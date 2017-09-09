@@ -1220,7 +1220,7 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     // for stack scanning.
     if (state == not_entrant) {
       mark_as_seen_on_stack();
-      OrderAccess::storestore();
+      OrderAccess::storestore(); // _stack_traversal_mark and _state
     }
 
     // Change state

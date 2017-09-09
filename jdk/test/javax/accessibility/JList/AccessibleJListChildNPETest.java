@@ -35,6 +35,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
 /* @test
+   @key headful
    @bug 8076249
    @summary  NPE in AccessBridge while editing JList model
    @author Mikhail Cherkasov

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,14 @@ public class Track {
 
     // TODO: use arrays for faster access
 
-    // the list containing the events
+    /**
+     * The list containing the events.
+     */
     private final ArrayList<MidiEvent> eventsList = new ArrayList<>();
 
-    // use a hashset to detect duplicate events in add(MidiEvent)
+    /**
+     * Use a hashset to detect duplicate events in add(MidiEvent).
+     */
     private final HashSet<MidiEvent> set = new HashSet<>();
 
     private final MidiEvent eotEvent;

@@ -61,6 +61,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       -DUSE_PLATFORM_MIDI_IN=TRUE \
       -DUSE_PORTS=TRUE
   LIBJSOUND_SRC_FILES += \
+      PLATFORM_API_WinOS_Charset_Util.cpp \
       PLATFORM_API_WinOS_MidiIn.cpp \
       PLATFORM_API_WinOS_MidiOut.c \
       PLATFORM_API_WinOS_Util.c \
@@ -190,6 +191,7 @@ ifneq ($(filter jsoundds, $(EXTRA_SOUND_JNI_LIBS)), )
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJSOUND_SRC_DIRS), \
       INCLUDE_FILES := Utilities.c $(LIBJSOUND_DAUDIOFILES) \
+          PLATFORM_API_WinOS_Charset_Util.cpp \
           PLATFORM_API_WinOS_DirectSound.cpp, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ static BOOL shouldUsePressAndHold() {
     // Allow TSM to look at the event and potentially send back NSTextInputClient messages.
     [self interpretKeyEvents:[NSArray arrayWithObject:event]];
     
-    if (fEnablePressAndHold && [event willBeHandledByComplexInputMethod]) {
+    if (fEnablePressAndHold && [event willBeHandledByComplexInputMethod] && fInputMethodLOCKABLE) {
         fProcessingKeystroke = NO;
         if (!fInPressAndHold) {
             fInPressAndHold = YES;
@@ -770,11 +770,9 @@ static BOOL shouldUsePressAndHold() {
     CDragSource *dragSource = self._dragSource;
     NSDragOperation dragOp = NSDragOperationNone;
     
-    if (dragSource != nil)
+    if (dragSource != nil) {
         dragOp = [dragSource draggingSourceOperationMaskForLocal:flag];
-    else if ([super respondsToSelector:@selector(draggingSourceOperationMaskForLocal:)])
-        dragOp = [super draggingSourceOperationMaskForLocal:flag];
-    
+    }
     return dragOp;
 }
 
@@ -784,11 +782,9 @@ static BOOL shouldUsePressAndHold() {
     CDragSource *dragSource = self._dragSource;
     NSArray* array = nil;
     
-    if (dragSource != nil)
+    if (dragSource != nil) {
         array = [dragSource namesOfPromisedFilesDroppedAtDestination:dropDestination];
-    else if ([super respondsToSelector:@selector(namesOfPromisedFilesDroppedAtDestination:)])
-        array = [super namesOfPromisedFilesDroppedAtDestination:dropDestination];
-    
+    }
     return array;
 }
 
@@ -797,10 +793,9 @@ static BOOL shouldUsePressAndHold() {
     // If draggingSource is nil route the message to the superclass (if responding to the selector):
     CDragSource *dragSource = self._dragSource;
     
-    if (dragSource != nil)
+    if (dragSource != nil) {
         [dragSource draggedImage:image beganAt:screenPoint];
-    else if ([super respondsToSelector:@selector(draggedImage::)])
-        [super draggedImage:image beganAt:screenPoint];
+    }
 }
 
 - (void)draggedImage:(NSImage *)image endedAt:(NSPoint)screenPoint operation:(NSDragOperation)operation
@@ -808,10 +803,9 @@ static BOOL shouldUsePressAndHold() {
     // If draggingSource is nil route the message to the superclass (if responding to the selector):
     CDragSource *dragSource = self._dragSource;
     
-    if (dragSource != nil)
+    if (dragSource != nil) {
         [dragSource draggedImage:image endedAt:screenPoint operation:operation];
-    else if ([super respondsToSelector:@selector(draggedImage:::)])
-        [super draggedImage:image endedAt:screenPoint operation:operation];
+    }
 }
 
 - (void)draggedImage:(NSImage *)image movedTo:(NSPoint)screenPoint
@@ -819,10 +813,9 @@ static BOOL shouldUsePressAndHold() {
     // If draggingSource is nil route the message to the superclass (if responding to the selector):
     CDragSource *dragSource = self._dragSource;
     
-    if (dragSource != nil)
+    if (dragSource != nil) {
         [dragSource draggedImage:image movedTo:screenPoint];
-    else if ([super respondsToSelector:@selector(draggedImage::)])
-        [super draggedImage:image movedTo:screenPoint];
+    }
 }
 
 - (BOOL)ignoreModifierKeysWhileDragging
@@ -831,11 +824,9 @@ static BOOL shouldUsePressAndHold() {
     CDragSource *dragSource = self._dragSource;
     BOOL result = FALSE;
     
-    if (dragSource != nil)
+    if (dragSource != nil) {
         result = [dragSource ignoreModifierKeysWhileDragging];
-    else if ([super respondsToSelector:@selector(ignoreModifierKeysWhileDragging)])
-        result = [super ignoreModifierKeysWhileDragging];
-    
+    }
     return result;
 }
 
@@ -849,11 +840,9 @@ static BOOL shouldUsePressAndHold() {
     CDropTarget *dropTarget = self._dropTarget;
     NSDragOperation dragOp = NSDragOperationNone;
     
-    if (dropTarget != nil)
+    if (dropTarget != nil) {
         dragOp = [dropTarget draggingEntered:sender];
-    else if ([super respondsToSelector:@selector(draggingEntered:)])
-        dragOp = [super draggingEntered:sender];
-    
+    }
     return dragOp;
 }
 
@@ -863,11 +852,9 @@ static BOOL shouldUsePressAndHold() {
     CDropTarget *dropTarget = self._dropTarget;
     NSDragOperation dragOp = NSDragOperationNone;
     
-    if (dropTarget != nil)
+    if (dropTarget != nil) {
         dragOp = [dropTarget draggingUpdated:sender];
-    else if ([super respondsToSelector:@selector(draggingUpdated:)])
-        dragOp = [super draggingUpdated:sender];
-    
+    }
     return dragOp;
 }
 
@@ -876,10 +863,9 @@ static BOOL shouldUsePressAndHold() {
     // If draggingDestination is nil route the message to the superclass:
     CDropTarget *dropTarget = self._dropTarget;
     
-    if (dropTarget != nil)
+    if (dropTarget != nil) {
         [dropTarget draggingExited:sender];
-    else if ([super respondsToSelector:@selector(draggingExited:)])
-        [super draggingExited:sender];
+    }
 }
 
 - (BOOL)prepareForDragOperation:(id <NSDraggingInfo>)sender
@@ -888,11 +874,9 @@ static BOOL shouldUsePressAndHold() {
     CDropTarget *dropTarget = self._dropTarget;
     BOOL result = FALSE;
     
-    if (dropTarget != nil)
+    if (dropTarget != nil) {
         result = [dropTarget prepareForDragOperation:sender];
-    else if ([super respondsToSelector:@selector(prepareForDragOperation:)])
-        result = [super prepareForDragOperation:sender];
-    
+    }
     return result;
 }
 
@@ -902,11 +886,9 @@ static BOOL shouldUsePressAndHold() {
     CDropTarget *dropTarget = self._dropTarget;
     BOOL result = FALSE;
     
-    if (dropTarget != nil)
+    if (dropTarget != nil) {
         result = [dropTarget performDragOperation:sender];
-    else if ([super respondsToSelector:@selector(performDragOperation:)])
-        result = [super performDragOperation:sender];
-    
+    }
     return result;
 }
 
@@ -915,10 +897,9 @@ static BOOL shouldUsePressAndHold() {
     // If draggingDestination is nil route the message to the superclass:
     CDropTarget *dropTarget = self._dropTarget;
     
-    if (dropTarget != nil)
+    if (dropTarget != nil) {
         [dropTarget concludeDragOperation:sender];
-    else if ([super respondsToSelector:@selector(concludeDragOperation:)])
-        [super concludeDragOperation:sender];
+    }
 }
 
 - (void)draggingEnded:(id <NSDraggingInfo>)sender
@@ -926,10 +907,9 @@ static BOOL shouldUsePressAndHold() {
     // If draggingDestination is nil route the message to the superclass:
     CDropTarget *dropTarget = self._dropTarget;
     
-    if (dropTarget != nil)
+    if (dropTarget != nil) {
         [dropTarget draggingEnded:sender];
-    else if ([super respondsToSelector:@selector(draggingEnded:)])
-        [super draggingEnded:sender];
+    }
 }
 
 /********************************  END NSDraggingDestination Interface  ********************************/
@@ -985,6 +965,13 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
         // The input method event will create psuedo-key events for each character in the committed string.
         // We also don't want to send the character that triggered the insertText, usually a return. [3337563]
         fKeyEventsNeeded = NO;
+    }
+    else {
+        // Need to set back the fKeyEventsNeeded flag so that the string following the
+        // marked text is not ignored by keyDown
+        if ([useString length] > 0) {
+            fKeyEventsNeeded = YES;
+        }
     }
     fPAHNeedsToSelect = NO;
 }

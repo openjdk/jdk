@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import javax.print.attribute.Attribute;
-import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.DocAttribute;
-import javax.print.attribute.PrintRequestAttribute;
+import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.PrintJobAttribute;
+import javax.print.attribute.PrintRequestAttribute;
 
 /**
- * Class PrintQuality is a printing attribute class, an enumeration,
+ * Class {@code PrintQuality} is a printing attribute class, an enumeration,
  * that specifies the print quality that the printer uses for the job.
- * <P>
- * <B>IPP Compatibility:</B> The category name returned by
- * {@code getName()} is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The {@code toString()} method
- * returns the IPP string representation of the attribute value.
+ * <p>
+ * <b>IPP Compatibility:</b> The category name returned by {@code getName()} is
+ * the IPP attribute name. The enumeration's integer value is the IPP enum
+ * value. The {@code toString()} method returns the IPP string representation of
+ * the attribute value.
  *
- * @author  David Mendenhall
- * @author  Alan Kaminsky
+ * @author David Mendenhall
+ * @author Alan Kaminsky
  */
 public class PrintQuality extends EnumSyntax
     implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -3072341285225858365L;
+
     /**
      * Lowest quality available on the printer.
      */
@@ -65,18 +70,24 @@ public class PrintQuality extends EnumSyntax
      * Construct a new print quality enumeration value with the given integer
      * value.
      *
-     * @param  value  Integer value.
+     * @param  value Integer value
      */
     protected PrintQuality(int value) {
         super (value);
     }
 
+    /**
+     * The string table for class {@code PrintQuality}.
+     */
     private static final String[] myStringTable = {
         "draft",
         "normal",
         "high"
     };
 
+    /**
+     * The enumeration value table for class {@code PrintQuality}.
+     */
     private static final PrintQuality[] myEnumValueTable = {
         DRAFT,
         NORMAL,
@@ -84,21 +95,21 @@ public class PrintQuality extends EnumSyntax
     };
 
     /**
-     * Returns the string table for class PrintQuality.
+     * Returns the string table for class {@code PrintQuality}.
      */
     protected String[] getStringTable() {
         return myStringTable.clone();
     }
 
     /**
-     * Returns the enumeration value table for class PrintQuality.
+     * Returns the enumeration value table for class {@code PrintQuality}.
      */
     protected EnumSyntax[] getEnumValueTable() {
         return (EnumSyntax[])myEnumValueTable.clone();
     }
 
     /**
-     * Returns the lowest integer value used by class PrintQuality.
+     * Returns the lowest integer value used by class {@code PrintQuality}.
      */
     protected int getOffset() {
         return 3;
@@ -107,12 +118,12 @@ public class PrintQuality extends EnumSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class PrintQuality and any vendor-defined subclasses, the category is
-     * class PrintQuality itself.
+     * <p>
+     * For class {@code PrintQuality} and any vendor-defined subclasses, the
+     * category is class {@code PrintQuality} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return PrintQuality.class;
@@ -121,14 +132,13 @@ public class PrintQuality extends EnumSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class PrintQuality and any vendor-defined subclasses, the category
-     * name is {@code "print-quality"}.
+     * <p>
+     * For class {@code PrintQuality} and any vendor-defined subclasses, the
+     * category name is {@code "print-quality"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "print-quality";
     }
-
 }

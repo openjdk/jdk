@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,15 +41,19 @@ import java.security.BasicPermission;
  * and for each provides a description of what the permission allows
  * and a discussion of the risks of granting code the permission.
  *
- * <table border=1 cellpadding=5 summary="Permission target name, what the permission allows, and associated risks">
+ * <table class="striped">
+ * <caption style="display:none">Permission target name, what the permission allows, and associated risks"</caption>
+ * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
+ * </thead>
  *
+ * <tbody style="text-align:left">
  * <tr>
- *   <td>setDatatypeConverter</td>
+ *   <th scope="row">setDatatypeConverter</th>
  *   <td>
  *     Allows the code to set VM-wide {@link DatatypeConverterInterface}
  *     via {@link DatatypeConverter#setDatatypeConverter(DatatypeConverterInterface) the setDatatypeConverter method}
@@ -63,6 +67,7 @@ import java.security.BasicPermission;
  *     another application running in the same JVM.
  *   </td>
  * </tr>
+ * </tbody>
  * </table>
  *
  * @see java.security.BasicPermission

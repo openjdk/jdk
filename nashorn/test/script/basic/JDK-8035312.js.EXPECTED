@@ -58,37 +58,37 @@ x[4] === undefined (should be undefined)
 
 >>> Pop test
 Popping from 1,2,3
-	array is now [1,2,3] length is = 3
+	array is now [1,2,] length is = 3
 
 class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
-Popping from 1,2,3
-	array is now [1,2,3] length is = 3
-
-class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
-x.length === 3 (should be 3)
-x === 1,2,3
-Popping from 1,2,3
-	array is now [1,2,3] length is = 3
-
-class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
-Popping from 1,2,3
-	array is now [1,2,3] length is = 3
-
-class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
-Popping from 1,2,3
-	array is now [1,2,3] length is = 3
-
-class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
-Popping from 1,2,3
-	array is now [1,2,3] length is = 3
-
-class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
-Popping from 1,2,3
-	array is now [1,2,3] length is = 3
+Popping from 1,2,
+	array is now [1,2,] length is = 3
 
 class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
 x.length === 3 (should be 3)
-x === 1,2,3
+x === 1,2,
+Popping from 1,2,
+	array is now [1,2,] length is = 3
+
+class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
+Popping from 1,2,
+	array is now [1,2,] length is = 3
+
+class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
+Popping from 1,2,
+	array is now [1,2,] length is = 3
+
+class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
+Popping from 1,2,
+	array is now [1,2,] length is = 3
+
+class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
+Popping from 1,2,
+	array is now [1,2,] length is = 3
+
+class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
+x.length === 3 (should be 3)
+x === 1,2,
 class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter
 Writing 0
 class jdk.nashorn.internal.runtime.arrays.LengthNotWritableFilter

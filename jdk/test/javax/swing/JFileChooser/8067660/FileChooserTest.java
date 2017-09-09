@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8067660
+ * @bug 8067660 8178106
  * @summary JFileChooser create new folder fails silently
  * @requires (os.family == "windows")
  * @run main/manual FileChooserTest
@@ -52,15 +52,21 @@ public class FileChooserTest {
             @Override
             public void run() {
                 String[] instructions
-                        = {
-                            "1) Create a folder with read only permissions",
-                            "2) Click on run test button.It will open a open dialog"
-                            + " Navigate to the newly created read only folder",
-                            "3) Click on the create new folder button in open dialog",
-                            "4) If an error message does not pops up"
-                            + "test failed otherwise passed.",
-                            "5) Pressing Pass/Fail button will mark test as "
-                            + "pass/fail and will shutdown JVM"};
+                     = {
+                       "1) Create a folder with read only permissions by "
+                       + "changing security permission through Security tab"
+                       + "under Folder->Properties menu to deny write permission"
+                       + " to the newly created folder",
+                       "2) Click on run test button.It will open a open dialog"
+                       + " Navigate to the newly created read only folder",
+                       "3) Click on the create new folder button in open dialog",
+                       "4) If an error message does not pops up"
+                       + "test failed otherwise passed.",
+                       "5) Pressing Pass/Fail button will mark test as "
+                       + "pass/fail and will shutdown JVM",
+                       "6) Newly created folder permissions can now be restored"
+                       + " back to default",
+                };
 
                 Sysout.createDialogWithInstructions(instructions);
                 Sysout.printInstructions(instructions);

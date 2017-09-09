@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,64 +22,60 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import javax.print.attribute.Attribute;
 import javax.print.attribute.IntegerSyntax;
-import javax.print.attribute.PrintRequestAttribute;
 import javax.print.attribute.PrintJobAttribute;
+import javax.print.attribute.PrintRequestAttribute;
 
 /**
- * Class Copies is an integer valued printing attribute class that specifies the
- * number of copies to be printed.
- * <P>
+ * Class {@code Copies} is an integer valued printing attribute class that
+ * specifies the number of copies to be printed.
+ * <p>
  * On many devices the supported number of collated copies will be limited by
  * the number of physical output bins on the device, and may be different from
  * the number of uncollated copies which can be supported.
- * <P>
- * The effect of a Copies attribute with a value of <I>n</I> on a multidoc print
- * job (a job with multiple documents) depends on the (perhaps defaulted) value
- * of the {@link MultipleDocumentHandling MultipleDocumentHandling} attribute:
- * <UL>
- * <LI>
- * SINGLE_DOCUMENT -- The result will be <I>n</I> copies of a single output
- * document comprising all the input docs.
+ * <p>
+ * The effect of a {@code Copies} attribute with a value of <i>n</i> on a
+ * multidoc print job (a job with multiple documents) depends on the (perhaps
+ * defaulted) value of the
+ * {@link MultipleDocumentHandling MultipleDocumentHandling} attribute:
+ * <ul>
+ *   <li>{@code SINGLE_DOCUMENT} -- The result will be <i>n</i> copies of a
+ *   single output document comprising all the input docs.
+ *   <li>{@code SINGLE_DOCUMENT_NEW_SHEET} -- The result will be <i>n</i> copies
+ *   of a single output document comprising all the input docs, and the first
+ *   impression of each input doc will always start on a new media sheet.
+ *   <li>{@code SEPARATE_DOCUMENTS_UNCOLLATED_COPIES} -- The result will be
+ *   <i>n</i> copies of the first input document, followed by <i>n</i> copies of
+ *   the second input document, . . . followed by <i>n</i> copies of the last
+ *   input document.
+ *   <li>{@code SEPARATE_DOCUMENTS_COLLATED_COPIES} -- The result will be the
+ *   first input document, the second input document, . . . the last input
+ *   document, the group of documents being repeated <i>n</i> times.
+ * </ul>
+ * <p>
+ * <b>IPP Compatibility:</b> The integer value gives the IPP integer value. The
+ * category name returned by {@code getName()} gives the IPP attribute name.
  *
- * <LI>
- * SINGLE_DOCUMENT_NEW_SHEET -- The result will be <I>n</I> copies of a single
- * output document comprising all the input docs, and the first impression of
- * each input doc will always start on a new media sheet.
- *
- * <LI>
- * SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- The result will be <I>n</I> copies of
- * the first input document, followed by <I>n</I> copies of the second input
- * document, . . . followed by <I>n</I> copies of the last input document.
- *
- * <LI>
- * SEPARATE_DOCUMENTS_COLLATED_COPIES -- The result will be the first input
- * document, the second input document, . . . the last input document, the group
- * of documents being repeated <I>n</I> times.
- * </UL>
- * <P>
- * <B>IPP Compatibility:</B> The integer value gives the IPP integer value. The
- * category name returned by {@code getName()} gives the IPP attribute
- * name.
- *
- * @author  David Mendenhall
- * @author  Alan Kamihensky
+ * @author David Mendenhall
+ * @author Alan Kamihensky
  */
 public final class Copies extends IntegerSyntax
         implements PrintRequestAttribute, PrintJobAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -6426631521680023833L;
 
     /**
      * Construct a new copies attribute with the given integer value.
      *
-     * @param  value  Integer value.
-     *
-     * @exception  IllegalArgumentException
-     *  (Unchecked exception) Thrown if {@code value} is less than 1.
+     * @param  value Integer value
+     * @throws IllegalArgumentException if {@code value < 1}
      */
     public Copies(int value) {
         super (value, 1, Integer.MAX_VALUE);
@@ -88,20 +84,15 @@ public final class Copies extends IntegerSyntax
     /**
      * Returns whether this copies attribute is equivalent to the passed in
      * object. To be equivalent, all of the following conditions must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class Copies.
-     * <LI>
-     * This copies attribute's value and {@code object}'s value are
-     * equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code Copies}.
+     *   <li>This copies attribute's value and {@code object}'s value are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this copies
-     *          attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this copies
+     *         attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return super.equals (object) && object instanceof Copies;
@@ -110,11 +101,11 @@ public final class Copies extends IntegerSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class Copies, the category is class Copies itself.
+     * <p>
+     * For class {@code Copies}, the category is class {@code Copies} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return Copies.class;
@@ -123,13 +114,12 @@ public final class Copies extends IntegerSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class Copies, the category name is {@code "copies"}.
+     * <p>
+     * For class {@code Copies}, the category name is {@code "copies"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "copies";
     }
-
 }

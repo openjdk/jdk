@@ -42,9 +42,9 @@ import java.util.concurrent.Callable;
  */
 @SuppressWarnings("serial") // JDK-implementation class
 public abstract class ShellFolder extends File {
-    private static final String COLUMN_NAME = "FileChooser.fileNameHeaderText";
-    private static final String COLUMN_SIZE = "FileChooser.fileSizeHeaderText";
-    private static final String COLUMN_DATE = "FileChooser.fileDateHeaderText";
+    public static final String COLUMN_NAME = "FileChooser.fileNameHeaderText";
+    public static final String COLUMN_SIZE = "FileChooser.fileSizeHeaderText";
+    public static final String COLUMN_DATE = "FileChooser.fileDateHeaderText";
 
     protected ShellFolder parent;
 

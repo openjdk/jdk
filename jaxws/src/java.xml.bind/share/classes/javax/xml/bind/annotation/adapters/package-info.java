@@ -26,13 +26,13 @@
 /**
  * {@link javax.xml.bind.annotation.adapters.XmlAdapter} and its spec-defined
  * sub-classes to allow arbitrary Java classes to be used with JAXB.
- * <p>
+ *
  * <h2>Package Specification</h2>
- * <p>
+ *
  * <ul>
  * <li><a href="http://jcp.org/en/jsr/detail?id=222">JAXB Specification</a>
  * </ul>
- * <p>
+ *
  * <h2>Related Documentation</h2>
  * <p>
  * For overviews, tutorials, examples, guides, and tool documentation,

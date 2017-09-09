@@ -36,6 +36,7 @@ import java.awt.event.InputEvent;
 
 /**
  * @test
+ * @key headful
  * @bug 8176448
  * @run main/timeout=300 ChoicePopupLocation
  */

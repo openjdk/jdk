@@ -663,13 +663,6 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
         if (sDraggingError == FALSE) {
             JNFCallVoidMethod(env, fDropTargetContextPeer, handleDropMessageMethod, fComponent, (jint) javaLocation.x, (jint) javaLocation.y, dropAction, actions, formats, ptr_to_jlong(self)); // AWT_THREADING Safe (event)
         }
-
-        if (sDraggingError == FALSE) {
-            JNF_MEMBER_CACHE(flushEventsMethod, jc_CDropTargetContextPeer, "flushEvents", "(Ljava/awt/Component;)V");
-            if (sDraggingError == FALSE) {
-                JNFCallVoidMethod(env, fDropTargetContextPeer, flushEventsMethod, fComponent); // AWT_THREADING Safe (AWTRunLoopMode)
-            }
-        }
     } else {
         // 8-19-03 Note: [Radar 3368754]
         // draggingExited: is not called after a drop - we must do that here ... but only in case

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,10 @@ import java.util.Arrays;
 
 /**
  * @test
- * @bug 8076419
+ * @bug 8076419 8078192 8186364
  * @summary Check Path2D copy constructor (trims arrays)
  *          and constructor with zero capacity
+ *          and Path2D.trimToSize()
  * @run main Path2DCopyConstructor
  */
 public class Path2DCopyConstructor {
@@ -179,58 +180,232 @@ public class Path2DCopyConstructor {
     }
 
     static void test(Path2D p2d, boolean isEmpty) {
-        testEqual(new Path2D.Float(p2d), p2d);
-        testEqual(new Path2D.Double(p2d), p2d);
-        testEqual(new GeneralPath(p2d), p2d);
+        Path2D c;
+        Path2D.Float pf;
+        Path2D.Double pd;
+        GeneralPath gp;
 
-        testIterator(new Path2D.Float(p2d), p2d);
-        testIterator(new Path2D.Double(p2d), p2d);
-        testIterator((Path2D) p2d.clone(), p2d);
+        pf = new Path2D.Float(p2d);
+        testEqual(pf, p2d);
+        pf.trimToSize();
+        testEqual(pf, p2d);
+        pd = new Path2D.Double(p2d);
+        testEqual(pd, p2d);
+        pd.trimToSize();
+        testEqual(pd, p2d);
+        c = (Path2D)p2d.clone();
+        testEqual(c, p2d);
+        c.trimToSize();
+        testEqual(c, p2d);
+        gp = new GeneralPath(p2d);
+        testEqual(gp, p2d);
+        gp.trimToSize();
+        testEqual(gp, p2d);
 
-        testFlattening(new Path2D.Float(p2d), p2d);
-        testFlattening(new Path2D.Double(p2d), p2d);
-        testFlattening((Path2D) p2d.clone(), p2d);
+        pf = new Path2D.Float(p2d);
+        testIterator(pf, p2d);
+        pf.trimToSize();
+        testIterator(pf, p2d);
+        pd = new Path2D.Double(p2d);
+        testIterator(pd, p2d);
+        pd.trimToSize();
+        testIterator(pd, p2d);
+        c = (Path2D)p2d.clone();
+        testIterator(c, p2d);
+        c.trimToSize();
+        testIterator(c, p2d);
+        gp = new GeneralPath(p2d);
+        testIterator(gp, p2d);
+        gp.trimToSize();
+        testIterator(gp, p2d);
 
-        testAddMove(new Path2D.Float(p2d));
-        testAddMove(new Path2D.Double(p2d));
-        testAddMove((Path2D) p2d.clone());
+        pf = new Path2D.Float(p2d);
+        testFlattening(pf, p2d);
+        pf.trimToSize();
+        testFlattening(pf, p2d);
+        pd = new Path2D.Double(p2d);
+        testFlattening(pd, p2d);
+        pd.trimToSize();
+        testFlattening(pd, p2d);
+        c = (Path2D)p2d.clone();
+        testFlattening(c, p2d);
+        c.trimToSize();
+        testFlattening(c, p2d);
+        gp = new GeneralPath(p2d);
+        testFlattening(gp, p2d);
+        gp.trimToSize();
+        testFlattening(gp, p2d);
+
+        pf = new Path2D.Float(p2d);
+        testAddMove(pf);
+        pf.trimToSize();
+        testAddMove(pf);
+        pd = new Path2D.Double(p2d);
+        testAddMove(pd);
+        pd.trimToSize();
+        testAddMove(pd);
+        c = (Path2D)p2d.clone();
+        testAddMove(c);
+        c.trimToSize();
+        testAddMove(c);
+        gp = new GeneralPath(p2d);
+        testAddMove(gp);
+        gp.trimToSize();
+        testAddMove(gp);
 
         // These should expect exception if empty
-        testAddLine(new Path2D.Float(p2d), isEmpty);
-        testAddLine(new Path2D.Double(p2d), isEmpty);
-        testAddLine((Path2D) p2d.clone(), isEmpty);
+        pf = new Path2D.Float(p2d);
+        testAddLine(pf, isEmpty);
+        pf.trimToSize();
+        testAddLine(pf, isEmpty);
+        pd = new Path2D.Double(p2d);
+        testAddLine(pd, isEmpty);
+        pd.trimToSize();
+        testAddLine(pd, isEmpty);
+        c = (Path2D)p2d.clone();
+        testAddLine(c, isEmpty);
+        c.trimToSize();
+        testAddLine(c, isEmpty);
+        gp = new GeneralPath(p2d);
+        testAddLine(gp, isEmpty);
+        gp.trimToSize();
+        testAddLine(gp, isEmpty);
 
-        testAddQuad(new Path2D.Float(p2d), isEmpty);
-        testAddQuad(new Path2D.Double(p2d), isEmpty);
-        testAddQuad((Path2D) p2d.clone(), isEmpty);
+        pf = new Path2D.Float(p2d);
+        testAddQuad(pf, isEmpty);
+        pf.trimToSize();
+        testAddQuad(pf, isEmpty);
+        pd = new Path2D.Double(p2d);
+        testAddQuad(pd, isEmpty);
+        pd.trimToSize();
+        testAddQuad(pd, isEmpty);
+        c = (Path2D)p2d.clone();
+        testAddQuad(c, isEmpty);
+        c.trimToSize();
+        testAddQuad(c, isEmpty);
+        gp = new GeneralPath(p2d);
+        testAddQuad(gp, isEmpty);
+        gp.trimToSize();
+        testAddQuad(gp, isEmpty);
 
-        testAddCubic(new Path2D.Float(p2d), isEmpty);
-        testAddCubic(new Path2D.Double(p2d), isEmpty);
-        testAddCubic((Path2D) p2d.clone(), isEmpty);
+        pf = new Path2D.Float(p2d);
+        testAddCubic(pf, isEmpty);
+        pf.trimToSize();
+        testAddCubic(pf, isEmpty);
+        pd = new Path2D.Double(p2d);
+        testAddCubic(pd, isEmpty);
+        pd.trimToSize();
+        testAddCubic(pd, isEmpty);
+        c = (Path2D)p2d.clone();
+        testAddCubic(c, isEmpty);
+        c.trimToSize();
+        testAddCubic(c, isEmpty);
+        gp = new GeneralPath(p2d);
+        testAddCubic(gp, isEmpty);
+        gp.trimToSize();
+        testAddCubic(gp, isEmpty);
 
-        testAddClose(new Path2D.Float(p2d), isEmpty);
-        testAddClose(new Path2D.Double(p2d), isEmpty);
-        testAddClose((Path2D) p2d.clone(), isEmpty);
+        pf = new Path2D.Float(p2d);
+        testAddClose(pf, isEmpty);
+        pf.trimToSize();
+        testAddClose(pf, isEmpty);
+        pd = new Path2D.Double(p2d);
+        testAddClose(pd, isEmpty);
+        pd.trimToSize();
+        testAddClose(pd, isEmpty);
+        c = (Path2D)p2d.clone();
+        testAddClose(c, isEmpty);
+        c.trimToSize();
+        testAddClose(c, isEmpty);
+        gp = new GeneralPath(p2d);
+        testAddClose(gp, isEmpty);
+        gp.trimToSize();
+        testAddClose(gp, isEmpty);
 
-        testGetBounds(new Path2D.Float(p2d), p2d);
-        testGetBounds(new Path2D.Double(p2d), p2d);
-        testGetBounds((Path2D) p2d.clone(), p2d);
+        pf = new Path2D.Float(p2d);
+        testGetBounds(pf, p2d);
+        pf.trimToSize();
+        testGetBounds(pf, p2d);
+        pd = new Path2D.Double(p2d);
+        testGetBounds(pd, p2d);
+        pd.trimToSize();
+        testGetBounds(pd, p2d);
+        c = (Path2D)p2d.clone();
+        testGetBounds(c, p2d);
+        c.trimToSize();
+        testGetBounds(c, p2d);
+        gp = new GeneralPath(p2d);
+        testGetBounds(gp, p2d);
+        gp.trimToSize();
+        testGetBounds(gp, p2d);
 
-        testTransform(new Path2D.Float(p2d));
-        testTransform(new Path2D.Double(p2d));
-        testTransform((Path2D) p2d.clone());
+        pf = new Path2D.Float(p2d);
+        testTransform(pf);
+        pf.trimToSize();
+        testTransform(pf);
+        pd = new Path2D.Double(p2d);
+        testTransform(pd);
+        pd.trimToSize();
+        testTransform(pd);
+        c = (Path2D)p2d.clone();
+        testTransform(c);
+        c.trimToSize();
+        testTransform(c);
+        gp = new GeneralPath(p2d);
+        testTransform(gp);
+        gp.trimToSize();
+        testTransform(gp);
 
-        testIntersect(new Path2D.Float(p2d), p2d);
-        testIntersect(new Path2D.Double(p2d), p2d);
-        testIntersect((Path2D) p2d.clone(), p2d);
+        pf = new Path2D.Float(p2d);
+        testIntersect(pf, p2d);
+        pf.trimToSize();
+        testIntersect(pf, p2d);
+        pd = new Path2D.Double(p2d);
+        testIntersect(pd, p2d);
+        pd.trimToSize();
+        testIntersect(pd, p2d);
+        c = (Path2D)p2d.clone();
+        testIntersect(c, p2d);
+        c.trimToSize();
+        testIntersect(c, p2d);
+        gp = new GeneralPath(p2d);
+        testIntersect(gp, p2d);
+        gp.trimToSize();
+        testIntersect(gp, p2d);
 
-        testContains(new Path2D.Float(p2d), p2d);
-        testContains(new Path2D.Double(p2d), p2d);
-        testContains((Path2D) p2d.clone(), p2d);
+        pf = new Path2D.Float(p2d);
+        testContains(pf, p2d);
+        pf.trimToSize();
+        testContains(pf, p2d);
+        pd = new Path2D.Double(p2d);
+        testContains(pd, p2d);
+        pd.trimToSize();
+        testContains(pd, p2d);
+        c = (Path2D)p2d.clone();
+        testContains(c, p2d);
+        c.trimToSize();
+        testContains(c, p2d);
+        gp = new GeneralPath(p2d);
+        testContains(gp, p2d);
+        gp.trimToSize();
+        testContains(gp, p2d);
 
-        testGetCurrentPoint(new Path2D.Float(p2d), p2d);
-        testGetCurrentPoint(new Path2D.Double(p2d), p2d);
-        testGetCurrentPoint((Path2D) p2d.clone(), p2d);
+        pf = new Path2D.Float(p2d);
+        testGetCurrentPoint(pf, p2d);
+        pf.trimToSize();
+        testGetCurrentPoint(pf, p2d);
+        pd = new Path2D.Double(p2d);
+        testGetCurrentPoint(pd, p2d);
+        pd.trimToSize();
+        testGetCurrentPoint(pd, p2d);
+        c = (Path2D)p2d.clone();
+        testGetCurrentPoint(c, p2d);
+        c.trimToSize();
+        testGetCurrentPoint(c, p2d);
+        gp = new GeneralPath(p2d);
+        testGetCurrentPoint(gp, p2d);
+        gp.trimToSize();
+        testGetCurrentPoint(gp, p2d);
     }
 
     static void testEqual(Path2D pathA, Path2D pathB) {

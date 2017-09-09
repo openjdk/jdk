@@ -187,10 +187,9 @@ public final class BinaryContainer implements SymbolTable {
         {"StubRoutines::_arrayof_oop_disjoint_arraycopy", "_aot_stub_routines_arrayof_oop_disjoint_arraycopy"},
         {"StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit", "_aot_stub_routines_arrayof_oop_disjoint_arraycopy_uninit"},
 
+        {"StubRoutines::_unsafe_arraycopy", "_aot_stub_routines_unsafe_arraycopy"},
+
         {"StubRoutines::_checkcast_arraycopy", "_aot_stub_routines_checkcast_arraycopy"},
-
-
-
 
         {"StubRoutines::_aescrypt_encryptBlock", "_aot_stub_routines_aescrypt_encryptBlock"},
         {"StubRoutines::_aescrypt_decryptBlock", "_aot_stub_routines_aescrypt_decryptBlock"},
@@ -478,8 +477,8 @@ public final class BinaryContainer implements SymbolTable {
     }
 
     /**
-     * Creates a global symbol of the form {@code "A" + container name}.
-     * Note, linker on Windows does not allow names which start with '.'
+     * Creates a global symbol of the form {@code "A" + container name}. Note, linker on Windows
+     * does not allow names which start with '.'
      *
      * @param container container to create a symbol for
      */
@@ -685,7 +684,8 @@ public final class BinaryContainer implements SymbolTable {
     }
 
     /**
-     * Add oop symbol by as follows. Extend the oop.got section with another slot for the VM to patch.
+     * Add oop symbol by as follows. Extend the oop.got section with another slot for the VM to
+     * patch.
      *
      * @param oopName name of the oop symbol
      */
@@ -728,10 +728,9 @@ public final class BinaryContainer implements SymbolTable {
     }
 
     /**
-     * Add klass symbol by as follows.
-     *   - Adding the symbol name to the metaspace.names section
-     *   - Add the offset of the name in metaspace.names to metaspace.offsets
-     *   - Extend the klasses.got section with another slot for the VM to patch
+     * Add klass symbol by as follows. - Adding the symbol name to the metaspace.names section - Add
+     * the offset of the name in metaspace.names to metaspace.offsets - Extend the klasses.got
+     * section with another slot for the VM to patch
      *
      * @param klassName name of the metaspace symbol
      * @return the got offset in the klasses.got of the metaspace symbol

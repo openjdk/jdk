@@ -57,7 +57,9 @@ public @interface ClassSubstitution {
 
     /**
      * Determines if the substitutions are for classes that may not be part of the runtime.
-     * Substitutions for such classes are omitted if the original classes cannot be found.
+     * Substitutions for such classes are omitted if the original classes cannot be found. If
+     * multiple classes are specified using {@link #className()} and {@link #optional()} is false,
+     * then at least one of the classes is required to be reachable.
      */
     boolean optional() default false;
 }

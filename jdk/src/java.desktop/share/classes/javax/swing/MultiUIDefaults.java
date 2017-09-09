@@ -127,7 +127,7 @@ class MultiUIDefaults extends UIDefaults
 
     @Override
     protected void getUIError(String msg) {
-        if (tables.length > 0) {
+        if (tables != null && tables.length > 0 && tables[0] != null) {
             tables[0].getUIError(msg);
         } else {
             super.getUIError(msg);

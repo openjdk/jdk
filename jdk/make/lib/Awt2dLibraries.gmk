@@ -311,7 +311,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
         -I$(JDK_TOPDIR)/src/java.desktop/share/native/libawt/java2d/pipe \
         -I$(JDK_TOPDIR)/src/java.desktop/share/native/libawt/awt/image/cvutils \
         -I$(JDK_TOPDIR)/src/java.desktop/share/native/libawt/awt/image \
-        -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libsunwjdga \
         -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/font \
         $(LIBJAVA_HEADER_FLAGS)
         #
@@ -536,7 +535,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
       -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/font \
       -I$(JDK_TOPDIR)/src/java.desktop/share/native/common/java2d/opengl \
       -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/java2d/opengl \
-      -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libsunwjdga/ \
       $(LIBJAVA_HEADER_FLAGS) \
       #
 

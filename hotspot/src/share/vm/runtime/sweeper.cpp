@@ -53,7 +53,7 @@ class SweeperRecord {
  public:
   int traversal;
   int compile_id;
-  jlong traversal_mark;
+  long traversal_mark;
   int state;
   const char* kind;
   address vep;
@@ -62,7 +62,7 @@ class SweeperRecord {
 
   void print() {
       tty->print_cr("traversal = %d compile_id = %d %s uep = " PTR_FORMAT " vep = "
-                    PTR_FORMAT " state = %d traversal_mark "JLONG_FORMAT" line = %d",
+                    PTR_FORMAT " state = %d traversal_mark %ld line = %d",
                     traversal,
                     compile_id,
                     kind == NULL ? "" : kind,
@@ -629,6 +629,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
   } else if (cm->is_not_entrant()) {
     // If there are no current activations of this method on the
     // stack we can safely convert it to a zombie method
+    OrderAccess::loadload(); // _stack_traversal_mark and _state
     if (cm->can_convert_to_zombie()) {
       // Clear ICStubs to prevent back patching stubs of zombie or flushed
       // nmethods during the next safepoint (see ICStub::finalize).

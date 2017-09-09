@@ -3630,6 +3630,12 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
 }
 
 #if INCLUDE_ALL_GCS
+/*
+ * g1_write_barrier_pre -- G1GC pre-write barrier for store of new_val at
+ * store_addr.
+ *
+ * Allocates rscratch1
+ */
 void MacroAssembler::g1_write_barrier_pre(Register obj,
                                           Register pre_val,
                                           Register thread,
@@ -3645,10 +3651,8 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   Label done;
   Label runtime;
 
-  assert(pre_val != noreg, "check this code");
-
-  if (obj != noreg)
-    assert_different_registers(obj, pre_val, tmp);
+  assert_different_registers(obj, pre_val, tmp, rscratch1);
+  assert(pre_val != noreg &&  tmp != noreg, "expecting a register");
 
   Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
                                        SATBMarkQueue::byte_offset_of_active()));
@@ -3722,12 +3726,22 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   bind(done);
 }
 
+/*
+ * g1_write_barrier_post -- G1GC post-write barrier for store of new_val at
+ * store_addr
+ *
+ * Allocates rscratch1
+ */
 void MacroAssembler::g1_write_barrier_post(Register store_addr,
                                            Register new_val,
                                            Register thread,
                                            Register tmp,
                                            Register tmp2) {
   assert(thread == rthread, "must be");
+  assert_different_registers(store_addr, new_val, thread, tmp, tmp2,
+                             rscratch1);
+  assert(store_addr != noreg && new_val != noreg && tmp != noreg
+         && tmp2 != noreg, "expecting a register");
 
   Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
                                        DirtyCardQueue::byte_offset_of_index()));

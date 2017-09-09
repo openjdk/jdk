@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,14 @@ public interface Port extends Line {
         // DAT
         // DVD
 
+        /**
+         * The string that names the port.
+         */
         private final String name;
+
+        /**
+         * Whether this port is source or not.
+         */
         private final boolean isSource;
 
         /**
@@ -111,8 +118,8 @@ public interface Port extends Line {
          * @param  lineClass the class of the port described by the info object
          * @param  name the string that names the port
          * @param  isSource {@code true} if the port is a source port (such as a
-         *         microphone), {@code false} if the port is a target port
-         *         (such as a speaker)
+         *         microphone), {@code false} if the port is a target port (such
+         *         as a speaker)
          */
         public Info(Class<?> lineClass, String name, boolean isSource) {
 
@@ -134,8 +141,8 @@ public interface Port extends Line {
          * Indicates whether the port is a source or a target for its mixer.
          *
          * @return {@code true} if the port is a source port (such as a
-         *         microphone), {@code false} if the port is a target port
-         *         (such as a speaker)
+         *         microphone), {@code false} if the port is a target port (such
+         *         as a speaker)
          */
         public boolean isSource() {
             return isSource;
@@ -147,6 +154,8 @@ public interface Port extends Line {
          * types must be equal.
          *
          * @param  info the info object for which the match is queried
+         * @return {@code true} if the specified object matches this one,
+         *         {@code false} otherwise
          */
         @Override
         public boolean matches(Line.Info info) {
@@ -167,7 +176,12 @@ public interface Port extends Line {
         }
 
         /**
-         * Finalizes the equals method.
+         * Indicates whether the specified object is equal to this info object,
+         * returning {@code true} if the objects are the same.
+         *
+         * @param  obj the reference object with which to compare
+         * @return {@code true} if the specified object is equal to this info
+         *         object; {@code false} otherwise
          */
         @Override
         public final boolean equals(Object obj) {
@@ -175,7 +189,9 @@ public interface Port extends Line {
         }
 
         /**
-         * Finalizes the hashCode method.
+         * Returns a hash code value for this info object.
+         *
+         * @return a hash code value for this info object
          */
         @Override
         public final int hashCode() {

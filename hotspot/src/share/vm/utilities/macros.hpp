@@ -65,18 +65,6 @@
 #define NOT_JVMTI_RETURN_(code) { return code; }
 #endif // INCLUDE_JVMTI
 
-#ifndef INCLUDE_FPROF
-#define INCLUDE_FPROF 1
-#endif
-
-#if INCLUDE_FPROF
-#define NOT_FPROF_RETURN        /* next token must be ; */
-#define NOT_FPROF_RETURN_(code) /* next token must be ; */
-#else
-#define NOT_FPROF_RETURN                {}
-#define NOT_FPROF_RETURN_(code) { return code; }
-#endif // INCLUDE_FPROF
-
 #ifndef INCLUDE_VM_STRUCTS
 #define INCLUDE_VM_STRUCTS 1
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,23 +36,26 @@ package javax.xml.bind.annotation;
  * The namespace qualification values are used in the annotations
  * defined in this packge. The enumeration values are mapped as follows:
  *
- * <table summary="" border="1" cellpadding="4" cellspacing="3">
+ * <table class="striped">
+ *   <caption style="display:none">Mapping of enumeration values</caption>
+ *   <thead>
+ *     <tr>
+ *       <th scope="col">Enum Value</th>
+ *       <th scope="col">XML Schema Value</th>
+ *     </tr>
+ *   </thead>
+ *
  *   <tbody>
  *     <tr>
- *       <td><b>Enum Value</b></td>
- *       <td><b>XML Schema Value</b></td>
- *     </tr>
- *
- *     <tr valign="top">
- *       <td>UNQUALIFIED</td>
+ *       <th scope="row">UNQUALIFIED</th>
  *       <td>unqualified</td>
  *     </tr>
- *     <tr valign="top">
- *       <td>QUALIFIED</td>
+ *     <tr>
+ *       <th scope="row">QUALIFIED</th>
  *       <td>qualified</td>
  *     </tr>
- *     <tr valign="top">
- *       <td>UNSET</td>
+ *     <tr>
+ *       <th scope="row">UNSET</th>
  *       <td>namespace qualification attribute is absent from the
  *           XML Schema fragment</td>
  *     </tr>

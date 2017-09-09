@@ -917,9 +917,14 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                     processMouseEvent(me);
                 break;
             case MouseEvent.MOUSE_WHEEL:
+                // If the scroll is done inside a combobox, menuitem,
+                // or inside a Popup#HeavyWeightWindow or inside a frame
+                // popup should not close which is the standard behaviour
                 if (isInPopup(src)
-                    || ((src instanceof JComboBox) && ((JComboBox) src).isPopupVisible())) {
-
+                    || ((src instanceof JComboBox) && ((JComboBox) src).isPopupVisible())
+                    || ((src instanceof JWindow) && ((JWindow)src).isVisible())
+                    || ((src instanceof JMenuItem) && ((JMenuItem)src).isVisible())
+                    || (src instanceof JFrame)) {
                     return;
                 }
                 cancelPopupMenu();

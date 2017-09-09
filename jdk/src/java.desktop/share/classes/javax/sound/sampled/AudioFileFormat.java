@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,44 +51,36 @@ import java.util.Objects;
  * implementations:
  *
  * <table border=1>
- *  <caption>Audio File Format Properties</caption>
- *  <tr>
- *   <th>Property key</th>
- *   <th>Value type</th>
- *   <th>Description</th>
- *  </tr>
- *  <tr>
- *   <td>&quot;duration&quot;</td>
- *   <td>{@link java.lang.Long Long}</td>
- *   <td>playback duration of the file in microseconds</td>
- *  </tr>
- *  <tr>
- *   <td>&quot;author&quot;</td>
- *   <td>{@link java.lang.String String}</td>
- *   <td>name of the author of this file</td>
- *  </tr>
- *  <tr>
- *   <td>&quot;title&quot;</td>
- *   <td>{@link java.lang.String String}</td>
- *   <td>title of this file</td>
- *  </tr>
- *  <tr>
- *   <td>&quot;copyright&quot;</td>
- *   <td>{@link java.lang.String String}</td>
- *   <td>copyright message</td>
- *  </tr>
- *  <tr>
- *   <td>&quot;date&quot;</td>
- *   <td>{@link java.util.Date Date}</td>
- *   <td>date of the recording or release</td>
- *  </tr>
- *  <tr>
- *   <td>&quot;comment&quot;</td>
- *   <td>{@link java.lang.String String}</td>
- *   <td>an arbitrary text</td>
- *  </tr>
+ * <caption>Audio File Format Properties</caption>
+ *   <tr>
+ *     <th>Property key
+ *     <th>Value type
+ *     <th>Description
+ *   <tr>
+ *     <td>&quot;duration&quot;
+ *     <td>{@link Long Long}
+ *     <td>playback duration of the file in microseconds
+ *   <tr>
+ *     <td>&quot;author&quot;
+ *     <td>{@link String String}
+ *     <td>name of the author of this file
+ *   <tr>
+ *     <td>&quot;title&quot;
+ *     <td>{@link String String}
+ *     <td>title of this file
+ *   <tr>
+ *     <td>&quot;copyright&quot;
+ *     <td>{@link String String}
+ *     <td>copyright message
+ *   <tr>
+ *     <td>&quot;date&quot;
+ *     <td>{@link java.util.Date Date}
+ *     <td>date of the recording or release
+ *   <tr>
+ *     <td>&quot;comment&quot;
+ *     <td>{@link String String}
+ *     <td>an arbitrary text
  * </table>
- *
  *
  * @author David Rivas
  * @author Kara Kytle
@@ -351,7 +343,12 @@ public class AudioFileFormat {
         }
 
         /**
-         * Finalizes the equals method.
+         * Indicates whether the specified object is equal to this file type,
+         * returning {@code true} if the objects are equal.
+         *
+         * @param  obj the reference object with which to compare
+         * @return {@code true} if the specified object is equal to this file
+         *         type; {@code false} otherwise
          */
         @Override
         public final boolean equals(final Object obj) {
@@ -365,7 +362,9 @@ public class AudioFileFormat {
         }
 
         /**
-         * Finalizes the hashCode method.
+         * Returns a hash code value for this file type.
+         *
+         * @return a hash code value for this file type
          */
         @Override
         public final int hashCode() {

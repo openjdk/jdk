@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,15 @@
 /*
  * @test
  * @bug 4422122
- * @key intermittent
  * @summary Test that MulticastSocket.getInterface returns the
  *          same InetAddress set by MulticastSocket.setInterface
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ * @run main TestInterfaces
  */
+import jdk.test.lib.NetworkConfiguration;
+
 import java.net.*;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,6 +55,10 @@ public class TestInterfaces {
             // JDK-8022963, Skip (Windows) Teredo Tunneling Pseudo-Interface
             String dName = ni.getDisplayName();
             if (isWindows && dName != null && dName.contains("Teredo"))
+                continue;
+
+            // Skip those interfaces not up or not support multicast
+            if (!ni.isUp() || !ni.supportsMulticast())
                 continue;
 
             /*
@@ -115,6 +124,8 @@ public class TestInterfaces {
         }
 
         if (failures > 0) {
+            System.err.println("********************************");
+            NetworkConfiguration.printSystemConfiguration(System.err);
             System.out.println("********************************");
             throw new Exception(failures + " test(s) failed!!!");
         }
