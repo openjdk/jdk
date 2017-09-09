@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,65 +23,75 @@
  * questions.
  */
 
-
 package javax.print.attribute;
 
 import java.io.Serializable;
 
 /**
- * Class AttributeSetUtilities provides static methods for manipulating
- * AttributeSets.
+ * Class {@code AttributeSetUtilities} provides static methods for manipulating
+ * {@code AttributeSets}.
  * <ul>
- * <li>Methods for creating unmodifiable and synchronized views of attribute
- * sets.
- * <li>operations useful for building
- * implementations of interface {@link AttributeSet AttributeSet}
+ *   <li>Methods for creating unmodifiable and synchronized views of attribute
+ *   sets.
+ *   <li>operations useful for building implementations of interface
+ *   {@link AttributeSet AttributeSet}
  * </ul>
- * <P>
- * An <B>unmodifiable view</B> <I>U</I> of an AttributeSet <I>S</I> provides a
- * client with "read-only" access to <I>S</I>. Query operations on <I>U</I>
- * "read through" to <I>S</I>; thus, changes in <I>S</I> are reflected in
- * <I>U</I>. However, any attempt to modify <I>U</I>,
- *  results in an UnmodifiableSetException.
- * The unmodifiable view object <I>U</I> will be serializable if the
- * attribute set object <I>S</I> is serializable.
- * <P>
- * A <B>synchronized view</B> <I>V</I> of an attribute set <I>S</I> provides a
- * client with synchronized (multiple thread safe) access to <I>S</I>. Each
- * operation of <I>V</I> is synchronized using <I>V</I> itself as the lock
- * object and then merely invokes the corresponding operation of <I>S</I>. In
- * order to guarantee mutually exclusive access, it is critical that all
- * access to <I>S</I> is accomplished through <I>V</I>. The synchronized view
- * object <I>V</I> will be serializable if the attribute set object <I>S</I>
- * is serializable.
- * <P>
- * As mentioned in the package description of javax.print, a null reference
- * parameter to methods is
- * incorrect unless explicitly documented on the method as having a meaningful
- * interpretation.  Usage to the contrary is incorrect coding and may result in
- * a run time exception either immediately
- * or at some later time. IllegalArgumentException and NullPointerException
- * are examples of typical and acceptable run time exceptions for such cases.
+ * An <b>unmodifiable view</b> <i>U</i> of an {@code AttributeSet} <i>S</i>
+ * provides a client with "read-only" access to <i>S</i>. Query operations on
+ * <i>U</i> "read through" to <i>S</i>; thus, changes in <i>S</i> are reflected
+ * in <i>U</i>. However, any attempt to modify <i>U</i>, results in an
+ * {@code UnmodifiableSetException}. The unmodifiable view object <i>U</i> will
+ * be serializable if the attribute set object <i>S</i> is serializable.
+ * <p>
+ * A <b>synchronized view</b> <i>V</i> of an attribute set <i>S</i> provides a
+ * client with synchronized (multiple thread safe) access to <i>S</i>. Each
+ * operation of <i>V</i> is synchronized using <i>V</i> itself as the lock
+ * object and then merely invokes the corresponding operation of <i>S</i>. In
+ * order to guarantee mutually exclusive access, it is critical that all access
+ * to <i>S</i> is accomplished through <i>V</i>. The synchronized view object
+ * <i>V</i> will be serializable if the attribute set object <i>S</i> is
+ * serializable.
+ * <p>
+ * As mentioned in the package description of {@code javax.print}, a
+ * {@code null} reference parameter to methods is incorrect unless explicitly
+ * documented on the method as having a meaningful interpretation. Usage to the
+ * contrary is incorrect coding and may result in a run time exception either
+ * immediately or at some later time. {@code IllegalArgumentException} and
+ * {@code NullPointerException} are examples of typical and acceptable run time
+ * exceptions for such cases.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class AttributeSetUtilities {
 
-    /* Suppress default constructor, ensuring non-instantiability.
+    /**
+     * Suppress default constructor, ensuring non-instantiability.
      */
     private AttributeSetUtilities() {
     }
 
     /**
-      * @serial include
-      */
+     * Unmodifiable view of {@code AttributeSet}.
+     *
+     * @serial include
+     */
     private static class UnmodifiableAttributeSet
         implements AttributeSet, Serializable {
+
+        /**
+         * Use serialVersionUID from JDK 1.4 for interoperability.
+         */
         private static final long serialVersionUID = -6131802583863447813L;
 
+        /**
+         * The attribute set.
+         */
         private AttributeSet attrset;
 
-        /* Unmodifiable view of the underlying attribute set.
+        /**
+         * Constructs unmodifiable view of the underlying attribute set.
+         *
+         * @param  attributeSet the attribute set
          */
         public UnmodifiableAttributeSet(AttributeSet attributeSet) {
 
@@ -139,17 +149,27 @@ public final class AttributeSetUtilities {
         public int hashCode() {
             return attrset.hashCode();
         }
-
     }
 
     /**
-      * @serial include
-      */
+     * Unmodifiable view of {@code DocAttributeSet}.
+     *
+     * @serial include
+     */
     private static class UnmodifiableDocAttributeSet
         extends UnmodifiableAttributeSet
         implements DocAttributeSet, Serializable {
+
+        /**
+         * Use serialVersionUID from JDK 1.4 for interoperability.
+         */
         private static final long serialVersionUID = -6349408326066898956L;
 
+        /**
+         * Constructs a new unmodifiable doc attribute set.
+         *
+         * @param  attributeSet the doc attribute set
+         */
         public UnmodifiableDocAttributeSet(DocAttributeSet attributeSet) {
 
             super (attributeSet);
@@ -157,13 +177,25 @@ public final class AttributeSetUtilities {
     }
 
     /**
-      * @serial include
-      */
+     * Unmodifiable view of {@code PrintRequestAttributeSet}.
+     *
+     * @serial include
+     */
     private static class UnmodifiablePrintRequestAttributeSet
         extends UnmodifiableAttributeSet
         implements PrintRequestAttributeSet, Serializable
     {
+
+        /**
+         * Use serialVersionUID from JDK 1.4 for interoperability.
+         */
         private static final long serialVersionUID = 7799373532614825073L;
+
+        /**
+         * Constructs a new unmodifiable print request attribute set.
+         *
+         * @param  attributeSet the print request attribute set
+         */
         public UnmodifiablePrintRequestAttributeSet
             (PrintRequestAttributeSet attributeSet) {
 
@@ -172,13 +204,24 @@ public final class AttributeSetUtilities {
     }
 
     /**
-      * @serial include
-      */
+     * Unmodifiable view of {@code PrintJobAttributeSet}.
+     *
+     * @serial include
+     */
     private static class UnmodifiablePrintJobAttributeSet
         extends UnmodifiableAttributeSet
         implements PrintJobAttributeSet, Serializable
     {
+        /**
+         * Use serialVersionUID from JDK 1.4 for interoperability.
+         */
         private static final long serialVersionUID = -8002245296274522112L;
+
+        /**
+         * Constructs a new unmodifiable print job attribute set.
+         *
+         * @param  attributeSet the print job attribute set
+         */
         public UnmodifiablePrintJobAttributeSet
             (PrintJobAttributeSet attributeSet) {
 
@@ -187,13 +230,24 @@ public final class AttributeSetUtilities {
     }
 
     /**
-      * @serial include
-      */
+     * Unmodifiable view of {@code PrintServiceAttributeSet}.
+     *
+     * @serial include
+     */
     private static class UnmodifiablePrintServiceAttributeSet
         extends UnmodifiableAttributeSet
         implements PrintServiceAttributeSet, Serializable
     {
+        /**
+         * Use serialVersionUID from JDK 1.4 for interoperability.
+         */
         private static final long serialVersionUID = -7112165137107826819L;
+
+        /**
+         * Constructs a new unmodifiable print service attribute set.
+         *
+         * @param  attributeSet the print service attribute set
+         */
         public UnmodifiablePrintServiceAttributeSet
             (PrintServiceAttributeSet attributeSet) {
 
@@ -204,12 +258,9 @@ public final class AttributeSetUtilities {
     /**
      * Creates an unmodifiable view of the given attribute set.
      *
-     * @param  attributeSet  Underlying attribute set.
-     *
-     * @return  Unmodifiable view of {@code attributeSet}.
-     *
-     * @exception  NullPointerException
-     *     Thrown if {@code attributeSet} is null. Null is never a
+     * @param  attributeSet underlying attribute set
+     * @return unmodifiable view of {@code attributeSet}
+     * @throws NullPointerException if {@code attributeSet} is {@code null}
      */
     public static AttributeSet unmodifiableView(AttributeSet attributeSet) {
         if (attributeSet == null) {
@@ -222,12 +273,9 @@ public final class AttributeSetUtilities {
     /**
      * Creates an unmodifiable view of the given doc attribute set.
      *
-     * @param  attributeSet  Underlying doc attribute set.
-     *
-     * @return  Unmodifiable view of {@code attributeSet}.
-     *
-     * @exception  NullPointerException
-     *     Thrown if {@code attributeSet} is null.
+     * @param  attributeSet underlying doc attribute set
+     * @return unmodifiable view of {@code attributeSet}
+     * @throws NullPointerException if {@code attributeSet} is {@code null}
      */
     public static DocAttributeSet unmodifiableView
         (DocAttributeSet attributeSet) {
@@ -240,12 +288,9 @@ public final class AttributeSetUtilities {
     /**
      * Creates an unmodifiable view of the given print request attribute set.
      *
-     * @param  attributeSet  Underlying print request attribute set.
-     *
-     * @return  Unmodifiable view of {@code attributeSet}.
-     *
-     * @exception  NullPointerException
-     *     Thrown if {@code attributeSet} is null.
+     * @param  attributeSet underlying print request attribute set
+     * @return unmodifiable view of {@code attributeSet}
+     * @throws NullPointerException if {@code attributeSet} is {@code null}
      */
     public static PrintRequestAttributeSet
         unmodifiableView(PrintRequestAttributeSet attributeSet) {
@@ -258,12 +303,9 @@ public final class AttributeSetUtilities {
     /**
      * Creates an unmodifiable view of the given print job attribute set.
      *
-     * @param  attributeSet  Underlying print job attribute set.
-     *
-     * @return  Unmodifiable view of {@code attributeSet}.
-     *
-     * @exception  NullPointerException
-     *     Thrown if {@code attributeSet} is null.
+     * @param  attributeSet underlying print job attribute set
+     * @return unmodifiable view of {@code attributeSet}
+     * @throws NullPointerException if {@code attributeSet} is {@code null}
      */
     public static PrintJobAttributeSet
         unmodifiableView(PrintJobAttributeSet attributeSet) {
@@ -276,12 +318,9 @@ public final class AttributeSetUtilities {
     /**
      * Creates an unmodifiable view of the given print service attribute set.
      *
-     * @param  attributeSet  Underlying print service attribute set.
-     *
-     * @return  Unmodifiable view of {@code attributeSet}.
-     *
-     * @exception  NullPointerException
-     *     Thrown if {@code attributeSet} is null.
+     * @param  attributeSet underlying print service attribute set
+     * @return unmodifiable view of {@code attributeSet}
+     * @throws NullPointerException if {@code attributeSet} is {@code null}
      */
     public static PrintServiceAttributeSet
         unmodifiableView(PrintServiceAttributeSet attributeSet) {
@@ -292,14 +331,28 @@ public final class AttributeSetUtilities {
     }
 
     /**
-      * @serial include
-      */
+     * Synchronized view of {@code AttributeSet}.
+     *
+     * @serial include
+     */
     private static class SynchronizedAttributeSet
                         implements AttributeSet, Serializable {
+
+        /**
+         * Use serialVersionUID from JDK 1.4 for interoperability.
+         */
         private static final long serialVersionUID = 8365731020128564925L;
 
+        /**
+         * The attribute set.
+         */
         private AttributeSet attrset;
 
+        /**
+         * Constructs a new synchronized attribute set.
+         *
+         * @param  attributeSet the attribute set
+         */
         public SynchronizedAttributeSet(AttributeSet attributeSet) {
             attrset = attributeSet;
         }
@@ -358,26 +411,48 @@ public final class AttributeSetUtilities {
     }
 
     /**
-      * @serial include
-      */
+     * Synchronized view of {@code DocAttributeSet}.
+     *
+     * @serial include
+     */
     private static class SynchronizedDocAttributeSet
         extends SynchronizedAttributeSet
         implements DocAttributeSet, Serializable {
+
+        /**
+         * Use serialVersionUID from JDK 1.4 for interoperability.
+         */
         private static final long serialVersionUID = 6455869095246629354L;
 
+        /**
+         * Constructs a new synchronized doc attribute set.
+         *
+         * @param  attributeSet the doc attribute set
+         */
         public SynchronizedDocAttributeSet(DocAttributeSet attributeSet) {
             super(attributeSet);
         }
     }
 
     /**
-      * @serial include
-      */
+     * Synchronized view of {@code PrintRequestAttributeSet}.
+     *
+     * @serial include
+     */
     private static class SynchronizedPrintRequestAttributeSet
         extends SynchronizedAttributeSet
         implements PrintRequestAttributeSet, Serializable {
+
+        /**
+         * Use serialVersionUID from JDK 1.4 for interoperability.
+         */
         private static final long serialVersionUID = 5671237023971169027L;
 
+        /**
+         * Constructs a new synchronized print request attribute set.
+         *
+         * @param  attributeSet the print request attribute set
+         */
         public SynchronizedPrintRequestAttributeSet
             (PrintRequestAttributeSet attributeSet) {
             super(attributeSet);
@@ -385,13 +460,24 @@ public final class AttributeSetUtilities {
     }
 
     /**
-      * @serial include
-      */
+     * Synchronized view of {@code PrintJobAttributeSet}.
+     *
+     * @serial include
+     */
     private static class SynchronizedPrintJobAttributeSet
         extends SynchronizedAttributeSet
         implements PrintJobAttributeSet, Serializable {
+
+        /**
+         * Use serialVersionUID from JDK 1.4 for interoperability.
+         */
         private static final long serialVersionUID = 2117188707856965749L;
 
+        /**
+         * Constructs a new synchronized print job attribute set.
+         *
+         * @param  attributeSet the print job attribute set
+         */
         public SynchronizedPrintJobAttributeSet
             (PrintJobAttributeSet attributeSet) {
             super(attributeSet);
@@ -399,13 +485,24 @@ public final class AttributeSetUtilities {
     }
 
     /**
-      * @serial include
-      */
+     * Synchronized view of {@code PrintServiceAttributeSet}.
+     *
+     * @serial include
+     */
     private static class SynchronizedPrintServiceAttributeSet
         extends SynchronizedAttributeSet
         implements PrintServiceAttributeSet, Serializable {
+
+        /**
+         * Use serialVersionUID from JDK 1.4 for interoperability.
+         */
         private static final long serialVersionUID = -2830705374001675073L;
 
+        /**
+         * Constructs a new synchronized print service attribute set.
+         *
+         * @param  attributeSet the print service attribute set
+         */
         public SynchronizedPrintServiceAttributeSet
             (PrintServiceAttributeSet attributeSet) {
             super(attributeSet);
@@ -415,12 +512,9 @@ public final class AttributeSetUtilities {
     /**
      * Creates a synchronized view of the given attribute set.
      *
-     * @param  attributeSet  Underlying attribute set.
-     *
-     * @return  Synchronized view of {@code attributeSet}.
-     *
-     * @exception  NullPointerException
-     *     Thrown if {@code attributeSet} is null.
+     * @param  attributeSet underlying attribute set
+     * @return synchronized view of {@code attributeSet}
+     * @throws NullPointerException if {@code attributeSet} is {@code null}
      */
     public static AttributeSet synchronizedView
         (AttributeSet attributeSet) {
@@ -433,12 +527,9 @@ public final class AttributeSetUtilities {
     /**
      * Creates a synchronized view of the given doc attribute set.
      *
-     * @param  attributeSet  Underlying doc attribute set.
-     *
-     * @return  Synchronized view of {@code attributeSet}.
-     *
-     * @exception  NullPointerException
-     *     Thrown if {@code attributeSet} is null.
+     * @param  attributeSet underlying doc attribute set
+     * @return synchronized view of {@code attributeSet}
+     * @throws NullPointerException if {@code attributeSet} is {@code null}
      */
     public static DocAttributeSet
         synchronizedView(DocAttributeSet attributeSet) {
@@ -451,12 +542,9 @@ public final class AttributeSetUtilities {
     /**
      * Creates a synchronized view of the given print request attribute set.
      *
-     * @param  attributeSet  Underlying print request attribute set.
-     *
-     * @return  Synchronized view of {@code attributeSet}.
-     *
-     * @exception  NullPointerException
-     *     Thrown if {@code attributeSet} is null.
+     * @param  attributeSet underlying print request attribute set
+     * @return synchronized view of {@code attributeSet}
+     * @throws NullPointerException if {@code attributeSet} is {@code null}
      */
     public static PrintRequestAttributeSet
         synchronizedView(PrintRequestAttributeSet attributeSet) {
@@ -469,12 +557,9 @@ public final class AttributeSetUtilities {
     /**
      * Creates a synchronized view of the given print job attribute set.
      *
-     * @param  attributeSet  Underlying print job attribute set.
-     *
-     * @return  Synchronized view of {@code attributeSet}.
-     *
-     * @exception  NullPointerException
-     *     Thrown if {@code attributeSet} is null.
+     * @param  attributeSet underlying print job attribute set
+     * @return synchronized view of {@code attributeSet}
+     * @throws NullPointerException if {@code attributeSet} is {@code null}
      */
     public static PrintJobAttributeSet
         synchronizedView(PrintJobAttributeSet attributeSet) {
@@ -487,9 +572,9 @@ public final class AttributeSetUtilities {
     /**
      * Creates a synchronized view of the given print service attribute set.
      *
-     * @param  attributeSet  Underlying print service attribute set.
-     *
-     * @return  Synchronized view of {@code attributeSet}.
+     * @param  attributeSet underlying print service attribute set
+     * @return synchronized view of {@code attributeSet}
+     * @throws NullPointerException if {@code attributeSet} is {@code null}
      */
     public static PrintServiceAttributeSet
         synchronizedView(PrintServiceAttributeSet attributeSet) {
@@ -499,26 +584,19 @@ public final class AttributeSetUtilities {
         return new SynchronizedPrintServiceAttributeSet(attributeSet);
     }
 
-
     /**
-     * Verify that the given object is a {@link java.lang.Class Class} that
-     * implements the given interface, which is assumed to be interface {@link
-     * Attribute Attribute} or a subinterface thereof.
+     * Verify that the given object is a {@link Class Class} that implements the
+     * given interface, which is assumed to be interface
+     * {@link Attribute Attribute} or a subinterface thereof.
      *
-     * @param  object     Object to test.
-     * @param  interfaceName  Interface the object must implement.
-     *
-     * @return  If {@code object} is a {@link java.lang.Class Class}
-     *          that implements {@code interfaceName},
-     *          {@code object} is returned downcast to type {@link
-     *          java.lang.Class Class}; otherwise an exception is thrown.
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code object} is null.
-     * @exception  ClassCastException
-     *     (unchecked exception) Thrown if {@code object} is not a
-     *     {@link java.lang.Class Class} that implements
-     *     {@code interfaceName}.
+     * @param  object {@code Object} to test
+     * @param  interfaceName interface the object must implement
+     * @return if {@code object} is a {@link Class Class} that implements
+     *         {@code interfaceName}, {@code object} is returned downcast to
+     *         type {@link Class Class}; otherwise an exception is thrown
+     * @throws NullPointerException if {@code object} is {@code null}
+     * @throws ClassCastException if {@code object} is not a
+     *         {@link Class Class} that implements {@code interfaceName}
      */
     public static Class<?>
         verifyAttributeCategory(Object object, Class<?> interfaceName) {
@@ -537,19 +615,14 @@ public final class AttributeSetUtilities {
      * is assumed to be interface {@link Attribute Attribute} or a subinterface
      * thereof.
      *
-     * @param  object     Object to test.
-     * @param  interfaceName  Interface of which the object must be an instance.
-     *
-     * @return  If {@code object} is an instance of
-     *          {@code interfaceName}, {@code object} is returned
-     *          downcast to type {@link Attribute Attribute}; otherwise an
-     *          exception is thrown.
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code object} is null.
-     * @exception  ClassCastException
-     *     (unchecked exception) Thrown if {@code object} is not an
-     *     instance of {@code interfaceName}.
+     * @param  object {@code Object} to test
+     * @param  interfaceName interface of which the object must be an instance
+     * @return if {@code object} is an instance of {@code interfaceName},
+     *         {@code object} is returned downcast to type
+     *         {@link Attribute Attribute}; otherwise an exception is thrown
+     * @throws NullPointerException if {@code object} is {@code null}
+     * @throws ClassCastException if {@code object} is not an instance of
+     *         {@code interfaceName}
      */
     public static Attribute
         verifyAttributeValue(Object object, Class<?> interfaceName) {
@@ -565,19 +638,16 @@ public final class AttributeSetUtilities {
     }
 
     /**
-     * Verify that the given attribute category object is equal to the
-     * category of the given attribute value object. If so, this method
-     * returns doing nothing. If not, this method throws an exception.
+     * Verify that the given attribute category object is equal to the category
+     * of the given attribute value object. If so, this method returns doing
+     * nothing. If not, this method throws an exception.
      *
-     * @param  category   Attribute category to test.
-     * @param  attribute  Attribute value to test.
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if the {@code category} is
-     *     null or if the {@code attribute} is null.
-     * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if the {@code category} is not
-     *     equal to the category of the {@code attribute}.
+     * @param  category attribute category to test
+     * @param  attribute attribute value to test
+     * @throws NullPointerException if the {@code category} or {@code attribute}
+     *         are {@code null}
+     * @throws IllegalArgumentException if the {@code category} is not equal to
+     *         the category of the {@code attribute}
      */
     public static void
         verifyCategoryForValue(Class<?> category, Attribute attribute) {

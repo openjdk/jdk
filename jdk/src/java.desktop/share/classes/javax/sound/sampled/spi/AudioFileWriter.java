@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,10 +113,10 @@ public abstract class AudioFileWriter {
 
     /**
      * Writes a stream of bytes representing an audio file of the file type
-     * indicated to the output stream provided. Some file types require that
-     * the length be written into the file header, and cannot be written from
-     * start to finish unless the length is known in advance. An attempt to
-     * write such a file type will fail with an IOException if the length in the
+     * indicated to the output stream provided. Some file types require that the
+     * length be written into the file header, and cannot be written from start
+     * to finish unless the length is known in advance. An attempt to write such
+     * a file type will fail with an {@code IOException} if the length in the
      * audio file format is {@link AudioSystem#NOT_SPECIFIED}.
      *
      * @param  stream the audio input stream containing audio data to be written

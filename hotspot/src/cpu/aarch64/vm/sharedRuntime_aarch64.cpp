@@ -2067,7 +2067,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ g1_write_barrier_pre(noreg /* obj */,
                               r0 /* pre_val */,
                               rthread /* thread */,
-                              rscratch1 /* tmp */,
+                              rscratch2 /* tmp */,
                               true /* tosca_live */,
                               true /* expand_call */);
     }

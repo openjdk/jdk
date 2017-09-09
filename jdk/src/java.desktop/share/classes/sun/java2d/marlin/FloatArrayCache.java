@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.java2d.marlin;
 
 import static sun.java2d.marlin.ArrayCacheConst.ARRAY_SIZES;
@@ -37,13 +38,14 @@ import sun.java2d.marlin.ArrayCacheConst.BucketStats;
 import sun.java2d.marlin.ArrayCacheConst.CacheStats;
 
 /*
- * Note that the [BYTE/INT/FLOAT]ArrayCache files are nearly identical except
+ * Note that the [BYTE/INT/FLOAT/DOUBLE]ArrayCache files are nearly identical except
  * for a few type and name differences. Typically, the [BYTE]ArrayCache.java file
- * is edited manually and then [INT]ArrayCache.java and [FLOAT]ArrayCache.java
+ * is edited manually and then [INT/FLOAT/DOUBLE]ArrayCache.java
  * files are generated with the following command lines:
  */
 // % sed -e 's/(b\yte)[ ]*//g' -e 's/b\yte/int/g' -e 's/B\yte/Int/g' < B\yteArrayCache.java > IntArrayCache.java
-// % sed -e 's/(b\yte)[ ]*/(float) /g' -e 's/b\yte/float/g' -e 's/B\yte/Float/g' < B\yteArrayCache.java > FloatArrayCache.java
+// % sed -e 's/(b\yte)[ ]*0/0.0f/g' -e 's/(b\yte)[ ]*/(float) /g' -e 's/b\yte/float/g' -e 's/B\yte/Float/g' < B\yteArrayCache.java > FloatArrayCache.java
+// % sed -e 's/(b\yte)[ ]*0/0.0d/g' -e 's/(b\yte)[ ]*/(double) /g' -e 's/b\yte/double/g' -e 's/B\yte/Double/g' < B\yteArrayCache.java > DoubleArrayCache.java
 
 final class FloatArrayCache implements MarlinConst {
 
@@ -159,7 +161,7 @@ final class FloatArrayCache implements MarlinConst {
             if (array.length <= MAX_ARRAY_SIZE) {
                 if ((clean || DO_CLEAN_DIRTY) && (toIndex != 0)) {
                     // clean-up array of dirty part[fromIndex; toIndex[
-                    fill(array, fromIndex, toIndex, (float) 0);
+                    fill(array, fromIndex, toIndex, 0.0f);
                 }
                 // ensure to never store initial arrays in cache:
                 if (array != initial) {
@@ -231,8 +233,8 @@ final class FloatArrayCache implements MarlinConst {
         if (clean) {
             return new float[length];
         }
-       // use JDK9 Unsafe.allocateUninitializedArray(class, length):
-       return (float[]) OffHeapArray.UNSAFE.allocateUninitializedArray(float.class, length);
+        // use JDK9 Unsafe.allocateUninitializedArray(class, length):
+        return (float[]) OffHeapArray.UNSAFE.allocateUninitializedArray(float.class, length);
     }
 
     static void fill(final float[] array, final int fromIndex,

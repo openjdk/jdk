@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import sun.java2d.marlin.MarlinRenderingEngine.NormalizingPathIterator;
 /**
  * This class is a renderer context dedicated to a single thread
  */
-final class RendererContext extends ReentrantContext implements MarlinConst {
+final class RendererContext extends ReentrantContext implements IRendererContext {
 
     // RendererContext creation counter
     private static final AtomicInteger CTX_COUNT = new AtomicInteger(1);
@@ -121,7 +121,7 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
         // Renderer:
         cache = new MarlinCache(this);
         renderer = new Renderer(this); // needs MarlinCache from rdrCtx.cache
-        ptg = new MarlinTileGenerator(renderer);
+        ptg = new MarlinTileGenerator(stats, renderer, cache);
 
         stroker = new Stroker(this);
         dasher = new Dasher(this);
@@ -174,14 +174,21 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
         return p2d;
     }
 
-    OffHeapArray newOffHeapArray(final long initialSize) {
+    @Override
+    public RendererStats stats() {
+        return stats;
+    }
+
+    @Override
+    public OffHeapArray newOffHeapArray(final long initialSize) {
         if (DO_STATS) {
             stats.totalOffHeapInitial += initialSize;
         }
         return new OffHeapArray(cleanerObj, initialSize);
     }
 
-    IntArrayCache.Reference newCleanIntArrayRef(final int initialSize) {
+    @Override
+    public IntArrayCache.Reference newCleanIntArrayRef(final int initialSize) {
         return cleanIntCache.createRef(initialSize);
     }
 

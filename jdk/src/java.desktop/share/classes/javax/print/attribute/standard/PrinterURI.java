@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,41 +22,41 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import java.net.URI;
-import java.util.Locale;
 
 import javax.print.attribute.Attribute;
-import javax.print.attribute.URISyntax;
 import javax.print.attribute.PrintServiceAttribute;
+import javax.print.attribute.URISyntax;
 
 /**
- * Class PrinterURI is a printing attribute class, a URI, that specifies the
- * globally unique name of a printer.  If it has such a name, an administrator
- * determines a printer's URI and sets this attribute to that name.
- * <P>
- * <B>IPP Compatibility:</B>  This implements the
- * IPP printer-uri attribute. The string form returned by
- * {@code toString()}  gives the IPP printer-uri value.
- * The category name returned by {@code getName()}
- * gives the IPP attribute name.
+ * Class {@code PrinterURI} is a printing attribute class, a {@code URI}, that
+ * specifies the globally unique name of a printer. If it has such a name, an
+ * administrator determines a printer's {@code URI} and sets this attribute to
+ * that name.
+ * <p>
+ * <b>IPP Compatibility:</b> This implements the IPP printer-uri attribute. The
+ * string form returned by {@code toString()} gives the IPP printer-uri value.
+ * The category name returned by {@code getName()} gives the IPP attribute name.
  *
- * @author  Robert Herriot
+ * @author Robert Herriot
  */
-
 public final class PrinterURI extends URISyntax
         implements PrintServiceAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 7923912792485606497L;
 
     /**
-     * Constructs a new PrinterURI attribute with the specified URI.
+     * Constructs a new {@code PrinterURI} attribute with the specified
+     * {@code URI}.
      *
-     * @param  uri  URI of the printer
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code uri} is null.
+     * @param  uri {@code URI} of the printer
+     * @throws NullPointerException if {@code uri} is {@code null}
      */
     public PrinterURI(URI uri) {
         super (uri);
@@ -66,34 +66,30 @@ public final class PrinterURI extends URISyntax
      * Returns whether this printer name attribute is equivalent to the passed
      * in object. To be equivalent, all of the following conditions must be
      * true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class PrinterURI.
-     * <LI>
-     * This PrinterURI attribute's underlying URI and
-     * {@code object}'s underlying URI are equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code PrinterURI}.
+     *   <li>This {@code PrinterURI} attribute's underlying {@code URI} and
+     *   {@code object}'s underlying {@code URI} are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this PrinterURI
-     *          attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this
+     *         {@code PrinterURI} attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return (super.equals(object) && object instanceof PrinterURI);
     }
 
-   /**
+    /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class PrinterURI and any vendor-defined subclasses, the category is
-     * class PrinterURI itself.
+     * <p>
+     * For class {@code PrinterURI} and any vendor-defined subclasses, the
+     * category is class {@code PrinterURI} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return PrinterURI.class;
@@ -102,14 +98,13 @@ public final class PrinterURI extends URISyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class PrinterURI and any vendor-defined subclasses, the category
-     * name is {@code "printer-uri"}.
+     * <p>
+     * For class {@code PrinterURI} and any vendor-defined subclasses, the
+     * category name is {@code "printer-uri"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "printer-uri";
     }
-
 }

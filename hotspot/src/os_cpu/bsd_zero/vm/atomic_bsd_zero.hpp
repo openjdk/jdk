@@ -184,8 +184,8 @@ struct Atomic::PlatformAdd
 template<>
 template<typename I, typename D>
 inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
-  STATIC_CAST(4 == sizeof(I));
-  STATIC_CAST(4 == sizeof(D));
+  STATIC_ASSERT(4 == sizeof(I));
+  STATIC_ASSERT(4 == sizeof(D));
 
 #ifdef ARM
   return add_using_helper<int>(arm_add_and_fetch, add_value, dest);
@@ -201,8 +201,8 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) co
 template<>
 template<typename I, typename D>
 inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
-  STATIC_CAST(8 == sizeof(I));
-  STATIC_CAST(8 == sizeof(D));
+  STATIC_ASSERT(8 == sizeof(I));
+  STATIC_ASSERT(8 == sizeof(D));
 
   return __sync_add_and_fetch(dest, add_value);
 }
@@ -283,7 +283,7 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
                                                 T volatile* dest,
                                                 T compare_value,
                                                 cmpxchg_memory_order order) const {
-  STATIC_CAST(4 == sizeof(T));
+  STATIC_ASSERT(4 == sizeof(T));
 #ifdef ARM
   return cmpxchg_using_helper<int>(arm_compare_and_swap, exchange_value, dest, compare_value);
 #else
@@ -301,7 +301,7 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
                                                 T volatile* dest,
                                                 T compare_value,
                                                 cmpxchg_memory_order order) const {
-  STATIC_CAST(8 == sizeof(T));
+  STATIC_ASSERT(8 == sizeof(T));
   return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
 }
 

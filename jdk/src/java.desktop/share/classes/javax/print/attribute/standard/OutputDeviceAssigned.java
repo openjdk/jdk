@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,46 +22,48 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import java.util.Locale;
 
 import javax.print.attribute.Attribute;
-import javax.print.attribute.TextSyntax;
 import javax.print.attribute.PrintJobAttribute;
+import javax.print.attribute.TextSyntax;
 
 /**
- * Class OutputDeviceAssigned is a printing attribute class, a text attribute,
- * that identifies the output device to which the service has assigned this
- * job. If an output device implements an embedded Print Service instance, the
- * printer need not set this attribute. If a print server implements a
- * Print Service instance, the value may be empty (zero- length string) or not
- * returned until the service assigns an output device to the job. This
- * attribute is particularly useful when a single service supports multiple
- * devices (so called "fan-out").
- * <P>
- * <B>IPP Compatibility:</B> The string value gives the IPP name value. The
+ * Class {@code OutputDeviceAssigned} is a printing attribute class, a text
+ * attribute, that identifies the output device to which the service has
+ * assigned this job. If an output device implements an embedded Print Service
+ * instance, the printer need not set this attribute. If a print server
+ * implements a Print Service instance, the value may be empty (zero- length
+ * string) or not returned until the service assigns an output device to the
+ * job. This attribute is particularly useful when a single service supports
+ * multiple devices (so called "fan-out").
+ * <p>
+ * <b>IPP Compatibility:</b> The string value gives the IPP name value. The
  * locale gives the IPP natural language. The category name returned by
  * {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class OutputDeviceAssigned extends TextSyntax
     implements PrintJobAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 5486733778854271081L;
 
     /**
      * Constructs a new output device assigned attribute with the given device
      * name and locale.
      *
-     * @param  deviceName  Device name.
-     * @param  locale      Natural language of the text string. null
-     * is interpreted to mean the default locale as returned
-     * by {@code Locale.getDefault()}
-     *
-     * @exception  NullPointerException
-     *   (unchecked exception) Thrown if {@code deviceName} is null.
+     * @param  deviceName device name
+     * @param  locale natural language of the text string. {@code null} is
+     *         interpreted to mean the default locale as returned by
+     *         {@code Locale.getDefault()}
+     * @throws NullPointerException if {@code deviceName} is {@code null}
      */
     public OutputDeviceAssigned(String deviceName, Locale locale) {
 
@@ -74,23 +76,19 @@ public final class OutputDeviceAssigned extends TextSyntax
      * Returns whether this output device assigned attribute is equivalent to
      * the passed in object. To be equivalent, all of the following conditions
      * must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class OutputDeviceAssigned.
-     * <LI>
-     * This output device assigned attribute's underlying string and
-     * {@code object}'s underlying string are equal.
-     * <LI>
-     * This output device assigned attribute's locale and
-     * {@code object}'s locale are equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class
+     *   {@code OutputDeviceAssigned}.
+     *   <li>This output device assigned attribute's underlying string and
+     *   {@code object}'s underlying string are equal.
+     *   <li>This output device assigned attribute's locale and {@code object}'s
+     *   locale are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this output
-     *          device assigned attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this output
+     *         device assigned attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return (super.equals (object) &&
@@ -100,12 +98,12 @@ public final class OutputDeviceAssigned extends TextSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class OutputDeviceAssigned, the
-     * category is class OutputDeviceAssigned itself.
+     * <p>
+     * For class {@code OutputDeviceAssigned}, the category is class
+     * {@code OutputDeviceAssigned} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return OutputDeviceAssigned.class;
@@ -114,14 +112,13 @@ public final class OutputDeviceAssigned extends TextSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class OutputDeviceAssigned, the
-     * category name is {@code "output-device-assigned"}.
+     * <p>
+     * For class {@code OutputDeviceAssigned}, the category name is
+     * {@code "output-device-assigned"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "output-device-assigned";
     }
-
 }

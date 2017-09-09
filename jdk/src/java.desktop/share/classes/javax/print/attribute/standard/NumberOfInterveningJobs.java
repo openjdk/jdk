@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import javax.print.attribute.Attribute;
@@ -29,30 +30,30 @@ import javax.print.attribute.IntegerSyntax;
 import javax.print.attribute.PrintJobAttribute;
 
 /**
- * Class NumberOfInterveningJobs is an integer valued printing attribute that
- * indicates the number of jobs that are ahead of this job in the relative
- * chronological order of expected time to complete (i.e., the current
- * scheduled order).
- * <P>
- * <B>IPP Compatibility:</B> The integer value gives the IPP integer value.
- * The category name returned by {@code getName()} gives the IPP
- * attribute name.
+ * Class {@code NumberOfInterveningJobs} is an integer valued printing attribute
+ * that indicates the number of jobs that are ahead of this job in the relative
+ * chronological order of expected time to complete (i.e., the current scheduled
+ * order).
+ * <p>
+ * <b>IPP Compatibility:</b> The integer value gives the IPP integer value. The
+ * category name returned by {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class NumberOfInterveningJobs extends IntegerSyntax
     implements PrintJobAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 2568141124844982746L;
 
     /**
      * Construct a new number of intervening jobs attribute with the given
      * integer value.
      *
-     * @param  value  Integer value.
-     *
-     * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if {@code value} is less than 0.
+     * @param  value Integer value
+     * @throws IllegalArgumentException if {@code value} is negative
      */
     public NumberOfInterveningJobs(int value) {
         super(value, 0, Integer.MAX_VALUE);
@@ -62,20 +63,17 @@ public final class NumberOfInterveningJobs extends IntegerSyntax
      * Returns whether this number of intervening jobs attribute is equivalent
      * to the passed in object. To be equivalent, all of the following
      * conditions must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class NumberOfInterveningJobs.
-     * <LI>
-     * This number of intervening jobs attribute's value and
-     * {@code object}'s value are equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class
+     *   {@code NumberOfInterveningJobs}.
+     *   <li>This number of intervening jobs attribute's value and
+     *   {@code object}'s value are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this number of
-     *          intervening jobs attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this number of
+     *         intervening jobs attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return (super.equals (object) &&
@@ -85,12 +83,12 @@ public final class NumberOfInterveningJobs extends IntegerSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class NumberOfInterveningJobs, the
-     * category is class NumberOfInterveningJobs itself.
+     * <p>
+     * For class {@code NumberOfInterveningJobs}, the category is class
+     * {@code NumberOfInterveningJobs} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return NumberOfInterveningJobs.class;
@@ -99,14 +97,13 @@ public final class NumberOfInterveningJobs extends IntegerSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class NumberOfInterveningJobs, the
-     * category name is {@code "number-of-intervening-jobs"}.
+     * <p>
+     * For class {@code NumberOfInterveningJobs}, the category name is
+     * {@code "number-of-intervening-jobs"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "number-of-intervening-jobs";
     }
-
 }

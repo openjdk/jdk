@@ -50,7 +50,6 @@
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
@@ -514,7 +513,6 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     MarkingCodeBlobClosure each_active_code_blob(mark_and_push_closure(), !CodeBlobToOopClosure::FixRelocations);
     Threads::oops_do(mark_and_push_closure(), &each_active_code_blob);
     ObjectSynchronizer::oops_do(mark_and_push_closure());
-    FlatProfiler::oops_do(mark_and_push_closure());
     Management::oops_do(mark_and_push_closure());
     JvmtiExport::oops_do(mark_and_push_closure());
     SystemDictionary::always_strong_oops_do(mark_and_push_closure());
@@ -607,7 +605,6 @@ void PSMarkSweep::mark_sweep_phase3() {
   JNIHandles::oops_do(adjust_pointer_closure());   // Global (strong) JNI handles
   Threads::oops_do(adjust_pointer_closure(), NULL);
   ObjectSynchronizer::oops_do(adjust_pointer_closure());
-  FlatProfiler::oops_do(adjust_pointer_closure());
   Management::oops_do(adjust_pointer_closure());
   JvmtiExport::oops_do(adjust_pointer_closure());
   SystemDictionary::oops_do(adjust_pointer_closure());

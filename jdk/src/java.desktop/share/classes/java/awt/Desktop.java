@@ -1002,6 +1002,15 @@ public class Desktop {
     public void setDefaultMenuBar(final JMenuBar menuBar) {
         checkEventsProcessingPermission();
         checkActionSupport(Action.APP_MENU_BAR);
+
+        if (menuBar != null) {
+            Container parent = menuBar.getParent();
+            if (parent != null) {
+                parent.remove(menuBar);
+                menuBar.updateUI();
+            }
+        }
+
         peer.setDefaultMenuBar(menuBar);
     }
 

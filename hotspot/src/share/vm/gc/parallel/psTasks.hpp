@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,11 @@ class ScavengeRootsTask : public GCTask {
     jni_handles           = 2,
     threads               = 3,
     object_synchronizer   = 4,
-    flat_profiler         = 5,
-    system_dictionary     = 6,
-    class_loader_data     = 7,
-    management            = 8,
-    jvmti                 = 9,
-    code_cache            = 10
+    system_dictionary     = 5,
+    class_loader_data     = 6,
+    management            = 7,
+    jvmti                 = 8,
+    code_cache            = 9
   };
  private:
   RootType _root_type;

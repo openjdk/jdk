@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,50 +22,50 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import java.util.Locale;
 
 import javax.print.attribute.Attribute;
-import javax.print.attribute.TextSyntax;
 import javax.print.attribute.PrintJobAttribute;
+import javax.print.attribute.TextSyntax;
 
 /**
- * Class JobOriginatingUserName is a printing attribute class, a text
- * attribute, that contains the name of the end user that submitted the
- * print job. If possible, the printer sets this attribute to the most
- * authenticated printable user name that it can obtain from the
- * authentication service that authenticated the submitted Print Request.
- * If such is not available, the printer uses the value of the
- * {@link RequestingUserName RequestingUserName}
- * attribute supplied by the client in the Print Request's attribute set.
- * If no authentication service is available, and the client did not supply
- * a {@link RequestingUserName RequestingUserName} attribute,
- * the printer sets the JobOriginatingUserName attribute to an empty
- * (zero-length) string.
- * <P>
- * <B>IPP Compatibility:</B> The string value gives the IPP name value. The
+ * Class {@code JobOriginatingUserName} is a printing attribute class, a text
+ * attribute, that contains the name of the end user that submitted the print
+ * job. If possible, the printer sets this attribute to the most authenticated
+ * printable user name that it can obtain from the authentication service that
+ * authenticated the submitted Print Request. If such is not available, the
+ * printer uses the value of the {@link RequestingUserName RequestingUserName}
+ * attribute supplied by the client in the Print Request's attribute set. If no
+ * authentication service is available, and the client did not supply a
+ * {@link RequestingUserName RequestingUserName} attribute, the printer sets the
+ * JobOriginatingUserName attribute to an empty (zero-length) string.
+ * <p>
+ * <b>IPP Compatibility:</b> The string value gives the IPP name value. The
  * locale gives the IPP natural language. The category name returned by
  * {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class JobOriginatingUserName extends TextSyntax
         implements PrintJobAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -8052537926362933477L;
 
     /**
-     * Constructs a new job originating user name attribute with the given
-     * user name and locale.
+     * Constructs a new job originating user name attribute with the given user
+     * name and locale.
      *
-     * @param  userName  User name.
-     * @param  locale    Natural language of the text string. null
-     * is interpreted to mean the default locale as returned
-     * by {@code Locale.getDefault()}
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code userName} is null.
+     * @param  userName user name
+     * @param  locale natural language of the text string. {@code null} is
+     *         interpreted to mean the default locale as returned by
+     *         {@code Locale.getDefault()}
+     * @throws NullPointerException if {@code userName} is {@code null}
      */
     public JobOriginatingUserName(String userName, Locale locale) {
         super (userName, locale);
@@ -75,23 +75,19 @@ public final class JobOriginatingUserName extends TextSyntax
      * Returns whether this job originating user name attribute is equivalent to
      * the passed in object. To be equivalent, all of the following conditions
      * must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class JobOriginatingUserName.
-     * <LI>
-     * This job originating user name attribute's underlying string and
-     * {@code object}'s underlying string are equal.
-     * <LI>
-     * This job originating user name attribute's locale and
-     * {@code object}'s locale are equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class
+     *   {@code JobOriginatingUserName}.
+     *   <li>This job originating user name attribute's underlying string and
+     *   {@code object}'s underlying string are equal.
+     *   <li>This job originating user name attribute's locale and
+     *   {@code object}'s locale are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this job
-     *          originating user name attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this job
+     *         originating user name attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return (super.equals (object) &&
@@ -101,12 +97,12 @@ public final class JobOriginatingUserName extends TextSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class JobOriginatingUserName, the
-     * category is class JobOriginatingUserName itself.
+     * <p>
+     * For class {@code JobOriginatingUserName}, the category is class
+     * {@code JobOriginatingUserName} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return JobOriginatingUserName.class;
@@ -115,14 +111,13 @@ public final class JobOriginatingUserName extends TextSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class JobOriginatingUserName, the
-     * category name is {@code "job-originating-user-name"}.
+     * <p>
+     * For class {@code JobOriginatingUserName}, the category name is
+     * {@code "job-originating-user-name"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "job-originating-user-name";
     }
-
 }

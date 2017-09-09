@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,20 @@
  * questions.
  */
 
-
 package javax.print.attribute;
 
 /**
- * Interface SupportedValuesAttribute is a tagging interface which a printing
- * attribute class implements to indicate the attribute describes the supported
- * values for another attribute. For example, if a Print Service instance
- * supports the {@link javax.print.attribute.standard.Copies Copies}
- * attribute, the Print Service instance will have a {@link
- * javax.print.attribute.standard.CopiesSupported CopiesSupported} attribute,
- * which is a SupportedValuesAttribute giving the legal values a client may
- * specify for the {@link javax.print.attribute.standard.Copies Copies}
- * attribute.
+ * Interface {@code SupportedValuesAttribute} is a tagging interface which a
+ * printing attribute class implements to indicate the attribute describes the
+ * supported values for another attribute. For example, if a Print Service
+ * instance supports the {@link javax.print.attribute.standard.Copies Copies}
+ * attribute, the Print Service instance will have a
+ * {@link javax.print.attribute.standard.CopiesSupported CopiesSupported}
+ * attribute, which is a {@code SupportedValuesAttribute} giving the legal
+ * values a client may specify for the
+ * {@link javax.print.attribute.standard.Copies Copies} attribute.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public interface SupportedValuesAttribute extends Attribute {
 }

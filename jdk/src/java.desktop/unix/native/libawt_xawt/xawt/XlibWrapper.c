@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -535,7 +535,8 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XSelectInput
 }
 
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XkbSelectEvents
-(JNIEnv *env, jclass clazz, jlong display, jlong device, jlong bits_to_change, jlong values_for_bits)
+(JNIEnv *env, jclass clazz, jlong display, jlong device, jlong bits_to_change,
+              jlong values_for_bits)
 {
     AWT_CHECK_HAVE_LOCK();
     XkbSelectEvents((Display *) jlong_to_ptr(display), (unsigned int)device,
@@ -543,7 +544,8 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XkbSelectEvents
                    (unsigned long)values_for_bits);
 }
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XkbSelectEventDetails
-(JNIEnv *env, jclass clazz, jlong display, jlong device, jlong event_type, jlong bits_to_change, jlong values_for_bits)
+(JNIEnv *env, jclass clazz, jlong display, jlong device, jlong event_type,
+              jlong bits_to_change, jlong values_for_bits)
 {
     AWT_CHECK_HAVE_LOCK();
     XkbSelectEventDetails((Display *) jlong_to_ptr(display), (unsigned int)device,
@@ -555,21 +557,26 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_XkbQueryExtension
 (JNIEnv *env, jclass clazz, jlong display, jlong opcode_rtrn, jlong event_rtrn,
               jlong error_rtrn, jlong major_in_out, jlong minor_in_out)
 {
+    Bool status;
     AWT_CHECK_HAVE_LOCK_RETURN(JNI_FALSE);
-    return XkbQueryExtension( (Display *) jlong_to_ptr(display),
-                       (int *) jlong_to_ptr(opcode_rtrn),
-                       (int *) jlong_to_ptr(event_rtrn),
-                       (int *) jlong_to_ptr(error_rtrn),
-                       (int *) jlong_to_ptr(major_in_out),
-                       (int *) jlong_to_ptr(minor_in_out));
+    status = XkbQueryExtension((Display *) jlong_to_ptr(display),
+                               (int *) jlong_to_ptr(opcode_rtrn),
+                               (int *) jlong_to_ptr(event_rtrn),
+                               (int *) jlong_to_ptr(error_rtrn),
+                               (int *) jlong_to_ptr(major_in_out),
+                               (int *) jlong_to_ptr(minor_in_out));
+    return status ? JNI_TRUE : JNI_FALSE;
 }
 JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_XkbLibraryVersion
 (JNIEnv *env, jclass clazz, jlong lib_major_in_out, jlong lib_minor_in_out)
 {
+    Bool status;
     AWT_CHECK_HAVE_LOCK_RETURN(JNI_FALSE);
     *((int *)jlong_to_ptr(lib_major_in_out)) =  XkbMajorVersion;
     *((int *)jlong_to_ptr(lib_minor_in_out)) =  XkbMinorVersion;
-    return  XkbLibraryVersion((int *)jlong_to_ptr(lib_major_in_out), (int *)jlong_to_ptr(lib_minor_in_out));
+    status = XkbLibraryVersion((int *)jlong_to_ptr(lib_major_in_out),
+                               (int *)jlong_to_ptr(lib_minor_in_out));
+    return status ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jlong JNICALL Java_sun_awt_X11_XlibWrapper_XkbGetMap
@@ -603,8 +610,10 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_XkbTranslateKeyCode
                               (unsigned int *)jlong_to_ptr(mods_rtrn),
                                (KeySym *)jlong_to_ptr(keysym_rtrn));
     //printf("native,  input: keycode:0x%0X; mods:0x%0X\n", keycode, mods);
-    //printf("native, output:  keysym:0x%0X; mods:0x%0X\n", *(unsigned int *)jlong_to_ptr(keysym_rtrn), *(unsigned int *)jlong_to_ptr(mods_rtrn));
-    return b;
+    //printf("native, output:  keysym:0x%0X; mods:0x%0X\n",
+    //       *(unsigned int *)jlong_to_ptr(keysym_rtrn),
+    //       *(unsigned int *)jlong_to_ptr(mods_rtrn));
+    return b ? JNI_TRUE : JNI_FALSE;
 }
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XkbSetDetectableAutoRepeat
 (JNIEnv *env, jclass clazz, jlong display, jboolean detectable)
@@ -2222,13 +2231,13 @@ JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11_XlibWrapper_XShapeQueryExtension
 (JNIEnv *env, jclass clazz, jlong display, jlong event_base_return, jlong error_base_return)
 {
-    jboolean status;
+    Bool status;
 
     AWT_CHECK_HAVE_LOCK_RETURN(JNI_FALSE);
 
     status = XShapeQueryExtension((Display *)jlong_to_ptr(display),
             (int *)jlong_to_ptr(event_base_return), (int *)jlong_to_ptr(error_base_return));
-    return status;
+    return status ? JNI_TRUE : JNI_FALSE;
 }
 
 /*

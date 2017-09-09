@@ -28,8 +28,6 @@
 #include "awt_p.h"
 #include "awt_GraphicsEnv.h"
 
-#include <jdga.h>
-
 #ifdef HEADLESS
 #include "GLXGraphicsConfig.h"
 #endif
@@ -105,11 +103,8 @@ struct _X11SDOps {
     GC                  cachedGC;      /* cached for use in X11SD_Unlock() */
     jint                depth;
     jint                pixelmask;
-    JDgaSurfaceInfo     surfInfo;
     AwtGraphicsConfigData *configData;
     ColorData           *cData;
-    jboolean            dgaAvailable;
-    void                *dgaDev;
     Pixmap              bitmask;
     jint                bgPixel;       /* bg pixel for the pixmap */
     jboolean            isBgInitialized; /* whether the bg pixel is valid */
@@ -124,7 +119,6 @@ struct _X11SDOps {
 #define X11SD_LOCK_UNLOCKED     0       /* surface is not locked */
 #define X11SD_LOCK_BY_NULL      1       /* surface locked for NOP */
 #define X11SD_LOCK_BY_XIMAGE    2       /* surface locked by Get/PutImage */
-#define X11SD_LOCK_BY_DGA       3       /* surface locked by DGA */
 #define X11SD_LOCK_BY_SHMEM     4       /* surface locked by ShMemExt */
 
 #ifdef MITSHM

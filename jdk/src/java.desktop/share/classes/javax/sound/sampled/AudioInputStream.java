@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package javax.sound.sampled;
 import java.io.IOException;
 import java.io.InputStream;
 
-
 /**
  * An audio input stream is an input stream with a specified audio format and
  * length. The length is expressed in sample frames, not bytes. Several methods
@@ -42,9 +41,10 @@ import java.io.InputStream;
  * The {@code AudioSystem} class includes many methods that manipulate
  * {@code AudioInputStream} objects. For example, the methods let you:
  * <ul>
- * <li> obtain an audio input stream from an external audio file, stream, or URL
- * <li> write an external file from an audio input stream
- * <li> convert an audio input stream to a different audio format
+ *   <li>obtain an audio input stream from an external audio file, stream, or
+ *   {@code URL}
+ *   <li>write an external file from an audio input stream
+ *   <li>convert an audio input stream to a different audio format
  * </ul>
  *
  * @author David Rivas
@@ -139,7 +139,7 @@ public class AudioInputStream extends InputStream {
     /**
      * Constructs an audio input stream that reads its data from the target data
      * line indicated. The format of the stream is the same as that of the
-     * target data line, and the length is AudioSystem#NOT_SPECIFIED.
+     * target data line, and the length is {@code AudioSystem#NOT_SPECIFIED}.
      *
      * @param  line the target data line from which this stream obtains its data
      * @see AudioSystem#NOT_SPECIFIED
@@ -370,11 +370,11 @@ public class AudioInputStream extends InputStream {
 
     /**
      * Returns the maximum number of bytes that can be read (or skipped over)
-     * from this audio input stream without blocking. This limit applies only
-     * to the next invocation of a {@code read} or {@code skip} method for this
+     * from this audio input stream without blocking. This limit applies only to
+     * the next invocation of a {@code read} or {@code skip} method for this
      * audio input stream; the limit can vary each time these methods are
-     * invoked. Depending on the underlying stream, an IOException may be thrown
-     * if this stream is closed.
+     * invoked. Depending on the underlying stream, an {@code IOException} may
+     * be thrown if this stream is closed.
      *
      * @return the number of bytes that can be read from this audio input stream
      *         without blocking

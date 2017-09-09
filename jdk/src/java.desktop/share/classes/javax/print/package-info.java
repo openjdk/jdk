@@ -28,10 +28,10 @@
  * Service API. The Java Print Service API enables client and server
  * applications to:
  * <ul>
- *     <li>Discover and select print services based on their capabilities</li>
- *     <li>Specify the format of print data</li>
- *     <li>Submit print jobs to services that support the document type to be
- *     printed.</li>
+ *   <li>Discover and select print services based on their capabilities
+ *   <li>Specify the format of print data
+ *   <li>Submit print jobs to services that support the document type to be
+ *   printed.
  * </ul>
  *
  * <h3>Print Service Discovery</h3>
@@ -51,15 +51,15 @@
  * <h3>Attribute Definitions</h3>
  * The {@link javax.print.attribute} and {@link javax.print.attribute.standard}
  * packages define print attributes, which describe the capabilities of a print
- * service, specify the requirements of a print job, and track the progress of
- * a print job.
+ * service, specify the requirements of a print job, and track the progress of a
+ * print job.
  * <p>
  * The {@code javax.print.attribute} package describes the types of attributes
  * and how they can be collected into sets. The
  * {@code javax.print.attribute.standard} package enumerates all of the standard
  * attributes supported by the API, most of which are implementations of
  * attributes specified in the IETF Specification,
- * <a href="http://www.ietf.org/rfc/rfc2911.txt"> RFC 2911 Internet Printing
+ * <a href="http://www.ietf.org/rfc/rfc2911.txt">RFC 2911 Internet Printing
  * Protocol, 1.1: Model and Semantics</a>, dated September 2000. The attributes
  * specified in {@code javax.print.attribute.standard} include common
  * capabilities, such as: resolution, copies, media sizes, job priority, and
@@ -78,16 +78,16 @@
  * A typical application using the Java Print Service API performs these steps
  * to process a print request:
  * <ol>
- *     <li>Chooses a {@code DocFlavor}.</li>
- *     <li>Creates a set of attributes.</li>
- *     <li>Locates a print service that can handle the print request as
- *     specified by the {@code DocFlavor} and the attribute set.</li>
- *     <li>Creates a {@link javax.print.Doc Doc} object encapsulating the
- *     {@code DocFlavor} and the actual print data, which can take many forms
- *     including: a Postscript file, a JPEG image, a URL, or plain text.</li>
- *     <li>Gets a print job, represented by
- *     {@link javax.print.DocPrintJob DocPrintJob}, from the print service.</li>
- *     <li>Calls the print method of the print job.</li>
+ *   <li>Chooses a {@code DocFlavor}.
+ *   <li>Creates a set of attributes.
+ *   <li>Locates a print service that can handle the print request as specified
+ *   by the {@code DocFlavor} and the attribute set.
+ *   <li>Creates a {@link javax.print.Doc Doc} object encapsulating the
+ *   {@code DocFlavor} and the actual print data, which can take many forms
+ *   including: a Postscript file, a JPEG image, a {@code URL}, or plain text.
+ *   <li>Gets a print job, represented by
+ *   {@link javax.print.DocPrintJob DocPrintJob}, from the print service.
+ *   <li>Calls the print method of the print job.
  * </ol>
  * The following code sample demonstrates a typical use of the Java Print
  * Service API: locating printers that can print five double-sided copies of a
@@ -119,13 +119,13 @@
  * }
  * }</pre>
  * </blockquote>
- * <P>
- * Please note: In the javax.print APIs, a null reference parameter to methods
- * is incorrect unless explicitly documented on the method as having a
- * meaningful interpretation. Usage to the contrary is incorrect coding and may
- * result in a run time exception either immediately or at some later time.
- * IllegalArgumentException and NullPointerException are examples of typical and
- * acceptable run time exceptions for such cases.
+ * <p>
+ * Please note: In the {@code javax.print} APIs, a {@code null} reference
+ * parameter to methods is incorrect unless explicitly documented on the method
+ * as having a meaningful interpretation. Usage to the contrary is incorrect
+ * coding and may result in a run time exception either immediately or at some
+ * later time. {@code IllegalArgumentException} and {@code NullPointerException}
+ * are examples of typical and acceptable run time exceptions for such cases.
  *
  * @since 1.4
  */

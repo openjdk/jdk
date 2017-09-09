@@ -66,6 +66,7 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/arguments_ext.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fieldType.hpp"
 #include "runtime/handles.inline.hpp"
@@ -869,7 +870,7 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
             // during compilations.
             MutexLocker mu(Compile_lock, THREAD);
             update_dictionary(d_index, d_hash, p_index, p_hash,
-                              k, class_loader, THREAD);
+              k, class_loader, THREAD);
           }
 
           if (JvmtiExport::should_post_class_load()) {
@@ -910,12 +911,9 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   if (protection_domain() == NULL) return k;
 
   // Check the protection domain has the right access
-  {
-    MutexLocker mu(SystemDictionary_lock, THREAD);
-    if (dictionary->is_valid_protection_domain(d_index, d_hash, name,
-                                               protection_domain)) {
-      return k;
-    }
+  if (dictionary->is_valid_protection_domain(d_index, d_hash, name,
+                                             protection_domain)) {
+    return k;
   }
 
   // Verify protection domain. If it fails an exception is thrown
@@ -1009,7 +1007,6 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
     // Create a new CLD for anonymous class, that uses the same class loader
     // as the host_klass
     guarantee(host_klass->class_loader() == class_loader(), "should be the same");
-    guarantee(!DumpSharedSpaces, "must not create anonymous classes when dumping");
     loader_data = ClassLoaderData::anonymous_class_loader_data(class_loader(), CHECK_NULL);
   } else {
     loader_data = ClassLoaderData::class_loader_data(class_loader());
@@ -1078,6 +1075,15 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
                                                      Handle protection_domain,
                                                      ClassFileStream* st,
                                                      TRAPS) {
+#if INCLUDE_CDS
+  ResourceMark rm(THREAD);
+  if (DumpSharedSpaces && !class_loader.is_null() &&
+      !ArgumentsExt::using_AppCDS() && strcmp(class_name->as_C_string(), "Unnamed") != 0) {
+    // If AppCDS is not enabled, don't define the class at dump time (except for the "Unnamed"
+    // class, which is used by MethodHandles).
+    THROW_MSG_NULL(vmSymbols::java_lang_ClassNotFoundException(), class_name->as_C_string());
+  }
+#endif
 
   HandleMark hm(THREAD);
 
@@ -1104,11 +1110,13 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
  InstanceKlass* k = NULL;
 
 #if INCLUDE_CDS
-  k = SystemDictionaryShared::lookup_from_stream(class_name,
-                                                 class_loader,
-                                                 protection_domain,
-                                                 st,
-                                                 CHECK_NULL);
+  if (!DumpSharedSpaces) {
+    k = SystemDictionaryShared::lookup_from_stream(class_name,
+                                                   class_loader,
+                                                   protection_domain,
+                                                   st,
+                                                   CHECK_NULL);
+  }
 #endif
 
   if (k == NULL) {
@@ -1217,6 +1225,16 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
          "Cannot use sharing if java.base is patched");
   ResourceMark rm;
   int path_index = ik->shared_classpath_index();
+  ClassLoaderData* loader_data = class_loader_data(class_loader);
+  if (path_index < 0) {
+    // path_index < 0 indicates that the class is intended for a custom loader
+    // and should not be loaded by boot/platform/app loaders
+    if (loader_data->is_builtin_class_loader_data()) {
+      return false;
+    } else {
+      return true;
+    }
+  }
   SharedClassPathEntry* ent =
             (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
   if (!Universe::is_module_initialized()) {
@@ -1230,7 +1248,6 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
   PackageEntry* pkg_entry = NULL;
   ModuleEntry* mod_entry = NULL;
   const char* pkg_string = NULL;
-  ClassLoaderData* loader_data = class_loader_data(class_loader);
   pkg_name = InstanceKlass::package_from_name(class_name, CHECK_false);
   if (pkg_name != NULL) {
     pkg_string = pkg_name->as_C_string();
@@ -1403,6 +1420,18 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   }
   return ik;
 }
+
+void SystemDictionary::clear_invoke_method_table() {
+  SymbolPropertyEntry* spe = NULL;
+  for (int index = 0; index < _invoke_method_table->table_size(); index++) {
+    SymbolPropertyEntry* p = _invoke_method_table->bucket(index);
+    while (p != NULL) {
+      spe = p;
+      p = p->next();
+      _invoke_method_table->free_entry(spe);
+    }
+  }
+}
 #endif // INCLUDE_CDS
 
 InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle class_loader, TRAPS) {
@@ -1449,7 +1478,6 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
         }
       }
     } else {
-      assert(!DumpSharedSpaces, "Archive dumped after module system initialization");
       // After the module system has been initialized, check if the class'
       // package is in a module defined to the boot loader.
       if (pkg_name == NULL || pkg_entry == NULL || pkg_entry->in_unnamed_module()) {
@@ -1968,8 +1996,19 @@ void SystemDictionary::methods_do(void f(Method*)) {
   invoke_method_table()->methods_do(f);
 }
 
+class RemoveClassesClosure : public CLDClosure {
+  public:
+    void do_cld(ClassLoaderData* cld) {
+      if (cld->is_system_class_loader_data() || cld->is_platform_class_loader_data()) {
+        cld->dictionary()->remove_classes_in_error_state();
+      }
+    }
+};
+
 void SystemDictionary::remove_classes_in_error_state() {
   ClassLoaderData::the_null_class_loader_data()->dictionary()->remove_classes_in_error_state();
+  RemoveClassesClosure rcc;
+  ClassLoaderDataGraph::cld_do(&rcc);
 }
 
 // ----------------------------------------------------------------------------
@@ -2910,6 +2949,56 @@ int SystemDictionaryDCmd::num_arguments() {
   }
 }
 
+class CombineDictionariesClosure : public CLDClosure {
+  private:
+    Dictionary* _master_dictionary;
+  public:
+    CombineDictionariesClosure(Dictionary* master_dictionary) :
+      _master_dictionary(master_dictionary) {}
+    void do_cld(ClassLoaderData* cld) {
+      ResourceMark rm;
+      if (cld->is_system_class_loader_data() || cld->is_platform_class_loader_data()) {
+        for (int i = 0; i < cld->dictionary()->table_size(); ++i) {
+          Dictionary* curr_dictionary = cld->dictionary();
+          DictionaryEntry* p = curr_dictionary->bucket(i);
+          while (p != NULL) {
+            Symbol* name = p->instance_klass()->name();
+            unsigned int d_hash = _master_dictionary->compute_hash(name);
+            int d_index = _master_dictionary->hash_to_index(d_hash);
+            DictionaryEntry* next = p->next();
+            if (p->literal()->class_loader_data() != cld) {
+              // This is an initiating class loader entry; don't use it
+              log_trace(cds)("Skipping initiating cl entry: %s", name->as_C_string());
+              curr_dictionary->free_entry(p);
+            } else {
+              log_trace(cds)("Moved to boot dictionary: %s", name->as_C_string());
+              curr_dictionary->unlink_entry(p);
+              p->set_pd_set(NULL); // pd_set is runtime only information and will be reconstructed.
+              _master_dictionary->add_entry(d_index, p);
+            }
+            p = next;
+          }
+          *curr_dictionary->bucket_addr(i) = NULL;
+        }
+      }
+    }
+};
+
+// Combining platform and system loader dictionaries into boot loader dictionaries.
+// During run time, we only have one shared dictionary.
+void SystemDictionary::combine_shared_dictionaries() {
+  assert(DumpSharedSpaces, "dump time only");
+  Dictionary* master_dictionary = ClassLoaderData::the_null_class_loader_data()->dictionary();
+  CombineDictionariesClosure cdc(master_dictionary);
+  ClassLoaderDataGraph::cld_do(&cdc);
+
+  // These tables are no longer valid or necessary. Keeping them around will
+  // cause SystemDictionary::verify() to fail. Let's empty them.
+  _placeholders        = new PlaceholderTable(_placeholder_table_size);
+  _loader_constraints  = new LoaderConstraintTable(_loader_constraint_size);
+
+  NOT_PRODUCT(SystemDictionary::verify());
+}
 
 // caller needs ResourceMark
 const char* SystemDictionary::loader_name(const oop loader) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,11 @@ import java.util.List;
  * {@code MidiDevice} instance, the following rules apply:
  *
  * <ul>
- * <li>After an explicit open (either before or after implicit opens), the
- * device will not be closed by implicit closing. The only way to close an
- * explicitly opened device is an explicit close.</li>
- * <li>An explicit close always closes the device, even if it also has been
- * opened implicitly. A subsequent implicit close has no further effect.</li>
+ *   <li>After an explicit open (either before or after implicit opens), the
+ *   device will not be closed by implicit closing. The only way to close an
+ *   explicitly opened device is an explicit close.
+ *   <li>An explicit close always closes the device, even if it also has been
+ *   opened implicitly. A subsequent implicit close has no further effect.
  * </ul>
  *
  * To detect if a MidiDevice represents a hardware MIDI port, the following
@@ -76,7 +76,7 @@ import java.util.List;
  *
  * <pre>{@code
  * MidiDevice device = ...;
- * if ( ! (device instanceof Sequencer) && ! (device instanceof Synthesizer)) {
+ * if (!(device instanceof Sequencer) && !(device instanceof Synthesizer)) {
  *   // we're now sure that device represents a MIDI port
  *   // ...
  * }
@@ -112,7 +112,8 @@ public interface MidiDevice extends AutoCloseable {
      * resources and allow applications to exit cleanly.
      * <p>
      * Note that some devices, once closed, cannot be reopened. Attempts to
-     * reopen such a device will always result in a MidiUnavailableException.
+     * reopen such a device will always result in a
+     * {@code MidiUnavailableException}.
      *
      * @throws MidiUnavailableException thrown if the device cannot be opened
      *         due to resource restrictions
@@ -198,7 +199,8 @@ public interface MidiDevice extends AutoCloseable {
 
     /**
      * Returns all currently active, non-closed receivers connected with this
-     * MidiDevice. A receiver can be removed from the device by closing it.
+     * {@code MidiDevice}. A receiver can be removed from the device by closing
+     * it.
      * <p>
      * Usually the returned receivers implement the {@code MidiDeviceReceiver}
      * interface.
@@ -231,7 +233,8 @@ public interface MidiDevice extends AutoCloseable {
 
     /**
      * Returns all currently active, non-closed transmitters connected with this
-     * MidiDevice. A transmitter can be removed from the device by closing it.
+     * {@code MidiDevice}. A transmitter can be removed from the device by
+     * closing it.
      * <p>
      * Usually the returned transmitters implement the
      * {@code MidiDeviceTransmitter} interface.
@@ -288,12 +291,12 @@ public interface MidiDevice extends AutoCloseable {
         }
 
         /**
-         * Reports whether two objects are equal. Returns {@code true} if the
-         * objects are identical.
+         * Indicates whether the specified object is equal to this info object,
+         * returning {@code true} if the objects are the same.
          *
-         * @param  obj the reference object with which to compare this object
-         * @return {@code true} if this object is the same as the {@code obj}
-         *         argument; {@code false} otherwise
+         * @param  obj the reference object with which to compare
+         * @return {@code true} if the specified object is equal to this info
+         *         object; {@code false} otherwise
          */
         @Override
         public final boolean equals(Object obj) {
@@ -301,7 +304,9 @@ public interface MidiDevice extends AutoCloseable {
         }
 
         /**
-         * Finalizes the hashcode method.
+         * Returns a hash code value for this info object.
+         *
+         * @return a hash code value for this info object
          */
         @Override
         public final int hashCode() {
@@ -353,5 +358,5 @@ public interface MidiDevice extends AutoCloseable {
         public final String toString() {
             return name;
         }
-    } // class Info
+    }
 }
