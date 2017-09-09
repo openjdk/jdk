@@ -319,7 +319,7 @@ public abstract class GraalCompilerState {
         assert !graph.isFrozen();
         ResolvedJavaMethod installedCodeOwner = graph.method();
         request = new Request<>(graph, installedCodeOwner, getProviders(), getBackend(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL,
-                        graph.getProfilingInfo(), createSuites(getOptions()), createLIRSuites(getOptions()), new CompilationResult(), CompilationResultBuilderFactory.Default);
+                        graph.getProfilingInfo(), createSuites(getOptions()), createLIRSuites(getOptions()), new CompilationResult(graph.compilationId()), CompilationResultBuilderFactory.Default);
     }
 
     /**

@@ -75,6 +75,9 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#endif // INCLUDE_ALL_GCS
 #if INCLUDE_TRACE
 #include "trace/tracing.hpp"
 #endif
@@ -762,6 +765,25 @@ Metaspace* ClassLoaderData::metaspace_non_null() {
 OopHandle ClassLoaderData::add_handle(Handle h) {
   MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
   return OopHandle(_handles.add(h()));
+}
+
+void ClassLoaderData::remove_handle(OopHandle h) {
+  oop* ptr = h.ptr_raw();
+  if (ptr != NULL) {
+    assert(_handles.contains(ptr), "Got unexpected handle " PTR_FORMAT, p2i(ptr));
+#if INCLUDE_ALL_GCS
+    // This barrier is used by G1 to remember the old oop values, so
+    // that we don't forget any objects that were live at the snapshot at
+    // the beginning.
+    if (UseG1GC) {
+      oop obj = *ptr;
+      if (obj != NULL) {
+        G1SATBCardTableModRefBS::enqueue(obj);
+      }
+    }
+#endif
+    *ptr = NULL;
+  }
 }
 
 void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {

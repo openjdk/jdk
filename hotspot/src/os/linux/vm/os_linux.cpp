@@ -1419,53 +1419,6 @@ static bool file_exists(const char* filename) {
   return os::stat(filename, &statbuf) == 0;
 }
 
-bool os::dll_build_name(char* buffer, size_t buflen,
-                        const char* pname, const char* fname) {
-  bool retval = false;
-  // Copied from libhpi
-  const size_t pnamelen = pname ? strlen(pname) : 0;
-
-  // Return error on buffer overflow.
-  if (pnamelen + strlen(fname) + 10 > (size_t) buflen) {
-    return retval;
-  }
-
-  if (pnamelen == 0) {
-    snprintf(buffer, buflen, "lib%s.so", fname);
-    retval = true;
-  } else if (strchr(pname, *os::path_separator()) != NULL) {
-    int n;
-    char** pelements = split_path(pname, &n);
-    if (pelements == NULL) {
-      return false;
-    }
-    for (int i = 0; i < n; i++) {
-      // Really shouldn't be NULL, but check can't hurt
-      if (pelements[i] == NULL || strlen(pelements[i]) == 0) {
-        continue; // skip the empty path values
-      }
-      snprintf(buffer, buflen, "%s/lib%s.so", pelements[i], fname);
-      if (file_exists(buffer)) {
-        retval = true;
-        break;
-      }
-    }
-    // release the storage
-    for (int i = 0; i < n; i++) {
-      if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i]);
-      }
-    }
-    if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements);
-    }
-  } else {
-    snprintf(buffer, buflen, "%s/lib%s.so", pname, fname);
-    retval = true;
-  }
-  return retval;
-}
-
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
@@ -4047,11 +4000,10 @@ void os::hint_no_preempt() {}
 ////////////////////////////////////////////////////////////////////////////////
 // suspend/resume support
 
-//  the low-level signal-based suspend/resume support is a remnant from the
+//  The low-level signal-based suspend/resume support is a remnant from the
 //  old VM-suspension that used to be for java-suspension, safepoints etc,
-//  within hotspot. Now there is a single use-case for this:
-//    - calling get_thread_pc() on the VMThread by the flat-profiler task
-//      that runs in the watcher thread.
+//  within hotspot. Currently used by JFR's OSThreadSampler
+//
 //  The remaining code is greatly simplified from the more general suspension
 //  code that used to be used.
 //
@@ -4067,6 +4019,13 @@ void os::hint_no_preempt() {}
 //
 //  Note that the SR_lock plays no role in this suspend/resume protocol,
 //  but is checked for NULL in SR_handler as a thread termination indicator.
+//  The SR_lock is, however, used by JavaThread::java_suspend()/java_resume() APIs.
+//
+//  Note that resume_clear_context() and suspend_save_context() are needed
+//  by SR_handler(), so that fetch_frame_from_ucontext() works,
+//  which in part is used by:
+//    - Forte Analyzer: AsyncGetCallTrace()
+//    - StackBanging: get_frame_at_stack_banging_point()
 
 static void resume_clear_context(OSThread *osthread) {
   osthread->set_ucontext(NULL);
@@ -5105,44 +5064,6 @@ void os::SuspendedThreadTask::internal_do_task() {
     do_task(context);
     do_resume(_thread->osthread());
   }
-}
-
-class PcFetcher : public os::SuspendedThreadTask {
- public:
-  PcFetcher(Thread* thread) : os::SuspendedThreadTask(thread) {}
-  ExtendedPC result();
- protected:
-  void do_task(const os::SuspendedThreadTaskContext& context);
- private:
-  ExtendedPC _epc;
-};
-
-ExtendedPC PcFetcher::result() {
-  guarantee(is_done(), "task is not done yet.");
-  return _epc;
-}
-
-void PcFetcher::do_task(const os::SuspendedThreadTaskContext& context) {
-  Thread* thread = context.thread();
-  OSThread* osthread = thread->osthread();
-  if (osthread->ucontext() != NULL) {
-    _epc = os::Linux::ucontext_get_pc((const ucontext_t *) context.ucontext());
-  } else {
-    // NULL context is unexpected, double-check this is the VMThread
-    guarantee(thread->is_VM_thread(), "can only be called for VMThread");
-  }
-}
-
-// Suspends the target using the signal mechanism and then grabs the PC before
-// resuming the target. Used by the flat-profiler only
-ExtendedPC os::get_thread_pc(Thread* thread) {
-  // Make sure that it is called by the watcher for the VMThread
-  assert(Thread::current()->is_Watcher_thread(), "Must be watcher");
-  assert(thread->is_VM_thread(), "Can only be called for VMThread");
-
-  PcFetcher fetcher(thread);
-  fetcher.run();
-  return fetcher.result();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -86,11 +86,6 @@ ifneq ($(call check-jvm-feature, jvmci), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_JVMCI=0
   JVM_EXCLUDES += jvmci
   JVM_EXCLUDE_FILES += jvmciCodeInstaller_$(HOTSPOT_TARGET_CPU_ARCH).cpp
-endif
-
-ifneq ($(call check-jvm-feature, fprof), true)
-  JVM_CFLAGS_FEATURES += -DINCLUDE_FPROF=0
-  JVM_EXCLUDE_FILES += fprofiler.cpp
 endif
 
 ifneq ($(call check-jvm-feature, vm-structs), true)

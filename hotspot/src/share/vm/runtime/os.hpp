@@ -476,7 +476,6 @@ class os: AllStatic {
   static frame      fetch_frame_from_context(const void* ucVoid);
   static frame      fetch_frame_from_ucontext(Thread* thread, void* ucVoid);
 
-  static ExtendedPC get_thread_pc(Thread *thread);
   static void breakpoint();
   static bool start_debugging(char *buf, int buflen);
 
@@ -541,9 +540,16 @@ class os: AllStatic {
   static const char*    get_temp_directory();
   static const char*    get_current_directory(char *buf, size_t buflen);
 
-  // Builds a platform-specific full library path given a ld path and lib name
-  // Returns true if buffer contains full path to existing file, false otherwise
+  // Builds the platform-specific name of a library.
+  // Returns false if the buffer is too small.
   static bool           dll_build_name(char* buffer, size_t size,
+                                       const char* fname);
+
+  // Builds a platform-specific full library path given an ld path and
+  // unadorned library name. Returns true if the buffer contains a full
+  // path to an existing file, false otherwise. If pathname is empty,
+  // uses the path to the current directory.
+  static bool           dll_locate_lib(char* buffer, size_t size,
                                        const char* pathname, const char* fname);
 
   // Symbol lookup, find nearest function name; basically it implements

@@ -327,8 +327,6 @@ class InstanceKlass: public Klass {
   }
 
   void set_class_loader_type(s2 loader_type) {
-    assert(( _misc_flags & loader_type_bits()) == 0,
-           "Should only be called once for each class.");
     switch (loader_type) {
     case ClassLoader::BOOT_LOADER:
       _misc_flags |= _misc_is_shared_boot_class;
@@ -1335,6 +1333,7 @@ private:
 public:
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
+  virtual void remove_java_mirror();
   virtual void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
 
   // jvm support

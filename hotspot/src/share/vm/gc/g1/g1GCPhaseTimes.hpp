@@ -49,7 +49,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     UniverseRoots,
     JNIRoots,
     ObjectSynchronizerRoots,
-    FlatProfilerRoots,
     ManagementRoots,
     SystemDictionaryRoots,
     CLDGRoots,

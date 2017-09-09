@@ -60,7 +60,6 @@
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
@@ -2086,7 +2085,6 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     // We scan the thread roots in parallel
     Threads::create_thread_roots_marking_tasks(q);
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::object_synchronizer));
-    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::flat_profiler));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::management));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::system_dictionary));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::class_loader_data));
@@ -2169,7 +2167,6 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   JNIHandles::oops_do(&oop_closure);   // Global (strong) JNI handles
   Threads::oops_do(&oop_closure, NULL);
   ObjectSynchronizer::oops_do(&oop_closure);
-  FlatProfiler::oops_do(&oop_closure);
   Management::oops_do(&oop_closure);
   JvmtiExport::oops_do(&oop_closure);
   SystemDictionary::oops_do(&oop_closure);
