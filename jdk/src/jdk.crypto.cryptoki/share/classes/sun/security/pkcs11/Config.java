@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.pkcs11;
 import java.io.*;
 import static java.io.StreamTokenizer.*;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import java.security.*;
@@ -202,7 +203,8 @@ final class Config {
             reader = new StringReader(config);
         } else {
             reader = new BufferedReader(new InputStreamReader
-                (new FileInputStream(expand(filename))));
+                (new FileInputStream(expand(filename)),
+                    StandardCharsets.ISO_8859_1));
         }
         parsedKeywords = new HashSet<String>();
         st = new StreamTokenizer(reader);

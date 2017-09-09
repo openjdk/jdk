@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,71 +54,6 @@ Java_java_awt_Color_initIDs(JNIEnv *env, jclass cls)
     DASSERT(AwtColor::getRGBMID != NULL);
 
     CATCH_BAD_ALLOC;
-}
-
-} /* extern "C" */
-
-/************************************************************************
- * WColor native methods
- */
-
-extern "C" {
-
-/*
- * Class:     sun_awt_windows_WColor
- * Method:    getDefaultColor
- * Signature: (I)Ljava/awt/Color;
- */
-JNIEXPORT jobject JNICALL
-Java_sun_awt_windows_WColor_getDefaultColor(JNIEnv *env, jclass cls,
-                                            jint index)
-{
-    TRY;
-
-    int iColor = 0;
-    switch(index) {
-
-    case sun_awt_windows_WColor_WINDOW_BKGND:
-        iColor = COLOR_WINDOW;
-        break;
-    case sun_awt_windows_WColor_WINDOW_TEXT:
-        iColor = COLOR_WINDOWTEXT;
-        break;
-    case sun_awt_windows_WColor_FRAME:
-        iColor = COLOR_WINDOWFRAME;
-        break;
-    case sun_awt_windows_WColor_SCROLLBAR:
-        iColor = COLOR_SCROLLBAR;
-        break;
-    case sun_awt_windows_WColor_MENU_BKGND:
-        iColor = COLOR_MENU;
-        break;
-    case sun_awt_windows_WColor_MENU_TEXT:
-        iColor = COLOR_MENUTEXT;
-        break;
-    case sun_awt_windows_WColor_BUTTON_BKGND:
-        iColor = COLOR_BTNFACE;
-        break;
-    case sun_awt_windows_WColor_BUTTON_TEXT:
-        iColor = COLOR_BTNTEXT;
-        break;
-    case sun_awt_windows_WColor_HIGHLIGHT:
-        iColor = COLOR_HIGHLIGHT;
-        break;
-
-    default:
-        return NULL;
-    }
-    DWORD c = ::GetSysColor(iColor);
-
-    jobject wColor = JNU_NewObjectByName(env, "java/awt/Color", "(III)V",
-                                         GetRValue(c), GetGValue(c),
-                                         GetBValue(c));
-
-    DASSERT(!safe_ExceptionOccurred(env));
-    return wColor;
-
-    CATCH_BAD_ALLOC_RET(NULL);
 }
 
 } /* extern "C" */

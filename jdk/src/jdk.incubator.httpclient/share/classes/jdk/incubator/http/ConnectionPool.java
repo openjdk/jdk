@@ -25,17 +25,35 @@
 
 package jdk.incubator.http;
 
+import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import jdk.incubator.http.internal.common.Utils;
 
 /**
  * Http 1.1 connection pool.
  */
 final class ConnectionPool {
+
+    // These counters are used to distribute ids for debugging
+    // The ACTIVE_CLEANER_COUNTER will tell how many CacheCleaner
+    // are active at a given time. It will increase when a new
+    // CacheCleaner is started and decrease when it exits.
+    static final AtomicLong ACTIVE_CLEANER_COUNTER = new AtomicLong();
+    // The POOL_IDS_COUNTER increases each time a new ConnectionPool
+    // is created. It may wrap and become negative but will never be
+    // decremented.
+    static final AtomicLong POOL_IDS_COUNTER = new AtomicLong();
+    // The cleanerCounter is used to name cleaner threads within a
+    // a connection pool, and increments monotically.
+    // It may wrap and become negative but will never be
+    // decremented.
+    final AtomicLong cleanerCounter = new AtomicLong();
 
     static final long KEEP_ALIVE = Utils.getIntegerNetProperty(
             "jdk.httpclient.keepalive.timeout", 1200); // seconds
@@ -44,7 +62,12 @@ final class ConnectionPool {
 
     final HashMap<CacheKey,LinkedList<HttpConnection>> plainPool;
     final HashMap<CacheKey,LinkedList<HttpConnection>> sslPool;
-    CacheCleaner cleaner;
+    // A monotically increasing id for this connection pool.
+    // It may be negative (that's OK)
+    // Mostly used for debugging purposes when looking at thread dumps.
+    // Global scope.
+    final long poolID = POOL_IDS_COUNTER.incrementAndGet();
+    final AtomicReference<CacheCleaner> cleanerRef;
 
     /**
      * Entries in connection pool are keyed by destination address and/or
@@ -105,6 +128,7 @@ final class ConnectionPool {
         plainPool = new HashMap<>();
         sslPool = new HashMap<>();
         expiryList = new LinkedList<>();
+        cleanerRef = new AtomicReference<>();
     }
 
     void start() {
@@ -143,7 +167,7 @@ final class ConnectionPool {
     findConnection(CacheKey key,
                    HashMap<CacheKey,LinkedList<HttpConnection>> pool) {
         LinkedList<HttpConnection> l = pool.get(key);
-        if (l == null || l.size() == 0) {
+        if (l == null || l.isEmpty()) {
             return null;
         } else {
             HttpConnection c = l.removeFirst();
@@ -175,19 +199,36 @@ final class ConnectionPool {
         l.add(c);
     }
 
-    // only runs while entries exist in cache
+    static String makeCleanerName(long poolId, long cleanerId) {
+        return "HTTP-Cache-cleaner-" + poolId + "-" + cleanerId;
+    }
 
-    final class CacheCleaner extends Thread {
+    // only runs while entries exist in cache
+    final static class CacheCleaner extends Thread {
 
         volatile boolean stopping;
+        // A monotically increasing id. May wrap and become negative (that's OK)
+        // Mostly used for debugging purposes when looking at thread dumps.
+        // Scoped per connection pool.
+        final long cleanerID;
+        // A reference to the owning ConnectionPool.
+        // This reference's referent may become null if the HttpClientImpl
+        // that owns this pool is GC'ed.
+        final WeakReference<ConnectionPool> ownerRef;
 
-        CacheCleaner() {
-            super(null, null, "HTTP-Cache-cleaner", 0, false);
+        CacheCleaner(ConnectionPool owner) {
+            this(owner, owner.cleanerCounter.incrementAndGet());
+        }
+
+        CacheCleaner(ConnectionPool owner, long cleanerID) {
+            super(null, null, makeCleanerName(owner.poolID, cleanerID), 0, false);
+            this.cleanerID = cleanerID;
+            this.ownerRef = new WeakReference<>(owner);
             setDaemon(true);
         }
 
         synchronized boolean stopping() {
-            return stopping;
+            return stopping || ownerRef.get() == null;
         }
 
         synchronized void stopCleaner() {
@@ -196,11 +237,19 @@ final class ConnectionPool {
 
         @Override
         public void run() {
-            while (!stopping()) {
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {}
-                cleanCache();
+            ACTIVE_CLEANER_COUNTER.incrementAndGet();
+            try {
+                while (!stopping()) {
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {}
+                    ConnectionPool owner = ownerRef.get();
+                    if (owner == null) return;
+                    owner.cleanCache(this);
+                    owner = null;
+                }
+            } finally {
+                ACTIVE_CLEANER_COUNTER.decrementAndGet();
             }
         }
     }
@@ -217,13 +266,15 @@ final class ConnectionPool {
                 return;
             }
         }
-        if (expiryList.isEmpty()) {
+        CacheCleaner cleaner = this.cleanerRef.get();
+        if (expiryList.isEmpty() && cleaner != null) {
+            this.cleanerRef.compareAndSet(cleaner, null);
             cleaner.stopCleaner();
-            cleaner = null;
+            cleaner.interrupt();
         }
     }
 
-    private void cleanCache() {
+    private void cleanCache(CacheCleaner cleaner) {
         long now = System.currentTimeMillis() / 1000;
         LinkedList<HttpConnection> closelist = new LinkedList<>();
 
@@ -242,6 +293,10 @@ final class ConnectionPool {
                     }
                 }
             }
+            if (expiryList.isEmpty() && cleaner != null) {
+                this.cleanerRef.compareAndSet(cleaner, null);
+                cleaner.stopCleaner();
+            }
         }
         for (HttpConnection c : closelist) {
             //System.out.println ("KAC: closing " + c);
@@ -252,10 +307,13 @@ final class ConnectionPool {
     private synchronized void addToExpiryList(HttpConnection conn) {
         long now = System.currentTimeMillis() / 1000;
         long then = now + KEEP_ALIVE;
-
         if (expiryList.isEmpty()) {
-            cleaner = new CacheCleaner();
-            cleaner.start();
+            CacheCleaner cleaner = new CacheCleaner(this);
+            if (this.cleanerRef.compareAndSet(null, cleaner)) {
+                cleaner.start();
+            }
+            expiryList.add(new ExpiryEntry(conn, then));
+            return;
         }
 
         ListIterator<ExpiryEntry> li = expiryList.listIterator();

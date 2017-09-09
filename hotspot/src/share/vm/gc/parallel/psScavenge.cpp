@@ -49,7 +49,6 @@
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vmThread.hpp"
@@ -381,7 +380,6 @@ bool PSScavenge::invoke_no_policy() {
       // We scan the thread roots in parallel
       Threads::create_thread_roots_tasks(q);
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::object_synchronizer));
-      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::flat_profiler));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::management));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::system_dictionary));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::class_loader_data));

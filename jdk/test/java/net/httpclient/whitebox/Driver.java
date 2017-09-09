@@ -23,9 +23,10 @@
 
 /*
  * @test
- * @bug 8151299 8164704
- * @modules jdk.incubator.httpclient
+ * @bug 8151299 8164704 8187044
+ * @modules jdk.incubator.httpclient java.management
  * @run testng jdk.incubator.httpclient/jdk.incubator.http.SelectorTest
  * @run testng jdk.incubator.httpclient/jdk.incubator.http.RawChannelTest
  * @run testng jdk.incubator.httpclient/jdk.incubator.http.ResponseHeadersTest
+ * @run main/othervm --add-reads jdk.incubator.httpclient=java.management jdk.incubator.httpclient/jdk.incubator.http.ConnectionPoolTest
  */

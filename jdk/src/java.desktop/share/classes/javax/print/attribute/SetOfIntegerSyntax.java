@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,82 +23,82 @@
  * questions.
  */
 
-
 package javax.print.attribute;
 
 import java.io.Serializable;
 import java.util.Vector;
 
 /**
- * Class SetOfIntegerSyntax is an abstract base class providing the common
- * implementation of all attributes whose value is a set of nonnegative
+ * Class {@code SetOfIntegerSyntax} is an abstract base class providing the
+ * common implementation of all attributes whose value is a set of nonnegative
  * integers. This includes attributes whose value is a single range of integers
  * and attributes whose value is a set of ranges of integers.
- * <P>
- * You can construct an instance of SetOfIntegerSyntax by giving it in "string
- * form." The string consists of zero or more comma-separated integer groups.
- * Each integer group consists of either one integer, two integers separated by
- * a hyphen ({@code -}), or two integers separated by a colon
- * ({@code :}). Each integer consists of one or more decimal digits
- * ({@code 0} through {@code 9}). Whitespace characters cannot
- * appear within an integer but are otherwise ignored. For example:
- * {@code ""}, {@code "1"}, {@code "5-10"}, {@code "1:2, 4"}.
- * <P>
- * You can also construct an instance of SetOfIntegerSyntax by giving it in
- * "array form." Array form consists of an array of zero or more integer groups
- * where each integer group is a length-1 or length-2 array of
- * {@code int}s; for example, {@code int[0][]},
- * {@code int[][]{{1}}}, {@code int[][]{{5,10}}},
- * {@code int[][]{{1,2},{4}}}.
- * <P>
+ * <p>
+ * You can construct an instance of {@code SetOfIntegerSyntax} by giving it in
+ * "string form." The string consists of zero or more comma-separated integer
+ * groups. Each integer group consists of either one integer, two integers
+ * separated by a hyphen ({@code -}), or two integers separated by a colon
+ * ({@code :}). Each integer consists of one or more decimal digits ({@code 0}
+ * through {@code 9}). Whitespace characters cannot appear within an integer but
+ * are otherwise ignored. For example: {@code ""}, {@code "1"}, {@code "5-10"},
+ * {@code "1:2, 4"}.
+ * <p>
+ * You can also construct an instance of {@code SetOfIntegerSyntax} by giving it
+ * in "array form." Array form consists of an array of zero or more integer
+ * groups where each integer group is a length-1 or length-2 array of
+ * {@code int}s; for example, {@code int[0][]}, {@code int[][]{{1}}},
+ * {@code int[][]{{5,10}}}, {@code int[][]{{1,2},{4}}}.
+ * <p>
  * In both string form and array form, each successive integer group gives a
  * range of integers to be included in the set. The first integer in each group
  * gives the lower bound of the range; the second integer in each group gives
  * the upper bound of the range; if there is only one integer in the group, the
  * upper bound is the same as the lower bound. If the upper bound is less than
- * the lower bound, it denotes a null range (no values). If the upper bound is
- * equal to the lower bound, it denotes a range consisting of a single value. If
- * the upper bound is greater than the lower bound, it denotes a range
+ * the lower bound, it denotes a {@code null} range (no values). If the upper
+ * bound is equal to the lower bound, it denotes a range consisting of a single
+ * value. If the upper bound is greater than the lower bound, it denotes a range
  * consisting of more than one value. The ranges may appear in any order and are
  * allowed to overlap. The union of all the ranges gives the set's contents.
- * Once a SetOfIntegerSyntax instance is constructed, its value is immutable.
- * <P>
- * The SetOfIntegerSyntax object's value is actually stored in "<I>canonical</I>
- * array form." This is the same as array form, except there are no null ranges;
- * the members of the set are represented in as few ranges as possible (i.e.,
- * overlapping ranges are coalesced); the ranges appear in ascending order; and
- * each range is always represented as a length-two array of {@code int}s
- * in the form {lower bound, upper bound}. An empty set is represented as a
- * zero-length array.
- * <P>
- * Class SetOfIntegerSyntax has operations to return the set's members in
- * canonical array form, to test whether a given integer is a member of the
+ * Once a {@code SetOfIntegerSyntax} instance is constructed, its value is
+ * immutable.
+ * <p>
+ * The {@code SetOfIntegerSyntax} object's value is actually stored in
+ * "<i>canonical</i> array form." This is the same as array form, except there
+ * are no {@code null} ranges; the members of the set are represented in as few
+ * ranges as possible (i.e., overlapping ranges are coalesced); the ranges
+ * appear in ascending order; and each range is always represented as a
+ * length-two array of {@code int}s in the form {lower bound, upper bound}. An
+ * empty set is represented as a zero-length array.
+ * <p>
+ * Class {@code SetOfIntegerSyntax} has operations to return the set's members
+ * in canonical array form, to test whether a given integer is a member of the
  * set, and to iterate through the members of the set.
  *
- * @author  David Mendenhall
- * @author  Alan Kaminsky
+ * @author David Mendenhall
+ * @author Alan Kaminsky
  */
 public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 3666874174847632203L;
 
     /**
      * This set's members in canonical array form.
+     *
      * @serial
      */
     private int[][] members;
 
-
     /**
-     * Construct a new set-of-integer attribute with the given members in
-     * string form.
+     * Construct a new set-of-integer attribute with the given members in string
+     * form.
      *
-     * @param  members  Set members in string form. If null, an empty set is
-     *                     constructed.
-     *
-     * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if {@code members} does not
-     *    obey  the proper syntax.
+     * @param  members set members in string form. If {@code null}, an empty set
+     *         is constructed.
+     * @throws IllegalArgumentException if {@code members} does not obey the
+     *         proper syntax
      */
     protected SetOfIntegerSyntax(String members) {
         this.members = parse (members);
@@ -106,6 +106,9 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
 
     /**
      * Parse the given string, returning canonical array form.
+     *
+     * @param  members the string
+     * @return the canonical array form
      */
     private static int[][] parse(String members) {
         // Create vector to hold int[] elements, each element being one range
@@ -238,8 +241,8 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
     }
 
     /**
-     * Accumulate the given range (lb .. ub) into the canonical array form
-     * into the given vector of int[] objects.
+     * Accumulate the given range (lb .. ub) into the canonical array form into
+     * the given vector of int[] objects.
      */
     private static void accumulate(Vector<int[]> ranges, int lb,int ub) {
         // Make sure range is non-null.
@@ -257,12 +260,12 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
                 int[] rangeb = ranges.elementAt (j+1);
                 int lbb = rangeb[0];
                 int ubb = rangeb[1];
-
-                /* If the two ranges overlap or are adjacent, coalesce them.
-                 * The two ranges overlap if the larger lower bound is less
-                 * than or equal to the smaller upper bound. The two ranges
-                 * are adjacent if the larger lower bound is one greater
-                 * than the smaller upper bound.
+                /*
+                 * If the two ranges overlap or are adjacent, coalesce them. The
+                 * two ranges overlap if the larger lower bound is less than or
+                 * equal to the smaller upper bound. The two ranges are adjacent
+                 * if the larger lower bound is one greater than the smaller
+                 * upper bound.
                  */
                 if (Math.max(lba, lbb) - Math.min(uba, ubb) <= 1) {
                     // The coalesced range is from the smaller lower bound to
@@ -279,9 +282,10 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
                     ranges.setElementAt (rangeb, j);
                     ranges.setElementAt (rangea, j+1);
                 } else {
-                /* If the two ranges don't overlap and aren't adjacent and
-                 * aren't out of order, we're done early.
-                 */
+                    /*
+                     * If the two ranges don't overlap and aren't adjacent and
+                     * aren't out of order, we're done early.
+                     */
                     break;
                 }
             }
@@ -296,20 +300,16 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
     }
 
     /**
-     * Construct a new set-of-integer attribute with the given members in
-     * array form.
+     * Construct a new set-of-integer attribute with the given members in array
+     * form.
      *
-     * @param  members  Set members in array form. If null, an empty set is
-     *                     constructed.
-     *
-     * @exception  NullPointerException
-     *     (Unchecked exception) Thrown if any element of
-     *     {@code members} is null.
-     * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if any element of
-     *     {@code members} is not a length-one or length-two array or if
-     *     any non-null range in {@code members} has a lower bound less
-     *     than zero.
+     * @param  members set members in array form. If {@code null}, an empty set
+     *         is constructed.
+     * @throws NullPointerException if any element of {@code members} is
+     *         {@code null}
+     * @throws IllegalArgumentException if any element of {@code members} is not
+     *         a length-one or length-two array or if any {@code non-null} range
+     *         in {@code members} has a lower bound less than zero
      */
     protected SetOfIntegerSyntax(int[][] members) {
         this.members = parse (members);
@@ -353,11 +353,8 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
     /**
      * Construct a new set-of-integer attribute containing a single integer.
      *
-     * @param  member  Set member.
-     *
-     * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if {@code member} is less than
-     *     zero.
+     * @param  member set member
+     * @throws IllegalArgumentException if {@code member} is negative
      */
     protected SetOfIntegerSyntax(int member) {
         if (member < 0) {
@@ -371,12 +368,10 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * integers. If the lower bound is greater than the upper bound (a null
      * range), an empty set is constructed.
      *
-     * @param  lowerBound  Lower bound of the range.
-     * @param  upperBound  Upper bound of the range.
-     *
-     * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if the range is non-null and
-     *     {@code lowerBound} is less than zero.
+     * @param  lowerBound Lower bound of the range
+     * @param  upperBound Upper bound of the range
+     * @throws IllegalArgumentException if the range is {@code non-null} and
+     *         {@code lowerBound} is less than zero
      */
     protected SetOfIntegerSyntax(int lowerBound, int upperBound) {
         if (lowerBound <= upperBound && lowerBound < 0) {
@@ -387,13 +382,12 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
             new int[0][];
     }
 
-
     /**
      * Obtain this set-of-integer attribute's members in canonical array form.
      * The returned array is "safe;" the client may alter it without affecting
      * this set-of-integer attribute.
      *
-     * @return  This set-of-integer attribute's members in canonical array form.
+     * @return this set-of-integer attribute's members in canonical array form
      */
     public int[][] getMembers() {
         int n = members.length;
@@ -407,10 +401,9 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
     /**
      * Determine if this set-of-integer attribute contains the given value.
      *
-     * @param  x  Integer value.
-     *
-     * @return  True if this set-of-integer attribute contains the value
-     *          {@code x}, false otherwise.
+     * @param  x the Integer value
+     * @return {@code true} if this set-of-integer attribute contains the value
+     *         {@code x}, {@code false} otherwise
      */
     public boolean contains(int x) {
         // Do a linear search to find the range that contains x, if any.
@@ -429,10 +422,9 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * Determine if this set-of-integer attribute contains the given integer
      * attribute's value.
      *
-     * @param  attribute  Integer attribute.
-     *
-     * @return  True if this set-of-integer attribute contains
-     *          {@code theAttribute}'s value, false otherwise.
+     * @param  attribute the Integer attribute
+     * @return {@code true} if this set-of-integer attribute contains
+     *         {@code attribute}'s value, {@code false} otherwise
      */
     public boolean contains(IntegerSyntax attribute) {
         return contains (attribute.getValue());
@@ -446,20 +438,19 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * values, {@code -1} will never appear in the set.) You can use the
      * {@code next()} method to iterate through the integer values in a
      * set-of-integer attribute in ascending order, like this:
-     * <PRE>
+     * <pre>
      *     SetOfIntegerSyntax attribute = . . .;
      *     int i = -1;
      *     while ((i = attribute.next (i)) != -1)
      *         {
      *         foo (i);
      *         }
-     * </PRE>
+     * </pre>
      *
-     * @param  x  Integer value.
-     *
-     * @return  The smallest integer in this set-of-integer attribute that is
-     *          greater than {@code x}, or {@code -1} if no integer in
-     *          this set-of-integer attribute is greater than {@code x}.
+     * @param  x the Integer value
+     * @return the smallest integer in this set-of-integer attribute that is
+     *         greater than {@code x}, or {@code -1} if no integer in this
+     *         set-of-integer attribute is greater than {@code x}.
      */
     public int next(int x) {
         // Do a linear search to find the range that contains x, if any.
@@ -478,20 +469,16 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * Returns whether this set-of-integer attribute is equivalent to the passed
      * in object. To be equivalent, all of the following conditions must be
      * true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class SetOfIntegerSyntax.
-     * <LI>
-     * This set-of-integer attribute's members and {@code object}'s
-     * members are the same.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code SetOfIntegerSyntax}.
+     *   <li>This set-of-integer attribute's members and {@code object}'s
+     *   members are the same.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this
-     *          set-of-integer attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this
+     *         set-of-integer attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         if (object != null && object instanceof SetOfIntegerSyntax) {
@@ -533,9 +520,9 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * Returns a string value corresponding to this set-of-integer attribute.
      * The string value is a zero-length string if this set is empty. Otherwise,
      * the string value is a comma-separated list of the ranges in the canonical
-     * array form, where each range is represented as <code>"<I>i</I>"</code> if
+     * array form, where each range is represented as <code>"<i>i</i>"</code> if
      * the lower bound equals the upper bound or
-     * <code>"<I>i</I>-<I>j</I>"</code> otherwise.
+     * <code>"<i>i</i>-<i>j</i>"</code> otherwise.
      */
     public String toString() {
         StringBuilder result = new StringBuilder();
@@ -552,5 +539,4 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
         }
         return result.toString();
     }
-
 }

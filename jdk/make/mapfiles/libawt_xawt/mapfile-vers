@@ -364,7 +364,6 @@ SUNWprivate_1.1 {
         Java_sun_java2d_x11_X11Renderer_XFillRoundRect;
         Java_sun_java2d_x11_X11Renderer_devCopyArea;
         Java_sun_java2d_x11_X11SurfaceData_initIDs;
-        Java_sun_java2d_x11_X11SurfaceData_isDgaAvailable;
         Java_sun_java2d_x11_X11SurfaceData_isShmPMAvailable;
         Java_sun_java2d_x11_X11SurfaceData_initSurface;
         Java_sun_java2d_x11_X11SurfaceData_XSetCopyMode;

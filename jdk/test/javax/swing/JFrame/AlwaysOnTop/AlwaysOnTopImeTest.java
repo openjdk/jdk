@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @bug 8179665
  * @summary [Windows] java.awt.IllegalComponentStateException: component must
  *          be showing on the screen to determine its location

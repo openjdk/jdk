@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ final class CollinearSimplifier implements PathConsumer2D {
 
     private static float getSlope(float x1, float y1, float x2, float y2) {
         float dy = y2 - y1;
-        if (dy == 0f) {
+        if (dy == 0.0f) {
             return (x2 > x1) ? Float.POSITIVE_INFINITY
                    : Float.NEGATIVE_INFINITY;
         }

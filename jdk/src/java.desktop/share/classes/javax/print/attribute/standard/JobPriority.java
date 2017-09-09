@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,54 +22,55 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import javax.print.attribute.Attribute;
 import javax.print.attribute.IntegerSyntax;
-import javax.print.attribute.PrintRequestAttribute;
 import javax.print.attribute.PrintJobAttribute;
+import javax.print.attribute.PrintRequestAttribute;
 
 /**
- * Class JobPriority is an integer valued printing attribute class that
+ * Class {@code JobPriority} is an integer valued printing attribute class that
  * specifies a print job's priority.
- * <P>
- * If a JobPriority attribute is specified for a Print Job, it specifies a
- * priority for scheduling the job. A higher value specifies a higher priority.
- * The value 1 indicates the lowest possible priority. The value 100 indicates
- * the highest possible priority. Among those jobs that are ready to print, a
- * printer must print all jobs with a priority value of <I>n</I> before printing
- * those with a priority value of <I>n</I>-1 for all <I>n.</I>
- * <P>
- * If the client does not specify a JobPriority attribute for a Print Job and
- * the printer does support the JobPriority attribute, the printer must use an
- * implementation-defined default JobPriority value.
- * <P>
+ * <p>
+ * If a {@code JobPriority} attribute is specified for a Print Job, it specifies
+ * a priority for scheduling the job. A higher value specifies a higher
+ * priority. The value 1 indicates the lowest possible priority. The value 100
+ * indicates the highest possible priority. Among those jobs that are ready to
+ * print, a printer must print all jobs with a priority value of <i>n</i> before
+ * printing those with a priority value of <i>n</i>-1 for all <i>n.</i>
+ * <p>
+ * If the client does not specify a {@code JobPriority} attribute for a Print
+ * Job and the printer does support the JobPriority attribute, the printer must
+ * use an implementation-defined default JobPriority value.
+ * <p>
  * The client can always specify any job priority value from 1 to 100 for a job.
- * However, a Print Service instance may support fewer than 100 different
- * job priority levels. If this is the case, the Print Service instance
+ * However, a Print Service instance may support fewer than 100 different job
+ * priority levels. If this is the case, the Print Service instance
  * automatically maps the client-specified job priority value to one of the
  * supported job priority levels, dividing the 100 job priority values equally
  * among the available job priority levels.
- * <P>
- * <B>IPP Compatibility:</B> The integer value gives the IPP integer value. The
- * category name returned by {@code getName()} gives the IPP attribute
- * name.
+ * <p>
+ * <b>IPP Compatibility:</b> The integer value gives the IPP integer value. The
+ * category name returned by {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class JobPriority extends IntegerSyntax
     implements PrintRequestAttribute, PrintJobAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -4599900369040602769L;
 
     /**
      * Construct a new job priority attribute with the given integer value.
      *
-     * @param  value  Integer value.
-     *
-     * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if {@code value} is less than 1
-     *     or greater than 100.
+     * @param  value Integer value
+     * @throws IllegalArgumentException if {@code value} is less than 1 or
+     *         greater than 100
      */
     public JobPriority(int value) {
         super (value, 1, 100);
@@ -79,20 +80,16 @@ public final class JobPriority extends IntegerSyntax
      * Returns whether this job priority attribute is equivalent to the passed
      * in object. To be equivalent, all of the following conditions must be
      * true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class JobPriority.
-     * <LI>
-     * This job priority attribute's value and {@code object}'s value
-     * are equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code JobPriority}.
+     *   <li>This job priority attribute's value and {@code object}'s value are
+     *   equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this job
-     *          priority attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this job priority
+     *         attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return (super.equals (object) && object instanceof JobPriority);
@@ -101,11 +98,12 @@ public final class JobPriority extends IntegerSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class JobPriority, the category is class JobPriority itself.
+     * <p>
+     * For class {@code JobPriority}, the category is class
+     * {@code JobPriority} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return JobPriority.class;
@@ -114,13 +112,13 @@ public final class JobPriority extends IntegerSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class JobPriority, the category name is {@code "job-priority"}.
+     * <p>
+     * For class {@code JobPriority}, the category name is
+     * {@code "job-priority"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "job-priority";
     }
-
 }

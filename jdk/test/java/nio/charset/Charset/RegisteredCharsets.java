@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4473201 4696726 4652234 4482298 4784385 4966197 4267354 5015668
-        6911753 8071447
+        6911753 8071447 8186751
  * @summary Check that registered charsets are actually registered
  * @modules jdk.charsets
  */
@@ -42,7 +42,8 @@ public class RegisteredCharsets {
                             "ISO-8859-1", "ISO-8859-2", "ISO-8859-3",
                             "ISO-8859-4", "ISO-8859-5", "ISO-8859-6",
                             "ISO-8859-7", "ISO-8859-8", "ISO-8859-9",
-                            "ISO-8859-13", "ISO-8859-15", "windows-1251",
+                            "ISO-8859-13", "ISO-8859-15", "ISO-8859-16",
+                            "windows-1251",
                             "windows-1252", "windows-1253", "windows-1254",
                             "windows-1255", "windows-1256", "windows-31j",
                             "Shift_JIS", "JIS_X0201", "JIS_X0212-1990",
@@ -416,6 +417,8 @@ public class RegisteredCharsets {
                 new String[] {
                     // IANA alias
                     "ISO_8859-15",
+                    "Latin-9",
+                    "csISO885915",
                     // JDK historical aliases
                     "8859_15",
                     "ISO-8859-15",
@@ -432,8 +435,17 @@ public class RegisteredCharsets {
                     "csISOlatin0",
                     "csISOlatin9",
                     "ISO8859_15_FDIS"
-
                 });
+
+        aliasCheck("ISO-8859-16",
+                new String[] {
+                    "iso-ir-226",
+                    "ISO_8859-16:2001",
+                    "ISO_8859-16",
+                    "latin10",
+                    "l10",
+                    "csISO885916"
+                   });
 
         aliasCheck("JIS_X0212-1990",
                 new String[] {

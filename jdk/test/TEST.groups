@@ -318,7 +318,9 @@ jdk_awt = \
     java/awt \
     com/sun/awt \
     com/apple/eawt \
-    sun/awt
+    com/apple/laf \
+    sun/awt \
+    sun/applet
 
 jdk_2d = \
     javax/print \

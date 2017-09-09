@@ -203,6 +203,7 @@ JDKFontInfo*
                        jfloat ptSize,
                        jlong pScaler,
                        jlong pNativeFont,
+                       jlong layoutTables,
                        jfloatArray matrix,
                        jboolean aat) {
 
@@ -215,6 +216,7 @@ JDKFontInfo*
     fi->font2D = font2D;
     fi->fontStrike = fontStrike;
     fi->nativeFont = pNativeFont;
+    fi->layoutTables = (TTLayoutTableCache*)layoutTables;
     fi->aat = aat;
     (*env)->GetFloatArrayRegion(env, matrix, 0, 4, fi->matrix);
     fi->ptSize = ptSize;
@@ -241,6 +243,7 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
      jfloatArray matrix,
      jlong pScaler,
      jlong pNativeFont,
+     jlong layoutTables,
      jboolean aat,
      jcharArray text,
      jobject gvdata,
@@ -269,7 +272,7 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
 
      JDKFontInfo *jdkFontInfo =
          createJDKFontInfo(env, font2D, fontStrike, ptSize,
-                           pScaler, pNativeFont, matrix, aat);
+                           pScaler, pNativeFont, layoutTables, matrix, aat);
      if (!jdkFontInfo) {
         return JNI_FALSE;
      }
