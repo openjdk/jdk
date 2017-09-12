@@ -26,8 +26,8 @@
 include LibCommon.gmk
 
 # Prepare the find cache.
-$(eval $(call FillCacheFind, $(wildcard $(JDK_TOPDIR)/src/java.desktop/*/native \
-    $(JDK_TOPDIR)/src/*/java.desktop/*/native)))
+$(eval $(call FillCacheFind, $(wildcard $(TOPDIR)/src/java.desktop/*/native \
+    $(TOPDIR)/src/*/java.desktop/*/native)))
 
 include LibosxLibraries.gmk
 include PlatformLibraries.gmk

@@ -29,8 +29,8 @@ include MakeBase.gmk
 include Modules.gmk
 include ProcessMarkdown.gmk
 include ZipArchive.gmk
-include $(JDK_TOPDIR)/make/Tools.gmk
-include $(JDK_TOPDIR)/make/ModuleTools.gmk
+include $(TOPDIR)/make/ToolsJdk.gmk
+include $(TOPDIR)/make/ModuleTools.gmk
 
 # This is needed to properly setup DOCS_MODULES.
 $(eval $(call ReadImportMetaData))
@@ -58,7 +58,7 @@ $(eval $(call IncludeCustomExtension, , Docs.gmk))
 # On top of the sources that was used to compile the JDK, we need some
 # extra java.rmi sources that are used just for javadoc.
 MODULES_SOURCE_PATH := $(call PathList, $(call GetModuleSrcPath) \
-    $(SUPPORT_OUTPUTDIR)/rmic/* $(JDK_TOPDIR)/src/*/share/doc/stub)
+    $(SUPPORT_OUTPUTDIR)/rmic/* $(TOPDIR)/src/*/share/doc/stub)
 
 # URLs
 JAVADOC_BASE_URL := http://www.oracle.com/pls/topic/lookup?ctx=javase9&amp;id=homepage
@@ -340,7 +340,7 @@ define SetupApiDocsGenerationBody
     # First we run the GenGraph tool. It will query the module structure of the
     # running JVM and output .dot files for all existing modules.
     GENGRAPHS_PROPS := \
-        $$(JDK_TOPDIR)/make/src/classes/build/tools/jigsaw/javadoc-graphs.properties
+        $$(TOPDIR)/make/jdk/src/classes/build/tools/jigsaw/javadoc-graphs.properties
 
     $1_GENGRAPHS_DIR := $$(SUPPORT_OUTPUTDIR)/docs/$1-gengraphs
     $1_GENGRAPHS_MARKER := $$($1_GENGRAPHS_DIR)/_gengraphs_run.marker
@@ -448,7 +448,7 @@ $(JDK_INDEX_HTML):
 JDK_INDEX_TARGETS += $(JDK_INDEX_HTML)
 
 # Copy the global resources
-GLOBAL_SPECS_RESOURCES_DIR := $(JDK_TOPDIR)/make/data/docs-resources/
+GLOBAL_SPECS_RESOURCES_DIR := $(TOPDIR)/make/data/docs-resources/
 $(eval $(call SetupCopyFiles, COPY_GLOBAL_RESOURCES, \
     SRC := $(GLOBAL_SPECS_RESOURCES_DIR), \
     FILES := $(call CacheFind, $(GLOBAL_SPECS_RESOURCES_DIR)), \
@@ -459,7 +459,7 @@ JDK_INDEX_TARGETS += $(COPY_GLOBAL_RESOURCES)
 # Copy the legal notices distributed with the docs bundle
 DOCS_LEGAL_NOTICES := jquery.md jszip.md pako.md
 $(eval $(call SetupCopyFiles, COPY_DOCS_LEGAL_NOTICES, \
-    SRC := $(LANGTOOLS_TOPDIR)/src/jdk.javadoc/share/legal, \
+    SRC := $(TOPDIR)/src/jdk.javadoc/share/legal, \
     FILES := $(DOCS_LEGAL_NOTICES), \
     DEST := $(DOCS_OUTPUTDIR)/legal, \
 ))
@@ -498,14 +498,15 @@ ifeq ($(ENABLE_FULL_DOCS), true)
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
     $(foreach d, $(SPECS_$m), \
       $(if $(filter %.md, $(call CacheFind, $d)), \
-        $(eval $(call SetupProcessMarkdown, CONVERT_MARKDOWN_$m_$(patsubst $(TOPDIR)/%,%,$d), \
+        $(eval $m_$d_NAME := CONVERT_MARKDOWN_$m_$(strip $(call RelativePath, $d, $(TOPDIR)))) \
+        $(eval $(call SetupProcessMarkdown, $($m_$d_NAME), \
             SRC := $d, \
             FILES := $(filter %.md, $(call CacheFind, $d)), \
             DEST := $(DOCS_OUTPUTDIR)/specs/, \
             CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
         )) \
+        $(eval JDK_SPECS_TARGETS += $($($m_$d_NAME))) \
       ) \
-      $(eval JDK_SPECS_TARGETS += $(CONVERT_MARKDOWN_$m_$(patsubst $(TOPDIR)/%,%,$d))) \
     ) \
   )
 endif

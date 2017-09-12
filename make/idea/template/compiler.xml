@@ -3,17 +3,10 @@
   <component name="CompilerConfiguration">
     <option name="DEFAULT_COMPILER" value="Javac" />
     <excludeFromCompile>
-      <directory url="file://$PROJECT_DIR$/jdk/src" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/langtools/src" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/jaxp/src" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/jaxws/src" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/corba/src" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/nashorn/src" includeSubdirectories="true" />
+      <directory url="file://$PROJECT_DIR$/src" includeSubdirectories="true" />
       <directory url="file://$PROJECT_DIR$/build" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/jdk/test" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/jaxp/test" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/langtools/test" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/langtools" includeSubdirectories="true" />
+      <directory url="file://$PROJECT_DIR$/make" includeSubdirectories="true" />
+      <directory url="file://$PROJECT_DIR$/test" includeSubdirectories="true" />
     </excludeFromCompile>
     <resourceExtensions />
     <wildcardResourcePatterns>

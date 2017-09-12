@@ -44,7 +44,7 @@ fi
 export CONFIG_SHELL=$BASH
 export _as_can_reexec=no
 
-conf_script_dir="$TOPDIR/common/autoconf"
+conf_script_dir="$TOPDIR/make/autoconf"
 
 if [ "$CUSTOM_CONFIG_DIR" = "" ]; then
   conf_custom_script_dir="$TOPDIR/closed/autoconf"

@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
 @SuppressWarnings("javadoc")
 public class ClassFilterTest {
     private static final String NASHORN_CODE_CACHE = "nashorn.persistent.code.cache";
-    private static final String CLASSFILTER_CODE_CACHE = "build/classfilter_nashorn_code_cache";
+    private static final String CLASSFILTER_CODE_CACHE = System.getProperty("build.dir", "build") + "/classfilter_nashorn_code_cache";
 
     // @Test
     // This test takes too much time for basic "ant clean test" run.

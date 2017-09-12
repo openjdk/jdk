@@ -25,10 +25,10 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call IncludeCustomExtension, jdk, launcher/Launcher-java.base.gmk))
+$(eval $(call IncludeCustomExtension, , launcher/Launcher-java.base.gmk))
 
-JAVA_RC_FLAGS += -I $(JDK_TOPDIR)/src/java.base/windows/native/common
-JAVA_RC_FLAGS += -I $(JDK_TOPDIR)/src/java.base/windows/native/launcher/icons
+JAVA_RC_FLAGS += -I $(TOPDIR)/src/java.base/windows/native/common
+JAVA_RC_FLAGS += -I $(TOPDIR)/src/java.base/windows/native/launcher/icons
 
 ################################################################################
 
@@ -73,11 +73,11 @@ $(eval $(call SetupBuildLauncher, keytool, \
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
   $(eval $(call SetupNativeCompilation, BUILD_JEXEC, \
-      SRC := $(JDK_TOPDIR)/src/$(MODULE)/unix/native/launcher, \
+      SRC := $(TOPDIR)/src/$(MODULE)/unix/native/launcher, \
       INCLUDE_FILES := jexec.c, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKEXE) \
-          -I$(JDK_TOPDIR)/src/$(MODULE)/share/native/libjli, \
+          -I$(TOPDIR)/src/$(MODULE)/share/native/libjli, \
       CFLAGS_linux := -fPIC, \
       CFLAGS_solaris := -KPIC, \
       LDFLAGS := $(LDFLAGS_JDKEXE), \
@@ -93,9 +93,9 @@ endif
 
 ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
   $(eval $(call SetupNativeCompilation, BUILD_JSPAWNHELPER, \
-      SRC := $(JDK_TOPDIR)/src/$(MODULE)/unix/native/jspawnhelper, \
+      SRC := $(TOPDIR)/src/$(MODULE)/unix/native/jspawnhelper, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKEXE) -I$(JDK_TOPDIR)/src/$(MODULE)/unix/native/libjava, \
+      CFLAGS := $(CFLAGS_JDKEXE) -I$(TOPDIR)/src/$(MODULE)/unix/native/libjava, \
       EXTRA_OBJECT_FILES := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc.o, \
       LDFLAGS := $(LDFLAGS_JDKEXE), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jspawnhelper, \

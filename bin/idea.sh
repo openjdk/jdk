@@ -25,14 +25,14 @@
 # Shell script for generating an IDEA project from a given list of modules
 
 usage() {
-      echo "usage: $0 [-h|--help] [-v|--verbose] [-o|--output <path>] [modules]+" 
+      echo "usage: $0 [-h|--help] [-v|--verbose] [-o|--output <path>] [modules]+"
       exit 1
 }
 
 SCRIPT_DIR=`dirname $0`
 PWD=`pwd`
 cd $SCRIPT_DIR; SCRIPT_DIR=`pwd`
-cd ../../; TOP=`pwd`; cd $PWD
+cd ../; TOP=`pwd`; cd $PWD
 
 IDEA_OUTPUT=$TOP/.idea
 VERBOSE="false"
@@ -70,8 +70,10 @@ IDEA_MAKE="$TOP/make/idea"
 IDEA_TEMPLATE="$IDEA_MAKE/template"
 IML_TEMPLATE="$IDEA_TEMPLATE/jdk.iml"
 ANT_TEMPLATE="$IDEA_TEMPLATE/ant.xml"
+MISC_TEMPLATE="$IDEA_TEMPLATE/misc.xml"
 IDEA_IML="$IDEA_OUTPUT/jdk.iml"
 IDEA_ANT="$IDEA_OUTPUT/ant.xml"
+IDEA_MISC="$IDEA_OUTPUT/misc.xml"
 
 if [ "$VERBOSE" = "true" ] ; then
   echo "output dir: $IDEA_OUTPUT"
@@ -120,20 +122,16 @@ addSourceFolder() {
 }
 
 ### Generate project iml
-RELATIVE_BUILD_DIR="`dirname $SPEC | sed -e s@"$TOP/\(.*$\)"@"\1"@`"
 rm -f $IDEA_IML
 while IFS= read -r line
 do
   if echo "$line" | egrep "^ .* <sourceFolder.*####" > /dev/null ; then
-    if [ "$SOURCE_FOLDERS_DONE" = "false" ] ; then 
+    if [ "$SOURCE_FOLDERS_DONE" = "false" ] ; then
       SOURCE_FOLDERS_DONE="true"
       for root in $MODULE_ROOTS; do
          addSourceFolder $root
       done
     fi
-  elif echo "$line" | egrep "^ .* <excludeFolder.*####" > /dev/null ; then
-    ul="`echo "$line" | sed -e s@"\(.*/\)####\(.*\)"@"\1$RELATIVE_BUILD_DIR\2"@`"
-    printf "%s\n" "$ul" >> $IDEA_IML 
   else
     printf "%s\n" "$line" >> $IDEA_IML
   fi
@@ -155,14 +153,6 @@ addBuildDir() {
   printf "%s\n" "$mn" >> $IDEA_ANT
 }
 
-JTREG_HOME="        <property name=\"jtreg.home\" value=\"####\" />"
-
-addJtregHome() {
-  DIR=`dirname $SPEC`
-  mn="`echo "$JTREG_HOME" | sed -e s@"\(.*\)####\(.*\)"@"\1$JT_HOME\2"@`"
-  printf "%s\n" "$mn" >> $IDEA_ANT
-}
-
 ### Generate ant.xml
 
 rm -f $IDEA_ANT
@@ -170,14 +160,44 @@ while IFS= read -r line
 do
   if echo "$line" | egrep "^ .* <property name=\"module.name\"" > /dev/null ; then
     addModuleName
-  elif echo "$line" | egrep "^ .* <property name=\"jtreg.home\"" > /dev/null ; then
-    addJtregHome
   elif echo "$line" | egrep "^ .* <property name=\"build.target.dir\"" > /dev/null ; then
     addBuildDir
   else
     printf "%s\n" "$line" >> $IDEA_ANT
   fi
 done < "$ANT_TEMPLATE"
+
+### Generate misc.xml
+
+rm -f $IDEA_MISC
+
+JTREG_HOME="    <path>####</path>"
+
+IMAGES_DIR="    <jre alt=\"true\" value=\"####\" />"
+
+addImagesDir() {
+  DIR=`dirname $SPEC`/images/jdk
+  mn="`echo "$IMAGES_DIR" | sed -e s@"\(.*\)####\(.*\)"@"\1$DIR\2"@`"
+  printf "%s\n" "$mn" >> $IDEA_MISC
+}
+
+addJtregHome() {
+  DIR=`dirname $SPEC`
+  mn="`echo "$JTREG_HOME" | sed -e s@"\(.*\)####\(.*\)"@"\1$JT_HOME\2"@`"
+  printf "%s\n" "$mn" >> $IDEA_MISC
+}
+
+rm -f $MISC_ANT
+while IFS= read -r line
+do
+  if echo "$line" | egrep "^ .*<path>jtreg_home</path>" > /dev/null ; then
+	addJtregHome
+  elif echo "$line" | egrep "^ .*<jre alt=\"true\" value=\"images_jdk\"" > /dev/null ; then
+    addImagesDir
+  else
+    printf "%s\n" "$line" >> $IDEA_MISC
+  fi
+done < "$MISC_TEMPLATE"
 
 ### Compile the custom Logger
 

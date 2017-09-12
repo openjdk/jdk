@@ -42,7 +42,7 @@ define cldrconverter_copytznames
 endef
 
 $(eval $(call SetupCopyFiles,COPY_INTERIM_CLDRCONVERTER, \
-    SRC := $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/resources, \
+    SRC := $(TOPDIR)/src/java.base/share/classes/sun/util/resources, \
     DEST := $(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes/build/tools/cldrconverter, \
     FILES := TimeZoneNames.java, \
     MACRO := cldrconverter_copytznames))

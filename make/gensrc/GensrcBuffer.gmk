@@ -27,7 +27,7 @@ GENSRC_BUFFER :=
 
 GENSRC_BUFFER_DST := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/nio
 
-GENSRC_BUFFER_SRC := $(JDK_TOPDIR)/src/java.base/share/classes/java/nio
+GENSRC_BUFFER_SRC := $(TOPDIR)/src/java.base/share/classes/java/nio
 
 ###
 

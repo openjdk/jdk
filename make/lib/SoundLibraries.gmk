@@ -24,8 +24,8 @@
 #
 
 LIBJSOUND_SRC_DIRS := \
-    $(JDK_TOPDIR)/src/java.desktop/share/native/libjsound \
-    $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libjsound \
+    $(TOPDIR)/src/java.desktop/share/native/libjsound \
+    $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libjsound \
     #
 LIBJSOUND_CFLAGS := \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
@@ -86,7 +86,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       -DUSE_DAUDIO=TRUE \
       -DUSE_PLATFORM_MIDI_OUT=TRUE \
       -DUSE_PLATFORM_MIDI_IN=TRUE
-  LIBJSOUND_SRC_DIRS += $(JDK_TOPDIR)/src/java.desktop/macosx/native/libjsound
+  LIBJSOUND_SRC_DIRS += $(TOPDIR)/src/java.desktop/macosx/native/libjsound
   LIBJSOUND_SRC_FILES += \
       PLATFORM_API_MacOSX_Utils.cpp \
       PLATFORM_API_MacOSX_PCM.cpp \
@@ -124,7 +124,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJSOUND_CFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBJSOUND_CFLAGS), \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsound/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/libjsound/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljava -ljvm, \
@@ -169,7 +169,7 @@ ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
           -DUSE_PORTS=TRUE \
           -DUSE_PLATFORM_MIDI_OUT=TRUE \
           -DUSE_PLATFORM_MIDI_IN=TRUE, \
-      MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsoundalsa/mapfile-vers, \
+      MAPFILE := $(TOPDIR)/make/mapfiles/libjsoundalsa/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(ALSA_LIBS) -ljava -ljvm, \

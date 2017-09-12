@@ -43,7 +43,7 @@ define SetupInterimModule
   $$(eval $$(call SetupJavaCompilation,BUILD_INTERIM_$(strip $1), \
       SETUP := BOOT_JAVAC, \
       DISABLE_SJAVAC := true, \
-      SRC := $(LANGTOOLS_TOPDIR)/src/$(strip $1)/share/classes \
+      SRC := $(TOPDIR)/src/$(strip $1)/share/classes \
           $$(wildcard $(SUPPORT_OUTPUTDIR)/gensrc/$(strip $1)), \
       EXCLUDES := sun com/sun/tools/jdeps com/sun/tools/javap \
           com/sun/tools/jdeprscan, \

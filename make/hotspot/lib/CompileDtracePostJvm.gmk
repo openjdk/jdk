@@ -46,8 +46,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     # in the libjvm.so, using JVM_CFLAGS as setup in CompileJvm.gmk. Otherwise
     # this would preferrably have been done as a part of GensrcDtrace.gmk.
     $(eval $(call SetupNativeCompilation, BUILD_DTRACE_GEN_OFFSETS, \
-        SRC := $(HOTSPOT_TOPDIR)/src/os/$(OPENJDK_TARGET_OS)/dtrace, \
-        INCLUDE_FILES := generateJvmOffsets.cpp generateJvmOffsetsMain.c, \
+        SRC := $(TOPDIR)/make/hotspot/src/native/dtrace, \
         CC := $(BUILD_CXX), \
         CXX := $(BUILD_CXX), \
         LDEXE := $(BUILD_CXX), \
@@ -100,7 +99,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     # Generate DTRACE_OBJ which is linked with libjvm.so.
 
     # Concatenate all *.d files into a single file
-    DTRACE_SOURCE_FILES := $(addprefix $(HOTSPOT_TOPDIR)/src/os/posix/dtrace/, \
+    DTRACE_SOURCE_FILES := $(addprefix $(TOPDIR)/src/hotspot/os/posix/dtrace/, \
         hotspot_jni.d \
         hotspot.d \
         hs_private.d \
@@ -158,7 +157,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     # Unfortunately dtrace generates incorrect types for some symbols in
     # dtrace_jhelper.o, resulting in "warning: symbol X has differing types"
     # This is tracked in JDK-6890703.
-    $(DTRACE_JHELPER_OBJ): $(HOTSPOT_TOPDIR)/src/os/solaris/dtrace/jhelper.d \
+    $(DTRACE_JHELPER_OBJ): $(TOPDIR)/src/hotspot/os/solaris/dtrace/jhelper.d \
         $(JVM_OFFSETS_INDEX_H)
 	$(call LogInfo, Running dtrace for $(<F))
 	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) $(DTRACE_CPP_FLAGS) -C \
@@ -181,12 +180,11 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     $(eval $(call SetupNativeCompilation, BUILD_LIBJVM_DTRACE, \
         LIBRARY := jvm_dtrace, \
         OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
-        SRC := $(HOTSPOT_TOPDIR)/src/os/solaris/dtrace, \
-        INCLUDE_FILES := jvm_dtrace.c, \
+        SRC := $(TOPDIR)/src/java.base/solaris/native/libjvm_dtrace, \
         CFLAGS := -m64 -G -mt -KPIC, \
         LDFLAGS := -m64 -mt -xnolib $(SHARED_LIBRARY_FLAGS), \
         LIBS := $(LIBDL) -lc -lthread -ldoor, \
-        MAPFILE := $(HOTSPOT_TOPDIR)/make/mapfiles/libjvm_dtrace/mapfile-vers, \
+        MAPFILE := $(TOPDIR)/make/mapfiles/libjvm_dtrace/mapfile-vers, \
         OBJECT_DIR := $(LIBJVM_DTRACE_OUTPUTDIR)/objs, \
     ))
 
@@ -197,13 +195,12 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     $(eval $(call SetupNativeCompilation, BUILD_LIBJVM_DB, \
         LIBRARY := jvm_db, \
         OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
-        SRC := $(HOTSPOT_TOPDIR)/src/os/solaris/dtrace, \
-        INCLUDE_FILES := libjvm_db.c, \
+        SRC := $(TOPDIR)/src/java.base/solaris/native/libjvm_db, \
         CFLAGS := -I$(JVM_VARIANT_OUTPUTDIR)/gensrc -I$(DTRACE_SUPPORT_DIR) \
             -m64 -G -mt -KPIC, \
         LDFLAGS := -m64 -mt -xnolib $(SHARED_LIBRARY_FLAGS), \
         LIBS := -lc, \
-        MAPFILE := $(HOTSPOT_TOPDIR)/make/mapfiles/libjvm_db/mapfile-vers, \
+        MAPFILE := $(TOPDIR)/make/mapfiles/libjvm_db/mapfile-vers, \
         OBJECT_DIR := $(LIBJVM_DB_OUTPUTDIR)/objs, \
     ))
 

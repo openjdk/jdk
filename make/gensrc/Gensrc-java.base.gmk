@@ -23,7 +23,7 @@
 # questions.
 #
 
-include GensrcCommon.gmk
+include GensrcCommonJdk.gmk
 
 include GensrcLocaleData.gmk
 include GensrcCLDR.gmk
@@ -41,12 +41,12 @@ include GensrcModuleLoaderMap.gmk
 include GensrcProperties.gmk
 
 $(eval $(call SetupCompileProperties, LIST_RESOURCE_BUNDLE, \
-    SRC_DIRS := $(JDK_TOPDIR)/src/java.base/share/classes/sun/launcher/resources, \
+    SRC_DIRS := $(TOPDIR)/src/java.base/share/classes/sun/launcher/resources, \
     CLASS := ListResourceBundle, \
 ))
 
 $(eval $(call SetupCompileProperties, SUN_UTIL, \
-    SRC_DIRS := $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/resources, \
+    SRC_DIRS := $(TOPDIR)/src/java.base/share/classes/sun/util/resources, \
     CLASS := sun.util.resources.LocaleNamesBundle, \
 ))
 
@@ -55,7 +55,7 @@ GENSRC_JAVA_BASE += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL)
 # Some resources bundles are already present as java files but still need to be
 # copied to zh_HK locale.
 $(eval $(call SetupCopy-zh_HK,COPY_ZH_HK, \
-    $(addprefix $(JDK_TOPDIR)/src/java.base/share/classes/, \
+    $(addprefix $(TOPDIR)/src/java.base/share/classes/, \
         sun/security/util/AuthResources_zh_TW.java \
         sun/security/util/Resources_zh_TW.java)))
 
@@ -65,7 +65,7 @@ GENSRC_JAVA_BASE += $(COPY_ZH_HK)
 
 GENSRC_LSREQUIVMAPS := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/LocaleEquivalentMaps.java
 
-$(GENSRC_LSREQUIVMAPS): $(JDK_TOPDIR)/make/data/lsrdata/language-subtag-registry.txt $(BUILD_TOOLS_JDK)
+$(GENSRC_LSREQUIVMAPS): $(TOPDIR)/make/data/lsrdata/language-subtag-registry.txt $(BUILD_TOOLS_JDK)
 	$(call MakeDir, $(@D))
 	$(TOOL_GENERATELSREQUIVMAPS) $< $@
 

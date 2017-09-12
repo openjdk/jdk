@@ -23,11 +23,11 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, jdk, gendata/GendataFontConfig.gmk))
+$(eval $(call IncludeCustomExtension, , gendata/GendataFontConfig.gmk))
 
 GENDATA_FONT_CONFIG_DST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)
 
-GENDATA_FONT_CONFIG_DATA_DIR ?= $(JDK_TOPDIR)/make/data/fontconfig
+GENDATA_FONT_CONFIG_DATA_DIR ?= $(TOPDIR)/make/data/fontconfig
 
 GENDATA_FONT_CONFIG_SRC_FILES := \
     $(wildcard $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).*)

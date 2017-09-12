@@ -27,10 +27,10 @@ include LibCommon.gmk
 
 ################################################################################
 
-LIBJ2PCSC_SRC := $(JDK_TOPDIR)/src/java.smartcardio/share/native/libj2pcsc \
-    $(JDK_TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pcsc
+LIBJ2PCSC_SRC := $(TOPDIR)/src/java.smartcardio/share/native/libj2pcsc \
+    $(TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pcsc
 LIBJ2PCSC_CPPFLAGS := $(addprefix -I,$(LIBJ2PCSC_SRC)) \
-    -I$(JDK_TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pcsc/MUSCLE \
+    -I$(TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pcsc/MUSCLE \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.smartcardio
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC, \
@@ -40,7 +40,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC, \
     CFLAGS_unix := -D__sun_jdk, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBJ2PCSC_CPPFLAGS), \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2pcsc/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/libj2pcsc/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBDL), \

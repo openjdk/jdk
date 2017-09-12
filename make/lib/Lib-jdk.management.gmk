@@ -26,14 +26,14 @@
 include LibCommon.gmk
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, jdk, lib/Lib-jdk.management.gmk))
+$(eval $(call IncludeCustomExtension, , lib/Lib-jdk.management.gmk))
 
 ################################################################################
 
-LIBMANAGEMENT_EXT_SRC += $(JDK_TOPDIR)/src/jdk.management/share/native/libmanagement_ext \
-    $(JDK_TOPDIR)/src/jdk.management/$(OPENJDK_TARGET_OS_TYPE)/native/libmanagement_ext       \
-    $(JDK_TOPDIR)/src/jdk.management/$(OPENJDK_TARGET_OS)/native/libmanagement_ext
-LIBMANAGEMENT_EXT_CFLAGS := -I$(JDK_TOPDIR)/src/java.management/share/native/include \
+LIBMANAGEMENT_EXT_SRC += $(TOPDIR)/src/jdk.management/share/native/libmanagement_ext \
+    $(TOPDIR)/src/jdk.management/$(OPENJDK_TARGET_OS_TYPE)/native/libmanagement_ext       \
+    $(TOPDIR)/src/jdk.management/$(OPENJDK_TARGET_OS)/native/libmanagement_ext
+LIBMANAGEMENT_EXT_CFLAGS := -I$(TOPDIR)/src/java.management/share/native/include \
     $(addprefix -I,$(LIBMANAGEMENT_EXT_SRC)) \
     -I$(SUPPORT_OUTPUTDIR)/headers/jdk.management \
     $(LIBJAVA_HEADER_FLAGS) \
@@ -60,7 +60,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT_EXT, \
     LANG := C, \
     OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_EXT_CFLAGS), \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libmanagement_ext/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/libmanagement_ext/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \

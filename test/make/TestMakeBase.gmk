@@ -28,9 +28,9 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
-THIS_FILE := $(SRC_ROOT)/test/make/TestMakeBase.gmk
+THIS_FILE := $(TOPDIR)/test/make/TestMakeBase.gmk
 DEPS := $(THIS_FILE) \
-    $(SRC_ROOT)/make/common/MakeBase.gmk \
+    $(TOPDIR)/make/common/MakeBase.gmk \
     #
 
 # Assert two strings are equal

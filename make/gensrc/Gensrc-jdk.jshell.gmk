@@ -23,7 +23,7 @@
 # questions.
 #
 
-include GensrcCommon.gmk
+include GensrcCommonLangtools.gmk
 
 $(eval $(call SetupVersionProperties,JSHELL_VERSION, \
     jdk/internal/jshell/tool/resources/version.properties))

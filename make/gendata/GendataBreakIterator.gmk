@@ -46,7 +46,7 @@ BREAK_ITERATOR_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/break_iterator_classes
 # These two files should be moved out to a build tool!
 $(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR_BASE, \
     SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(JDK_TOPDIR)/src/java.base/share/classes, \
+    SRC := $(TOPDIR)/src/java.base/share/classes, \
     INCLUDE_FILES := \
         $(TEXT_PKG)/BreakIteratorRules.java \
         $(TEXT_PKG)/BreakIteratorInfo.java, \
@@ -54,7 +54,7 @@ $(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR_BASE, \
 
 $(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR_LD, \
     SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(JDK_TOPDIR)/src/jdk.localedata/share/classes, \
+    SRC := $(TOPDIR)/src/jdk.localedata/share/classes, \
     INCLUDE_FILES := \
         $(TEXT_PKG_LD)/BreakIteratorRules_th.java \
         $(TEXT_PKG_LD)/BreakIteratorInfo_th.java, \
@@ -76,7 +76,7 @@ endif
 
 # Generate data resource files.
 # input
-UNICODEDATA := $(JDK_TOPDIR)/make/data/unicodedata/UnicodeData.txt
+UNICODEDATA := $(TOPDIR)/make/data/unicodedata/UnicodeData.txt
 
 # output
 BASE_DATA_PKG_DIR := $(JDK_OUTPUTDIR)/modules/java.base/sun/text/resources

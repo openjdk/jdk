@@ -29,7 +29,7 @@ include LibCommon.gmk
 
 ifeq ($(ENABLE_INTREE_EC), true)
 
-  LIBSUNEC_SRC := $(JDK_TOPDIR)/src/jdk.crypto.ec/share/native/libsunec
+  LIBSUNEC_SRC := $(TOPDIR)/src/jdk.crypto.ec/share/native/libsunec
   BUILD_LIBSUNEC_FLAGS := $(addprefix -I, $(SUNEC_SRC))
 
   #
@@ -56,7 +56,7 @@ ifeq ($(ENABLE_INTREE_EC), true)
           $(BUILD_LIBSUNEC_FLAGS), \
       DISABLED_WARNINGS_gcc := sign-compare, \
       DISABLED_WARNINGS_microsoft := 4101 4244 4146 4018, \
-      MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsunec/mapfile-vers, \
+      MAPFILE := $(TOPDIR)/make/mapfiles/libsunec/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
       LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBCXX), \

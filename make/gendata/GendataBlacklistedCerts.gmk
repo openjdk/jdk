@@ -23,9 +23,9 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, jdk, gendata/GendataBlacklistedCerts.gmk))
+$(eval $(call IncludeCustomExtension, , gendata/GendataBlacklistedCerts.gmk))
 
-GENDATA_BLACKLISTED_CERTS_SRC += $(JDK_TOPDIR)/make/data/blacklistedcertsconverter/blacklisted.certs.pem
+GENDATA_BLACKLISTED_CERTS_SRC += $(TOPDIR)/make/data/blacklistedcertsconverter/blacklisted.certs.pem
 GENDATA_BLACKLISTED_CERTS := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/blacklisted.certs
 
 $(GENDATA_BLACKLISTED_CERTS): $(BUILD_TOOLS) $(GENDATA_BLACKLISTED_CERTS_SRC)

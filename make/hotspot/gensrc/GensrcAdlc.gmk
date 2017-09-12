@@ -23,7 +23,7 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, hotspot, gensrc/GensrcAdlc.gmk))
+$(eval $(call IncludeCustomExtension, , hotspot/gensrc/GensrcAdlc.gmk))
 
 ifeq ($(call check-jvm-feature, compiler2), true)
 
@@ -60,12 +60,12 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 
   ADLC_CFLAGS += -D$(HOTSPOT_TARGET_CPU_DEFINE)
 
-  ADLC_CFLAGS += -I$(HOTSPOT_TOPDIR)/src/share/vm
+  ADLC_CFLAGS += -I$(TOPDIR)/src/hotspot/share
 
   $(eval $(call SetupNativeCompilation, BUILD_ADLC, \
       TOOLCHAIN := TOOLCHAIN_BUILD_LINK_CXX, \
-      SRC := $(HOTSPOT_TOPDIR)/src/share/vm/adlc, \
-      EXTRA_FILES := $(HOTSPOT_TOPDIR)/src/share/vm/opto/opcodes.cpp, \
+      SRC := $(TOPDIR)/src/hotspot/share/adlc, \
+      EXTRA_FILES := $(TOPDIR)/src/hotspot/share/opto/opcodes.cpp, \
       CFLAGS := $(ADLC_CFLAGS) $(ADLC_CFLAGS_WARNINGS), \
       LDFLAGS := $(ADLC_LDFLAGS), \
       LIBS := $(ADLC_LIBS), \
@@ -127,12 +127,12 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   # #line directives in those files will be pointing back to <arch>.ad.
 
   # AD_SRC_ROOTS might have been added to by a custom extension
-  AD_SRC_ROOTS += $(HOTSPOT_TOPDIR)/src
+  AD_SRC_ROOTS += $(TOPDIR)/src/hotspot
 
   AD_SRC_FILES := $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
-      $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/vm/$(HOTSPOT_TARGET_CPU).ad \
-      $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/vm/$(HOTSPOT_TARGET_CPU_ARCH).ad \
-      $d/os_cpu/$(HOTSPOT_TARGET_OS)_$(HOTSPOT_TARGET_CPU_ARCH)/vm/$(HOTSPOT_TARGET_OS)_$(HOTSPOT_TARGET_CPU_ARCH).ad \
+      $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU).ad \
+      $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH).ad \
+      $d/os_cpu/$(HOTSPOT_TARGET_OS)_$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_OS)_$(HOTSPOT_TARGET_CPU_ARCH).ad \
     )))
 
   SINGLE_AD_SRCFILE := $(ADLC_SUPPORT_DIR)/all-ad-src.ad

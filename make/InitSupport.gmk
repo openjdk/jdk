@@ -69,7 +69,11 @@ ifeq ($(HAS_SPEC),)
       $(subst \ ,\#,$(MAKEOVERRIDES))))
 
   # Setup information about available configurations, if any.
-  build_dir=$(topdir)/build
+  ifeq ($(CUSTOM_BUILD_DIR), )
+    build_dir=$(topdir)/build
+  else
+    build_dir=$(CUSTOM_BUILD_DIR)
+  endif
   all_spec_files=$(wildcard $(build_dir)/*/spec.gmk)
   # Extract the configuration names from the path
   all_confs=$(patsubst %/spec.gmk, %, $(patsubst $(build_dir)/%, %, $(all_spec_files)))
@@ -342,7 +346,7 @@ else # $(HAS_SPEC)=true
   # proper and existing SPEC is included.
   ##############################################################################
 
-  include $(SRC_ROOT)/make/common/MakeBase.gmk
+  include $(TOPDIR)/make/common/MakeBase.gmk
 
   # Define basic logging setup
   BUILD_LOG := $(OUTPUT_ROOT)/build.log

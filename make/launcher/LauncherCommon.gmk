@@ -42,16 +42,16 @@ else
   endif
 endif
 
-LAUNCHER_SRC := $(JDK_TOPDIR)/src/java.base/share/native/launcher
-LAUNCHER_CFLAGS := -I$(JDK_TOPDIR)/src/java.base/share/native/launcher \
-    -I$(JDK_TOPDIR)/src/java.base/share/native/libjli \
-    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
-    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli \
+LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
+LAUNCHER_CFLAGS := -I$(TOPDIR)/src/java.base/share/native/launcher \
+    -I$(TOPDIR)/src/java.base/share/native/libjli \
+    -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
+    -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli \
     #
-GLOBAL_VERSION_INFO_RESOURCE := $(JDK_TOPDIR)/src/java.base/windows/native/common/version.rc
-JAVA_VERSION_INFO_RESOURCE := $(JDK_TOPDIR)/src/java.base/windows/native/launcher/java.rc
-MACOSX_PLIST_DIR := $(JDK_TOPDIR)/src/java.base/macosx/native/launcher
-JAVA_MANIFEST := $(JDK_TOPDIR)/src/java.base/windows/native/launcher/java.manifest
+GLOBAL_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/common/version.rc
+JAVA_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/launcher/java.rc
+MACOSX_PLIST_DIR := $(TOPDIR)/src/java.base/macosx/native/launcher
+JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 
 ################################################################################
 # Build standard launcher.
@@ -169,14 +169,14 @@ define SetupBuildLauncherBody
   # "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
   # if feeded with a version script which contains named tags.
   ifeq ($(USING_BROKEN_SUSE_LD),yes)
-    ifneq ($(wildcard $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous), )
-      $1_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous
+    ifneq ($(wildcard $(TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous), )
+      $1_MAPFILE := $(TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous
     else
       $1_MAPFILE :=
     endif
   else
-    ifneq ($(wildcard $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)), )
-      $1_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)
+    ifneq ($(wildcard $(TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)), )
+      $1_MAPFILE := $(TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)
     else
       $1_MAPFILE :=
     endif

@@ -28,7 +28,7 @@
 include lib/JvmFeatures.gmk
 include lib/JvmOverrideFiles.gmk
 
-$(eval $(call IncludeCustomExtension, hotspot, lib/CompileJvm.gmk))
+$(eval $(call IncludeCustomExtension, , hotspot/lib/CompileJvm.gmk))
 
 ################################################################################
 # Setup compilation of the main Hotspot native library (libjvm).
@@ -40,14 +40,14 @@ JVM_MAPFILE := $(JVM_OUTPUTDIR)/mapfile
 # Platform independent setup
 
 # This variable may be added to by a custom extension
-JVM_SRC_ROOTS += $(HOTSPOT_TOPDIR)/src
+JVM_SRC_ROOTS += $(TOPDIR)/src/hotspot
 
 JVM_SRC_DIRS += $(call uniq, $(wildcard $(foreach d, $(JVM_SRC_ROOTS), \
-        $d/share/vm \
-        $d/os/$(HOTSPOT_TARGET_OS)/vm \
-        $d/os/$(HOTSPOT_TARGET_OS_TYPE)/vm \
-        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/vm \
-        $d/os_cpu/$(HOTSPOT_TARGET_OS)_$(HOTSPOT_TARGET_CPU_ARCH)/vm \
+        $d/share \
+        $d/os/$(HOTSPOT_TARGET_OS) \
+        $d/os/$(HOTSPOT_TARGET_OS_TYPE) \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH) \
+        $d/os_cpu/$(HOTSPOT_TARGET_OS)_$(HOTSPOT_TARGET_CPU_ARCH) \
     ))) \
     $(JVM_VARIANT_OUTPUTDIR)/gensrc/jvmtifiles \
     $(JVM_VARIANT_OUTPUTDIR)/gensrc/tracefiles \
@@ -56,8 +56,8 @@ JVM_SRC_DIRS += $(call uniq, $(wildcard $(foreach d, $(JVM_SRC_ROOTS), \
 JVM_CFLAGS_INCLUDES += \
     $(patsubst %,-I%,$(filter-out $(JVM_VARIANT_OUTPUTDIR)/gensrc/%, $(JVM_SRC_DIRS))) \
     -I$(JVM_VARIANT_OUTPUTDIR)/gensrc \
-    -I$(HOTSPOT_TOPDIR)/src/share/vm/precompiled \
-    -I$(HOTSPOT_TOPDIR)/src/share/vm/prims \
+    -I$(TOPDIR)/src/hotspot/share/precompiled \
+    -I$(TOPDIR)/src/hotspot/share/prims \
     #
 
 # INCLUDE_SUFFIX_* is only meant for including the proper
@@ -161,7 +161,7 @@ else ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), linux-aarch64)
 endif
 
 ifneq ($(filter $(OPENJDK_TARGET_OS), linux macosx windows), )
-  JVM_PRECOMPILED_HEADER := $(HOTSPOT_TOPDIR)/src/share/vm/precompiled/precompiled.hpp
+  JVM_PRECOMPILED_HEADER := $(TOPDIR)/src/hotspot/share/precompiled/precompiled.hpp
 endif
 
 ifeq ($(OPENJDK_TARGET_CPU), x86)
@@ -173,9 +173,9 @@ endif
 # Inline assembly for solaris
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   ifeq ($(OPENJDK_TARGET_CPU), x86_64)
-    JVM_CFLAGS += $(HOTSPOT_TOPDIR)/src/os_cpu/solaris_x86/vm/solaris_x86_64.il
+    JVM_CFLAGS += $(TOPDIR)/src/hotspot/os_cpu/solaris_x86/solaris_x86_64.il
   else ifeq ($(OPENJDK_TARGET_CPU), sparcv9)
-    JVM_CFLAGS += $(HOTSPOT_TOPDIR)/src/os_cpu/solaris_sparc/vm/solaris_sparc.il
+    JVM_CFLAGS += $(TOPDIR)/src/hotspot/os_cpu/solaris_sparc/solaris_sparc.il
   endif
 endif
 
@@ -231,7 +231,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     STRIPFLAGS := $(JVM_STRIPFLAGS), \
     EMBED_MANIFEST := true, \
     RC_FLAGS := $(JVM_RCFLAGS), \
-    VERSIONINFO_RESOURCE := $(HOTSPOT_TOPDIR)/src/os/windows/vm/version.rc, \
+    VERSIONINFO_RESOURCE := $(TOPDIR)/src/hotspot/os/windows/version.rc, \
     PRECOMPILED_HEADER := $(JVM_PRECOMPILED_HEADER), \
     PRECOMPILED_HEADER_EXCLUDE := $(JVM_PRECOMPILED_HEADER_EXCLUDE), \
 ))

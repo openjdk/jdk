@@ -35,7 +35,7 @@ include SetupJavaCompilers.gmk
 
 $(eval $(call SetupJavaCompilation,BUILD_TOOLS_CORBA, \
     SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(CORBA_TOPDIR)/make/src/classes, \
+    SRC := $(TOPDIR)/make/corba/src/classes, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/corba_tools_classes))
 
 TOOL_LOGUTIL_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/corba_tools_classes \
@@ -43,7 +43,7 @@ TOOL_LOGUTIL_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/corba_tools_classe
 
 $(eval $(call SetupJavaCompilation,BUILD_IDLJ, \
     SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(CORBA_TOPDIR)/src/java.corba/share/classes, \
+    SRC := $(TOPDIR)/src/java.corba/share/classes, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/idlj_classes, \
     COPY := .prp, \
     INCLUDES := com/sun/tools/corba/se/idl, \
@@ -60,7 +60,7 @@ LOGWRAPPER_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.corba/_logwrappers
 
 # Generate LogWrapper classes
 $(EXCEPTION_DIR)/%SystemException.java: \
-    $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
+    $(TOPDIR)/src/java.corba/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
     $(BUILD_TOOLS_CORBA)
 	$(call LogInfo, Generating class file from $*.mc)
 	$(call MakeDir, $(@D))
@@ -83,7 +83,7 @@ $(EXCEPTION_DIR)/LogStrings.properties: \
 
 # The resources files are generated from lisp-like .mc files.
 $(LOGWRAPPER_DIR)/%SystemException.resource: \
-    $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
+    $(TOPDIR)/src/java.corba/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
     $(BUILD_TOOLS_CORBA)
 	$(call LogInfo, Generating resource file from $*.mc)
 	$(call MakeDir, $(@D))
@@ -216,7 +216,7 @@ IDL_DELETES := \
 
 $(eval $(call SetupIdlCompilation,BUILD_IDLS, \
     IDLJ := $(TOOL_IDLJ_CMD), \
-    SRC := $(CORBA_TOPDIR)/src/java.corba/share/classes, \
+    SRC := $(TOPDIR)/src/java.corba/share/classes, \
     BIN := $(SUPPORT_OUTPUTDIR)/gensrc/java.corba, \
     EXCLUDES := com/sun/tools/corba/se/idl/% \
         org/omg/CORBA/% \
@@ -233,7 +233,7 @@ $(BUILD_IDLS): $(BUILD_IDLJ)
 # zh_HK is just a copy of zh_TW
 
 $(SUPPORT_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_HK.properties: \
-    $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_TW.properties
+    $(TOPDIR)/src/java.corba/share/classes/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_TW.properties
 	$(install-file)
 
 ################################################################################

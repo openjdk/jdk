@@ -1287,7 +1287,7 @@ var getVersionNumbers = function () {
     // Read version information from common/autoconf/version-numbers
     if (version_numbers == null) {
         version_numbers = new java.util.Properties();
-        var stream = new java.io.FileInputStream(__DIR__ + "/../../common/autoconf/version-numbers");
+        var stream = new java.io.FileInputStream(__DIR__ + "/../autoconf/version-numbers");
         version_numbers.load(stream);
         stream.close();
     }

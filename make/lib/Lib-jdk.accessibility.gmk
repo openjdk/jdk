@@ -29,13 +29,13 @@ include LibCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
 
-  ROOT_SRCDIR := $(JDK_TOPDIR)/src/jdk.accessibility/windows/native
+  ROOT_SRCDIR := $(TOPDIR)/src/jdk.accessibility/windows/native
   JAVA_AB_SRCDIR := $(ROOT_SRCDIR)/libjavaaccessbridge $(ROOT_SRCDIR)/common
   WIN_AB_SRCDIR := $(ROOT_SRCDIR)/libwindowsaccessbridge $(ROOT_SRCDIR)/common
   SYSINFO_SRCDIR := $(ROOT_SRCDIR)/libjabsysinfo
   ACCESSBRIDGE_CFLAGS := -I$(SUPPORT_OUTPUTDIR)/headers/jdk.accessibility \
-      -I$(JDK_TOPDIR)/src/java.desktop/windows/native/include \
-      -I$(JDK_TOPDIR)/src/java.desktop/share/native/include
+      -I$(TOPDIR)/src/java.desktop/windows/native/include \
+      -I$(TOPDIR)/src/java.desktop/share/native/include
 
   define SetupJavaDLL
     # Parameter 1 Suffix

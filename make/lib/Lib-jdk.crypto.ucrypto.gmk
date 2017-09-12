@@ -29,7 +29,7 @@ include LibCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 
-  LIBJ2UCRYPTO_SRC := $(JDK_TOPDIR)/src/jdk.crypto.ucrypto/solaris/native/libj2ucrypto
+  LIBJ2UCRYPTO_SRC := $(TOPDIR)/src/jdk.crypto.ucrypto/solaris/native/libj2ucrypto
 
   $(eval $(call SetupNativeCompilation,BUILD_LIBJ2UCRYPTO, \
       LIBRARY := j2ucrypto, \
@@ -38,7 +38,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(addprefix -I, $(LIBJ2UCRYPTO_SRC)), \
-      MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2ucrypto/mapfile-vers, \
+      MAPFILE := $(TOPDIR)/make/mapfiles/libj2ucrypto/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
       LIBS := $(LIBDL), \
       LIBS_solaris := -lc, \

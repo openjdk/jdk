@@ -35,12 +35,12 @@ include SetupJavaCompilers.gmk
 TARGETS :=
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, hotspot, CompileTools.gmk))
+$(eval $(call IncludeCustomExtension, , hotspot/CompileTools.gmk))
 
 ifeq ($(INCLUDE_GRAAL), true)
-  VM_CI_SRC_DIR := $(HOTSPOT_TOPDIR)/src/jdk.internal.vm.ci/share/classes
+  VM_CI_SRC_DIR := $(TOPDIR)/src/jdk.internal.vm.ci/share/classes
 
-  SRC_DIR := $(HOTSPOT_TOPDIR)/src/jdk.internal.vm.compiler/share/classes
+  SRC_DIR := $(TOPDIR)/src/jdk.internal.vm.compiler/share/classes
 
   ##############################################################################
   # Compile the annotation processors

@@ -24,7 +24,7 @@
 #
 
 CLDRVERSION := 29.0.0
-CLDRSRCDIR := $(JDK_TOPDIR)/src/jdk.localedata/share/classes/sun/util/cldr/resources/common
+CLDRSRCDIR := $(TOPDIR)/src/jdk.localedata/share/classes/sun/util/cldr/resources/common
 
 GENSRC_BASEDIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata

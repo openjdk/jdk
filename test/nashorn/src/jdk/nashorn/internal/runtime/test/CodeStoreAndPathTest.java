@@ -390,7 +390,7 @@ public class CodeStoreAndPathTest {
             "        return object; \n" +
             "    })(); \n" +
             "}()); ";
-    final static String codeCache = "build/nashorn_code_cache";
+    final static String codeCache = System.getProperty("build.dir", "build") + "/nashorn_code_cache";
     final static String oldUserDir = System.getProperty("user.dir");
 
     private static final String[] ENGINE_OPTIONS_OPT   = new String[]{"--persistent-code-cache", "--optimistic-types=true"};

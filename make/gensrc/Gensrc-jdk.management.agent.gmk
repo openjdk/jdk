@@ -23,14 +23,14 @@
 # questions.
 #
 
-include GensrcCommon.gmk
+include GensrcCommonJdk.gmk
 
 ################################################################################
 
 include GensrcProperties.gmk
 
 $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
-    SRC_DIRS := $(JDK_TOPDIR)/src/jdk.management.agent/share/classes/jdk/internal/agent/resources, \
+    SRC_DIRS := $(TOPDIR)/src/jdk.management.agent/share/classes/jdk/internal/agent/resources, \
     CLASS := ListResourceBundle, \
 ))
 

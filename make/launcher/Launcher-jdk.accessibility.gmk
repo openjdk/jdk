@@ -30,8 +30,8 @@ include LauncherCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
 
-  JABSWITCH_SRC := $(JDK_TOPDIR)/src/jdk.accessibility/windows/native/jabswitch
-  ACCESSBRIDGE_SRC := $(JDK_TOPDIR)/src/jdk.accessibility/windows/native/common
+  JABSWITCH_SRC := $(TOPDIR)/src/jdk.accessibility/windows/native/jabswitch
+  ACCESSBRIDGE_SRC := $(TOPDIR)/src/jdk.accessibility/windows/native/common
 
   $(eval $(call SetupNativeCompilation,BUILD_JABSWITCH, \
       SRC := $(JABSWITCH_SRC), \
@@ -59,7 +59,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 ################################################################################
 # jaccessinspector
 
-  TOPDIR := $(JDK_TOPDIR)/src/jdk.accessibility/windows/native
+  TOPDIR := $(TOPDIR)/src/jdk.accessibility/windows/native
   TOOLS_CFLAGS := $(addprefix -I, \
       $(TOPDIR)/include/bridge \
       $(TOPDIR)/common \

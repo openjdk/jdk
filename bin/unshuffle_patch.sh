@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,17 @@
 # Script for updating a patch file as per the shuffled/unshuffled source location.
 
 usage() {
-      echo "Usage: $0 [-h|--help] [-v|--verbose] <repo> <input_patch> <output_patch>"
-      echo "where:"
-      echo "  <repo>          is one of: corba, jaxp, jaxws, jdk, langtools, nashorn"
-      echo "                  [Note: patches from other repos do not need updating]"
-      echo "  <input_patch>   is the input patch file, that needs shuffling/unshuffling"
-      echo "  <output_patch>  is the updated patch file "
-      echo " "
-      exit 1
+  echo "Usage: $0 [-h|--help] [-v|--verbose] [-to9|-to10] [-r <repo>] <input_patch> <output_patch>"
+  echo "where:"
+  echo "  -to9            create patches appropriate for a JDK 9 source tree"
+  echo "                  When going to 9, the output patches will be suffixed with the"
+  echo "                  repo name"
+  echo "  -to10           create patches appropriate for a JDK 10 source tree"
+  echo "  -r <repo>       specify repo for source patch, set to 'top' for top repo"
+  echo "  <input_patch>   is the input patch file, that needs shuffling/unshuffling"
+  echo "  <output_patch>  is the updated patch file "
+  echo " "
+  exit 1
 }
 
 SCRIPT_DIR=`dirname $0`
@@ -55,11 +58,24 @@ do
       vflag="true"
       ;;
 
+    -r)
+      repo="$2"
+      shift
+      ;;
+
+    -to9)
+      shuffle_to=9
+      ;;
+
+    -to10)
+      shuffle_to=10
+      ;;
+
     -*)  # bad option
       usage
       ;;
 
-     * )  # non option
+    * )  # non option
       break
       ;;
   esac
@@ -67,28 +83,40 @@ do
 done
 
 # Make sure we have the right number of arguments
-if [ ! $# -eq 3 ] ; then
+if [ ! $# -eq 2 ] ; then
   echo "ERROR: Invalid number of arguments." >&2
   usage
 fi
 
 # Check the given repo
-repos="corba jaxp jaxws jdk langtools nashorn"
-repo="$1"
+repos="top corba jaxp jaxws jdk langtools nashorn hotspot"
 found="false"
-for r in $repos ; do
-  if [ $repo = "$r" ] ; then
-    found="true"
-    break;
+if [ -n "$repo" ]; then
+  for r in $repos ; do
+    if [ $repo = "$r" ] ; then
+      found="true"
+      break;
+    fi
+  done
+  if [ $found = "false" ] ; then
+    echo "ERROR: Unknown repo: $repo. Should be one of [$repos]." >&2
+    usage
   fi
-done
-if [ $found = "false" ] ; then
-  echo "ERROR: Unknown repo: $repo. Should be one of [$repos]." >&2
-  usage
+fi
+
+if [ "$shuffle_to" != "9" -a "$shuffle_to" != "10" ]; then
+  echo "ERROR: Must pick either -to9 or -to10"
+  exit 1
+fi
+
+# When going to 10, a repo must be specified for the source patch
+if [ "$shuffle_to" = "10" -a -z "$repo" ]; then
+  echo "ERROR: Must specify src repo for JDK 9 patch"
+  exit 1
 fi
 
 # Check given input/output files
-input="$2"
+input="$1"
 if [ "x$input" = "x-" ] ; then
   input="/dev/stdin"
 fi
@@ -98,17 +126,25 @@ if [ ! -f $input -a "x$input" != "x/dev/stdin" ] ; then
   exit 1
 fi
 
-output="$3"
+output="$2"
 if [ "x$output" = "x-" ] ; then
   output="/dev/stdout"
 fi
+base_output="$output"
 
-if [ -f $output -a "x$output" != "x/dev/stdout" ] ; then
-  echo "ERROR: Output patch already exists: $output" >&2
-  exit 1
+if [ "$shuffle_to" = "10" ]; then
+  if [ -f $output -a "x$output" != "x/dev/stdout" ] ; then
+    echo "ERROR: Output patch already exists: $output" >&2
+    exit 1
+  fi
+else
+  for r in $repos; do
+    if [ -f "$output.$r" ]; then
+      echo "ERROR: Output patch already exists: $output.$r" >&2
+      exit 1
+    fi
+  done
 fi
-
-what=""  ## shuffle or unshuffle
 
 verbose() {
   if [ ${vflag} = "true" ] ; then
@@ -135,30 +171,17 @@ unshuffle() {
   fi
   verbose "Extracted path: \"$path\""
 
-  # Only source can be shuffled, or unshuffled
-  if ! echo "$path" | egrep '^src/.*' > /dev/null ; then
-    verbose "Not a src path, skipping."
-    echo "$line" >> $output
-    return
-  fi
-
-  # Shuffle or unshuffle?
-  if [ "${what}" = "" ] ; then
-    if echo "$path" | egrep '^src/java\..*|^src/jdk\..*' > /dev/null ; then
-      what="unshuffle"
-    else
-      what="shuffle"
-    fi
-    verbose "Shuffle or unshuffle: $what"
-  fi
-
   # Find the most specific matches in the shuffle list
   matches=
-  matchpath="$repo"/"$path"/x
+  if [ -n "$repo" -a "$repo" != "top" ]; then
+    matchpath="$repo"/"$path"/x
+  else
+    matchpath="$path"/x
+  fi
   while [ "$matchpath" != "" ] ; do
     matchpath="`echo $matchpath | sed s@'\(.*\)/.*$'@'\1'@`"
 
-    if [ "${what}" =  "shuffle" ] ; then
+    if [ "$shuffle_to" =  "10" ] ; then
       pattern=": $matchpath$"
     else
       pattern="^$matchpath :"
@@ -177,12 +200,24 @@ unshuffle() {
 
   # Rewrite the line, if we have a match
   if ! [ "x${matches}" = "x" ] ; then
-    shuffled="`echo "$matches" | sed -e s@' : .*'@@g -e s@'^[a-z]*\/'@@`"
-    unshuffled="`echo "$matches" | sed -e s@'.* : '@@g -e s@'^[a-z]*\/'@@`"
-    if [ "${what}" =  "shuffle" ] ; then
+    shuffled="${matches%% : *}"
+    unshuffled="${matches#* : }"
+    patch_suffix_9=""
+    for r in $repos; do
+      if [ "$unshuffled" != "${unshuffled#$r}" ]; then
+        unshuffled="${unshuffled#$r\/}"
+        patch_suffix_9=".$r"
+      fi
+    done
+    verbose "shuffled: $shuffled"
+    verbose "unshuffled: $unshuffled"
+    verbose "patch_suffix_9: $patch_suffix_9"
+    if [ "$shuffle_to" =  "10" ] ; then
       newline="`echo "$line" | sed -e s@"$unshuffled"@"$shuffled"@g`"
     else
       newline="`echo "$line" | sed -e s@"$shuffled"@"$unshuffled"@g`"
+      output=$base_output$patch_suffix_9
+      verbose "Writing to $output"
     fi
     verbose "Rewriting to \"$newline\""
     echo "$newline" >> $output

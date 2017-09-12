@@ -29,7 +29,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include $(JDK_TOPDIR)/make/ModuleTools.gmk
+include $(TOPDIR)/make/ModuleTools.gmk
 
 ################################################################################
 

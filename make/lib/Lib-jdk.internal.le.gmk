@@ -29,7 +29,7 @@ include LibCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
 
-  LIBLE_SRC := $(JDK_TOPDIR)/src/jdk.internal.le/$(OPENJDK_TARGET_OS_TYPE)/native/lible \
+  LIBLE_SRC := $(TOPDIR)/src/jdk.internal.le/$(OPENJDK_TARGET_OS_TYPE)/native/lible \
       #
   LIBLE_CPPFLAGS := \
       $(addprefix -I, $(LIBLE_SRC)) \

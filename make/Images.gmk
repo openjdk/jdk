@@ -232,7 +232,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       xjc.1
 
   # This variable is potentially overridden in the closed makefile.
-  MAN_SRC_BASEDIR ?= $(JDK_TOPDIR)/src
+  MAN_SRC_BASEDIR ?= $(TOPDIR)/src
 
   ifeq ($(OPENJDK_TARGET_OS), linux)
     MAN_SRC_DIR = $(MAN_SRC_BASEDIR)/linux/doc

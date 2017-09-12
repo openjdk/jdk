@@ -28,7 +28,7 @@ include CopyCommon.gmk
 ################################################################################
 
 MGMT_CONF_DIR := $(CONF_DST_DIR)/management
-MGMT_CONF_SRC := $(JDK_TOPDIR)/src/jdk.management.agent/share/conf
+MGMT_CONF_SRC := $(TOPDIR)/src/jdk.management.agent/share/conf
 MGMT_SRC_FILES := $(wildcard $(MGMT_CONF_SRC)/*)
 MGMT_TARGET_FILES := $(subst $(MGMT_CONF_SRC),$(MGMT_CONF_DIR),$(MGMT_SRC_FILES))
 

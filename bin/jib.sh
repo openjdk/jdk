@@ -42,7 +42,7 @@ setup_url() {
     jib_revision="2.0-SNAPSHOT"
     jib_ext="jib.sh.gz"
 
-    closed_script="${mydir}/../../closed/conf/jib-install.conf"
+    closed_script="${mydir}/../../../closed/conf/jib-install.conf"
     if [ -f "${closed_script}" ]; then
         source "${closed_script}"
     fi

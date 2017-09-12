@@ -466,9 +466,9 @@ public class ParallelTestRunner {
     }
 
     private static void setTest262Properties() throws IOException {
-        System.setProperty(TEST_JS_ROOTS, "test/test262/test/suite/");
-        System.setProperty(TEST_JS_FRAMEWORK, "test/script/test262.js test/test262/test/harness/framework.js test/test262/test/harness/sta.js");
-        System.setProperty(TEST_JS_EXCLUDES_FILE, "test/test262/test/config/excludelist.xml");
+        System.setProperty(TEST_JS_ROOTS, "test/nashorn/script/external/test262/test/suite/");
+        System.setProperty(TEST_JS_FRAMEWORK, "test/nashorn/script/test262.js test/nashorn/script/external/test262/test/harness/framework.js test/nashorn/script/external/test262/test/harness/sta.js");
+        System.setProperty(TEST_JS_EXCLUDES_FILE, "test/nashorn/script/external/test262/test/config/excludelist.xml");
         System.setProperty(TEST_JS_ENABLE_STRICT_MODE, "true");
 
         final Properties projectProperties = new Properties();

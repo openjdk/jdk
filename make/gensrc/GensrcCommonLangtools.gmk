@@ -64,13 +64,13 @@ endef
 define SetupCompileProperties
   # Lookup the properties that need to be compiled into resource bundles.
   PROPSOURCES := $2 \
-      $$(shell $(FIND) $(LANGTOOLS_TOPDIR)/src/$(MODULE)/share/classes -name "*.properties")
+      $$(shell $(FIND) $(TOPDIR)/src/$(MODULE)/share/classes -name "*.properties")
 
   # Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
   # to .../langtools/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
   # Strip away prefix and suffix, leaving for example only:
   # "<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN"
-  PROPJAVAS := $$(patsubst $(LANGTOOLS_TOPDIR)/src/%, \
+  PROPJAVAS := $$(patsubst $(TOPDIR)/src/%, \
       $(SUPPORT_OUTPUTDIR)/gensrc/%, \
       $$(patsubst %.properties, %.java, \
       $$(subst /share/classes,, $$(PROPSOURCES))))
@@ -104,9 +104,9 @@ endef
 # Param 2 - Extra properties files to process
 define SetupParseProperties
   # property files to process
-  PARSEPROPSOURCES := $$(addprefix $(LANGTOOLS_TOPDIR)/src/$(MODULE)/share/classes/, $2)
+  PARSEPROPSOURCES := $$(addprefix $(TOPDIR)/src/$(MODULE)/share/classes/, $2)
 
-  PARSEPROPALLDIRS := $$(patsubst $(LANGTOOLS_TOPDIR)/src/$(MODULE)/share/classes/%, \
+  PARSEPROPALLDIRS := $$(patsubst $(TOPDIR)/src/$(MODULE)/share/classes/%, \
       $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/%, \
       $$(dir $$(PARSEPROPSOURCES)))
 

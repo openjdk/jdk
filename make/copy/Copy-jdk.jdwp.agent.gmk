@@ -29,7 +29,7 @@ include CopyCommon.gmk
 
 TARGETS := $(INCLUDE_DST_DIR)/jdwpTransport.h
 
-$(INCLUDE_DST_DIR)/%.h: $(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/include/%.h
+$(INCLUDE_DST_DIR)/%.h: $(TOPDIR)/src/jdk.jdwp.agent/share/native/include/%.h
 	$(call install-file)
 
 ################################################################################

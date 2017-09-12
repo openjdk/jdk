@@ -28,7 +28,7 @@ GENDATA_TZDB :=
 #
 # Time zone data file creation
 #
-TZDATA_DIR := $(JDK_TOPDIR)/make/data/tzdata
+TZDATA_DIR := $(TOPDIR)/make/data/tzdata
 TZDATA_TZFILE := africa antarctica asia australasia europe northamerica pacificnew southamerica backward etcetera gmt jdk11_backward
 TZDATA_TZFILES := $(addprefix $(TZDATA_DIR)/,$(TZDATA_TZFILE))
 

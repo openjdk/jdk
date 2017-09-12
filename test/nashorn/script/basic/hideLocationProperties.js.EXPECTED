@@ -1,4 +1,4 @@
-test/script/basic/hideLocationProperties.js
+test/nashorn/script/basic/hideLocationProperties.js
 woot
 foo
 bar

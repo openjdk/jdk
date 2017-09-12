@@ -25,7 +25,7 @@
 
 include CopyCommon.gmk
 
-$(eval $(call IncludeCustomExtension, jdk, copy/Copy-java.desktop.gmk))
+$(eval $(call IncludeCustomExtension, , copy/Copy-java.desktop.gmk))
 
 ################################################################################
 
@@ -34,11 +34,11 @@ TARGETS += \
     $(INCLUDE_DST_OS_DIR)/jawt_md.h \
     #
 
-$(INCLUDE_DST_DIR)/%.h: $(JDK_TOPDIR)/src/java.desktop/share/native/include/%.h
+$(INCLUDE_DST_DIR)/%.h: $(TOPDIR)/src/java.desktop/share/native/include/%.h
 	$(call install-file)
 
 $(INCLUDE_DST_OS_DIR)/%.h: \
-    $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_EXPORT_DIR)/native/include/%.h
+    $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_EXPORT_DIR)/native/include/%.h
 	$(call install-file)
 
 ################################################################################
@@ -88,7 +88,7 @@ endif
 
 ################################################################################
 
-$(CONF_DST_DIR)/sound.properties: $(JDK_TOPDIR)/src/java.desktop/share/conf/sound.properties
+$(CONF_DST_DIR)/sound.properties: $(TOPDIR)/src/java.desktop/share/conf/sound.properties
 	$(call install-file)
 
 TARGETS += $(CONF_DST_DIR)/sound.properties
@@ -97,7 +97,7 @@ TARGETS += $(CONF_DST_DIR)/sound.properties
 #
 # Copy property files from sun/print to LIB_DST_DIR
 #
-PSFONTPROPFILE_SRC_DIR := $(JDK_TOPDIR)/src/java.desktop/share/conf
+PSFONTPROPFILE_SRC_DIR := $(TOPDIR)/src/java.desktop/share/conf
 PSFONTPROPFILE_SRCS := $(wildcard $(PSFONTPROPFILE_SRC_DIR)/psfont*.properties*)
 PSFONTPROPFILE_TARGET_FILES := $(subst $(PSFONTPROPFILE_SRC_DIR),$(LIB_DST_DIR),$(PSFONTPROPFILE_SRCS))
 

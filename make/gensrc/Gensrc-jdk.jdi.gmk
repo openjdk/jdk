@@ -23,13 +23,13 @@
 # questions.
 #
 
-include GensrcCommon.gmk
+include GensrcCommonJdk.gmk
 
 ################################################################################
 # Translate the Java debugger wire protocol (jdwp.spec) file into a JDWP.java file
 # and a JDWPCommands.h C-header file.
 
-JDWP_SPEC_FILE := $(JDK_TOPDIR)/make/data/jdwp/jdwp.spec
+JDWP_SPEC_FILE := $(TOPDIR)/make/data/jdwp/jdwp.spec
 HEADER_FILE := $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h
 JAVA_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java
 
@@ -64,7 +64,7 @@ GENSRC_JDK_JDI += $(GENSRC_JDWP)
 include GensrcProperties.gmk
 
 $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
-    SRC_DIRS := $(JDK_TOPDIR)/src/jdk.jdi/share/classes/com/sun/tools/jdi/resources, \
+    SRC_DIRS := $(TOPDIR)/src/jdk.jdi/share/classes/com/sun/tools/jdi/resources, \
     CLASS := ListResourceBundle, \
 ))
 

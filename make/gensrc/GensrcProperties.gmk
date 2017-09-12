@@ -29,7 +29,7 @@
 ################################################################################
 # Helper macro for SetupCopy-zh_HK.
 define SetupOneCopy-zh_HK
-  $1_$2_TARGET := $$(patsubst $(JDK_TOPDIR)/src/$(MODULE)/share/classes/%, \
+  $1_$2_TARGET := $$(patsubst $(TOPDIR)/src/$(MODULE)/share/classes/%, \
       $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/%, \
       $$(subst _zh_TW,_zh_HK, $2))
 
@@ -58,12 +58,12 @@ endef
 # SRC_DIRS   Directories containing properties files to process.
 # EXCLUDE   Exclude files matching this pattern.
 # CLASS   The super class for the generated classes.
-# MODULE_PATH_ROOT   Module path root, defaults to $(JDK_TOPDIR)/src.
+# MODULE_PATH_ROOT   Module path root, defaults to $(TOPDIR)/src.
 SetupCompileProperties = $(NamedParamsMacroTemplate)
 define SetupCompilePropertiesBody
   # Set default value unless overridden
   ifeq ($$($1_MODULE_PATH_ROOT), )
-    $1_MODULE_PATH_ROOT := $(JDK_TOPDIR)/src
+    $1_MODULE_PATH_ROOT := $(TOPDIR)/src
   endif
 
   # Locate all properties files in the given source dirs.

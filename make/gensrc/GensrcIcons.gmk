@@ -23,7 +23,7 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, jdk, gensrc/GensrcIcons.gmk))
+$(eval $(call IncludeCustomExtension, , gensrc/GensrcIcons.gmk))
 
 GENSRC_AWT_ICONS :=
 GENSRC_AWT_ICONS_SRC :=
@@ -31,7 +31,7 @@ GENSRC_AWT_ICONS_TMP := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop
 GENSRC_AWT_ICONS_DST := $(GENSRC_AWT_ICONS_TMP)/sun/awt/
 
 # Allow this to be overridden from a custom makefile
-X11_ICONS_PATH_PREFIX ?= $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)
+X11_ICONS_PATH_PREFIX ?= $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)
 
 GENSRC_AWT_ICONS_SRC += \
     $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon16.png \
@@ -40,7 +40,7 @@ GENSRC_AWT_ICONS_SRC += \
     $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon48.png
 
 
-AWT_ICONPATH := $(JDK_TOPDIR)/src/java.desktop/share/classes/sun/awt/resources
+AWT_ICONPATH := $(TOPDIR)/src/java.desktop/share/classes/sun/awt/resources
 
 GENSRC_AWT_ICONS_SRC += \
     $(AWT_ICONPATH)/security-icon-bw16.png \
@@ -113,7 +113,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   GENSRC_OSX_ICONS_DST := $(SUPPORT_OUTPUTDIR)/headers/java.desktop
   GENSRC_OSX_ICONS := $(GENSRC_OSX_ICONS_DST)/AWTIconData.h
 
-  GENSRC_OSX_ICONS_SRC ?= $(JDK_TOPDIR)/make/data/macosxicons/JavaApp.icns
+  GENSRC_OSX_ICONS_SRC ?= $(TOPDIR)/make/data/macosxicons/JavaApp.icns
 
 
   $(GENSRC_OSX_ICONS): $(GENSRC_OSX_ICONS_SRC) $(BUILD_TOOLS_JDK)

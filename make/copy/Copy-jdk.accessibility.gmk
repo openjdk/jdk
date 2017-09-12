@@ -33,7 +33,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       $(INCLUDE_DST_OS_DIR)/bridge/AccessBridgePackages.h
 
   $(INCLUDE_DST_OS_DIR)/bridge/%: \
-      $(JDK_TOPDIR)/src/jdk.accessibility/windows/native/include/bridge/%
+      $(TOPDIR)/src/jdk.accessibility/windows/native/include/bridge/%
 		$(install-file)
 
 endif

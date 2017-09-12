@@ -152,18 +152,18 @@ ifeq ($(HAS_FILE_FUNCTION), true)
 else # HAS_FILE_FUNCTION = false
 
   $(eval compress_paths = \
-      $(strip $(shell $(CAT) $(SRC_ROOT)/make/common/support/ListPathsSafely-pre-compress.incl)))
+      $(strip $(shell $(CAT) $(TOPDIR)/make/common/support/ListPathsSafely-pre-compress.incl)))
   compress_paths += \
-      $(subst $(SRC_ROOT),X97, \
+      $(subst $(TOPDIR),X97, \
       $(subst $(OUTPUT_ROOT),X98, \
       $(subst X,X00, \
       $(subst $(SPACE),\n,$(strip $1)))))
   $(eval compress_paths += \
-      $(strip $(shell $(CAT) $(SRC_ROOT)/make/common/support/ListPathsSafely-post-compress.incl)))
+      $(strip $(shell $(CAT) $(TOPDIR)/make/common/support/ListPathsSafely-post-compress.incl)))
 
-  decompress_paths=$(SED) -f $(SRC_ROOT)/make/common/support/ListPathsSafely-uncompress.sed \
+  decompress_paths=$(SED) -f $(TOPDIR)/make/common/support/ListPathsSafely-uncompress.sed \
       -e 's|X99|\\n|g' \
-      -e 's|X98|$(OUTPUT_ROOT)|g' -e 's|X97|$(SRC_ROOT)|g' \
+      -e 's|X98|$(OUTPUT_ROOT)|g' -e 's|X97|$(TOPDIR)|g' \
       -e 's|X00|X|g'
 
   ListPathsSafely_IfPrintf = \
@@ -344,24 +344,24 @@ SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
 
 # Locate all hg repositories included in the forest, as absolute paths
 FindAllReposAbs = \
-    $(strip $(sort $(dir $(filter-out $(SRC_ROOT)/build/%, $(wildcard \
-        $(addprefix $(SRC_ROOT)/, .hg */.hg */*/.hg */*/*/.hg) \
+    $(strip $(sort $(dir $(filter-out $(TOPDIR)/build/%, $(wildcard \
+        $(addprefix $(TOPDIR)/, .hg */.hg */*/.hg */*/*/.hg */*/*/*/.hg) \
     )))))
 
 # Locate all hg repositories included in the forest, as relative paths
 FindAllReposRel = \
-    $(strip $(subst $(SRC_ROOT)/,.,$(patsubst $(SRC_ROOT)/%/, %, $(FindAllReposAbs))))
+    $(strip $(subst $(TOPDIR)/,.,$(patsubst $(TOPDIR)/%/, %, $(FindAllReposAbs))))
 
 ################################################################################
 
 define SetupLogging
   ifeq ($$(LOG_PROFILE_TIMES_FILE), true)
     ifeq ($$(IS_GNU_TIME), yes)
-      SHELL :=  $$(BASH) $$(SRC_ROOT)/common/bin/shell-profiler.sh \
+      SHELL :=  $$(BASH) $$(TOPDIR)/make/scripts/shell-profiler.sh \
                 gnutime $$(TIME) \
                 $$(OUTPUT_ROOT)/build-profile.log $$(SHELL)
     else ifneq ($$(FLOCK), )
-      SHELL :=  $$(BASH) $$(SRC_ROOT)/common/bin/shell-profiler.sh \
+      SHELL :=  $$(BASH) $$(TOPDIR)/make/scripts/shell-profiler.sh \
                 flock $$(FLOCK) \
                 $$(OUTPUT_ROOT)/build-profile.log $$(SHELL)
     endif
@@ -874,7 +874,7 @@ endif
 # Defines the sub directory structure to store variable value file in
 DependOnVariableDirName = \
     $(strip $(addsuffix $(if $(MODULE),/$(MODULE)), \
-        $(subst $(SRC_ROOT)/,, $(if $(filter /%, $(firstword $(MAKEFILE_LIST))), \
+        $(subst $(TOPDIR)/,, $(if $(filter /%, $(firstword $(MAKEFILE_LIST))), \
           $(firstword $(MAKEFILE_LIST)), \
           $(CURDIR)/$(firstword $(MAKEFILE_LIST))))))
 

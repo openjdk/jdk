@@ -33,7 +33,7 @@ INCLUDE_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_include/$(MODULE)
 ################################################################################
 # Copy platform-independent .h files
 $(eval $(call SetupCopyFiles, COPY_INCLUDE_FILES, \
-    SRC := $(HOTSPOT_TOPDIR)/src/share/vm, \
+    SRC := $(TOPDIR)/src/hotspot/share, \
     DEST := $(INCLUDE_DST_DIR), \
     FLATTEN := true, \
     FILES := prims/jni.h code/jvmticmlr.h \
@@ -45,7 +45,7 @@ $(eval $(call SetupCopyFiles, COPY_INCLUDE_FILES, \
 # Copy jni_md.h
 
 # This might have been defined in a custom extension
-JNI_MD_H_SRC ?= $(HOTSPOT_TOPDIR)/src/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/vm/jni_$(HOTSPOT_TARGET_CPU_ARCH).h
+JNI_MD_H_SRC ?= $(TOPDIR)/src/hotspot/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/jni_$(HOTSPOT_TARGET_CPU_ARCH).h
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   # NOTE: This should most likely be darwin, but the old hotspot build uses bsd

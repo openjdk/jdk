@@ -25,7 +25,7 @@
 
 include NativeCompilation.gmk
 
-$(eval $(call IncludeCustomExtension, hotspot, lib/Lib-jdk.hotspot.agent.gmk))
+$(eval $(call IncludeCustomExtension, , hotspot/lib/Lib-jdk.hotspot.agent.gmk))
 
 ################################################################################
 
@@ -33,17 +33,17 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx windows), )
   DISABLE_MAPFILES := true
 endif
 
-SA_TOPDIR := $(HOTSPOT_TOPDIR)/src/jdk.hotspot.agent
+SA_TOPDIR := $(TOPDIR)/src/jdk.hotspot.agent
 
 # Defaults for most platforms
 SA_TOOLCHAIN := TOOLCHAIN_DEFAULT
 SA_NAME := saproc
 SA_SRC += $(SA_TOPDIR)/share/native/libsaproc $(SA_TOPDIR)/$(OPENJDK_TARGET_OS)/native/libsaproc
-SA_MAPFILE := $(HOTSPOT_TOPDIR)/make/mapfiles/libsaproc/mapfile-$(OPENJDK_TARGET_OS)
+SA_MAPFILE := $(TOPDIR)/make/mapfiles/libsaproc/mapfile-$(OPENJDK_TARGET_OS)
 SA_INCLUDES := \
     $(addprefix -I, $(SA_SRC)) \
     -I$(SUPPORT_OUTPUTDIR)/headers/jdk.hotspot.agent \
-    -I$(HOTSPOT_TOPDIR)/src/os/$(OPENJDK_TARGET_OS) \
+    -I$(TOPDIR)/src/hotspot/os/$(OPENJDK_TARGET_OS) \
     #
 
 ifeq ($(OPENJDK_TARGET_CPU), x86_64)

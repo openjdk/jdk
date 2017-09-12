@@ -88,7 +88,7 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
 fi
 
 # Now locate the main script and run it.
-REAL_COMPARE_SCRIPT="$SRC_ROOT/common/bin/compare.sh"
+REAL_COMPARE_SCRIPT="$SRC_ROOT/make/scripts/compare.sh"
 if [ ! -e "$REAL_COMPARE_SCRIPT" ]; then
   echo "Error: Cannot locate compare script, it should have been in $REAL_COMPARE_SCRIPT"
   exit 1
@@ -100,4 +100,4 @@ $MV $OUTPUT_ROOT/compare.log $OUTPUT_ROOT/compare.log.old 2> /dev/null
 
 export SCRIPT_DIR="$( cd "$( dirname "$0" )" > /dev/null && pwd )"
 
-$BASH $SRC_ROOT/common/bin/logger.sh $OUTPUT_ROOT/compare.log $BASH "$REAL_COMPARE_SCRIPT" "$@"
+$BASH $SRC_ROOT/make/scripts/logger.sh $OUTPUT_ROOT/compare.log $BASH "$REAL_COMPARE_SCRIPT" "$@"

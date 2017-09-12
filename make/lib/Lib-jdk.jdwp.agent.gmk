@@ -27,13 +27,13 @@ include LibCommon.gmk
 
 ################################################################################
 
-LIBDT_SOCKET_SRC := $(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/libdt_socket \
-    $(JDK_TOPDIR)/src/jdk.jdwp.agent/$(OPENJDK_TARGET_OS_TYPE)/native/libdt_socket
+LIBDT_SOCKET_SRC := $(TOPDIR)/src/jdk.jdwp.agent/share/native/libdt_socket \
+    $(TOPDIR)/src/jdk.jdwp.agent/$(OPENJDK_TARGET_OS_TYPE)/native/libdt_socket
 LIBDT_SOCKET_CPPFLAGS := \
     $(addprefix -I, $(LIBDT_SOCKET_SRC)) \
-    -I$(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp/export \
-    -I$(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp \
-    -I$(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/include \
+    -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp/export \
+    -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp \
+    -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/include \
     #
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET, \
@@ -43,7 +43,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP \
         $(LIBDT_SOCKET_CPPFLAGS), \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libdt_socket/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/libdt_socket/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -export:jdwpTransport_OnLoad, \
@@ -65,11 +65,11 @@ TARGETS += $(BUILD_LIBDT_SOCKET)
 
 ################################################################################
 
-LIBJDWP_SRC := $(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp \
-    $(JDK_TOPDIR)/src/jdk.jdwp.agent/$(OPENJDK_TARGET_OS_TYPE)/native/libjdwp
+LIBJDWP_SRC := $(TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp \
+    $(TOPDIR)/src/jdk.jdwp.agent/$(OPENJDK_TARGET_OS_TYPE)/native/libjdwp
 LIBJDWP_CPPFLAGS := \
-    -I$(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp/export \
-    -I$(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/include \
+    -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp/export \
+    -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/include \
     $(addprefix -I, $(LIBJDWP_SRC))
 
 # JDWP_LOGGING causes log messages to be compiled into the library.
@@ -81,7 +81,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP, \
     CFLAGS := $(CFLAGS_JDKLIB) -DJDWP_LOGGING \
         $(LIBJDWP_CPPFLAGS) \
         -I$(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjdwp/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/libjdwp/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \

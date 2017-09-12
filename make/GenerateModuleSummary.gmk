@@ -32,7 +32,7 @@ include ModuleTools.gmk
 
 GENGRAPHS_DIR := $(IMAGES_OUTPUTDIR)/gengraphs
 SPEC_DOTFILES_DIR := $(GENGRAPHS_DIR)/spec-dotfiles
-TOOLS_MODULE_SRCDIR := $(JDK_TOPDIR)/make/src/classes/build/tools/jigsaw
+TOOLS_MODULE_SRCDIR := $(TOPDIR)/make/jdk/src/classes/build/tools/jigsaw
 
 $(GENGRAPHS_DIR)/jdk.dot: $(BUILD_JIGSAW_TOOLS)
 	$(MKDIR) -p $(@D)
