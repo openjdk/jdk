@@ -1,6 +1,0 @@
-^build/
-^dist/
-^webrev
-^.idea
-/nbproject/private/
-.DS_Store
