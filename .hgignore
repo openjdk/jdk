@@ -5,6 +5,6 @@ nbproject/private/
 ^webrev
 ^.src-rev$
 ^.jib/
-.DS_Store
-.metadata/
-.recommenders/
+\.DS_Store
+\.metadata/
+\.recommenders/
