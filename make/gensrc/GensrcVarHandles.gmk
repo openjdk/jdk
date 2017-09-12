@@ -26,7 +26,7 @@
 GENSRC_VARHANDLES :=
 
 VARHANDLES_GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/invoke
-VARHANDLES_SRC_DIR := $(JDK_TOPDIR)/src/java.base/share/classes/java/lang/invoke
+VARHANDLES_SRC_DIR := $(TOPDIR)/src/java.base/share/classes/java/lang/invoke
 
 ################################################################################
 # Setup a rule for generating a VarHandle java class

@@ -24,14 +24,14 @@
 #
 
 BUILD_LIBNIO_SRC := \
-    $(JDK_TOPDIR)/src/java.base/share/native/libnio \
-    $(JDK_TOPDIR)/src/java.base/share/native/libnio/ch \
-    $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio \
+    $(TOPDIR)/src/java.base/share/native/libnio \
+    $(TOPDIR)/src/java.base/share/native/libnio/ch \
+    $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio \
     $(sort $(wildcard \
-      $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio/ch \
-      $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio/fs \
-      $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libnio/ch \
-      $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libnio/fs)) \
+      $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio/ch \
+      $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio/fs \
+      $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libnio/ch \
+      $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libnio/fs)) \
     #
 
 BUILD_LIBNIO_CFLAGS := \
@@ -41,19 +41,19 @@ BUILD_LIBNIO_CFLAGS := \
     $(addprefix -I, $(BUILD_LIBNET_SRC))
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
-  BUILD_LIBNIO_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
+  BUILD_LIBNIO_MAPFILE := $(TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  BUILD_LIBNIO_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
+  BUILD_LIBNIO_MAPFILE := $(TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
-  BUILD_LIBNIO_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
+  BUILD_LIBNIO_MAPFILE := $(TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), aix)
-  BUILD_LIBNIO_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
+  BUILD_LIBNIO_MAPFILE := $(TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \

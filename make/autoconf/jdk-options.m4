@@ -258,7 +258,7 @@ AC_DEFUN_ONCE([JDKOPT_DETECT_INTREE_EC],
 [
   AC_MSG_CHECKING([if elliptic curve crypto implementation is present])
 
-  if test -d "${SRC_ROOT}/jdk/src/jdk.crypto.ec/share/native/libsunec/impl"; then
+  if test -d "${TOPDIR}/src/jdk.crypto.ec/share/native/libsunec/impl"; then
     ENABLE_INTREE_EC=true
     AC_MSG_RESULT([yes])
   else

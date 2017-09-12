@@ -32,13 +32,13 @@ include SetupJavaCompilers.gmk
 
 ################################################################################
 
-$(eval $(call IncludeCustomExtension, jdk, CompileTools.gmk))
+$(eval $(call IncludeCustomExtension, , CompileTools.gmk))
 
 ################################################################################
 
 # Use += to be able to add to this from a custom extension
 BUILD_TOOLS_SRC_DIRS += \
-    $(JDK_TOPDIR)/make/src/classes \
+    $(TOPDIR)/make/jdk/src/classes \
     $(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes \
     #
 
@@ -53,9 +53,9 @@ $(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
 TARGETS += $(BUILD_TOOLS_JDK)
 
 $(eval $(call SetupCopyFiles,COPY_NIMBUS_TEMPLATES, \
-    SRC := $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus, \
+    SRC := $(TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus, \
     DEST := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes/build/tools/generatenimbus/resources, \
-    FILES := $(wildcard $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/*.template)))
+    FILES := $(wildcard $(TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/*.template)))
 
 TARGETS += $(COPY_NIMBUS_TEMPLATES)
 

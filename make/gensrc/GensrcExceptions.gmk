@@ -27,8 +27,8 @@ GENSRC_EXCEPTIONS :=
 
 GENSRC_EXCEPTIONS_DST := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/nio
 
-GENSRC_EXCEPTIONS_SRC := $(JDK_TOPDIR)/src/java.base/share/classes/java/nio
-GENSRC_EXCEPTIONS_CMD := $(JDK_TOPDIR)/make/scripts/genExceptions.sh
+GENSRC_EXCEPTIONS_SRC := $(TOPDIR)/src/java.base/share/classes/java/nio
+GENSRC_EXCEPTIONS_CMD := $(TOPDIR)/make/scripts/genExceptions.sh
 
 GENSRC_EXCEPTIONS_SRC_DIRS := . charset channels
 
@@ -36,7 +36,7 @@ $(GENSRC_EXCEPTIONS_DST)/_the.%.marker: $(GENSRC_EXCEPTIONS_SRC)/%/exceptions \
     $(GENSRC_EXCEPTIONS_CMD)
 	$(call LogInfo, Generating exceptions java.nio $*)
 	$(call MakeDir, $(@D)/$*)
-	SCRIPTS="$(JDK_TOPDIR)/make/scripts" NAWK="$(NAWK)" SH="$(SH)" $(SH) \
+	SCRIPTS="$(TOPDIR)/make/scripts" NAWK="$(NAWK)" SH="$(SH)" $(SH) \
 	    $(GENSRC_EXCEPTIONS_CMD) $< $(@D)/$* $(LOG_DEBUG)
 	$(TOUCH) $@
 

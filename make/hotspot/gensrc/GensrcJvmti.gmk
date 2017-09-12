@@ -23,12 +23,12 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, hotspot, gensrc/GensrcJvmti.gmk))
+$(eval $(call IncludeCustomExtension, , hotspot/gensrc/GensrcJvmti.gmk))
 
 ################################################################################
 # Build tools needed for the JVMTI source code generation
 
-JVMTI_TOOLS_SRCDIR := $(HOTSPOT_TOPDIR)/src/share/vm/prims
+JVMTI_TOOLS_SRCDIR := $(TOPDIR)/src/hotspot/share/prims
 JVMTI_TOOLS_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/tools/jvmti
 
 $(eval $(call SetupJavaCompiler, GENERATE_OLDBYTECODE, \
@@ -79,7 +79,7 @@ endef
 ################################################################################
 # Create JVMTI files in gensrc/jvmtifiles
 
-JVMTI_SRCDIR := $(HOTSPOT_TOPDIR)/src/share/vm/prims
+JVMTI_SRCDIR := $(TOPDIR)/src/hotspot/share/prims
 JVMTI_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jvmtifiles
 
 # Setup rule for generating a jvmti file
@@ -106,7 +106,7 @@ $(eval $(call SetupJvmtiGeneration, jvmti.h, jvmtiH.xsl))
 $(eval $(call SetupJvmtiGeneration, jvmti.html, jvmti.xsl))
 $(eval $(call SetupJvmtiGeneration, jvmtiEnvStub.cpp, jvmtiEnv.xsl))
 
-JVMTI_BC_SRCDIR := $(HOTSPOT_TOPDIR)/src/share/vm/interpreter
+JVMTI_BC_SRCDIR := $(TOPDIR)/src/hotspot/share/interpreter
 
 $(eval $(call SetupXslTransform, bytecodeInterpreterWithChecks.cpp, \
     XML_FILE := $(JVMTI_BC_SRCDIR)/bytecodeInterpreterWithChecks.xml, \
@@ -146,7 +146,7 @@ endif
 # Create trace files in gensrc/tracefiles
 
 TRACE_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/gensrc/tracefiles
-TRACE_SRCDIR := $(HOTSPOT_TOPDIR)/src/share/vm/trace
+TRACE_SRCDIR := $(TOPDIR)/src/hotspot/share/trace
 
 # Append list of XSL files to search (might have been set by custom extensions)
 TRACE_XSL_FILES += $(wildcard $(TRACE_SRCDIR)/*.xsl)

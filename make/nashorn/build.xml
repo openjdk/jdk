@@ -23,7 +23,7 @@
  questions.
 -->
 
-<project name="nashorn" default="test" basedir="..">
+<project name="nashorn" default="test" basedir="../..">
   <import file="build-nasgen.xml"/>
   <import file="code_coverage.xml"/>
 
@@ -35,7 +35,7 @@
     <!-- loading locally defined resources and properties. NB they owerwrite default ones defined later -->
     <property file="${user.home}/.nashorn.project.local.properties"/>
 
-    <loadproperties srcFile="make/project.properties"/>
+    <loadproperties srcFile="make/nashorn/project.properties"/>
   </target>
 
   <target name="init-conditions" depends="load-properties">
@@ -86,7 +86,7 @@
     </condition>
 
     <!-- exclude tests in exclude lists -->
-    <condition property="exclude.list" value="./exclude/exclude_list_cc.txt" else="./exclude/exclude_list.txt">
+    <condition property="exclude.list" value="${nashorn.make.dir}/exclude/exclude_list_cc.txt" else="${nashorn.make.dir}/exclude/exclude_list.txt">
       <istrue value="${make.code.coverage}" />
     </condition>
 
@@ -167,6 +167,8 @@
       <fileset dir="${build.dir}" erroronmissingdir="false"/>
     </delete>
     <delete dir="${dist.dir}"/>
+    <delete dir="${jdk.build.dir}/nashorn_code_cache"/>
+    <delete file="${basedir}/NashornProfile.txt"/>
   </target>
 
   <target name="compile" depends="prepare" description="Compiles nashorn">
@@ -271,7 +273,9 @@
         windowtitle="${nashorn.product.name} ${nashorn.version}"
         additionalparam="-quiet" failonerror="true" useexternalfile="true">
       <arg value="--module-source-path"/>
-      <arg value="${basedir}/src/*/share/classes"/>
+      <arg value="${nashorn.module.src.dir}"/>
+      <arg value="--module-source-path"/>
+      <arg value="${dynalink.module.src.dir}"/>
       <arg value="${javadoc.option}"/>
       <classpath>
         <pathelement location="${build.classes.dir}"/>
@@ -289,7 +293,7 @@
         extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
         additionalparam="-quiet" failonerror="true" useexternalfile="true">
       <arg value="--module-source-path"/>
-      <arg value="${basedir}/src/*/share/classes"/>
+      <arg value="${nashorn.module.src.dir}"/>
       <arg value="${javadoc.option}"/>
       <classpath>
         <pathelement location="${build.classes.dir}"/>
@@ -306,7 +310,7 @@
         windowtitle="Dynalink"
         additionalparam="-quiet" failonerror="true" useexternalfile="true">
       <arg value="--module-source-path"/>
-      <arg value="${basedir}/src/*/share/classes"/>
+      <arg value="${dynalink.module.src.dir}"/>
       <arg value="${javadoc.option}"/>
       <classpath>
         <pathelement location="${build.classes.dir}"/>
@@ -425,7 +429,7 @@ grant codeBase "file:/${basedir}/${nashorn.api.tests.jar}" {
     permission java.util.PropertyPermission "parserapitest.*", "read";
     permission java.util.PropertyPermission "test.*", "read";
     permission java.util.PropertyPermission "test262.*", "read";
-    permission java.io.FilePermission "${basedir}/test/-","read";
+    permission java.io.FilePermission "${basedir}/test/nashorn/-","read";
     permission java.io.FilePermission "$${user.dir}", "read";
     permission java.util.PropertyPermission "user.dir", "read";
 };
@@ -461,56 +465,56 @@ grant codeBase "file:/${file.reference.snakeyaml.jar}" {
 };
 
 
-grant codeBase "file:/${basedir}/test/script/trusted/*" {
+grant codeBase "file:/${basedir}/${test.script.dir}/trusted/*" {
     permission java.security.AllPermission;
 };
 
-grant codeBase "file:/${basedir}/test/script/maptests/*" {
-    permission java.io.FilePermission "${basedir}/test/script/maptests/*","read";
+grant codeBase "file:/${basedir}/${test.script.dir}/maptests/*" {
+    permission java.io.FilePermission "${basedir}/${test.script.dir}/maptests/*","read";
     permission java.lang.RuntimePermission "nashorn.debugMode";
 };
 
-grant codeBase "file:/${basedir}/test/script/basic/*" {
-    permission java.io.FilePermission "${basedir}/test/script/-", "read";
+grant codeBase "file:/${basedir}/${test.script.dir}/basic/*" {
+    permission java.io.FilePermission "${basedir}/${test.script.dir}/-", "read";
     permission java.io.FilePermission "$${user.dir}", "read";
     permission java.util.PropertyPermission "user.dir", "read";
     permission java.util.PropertyPermission "nashorn.test.*", "read";
 };
 
-grant codeBase "file:/${basedir}/test/script/basic/apply_to_call/*" {
-    permission java.io.FilePermission "${basedir}/test/script/-", "read";
+grant codeBase "file:/${basedir}/${test.script.dir}/basic/apply_to_call/*" {
+    permission java.io.FilePermission "${basedir}/${test.script.dir}/-", "read";
     permission java.io.FilePermission "$${user.dir}", "read";
     permission java.util.PropertyPermission "user.dir", "read";
     permission java.util.PropertyPermission "nashorn.test.*", "read";
 };
 
-grant codeBase "file:/${basedir}/test/script/basic/parser/*" {
-    permission java.io.FilePermission "${basedir}/test/script/-", "read";
+grant codeBase "file:/${basedir}/${test.script.dir}/basic/parser/*" {
+    permission java.io.FilePermission "${basedir}/${test.script.dir}/-", "read";
     permission java.io.FilePermission "$${user.dir}", "read";
     permission java.util.PropertyPermission "user.dir", "read";
     permission java.util.PropertyPermission "nashorn.test.*", "read";
 };
 
-grant codeBase "file:/${basedir}/test/script/basic/es6/*" {
-    permission java.io.FilePermission "${basedir}/test/script/-", "read";
+grant codeBase "file:/${basedir}/${test.script.dir}/basic/es6/*" {
+    permission java.io.FilePermission "${basedir}/${test.script.dir}/-", "read";
     permission java.io.FilePermission "$${user.dir}", "read";
     permission java.util.PropertyPermission "user.dir", "read";
     permission java.util.PropertyPermission "nashorn.test.*", "read";
 };
 
-grant codeBase "file:/${basedir}/test/script/basic/JDK-8010946-privileged.js" {
+grant codeBase "file:/${basedir}/${test.script.dir}/basic/JDK-8010946-privileged.js" {
     permission java.util.PropertyPermission "java.security.policy", "read";
 };
 
-grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
+grant codeBase "file:/${basedir}/${test.script.dir}/basic/classloader.js" {
     permission java.lang.RuntimePermission "nashorn.JavaReflection";
 };
 
-grant codeBase "file:/${basedir}/test/script/markdown.js" {
-    permission java.io.FilePermission "${basedir}/test/script/external/showdown/-", "read";
+grant codeBase "file:/${basedir}/${test.script.dir}/markdown.js" {
+    permission java.io.FilePermission "${basedir}/${test.script.dir}/external/showdown/-", "read";
 };
 
-grant codeBase "file:/${basedir}/test/script/basic/JDK-8158467.js" {
+grant codeBase "file:/${basedir}/${test.script.dir}/basic/JDK-8158467.js" {
     permission java.lang.RuntimePermission "nashorn.setConfig";
 };
 
@@ -610,7 +614,7 @@ grant codeBase "file:/${basedir}/test/script/basic/JDK-8158467.js" {
     </testng>
   </target>
 
-  <target name="test" depends="prepare, javadoc, test-pessimistic, test-optimistic"/>
+  <target name="test" depends="prepare, test-pessimistic, test-optimistic"/>
 
   <target name="test-optimistic" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-security-config" if="testng.available">
     <echo message="Running test suite in OPTIMISTIC mode..."/>

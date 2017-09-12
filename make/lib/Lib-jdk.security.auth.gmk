@@ -30,7 +30,7 @@ include LibCommon.gmk
 LIBJAAS_MAPFILE :=
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   # only on solaris...wonder why
-  LIBJAAS_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjaas/mapfile-vers
+  LIBJAAS_MAPFILE := $(TOPDIR)/make/mapfiles/libjaas/mapfile-vers
 endif
 
 LIBJAAS_NAME := jaas_unix

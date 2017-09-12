@@ -48,7 +48,7 @@ POLICY_DIR := $(SUPPORT_OUTPUTDIR)/modules_conf/java.base/security/policy
 LIMITED_POLICY_DIR := $(POLICY_DIR)/limited
 UNLIMITED_POLICY_DIR := $(POLICY_DIR)/unlimited
 
-POLICY_SRC_DIR := $(JDK_TOPDIR)/src/java.base/share/conf/security/policy
+POLICY_SRC_DIR := $(TOPDIR)/src/java.base/share/conf/security/policy
 LIMITED_POLICY_SRC_DIR := $(POLICY_SRC_DIR)/limited
 UNLIMITED_POLICY_SRC_DIR := $(POLICY_SRC_DIR)/unlimited
 

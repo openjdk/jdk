@@ -30,10 +30,10 @@ include MakeBase.gmk
 
 ################################################################################
 # Unpack the binary distributions of the crypto classes if they exist.
-SEC_FILES_ZIP := $(JDK_TOPDIR)/make/tools/crypto/sec-bin.zip
-SEC_FILES_WIN_ZIP := $(JDK_TOPDIR)/make/tools/crypto/sec-windows-bin.zip
-JGSS_WIN32_FILES_ZIP := $(JDK_TOPDIR)/make/tools/crypto/jgss-windows-i586-bin.zip
-JGSS_WIN64_FILES_ZIP := $(JDK_TOPDIR)/make/tools/crypto/jgss-windows-x64-bin.zip
+SEC_FILES_ZIP := $(TOPDIR)/make/tools/crypto/sec-bin.zip
+SEC_FILES_WIN_ZIP := $(TOPDIR)/make/tools/crypto/sec-windows-bin.zip
+JGSS_WIN32_FILES_ZIP := $(TOPDIR)/make/tools/crypto/jgss-windows-i586-bin.zip
+JGSS_WIN64_FILES_ZIP := $(TOPDIR)/make/tools/crypto/jgss-windows-x64-bin.zip
 
 define unzip-sec-file
 	$(ECHO) Unzipping $(<F)

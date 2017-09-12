@@ -577,7 +577,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   AC_SUBST(CANONICAL_TOPDIR)
 
   # Locate the directory of this script.
-  AUTOCONF_DIR=$TOPDIR/common/autoconf
+  AUTOCONF_DIR=$TOPDIR/make/autoconf
 
   # Setup username (for use in adhoc version strings etc)
   # Outer [ ] to quote m4.
@@ -768,11 +768,14 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_ARG_WITH(conf-name, [AS_HELP_STRING([--with-conf-name],
       [use this as the name of the configuration @<:@generated from important configuration options@:>@])],
       [ CONF_NAME=${with_conf_name} ])
+  AC_ARG_WITH(output-base-dir, [AS_HELP_STRING([--with-output-base-dir],
+      [override the default output base directory @<:@./build@:>@])],
+      [ OUTPUT_BASE=${with_output_base_dir} ], [ OUTPUT_BASE="$SRC_ROOT/build" ] )
 
   # Test from where we are running configure, in or outside of src root.
   AC_MSG_CHECKING([where to store configuration])
   if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
-      || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" \
+      || test "x$CURDIR" = "x$SRC_ROOT/make/autoconf" \
       || test "x$CURDIR" = "x$SRC_ROOT/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
@@ -782,7 +785,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     else
       AC_MSG_RESULT([in build directory with custom name])
     fi
-    OUTPUT_ROOT="$SRC_ROOT/build/${CONF_NAME}"
+    OUTPUT_ROOT="${OUTPUT_BASE}/${CONF_NAME}"
     $MKDIR -p "$OUTPUT_ROOT"
     if test ! -d "$OUTPUT_ROOT"; then
       AC_MSG_ERROR([Could not create build directory $OUTPUT_ROOT])

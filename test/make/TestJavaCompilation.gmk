@@ -30,10 +30,10 @@ include MakeBase.gmk
 include JarArchive.gmk
 include JavaCompilation.gmk
 
-THIS_FILE := $(SRC_ROOT)/test/make/TestJavaCompilation.gmk
+THIS_FILE := $(TOPDIR)/test/make/TestJavaCompilation.gmk
 DEPS := $(THIS_FILE) \
-    $(SRC_ROOT)/make/common/MakeBase.gmk \
-    $(SRC_ROOT)/make/common/JavaCompilation.gmk \
+    $(TOPDIR)/make/common/MakeBase.gmk \
+    $(TOPDIR)/make/common/JavaCompilation.gmk \
     #
 
 OUTPUT_DIR := $(TESTMAKE_OUTPUTDIR)/java-compilation

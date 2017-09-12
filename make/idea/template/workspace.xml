@@ -8,14 +8,6 @@
   <component name="StructureViewFactory">
     <option name="ACTIVE_ACTIONS" value=",ALPHA_COMPARATOR" />
   </component>
-  <component name="RunManager" selected="Ant Target.jtreg">
-    <configuration default="false" name="jtreg" type="AntRunConfiguration" factoryName="Ant Target">
-      <antsettings antfile="file://$PROJECT_DIR$/.idea/build.xml" target="jtreg" />
-      <method>
-        <option name="Make" enabled="false" />
-      </method>
-    </configuration>
-  </component>
   <component name="antWorkspaceConfiguration">
     <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
     <option name="FILTER_TARGETS" value="false" />
@@ -43,7 +35,7 @@
     </buildFile>
   </component>
   <component name="ProjectView">
-    <navigator currentView="PackagesPane" proportions="" version="1">
+    <navigator currentView="ProjectPane" proportions="" version="1">
       <flattenPackages />
       <showMembers />
       <showModules />

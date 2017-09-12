@@ -35,7 +35,7 @@ TARGETS :=
 
 ################################################################################
 
-FH_BASEDIR := $(SRC_ROOT)/test/failure_handler
+FH_BASEDIR := $(TOPDIR)/test/failure_handler
 FH_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/failure_handler
 FH_JAR := $(FH_SUPPORT)/jtregFailureHandler.jar
 

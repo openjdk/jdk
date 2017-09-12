@@ -6,7 +6,11 @@
         new LangtoolsLogger(project)
     </script>
 
-    <import file="../make/build.xml"/>
+    <import file="../make/langtools/build.xml"/>
 
-    <target name="post-make" depends="clean, build-all-tools"/>
+    <target name="cond-clean" unless="${intellij.ismake}">
+        <antcall target="clean"/>
+    </target>
+
+    <target name="post-make" depends="cond-clean, build-all-tools"/>
 </project>

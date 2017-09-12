@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Building OpenJDK</title>
   <style type="text/css">code{white-space: pre;}</style>
-  <link rel="stylesheet" href="../../jdk/make/data/docs-resources/resources/jdk-default.css">
+  <link rel="stylesheet" href="../make/data/docs-resources/resources/jdk-default.css">
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
@@ -22,9 +22,6 @@
 <li><a href="#introduction">Introduction</a></li>
 <li><a href="#getting-the-source-code">Getting the Source Code</a><ul>
 <li><a href="#special-considerations">Special Considerations</a></li>
-<li><a href="#using-get_source.sh">Using get_source.sh</a></li>
-<li><a href="#using-hgforest.sh">Using hgforest.sh</a></li>
-<li><a href="#using-the-trees-extension">Using the Trees Extension</a></li>
 </ul></li>
 <li><a href="#build-hardware-requirements">Build Hardware Requirements</a><ul>
 <li><a href="#building-on-x86">Building on x86</a></li>
@@ -119,7 +116,7 @@
 <p>If you are eager to try out building OpenJDK, these simple steps works most of the time. They assume that you have installed Mercurial (and Cygwin if running on Windows) and cloned the top-level OpenJDK repository that you want to build.</p>
 <ol type="1">
 <li><p><a href="#getting-the-source-code">Get the complete source code</a>:<br />
-<code>bash get_source.sh</code></p></li>
+<code>hg clone http://hg.openjdk.java.net/jdk10/master</code></p></li>
 <li><p><a href="#running-configure">Run configure</a>:<br />
 <code>bash configure</code></p>
 <p>If <code>configure</code> fails due to missing dependencies (to either the <a href="#native-compiler-toolchain-requirements">toolchain</a>, <a href="#external-library-requirements">external libraries</a> or the <a href="#boot-jdk-requirements">boot JDK</a>), most of the time it prints a suggestion on how to resolve the situation on your platform. Follow the instructions, and try running <code>bash configure</code> again.</p></li>
@@ -135,8 +132,7 @@
 <p>OpenJDK is a complex software project. Building it requires a certain amount of technical expertise, a fair number of dependencies on external software, and reasonably powerful hardware.</p>
 <p>If you just want to use OpenJDK and not build it yourself, this document is not for you. See for instance <a href="http://openjdk.java.net/install">OpenJDK installation</a> for some methods of installing a prebuilt OpenJDK.</p>
 <h2 id="getting-the-source-code">Getting the Source Code</h2>
-<p>OpenJDK uses <a href="http://www.mercurial-scm.org">Mercurial</a> for source control. The source code is contained not in a single Mercurial repository, but in a tree (&quot;forest&quot;) of interrelated repositories. You will need to check out all of the repositories to be able to build OpenJDK. To assist you in dealing with this somewhat unusual arrangement, there are multiple tools available, which are explained below.</p>
-<p>In any case, make sure you are getting the correct version. At the <a href="http://hg.openjdk.java.net/">OpenJDK Mercurial server</a> you can see a list of all available forests. If you want to build an older version, e.g. JDK 8, it is recommended that you get the <code>jdk8u</code> forest, which contains incremental updates, instead of the <code>jdk8</code> forest, which was frozen at JDK 8 GA.</p>
+<p>Make sure you are getting the correct version. As of JDK 10, the source is no longer split into separate repositories so you only need to clone one single repository. At the <a href="http://hg.openjdk.java.net/">OpenJDK Mercurial server</a> you can see a list of all available forests. If you want to build an older version, e.g. JDK 8, it is recommended that you get the <code>jdk8u</code> forest, which contains incremental updates, instead of the <code>jdk8</code> forest, which was frozen at JDK 8 GA.</p>
 <p>If you are new to Mercurial, a good place to start is the <a href="http://www.mercurial-scm.org/guide">Mercurial Beginner's Guide</a>. The rest of this document assumes a working knowledge of Mercurial.</p>
 <h3 id="special-considerations">Special Considerations</h3>
 <p>For a smooth building experience, it is recommended that you follow these rules on where and how to check out the source code.</p>
@@ -152,45 +148,6 @@
 </ul>
 <p>Failure to follow this procedure might result in hard-to-debug build problems.</p></li>
 </ul>
-<h3 id="using-get_source.sh">Using get_source.sh</h3>
-<p>The simplest way to get the entire forest is probably to clone the top-level repository and then run the <code>get_source.sh</code> script, like this:</p>
-<pre><code>hg clone http://hg.openjdk.java.net/jdk9/jdk9
-cd jdk9
-bash get_source.sh</code></pre>
-<p>The first time this is run, it will clone all the sub-repositories. Any subsequent execution of the script will update all sub-repositories to the latest revision.</p>
-<h3 id="using-hgforest.sh">Using hgforest.sh</h3>
-<p>The <code>hgforest.sh</code> script is more expressive than <code>get_source.sh</code>. It takes any number of arguments, and runs <code>hg</code> with those arguments on each sub-repository in the forest. The <code>get_source.sh</code> script is basically a simple wrapper that runs either <code>hgforest.sh clone</code> or <code>hgforest.sh pull -u</code>.</p>
-<ul>
-<li><p>Cloning the forest:</p>
-<pre><code>hg clone http://hg.openjdk.java.net/jdk9/jdk9
-cd jdk9
-bash common/bin/hgforest.sh clone</code></pre></li>
-<li><p>Pulling and updating the forest:</p>
-<pre><code>bash common/bin/hgforest.sh pull -u</code></pre></li>
-<li><p>Merging over the entire forest:</p>
-<pre><code>bash common/bin/hgforest.sh merge</code></pre></li>
-</ul>
-<h3 id="using-the-trees-extension">Using the Trees Extension</h3>
-<p>The trees extension is a Mercurial add-on that helps you deal with the forest. More information is available on the <a href="http://openjdk.java.net/projects/code-tools/trees">Code Tools trees page</a>.</p>
-<h4 id="installing-the-extension">Installing the Extension</h4>
-<p>Install the extension by cloning <code>http://hg.openjdk.java.net/code-tools/trees</code> and updating your <code>.hgrc</code> file. Here's one way to do this:</p>
-<pre><code>cd ~
-mkdir hg-ext
-cd hg-ext
-hg clone http://hg.openjdk.java.net/code-tools/trees
-cat &lt;&lt; EOT &gt;&gt; ~/.hgrc
-[extensions]
-trees=~/hg-ext/trees/trees.py
-EOT</code></pre>
-<h4 id="initializing-the-tree">Initializing the Tree</h4>
-<p>The trees extension needs to know the structure of the forest. If you have already cloned the entire forest using another method, you can initialize the forest like this:</p>
-<pre><code>hg tconf --set --walk --depth</code></pre>
-<p>Or you can clone the entire forest at once, if you substitute <code>clone</code> with <code>tclone</code> when cloning the top-level repository, e.g. like this:</p>
-<pre><code>hg tclone http://hg.openjdk.java.net/jdk9/jdk9</code></pre>
-<p>In this case, the forest will be properly initialized from the start.</p>
-<h4 id="other-operations">Other Operations</h4>
-<p>The trees extensions supplement many common operations with a trees version by prefixing a <code>t</code> to the normal Mercurial command, e.g. <code>tcommit</code>, <code>tstatus</code> or <code>tmerge</code>. For instance, to update the entire forest:</p>
-<pre><code>hg tpull -u</code></pre>
 <h2 id="build-hardware-requirements">Build Hardware Requirements</h2>
 <p>OpenJDK is a massive project, and require machines ranging from decent to powerful to be able to build in a reasonable amount of time, or to be able to complete a build at all.</p>
 <p>We <em>strongly</em> recommend usage of an SSD disk for the build, since disk speed is one of the limiting factors for build performance.</p>
@@ -327,8 +284,7 @@ EOT</code></pre>
 </tbody>
 </table>
 <h3 id="gcc">gcc</h3>
-<p>The minimum accepted version of gcc is 4.3. Older versions will not be accepted by <code>configure</code>.</p>
-<p>However, gcc 4.3 is quite old and OpenJDK is not regularly tested on this version, so it is recommended to use a more modern gcc.</p>
+<p>The minimum accepted version of gcc is 4.7. Older versions will generate a warning by <code>configure</code> and are unlikely to work.</p>
 <p>OpenJDK 9 includes patches that should allow gcc 6 to compile, but this should be considered experimental.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>

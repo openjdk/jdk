@@ -7,12 +7,26 @@
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.javadoc/share/classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.jdeps/share/classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.jshell/share/classes" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/build/gensrc/jdk.compiler" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/build/gensrc/jdk.javadoc" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/build/gensrc/jdk.jdeps" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/make/tools" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/make/src/classes" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/langtools/gensrc/jdk.compiler" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/langtools/gensrc/jdk.javadoc" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/langtools/gensrc/jdk.jdeps" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/make/langtools/tools" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/make/langtools/src/classes" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/langtools/gensrc/jdk.compiler" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/langtools/gensrc/jdk.javadoc" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/langtools/gensrc/jdk.jdeps" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/langtools/gensrc/jdk.jshell" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/jdk.compiler" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/java.compiler" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/jdk.jdeps" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/jdk.jshell" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/jdk.javadoc" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/build" />
+      <excludeFolder url="file://$MODULE_DIR$/make" />
+      <excludeFolder url="file://$MODULE_DIR$/src" />
+      <excludeFolder url="file://$MODULE_DIR$/test" />
     </content>
+    <content url="file://$MODULE_DIR$/test/langtools"/>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
   </component>

@@ -23,10 +23,10 @@
 # questions.
 #
 
-include GensrcCommon.gmk
+include GensrcCommonJdk.gmk
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, jdk, gensrc/Gensrc-jdk.localedata.gmk))
+$(eval $(call IncludeCustomExtension, , gensrc/Gensrc-jdk.localedata.gmk))
 
 include GensrcLocaleData.gmk
 include GensrcCLDR.gmk
@@ -36,7 +36,7 @@ include GensrcCLDR.gmk
 include GensrcProperties.gmk
 
 $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
-    SRC_DIRS := $(JDK_TOPDIR)/src/jdk.localedata/share/classes/sun/util/resources, \
+    SRC_DIRS := $(TOPDIR)/src/jdk.localedata/share/classes/sun/util/resources, \
     CLASS := sun.util.resources.LocaleNamesBundle, \
 ))
 

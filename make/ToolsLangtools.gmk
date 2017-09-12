@@ -38,7 +38,7 @@ $(eval $(call SetupJavaCompilation,BUILD_TOOLS_LANGTOOLS, \
     SETUP := BOOT_JAVAC, \
     DISABLE_SJAVAC := true, \
     ADD_JAVAC_FLAGS := -Xprefer:source, \
-    SRC := $(LANGTOOLS_TOPDIR)/make/tools, \
+    SRC := $(TOPDIR)/make/langtools/tools, \
     INCLUDES := compileproperties propertiesparser, \
     COPY := .properties, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes))

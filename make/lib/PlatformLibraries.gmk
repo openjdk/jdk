@@ -27,7 +27,7 @@
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
-  LIBOSXAPP_SRC := $(JDK_TOPDIR)/src/java.desktop/macosx/native/libosxapp
+  LIBOSXAPP_SRC := $(TOPDIR)/src/java.desktop/macosx/native/libosxapp
 
   $(eval $(call SetupNativeCompilation,BUILD_LIBOSXAPP, \
       LIBRARY := osxapp, \

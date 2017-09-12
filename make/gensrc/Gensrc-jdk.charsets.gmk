@@ -23,23 +23,23 @@
 # questions.
 #
 
-include GensrcCommon.gmk
+include GensrcCommonJdk.gmk
 
 ################################################################################
 #
 # Generate files using the charsetmapping tool
 #
-CHARSET_DATA_DIR := $(JDK_TOPDIR)/make/data/charsetmapping
+CHARSET_DATA_DIR := $(TOPDIR)/make/data/charsetmapping
 
 CHARSET_GENSRC_JAVA_DIR_CS := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.charsets/sun/nio/cs/ext
 CHARSET_DONE_CS := $(CHARSET_GENSRC_JAVA_DIR_CS)/_the.charsetmapping
-CHARSET_COPYRIGHT_HEADER := $(JDK_TOPDIR)/make/src/classes/build/tools/charsetmapping
+CHARSET_COPYRIGHT_HEADER := $(TOPDIR)/make/jdk/src/classes/build/tools/charsetmapping
 CHARSET_TEMPLATES := \
     $(CHARSET_DATA_DIR)/SingleByte-X.java.template \
     $(CHARSET_DATA_DIR)/DoubleByte-X.java.template
 CHARSET_EXTENDED_JAVA_TEMPLATES := \
-    $(JDK_TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext/ExtendedCharsets.java.template
-CHARSET_EXTENDED_JAVA_DIR := $(JDK_TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext
+    $(TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext/ExtendedCharsets.java.template
+CHARSET_EXTENDED_JAVA_DIR := $(TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext
 CHARSET_STANDARD_OS := stdcs-$(OPENJDK_TARGET_OS)
 
 $(CHARSET_DONE_CS)-extcs: $(CHARSET_DATA_DIR)/charsets \

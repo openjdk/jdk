@@ -28,9 +28,9 @@ include LibCommon.gmk
 ################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  LIBPREF_SRC_DIRS := $(JDK_TOPDIR)/src/java.prefs/macosx/native/libprefs
+  LIBPREF_SRC_DIRS := $(TOPDIR)/src/java.prefs/macosx/native/libprefs
 else
-  LIBPREF_SRC_DIRS := $(JDK_TOPDIR)/src/java.prefs/$(OPENJDK_TARGET_OS_TYPE)/native/libprefs
+  LIBPREF_SRC_DIRS := $(TOPDIR)/src/java.prefs/$(OPENJDK_TARGET_OS_TYPE)/native/libprefs
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBPREFS, \
@@ -40,7 +40,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBPREFS, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBPREF_SRC_DIRS)) \
         $(LIBJAVA_HEADER_FLAGS), \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libprefs/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/libprefs/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \

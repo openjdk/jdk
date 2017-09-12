@@ -30,17 +30,17 @@ include LibCommon.gmk
 $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
     LIBRARY := unpack, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(JDK_TOPDIR)/src/jdk.pack/share/native/libunpack \
-        $(JDK_TOPDIR)/src/jdk.pack/share/native/common-unpack, \
+    SRC := $(TOPDIR)/src/jdk.pack/share/native/libunpack \
+        $(TOPDIR)/src/jdk.pack/share/native/common-unpack, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CXXFLAGS_JDKLIB) \
         -DNO_ZLIB -DUNPACK_JNI -DFULL \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
-        -I$(JDK_TOPDIR)/src/jdk.pack/share/native/common-unpack \
+        -I$(TOPDIR)/src/jdk.pack/share/native/common-unpack \
         $(LIBJAVA_HEADER_FLAGS), \
     CFLAGS_release := -DPRODUCT, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/libunpack/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -map:$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpack.map -debug, \

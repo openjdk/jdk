@@ -28,7 +28,7 @@
 #
 NIMBUS_PACKAGE = javax.swing.plaf
 NIMBUS_GENSRC_DIR = $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/javax/swing/plaf/nimbus
-NIMBUS_SKIN_FILE = $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/skin.laf
+NIMBUS_SKIN_FILE = $(TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/skin.laf
 
 $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_the.generated_nimbus: $(NIMBUS_SKIN_FILE) $(BUILD_TOOLS_JDK)
 	$(call LogInfo, Generating Nimbus source files)

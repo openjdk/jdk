@@ -26,9 +26,9 @@
 ################################################################################
 # Copy idl files to jdk/lib.
 $(eval $(call SetupCopyFiles,COPY_IDL, \
-    SRC := $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/tools/corba/se/idl, \
+    SRC := $(TOPDIR)/src/java.corba/share/classes/com/sun/tools/corba/se/idl, \
     DEST := $(SUPPORT_OUTPUTDIR)/modules_include/$(MODULE), \
-    FILES := $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/tools/corba/se/idl/orb.idl \
-        $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/tools/corba/se/idl/ir.idl))
+    FILES := $(TOPDIR)/src/java.corba/share/classes/com/sun/tools/corba/se/idl/orb.idl \
+        $(TOPDIR)/src/java.corba/share/classes/com/sun/tools/corba/se/idl/ir.idl))
 
 TARGETS := $(COPY_IDL)

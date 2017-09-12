@@ -37,7 +37,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     DTRACE_CPP_FLAGS := -x c
   endif
 
-  DTRACE_SOURCE_DIR := $(HOTSPOT_TOPDIR)/src/os/posix/dtrace
+  DTRACE_SOURCE_DIR := $(TOPDIR)/src/hotspot/os/posix/dtrace
   DTRACE_GENSRC_DIR := $(JVM_VARIANT_OUTPUTDIR)/gensrc/dtracefiles
 
   # Make sure we run our selected compiler for preprocessing instead of letting

@@ -857,6 +857,8 @@ JRE_SYMBOLS_BUNDLE :=  $(BUNDLES_OUTPUTDIR)/$(JRE_SYMBOLS_BUNDLE_NAME)
 TEST_BUNDLE :=  $(BUNDLES_OUTPUTDIR)/$(TEST_BUNDLE_NAME)
 DOCS_BUNDLE :=  $(BUNDLES_OUTPUTDIR)/$(DOCS_BUNDLE_NAME)
 
+CONFIGURE_CMD := $(TOPDIR)/configure
+
 # This macro is called to allow inclusion of closed source counterparts.
 # Unless overridden in closed sources, it expands to nothing.
 # Usage: This function is called in an open makefile, with the following

@@ -3,6 +3,15 @@
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
   </component>
+  <component name="JTRegService">
+    <path>jtreg_home</path> <!-- this will be replaced -->
+    <workDir>build</workDir>
+    <jre alt="true" value="images_jdk" /> <!-- this will be replaced -->
+    <options></options>
+    <ant>
+      <target file="file://$PROJECT_DIR$/.idea/build.xml" name="images" />
+    </ant>
+  </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_9" assert-keyword="true" jdk-15="true">
     <output url="file://$PROJECT_DIR$/build/idea/out" />
   </component>

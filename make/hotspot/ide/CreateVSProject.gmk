@@ -90,7 +90,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   $(eval $(call SetupJavaCompilation, BUILD_PROJECT_CREATOR, \
       SETUP := GENERATE_OLDBYTECODE, \
       ADD_JAVAC_FLAGS := -Xlint:-auxiliaryclass, \
-      SRC := $(HOTSPOT_TOPDIR)/make/src/classes, \
+      SRC := $(TOPDIR)/make/hotspot/src/classes, \
       BIN := $(TOOLS_OUTPUTDIR), \
   ))
 

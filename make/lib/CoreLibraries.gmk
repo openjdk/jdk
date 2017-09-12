@@ -26,7 +26,7 @@
 WIN_VERIFY_LIB := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libverify/verify.lib
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, jdk, lib/CoreLibraries.gmk))
+$(eval $(call IncludeCustomExtension, , lib/CoreLibraries.gmk))
 
 
 ##########################################################################################
@@ -51,7 +51,7 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
   endif
 endif
 
-LIBFDLIBM_SRC := $(JDK_TOPDIR)/src/java.base/share/native/libfdlibm
+LIBFDLIBM_SRC := $(TOPDIR)/src/java.base/share/native/libfdlibm
 LIBFDLIBM_CFLAGS := -I$(LIBFDLIBM_SRC)
 
 ifneq ($(OPENJDK_TARGET_OS), macosx)
@@ -96,7 +96,7 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   ifneq ($(OPENJDK_TARGET_CPU), x86_64)
-    BUILD_LIBVERIFY_REORDER := $(JDK_TOPDIR)/make/mapfiles/libverify/reorder-$(OPENJDK_TARGET_CPU)
+    BUILD_LIBVERIFY_REORDER := $(TOPDIR)/make/mapfiles/libverify/reorder-$(OPENJDK_TARGET_CPU)
   endif
 endif
 
@@ -110,11 +110,11 @@ endif
 $(eval $(call SetupNativeCompilation,BUILD_LIBVERIFY, \
     LIBRARY := verify, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(JDK_TOPDIR)/src/java.base/share/native/libverify, \
+    SRC := $(TOPDIR)/src/java.base/share/native/libverify, \
     OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB), \
     DISABLED_WARNINGS_microsoft := 4244 4267, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libverify/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/libverify/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm -lc, \
@@ -136,12 +136,12 @@ TARGETS += $(BUILD_LIBVERIFY)
 LIBJAVA_SRC_DIRS += $(call FindSrcDirsForLib, java.base, java)
 
 LIBJAVA_CFLAGS := $(addprefix -I, $(LIBJAVA_SRC_DIRS)) \
-    -I$(JDK_TOPDIR)/src/java.base/share/native/libfdlibm \
+    -I$(TOPDIR)/src/java.base/share/native/libfdlibm \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
     -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"'
 
 # Make it possible to override this variable
-LIBJAVA_MAPFILE ?= $(JDK_TOPDIR)/make/mapfiles/libjava/mapfile-vers
+LIBJAVA_MAPFILE ?= $(TOPDIR)/make/mapfiles/libjava/mapfile-vers
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   BUILD_LIBJAVA_java_props_md.c_CFLAGS := -x objective-c
@@ -150,7 +150,7 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   ifneq ($(OPENJDK_TARGET_CPU), x86_64)
-    LIBJAVA_REORDER := $(JDK_TOPDIR)/make/mapfiles/libjava/reorder-$(OPENJDK_TARGET_CPU)
+    LIBJAVA_REORDER := $(TOPDIR)/make/mapfiles/libjava/reorder-$(OPENJDK_TARGET_CPU)
   endif
 endif
 
@@ -209,7 +209,7 @@ endif
 BUILD_LIBZIP_REORDER :=
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   ifneq ($(OPENJDK_TARGET_CPU), x86_64)
-    BUILD_LIBZIP_REORDER := $(JDK_TOPDIR)/make/mapfiles/libzip/reorder-$(OPENJDK_TARGET_CPU)
+    BUILD_LIBZIP_REORDER := $(TOPDIR)/make/mapfiles/libzip/reorder-$(OPENJDK_TARGET_CPU)
   endif
 endif
 
@@ -221,15 +221,15 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
     LIBRARY := zip, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     OPTIMIZATION := LOW, \
-    SRC := $(JDK_TOPDIR)/src/java.base/share/native/libzip, \
+    SRC := $(TOPDIR)/src/java.base/share/native/libzip, \
     EXCLUDES := $(LIBZIP_EXCLUDES), \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(ZLIB_CPPFLAGS) \
-        -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
-        -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
+        -I$(TOPDIR)/src/java.base/share/native/libjava \
+        -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.base, \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libzip/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/libzip/mapfile-vers, \
     REORDER := $(BUILD_LIBZIP_REORDER), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -254,9 +254,9 @@ TARGETS += $(BUILD_LIBZIP)
 ##########################################################################################
 
 JIMAGELIB_CPPFLAGS := \
-    -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
-    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
-    -I$(JDK_TOPDIR)/src/java.base/share/native/libjimage \
+    -I$(TOPDIR)/src/java.base/share/native/libjava \
+    -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
+    -I$(TOPDIR)/src/java.base/share/native/libjimage \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
     #
 
@@ -265,13 +265,13 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     OPTIMIZATION := LOW, \
-    SRC := $(JDK_TOPDIR)/src/java.base/share/native/libjimage \
-        $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjimage, \
+    SRC := $(TOPDIR)/src/java.base/share/native/libjimage \
+        $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjimage, \
     EXCLUDES := $(LIBJIMAGE_EXCLUDES), \
     CFLAGS := $(CFLAGS_JDKLIB) $(JIMAGELIB_CPPFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JIMAGELIB_CPPFLAGS), \
     CFLAGS_unix := -UDEBUG, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjimage/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/libjimage/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -export:JIMAGE_Open -export:JIMAGE_Close \
@@ -344,7 +344,7 @@ LIBJLI_CFLAGS += $(addprefix -I, $(LIBJLI_SRC_DIRS))
 ifneq ($(USE_EXTERNAL_LIBZ), true)
   LIBJLI_CFLAGS += $(ZLIB_CPPFLAGS)
   LIBJLI_EXTRA_FILES += \
-      $(addprefix $(JDK_TOPDIR)/src/java.base/share/native/libzip/zlib/, \
+      $(addprefix $(TOPDIR)/src/java.base/share/native/libzip/zlib/, \
           inflate.c \
           inftrees.c \
           inffast.c \
@@ -365,7 +365,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
     DISABLED_WARNINGS_solstudio := \
         E_ASM_DISABLES_OPTIMIZATION \
         E_STATEMENT_NOT_REACHED, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjli/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/libjli/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \

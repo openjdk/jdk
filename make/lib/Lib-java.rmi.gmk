@@ -30,10 +30,10 @@ include LibCommon.gmk
 $(eval $(call SetupNativeCompilation,BUILD_LIBRMI, \
     LIBRARY := rmi, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(JDK_TOPDIR)/src/java.rmi/share/native/librmi, \
+    SRC := $(TOPDIR)/src/java.rmi/share/native/librmi, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/java.rmi, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/librmi/mapfile-vers, \
+    MAPFILE := $(TOPDIR)/make/mapfiles/librmi/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \

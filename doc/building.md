@@ -7,7 +7,7 @@ the time. They assume that you have installed Mercurial (and Cygwin if running
 on Windows) and cloned the top-level OpenJDK repository that you want to build.
 
  1. [Get the complete source code](#getting-the-source-code): \
-    `bash get_source.sh`
+    `hg clone http://hg.openjdk.java.net/jdk10/master`
 
  2. [Run configure](#running-configure): \
     `bash configure`
@@ -44,18 +44,12 @@ OpenJDK.
 
 ## Getting the Source Code
 
-OpenJDK uses [Mercurial](http://www.mercurial-scm.org) for source control. The
-source code is contained not in a single Mercurial repository, but in a tree
-("forest") of interrelated repositories. You will need to check out all of the
-repositories to be able to build OpenJDK. To assist you in dealing with this
-somewhat unusual arrangement, there are multiple tools available, which are
-explained below.
-
-In any case, make sure you are getting the correct version. At the [OpenJDK
-Mercurial server](http://hg.openjdk.java.net/) you can see a list of all
-available forests. If you want to build an older version, e.g. JDK 8, it is
-recommended that you get the `jdk8u` forest, which contains incremental
-updates, instead of the `jdk8` forest, which was frozen at JDK 8 GA.
+Make sure you are getting the correct version. As of JDK 10, the source is no
+longer split into separate repositories so you only need to clone one single
+repository. At the [OpenJDK Mercurial server](http://hg.openjdk.java.net/) you
+can see a list of all available forests. If you want to build an older version,
+e.g. JDK 8, it is recommended that you get the `jdk8u` forest, which contains
+incremental updates, instead of the `jdk8` forest, which was frozen at JDK 8 GA.
 
 If you are new to Mercurial, a good place to start is the [Mercurial Beginner's
 Guide](http://www.mercurial-scm.org/guide). The rest of this document assumes a
@@ -100,96 +94,6 @@ on where and how to check out the source code.
 
     Failure to follow this procedure might result in hard-to-debug build
     problems.
-
-### Using get\_source.sh
-
-The simplest way to get the entire forest is probably to clone the top-level
-repository and then run the `get_source.sh` script, like this:
-
-```
-hg clone http://hg.openjdk.java.net/jdk9/jdk9
-cd jdk9
-bash get_source.sh
-```
-
-The first time this is run, it will clone all the sub-repositories. Any
-subsequent execution of the script will update all sub-repositories to the
-latest revision.
-
-### Using hgforest.sh
-
-The `hgforest.sh` script is more expressive than `get_source.sh`. It takes any
-number of arguments, and runs `hg` with those arguments on each sub-repository
-in the forest. The `get_source.sh` script is basically a simple wrapper that
-runs either `hgforest.sh clone` or `hgforest.sh pull -u`.
-
-  * Cloning the forest:
-    ```
-    hg clone http://hg.openjdk.java.net/jdk9/jdk9
-    cd jdk9
-    bash common/bin/hgforest.sh clone
-    ```
-
-  * Pulling and updating the forest:
-    ```
-    bash common/bin/hgforest.sh pull -u
-    ```
-
-  * Merging over the entire forest:
-    ```
-    bash common/bin/hgforest.sh merge
-    ```
-
-### Using the Trees Extension
-
-The trees extension is a Mercurial add-on that helps you deal with the forest.
-More information is available on the [Code Tools trees page](
-http://openjdk.java.net/projects/code-tools/trees).
-
-#### Installing the Extension
-
-Install the extension by cloning `http://hg.openjdk.java.net/code-tools/trees`
-and updating your `.hgrc` file. Here's one way to do this:
-
-```
-cd ~
-mkdir hg-ext
-cd hg-ext
-hg clone http://hg.openjdk.java.net/code-tools/trees
-cat << EOT >> ~/.hgrc
-[extensions]
-trees=~/hg-ext/trees/trees.py
-EOT
-```
-
-#### Initializing the Tree
-
-The trees extension needs to know the structure of the forest. If you have
-already cloned the entire forest using another method, you can initialize the
-forest like this:
-
-```
-hg tconf --set --walk --depth
-```
-
-Or you can clone the entire forest at once, if you substitute `clone` with
-`tclone` when cloning the top-level repository, e.g. like this:
-
-```
-hg tclone http://hg.openjdk.java.net/jdk9/jdk9
-```
-
-In this case, the forest will be properly initialized from the start.
-
-#### Other Operations
-
-The trees extensions supplement many common operations with a trees version by
-prefixing a `t` to the normal Mercurial command, e.g. `tcommit`, `tstatus` or
-`tmerge`. For instance, to update the entire forest:
-
-```
-hg tpull -u
-```
 
 ## Build Hardware Requirements
 

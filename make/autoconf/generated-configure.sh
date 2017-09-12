@@ -871,7 +871,6 @@ IMPORT_MODULES_LIBS
 IMPORT_MODULES_CMDS
 IMPORT_MODULES_CLASSES
 BUILD_OUTPUT
-JDK_TOPDIR
 NASHORN_TOPDIR
 HOTSPOT_TOPDIR
 JAXWS_TOPDIR
@@ -1140,6 +1139,7 @@ with_toolchain_path
 with_extra_path
 with_sdk_name
 with_conf_name
+with_output_base_dir
 with_output_sync
 with_default_make_target
 enable_headless_only
@@ -2059,6 +2059,7 @@ Optional Packages:
   --with-sdk-name         use the platform SDK of the given name. [macosx]
   --with-conf-name        use this as the name of the configuration [generated
                           from important configuration options]
+  --with-output-base-dir  override the default output base directory [./build]
   --with-output-sync      set make output sync type if supported by make.
                           [recurse]
   --with-default-make-target
@@ -3451,7 +3452,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 ac_aux_dir=
-for ac_dir in $TOPDIR/common/autoconf/build-aux "$srcdir"/$TOPDIR/common/autoconf/build-aux; do
+for ac_dir in $TOPDIR/make/autoconf/build-aux "$srcdir"/$TOPDIR/make/autoconf/build-aux; do
   if test -f "$ac_dir/install-sh"; then
     ac_aux_dir=$ac_dir
     ac_install_sh="$ac_aux_dir/install-sh -c"
@@ -3467,7 +3468,7 @@ for ac_dir in $TOPDIR/common/autoconf/build-aux "$srcdir"/$TOPDIR/common/autocon
   fi
 done
 if test -z "$ac_aux_dir"; then
-  as_fn_error $? "cannot find install-sh, install.sh, or shtool in $TOPDIR/common/autoconf/build-aux \"$srcdir\"/$TOPDIR/common/autoconf/build-aux" "$LINENO" 5
+  as_fn_error $? "cannot find install-sh, install.sh, or shtool in $TOPDIR/make/autoconf/build-aux \"$srcdir\"/$TOPDIR/make/autoconf/build-aux" "$LINENO" 5
 fi
 
 # These three variables are undocumented and unsupported,
@@ -5161,7 +5162,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1504441177
+DATE_WHEN_GENERATED=1505235832
 
 ###############################################################################
 #
@@ -16905,7 +16906,7 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
 
 
   # Locate the directory of this script.
-  AUTOCONF_DIR=$TOPDIR/common/autoconf
+  AUTOCONF_DIR=$TOPDIR/make/autoconf
 
   # Setup username (for use in adhoc version strings etc)
   # Outer [ ] to quote m4.
@@ -17600,11 +17601,19 @@ if test "${with_conf_name+set}" = set; then :
 fi
 
 
+# Check whether --with-output-base-dir was given.
+if test "${with_output_base_dir+set}" = set; then :
+  withval=$with_output_base_dir;  OUTPUT_BASE=${with_output_base_dir}
+else
+   OUTPUT_BASE="$SRC_ROOT/build"
+fi
+
+
   # Test from where we are running configure, in or outside of src root.
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking where to store configuration" >&5
 $as_echo_n "checking where to store configuration... " >&6; }
   if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
-      || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" \
+      || test "x$CURDIR" = "x$SRC_ROOT/make/autoconf" \
       || test "x$CURDIR" = "x$SRC_ROOT/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
@@ -17616,7 +17625,7 @@ $as_echo "in default location" >&6; }
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: in build directory with custom name" >&5
 $as_echo "in build directory with custom name" >&6; }
     fi
-    OUTPUT_ROOT="$SRC_ROOT/build/${CONF_NAME}"
+    OUTPUT_ROOT="${OUTPUT_BASE}/${CONF_NAME}"
     $MKDIR -p "$OUTPUT_ROOT"
     if test ! -d "$OUTPUT_ROOT"; then
       as_fn_error $? "Could not create build directory $OUTPUT_ROOT" "$LINENO" 5
@@ -51890,11 +51899,11 @@ fi
   # Setup some hard coded includes
   COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
       -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
-      -I${JDK_TOPDIR}/src/java.base/share/native/include \
-      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
-      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include \
-      -I${JDK_TOPDIR}/src/java.base/share/native/libjava \
-      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava"
+      -I${TOPDIR}/src/java.base/share/native/include \
+      -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
+      -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include \
+      -I${TOPDIR}/src/java.base/share/native/libjava \
+      -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava"
 
   # The shared libraries are compiled using the picflag.
   CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK \
@@ -52769,11 +52778,11 @@ fi
   # Setup some hard coded includes
   OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
       -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
-      -I${JDK_TOPDIR}/src/java.base/share/native/include \
-      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_BUILD_OS/native/include \
-      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/include \
-      -I${JDK_TOPDIR}/src/java.base/share/native/libjava \
-      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/libjava"
+      -I${TOPDIR}/src/java.base/share/native/include \
+      -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS/native/include \
+      -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/include \
+      -I${TOPDIR}/src/java.base/share/native/libjava \
+      -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/libjava"
 
   # The shared libraries are compiled using the picflag.
   OPENJDK_BUILD_CFLAGS_JDKLIB="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
@@ -54200,19 +54209,19 @@ $as_echo "no, forced" >&6; }
   if test "x$ENABLE_AOT" = "xtrue"; then
     # Only enable AOT on X64 platforms.
     if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
-      if test -e "$HOTSPOT_TOPDIR/src/jdk.aot"; then
-        if test -e "$HOTSPOT_TOPDIR/src/jdk.internal.vm.compiler"; then
+      if test -e "${TOPDIR}/src/jdk.aot"; then
+        if test -e "${TOPDIR}/src/jdk.internal.vm.compiler"; then
           ENABLE_AOT="true"
         else
           ENABLE_AOT="false"
           if test "x$enable_aot" = "xyes"; then
-            as_fn_error $? "Cannot build AOT without hotspot/src/jdk.internal.vm.compiler sources. Remove --enable-aot." "$LINENO" 5
+            as_fn_error $? "Cannot build AOT without src/jdk.internal.vm.compiler sources. Remove --enable-aot." "$LINENO" 5
           fi
         fi
       else
         ENABLE_AOT="false"
         if test "x$enable_aot" = "xyes"; then
-          as_fn_error $? "Cannot build AOT without hotspot/src/jdk.aot sources. Remove --enable-aot." "$LINENO" 5
+          as_fn_error $? "Cannot build AOT without src/jdk.aot sources. Remove --enable-aot." "$LINENO" 5
         fi
       fi
     else
@@ -54249,7 +54258,7 @@ if test "${enable_hotspot_gtest+set}" = set; then :
 fi
 
 
-  if test -e "$HOTSPOT_TOPDIR/test/native"; then
+  if test -e "${TOPDIR}/test/hotspot/gtest"; then
     GTEST_DIR_EXISTS="true"
   else
     GTEST_DIR_EXISTS="false"
@@ -54302,7 +54311,7 @@ $as_echo "no" >&6; }
   if test "x$OPENJDK_BUILD_OS" = xwindows; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if fixpath can be created" >&5
 $as_echo_n "checking if fixpath can be created... " >&6; }
-    FIXPATH_SRC="$SRC_ROOT/common/src/fixpath.c"
+    FIXPATH_SRC="$SRC_ROOT/make/src/native/fixpath.c"
     FIXPATH_BIN="$CONFIGURESUPPORT_OUTPUTDIR/bin/fixpath.exe"
     FIXPATH_DIR="$CONFIGURESUPPORT_OUTPUTDIR/fixpath"
     if test "x$OPENJDK_BUILD_OS_ENV" = xwindows.cygwin; then
@@ -65934,7 +65943,7 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if elliptic curve crypto implementation is present" >&5
 $as_echo_n "checking if elliptic curve crypto implementation is present... " >&6; }
 
-  if test -d "${SRC_ROOT}/jdk/src/jdk.crypto.ec/share/native/libsunec/impl"; then
+  if test -d "${TOPDIR}/src/jdk.crypto.ec/share/native/libsunec/impl"; then
     ENABLE_INTREE_EC=true
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }

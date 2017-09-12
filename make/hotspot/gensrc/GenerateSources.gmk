@@ -39,14 +39,14 @@ include gensrc/GensrcAdlc.gmk
 include gensrc/GensrcDtrace.gmk
 include gensrc/GensrcJvmti.gmk
 
-$(eval $(call IncludeCustomExtension, hotspot, gensrc/GenerateSources.gmk))
+$(eval $(call IncludeCustomExtension, , hotspot/gensrc/GenerateSources.gmk))
 
 # While technically the rules below are "gendata" which can be done in parallel
 # with native compilation, let's keep it here for simplicity.
 
 # The Xusage.txt file needs to have platform specific path separator
 $(eval $(call SetupTextFileProcessing, CREATE_XUSAGE, \
-    SOURCE_FILES := $(HOTSPOT_TOPDIR)/src/share/vm/Xusage.txt, \
+    SOURCE_FILES := $(TOPDIR)/src/hotspot/share/Xusage.txt, \
     OUTPUT_FILE := $(JVM_LIB_OUTPUTDIR)/Xusage.txt, \
     REPLACEMENTS := separated by ;> => separated by $(PATH_SEP)> ; , \
 ))
@@ -55,7 +55,7 @@ TARGETS += $(CREATE_XUSAGE)
 
 # Setup the hotspot launcher script for developer use
 $(eval $(call SetupTextFileProcessing, CREATE_HOTSPOT_LAUNCHER, \
-    SOURCE_FILES := $(HOTSPOT_TOPDIR)/make/hotspot.script, \
+    SOURCE_FILES := $(TOPDIR)/make/hotspot/hotspot.script, \
     OUTPUT_FILE := $(JVM_OUTPUTDIR)/hotspot, \
     REPLACEMENTS := \
         @@LIBARCH@@ => $(OPENJDK_TARGET_CPU_LEGACY_LIB) ; \

@@ -53,7 +53,7 @@
  - utility definitions
  -->
 
-<project name="langtools" default="build" basedir="..">
+<project name="langtools" default="build" basedir="../..">
     <!--
     **** Global property definitions.
     -->
@@ -61,7 +61,7 @@
     <!-- The following locations can be used to override default property values. -->
 
     <!-- Use this location for customizations specific to this instance of this workspace -->
-    <property file="build.properties"/>
+    <property file="make/langtools/build.properties"/>
 
     <!-- Use this location for customizations common to all OpenJDK langtools workspaces -->
     <property file="${user.home}/.openjdk/${ant.project.name}-build.properties"/>
@@ -72,10 +72,10 @@
     <!-- Convenient shorthands for standard locations within the workspace. -->
     <property name="src.dir" location="src"/>
     <property name="test.dir" location="test"/>
-    <property name="make.dir" location="make"/>
+    <property name="make.dir" location="make/langtools"/>
     <property name="make.conf.dir" location="${make.dir}/conf"/>
     <property name="make.tools.dir" location="${make.dir}/tools"/>
-    <property name="build.dir" location="build"/>
+    <property name="build.dir" location="build/langtools"/>
     <property name="build.modules" location="${build.dir}/modules"/>
     <property name="build.gensrc" location="${build.dir}/gensrc"/>
     <property name="build.tools" location="${build.dir}/toolclasses"/>
@@ -83,29 +83,26 @@
     <property name="build.jtreg" location="${build.dir}/jtreg"/>
     <property name="build.prevsrc" location="${build.dir}/prevsrc"/>
 
-    <pathconvert property="modules.names" pathsep=",">
-        <globmapper from="${src.dir}/*" to="*" handledirsep="yes"/>
-        <dirset dir="${src.dir}" includes="*.*"/>
-    </pathconvert>
+    <dirset id="src.module.dirset" dir="${src.dir}" includes="${module.names}"/>
 
-    <pathconvert property="xpatch.rest" pathsep=" --patch-module=">
+    <pathconvert pathsep="," property="src.module.dirs" refid="src.module.dirset"/>
+
+    <pathconvert property="xpatch.rest" pathsep=" --patch-module=" refid="src.module.dirset">
         <scriptmapper language="javascript">
             fs = project.getProperty("file.separator");
             path = project.getProperty("build.modules");
             mod = source.substr(source.lastIndexOf(fs)+1);
             self.addMappedName(mod + "=\"" + path + fs + mod + "\"");
         </scriptmapper>
-        <dirset dir="${src.dir}" includes="*.*"/>
     </pathconvert>
 
-    <pathconvert property="xpatch.noquotes.rest" pathsep=" --patch-module=">
+    <pathconvert property="xpatch.noquotes.rest" pathsep=" --patch-module=" refid="src.module.dirset">
         <scriptmapper language="javascript">
             fs = project.getProperty("file.separator");
             path = project.getProperty("build.modules");
             mod = source.substr(source.lastIndexOf(fs)+1);
             self.addMappedName(mod + "=" + path + fs + mod);
         </scriptmapper>
-        <dirset dir="${src.dir}" includes="*.*"/>
     </pathconvert>
 
     <property name="xpatch.cmd" value="--patch-module=${xpatch.rest}"/>
@@ -198,6 +195,7 @@
 
     <target name="generate-sources-internal">
         <basename property="module.name" file="${basedir}"/>
+        <mkdir dir="${build.gensrc}/${module.name}"/>
         <pparse destdir="${build.gensrc}/${module.name}" includes="${langtools.resource.includes}">
             <src path="./share/classes"/>
         </pparse>
@@ -208,22 +206,48 @@
 
     <target name="generate-sources"  depends="-prepare-build,-def-pparse,-def-pcompile">
         <subant inheritall="true" target="generate-sources-internal" genericantfile="${make.dir}/build.xml">
-              <dirset dir="${src.dir}" includes="*.*"/>
+              <dirset refid="src.module.dirset"/>
         </subant>
     </target>
 
     <target name="build-all-classes" depends="generate-sources">
+        <pathconvert property="xpatch.src.rest" pathsep=" --patch-module=" refid="src.module.dirset">
+            <scriptmapper language="javascript">
+                fs = project.getProperty("file.separator");
+                path_src = project.getProperty("src.dir");
+                path_sep = project.getProperty("path.separator");
+                path_gensrc = project.getProperty("build.gensrc");
+                mod = source.substr(source.lastIndexOf(fs)+1);
+                self.addMappedName(mod + "=" + path_src + fs + mod + path_sep + path_gensrc + fs + mod);
+            </scriptmapper>
+        </pathconvert>
+        <property name="xpatch.src.cmd" value="--patch-module=${xpatch.src.rest}"/>
+        <pathconvert pathsep="," property="gensrc.module.dirs">
+            <dirset dir="${build.gensrc}" includes="${module.names}"/>
+        </pathconvert>
+        <multirootfileset id="source.fileset" basedirs="${src.module.dirs},${gensrc.module.dirs}">
+            <include name="**/*.java"/>
+            <different targetdir="${build.prevsrc}" ignoreFileTimes="true"/>
+        </multirootfileset>
+        <pathconvert pathsep=" " property="source.files" refid="source.fileset"/>
+        <echo file="${build.dir}/sources.txt">${source.files}</echo>
         <exec executable="${langtools.jdk.home}/bin/javac" failonerror="true">
             <arg line="-source ${javac.source} -target ${javac.target}" />
             <arg value="-d" />
             <arg value="${build.modules}" />
             <arg line="${javac.opts}" />
-            <arg line="--module-source-path ${src.dir}${file.separator}*${file.separator}share${file.separator}classes${path.separator}${build.gensrc}" />
-            <arg line="-m ${modules.names}" />
+            <arg line="${xpatch.src.cmd}" />
+            <arg line="--module-source-path ." />
+            <arg line="@${build.dir}/sources.txt" />
         </exec>
+        <delete file="${build.dir}/sources.txt"/>
         <delete>
             <fileset dir="${build.modules}" includes="**/module-info.class"/>
         </delete>
+        <!-- workaround for incremental compilation -->
+        <copy todir="${build.prevsrc}" >
+            <multirootfileset refid="source.fileset"/>
+        </copy>
     </target>
 
     <target name="build-all-tools" depends="build-all-classes, -def-build-tool">
@@ -247,7 +271,7 @@
     <target name="idea" depends="-check-langtools.jdk.home">
         <mkdir dir=".idea"/>
         <copy todir=".idea" >
-            <fileset dir="make/intellij">
+            <fileset dir="${make.dir}/intellij">
                <exclude name="**/src/**"/>
                <exclude name="**/utils/**"/>
             </fileset>
@@ -267,7 +291,7 @@
         <mkdir dir=".idea/classes"/>
         <javac source="${javac.build.source}"
                target="${javac.build.target}"
-               srcdir="make/intellij/src"
+               srcdir="${make.dir}/intellij/src"
                destdir=".idea/classes"/>
     </target>
 

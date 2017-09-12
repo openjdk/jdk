@@ -29,8 +29,8 @@
 
 GENSRC_CHARACTERDATA :=
 
-CHARACTERDATA = $(JDK_TOPDIR)/make/data/characterdata
-UNICODEDATA = $(JDK_TOPDIR)/make/data/unicodedata
+CHARACTERDATA = $(TOPDIR)/make/data/characterdata
+UNICODEDATA = $(TOPDIR)/make/data/unicodedata
 
 define SetupCharacterData
   $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/$1.java: \

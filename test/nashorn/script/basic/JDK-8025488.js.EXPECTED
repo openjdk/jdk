@@ -1,3 +1,3 @@
 [object Object]
-	at MyError (test/script/basic/JDK-8025488.js:34)
-	at <program> (test/script/basic/JDK-8025488.js:42)
+	at MyError (test/nashorn/script/basic/JDK-8025488.js:34)
+	at <program> (test/nashorn/script/basic/JDK-8025488.js:42)

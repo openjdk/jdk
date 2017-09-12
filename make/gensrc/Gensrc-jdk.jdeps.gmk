@@ -23,7 +23,7 @@
 # questions.
 #
 
-include GensrcCommon.gmk
+include GensrcCommonLangtools.gmk
 
 $(eval $(call SetupVersionProperties,JAVAP_VERSION, \
     com/sun/tools/javap/resources/version.properties))

@@ -29,7 +29,7 @@
  * @run
  */
 
-var p = new Packages.java.io.File("test/script/basic/JDK-8007990.js");
+var p = new Packages.java.io.File("test/nashorn/script/basic/JDK-8007990.js");
 var path = p.toPath();
 var basicView = Packages.java.nio.file.Files.getFileAttributeView(path, Packages.java.nio.file.attribute.BasicFileAttributeView.class);
 // We just want to confirm we can access the readAttributes() function

@@ -187,6 +187,23 @@ DOCS_MODULES += \
 # before building the real images.
 INTERIM_IMAGE_MODULES := java.base java.logging
 
+LANGTOOLS_MODULES := \
+    java.compiler \
+    jdk.compiler \
+    jdk.javadoc \
+    jdk.jdeps \
+    jdk.jshell \
+    #
+
+CORBA_MODULES := java.corba
+
+HOTSPOT_MODULES := \
+    jdk.aot \
+    jdk.hotspot.agent \
+    jdk.internal.vm.ci \
+    jdk.internal.vm.compiler \
+    #
+
 ################################################################################
 # Some platforms don't have the serviceability agent
 
@@ -218,13 +235,7 @@ GENERATED_SRC_DIRS += \
     #
 
 TOP_SRC_DIRS += \
-    $(CORBA_TOPDIR)/src \
-    $(HOTSPOT_TOPDIR)/src \
-    $(JDK_TOPDIR)/src \
-    $(LANGTOOLS_TOPDIR)/src \
-    $(JAXP_TOPDIR)/src \
-    $(JAXWS_TOPDIR)/src \
-    $(NASHORN_TOPDIR)/src \
+    $(TOPDIR)/src \
     #
 
 SRC_SUBDIRS += $(OPENJDK_TARGET_OS)/classes

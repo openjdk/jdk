@@ -29,7 +29,7 @@ include CopyCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 
-  UCRYPTO_CFG_SRC := $(JDK_TOPDIR)/src/jdk.crypto.ucrypto/solaris/conf/security/ucrypto-solaris.cfg
+  UCRYPTO_CFG_SRC := $(TOPDIR)/src/jdk.crypto.ucrypto/solaris/conf/security/ucrypto-solaris.cfg
   UCRYPTO_CFG_DST := $(CONF_DST_DIR)/security/ucrypto-solaris.cfg
 
   $(UCRYPTO_CFG_DST): $(UCRYPTO_CFG_SRC)

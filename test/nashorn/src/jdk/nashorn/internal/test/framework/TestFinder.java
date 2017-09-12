@@ -116,7 +116,7 @@ public final class TestFinder {
         if (testList == null || testList.length() == 0) {
             // Run the tests under the test roots dir, selected by the
             // TEST_JS_INCLUDES patterns
-            final String testRootsString = System.getProperty(TEST_JS_ROOTS, "test/script");
+            final String testRootsString = System.getProperty(TEST_JS_ROOTS, "test/nashorn/script");
             if (testRootsString == null || testRootsString.length() == 0) {
                 throw new Exception("Error: " + TEST_JS_ROOTS + " must be set");
             }
@@ -160,6 +160,7 @@ public final class TestFinder {
             factory.log("WARNING: " + dir + " not found or not a directory");
         }
 
+
         Files.walkFileTree(dir, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
@@ -191,7 +192,7 @@ public final class TestFinder {
         }
     }
 
-    private static final String uncheckedDirs[] = System.getProperty(TEST_JS_UNCHECKED_DIR, "test/script/external/test262/").split(" ");
+    private static final String uncheckedDirs[] = System.getProperty(TEST_JS_UNCHECKED_DIR, "test/nashorn/script/external/test262/").split(" ");
 
     private static boolean isUnchecked(final Path testFile) {
         for (final String uncheckedDir : uncheckedDirs) {
@@ -447,7 +448,7 @@ public final class TestFinder {
     }
 
     private static Path[] getExcludeDirs() {
-        final String excludeDirs[] = System.getProperty(TEST_JS_EXCLUDE_DIR, "test/script/currently-failing").split(" ");
+        final String excludeDirs[] = System.getProperty(TEST_JS_EXCLUDE_DIR, "test/nashorn/script/currently-failing").split(" ");
         final Path[] excludePaths = new Path[excludeDirs.length];
         final FileSystem fileSystem = FileSystems.getDefault();
         int i = 0;

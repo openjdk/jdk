@@ -214,19 +214,19 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_AOT],
   if test "x$ENABLE_AOT" = "xtrue"; then
     # Only enable AOT on X64 platforms.
     if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
-      if test -e "$HOTSPOT_TOPDIR/src/jdk.aot"; then
-        if test -e "$HOTSPOT_TOPDIR/src/jdk.internal.vm.compiler"; then
+      if test -e "${TOPDIR}/src/jdk.aot"; then
+        if test -e "${TOPDIR}/src/jdk.internal.vm.compiler"; then
           ENABLE_AOT="true"
         else
           ENABLE_AOT="false"
           if test "x$enable_aot" = "xyes"; then
-            AC_MSG_ERROR([Cannot build AOT without hotspot/src/jdk.internal.vm.compiler sources. Remove --enable-aot.])
+            AC_MSG_ERROR([Cannot build AOT without src/jdk.internal.vm.compiler sources. Remove --enable-aot.])
           fi
         fi
       else
         ENABLE_AOT="false"
         if test "x$enable_aot" = "xyes"; then
-          AC_MSG_ERROR([Cannot build AOT without hotspot/src/jdk.aot sources. Remove --enable-aot.])
+          AC_MSG_ERROR([Cannot build AOT without src/jdk.aot sources. Remove --enable-aot.])
         fi
       fi
     else
@@ -488,7 +488,7 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_GTEST],
   AC_ARG_ENABLE([hotspot-gtest], [AS_HELP_STRING([--disable-hotspot-gtest],
       [Disables building of the Hotspot unit tests])])
 
-  if test -e "$HOTSPOT_TOPDIR/test/native"; then
+  if test -e "${TOPDIR}/test/hotspot/gtest"; then
     GTEST_DIR_EXISTS="true"
   else
     GTEST_DIR_EXISTS="false"

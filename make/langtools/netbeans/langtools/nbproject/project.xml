@@ -39,7 +39,7 @@
             <!-- Do not use Project Properties customizer when editing this file manually. -->
             <name>langtools</name>
             <properties>
-                <property name="root">../../..</property>
+                <property name="root">../../../..</property>
             </properties>
             <folders>
                 <source-folder>
@@ -49,12 +49,12 @@
                 <source-folder>
                     <label>Test files</label>
                     <type>tests</type>
-                    <location>${root}/test</location>
+                    <location>${root}/test/langtools</location>
                 </source-folder>
                 <source-folder>
                     <label>Build files</label>
                     <type>build</type>
-                    <location>${root}/make</location>
+                    <location>${root}/make/langtools</location>
                 </source-folder>
                 <source-folder>
                     <label>Source files - java.compiler</label>
@@ -253,7 +253,7 @@
                     <target>jtreg</target>
                     <context>
                         <property>jtreg.tests</property>
-                        <folder>${root}/test</folder>
+                        <folder>${root}/test/langtools</folder>
                         <pattern>\.(java|sh)$</pattern>
                         <format>relative-path</format>
                         <arity>
@@ -335,7 +335,7 @@
                     <target>debug-jtreg</target>
                     <context>
                         <property>jtreg.tests</property>
-                        <folder>${root}/test</folder>
+                        <folder>${root}/test/langtools</folder>
                         <pattern>\.(java|sh)$</pattern>
                         <format>relative-path</format>
                         <arity>
@@ -447,7 +447,7 @@
                     </source-folder>
                     <source-folder style="tree">
                         <label>Test files</label>
-                        <location>${root}/test</location>
+                        <location>${root}/test/langtools</location>
                     </source-folder>
                     <source-folder style="tree">
                         <label>Build files</label>

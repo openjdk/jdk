@@ -44,7 +44,7 @@ VARDEPS_FILE := $(call DependOnVariable, VARDEPS_VALUE)
 ############################################################################
 
 $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/module/ModuleLoaderMap.java: \
-    $(JDK_TOPDIR)/src/java.base/share/classes/jdk/internal/module/ModuleLoaderMap.java \
+    $(TOPDIR)/src/java.base/share/classes/jdk/internal/module/ModuleLoaderMap.java \
     $(VARDEPS_FILE) $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
@@ -55,7 +55,7 @@ $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/module/ModuleLoaderMap.java: 
 GENSRC_JAVA_BASE += $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/module/ModuleLoaderMap.java
 
 $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/vm/cds/resources/ModuleLoaderMap.dat: \
-    $(JDK_TOPDIR)/src/java.base/share/classes/jdk/internal/vm/cds/resources/ModuleLoaderMap.dat \
+    $(TOPDIR)/src/java.base/share/classes/jdk/internal/vm/cds/resources/ModuleLoaderMap.dat \
     $(VARDEPS_FILE) $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp

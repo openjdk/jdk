@@ -27,19 +27,19 @@
   </target>
 
   <target name="prepare" depends="init">
-    <mkdir dir="${build.classes.dir}"/>
-    <mkdir dir="${dist.dir}"/>
-    <mkdir dir="${dist.dir}/lib"/>
+    <mkdir dir="${nasgen.build.classes.dir}"/>
+    <mkdir dir="${nasgen.dist.dir}"/>
+    <mkdir dir="${nasgen.dist.dir}/lib"/>
   </target>
 
   <target name="clean" depends="init">
-    <delete dir="${build.dir}"/>
-    <delete dir="${dist.dir}"/>
+    <delete dir="${nasgen.build.dir}"/>
+    <delete dir="${nasgen.dist.dir}"/>
   </target>
 
   <target name="compile" depends="prepare" description="Compiles the nasgen sources">
     <javac srcdir="${src.dir}"
-           destdir="${build.classes.dir}"
+           destdir="${nasgen.build.classes.dir}"
            debug="${javac.debug}"
            includeantruntime="false" fork="true">
       <compilerarg line="${nasgen.module.imports}"/>
@@ -50,7 +50,7 @@
   </target>
 
   <target name="jar" depends="compile" description="Creates nasgen.jar">
-    <jar jarfile="${dist.jar}" basedir="${build.classes.dir}" manifest="${meta.inf.dir}/MANIFEST.MF"/>
+    <jar jarfile="${nasgen.dist.jar}" basedir="${nasgen.build.classes.dir}" manifest="${meta.inf.dir}/MANIFEST.MF"/>
   </target>
 
   <target name="dist" depends="jar"/>
