@@ -162,16 +162,18 @@ public class CreateMultiReleaseTestJars {
 
     String findTestDir(String dir) throws IOException {
         Path path = Paths.get(dir).toAbsolutePath();
+        Path child = null;
         while (path != null && !path.endsWith("test")) {
+            child = path;
             path = path.getParent();
         }
-        if (path == null) {
+        if (child == null) {
             throw new IllegalArgumentException(dir + " is not in a test directory");
         }
-        if (!Files.isDirectory(path)) {
-            throw new IOException(path.toString() + " is not a directory");
+        if (!Files.isDirectory(child)) {
+            throw new IOException(child.toString() + " is not a directory");
         }
-        return path.toString();
+        return child.toString();
     }
 
     void compileEntries() {

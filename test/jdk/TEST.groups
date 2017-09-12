@@ -548,6 +548,7 @@ needs_jre = \
 # These are isolated for easy exclusions
 #
 needs_charsets = \
+  -:needs_locales_and_charsets \
   java/io/OutputStreamWriter/TestWrite.java \
   java/nio/charset/RemovingSunIO/SunioAlias.java \
   java/nio/charset/coders/Check.java \
@@ -782,3 +783,90 @@ compact1_minimal = \
  -:needs_compact3 \
  -:needs_jre \
  -:needs_jdk
+
+needs_headful = \
+  java/util/TimeZone/DefaultTimeZoneTest.java \
+  sun/security/tools/policytool
+
+needs_locales = \
+  -:needs_locales_and_charsets \
+  java/text/Collator/APITest.java \
+  java/text/Collator/CollationKeyTest.java \
+  java/text/Collator/DanishTest.java \
+  java/text/Collator/FinnishTest.java \
+  java/text/Collator/FrenchTest.java \
+  java/text/Collator/G7Test.java \
+  java/text/Collator/JapaneseTest.java \
+  java/text/Collator/KoreanTest.java \
+  java/text/Collator/Regression.java \
+  java/text/Collator/TurkishTest.java \
+  java/text/Collator/VietnameseTest.java \
+  java/text/Format/DateFormat/bug4117335.java \
+  java/text/Format/DateFormat/DateFormatTest.java \
+  java/text/Format/DateFormat/IntlTestDateFormatSymbols.java \
+  java/text/Format/DateFormat/NonGregorianFormatTest.java \
+  java/text/Format/NumberFormat/IntlTestNumberFormatAPI.java \
+  java/text/Format/NumberFormat/NumberRegression.java \
+  java/text/Format/NumberFormat/NumberTest.java \
+  java/util/Calendar/Bug4302966.java \
+  java/util/TimeZone/HongKong.java \
+  java/util/TimeZone/TimeZoneTest.java \
+  java/util/Calendar/NarrowNamesTest.sh \
+  java/util/Locale/Bug8001562.java \
+  java/util/Locale/InternationalBAT.java \
+  java/util/Locale/LocaleEnhanceTest.java \
+  java/util/Locale/LocaleTest.java \
+  java/util/Locale/ThaiGov.java \
+  java/text/Format/DateFormat/Bug4823811.java \
+  java/text/Format/DateFormat/Bug6683975.java \
+  java/text/Format/DateFormat/ContextMonthNamesTest.java \
+  java/text/Format/DecimalFormat/RoundingAndPropertyTest.java \
+  java/time/test/java/time/format/TestDateTimeFormatterBuilder.java \
+  java/time/test/java/time/format/TestDateTimeTextProvider.java \
+  java/time/test/java/time/format/TestNonIsoFormatter.java \
+  java/time/test/java/time/format/TestTextParser.java \
+  java/time/test/java/time/format/TestTextPrinter.java \
+  java/util/Currency/CurrencyTest.java \
+  java/util/Formatter/Basic.java \
+  sun/text/resources/Collator/Bug4248694.java \
+  sun/text/resources/Collator/Bug4804273.java \
+  sun/text/resources/Collator/Bug6755060.java \
+  sun/text/resources/Format/Bug4395196.java \
+  sun/text/resources/Format/Bug4442855.java \
+  sun/text/resources/Format/Bug4621320.java \
+  sun/text/resources/Format/Bug4651568.java \
+  sun/text/resources/Format/Bug4762201.java \
+  sun/text/resources/Format/Bug4807540.java \
+  sun/text/resources/Format/Bug4810032.java \
+  sun/text/resources/Format/Bug4994312.java \
+  sun/text/resources/Format/Bug5096553.java \
+  sun/text/resources/LocaleDataTest.java \
+  sun/util/resources/Calendar/Bug4518811.java \
+  sun/util/resources/Calendar/Bug4527203.java \
+  sun/util/resources/Locale/Bug4429024.java \
+  sun/util/resources/Locale/Bug4965260.java \
+  sun/util/resources/Locale/Bug6275682.java \
+  sun/util/resources/TimeZone/Bug6271396.java \
+  sun/util/resources/TimeZone/Bug6317929.java \
+  sun/util/resources/TimeZone/Bug6377794.java \
+  sun/util/resources/TimeZone/Bug6442006.java
+
+needs_locales_and_charsets = \
+  java/text/BreakIterator/NewVSOld_th_TH.java \
+  java/util/Locale/InternationalBAT.java
+
+needs_sunec = \
+ -:needs_sunec_and_sunpkcs11 \
+  sun/security/ec/TestEC.java
+
+needs_sunpkcs11 = \
+ -:needs_sunec_and_sunpkcs11 \
+  sun/security/pkcs11/Secmod \
+  sun/security/tools/keytool/autotest.sh
+
+needs_sunec_and_sunpkcs11 = \
+  sun/security/pkcs11/Secmod/AddPrivateKey.java \
+  sun/security/pkcs11/Secmod/TrustAnchors.java
+
+needs_nashorn = \
+  javax/script

@@ -27,7 +27,7 @@ default: all
 
 USE_FAILURE_HANDLER := true
 
-include ../../test/TestCommon.gmk
+include ../TestCommon.gmk
 
 # Default make rule (runs default nashorn tests)
 all: nashorn_default

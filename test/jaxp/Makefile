@@ -27,7 +27,7 @@ default: all
 
 USE_JTREG_VERSION := 4.1
 
-include ../../test/TestCommon.gmk
+include ../TestCommon.gmk
 
 # Default make rule (runs default JAXP tests)
 all: jaxp_all
