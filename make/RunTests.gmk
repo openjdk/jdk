@@ -32,6 +32,9 @@ include FindTests.gmk
 # We will always run multiple tests serially
 .NOTPARALLEL:
 
+# Directories to find jtreg tests relative to
+JTREG_TEST_TOPDIRS := $(TOPDIR) $(JTREG_TESTROOTS)
+
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , RunTests.gmk))
 
@@ -120,8 +123,8 @@ endef
 #
 # It is a Jtreg test if it optionally begins with jtreg:, and then is either
 # an unspecified group name (possibly prefixed by :), or a group in a
-# specified <component>/test directory, or a path to a test or test directory,
-# either absolute or relative to TOPDIR.
+# specified test/<component> directory, or a path to a test or test directory,
+# either absolute or relative to any of the JTREG_TEST_TOPDIRS.
 define ParseJtregTestSelection
   $(eval TEST_NAME := $(strip $(patsubst jtreg:%, %, $1))) \
   $(if $(or $(findstring :, $(TEST_NAME)), $(findstring /, $(TEST_NAME))), , \
@@ -129,18 +132,19 @@ define ParseJtregTestSelection
   ) \
   $(if $(findstring :, $(TEST_NAME)), \
     $(if $(filter :%, $(TEST_NAME)), \
-      $(foreach component, $(JTREG_COMPONENTS), \
+      $(foreach root, $(JTREG_TESTROOTS), \
         $(if $(filter $(patsubst :%, %, $(TEST_NAME)), \
-            $($(component)_JTREG_TEST_GROUPS)), \
-          jtreg:$(component)/test:$(patsubst :%,%,$(TEST_NAME)) \
+            $($(root)_JTREG_TEST_GROUPS)), \
+          jtreg:$(root):$(patsubst :%,%,$(TEST_NAME)) \
         ) \
       ) \
     , \
-      $(eval COMPONENT := $(word 1, $(subst /, $(SPACE), $(TEST_NAME)))) \
+      $(eval ROOT_PART := $(word 1, $(subst :, $(SPACE), $(TEST_NAME)))) \
+      $(eval ROOT := $(filter $(addprefix %, $(ROOT_PART)), $(JTREG_TESTROOTS))) \
       $(eval GROUP := $(word 2, $(subst :, $(SPACE), $(TEST_NAME)))) \
-      $(if $(filter $(COMPONENT), $(JTREG_COMPONENTS)), \
-        $(if $(filter $(GROUP), $($(COMPONENT)_JTREG_TEST_GROUPS)), \
-          jtreg:$(TEST_NAME) \
+      $(foreach root, $(ROOT), \
+        $(if $(filter $(GROUP), $($(root)_JTREG_TEST_GROUPS)), \
+          jtreg:$(root):$(GROUP) \
         ) \
       ) \
     ) \
@@ -150,9 +154,7 @@ define ParseJtregTestSelection
         jtreg:$(TEST_NAME) \
       ) \
     , \
-      $(if $(wildcard $(TOPDIR)/$(TEST_NAME)), \
-        jtreg:$(TEST_NAME) \
-      ) \
+      $(addprefix jtreg:, $(wildcard $(addsuffix /$(TEST_NAME), $(JTREG_TEST_TOPDIRS)))) \
     ) \
   )
 endef
@@ -297,7 +299,8 @@ define SetupRunJtregTestBody
   $1_TEST_SUPPORT_DIR := $$(TEST_SUPPORT_DIR)/$1
 
   $1_TEST_NAME := $$(strip $$(patsubst jtreg:%, %, $$($1_TEST)))
-  $1_COMPONENT := $$(firstword $$(subst /, $$(SPACE), $$($1_TEST_NAME)))
+  $1_COMPONENT := $$(firstword $$(subst /, $$(SPACE), \
+      $$(patsubst test/%, %, $$($1_TEST_NAME))))
 
   ifeq ($$(JT_HOME), )
     $$(info Error: jtreg framework is not found.)

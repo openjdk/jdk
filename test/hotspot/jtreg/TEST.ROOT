@@ -29,13 +29,13 @@
 # The list of keywords supported in this test suite
 keys=cte_test jcmd nmt regression gc stress
 
-groups=TEST.groups [closed/TEST.groups]
+groups=TEST.groups
 
 # Source files for classes that will be used at the beginning of each test suite run,
 # to determine additional characteristics of the system for use with the @requires tag.
 # Note: compiled bootlibs code will be located in the folder 'bootClasses'
-requires.extraPropDefns = ../../test/jtreg-ext/requires/VMProps.java [../../closed/test/jtreg-ext/requires/VMPropsExt.java]
-requires.extraPropDefns.bootlibs = ../../test/lib/sun ../../test/lib/jdk/test/lib/Platform.java
+requires.extraPropDefns = ../../jtreg-ext/requires/VMProps.java
+requires.extraPropDefns.bootlibs = ../../lib/sun ../../lib/jdk/test/lib/Platform.java
 requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:bootClasses
 requires.properties= \
     sun.arch.data.model \
@@ -58,8 +58,8 @@ requires.properties= \
 requiredVersion=4.2 b08
 
 # Path to libraries in the topmost test directory. This is needed so @library
-# does not need ../../ notation to reach them
-external.lib.roots = ../../
+# does not need ../../../ notation to reach them
+external.lib.roots = ../../../
 
 # Use new module options
 useNewOptions=true

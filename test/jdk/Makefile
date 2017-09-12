@@ -31,7 +31,7 @@ USE_FAILURE_HANDLER := true
 
 TREAT_EXIT_CODE_1_AS_0 := true
 
-include ../../test/TestCommon.gmk
+include ../TestCommon.gmk
 
 # Default make rule (runs default jdk tests)
 all: jdk_default

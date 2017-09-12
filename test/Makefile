@@ -27,22 +27,13 @@
 # Makefile to run tests from multiple sibling directories
 #
 
-# Root of the forest that was built
-TOPDIR=..
-
-# This makefile depends on the availability of sibling directories.
-LANGTOOLS_DIR=$(TOPDIR)/langtools
-JDK_DIR=$(TOPDIR)/jdk
-JAXP_DIR=$(TOPDIR)/jaxp
-HOTSPOT_DIR=$(TOPDIR)/hotspot
-
 # Macro to run a test target in a subdir
 define SUBDIR_TEST # subdirectory target
 if [ -d $1 ] ; then \
-  if [ -r $1/test/Makefile ] ; then \
-    $(MAKE) --no-print-directory -k -C $1/test $2 ; \
+  if [ -r $1/Makefile ] ; then \
+    $(MAKE) --no-print-directory -k -C $1 $2 ; \
   else \
-    echo "ERROR: File does not exist: $1/test/Makefile"; \
+    echo "ERROR: File does not exist: $1/Makefile"; \
     exit 1; \
   fi; \
 else \
@@ -56,9 +47,6 @@ default: jdk_core langtools_jtreg jaxp_all
 # All testing
 all: jdk_all langtools_all jaxp_all
 
-# Bring in closed test targets if present
--include $(TOPDIR)/closed/test/Makefile
-
 ifeq ($(TEST_JOBS), 0)
   ifeq ($(shell $(EXPR) $(JOBS) \> 50), 1)
     # JTReg cannot handle more than 50 in concurrency
@@ -71,13 +59,18 @@ else
 endif
 # Test targets
 langtools_% :
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(LANGTOOLS_DIR), CONCURRENCY=$(JDK_TEST_JOBS) JT_JAVA=$(PRODUCT_HOME) JTREG_HOME=$(JT_HOME) TEST="$(subst langtools_,,$@)" $(subst langtools_,,$@))
+	@$(NO_STOPPING)$(call SUBDIR_TEST, langtools, CONCURRENCY=$(JDK_TEST_JOBS) \
+	    JT_JAVA=$(PRODUCT_HOME) JTREG_HOME=$(JT_HOME) \
+	    TEST="$(subst langtools_,,$@)" $(subst langtools_,,$@))
 
 jdk_% core_%s svc_%:
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), CONCURRENCY=$(JDK_TEST_JOBS) TEST="$@" $@)
+	@$(NO_STOPPING)$(call SUBDIR_TEST, jdk, CONCURRENCY=$(JDK_TEST_JOBS) TEST="$@" $@)
 
 jaxp_%:
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JAXP_DIR), CONCURRENCY=$(JDK_TEST_JOBS) TEST="$@" $@)
+	@$(NO_STOPPING)$(call SUBDIR_TEST, jaxp, CONCURRENCY=$(JDK_TEST_JOBS) TEST="$@" $@)
+
+nashorn_%:
+	@$(NO_STOPPING)$(call SUBDIR_TEST, nashorn, CONCURRENCY=$(JDK_TEST_JOBS) TEST="$@" $@)
 
 SUB_MAKE_ARGS :=
 ifneq ($(TEST_JOBS), 0)
@@ -86,7 +79,7 @@ ifneq ($(TEST_JOBS), 0)
   endif
 endif
 hotspot_%:
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(HOTSPOT_DIR), $(SUB_MAKE_ARGS) TEST="$@" $@)
+	@$(NO_STOPPING)$(call SUBDIR_TEST, hotspot/jtreg, $(SUB_MAKE_ARGS) TEST="$@" $@)
 
 #
 # jtreg_tests
@@ -103,16 +96,21 @@ hotspot_%:
 # corresponding ../<component>/test/Makefile.
 
 ifneq ($(TESTDIRS),)
-# Extract the component from ../<component>/...
-COMPONENT=$(word 2,$(subst /, ,$(TESTDIRS)))
+  # Extract the component from ../test/<component>/...
+  TESTDIRS_NORM := $(patsubst test/%, %, $(patsubst ../%, %, $(TESTDIRS)))
+  COMPONENT := $(word 1,$(subst /, ,$(TESTDIRS_NORM)))
 
-# Strip off the ../<component>/test prefix and pass the rest as TESTDIRS
-# to the delegate Makefile
-TESTDIRS_TESTS=$(patsubst ../$(COMPONENT)/test/%,%,$(TESTDIRS))
+  # Strip off the ../<component>/test prefix and pass the rest as TESTDIRS
+  # to the delegate Makefile
+  # The hotspot tests are in a subdir "java". Accept paths both including
+  # and excluding this extra subdir
+  TESTDIRS_TESTS := $(patsubst $(COMPONENT)/%,%,$(patsubst hotspot/jtreg/%,%, \
+      $(patsubst ../%, %, $(TESTDIRS_NORM))))
 endif
 
 jtreg_tests:
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(TOPDIR)/$(COMPONENT), TESTDIRS=$(TESTDIRS_TESTS) $@)
+	$(MAKE) --no-print-directory TESTDIRS=$(TESTDIRS_TESTS) \
+	    $(COMPONENT)_jtreg_tests
 
 ################################################################
 

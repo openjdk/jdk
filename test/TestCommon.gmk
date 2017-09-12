@@ -301,7 +301,7 @@ ifndef JT_HOME
 endif
 
 # Problematic tests to be excluded
-PROBLEM_LISTS=$(call MixedDirs,$(wildcard ProblemList.txt closed/ProblemList.txt))
+PROBLEM_LISTS=$(call MixedDirs,$(wildcard ProblemList.txt))
 
 # Create exclude list for this platform and arch
 ifdef NO_EXCLUDES
@@ -412,6 +412,10 @@ jtreg_tests: prep jtreg_exists $(PRODUCT_HOME)
 	) 2>&1 | $(TEE) $(ABS_TEST_OUTPUT_DIR)/output.txt ; $(TESTEXIT)
 
 PHONY_LIST += jtreg_tests
+
+# Make it possible to call this with <component>_jtreg_tests
+%_jtreg_tests: jtreg_tests
+	# Must have a fake recipe here to prevent make from matching any other rule
 
 ################################################################
 

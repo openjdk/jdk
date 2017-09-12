@@ -49,7 +49,7 @@ hotspot_native_sanity = \
 
 hotspot_tier1_common = \
   sanity/BasicVMTest.java \
-  native/GTestWrapper.java
+  gtest/GTestWrapper.java
 
 hotspot_tier1_compiler_1 = \
   compiler/aot/ \

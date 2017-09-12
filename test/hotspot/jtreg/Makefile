@@ -74,7 +74,7 @@ endif
 JTREG_BASIC_OPTIONS += -vmoption:-XX:MaxRAMPercentage=$(shell expr 25 / $(CONCURRENCY))
 
 # Include the common base file with most of the logic
-include ../../test/TestCommon.gmk
+include ../../TestCommon.gmk
 
 ################################################################
 # Default make rule (runs jtreg_tests)
@@ -90,10 +90,6 @@ hotspot_%:
 
 hotspot_internal:
 	$(ALT_OUTPUTDIR)/jdk/bin/java -XX:+ExecuteInternalVMTests -XX:+ShowMessageBoxOnError -version
-
-################################################################
-ALT_MAKE ?= closed
--include $(ALT_MAKE)/Makefile
 
 ################################################################
 

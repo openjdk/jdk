@@ -29,13 +29,13 @@ _FIND_TESTS_GMK := 1
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , common/FindTests.gmk))
 
-# JTREG_COMPONENTS might have been set by a custom extension
-JTREG_COMPONENTS += hotspot jdk langtools nashorn jaxp
+# JTREG_TESTROOTS might have been set by a custom extension
+JTREG_TESTROOTS += $(addprefix $(TOPDIR)/test/, hotspot/jtreg jdk langtools nashorn jaxp)
 
 ################################################################################
 # Find the Jtreg test groups for the given component.
 #
-# Parameter 1 is the name of the component. This name is used as variable prefix.
+# Parameter 1 is the jtreg root dir. This name is used as variable prefix.
 #
 # After this macro has been evaluated, the following variables are defined for
 # the component:
@@ -45,12 +45,10 @@ JTREG_COMPONENTS += hotspot jdk langtools nashorn jaxp
 #
 FindJtregGroups = $(NamedParamsMacroTemplate)
 define FindJtregGroupsBody
-  $1_JTREG_TESTROOT := $$(TOPDIR)/$1/test
-  ifneq ($$(wildcard $$($1_JTREG_TESTROOT)), )
+  ifneq ($$(wildcard $1), )
     $1_JTREG_GROUP_FILENAMES := $$(shell $$(SED) -n -e 's/\[\(.*\)\]/\1/g' \
-        -e 's/^groups\w*=//p' $$($1_JTREG_TESTROOT)/TEST.ROOT)
-    $1_JTREG_GROUP_FILES := $$(addprefix $$($1_JTREG_TESTROOT)/, \
-        $$($1_JTREG_GROUP_FILENAMES))
+        -e 's/^groups\w*=//p' $1/TEST.ROOT)
+    $1_JTREG_GROUP_FILES := $$(addprefix $1/, $$($1_JTREG_GROUP_FILENAMES))
     $1_JTREG_TEST_GROUPS := $$(strip $$(shell $$(SED) -n \
         -e 's/\([^ ]*\)\w*=.*/\1/gp' $$(wildcard $$($1_JTREG_GROUP_FILES)) \
         | $$(SORT) -u))
@@ -58,12 +56,11 @@ define FindJtregGroupsBody
 endef
 
 # Configure definitions for all available test components
-$(foreach component, $(JTREG_COMPONENTS), \
-    $(eval $(call FindJtregGroups, $(component))))
+$(foreach root, $(JTREG_TESTROOTS), $(eval $(call FindJtregGroups, $(root))))
 
 # Create a list of all available Jtreg test groups in all components
-JTREG_TEST_GROUPS += $(sort $(foreach component, $(JTREG_COMPONENTS), \
-    $($(component)_JTREG_TEST_GROUPS)))
+JTREG_TEST_GROUPS += $(sort $(foreach root, $(JTREG_TESTROOTS), \
+    $($(root)_JTREG_TEST_GROUPS)))
 
 # Add Jtreg test groups to list of named tests (test groups, test list, etc)
 # ALL_NAMED_TESTS might have been set by a custom extension

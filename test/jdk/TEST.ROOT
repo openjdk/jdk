@@ -23,7 +23,7 @@ othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound j
 exclusiveAccess.dirs=java/rmi/Naming java/util/prefs sun/management/jmxremote sun/tools/jstatd sun/security/mscapi java/util/stream java/util/Arrays/largeMemory java/util/BitSet/stream javax/rmi com/sun/corba/cachedSocket
 
 # Group definitions
-groups=TEST.groups [closed/TEST.groups]
+groups=TEST.groups
 
 # Allow querying of various System properties in @requires clauses
 #
