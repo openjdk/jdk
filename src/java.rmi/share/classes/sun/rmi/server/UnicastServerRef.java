@@ -30,7 +30,6 @@ import java.io.ObjectInput;
 import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
-import java.io.ObjectStreamClass;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.AccessException;
@@ -330,11 +329,16 @@ public class UnicastServerRef extends UnicastRef
             logCall(obj, method);
 
             // unmarshal parameters
-            Object[] params = null;
+            Class<?>[] types = method.getParameterTypes();
+            Object[] params = new Object[types.length];
 
             try {
                 unmarshalCustomCallData(in);
-                params = unmarshalParameters(obj, method, marshalStream);
+                // Unmarshal the parameters
+                for (int i = 0; i < types.length; i++) {
+                    params[i] = unmarshalValue(types[i], in);
+                }
+
             } catch (AccessException aex) {
                 // For compatibility, AccessException is not wrapped in UnmarshalException
                 // disable saving any refs in the inputStream for GC
@@ -600,84 +604,4 @@ public class UnicastServerRef extends UnicastRef
         }
     }
 
-    /**
-     * Unmarshal parameters for the given method of the given instance over
-     * the given marshalinputstream. Perform any necessary checks.
-     */
-    private Object[] unmarshalParameters(Object obj, Method method, MarshalInputStream in)
-    throws IOException, ClassNotFoundException {
-        return (obj instanceof DeserializationChecker) ?
-            unmarshalParametersChecked((DeserializationChecker)obj, method, in) :
-            unmarshalParametersUnchecked(method, in);
-    }
-
-    /**
-     * Unmarshal parameters for the given method of the given instance over
-     * the given marshalinputstream. Do not perform any additional checks.
-     */
-    private Object[] unmarshalParametersUnchecked(Method method, ObjectInput in)
-    throws IOException, ClassNotFoundException {
-        Class<?>[] types = method.getParameterTypes();
-        Object[] params = new Object[types.length];
-        for (int i = 0; i < types.length; i++) {
-            params[i] = unmarshalValue(types[i], in);
-        }
-        return params;
-    }
-
-    /**
-     * Unmarshal parameters for the given method of the given instance over
-     * the given marshalinputstream. Do perform all additional checks.
-     */
-    private Object[] unmarshalParametersChecked(
-        DeserializationChecker checker,
-        Method method, MarshalInputStream in)
-    throws IOException, ClassNotFoundException {
-        int callID = methodCallIDCount.getAndIncrement();
-        MyChecker myChecker = new MyChecker(checker, method, callID);
-        in.setStreamChecker(myChecker);
-        try {
-            Class<?>[] types = method.getParameterTypes();
-            Object[] values = new Object[types.length];
-            for (int i = 0; i < types.length; i++) {
-                myChecker.setIndex(i);
-                values[i] = unmarshalValue(types[i], in);
-            }
-            myChecker.end(callID);
-            return values;
-        } finally {
-            in.setStreamChecker(null);
-        }
-    }
-
-    private static class MyChecker implements MarshalInputStream.StreamChecker {
-        private final DeserializationChecker descriptorCheck;
-        private final Method method;
-        private final int callID;
-        private int parameterIndex;
-
-        MyChecker(DeserializationChecker descriptorCheck, Method method, int callID) {
-            this.descriptorCheck = descriptorCheck;
-            this.method = method;
-            this.callID = callID;
-        }
-
-        @Override
-        public void validateDescriptor(ObjectStreamClass descriptor) {
-            descriptorCheck.check(method, descriptor, parameterIndex, callID);
-        }
-
-        @Override
-        public void checkProxyInterfaceNames(String[] ifaces) {
-            descriptorCheck.checkProxyClass(method, ifaces, parameterIndex, callID);
-        }
-
-        void setIndex(int parameterIndex) {
-            this.parameterIndex = parameterIndex;
-        }
-
-        void end(int callId) {
-            descriptorCheck.end(callId);
-        }
-    }
 }
