@@ -885,7 +885,7 @@ test-support/</code></pre>
 <p>While technically using <code>make</code>, the make source files of the OpenJDK does not resemble most other Makefiles. Instead of listing specific targets and actions (perhaps using patterns), the basic modus operandi is to call a high-level function (or properly, macro) from the API in <code>make/common</code>. For instance, to compile all classes in the <code>jdk.internal.foo</code> package in the <code>jdk.foo</code> module, a call like this would be made:</p>
 <pre><code>$(eval $(call SetupJavaCompilation, BUILD_FOO_CLASSES, \
     SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(JDK_TOPDIR)/src/jkd.foo/share/classes, \
+    SRC := $(TOPDIR)/src/jkd.foo/share/classes, \
     INCLUDES := jdk/internal/foo, \
     BIN := $(SUPPORT_OUTPUTDIR)/foo_classes, \
 ))</code></pre>

@@ -1,4 +1,4 @@
-#
+SRC#
 # Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -150,10 +150,7 @@ BOOTJDK_SETUP_BUILD_JDK
 #
 ###############################################################################
 
-SRCDIRS_SETUP_TOPDIRS
-SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS
-SRCDIRS_SETUP_OUTPUT_DIRS
-
+SRCDIRS_SETUP_DIRS
 SRCDIRS_SETUP_IMPORT_MODULES
 
 ###############################################################################

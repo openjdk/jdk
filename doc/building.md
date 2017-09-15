@@ -296,7 +296,7 @@ issues.
 
 ### gcc
 
-The minimum accepted version of gcc is 4.7. Older versions will generate a warning 
+The minimum accepted version of gcc is 4.7. Older versions will generate a warning
 by `configure` and are unlikely to work.
 
 OpenJDK 9 includes patches that should allow gcc 6 to compile, but this should
@@ -1703,7 +1703,7 @@ a call like this would be made:
 ```
 $(eval $(call SetupJavaCompilation, BUILD_FOO_CLASSES, \
     SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(JDK_TOPDIR)/src/jkd.foo/share/classes, \
+    SRC := $(TOPDIR)/src/jkd.foo/share/classes, \
     INCLUDES := jdk/internal/foo, \
     BIN := $(SUPPORT_OUTPUTDIR)/foo_classes, \
 ))
