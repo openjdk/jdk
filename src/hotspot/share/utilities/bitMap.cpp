@@ -81,8 +81,10 @@ BitMap::bm_word_t* BitMap::reallocate(const Allocator& allocator, bm_word_t* old
   if (new_size_in_words > 0) {
     map = allocator.allocate(new_size_in_words);
 
-    Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) map,
-                         MIN2(old_size_in_words, new_size_in_words));
+    if (old_map != NULL) {
+      Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) map,
+                           MIN2(old_size_in_words, new_size_in_words));
+    }
 
     if (new_size_in_words > old_size_in_words) {
       clear_range_of_words(map, old_size_in_words, new_size_in_words);
