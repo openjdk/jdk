@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,48 +23,14 @@
 # questions.
 #
 
-AC_DEFUN_ONCE([SRCDIRS_SETUP_TOPDIRS],
-[
-  # Where are the sources.
-  LANGTOOLS_TOPDIR="$SRC_ROOT/langtools"
-  CORBA_TOPDIR="$SRC_ROOT/corba"
-  JAXP_TOPDIR="$SRC_ROOT/jaxp"
-  JAXWS_TOPDIR="$SRC_ROOT/jaxws"
-  HOTSPOT_TOPDIR="$SRC_ROOT/hotspot"
-  NASHORN_TOPDIR="$SRC_ROOT/nashorn"
-  JDK_TOPDIR="$SRC_ROOT/jdk"
-  AC_SUBST(LANGTOOLS_TOPDIR)
-  AC_SUBST(CORBA_TOPDIR)
-  AC_SUBST(JAXP_TOPDIR)
-  AC_SUBST(JAXWS_TOPDIR)
-  AC_SUBST(HOTSPOT_TOPDIR)
-  AC_SUBST(NASHORN_TOPDIR)
-  AC_SUBST(TOPDIR)
-])
-
-AC_DEFUN_ONCE([SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS],
-[
-  # This feature is no longer supported.
-
-  BASIC_DEPRECATED_ARG_WITH(add-source-root)
-  BASIC_DEPRECATED_ARG_WITH(override-source-root)
-  BASIC_DEPRECATED_ARG_WITH(adds-and-overrides)
-  BASIC_DEPRECATED_ARG_WITH(override-langtools)
-  BASIC_DEPRECATED_ARG_WITH(override-corba)
-  BASIC_DEPRECATED_ARG_WITH(override-jaxp)
-  BASIC_DEPRECATED_ARG_WITH(override-jaxws)
-  BASIC_DEPRECATED_ARG_WITH(override-hotspot)
-  BASIC_DEPRECATED_ARG_WITH(override-nashorn)
-  BASIC_DEPRECATED_ARG_WITH(override-jdk)
-])
-
-AC_DEFUN_ONCE([SRCDIRS_SETUP_OUTPUT_DIRS],
+AC_DEFUN_ONCE([SRCDIRS_SETUP_DIRS],
 [
   BUILD_OUTPUT="$OUTPUT_ROOT"
   AC_SUBST(BUILD_OUTPUT)
   JDK_OUTPUTDIR="$OUTPUT_ROOT/jdk"
 
-  BASIC_DEPRECATED_ARG_WITH(import_hotspot)
+  # Where are the sources.
+  AC_SUBST(TOPDIR)
 ])
 
 ################################################################################

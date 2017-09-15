@@ -107,9 +107,9 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
   # We hard-code gensrc dir to server (since this includes adfiles)
   PROJECT_CREATOR_ARGS := \
-      -sourceBase $(call FixPath, $(HOTSPOT_TOPDIR)) \
-      -startAt src \
-      -relativeSrcInclude src \
+      -sourceBase $(call FixPath, $(TOPDIR)/src) \
+      -startAt hotspot \
+      -relativeSrcInclude hotspot \
       -hidePath .hg \
       -hidePath .jcheck \
       -hidePath jdk.aot \
