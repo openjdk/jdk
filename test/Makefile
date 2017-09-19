@@ -59,18 +59,22 @@ else
 endif
 # Test targets
 langtools_% :
-	@$(NO_STOPPING)$(call SUBDIR_TEST, langtools, CONCURRENCY=$(JDK_TEST_JOBS) \
+	@$(NO_STOPPING)$(call SUBDIR_TEST, langtools, \
+	    $(if $(JDK_TEST_JOBS), CONCURRENCY=$(JDK_TEST_JOBS)) \
 	    JT_JAVA=$(PRODUCT_HOME) JTREG_HOME=$(JT_HOME) \
 	    TEST="$(subst langtools_,,$@)" $(subst langtools_,,$@))
 
 jdk_% core_%s svc_%:
-	@$(NO_STOPPING)$(call SUBDIR_TEST, jdk, CONCURRENCY=$(JDK_TEST_JOBS) TEST="$@" $@)
+	@$(NO_STOPPING)$(call SUBDIR_TEST, jdk, \
+	    $(if $(JDK_TEST_JOBS), CONCURRENCY=$(JDK_TEST_JOBS)) TEST="$@" $@)
 
 jaxp_%:
-	@$(NO_STOPPING)$(call SUBDIR_TEST, jaxp, CONCURRENCY=$(JDK_TEST_JOBS) TEST="$@" $@)
+	@$(NO_STOPPING)$(call SUBDIR_TEST, jaxp, \
+	    $(if $(JDK_TEST_JOBS), CONCURRENCY=$(JDK_TEST_JOBS)) TEST="$@" $@)
 
 nashorn_%:
-	@$(NO_STOPPING)$(call SUBDIR_TEST, nashorn, CONCURRENCY=$(JDK_TEST_JOBS) TEST="$@" $@)
+	@$(NO_STOPPING)$(call SUBDIR_TEST, nashorn, \
+	    $(if $(JDK_TEST_JOBS), CONCURRENCY=$(JDK_TEST_JOBS)) TEST="$@" $@)
 
 SUB_MAKE_ARGS :=
 ifneq ($(TEST_JOBS), 0)
