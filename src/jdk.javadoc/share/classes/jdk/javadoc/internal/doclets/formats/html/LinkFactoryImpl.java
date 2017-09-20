@@ -139,11 +139,6 @@ public class LinkFactoryImpl extends LinkFactory {
     }
 
     @Override
-    protected Content getTypeAnnotationLink(LinkInfo linkInfo, AnnotationMirror annotation) {
-        throw new RuntimeException("Not implemented yet!");
-    }
-
-    @Override
     public Content getTypeAnnotationLinks(LinkInfo linkInfo) {
         Utils utils = ((LinkInfoImpl)linkInfo).utils;
         ContentBuilder links = new ContentBuilder();
