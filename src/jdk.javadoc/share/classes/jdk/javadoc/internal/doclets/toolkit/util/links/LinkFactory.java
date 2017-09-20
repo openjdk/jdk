@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,8 +223,6 @@ public abstract class LinkFactory {
      */
     protected abstract Content getTypeParameterLink(LinkInfo linkInfo, TypeMirror typeParam);
 
-    protected abstract Content getTypeAnnotationLink(LinkInfo linkInfo, AnnotationMirror annotation);
-
     /**
      * Return the links to the type parameters.
      *
@@ -282,23 +280,5 @@ public abstract class LinkFactory {
         return links;
     }
 
-    public Content getTypeAnnotationLinks(LinkInfo linkInfo) {
-        Utils utils = ((LinkInfoImpl)linkInfo).utils;
-        Content links = newContent();
-        if (!utils.isAnnotated(linkInfo.type))
-            return links;
-
-        List<? extends AnnotationMirror> annotations = linkInfo.type.getAnnotationMirrors();
-        boolean needSpace = false;
-        for (AnnotationMirror anno : annotations) {
-            if (needSpace) {
-                links.addContent(" ");
-            }
-            links.addContent(getTypeAnnotationLink(linkInfo, anno));
-            needSpace = true;
-        }
-
-        links.addContent(" ");
-        return links;
-    }
+    public abstract Content getTypeAnnotationLinks(LinkInfo linkInfo);
 }
