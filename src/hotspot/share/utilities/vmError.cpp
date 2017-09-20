@@ -232,6 +232,13 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
     int count = 0;
     while (count++ < StackPrintLimit) {
       fr.print_on_error(st, buf, buf_size);
+      if (fr.pc()) { // print source file and line, if available
+        char buf[128];
+        int line_no;
+        if (Decoder::get_source_info(fr.pc(), buf, sizeof(buf), &line_no)) {
+          st->print("  (%s:%d)", buf, line_no);
+        }
+      }
       st->cr();
       // Compiled code may use EBP register on x86 so it looks like
       // non-walkable C frame. Use frame.sender() for java frames.
