@@ -50,6 +50,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "symbolengine.hpp"
 #include "unwind_windows_x86.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
@@ -397,6 +398,12 @@ bool os::platform_print_native_stack(outputStream* st, const void* context,
         // may not contain what Java expects, and may cause the frame() constructor
         // to crash. Let's just print out the symbolic address.
         frame::print_C_frame(st, buf, buf_size, pc);
+        // print source file and line, if available
+        char buf[128];
+        int line_no;
+        if (SymbolEngine::get_source_info(pc, buf, sizeof(buf), &line_no)) {
+          st->print("  (%s:%d)", buf, line_no);
+        }
         st->cr();
       }
       lastpc = pc;

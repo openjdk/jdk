@@ -116,38 +116,36 @@ static void initialize() {
 
 }
 
+
 ///////////////////// External functions //////////////////////////
 
 // All outside facing functions are synchronized. Also, we run
 // initialization on first touch.
 
+static CRITICAL_SECTION g_cs;
 
-// Call InitializeCriticalSection as early as possible.
-class CritSect {
-  CRITICAL_SECTION cs;
-public:
-  CritSect() { ::InitializeCriticalSection(&cs); }
-  void enter() { ::EnterCriticalSection(&cs); }
-  void leave() { ::LeaveCriticalSection(&cs); }
-};
-
-static CritSect g_cs;
-
-class EntryGuard {
-public:
-  EntryGuard() {
-    g_cs.enter();
-    if (g_state == state_uninitialized) {
-      initialize();
+namespace { // Do not export.
+  class WindowsDbgHelpEntry {
+   public:
+    WindowsDbgHelpEntry() {
+      ::EnterCriticalSection(&g_cs);
+      if (g_state == state_uninitialized) {
+        initialize();
+      }
     }
-  }
-  ~EntryGuard() {
-    g_cs.leave();
-  }
-};
+    ~WindowsDbgHelpEntry() {
+      ::LeaveCriticalSection(&g_cs);
+    }
+  };
+}
+
+// Called at DLL_PROCESS_ATTACH.
+void WindowsDbgHelp::pre_initialize() {
+  ::InitializeCriticalSection(&g_cs);
+}
 
 DWORD WindowsDbgHelp::symSetOptions(DWORD arg) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_SymSetOptions != NULL) {
     return g_pfn_SymSetOptions(arg);
   }
@@ -155,7 +153,7 @@ DWORD WindowsDbgHelp::symSetOptions(DWORD arg) {
 }
 
 DWORD WindowsDbgHelp::symGetOptions(void) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_SymGetOptions != NULL) {
     return g_pfn_SymGetOptions();
   }
@@ -163,7 +161,7 @@ DWORD WindowsDbgHelp::symGetOptions(void) {
 }
 
 BOOL WindowsDbgHelp::symInitialize(HANDLE hProcess, PCTSTR UserSearchPath, BOOL fInvadeProcess) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_SymInitialize != NULL) {
     return g_pfn_SymInitialize(hProcess, UserSearchPath, fInvadeProcess);
   }
@@ -172,7 +170,7 @@ BOOL WindowsDbgHelp::symInitialize(HANDLE hProcess, PCTSTR UserSearchPath, BOOL 
 
 BOOL WindowsDbgHelp::symGetSymFromAddr64(HANDLE hProcess, DWORD64 the_address,
                                          PDWORD64 Displacement, PIMAGEHLP_SYMBOL64 Symbol) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_SymGetSymFromAddr64 != NULL) {
     return g_pfn_SymGetSymFromAddr64(hProcess, the_address, Displacement, Symbol);
   }
@@ -181,7 +179,7 @@ BOOL WindowsDbgHelp::symGetSymFromAddr64(HANDLE hProcess, DWORD64 the_address,
 
 DWORD WindowsDbgHelp::unDecorateSymbolName(const char* DecoratedName, char* UnDecoratedName,
                                            DWORD UndecoratedLength, DWORD Flags) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_UnDecorateSymbolName != NULL) {
     return g_pfn_UnDecorateSymbolName(DecoratedName, UnDecoratedName, UndecoratedLength, Flags);
   }
@@ -192,7 +190,7 @@ DWORD WindowsDbgHelp::unDecorateSymbolName(const char* DecoratedName, char* UnDe
 }
 
 BOOL WindowsDbgHelp::symSetSearchPath(HANDLE hProcess, PCTSTR SearchPath) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_SymSetSearchPath != NULL) {
     return g_pfn_SymSetSearchPath(hProcess, SearchPath);
   }
@@ -200,7 +198,7 @@ BOOL WindowsDbgHelp::symSetSearchPath(HANDLE hProcess, PCTSTR SearchPath) {
 }
 
 BOOL WindowsDbgHelp::symGetSearchPath(HANDLE hProcess, PTSTR SearchPath, int SearchPathLength) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_SymGetSearchPath != NULL) {
     return g_pfn_SymGetSearchPath(hProcess, SearchPath, SearchPathLength);
   }
@@ -212,7 +210,7 @@ BOOL WindowsDbgHelp::stackWalk64(DWORD MachineType,
                                  HANDLE hThread,
                                  LPSTACKFRAME64 StackFrame,
                                  PVOID ContextRecord) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_StackWalk64 != NULL) {
     return g_pfn_StackWalk64(MachineType, hProcess, hThread, StackFrame,
                              ContextRecord,
@@ -226,7 +224,7 @@ BOOL WindowsDbgHelp::stackWalk64(DWORD MachineType,
 }
 
 PVOID WindowsDbgHelp::symFunctionTableAccess64(HANDLE hProcess, DWORD64 AddrBase) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_SymFunctionTableAccess64 != NULL) {
     return g_pfn_SymFunctionTableAccess64(hProcess, AddrBase);
   }
@@ -234,7 +232,7 @@ PVOID WindowsDbgHelp::symFunctionTableAccess64(HANDLE hProcess, DWORD64 AddrBase
 }
 
 DWORD64 WindowsDbgHelp::symGetModuleBase64(HANDLE hProcess, DWORD64 dwAddr) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_SymGetModuleBase64 != NULL) {
     return g_pfn_SymGetModuleBase64(hProcess, dwAddr);
   }
@@ -245,7 +243,7 @@ BOOL WindowsDbgHelp::miniDumpWriteDump(HANDLE hProcess, DWORD ProcessId, HANDLE 
                                        MINIDUMP_TYPE DumpType, PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam,
                                        PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
                                        PMINIDUMP_CALLBACK_INFORMATION CallbackParam) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_MiniDumpWriteDump != NULL) {
     return g_pfn_MiniDumpWriteDump(hProcess, ProcessId, hFile, DumpType,
                                    ExceptionParam, UserStreamParam, CallbackParam);
@@ -255,7 +253,7 @@ BOOL WindowsDbgHelp::miniDumpWriteDump(HANDLE hProcess, DWORD ProcessId, HANDLE 
 
 BOOL WindowsDbgHelp::symGetLineFromAddr64(HANDLE hProcess, DWORD64 dwAddr,
                           PDWORD pdwDisplacement, PIMAGEHLP_LINE64 Line) {
-  EntryGuard entry_guard;
+  WindowsDbgHelpEntry entry_guard;
   if (g_pfn_SymGetLineFromAddr64 != NULL) {
     return g_pfn_SymGetLineFromAddr64(hProcess, dwAddr, pdwDisplacement, Line);
   }
