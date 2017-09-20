@@ -1122,30 +1122,36 @@ class ZipFile implements ZipConstants, Closeable {
                                 zerror("zip comment read failed");
                             }
                         }
-                        if (end.cenlen == ZIP64_MAGICVAL ||
-                            end.cenoff == ZIP64_MAGICVAL ||
-                            end.centot == ZIP64_MAGICCOUNT)
-                        {
-                            // need to find the zip64 end;
-                            try {
-                                byte[] loc64 = new byte[ZIP64_LOCHDR];
-                                if (readFullyAt(loc64, 0, loc64.length, end.endpos - ZIP64_LOCHDR)
-                                    != loc64.length || GETSIG(loc64) != ZIP64_LOCSIG) {
-                                    return end;
-                                }
-                                long end64pos = ZIP64_LOCOFF(loc64);
-                                byte[] end64buf = new byte[ZIP64_ENDHDR];
-                                if (readFullyAt(end64buf, 0, end64buf.length, end64pos)
-                                    != end64buf.length || GETSIG(end64buf) != ZIP64_ENDSIG) {
-                                    return end;
-                                }
-                                // end64 found, re-calcualte everything.
-                                end.cenlen = ZIP64_ENDSIZ(end64buf);
-                                end.cenoff = ZIP64_ENDOFF(end64buf);
-                                end.centot = (int)ZIP64_ENDTOT(end64buf); // assume total < 2g
-                                end.endpos = end64pos;
-                            } catch (IOException x) {}    // no zip64 loc/end
-                        }
+                        // must check for a zip64 end record; it is always permitted to be present
+                        try {
+                            byte[] loc64 = new byte[ZIP64_LOCHDR];
+                            if (end.endpos < ZIP64_LOCHDR ||
+                                readFullyAt(loc64, 0, loc64.length, end.endpos - ZIP64_LOCHDR)
+                                != loc64.length || GETSIG(loc64) != ZIP64_LOCSIG) {
+                                return end;
+                            }
+                            long end64pos = ZIP64_LOCOFF(loc64);
+                            byte[] end64buf = new byte[ZIP64_ENDHDR];
+                            if (readFullyAt(end64buf, 0, end64buf.length, end64pos)
+                                != end64buf.length || GETSIG(end64buf) != ZIP64_ENDSIG) {
+                                return end;
+                            }
+                            // end64 candidate found,
+                            long cenlen64 = ZIP64_ENDSIZ(end64buf);
+                            long cenoff64 = ZIP64_ENDOFF(end64buf);
+                            long centot64 = ZIP64_ENDTOT(end64buf);
+                            // double-check
+                            if (cenlen64 != end.cenlen && end.cenlen != ZIP64_MAGICVAL ||
+                                cenoff64 != end.cenoff && end.cenoff != ZIP64_MAGICVAL ||
+                                centot64 != end.centot && end.centot != ZIP64_MAGICCOUNT) {
+                                return end;
+                            }
+                            // to use the end64 values
+                            end.cenlen = cenlen64;
+                            end.cenoff = cenoff64;
+                            end.centot = (int)centot64; // assume total < 2g
+                            end.endpos = end64pos;
+                        } catch (IOException x) {}    // no zip64 loc/end
                         return end;
                     }
                 }
