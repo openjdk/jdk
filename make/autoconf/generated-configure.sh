@@ -871,12 +871,6 @@ IMPORT_MODULES_LIBS
 IMPORT_MODULES_CMDS
 IMPORT_MODULES_CLASSES
 BUILD_OUTPUT
-NASHORN_TOPDIR
-HOTSPOT_TOPDIR
-JAXWS_TOPDIR
-JAXP_TOPDIR
-CORBA_TOPDIR
-LANGTOOLS_TOPDIR
 EXTERNAL_BUILDJDK
 BUILD_JDK
 CREATE_BUILDJDK
@@ -1162,17 +1156,6 @@ with_version_security
 with_version_patch
 with_boot_jdk
 with_build_jdk
-with_add_source_root
-with_override_source_root
-with_adds_and_overrides
-with_override_langtools
-with_override_corba
-with_override_jaxp
-with_override_jaxws
-with_override_hotspot
-with_override_nashorn
-with_override_jdk
-with_import_hotspot
 with_import_modules
 enable_static_build
 with_toolchain_type
@@ -2093,31 +2076,6 @@ Optional Packages:
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
   --with-build-jdk        path to JDK of same version as is being built[the
                           newly built JDK]
-  --with-add-source-root  Deprecated. Option is kept for backwards
-                          compatibility and is ignored
-  --with-override-source-root
-                          Deprecated. Option is kept for backwards
-                          compatibility and is ignored
-  --with-adds-and-overrides
-                          Deprecated. Option is kept for backwards
-                          compatibility and is ignored
-  --with-override-langtools
-                          Deprecated. Option is kept for backwards
-                          compatibility and is ignored
-  --with-override-corba   Deprecated. Option is kept for backwards
-                          compatibility and is ignored
-  --with-override-jaxp    Deprecated. Option is kept for backwards
-                          compatibility and is ignored
-  --with-override-jaxws   Deprecated. Option is kept for backwards
-                          compatibility and is ignored
-  --with-override-hotspot Deprecated. Option is kept for backwards
-                          compatibility and is ignored
-  --with-override-nashorn Deprecated. Option is kept for backwards
-                          compatibility and is ignored
-  --with-override-jdk     Deprecated. Option is kept for backwards
-                          compatibility and is ignored
-  --with-import_hotspot   Deprecated. Option is kept for backwards
-                          compatibility and is ignored
   --with-import-modules   import a set of prebuilt modules either as a zip
                           file or an exploded directory
   --with-toolchain-type   the toolchain type (or family) to use, use '--help'
@@ -4890,7 +4848,7 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4913,10 +4871,6 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-
-
-
-
 
 
 
@@ -5162,7 +5116,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1505235832
+DATE_WHEN_GENERATED=1506027115
 
 ###############################################################################
 #
@@ -31769,130 +31723,11 @@ $as_echo "no" >&6; }
 ###############################################################################
 
 
-  # Where are the sources.
-  LANGTOOLS_TOPDIR="$SRC_ROOT/langtools"
-  CORBA_TOPDIR="$SRC_ROOT/corba"
-  JAXP_TOPDIR="$SRC_ROOT/jaxp"
-  JAXWS_TOPDIR="$SRC_ROOT/jaxws"
-  HOTSPOT_TOPDIR="$SRC_ROOT/hotspot"
-  NASHORN_TOPDIR="$SRC_ROOT/nashorn"
-  JDK_TOPDIR="$SRC_ROOT/jdk"
-
-
-
-
-
-
-
-
-
-  # This feature is no longer supported.
-
-
-
-# Check whether --with-add-source-root was given.
-if test "${with_add_source_root+set}" = set; then :
-  withval=$with_add_source_root; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-add-source-root is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-add-source-root is deprecated and will be ignored." >&2;}
-fi
-
-
-
-
-# Check whether --with-override-source-root was given.
-if test "${with_override_source_root+set}" = set; then :
-  withval=$with_override_source_root; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-source-root is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-override-source-root is deprecated and will be ignored." >&2;}
-fi
-
-
-
-
-# Check whether --with-adds-and-overrides was given.
-if test "${with_adds_and_overrides+set}" = set; then :
-  withval=$with_adds_and_overrides; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-adds-and-overrides is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-adds-and-overrides is deprecated and will be ignored." >&2;}
-fi
-
-
-
-
-# Check whether --with-override-langtools was given.
-if test "${with_override_langtools+set}" = set; then :
-  withval=$with_override_langtools; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-langtools is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-override-langtools is deprecated and will be ignored." >&2;}
-fi
-
-
-
-
-# Check whether --with-override-corba was given.
-if test "${with_override_corba+set}" = set; then :
-  withval=$with_override_corba; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-corba is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-override-corba is deprecated and will be ignored." >&2;}
-fi
-
-
-
-
-# Check whether --with-override-jaxp was given.
-if test "${with_override_jaxp+set}" = set; then :
-  withval=$with_override_jaxp; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-jaxp is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-override-jaxp is deprecated and will be ignored." >&2;}
-fi
-
-
-
-
-# Check whether --with-override-jaxws was given.
-if test "${with_override_jaxws+set}" = set; then :
-  withval=$with_override_jaxws; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-jaxws is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-override-jaxws is deprecated and will be ignored." >&2;}
-fi
-
-
-
-
-# Check whether --with-override-hotspot was given.
-if test "${with_override_hotspot+set}" = set; then :
-  withval=$with_override_hotspot; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-hotspot is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-override-hotspot is deprecated and will be ignored." >&2;}
-fi
-
-
-
-
-# Check whether --with-override-nashorn was given.
-if test "${with_override_nashorn+set}" = set; then :
-  withval=$with_override_nashorn; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-nashorn is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-override-nashorn is deprecated and will be ignored." >&2;}
-fi
-
-
-
-
-# Check whether --with-override-jdk was given.
-if test "${with_override_jdk+set}" = set; then :
-  withval=$with_override_jdk; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-jdk is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-override-jdk is deprecated and will be ignored." >&2;}
-fi
-
-
-
-
   BUILD_OUTPUT="$OUTPUT_ROOT"
 
   JDK_OUTPUTDIR="$OUTPUT_ROOT/jdk"
 
-
-
-# Check whether --with-import_hotspot was given.
-if test "${with_import_hotspot+set}" = set; then :
-  withval=$with_import_hotspot; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-import_hotspot is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --with-import_hotspot is deprecated and will be ignored." >&2;}
-fi
-
-
+  # Where are the sources.
 
 
 
