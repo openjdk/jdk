@@ -323,9 +323,12 @@ public class Proc {
         br = new BufferedReader(new InputStreamReader(p.getInputStream()));
         return this;
     }
-    String getId(String prefix) {
-        if (debug != null) return prefix + "." + debug;
-        else return prefix + "." + System.identityHashCode(this);
+    String getId(String suffix) {
+        if (debug != null) {
+            return debug + "." + suffix;
+        } else {
+            return System.identityHashCode(this) + "." + suffix;
+        }
     }
     // Reads a line from stdout of proc
     public String readLine() throws IOException {
@@ -395,9 +398,13 @@ public class Proc {
         boolean isEmpty = true;
         while (true) {
             int i = System.in.read();
-            if (i == -1) break;
+            if (i == -1) {
+                break;
+            }
             isEmpty = false;
-            if (i == '\n') break;
+            if (i == '\n') {
+                break;
+            }
             if (i != 13) {
                 // Force it to a char, so only simple ASCII works.
                 sb.append((char)i);
