@@ -173,7 +173,6 @@ DOCS_MODULES += \
     jdk.naming.rmi \
     jdk.net \
     jdk.pack \
-    jdk.policytool \
     jdk.rmic \
     jdk.scripting.nashorn \
     jdk.sctp \

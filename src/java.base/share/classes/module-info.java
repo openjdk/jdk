@@ -271,7 +271,6 @@ module java.base {
         java.rmi,
         java.security.jgss,
         jdk.crypto.cryptoki,
-        jdk.policytool,
         jdk.security.auth;
     exports sun.security.provider.certpath to
         java.naming;
@@ -294,7 +293,6 @@ module java.base {
         jdk.crypto.ec,
         jdk.crypto.cryptoki,
         jdk.jartool,
-        jdk.policytool,
         jdk.security.auth,
         jdk.security.jgss;
     exports sun.security.x509 to

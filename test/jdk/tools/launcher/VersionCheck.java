@@ -110,7 +110,6 @@ public class VersionCheck extends TestHelper {
         "orbd",
         "pack200",
         "packager",
-        "policytool",
         "rmic",
         "rmid",
         "rmiregistry",
