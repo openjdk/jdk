@@ -31,7 +31,7 @@ RuntimePermission "queuePrintJob"
 
 The program will run without these properties set,
 but some of its features will be limited.
-To enable all features, please add these permissions with policytool.
+To enable all features, please add these permissions.
 
 -----------------------------------------------------------------------
 Introduction

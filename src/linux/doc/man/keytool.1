@@ -1231,7 +1231,7 @@ Keystore implementations are provider-based\&. More specifically, the applicatio
 
 Applications can choose different types of keystore implementations from different providers, using the \f3getInstance\fR factory method supplied in the \f3KeyStore\fR class\&. A keystore type defines the storage and data format of the keystore information, and the algorithms used to protect private/secret keys in the keystore and the integrity of the keystore\&. Keystore implementations of different types are not compatible\&.
 
-The \f3keytool\fR command works on any file-based keystore implementation\&. It treats the keystore location that is passed to it at the command line as a file name and converts it to a \f3FileInputStream\fR, from which it loads the keystore information\&.)The \f3jarsigner\fR and \f3policytool\fR commands can read a keystore from any location that can be specified with a URL\&.
+The \f3keytool\fR command works on any file-based keystore implementation\&. It treats the keystore location that is passed to it at the command line as a file name and converts it to a \f3FileInputStream\fR, from which it loads the keystore information\&.)The \f3jarsigner\fR command can read a keystore from any location that can be specified with a URL\&.
 
 For \f3keytool\fR and \f3jarsigner\fR, you can specify a keystore type at the command line, with the \f3-storetype\fR option\&. For Policy Tool, you can specify a keystore type with the \fIKeystore\fR menu\&.
 

@@ -64,7 +64,7 @@ public class PolicyUtil {
     }
 
     /**
-     * this is intended for use by policytool and the policy parser to
+     * this is intended for use by the policy parser to
      * instantiate a KeyStore from the information in the GUI/policy file
      */
     public static KeyStore getKeyStore
