@@ -271,17 +271,16 @@
   <target name="javadoc" depends="jar">
     <javadoc destdir="${dist.javadoc.dir}" use="yes"
         windowtitle="${nashorn.product.name} ${nashorn.version}"
-        additionalparam="-quiet" failonerror="true" useexternalfile="true">
+        additionalparam="-quiet" failonerror="true" useexternalfile="true"> 
+      <arg value="--patch-module"/>
+      <arg value="jdk.scripting.nashorn=${basedir}/${nashorn.module.src.dir}"/>
+      <arg value="--patch-module"/>
+      <arg value="jdk.dynalink=${basedir}/${dynalink.module.src.dir}"/>
       <arg value="--module-source-path"/>
-      <arg value="${nashorn.module.src.dir}"/>
-      <arg value="--module-source-path"/>
-      <arg value="${dynalink.module.src.dir}"/>
+      <arg value="."/>
       <arg value="${javadoc.option}"/>
-      <classpath>
-        <pathelement location="${build.classes.dir}"/>
-      </classpath>
-      <fileset dir="${dynalink.module.src.dir}" includes="**/*.java"/>
       <fileset dir="${nashorn.module.src.dir}" includes="**/*.java"/>
+      <fileset dir="${dynalink.module.src.dir}" includes="**/*.java"/>
       <link href="http://docs.oracle.com/javase/8/docs/api/"/>
     </javadoc>
   </target>
@@ -290,14 +289,15 @@
   <target name="nashornapi" depends="jar">
     <mkdir dir="${dist.nashornapi.javadoc.dir}"/>
     <javadoc destdir="${dist.nashornapi.javadoc.dir}" use="yes"
-        extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
+        windowtitle="${nashorn.product.name} ${nashorn.version}"
         additionalparam="-quiet" failonerror="true" useexternalfile="true">
+      <arg value="--patch-module"/>
+      <arg value="jdk.scripting.nashorn=${basedir}/${nashorn.module.src.dir}"/>
+      <arg value="--patch-module"/>
+      <arg value="jdk.dynalink=${basedir}/${dynalink.module.src.dir}"/>
       <arg value="--module-source-path"/>
-      <arg value="${nashorn.module.src.dir}"/>
+      <arg value="."/>
       <arg value="${javadoc.option}"/>
-      <classpath>
-        <pathelement location="${build.classes.dir}"/>
-      </classpath>
       <fileset dir="${nashorn.module.src.dir}" includes="jdk/nashorn/api/**/*.java"/>
       <link href="http://docs.oracle.com/javase/8/docs/api/"/>
     </javadoc>
@@ -309,30 +309,22 @@
     <javadoc destdir="${dist.dynalinkapi.javadoc.dir}" use="yes"
         windowtitle="Dynalink"
         additionalparam="-quiet" failonerror="true" useexternalfile="true">
+      <arg value="--patch-module"/>
+      <arg value="jdk.scripting.nashorn=${basedir}/${nashorn.module.src.dir}"/>
+      <arg value="--patch-module"/>
+      <arg value="jdk.dynalink=${basedir}/${dynalink.module.src.dir}"/>
       <arg value="--module-source-path"/>
-      <arg value="${dynalink.module.src.dir}"/>
+      <arg value="."/>
       <arg value="${javadoc.option}"/>
-      <classpath>
-        <pathelement location="${build.classes.dir}"/>
-      </classpath>
-      <fileset dir="${dynalink.module.src.dir}" includes="**/*.java" excludes="jdk/dynalink/internal/*.java"/>
+      <fileset dir="${dynalink.module.src.dir}" includes="**/*.java"/>
       <link href="http://docs.oracle.com/javase/8/docs/api/"/>
     </javadoc>
   </target>
 
   <target name="javadocapi" depends="nashornapi, dynalinkapi"/>
 
-  <!-- generate shell.html for shell tool documentation -->
-  <target name="shelldoc" depends="jar">
-    <java classname="${nashorn.shell.tool}" dir="${basedir}" output="${dist.dir}/shell.html" failonerror="true" fork="true">
-      <jvmarg line="${nashorn.override.option}"/>
-      <arg value="-scripting"/>
-      <arg value="docs/genshelldoc.js"/>
-    </java>
-  </target>
-
   <!-- generate all docs -->
-  <target name="docs" depends="javadoc, shelldoc"/>
+  <target name="docs" depends="javadoc"/>
 
   <!-- create .zip and .tar.gz for nashorn binaries and scripts. -->
   <target name="dist" depends="jar">
@@ -614,7 +606,7 @@ grant codeBase "file:/${basedir}/${test.script.dir}/basic/JDK-8158467.js" {
     </testng>
   </target>
 
-  <target name="test" depends="prepare, test-pessimistic, test-optimistic"/>
+  <target name="test" depends="prepare, javadoc, test-pessimistic, test-optimistic"/>
 
   <target name="test-optimistic" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-security-config" if="testng.available">
     <echo message="Running test suite in OPTIMISTIC mode..."/>
@@ -752,7 +744,7 @@ grant codeBase "file:/${basedir}/${test.script.dir}/basic/JDK-8158467.js" {
 
   <target name="run" depends="jar"
       description="Run the shell with a sample script">
-    <java classname="${nashorn.shell.tool}" fork="true" dir="samples">
+    <java classname="${nashorn.shell.tool}" fork="true" dir="${basedir}/src/sample/nashorn">
         <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
         <arg value="-dump-on-error"/>
         <arg value="test.js"/>
@@ -761,7 +753,7 @@ grant codeBase "file:/${basedir}/${test.script.dir}/basic/JDK-8158467.js" {
 
   <target name="debug" depends="jar"
       description="Debug the shell with a sample script">
-    <java classname="${nashorn.shell.tool}" fork="true" dir="samples">
+    <java classname="${nashorn.shell.tool}" fork="true" dir="${basedir}/src/sample/nashorn">
         <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
         <arg value="--print-code"/>
         <arg value="--verify-code"/>
