@@ -27,18 +27,18 @@
   </target>
 
   <target name="prepare" depends="init">
-    <mkdir dir="${build.classes.dir}"/>
-    <mkdir dir="${dist.dir}"/>
+    <mkdir dir="${nashorntask.build.classes.dir}"/>
+    <mkdir dir="${nashorntask.dist.dir}"/>
   </target>
 
   <target name="clean" depends="init">
-    <delete dir="${build.dir}"/>
-    <delete dir="${dist.dir}"/>
+    <delete dir="${nashorntask.build.dir}"/>
+    <delete dir="${nashorntask.dist.dir}"/>
   </target>
 
   <target name="compile" depends="prepare" description="Compiles the nashorn ant tag sources">
     <javac srcdir="${src.dir}"
-           destdir="${build.classes.dir}"
+           destdir="${nashorntask.build.classes.dir}"
            debug="${javac.debug}"
            includeantruntime="true">
       <compilerarg value="-Xlint:unchecked"/>
@@ -47,7 +47,7 @@
   </target>
 
   <target name="jar" depends="compile" description="Creates nashorntask.jar">
-    <jar jarfile="${dist.jar}" basedir="${build.classes.dir}"/>
+    <jar jarfile="${nashorntask.dist.jar}" basedir="${nashorntask.build.classes.dir}"/>
   </target>
 
   <target name="dist" depends="jar"/>
