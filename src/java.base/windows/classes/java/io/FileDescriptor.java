@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,12 @@ import jdk.internal.misc.SharedSecrets;
 
 /**
  * Instances of the file descriptor class serve as an opaque handle
- * to the underlying machine-specific structure representing an
- * open file, an open socket, or another source or sink of bytes.
+ * to the underlying machine-specific structure representing an open
+ * file, an open socket, or another source or sink of bytes.
  * The main practical use for a file descriptor is to create a
  * {@link FileInputStream} or {@link FileOutputStream} to contain it.
- *
- * <p>Applications should not create their own file descriptors.
+ * <p>
+ * Applications should not create their own file descriptors.
  *
  * @author  Pavani Diwanji
  * @since   1.0
@@ -57,15 +57,6 @@ public final class FileDescriptor {
      */
     private boolean append;
 
-    /**
-     * Constructs an (invalid) FileDescriptor
-     * object.
-     */
-    public /**/ FileDescriptor() {
-        fd = -1;
-        handle = -1;
-    }
-
     static {
         initIDs();
     }
@@ -73,32 +64,45 @@ public final class FileDescriptor {
     // Set up JavaIOFileDescriptorAccess in SharedSecrets
     static {
         SharedSecrets.setJavaIOFileDescriptorAccess(
-            new JavaIOFileDescriptorAccess() {
-                public void set(FileDescriptor obj, int fd) {
-                    obj.fd = fd;
-                }
+                new JavaIOFileDescriptorAccess() {
+                    public void set(FileDescriptor fdo, int fd) {
+                        fdo.fd = fd;
+                    }
 
-                public int get(FileDescriptor obj) {
-                    return obj.fd;
-                }
+                    public int get(FileDescriptor fdo) {
+                        return fdo.fd;
+                    }
 
-                public void setAppend(FileDescriptor obj, boolean append) {
-                    obj.append = append;
-                }
+                    public void setAppend(FileDescriptor fdo, boolean append) {
+                        fdo.append = append;
+                    }
 
-                public boolean getAppend(FileDescriptor obj) {
-                    return obj.append;
-                }
+                    public boolean getAppend(FileDescriptor fdo) {
+                        return fdo.append;
+                    }
 
-                public void setHandle(FileDescriptor obj, long handle) {
-                    obj.handle = handle;
-                }
+                    public void close(FileDescriptor fdo) {
+                        fdo.close();
+                    }
 
-                public long getHandle(FileDescriptor obj) {
-                    return obj.handle;
+                    public void setHandle(FileDescriptor fdo, long handle) {
+                        fdo.handle = handle;
+                    }
+
+                    public long getHandle(FileDescriptor fdo) {
+                        return fdo.handle;
+                    }
                 }
-            }
         );
+    }
+
+    /**
+     * Constructs an (invalid) FileDescriptor
+     * object.
+     */
+    public FileDescriptor() {
+        fd = -1;
+        handle = -1;
     }
 
     /**
@@ -135,7 +139,7 @@ public final class FileDescriptor {
      *          {@code false} otherwise.
      */
     public boolean valid() {
-        return ((handle != -1) || (fd != -1));
+        return (handle != -1) || (fd != -1);
     }
 
     /**
@@ -178,6 +182,13 @@ public final class FileDescriptor {
         desc.handle = set(fd);
         return desc;
     }
+
+    /**
+     * Close the raw file descriptor or handle, if it has not already been closed
+     * and set the fd and handle to -1.
+     * Package private to allow it to be used in java.io.
+     */
+    native void close();
 
     /*
      * Package private methods to track referents.

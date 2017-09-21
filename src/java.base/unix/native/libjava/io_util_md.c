@@ -124,19 +124,31 @@ fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags)
 void
 fileClose(JNIEnv *env, jobject this, jfieldID fid)
 {
-    FD fd = GET_FD(this, fid);
-    if (fd == -1) {
+    jobject fileDescriptor = (*env)->GetObjectField(env, (this), (fid));
+    if (fileDescriptor == NULL) {
         return;
     }
+    fileDescriptorClose(env, fileDescriptor);
+}
 
+// Function to close the fd held by this FileDescriptor and set fd to -1.
+void
+fileDescriptorClose(JNIEnv *env, jobject this)
+{
+    FD fd = (*env)->GetIntField(env, this, IO_fd_fdID);
+    if ((*env)->ExceptionOccurred(env)) {
+        return;
+    }
     /* Set the fd to -1 before closing it so that the timing window
      * of other threads using the wrong fd (closed but recycled fd,
      * that gets re-opened with some other filename) is reduced.
      * Practically the chance of its occurance is low, however, we are
      * taking extra precaution over here.
      */
-    SET_FD(this, -1, fid);
-
+    (*env)->SetIntField(env, this, IO_fd_fdID, -1);
+    if ((*env)->ExceptionOccurred(env)) {
+        return;
+    }
     /*
      * Don't close file descriptors 0, 1, or 2. If we close these stream
      * then a subsequent file open or socket will use them. Instead we
@@ -145,7 +157,7 @@ fileClose(JNIEnv *env, jobject this, jfieldID fid)
     if (fd >= STDIN_FILENO && fd <= STDERR_FILENO) {
         int devnull = open("/dev/null", O_WRONLY);
         if (devnull < 0) {
-            SET_FD(this, fd, fid); // restore fd
+            (*env)->SetIntField(env, this, IO_fd_fdID, fd);
             JNU_ThrowIOExceptionWithLastError(env, "open /dev/null failed");
         } else {
             dup2(devnull, fd);

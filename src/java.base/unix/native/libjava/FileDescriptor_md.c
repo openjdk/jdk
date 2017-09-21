@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,4 +69,10 @@ JNIEXPORT jboolean JNICALL
 Java_java_io_FileDescriptor_getAppend(JNIEnv *env, jclass fdClass, jint fd) {
     int flags = fcntl(fd, F_GETFL);
     return ((flags & O_APPEND) == 0) ? JNI_FALSE : JNI_TRUE;
+}
+
+// instance method close0 for FileDescriptor
+JNIEXPORT void JNICALL
+Java_java_io_FileDescriptor_close(JNIEnv *env, jobject this) {
+    fileDescriptorClose(env, this);
 }

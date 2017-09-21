@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -74,17 +74,16 @@ SUNWprivate_1.1 {
 		JNU_ThrowStringIndexOutOfBoundsException;
 		JNU_ToString;
 
+		Java_java_io_FileDescriptor_close;
 		Java_java_io_FileDescriptor_initIDs;
 		Java_java_io_FileDescriptor_sync;
 		Java_java_io_FileDescriptor_getAppend;
 		Java_java_io_FileInputStream_available0;
-		Java_java_io_FileInputStream_close0;
 		Java_java_io_FileInputStream_initIDs;
 		Java_java_io_FileInputStream_open0;
 		Java_java_io_FileInputStream_read0;
 		Java_java_io_FileInputStream_readBytes;
 		Java_java_io_FileInputStream_skip0;
-		Java_java_io_FileOutputStream_close0;
 		Java_java_io_FileOutputStream_initIDs;
 		Java_java_io_FileOutputStream_open0;
 		Java_java_io_FileOutputStream_write;
@@ -95,7 +94,6 @@ SUNWprivate_1.1 {
 		Java_java_io_ObjectOutputStream_floatsToBytes;
 		Java_java_io_ObjectStreamClass_hasStaticInitializer;
 		Java_java_io_ObjectStreamClass_initNative;
-		Java_java_io_RandomAccessFile_close0;
 		Java_java_io_RandomAccessFile_getFilePointer;
 		Java_java_io_RandomAccessFile_initIDs;
 		Java_java_io_RandomAccessFile_length;

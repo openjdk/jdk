@@ -104,7 +104,7 @@ class FileDispatcherImpl extends FileDispatcher {
     }
 
     void close(FileDescriptor fd) throws IOException {
-        close0(fd);
+        fdAccess.close(fd);
     }
 
     FileDescriptor duplicateForMapping(FileDescriptor fd) throws IOException {
