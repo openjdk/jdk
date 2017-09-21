@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import sun.security.krb5.internal.crypto.Des3;
 import sun.security.krb5.internal.crypto.Aes128;
 import sun.security.krb5.internal.crypto.Aes256;
 import sun.security.krb5.internal.crypto.ArcFourHmac;
+import sun.security.krb5.internal.crypto.EType;
 
 class CipherHelper {
 
@@ -77,10 +78,6 @@ class CipherHelper {
     private int sgnAlg, sealAlg;
     private byte[] keybytes;
 
-    // new token format from draft-ietf-krb-wg-gssapi-cfx-07
-    // proto is used to determine new GSS token format for "newer" etypes
-    private int proto = 0;
-
     CipherHelper(EncryptionKey key) throws GSSException {
         etype = key.getEType();
         keybytes = key.getBytes();
@@ -106,7 +103,6 @@ class CipherHelper {
         case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
             sgnAlg = -1;
             sealAlg = -1;
-            proto = 1;
             break;
 
         default:
@@ -123,8 +119,10 @@ class CipherHelper {
         return sealAlg;
     }
 
+    // new token format from draft-ietf-krb-wg-gssapi-cfx-07
+    // proto is used to determine new GSS token format for "newer" etypes
     int getProto() {
-        return proto;
+        return EType.isNewer(etype) ? 1 : 0;
     }
 
     int getEType() {
