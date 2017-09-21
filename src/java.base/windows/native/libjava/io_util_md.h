@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,8 @@ jlong handleGetLength(FD fd);
 JNIEXPORT jint handleRead(FD fd, void *buf, jint len);
 jint handleWrite(FD fd, const void *buf, jint len);
 jint handleAppend(FD fd, const void *buf, jint len);
-jint handleClose(JNIEnv *env, jobject this, jfieldID fid);
+void handleClose(JNIEnv *env, jobject this, jfieldID fid);
+void fileDescriptorClose(JNIEnv *env, jobject this);
 jlong handleLseek(FD fd, jlong offset, jint whence);
 
 /*

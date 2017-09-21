@@ -365,7 +365,7 @@ class FileOutputStream extends OutputStream
 
         fd.closeAll(new Closeable() {
             public void close() throws IOException {
-               close0();
+               fd.close();
            }
         });
     }
@@ -457,8 +457,6 @@ class FileOutputStream extends OutputStream
             }
         }
     }
-
-    private native void close0() throws IOException;
 
     private static native void initIDs();
 
