@@ -537,6 +537,9 @@ final class CompiledFunction {
 
         final int csParamCount = getParamCount(other);
         final boolean csIsVarArg = csParamCount == Integer.MAX_VALUE;
+        if (csIsVarArg && isApplyToCall()) {
+            return false; // apply2call function must be called with exact number of parameters
+        }
         final int thisThisIndex = needsCallee() ? 1 : 0; // Index of "this" parameter in this function's type
 
         final int fnParamCountNoCallee = fnParamCount - thisThisIndex;
