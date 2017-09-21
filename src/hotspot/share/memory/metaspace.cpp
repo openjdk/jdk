@@ -1291,7 +1291,7 @@ VirtualSpaceList::VirtualSpaceList(ReservedSpace rs) :
 }
 
 size_t VirtualSpaceList::free_bytes() {
-  return virtual_space_list()->free_words_in_vs() * BytesPerWord;
+  return current_virtual_space()->free_words_in_vs() * BytesPerWord;
 }
 
 // Allocate another meta virtual space and add it to the list.
