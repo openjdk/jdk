@@ -138,6 +138,17 @@ public class KDC {
     private TreeMap<String,char[]> passwords = new TreeMap<>
             (String.CASE_INSENSITIVE_ORDER);
 
+    // Non default salts. Precisely, there should be different salts for
+    // different etypes, pretend they are the same at the moment.
+    private TreeMap<String,String> salts = new TreeMap<>
+            (String.CASE_INSENSITIVE_ORDER);
+
+    // Non default s2kparams for newer etypes. Precisely, there should be
+    // different s2kparams for different etypes, pretend they are the same
+    // at the moment.
+    private TreeMap<String,byte[]> s2kparamses = new TreeMap<>
+            (String.CASE_INSENSITIVE_ORDER);
+
     // Realm name
     private String realm;
     // KDC
@@ -367,10 +378,28 @@ public class KDC {
      * @param pass the password for the principal
      */
     public void addPrincipal(String user, char[] pass) {
+        addPrincipal(user, pass, null, null);
+    }
+
+    /**
+     * Adds a new principal to this realm with a given password.
+     * @param user the principal's name. For a service principal, use the
+     *        form of host/f.q.d.n
+     * @param pass the password for the principal
+     * @param salt the salt, or null if a default value will be used
+     * @param s2kparams the s2kparams, or null if a default value will be used
+     */
+    public void addPrincipal(String user, char[] pass, String salt, byte[] s2kparams) {
         if (user.indexOf('@') < 0) {
             user = user + "@" + realm;
         }
         passwords.put(user, pass);
+        if (salt != null) {
+            salts.put(user, salt);
+        }
+        if (s2kparams != null) {
+            s2kparamses.put(user, s2kparams);
+        }
     }
 
     /**
@@ -585,6 +614,9 @@ public class KDC {
         if (p.getRealmString() == null) {
             pn = pn + "@" + getRealm();
         }
+        if (salts.containsKey(pn)) {
+            return salts.get(pn);
+        }
         if (passwords.containsKey(pn)) {
             try {
                 // Find the principal name with correct case.
@@ -599,6 +631,29 @@ public class KDC {
             s += n;
         }
         return s;
+    }
+
+    /**
+     * Returns the s2kparams for the principal given the etype.
+     * @param p principal
+     * @param etype encryption type
+     * @return the s2kparams, might be null
+     */
+    protected byte[] getParams(PrincipalName p, int etype) {
+        switch (etype) {
+            case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96:
+            case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
+                String pn = p.toString();
+                if (p.getRealmString() == null) {
+                    pn = pn + "@" + getRealm();
+                }
+                if (s2kparamses.containsKey(pn)) {
+                    return s2kparamses.get(pn);
+                }
+                return new byte[] {0, 0, 0x10, 0};
+            default:
+                return null;
+        }
     }
 
     /**
@@ -624,7 +679,7 @@ public class KDC {
                 }
             }
             return new EncryptionKey(EncryptionKeyDotStringToKey(
-                    getPassword(p, server), getSalt(p), null, etype),
+                    getPassword(p, server), getSalt(p), getParams(p, etype), etype),
                     etype, kvno);
         } catch (KrbException ke) {
             throw ke;
@@ -1068,7 +1123,7 @@ public class KDC {
                             epas[i],
                             epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC ?
                                 null : getSalt(body.cname),
-                            null).asn1Encode());
+                            getParams(body.cname, epas[i])).asn1Encode());
                 }
                 boolean allOld = true;
                 for (int i: eTypes) {
