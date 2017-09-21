@@ -2344,12 +2344,6 @@ public:
           range(30*K, max_uintx/BytesPerWord)                               \
           constraint(InitialBootClassLoaderMetaspaceSizeConstraintFunc, AfterErgo)\
                                                                             \
-  product(bool, TraceYoungGenTime, false,                                   \
-          "Trace accumulated time for young collection")                    \
-                                                                            \
-  product(bool, TraceOldGenTime, false,                                     \
-          "Trace accumulated time for old collection")                      \
-                                                                            \
   product(bool, PrintHeapAtSIGBREAK, true,                                  \
           "Print heap layout in response to SIGBREAK")                      \
                                                                             \
