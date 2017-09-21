@@ -3152,10 +3152,9 @@ public class JavacParser implements Parser {
             nextToken();
             JCExpression pid = qualident(false);
             accept(SEMI);
-            JCPackageDecl pd = F.at(packagePos).PackageDecl(annotations, pid);
+            JCPackageDecl pd = toP(F.at(packagePos).PackageDecl(annotations, pid));
             attach(pd, firstToken.comment(CommentStyle.JAVADOC));
             consumedToplevelDoc = true;
-            storeEnd(pd, token.pos);
             defs.append(pd);
         }
 
