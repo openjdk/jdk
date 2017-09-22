@@ -98,6 +98,7 @@ public final class FileUtils {
         while (true) {
             try {
                 Files.delete(path);
+                // Checks for absence of the file. Semantics of Files.exists() is not the same.
                 while (!Files.notExists(path)) {
                     times++;
                     if (times > MAX_RETRY_DELETE_TIMES) {
