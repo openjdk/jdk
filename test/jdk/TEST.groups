@@ -176,9 +176,6 @@ jdk_security2 = \
     com/oracle/security/ucrypto \
     com/sun/crypto
 
-#
-# 8187788: Disasble javax/net tests until JDK-8187786 is resolved
-#
 jdk_security3 = \
     javax/security  \
     -javax/security/auth/kerberos \
@@ -190,6 +187,7 @@ jdk_security3 = \
     sun/security \
     -sun/security/krb5 \
     -sun/security/jgss \
+    javax/net \
     com/sun/net/ssl \
     lib/security
 
