@@ -93,7 +93,7 @@ public final class NativeSymbol extends ScriptObject {
         } else if (self instanceof NativeSymbol) {
             return ((NativeSymbol) self).symbol;
         } else {
-            throw typeError("not.a.symbol");
+            throw typeError("not.a.symbol", ScriptRuntime.safeToString(self));
         }
     }
 
