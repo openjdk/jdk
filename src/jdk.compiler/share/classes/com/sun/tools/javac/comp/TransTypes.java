@@ -72,6 +72,7 @@ public class TransTypes extends TreeTranslator {
     private Enter enter;
     private Types types;
     private Annotate annotate;
+    private Attr attr;
     private final Resolve resolve;
     private final CompileStates compileStates;
 
@@ -96,6 +97,7 @@ public class TransTypes extends TreeTranslator {
         allowInterfaceBridges = source.allowDefaultMethods();
         allowGraphInference = source.allowGraphInference();
         annotate = Annotate.instance(context);
+        attr = Attr.instance(context);
     }
 
     /** A hashtable mapping bridge methods to the pair of methods they bridge.
@@ -693,8 +695,14 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitNewClass(JCNewClass tree) {
-        if (tree.encl != null)
-            tree.encl = translate(tree.encl, erasure(tree.encl.type));
+        if (tree.encl != null) {
+            if (tree.def == null) {
+                tree.encl = translate(tree.encl, erasure(tree.encl.type));
+            } else {
+                tree.args = tree.args.prepend(attr.makeNullCheck(tree.encl));
+                tree.encl = null;
+            }
+        }
 
         Type erasedConstructorType = tree.constructorType != null ?
                 erasure(tree.constructorType) :
