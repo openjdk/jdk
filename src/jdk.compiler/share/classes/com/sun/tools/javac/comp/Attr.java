@@ -2305,9 +2305,7 @@ public class Attr extends JCTree.Visitor {
                 // prefix it to the constructor arguments
                 // and delete it from the new expression
                 if (tree.encl != null && !clazztype.tsym.isInterface()) {
-                    tree.args = tree.args.prepend(makeNullCheck(tree.encl));
                     finalargtypes = argtypes.prepend(tree.encl.type);
-                    tree.encl = null;
                 } else {
                     finalargtypes = argtypes;
                 }

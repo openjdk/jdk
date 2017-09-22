@@ -965,6 +965,10 @@ public class Check {
             formals = formals.tail.tail;
             nonInferred = nonInferred.tail.tail;
         }
+        if ((sym.flags() & ANONCONSTR_BASED) != 0) {
+            formals = formals.tail;
+            nonInferred = nonInferred.tail;
+        }
         List<JCExpression> args = argtrees;
         if (args != null) {
             //this is null when type-checking a method reference
