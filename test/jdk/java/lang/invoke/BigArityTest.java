@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,14 @@
  */
 
 /* @test
- * @summary High arity invocations, up to the maximum of 255 arguments
+ * @summary High arity invocations
  * @compile BigArityTest.java
  * @run junit/othervm/timeout=2500 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -esa -DBigArityTest.ITERATION_COUNT=1 test.java.lang.invoke.BigArityTest
  */
 
 package test.java.lang.invoke;
+
+import org.junit.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -37,8 +39,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
+
 import static org.junit.Assert.assertEquals;
-import org.junit.Test;
 
 public class BigArityTest {
 
@@ -63,12 +65,70 @@ public class BigArityTest {
     static Object hashArguments(Object... args) {
         return Objects.hash(args);
     }
+    static Object hashArguments(int... args) {
+        Object[] wrappedArgs = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            wrappedArgs[i] = args[i];
+        }
+        return hashArguments(wrappedArgs);
+    }
+    static Object hashArguments(long... args) {
+        Object[] wrappedArgs = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            wrappedArgs[i] = (int) args[i];
+        }
+        return hashArguments(wrappedArgs);
+    }
+
+    static Object hashArguments1(Object o, Object... args) {
+        Object[] arr = new Object[args.length + 1];
+        arr[0] = 0;
+        System.arraycopy(args, 0, arr, 1, args.length);
+        return Objects.hash(arr);
+    }
+    static Object hashArguments1(int i0, int... args) {
+        Object[] wrappedArgs = new Object[args.length + 1];
+        wrappedArgs[0] = i0;
+        for (int i = 0; i < args.length; i++) {
+            wrappedArgs[i + 1] = args[i];
+        }
+        return hashArguments(wrappedArgs);
+    }
+    static Object hashArguments1(long l0, long... args) {
+        Object[] wrappedArgs = new Object[args.length + 1];
+        wrappedArgs[0] = l0;
+        for (int i = 0; i < args.length; i++) {
+            wrappedArgs[i + 1] = (int) args[i];
+        }
+        return hashArguments(wrappedArgs);
+    }
+
     static final MethodHandle MH_hashArguments_VA;
+    static final MethodHandle MH_hashArguments_IVA;
+    static final MethodHandle MH_hashArguments_JVA;
+    static final MethodHandle MH_hashArguments1_VA;
+    static final MethodHandle MH_hashArguments1_IVA;
+    static final MethodHandle MH_hashArguments1_JVA;
     static {
         try {
             MH_hashArguments_VA =
                 MethodHandles.lookup().unreflect(
                     BigArityTest.class.getDeclaredMethod("hashArguments", Object[].class));
+            MH_hashArguments_IVA =
+                MethodHandles.lookup().unreflect(
+                    BigArityTest.class.getDeclaredMethod("hashArguments", int[].class));
+            MH_hashArguments_JVA =
+                MethodHandles.lookup().unreflect(
+                    BigArityTest.class.getDeclaredMethod("hashArguments", long[].class));
+            MH_hashArguments1_VA =
+                MethodHandles.lookup().unreflect(
+                    BigArityTest.class.getDeclaredMethod("hashArguments1", Object.class, Object[].class));
+            MH_hashArguments1_IVA =
+                MethodHandles.lookup().unreflect(
+                    BigArityTest.class.getDeclaredMethod("hashArguments1", int.class, int[].class));
+            MH_hashArguments1_JVA =
+                MethodHandles.lookup().unreflect(
+                    BigArityTest.class.getDeclaredMethod("hashArguments1", long.class, long[].class));
         } catch (ReflectiveOperationException ex) {
             throw new Error(ex);
         }
@@ -343,6 +403,28 @@ public class BigArityTest {
         Object r0 = Objects.hash(args);
         Object r = MH_hashArguments(arity).invokeWithArguments(args);
         assertEquals("arity=MAX_ARITY", r0, r);
+    }
+
+    @Test
+    public void testInvokeWithArgumentsJumbo() throws Throwable {
+        System.out.println("testing invokeWithArguments on jumbo arities");
+        ArrayList<Integer> arities = new ArrayList<>();
+        for (int arity = 125; arity < 1000; arity += (arity < MAX_ARITY+10 ? 1 : arity/7)) {
+            arities.add(arity);
+            Object[] args = testArgs(arity);
+            Object r0 = Objects.hash(args);
+
+            assertEquals("jumbo arity="+arity, r0, MH_hashArguments_VA.invokeWithArguments(args));
+            assertEquals("jumbo arity="+arity, r0, MH_hashArguments1_VA.invokeWithArguments(args));
+
+            // use primitive typed argument lists also:
+            assertEquals("jumbo int arity="+arity, r0, MH_hashArguments_IVA.invokeWithArguments(args));
+            assertEquals("jumbo int arity="+arity, r0, MH_hashArguments1_IVA.invokeWithArguments(args));
+
+            assertEquals("jumbo long arity="+arity, r0, MH_hashArguments_JVA.invokeWithArguments(args));
+            assertEquals("jumbo long arity="+arity, r0, MH_hashArguments1_JVA.invokeWithArguments(args));
+        }
+        System.out.println("  jumbo arities = "+arities);
     }
 
     static Object[] cat(Object a, Object[] b) {
