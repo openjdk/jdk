@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,25 @@
 
 package javax.swing.filechooser;
 
-
-import javax.swing.*;
-
 import java.awt.Image;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.ArrayList;
 import java.lang.ref.WeakReference;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 
-import sun.awt.shell.*;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JFileChooser;
+import javax.swing.UIManager;
+
+import jdk.internal.ref.CleanerFactory;
+import sun.awt.shell.ShellFolder;
 
 /**
  * FileSystemView is JFileChooser's gateway to the
@@ -109,22 +111,19 @@ public abstract class FileSystemView {
      * Constructs a FileSystemView.
      */
     public FileSystemView() {
-        final WeakReference<FileSystemView> weakReference = new WeakReference<FileSystemView>(this);
-
-        UIManager.addPropertyChangeListener(new PropertyChangeListener() {
-            public void propertyChange(PropertyChangeEvent evt) {
-                FileSystemView fileSystemView = weakReference.get();
-
-                if (fileSystemView == null) {
-                    // FileSystemView was destroyed
-                    UIManager.removePropertyChangeListener(this);
-                } else {
-                    if (evt.getPropertyName().equals("lookAndFeel")) {
-                        fileSystemView.useSystemExtensionHiding =
-                                UIManager.getDefaults().getBoolean("FileChooser.useSystemExtensionHiding");
-                    }
-                }
+        final WeakReference<FileSystemView> weakReference = new WeakReference<>(this);
+        final PropertyChangeListener pcl = evt -> {
+            final FileSystemView fsv = weakReference.get();
+            if (fsv != null && evt.getPropertyName().equals("lookAndFeel")) {
+                fsv.useSystemExtensionHiding =
+                        UIManager.getDefaults().getBoolean(
+                                "FileChooser.useSystemExtensionHiding");
             }
+        };
+
+        UIManager.addPropertyChangeListener(pcl);
+        CleanerFactory.cleaner().register(this, () -> {
+            UIManager.removePropertyChangeListener(pcl);
         });
     }
 
