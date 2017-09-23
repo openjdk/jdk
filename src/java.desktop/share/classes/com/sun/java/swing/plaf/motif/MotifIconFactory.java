@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,7 +360,7 @@ public class MotifIconFactory implements Serializable
             Color oldColor = g.getColor();
 
             if (model.isSelected()){
-                if( MotifGraphicsUtils.isLeftToRight(c) ){
+                if (c.getComponentOrientation().isLeftToRight()) {
                     g.setColor(shadow);
                     g.fillRect(x+1,y+1,2,h);
                     g.drawLine(x+4,y+2,x+4,y+2);
@@ -392,7 +392,7 @@ public class MotifIconFactory implements Serializable
                     g.drawLine(x+7,y+1,x+7,y+1);
                 }
             } else {
-                if( MotifGraphicsUtils.isLeftToRight(c) ){
+                if (c.getComponentOrientation().isLeftToRight()) {
                     g.setColor(highlight);
                     g.drawLine(x+1,y+1,x+1,y+h);
                     g.drawLine(x+2,y+1,x+2,y+h-2);
