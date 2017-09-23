@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
                 in = new Insets( 0, 0, 0, 0 );
             }
             // Draw the separation
-            if(MotifGraphicsUtils.isLeftToRight(comboBox)) {
+            if (comboBox.getComponentOrientation().isLeftToRight()) {
                 r.x -= (HORIZ_MARGIN + 2);
             }
             else {
@@ -211,7 +211,7 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
         b.width -= (in.left + in.right);
         b.height -= (in.top + in.bottom);
 
-        if(MotifGraphicsUtils.isLeftToRight(comboBox)) {
+        if (comboBox.getComponentOrientation().isLeftToRight()) {
             b.x = b.x + b.width - HORIZ_MARGIN - arrowIcon.getIconWidth();
         }
         else {
@@ -227,7 +227,7 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
         int width = comboBox.getWidth();
         int height = comboBox.getHeight();
         Insets insets = getInsets();
-        if(MotifGraphicsUtils.isLeftToRight(comboBox)) {
+        if (comboBox.getComponentOrientation().isLeftToRight()) {
             return new Rectangle(insets.left, insets.top,
                                  (width - (insets.left + insets.right)) -
                                                         iconAreaWidth(),

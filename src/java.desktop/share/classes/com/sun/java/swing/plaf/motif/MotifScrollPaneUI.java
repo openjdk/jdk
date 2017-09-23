@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class MotifScrollPaneUI extends BasicScrollPaneUI
                             vsb.getBorder() == vsbBorder) {
                             // The Border on the verticall scrollbar matches
                             // what we installed, reset it.
-                            if (MotifGraphicsUtils.isLeftToRight(pane)) {
+                            if (pane.getComponentOrientation().isLeftToRight()) {
                                 vsbBorder = new CompoundBorder(vsbMarginBorderR,
                                                 vsbBorder.getInsideBorder());
                             } else {
@@ -101,7 +101,7 @@ public class MotifScrollPaneUI extends BasicScrollPaneUI
 
         JScrollBar vsb = scrollpane.getVerticalScrollBar();
         if (vsb != null) {
-            if (MotifGraphicsUtils.isLeftToRight(scrollpane)) {
+            if (scrollpane.getComponentOrientation().isLeftToRight()) {
                 vsbBorder = new CompoundBorder(vsbMarginBorderR,
                                                vsb.getBorder());
             }
