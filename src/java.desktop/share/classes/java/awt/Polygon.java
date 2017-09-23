@@ -62,7 +62,7 @@ public class Polygon implements Shape, java.io.Serializable {
      * represents the number of valid points in this {@code Polygon}
      * and might be less than the number of elements in
      * {@link #xpoints xpoints} or {@link #ypoints ypoints}.
-     * This value can be NULL.
+     * This value can be 0.
      *
      * @serial
      * @see #addPoint(int, int)
