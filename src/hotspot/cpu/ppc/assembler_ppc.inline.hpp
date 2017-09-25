@@ -926,7 +926,8 @@ inline void Assembler::vncipherlast(VectorRegister d, VectorRegister a, VectorRe
 inline void Assembler::vsbox(       VectorRegister d, VectorRegister a)                   { emit_int32( VSBOX_OPCODE        | vrt(d) | vra(a)         ); }
 
 // SHA (introduced with Power 8)
-// Not yet implemented.
+inline void Assembler::vshasigmad(VectorRegister d, VectorRegister a, bool st, int six) { emit_int32( VSHASIGMAD_OPCODE | vrt(d) | vra(a) | vst(st) | vsix(six)); }
+inline void Assembler::vshasigmaw(VectorRegister d, VectorRegister a, bool st, int six) { emit_int32( VSHASIGMAW_OPCODE | vrt(d) | vra(a) | vst(st) | vsix(six)); }
 
 // Vector Binary Polynomial Multiplication (introduced with Power 8)
 inline void Assembler::vpmsumb(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPMSUMB_OPCODE | vrt(d) | vra(a) | vrb(b)); }
@@ -1034,6 +1035,22 @@ inline void Assembler::stvx(  VectorRegister d, Register s2) { emit_int32( STVX_
 inline void Assembler::stvxl( VectorRegister d, Register s2) { emit_int32( STVXL_OPCODE  | vrt(d) | rb(s2)); }
 inline void Assembler::lvsl(  VectorRegister d, Register s2) { emit_int32( LVSL_OPCODE   | vrt(d) | rb(s2)); }
 inline void Assembler::lvsr(  VectorRegister d, Register s2) { emit_int32( LVSR_OPCODE   | vrt(d) | rb(s2)); }
+
+inline void Assembler::load_perm(VectorRegister perm, Register addr) {
+#if defined(VM_LITTLE_ENDIAN)
+  lvsr(perm, addr);
+#else
+  lvsl(perm, addr);
+#endif
+}
+
+inline void Assembler::vec_perm(VectorRegister first_dest, VectorRegister second, VectorRegister perm) {
+#if defined(VM_LITTLE_ENDIAN)
+  vperm(first_dest, second, first_dest, perm);
+#else
+  vperm(first_dest, first_dest, second, perm);
+#endif
+}
 
 inline void Assembler::load_const(Register d, void* x, Register tmp) {
    load_const(d, (long)x, tmp);
