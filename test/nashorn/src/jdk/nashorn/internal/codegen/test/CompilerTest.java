@@ -49,7 +49,6 @@ public class CompilerTest {
     private static final boolean VERBOSE  = Boolean.valueOf(System.getProperty("compilertest.verbose"));
     private static final boolean TEST262  = Boolean.valueOf(System.getProperty("compilertest.test262"));
     private static final String TEST_BASIC_DIR  = System.getProperty("test.basic.dir");
-    private static final String TEST_NODE_DIR  = System.getProperty("test.node.dir");
     private static final String TEST262_SUITE_DIR = System.getProperty("test262.suite.dir");
 
     interface TestFilter {
@@ -108,8 +107,6 @@ public class CompilerTest {
                 return file.getName().equals("es6");
             }
         });
-        compileTestSet(new File(TEST_NODE_DIR, "node"), null);
-        compileTestSet(new File(TEST_NODE_DIR, "src"), null);
     }
 
     private void compileTestSet(final File testSetDir, final TestFilter filter) {
