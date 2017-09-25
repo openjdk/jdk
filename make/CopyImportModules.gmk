@@ -62,10 +62,10 @@ ifneq ($(LIBS_DIR), )
         FILES := $(filter %$(SHARED_LIBRARY_SUFFIX), $(call CacheFind, $(LIBS_DIR))), \
     ))
 
-    # Use relative links if the import dir is inside the OUTPUT_ROOT, otherwise
+    # Use relative links if the import dir is inside the OUTPUTDIR, otherwise
     # copy to avoid having automated systems following symlinks when deleting files,
     # or risk invalidating the build output from external changes.
-    ifeq ($(filter $(OUTPUT_ROOT)/%, $(LIBS_DIR)), )
+    ifeq ($(filter $(OUTPUTDIR)/%, $(LIBS_DIR)), )
       LINK_MACRO := install-file
       LOG_ACTION := Copying
     else

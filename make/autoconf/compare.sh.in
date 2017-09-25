@@ -70,14 +70,14 @@ export UNPACK200="@FIXPATH@ @BOOT_JDK@/bin/unpack200"
 export UNARCHIVE="@UNZIP@ -q -o"
 
 export TOPDIR="@TOPDIR@"
-export OUTPUT_ROOT="@OUTPUT_ROOT@"
+export OUTPUTDIR="@OUTPUTDIR@"
 
 if [ "@COMPILE_TYPE@" != "cross" ]; then
-    export JAVAP="@FIXPATH@ $OUTPUT_ROOT/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
-    export JIMAGE="@FIXPATH@ $OUTPUT_ROOT/jdk/bin/jimage"
+    export JAVAP="@FIXPATH@ $OUTPUTDIR/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
+    export JIMAGE="@FIXPATH@ $OUTPUTDIR/jdk/bin/jimage"
 elif [ "@CREATE_BUILDJDK@" = "true" ]; then
-    export JAVAP="@FIXPATH@ $OUTPUT_ROOT/buildjdk/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
-    export JIMAGE="@FIXPATH@ $OUTPUT_ROOT/buildjdk/jdk/bin/jimage"
+    export JAVAP="@FIXPATH@ $OUTPUTDIR/buildjdk/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
+    export JIMAGE="@FIXPATH@ $OUTPUTDIR/buildjdk/jdk/bin/jimage"
 else
     export JAVAP="@FIXPATH@ @BUILD_JDK@/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
     export JIMAGE="@FIXPATH@ @BUILD_JDK@/bin/jimage"
@@ -95,9 +95,9 @@ if [ ! -e "$REAL_COMPARE_SCRIPT" ]; then
 fi
 
 # Rotate logs
-$RM $OUTPUT_ROOT/compare.log.old 2> /dev/null
-$MV $OUTPUT_ROOT/compare.log $OUTPUT_ROOT/compare.log.old 2> /dev/null
+$RM $OUTPUTDIR/compare.log.old 2> /dev/null
+$MV $OUTPUTDIR/compare.log $OUTPUTDIR/compare.log.old 2> /dev/null
 
 export SCRIPT_DIR="$( cd "$( dirname "$0" )" > /dev/null && pwd )"
 
-$BASH $TOPDIR/make/scripts/logger.sh $OUTPUT_ROOT/compare.log $BASH "$REAL_COMPARE_SCRIPT" "$@"
+$BASH $TOPDIR/make/scripts/logger.sh $OUTPUTDIR/compare.log $BASH "$REAL_COMPARE_SCRIPT" "$@"

@@ -208,7 +208,7 @@ endif
 CACERTS_DST := $(LIB_DST_DIR)/security/cacerts
 
 $(CACERTS_DST): $(CACERTS_FILE)
-	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%, %, $@))
+	$(call LogInfo, Copying $(patsubst $(OUTPUTDIR)/%, %, $@))
 	$(call install-file)
 
 TARGETS += $(CACERTS_DST)

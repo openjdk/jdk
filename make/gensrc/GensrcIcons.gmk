@@ -117,7 +117,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
 
   $(GENSRC_OSX_ICONS): $(GENSRC_OSX_ICONS_SRC) $(BUILD_TOOLS_JDK)
-	$(call LogInfo, Generating $(patsubst $(OUTPUT_ROOT)/%, %, $@))
+	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $@))
 	$(call MakeDir, $(@D))
 	$(RM) $@ $@.tmp
 	$(ECHO) "static unsigned char sAWTIconData[] = { " >> $@.tmp

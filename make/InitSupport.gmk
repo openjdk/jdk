@@ -349,8 +349,8 @@ else # $(HAS_SPEC)=true
   include $(TOPDIR)/make/common/MakeBase.gmk
 
   # Define basic logging setup
-  BUILD_LOG := $(OUTPUT_ROOT)/build.log
-  BUILD_PROFILE_LOG := $(OUTPUT_ROOT)/build-profile.log
+  BUILD_LOG := $(OUTPUTDIR)/build.log
+  BUILD_PROFILE_LOG := $(OUTPUTDIR)/build-profile.log
 
   BUILD_LOG_PIPE := > >($(TEE) -a $(BUILD_LOG)) 2> >($(TEE) -a $(BUILD_LOG) >&2) && wait
 
@@ -383,7 +383,7 @@ else # $(HAS_SPEC)=true
   # FAIL can be set to false to have the return value of compare be ignored.
   define ParseCompareBuild
     ifneq ($$(COMPARE_BUILD), )
-      COMPARE_BUILD_OUTPUT_ROOT := $(TOPDIR)/build/compare-build/$(CONF_NAME)
+      COMPARE_BUILD_OUTPUTDIR := $(TOPDIR)/build/compare-build/$(CONF_NAME)
       COMPARE_BUILD_FAIL := true
 
       ifneq ($$(findstring :, $$(COMPARE_BUILD)), )
@@ -443,16 +443,16 @@ else # $(HAS_SPEC)=true
         # Move the first build away temporarily
 	$(RM) -r $(TOPDIR)/build/.compare-build-temp
 	$(MKDIR) -p $(TOPDIR)/build/.compare-build-temp
-	$(MV) $(OUTPUT_ROOT) $(TOPDIR)/build/.compare-build-temp
+	$(MV) $(OUTPUTDIR) $(TOPDIR)/build/.compare-build-temp
         # Restore an old compare-build, or create a new compare-build directory.
-	if test -d $(COMPARE_BUILD_OUTPUT_ROOT); then \
-	  $(MV) $(COMPARE_BUILD_OUTPUT_ROOT) $(OUTPUT_ROOT); \
+	if test -d $(COMPARE_BUILD_OUTPUTDIR); then \
+	  $(MV) $(COMPARE_BUILD_OUTPUTDIR) $(OUTPUTDIR); \
 	else \
-	  $(MKDIR) -p $(OUTPUT_ROOT); \
+	  $(MKDIR) -p $(OUTPUTDIR); \
 	fi
         # Re-run configure with the same arguments (and possibly some additional),
         # must be done after patching.
-	( cd $(OUTPUT_ROOT) && PATH="$(ORIGINAL_PATH)" \
+	( cd $(OUTPUTDIR) && PATH="$(ORIGINAL_PATH)" \
 	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) $(COMPARE_BUILD_CONF))
   endef
 
@@ -462,8 +462,8 @@ else # $(HAS_SPEC)=true
 	$(if $(COMPARE_BUILD_PATCH), $(PATCH) -R -p1 < $(COMPARE_BUILD_PATCH))
         # Move this build away and restore the original build
 	$(MKDIR) -p $(TOPDIR)/build/compare-build
-	$(MV) $(OUTPUT_ROOT) $(COMPARE_BUILD_OUTPUT_ROOT)
-	$(MV) $(TOPDIR)/build/.compare-build-temp/$(CONF_NAME) $(OUTPUT_ROOT)
+	$(MV) $(OUTPUTDIR) $(COMPARE_BUILD_OUTPUTDIR)
+	$(MV) $(TOPDIR)/build/.compare-build-temp/$(CONF_NAME) $(OUTPUTDIR)
 	$(RM) -r $(TOPDIR)/build/.compare-build-temp
   endef
 
@@ -472,11 +472,11 @@ else # $(HAS_SPEC)=true
         # Compare first and second build. Ignore any error code from compare.sh.
 	$(ECHO) "Comparing between comparison rebuild (this/new) and baseline (other/old)"
 	$(if $(COMPARE_BUILD_COMP_DIR), \
-	  +(cd $(COMPARE_BUILD_OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) \
-	      -2dirs $(COMPARE_BUILD_OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) \
-	      $(OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) $(COMPARE_BUILD_IGNORE_RESULT)), \
-	  +(cd $(COMPARE_BUILD_OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) \
-	      -o $(OUTPUT_ROOT) $(COMPARE_BUILD_IGNORE_RESULT)) \
+	  +(cd $(COMPARE_BUILD_OUTPUTDIR) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) \
+	      -2dirs $(COMPARE_BUILD_OUTPUTDIR)/$(COMPARE_BUILD_COMP_DIR) \
+	      $(OUTPUTDIR)/$(COMPARE_BUILD_COMP_DIR) $(COMPARE_BUILD_IGNORE_RESULT)), \
+	  +(cd $(COMPARE_BUILD_OUTPUTDIR) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) \
+	      -o $(OUTPUTDIR) $(COMPARE_BUILD_IGNORE_RESULT)) \
 	)
   endef
 

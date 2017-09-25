@@ -206,15 +206,15 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "====================================================\n"
   if test "x$no_create" != "xyes"; then
     if test "x$IS_RECONFIGURE" != "xyes"; then
-      printf "A new configuration has been successfully created in\n%s\n" "$OUTPUT_ROOT"
+      printf "A new configuration has been successfully created in\n%s\n" "$OUTPUTDIR"
     else
-      printf "The existing configuration has been successfully updated in\n%s\n" "$OUTPUT_ROOT"
+      printf "The existing configuration has been successfully updated in\n%s\n" "$OUTPUTDIR"
     fi
   else
     if test "x$IS_RECONFIGURE" != "xyes"; then
       printf "A configuration has been successfully checked but not created\n"
     else
-      printf "The existing configuration has been successfully checked in\n%s\n" "$OUTPUT_ROOT"
+      printf "The existing configuration has been successfully checked in\n%s\n" "$OUTPUTDIR"
     fi
   fi
   if test "x$CONFIGURE_COMMAND_LINE" != x; then
