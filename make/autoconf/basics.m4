@@ -568,8 +568,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
   BASIC_FIXUP_PATH(CURDIR)
   BASIC_FIXUP_PATH(TOPDIR)
-  # SRC_ROOT is a traditional alias for TOPDIR.
-  SRC_ROOT=$TOPDIR
 
   # Calculate a canonical version of TOPDIR for string comparisons
   CANONICAL_TOPDIR=$TOPDIR
@@ -770,13 +768,13 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
       [ CONF_NAME=${with_conf_name} ])
   AC_ARG_WITH(output-base-dir, [AS_HELP_STRING([--with-output-base-dir],
       [override the default output base directory @<:@./build@:>@])],
-      [ OUTPUT_BASE=${with_output_base_dir} ], [ OUTPUT_BASE="$SRC_ROOT/build" ] )
+      [ OUTPUT_BASE=${with_output_base_dir} ], [ OUTPUT_BASE="$TOPDIR/build" ] )
 
   # Test from where we are running configure, in or outside of src root.
   AC_MSG_CHECKING([where to store configuration])
-  if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
-      || test "x$CURDIR" = "x$SRC_ROOT/make/autoconf" \
-      || test "x$CURDIR" = "x$SRC_ROOT/make" ; then
+  if test "x$CURDIR" = "x$TOPDIR" || test "x$CURDIR" = "x$TOPDIR/common" \
+      || test "x$CURDIR" = "x$TOPDIR/make/autoconf" \
+      || test "x$CURDIR" = "x$TOPDIR/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -796,7 +794,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # If configuration is situated in normal build directory, just use the build
     # directory name as configuration name, otherwise use the complete path.
     if test "x${CONF_NAME}" = x; then
-      CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${SRC_ROOT}/build/!!"`
+      CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${TOPDIR}/build/!!"`
     fi
     OUTPUT_ROOT="$CURDIR"
     AC_MSG_RESULT([in current directory])
@@ -822,7 +820,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
         AC_MSG_NOTICE([(as opposed to creating a configuration in <src_root>/build/<conf-name>).])
         AC_MSG_NOTICE([However, this directory is not empty. This is not allowed, since it could])
         AC_MSG_NOTICE([seriously mess up just about everything.])
-        AC_MSG_NOTICE([Try 'cd $SRC_ROOT' and restart configure])
+        AC_MSG_NOTICE([Try 'cd $TOPDIR' and restart configure])
         AC_MSG_NOTICE([(or create a new empty directory and cd to it).])
         AC_MSG_ERROR([Will not continue creating configuration in $CURDIR])
       fi
@@ -1173,7 +1171,7 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
 AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
 [
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    file_to_test="$SRC_ROOT/LICENSE"
+    file_to_test="$TOPDIR/LICENSE"
     if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
       AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin.])
     fi
