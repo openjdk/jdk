@@ -177,7 +177,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
             }
         } else {
             LiveRef lref = new LiveRef(id, port, csf, ssf);
-            setup(new UnicastServerRef2(lref, RegistryImpl::registryFilter));
+            setup(new UnicastServerRef2(lref, serialFilter));
         }
     }
 
