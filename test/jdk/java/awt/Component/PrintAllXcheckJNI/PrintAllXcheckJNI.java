@@ -26,19 +26,25 @@
   @key headful
   @bug 6736247
   @summary Component.printAll Invalid local JNI handle
+  @library ../../regtesthelpers
+  @build Util
   @author Dmitry Cherepanov: area=awt.component
   @run  main/othervm -Xcheck:jni PrintAllXcheckJNI
 */
 
-import java.awt.*;
+import java.awt.Frame;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import test.java.awt.regtesthelpers.Util;
 
 public class PrintAllXcheckJNI
 {
     public static void main(String []s)
     {
         Frame frame = new Frame();
+        frame.setBounds(100, 100, 100, 100);
         frame.setVisible(true);
+        Util.waitForIdle(Util.createRobot());
 
         BufferedImage img = new BufferedImage(frame.getWidth(),
                                               frame.getHeight(),
