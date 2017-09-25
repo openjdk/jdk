@@ -1308,6 +1308,7 @@ class Assembler : public AbstractAssembler {
   inline void li(   Register d, int si16);
   inline void lis(  Register d, int si16);
   inline void addir(Register d, int si16, Register a);
+  inline void subi( Register d, Register a, int si16);
 
   static bool is_addi(int x) {
      return ADDI_OPCODE == (x & ADDI_OPCODE_MASK);

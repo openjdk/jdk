@@ -815,6 +815,8 @@ class MacroAssembler: public Assembler {
                                Register yz_idx, Register idx, Register carry,
                                Register product_high, Register product,
                                Register carry2, Register tmp);
+  void muladd(Register out, Register in, Register offset, Register len, Register k,
+              Register tmp1, Register tmp2, Register carry);
   void multiply_to_len(Register x, Register xlen,
                        Register y, Register ylen,
                        Register z, Register zlen,

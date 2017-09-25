@@ -3306,6 +3306,267 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("} Stub body");
   }
 
+  /**
+  *  Arguments:
+  *
+  *  Input:
+  *   R3_ARG1    - out address
+  *   R4_ARG2    - in address
+  *   R5_ARG3    - offset
+  *   R6_ARG4    - len
+  *   R7_ARG5    - k
+  *  Output:
+  *   R3_RET     - carry
+  */
+  address generate_mulAdd() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "mulAdd");
+
+    address start = __ function_entry();
+
+    // C2 does not sign extend signed parameters to full 64 bits registers:
+    __ rldic (R5_ARG3, R5_ARG3, 2, 32);  // always positive
+    __ clrldi(R6_ARG4, R6_ARG4, 32);     // force zero bits on higher word
+    __ clrldi(R7_ARG5, R7_ARG5, 32);     // force zero bits on higher word
+
+    __ muladd(R3_ARG1, R4_ARG2, R5_ARG3, R6_ARG4, R7_ARG5, R8, R9, R10);
+
+    // Moves output carry to return register
+    __ mr    (R3_RET,  R10);
+
+    __ blr();
+
+    return start;
+  }
+
+  /**
+  *  Arguments:
+  *
+  *  Input:
+  *   R3_ARG1    - in address
+  *   R4_ARG2    - in length
+  *   R5_ARG3    - out address
+  *   R6_ARG4    - out length
+  */
+  address generate_squareToLen() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "squareToLen");
+
+    address start = __ function_entry();
+
+    // args - higher word is cleaned (unsignedly) due to int to long casting
+    const Register in        = R3_ARG1;
+    const Register in_len    = R4_ARG2;
+    __ clrldi(in_len, in_len, 32);
+    const Register out       = R5_ARG3;
+    const Register out_len   = R6_ARG4;
+    __ clrldi(out_len, out_len, 32);
+
+    // output
+    const Register ret       = R3_RET;
+
+    // temporaries
+    const Register lplw_s    = R7;
+    const Register in_aux    = R8;
+    const Register out_aux   = R9;
+    const Register piece     = R10;
+    const Register product   = R14;
+    const Register lplw      = R15;
+    const Register i_minus1  = R16;
+    const Register carry     = R17;
+    const Register offset    = R18;
+    const Register off_aux   = R19;
+    const Register t         = R20;
+    const Register mlen      = R21;
+    const Register len       = R22;
+    const Register a         = R23;
+    const Register b         = R24;
+    const Register i         = R25;
+    const Register c         = R26;
+    const Register cs        = R27;
+
+    // Labels
+    Label SKIP_LSHIFT, SKIP_DIAGONAL_SUM, SKIP_ADDONE, SKIP_MULADD, SKIP_LOOP_SQUARE;
+    Label LOOP_LSHIFT, LOOP_DIAGONAL_SUM, LOOP_ADDONE, LOOP_MULADD, LOOP_SQUARE;
+
+    // Save non-volatile regs (frameless).
+    int current_offs = -8;
+    __ std(R28, current_offs, R1_SP); current_offs -= 8;
+    __ std(R27, current_offs, R1_SP); current_offs -= 8;
+    __ std(R26, current_offs, R1_SP); current_offs -= 8;
+    __ std(R25, current_offs, R1_SP); current_offs -= 8;
+    __ std(R24, current_offs, R1_SP); current_offs -= 8;
+    __ std(R23, current_offs, R1_SP); current_offs -= 8;
+    __ std(R22, current_offs, R1_SP); current_offs -= 8;
+    __ std(R21, current_offs, R1_SP); current_offs -= 8;
+    __ std(R20, current_offs, R1_SP); current_offs -= 8;
+    __ std(R19, current_offs, R1_SP); current_offs -= 8;
+    __ std(R18, current_offs, R1_SP); current_offs -= 8;
+    __ std(R17, current_offs, R1_SP); current_offs -= 8;
+    __ std(R16, current_offs, R1_SP); current_offs -= 8;
+    __ std(R15, current_offs, R1_SP); current_offs -= 8;
+    __ std(R14, current_offs, R1_SP);
+
+    // Store the squares, right shifted one bit (i.e., divided by 2)
+    __ subi   (out_aux,   out,       8);
+    __ subi   (in_aux,    in,        4);
+    __ cmpwi  (CCR0,      in_len,    0);
+    // Initialize lplw outside of the loop
+    __ xorr   (lplw,      lplw,      lplw);
+    __ ble    (CCR0,      SKIP_LOOP_SQUARE);    // in_len <= 0
+    __ mtctr  (in_len);
+
+    __ bind(LOOP_SQUARE);
+    __ lwzu   (piece,     4,         in_aux);
+    __ mulld  (product,   piece,     piece);
+    // shift left 63 bits and only keep the MSB
+    __ rldic  (lplw_s,    lplw,      63, 0);
+    __ mr     (lplw,      product);
+    // shift right 1 bit without sign extension
+    __ srdi   (product,   product,   1);
+    // join them to the same register and store it
+    __ orr    (product,   lplw_s,    product);
+#ifdef VM_LITTLE_ENDIAN
+    // Swap low and high words for little endian
+    __ rldicl (product,   product,   32, 0);
+#endif
+    __ stdu   (product,   8,         out_aux);
+    __ bdnz   (LOOP_SQUARE);
+
+    __ bind(SKIP_LOOP_SQUARE);
+
+    // Add in off-diagonal sums
+    __ cmpwi  (CCR0,      in_len,    0);
+    __ ble    (CCR0,      SKIP_DIAGONAL_SUM);
+    // Avoid CTR usage here in order to use it at mulAdd
+    __ subi   (i_minus1,  in_len,    1);
+    __ li     (offset,    4);
+
+    __ bind(LOOP_DIAGONAL_SUM);
+
+    __ sldi   (off_aux,   out_len,   2);
+    __ sub    (off_aux,   off_aux,   offset);
+
+    __ mr     (len,       i_minus1);
+    __ sldi   (mlen,      i_minus1,  2);
+    __ lwzx   (t,         in,        mlen);
+
+    __ muladd (out, in, off_aux, len, t, a, b, carry);
+
+    // begin<addOne>
+    // off_aux = out_len*4 - 4 - mlen - offset*4 - 4;
+    __ addi   (mlen,      mlen,      4);
+    __ sldi   (a,         out_len,   2);
+    __ subi   (a,         a,         4);
+    __ sub    (a,         a,         mlen);
+    __ subi   (off_aux,   offset,    4);
+    __ sub    (off_aux,   a,         off_aux);
+
+    __ lwzx   (b,         off_aux,   out);
+    __ add    (b,         b,         carry);
+    __ stwx   (b,         off_aux,   out);
+
+    // if (((uint64_t)s >> 32) != 0) {
+    __ srdi_  (a,         b,         32);
+    __ beq    (CCR0,      SKIP_ADDONE);
+
+    // while (--mlen >= 0) {
+    __ bind(LOOP_ADDONE);
+    __ subi   (mlen,      mlen,      4);
+    __ cmpwi  (CCR0,      mlen,      0);
+    __ beq    (CCR0,      SKIP_ADDONE);
+
+    // if (--offset_aux < 0) { // Carry out of number
+    __ subi   (off_aux,   off_aux,   4);
+    __ cmpwi  (CCR0,      off_aux,   0);
+    __ blt    (CCR0,      SKIP_ADDONE);
+
+    // } else {
+    __ lwzx   (b,         off_aux,   out);
+    __ addi   (b,         b,         1);
+    __ stwx   (b,         off_aux,   out);
+    __ cmpwi  (CCR0,      b,         0);
+    __ bne    (CCR0,      SKIP_ADDONE);
+    __ b      (LOOP_ADDONE);
+
+    __ bind(SKIP_ADDONE);
+    // } } } end<addOne>
+
+    __ addi   (offset,    offset,    8);
+    __ subi   (i_minus1,  i_minus1,  1);
+    __ cmpwi  (CCR0,      i_minus1,  0);
+    __ bge    (CCR0,      LOOP_DIAGONAL_SUM);
+
+    __ bind(SKIP_DIAGONAL_SUM);
+
+    // Shift back up and set low bit
+    // Shifts 1 bit left up to len positions. Assumes no leading zeros
+    // begin<primitiveLeftShift>
+    __ cmpwi  (CCR0,      out_len,   0);
+    __ ble    (CCR0,      SKIP_LSHIFT);
+    __ li     (i,         0);
+    __ lwz    (c,         0,         out);
+    __ subi   (b,         out_len,   1);
+    __ mtctr  (b);
+
+    __ bind(LOOP_LSHIFT);
+    __ mr     (b,         c);
+    __ addi   (cs,        i,         4);
+    __ lwzx   (c,         out,       cs);
+
+    __ sldi   (b,         b,         1);
+    __ srwi   (cs,        c,         31);
+    __ orr    (b,         b,         cs);
+    __ stwx   (b,         i,         out);
+
+    __ addi   (i,         i,         4);
+    __ bdnz   (LOOP_LSHIFT);
+
+    __ sldi   (c,         out_len,   2);
+    __ subi   (c,         c,         4);
+    __ lwzx   (b,         out,       c);
+    __ sldi   (b,         b,         1);
+    __ stwx   (b,         out,       c);
+
+    __ bind(SKIP_LSHIFT);
+    // end<primitiveLeftShift>
+
+    // Set low bit
+    __ sldi   (i,         in_len,    2);
+    __ subi   (i,         i,         4);
+    __ lwzx   (i,         in,        i);
+    __ sldi   (c,         out_len,   2);
+    __ subi   (c,         c,         4);
+    __ lwzx   (b,         out,       c);
+
+    __ andi   (i,         i,         1);
+    __ orr    (i,         b,         i);
+
+    __ stwx   (i,         out,       c);
+
+    // Restore non-volatile regs.
+    current_offs = -8;
+    __ ld(R28, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R27, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R26, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R25, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R24, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R23, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R22, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R21, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R20, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R19, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R18, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R17, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R16, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R15, current_offs, R1_SP); current_offs -= 8;
+    __ ld(R14, current_offs, R1_SP);
+
+    __ mr(ret, out);
+    __ blr();
+
+    return start;
+  }
 
   /**
    * Arguments:
@@ -3500,6 +3761,12 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
+    if (UseSquareToLenIntrinsic) {
+      StubRoutines::_squareToLen = generate_squareToLen();
+    }
+    if (UseMulAddIntrinsic) {
+      StubRoutines::_mulAdd = generate_mulAdd();
+    }
     if (UseMontgomeryMultiplyIntrinsic) {
       StubRoutines::_montgomeryMultiply
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_multiply);
