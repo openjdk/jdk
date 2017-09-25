@@ -5234,6 +5234,40 @@ void MacroAssembler::multiply_128_x_128_loop(Register x_xstart,
   bind(L_post_third_loop_done);
 }   // multiply_128_x_128_loop
 
+void MacroAssembler::muladd(Register out, Register in,
+                            Register offset, Register len, Register k,
+                            Register tmp1, Register tmp2, Register carry) {
+
+  // Labels
+  Label LOOP, SKIP;
+
+  // Make sure length is positive.
+  cmpdi  (CCR0,    len,     0);
+
+  // Prepare variables
+  subi   (offset,  offset,  4);
+  li     (carry,   0);
+  ble    (CCR0,    SKIP);
+
+  mtctr  (len);
+  subi   (len,     len,     1    );
+  sldi   (len,     len,     2    );
+
+  // Main loop
+  bind(LOOP);
+  lwzx   (tmp1,    len,     in   );
+  lwzx   (tmp2,    offset,  out  );
+  mulld  (tmp1,    tmp1,    k    );
+  add    (tmp2,    carry,   tmp2 );
+  add    (tmp2,    tmp1,    tmp2 );
+  stwx   (tmp2,    offset,  out  );
+  srdi   (carry,   tmp2,    32   );
+  subi   (offset,  offset,  4    );
+  subi   (len,     len,     4    );
+  bdnz   (LOOP);
+  bind(SKIP);
+}
+
 void MacroAssembler::multiply_to_len(Register x, Register xlen,
                                      Register y, Register ylen,
                                      Register z, Register zlen,
