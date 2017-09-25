@@ -89,7 +89,7 @@ public class ChildAlwaysOnTopTest {
         });
 
         Robot robot = new Robot();
-        robot.delay(200);
+        robot.delay(500);
         robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -101,7 +101,7 @@ public class ChildAlwaysOnTopTest {
             }
         });
 
-        robot.delay(200);
+        robot.delay(500);
         robot.waitForIdle();
 
         Color color = robot.getPixelColor(point.x + 100, point.y + 100);
@@ -123,7 +123,7 @@ public class ChildAlwaysOnTopTest {
             }
         });
 
-        robot.delay(200);
+        robot.delay(500);
         robot.waitForIdle();
 
         color = robot.getPixelColor(point.x + 100, point.y + 100);
@@ -146,7 +146,7 @@ public class ChildAlwaysOnTopTest {
             }
         });
 
-        robot.delay(200);
+        robot.delay(500);
         robot.waitForIdle();
 
         color = robot.getPixelColor(point.x + 100, point.y + 100);
