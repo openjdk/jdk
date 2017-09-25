@@ -129,7 +129,7 @@ void MacroAssembler::calculate_address_from_global_toc(Register dst, address add
   }
 }
 
-int MacroAssembler::patch_calculate_address_from_global_toc_at(address a, address bound, address addr) {
+address MacroAssembler::patch_calculate_address_from_global_toc_at(address a, address bound, address addr) {
   const int offset = MacroAssembler::offset_to_global_toc(addr);
 
   const address inst2_addr = a;
@@ -155,7 +155,7 @@ int MacroAssembler::patch_calculate_address_from_global_toc_at(address a, addres
   assert(is_addis(inst1) && inv_ra_field(inst1) == 29 /* R29 */, "source must be global TOC");
   set_imm((int *)inst1_addr, MacroAssembler::largeoffset_si16_si16_hi(offset));
   set_imm((int *)inst2_addr, MacroAssembler::largeoffset_si16_si16_lo(offset));
-  return (int)((intptr_t)addr - (intptr_t)inst1_addr);
+  return inst1_addr;
 }
 
 address MacroAssembler::get_address_of_calculate_address_from_global_toc_at(address a, address bound) {
@@ -201,7 +201,7 @@ address MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr
 //    clrldi rx = rx & 0xFFFFffff // clearMS32b, optional
 //    ori rx = rx | const.lo
 // Clrldi will be passed by.
-int MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop data) {
+address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop data) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 
   const address inst2_addr = a;
@@ -227,7 +227,7 @@ int MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop dat
 
   set_imm((int *)inst1_addr, (short)(xc)); // see enc_load_con_narrow_hi/_lo
   set_imm((int *)inst2_addr,        (xd)); // unsigned int
-  return (int)((intptr_t)inst2_addr - (intptr_t)inst1_addr);
+  return inst1_addr;
 }
 
 // Get compressed oop or klass constant.
