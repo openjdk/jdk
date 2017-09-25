@@ -54,7 +54,7 @@ endef
 
 # Param 1 - The file containing the MODULES list
 define prepare-info-file
-  $(call LogInfo, Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@))
+  $(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%,%,$@))
   $(call MakeDir, $(@D))
   $(RM) $@
 endef

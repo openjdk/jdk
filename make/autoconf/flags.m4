@@ -1313,7 +1313,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
   $2LDFLAGS_JDKLIB="${$2LDFLAGS_JDKLIB} ${SHARED_LIBRARY_FLAGS}"
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \
-        -libpath:${OUTPUT_ROOT}/support/modules_libs/java.base"
+        -libpath:${OUTPUTDIR}/support/modules_libs/java.base"
     $2JDKLIB_LIBS=""
   else
     $2JAVA_BASE_LDFLAGS="${$2JAVA_BASE_LDFLAGS} \

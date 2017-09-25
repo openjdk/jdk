@@ -38,8 +38,8 @@ JTREG_TEST_TOPDIRS := $(TOPDIR) $(JTREG_TESTROOTS)
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , RunTests.gmk))
 
-TEST_RESULTS_DIR := $(BUILD_OUTPUT)/test-results
-TEST_SUPPORT_DIR := $(BUILD_OUTPUT)/test-support
+TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
+TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
 
 
 ################################################################################

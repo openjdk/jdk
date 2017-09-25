@@ -36,7 +36,7 @@ define RunTests
 	($(CD) $(TOPDIR)/test && $(MAKE) $(MAKE_ARGS) -j1 -k MAKEFLAGS= \
 	    JT_HOME=$(JT_HOME) PRODUCT_HOME=$(strip $2) \
 	    TEST_IMAGE_DIR=$(TEST_IMAGE_DIR) \
-	    ALT_OUTPUTDIR=$(OUTPUT_ROOT) TEST_JOBS=$(TEST_JOBS) \
+	    ALT_OUTPUTDIR=$(OUTPUTDIR) TEST_JOBS=$(TEST_JOBS) \
 	    JT_JAVA=$(BOOT_JDK) JIB_JAR=$(JIB_JAR) \
 	    JOBS=$(JOBS) $1) || true
 endef
@@ -54,7 +54,7 @@ endef
 define CleanDir
 	@$(PRINTF) "Cleaning $(strip $1) build artifacts ..."
 	@$(PRINTF) "\n" $(LOG_DEBUG)
-	($(CD) $(OUTPUT_ROOT) && $(RM) -r $1)
+	($(CD) $(OUTPUTDIR) && $(RM) -r $1)
 	@$(PRINTF) " done\n"
 endef
 

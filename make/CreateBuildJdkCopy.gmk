@@ -54,7 +54,7 @@ TARGETS += $(COPY_CLASSES_TARGET)
 ################################################################################
 
 $(eval $(call SetupCopyFiles, COPY_SUPPORT_HEADERS, \
-    SRC := $(BUILD_OUTPUT), \
+    SRC := $(OUTPUTDIR), \
     DEST := $(BUILDJDK_OUTPUTDIR), \
     FILES := $(call CacheFind, $(wildcard \
         $(addprefix $(SUPPORT_OUTPUTDIR)/headers/, $(MODULES_TO_COPY)))), \
@@ -65,7 +65,7 @@ TARGETS += $(COPY_SUPPORT_HEADERS)
 ################################################################################
 
 $(eval $(call SetupCopyFiles, COPY_JDK_LIB_FILES, \
-    SRC := $(BUILD_OUTPUT), \
+    SRC := $(OUTPUTDIR), \
     DEST := $(BUILDJDK_OUTPUTDIR), \
     FILES := $(JDK_OUTPUTDIR)/lib/tzdb.dat, \
 ))

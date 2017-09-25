@@ -95,7 +95,7 @@ define SetupZipArchiveBody
   endif
 
   # Use a slightly shorter name for logging, but with enough path to identify this zip.
-  $1_NAME:=$$(subst $$(OUTPUT_ROOT)/,,$$($1_ZIP))
+  $1_NAME:=$$(subst $$(OUTPUTDIR)/,,$$($1_ZIP))
 
   # Now $1_ALL_SRCS should contain all sources that are going to be put into the zip.
   # I.e. the zip -i and -x options should match the filtering done in the makefile.

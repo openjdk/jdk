@@ -532,7 +532,7 @@ JDK_SPECS_TARGETS += $(COPY_JVMTI_HTML)
 # Optional target which bundles all generated javadocs into a zip archive.
 
 JAVADOC_ZIP_NAME := jdk-$(VERSION_STRING)-docs.zip
-JAVADOC_ZIP_FILE := $(OUTPUT_ROOT)/bundles/$(JAVADOC_ZIP_NAME)
+JAVADOC_ZIP_FILE := $(OUTPUTDIR)/bundles/$(JAVADOC_ZIP_NAME)
 
 $(eval $(call SetupZipArchive, BUILD_JAVADOC_ZIP, \
     SRC := $(DOCS_OUTPUTDIR), \

@@ -82,7 +82,7 @@ PrintVar = \
 ### Functions for timers
 
 # Store the build times in this directory.
-BUILDTIMESDIR=$(OUTPUT_ROOT)/make-support/build-times
+BUILDTIMESDIR=$(OUTPUTDIR)/make-support/build-times
 
 # Record starting time for build of a sub repository.
 define RecordStartTime
@@ -155,7 +155,7 @@ else # HAS_FILE_FUNCTION = false
       $(strip $(shell $(CAT) $(TOPDIR)/make/common/support/ListPathsSafely-pre-compress.incl)))
   compress_paths += \
       $(subst $(TOPDIR),X97, \
-      $(subst $(OUTPUT_ROOT),X98, \
+      $(subst $(OUTPUTDIR),X98, \
       $(subst X,X00, \
       $(subst $(SPACE),\n,$(strip $1)))))
   $(eval compress_paths += \
@@ -163,7 +163,7 @@ else # HAS_FILE_FUNCTION = false
 
   decompress_paths=$(SED) -f $(TOPDIR)/make/common/support/ListPathsSafely-uncompress.sed \
       -e 's|X99|\\n|g' \
-      -e 's|X98|$(OUTPUT_ROOT)|g' -e 's|X97|$(TOPDIR)|g' \
+      -e 's|X98|$(OUTPUTDIR)|g' -e 's|X97|$(TOPDIR)|g' \
       -e 's|X00|X|g'
 
   ListPathsSafely_IfPrintf = \
@@ -359,11 +359,11 @@ define SetupLogging
     ifeq ($$(IS_GNU_TIME), yes)
       SHELL :=  $$(BASH) $$(TOPDIR)/make/scripts/shell-profiler.sh \
                 gnutime $$(TIME) \
-                $$(OUTPUT_ROOT)/build-profile.log $$(SHELL)
+                $$(OUTPUTDIR)/build-profile.log $$(SHELL)
     else ifneq ($$(FLOCK), )
       SHELL :=  $$(BASH) $$(TOPDIR)/make/scripts/shell-profiler.sh \
                 flock $$(FLOCK) \
-                $$(OUTPUT_ROOT)/build-profile.log $$(SHELL)
+                $$(OUTPUTDIR)/build-profile.log $$(SHELL)
     endif
   endif
 
@@ -707,7 +707,7 @@ define AddFileToCopy
   # 4 : Macro to call for copy operation
   # 5 : Action text to log
   $2: $1
-	$$(call LogInfo, $(strip $5) $$(patsubst $(OUTPUT_ROOT)/%,%,$$@))
+	$$(call LogInfo, $(strip $5) $$(patsubst $(OUTPUTDIR)/%,%,$$@))
 	$$($$(strip $4))
 
   $3 += $2
@@ -937,8 +937,8 @@ ExecuteWithLog = \
   $(call WriteFile, $2, $(strip $1).cmdline) \
   ( $(strip $2) > >($(TEE) $(strip $1).log) 2> >($(TEE) $(strip $1).log >&2) || \
       ( exitcode=$(DOLLAR)? && \
-      $(CP) $(strip $1).log $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(BUILD_OUTPUT)/%,%,$(strip $1))).log && \
-      $(CP) $(strip $1).cmdline $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(BUILD_OUTPUT)/%,%,$(strip $1))).cmdline && \
+      $(CP) $(strip $1).log $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(OUTPUTDIR)/%,%,$(strip $1))).log && \
+      $(CP) $(strip $1).cmdline $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(OUTPUTDIR)/%,%,$(strip $1))).cmdline && \
       exit $(DOLLAR)exitcode ) )
 
 ################################################################################

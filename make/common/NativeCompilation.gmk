@@ -751,10 +751,10 @@ define SetupNativeCompilationBody
   # This is a rough heuristic and may not always print accurate information.
   $$($1_BUILD_INFO): $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
         ifeq ($$(wildcard $$($1_TARGET)),)
-	  $(ECHO) 'Creating $$(subst $$(BUILD_OUTPUT)/,,$$($1_TARGET)) from $$(words \
+	  $(ECHO) 'Creating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) from $$(words \
 	      $$(filter-out %.vardeps, $$?)) file(s)'
         else
-	  $(ECHO) $$(strip 'Updating $$(subst $$(BUILD_OUTPUT)/,,$$($1_TARGET))' \
+	  $(ECHO) $$(strip 'Updating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET))' \
 	      $$(if $$(filter-out %.vardeps, $$?), \
 	        'due to $$(words $$(filter-out %.vardeps, $$?)) file(s)', \
 	      $$(if $$(filter %.vardeps, $$?), 'due to makefile changes')))
@@ -946,9 +946,9 @@ define SetupNativeCompilationBody
       ifeq ($$(TOOLCHAIN_TYPE), clang)
         # There is no strlen function in make, but checking path depth is a
         # reasonable approximation.
-        ifneq ($$(word 10, $$(subst /, ,$$(OUTPUT_ROOT))), )
+        ifneq ($$(word 10, $$(subst /, ,$$(OUTPUTDIR))), )
           $1_LINK_OBJS_RELATIVE := true
-          $1_ALL_OBJS_RELATIVE := $$(patsubst $$(OUTPUT_ROOT)/%, %, $$($1_ALL_OBJS))
+          $1_ALL_OBJS_RELATIVE := $$(patsubst $$(OUTPUTDIR)/%, %, $$($1_ALL_OBJS))
         endif
       endif
     endif
@@ -976,7 +976,7 @@ define SetupNativeCompilationBody
 		  $$($1_STRIP_CMD)
                 else
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
-		      $$(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUT_ROOT) ; ) \
+		      $$(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
 		      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$($1_LIBS) \
 		      $$($1_EXTRA_LIBS)) ; \
