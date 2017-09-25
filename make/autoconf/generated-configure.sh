@@ -5115,7 +5115,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1506329089
+DATE_WHEN_GENERATED=1506329225
 
 ###############################################################################
 #
@@ -25080,8 +25080,20 @@ if test "${with_cacerts_file+set}" = set; then :
   withval=$with_cacerts_file;
 fi
 
-  if test "x$with_cacerts_file" != x; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cacerts file" >&5
+$as_echo_n "checking for cacerts file... " >&6; }
+  if test "x$with_cacerts_file" == x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: default" >&5
+$as_echo "default" >&6; }
+  else
     CACERTS_FILE=$with_cacerts_file
+    if test ! -f "$CACERTS_FILE"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: fail" >&5
+$as_echo "fail" >&6; }
+      as_fn_error $? "Specified cacerts file \"$CACERTS_FILE\" does not exist" "$LINENO" 5
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CACERTS_FILE" >&5
+$as_echo "$CACERTS_FILE" >&6; }
   fi
 
 
