@@ -68,8 +68,8 @@ public class NewClassDefEnclosing {
             JCTree.JCVariableDecl var =
                     (JCTree.JCVariableDecl) ((ClassTree) cut.getTypeDecls().get(0)).getMembers().get(1);
 
-            expected = expected.replaceAll("[ \n]+", " ");
-            String actual = var.toString().replaceAll("[ \n]+", " ");
+            expected = expected.replaceAll("\\s+", " ");
+            String actual = var.toString().replaceAll("\\s+", " ");
 
             if (!expected.equals(actual)) {
                 System.err.println("Expected: " + expected);
