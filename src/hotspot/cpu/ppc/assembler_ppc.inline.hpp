@@ -164,6 +164,7 @@ inline void Assembler::divwo_(  Register d, Register a, Register b) { emit_int32
 inline void Assembler::li(   Register d, int si16)             { Assembler::addi_r0ok( d, R0, si16); }
 inline void Assembler::lis(  Register d, int si16)             { Assembler::addis_r0ok(d, R0, si16); }
 inline void Assembler::addir(Register d, int si16, Register a) { Assembler::addi(d, a, si16); }
+inline void Assembler::subi( Register d, Register a, int si16) { Assembler::addi(d, a, -si16); }
 
 // PPC 1, section 3.3.9, Fixed-Point Compare Instructions
 inline void Assembler::cmpi(  ConditionRegister f, int l, Register a, int si16)   { emit_int32( CMPI_OPCODE  | bf(f) | l10(l) | ra(a) | simm(si16,16)); }

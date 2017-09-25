@@ -258,6 +258,12 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
+  if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
+    UseSquareToLenIntrinsic = true;
+  }
+  if (FLAG_IS_DEFAULT(UseMulAddIntrinsic)) {
+    UseMulAddIntrinsic = true;
+  }
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;
   }
