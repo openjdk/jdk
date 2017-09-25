@@ -105,13 +105,15 @@ class MacroAssembler: public Assembler {
   };
 
   inline static bool is_calculate_address_from_global_toc_at(address a, address bound);
-  static int patch_calculate_address_from_global_toc_at(address a, address addr, address bound);
+  // Returns address of first instruction in sequence.
+  static address patch_calculate_address_from_global_toc_at(address a, address bound, address addr);
   static address get_address_of_calculate_address_from_global_toc_at(address a, address addr);
 
 #ifdef _LP64
   // Patch narrow oop constant.
   inline static bool is_set_narrow_oop(address a, address bound);
-  static int patch_set_narrow_oop(address a, address bound, narrowOop data);
+  // Returns address of first instruction in sequence.
+  static address patch_set_narrow_oop(address a, address bound, narrowOop data);
   static narrowOop get_narrow_oop(address a, address bound);
 #endif
 
