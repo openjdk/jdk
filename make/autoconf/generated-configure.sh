@@ -5116,7 +5116,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1506027115
+DATE_WHEN_GENERATED=1506327629
 
 ###############################################################################
 #
@@ -16804,8 +16804,6 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
     fi
   fi
 
-  # SRC_ROOT is a traditional alias for TOPDIR.
-  SRC_ROOT=$TOPDIR
 
   # Calculate a canonical version of TOPDIR for string comparisons
   CANONICAL_TOPDIR=$TOPDIR
@@ -17559,16 +17557,16 @@ fi
 if test "${with_output_base_dir+set}" = set; then :
   withval=$with_output_base_dir;  OUTPUT_BASE=${with_output_base_dir}
 else
-   OUTPUT_BASE="$SRC_ROOT/build"
+   OUTPUT_BASE="$TOPDIR/build"
 fi
 
 
   # Test from where we are running configure, in or outside of src root.
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking where to store configuration" >&5
 $as_echo_n "checking where to store configuration... " >&6; }
-  if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
-      || test "x$CURDIR" = "x$SRC_ROOT/make/autoconf" \
-      || test "x$CURDIR" = "x$SRC_ROOT/make" ; then
+  if test "x$CURDIR" = "x$TOPDIR" || test "x$CURDIR" = "x$TOPDIR/common" \
+      || test "x$CURDIR" = "x$TOPDIR/make/autoconf" \
+      || test "x$CURDIR" = "x$TOPDIR/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -17590,7 +17588,7 @@ $as_echo "in build directory with custom name" >&6; }
     # If configuration is situated in normal build directory, just use the build
     # directory name as configuration name, otherwise use the complete path.
     if test "x${CONF_NAME}" = x; then
-      CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${SRC_ROOT}/build/!!"`
+      CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${TOPDIR}/build/!!"`
     fi
     OUTPUT_ROOT="$CURDIR"
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: in current directory" >&5
@@ -17622,8 +17620,8 @@ $as_echo "$as_me: (as opposed to creating a configuration in <src_root>/build/<c
 $as_echo "$as_me: However, this directory is not empty. This is not allowed, since it could" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: seriously mess up just about everything." >&5
 $as_echo "$as_me: seriously mess up just about everything." >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Try 'cd $SRC_ROOT' and restart configure" >&5
-$as_echo "$as_me: Try 'cd $SRC_ROOT' and restart configure" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Try 'cd $TOPDIR' and restart configure" >&5
+$as_echo "$as_me: Try 'cd $TOPDIR' and restart configure" >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: (or create a new empty directory and cd to it)." >&5
 $as_echo "$as_me: (or create a new empty directory and cd to it)." >&6;}
         as_fn_error $? "Will not continue creating configuration in $CURDIR" "$LINENO" 5
@@ -54146,7 +54144,7 @@ $as_echo "no" >&6; }
   if test "x$OPENJDK_BUILD_OS" = xwindows; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if fixpath can be created" >&5
 $as_echo_n "checking if fixpath can be created... " >&6; }
-    FIXPATH_SRC="$SRC_ROOT/make/src/native/fixpath.c"
+    FIXPATH_SRC="$TOPDIR/make/src/native/fixpath.c"
     FIXPATH_BIN="$CONFIGURESUPPORT_OUTPUTDIR/bin/fixpath.exe"
     FIXPATH_DIR="$CONFIGURESUPPORT_OUTPUTDIR/fixpath"
     if test "x$OPENJDK_BUILD_OS_ENV" = xwindows.cygwin; then
@@ -67516,7 +67514,7 @@ $as_echo "no" >&6; }
 # Check for some common pitfalls
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    file_to_test="$SRC_ROOT/LICENSE"
+    file_to_test="$TOPDIR/LICENSE"
     if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
       as_fn_error $? "Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin." "$LINENO" 5
     fi

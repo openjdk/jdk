@@ -125,12 +125,11 @@ endif
 SYSROOT_CFLAGS := @SYSROOT_CFLAGS@
 SYSROOT_LDFLAGS := @SYSROOT_LDFLAGS@
 
-# The top-level directory of the forest (SRC_ROOT is a traditional alias)
+# The top-level directory of the source repository
 TOPDIR:=@TOPDIR@
 # These two versions of TOPDIR are used in string comparisons
 ORIGINAL_TOPDIR:=@ORIGINAL_TOPDIR@
 CANONICAL_TOPDIR:=@CANONICAL_TOPDIR@
-SRC_ROOT:=@TOPDIR@
 
 OUTPUT_ROOT:=@OUTPUT_ROOT@
 
