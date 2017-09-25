@@ -32,46 +32,38 @@
  * @run main WindowTest
  */
 
-import java.awt.*;
-import java.applet.*;
+import java.awt.Frame;
+import java.awt.Panel;
+import java.awt.FlowLayout;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.ComponentOrientation;
+import java.awt.Container;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-public class WindowTest extends Applet {
-    static Exception failure=null;
-    static Thread mainThread=null;
+public class WindowTest {
 
     public static void main(String args[]) throws Exception {
-        mainThread = Thread.currentThread();
-        WindowTest app = new WindowTest();
-        app.start();
+        Frame frame  = new Frame();
+        frame.setSize(200,200);
+        frame.setVisible(true);
         try {
-            Thread.sleep(300000);
-        } catch (InterruptedException e) {
-            if (failure != null) {
-                throw failure;
-            }
+            doTest(frame);
+        } finally {
+            frame.setVisible(false);
+            frame.dispose();
         }
     }
 
-    public void start() {
-        try {
-            doTest();
-        } catch (Exception e) {
-            failure = e;
-        }
-        mainThread.interrupt();
-    }
-
-    public void doTest() {
+    public static void doTest (Frame  myFrame) throws Exception{
         System.out.println("WindowTest {");
 
         ResourceBundle rb;
-        Frame myFrame;
 
         // Create a window containing a hierarchy of components.
         System.out.println("  Creating component hierarchy...");
-        myFrame = new Frame();
         myFrame.setLayout(new FlowLayout());
         Panel panel1 = new Panel();
         panel1.setLayout(new BorderLayout());
@@ -115,9 +107,6 @@ public class WindowTest extends Applet {
         myFrame.applyResourceBundle(rb);
         verifyOrientation(myFrame, ComponentOrientation.LEFT_TO_RIGHT);
 
-
-        myFrame.setVisible(false);
-        myFrame.dispose();
         System.out.println("}");
     }
 
