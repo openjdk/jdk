@@ -517,7 +517,7 @@ ParallelCompactData::RegionData::set_blocks_filled()
   OrderAccess::release();
   _blocks_filled = true;
   // Debug builds count the number of times the table was filled.
-  DEBUG_ONLY(Atomic::inc_ptr(&_blocks_filled_count));
+  DEBUG_ONLY(Atomic::inc(&_blocks_filled_count));
 }
 
 inline void

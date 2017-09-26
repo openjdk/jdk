@@ -41,14 +41,6 @@ inline void Atomic::store    (jlong    store_value, volatile jlong*    dest) { *
 inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
 inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
 
-inline void Atomic::inc    (volatile jint*     dest) { (void)add    (1, dest); }
-inline void Atomic::inc_ptr(volatile intptr_t* dest) { (void)add_ptr(1, dest); }
-inline void Atomic::inc_ptr(volatile void*     dest) { (void)add_ptr(1, dest); }
-
-inline void Atomic::dec    (volatile jint*     dest) { (void)add    (-1, dest); }
-inline void Atomic::dec_ptr(volatile intptr_t* dest) { (void)add_ptr(-1, dest); }
-inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); }
-
 inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 template<size_t byte_size>

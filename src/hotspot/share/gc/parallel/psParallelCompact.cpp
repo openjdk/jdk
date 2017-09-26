@@ -520,7 +520,7 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
   const size_t beg_region = obj_ofs >> Log2RegionSize;
   const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
 
-  DEBUG_ONLY(Atomic::inc_ptr(&add_obj_count);)
+  DEBUG_ONLY(Atomic::inc(&add_obj_count);)
   DEBUG_ONLY(Atomic::add_ptr(len, &add_obj_size);)
 
   if (beg_region == end_region) {
