@@ -81,30 +81,6 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
   return add_using_helper<intptr_t>(os::atomic_add_ptr_func, add_value, dest);
 }
 
-inline void Atomic::inc    (volatile jint*     dest) {
-  (void)add    (1, dest);
-}
-
-inline void Atomic::inc_ptr(volatile intptr_t* dest) {
-  (void)add_ptr(1, dest);
-}
-
-inline void Atomic::inc_ptr(volatile void*     dest) {
-  (void)add_ptr(1, dest);
-}
-
-inline void Atomic::dec    (volatile jint*     dest) {
-  (void)add    (-1, dest);
-}
-
-inline void Atomic::dec_ptr(volatile intptr_t* dest) {
-  (void)add_ptr(-1, dest);
-}
-
-inline void Atomic::dec_ptr(volatile void*     dest) {
-  (void)add_ptr(-1, dest);
-}
-
 inline jint     Atomic::xchg    (jint     exchange_value, volatile jint*     dest) {
   return (jint)(*os::atomic_xchg_func)(exchange_value, dest);
 }
@@ -150,38 +126,6 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) co
     lock xadd dword ptr [edx], eax;
     add eax, ecx;
   }
-}
-
-inline void Atomic::inc    (volatile jint*     dest) {
-  // alternative for InterlockedIncrement
-  __asm {
-    mov edx, dest;
-    lock add dword ptr [edx], 1;
-  }
-}
-
-inline void Atomic::inc_ptr(volatile intptr_t* dest) {
-  inc((volatile jint*)dest);
-}
-
-inline void Atomic::inc_ptr(volatile void*     dest) {
-  inc((volatile jint*)dest);
-}
-
-inline void Atomic::dec    (volatile jint*     dest) {
-  // alternative for InterlockedDecrement
-  __asm {
-    mov edx, dest;
-    lock sub dword ptr [edx], 1;
-  }
-}
-
-inline void Atomic::dec_ptr(volatile intptr_t* dest) {
-  dec((volatile jint*)dest);
-}
-
-inline void Atomic::dec_ptr(volatile void*     dest) {
-  dec((volatile jint*)dest);
 }
 
 inline jint     Atomic::xchg    (jint     exchange_value, volatile jint*     dest) {

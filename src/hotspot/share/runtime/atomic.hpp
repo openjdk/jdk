@@ -97,21 +97,21 @@ class Atomic : AllStatic {
     return add(add_value, reinterpret_cast<char* volatile*>(dest));
   }
 
-  // Atomically increment location. inc*() provide:
+  // Atomically increment location. inc() provide:
   // <fence> increment-dest <membar StoreLoad|StoreStore>
-  inline static void inc    (volatile jint*     dest);
-  inline static void inc    (volatile jshort*   dest);
-  inline static void inc    (volatile size_t*   dest);
-  inline static void inc_ptr(volatile intptr_t* dest);
-  inline static void inc_ptr(volatile void*     dest);
+  // The type D may be either a pointer type, or an integral
+  // type. If it is a pointer type, then the increment is
+  // scaled to the size of the type pointed to by the pointer.
+  template<typename D>
+  inline static void inc(D volatile* dest);
 
-  // Atomically decrement a location. dec*() provide:
+  // Atomically decrement a location. dec() provide:
   // <fence> decrement-dest <membar StoreLoad|StoreStore>
-  inline static void dec    (volatile jint*     dest);
-  inline static void dec    (volatile jshort*   dest);
-  inline static void dec    (volatile size_t*   dest);
-  inline static void dec_ptr(volatile intptr_t* dest);
-  inline static void dec_ptr(volatile void*     dest);
+  // The type D may be either a pointer type, or an integral
+  // type. If it is a pointer type, then the decrement is
+  // scaled to the size of the type pointed to by the pointer.
+  template<typename D>
+  inline static void dec(D volatile* dest);
 
   // Performs atomic exchange of *dest with exchange_value. Returns old
   // prior value of *dest. xchg*() provide:
@@ -312,6 +312,22 @@ struct Atomic::AddAndFetch VALUE_OBJ_CLASS_SPEC {
   D operator()(I add_value, D volatile* dest) const;
 };
 
+template<typename D>
+inline void Atomic::inc(D volatile* dest) {
+  STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
+  typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
+  Atomic::add(I(1), dest);
+}
+
+template<typename D>
+inline void Atomic::dec(D volatile* dest) {
+  STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
+  typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
+  // Assumes two's complement integer representation.
+  #pragma warning(suppress: 4146)
+  Atomic::add(I(-1), dest);
+}
+
 // Define the class before including platform file, which may specialize
 // the operator definition.  No generic definition of specializations
 // of the operator template are provided, nor are there any generic
@@ -435,14 +451,6 @@ inline D Atomic::add_using_helper(Fn fn, I add_value, D volatile* dest) {
   return PrimitiveConversions::cast<D>(
     fn(PrimitiveConversions::cast<Type>(add_value),
        reinterpret_cast<Type volatile*>(dest)));
-}
-
-inline void Atomic::inc(volatile size_t* dest) {
-  inc_ptr((volatile intptr_t*) dest);
-}
-
-inline void Atomic::dec(volatile size_t* dest) {
-  dec_ptr((volatile intptr_t*) dest);
 }
 
 template<typename T, typename D, typename U>
@@ -589,14 +597,6 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T exchange_value,
 inline unsigned Atomic::xchg(unsigned int exchange_value, volatile unsigned int* dest) {
   assert(sizeof(unsigned int) == sizeof(jint), "more work to do");
   return (unsigned int)Atomic::xchg((jint)exchange_value, (volatile jint*)dest);
-}
-
-inline void Atomic::inc(volatile jshort* dest) {
-  (void)add(jshort(1), dest);
-}
-
-inline void Atomic::dec(volatile jshort* dest) {
-  (void)add(jshort(-1), dest);
 }
 
 #endif // SHARE_VM_RUNTIME_ATOMIC_HPP
