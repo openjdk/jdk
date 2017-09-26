@@ -529,4 +529,7 @@ public class WhiteBox {
   // Compiler Directive
   public native int addCompilerDirective(String compDirect);
   public native void removeCompilerDirective(int count);
+
+  // Returns true on linux if library has the noexecstack flag set.
+  public native boolean checkLibSpecifiesNoexecstack(String libfilename);
 }
