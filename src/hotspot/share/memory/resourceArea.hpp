@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,11 @@ class ResourceArea: public Arena {
   debug_only(static int _warned;)       // to suppress multiple warnings
 
 public:
-  ResourceArea() : Arena(mtThread) {
+  ResourceArea(MEMFLAGS flags = mtThread) : Arena(flags) {
     debug_only(_nesting = 0;)
   }
 
-  ResourceArea(size_t init_size) : Arena(mtThread, init_size) {
+  ResourceArea(size_t init_size, MEMFLAGS flags = mtThread) : Arena(flags, init_size) {
     debug_only(_nesting = 0;);
   }
 
