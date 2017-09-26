@@ -58,7 +58,6 @@ BOOT_MODULES += \
     java.rmi \
     java.security.sasl \
     java.xml \
-    jdk.httpserver \
     jdk.internal.vm.ci \
     jdk.management \
     jdk.management.agent \
@@ -112,6 +111,7 @@ PLATFORM_MODULES += \
     jdk.crypto.cryptoki \
     jdk.crypto.ec \
     jdk.dynalink \
+    jdk.httpserver \
     jdk.incubator.httpclient \
     jdk.jsobject \
     jdk.localedata \
