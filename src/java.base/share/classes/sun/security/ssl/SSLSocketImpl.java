@@ -1802,7 +1802,12 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
                 try {
                     readRecord(true);
                 } catch (SocketTimeoutException e) {
-                    // if time out, ignore the exception and continue
+                    if ((debug != null) && Debug.isOn("ssl")) {
+                        System.out.println(
+                            Thread.currentThread().getName() +
+                            ", received Exception: " + e);
+                    }
+                    fatal((byte)(-1), "Did not receive close_notify from peer", e);
                 }
             }
         } catch (IOException e) {
