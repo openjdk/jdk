@@ -1,7 +1,7 @@
 # underscore name translator dynalink linker example
 
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,10 +37,12 @@
 $EXEC.throwOnError=true
 
 // compile UnderscoreNameLinkerExporter
-`javac -cp ../../dist/nashorn.jar UnderscoreNameLinkerExporter.java`
+`javac UnderscoreNameLinkerExporter.java`
+
+load('jarutil.js');
 
 // make a jar file out of pluggable linker
-`jar cvf underscore_linker.jar UnderscoreNameLinkerExporter*.class META-INF/`
+makeJar("underscore_linker.jar");
 
 // run a sample script that uses pluggable linker
 // but make sure classpath points to the pluggable linker jar!
