@@ -56,7 +56,15 @@ typedef void (__kernel_dmb_t) (void);
 
 #else // PPC
 
+#ifdef ALPHA
+
+#define LIGHT_MEM_BARRIER __sync_synchronize()
+
+#else // ALPHA
+
 #define LIGHT_MEM_BARRIER __asm __volatile ("":::"memory")
+
+#endif // ALPHA
 
 #endif // PPC
 
