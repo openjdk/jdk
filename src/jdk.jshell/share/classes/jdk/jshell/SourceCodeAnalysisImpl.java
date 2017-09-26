@@ -134,6 +134,8 @@ import static jdk.jshell.TreeDissector.printType;
 
 import static java.util.stream.Collectors.joining;
 
+import javax.lang.model.type.IntersectionType;
+
 /**
  * The concrete implementation of SourceCodeAnalysis.
  * @author Robert Field
@@ -715,6 +717,13 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             return Collections.emptyList();
 
         switch (site.getKind()) {
+            case INTERSECTION: {
+                List<Element> result = new ArrayList<>();
+                for (TypeMirror bound : ((IntersectionType) site).getBounds()) {
+                    result.addAll(membersOf(at, bound, shouldGenerateDotClassItem));
+                }
+                return result;
+            }
             case DECLARED: {
                 TypeElement element = (TypeElement) at.getTypes().asElement(site);
                 List<Element> result = new ArrayList<>();

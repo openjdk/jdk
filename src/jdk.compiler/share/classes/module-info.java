@@ -106,7 +106,8 @@ module jdk.compiler {
     exports com.sun.tools.javac.jvm to
         jdk.javadoc;
     exports com.sun.tools.javac.main to
-        jdk.javadoc;
+        jdk.javadoc,
+        jdk.jshell;
     exports com.sun.tools.javac.model to
         jdk.javadoc;
     exports com.sun.tools.javac.parser to

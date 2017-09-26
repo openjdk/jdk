@@ -843,11 +843,15 @@ public class Check {
     List<Type> checkDiamondDenotable(ClassType t) {
         ListBuffer<Type> buf = new ListBuffer<>();
         for (Type arg : t.allparams()) {
-            if (!diamondTypeChecker.visit(arg, null)) {
+            if (!checkDenotable(arg)) {
                 buf.append(arg);
             }
         }
         return buf.toList();
+    }
+
+    boolean checkDenotable(Type t) {
+        return denotableChecker.visit(t, null);
     }
         // where
 
@@ -855,14 +859,14 @@ public class Check {
          *  types. The visit methods return false as soon as a non-denotable type is encountered and true
          *  otherwise.
          */
-        private static final Types.SimpleVisitor<Boolean, Void> diamondTypeChecker = new Types.SimpleVisitor<Boolean, Void>() {
+        private static final Types.SimpleVisitor<Boolean, Void> denotableChecker = new Types.SimpleVisitor<Boolean, Void>() {
             @Override
             public Boolean visitType(Type t, Void s) {
                 return true;
             }
             @Override
             public Boolean visitClassType(ClassType t, Void s) {
-                if (t.isCompound()) {
+                if (t.isUnion() || t.isIntersection()) {
                     return false;
                 }
                 for (Type targ : t.allparams()) {
@@ -878,7 +882,7 @@ public class Check {
                 /* Any type variable mentioned in the inferred type must have been declared as a type parameter
                   (i.e cannot have been produced by inference (18.4))
                 */
-                return t.tsym.owner.type.getTypeArguments().contains(t);
+                return (t.tsym.flags() & SYNTHETIC) == 0;
             }
 
             @Override
@@ -940,6 +944,17 @@ public class Check {
                     (s.flags() & (STATIC | FINAL |
                                   (allowPrivateSafeVarargs ? PRIVATE : 0) )) != 0);
         }
+
+    Type checkLocalVarType(DiagnosticPosition pos, Type t, Name name) {
+        //upward project the initializer type
+        t = types.upward(t, types.captures(t));
+        //check that resulting type is not the null type
+        if (t.hasTag(BOT)) {
+            log.error(pos, Errors.CantInferLocalVarType(name, Fragments.LocalCantInferNull));
+            return types.createErrorType(t);
+        }
+        return t;
+    }
 
     Type checkMethod(final Type mtype,
             final Symbol sym,
@@ -3159,7 +3174,10 @@ public class Check {
                 if (s.kind == PCK)
                     return true;
             } else if (target == names.TYPE_USE) {
-                if (s.kind == TYP || s.kind == VAR ||
+                if (s.kind == VAR && s.owner.kind == MTH && s.type.hasTag(NONE)) {
+                    //cannot type annotate implictly typed locals
+                    return false;
+                } else if (s.kind == TYP || s.kind == VAR ||
                         (s.kind == MTH && !s.isConstructor() &&
                                 !s.type.getReturnType().hasTag(VOID)) ||
                         (s.kind == MTH && s.isConstructor())) {

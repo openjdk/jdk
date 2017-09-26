@@ -29,14 +29,20 @@ import com.sun.source.tree.ReturnTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ConditionalExpressionTree;
+import com.sun.source.tree.ExpressionStatementTree;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.tree.Tree.Kind;
+import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.util.List;
 import jdk.jshell.TaskFactory.AnalyzeTask;
 
 /**
@@ -63,6 +69,10 @@ class ExpressionToTypeInfo {
     public static class ExpressionInfo {
         ExpressionTree tree;
         String typeName;
+        String fullTypeName;
+        List<String> parameterTypes;
+        String enclosingInstanceType;
+        boolean isClass;
         boolean isNonVoid;
     }
 
@@ -111,6 +121,16 @@ class ExpressionToTypeInfo {
                 return null;
             }
         }
+
+        @Override
+        public TreePath visitVariable(VariableTree node, Boolean isTargetContext) {
+            if (isTargetContext) {
+                throw new Result(getCurrentPath());
+            } else {
+                return null;
+            }
+        }
+
     }
 
     private Type pathToType(TreePath tp) {
@@ -156,6 +176,30 @@ class ExpressionToTypeInfo {
         }
     }
 
+    /**
+     * Entry method: get expression info corresponding to a local variable declaration if its type
+     * has been inferred automatically from the given initializer.
+     * @param code the initializer as a string
+     * @param state a JShell instance
+     * @return type information
+     */
+    public static ExpressionInfo localVariableTypeForInitializer(String code, JShell state) {
+        if (code == null || code.isEmpty()) {
+            return null;
+        }
+        try {
+            OuterWrap codeWrap = state.outerMap.wrapInTrialClass(Wrap.methodWrap("var $$$ = " + code));
+            AnalyzeTask at = state.taskFactory.new AnalyzeTask(codeWrap);
+            CompilationUnitTree cu = at.firstCuTree();
+            if (at.hasErrors() || cu == null) {
+                return null;
+            }
+            return new ExpressionToTypeInfo(at, cu, state).typeOfExpression();
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
     private ExpressionInfo typeOfExpression() {
         return treeToInfo(findExpressionPath());
     }
@@ -172,9 +216,11 @@ class ExpressionToTypeInfo {
     private ExpressionInfo treeToInfo(TreePath tp) {
         if (tp != null) {
             Tree tree = tp.getLeaf();
-            if (tree instanceof ExpressionTree) {
+            boolean isExpression = tree instanceof ExpressionTree;
+            if (isExpression || tree.getKind() == Kind.VARIABLE) {
                 ExpressionInfo ei = new ExpressionInfo();
-                ei.tree = (ExpressionTree) tree;
+                if (isExpression)
+                    ei.tree = (ExpressionTree) tree;
                 Type type = pathToType(tp, tree);
                 if (type != null) {
                     switch (type.getKind()) {
@@ -189,12 +235,35 @@ class ExpressionToTypeInfo {
                             break;
                         default: {
                             ei.isNonVoid = true;
-                            ei.typeName = varTypeName(type);
-                            if (ei.typeName == null) {
-                                ei.typeName = OBJECT_TYPE_NAME;
-                            }
+                            ei.typeName = varTypeName(type, false);
+                            ei.fullTypeName = varTypeName(type, true);
                             break;
                         }
+                    }
+                }
+                if (tree.getKind() == Tree.Kind.VARIABLE) {
+                    Tree init = ((VariableTree) tree).getInitializer();
+                    if (init.getKind() == Tree.Kind.NEW_CLASS &&
+                        ((NewClassTree) init).getClassBody() != null) {
+                        NewClassTree nct = (NewClassTree) init;
+                        ClassTree clazz = nct.getClassBody();
+                        MethodTree constructor = (MethodTree) clazz.getMembers().get(0);
+                        ExpressionStatementTree superCallStatement =
+                                (ExpressionStatementTree) constructor.getBody().getStatements().get(0);
+                        MethodInvocationTree superCall =
+                                (MethodInvocationTree) superCallStatement.getExpression();
+                        TreePath superCallPath =
+                                at.trees().getPath(tp.getCompilationUnit(), superCall.getMethodSelect());
+                        Type constrType = pathToType(superCallPath);
+                        ei.parameterTypes = constrType.getParameterTypes()
+                                                      .stream()
+                                                      .map(t -> varTypeName(t, false))
+                                                      .collect(List.collector());
+                        if (nct.getEnclosingExpression() != null) {
+                            TreePath enclPath = new TreePath(tp, nct.getEnclosingExpression());
+                            ei.enclosingInstanceType = varTypeName(pathToType(enclPath), false);
+                        }
+                        ei.isClass = at.task.getTypes().directSupertypes(type).size() == 1;
                     }
                 }
                 return ei;
@@ -203,13 +272,19 @@ class ExpressionToTypeInfo {
         return null;
     }
 
-    private String varTypeName(Type type) {
+    private String varTypeName(Type type, boolean printIntersectionTypes) {
         try {
-            TypePrinter tp = new VarTypePrinter(at.messages(),
-                    state.maps::fullClassNameAndPackageToClass, syms, types);
-            return tp.toString(type);
+            TypePrinter tp = new TypePrinter(at.messages(),
+                    state.maps::fullClassNameAndPackageToClass, printIntersectionTypes);
+            List<Type> captures = types.captures(type);
+            String res = tp.toString(types.upward(type, captures));
+
+            if (res == null)
+                res = OBJECT_TYPE_NAME;
+
+            return res;
         } catch (Exception ex) {
-            return null;
+            return OBJECT_TYPE_NAME;
         }
     }
 
