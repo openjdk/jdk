@@ -3443,8 +3443,6 @@ void os::init(void) {
 
   init_random(1234567);
 
-  ThreadCritical::initialize();
-
   // Main_thread points to the aboriginal thread.
   Aix::_main_thread = pthread_self();
 

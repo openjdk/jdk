@@ -51,16 +51,6 @@ static DWORD lock_owner = -1;
 // and found them ~30 times slower than the critical region code.
 //
 
-void ThreadCritical::initialize() {
-}
-
-void ThreadCritical::release() {
-  assert(lock_owner == -1, "Mutex being deleted while owned.");
-  assert(lock_count == -1, "Mutex being deleted while recursively locked");
-  assert(lock_event != NULL, "Sanity check");
-  CloseHandle(lock_event);
-}
-
 ThreadCritical::ThreadCritical() {
   DWORD current_thread = GetCurrentThreadId();
 
