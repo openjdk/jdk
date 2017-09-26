@@ -1,7 +1,5 @@
-#! simple dom linker example
-
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,20 +29,21 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This script assumes you've built jdk9 or using latest
-// jdk9 image and put the 'bin' directory in the PATH
+// Usage: jjs --language=es6 base64.js
 
-$EXEC.throwOnError=true
+const Base64 = Java.type("java.util.Base64");
+const ByteArray = Java.type("byte[]");
+const JString = Java.type("java.lang.String");
 
-// compile DOMLinkerExporter
-`javac DOMLinkerExporter.java`
+function toBase64(s) {
+    const ba = s instanceof ByteArray? s : String(s).bytes;
+    return Base64.encoder.encodeToString(ba);
+}
 
-load("jarutil.js");
+function fromBase64(s) {
+    const ba = s instanceof ByteArray? s : String(s).bytes;
+    return new JString(Base64.decoder.decode(ba));
+}
 
-// make a jar file out of pluggable linker
-makeJar("dom_linker.jar");
-
-// run a sample script that uses pluggable linker
-// but make sure classpath points to the pluggable linker jar!
-
-`jjs -cp dom_linker.jar dom_linker_gutenberg.js`
+print(toBase64`hello world`);
+print(fromBase64(toBase64`hello world`));

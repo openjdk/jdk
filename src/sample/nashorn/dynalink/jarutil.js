@@ -1,7 +1,5 @@
-#! simple dom linker example
-
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,20 +29,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This script assumes you've built jdk9 or using latest
-// jdk9 image and put the 'bin' directory in the PATH
+function classFiles() {
+    var arr = new java.io.File(".").listFiles(
+        new java.io.FilenameFilter() {
+            accept: function(dir, str) str.endsWith(".class")
+        });
+    var str = "";
+    for (var i in arr) str += " " + arr[i];
+    return str;
+}
 
-$EXEC.throwOnError=true
-
-// compile DOMLinkerExporter
-`javac DOMLinkerExporter.java`
-
-load("jarutil.js");
-
-// make a jar file out of pluggable linker
-makeJar("dom_linker.jar");
-
-// run a sample script that uses pluggable linker
-// but make sure classpath points to the pluggable linker jar!
-
-`jjs -cp dom_linker.jar dom_linker_gutenberg.js`
+function makeJar(name) {
+    $EXEC("jar cvf " + name + " META-INF/ " + classFiles());
+    print($ERR);
+}
