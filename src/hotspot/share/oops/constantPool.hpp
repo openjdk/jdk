@@ -226,6 +226,7 @@ class ConstantPool : public Metadata {
 
   // resolved strings, methodHandles and callsite objects from the constant pool
   objArrayOop resolved_references()  const;
+  objArrayOop resolved_references_or_null()  const;
   // mapping resolved object array indexes to cp indexes and back.
   int object_to_cp_index(int index)         { return reference_map()->at(index); }
   int cp_to_object_index(int index);
