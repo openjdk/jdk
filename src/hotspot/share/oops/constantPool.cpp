@@ -135,6 +135,16 @@ objArrayOop ConstantPool::resolved_references() const {
   return (objArrayOop)_cache->resolved_references();
 }
 
+// Called from outside constant pool resolution where a resolved_reference array
+// may not be present.
+objArrayOop ConstantPool::resolved_references_or_null() const {
+  if (_cache == NULL) {
+    return NULL;
+  } else {
+    return (objArrayOop)_cache->resolved_references();
+  }
+}
+
 // Create resolved_references array and mapping array for original cp indexes
 // The ldc bytecode was rewritten to have the resolved reference array index so need a way
 // to map it back for resolving and some unlikely miscellaneous uses.
