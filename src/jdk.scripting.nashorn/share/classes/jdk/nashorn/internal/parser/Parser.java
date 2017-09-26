@@ -2053,10 +2053,18 @@ public class Parser extends AbstractParser implements Loggable {
             if (outer != null) {
                 restoreBlock(outer);
                 if (body != null) {
+                    List<Statement> statements = new ArrayList<>();
+                    for (final Statement var : outer.getStatements()) {
+                        if(var instanceof VarNode && !((VarNode)var).isBlockScoped()) {
+                            appendStatement(var);
+                        }else {
+                            statements.add(var);
+                        }
+                    }
                     appendStatement(new BlockStatement(forLine, new Block(
                                     outer.getToken(),
                                     body.getFinish(),
-                                    outer.getStatements())));
+                                    statements)));
                 }
             }
         }
