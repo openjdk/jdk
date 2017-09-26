@@ -30,6 +30,8 @@ import java.awt.event.WindowEvent;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.LightweightPeer;
 import java.lang.ref.WeakReference;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.ListIterator;
@@ -77,6 +79,8 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private boolean consumeNextKeyTyped;
     private Component restoreFocusTo;
 
+    private static boolean fxAppThreadIsDispatchThread;
+
     static {
         AWTAccessor.setDefaultKeyboardFocusManagerAccessor(
             new AWTAccessor.DefaultKeyboardFocusManagerAccessor() {
@@ -84,6 +88,13 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                     dkfm.consumeNextKeyTyped(e);
                 }
             });
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            public Object run() {
+                fxAppThreadIsDispatchThread =
+                        "true".equals(System.getProperty("javafx.embed.singleThread"));
+                return null;
+            }
+        });
     }
 
     private static class TypeAheadMarker {
@@ -264,13 +275,41 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             }
             SunToolkit.postEvent(targetAppContext, se);
             if (EventQueue.isDispatchThread()) {
-                EventDispatchThread edt = (EventDispatchThread)
-                    Thread.currentThread();
-                edt.pumpEvents(SentEvent.ID, new Conditional() {
+                if (Thread.currentThread() instanceof EventDispatchThread) {
+                    EventDispatchThread edt = (EventDispatchThread)
+                            Thread.currentThread();
+                    edt.pumpEvents(SentEvent.ID, new Conditional() {
                         public boolean evaluate() {
                             return !se.dispatched && !targetAppContext.isDisposed();
                         }
                     });
+                } else {
+                    if (fxAppThreadIsDispatchThread) {
+                        Thread fxCheckDispatchThread = new Thread() {
+                            @Override
+                            public void run() {
+                                while (!se.dispatched && !targetAppContext.isDisposed()) {
+                                    try {
+                                        Thread.sleep(100);
+                                    } catch (InterruptedException e) {
+                                        break;
+                                    }
+                                }
+                            }
+                        };
+                        fxCheckDispatchThread.start();
+                        try {
+                            // check if event is dispatched or disposed
+                            // but since this user app thread is same as
+                            // dispatch thread in fx when run with
+                            // javafx.embed.singleThread=true
+                            // we do not wait infinitely to avoid deadlock
+                            // as dispatch will ultimately be done by this thread
+                            fxCheckDispatchThread.join(500);
+                        } catch (InterruptedException ex) {
+                        }
+                    }
+                }
             } else {
                 synchronized (se) {
                     while (!se.dispatched && !targetAppContext.isDisposed()) {
