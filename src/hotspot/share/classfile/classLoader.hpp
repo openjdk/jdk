@@ -403,7 +403,8 @@ class ClassLoader: AllStatic {
   static int compute_Object_vtable();
 
   static ClassPathEntry* classpath_entry(int n) {
-    assert(n >= 0 && n < _num_entries, "sanity");
+    assert(n >= 0, "sanity");
+    assert(!has_jrt_entry() || n < _num_entries, "sanity");
     if (n == 0) {
       assert(has_jrt_entry(), "No class path entry at 0 for exploded module builds");
       return ClassLoader::_jrt_entry;
