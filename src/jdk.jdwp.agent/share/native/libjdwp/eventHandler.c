@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1287,11 +1287,11 @@ cbVMDeath(jvmtiEnv *jvmti_env, JNIEnv *env)
     } debugMonitorExit(callbackBlock);
 
     /*
-     * The VM will die soon after the completion of this callback - we
-     * may need to do a final synchronization with the command loop to
-     * avoid the VM terminating with replying to the final (resume)
-     * command.
+     * The VM will die soon after the completion of this callback -
+     * we synchronize with both the command loop and the debug loop
+     * for a more orderly shutdown.
      */
+    commandLoop_sync();
     debugLoop_sync();
 
     LOG_MISC(("END cbVMDeath"));
