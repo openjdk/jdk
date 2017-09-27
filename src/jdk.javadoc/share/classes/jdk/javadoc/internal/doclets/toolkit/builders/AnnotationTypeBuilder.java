@@ -147,8 +147,8 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
             throws DocletException {
         Content annotationInfoTree = writer.getAnnotationInfoTreeHeader();
 
-        buildDeprecationInfo(annotationInfoTree);
         buildAnnotationTypeSignature(annotationInfoTree);
+        buildDeprecationInfo(annotationInfoTree);
         buildAnnotationTypeDescription(annotationInfoTree);
         buildAnnotationTypeTagInfo(annotationInfoTree);
 

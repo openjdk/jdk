@@ -929,7 +929,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         if (utils.isDeprecated(mdle)) {
             CommentHelper ch = utils.getCommentHelper(mdle);
             HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
-            deprDiv.addStyle(HtmlStyle.deprecatedContent);
+            deprDiv.addStyle(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(mdle));
             deprDiv.addContent(deprPhrase);
             if (!deprs.isEmpty()) {
@@ -1064,7 +1064,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         if (utils.isDeprecated(pkg)) {
             deprs = utils.getDeprecatedTrees(pkg);
             HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
-            deprDiv.addStyle(HtmlStyle.deprecatedContent);
+            deprDiv.addStyle(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(pkg));
             deprDiv.addContent(deprPhrase);
             if (!deprs.isEmpty()) {

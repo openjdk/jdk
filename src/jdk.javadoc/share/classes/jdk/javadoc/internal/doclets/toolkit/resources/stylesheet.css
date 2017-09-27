@@ -645,6 +645,17 @@ h1.hidden {
 .deprecationComment, .emphasizedPhrase, .interfaceName {
     font-style:italic;
 }
+.deprecationBlock {
+    font-size:14px;
+    font-family:'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
+    border-style:solid;
+    border-width:thin;
+    border-radius:10px;
+    padding:10px;
+    margin-bottom:10px;
+    margin-right:10px;
+    display:inline-block;
+}
 
 div.block div.block span.deprecationComment, div.block div.block span.emphasizedPhrase,
 div.block div.block span.interfaceName {

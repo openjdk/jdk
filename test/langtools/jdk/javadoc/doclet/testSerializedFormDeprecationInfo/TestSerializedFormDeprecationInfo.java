@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6802694 8025633 8026567
+ * @bug 6802694 8025633 8026567 8183511
  * @summary This test verifies deprecation info in serialized-form.html.
  * @author Bhavesh Patel
  * @library ../lib
@@ -135,7 +135,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     void checkNoComment(boolean expectFound) {
         checkOutput("serialized-form.html", expectFound,
                 "<pre>boolean undecorated</pre>\n"
-                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;<span class=\"deprecationComment\">"
+                + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;<span class=\"deprecationComment\">"
                 + "As of JDK version 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>"
                 + "setUndecorated(boolean)</code></a>.</span></div>\n"
