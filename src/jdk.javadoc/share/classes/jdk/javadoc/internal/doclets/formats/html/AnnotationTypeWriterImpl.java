@@ -278,7 +278,8 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public void addAnnotationTypeSignature(String modifiers, Content annotationInfoTree) {
-        annotationInfoTree.addContent(new HtmlTree(HtmlTag.BR));
+        Content hr = new HtmlTree(HtmlTag.HR);
+        annotationInfoTree.addContent(hr);
         Content pre = new HtmlTree(HtmlTag.PRE);
         addAnnotationInfo(annotationType, pre);
         pre.addContent(modifiers);
@@ -324,13 +325,11 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public void addAnnotationTypeDeprecationInfo(Content annotationInfoTree) {
-        Content hr = new HtmlTree(HtmlTag.HR);
-        annotationInfoTree.addContent(hr);
         List<? extends DocTree> deprs = utils.getBlockTags(annotationType, DocTree.Kind.DEPRECATED);
         if (utils.isDeprecated(annotationType)) {
             CommentHelper ch = utils.getCommentHelper(annotationType);
             Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(annotationType));
-            Content div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
+            Content div = HtmlTree.DIV(HtmlStyle.deprecationBlock, deprLabel);
             if (!deprs.isEmpty()) {
 
                 List<? extends DocTree> commentTags = ch.getDescription(configuration, deprs.get(0));

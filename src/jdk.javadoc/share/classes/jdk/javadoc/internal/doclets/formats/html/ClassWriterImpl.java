@@ -293,7 +293,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     @Override
     public void addClassSignature(String modifiers, Content classInfoTree) {
-        classInfoTree.addContent(new HtmlTree(HtmlTag.BR));
+        Content hr = new HtmlTree(HtmlTag.HR);
+        classInfoTree.addContent(hr);
         Content pre = new HtmlTree(HtmlTag.PRE);
         addAnnotationInfo(typeElement, pre);
         pre.addContent(modifiers);
@@ -606,12 +607,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     @Override
     public void addClassDeprecationInfo(Content classInfoTree) {
-        Content hr = new HtmlTree(HtmlTag.HR);
-        classInfoTree.addContent(hr);
         List<? extends DocTree> deprs = utils.getBlockTags(typeElement, DocTree.Kind.DEPRECATED);
         if (utils.isDeprecated(typeElement)) {
             Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(typeElement));
-            Content div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
+            Content div = HtmlTree.DIV(HtmlStyle.deprecationBlock, deprLabel);
             if (!deprs.isEmpty()) {
                 CommentHelper ch = utils.getCommentHelper(typeElement);
                 DocTree dt = deprs.get(0);

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
- *           8175218 8176452 8181215 8182263
+ *           8175218 8176452 8181215 8182263 8183511
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib
@@ -185,6 +185,17 @@ public class TestStylesheet extends JavadocTester {
                 + "th.colConstructorName a:link, th.colConstructorName a:visited,\n"
                 + ".constantValuesContainer td a:link, .constantValuesContainer td a:visited {\n"
                 + "    font-weight:bold;\n"
+                + "}",
+                ".deprecationBlock {\n"
+                + "    font-size:14px;\n"
+                + "    font-family:'DejaVu Serif', Georgia, \"Times New Roman\", Times, serif;\n"
+                + "    border-style:solid;\n"
+                + "    border-width:thin;\n"
+                + "    border-radius:10px;\n"
+                + "    padding:10px;\n"
+                + "    margin-bottom:10px;\n"
+                + "    margin-right:10px;\n"
+                + "    display:inline-block;\n"
                 + "}",
                 "#reset {\n"
                 + "    background-color: rgb(255,255,255);\n"
