@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4927552 8026567 8071982 8162674 8175200 8175218 8183511
+ * @bug      4927552 8026567 8071982 8162674 8175200 8175218 8183511 8186332
  * @summary  <DESC>
  * @author   jamieh
  * @library  ../lib
@@ -83,10 +83,10 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "public&nbsp;int field</pre>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;</div>",
                 "<pre>@Deprecated(forRemoval=true)\n"
-                + "public&nbsp;DeprecatedClassByAnnotation&#8203;()</pre>\n"
+                + "public&nbsp;DeprecatedClassByAnnotation()</pre>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;</div>",
                 "<pre>@Deprecated\n"
-                + "public&nbsp;void&nbsp;method&#8203;()</pre>\n"
+                + "public&nbsp;void&nbsp;method()</pre>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>");
 
         checkOutput("pkg/TestAnnotationType.html", true,
@@ -117,7 +117,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "<div class=\"block\"><span class=\"deprecationComment\">class_test1 passes.</span></div>\n"
                 + "</div>",
                 "<pre>@Deprecated(forRemoval=true)\n"
-                + "public&nbsp;TestClass&#8203;()</pre>\n"
+                + "public&nbsp;TestClass()</pre>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;"
                 + "<span class=\"deprecationComment\">class_test3 passes.</span></div>");
 
