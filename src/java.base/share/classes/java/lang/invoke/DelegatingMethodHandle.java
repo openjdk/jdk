@@ -28,6 +28,7 @@ package java.lang.invoke;
 import java.util.Arrays;
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
+import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeVirtual;
 import static java.lang.invoke.MethodHandleStatics.*;
 
 /**
@@ -158,8 +159,11 @@ abstract class DelegatingMethodHandle extends MethodHandle {
     static final NamedFunction NF_getTarget;
     static {
         try {
-            NF_getTarget = new NamedFunction(DelegatingMethodHandle.class
-                                             .getDeclaredMethod("getTarget"));
+            MemberName member = new MemberName(DelegatingMethodHandle.class, "getTarget",
+                    MethodType.methodType(MethodHandle.class), REF_invokeVirtual);
+            NF_getTarget = new NamedFunction(
+                    MemberName.getFactory()
+                            .resolveOrFail(REF_invokeVirtual, member, DelegatingMethodHandle.class, NoSuchMethodException.class));
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
