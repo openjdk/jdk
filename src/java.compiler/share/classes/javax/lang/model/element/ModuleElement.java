@@ -87,7 +87,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      *
      * @return {@code true} if this is an open module and {@code
      * false} otherwise
-     */ // TODO: add @jls to unnamed module section
+     */
     boolean isOpen();
 
     /**
@@ -96,7 +96,9 @@ public interface ModuleElement extends Element, QualifiedNameable {
      *
      * @return {@code true} if this is an unnamed module and {@code
      * false} otherwise
-     */ // TODO: add @jls to unnamed module section
+     *
+     * @jls 7.7.5 Unnamed Modules
+     */
     boolean isUnnamed();
 
     /**
