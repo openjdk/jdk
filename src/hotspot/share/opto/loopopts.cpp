@@ -311,6 +311,7 @@ Node *PhaseIdealLoop::has_local_phi_input( Node *n ) {
       }
       return NULL;
     }
+    assert(m->is_Phi() || is_dominator(get_ctrl(m), n_ctrl), "m has strange control");
   }
 
   return n_ctrl;
@@ -615,6 +616,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   // Now replace all Phis with CMOV's
   Node *cmov_ctrl = iff->in(0);
   uint flip = (lp->Opcode() == Op_IfTrue);
+  Node_List wq;
   while (1) {
     PhiNode* phi = NULL;
     for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
@@ -627,17 +629,21 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     if (phi == NULL)  break;
     if (PrintOpto && VerifyLoopOptimizations) { tty->print_cr("CMOV"); }
     // Move speculative ops
-    for (uint j = 1; j < region->req(); j++) {
-      Node *proj = region->in(j);
-      Node *inp = phi->in(j);
-      if (get_ctrl(inp) == proj) { // Found local op
+    wq.push(phi);
+    while (wq.size() > 0) {
+      Node *n = wq.pop();
+      for (uint j = 1; j < n->req(); j++) {
+        Node* m = n->in(j);
+        if (m != NULL && !is_dominator(get_ctrl(m), cmov_ctrl)) {
 #ifndef PRODUCT
-        if (PrintOpto && VerifyLoopOptimizations) {
-          tty->print("  speculate: ");
-          inp->dump();
-        }
+          if (PrintOpto && VerifyLoopOptimizations) {
+            tty->print("  speculate: ");
+            m->dump();
+          }
 #endif
-        set_ctrl(inp, cmov_ctrl);
+          set_ctrl(m, cmov_ctrl);
+          wq.push(m);
+        }
       }
     }
     Node *cmov = CMoveNode::make(cmov_ctrl, iff->in(1), phi->in(1+flip), phi->in(2-flip), _igvn.type(phi));
