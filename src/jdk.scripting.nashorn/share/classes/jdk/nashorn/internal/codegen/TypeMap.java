@@ -117,6 +117,15 @@ public final class TypeMap {
         return null;
     }
 
+    /**
+     * Get the return type required for the call site we're compiling for. This only determines
+     * whether object return type is required or not.
+     * @return Type.OBJECT for call sites with object return types, Type.UNKNOWN for everything else
+     */
+    Type getReturnType() {
+        return returnType.isObject() ? Type.OBJECT : Type.UNKNOWN;
+    }
+
     @Override
     public String toString() {
         return toString("");
