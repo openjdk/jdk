@@ -39,6 +39,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor9;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -199,55 +200,61 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      */
     protected void addParameters(ExecutableElement member,
             boolean includeAnnotations, Content htmltree, int indentSize) {
-        htmltree.addContent(Contents.ZERO_WIDTH_SPACE);
-        htmltree.addContent("(");
+        Content paramTree = new ContentBuilder();
         String sep = "";
         List<? extends VariableElement> parameters = member.getParameters();
         CharSequence indent = makeSpace(indentSize + 1);
         TypeMirror rcvrType = member.getReceiverType();
         if (includeAnnotations && rcvrType != null && utils.isAnnotated(rcvrType)) {
             List<? extends AnnotationMirror> annotationMirrors = rcvrType.getAnnotationMirrors();
-            addReceiverAnnotations(member, rcvrType, annotationMirrors, htmltree);
+            addReceiverAnnotations(member, rcvrType, annotationMirrors, paramTree);
             sep = "," + DocletConstants.NL + indent;
         }
         int paramstart;
         for (paramstart = 0; paramstart < parameters.size(); paramstart++) {
-            htmltree.addContent(sep);
+            paramTree.addContent(sep);
             VariableElement param = parameters.get(paramstart);
 
             if (param.getKind() != ElementKind.INSTANCE_INIT) {
                 if (includeAnnotations) {
                     boolean foundAnnotations =
                             writer.addAnnotationInfo(indent.length(),
-                            member, param, htmltree);
+                            member, param, paramTree);
                     if (foundAnnotations) {
-                        htmltree.addContent(DocletConstants.NL);
-                        htmltree.addContent(indent);
+                        paramTree.addContent(DocletConstants.NL);
+                        paramTree.addContent(indent);
                     }
                 }
                 addParam(member, param,
-                    (paramstart == parameters.size() - 1) && member.isVarArgs(), htmltree);
+                    (paramstart == parameters.size() - 1) && member.isVarArgs(), paramTree);
                 break;
             }
         }
 
         for (int i = paramstart + 1; i < parameters.size(); i++) {
-            htmltree.addContent(",");
-            htmltree.addContent(DocletConstants.NL);
-            htmltree.addContent(indent);
+            paramTree.addContent(",");
+            paramTree.addContent(DocletConstants.NL);
+            paramTree.addContent(indent);
             if (includeAnnotations) {
                 boolean foundAnnotations =
                         writer.addAnnotationInfo(indent.length(), member, parameters.get(i),
-                        htmltree);
+                        paramTree);
                 if (foundAnnotations) {
-                    htmltree.addContent(DocletConstants.NL);
-                    htmltree.addContent(indent);
+                    paramTree.addContent(DocletConstants.NL);
+                    paramTree.addContent(indent);
                 }
             }
             addParam(member, parameters.get(i), (i == parameters.size() - 1) && member.isVarArgs(),
-                    htmltree);
+                    paramTree);
         }
-        htmltree.addContent(")");
+        if (paramTree.isEmpty()) {
+            htmltree.addContent("()");
+        } else {
+            htmltree.addContent(Contents.ZERO_WIDTH_SPACE);
+            htmltree.addContent("(");
+            htmltree.addContent(paramTree);
+            paramTree.addContent(")");
+        }
     }
 
     /**

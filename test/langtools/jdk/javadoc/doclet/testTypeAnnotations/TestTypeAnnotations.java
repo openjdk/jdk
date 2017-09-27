@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8005091 8009686 8025633 8026567 6469562 8071982 8071984 8162363 8175200
+ * @bug      8005091 8009686 8025633 8026567 6469562 8071982 8071984 8162363 8175200 8186332
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -155,17 +155,17 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/MtdDefaultScope.html", true,
                 "<pre>public&nbsp;&lt;T&gt;&nbsp;<a href=\"../typeannos/MRtnA.html\" "
                 + "title=\"annotation in typeannos\">@MRtnA</a> java.lang.String"
-                + "&nbsp;method&#8203;()</pre>",
+                + "&nbsp;method()</pre>",
 
                 // When JDK-8068737 is fixed, we should change the order
                 "<pre><a href=\"../typeannos/MRtnA.html\" title=\"annotation in typeannos\">"
                 + "@MRtnA</a> java.lang.String "
                 + "<a href=\"../typeannos/MRtnB.html\" title=\"annotation in typeannos\">@MRtnB</a> [] "
                 + "<a href=\"../typeannos/MRtnA.html\" title=\"annotation in typeannos\">@MRtnA</a> []"
-                + "&nbsp;array2Deep&#8203;()</pre>",
+                + "&nbsp;array2Deep()</pre>",
 
                 "<pre><a href=\"../typeannos/MRtnA.html\" title=\"annotation in "
-                + "typeannos\">@MRtnA</a> java.lang.String[][]&nbsp;array2&#8203;()</pre>");
+                + "typeannos\">@MRtnA</a> java.lang.String[][]&nbsp;array2()</pre>");
 
         checkOutput("typeannos/MtdModifiedScoped.html", true,
                 "<pre>public final&nbsp;<a href=\"../typeannos/MtdParameterized.html\" "
@@ -177,25 +177,25 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "String,<a href=\"../typeannos/MRtnB.html\" title=\"annotation in "
                 + "typeannos\">@MRtnB</a> java.lang.String&gt;,<a href=\"../typeannos/"
                 + "MRtnB.html\" title=\"annotation in typeannos\">@MRtnB</a> java."
-                + "lang.String&gt;&nbsp;nestedMtdParameterized&#8203;()</pre>");
+                + "lang.String&gt;&nbsp;nestedMtdParameterized()</pre>");
 
         // Test for type annotations on method type parameters (MethodTypeParameters.java).
         checkOutput("typeannos/UnscopedUnmodified.html", true,
                 "<pre>&lt;K extends <a href=\"../typeannos/MTyParamA.html\" title=\""
                 + "annotation in typeannos\">@MTyParamA</a> java.lang.String&gt;"
-                + "&nbsp;void&nbsp;methodExtends&#8203;()</pre>",
+                + "&nbsp;void&nbsp;methodExtends()</pre>",
 
                 "<pre>&lt;K extends <a href=\"../typeannos/MTyParamA.html\" title=\""
                 + "annotation in typeannos\">@MTyParamA</a> <a href=\"../typeannos/"
                 + "MtdTyParameterized.html\" title=\"class in typeannos\">"
                 + "MtdTyParameterized</a>&lt;<a href=\"../typeannos/MTyParamB.html\" "
                 + "title=\"annotation in typeannos\">@MTyParamB</a> java.lang.String"
-                + "&gt;&gt;&nbsp;void&nbsp;nestedExtends&#8203;()</pre>");
+                + "&gt;&gt;&nbsp;void&nbsp;nestedExtends()</pre>");
 
         checkOutput("typeannos/PublicModifiedMethods.html", true,
                 "<pre>public final&nbsp;&lt;K extends <a href=\"../typeannos/"
                 + "MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> "
-                + "java.lang.String&gt;&nbsp;void&nbsp;methodExtends&#8203;()</pre>",
+                + "java.lang.String&gt;&nbsp;void&nbsp;methodExtends()</pre>",
 
                 "<pre>public final&nbsp;&lt;K extends <a href=\"../typeannos/"
                 + "MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> "
@@ -204,7 +204,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "typeannos/MtdTyParameterized.html\" title=\"class in typeannos\">"
                 + "MtdTyParameterized</a>&lt;<a href=\"../typeannos/MTyParamB.html\" "
                 + "title=\"annotation in typeannos\">@MTyParamB</a> java.lang.String"
-                + "&gt;&gt;&nbsp;void&nbsp;dual&#8203;()</pre>");
+                + "&gt;&gt;&nbsp;void&nbsp;dual()</pre>");
 
         // Test for type annotations on parameters (Parameters.java).
         checkOutput("typeannos/Parameters.html", true,
@@ -236,11 +236,11 @@ public class TestTypeAnnotations extends JavadocTester {
 
         // Test for type annotations on throws (Throws.java).
         checkOutput("typeannos/ThrDefaultUnmodified.html", true,
-                "<pre>void&nbsp;oneException&#8203;()\n"
+                "<pre>void&nbsp;oneException()\n"
                 + "           throws <a href=\"../typeannos/ThrA.html\" title=\""
                 + "annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>",
 
-                "<pre>void&nbsp;twoExceptions&#8203;()\n"
+                "<pre>void&nbsp;twoExceptions()\n"
                 + "            throws <a href=\"../typeannos/ThrA.html\" title=\""
                 + "annotation in typeannos\">@ThrA</a> java.lang.RuntimeException,\n"
                 + "                   <a href=\"../typeannos/ThrA.html\" title=\""
@@ -258,12 +258,12 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "title=\"annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>");
 
         checkOutput("typeannos/ThrWithValue.html", true,
-                "<pre>void&nbsp;oneException&#8203;()\n"
+                "<pre>void&nbsp;oneException()\n"
                 + "           throws <a href=\"../typeannos/ThrB.html\" title=\""
                 + "annotation in typeannos\">@ThrB</a>("
                 + "\"m\") java.lang.Exception</pre>",
 
-                "<pre>void&nbsp;twoExceptions&#8203;()\n"
+                "<pre>void&nbsp;twoExceptions()\n"
                 + "            throws <a href=\"../typeannos/ThrB.html\" title=\""
                 + "annotation in typeannos\">@ThrB</a>("
                 + "\"m\") java.lang.RuntimeException,\n"
@@ -275,7 +275,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 "<pre>&lt;K,<a href=\"../typeannos/TyParaA.html\" title=\"annotation in typeannos\">"
                 + "@TyParaA</a> V extends <a href=\"../typeannos/TyParaA.html\" "
                 + "title=\"annotation in typeannos\">@TyParaA</a> "
-                + "java.lang.String&gt;&nbsp;void&nbsp;secondAnnotated&#8203;()</pre>"
+                + "java.lang.String&gt;&nbsp;void&nbsp;secondAnnotated()</pre>"
         );
 
         // Test for type annotations on wildcard type (Wildcards.java).
@@ -288,7 +288,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 "<pre><a href=\"../typeannos/MyList.html\" title=\"class in "
                 + "typeannos\">MyList</a>&lt;? super <a href=\"../typeannos/WldA.html\" "
                 + "title=\"annotation in typeannos\">@WldA</a> java.lang.String&gt;"
-                + "&nbsp;returnWcSuper&#8203;()</pre>");
+                + "&nbsp;returnWcSuper()</pre>");
 
         checkOutput("typeannos/BoundWithValue.html", true,
                 "<pre>void&nbsp;wcSuper&#8203;(<a href=\"../typeannos/MyList.html\" title=\""
@@ -301,7 +301,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "typeannos\">MyList</a>&lt;? extends <a href=\"../typeannos/WldB."
                 + "html\" title=\"annotation in typeannos\">@WldB</a>("
                 + "\"m\") java.lang.String"
-                + "&gt;&nbsp;returnWcExtends&#8203;()</pre>");
+                + "&gt;&nbsp;returnWcExtends()</pre>");
 
         // Test for receiver annotations (Receivers.java).
         checkOutput("typeannos/DefaultUnmodified.html", true,
@@ -396,7 +396,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\"../typeannos/RepConstructorB.html\" title=\"annotation in typeannos"
                 + "\">@RepConstructorB</a> <a href=\"../typeannos/RepConstructorB.html"
                 + "\" title=\"annotation in typeannos\">@RepConstructorB</a>\n"
-                + "RepeatingOnConstructor&#8203;()</pre>",
+                + "RepeatingOnConstructor()</pre>",
 
                 "<pre><a href=\"../typeannos/RepConstructorA.html\" title=\"annotation in typeannos"
                 + "\">@RepConstructorA</a> <a href=\"../typeannos/RepConstructorA.html"
@@ -574,7 +574,7 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/RepeatingOnMethod.html", true,
                 "<code>(package private) java.lang.String</code></td>\n<th class=\"colSecond\" scope=\"row\">"
                 + "<code><span class=\"memberNameLink\"><a href="
-                + "\"../typeannos/RepeatingOnMethod.html#test1--\">test1</a></span>&#8203;()</code>",
+                + "\"../typeannos/RepeatingOnMethod.html#test1--\">test1</a></span>()</code>",
 
                 "<code>(package private) <a href=\"../typeannos/RepTypeUseA.html\" "
                 + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
@@ -584,7 +584,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String</code>"
                 + "</td>\n<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"../typeannos/RepeatingOnMethod.html#test2--\">test2</a>"
-                + "</span>&#8203;()</code>",
+                + "</span>()</code>",
 
                 "<code>(package private) <a href=\"../typeannos/RepTypeUseA.html\" "
                 + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
@@ -594,7 +594,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String</code>"
                 + "</td>\n<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"../typeannos/RepeatingOnMethod.html#test3--\">test3</a>"
-                + "</span>&#8203;()</code>",
+                + "</span>()</code>",
 
                 "<code>(package private) <a href=\"../typeannos/RepAllContextsA.html\" "
                 + "title=\"annotation in typeannos\">@RepAllContextsA</a> <a href="
@@ -604,7 +604,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos\">"
                 + "@RepAllContextsB</a> java.lang.String</code></td>\n<th class=\"colSecond\" scope=\"row\">"
                 + "<code><span class=\"memberNameLink\"><a href=\"../typeannos/RepeatingOnMethod.html"
-                + "#test4--\">test4</a></span>&#8203;()</code>",
+                + "#test4--\">test4</a></span>()</code>",
 
                 "<code><span class=\"memberNameLink\"><a href=\"../typeannos/RepeatingOnMethod.html"
                 + "#test5-java.lang.String-java.lang.String...-\">test5</a></span>"
@@ -621,13 +621,13 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\"annotation in typeannos\">@RepMethodA</a>\n<a href=\"../typeannos/RepMethodB.html\""
                 + " title=\"annotation in typeannos\">@RepMethodB</a> <a href="
                 + "\"../typeannos/RepMethodB.html\" title=\"annotation in typeannos\">"
-                + "@RepMethodB</a>\njava.lang.String&nbsp;test1&#8203;()",
+                + "@RepMethodB</a>\njava.lang.String&nbsp;test1()",
 
                 "<a href=\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
                 + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" title="
                 + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" "
                 + "title=\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" "
-                + "title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String&nbsp;test2&#8203;()",
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String&nbsp;test2()",
 
                 "<a href=\"../typeannos/RepMethodA.html\" title=\"annotation in typeannos\">"
                 + "@RepMethodA</a> <a href=\"../typeannos/RepMethodA.html\" title="
@@ -639,7 +639,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
                 + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
                 + "@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
-                + "\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String&nbsp;test3&#8203;()",
+                + "\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String&nbsp;test3()",
 
                 "<a href=\"../typeannos/RepAllContextsA.html\" title=\"annotation in typeannos\">"
                 + "@RepAllContextsA</a> <a href=\"../typeannos/RepAllContextsA.html\" "
@@ -652,7 +652,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "title=\"annotation in typeannos\">@RepAllContextsA</a> <a href="
                 + "\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos\">"
                 + "@RepAllContextsB</a> <a href=\"../typeannos/RepAllContextsB.html\" "
-                + "title=\"annotation in typeannos\">@RepAllContextsB</a> java.lang.String&nbsp;test4&#8203;()",
+                + "title=\"annotation in typeannos\">@RepAllContextsB</a> java.lang.String&nbsp;test4()",
 
                 "java.lang.String&nbsp;test5&#8203;(<a href=\"../typeannos/RepTypeUseA.html\" "
                 + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
@@ -697,7 +697,7 @@ public class TestTypeAnnotations extends JavadocTester {
 
                 "<code>(package private) java.lang.String</code></td>\n<th class=\"colSecond\" scope=\"row\"><code>"
                 + "<span class=\"memberNameLink\"><a href=\"../typeannos/RepeatingOnTypeParametersBoundsTypeArgumentsOnMethod.html#"
-                + "test--\">test</a></span>&#8203;()</code>",
+                + "test--\">test</a></span>()</code>",
 
                 "java.lang.String&nbsp;test&#8203;(<a href=\"../typeannos/RepTypeUseA.html\" "
                 + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
@@ -718,6 +718,6 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "\"annotation in typeannos\">@RepMethodA</a>\n<a href=\"../typeannos/RepMethodB.html"
                 + "\" title=\"annotation in typeannos\">@RepMethodB</a> <a href="
                 + "\"../typeannos/RepMethodB.html\" title=\"annotation in typeannos\">"
-                + "@RepMethodB</a>\nvoid&nbsp;test&#8203;()");
+                + "@RepMethodB</a>\nvoid&nbsp;test()");
     }
 }
