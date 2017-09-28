@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug      8173425
+ * @bug      8173425 8186332
  * @summary  tests for the summary tag behavior
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -87,7 +87,7 @@ public class TestSummaryTag extends JavadocTester {
         checkOutput("p1/A.html", true,
              "<li class=\"blockList\">\n"
              + "<h4>m3</h4>\n"
-             + "<pre>public&nbsp;void&nbsp;m3&#8203;()</pre>\n"
+             + "<pre>public&nbsp;void&nbsp;m3()</pre>\n"
              + "<div class=\"block\">First sentence  some text maybe second sentence.</div>\n"
              + "</li>\n"
         );

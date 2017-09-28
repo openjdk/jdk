@@ -81,12 +81,19 @@
  *     in which dynamic call site occurs </li>
  * <li>a {@code String}, the method name mentioned in the call site </li>
  * <li>a {@code MethodType}, the resolved type descriptor of the call </li>
- * <li>optionally, between 1 and 251 additional static arguments taken from the constant pool </li>
+ * <li>optionally, any number of additional static arguments taken from the constant pool </li>
  * </ul>
- * Invocation is as if by
- * {@link java.lang.invoke.MethodHandle#invoke MethodHandle.invoke}.
- * The returned result must be a {@link java.lang.invoke.CallSite CallSite}
- * (or a subclass), otherwise a
+ * <p>
+ * In all cases, bootstrap method invocation is as if by
+ * {@link java.lang.invoke.MethodHandle#invokeWithArguments MethodHandle.invokeWithArguments},
+ * (This is also equivalent to
+ * {@linkplain java.lang.invoke.MethodHandle#invoke generic invocation}
+ * if the number of arguments is small enough.)
+ * <p>
+ * For an {@code invokedynamic} instruction, the
+ * returned result must be convertible to a non-null reference to a
+ * {@link java.lang.invoke.CallSite CallSite}.
+ * If the returned result cannot be converted to the expected type,
  * {@link java.lang.BootstrapMethodError BootstrapMethodError} is thrown.
  * The type of the call site's target must be exactly equal to the type
  * derived from the dynamic call site's type descriptor and passed to
@@ -150,10 +157,12 @@
  * If the {@code invokedynamic} instruction specifies one or more static arguments,
  * those values will be passed as additional arguments to the method handle.
  * (Note that because there is a limit of 255 arguments to any method,
- * at most 251 extra arguments can be supplied, since the bootstrap method
+ * at most 251 extra arguments can be supplied to a non-varargs bootstrap method,
+ * since the bootstrap method
  * handle itself and its first three arguments must also be stacked.)
- * The bootstrap method will be invoked as if by either {@code MethodHandle.invoke}
- * or {@code invokeWithArguments}.  (There is no way to tell the difference.)
+ * The bootstrap method will be invoked as if by {@code MethodHandle.invokeWithArguments}.
+ * A variable-arity bootstrap method can accept thousands of static arguments,
+ * subject only by limits imposed by the class-file format.
  * <p>
  * The normal argument conversion rules for {@code MethodHandle.invoke} apply to all stacked arguments.
  * For example, if a pushed value is a primitive type, it may be converted to a reference by boxing conversion.
@@ -194,9 +203,9 @@
  * </tbody>
  * </table>
  * The last example assumes that the extra arguments are of type
- * {@code CONSTANT_String} and {@code CONSTANT_Integer}, respectively.
+ * {@code String} and {@code Integer} (or {@code int}), respectively.
  * The second-to-last example assumes that all extra arguments are of type
- * {@code CONSTANT_String}.
+ * {@code String}.
  * The other examples work with all types of extra arguments.
  * <p>
  * As noted above, the actual method type of the bootstrap method can vary.
@@ -220,7 +229,7 @@
  * to safely and compactly encode metadata.
  * In principle, the name and extra arguments are redundant,
  * since each call site could be given its own unique bootstrap method.
- * Such a practice is likely to produce large class files and constant pools.
+ * Such a practice would be likely to produce large class files and constant pools.
  *
  * @author John Rose, JSR 292 EG
  * @since 1.7

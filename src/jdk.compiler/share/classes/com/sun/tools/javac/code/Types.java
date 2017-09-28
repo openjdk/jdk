@@ -190,6 +190,245 @@ public class Types {
     }
     // </editor-fold>
 
+    // <editor-fold defaultstate="collapsed" desc="projections">
+
+    /**
+     * A projection kind. See {@link TypeProjection}
+     */
+    enum ProjectionKind {
+        UPWARDS() {
+            @Override
+            ProjectionKind complement() {
+                return DOWNWARDS;
+            }
+        },
+        DOWNWARDS() {
+            @Override
+            ProjectionKind complement() {
+                return UPWARDS;
+            }
+        };
+
+        abstract ProjectionKind complement();
+    }
+
+    /**
+     * This visitor performs upwards and downwards projections on types.
+     *
+     * A projection is defined as a function that takes a type T, a set of type variables V and that
+     * produces another type S.
+     *
+     * An upwards projection maps a type T into a type S such that (i) T has no variables in V,
+     * and (ii) S is an upper bound of T.
+     *
+     * A downwards projection maps a type T into a type S such that (i) T has no variables in V,
+     * and (ii) S is a lower bound of T.
+     *
+     * Note that projections are only allowed to touch variables in V. Theferore it is possible for
+     * a projection to leave its input type unchanged if it does not contain any variables in V.
+     *
+     * Moreover, note that while an upwards projection is always defined (every type as an upper bound),
+     * a downwards projection is not always defined.
+     *
+     * Examples:
+     *
+     * {@code upwards(List<#CAP1>, [#CAP1]) = List<? extends String>, where #CAP1 <: String }
+     * {@code downwards(List<#CAP2>, [#CAP2]) = List<? super String>, where #CAP2 :> String }
+     * {@code upwards(List<#CAP1>, [#CAP2]) = List<#CAP1> }
+     * {@code downwards(List<#CAP1>, [#CAP1]) = not defined }
+     */
+    class TypeProjection extends StructuralTypeMapping<ProjectionKind> {
+
+        List<Type> vars;
+        Set<Type> seen = new HashSet<>();
+
+        public TypeProjection(List<Type> vars) {
+            this.vars = vars;
+        }
+
+        @Override
+        public Type visitClassType(ClassType t, ProjectionKind pkind) {
+            if (t.isCompound()) {
+                List<Type> components = directSupertypes(t);
+                List<Type> components1 = components.map(c -> c.map(this, pkind));
+                if (components == components1) return t;
+                else return makeIntersectionType(components1);
+            } else {
+                Type outer = t.getEnclosingType();
+                Type outer1 = visit(outer, pkind);
+                List<Type> typarams = t.getTypeArguments();
+                List<Type> typarams1 = typarams.map(ta -> mapTypeArgument(ta, pkind));
+                if (typarams1.stream().anyMatch(ta -> ta.hasTag(BOT))) {
+                    //not defined
+                    return syms.botType;
+                }
+                if (outer1 == outer && typarams1 == typarams) return t;
+                else return new ClassType(outer1, typarams1, t.tsym, t.getMetadata()) {
+                    @Override
+                    protected boolean needsStripping() {
+                        return true;
+                    }
+                };
+            }
+        }
+
+        protected Type makeWildcard(Type upper, Type lower) {
+            BoundKind bk;
+            Type bound;
+            if (upper.hasTag(BOT)) {
+                upper = syms.objectType;
+            }
+            boolean isUpperObject = isSameType(upper, syms.objectType);
+            if (!lower.hasTag(BOT) && isUpperObject) {
+                bound = lower;
+                bk = SUPER;
+            } else {
+                bound = upper;
+                bk = isUpperObject ? UNBOUND : EXTENDS;
+            }
+            return new WildcardType(bound, bk, syms.boundClass);
+        }
+
+        @Override
+        public Type visitTypeVar(TypeVar t, ProjectionKind pkind) {
+            if (vars.contains(t)) {
+                try {
+                    if (seen.add(t)) {
+                        final Type bound;
+                        switch (pkind) {
+                            case UPWARDS:
+                                bound = t.getUpperBound();
+                                break;
+                            case DOWNWARDS:
+                                bound = (t.getLowerBound() == null) ?
+                                        syms.botType :
+                                        t.getLowerBound();
+                                break;
+                            default:
+                                Assert.error();
+                                return null;
+                        }
+                        return bound.map(this, pkind);
+                    } else {
+                        //cycle
+                        return syms.objectType;
+                    }
+                } finally {
+                    seen.remove(t);
+                }
+            } else {
+                return t;
+            }
+        }
+
+        @Override
+        public Type visitWildcardType(WildcardType wt, ProjectionKind pkind) {
+            switch (pkind) {
+                case UPWARDS:
+                    return wt.isExtendsBound() ?
+                            wt.type.map(this, pkind) :
+                            syms.objectType;
+                case DOWNWARDS:
+                    return wt.isSuperBound() ?
+                            wt.type.map(this, pkind) :
+                            syms.botType;
+                default:
+                    Assert.error();
+                    return null;
+            }
+        }
+
+        private Type mapTypeArgument(Type t, ProjectionKind pkind) {
+            if (!t.containsAny(vars)) {
+                return t;
+            } else if (!t.hasTag(WILDCARD) && pkind == ProjectionKind.DOWNWARDS) {
+                //not defined
+                return syms.botType;
+            } else {
+                Type upper = t.map(this, pkind);
+                Type lower = t.map(this, pkind.complement());
+                return makeWildcard(upper, lower);
+            }
+        }
+    }
+
+    /**
+     * Computes an upward projection of given type, and vars. See {@link TypeProjection}.
+     *
+     * @param t the type to be projected
+     * @param vars the set of type variables to be mapped
+     * @return the type obtained as result of the projection
+     */
+    public Type upward(Type t, List<Type> vars) {
+        return t.map(new TypeProjection(vars), ProjectionKind.UPWARDS);
+    }
+
+    /**
+     * Computes the set of captured variables mentioned in a given type. See {@link CaptureScanner}.
+     * This routine is typically used to computed the input set of variables to be used during
+     * an upwards projection (see {@link Types#upward(Type, List)}).
+     *
+     * @param t the type where occurrences of captured variables have to be found
+     * @return the set of captured variables found in t
+     */
+    public List<Type> captures(Type t) {
+        CaptureScanner cs = new CaptureScanner();
+        Set<Type> captures = new HashSet<>();
+        cs.visit(t, captures);
+        return List.from(captures);
+    }
+
+    /**
+     * This visitor scans a type recursively looking for occurrences of captured type variables.
+     */
+    class CaptureScanner extends SimpleVisitor<Void, Set<Type>> {
+
+        @Override
+        public Void visitType(Type t, Set<Type> types) {
+            return null;
+        }
+
+        @Override
+        public Void visitClassType(ClassType t, Set<Type> seen) {
+            if (t.isCompound()) {
+                directSupertypes(t).forEach(s -> visit(s, seen));
+            } else {
+                t.allparams().forEach(ta -> visit(ta, seen));
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitArrayType(ArrayType t, Set<Type> seen) {
+            return visit(t.elemtype, seen);
+        }
+
+        @Override
+        public Void visitWildcardType(WildcardType t, Set<Type> seen) {
+            visit(t.type, seen);
+            return null;
+        }
+
+        @Override
+        public Void visitTypeVar(TypeVar t, Set<Type> seen) {
+            if ((t.tsym.flags() & Flags.SYNTHETIC) != 0 && seen.add(t)) {
+                visit(t.getUpperBound(), seen);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitCapturedType(CapturedType t, Set<Type> seen) {
+            if (seen.add(t)) {
+                visit(t.getUpperBound(), seen);
+                visit(t.getLowerBound(), seen);
+            }
+            return null;
+        }
+    }
+
+    // </editor-fold>
+
     // <editor-fold defaultstate="collapsed" desc="isUnbounded">
     /**
      * Checks that all the arguments to a class are unbounded

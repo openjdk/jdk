@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,13 @@ import java.io.FileDescriptor;
  */
 
 public interface JavaIOFileDescriptorAccess {
-    public void set(FileDescriptor obj, int fd);
-    public int get(FileDescriptor fd);
-    public void setAppend(FileDescriptor obj, boolean append);
-    public boolean getAppend(FileDescriptor obj);
+    public void set(FileDescriptor fdo, int fd);
+    public int get(FileDescriptor fdo);
+    public void setAppend(FileDescriptor fdo, boolean append);
+    public boolean getAppend(FileDescriptor fdo);
+    public void close(FileDescriptor fdo);
 
     // Only valid on Windows
-    public void setHandle(FileDescriptor obj, long handle);
-    public long getHandle(FileDescriptor obj);
+    public void setHandle(FileDescriptor fdo, long handle);
+    public long getHandle(FileDescriptor fdo);
 }

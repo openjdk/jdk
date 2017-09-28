@@ -117,7 +117,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
 endif
 
-BUILD_HOTSPOT_JTREG_OUTPUT_DIR := $(BUILD_OUTPUT)/support/test/hotspot/jtreg/native
+BUILD_HOTSPOT_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/hotspot/jtreg/native
 
 BUILD_HOTSPOT_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/hotspot/jtreg
 

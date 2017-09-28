@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -643,6 +643,22 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("Baz<String> bz = new Baz<>(|", true, "str");
         assertEval("class Foo { static void m(String str) {} static void m(Baz<String> baz) {} }");
         assertCompletion("Foo.m(new Baz<>(|", true, "str");
+    }
+
+    public void testIntersection() {
+        assertEval("<Z extends Runnable & CharSequence> Z get() { return null; }");
+        assertEval("var v = get();");
+        assertCompletionIncludesExcludes("v.|", true, Set.of("run()", "length()"), Set.of());
+        assertCompletion("Runnable r = |", true, "get()", "v");
+        assertCompletion("CharSequence r = |", true, "get()", "v");
+        assertCompletion("Number r = |", true);
+    }
+
+    public void testAnonymous() {
+        assertEval("var v = new Runnable() { public void run() { } public int length() { return 0; } };");
+        assertCompletionIncludesExcludes("v.|", true, Set.of("run()", "length()"), Set.of());
+        assertCompletion("Runnable r = |", true, "v");
+        assertCompletion("CharSequence r = |", true);
     }
 
     @BeforeMethod

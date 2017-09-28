@@ -48,9 +48,9 @@ endif
 BOOT_JDK := $(JDK_IMAGE_DIR)
 
 # The bootcycle build has a different output directory
-OLD_BUILD_OUTPUT:=@BUILD_OUTPUT@
-BUILD_OUTPUT:=$(OLD_BUILD_OUTPUT)/bootcycle-build
-SJAVAC_SERVER_DIR:=$(patsubst $(OLD_BUILD_OUTPUT)%, $(BUILD_OUTPUT)%, $(SJAVAC_SERVER_DIR))
+OLD_OUTPUTDIR:=@OUTPUTDIR@
+OUTPUTDIR:=$(OLD_OUTPUTDIR)/bootcycle-build
+SJAVAC_SERVER_DIR:=$(patsubst $(OLD_OUTPUTDIR)%, $(OUTPUTDIR)%, $(SJAVAC_SERVER_DIR))
 
 JAVA_CMD:=$(BOOT_JDK)/bin/java
 JAVAC_CMD:=$(BOOT_JDK)/bin/javac

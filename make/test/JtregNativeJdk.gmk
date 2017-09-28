@@ -47,7 +47,7 @@ BUILD_JDK_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/jdk/java/lang/String/nativeEncoding \
     #
 
-BUILD_JDK_JTREG_OUTPUT_DIR := $(BUILD_OUTPUT)/support/test/jdk/jtreg/native
+BUILD_JDK_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/jdk/jtreg/native
 
 BUILD_JDK_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/jdk/jtreg
 

@@ -151,9 +151,9 @@ final class ProcessHandleImpl implements ProcessHandle {
                                 } catch (InterruptedException ie) {
                                     // ignore and retry
                                 }
-                                startTime = isAlive0(pid);  // recheck if is alive
-                                if (origStart > 0 && startTime != origStart) {
-                                    // start time changed, pid is not the same process
+                                startTime = isAlive0(pid);  // recheck if it is alive
+                                if (startTime > 0 && origStart > 0 && startTime != origStart) {
+                                    // start time changed (and is not zero), pid is not the same process
                                     break;
                                 }
                             }

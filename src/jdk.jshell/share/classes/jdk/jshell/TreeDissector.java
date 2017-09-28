@@ -227,7 +227,7 @@ class TreeDissector {
         Type typeImpl = (Type) type;
         try {
             TypePrinter tp = new TypePrinter(at.messages(),
-                    state.maps::fullClassNameAndPackageToClass);
+                    state.maps::fullClassNameAndPackageToClass, true);
             return tp.toString(typeImpl);
         } catch (Exception ex) {
             return null;

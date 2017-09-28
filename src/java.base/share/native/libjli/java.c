@@ -1517,6 +1517,7 @@ NewPlatformString(JNIEnv *env, char *s)
             }
             str = (*env)->CallStaticObjectMethod(env, cls,
                     makePlatformStringMID, USE_STDERR, ary);
+            CHECK_EXCEPTION_RETURN_VALUE(0);
             (*env)->DeleteLocalRef(env, ary);
             return str;
         }
@@ -1585,13 +1586,16 @@ static jclass
 GetApplicationClass(JNIEnv *env)
 {
     jmethodID mid;
+    jclass appClass;
     jclass cls = GetLauncherHelperClass(env);
     NULL_CHECK0(cls);
     NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,
                 "getApplicationClass",
                 "()Ljava/lang/Class;"));
 
-    return (*env)->CallStaticObjectMethod(env, cls, mid);
+    appClass = (*env)->CallStaticObjectMethod(env, cls, mid);
+    CHECK_EXCEPTION_RETURN_VALUE(0);
+    return appClass;
 }
 
 static char* expandWildcardOnLongOpt(char* arg) {

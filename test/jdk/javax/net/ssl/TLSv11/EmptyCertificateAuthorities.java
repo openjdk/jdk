@@ -34,6 +34,7 @@
  * @summary Support TLS 1.1
  * @run main/othervm EmptyCertificateAuthorities
  * @modules java.security.jgss
+ *          java.security.jgss/sun.security.jgss.krb5
  *          java.security.jgss/sun.security.krb5:+open
  *          java.security.jgss/sun.security.krb5.internal:+open
  *          java.security.jgss/sun.security.krb5.internal.ccache

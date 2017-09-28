@@ -41,7 +41,7 @@ JDK_CLASSES := $(call PathList, $(strip $(addprefix $(JDK_OUTPUTDIR)/modules/, \
 $(eval $(call SetupJavaCompiler, GENERATE_NEWBYTECODE_DEBUG, \
     JVM := $(JAVA_JAVAC), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -g -source 9 -target 9 --upgrade-module-path "$(JDK_OUTPUTDIR)/modules/" \
+    FLAGS := -g -source 10 -target 10 --upgrade-module-path "$(JDK_OUTPUTDIR)/modules/" \
          --system none --module-source-path $(call GetModuleSrcPath), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))

@@ -341,7 +341,7 @@ class FileInputStream extends InputStream
 
         fd.closeAll(new Closeable() {
             public void close() throws IOException {
-               close0();
+               fd.close();
            }
         });
     }
@@ -403,7 +403,6 @@ class FileInputStream extends InputStream
 
     private static native void initIDs();
 
-    private native void close0() throws IOException;
 
     static {
         initIDs();

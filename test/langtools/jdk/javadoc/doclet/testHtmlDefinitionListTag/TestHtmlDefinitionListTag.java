@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6786690 6820360 8025633 8026567 8175200
+ * @bug 6786690 6820360 8025633 8026567 8175200 8183511 8186332
  * @summary This test verifies the nesting of definition list tags.
  * @author Bhavesh Patel
  * @library ../lib
@@ -367,12 +367,12 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         // Test with -nocomment and -nodeprecated options. The ClassDocs whould
         // not display definition lists for any member details.
         checkOutput("pkg1/C1.html", expectFound,
-                "<pre>public&nbsp;void&nbsp;readObject&#8203;()\n" +
+                "<pre>public&nbsp;void&nbsp;readObject()\n" +
                 "                throws java.io.IOException</pre>\n" +
                 "</li>");
 
         checkOutput("pkg1/C2.html", expectFound,
-                "<pre>public&nbsp;C2&#8203;()</pre>\n" +
+                "<pre>public&nbsp;C2()</pre>\n" +
                 "</li>");
 
         checkOutput("pkg1/C1.ModalExclusionType.html", expectFound,
@@ -385,7 +385,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         checkOutput("serialized-form.html", expectFound,
                 "<pre>boolean " +
                 "undecorated</pre>\n" +
-                "<div class=\"block\"><span class=\"deprecatedLabel\">" +
+                "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">" +
                 "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
                 " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>" +
                 "setUndecorated(boolean)</code></a>.</span></div>\n" +

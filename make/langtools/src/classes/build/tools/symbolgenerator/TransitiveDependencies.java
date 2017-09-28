@@ -57,8 +57,8 @@ public class TransitiveDependencies {
         }
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        List<String> options = Arrays.asList("-source", "9",
-                                             "-target", "9",
+        List<String> options = Arrays.asList("-source", "10",
+                                             "-target", "10",
                                              "-proc:only",
                                              "--system", "none",
                                              "--module-source-path", args[0],

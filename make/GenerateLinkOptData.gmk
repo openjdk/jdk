@@ -59,8 +59,8 @@ endif
 
 $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
 	$(call MakeDir, $(LINK_OPT_DIR))
-	$(call LogInfo, Generating $(patsubst $(OUTPUT_ROOT)/%, %, $@))
-	$(call LogInfo, Generating $(patsubst $(OUTPUT_ROOT)/%, %, $(JLI_TRACE_FILE)))
+	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $@))
+	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $(JLI_TRACE_FILE)))
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@ \
 	    -Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \

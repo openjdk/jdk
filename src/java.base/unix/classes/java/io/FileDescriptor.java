@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,13 @@ import jdk.internal.misc.SharedSecrets;
 /**
  * Instances of the file descriptor class serve as an opaque handle
  * to the underlying machine-specific structure representing an open
- * file, an open socket, or another source or sink of bytes. The
- * main practical use for a file descriptor is to create a
- * <code>FileInputStream</code> or <code>FileOutputStream</code> to
- * contain it.
+ * file, an open socket, or another source or sink of bytes.
+ * The main practical use for a file descriptor is to create a
+ * {@link FileInputStream} or {@link FileOutputStream} to contain it.
  * <p>
  * Applications should not create their own file descriptors.
  *
  * @author  Pavani Diwanji
- * @see     java.io.FileInputStream
- * @see     java.io.FileOutputStream
  * @since   1.0
  */
 public final class FileDescriptor {
@@ -57,6 +54,45 @@ public final class FileDescriptor {
      * true, if file is opened for appending.
      */
     private boolean append;
+
+    static {
+        initIDs();
+    }
+
+    // Set up JavaIOFileDescriptorAccess in SharedSecrets
+    static {
+        SharedSecrets.setJavaIOFileDescriptorAccess(
+                new JavaIOFileDescriptorAccess() {
+                    public void set(FileDescriptor fdo, int fd) {
+                        fdo.fd = fd;
+                    }
+
+                    public int get(FileDescriptor fdo) {
+                        return fdo.fd;
+                    }
+
+                    public void setAppend(FileDescriptor fdo, boolean append) {
+                        fdo.append = append;
+                    }
+
+                    public boolean getAppend(FileDescriptor fdo) {
+                        return fdo.append;
+                    }
+
+                    public void close(FileDescriptor fdo) {
+                        fdo.close();
+                    }
+
+                    public void setHandle(FileDescriptor fdo, long handle) {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public long getHandle(FileDescriptor fdo) {
+                        throw new UnsupportedOperationException();
+                    }
+                }
+        );
+    }
 
     /**
      * Constructs an (invalid) FileDescriptor
@@ -74,7 +110,7 @@ public final class FileDescriptor {
     /**
      * A handle to the standard input stream. Usually, this file
      * descriptor is not used directly, but rather via the input stream
-     * known as <code>System.in</code>.
+     * known as {@code System.in}.
      *
      * @see     java.lang.System#in
      */
@@ -83,7 +119,7 @@ public final class FileDescriptor {
     /**
      * A handle to the standard output stream. Usually, this file
      * descriptor is not used directly, but rather via the output stream
-     * known as <code>System.out</code>.
+     * known as {@code System.out}.
      * @see     java.lang.System#out
      */
     public static final FileDescriptor out = new FileDescriptor(1);
@@ -91,7 +127,7 @@ public final class FileDescriptor {
     /**
      * A handle to the standard error stream. Usually, this file
      * descriptor is not used directly, but rather via the output stream
-     * known as <code>System.err</code>.
+     * known as {@code System.err}.
      *
      * @see     java.lang.System#err
      */
@@ -100,9 +136,9 @@ public final class FileDescriptor {
     /**
      * Tests if this file descriptor object is valid.
      *
-     * @return  <code>true</code> if the file descriptor object represents a
+     * @return  {@code true} if the file descriptor object represents a
      *          valid, open file, socket, or other active I/O connection;
-     *          <code>false</code> otherwise.
+     *          {@code false} otherwise.
      */
     public boolean valid() {
         return fd != -1;
@@ -141,45 +177,17 @@ public final class FileDescriptor {
     /* This routine initializes JNI field offsets for the class */
     private static native void initIDs();
 
-    static {
-        initIDs();
-    }
-
-    // Set up JavaIOFileDescriptorAccess in SharedSecrets
-    static {
-        SharedSecrets.setJavaIOFileDescriptorAccess(
-            new JavaIOFileDescriptorAccess() {
-                public void set(FileDescriptor obj, int fd) {
-                    obj.fd = fd;
-                }
-
-                public int get(FileDescriptor obj) {
-                    return obj.fd;
-                }
-
-                public void setAppend(FileDescriptor obj, boolean append) {
-                    obj.append = append;
-                }
-
-                public boolean getAppend(FileDescriptor obj) {
-                    return obj.append;
-                }
-
-                public void setHandle(FileDescriptor obj, long handle) {
-                    throw new UnsupportedOperationException();
-                }
-
-                public long getHandle(FileDescriptor obj) {
-                    throw new UnsupportedOperationException();
-                }
-            }
-        );
-    }
-
     /**
      * Returns true, if the file was opened for appending.
      */
     private static native boolean getAppend(int fd);
+
+    /**
+     * Close the raw file descriptor or handle, if it has not already been closed
+     * and set the fd and handle to -1.
+     * Package private to allow it to be used in java.io.
+     */
+    native void close();
 
     /*
      * Package private methods to track referents.

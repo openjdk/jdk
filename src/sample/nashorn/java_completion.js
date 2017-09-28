@@ -38,4 +38,4 @@ var repl = Java.type("jdk.jshell.JShell").create()
 var analysis = repl.sourceCodeAnalysis()
 var code = "System."
 var suggestions = analysis.completionSuggestions(code, code.length, [0])
-suggestions.forEach(function(s) print(s.continuation))
+suggestions.forEach(function(s) print(s.continuation()))

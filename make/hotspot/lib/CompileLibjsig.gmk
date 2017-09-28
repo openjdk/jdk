@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(STATIC_BUILD), false)
     ifeq ($(OPENJDK_TARGET_OS), linux)
       LIBJSIG_CFLAGS := -fPIC -D_GNU_SOURCE -D_REENTRANT $(EXTRA_CFLAGS)
-      LIBJSIG_LDFLAGS := $(LDFLAGS_HASH_STYLE) $(EXTRA_CFLAGS)
+      LIBJSIG_LDFLAGS := $(LDFLAGS_HASH_STYLE) ${LDFLAGS_NO_EXEC_STACK} $(EXTRA_CFLAGS)
       LIBJSIG_LIBS := $(LIBDL)
 
       # NOTE: The old build compiled this library without -soname.

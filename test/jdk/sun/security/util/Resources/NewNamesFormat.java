@@ -27,7 +27,6 @@
  * @modules java.base/sun.security.util
  *          java.base/sun.security.tools.keytool
  *          jdk.jartool/sun.security.tools.jarsigner
- *          jdk.policytool/sun.security.tools.policytool
  * @summary security/util/Resources.java needs improvement
  */
 
@@ -46,7 +45,6 @@ public class NewNamesFormat {
         checkRes("sun.security.util.AuthResources");
         checkRes("sun.security.tools.jarsigner.Resources");
         checkRes("sun.security.tools.keytool.Resources");
-        checkRes("sun.security.tools.policytool.Resources");
     }
 
     private static void checkRes(String resName) throws Exception {

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -738,6 +738,28 @@ public class ToolSimpleTest extends ReplToolTesting {
         test(
                 (a) -> assertCommandOutputContains(a, "System.out.println(\"%5d\", 10);", "%5d"),
                 (a) -> assertCommandOutputContains(a, "1234", "==> 1234")
+        );
+    }
+
+    @Test
+    public void testIntersection() {
+        test(
+                (a) -> assertCommandOutputContains(a, "<Z extends Runnable&CharSequence> Z get1() { return null; }", "get1()"),
+                (a) -> assertCommandOutputContains(a, "var g1 = get1()", "g1"),
+                (a) -> assertCommand(a, "/vars g1", "|    CharSequence&Runnable g1 = null"),
+                (a) -> assertCommandOutputContains(a, "<Z extends Number&CharSequence> Z get2() { return null; }", "get2()"),
+                (a) -> assertCommandOutputContains(a, "var g2 = get2()", "g2"),
+                (a) -> assertCommand(a, "/vars g2", "|    Number&CharSequence g2 = null")
+        );
+    }
+
+    @Test
+    public void testAnonymous() {
+        test(
+                (a) -> assertCommandOutputContains(a, "var r1 = new Object() {}", "r1"),
+                (a) -> assertCommandOutputContains(a, "/vars r1", "|    <anonymous class extending Object> r1 = "),
+                (a) -> assertCommandOutputContains(a, "var r2 = new Runnable() { public void run() { } }", "r2"),
+                (a) -> assertCommandOutputContains(a, "/vars r2", "|    <anonymous class implementing Runnable> r2 = ")
         );
     }
 }

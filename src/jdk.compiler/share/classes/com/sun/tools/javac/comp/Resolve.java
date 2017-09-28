@@ -105,6 +105,7 @@ public class Resolve {
     public final boolean allowModules;
     public final boolean checkVarargsAccessAfterResolution;
     private final boolean compactMethodDiags;
+    private final boolean allowLocalVariableTypeInference;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
 
     WriteableScope polymorphicSignatureScope;
@@ -136,6 +137,7 @@ public class Resolve {
         Target target = Target.instance(context);
         allowMethodHandles = target.hasMethodHandles();
         allowFunctionalInterfaceMostSpecific = source.allowFunctionalInterfaceMostSpecific();
+        allowLocalVariableTypeInference = source.allowLocalVariableTypeInference();
         checkVarargsAccessAfterResolution =
                 source.allowPostApplicabilityVarargsAccessCheck();
         polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
@@ -2325,6 +2327,10 @@ public class Resolve {
      *                   (a subset of VAL, TYP, PCK).
      */
     Symbol findIdent(Env<AttrContext> env, Name name, KindSelector kind) {
+        return checkVarType(findIdentInternal(env, name, kind), name);
+    }
+
+    Symbol findIdentInternal(Env<AttrContext> env, Name name, KindSelector kind) {
         Symbol bestSoFar = typeNotFound;
         Symbol sym;
 
@@ -2353,6 +2359,11 @@ public class Resolve {
      *                   (a nonempty subset of TYP, PCK).
      */
     Symbol findIdentInPackage(Env<AttrContext> env, TypeSymbol pck,
+                              Name name, KindSelector kind) {
+        return checkVarType(findIdentInPackageInternal(env, pck, name, kind), name);
+    }
+
+    Symbol findIdentInPackageInternal(Env<AttrContext> env, TypeSymbol pck,
                               Name name, KindSelector kind) {
         Name fullname = TypeSymbol.formFullName(name, pck);
         Symbol bestSoFar = typeNotFound;
@@ -2383,6 +2394,11 @@ public class Resolve {
      */
     Symbol findIdentInType(Env<AttrContext> env, Type site,
                            Name name, KindSelector kind) {
+        return checkVarType(findIdentInTypeInternal(env, site, name, kind), name);
+    }
+
+    Symbol findIdentInTypeInternal(Env<AttrContext> env, Type site,
+                           Name name, KindSelector kind) {
         Symbol bestSoFar = typeNotFound;
         Symbol sym;
         if (kind.contains(KindSelector.VAL)) {
@@ -2395,6 +2411,14 @@ public class Resolve {
             sym = findMemberType(env, site, name, site.tsym);
             if (sym.exists()) return sym;
             else bestSoFar = bestOf(bestSoFar, sym);
+        }
+        return bestSoFar;
+    }
+
+    private Symbol checkVarType(Symbol bestSoFar, Name name) {
+        if (allowLocalVariableTypeInference && name.equals(names.var) &&
+                (bestSoFar.kind == TYP || bestSoFar.kind == ABSENT_TYP)) {
+            bestSoFar = new BadVarTypeError();
         }
         return bestSoFar;
     }
@@ -3771,6 +3795,17 @@ public class Resolve {
                 return types.createErrorType(name, location, sym.type).tsym;
             else
                 return sym;
+        }
+    }
+
+    class BadVarTypeError extends ResolveError {
+        BadVarTypeError() {
+            super(Kind.BAD_VAR, "bad var use");
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+            return diags.create(dkind, log.currentSource(), pos, "illegal.ref.to.var.type", name);
         }
     }
 

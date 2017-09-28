@@ -1247,7 +1247,9 @@ public class TypeAnnotations {
                 final TypeAnnotationPosition pos =
                     TypeAnnotationPosition.localVariable(currentLambda,
                                                          tree.pos);
-                separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
+                if (!tree.isImplicitlyTyped()) {
+                    separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
+                }
             } else if (tree.sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
                 final TypeAnnotationPosition pos =
                     TypeAnnotationPosition.exceptionParameter(currentLambda,

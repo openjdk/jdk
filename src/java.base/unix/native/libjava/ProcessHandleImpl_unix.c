@@ -662,7 +662,7 @@ pid_t unix_getParentPidAndTimings(JNIEnv *env, pid_t pid,
         return -1;
     }
 
-    // Validate the pid before returning the info in case /proc/pid is racy
+    // Validate the pid before returning the info
     if (kill(pid, 0) < 0) {
         return -1;
     }

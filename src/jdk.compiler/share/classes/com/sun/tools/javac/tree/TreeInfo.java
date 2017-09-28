@@ -1136,7 +1136,7 @@ public class TreeInfo {
      * For an array that contains an annotated type, return that annotated type.
      * TODO: currently only used by Pretty. Describe behavior better.
      */
-    public static JCTree innermostType(JCTree type) {
+    public static JCTree innermostType(JCTree type, boolean skipAnnos) {
         JCTree lastAnnotatedType = null;
         JCTree cur = type;
         loop: while (true) {
@@ -1157,7 +1157,7 @@ public class TreeInfo {
                 break loop;
             }
         }
-        if (lastAnnotatedType!=null) {
+        if (!skipAnnos && lastAnnotatedType!=null) {
             return lastAnnotatedType;
         } else {
             return cur;

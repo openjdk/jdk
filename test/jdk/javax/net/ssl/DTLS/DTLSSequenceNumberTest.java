@@ -30,6 +30,7 @@
  * @library /sun/security/krb5/auto /test/lib /javax/net/ssl/TLSCommon
  * @modules java.security.jgss
  *          jdk.security.auth
+ *          java.security.jgss/sun.security.jgss.krb5
  *          java.security.jgss/sun.security.krb5:+open
  *          java.security.jgss/sun.security.krb5.internal:+open
  *          java.security.jgss/sun.security.krb5.internal.ccache

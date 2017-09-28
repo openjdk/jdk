@@ -898,11 +898,25 @@ Java_sun_print_Win32PrintService_getDefaultSettings(JNIEnv *env,
       defIndices[1] = pDevMode->dmMediaType;
   }
 
-  if (pDevMode->dmFields & DM_YRESOLUTION) {
-     defIndices[2]  = pDevMode->dmYResolution;
+  /*
+   * For some printer like Brother HL-2240D series
+   * pDevMode->dmYResolution is not set in pDevMode->dmFields
+   * even though pDevMode->dmYResolution is populated
+   * via ::DocumentProperties API, so for this case
+   * we populate the resolution index in default array
+   */
+  if (pDevMode->dmFields & DM_YRESOLUTION || pDevMode->dmYResolution > 0) {
+      defIndices[2]  = pDevMode->dmYResolution;
   }
 
-  if (pDevMode->dmFields & DM_PRINTQUALITY) {
+  /*
+   * For some printer like Brother HL-2240D series
+   * pDevMode->dmPrintQuality is not set in pDevMode->dmFields
+   * even though pDevMode->dmPrintQuality is populated
+   * via ::DocumentProperties API, so for this case
+   * we populate the print quality index in default array
+   */
+  if (pDevMode->dmFields & DM_PRINTQUALITY || pDevMode->dmPrintQuality != 0) {
       defIndices[3] = pDevMode->dmPrintQuality;
   }
 

@@ -22,11 +22,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.jshell" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.javadoc" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
-      <excludeFolder url="file://$MODULE_DIR$/make" />
-      <excludeFolder url="file://$MODULE_DIR$/src" />
-      <excludeFolder url="file://$MODULE_DIR$/test" />
     </content>
-    <content url="file://$MODULE_DIR$/test/langtools"/>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
   </component>

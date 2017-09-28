@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import com.sun.security.auth.module.Krb5LoginModule;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.PrivilegedActionException;
@@ -31,6 +32,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import javax.security.auth.Subject;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
@@ -41,9 +47,14 @@ import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
 import org.ietf.jgss.Oid;
+import sun.security.jgss.krb5.Krb5Util;
+import sun.security.krb5.Credentials;
+import sun.security.krb5.internal.ccache.CredentialsCache;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.security.Principal;
+import java.util.Set;
 
 /**
  * Context of a JGSS subject, encapsulating Subject and GSSContext.
@@ -149,24 +160,36 @@ public class Context {
         Map<String, String> map = new HashMap<>();
         Map<String, Object> shared = new HashMap<>();
 
+        if (storeKey) {
+            map.put("storeKey", "true");
+        }
+
         if (pass != null) {
-            map.put("useFirstPass", "true");
-            shared.put("javax.security.auth.login.name", user);
-            shared.put("javax.security.auth.login.password", pass);
+            krb5.initialize(out.s, new CallbackHandler() {
+                @Override
+                public void handle(Callback[] callbacks)
+                        throws IOException, UnsupportedCallbackException {
+                    for (Callback cb: callbacks) {
+                        if (cb instanceof NameCallback) {
+                            ((NameCallback)cb).setName(user);
+                        } else if (cb instanceof PasswordCallback) {
+                            ((PasswordCallback)cb).setPassword(pass);
+                        }
+                    }
+                }
+            }, shared, map);
         } else {
             map.put("doNotPrompt", "true");
             map.put("useTicketCache", "true");
             if (user != null) {
                 map.put("principal", user);
             }
-        }
-        if (storeKey) {
-            map.put("storeKey", "true");
+            krb5.initialize(out.s, null, shared, map);
         }
 
-        krb5.initialize(out.s, null, shared, map);
         krb5.login();
         krb5.commit();
+
         return out;
     }
 
@@ -529,9 +552,23 @@ public class Context {
      * @param s2 the receiver
      * @throws java.lang.Exception If anything goes wrong
      */
-    static public void transmit(final String message, final Context s1,
+    static public void transmit(String message, final Context s1,
+                                final Context s2) throws Exception {
+        transmit(message.getBytes(), s1, s2);
+    }
+
+    /**
+     * Transmits a message from one Context to another. The sender wraps the
+     * message and sends it to the receiver. The receiver unwraps it, creates
+     * a MIC of the clear text and sends it back to the sender. The sender
+     * verifies the MIC against the message sent earlier.
+     * @param messageBytes the message
+     * @param s1 the sender
+     * @param s2 the receiver
+     * @throws java.lang.Exception If anything goes wrong
+     */
+    static public void transmit(byte[] messageBytes, final Context s1,
             final Context s2) throws Exception {
-        final byte[] messageBytes = message.getBytes();
         System.out.printf("-------------------- TRANSMIT from %s to %s------------------------\n",
                 s1.name, s2.name);
         byte[] wrapped = s1.wrap(messageBytes, true);
@@ -616,6 +653,32 @@ public class Context {
                 }
             }
         }, in);
+    }
+
+    /**
+     * Saves the tickets to a ccache file.
+     *
+     * @param file pathname of the ccache file
+     * @return true if created, false otherwise.
+     */
+    public boolean ccache(String file) throws Exception {
+        Set<KerberosTicket> tickets
+                = s.getPrivateCredentials(KerberosTicket.class);
+        if (tickets != null && !tickets.isEmpty()) {
+            CredentialsCache cc = null;
+            for (KerberosTicket t : tickets) {
+                Credentials cred = Krb5Util.ticketToCreds(t);
+                if (cc == null) {
+                    cc = CredentialsCache.create(cred.getClient(), file);
+                }
+                cc.update(cred.toCCacheCreds());
+            }
+            if (cc != null) {
+                cc.save();
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

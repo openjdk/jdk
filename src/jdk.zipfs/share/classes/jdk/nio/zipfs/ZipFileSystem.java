@@ -79,6 +79,7 @@ class ZipFileSystem extends FileSystem {
     private static final boolean isWindows = AccessController.doPrivileged(
             (PrivilegedAction<Boolean>) () -> System.getProperty("os.name")
                                                     .startsWith("Windows"));
+    private final boolean forceEnd64;
 
     ZipFileSystem(ZipFileSystemProvider provider,
                   Path zfpath,
@@ -91,12 +92,13 @@ class ZipFileSystem extends FileSystem {
                               (String)env.get("encoding") : "UTF-8";
         this.noExtt = "false".equals(env.get("zipinfo-time"));
         this.useTempFile  = TRUE.equals(env.get("useTempFile"));
+        this.forceEnd64 = "true".equals(env.get("forceZIP64End"));
         this.provider = provider;
         this.zfpath = zfpath;
         if (Files.notExists(zfpath)) {
             if (createNew) {
                 try (OutputStream os = Files.newOutputStream(zfpath, CREATE_NEW, WRITE)) {
-                    new END().write(os, 0);
+                    new END().write(os, 0, forceEnd64);
                 }
             } else {
                 throw new FileSystemNotFoundException(zfpath.toString());
@@ -1000,28 +1002,36 @@ class ZipFileSystem extends FileSystem {
                     end.cenoff = ENDOFF(buf);
                     end.comlen = ENDCOM(buf);
                     end.endpos = pos + i;
-                    if (end.cenlen == ZIP64_MINVAL ||
-                        end.cenoff == ZIP64_MINVAL ||
-                        end.centot == ZIP64_MINVAL32)
-                    {
-                        // need to find the zip64 end;
-                        byte[] loc64 = new byte[ZIP64_LOCHDR];
-                        if (readFullyAt(loc64, 0, loc64.length, end.endpos - ZIP64_LOCHDR)
-                            != loc64.length) {
-                            return end;
-                        }
-                        long end64pos = ZIP64_LOCOFF(loc64);
-                        byte[] end64buf = new byte[ZIP64_ENDHDR];
-                        if (readFullyAt(end64buf, 0, end64buf.length, end64pos)
-                            != end64buf.length) {
-                            return end;
-                        }
-                        // end64 found, re-calcualte everything.
-                        end.cenlen = ZIP64_ENDSIZ(end64buf);
-                        end.cenoff = ZIP64_ENDOFF(end64buf);
-                        end.centot = (int)ZIP64_ENDTOT(end64buf); // assume total < 2g
-                        end.endpos = end64pos;
+                    // try if there is zip64 end;
+                    byte[] loc64 = new byte[ZIP64_LOCHDR];
+                    if (end.endpos < ZIP64_LOCHDR ||
+                        readFullyAt(loc64, 0, loc64.length, end.endpos - ZIP64_LOCHDR)
+                        != loc64.length ||
+                        !locator64SigAt(loc64, 0)) {
+                        return end;
                     }
+                    long end64pos = ZIP64_LOCOFF(loc64);
+                    byte[] end64buf = new byte[ZIP64_ENDHDR];
+                    if (readFullyAt(end64buf, 0, end64buf.length, end64pos)
+                        != end64buf.length ||
+                        !end64SigAt(end64buf, 0)) {
+                        return end;
+                    }
+                    // end64 found,
+                    long cenlen64 = ZIP64_ENDSIZ(end64buf);
+                    long cenoff64 = ZIP64_ENDOFF(end64buf);
+                    long centot64 = ZIP64_ENDTOT(end64buf);
+                    // double-check
+                    if (cenlen64 != end.cenlen && end.cenlen != ZIP64_MINVAL ||
+                        cenoff64 != end.cenoff && end.cenoff != ZIP64_MINVAL ||
+                        centot64 != end.centot && end.centot != ZIP64_MINVAL32) {
+                        return end;
+                    }
+                    // to use the end64 values
+                    end.cenlen = cenlen64;
+                    end.cenoff = cenoff64;
+                    end.centot = (int)centot64; // assume total < 2g
+                    end.endpos = end64pos;
                     return end;
                 }
             }
@@ -1192,7 +1202,7 @@ class ZipFileSystem extends FileSystem {
 
     // sync the zip file system, if there is any udpate
     private void sync() throws IOException {
-        //System.out.printf("->sync(%s) starting....!%n", toString());
+        // System.out.printf("->sync(%s) starting....!%n", toString());
         // check ex-closer
         if (!exChClosers.isEmpty()) {
             for (ExChannelCloser ecc : exChClosers) {
@@ -1282,7 +1292,7 @@ class ZipFileSystem extends FileSystem {
             }
             end.centot = elist.size();
             end.cenlen = written - end.cenoff;
-            end.write(os, written);
+            end.write(os, written, forceEnd64);
         }
         if (!streams.isEmpty()) {
             //
@@ -1712,8 +1722,8 @@ class ZipFileSystem extends FileSystem {
         long endpos;
         // int disktot;
 
-        void write(OutputStream os, long offset) throws IOException {
-            boolean hasZip64 = false;
+        void write(OutputStream os, long offset, boolean forceEnd64) throws IOException {
+            boolean hasZip64 = forceEnd64; // false;
             long xlen = cenlen;
             long xoff = cenoff;
             if (xlen >= ZIP64_MINVAL) {
@@ -1738,8 +1748,8 @@ class ZipFileSystem extends FileSystem {
                 writeShort(os, 45);               // version needed to extract
                 writeInt(os, 0);                  // number of this disk
                 writeInt(os, 0);                  // central directory start disk
-                writeLong(os, centot);            // number of directory entires on disk
-                writeLong(os, centot);            // number of directory entires
+                writeLong(os, centot);            // number of directory entries on disk
+                writeLong(os, centot);            // number of directory entries
                 writeLong(os, cenlen);            // length of central directory
                 writeLong(os, cenoff);            // offset of central directory
 

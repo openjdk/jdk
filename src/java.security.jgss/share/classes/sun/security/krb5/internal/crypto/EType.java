@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,6 +299,26 @@ public abstract class EType {
     public static boolean isSupported(int eTypeConst) {
         int[] enabledETypes = getBuiltInDefaults();
         return isSupported(eTypeConst, enabledETypes);
+    }
+
+    /**
+     * https://tools.ietf.org/html/rfc4120#section-3.1.3:
+     *
+     *                 A "newer" enctype is any enctype first officially
+     * specified concurrently with or subsequent to the issue of this RFC.
+     * The enctypes DES, 3DES, or RC4 and any defined in [RFC1510] are not
+     * "newer" enctypes.
+     *
+     * @param eTypeConst the encryption type
+     * @return true if "newer"
+     */
+    public static boolean isNewer(int eTypeConst) {
+        return eTypeConst != EncryptedData.ETYPE_DES_CBC_CRC &&
+                eTypeConst != EncryptedData.ETYPE_DES_CBC_MD4 &&
+                eTypeConst != EncryptedData.ETYPE_DES_CBC_MD5 &&
+                eTypeConst != EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD &&
+                eTypeConst != EncryptedData.ETYPE_ARCFOUR_HMAC &&
+                eTypeConst != EncryptedData.ETYPE_ARCFOUR_HMAC_EXP;
     }
 
     public static String toString(int type) {

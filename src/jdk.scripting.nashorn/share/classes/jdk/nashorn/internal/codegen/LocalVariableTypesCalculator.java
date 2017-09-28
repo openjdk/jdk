@@ -405,8 +405,13 @@ final class LocalVariableTypesCalculator extends SimpleNodeVisitor {
     // variables).
     private final Deque<Label> catchLabels = new ArrayDeque<>();
 
-    LocalVariableTypesCalculator(final Compiler compiler) {
+    private LocalVariableTypesCalculator(final Compiler compiler) {
         this.compiler = compiler;
+    }
+
+    LocalVariableTypesCalculator(final Compiler compiler, final Type returnType) {
+        this(compiler);
+        this.returnType = returnType;
     }
 
     private JumpTarget createJumpTarget(final Label label) {

@@ -344,13 +344,21 @@ public class CallSite {
                         break;
                     default:
                         final int NON_SPREAD_ARG_COUNT = 3;  // (caller, name, type)
-                        if (NON_SPREAD_ARG_COUNT + argv.length > MethodType.MAX_MH_ARITY)
-                            throw new BootstrapMethodError("too many bootstrap method arguments");
-
-                        MethodType invocationType = MethodType.genericMethodType(NON_SPREAD_ARG_COUNT + argv.length);
-                        MethodHandle typedBSM = bootstrapMethod.asType(invocationType);
-                        MethodHandle spreader = invocationType.invokers().spreadInvoker(NON_SPREAD_ARG_COUNT);
-                        binding = spreader.invokeExact(typedBSM, (Object) caller, (Object) name, (Object) type, argv);
+                        final int MAX_SAFE_SIZE = MethodType.MAX_MH_ARITY / 2 - NON_SPREAD_ARG_COUNT;
+                        if (argv.length >= MAX_SAFE_SIZE) {
+                            // to be on the safe side, use invokeWithArguments which handles jumbo lists
+                            Object[] newargv = new Object[NON_SPREAD_ARG_COUNT + argv.length];
+                            newargv[0] = caller;
+                            newargv[1] = name;
+                            newargv[2] = type;
+                            System.arraycopy(argv, 0, newargv, NON_SPREAD_ARG_COUNT, argv.length);
+                            binding = bootstrapMethod.invokeWithArguments(newargv);
+                        } else {
+                            MethodType invocationType = MethodType.genericMethodType(NON_SPREAD_ARG_COUNT + argv.length);
+                            MethodHandle typedBSM = bootstrapMethod.asType(invocationType);
+                            MethodHandle spreader = invocationType.invokers().spreadInvoker(NON_SPREAD_ARG_COUNT);
+                            binding = spreader.invokeExact(typedBSM, (Object) caller, (Object) name, (Object) type, argv);
+                        }
                 }
             }
             if (binding instanceof CallSite) {

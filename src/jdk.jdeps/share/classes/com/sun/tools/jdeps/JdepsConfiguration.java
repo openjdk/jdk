@@ -285,7 +285,9 @@ public class JdepsConfiguration implements AutoCloseable {
             String mn = mref.descriptor().name();
             URI location = mref.location().orElseThrow(FileNotFoundException::new);
             ModuleDescriptor md = mref.descriptor();
-            Module.Builder builder = new Module.Builder(md, system.find(mn).isPresent());
+            // is this module from the system module path?
+            URI loc = system.find(mn).flatMap(ModuleReference::location).orElse(null);
+            boolean isSystem = location.equals(loc);
 
             final ClassFileReader reader;
             if (location.getScheme().equals("jrt")) {
@@ -293,7 +295,7 @@ public class JdepsConfiguration implements AutoCloseable {
             } else {
                 reader = ClassFileReader.newInstance(Paths.get(location), version);
             }
-
+            Module.Builder builder = new Module.Builder(md, isSystem);
             builder.classes(reader);
             builder.location(location);
 

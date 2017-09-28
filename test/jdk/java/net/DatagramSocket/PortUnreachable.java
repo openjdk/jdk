@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 /**
  * @test
  * @bug 4361783
- * @key intermittent
  * @summary  Test to see if ICMP Port Unreachable on non-connected
  *           DatagramSocket causes a SocketException "socket closed"
  *           exception on Windows 2000.
  */
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
@@ -50,7 +50,7 @@ public class PortUnreachable {
                                                        serverPort);
             clientSock.send(packet);
 
-            DatagramSocket sock = new DatagramSocket(serverPort);
+            DatagramSocket sock = recreateServerSocket(serverPort);
             b = "Greetings from the server".getBytes();
             packet = new DatagramPacket(b, b.length, addr, clientPort);
             sock.send(packet);
@@ -58,6 +58,29 @@ public class PortUnreachable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    DatagramSocket recreateServerSocket (int serverPort) throws Exception {
+        DatagramSocket serverSocket = null;
+        int retryCount = 0;
+        System.out.println("Attempting to recreate server socket with port: " +
+                serverPort);
+        while (serverSocket == null) {
+            try {
+                serverSocket = new DatagramSocket(serverPort);
+            } catch (BindException bEx) {
+                if (retryCount++ < 5) {
+                    Thread.sleep(500);
+                } else {
+                    System.out.println("Give up after 5 retries");
+                    throw bEx;
+                }
+            }
+        }
+
+        System.out.println("PortUnreachableTest.recreateServerSocket: returning socket == "
+                + serverSocket.getLocalAddress() + ":" + serverSocket.getLocalPort());
+        return serverSocket;
     }
 
     PortUnreachable() throws Exception {
@@ -103,3 +126,4 @@ public class PortUnreachable {
     }
 
 }
+

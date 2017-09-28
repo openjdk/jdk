@@ -308,6 +308,11 @@ public class Flags {
      */
     public static final long HAS_RESOURCE = 1L<<56;
 
+    /**
+     * Flag for synthesized default constructors of anonymous classes that have an enclosing expression.
+     */
+    public static final long ANONCONSTR_BASED = 1L<<57;
+
     /** Modifier masks.
      */
     public static final int

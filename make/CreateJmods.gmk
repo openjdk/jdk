@@ -130,7 +130,7 @@ endif
 # Create jmods in a temp dir and then move them into place to keep the
 # module path in $(IMAGES_OUTPUTDIR)/jmods valid at all times.
 $(JMODS_DIR)/$(MODULE).jmod: $(DEPS)
-	$(call LogWarn, Creating $(patsubst $(OUTPUT_ROOT)/%, %, $@))
+	$(call LogWarn, Creating $(patsubst $(OUTPUTDIR)/%, %, $@))
 	$(call MakeDir, $(JMODS_DIR) $(JMODS_TEMPDIR))
 	$(RM) $@ $(JMODS_TEMPDIR)/$(notdir $@)
 	$(JMOD) create \

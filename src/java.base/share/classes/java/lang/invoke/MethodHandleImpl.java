@@ -524,6 +524,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         }
 
         @Override
+        public MethodHandle withVarargs(boolean makeVarargs) {
+            if (makeVarargs)  return this;
+            return asFixedArity();
+        }
+
+        @Override
         public MethodHandle asTypeUncached(MethodType newType) {
             MethodType type = this.type();
             int collectArg = type.parameterCount() - 1;
@@ -560,6 +566,49 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                             newType.lastParameterType().getComponentType()))
                     : Arrays.asList(this, newType);
             return true;
+        }
+
+        @Override
+        public Object invokeWithArguments(Object... arguments) throws Throwable {
+            MethodType type = this.type();
+            int argc;
+            final int MAX_SAFE = 127;  // 127 longs require 254 slots, which is safe to spread
+            if (arguments == null
+                    || (argc = arguments.length) <= MAX_SAFE
+                    || argc < type.parameterCount()) {
+                return super.invokeWithArguments(arguments);
+            }
+
+            // a jumbo invocation requires more explicit reboxing of the trailing arguments
+            int uncollected = type.parameterCount() - 1;
+            Class<?> elemType = arrayType.getComponentType();
+            int collected = argc - uncollected;
+            Object collArgs = (elemType == Object.class)
+                ? new Object[collected] : Array.newInstance(elemType, collected);
+            if (!elemType.isPrimitive()) {
+                // simple cast:  just do some casting
+                try {
+                    System.arraycopy(arguments, uncollected, collArgs, 0, collected);
+                } catch (ArrayStoreException ex) {
+                    return super.invokeWithArguments(arguments);
+                }
+            } else {
+                // corner case of flat array requires reflection (or specialized copy loop)
+                MethodHandle arraySetter = MethodHandles.arrayElementSetter(arrayType);
+                try {
+                    for (int i = 0; i < collected; i++) {
+                        arraySetter.invoke(collArgs, i, arguments[uncollected + i]);
+                    }
+                } catch (WrongMethodTypeException|ClassCastException ex) {
+                    return super.invokeWithArguments(arguments);
+                }
+            }
+
+            // chop the jumbo list down to size and call in non-varargs mode
+            Object[] newArgs = new Object[uncollected + 1];
+            System.arraycopy(arguments, 0, newArgs, 0, uncollected);
+            newArgs[uncollected] = collArgs;
+            return asFixedArity().invokeWithArguments(newArgs);
         }
     }
 

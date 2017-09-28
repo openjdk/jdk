@@ -355,7 +355,7 @@ public abstract class AbstractMemberWriter {
             writer.getTagletWriterInstance(false));
         if (!output.isEmpty()) {
             Content deprecatedContent = output;
-            Content div = HtmlTree.DIV(HtmlStyle.block, deprecatedContent);
+            Content div = HtmlTree.DIV(HtmlStyle.deprecationBlock, deprecatedContent);
             contentTree.addContent(div);
         }
     }

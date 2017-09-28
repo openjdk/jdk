@@ -75,12 +75,12 @@ ifeq (,$(SKIP_ME))
   $(foreach p,$(filter-out $(me),$(platforms)),$(eval $(p) : $$(me)))
 endif
 
-OUTPUT_ROOT = $(abspath ../../build/devkit)
-RESULT = $(OUTPUT_ROOT)/result
+OUTPUTDIR = $(abspath ../../build/devkit)
+RESULT = $(OUTPUTDIR)/result
 
 submakevars = HOST=$@ BUILD=$(me) \
     RESULT=$(RESULT) PREFIX=$(RESULT)/$@ \
-    OUTPUT_ROOT=$(OUTPUT_ROOT)
+    OUTPUTDIR=$(OUTPUTDIR)
 $(platforms) :
 	@echo 'Building compilers for $@'
 	@echo 'Targets: $(platforms)'

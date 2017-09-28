@@ -88,7 +88,6 @@ src/jdk.naming.dns : jdk/src/jdk.naming.dns
 src/jdk.naming.rmi : jdk/src/jdk.naming.rmi
 src/jdk.net : jdk/src/jdk.net
 src/jdk.pack : jdk/src/jdk.pack
-src/jdk.policytool : jdk/src/jdk.policytool
 src/jdk.rmic : corba/src/jdk.rmic  jdk/src/jdk.rmic
 src/jdk.scripting.nashorn : nashorn/src/jdk.scripting.nashorn
 src/jdk.scripting.nashorn.shell : nashorn/src/jdk.scripting.nashorn.shell

@@ -1030,6 +1030,9 @@ public class TypeEnter implements Completer {
         if (c.name.isEmpty()) {
             flags |= ANONCONSTR;
         }
+        if (based) {
+            flags |= ANONCONSTR_BASED;
+        }
         Type mType = new MethodType(argtypes, null, thrown, c);
         Type initType = typarams.nonEmpty() ?
             new ForAll(typarams, mType) :
