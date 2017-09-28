@@ -5109,8 +5109,13 @@ public class Parser extends AbstractParser implements Loggable {
 
         final LiteralNode<Expression[]> rawStringArray = LiteralNode.newInstance(templateToken, finish, rawStrings);
         final LiteralNode<Expression[]> cookedStringArray = LiteralNode.newInstance(templateToken, finish, cookedStrings);
-        final RuntimeNode templateObject = new RuntimeNode(templateToken, finish, RuntimeNode.Request.GET_TEMPLATE_OBJECT, rawStringArray, cookedStringArray);
-        argumentList.set(0, templateObject);
+
+        if (!env._parse_only) {
+            final RuntimeNode templateObject = new RuntimeNode(templateToken, finish, RuntimeNode.Request.GET_TEMPLATE_OBJECT, rawStringArray, cookedStringArray);
+            argumentList.set(0, templateObject);
+        } else {
+            argumentList.set(0, rawStringArray);
+        }
         return optimizeList(argumentList);
     }
 
