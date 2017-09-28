@@ -23,7 +23,7 @@
 
 /*
  * @test TestPrintReferences
- * @bug 8136991 8186402
+ * @bug 8136991 8186402 8186465
  * @summary Validate the reference processing logging
  * @key gc
  * @library /test/lib
@@ -36,36 +36,58 @@ import java.util.ArrayList;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class TestPrintReferences {
+  static String output;
+  static final String doubleRegex = "[0-9]+[.,][0-9]+";
+  static final String referenceProcessing = "Reference Processing";
+  static final String softReference = "SoftReference";
+  static final String weakReference = "WeakReference";
+  static final String finalReference = "FinalReference";
+  static final String phantomReference = "PhantomReference";
+  static final String phase1 = "Phase1";
+  static final String phase2 = "Phase2";
+  static final String phase3 = "Phase3";
+  static final String gcLogTimeRegex = ".* GC\\([0-9]+\\) ";
+
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder("-Xlog:gc+phases+ref=debug",
                                                                       "-XX:+UseG1GC",
-                                                                      "-Xmx10M",
+                                                                      "-Xmx32M",
                                                                       // Explicit thread setting is required to avoid using only 1 thread
                                                                       "-XX:ParallelGCThreads=2",
                                                                       GCTest.class.getName());
     OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 
-    String indent_4 = "    ";
-    String indent_6 = "      ";
-    String indent_8 = "        ";
-    String gcLogTimeRegex = ".* GC\\([0-9]+\\) ";
+    checkLogFormat(output);
+    checkLogValue(output);
+
+    output.shouldHaveExitValue(0);
+  }
+
+  static String indent(int count) {
+    return " {" + count + "}";
+  }
+
+  // Find the first Reference Processing log and check its format.
+  public static void checkLogFormat(OutputAnalyzer output) {
     String countRegex = "[0-9]+";
-    String timeRegex = "[0-9]+[.,][0-9]+ms";
-    String totalRegex = gcLogTimeRegex + indent_4 + "Reference Processing: " + timeRegex + "\n";
-    String balanceRegex = gcLogTimeRegex + indent_8 + "Balance queues: " + timeRegex + "\n";
-    String softRefRegex = gcLogTimeRegex + indent_6 + "SoftReference: " + timeRegex + "\n";
-    String weakRefRegex = gcLogTimeRegex + indent_6 + "WeakReference: " + timeRegex + "\n";
-    String finalRefRegex = gcLogTimeRegex + indent_6 + "FinalReference: " + timeRegex + "\n";
-    String phantomRefRegex = gcLogTimeRegex + indent_6 + "PhantomReference: " + timeRegex + "\n";
-    String refDetailRegex = gcLogTimeRegex + indent_8 + "Phase2: " + timeRegex + "\n" +
-                            gcLogTimeRegex + indent_8 + "Phase3: " + timeRegex + "\n" +
-                            gcLogTimeRegex + indent_8 + "Discovered: " + countRegex + "\n" +
-                            gcLogTimeRegex + indent_8 + "Cleared: " + countRegex + "\n";
-    String softRefDetailRegex = gcLogTimeRegex + indent_8 + "Phase1: " + timeRegex + "\n" + refDetailRegex;
-    String enqueueRegex = gcLogTimeRegex + indent_4 + "Reference Enqueuing: " + timeRegex + "\n";
-    String enqueueDetailRegex = gcLogTimeRegex + indent_6 + "Reference Counts:  Soft: " + countRegex +
+    String timeRegex = doubleRegex + "ms";
+    String totalRegex = gcLogTimeRegex + indent(4) + referenceProcessing + ": " + timeRegex + "\n";
+    String balanceRegex = gcLogTimeRegex + indent(8) + "Balance queues: " + timeRegex + "\n";
+    String softRefRegex = gcLogTimeRegex + indent(6) + softReference + ": " + timeRegex + "\n";
+    String weakRefRegex = gcLogTimeRegex + indent(6) + weakReference + ": " + timeRegex + "\n";
+    String finalRefRegex = gcLogTimeRegex + indent(6) + finalReference + ": " + timeRegex + "\n";
+    String phantomRefRegex = gcLogTimeRegex + indent(6) + phantomReference + ": " + timeRegex + "\n";
+    String refDetailRegex = gcLogTimeRegex + indent(8) + phase2 + ": " + timeRegex + "\n" +
+                            gcLogTimeRegex + indent(8) + phase3 + ": " + timeRegex + "\n" +
+                            gcLogTimeRegex + indent(8) + "Discovered: " + countRegex + "\n" +
+                            gcLogTimeRegex + indent(8) + "Cleared: " + countRegex + "\n";
+    String softRefDetailRegex = gcLogTimeRegex + indent(8) + phase1 + ": " + timeRegex + "\n" + refDetailRegex;
+    String enqueueRegex = gcLogTimeRegex + indent(4) + "Reference Enqueuing: " + timeRegex + "\n";
+    String enqueueDetailRegex = gcLogTimeRegex + indent(6) + "Reference Counts:  Soft: " + countRegex +
                                 "  Weak: " + countRegex + "  Final: " + countRegex + "  Phantom: " + countRegex + "\n";
 
     output.shouldMatch(/* Total Reference processing time */
@@ -83,22 +105,90 @@ public class TestPrintReferences {
                          /* Enqueued Stats */
                        enqueueDetailRegex
                        );
+  }
 
-    output.shouldHaveExitValue(0);
+  // After getting time value, update 'output' for next use.
+  public static double getTimeValue(String name, int indentCount) {
+    // Pattern of 'name', 'value' and some extra strings.
+    String patternString = gcLogTimeRegex + indent(indentCount) + name + ": " + "(" + doubleRegex + ")";
+    Matcher m = Pattern.compile(patternString).matcher(output);
+     if (!m.find()) {
+      throw new RuntimeException("Could not find time log for " + patternString);
+     }
+
+    String match = m.group();
+    String value = m.group(1);
+
+    double result = Double.parseDouble(value);
+
+    int index = output.indexOf(match);
+    if (index != -1) {
+      output = output.substring(index, output.length());
+    }
+
+    return result;
+  }
+
+  // Reference log is printing 1 decimal place of elapsed time.
+  // So sum of each sub-phases could be slightly larger than the enclosing phase in some cases.
+  // As the maximum of sub-phases is 3, allow 0.1 of TOLERANCE.
+  // e.g. Actual value:  SoftReference(5.55) = phase1(1.85) + phase2(1.85) + phase3(1.85)
+  //      Log value:     SoftReference(5.6) = phase1(1.9) + phase2(1.9) + phase3(1.9)
+  //      When checked:  5.6 < 5.7 (sum of phase1~3)
+  public static boolean approximatelyEqual(double a, double b) {
+    final double TOLERANCE = 0.1;
+
+    return Math.abs(a - b) <= TOLERANCE;
+  }
+
+  // Return false, if 'total' is larger and not approximately equal to 'refTime'.
+  public static boolean compare(double refTime, double total) {
+    return (refTime < total) && (!approximatelyEqual(refTime, total));
+  }
+
+  public static double checkRefTime(String refType) {
+    double refTime = getTimeValue(refType, 2);
+    double total = 0.0;
+
+    if (softReference.equals(refType)) {
+      total += getTimeValue(phase1, 4);
+    }
+    total += getTimeValue(phase2, 4);
+    total += getTimeValue(phase3, 4);
+
+    if (compare(refTime, total)) {
+      throw new RuntimeException(refType +" time(" + refTime +
+                                 "ms) is less than the sum(" + total + "ms) of each phases");
+    }
+
+    return refTime;
+  }
+
+  // Find the first concurrent Reference Processing log and compare sub-time vs. total.
+  public static void checkLogValue(OutputAnalyzer out) {
+    output = out.getStdout();
+
+    double refProcTime = getTimeValue(referenceProcessing, 0);
+
+    double total = 0.0;
+    total += checkRefTime(softReference);
+    total += checkRefTime(weakReference);
+    total += checkRefTime(finalReference);
+    total += checkRefTime(phantomReference);
+
+    if (compare(refProcTime, total)) {
+      throw new RuntimeException("Reference Processing time(" + refProcTime + "ms) is less than the sum("
+                                 + total + "ms) of each phases");
+    }
   }
 
   static class GCTest {
-    static final int M = 1024 * 1024;
+    static final int SIZE = 512 * 1024;
+    static Object[] dummy = new Object[SIZE];
 
     public static void main(String [] args) {
-
-      ArrayList arrSoftRefs = new ArrayList();
-
-      // Populate to triger GC and then Reference related logs will be printed.
-      for (int i = 0; i < 10; i++) {
-        byte[] tmp = new byte[M];
-
-        arrSoftRefs.add(new SoftReference(tmp));
+      for (int i = 0; i < SIZE; i++) {
+        dummy[i] = new SoftReference<>(new Object());
       }
     }
   }
