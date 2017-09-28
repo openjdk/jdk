@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,170 +23,312 @@
 
 /*
  * @test
- * @bug 8009977
- * @summary A test library to launch multiple Java processes
+ * @bug 8009977 8186884
+ * @summary A test to launch multiple Java processes using either Java GSS
+ *          or native GSS
  * @library ../../../../java/security/testlibrary/
  * @compile -XDignore.symbol.file BasicProc.java
- * @run main/othervm BasicProc
+ * @run main/othervm BasicProc launcher
  */
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Arrays;
+import java.util.PropertyPermission;
+import java.util.Random;
+import java.util.Set;
+
 import org.ietf.jgss.Oid;
+import sun.security.krb5.Config;
 
 import javax.security.auth.PrivateCredentialPermission;
 
+/**
+ * Run this test automatically and test Java GSS with embedded KDC.
+ *
+ * Run with customized native.krb5.libs to test interop between Java GSS
+ * and native GSS, and native.kdc.path with a native KDC. For example,
+ * run the following command to test interop among Java, default native,
+ * MIT, and Heimdal krb5 libraries with the Heimdal KDC:
+ *
+ *    jtreg -Dnative.krb5.libs=j=,
+ *                             n=,
+ *                             k=/usr/local/krb5/lib/libgssapi_krb5.so,
+ *                             h=/space/install/heimdal/lib/libgssapi.so \
+ *          -Dnative.kdc.path=/usr/local/heimdal \
+ *          BasicProc.java
+ *
+ * Note: The first 4 lines should be concatenated to make a long system
+ * property value with no blank around ",". This comma-separated value
+ * has each element being name=libpath. The special name "j" means the
+ * Java library and libpath is ignored. Otherwise it means a native library,
+ * and libpath (can be empty) will be the value for the sun.security.jgss.lib
+ * system property. If this system property is not set, only the Java
+ * library will be tested.
+ */
+
 public class BasicProc {
 
-    static String CONF = "krb5.conf";
-    static String KTAB = "ktab";
+    private static final String CONF = "krb5.conf";
+    private static final String KTAB_S = "server.ktab";
+    private static final String KTAB_B = "backend.ktab";
+
+    private static final String HOST = "localhost";
+    private static final String SERVER = "server/" + HOST;
+    private static final String BACKEND = "backend/" + HOST;
+    private static final String USER = "user";
+    private static final char[] PASS = "password".toCharArray();
+    private static final String REALM = "REALM";
+
+    private static final int MSGSIZE = 1024;
+
     public static void main(String[] args) throws Exception {
-        String HOST = "localhost";
-        String SERVER = "server/" + HOST;
-        String BACKEND = "backend/" + HOST;
-        String USER = "user";
-        char[] PASS = "password".toCharArray();
-        String REALM = "REALM";
 
         Oid oid = new Oid("1.2.840.113554.1.2.2");
+        byte[] token, msg;
 
-        if (args.length == 0) {
-            System.setProperty("java.security.krb5.conf", CONF);
-            KDC kdc = KDC.create(REALM, HOST, 0, true);
-            kdc.addPrincipal(USER, PASS);
-            kdc.addPrincipalRandKey("krbtgt/" + REALM);
-            kdc.addPrincipalRandKey(SERVER);
-            kdc.addPrincipalRandKey(BACKEND);
+        switch (args[0]) {
+            case "launcher":
+                KDC kdc = KDC.create(REALM, HOST, 0, true);
+                try {
+                    kdc.addPrincipal(USER, PASS);
+                    kdc.addPrincipalRandKey("krbtgt/" + REALM);
+                    kdc.addPrincipalRandKey(SERVER);
+                    kdc.addPrincipalRandKey(BACKEND);
 
-            String cwd = System.getProperty("user.dir");
-            kdc.writeKtab(KTAB);
-            KDC.saveConfig(CONF, kdc, "forwardable = true");
+                    // Native lib might do some name lookup
+                    KDC.saveConfig(CONF, kdc,
+                            "dns_lookup_kdc = no",
+                            "ticket_lifetime = 1h",
+                            "dns_lookup_realm = no",
+                            "dns_canonicalize_hostname = false",
+                            "forwardable = true");
+                    System.setProperty("java.security.krb5.conf", CONF);
+                    Config.refresh();
+                    kdc.writeKtab(KTAB_S, false, SERVER);
+                    kdc.writeKtab(KTAB_B, false, BACKEND);
 
-            Proc pc = Proc.create("BasicProc")
-                    .args("client")
-                    .prop("java.security.krb5.conf", CONF)
-                    .prop("java.security.manager", "")
-                    .perm(new java.util.PropertyPermission(
-                            "sun.security.krb5.principal", "read"))
-                    .perm(new javax.security.auth.AuthPermission(
-                            "modifyPrincipals"))
-                    .perm(new javax.security.auth.AuthPermission(
-                            "modifyPrivateCredentials"))
-                    .perm(new javax.security.auth.AuthPermission("doAs"))
-                    .perm(new javax.security.auth.kerberos.ServicePermission(
-                            "krbtgt/" + REALM + "@" + REALM, "initiate"))
-                    .perm(new javax.security.auth.kerberos.ServicePermission(
-                            "server/localhost@" + REALM, "initiate"))
-                    .perm(new javax.security.auth.kerberos.DelegationPermission(
-                            "\"server/localhost@" + REALM + "\" " +
-                                    "\"krbtgt/" + REALM + "@" + REALM + "\""))
-                    .debug("C")
-                    .start();
-            Proc ps = Proc.create("BasicProc")
-                    .args("server")
-                    .prop("java.security.krb5.conf", CONF)
-                    .prop("java.security.manager", "")
-                    .perm(new java.util.PropertyPermission(
-                            "sun.security.krb5.principal", "read"))
-                    .perm(new javax.security.auth.AuthPermission(
-                            "modifyPrincipals"))
-                    .perm(new javax.security.auth.AuthPermission(
-                            "modifyPrivateCredentials"))
-                    .perm(new javax.security.auth.AuthPermission("doAs"))
-                    .perm(new PrivateCredentialPermission(
-                            "javax.security.auth.kerberos.KeyTab * \"*\"",
-                            "read"))
-                    .perm(new javax.security.auth.kerberos.ServicePermission(
-                            "server/localhost@" + REALM, "accept"))
-                    .perm(new java.io.FilePermission(
-                            cwd + File.separator + KTAB, "read"))
-                    .perm(new javax.security.auth.kerberos.ServicePermission(
-                            "backend/localhost@" + REALM, "initiate"))
-                    .debug("S")
-                    .start();
-            Proc pb = Proc.create("BasicProc")
-                    .args("backend")
-                    .prop("java.security.krb5.conf", CONF)
-                    .prop("java.security.manager", "")
-                    .perm(new java.util.PropertyPermission(
-                            "sun.security.krb5.principal", "read"))
-                    .perm(new javax.security.auth.AuthPermission(
-                            "modifyPrincipals"))
-                    .perm(new javax.security.auth.AuthPermission(
-                            "modifyPrivateCredentials"))
-                    .perm(new javax.security.auth.AuthPermission("doAs"))
-                    .perm(new PrivateCredentialPermission(
-                            "javax.security.auth.kerberos.KeyTab * \"*\"",
-                            "read"))
-                    .perm(new javax.security.auth.kerberos.ServicePermission(
-                            "backend/localhost@" + REALM, "accept"))
-                    .perm(new java.io.FilePermission(
-                            cwd + File.separator + KTAB, "read"))
-                    .debug("B")
-                    .start();
+                    String[] tmp = System.getProperty("native.krb5.libs", "j=")
+                            .split(",");
 
-            // Client and server handshake
-            String token = pc.readData();
-            ps.println(token);
-            token = ps.readData();
-            pc.println(token);
-            // Server and backend handshake
-            token = ps.readData();
-            pb.println(token);
-            token = pb.readData();
-            ps.println(token);
-            // wrap/unwrap/getMic/verifyMic and plain text
-            token = ps.readData();
-            pb.println(token);
-            token = pb.readData();
-            ps.println(token);
-            token = pb.readData();
-            ps.println(token);
+                    // Library paths. The 1st one is always null which means
+                    // Java, "" means the default native lib.
+                    String[] libs = new String[tmp.length];
 
-            if ((pc.waitFor() | ps.waitFor() | pb.waitFor()) != 0) {
-                throw new Exception();
-            }
-        } else if (args[0].equals("client")) {
-            Context c = Context.fromUserPass(USER, PASS, false);
-            c.startAsClient(SERVER, oid);
-            c.x().requestCredDeleg(true);
-            Proc.binOut(c.take(new byte[0]));
-            byte[] token = Proc.binIn();
-            c.take(token);
-        } else if (args[0].equals("server")) {
-            Context s = Context.fromUserKtab(SERVER, KTAB, true);
-            s.startAsServer(oid);
-            byte[] token = Proc.binIn();
-            token = s.take(token);
-            Proc.binOut(token);
-            Context s2 = s.delegated();
-            s2.startAsClient(BACKEND, oid);
-            Proc.binOut(s2.take(new byte[0]));
-            token = Proc.binIn();
-            s2.take(token);
-            byte[] msg = "Hello".getBytes();
-            Proc.binOut(s2.wrap(msg, true));
-            s2.verifyMic(Proc.binIn(), msg);
-            String in = Proc.textIn();
-            if (!in.equals("Hello")) {
-                throw new Exception();
-            }
-        } else if (args[0].equals("backend")) {
-            Context b = Context.fromUserKtab(BACKEND, KTAB, true);
-            b.startAsServer(oid);
-            byte[] token = Proc.binIn();
-            Proc.binOut(b.take(token));
-            byte[] msg = b.unwrap(Proc.binIn(), true);
-            Proc.binOut(b.getMic(msg));
-            Proc.textOut(new String(msg));
+                    // Names for each lib above. Use in file names.
+                    String[] names = new String[tmp.length];
+
+                    boolean hasNative = false;
+
+                    for (int i = 0; i < tmp.length; i++) {
+                        if (tmp[i].isEmpty()) {
+                            throw new Exception("Invalid native.krb5.libs");
+                        }
+                        String[] pair = tmp[i].split("=", 2);
+                        names[i] = pair[0];
+                        if (!pair[0].equals("j")) {
+                            libs[i] = pair.length > 1 ? pair[1] : "";
+                            hasNative = true;
+                        }
+                    }
+
+                    if (hasNative) {
+                        kdc.kinit(USER, "base.ccache");
+                    }
+
+                    // Try the same lib first
+                    for (int i = 0; i < libs.length; i++) {
+                        once(names[i] + names[i] + names[i],
+                                libs[i], libs[i], libs[i]);
+                    }
+
+                    for (int i = 0; i < libs.length; i++) {
+                        for (int j = 0; j < libs.length; j++) {
+                            for (int k = 0; k < libs.length; k++) {
+                                if (i != j || i != k) {
+                                    once(names[i] + names[j] + names[k],
+                                            libs[i], libs[j], libs[k]);
+                                }
+                            }
+                        }
+                    }
+                } finally {
+                    kdc.terminate();
+                }
+                break;
+            case "client":
+                Context c = args[1].equals("n") ?
+                        Context.fromThinAir() :
+                        Context.fromUserPass(USER, PASS, false);
+                c.startAsClient(SERVER, oid);
+                c.x().requestCredDeleg(true);
+                Proc.binOut(c.take(new byte[0])); // AP-REQ
+                token = Proc.binIn(); // AP-REP
+                c.take(token);
+                break;
+            case "server":
+                Context s = args[1].equals("n") ?
+                        Context.fromThinAir() :
+                        Context.fromUserKtab(SERVER, KTAB_S, true);
+                s.startAsServer(oid);
+                token = Proc.binIn(); // AP-REQ
+                token = s.take(token);
+                Proc.binOut(token); // AP-REP
+                Context s2 = s.delegated();
+                s2.startAsClient(BACKEND, oid);
+                Proc.binOut(s2.take(new byte[0])); // AP-REQ
+                token = Proc.binIn();
+                s2.take(token); // AP-REP
+                Random r = new Random();
+                msg = new byte[MSGSIZE];
+                r.nextBytes(msg);
+                Proc.binOut(s2.wrap(msg, true)); // enc1
+                Proc.binOut(s2.wrap(msg, true)); // enc2
+                Proc.binOut(s2.wrap(msg, true)); // enc3
+                s2.verifyMic(Proc.binIn(), msg); // mic
+                byte[] msg2 = Proc.binIn(); // msg
+                if (!Arrays.equals(msg, msg2)) {
+                    throw new Exception("diff msg");
+                }
+                break;
+            case "backend":
+                Context b = args[1].equals("n") ?
+                        Context.fromThinAir() :
+                        Context.fromUserKtab(BACKEND, KTAB_B, true);
+                b.startAsServer(oid);
+                token = Proc.binIn(); // AP-REQ
+                Proc.binOut(b.take(token)); // AP-REP
+                msg = b.unwrap(Proc.binIn(), true); // enc1
+                if (!Arrays.equals(msg, b.unwrap(Proc.binIn(), true))) {  // enc2
+                    throw new Exception("diff msg");
+                }
+                if (!Arrays.equals(msg, b.unwrap(Proc.binIn(), true))) {  // enc3
+                    throw new Exception("diff msg");
+                }
+                Proc.binOut(b.getMic(msg)); // mic
+                Proc.binOut(msg); // msg
+                break;
         }
     }
-    // create a native server
-    private static Proc ns(Proc p) throws Exception {
-        return p
-            .env("KRB5_CONFIG", CONF)
-            .env("KRB5_KTNAME", KTAB)
-            .prop("sun.security.jgss.native", "true")
-            .prop("javax.security.auth.useSubjectCredsOnly", "false")
-            .prop("sun.security.nativegss.debug", "true");
+
+    /**
+     * One test run.
+     *
+     * @param label test label
+     * @param lc lib of client
+     * @param ls lib of server
+     * @param lb lib of backend
+     */
+    private static void once(String label, String lc, String ls, String lb)
+            throws Exception {
+
+        Proc pc = proc(lc)
+                .args("client", lc == null ? "j" : "n")
+                .perm(new javax.security.auth.kerberos.ServicePermission(
+                        "krbtgt/" + REALM + "@" + REALM, "initiate"))
+                .perm(new javax.security.auth.kerberos.ServicePermission(
+                        SERVER + "@" + REALM, "initiate"))
+                .perm(new javax.security.auth.kerberos.DelegationPermission(
+                        "\"" + SERVER + "@" + REALM + "\" " +
+                                "\"krbtgt/" + REALM + "@" + REALM + "\""))
+                .debug(label + "-C");
+        if (lc == null) {
+            // for Krb5LoginModule::promptForName
+            pc.perm(new PropertyPermission("user.name", "read"));
+        } else {
+            Files.copy(Paths.get("base.ccache"), Paths.get(label + ".ccache"));
+            Files.setPosixFilePermissions(Paths.get(label + ".ccache"),
+                    Set.of(PosixFilePermission.OWNER_READ,
+                            PosixFilePermission.OWNER_WRITE));
+            pc.env("KRB5CCNAME", label + ".ccache");
+            // Do not try system ktab if ccache fails
+            pc.env("KRB5_KTNAME", "none");
+        }
+        pc.start();
+
+        Proc ps = proc(ls)
+                .args("server", ls == null ? "j" : "n")
+                .perm(new javax.security.auth.kerberos.ServicePermission(
+                        SERVER + "@" + REALM, "accept"))
+                .perm(new javax.security.auth.kerberos.ServicePermission(
+                        BACKEND + "@" + REALM, "initiate"))
+                .debug(label + "-S");
+        if (ls == null) {
+            ps.perm(new PrivateCredentialPermission(
+                    "javax.security.auth.kerberos.KeyTab * \"*\"", "read"))
+                .perm(new java.io.FilePermission(KTAB_S, "read"));
+        } else {
+            ps.env("KRB5_KTNAME", KTAB_S);
+        }
+        ps.start();
+
+        Proc pb = proc(lb)
+                .args("backend", lb == null ? "j" : "n")
+                .perm(new javax.security.auth.kerberos.ServicePermission(
+                        BACKEND + "@" + REALM, "accept"))
+                .debug(label + "-B");
+        if (lb == null) {
+            pb.perm(new PrivateCredentialPermission(
+                    "javax.security.auth.kerberos.KeyTab * \"*\"", "read"))
+                .perm(new java.io.FilePermission(KTAB_B, "read"));
+        } else {
+            pb.env("KRB5_KTNAME", KTAB_B);
+        }
+        pb.start();
+
+        // Client and server handshake
+        ps.println(pc.readData());
+        pc.println(ps.readData());
+
+        // Server and backend handshake
+        pb.println(ps.readData());
+        ps.println(pb.readData());
+
+        // wrap/unwrap/getMic/verifyMic and plain text
+        pb.println(ps.readData());
+        pb.println(ps.readData());
+        pb.println(ps.readData());
+        ps.println(pb.readData());
+        ps.println(pb.readData());
+
+        if ((pc.waitFor() | ps.waitFor() | pb.waitFor()) != 0) {
+            throw new Exception("Process failed");
+        }
+    }
+
+    /**
+     * A Proc for a child process.
+     *
+     * @param lib the library. Null is Java. "" is default native lib.
+     */
+    private static Proc proc(String lib) throws Exception {
+        Proc p = Proc.create("BasicProc")
+                .prop("java.security.manager", "")
+                .perm(new javax.security.auth.AuthPermission("doAs"));
+        if (lib != null) {
+            p.env("KRB5_CONFIG", CONF)
+                    .env("KRB5_TRACE", "/dev/stderr")
+                    .prop("sun.security.jgss.native", "true")
+                    .prop("sun.security.jgss.lib", lib)
+                    .prop("javax.security.auth.useSubjectCredsOnly", "false")
+                    .prop("sun.security.nativegss.debug", "true");
+            int pos = lib.lastIndexOf('/');
+            if (pos > 0) {
+                p.env("LD_LIBRARY_PATH", lib.substring(0, pos));
+                p.env("DYLD_LIBRARY_PATH", lib.substring(0, pos));
+            }
+        } else {
+            p.perm(new java.util.PropertyPermission(
+                            "sun.security.krb5.principal", "read"))
+                            // For Krb5LoginModule::login.
+                    .perm(new javax.security.auth.AuthPermission(
+                            "modifyPrincipals"))
+                    .perm(new javax.security.auth.AuthPermission(
+                            "modifyPrivateCredentials"))
+                    .prop("sun.security.krb5.debug", "true")
+                    .prop("java.security.krb5.conf", CONF);
+        }
+        return p;
     }
 }

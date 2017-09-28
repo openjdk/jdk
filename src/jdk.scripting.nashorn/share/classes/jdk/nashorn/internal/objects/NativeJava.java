@@ -43,6 +43,7 @@ import jdk.dynalink.beans.StaticClass;
 import jdk.dynalink.linker.support.TypeUtilities;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
@@ -430,9 +431,9 @@ public final class NativeJava {
         if (objArray == null) {
             return null;
         } else if (objArray instanceof Collection) {
-            return new NativeArray(((Collection<?>)objArray).toArray());
+            return new NativeArray(ScriptUtils.unwrapArray(((Collection<?>)objArray).toArray()));
         } else if (objArray instanceof Object[]) {
-            return new NativeArray(((Object[])objArray).clone());
+            return new NativeArray(ScriptUtils.unwrapArray(((Object[])objArray).clone()));
         } else if (objArray instanceof int[]) {
             return new NativeArray(((int[])objArray).clone());
         } else if (objArray instanceof double[]) {

@@ -1,7 +1,7 @@
 # autoimports script requires -scripting mode
 
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -43,6 +43,12 @@
  * script, you can call autoimports to get the exact Java imports you need and replace
  * the autoimports load with the generated import statements (to avoid costly init of
  * the autoimports script).
+ *
+ * Example usage of autoimports.js in interactive mode:
+ *
+ *     jjs -scripting autoimports.js -
+ *     jjs> Vector
+ *     jjs> [JavaClass java.util.Vector]
  */
 
 (function() {
@@ -99,8 +105,8 @@
     Files.walk(root).forEach(function(p) {
         if (Files.isRegularFile(p)) {
             var str = p.toString();
-            if (str.endsWith(".class")) {
-                str = str.substring(1);
+            if (str.endsWith(".class") && !str.endsWith("module-info.class")) {
+                str = str.substring("/modules/".length);
                 var idx = str.indexOf('/');
                 if (idx != -1) {
                     str = str.substring(idx + 1);

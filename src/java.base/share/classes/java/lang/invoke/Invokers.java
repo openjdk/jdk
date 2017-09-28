@@ -611,29 +611,32 @@ class Invokers {
         try {
             switch (func) {
                 case NF_checkExactType:
-                    return new NamedFunction(Invokers.class
-                        .getDeclaredMethod("checkExactType", MethodHandle.class,  MethodType.class));
+                    return getNamedFunction("checkExactType", MethodType.methodType(void.class, MethodHandle.class, MethodType.class));
                 case NF_checkGenericType:
-                    return new NamedFunction(Invokers.class
-                        .getDeclaredMethod("checkGenericType", MethodHandle.class,  MethodType.class));
+                    return getNamedFunction("checkGenericType", MethodType.methodType(MethodHandle.class, MethodHandle.class, MethodType.class));
                 case NF_getCallSiteTarget:
-                    return new NamedFunction(Invokers.class
-                        .getDeclaredMethod("getCallSiteTarget", CallSite.class));
+                    return getNamedFunction("getCallSiteTarget", MethodType.methodType(MethodHandle.class, CallSite.class));
                 case NF_checkCustomized:
-                    return new NamedFunction(Invokers.class
-                        .getDeclaredMethod("checkCustomized", MethodHandle.class));
+                    return getNamedFunction("checkCustomized", MethodType.methodType(void.class, MethodHandle.class));
                 case NF_checkVarHandleGenericType:
-                    return new NamedFunction(Invokers.class
-                        .getDeclaredMethod("checkVarHandleGenericType", VarHandle.class, VarHandle.AccessDescriptor.class));
+                    return getNamedFunction("checkVarHandleGenericType", MethodType.methodType(MethodHandle.class, VarHandle.class, VarHandle.AccessDescriptor.class));
                 case NF_checkVarHandleExactType:
-                    return new NamedFunction(Invokers.class
-                        .getDeclaredMethod("checkVarHandleExactType", VarHandle.class, VarHandle.AccessDescriptor.class));
+                    return getNamedFunction("checkVarHandleExactType", MethodType.methodType(MethodHandle.class, VarHandle.class, VarHandle.AccessDescriptor.class));
                 default:
                     throw newInternalError("Unknown function: " + func);
             }
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
+    }
+
+    private static NamedFunction getNamedFunction(String name, MethodType type)
+        throws ReflectiveOperationException
+    {
+        MemberName member = new MemberName(Invokers.class, name, type, REF_invokeStatic);
+        return new NamedFunction(
+                MemberName.getFactory()
+                        .resolveOrFail(REF_invokeStatic, member, Invokers.class, NoSuchMethodException.class));
     }
 
     private static class Lazy {

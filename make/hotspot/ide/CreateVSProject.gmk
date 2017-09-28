@@ -99,7 +99,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   # Run the ProjectCreator tool
   PROJECT_CREATOR_TOOL := $(JAVA_SMALL) -cp $(TOOLS_OUTPUTDIR) build.tools.projectcreator.ProjectCreator
 
-  IDE_OUTPUTDIR := $(BUILD_OUTPUT)/ide/hotspot-visualstudio
+  IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/hotspot-visualstudio
 
   VCPROJ_FILE := $(IDE_OUTPUTDIR)/jvm.vcxproj
 

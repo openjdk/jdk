@@ -63,6 +63,7 @@ public class Names {
     public final Name _default;
     public final Name _super;
     public final Name _this;
+    public final Name var;
     public final Name exports;
     public final Name opens;
     public final Name module;
@@ -224,6 +225,7 @@ public class Names {
         _default = fromString("default");
         _super = fromString("super");
         _this = fromString("this");
+        var = fromString("var");
         exports = fromString("exports");
         opens = fromString("opens");
         module = fromString("module");

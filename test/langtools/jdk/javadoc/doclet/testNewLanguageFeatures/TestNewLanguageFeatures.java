@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4789689 4905985 4927164 4827184 4993906 5004549 7025314 7010344 8025633 8026567 8162363
- *           8175200
+ *           8175200 8186332
  * @summary  Run Javadoc on a set of source files that demonstrate new
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
@@ -549,7 +549,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "=\"Constructor Annotation\",\n"
                 + "                <a href=\"../pkg/AnnotationType.html#required--\">"
                 + "required</a>=1994)\n"
-                + "public&nbsp;AnnotationTypeUsage&#8203;()</pre>",
+                + "public&nbsp;AnnotationTypeUsage()</pre>",
                 // METHOD
                 "<pre><a href=\"../pkg/AnnotationType.html\" "
                 + "title=\"annotation in pkg\">@AnnotationType</a>("
@@ -557,7 +557,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "=\"Method Annotation\",\n"
                 + "                <a href=\"../pkg/AnnotationType.html#required--\">"
                 + "required</a>=1994)\n"
-                + "public&nbsp;void&nbsp;method&#8203;()</pre>",
+                + "public&nbsp;void&nbsp;method()</pre>",
                 // METHOD PARAMS
                 "<pre>public&nbsp;void&nbsp;methodWithParams&#8203;("
                 + "<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">"
@@ -630,11 +630,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // CONSTRUCTOR
                 "<a href=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</a>(<a href=\"../pkg/AnnotationType.html#optional\">optional</a>=\"Constructor Annotation\",\n"
                 + "                <a href=\"../pkg/AnnotationType.html#required\">required</a>=1994)\n"
-                + "public <span class=\"typeNameLabel\">AnnotationTypeUsage</span>&#8203;()",
+                + "public <span class=\"typeNameLabel\">AnnotationTypeUsage</span>()",
                 // METHOD
                 "<a href=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</a>(<a href=\"../pkg/AnnotationType.html#optional\">optional</a>=\"Method Annotation\",\n"
                 + "                <a href=\"../pkg/AnnotationType.html#required\">required</a>=1994)\n"
-                + "public void <span class=\"memberNameLabel\">method</span>&#8203;()");
+                + "public void <span class=\"memberNameLabel\">method</span>()");
 
         //=================================
         // Make sure annotation types do not

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -535,14 +535,28 @@ jint handleAppend(FD fd, const void *buf, jint len) {
     return writeInternal(fd, buf, len, JNI_TRUE);
 }
 
-jint
+void
 handleClose(JNIEnv *env, jobject this, jfieldID fid)
 {
-    FD fd = GET_FD(this, fid);
+    jobject fileDescriptor = (*env)->GetObjectField(env, (this), (fid));
+    if (fileDescriptor == NULL) {
+        return;
+    }
+    fileDescriptorClose(env, fileDescriptor);
+}
+
+// Function to close the fd held by this FileDescriptor and set fd to -1.
+void
+fileDescriptorClose(JNIEnv *env, jobject this)
+{
+    FD fd = (*env)->GetLongField(env, this, IO_handle_fdID);
+    if ((*env)->ExceptionOccurred(env)) {
+        return;
+    }
     HANDLE h = (HANDLE)fd;
 
     if (h == INVALID_HANDLE_VALUE) {
-        return 0;
+        return;
     }
 
     /* Set the fd to -1 before closing it so that the timing window
@@ -551,12 +565,14 @@ handleClose(JNIEnv *env, jobject this, jfieldID fid)
      * Practically the chance of its occurance is low, however, we are
      * taking extra precaution over here.
      */
-    SET_FD(this, -1, fid);
+    (*env)->SetLongField(env, this, IO_handle_fdID, -1);
+    if ((*env)->ExceptionOccurred(env)) {
+        return;
+    }
 
     if (CloseHandle(h) == 0) { /* Returns zero on failure */
         JNU_ThrowIOExceptionWithLastError(env, "close failed");
     }
-    return 0;
 }
 
 jlong

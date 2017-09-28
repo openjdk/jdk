@@ -95,6 +95,7 @@ public class SSLwithPerms {
                     .prop("javax.net.ssl", "handshake")
                     .prop("sun.security.krb5.debug", "true")
                     .perm(new SecurityPermission("setProperty.jdk.tls.disabledAlgorithms"))
+                    .perm(new java.util.PropertyPermission("user.name", "read"))
                     .perm(new PropertyPermission("sun.security.krb5.principal", "read"))
                     .perm(new FilePermission("port", "read"))
                     .perm(new FilePermission(hostsFileName, "read"))

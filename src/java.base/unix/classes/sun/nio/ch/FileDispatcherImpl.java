@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,18 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.SharedSecrets;
+
 class FileDispatcherImpl extends FileDispatcher {
 
     static {
         IOUtil.load();
         init();
     }
+
+    private static final JavaIOFileDescriptorAccess fdAccess =
+            SharedSecrets.getJavaIOFileDescriptorAccess();
 
     FileDispatcherImpl() {
     }
@@ -95,7 +101,7 @@ class FileDispatcherImpl extends FileDispatcher {
     }
 
     void close(FileDescriptor fd) throws IOException {
-        close0(fd);
+        fdAccess.close(fd);
     }
 
     void preClose(FileDescriptor fd) throws IOException {
@@ -153,6 +159,8 @@ class FileDispatcherImpl extends FileDispatcher {
     static native void release0(FileDescriptor fd, long pos, long size)
         throws IOException;
 
+    // Shared with SocketDispatcher and DatagramDispatcher but
+    // NOT used by FileDispatcherImpl
     static native void close0(FileDescriptor fd) throws IOException;
 
     static native void preClose0(FileDescriptor fd) throws IOException;

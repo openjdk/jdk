@@ -28,9 +28,11 @@ package com.sun.tools.javac.comp;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.Compound;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
+import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.TypeMetadata.Entry.Kind;
+import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -602,7 +604,7 @@ public class Annotate {
     }
 
     private Attribute getAnnotationEnumValue(Type expectedElementType, JCExpression tree, Env<AttrContext> env) {
-        Type result = attr.attribExpr(tree, env, expectedElementType);
+        Type result = attr.attribTree(tree, env, annotationValueInfo(expectedElementType));
         Symbol sym = TreeInfo.symbol(tree);
         if (sym == null ||
                 TreeInfo.nonstaticSelect(tree) ||
@@ -616,7 +618,7 @@ public class Annotate {
     }
 
     private Attribute getAnnotationClassValue(Type expectedElementType, JCExpression tree, Env<AttrContext> env) {
-        Type result = attr.attribExpr(tree, env, expectedElementType);
+        Type result = attr.attribTree(tree, env, annotationValueInfo(expectedElementType));
         if (result.isErroneous()) {
             // Does it look like an unresolved class literal?
             if (TreeInfo.name(tree) == names._class &&
@@ -642,7 +644,7 @@ public class Annotate {
     }
 
     private Attribute getAnnotationPrimitiveValue(Type expectedElementType, JCExpression tree, Env<AttrContext> env) {
-        Type result = attr.attribExpr(tree, env, expectedElementType);
+        Type result = attr.attribTree(tree, env, annotationValueInfo(expectedElementType));
         if (result.isErroneous())
             return new Attribute.Error(result.getOriginalType());
         if (result.constValue() == null) {
@@ -651,6 +653,22 @@ public class Annotate {
         }
         result = cfolder.coerce(result, expectedElementType);
         return new Attribute.Constant(expectedElementType, result.constValue());
+    }
+
+    private Attr.ResultInfo annotationValueInfo(Type pt) {
+        return attr.unknownExprInfo.dup(pt, new AnnotationValueContext(attr.unknownExprInfo.checkContext));
+    }
+
+    class AnnotationValueContext extends Check.NestedCheckContext {
+        AnnotationValueContext(CheckContext enclosingContext) {
+            super(enclosingContext);
+        }
+
+        @Override
+        public boolean compatible(Type found, Type req, Warner warn) {
+            //handle non-final implicitly-typed vars (will be rejected later on)
+            return found.hasTag(TypeTag.NONE) || super.compatible(found, req, warn);
+        }
     }
 
     private Attribute getAnnotationArrayValue(Type expectedElementType, JCExpression tree, Env<AttrContext> env) {

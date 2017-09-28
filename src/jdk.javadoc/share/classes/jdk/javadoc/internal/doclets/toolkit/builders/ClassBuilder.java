@@ -175,8 +175,8 @@ public class ClassBuilder extends AbstractBuilder {
         buildInterfaceUsageInfo(classInfoTree);
         buildNestedClassInfo(classInfoTree);
         buildFunctionalInterfaceInfo(classInfoTree);
-        buildDeprecationInfo(classInfoTree);
         buildClassSignature(classInfoTree);
+        buildDeprecationInfo(classInfoTree);
         buildClassDescription(classInfoTree);
         buildClassTagInfo(classInfoTree);
 

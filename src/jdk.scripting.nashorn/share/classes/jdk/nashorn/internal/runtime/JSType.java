@@ -804,7 +804,11 @@ public enum JSType {
      * @return the value converted to Integer or Double
      */
     public static Number toNarrowestNumber(final long l) {
-        return isRepresentableAsInt(l) ? Integer.valueOf((int) l) : Double.valueOf(l);
+        if (isRepresentableAsInt(l)) {
+            return Integer.valueOf((int) l);
+        } else {
+            return Double.valueOf(l);
+        }
     }
 
     /**

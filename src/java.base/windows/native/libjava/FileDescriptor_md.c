@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,4 +71,10 @@ Java_java_io_FileDescriptor_sync(JNIEnv *env, jobject this) {
     if (IO_Sync(fd) == -1) {
         JNU_ThrowByName(env, "java/io/SyncFailedException", "sync failed");
     }
+}
+
+// instance method close0 for FileDescriptor
+JNIEXPORT void JNICALL
+Java_java_io_FileDescriptor_close(JNIEnv *env, jobject this) {
+    fileDescriptorClose(env, this);
 }

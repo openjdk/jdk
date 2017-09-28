@@ -364,7 +364,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         List<? extends DocTree> tags;
         Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(element));
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.block);
+        div.addStyle(HtmlStyle.deprecationBlock);
         if (utils.isDeprecated(element)) {
             div.addContent(span);
             tags = utils.getBlockTags(element, DocTree.Kind.DEPRECATED);

@@ -568,8 +568,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
   BASIC_FIXUP_PATH(CURDIR)
   BASIC_FIXUP_PATH(TOPDIR)
-  # SRC_ROOT is a traditional alias for TOPDIR.
-  SRC_ROOT=$TOPDIR
 
   # Calculate a canonical version of TOPDIR for string comparisons
   CANONICAL_TOPDIR=$TOPDIR
@@ -770,13 +768,13 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
       [ CONF_NAME=${with_conf_name} ])
   AC_ARG_WITH(output-base-dir, [AS_HELP_STRING([--with-output-base-dir],
       [override the default output base directory @<:@./build@:>@])],
-      [ OUTPUT_BASE=${with_output_base_dir} ], [ OUTPUT_BASE="$SRC_ROOT/build" ] )
+      [ OUTPUT_BASE=${with_output_base_dir} ], [ OUTPUT_BASE="$TOPDIR/build" ] )
 
   # Test from where we are running configure, in or outside of src root.
   AC_MSG_CHECKING([where to store configuration])
-  if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
-      || test "x$CURDIR" = "x$SRC_ROOT/make/autoconf" \
-      || test "x$CURDIR" = "x$SRC_ROOT/make" ; then
+  if test "x$CURDIR" = "x$TOPDIR" || test "x$CURDIR" = "x$TOPDIR/common" \
+      || test "x$CURDIR" = "x$TOPDIR/make/autoconf" \
+      || test "x$CURDIR" = "x$TOPDIR/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -785,10 +783,10 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     else
       AC_MSG_RESULT([in build directory with custom name])
     fi
-    OUTPUT_ROOT="${OUTPUT_BASE}/${CONF_NAME}"
-    $MKDIR -p "$OUTPUT_ROOT"
-    if test ! -d "$OUTPUT_ROOT"; then
-      AC_MSG_ERROR([Could not create build directory $OUTPUT_ROOT])
+    OUTPUTDIR="${OUTPUT_BASE}/${CONF_NAME}"
+    $MKDIR -p "$OUTPUTDIR"
+    if test ! -d "$OUTPUTDIR"; then
+      AC_MSG_ERROR([Could not create build directory $OUTPUTDIR])
     fi
   else
     # We are running configure from outside of the src dir.
@@ -796,18 +794,18 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # If configuration is situated in normal build directory, just use the build
     # directory name as configuration name, otherwise use the complete path.
     if test "x${CONF_NAME}" = x; then
-      CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${SRC_ROOT}/build/!!"`
+      CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${TOPDIR}/build/!!"`
     fi
-    OUTPUT_ROOT="$CURDIR"
+    OUTPUTDIR="$CURDIR"
     AC_MSG_RESULT([in current directory])
 
     # WARNING: This might be a bad thing to do. You need to be sure you want to
     # have a configuration in this directory. Do some sanity checks!
 
-    if test ! -e "$OUTPUT_ROOT/spec.gmk"; then
+    if test ! -e "$OUTPUTDIR/spec.gmk"; then
       # If we have a spec.gmk, we have run here before and we are OK. Otherwise, check for
       # other files
-      files_present=`$LS $OUTPUT_ROOT`
+      files_present=`$LS $OUTPUTDIR`
       # Configure has already touched config.log and confdefs.h in the current dir when this check
       # is performed.
       filtered_files=`$ECHO "$files_present" \
@@ -822,7 +820,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
         AC_MSG_NOTICE([(as opposed to creating a configuration in <src_root>/build/<conf-name>).])
         AC_MSG_NOTICE([However, this directory is not empty. This is not allowed, since it could])
         AC_MSG_NOTICE([seriously mess up just about everything.])
-        AC_MSG_NOTICE([Try 'cd $SRC_ROOT' and restart configure])
+        AC_MSG_NOTICE([Try 'cd $TOPDIR' and restart configure])
         AC_MSG_NOTICE([(or create a new empty directory and cd to it).])
         AC_MSG_ERROR([Will not continue creating configuration in $CURDIR])
       fi
@@ -831,29 +829,29 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_MSG_CHECKING([what configuration name to use])
   AC_MSG_RESULT([$CONF_NAME])
 
-  BASIC_FIXUP_PATH(OUTPUT_ROOT)
+  BASIC_FIXUP_PATH(OUTPUTDIR)
 
-  CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
+  CONFIGURESUPPORT_OUTPUTDIR="$OUTPUTDIR/configure-support"
   $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
 
-  SPEC="$OUTPUT_ROOT/spec.gmk"
+  SPEC="$OUTPUTDIR/spec.gmk"
   AC_SUBST(SPEC)
   AC_SUBST(CONF_NAME)
-  AC_SUBST(OUTPUT_ROOT)
+  AC_SUBST(OUTPUTDIR)
   AC_SUBST(CONFIGURESUPPORT_OUTPUTDIR)
 
   # The spec.gmk file contains all variables for the make system.
-  AC_CONFIG_FILES([$OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
   # The bootcycle-spec.gmk file contains support for boot cycle builds.
-  AC_CONFIG_FILES([$OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in])
   # The buildjdk-spec.gmk file contains support for building a buildjdk when cross compiling.
-  AC_CONFIG_FILES([$OUTPUT_ROOT/buildjdk-spec.gmk:$AUTOCONF_DIR/buildjdk-spec.gmk.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/buildjdk-spec.gmk:$AUTOCONF_DIR/buildjdk-spec.gmk.in])
   # The compare.sh is used to compare the build output to other builds.
-  AC_CONFIG_FILES([$OUTPUT_ROOT/compare.sh:$AUTOCONF_DIR/compare.sh.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/compare.sh:$AUTOCONF_DIR/compare.sh.in])
   # The generated Makefile knows where the spec.gmk is and where the source is.
-  # You can run make from the OUTPUT_ROOT, or from the top-level Makefile
+  # You can run make from the OUTPUTDIR, or from the top-level Makefile
   # which will look for generated configurations
-  AC_CONFIG_FILES([$OUTPUT_ROOT/Makefile:$AUTOCONF_DIR/Makefile.in])
+  AC_CONFIG_FILES([$OUTPUTDIR/Makefile:$AUTOCONF_DIR/Makefile.in])
 ])
 
 #%%% Simple tools %%%
@@ -1173,7 +1171,7 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
 AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
 [
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    file_to_test="$SRC_ROOT/LICENSE"
+    file_to_test="$TOPDIR/LICENSE"
     if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
       AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin.])
     fi
@@ -1186,7 +1184,7 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
   BASIC_CHECK_LEFTOVER_OVERRIDDEN
 
   AC_MSG_CHECKING([if build directory is on local disk])
-  BASIC_CHECK_DIR_ON_LOCAL_DISK($OUTPUT_ROOT,
+  BASIC_CHECK_DIR_ON_LOCAL_DISK($OUTPUTDIR,
       [OUTPUT_DIR_IS_LOCAL="yes"],
       [OUTPUT_DIR_IS_LOCAL="no"])
   AC_MSG_RESULT($OUTPUT_DIR_IS_LOCAL)
@@ -1198,7 +1196,7 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
 
   # Before generating output files, test if they exist. If they do, this is a reconfigure.
   # Since we can't properly handle the dependencies for this, warn the user about the situation
-  if test -e $OUTPUT_ROOT/spec.gmk; then
+  if test -e $OUTPUTDIR/spec.gmk; then
     IS_RECONFIGURE=yes
   else
     IS_RECONFIGURE=no
@@ -1269,18 +1267,18 @@ AC_DEFUN_ONCE([BASIC_POST_CONFIG_OUTPUT],
   fi
 
   # Rotate our log file (configure.log)
-  if test -e "$OUTPUT_ROOT/configure.log.old"; then
-    $RM -f "$OUTPUT_ROOT/configure.log.old"
+  if test -e "$OUTPUTDIR/configure.log.old"; then
+    $RM -f "$OUTPUTDIR/configure.log.old"
   fi
-  if test -e "$OUTPUT_ROOT/configure.log"; then
-    $MV -f "$OUTPUT_ROOT/configure.log" "$OUTPUT_ROOT/configure.log.old" 2> /dev/null
+  if test -e "$OUTPUTDIR/configure.log"; then
+    $MV -f "$OUTPUTDIR/configure.log" "$OUTPUTDIR/configure.log.old" 2> /dev/null
   fi
 
   # Move configure.log from current directory to the build output root
   if test -e ./configure.log; then
-    $MV -f ./configure.log "$OUTPUT_ROOT/configure.log" 2> /dev/null
+    $MV -f ./configure.log "$OUTPUTDIR/configure.log" 2> /dev/null
   fi
 
   # Make the compare script executable
-  $CHMOD +x $OUTPUT_ROOT/compare.sh
+  $CHMOD +x $OUTPUTDIR/compare.sh
 ])

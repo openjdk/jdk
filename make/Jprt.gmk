@@ -94,7 +94,7 @@ else
   # Just fake the main bundle to satisfy JPRT
   jprt_bundle: $(JPRT_TARGET)
 	@$(call TargetEnter)
-	$(MKDIR) -p $(BUILD_OUTPUT)/bundles
+	$(MKDIR) -p $(OUTPUTDIR)/bundles
 	$(CD) $(TOPDIR) && $(TAR) cf - README | $(GZIP) > \
 	    $(JPRT_ARCHIVE_BUNDLE)
 	@$(call TargetExit)

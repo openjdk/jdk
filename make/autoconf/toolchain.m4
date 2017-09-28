@@ -935,6 +935,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
   elif test "x$with_jtreg" != xyes && test "x$with_jtreg" != x; then
     # An explicit path is specified, use it.
     JT_HOME="$with_jtreg"
+    BASIC_FIXUP_PATH([JT_HOME])
     if test ! -d "$JT_HOME"; then
       AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg does not exist])
     fi

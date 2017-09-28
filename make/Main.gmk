@@ -928,7 +928,7 @@ java.base: hotspot
 
 demos: demos-jdk
 
-# The "exploded image" is a locally runnable JDK in $(BUILD_OUTPUT)/jdk.
+# The "exploded image" is a locally runnable JDK in $(OUTPUTDIR)/jdk.
 exploded-image-base: $(ALL_MODULES)
 exploded-image: exploded-image-base release-file
 # When cross compiling, no need to optimize the exploded image since it won't
@@ -957,7 +957,7 @@ docs-javadoc: docs-jdk-api
 
 mac-bundles: mac-bundles-jdk
 
-# The $(BUILD_OUTPUT)/images directory contain the resulting deliverables,
+# The $(OUTPUTDIR)/images directory contain the resulting deliverables,
 # and in line with this, our targets for creating these are named *-image[s].
 
 # This target builds the product images, e.g. the JRE and JDK image
@@ -1048,7 +1048,7 @@ CLEAN_MODULE_PHASE_TARGETS := $(addprefix clean-, $(foreach m, $(ALL_MODULES), \
 
 # Remove everything, except the output from configure.
 clean: $(CLEAN_DIR_TARGETS)
-	($(CD) $(OUTPUT_ROOT) && $(RM) -r build*.log*)
+	($(CD) $(OUTPUTDIR) && $(RM) -r build*.log*)
 	$(ECHO) Cleaned all build artifacts.
 
 clean-docs:
@@ -1081,14 +1081,14 @@ clean-support: clean-jdk
 # Remove everything, including configure configuration. If the output
 # directory was created by configure and now becomes empty, remove it as well.
 dist-clean: clean
-	($(CD) $(OUTPUT_ROOT) && \
+	($(CD) $(OUTPUTDIR) && \
 	    $(RM) -r *spec.gmk $(CONFIGURESUPPORT_OUTPUTDIR) Makefile compare.sh ide)
-	$(if $(filter $(CONF_NAME),$(notdir $(OUTPUT_ROOT))), \
-	  if test "x`$(LS) $(OUTPUT_ROOT)`" != x; then \
+	$(if $(filter $(CONF_NAME),$(notdir $(OUTPUTDIR))), \
+	  if test "x`$(LS) $(OUTPUTDIR)`" != x; then \
 	    $(ECHO) "Warning: Not removing non-empty configuration directory for '$(CONF_NAME)'" ; \
 	  else \
 	    ($(CD) $(TOPDIR) && $(ECHO) "Removing configuration directory for '$(CONF_NAME)'" \
-	        && $(RM) -r $(OUTPUT_ROOT)) \
+	        && $(RM) -r $(OUTPUTDIR)) \
 	  fi \
 	)
 	$(ECHO) Cleaned everything, you will have to re-run configure.

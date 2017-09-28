@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,7 @@ FD handleOpen(const char *path, int oflag, int mode);
  * IO helper function(s)
  */
 void fileClose(JNIEnv *env, jobject this, jfieldID fid);
+void fileDescriptorClose(JNIEnv *env, jobject this);
 
 #ifdef MACOSX
 jstring newStringPlatform(JNIEnv *env, const char* str);

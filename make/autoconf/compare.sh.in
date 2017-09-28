@@ -69,15 +69,15 @@ export UNIQ="@UNIQ@"
 export UNPACK200="@FIXPATH@ @BOOT_JDK@/bin/unpack200"
 export UNARCHIVE="@UNZIP@ -q -o"
 
-export SRC_ROOT="@TOPDIR@"
-export OUTPUT_ROOT="@OUTPUT_ROOT@"
+export TOPDIR="@TOPDIR@"
+export OUTPUTDIR="@OUTPUTDIR@"
 
 if [ "@COMPILE_TYPE@" != "cross" ]; then
-    export JAVAP="@FIXPATH@ $OUTPUT_ROOT/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
-    export JIMAGE="@FIXPATH@ $OUTPUT_ROOT/jdk/bin/jimage"
+    export JAVAP="@FIXPATH@ $OUTPUTDIR/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
+    export JIMAGE="@FIXPATH@ $OUTPUTDIR/jdk/bin/jimage"
 elif [ "@CREATE_BUILDJDK@" = "true" ]; then
-    export JAVAP="@FIXPATH@ $OUTPUT_ROOT/buildjdk/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
-    export JIMAGE="@FIXPATH@ $OUTPUT_ROOT/buildjdk/jdk/bin/jimage"
+    export JAVAP="@FIXPATH@ $OUTPUTDIR/buildjdk/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
+    export JIMAGE="@FIXPATH@ $OUTPUTDIR/buildjdk/jdk/bin/jimage"
 else
     export JAVAP="@FIXPATH@ @BUILD_JDK@/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
     export JIMAGE="@FIXPATH@ @BUILD_JDK@/bin/jimage"
@@ -88,16 +88,16 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
 fi
 
 # Now locate the main script and run it.
-REAL_COMPARE_SCRIPT="$SRC_ROOT/make/scripts/compare.sh"
+REAL_COMPARE_SCRIPT="$TOPDIR/make/scripts/compare.sh"
 if [ ! -e "$REAL_COMPARE_SCRIPT" ]; then
   echo "Error: Cannot locate compare script, it should have been in $REAL_COMPARE_SCRIPT"
   exit 1
 fi
 
 # Rotate logs
-$RM $OUTPUT_ROOT/compare.log.old 2> /dev/null
-$MV $OUTPUT_ROOT/compare.log $OUTPUT_ROOT/compare.log.old 2> /dev/null
+$RM $OUTPUTDIR/compare.log.old 2> /dev/null
+$MV $OUTPUTDIR/compare.log $OUTPUTDIR/compare.log.old 2> /dev/null
 
 export SCRIPT_DIR="$( cd "$( dirname "$0" )" > /dev/null && pwd )"
 
-$BASH $SRC_ROOT/make/scripts/logger.sh $OUTPUT_ROOT/compare.log $BASH "$REAL_COMPARE_SCRIPT" "$@"
+$BASH $TOPDIR/make/scripts/logger.sh $OUTPUTDIR/compare.log $BASH "$REAL_COMPARE_SCRIPT" "$@"

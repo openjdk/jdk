@@ -265,7 +265,7 @@ else # HAS_SPEC=true
         else
 	  $(ECHO) "Re-running configure using default settings"
         endif
-	( cd $(OUTPUT_ROOT) && PATH="$(ORIGINAL_PATH)" \
+	( cd $(OUTPUTDIR) && PATH="$(ORIGINAL_PATH)" \
 	    $(BASH) $(CONFIGURE_CMD) $(CONFIGURE_COMMAND_LINE) )
 
   ##############################################################################

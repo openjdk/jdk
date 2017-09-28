@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * Defines tools for manipulating Java Archive (JAR) files,
  * including the <em>{@index jar jar tool}</em> and
  * <em>{@index jarsigner jarsigner tool}</em> tools.
+ * This module also defines APIs for signing JAR files.
  *
  * <p> This module provides the equivalent of command-line access to
  * <em>jar</em> via the {@link java.util.spi.ToolProvider ToolProvider} SPI.

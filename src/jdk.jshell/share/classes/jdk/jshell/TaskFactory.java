@@ -61,7 +61,20 @@ import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import jdk.jshell.MemoryFileManager.SourceMemoryJavaFileObject;
 import java.lang.Runtime.Version;
+import java.nio.CharBuffer;
 import com.sun.source.tree.Tree.Kind;
+import com.sun.tools.javac.code.Kinds;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.parser.Parser;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.tree.JCTree.JCTypeCast;
+import com.sun.tools.javac.tree.JCTree.Tag;
+import com.sun.tools.javac.util.Context.Factory;
+import com.sun.tools.javac.util.Log.DiscardDiagnosticHandler;
+import jdk.jshell.Snippet.Status;
 
 /**
  * The primary interface to the compiler API.  Parsing, analysis, and
@@ -355,6 +368,7 @@ class TaskFactory {
             Iterable<? extends JavaFileObject> compilationUnits = inputs
                             .map(in -> sh.sourceToFileObject(fileManager, in))
                             .collect(Collectors.toList());
+            JShellJavaCompiler.preRegister(context, state);
             this.task = (JavacTaskImpl) ((JavacTool) compiler).getTask(null,
                     fileManager, diagnostics, options, null,
                     compilationUnits, context);
@@ -460,6 +474,59 @@ class TaskFactory {
                 state.debug(DBG_GEN, "Code: %s\n", diag.getCode());
                 state.debug(DBG_GEN, "Pos: %d (%d - %d) -- %s\n", diag.getPosition(),
                         diag.getStartPosition(), diag.getEndPosition(), diag.getMessage(null));
+            }
+        }
+    }
+
+    private static final class JShellJavaCompiler extends com.sun.tools.javac.main.JavaCompiler {
+
+        public static void preRegister(Context c, JShell state) {
+            c.put(compilerKey, (Factory<com.sun.tools.javac.main.JavaCompiler>) i -> new JShellJavaCompiler(i, state));
+        }
+
+        private final JShell state;
+
+        public JShellJavaCompiler(Context context, JShell state) {
+            super(context);
+            this.state = state;
+        }
+
+        @Override
+        public void processAnnotations(com.sun.tools.javac.util.List<JCCompilationUnit> roots, Collection<String> classnames) {
+            super.processAnnotations(roots, classnames);
+            state.maps
+                 .snippetList()
+                 .stream()
+                 .filter(s -> s.status() == Status.VALID)
+                 .filter(s -> s.kind() == Snippet.Kind.VAR)
+                 .filter(s -> s.subKind() == Snippet.SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND)
+                 .forEach(s -> setVariableType(roots, (VarSnippet) s));
+        }
+
+        private void setVariableType(com.sun.tools.javac.util.List<JCCompilationUnit> roots, VarSnippet s) {
+            ClassSymbol clazz = syms.getClass(syms.unnamedModule, names.fromString(s.classFullName()));
+            if (clazz == null || !clazz.isCompleted())
+                return;
+            VarSymbol field = (VarSymbol) clazz.members().findFirst(names.fromString(s.name()), sym -> sym.kind == Kinds.Kind.VAR);
+            if (field != null) {
+                JavaFileObject prev = log.useSource(null);
+                DiscardDiagnosticHandler h = new DiscardDiagnosticHandler(log);
+                try {
+                    String typeName = s.typeName();
+                    CharBuffer buf = CharBuffer.wrap(("(" + typeName +")x\u0000").toCharArray(), 0, typeName.length() + 3);
+                    Parser parser = parserFactory.newParser(buf, false, false, false);
+                    JCExpression expr = parser.parseExpression();
+                    if (expr.hasTag(Tag.TYPECAST)) {
+                        JCTypeCast tree = (JCTypeCast) expr;
+                        if (tree.clazz.hasTag(Tag.TYPEINTERSECTION)) {
+                            field.type = attr.attribType(tree.clazz,
+                                                         ((JCClassDecl) roots.head.getTypeDecls().head).sym);
+                        }
+                    }
+                } finally {
+                    log.popDiagnosticHandler(h);
+                    log.useSource(prev);
+                }
             }
         }
     }

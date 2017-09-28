@@ -86,7 +86,6 @@ if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
       ./bin/keytool
       ./bin/orbd
       ./bin/pack200
-      ./bin/policytool
       ./bin/rmic
       ./bin/rmid
       ./bin/rmiregistry
@@ -219,7 +218,6 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ];
       ./bin/keytool
       ./bin/orbd
       ./bin/pack200
-      ./bin/policytool
       ./bin/rmic
       ./bin/rmid
       ./bin/rmiregistry
@@ -329,7 +327,6 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
       ./bin/keytool
       ./bin/orbd
       ./bin/pack200
-      ./bin/policytool
       ./bin/rmic
       ./bin/rmid
       ./bin/rmiregistry
@@ -422,7 +419,6 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
       ./bin/ktab.exe
       ./bin/orbd.exe
       ./bin/pack200.exe
-      ./bin/policytool.exe
       ./bin/rmic.exe
       ./bin/rmid.exe
       ./bin/rmiregistry.exe
@@ -512,7 +508,6 @@ if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
       ./bin/keytool
       ./bin/orbd
       ./bin/pack200
-      ./bin/policytool
       ./bin/rmic
       ./bin/rmid
       ./bin/rmiregistry

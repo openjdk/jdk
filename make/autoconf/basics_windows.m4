@@ -382,7 +382,7 @@ AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
   FIXPATH=
   if test "x$OPENJDK_BUILD_OS" = xwindows; then
     AC_MSG_CHECKING([if fixpath can be created])
-    FIXPATH_SRC="$SRC_ROOT/make/src/native/fixpath.c"
+    FIXPATH_SRC="$TOPDIR/make/src/native/fixpath.c"
     FIXPATH_BIN="$CONFIGURESUPPORT_OUTPUTDIR/bin/fixpath.exe"
     FIXPATH_DIR="$CONFIGURESUPPORT_OUTPUTDIR/fixpath"
     if test "x$OPENJDK_BUILD_OS_ENV" = xwindows.cygwin; then

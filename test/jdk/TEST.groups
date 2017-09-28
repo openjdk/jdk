@@ -468,7 +468,6 @@ needs_jdk = \
   com/sun/tools \
   jdk/security/jarsigner \
   sun/security/tools/jarsigner \
-  sun/security/tools/policytool \
   sun/rmi/rmic \
   sun/tools \
   sun/jvmstat \
@@ -785,8 +784,7 @@ compact1_minimal = \
  -:needs_jdk
 
 needs_headful = \
-  java/util/TimeZone/DefaultTimeZoneTest.java \
-  sun/security/tools/policytool
+  java/util/TimeZone/DefaultTimeZoneTest.java
 
 needs_locales = \
   -:needs_locales_and_charsets \

@@ -56,7 +56,7 @@ define SetupBundleFileBody
     $$(eval $1_$$d_RELATIVE_FILES := $$$$(patsubst $$d/%, %, \
         $$$$(filter $$d/%, $$$$($1_FILES)))) \
     $$(eval $1_$$d_LIST_FILE := \
-        $(SUPPORT_OUTPUTDIR)/bundles/_$1_$$$$(subst /,_,$$$$(patsubst $(OUTPUT_ROOT)/%,%,$$d)_files)) \
+        $(SUPPORT_OUTPUTDIR)/bundles/_$1_$$$$(subst /,_,$$$$(patsubst $(OUTPUTDIR)/%,%,$$d)_files)) \
   )
 
   ifneq ($$(filter %.tar.gz, $$($1_BUNDLE_NAME)), )

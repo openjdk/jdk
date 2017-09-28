@@ -72,7 +72,7 @@ $(CHARSET_DONE_CS)-euctw: $(CHARSET_COPYRIGHT_HEADER)/EUC_TW.java \
 
 $(CHARSET_GENSRC_JAVA_DIR_CS)/sjis0213.dat: $(CHARSET_DATA_DIR)/sjis0213.map \
     $(BUILD_TOOLS_JDK)
-	$(call LogInfo, Generating $(patsubst $(OUTPUT_ROOT)/%, %, $@))
+	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $@))
 	$(call MakeDir, $(@D))
 	$(TOOL_CHARSETMAPPING) '$<' '$@' sjis0213
 

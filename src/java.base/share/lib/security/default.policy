@@ -142,6 +142,10 @@ grant codeBase "jrt:/jdk.dynalink" {
     permission java.security.AllPermission;
 };
 
+grant codeBase "jrt:/jdk.httpserver" {
+    permission java.security.AllPermission;
+};
+
 grant codeBase "jrt:/jdk.internal.le" {
     permission java.security.AllPermission;
 };

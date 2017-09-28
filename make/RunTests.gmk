@@ -38,8 +38,8 @@ JTREG_TEST_TOPDIRS := $(TOPDIR) $(JTREG_TESTROOTS)
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , RunTests.gmk))
 
-TEST_RESULTS_DIR := $(BUILD_OUTPUT)/test-results
-TEST_SUPPORT_DIR := $(BUILD_OUTPUT)/test-support
+TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
+TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
 
 
 ################################################################################
@@ -392,20 +392,27 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
-	$$(eval $1_PASSED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
-	    for (i=1; i<=NF; i++) { if ($$$$i == "passed:") \
-	    print $$$$(i+1) } }' $$($1_RESULT_FILE)))
-	$$(if $$($1_PASSED), , $$(eval $1_PASSED := 0))
-	$$(eval $1_FAILED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
-	    for (i=1; i<=NF; i++) { if ($$$$i == "failed:") \
-	    print $$$$(i+1) } }' $$($1_RESULT_FILE)))
-	$$(if $$($1_FAILED), , $$(eval $1_FAILED := 0))
-	$$(eval $1_ERROR := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
-	    for (i=1; i<=NF; i++) { if ($$$$i == "error:") \
-	    print $$$$(i+1) } }' $$($1_RESULT_FILE)))
-	$$(if $$($1_ERROR), , $$(eval $1_ERROR := 0))
-	$$(eval $1_TOTAL := $$(shell \
-	    $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR)))
+	$$(if  $$(wildcard $$($1_RESULT_FILE)), \
+	  $$(eval $1_PASSED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
+	      for (i=1; i<=NF; i++) { if ($$$$i == "passed:") \
+	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
+	  $$(eval $1_FAILED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
+	      for (i=1; i<=NF; i++) { if ($$$$i == "failed:") \
+	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
+	  $$(eval $1_ERROR := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
+	      for (i=1; i<=NF; i++) { if ($$$$i == "error:") \
+	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_ERROR), , $$(eval $1_ERROR := 0)) \
+	  $$(eval $1_TOTAL := $$(shell \
+	      $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR))) \
+	, \
+	  $$(eval $1_PASSED := 0) \
+	  $$(eval $1_FAILED := 0) \
+	  $$(eval $1_ERROR := 1) \
+	  $$(eval $1_TOTAL := 1) \
+	)
 
   $1: run-test-$1 parse-test-$1
 

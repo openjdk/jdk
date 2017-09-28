@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -759,7 +759,23 @@ class MethodType implements java.io.Serializable {
         return Collections.unmodifiableList(Arrays.asList(ptypes.clone()));
     }
 
-    /*non-public*/ Class<?> lastParameterType() {
+    /**
+     * Returns the last parameter type of this method type.
+     * If this type has no parameters, the sentinel value
+     * {@code void.class} is returned instead.
+     * @apiNote
+     * <p>
+     * The sentinel value is chosen so that reflective queries can be
+     * made directly against the result value.
+     * The sentinel value cannot be confused with a real parameter,
+     * since {@code void} is never acceptable as a parameter type.
+     * For variable arity invocation modes, the expression
+     * {@link Class#getComponentType lastParameterType().getComponentType()}
+     * is useful to query the type of the "varargs" parameter.
+     * @return the last parameter type if any, else {@code void.class}
+     * @since 10
+     */
+    public Class<?> lastParameterType() {
         int len = ptypes.length;
         return len == 0 ? void.class : ptypes[len-1];
     }

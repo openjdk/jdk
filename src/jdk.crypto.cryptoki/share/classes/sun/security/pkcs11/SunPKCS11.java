@@ -1212,7 +1212,6 @@ public final class SunPKCS11 extends AuthProvider {
 
             CallbackHandler myHandler = getCallbackHandler(handler);
             if (myHandler == null) {
-                // XXX PolicyTool is dependent on this message text
                 throw new LoginException
                         ("no password provided, and no callback handler " +
                         "available for retrieving password");
