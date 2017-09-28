@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #if INCLUDE_NMT
 
 #include "memory/allocation.hpp"
+#include "memory/metaspace.hpp"
 #include "services/allocationSite.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/linkedlist.hpp"
@@ -418,6 +419,31 @@ class VirtualMemoryTracker : AllStatic {
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
 };
 
+
+class MetaspaceSnapshot : public ResourceObj {
+private:
+  size_t  _reserved_in_bytes[Metaspace::MetadataTypeCount];
+  size_t  _committed_in_bytes[Metaspace::MetadataTypeCount];
+  size_t  _used_in_bytes[Metaspace::MetadataTypeCount];
+  size_t  _free_in_bytes[Metaspace::MetadataTypeCount];
+
+public:
+  MetaspaceSnapshot();
+  size_t reserved_in_bytes(Metaspace::MetadataType type)   const { assert_valid_metadata_type(type); return _reserved_in_bytes[type]; }
+  size_t committed_in_bytes(Metaspace::MetadataType type)  const { assert_valid_metadata_type(type); return _committed_in_bytes[type]; }
+  size_t used_in_bytes(Metaspace::MetadataType type)       const { assert_valid_metadata_type(type); return _used_in_bytes[type]; }
+  size_t free_in_bytes(Metaspace::MetadataType type)       const { assert_valid_metadata_type(type); return _free_in_bytes[type]; }
+
+  static void snapshot(MetaspaceSnapshot& s);
+
+private:
+  static void snapshot(Metaspace::MetadataType type, MetaspaceSnapshot& s);
+
+  static void assert_valid_metadata_type(Metaspace::MetadataType type) {
+    assert(type == Metaspace::ClassType || type == Metaspace::NonClassType,
+      "Invalid metadata type");
+  }
+};
 
 #endif // INCLUDE_NMT
 
