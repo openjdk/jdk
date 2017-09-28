@@ -2718,7 +2718,7 @@ void SpaceManager::dump(outputStream* const out) const {
 
 
 size_t MetaspaceAux::_capacity_words[] = {0, 0};
-size_t MetaspaceAux::_used_words[] = {0, 0};
+volatile size_t MetaspaceAux::_used_words[] = {0, 0};
 
 size_t MetaspaceAux::free_bytes(Metaspace::MetadataType mdtype) {
   VirtualSpaceList* list = Metaspace::get_space_list(mdtype);
