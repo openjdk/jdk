@@ -175,10 +175,42 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
       amount_in_current_scale(_malloc_snapshot->malloc_overhead()->size()) > 0) {
       out->print_cr("%27s (tracking overhead=" SIZE_FORMAT "%s)", " ",
         amount_in_current_scale(_malloc_snapshot->malloc_overhead()->size()), scale);
+    } else if (flag == mtClass) {
+      // Metadata information
+      report_metadata(Metaspace::NonClassType);
+      if (Metaspace::using_class_space()) {
+        report_metadata(Metaspace::ClassType);
+      }
     }
-
     out->print_cr(" ");
   }
+}
+
+void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
+  assert(type == Metaspace::NonClassType || type == Metaspace::ClassType,
+    "Invalid metadata type");
+  const char* name = (type == Metaspace::NonClassType) ?
+    "Metadata:   " : "Class space:";
+
+  outputStream* out = output();
+  const char* scale = current_scale();
+  size_t committed   = MetaspaceAux::committed_bytes(type);
+  size_t used = MetaspaceAux::used_bytes(type);
+  size_t free = (MetaspaceAux::capacity_bytes(type) - used)
+              + MetaspaceAux::free_chunks_total_bytes(type)
+              + MetaspaceAux::free_bytes(type);
+
+  assert(committed >= used + free, "Sanity");
+  size_t waste = committed - (used + free);
+
+  out->print_cr("%27s (  %s)", " ", name);
+  out->print("%27s (    ", " ");
+  print_total(MetaspaceAux::reserved_bytes(type), committed);
+  out->print_cr(")");
+  out->print_cr("%27s (    used=" SIZE_FORMAT "%s)", " ", amount_in_current_scale(used), scale);
+  out->print_cr("%27s (    free=" SIZE_FORMAT "%s)", " ", amount_in_current_scale(free), scale);
+  out->print_cr("%27s (    waste=" SIZE_FORMAT "%s =%2.2f%%)", " ", amount_in_current_scale(waste),
+    scale, ((float)waste * 100)/committed);
 }
 
 void MemDetailReporter::report_detail() {
@@ -305,9 +337,13 @@ void MemSummaryDiffReporter::report_diff() {
     MEMFLAGS flag = NMTUtil::index_to_flag(index);
     // thread stack is reported as part of thread category
     if (flag == mtThreadStack) continue;
-    diff_summary_of_type(flag, _early_baseline.malloc_memory(flag),
-      _early_baseline.virtual_memory(flag), _current_baseline.malloc_memory(flag),
-      _current_baseline.virtual_memory(flag));
+    diff_summary_of_type(flag,
+      _early_baseline.malloc_memory(flag),
+      _early_baseline.virtual_memory(flag),
+      _early_baseline.metaspace_snapshot(),
+      _current_baseline.malloc_memory(flag),
+      _current_baseline.virtual_memory(flag),
+      _current_baseline.metaspace_snapshot());
   }
 }
 
@@ -367,9 +403,11 @@ void MemSummaryDiffReporter::print_virtual_memory_diff(size_t current_reserved, 
 }
 
 
-void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag, const MallocMemory* early_malloc,
-  const VirtualMemory* early_vm, const MallocMemory* current_malloc,
-  const VirtualMemory* current_vm) const {
+void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
+  const MallocMemory* early_malloc, const VirtualMemory* early_vm,
+  const MetaspaceSnapshot* early_ms,
+  const MallocMemory* current_malloc, const VirtualMemory* current_vm,
+  const MetaspaceSnapshot* current_ms) const {
 
   outputStream* out = output();
   const char* scale = current_scale();
@@ -486,9 +524,75 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag, const MallocMem
         out->print(" %+ld%s", overhead_diff, scale);
       }
       out->print_cr(")");
+    } else if (flag == mtClass) {
+      assert(current_ms != NULL && early_ms != NULL, "Sanity");
+      print_metaspace_diff(current_ms, early_ms);
     }
     out->print_cr(" ");
   }
+}
+
+void MemSummaryDiffReporter::print_metaspace_diff(const MetaspaceSnapshot* current_ms,
+                                                  const MetaspaceSnapshot* early_ms) const {
+  print_metaspace_diff(Metaspace::NonClassType, current_ms, early_ms);
+  if (Metaspace::using_class_space()) {
+    print_metaspace_diff(Metaspace::ClassType, current_ms, early_ms);
+  }
+}
+
+void MemSummaryDiffReporter::print_metaspace_diff(Metaspace::MetadataType type,
+                                                  const MetaspaceSnapshot* current_ms,
+                                                  const MetaspaceSnapshot* early_ms) const {
+  const char* name = (type == Metaspace::NonClassType) ?
+    "Metadata:   " : "Class space:";
+
+  outputStream* out = output();
+  const char* scale = current_scale();
+
+  out->print_cr("%27s (  %s)", " ", name);
+  out->print("%27s (    ", " ");
+  print_virtual_memory_diff(current_ms->reserved_in_bytes(type),
+                            current_ms->committed_in_bytes(type),
+                            early_ms->reserved_in_bytes(type),
+                            early_ms->committed_in_bytes(type));
+  out->print_cr(")");
+
+  long diff_used = diff_in_current_scale(current_ms->used_in_bytes(type),
+                                         early_ms->used_in_bytes(type));
+  long diff_free = diff_in_current_scale(current_ms->free_in_bytes(type),
+                                         early_ms->free_in_bytes(type));
+
+  size_t current_waste = current_ms->committed_in_bytes(type)
+    - (current_ms->used_in_bytes(type) + current_ms->free_in_bytes(type));
+  size_t early_waste = early_ms->committed_in_bytes(type)
+    - (early_ms->used_in_bytes(type) + early_ms->free_in_bytes(type));
+  long diff_waste = diff_in_current_scale(current_waste, early_waste);
+
+  // Diff used
+  out->print("%27s (    used=" SIZE_FORMAT "%s", " ",
+    amount_in_current_scale(current_ms->used_in_bytes(type)), scale);
+  if (diff_used != 0) {
+    out->print(" %+ld%s", diff_used, scale);
+  }
+  out->print_cr(")");
+
+  // Diff free
+  out->print("%27s (    free=" SIZE_FORMAT "%s", " ",
+    amount_in_current_scale(current_ms->free_in_bytes(type)), scale);
+  if (diff_free != 0) {
+    out->print(" %+ld%s", diff_free, scale);
+  }
+  out->print_cr(")");
+
+
+  // Diff waste
+  out->print("%27s (    waste=" SIZE_FORMAT "%s =%2.2f%%", " ",
+    amount_in_current_scale(current_waste), scale,
+    ((float)current_waste * 100) / current_ms->committed_in_bytes(type));
+  if (diff_waste != 0) {
+    out->print(" %+ld%s", diff_waste, scale);
+  }
+  out->print_cr(")");
 }
 
 void MemDetailDiffReporter::report_diff() {
