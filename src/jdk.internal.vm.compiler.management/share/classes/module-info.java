@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,19 @@
  * questions.
  */
 
-module jdk.internal.vm.ci {
-    exports jdk.vm.ci.services to jdk.internal.vm.compiler;
-    exports jdk.vm.ci.runtime to
-        jdk.internal.vm.compiler,
-        jdk.internal.vm.compiler.management;
+/**
+ * Registers Graal Compiler specific management interfaces for the JVM.
+ *
+ * @moduleGraph
+ * @since 10
+ */
+module jdk.internal.vm.compiler.management {
+    requires java.management;
+    requires jdk.management;
+    requires jdk.internal.vm.ci;
+    requires jdk.internal.vm.compiler;
 
-    uses jdk.vm.ci.services.JVMCIServiceLocator;
-    uses jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
-
-    provides jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory with
-        jdk.vm.ci.hotspot.aarch64.AArch64HotSpotJVMCIBackendFactory,
-        jdk.vm.ci.hotspot.amd64.AMD64HotSpotJVMCIBackendFactory,
-        jdk.vm.ci.hotspot.sparc.SPARCHotSpotJVMCIBackendFactory;
+    provides sun.management.spi.PlatformMBeanProvider with
+        org.graalvm.compiler.hotspot.jmx.GraalMBeans;
 }
+
