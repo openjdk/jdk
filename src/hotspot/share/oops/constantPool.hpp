@@ -717,9 +717,9 @@ class ConstantPool : public Metadata {
 
   // CDS support
   void archive_resolved_references(Thread *THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  void resolve_class_constants(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
-  bool resolve_class_constants(TRAPS);
   // The ConstantPool vtable is restored by this call when the ConstantPool is
   // in the shared archive.  See patch_klass_vtables() in metaspaceShared.cpp for
   // all the gory details.  SA, dtrace and pstack helpers distinguish metadata
