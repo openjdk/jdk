@@ -168,6 +168,16 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCBCond, false);
   }
 
+  // Use 'mpmul' instruction if available.
+  if (has_mpmul()) {
+    if (FLAG_IS_DEFAULT(UseMPMUL)) {
+      FLAG_SET_DEFAULT(UseMPMUL, true);
+    }
+  } else if (UseMPMUL) {
+    warning("MPMUL instruction is not available on this CPU");
+    FLAG_SET_DEFAULT(UseMPMUL, false);
+  }
+
   assert(BlockZeroingLowLimit > 0, "invalid value");
 
   if (has_blk_zeroing() && cache_line_size > 0) {
@@ -407,6 +417,15 @@ void VM_Version::initialize() {
   } else if (UseCRC32Intrinsics) {
     warning("SPARC CRC32 intrinsics require VIS3 instructions support. Intrinsics will be disabled");
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
+  }
+
+  if (UseVIS > 2) {
+    if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
+      FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
+    }
+  } else if (UseMultiplyToLenIntrinsic) {
+    warning("SPARC multiplyToLen intrinsics require VIS3 instructions support. Intrinsics will be disabled");
+    FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, false);
   }
 
   if (UseVectorizedMismatchIntrinsic) {
