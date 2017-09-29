@@ -856,6 +856,29 @@ void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
     if (fldc.access_flags().is_static()) field_count++;
   }
 
+  // Add in resolved_references which is referenced by the cpCache
+  // The resolved_references is an array per InstanceKlass holding the
+  // strings and other oops resolved from the constant pool.
+  oop resolved_references = ik->constants()->resolved_references_or_null();
+  if (resolved_references != NULL) {
+    field_count++;
+
+    // Add in the resolved_references of the used previous versions of the class
+    // in the case of RedefineClasses
+    InstanceKlass* prev = ik->previous_versions();
+    while (prev != NULL && prev->constants()->resolved_references_or_null() != NULL) {
+      field_count++;
+      prev = prev->previous_versions();
+    }
+  }
+
+  // Also provide a pointer to the init_lock if present, so there aren't unreferenced int[0]
+  // arrays.
+  oop init_lock = ik->init_lock();
+  if (init_lock != NULL) {
+    field_count++;
+  }
+
   writer->write_u2(field_count);
 
   // pass 2 - dump the field descriptors and raw values
@@ -872,6 +895,29 @@ void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
 
       dump_field_value(writer, sig->byte_at(0), addr);
     }
+  }
+
+  // Add resolved_references for each class that has them
+  if (resolved_references != NULL) {
+    writer->write_symbolID(vmSymbols::resolved_references_name());  // name
+    writer->write_u1(sig2tag(vmSymbols::object_array_signature())); // type
+    writer->write_objectID(resolved_references);
+
+    // Also write any previous versions
+    InstanceKlass* prev = ik->previous_versions();
+    while (prev != NULL && prev->constants()->resolved_references_or_null() != NULL) {
+      writer->write_symbolID(vmSymbols::resolved_references_name());  // name
+      writer->write_u1(sig2tag(vmSymbols::object_array_signature())); // type
+      writer->write_objectID(prev->constants()->resolved_references());
+      prev = prev->previous_versions();
+    }
+  }
+
+  // Add init lock to the end if the class is not yet initialized
+  if (init_lock != NULL) {
+    writer->write_symbolID(vmSymbols::init_lock_name());         // name
+    writer->write_u1(sig2tag(vmSymbols::int_array_signature())); // type
+    writer->write_objectID(init_lock);
   }
 }
 
@@ -908,7 +954,7 @@ void DumperSupport::dump_instance_field_descriptors(DumpWriter* writer, Klass* k
     if (!fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
 
-      writer->write_symbolID(fld.name());                   // name
+      writer->write_symbolID(fld.name());   // name
       writer->write_u1(sig2tag(sig));       // type
     }
   }
@@ -1822,6 +1868,8 @@ void VM_HeapDumper::doit() {
   // HPROF_GC_ROOT_JNI_GLOBAL
   JNIGlobalsDumper jni_dumper(writer());
   JNIHandles::oops_do(&jni_dumper);
+  Universe::oops_do(&jni_dumper);  // technically not jni roots, but global roots
+                                   // for things like preallocated throwable backtraces
   check_segment_length();
 
   // HPROF_GC_ROOT_STICKY_CLASS

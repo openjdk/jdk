@@ -122,14 +122,6 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) co
 #endif
 }
 
-inline void Atomic::inc(volatile jint* dest) {
-  Atomic::add(1, (volatile jint *)dest);
-}
-
-inline void Atomic::dec(volatile jint* dest) {
-  Atomic::add(-1, (volatile jint *)dest);
-}
-
 #ifdef AARCH64
 template<>
 template<typename I, typename D>
@@ -150,23 +142,6 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
   return val;
 }
 #endif // AARCH64
-
-inline void Atomic::inc_ptr(volatile intptr_t* dest) {
-  Atomic::add_ptr(1, dest);
-}
-
-inline void Atomic::dec_ptr(volatile intptr_t* dest) {
-  Atomic::add_ptr(-1, dest);
-}
-
-inline void Atomic::inc_ptr(volatile void* dest) {
-  inc_ptr((volatile intptr_t*)dest);
-}
-
-inline void Atomic::dec_ptr(volatile void* dest) {
-  dec_ptr((volatile intptr_t*)dest);
-}
-
 
 inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
 #ifdef AARCH64
