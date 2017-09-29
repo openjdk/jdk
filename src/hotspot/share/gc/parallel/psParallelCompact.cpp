@@ -520,7 +520,7 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
   const size_t beg_region = obj_ofs >> Log2RegionSize;
   const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
 
-  DEBUG_ONLY(Atomic::inc_ptr(&add_obj_count);)
+  DEBUG_ONLY(Atomic::inc(&add_obj_count);)
   DEBUG_ONLY(Atomic::add_ptr(len, &add_obj_size);)
 
   if (beg_region == end_region) {
@@ -1778,7 +1778,9 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 
-    if (TraceOldGenTime) accumulated_time()->start();
+    if (log_is_enabled(Debug, gc, heap, exit)) {
+      accumulated_time()->start();
+    }
 
     // Let the size policy know we're starting
     size_policy->major_collection_begin();
@@ -1897,7 +1899,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // Resize the metaspace capacity after a collection
     MetaspaceGC::compute_new_size();
 
-    if (TraceOldGenTime) {
+    if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->stop();
     }
 

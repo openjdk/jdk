@@ -1281,7 +1281,7 @@ void ParNewGeneration::push_on_overflow_list(oop from_space_obj, ParScanThreadSt
     // XXX This is horribly inefficient when a promotion failure occurs
     // and should be fixed. XXX FIX ME !!!
 #ifndef PRODUCT
-    Atomic::inc_ptr(&_num_par_pushes);
+    Atomic::inc(&_num_par_pushes);
     assert(_num_par_pushes > 0, "Tautology");
 #endif
     if (from_space_obj->forwardee() == from_space_obj) {
