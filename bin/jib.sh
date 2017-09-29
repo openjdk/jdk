@@ -28,8 +28,8 @@
 mydir="$(dirname "${BASH_SOURCE[0]}")"
 myname="$(basename "${BASH_SOURCE[0]}")"
 
-installed_jib_script=${mydir}/../../.jib/jib
-install_data=${mydir}/../../.jib/.data
+installed_jib_script=${mydir}/../.jib/jib
+install_data=${mydir}/../.jib/.data
 
 setup_url() {
     if [ -f ~/.config/jib/jib.conf ]; then
@@ -42,7 +42,7 @@ setup_url() {
     jib_revision="2.0-SNAPSHOT"
     jib_ext="jib.sh.gz"
 
-    closed_script="${mydir}/../../../closed/conf/jib-install.conf"
+    closed_script="${mydir}/../../closed/make/conf/jib-install.conf"
     if [ -f "${closed_script}" ]; then
         source "${closed_script}"
     fi
@@ -144,6 +144,11 @@ if [ ! -x "${installed_jib_script}" ]; then
 elif [ ! -e "${install_data}" ] || [ "${data_string}" != "$(cat "${install_data}")" ]; then
     echo "Install url changed since last time, reinstalling"
     install_jib
+fi
+
+# Provide a reasonable default for the --src-dir parameter if run out of tree
+if [ -z "${JIB_SRC_DIR}" ]; then
+    export JIB_SRC_DIR="${mydir}/../"
 fi
 
 ${installed_jib_script} "$@"
