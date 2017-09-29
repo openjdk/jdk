@@ -103,7 +103,7 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 1);
     }
     else if (has_sparc5()) {
-      // Use prefetch instruction to avoid partial RAW issue on Core S4 processors,
+      // Use prefetch instruction to avoid partial RAW issue on Core C4 processors,
       // also use prefetch style 3.
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
       if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
@@ -128,7 +128,7 @@ void VM_Version::initialize() {
 
   // We increase the number of prefetched cache lines, to use just a bit more
   // aggressive approach, when the L2-cache line size is small (32 bytes), or
-  // when running on newer processor implementations, such as the Core S4.
+  // when running on newer processor implementations, such as the Core C4.
   bool inc_prefetch = cache_line_size > 0 && (cache_line_size < 64 || has_sparc5());
 
   if (inc_prefetch) {
@@ -218,7 +218,9 @@ void VM_Version::initialize() {
 
   char buf[512];
   jio_snprintf(buf, sizeof(buf),
-               "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"
+               "%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s"
+               "%s%s%s%s%s%s%s",
                (has_v9()          ? "v9" : ""),
                (has_popc()        ? ", popc" : ""),
                (has_vis1()        ? ", vis1" : ""),
@@ -250,6 +252,16 @@ void VM_Version::initialize() {
                (has_xmont()       ? ", xmont" : ""),
                (has_pause_nsec()  ? ", pause_nsec" : ""),
                (has_vamask()      ? ", vamask" : ""),
+
+               (has_sparc6()      ? ", sparc6" : ""),
+               (has_dictunp()     ? ", dictunp" : ""),
+               (has_fpcmpshl()    ? ", fpcmpshl" : ""),
+               (has_rle()         ? ", rle" : ""),
+               (has_sha3()        ? ", sha3" : ""),
+               (has_athena_plus2()? ", athena_plus2" : ""),
+               (has_vis3c()       ? ", vis3c" : ""),
+               (has_sparc5b()     ? ", sparc5b" : ""),
+               (has_mme()         ? ", mme" : ""),
 
                (has_fast_idiv()   ? ", *idiv" : ""),
                (has_fast_rdpc()   ? ", *rdpc" : ""),
