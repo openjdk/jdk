@@ -645,7 +645,7 @@ class Assembler : public AbstractAssembler {
   static void fmaf_only() { assert(VM_Version::has_fmaf(), "This instruction only works on SPARC with FMAf"); }
 
   // MPMUL instruction supported only on certain processors
-  static void mpmul_only() { assert( VM_Version::has_mpmul(), "This instruction only works on SPARC with MPMUL"); }
+  static void mpmul_only() { assert(VM_Version::has_mpmul(), "This instruction only works on SPARC with MPMUL"); }
 
   // instruction only in VIS1
   static void vis1_only() { assert(VM_Version::has_vis1(), "This instruction only works on SPARC with VIS1"); }
@@ -946,6 +946,10 @@ class Assembler : public AbstractAssembler {
   // fmaf instructions.
 
   inline void fmadd(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void fmsub(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+
+  inline void fnmadd(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void fnmsub(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
 
   // pp 165
 
