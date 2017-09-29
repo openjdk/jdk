@@ -97,11 +97,14 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
                    writeable) \
                                                                             \
   product(intx, UseVIS, 99,                                                 \
-          "Highest supported VIS instructions set on Sparc")                \
+          "Highest supported VIS instructions set on SPARC")                \
           range(0, 99)                                                      \
                                                                             \
   product(bool, UseCBCond, false,                                           \
           "Use compare and branch instruction on SPARC")                    \
+                                                                            \
+  product(bool, UseMPMUL, false,                                            \
+          "Use multi-precision multiply instruction (mpmul) on SPARC")      \
                                                                             \
   product(bool, UseBlockZeroing, false,                                     \
           "Use special cpu instructions for block zeroing")                 \
