@@ -359,6 +359,19 @@ inline void Assembler::fmadd(FloatRegisterImpl::Width w, FloatRegister s1, Float
   fmaf_only();
   emit_int32(op(arith_op) | fd(d, w) | op3(stpartialf_op3) | fs1(s1, w) | fs3(s3, w) | op5(w) | fs2(s2, w));
 }
+inline void Assembler::fmsub(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d) {
+  fmaf_only();
+  emit_int32(op(arith_op) | fd(d, w) | op3(stpartialf_op3) | fs1(s1, w) | fs3(s3, w) | op5(0x4 + w) | fs2(s2, w));
+}
+
+inline void Assembler::fnmadd(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d) {
+  fmaf_only();
+  emit_int32(op(arith_op) | fd(d, w) | op3(stpartialf_op3) | fs1(s1, w) | fs3(s3, w) | op5(0xc + w) | fs2(s2, w));
+}
+inline void Assembler::fnmsub(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d) {
+  fmaf_only();
+  emit_int32(op(arith_op) | fd(d, w) | op3(stpartialf_op3) | fs1(s1, w) | fs3(s3, w) | op5(0x8 + w) | fs2(s2, w));
+}
 
 inline void Assembler::flush(Register s1, Register s2) {
   emit_int32(op(arith_op) | op3(flush_op3) | rs1(s1) | rs2(s2));
