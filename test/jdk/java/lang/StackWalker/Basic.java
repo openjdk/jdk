@@ -29,8 +29,9 @@
  */
 
 import java.lang.StackWalker.StackFrame;
+import java.lang.invoke.MethodType;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static java.lang.StackWalker.Option.*;
@@ -72,6 +73,37 @@ public class Basic {
                              ConstructorNewInstance.class.getName()+"::create",
                              Basic.class.getName()+"::testWalkFromConstructor"),
                      found);
+    }
+
+    @Test
+    public static void testMethodSignature() throws Exception {
+        List<StackFrame> frames = new StackBuilder(16, 16).build();
+        Map<String, MethodType> methodTypes = StackBuilder.methodTypes();
+        for (StackFrame f : frames) {
+            MethodType type = methodTypes.get(f.getMethodName());
+            if (type != null) {
+                System.out.format("%s.%s %s%n", f.getClassName(), f.getMethodName(),
+                                  f.getDescriptor());
+
+                String descriptor = f.getDescriptor();
+                if (!descriptor.equals(type.toMethodDescriptorString())) {
+                    throw new RuntimeException("Expected: " + type.toMethodDescriptorString()
+                        + " got: " + f.getDescriptor());
+                }
+
+                if (!f.getMethodType().equals(type)) {
+                    throw new RuntimeException("Expected: " + type
+                        + " got: " + f.getMethodType());
+                }
+
+                // verify descriptor returned by getDescriptor() before and after
+                // getMethodType() is called
+                if (!descriptor.equals(f.getDescriptor())) {
+                    throw new RuntimeException("Mismatched: " + descriptor
+                        + " got: " + f.getDescriptor());
+                }
+            }
+        }
     }
 
     private final int depth;
@@ -132,7 +164,7 @@ public class Basic {
         }
     }
 
-    class StackBuilder {
+    static class StackBuilder {
         private final int stackDepth;
         private final int limit;
         private int depth = 0;
@@ -150,15 +182,17 @@ public class Basic {
             trace("m1");
             m2();
         }
-        void m2() {
+        List m2() {
             trace("m2");
             m3();
+            return null;
         }
-        void m3() {
+        int m3() {
             trace("m3");
-            m4();
+            m4(null);
+            return 0;
         }
-        void m4() {
+        void m4(Object o) {
             trace("m4");
             int remaining = stackDepth-depth-1;
             if (remaining >= 4) {
@@ -183,6 +217,13 @@ public class Basic {
             ++depth;
             if (verbose)
                 System.out.format("%2d: %s%n", depth, methodname);
+        }
+
+        static Map<String, MethodType> methodTypes() throws Exception {
+            return Map.of("m1", MethodType.methodType(void.class),
+                          "m2", MethodType.methodType(List.class),
+                          "m3", MethodType.methodType(int.class),
+                          "m4", MethodType.methodType(void.class, Object.class));
         }
     }
 
