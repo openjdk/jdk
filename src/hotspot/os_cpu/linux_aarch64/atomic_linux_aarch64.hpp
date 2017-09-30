@@ -57,26 +57,6 @@ struct Atomic::PlatformAdd
   }
 };
 
-inline void Atomic::inc(volatile jint* dest)
-{
- add(1, dest);
-}
-
-inline void Atomic::inc_ptr(volatile void* dest)
-{
- add_ptr(1, dest);
-}
-
-inline void Atomic::dec (volatile jint* dest)
-{
- add(-1, dest);
-}
-
-inline void Atomic::dec_ptr(volatile void* dest)
-{
- add_ptr(-1, dest);
-}
-
 inline jint Atomic::xchg (jint exchange_value, volatile jint* dest)
 {
   jint res = __sync_lock_test_and_set (dest, exchange_value);
@@ -109,16 +89,6 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T exchange_value,
 
 inline void Atomic::store (jlong store_value, jlong* dest) { *dest = store_value; }
 inline void Atomic::store (jlong store_value, volatile jlong* dest) { *dest = store_value; }
-
-inline void Atomic::inc_ptr(volatile intptr_t* dest)
-{
- add_ptr(1, dest);
-}
-
-inline void Atomic::dec_ptr(volatile intptr_t* dest)
-{
- add_ptr(-1, dest);
-}
 
 inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest)
 {

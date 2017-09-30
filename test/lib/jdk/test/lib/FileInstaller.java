@@ -45,10 +45,12 @@ public class FileInstaller {
         if (args.length != 2) {
             throw new IllegalArgumentException("Unexpected number of arguments for file copy");
         }
-        Path src = Paths.get(Utils.TEST_SRC, args[0]).toAbsolutePath();
-        Path dst = Paths.get(args[1]).toAbsolutePath();
+        Path src = Paths.get(Utils.TEST_SRC, args[0]).toAbsolutePath().normalize();
+        Path dst = Paths.get(args[1]).toAbsolutePath().normalize();
         if (src.toFile().exists()) {
+            System.out.printf("copying %s to %s%n", src, dst);
             if (src.toFile().isDirectory()) {
+                // can't use Files::copy for dirs, as 'dst' might exist already
                 Files.walkFileTree(src, new CopyFileVisitor(src, dst));
             } else {
                 Path dstDir = dst.getParent();
@@ -74,7 +76,7 @@ public class FileInstaller {
         @Override
         public FileVisitResult preVisitDirectory(Path file,
                 BasicFileAttributes attrs) throws IOException {
-            Path relativePath = file.relativize(copyFrom);
+            Path relativePath = copyFrom.relativize(file);
             Path destination = copyTo.resolve(relativePath);
             if (!destination.toFile().exists()) {
                 Files.createDirectories(destination);

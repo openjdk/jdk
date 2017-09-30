@@ -173,7 +173,9 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 
-    if (TraceOldGenTime) accumulated_time()->start();
+    if (log_is_enabled(Debug, gc, heap, exit)) {
+      accumulated_time()->start();
+    }
 
     // Let the size policy know we're starting
     size_policy->major_collection_begin();
@@ -342,7 +344,9 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     // We collected the heap, recalculate the metaspace capacity
     MetaspaceGC::compute_new_size();
 
-    if (TraceOldGenTime) accumulated_time()->stop();
+    if (log_is_enabled(Debug, gc, heap, exit)) {
+      accumulated_time()->stop();
+    }
 
     young_gen->print_used_change(young_gen_prev_used);
     old_gen->print_used_change(old_gen_prev_used);

@@ -1075,7 +1075,7 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
                         obj_ptr, old->is_objArray(), word_sz);
 
   NOT_PRODUCT(
-    Atomic::inc_ptr(&_numObjectsPromoted);
+    Atomic::inc(&_numObjectsPromoted);
     Atomic::add_ptr(alloc_sz, &_numWordsPromoted);
   )
 
@@ -7974,7 +7974,7 @@ void CMSCollector::push_on_overflow_list(oop p) {
 
 // Multi-threaded; use CAS to prepend to overflow list
 void CMSCollector::par_push_on_overflow_list(oop p) {
-  NOT_PRODUCT(Atomic::inc_ptr(&_num_par_pushes);)
+  NOT_PRODUCT(Atomic::inc(&_num_par_pushes);)
   assert(oopDesc::is_oop(p), "Not an oop");
   par_preserve_mark_if_necessary(p);
   oop observed_overflow_list = _overflow_list;

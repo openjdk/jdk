@@ -144,6 +144,7 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 bool MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
+  MetaspaceSnapshot::snapshot(_metaspace_snapshot);
   return true;
 }
 
