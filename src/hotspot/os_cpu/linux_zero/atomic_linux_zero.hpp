@@ -201,30 +201,6 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
   return __sync_add_and_fetch(dest, add_value);
 }
 
-inline void Atomic::inc(volatile jint* dest) {
-  add(1, dest);
-}
-
-inline void Atomic::inc_ptr(volatile intptr_t* dest) {
-  add_ptr(1, dest);
-}
-
-inline void Atomic::inc_ptr(volatile void* dest) {
-  add_ptr(1, dest);
-}
-
-inline void Atomic::dec(volatile jint* dest) {
-  add(-1, dest);
-}
-
-inline void Atomic::dec_ptr(volatile intptr_t* dest) {
-  add_ptr(-1, dest);
-}
-
-inline void Atomic::dec_ptr(volatile void* dest) {
-  add_ptr(-1, dest);
-}
-
 inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
 #ifdef ARM
   return arm_lock_test_and_set(dest, exchange_value);

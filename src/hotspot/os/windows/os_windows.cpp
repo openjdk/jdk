@@ -428,7 +428,7 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
   // When the VMThread gets here, the main thread may have already exited
   // which frees the CodeHeap containing the Atomic::add code
   if (thread != VMThread::vm_thread() && VMThread::vm_thread() != NULL) {
-    Atomic::dec_ptr((intptr_t*)&os::win32::_os_thread_count);
+    Atomic::dec(&os::win32::_os_thread_count);
   }
 
   // If a thread has not deleted itself ("delete this") as part of its
@@ -634,7 +634,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     return NULL;
   }
 
-  Atomic::inc_ptr((intptr_t*)&os::win32::_os_thread_count);
+  Atomic::inc(&os::win32::_os_thread_count);
 
   // Store info on the Win32 thread into the OSThread
   osthread->set_thread_handle(thread_handle);

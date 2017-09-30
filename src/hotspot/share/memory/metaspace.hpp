@@ -273,7 +273,7 @@ class MetaspaceAux : AllStatic {
   // Running sum of space in all Metachunks that
   // are being used for metadata. One for each
   // type of Metadata.
-  static size_t _used_words[Metaspace:: MetadataTypeCount];
+  static volatile size_t _used_words[Metaspace:: MetadataTypeCount];
 
  public:
   // Decrement and increment _allocated_capacity_words

@@ -39,14 +39,6 @@ inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *
 inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
 inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
 
-inline void Atomic::inc    (volatile jint*     dest) { (void)add    (1, dest); }
-inline void Atomic::inc_ptr(volatile intptr_t* dest) { (void)add_ptr(1, dest); }
-inline void Atomic::inc_ptr(volatile void*     dest) { (void)add_ptr(1, dest); }
-
-inline void Atomic::dec    (volatile jint*     dest) { (void)add    (-1, dest); }
-inline void Atomic::dec_ptr(volatile intptr_t* dest) { (void)add_ptr(-1, dest); }
-inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); }
-
 // For Sun Studio - implementation is in solaris_x86_64.il.
 
 extern "C" {

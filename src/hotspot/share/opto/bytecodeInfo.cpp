@@ -644,7 +644,8 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
       C->log()->elem("inline_level_discount caller='%d' callee='%d'", id1, id2);
     }
   }
-  InlineTree* ilt = new InlineTree(C, this, callee_method, caller_jvms, caller_bci, recur_frequency, _max_inline_level + max_inline_level_adjust);
+  // Allocate in the comp_arena to make sure the InlineTree is live when dumping a replay compilation file
+  InlineTree* ilt = new (C->comp_arena()) InlineTree(C, this, callee_method, caller_jvms, caller_bci, recur_frequency, _max_inline_level + max_inline_level_adjust);
   _subtrees.append(ilt);
 
   NOT_PRODUCT( _count_inlines += 1; )
