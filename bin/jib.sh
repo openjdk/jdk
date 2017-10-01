@@ -146,9 +146,4 @@ elif [ ! -e "${install_data}" ] || [ "${data_string}" != "$(cat "${install_data}
     install_jib
 fi
 
-# Provide a reasonable default for the --src-dir parameter if run out of tree
-if [ -z "${JIB_SRC_DIR}" ]; then
-    export JIB_SRC_DIR="${mydir}/../"
-fi
-
 ${installed_jib_script} "$@"
