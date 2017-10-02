@@ -592,8 +592,8 @@ public:
           range(8, 256)                                                     \
           constraint(ObjectAlignmentInBytesConstraintFunc,AtParse)          \
                                                                             \
-  product(bool, AssumeMP, false,                                            \
-          "Instruct the VM to assume multiple processors are available")    \
+  product(bool, AssumeMP, true,                                             \
+          "(Deprecated) Instruct the VM to assume multiple processors are available")\
                                                                             \
   /* UseMembar is theoretically a temp flag used for memory barrier      */ \
   /* removal testing.  It was supposed to be removed before FCS but has  */ \
