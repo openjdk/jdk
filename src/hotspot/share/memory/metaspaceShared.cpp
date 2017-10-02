@@ -165,7 +165,7 @@ public:
   }
 
   void print(size_t total_bytes) const {
-    tty->print_cr("%s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
+    tty->print_cr("%-3s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
                   _name, used(), perc(used(), total_bytes), reserved(), perc(used(), reserved()), p2i(_base));
   }
   void print_out_of_space_msg(const char* failing_region, size_t needed_bytes) {
@@ -1405,7 +1405,7 @@ void VM_PopulateDumpSharedSpace::print_region_stats() {
   print_heap_region_stats(_string_regions, "st", total_reserved);
   print_heap_region_stats(_open_archive_heap_regions, "oa", total_reserved);
 
-  tty->print_cr("total   : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
+  tty->print_cr("total    : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
                  total_bytes, total_reserved, total_u_perc);
 }
 
@@ -1416,7 +1416,7 @@ void VM_PopulateDumpSharedSpace::print_heap_region_stats(GrowableArray<MemRegion
       char* start = (char*)heap_mem->at(i).start();
       size_t size = heap_mem->at(i).byte_size();
       char* top = start + size;
-      tty->print_cr("%s%d space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100%% used] at " INTPTR_FORMAT,
+      tty->print_cr("%s%d space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
                     name, i, size, size/double(total_size)*100.0, size, p2i(start));
 
   }
