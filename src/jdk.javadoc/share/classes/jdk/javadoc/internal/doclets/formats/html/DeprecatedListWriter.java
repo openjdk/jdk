@@ -100,33 +100,33 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     private String getHeadingKey(DeprElementKind kind) {
         switch (kind) {
             case REMOVAL:
-                return "doclet.Deprecated_For_Removal";
+                return "doclet.For_Removal";
             case MODULE:
-                return "doclet.Deprecated_Modules";
+                return "doclet.Modules";
             case PACKAGE:
-                return "doclet.Deprecated_Packages";
+                return "doclet.Packages";
             case INTERFACE:
-                return "doclet.Deprecated_Interfaces";
+                return "doclet.Interfaces";
             case CLASS:
-                return "doclet.Deprecated_Classes";
+                return "doclet.Classes";
             case ENUM:
-                return "doclet.Deprecated_Enums";
+                return "doclet.Enums";
             case EXCEPTION:
-                return "doclet.Deprecated_Exceptions";
+                return "doclet.Exceptions";
             case ERROR:
-                return "doclet.Deprecated_Errors";
+                return "doclet.Errors";
             case ANNOTATION_TYPE:
-                return "doclet.Deprecated_Annotation_Types";
+                return "doclet.Annotation_Types";
             case FIELD:
-                return "doclet.Deprecated_Fields";
+                return "doclet.Fields";
             case METHOD:
-                return "doclet.Deprecated_Methods";
+                return "doclet.Methods";
             case CONSTRUCTOR:
-                return "doclet.Deprecated_Constructors";
+                return "doclet.Constructors";
             case ENUM_CONSTANT:
-                return "doclet.Deprecated_Enum_Constants";
+                return "doclet.Enum_Constants";
             case ANNOTATION_TYPE_MEMBER:
-                return "doclet.Deprecated_Annotation_Type_Members";
+                return "doclet.Annotation_Type_Members";
             default:
                 throw new AssertionError("unknown kind: " + kind);
         }
@@ -135,33 +135,33 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     private String getSummaryKey(DeprElementKind kind) {
         switch (kind) {
             case REMOVAL:
-                return "doclet.deprecated_for_removal";
+                return "doclet.for_removal";
             case MODULE:
-                return "doclet.deprecated_modules";
+                return "doclet.modules";
             case PACKAGE:
-                return "doclet.deprecated_packages";
+                return "doclet.packages";
             case INTERFACE:
-                return "doclet.deprecated_interfaces";
+                return "doclet.interfaces";
             case CLASS:
-                return "doclet.deprecated_classes";
+                return "doclet.classes";
             case ENUM:
-                return "doclet.deprecated_enums";
+                return "doclet.enums";
             case EXCEPTION:
-                return "doclet.deprecated_exceptions";
+                return "doclet.exceptions";
             case ERROR:
-                return "doclet.deprecated_errors";
+                return "doclet.errors";
             case ANNOTATION_TYPE:
-                return "doclet.deprecated_annotation_types";
+                return "doclet.annotation_types";
             case FIELD:
-                return "doclet.deprecated_fields";
+                return "doclet.fields";
             case METHOD:
-                return "doclet.deprecated_methods";
+                return "doclet.methods";
             case CONSTRUCTOR:
-                return "doclet.deprecated_constructors";
+                return "doclet.constructors";
             case ENUM_CONSTANT:
-                return "doclet.deprecated_enum_constants";
+                return "doclet.enum_constants";
             case ANNOTATION_TYPE_MEMBER:
-                return "doclet.deprecated_annotation_type_members";
+                return "doclet.annotation_type_members";
             default:
                 throw new AssertionError("unknown kind: " + kind);
         }
@@ -473,6 +473,6 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             default:
                 writer = new AnnotationTypeOptionalMemberWriterImpl(this, null);
         }
-        return HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, writer.getDeprecatedLink(e));
+        return HtmlTree.TH_ROW_SCOPE(HtmlStyle.colDeprecatedItemName, writer.getDeprecatedLink(e));
     }
 }

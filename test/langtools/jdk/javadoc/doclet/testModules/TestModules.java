@@ -25,7 +25,7 @@
  * @test
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218 8175823 8166306
- *      8178043 8181622 8183511
+ *      8178043 8181622 8183511 8169819
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -1021,8 +1021,8 @@ public class TestModules extends JavadocTester {
                 + "</div>");
         checkOutput("deprecated-list.html", found,
                 "<ul>\n"
-                + "<li><a href=\"#forRemoval\">Deprecated For Removal</a></li>\n"
-                + "<li><a href=\"#module\">Deprecated Modules</a></li>\n"
+                + "<li><a href=\"#forRemoval\">For Removal</a></li>\n"
+                + "<li><a href=\"#module\">Modules</a></li>\n"
                 + "</ul>",
                 "<tr class=\"altColor\">\n"
                 + "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleA-summary.html\">moduleA</a></th>\n"

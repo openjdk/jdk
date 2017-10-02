@@ -531,14 +531,16 @@ Table styles
     text-align:left;
     padding:0px 0px 12px 10px;
 }
-th.colFirst, th.colSecond, th.colLast, th.colConstructorName, .useSummary th, .constantsSummary th, .packagesSummary th,
-td.colFirst, td.colSecond, td.colLast, .useSummary td, .constantsSummary td {
+th.colFirst, th.colSecond, th.colLast, th.colConstructorName, th.colDeprecatedItemName, .useSummary th,
+.constantsSummary th, .packagesSummary th, td.colFirst, td.colSecond, td.colLast, .useSummary td,
+.constantsSummary td {
     vertical-align:top;
     padding-right:0px;
     padding-top:8px;
     padding-bottom:3px;
 }
-th.colFirst, th.colSecond, th.colLast, th.colConstructorName, .constantsSummary th, .packagesSummary th {
+th.colFirst, th.colSecond, th.colLast, th.colConstructorName, th.colDeprecatedItemName, .constantsSummary th,
+.packagesSummary th {
     background:#dee3e9;
     text-align:left;
     padding:8px 3px 3px 7px;
@@ -547,7 +549,7 @@ td.colFirst, th.colFirst {
     white-space:nowrap;
     font-size:13px;
 }
-td.colSecond, th.colSecond, td.colLast, th.colConstructorName, th.colLast {
+td.colSecond, th.colSecond, td.colLast, th.colConstructorName, th.colDeprecatedItemName, th.colLast {
     font-size:13px;
 }
 .constantsSummary th, .packagesSummary th {
@@ -576,6 +578,7 @@ td.colSecond a:link, td.colSecond a:visited,
 th.colFirst a:link, th.colFirst a:visited,
 th.colSecond a:link, th.colSecond a:visited,
 th.colConstructorName a:link, th.colConstructorName a:visited,
+th.colDeprecatedItemName a:link, th.colDeprecatedItemName a:visited, 
 .constantValuesContainer td a:link, .constantValuesContainer td a:visited {
     font-weight:bold;
 }
