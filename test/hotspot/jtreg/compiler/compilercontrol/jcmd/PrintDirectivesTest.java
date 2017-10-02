@@ -27,7 +27,7 @@
  * @summary Tests jcmd to be able to add a directive to compile only specified methods
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @requires vm.flavor != "minimal"
+ * @requires vm.flavor != "minimal" & !vm.graal.enabled
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
