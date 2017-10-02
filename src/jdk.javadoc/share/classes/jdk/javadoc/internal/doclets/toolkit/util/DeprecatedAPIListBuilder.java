@@ -78,7 +78,7 @@ public class DeprecatedAPIListBuilder {
         deprecatedMap = new EnumMap<>(DeprElementKind.class);
         for (DeprElementKind kind : DeprElementKind.values()) {
             deprecatedMap.put(kind,
-                    new TreeSet<>(utils.makeGeneralPurposeComparator()));
+                    new TreeSet<>(utils.makeDeprecatedComparator()));
         }
         buildDeprecatedAPIInfo();
     }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6492694 8026567 8048351 8162363 8183511
+ * @bug      6492694 8026567 8048351 8162363 8183511 8169819
  * @summary  Test package deprecation.
  * @author   bpatel
  * @library  ../lib/
@@ -54,7 +54,7 @@ public class TestPackageDeprecation extends JavadocTester {
         );
 
         checkOutput("deprecated-list.html", true,
-            "<li><a href=\"#package\">Deprecated Packages</a></li>"
+            "<li><a href=\"#package\">Packages</a></li>"
         );
     }
 
