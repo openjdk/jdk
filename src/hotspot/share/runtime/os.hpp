@@ -213,7 +213,7 @@ class os: AllStatic {
     // the bootstrap routine for the stub generator needs to check
     // the processor count directly and leave the bootstrap routine
     // in place until called after initialization has ocurred.
-    return (_processor_count != 1) || AssumeMP;
+    return AssumeMP || (_processor_count != 1);
   }
   static julong available_memory();
   static julong physical_memory();
