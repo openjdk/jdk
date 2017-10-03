@@ -861,4 +861,45 @@ public class FutureTaskTest extends JSR166TestCase {
         }
     }
 
+    /**
+     * toString indicates current completion state
+     */
+    public void testToString_incomplete() {
+        FutureTask<String> f = new FutureTask<String>(() -> "");
+        assertTrue(f.toString().matches(".*\\[.*Not completed.*\\]"));
+        if (testImplementationDetails)
+            assertTrue(f.toString().startsWith(
+                               identityString(f) + "[Not completed, task ="));
+    }
+
+    public void testToString_normal() {
+        FutureTask<String> f = new FutureTask<String>(() -> "");
+        f.run();
+        assertTrue(f.toString().matches(".*\\[.*Completed normally.*\\]"));
+        if (testImplementationDetails)
+            assertEquals(identityString(f) + "[Completed normally]",
+                         f.toString());
+    }
+
+    public void testToString_exception() {
+        FutureTask<String> f = new FutureTask<String>(
+                () -> { throw new ArithmeticException(); });
+        f.run();
+        assertTrue(f.toString().matches(".*\\[.*Completed exceptionally.*\\]"));
+        if (testImplementationDetails)
+            assertTrue(f.toString().startsWith(
+                               identityString(f) + "[Completed exceptionally: "));
+    }
+
+    public void testToString_cancelled() {
+        for (boolean mayInterruptIfRunning : new boolean[] { true, false }) {
+            FutureTask<String> f = new FutureTask<String>(() -> "");
+            assertTrue(f.cancel(mayInterruptIfRunning));
+            assertTrue(f.toString().matches(".*\\[.*Cancelled.*\\]"));
+            if (testImplementationDetails)
+                assertEquals(identityString(f) + "[Cancelled]",
+                             f.toString());
+        }
+    }
+
 }
