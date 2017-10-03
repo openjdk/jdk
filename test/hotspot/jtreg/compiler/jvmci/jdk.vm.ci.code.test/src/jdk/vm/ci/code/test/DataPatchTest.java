@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ public class DataPatchTest extends CodeInstallationTest {
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
             Register klass = asm.emitLoadPointer((HotSpotConstant) constantReflection.asObjectHub(type));
-            Register ret = asm.emitLoadPointer(klass, config.classMirrorOffset);
+            Register ret = asm.emitLoadPointer(asm.emitLoadPointer(klass, config.classMirrorHandleOffset), 0);
             asm.emitPointerRet(ret);
         });
     }
@@ -123,7 +123,7 @@ public class DataPatchTest extends CodeInstallationTest {
             HotSpotConstant hub = (HotSpotConstant) constantReflection.asObjectHub(type);
             Register narrowKlass = asm.emitLoadPointer((HotSpotConstant) hub.compress());
             Register klass = asm.emitUncompressPointer(narrowKlass, config.narrowKlassBase, config.narrowKlassShift);
-            Register ret = asm.emitLoadPointer(klass, config.classMirrorOffset);
+            Register ret = asm.emitLoadPointer(asm.emitLoadPointer(klass, config.classMirrorHandleOffset), 0);
             asm.emitPointerRet(ret);
         });
     }
@@ -135,7 +135,7 @@ public class DataPatchTest extends CodeInstallationTest {
             HotSpotConstant hub = (HotSpotConstant) constantReflection.asObjectHub(type);
             DataSectionReference ref = asm.emitDataItem(hub);
             Register klass = asm.emitLoadPointer(ref);
-            Register ret = asm.emitLoadPointer(klass, config.classMirrorOffset);
+            Register ret = asm.emitLoadPointer(asm.emitLoadPointer(klass, config.classMirrorHandleOffset), 0);
             asm.emitPointerRet(ret);
         });
     }
@@ -150,7 +150,7 @@ public class DataPatchTest extends CodeInstallationTest {
             DataSectionReference ref = asm.emitDataItem(narrowHub);
             Register narrowKlass = asm.emitLoadNarrowPointer(ref);
             Register klass = asm.emitUncompressPointer(narrowKlass, config.narrowKlassBase, config.narrowKlassShift);
-            Register ret = asm.emitLoadPointer(klass, config.classMirrorOffset);
+            Register ret = asm.emitLoadPointer(asm.emitLoadPointer(klass, config.classMirrorHandleOffset), 0);
             asm.emitPointerRet(ret);
         });
     }

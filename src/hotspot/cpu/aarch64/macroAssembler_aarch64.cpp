@@ -3291,6 +3291,7 @@ void MacroAssembler::load_mirror(Register dst, Register method) {
   ldr(dst, Address(dst, ConstMethod::constants_offset()));
   ldr(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
   ldr(dst, Address(dst, mirror_offset));
+  resolve_oop_handle(dst);
 }
 
 void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp) {

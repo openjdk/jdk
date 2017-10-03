@@ -3382,6 +3382,7 @@ void MacroAssembler::load_mirror_from_const_method(Register mirror, Register con
   ld(mirror, in_bytes(ConstMethod::constants_offset()), const_method);
   ld(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
   ld(mirror, in_bytes(Klass::java_mirror_offset()), mirror);
+  resolve_oop_handle(mirror);
 }
 
 // Clear Array
