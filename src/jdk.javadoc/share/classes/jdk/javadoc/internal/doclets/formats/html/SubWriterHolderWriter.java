@@ -189,9 +189,8 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         if (utils.isDeprecated(member)) {
             Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(member));
             div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
-            div.addContent(Contents.SPACE);
             if (!deprs.isEmpty()) {
-                addInlineDeprecatedComment(member, deprs.get(0), div);
+                addSummaryDeprecatedComment(member, deprs.get(0), div);
             }
             tdSummary.addContent(div);
             return;
@@ -200,7 +199,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
             if (te != null &&  utils.isTypeElement(te) && utils.isDeprecated(te)) {
                 Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(te));
                 div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
-                div.addContent(Contents.SPACE);
                 tdSummary.addContent(div);
             }
         }
