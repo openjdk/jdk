@@ -146,12 +146,14 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
   return result;
 }
 
-inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
-
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
+                                             T volatile* dest) const {
   // Note that xchg_ptr doesn't necessarily do an acquire
   // (see synchronizer.cpp).
 
-  unsigned int old_value;
+  T old_value;
   const uint64_t zero = 0;
 
   __asm__ __volatile__ (
@@ -179,15 +181,18 @@ inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
       "memory"
     );
 
-  return (jint) old_value;
+  return old_value;
 }
 
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
-
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
   // Note that xchg_ptr doesn't necessarily do an acquire
   // (see synchronizer.cpp).
 
-  long old_value;
+  T old_value;
   const uint64_t zero = 0;
 
   __asm__ __volatile__ (
@@ -215,11 +220,7 @@ inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* des
       "memory"
     );
 
-  return (intptr_t) old_value;
-}
-
-inline void* Atomic::xchg_ptr(void* exchange_value, volatile void* dest) {
-  return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
+  return old_value;
 }
 
 inline void cmpxchg_pre_membar(cmpxchg_memory_order order) {

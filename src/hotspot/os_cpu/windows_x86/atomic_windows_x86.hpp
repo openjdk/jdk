@@ -81,17 +81,19 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
   return add_using_helper<intptr_t>(os::atomic_add_ptr_func, add_value, dest);
 }
 
-inline jint     Atomic::xchg    (jint     exchange_value, volatile jint*     dest) {
-  return (jint)(*os::atomic_xchg_func)(exchange_value, dest);
-}
+#define DEFINE_STUB_XCHG(ByteSize, StubType, StubName)                  \
+  template<>                                                            \
+  template<typename T>                                                  \
+  inline T Atomic::PlatformXchg<ByteSize>::operator()(T exchange_value, \
+                                                      T volatile* dest) const { \
+    STATIC_ASSERT(ByteSize == sizeof(T));                               \
+    return xchg_using_helper<StubType>(StubName, exchange_value, dest); \
+  }
 
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
-  return (intptr_t)(os::atomic_xchg_ptr_func)(exchange_value, dest);
-}
+DEFINE_STUB_XCHG(4, jint, os::atomic_xchg_func)
+DEFINE_STUB_XCHG(8, jlong, os::atomic_xchg_ptr_func)
 
-inline void*    Atomic::xchg_ptr(void*    exchange_value, volatile void*     dest) {
-  return (void *)(os::atomic_xchg_ptr_func)((intptr_t)exchange_value, (volatile intptr_t*)dest);
-}
+#undef DEFINE_STUB_XCHG
 
 #define DEFINE_STUB_CMPXCHG(ByteSize, StubType, StubName)               \
   template<>                                                            \
@@ -128,21 +130,17 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) co
   }
 }
 
-inline jint     Atomic::xchg    (jint     exchange_value, volatile jint*     dest) {
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(T));
   // alternative for InterlockedExchange
   __asm {
     mov eax, exchange_value;
     mov ecx, dest;
     xchg eax, dword ptr [ecx];
   }
-}
-
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
-  return (intptr_t)xchg((jint)exchange_value, (volatile jint*)dest);
-}
-
-inline void*    Atomic::xchg_ptr(void*    exchange_value, volatile void*     dest) {
-  return (void*)xchg((jint)exchange_value, (volatile jint*)dest);
 }
 
 template<>

@@ -141,11 +141,15 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
     : "memory");
   return val;
 }
-#endif // AARCH64
+#endif
 
-inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(T));
 #ifdef AARCH64
-  jint old_val;
+  T old_val;
   int tmp;
   __asm__ volatile(
     "1:\n\t"
@@ -157,13 +161,17 @@ inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
     : "memory");
   return old_val;
 #else
-  return (*os::atomic_xchg_func)(exchange_value, dest);
+  return xchg_using_helper<jint>(os::atomic_xchg_func, exchange_value, dest);
 #endif
 }
 
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
 #ifdef AARCH64
-  intptr_t old_val;
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  T old_val;
   int tmp;
   __asm__ volatile(
     "1:\n\t"
@@ -174,14 +182,8 @@ inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* des
     : [new_val] "r" (exchange_value), [dest] "r" (dest)
     : "memory");
   return old_val;
-#else
-  return (intptr_t)xchg((jint)exchange_value, (volatile jint*)dest);
-#endif
 }
-
-inline void* Atomic::xchg_ptr(void* exchange_value, volatile void* dest) {
-  return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
-}
+#endif // AARCH64
 
 // The memory_order parameter is ignored - we always provide the strongest/most-conservative ordering
 
