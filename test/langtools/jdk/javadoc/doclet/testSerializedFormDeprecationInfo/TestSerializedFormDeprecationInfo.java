@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6802694 8025633 8026567 8183511
+ * @bug 6802694 8025633 8026567 8183511 8074407
  * @summary This test verifies deprecation info in serialized-form.html.
  * @author Bhavesh Patel
  * @library ../lib
@@ -99,10 +99,11 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
-                "<span class=\"deprecatedLabel\">Deprecated.</span>"
-                + "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
+                "<span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
-                + "<code>setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "<code>setUndecorated(boolean)</code></a>.</div>\n"
+                + "</div>\n"
                 + "<div class=\"block\">This field indicates whether the C1 "
                 + "is undecorated.</div>\n"
                 + "&nbsp;\n"
@@ -114,17 +115,18 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
-                "<span class=\"deprecatedLabel\">Deprecated.</span>"
-                + "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
+                "<span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
-                + "<code>setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "<code>setUndecorated(boolean)</code></a>.</div>\n"
+                + "</div>\n"
                 + "<div class=\"block\">Reads the object stream.</div>\n"
                 + "<dl>\n"
                 + "<dt><span class=\"throwsLabel\">Throws:</span></dt>\n"
                 + "<dd><code>java.io.IOException</code> - on error</dd>\n"
                 + "</dl>",
                 "<span class=\"deprecatedLabel\">Deprecated.</span>"
-                + "&nbsp;</div>\n"
+                + "</div>\n"
                 + "<div class=\"block\">"
                 + "The name for this class.</div>");
     }
@@ -135,16 +137,20 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
     void checkNoComment(boolean expectFound) {
         checkOutput("serialized-form.html", expectFound,
                 "<pre>boolean undecorated</pre>\n"
-                + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;<span class=\"deprecationComment\">"
+                + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\">"
                 + "As of JDK version 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>"
-                + "setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "setUndecorated(boolean)</code></a>.</div>\n"
+                + "</div>\n"
                 + "</li>",
                 "<span class=\"deprecatedLabel\">"
-                + "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version"
+                + "Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\">As of JDK version"
                 + " 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
-                + "<code>setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "<code>setUndecorated(boolean)</code></a>.</div>\n"
+                + "</div>\n"
                 + "</li>");
     }
 

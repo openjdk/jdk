@@ -660,7 +660,7 @@ h1.hidden {
     display:inline-block;
 }
 
-div.block div.block span.deprecationComment, div.block div.block span.emphasizedPhrase,
+div.block div.deprecationComment, div.block div.block span.emphasizedPhrase,
 div.block div.block span.interfaceName {
     font-style:normal;
 }

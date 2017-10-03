@@ -25,7 +25,7 @@
  * @test
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218 8175823 8166306
- *      8178043 8181622 8183511 8169819
+ *      8178043 8181622 8183511 8169819 8074407
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -448,7 +448,7 @@ public class TestModules extends JavadocTester {
                 "<section role=\"region\">\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal:"
                 + " This API element is subject to removal in a future version.</span>\n"
-                + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated.</span></div>\n"
+                + "<div class=\"deprecationComment\">This module is deprecated.</div>\n"
                 + "</div>\n"
                 + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
                 + "<a id=\"module.description\">\n"
@@ -1017,7 +1017,7 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleA-summary.html", found,
                 "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal:"
                 + " This API element is subject to removal in a future version.</span>\n"
-                + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated.</span></div>\n"
+                + "<div class=\"deprecationComment\">This module is deprecated.</div>\n"
                 + "</div>");
         checkOutput("deprecated-list.html", found,
                 "<ul>\n"
@@ -1027,12 +1027,12 @@ public class TestModules extends JavadocTester {
                 "<tr class=\"altColor\">\n"
                 + "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleA-summary.html\">moduleA</a></th>\n"
                 + "<td class=\"colLast\">\n"
-                + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated.</span></div>\n"
+                + "<div class=\"deprecationComment\">This module is deprecated.</div>\n"
                 + "</td>\n"
                 + "</tr>");
         checkOutput("moduleB-summary.html", !found,
                 "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
-                + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated using just the javadoc tag.</span></div>");
+                + "<div class=\"deprecationComment\">This module is deprecated using just the javadoc tag.</div>\n");
         checkOutput("moduletags-summary.html", found,
                 "<p>@Deprecated\n"
                 + "</p>",
@@ -1143,5 +1143,5 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"block\">This is a test description for the test.moduleFullName.</div>\n"
                 + "</dd>\n"
                 + "</dl>");
-}
+    }
 }
