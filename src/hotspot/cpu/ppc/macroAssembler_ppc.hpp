@@ -866,6 +866,40 @@ class MacroAssembler: public Assembler {
   void kernel_crc32_singleByteReg(Register crc, Register val, Register table,
                                   bool invertCRC);
 
+  // SHA-2 auxiliary functions and public interfaces
+ private:
+  void sha256_deque(const VectorRegister src,
+      const VectorRegister dst1, const VectorRegister dst2, const VectorRegister dst3);
+  void sha256_load_h_vec(const VectorRegister a, const VectorRegister e, const Register hptr);
+  void sha256_round(const VectorRegister* hs, const int total_hs, int& h_cnt, const VectorRegister kpw);
+  void sha256_load_w_plus_k_vec(const Register buf_in, const VectorRegister* ws,
+      const int total_ws, const Register k, const VectorRegister* kpws,
+      const int total_kpws);
+  void sha256_calc_4w(const VectorRegister w0, const VectorRegister w1,
+      const VectorRegister w2, const VectorRegister w3, const VectorRegister kpw0,
+      const VectorRegister kpw1, const VectorRegister kpw2, const VectorRegister kpw3,
+      const Register j, const Register k);
+  void sha256_update_sha_state(const VectorRegister a, const VectorRegister b,
+      const VectorRegister c, const VectorRegister d, const VectorRegister e,
+      const VectorRegister f, const VectorRegister g, const VectorRegister h,
+      const Register hptr);
+
+  void sha512_load_w_vec(const Register buf_in, const VectorRegister* ws, const int total_ws);
+  void sha512_update_sha_state(const Register state, const VectorRegister* hs, const int total_hs);
+  void sha512_round(const VectorRegister* hs, const int total_hs, int& h_cnt, const VectorRegister kpw);
+  void sha512_load_h_vec(const Register state, const VectorRegister* hs, const int total_hs);
+  void sha512_calc_2w(const VectorRegister w0, const VectorRegister w1,
+      const VectorRegister w2, const VectorRegister w3,
+      const VectorRegister w4, const VectorRegister w5,
+      const VectorRegister w6, const VectorRegister w7,
+      const VectorRegister kpw0, const VectorRegister kpw1, const Register j,
+      const VectorRegister vRb, const Register k);
+
+ public:
+  void sha256(bool multi_block);
+  void sha512(bool multi_block);
+
+
   //
   // Debugging
   //

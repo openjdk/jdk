@@ -116,10 +116,19 @@ class Atomic : AllStatic {
   // Performs atomic exchange of *dest with exchange_value. Returns old
   // prior value of *dest. xchg*() provide:
   // <fence> exchange-value-with-dest <membar StoreLoad|StoreStore>
-  inline static jint         xchg    (jint         exchange_value, volatile jint*         dest);
-  inline static unsigned int xchg    (unsigned int exchange_value, volatile unsigned int* dest);
-  inline static intptr_t     xchg_ptr(intptr_t     exchange_value, volatile intptr_t*     dest);
-  inline static void*        xchg_ptr(void*        exchange_value, volatile void*         dest);
+  // The type T must be either a pointer type convertible to or equal
+  // to D, an integral/enum type equal to D, or a type equal to D that
+  // is primitive convertible using PrimitiveConversions.
+  template<typename T, typename D>
+  inline static D xchg(T exchange_value, volatile D* dest);
+
+  inline static intptr_t xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
+    return xchg(exchange_value, dest);
+  }
+
+  inline static void*    xchg_ptr(void*    exchange_value, volatile void*     dest) {
+    return xchg(exchange_value, reinterpret_cast<void* volatile*>(dest));
+  }
 
   // Performs atomic compare of *dest and compare_value, and exchanges
   // *dest with exchange_value if the comparison succeeded. Returns prior
@@ -280,6 +289,45 @@ private:
 public: // Temporary, can't be private: C++03 11.4/2. Fixed by C++11.
   struct CmpxchgByteUsingInt;
 private:
+
+  // Dispatch handler for xchg.  Provides type-based validity
+  // checking and limited conversions around calls to the
+  // platform-specific implementation layer provided by
+  // PlatformXchg.
+  template<typename T, typename D, typename Enable = void>
+  struct XchgImpl;
+
+  // Platform-specific implementation of xchg.  Support for sizes
+  // of 4, and sizeof(intptr_t) are required.  The class is a function
+  // object that must be default constructable, with these requirements:
+  //
+  // - dest is of type T*.
+  // - exchange_value is of type T.
+  // - platform_xchg is an object of type PlatformXchg<sizeof(T)>.
+  //
+  // Then
+  //   platform_xchg(exchange_value, dest)
+  // must be a valid expression, returning a result convertible to T.
+  //
+  // A default definition is provided, which declares a function template
+  //   T operator()(T, T volatile*, T, cmpxchg_memory_order) const
+  //
+  // For each required size, a platform must either provide an
+  // appropriate definition of that function, or must entirely
+  // specialize the class template for that size.
+  template<size_t byte_size> struct PlatformXchg;
+
+  // Support for platforms that implement some variants of xchg
+  // using a (typically out of line) non-template helper function.
+  // The generic arguments passed to PlatformXchg need to be
+  // translated to the appropriate type for the helper function, the
+  // helper invoked on the translated arguments, and the result
+  // translated back.  Type is the parameter / return type of the
+  // helper function.
+  template<typename Type, typename Fn, typename T>
+  static T xchg_using_helper(Fn fn,
+                             T exchange_value,
+                             T volatile* dest);
 };
 
 template<typename From, typename To>
@@ -351,6 +399,18 @@ struct Atomic::CmpxchgByteUsingInt VALUE_OBJ_CLASS_SPEC {
                T volatile* dest,
                T compare_value,
                cmpxchg_memory_order order) const;
+};
+
+// Define the class before including platform file, which may specialize
+// the operator definition.  No generic definition of specializations
+// of the operator template are provided, nor are there any generic
+// specializations of the class.  The platform file is responsible for
+// providing those.
+template<size_t byte_size>
+struct Atomic::PlatformXchg VALUE_OBJ_CLASS_SPEC {
+  template<typename T>
+  T operator()(T exchange_value,
+               T volatile* dest) const;
 };
 
 // platform specific in-line definitions - must come before shared definitions
@@ -594,9 +654,75 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T exchange_value,
   return PrimitiveConversions::cast<T>(cur_as_bytes[offset]);
 }
 
-inline unsigned Atomic::xchg(unsigned int exchange_value, volatile unsigned int* dest) {
-  assert(sizeof(unsigned int) == sizeof(jint), "more work to do");
-  return (unsigned int)Atomic::xchg((jint)exchange_value, (volatile jint*)dest);
+// Handle xchg for integral and enum types.
+//
+// All the involved types must be identical.
+template<typename T>
+struct Atomic::XchgImpl<
+  T, T,
+  typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
+  VALUE_OBJ_CLASS_SPEC
+{
+  T operator()(T exchange_value, T volatile* dest) const {
+    // Forward to the platform handler for the size of T.
+    return PlatformXchg<sizeof(T)>()(exchange_value, dest);
+  }
+};
+
+// Handle xchg for pointer types.
+//
+// The exchange_value must be implicitly convertible to the
+// destination's type; it must be type-correct to store the
+// exchange_value in the destination.
+template<typename T, typename D>
+struct Atomic::XchgImpl<
+  T*, D*,
+  typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
+  VALUE_OBJ_CLASS_SPEC
+{
+  D* operator()(T* exchange_value, D* volatile* dest) const {
+    // Allow derived to base conversion, and adding cv-qualifiers.
+    D* new_value = exchange_value;
+    return PlatformXchg<sizeof(D*)>()(new_value, dest);
+  }
+};
+
+// Handle xchg for types that have a translator.
+//
+// All the involved types must be identical.
+//
+// This translates the original call into a call on the decayed
+// arguments, and returns the recovered result of that translated
+// call.
+template<typename T>
+struct Atomic::XchgImpl<
+  T, T,
+  typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
+  VALUE_OBJ_CLASS_SPEC
+{
+  T operator()(T exchange_value, T volatile* dest) const {
+    typedef PrimitiveConversions::Translate<T> Translator;
+    typedef typename Translator::Decayed Decayed;
+    STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
+    return Translator::recover(
+      xchg(Translator::decay(exchange_value),
+           reinterpret_cast<Decayed volatile*>(dest)));
+  }
+};
+
+template<typename Type, typename Fn, typename T>
+inline T Atomic::xchg_using_helper(Fn fn,
+                                   T exchange_value,
+                                   T volatile* dest) {
+  STATIC_ASSERT(sizeof(Type) == sizeof(T));
+  return PrimitiveConversions::cast<T>(
+    fn(PrimitiveConversions::cast<Type>(exchange_value),
+       reinterpret_cast<Type volatile*>(dest)));
+}
+
+template<typename T, typename D>
+inline D Atomic::xchg(T exchange_value, volatile D* dest) {
+  return XchgImpl<T, D>()(exchange_value, dest);
 }
 
 #endif // SHARE_VM_RUNTIME_ATOMIC_HPP

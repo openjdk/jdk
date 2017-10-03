@@ -3095,6 +3095,28 @@ class StubGenerator: public StubCodeGenerator {
      return start;
   }
 
+  address generate_sha256_implCompress(bool multi_block, const char *name) {
+    assert(UseSHA, "need SHA instructions");
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ function_entry();
+
+    __ sha256 (multi_block);
+
+    __ blr();
+    return start;
+  }
+
+  address generate_sha512_implCompress(bool multi_block, const char *name) {
+    assert(UseSHA, "need SHA instructions");
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ function_entry();
+
+    __ sha512 (multi_block);
+
+    __ blr();
+    return start;
+  }
+
   void generate_arraycopy_stubs() {
     // Note: the disjoint stubs must be generated first, some of
     // the conjoint stubs use them.
@@ -3781,6 +3803,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
     }
 
+    if (UseSHA256Intrinsics) {
+      StubRoutines::_sha256_implCompress   = generate_sha256_implCompress(false, "sha256_implCompress");
+      StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(true,  "sha256_implCompressMB");
+    }
+    if (UseSHA512Intrinsics) {
+      StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(false, "sha512_implCompress");
+      StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(true, "sha512_implCompressMB");
+    }
   }
 
  public:
