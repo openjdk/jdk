@@ -25,7 +25,7 @@
  * @test NullCheckDroppingsTest
  * @bug 8054492
  * @summary Casting can result in redundant null checks in generated code
- * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
