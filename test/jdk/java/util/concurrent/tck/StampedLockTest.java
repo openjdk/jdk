@@ -1207,4 +1207,90 @@ public class StampedLockTest extends JSR166TestCase {
         }
         assertUnlocked(lock);
     }
+
+    /**
+     * Stamped locks are not reentrant.
+     */
+    public void testNonReentrant() throws InterruptedException {
+        final StampedLock lock = new StampedLock();
+        long stamp;
+
+        stamp = lock.writeLock();
+        assertValid(lock, stamp);
+        assertEquals(0L, lock.tryWriteLock(0L, DAYS));
+        assertEquals(0L, lock.tryReadLock(0L, DAYS));
+        assertValid(lock, stamp);
+        lock.unlockWrite(stamp);
+
+        stamp = lock.tryWriteLock(1L, DAYS);
+        assertEquals(0L, lock.tryWriteLock(0L, DAYS));
+        assertValid(lock, stamp);
+        lock.unlockWrite(stamp);
+
+        stamp = lock.readLock();
+        assertEquals(0L, lock.tryWriteLock(0L, DAYS));
+        assertValid(lock, stamp);
+        lock.unlockRead(stamp);
+    }
+
+    /**
+     * """StampedLocks have no notion of ownership. Locks acquired in
+     * one thread can be released or converted in another."""
+     */
+    public void testNoOwnership() throws Throwable {
+        ArrayList<Future<?>> futures = new ArrayList<>();
+        for (Function<StampedLock, Long> writeLocker : writeLockers())
+        for (BiConsumer<StampedLock, Long> writeUnlocker : writeUnlockers()) {
+            StampedLock lock = new StampedLock();
+            long stamp = writeLocker.apply(lock);
+            futures.add(cachedThreadPool.submit(new CheckedRunnable() {
+                public void realRun() {
+                    writeUnlocker.accept(lock, stamp);
+                    assertUnlocked(lock);
+                    assertFalse(lock.validate(stamp));
+                }}));
+        }
+        for (Future<?> future : futures)
+            assertNull(future.get());
+    }
+
+    /** Tries out sample usage code from StampedLock javadoc. */
+    public void testSampleUsage() throws Throwable {
+        class Point {
+            private double x, y;
+            private final StampedLock sl = new StampedLock();
+
+            void move(double deltaX, double deltaY) { // an exclusively locked method
+                long stamp = sl.writeLock();
+                try {
+                    x += deltaX;
+                    y += deltaY;
+                } finally {
+                    sl.unlockWrite(stamp);
+                }
+            }
+
+            double distanceFromOrigin() { // A read-only method
+                double currentX, currentY;
+                long stamp = sl.tryOptimisticRead();
+                do {
+                    if (stamp == 0L)
+                        stamp = sl.readLock();
+                    try {
+                        // possibly racy reads
+                        currentX = x;
+                        currentY = y;
+                    } finally {
+                        stamp = sl.tryConvertToOptimisticRead(stamp);
+                    }
+                } while (stamp == 0);
+                return Math.hypot(currentX, currentY);
+            }
+        }
+
+        Point p = new Point();
+        p.move(3.0, 4.0);
+        assertEquals(5.0, p.distanceFromOrigin());
+    }
+
 }
