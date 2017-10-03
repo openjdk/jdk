@@ -34,16 +34,16 @@
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 
-class HasAccumulatedModifiedOopsClosure : public KlassClosure {
+class HasAccumulatedModifiedOopsClosure : public CLDClosure {
   bool _found;
  public:
   HasAccumulatedModifiedOopsClosure() : _found(false) {}
-  void do_klass(Klass* klass) {
+  void do_cld(ClassLoaderData* cld) {
     if (_found) {
       return;
     }
 
-    if (klass->has_accumulated_modified_oops()) {
+    if (cld->has_accumulated_modified_oops()) {
       _found = true;
     }
   }
@@ -52,27 +52,28 @@ class HasAccumulatedModifiedOopsClosure : public KlassClosure {
   }
 };
 
-bool KlassRemSet::mod_union_is_clear() {
+bool CLDRemSet::mod_union_is_clear() {
   HasAccumulatedModifiedOopsClosure closure;
-  ClassLoaderDataGraph::classes_do(&closure);
+  ClassLoaderDataGraph::cld_do(&closure);
 
   return !closure.found();
 }
 
 
-class ClearKlassModUnionClosure : public KlassClosure {
+class ClearCLDModUnionClosure : public CLDClosure {
  public:
-  void do_klass(Klass* klass) {
-    if (klass->has_accumulated_modified_oops()) {
-      klass->clear_accumulated_modified_oops();
+  void do_cld(ClassLoaderData* cld) {
+    if (cld->has_accumulated_modified_oops()) {
+      cld->clear_accumulated_modified_oops();
     }
   }
 };
 
-void KlassRemSet::clear_mod_union() {
-  ClearKlassModUnionClosure closure;
-  ClassLoaderDataGraph::classes_do(&closure);
+void CLDRemSet::clear_mod_union() {
+  ClearCLDModUnionClosure closure;
+  ClassLoaderDataGraph::cld_do(&closure);
 }
+
 
 CardTableRS::CardTableRS(MemRegion whole_heap) :
   _bs(NULL),

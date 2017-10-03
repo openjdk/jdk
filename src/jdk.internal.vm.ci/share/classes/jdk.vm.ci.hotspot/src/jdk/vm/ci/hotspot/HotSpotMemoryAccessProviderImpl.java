@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,21 +138,6 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
         return true;
     }
 
-    private boolean isValidObjectFieldDisplacement(Constant base, long displacement) {
-        if (base instanceof HotSpotMetaspaceConstant) {
-            MetaspaceWrapperObject metaspaceObject = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
-            if (metaspaceObject instanceof HotSpotResolvedObjectTypeImpl) {
-                if (displacement == runtime.getConfig().classMirrorOffset) {
-                    // Klass::_java_mirror is valid for all Klass* values
-                    return true;
-                }
-            } else {
-                throw new IllegalArgumentException(String.valueOf(metaspaceObject));
-            }
-        }
-        return false;
-    }
-
     private static long asRawPointer(Constant base) {
         if (base instanceof HotSpotMetaspaceConstantImpl) {
             MetaspaceWrapperObject meta = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
@@ -202,7 +187,7 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
         if (base instanceof HotSpotMetaspaceConstant) {
             MetaspaceWrapperObject metaspaceObject = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
             if (metaspaceObject instanceof HotSpotResolvedObjectTypeImpl) {
-                if (displacement == runtime.getConfig().classMirrorOffset) {
+                if (displacement == runtime.getConfig().classMirrorHandleOffset) {
                     assert expected == ((HotSpotResolvedObjectTypeImpl) metaspaceObject).mirror();
                 }
             }
@@ -294,10 +279,18 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
             Object o = readRawObject(base, displacement, runtime.getConfig().useCompressedOops);
             return HotSpotObjectConstantImpl.forObject(o);
         }
-        if (!isValidObjectFieldDisplacement(base, displacement)) {
-            return null;
+        if (base instanceof HotSpotMetaspaceConstant) {
+            MetaspaceWrapperObject metaspaceObject = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
+            if (metaspaceObject instanceof HotSpotResolvedObjectTypeImpl) {
+                 if (displacement == runtime.getConfig().classMirrorHandleOffset) {
+                    // Klass::_java_mirror is valid for all Klass* values
+                    return HotSpotObjectConstantImpl.forObject(((HotSpotResolvedObjectTypeImpl) metaspaceObject).mirror());
+                 }
+             } else {
+                 throw new IllegalArgumentException(String.valueOf(metaspaceObject));
+             }
         }
-        return HotSpotObjectConstantImpl.forObject(readRawObject(base, displacement, false));
+        return null;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,8 @@
 #include "utilities/debug.hpp"
 
 inline void MetadataAwareOopClosure::do_cld_nv(ClassLoaderData* cld) {
-  assert(_klass_closure._oop_closure == this, "Must be");
-
   bool claim = true;  // Must claim the class loader data before processing.
-  cld->oops_do(_klass_closure._oop_closure, &_klass_closure, claim);
+  cld->oops_do(this, claim);
 }
 
 inline void MetadataAwareOopClosure::do_klass_nv(Klass* k) {

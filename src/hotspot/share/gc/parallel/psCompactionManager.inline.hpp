@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,15 +98,10 @@ inline void ParCompactionManager::FollowStackClosure::do_void() {
   _compaction_manager->follow_marking_stacks();
 }
 
-inline void ParCompactionManager::FollowKlassClosure::do_klass(Klass* klass) {
-  klass->oops_do(_mark_and_push_closure);
-}
-
 inline void ParCompactionManager::follow_class_loader(ClassLoaderData* cld) {
   MarkAndPushClosure mark_and_push_closure(this);
-  FollowKlassClosure follow_klass_closure(&mark_and_push_closure);
 
-  cld->oops_do(&mark_and_push_closure, &follow_klass_closure, true);
+  cld->oops_do(&mark_and_push_closure, true);
 }
 
 inline void ParCompactionManager::follow_contents(oop obj) {
