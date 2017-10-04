@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
-import com.sun.org.apache.xerces.internal.util.XMLChar;
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * Implements common xml writer functions.

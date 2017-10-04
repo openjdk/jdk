@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -68,7 +69,6 @@ import java.util.Locale;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.JdkXmlUtils;
-import jdk.xml.internal.SecuritySupport;
 
 /**
  * This class is the configuration used to parse XML 1.0 and XML 1.1 documents.

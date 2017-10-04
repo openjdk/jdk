@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 
 /*
@@ -27,6 +28,10 @@ import com.sun.org.apache.xerces.internal.util.XMLAttributesIteratorImpl;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager.Limit;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
+import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLAttributes;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
@@ -38,11 +43,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentScanner;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
-import com.sun.org.apache.xerces.internal.xni.Augmentations;
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager.Limit;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.xml.internal.stream.XMLBufferListener;
 import com.sun.xml.internal.stream.XMLEntityStorage;
 import com.sun.xml.internal.stream.dtd.DTDGrammarUtil;
@@ -53,6 +53,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.events.XMLEvent;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  *

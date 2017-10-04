@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,7 +21,9 @@
 
 package com.sun.org.apache.xml.internal.serializer;
 
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
+import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
+import com.sun.org.apache.xml.internal.serializer.utils.Utils;
+import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,12 +31,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Enumeration;
 import java.util.Properties;
-
 import javax.xml.transform.OutputKeys;
-
-import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
-import com.sun.org.apache.xml.internal.serializer.utils.Utils;
-import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * This class is a factory to generate a set of default properties

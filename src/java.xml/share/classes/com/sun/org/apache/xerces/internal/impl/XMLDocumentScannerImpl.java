@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 
 /*
@@ -27,7 +28,6 @@ import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
@@ -43,6 +43,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.events.XMLEvent;
+import jdk.xml.internal.SecuritySupport;
 
 
 /**

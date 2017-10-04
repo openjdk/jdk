@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,6 +22,7 @@
 package com.sun.org.apache.xerces.internal.utils;
 
 import java.util.function.Supplier;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * This class is duplicated for each JAXP subpackage so keep it in sync.

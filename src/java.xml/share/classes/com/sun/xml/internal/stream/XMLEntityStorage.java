@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,11 @@ import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.URI;
 import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import java.util.HashMap;
 import java.util.Map;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  *

@@ -31,6 +31,7 @@
 // $Id: XMLReaderFactory.java,v 1.2.2.1 2005/07/31 22:48:08 jeffsuttor Exp $
 
 package org.xml.sax.helpers;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +42,7 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+import jdk.xml.internal.SecuritySupport;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
@@ -94,7 +96,6 @@ final public class XMLReaderFactory
     }
 
     private static final String property = "org.xml.sax.driver";
-    private static final SecuritySupport ss = new SecuritySupport();
 
     /**
      * Obtains a new instance of a {@link org.xml.sax.XMLReader}.
@@ -138,11 +139,11 @@ final public class XMLReaderFactory
         throws SAXException
     {
         String          className = null;
-        ClassLoader     cl = ss.getClassLoader();
+        ClassLoader     cl = SecuritySupport.getClassLoader();
 
         // 1. try the JVM-instance-wide system property
         try {
-            className = ss.getSystemProperty(property);
+            className = SecuritySupport.getSystemProperty(property);
         }
         catch (RuntimeException e) { /* continue searching */ }
 
@@ -187,7 +188,7 @@ final public class XMLReaderFactory
     public static XMLReader createXMLReader (String className)
         throws SAXException
     {
-        return loadClass (ss.getClassLoader(), className);
+        return loadClass (SecuritySupport.getClassLoader(), className);
     }
 
     private static XMLReader loadClass (ClassLoader loader, String className)
@@ -224,11 +225,11 @@ final public class XMLReaderFactory
         BufferedReader      reader;
 
         try {
-            in = ss.getResourceAsStream(cl, service);
+            in = SecuritySupport.getResourceAsStream(cl, service);
 
             // If no provider found then try the current ClassLoader
             if (in == null) {
-                in = ss.getResourceAsStream(null, service);
+                in = SecuritySupport.getResourceAsStream(null, service);
             }
 
             if (in != null) {
