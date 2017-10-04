@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug      4682448 4947464 5029946 8025633 8026567 8035473 8139101 8175200 8186332
+ * @bug      4682448 4947464 5029946 8025633 8026567 8035473 8139101 8175200
+             8186332 8186703
  * @summary  Verify that the public modifier does not show up in the
  *           documentation for public methods, as recommended by the JLS.
  *           If A implements I and B extends A, B should be in the list of
@@ -122,10 +123,36 @@ public class TestInterface extends JavadocTester {
                 "public int&nbsp;method()",
                 "public static final&nbsp;int field");
 
-        checkOutput("pkg/ClassWithStaticMethod.html", false,
+        checkOutput("pkg/ClassWithStaticMembers.html", false,
                 //Make sure "Specified By" does not appear on class documentation when
                 //the method is a static method in the interface.
                 "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n");
+
+        checkOutput("pkg/ClassWithStaticMembers.html", true,
+                "<h4>f</h4>\n"
+                + "<pre>public static&nbsp;int f</pre>\n"
+                + "<div class=\"block\">A hider field</div>",
+
+                "<td class=\"colFirst\"><code>static void</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"../pkg/ClassWithStaticMembers.html#m--\">m</a></span>()</code></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">A hider method</div>\n"
+                + "</td>\n",
+
+                "<h4>staticMethod</h4>\n"
+                + "<pre>public static&nbsp;void&nbsp;staticMethod()</pre>\n"
+                + "<div class=\"block\"><span class=\"descfrmTypeLabel\">"
+                + "Description copied from interface:&nbsp;<code>"
+                + "<a href=\"../pkg/InterfaceWithStaticMembers.html#staticMethod--\">"
+                + "InterfaceWithStaticMembers</a></code></span></div>\n"
+                + "<div class=\"block\">A static method</div>\n");
+
+        checkOutput("pkg/ClassWithStaticMembers.InnerClass.html", true,
+                "<pre>public static class <span class=\"typeNameLabel\">"
+                + "ClassWithStaticMembers.InnerClass</span>\n"
+                + "extends java.lang.Object</pre>\n"
+                + "<div class=\"block\">A hider inner class</div>");
     }
 
     @Test
@@ -155,8 +182,8 @@ public class TestInterface extends JavadocTester {
         checkOutput("pkg2/Spliterator.OfDouble.html", true,
             // Ensure the correct type parameters are displayed correctly
             "<h3>Nested classes/interfaces inherited from interface&nbsp;pkg2."
-            + "<a href=\"../pkg2/Spliterator.html\" title=\"interface in pkg2\">Spliterator</a></h3>\n" +
-            "<code><a href=\"../pkg2/Spliterator.OfDouble.html\" title=\"interface in pkg2\">"
+            + "<a href=\"../pkg2/Spliterator.html\" title=\"interface in pkg2\">Spliterator</a></h3>\n"
+            + "<code><a href=\"../pkg2/Spliterator.OfDouble.html\" title=\"interface in pkg2\">"
             + "Spliterator.OfDouble</a>, <a href=\"../pkg2/Spliterator.OfInt.html\" "
             + "title=\"interface in pkg2\">Spliterator.OfInt</a>&lt;"
             + "<a href=\"../pkg2/Spliterator.OfInt.html\" title=\"type parameter in Spliterator.OfInt\">"

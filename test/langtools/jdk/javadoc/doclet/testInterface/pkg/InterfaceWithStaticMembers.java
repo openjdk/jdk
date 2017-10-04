@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,14 @@
 
 package pkg;
 
-public class ClassWithStaticMethod implements InterfaceWithStaticMethod {
+public interface InterfaceWithStaticMembers {
 
-    public static void staticMethod() {
-    }
+    /** A static nested class */
+    static class InnerClass {}
 
+    /** A static field */
+    static int f = 0;
+
+    /** A static method */
+    static void staticMethod() { }
 }
