@@ -33,6 +33,7 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * <p>Implements pluggable streams.</p>
@@ -62,18 +63,12 @@ class FactoryFinder {
      */
     private static volatile boolean firstTime = true;
 
-    /**
-     * Security support class use to check access control before
-     * getting certain system resources.
-     */
-    final private static SecuritySupport ss = new SecuritySupport();
-
     // Define system property "jaxp.debug" to get output
     static {
         // Use try/catch block to support applets, which throws
         // SecurityException out of this code.
         try {
-            String val = ss.getSystemProperty("jaxp.debug");
+            String val = SecuritySupport.getSystemProperty("jaxp.debug");
             // Allow simply setting the prop to turn on debug
             debug = val != null && !"false".equals(val);
         }
@@ -107,7 +102,7 @@ class FactoryFinder {
                 if (useBSClsLoader) {
                     return Class.forName(className, false, FactoryFinder.class.getClassLoader());
                 } else {
-                    cl = ss.getContextClassLoader();
+                    cl = SecuritySupport.getContextClassLoader();
                     if (cl == null) {
                         throw new ClassNotFoundException();
                     }
@@ -256,7 +251,7 @@ class FactoryFinder {
 
             final String systemProp;
             if (type.getName().equals(factoryId)) {
-                systemProp = ss.getSystemProperty(factoryId);
+                systemProp = SecuritySupport.getSystemProperty(factoryId);
             } else {
                 systemProp = System.getProperty(factoryId);
             }
@@ -277,21 +272,21 @@ class FactoryFinder {
             if (firstTime) {
                 synchronized (cacheProps) {
                     if (firstTime) {
-                        configFile = ss.getSystemProperty("java.home") + File.separator +
+                        configFile = SecuritySupport.getSystemProperty("java.home") + File.separator +
                             "conf" + File.separator + "stax.properties";
                         final File fStax = new File(configFile);
                         firstTime = false;
-                        if (ss.doesFileExist(fStax)) {
+                        if (SecuritySupport.doesFileExist(fStax)) {
                             dPrint(()->"Read properties file "+fStax);
-                            cacheProps.load(ss.getFileInputStream(fStax));
+                            cacheProps.load(SecuritySupport.getFileInputStream(fStax));
                         }
                         else {
-                            configFile = ss.getSystemProperty("java.home") + File.separator +
+                            configFile = SecuritySupport.getSystemProperty("java.home") + File.separator +
                                 "conf" + File.separator + "jaxp.properties";
                             final File fJaxp = new File(configFile);
-                            if (ss.doesFileExist(fJaxp)) {
+                            if (SecuritySupport.doesFileExist(fJaxp)) {
                                 dPrint(()->"Read properties file "+fJaxp);
-                                cacheProps.load(ss.getFileInputStream(fJaxp));
+                                cacheProps.load(SecuritySupport.getFileInputStream(fJaxp));
                             }
                         }
                     }

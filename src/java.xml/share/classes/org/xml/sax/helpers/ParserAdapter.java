@@ -34,23 +34,22 @@ package org.xml.sax.helpers;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Vector;
-
-import org.xml.sax.Parser;      // deprecated
-import org.xml.sax.InputSource;
-import org.xml.sax.Locator;
+import jdk.xml.internal.SecuritySupport;
 import org.xml.sax.AttributeList; // deprecated
-import org.xml.sax.EntityResolver;
-import org.xml.sax.DTDHandler;
-import org.xml.sax.DocumentHandler; // deprecated
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
-import org.xml.sax.XMLReader;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.DTDHandler;
+import org.xml.sax.DocumentHandler; // deprecated
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
+import org.xml.sax.Parser;      // deprecated
+import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
 
 
 /**
@@ -82,7 +81,6 @@ import org.xml.sax.SAXNotSupportedException;
 @SuppressWarnings("deprecation")
 public class ParserAdapter implements XMLReader, DocumentHandler
 {
-    private static SecuritySupport ss = new SecuritySupport();
 
     ////////////////////////////////////////////////////////////////////
     // Constructors.
@@ -104,7 +102,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
     {
         super();
 
-        String driver = ss.getSystemProperty("org.xml.sax.parser");
+        String driver = SecuritySupport.getSystemProperty("org.xml.sax.parser");
 
         try {
             setup(ParserFactory.makeParser());

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,11 +21,11 @@
 
 package com.sun.org.apache.xerces.internal.impl.xpath.regex;
 
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.ArrayList;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * A Regular Expression Parser.

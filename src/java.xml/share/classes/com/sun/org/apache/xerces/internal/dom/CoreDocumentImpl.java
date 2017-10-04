@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,7 +25,6 @@ import com.sun.org.apache.xerces.internal.util.URI;
 import com.sun.org.apache.xerces.internal.util.XML11Char;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -34,6 +34,7 @@ import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
+import jdk.xml.internal.SecuritySupport;
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Comment;

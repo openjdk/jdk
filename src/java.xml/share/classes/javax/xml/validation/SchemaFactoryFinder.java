@@ -36,6 +36,7 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * Implementation of {@link SchemaFactory#newInstance(String)}.
@@ -47,10 +48,7 @@ class SchemaFactoryFinder  {
 
     /** debug support code. */
     private static boolean debug = false;
-    /**
-     *<p> Take care of restrictions imposed by java security model </p>
-     */
-    private static final SecuritySupport ss = new SecuritySupport();
+
     private static final String DEFAULT_PACKAGE = "com.sun.org.apache.xerces.internal";
     /**
      * <p>Cache properties for performance.</p>
@@ -65,7 +63,7 @@ class SchemaFactoryFinder  {
     static {
         // Use try/catch block to support applets
         try {
-            debug = ss.getSystemProperty("jaxp.debug") != null;
+            debug = SecuritySupport.getSystemProperty("jaxp.debug") != null;
         } catch (Exception unused) {
             debug = false;
         }
@@ -107,7 +105,7 @@ class SchemaFactoryFinder  {
 
     private void debugDisplayClassLoader() {
         try {
-            if( classLoader == ss.getContextClassLoader() ) {
+            if( classLoader == SecuritySupport.getContextClassLoader() ) {
                 debugPrintln(()->"using thread context class loader ("+classLoader+") for search");
                 return;
             }
@@ -166,7 +164,7 @@ class SchemaFactoryFinder  {
         // system property look up
         try {
             debugPrintln(()->"Looking up system property '"+propertyName+"'" );
-            String r = ss.getSystemProperty(propertyName);
+            String r = SecuritySupport.getSystemProperty(propertyName);
             if(r!=null) {
                 debugPrintln(()->"The value is '"+r+"'");
                 sf = createInstance(r, true);
@@ -180,7 +178,7 @@ class SchemaFactoryFinder  {
             }
         }
 
-        String javah = ss.getSystemProperty( "java.home" );
+        String javah = SecuritySupport.getSystemProperty( "java.home" );
         String configFile = javah + File.separator +
         "conf" + File.separator + "jaxp.properties";
 
@@ -192,9 +190,9 @@ class SchemaFactoryFinder  {
                     if(firstTime){
                         File f=new File( configFile );
                         firstTime = false;
-                        if(ss.doesFileExist(f)){
+                        if(SecuritySupport.doesFileExist(f)){
                             debugPrintln(()->"Read properties file " + f);
-                            cacheProps.load(ss.getFileInputStream(f));
+                            cacheProps.load(SecuritySupport.getFileInputStream(f));
                         }
                     }
                 }
@@ -411,6 +409,6 @@ class SchemaFactoryFinder  {
 
     // Used for debugging purposes
     private static String which( Class<?> clazz ) {
-        return ss.getClassSource(clazz);
+        return SecuritySupport.getClassSource(clazz);
     }
 }

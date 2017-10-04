@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,10 +21,9 @@
 
 package com.sun.org.apache.xalan.internal.res;
 
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
-import java.util.ListResourceBundle;
-
 import com.sun.org.apache.xpath.internal.res.XPATHMessages;
+import java.util.ResourceBundle;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * Sets things up for issuing error messages. This class is misnamed, and should
@@ -37,7 +36,7 @@ public class XSLMessages extends XPATHMessages {
     /**
      * The language specific resource object for Xalan messages.
      */
-    private static ListResourceBundle XSLTBundle = null;
+    private static ResourceBundle XSLTBundle = null;
     /**
      * The class name of the Xalan error message string table.
      */

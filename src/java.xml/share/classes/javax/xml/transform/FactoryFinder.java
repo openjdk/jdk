@@ -35,6 +35,7 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * <p>Implements pluggable Datatypes.</p>
@@ -64,18 +65,12 @@ class FactoryFinder {
      */
     static volatile boolean firstTime = true;
 
-    /**
-     * Security support class use to check access control before
-     * getting certain system resources.
-     */
-    private final static SecuritySupport ss = new SecuritySupport();
-
     // Define system property "jaxp.debug" to get output
     static {
         // Use try/catch block to support applets, which throws
         // SecurityException out of this code.
         try {
-            String val = ss.getSystemProperty("jaxp.debug");
+            String val = SecuritySupport.getSystemProperty("jaxp.debug");
             // Allow simply setting the prop to turn on debug
             debug = val != null && !"false".equals(val);
         }
@@ -109,7 +104,7 @@ class FactoryFinder {
                 if (useBSClsLoader) {
                     return Class.forName(className, false, FactoryFinder.class.getClassLoader());
                 } else {
-                    cl = ss.getContextClassLoader();
+                    cl = SecuritySupport.getContextClassLoader();
                     if (cl == null) {
                         throw new ClassNotFoundException();
                     }
@@ -258,7 +253,7 @@ class FactoryFinder {
         dPrint(()->"find factoryId =" + factoryId);
         // Use the system property first
         try {
-            String systemProp = ss.getSystemProperty(factoryId);
+            String systemProp = SecuritySupport.getSystemProperty(factoryId);
             if (systemProp != null) {
                 dPrint(()->"found system property, value=" + systemProp);
                 return newInstance(type, systemProp, null, true, true);
@@ -273,13 +268,13 @@ class FactoryFinder {
             if (firstTime) {
                 synchronized (cacheProps) {
                     if (firstTime) {
-                        String configFile = ss.getSystemProperty("java.home") + File.separator +
+                        String configFile = SecuritySupport.getSystemProperty("java.home") + File.separator +
                             "conf" + File.separator + "jaxp.properties";
                         File f = new File(configFile);
                         firstTime = false;
-                        if (ss.doesFileExist(f)) {
+                        if (SecuritySupport.doesFileExist(f)) {
                             dPrint(()->"Read properties file "+f);
-                            cacheProps.load(ss.getFileInputStream(f));
+                            cacheProps.load(SecuritySupport.getFileInputStream(f));
                         }
                     }
                 }

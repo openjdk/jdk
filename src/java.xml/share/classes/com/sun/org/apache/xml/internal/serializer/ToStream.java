@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,6 +21,9 @@
 
 package com.sun.org.apache.xml.internal.serializer;
 
+import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
+import com.sun.org.apache.xml.internal.serializer.utils.Utils;
+import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -34,21 +38,15 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
-
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-
+import jdk.xml.internal.SecuritySupport;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
-import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
-import com.sun.org.apache.xml.internal.serializer.utils.Utils;
-import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
 
 /**
  * This abstract class is a base class for other stream

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +21,9 @@
 
 package com.sun.org.apache.xml.internal.res;
 
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
-import java.util.ListResourceBundle;
 import java.util.Locale;
+import java.util.ResourceBundle;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * A utility class for issuing XML error messages.
@@ -36,7 +36,7 @@ public class XMLMessages
   protected Locale fLocale = Locale.getDefault();
 
   /** The language specific resource object for XML messages.  */
-  private static ListResourceBundle XMLBundle = null;
+  private static ResourceBundle XMLBundle = null;
 
   /** The class name of the XML error message string table.    */
   private static final String XML_ERROR_RESOURCES =
@@ -103,7 +103,7 @@ public class XMLMessages
    *
    * @return The formatted message string.
    */
-  public static final String createMsg(ListResourceBundle fResourceBundle,
+  public static final String createMsg(ResourceBundle fResourceBundle,
         String msgKey, Object args[])  //throws Exception
   {
 
