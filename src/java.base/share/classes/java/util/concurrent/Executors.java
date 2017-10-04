@@ -514,6 +514,9 @@ public class Executors {
             task.run();
             return result;
         }
+        public String toString() {
+            return super.toString() + "[Wrapped task = " + task + "]";
+        }
     }
 
     /**
@@ -539,6 +542,10 @@ public class Executors {
             } catch (PrivilegedActionException e) {
                 throw e.getException();
             }
+        }
+
+        public String toString() {
+            return super.toString() + "[Wrapped task = " + task + "]";
         }
     }
 
@@ -591,6 +598,10 @@ public class Executors {
             } catch (PrivilegedActionException e) {
                 throw e.getException();
             }
+        }
+
+        public String toString() {
+            return super.toString() + "[Wrapped task = " + task + "]";
         }
     }
 

@@ -1359,7 +1359,7 @@ public class Pretty extends JCTree.Visitor {
 
     // Prints the inner element type of a nested array
     private void printBaseElementType(JCTree tree) throws IOException {
-        printExpr(TreeInfo.innermostType(tree));
+        printExpr(TreeInfo.innermostType(tree, false));
     }
 
     // prints the brackets of a nested array in reverse order

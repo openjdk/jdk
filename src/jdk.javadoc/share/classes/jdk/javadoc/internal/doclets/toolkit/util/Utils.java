@@ -1733,6 +1733,25 @@ public class Utils {
         return packageComparator;
     }
 
+    private Comparator<Element> deprecatedComparator = null;
+    /**
+     * Returns a Comparator for deprecated items listed on deprecated list page, by comparing the
+     * fully qualified names.
+     *
+     * @return a Comparator
+     */
+    public Comparator<Element> makeDeprecatedComparator() {
+        if (deprecatedComparator == null) {
+            deprecatedComparator = new Utils.ElementComparator() {
+                @Override
+                public int compare(Element e1, Element e2) {
+                    return compareFullyQualifiedNames(e1, e2);
+                }
+            };
+        }
+        return deprecatedComparator;
+    }
+
     private Comparator<SerialFieldTree> serialFieldTreeComparator = null;
     /**
      * Returns a Comparator for SerialFieldTree.

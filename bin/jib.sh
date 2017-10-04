@@ -28,8 +28,8 @@
 mydir="$(dirname "${BASH_SOURCE[0]}")"
 myname="$(basename "${BASH_SOURCE[0]}")"
 
-installed_jib_script=${mydir}/../../.jib/jib
-install_data=${mydir}/../../.jib/.data
+installed_jib_script=${mydir}/../.jib/jib
+install_data=${mydir}/../.jib/.data
 
 setup_url() {
     if [ -f ~/.config/jib/jib.conf ]; then
@@ -42,7 +42,7 @@ setup_url() {
     jib_revision="2.0-SNAPSHOT"
     jib_ext="jib.sh.gz"
 
-    closed_script="${mydir}/../../../closed/conf/jib-install.conf"
+    closed_script="${mydir}/../../closed/make/conf/jib-install.conf"
     if [ -f "${closed_script}" ]; then
         source "${closed_script}"
     fi

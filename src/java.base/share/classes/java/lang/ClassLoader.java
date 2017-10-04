@@ -2160,10 +2160,12 @@ public abstract class ClassLoader {
      *          if a package of the given {@code name} is already
      *          defined by this class loader
      *
+     *
      * @since  1.2
      * @revised 9
      * @spec JPMS
      *
+     * @jvms 5.3 Run-time package
      * @see <a href="{@docRoot}/../specs/jar/jar.html#sealing">
      *      The JAR File Specification: Package Sealing</a>
      */
@@ -2186,16 +2188,18 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Returns a {@code Package} of the given <a href="#name">name</a> that has been
-     * defined by this class loader.
+     * Returns a {@code Package} of the given <a href="#name">name</a> that
+     * has been defined by this class loader.
      *
      * @param  name The <a href="#name">package name</a>
      *
-     * @return The {@code Package} of the given name defined by this class loader,
-     *         or {@code null} if not found
+     * @return The {@code Package} of the given name that has been defined
+     *         by this class loader, or {@code null} if not found
      *
      * @throws  NullPointerException
      *          if {@code name} is {@code null}.
+     *
+     * @jvms 5.3 Run-time package
      *
      * @since  9
      * @spec JPMS
@@ -2211,14 +2215,18 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Returns all of the {@code Package}s defined by this class loader.
-     * The returned array has no duplicated {@code Package}s of the same name.
+     * Returns all of the {@code Package}s that have been defined by
+     * this class loader.  The returned array has no duplicated {@code Package}s
+     * of the same name.
      *
      * @apiNote This method returns an array rather than a {@code Set} or {@code Stream}
      *          for consistency with the existing {@link #getPackages} method.
      *
-     * @return The array of {@code Package} objects defined by this class loader;
-     *         or an zero length array if no package has been defined by this class loader.
+     * @return The array of {@code Package} objects that have been defined by
+     *         this class loader; or an zero length array if no package has been
+     *         defined by this class loader.
+     *
+     * @jvms 5.3 Run-time package
      *
      * @since  9
      * @spec JPMS
@@ -2244,7 +2252,7 @@ public abstract class ClassLoader {
      * @param  name
      *         The <a href="#name">package name</a>
      *
-     * @return The {@code Package} corresponding to the given name defined by
+     * @return The {@code Package} of the given name that has been defined by
      *         this class loader or its ancestors, or {@code null} if not found.
      *
      * @throws  NullPointerException
@@ -2262,6 +2270,8 @@ public abstract class ClassLoader {
      * a child loader.  A more robust approach is to use the
      * {@link ClassLoader#getDefinedPackage} method which returns
      * a {@code Package} for the specified class loader.
+     *
+     * @see ClassLoader#getDefinedPackage(String)
      *
      * @since  1.2
      * @revised 9
@@ -2281,10 +2291,10 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Returns all of the {@code Package}s defined by this class loader
-     * and its ancestors.  The returned array may contain more than one
-     * {@code Package} object of the same package name, each defined by
-     * a different class loader in the class loader hierarchy.
+     * Returns all of the {@code Package}s that have been defined by
+     * this class loader and its ancestors.  The returned array may contain
+     * more than one {@code Package} object of the same package name, each
+     * defined by a different class loader in the class loader hierarchy.
      *
      * @apiNote The {@link #getPlatformClassLoader() platform class loader}
      * may delegate to the application class loader. In other words,
@@ -2294,8 +2304,10 @@ public abstract class ClassLoader {
      * when invoked on the platform class loader, this method will not
      * return any packages defined to the application class loader.
      *
-     * @return  The array of {@code Package} objects defined by this
-     *          class loader and its ancestors
+     * @return  The array of {@code Package} objects that have been defined by
+     *          this class loader and its ancestors
+     *
+     * @see ClassLoader#getDefinedPackages()
      *
      * @since  1.2
      * @revised 9

@@ -29,6 +29,7 @@ import jdk.internal.misc.SharedSecrets;
 
 import static java.lang.StackWalker.Option.*;
 import java.lang.StackWalker.StackFrame;
+import java.lang.invoke.MethodType;
 
 class StackFrameInfo implements StackFrame {
     private final static JavaLangInvokeAccess JLIA =
@@ -76,6 +77,17 @@ class StackFrameInfo implements StackFrame {
     @Override
     public String getMethodName() {
         return JLIA.getName(memberName);
+    }
+
+    @Override
+    public MethodType getMethodType() {
+        walker.ensureAccessEnabled(RETAIN_CLASS_REFERENCE);
+        return JLIA.getMethodType(memberName);
+    }
+
+    @Override
+    public String getDescriptor() {
+        return JLIA.getMethodDescriptor(memberName);
     }
 
     @Override

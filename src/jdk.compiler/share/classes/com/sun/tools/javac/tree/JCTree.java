@@ -946,6 +946,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             }
         }
 
+        public boolean isImplicitlyTyped() {
+            return vartype == null;
+        }
+
         @Override
         public void accept(Visitor v) { v.visitVarDef(this); }
 

@@ -73,6 +73,9 @@
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
 
+#ifdef LINUX
+#include "utilities/elfFile.hpp"
+#endif
 
 #define SIZE_T_MAX_VALUE ((size_t) -1)
 
@@ -1823,6 +1826,20 @@ WB_ENTRY(void, WB_RemoveCompilerDirective(JNIEnv* env, jobject o, jint count))
   DirectivesStack::pop(count);
 WB_END
 
+// Checks that the library libfile has the noexecstack bit set.
+WB_ENTRY(jboolean, WB_CheckLibSpecifiesNoexecstack(JNIEnv* env, jobject o, jstring libfile))
+  jboolean ret = false;
+#ifdef LINUX
+  // Can't be in VM when we call JNI.
+  ThreadToNativeFromVM ttnfv(thread);
+  const char* lf = env->GetStringUTFChars(libfile, NULL);
+  CHECK_JNI_EXCEPTION_(env, 0);
+  ret = (jboolean) ElfFile::specifies_noexecstack(lf);
+  env->ReleaseStringUTFChars(libfile, lf);
+#endif
+  return ret;
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2027,6 +2044,8 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetConcurrentGCPhases},
   {CC"requestConcurrentGCPhase0", CC"(Ljava/lang/String;)Z",
                                                       (void*)&WB_RequestConcurrentGCPhase},
+  {CC"checkLibSpecifiesNoexecstack", CC"(Ljava/lang/String;)Z",
+                                                      (void*)&WB_CheckLibSpecifiesNoexecstack},
 };
 
 #undef CC

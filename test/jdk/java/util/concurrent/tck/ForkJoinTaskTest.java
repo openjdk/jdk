@@ -35,6 +35,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -1675,4 +1676,42 @@ public class ForkJoinTaskTest extends JSR166TestCase {
         testInvokeOnPool(mainPool(), a);
     }
 
+    /**
+     * adapt(runnable).toString() contains toString of wrapped task
+     */
+    public void testAdapt_Runnable_toString() {
+        if (testImplementationDetails) {
+            Runnable r = () -> {};
+            ForkJoinTask<?> task = ForkJoinTask.adapt(r);
+            assertEquals(
+                identityString(task) + "[Wrapped task = " + r.toString() + "]",
+                task.toString());
+        }
+    }
+
+    /**
+     * adapt(runnable, x).toString() contains toString of wrapped task
+     */
+    public void testAdapt_Runnable_withResult_toString() {
+        if (testImplementationDetails) {
+            Runnable r = () -> {};
+            ForkJoinTask<String> task = ForkJoinTask.adapt(r, "");
+            assertEquals(
+                identityString(task) + "[Wrapped task = " + r.toString() + "]",
+                task.toString());
+        }
+    }
+
+    /**
+     * adapt(callable).toString() contains toString of wrapped task
+     */
+    public void testAdapt_Callable_toString() {
+        if (testImplementationDetails) {
+            Callable<String> c = () -> "";
+            ForkJoinTask<String> task = ForkJoinTask.adapt(c);
+            assertEquals(
+                identityString(task) + "[Wrapped task = " + c.toString() + "]",
+                task.toString());
+        }
+    }
 }

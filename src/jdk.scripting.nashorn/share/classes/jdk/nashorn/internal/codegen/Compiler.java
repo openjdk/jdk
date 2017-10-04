@@ -619,6 +619,10 @@ public final class Compiler implements Loggable {
         return types == null ? null : types.get(fn, pos);
     }
 
+    Type getReturnType() {
+        return types == null || !isOnDemandCompilation() ? Type.UNKNOWN : types.getReturnType();
+    }
+
     /**
      * Do a compilation job
      *

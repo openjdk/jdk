@@ -679,14 +679,16 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
         }
 
         /* ECONNABORTED or EWOULDBLOCK error so adjust timeout if there is one. */
-        currNanoTime = JVM_NanoTime(env, 0);
-        nanoTimeout -= (currNanoTime - prevNanoTime);
-        if (nanoTimeout < NET_NSEC_PER_MSEC) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
-                    "Accept timed out");
-            return;
+        if (nanoTimeout >= NET_NSEC_PER_MSEC) {
+            currNanoTime = JVM_NanoTime(env, 0);
+            nanoTimeout -= (currNanoTime - prevNanoTime);
+            if (nanoTimeout < NET_NSEC_PER_MSEC) {
+                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
+                        "Accept timed out");
+                return;
+            }
+            prevNanoTime = currNanoTime;
         }
-        prevNanoTime = currNanoTime;
     }
 
     if (newfd < 0) {

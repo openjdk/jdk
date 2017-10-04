@@ -273,7 +273,8 @@ abstract class CompilationPhase {
     private static final class LocalVariableTypeCalculationPhase extends CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            final FunctionNode newFunctionNode = transformFunction(fn, new LocalVariableTypesCalculator(compiler));
+            final FunctionNode newFunctionNode = transformFunction(fn, new LocalVariableTypesCalculator(compiler,
+                    compiler.getReturnType()));
             final ScriptEnvironment senv = compiler.getScriptEnvironment();
             final PrintWriter       err  = senv.getErr();
 

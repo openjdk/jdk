@@ -83,6 +83,7 @@ import com.sun.tools.javac.util.DiagnosticSource;
 import static com.sun.tools.javac.code.Flags.GENERATEDCONSTR;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.APPLY;
+import static com.sun.tools.javac.tree.JCTree.Tag.FOREACHLOOP;
 import static com.sun.tools.javac.tree.JCTree.Tag.LABELLED;
 import static com.sun.tools.javac.tree.JCTree.Tag.METHODDEF;
 import static com.sun.tools.javac.tree.JCTree.Tag.NEWCLASS;
@@ -139,7 +140,8 @@ public class Analyzer {
     enum AnalyzerMode {
         DIAMOND("diamond", Source::allowDiamond),
         LAMBDA("lambda", Source::allowLambda),
-        METHOD("method", Source::allowGraphInference);
+        METHOD("method", Source::allowGraphInference),
+        LOCAL("local", Source::allowLocalVariableTypeInference);
 
         final String opt;
         final Predicate<Source> sourceFilter;
@@ -341,11 +343,91 @@ public class Analyzer {
         }
     }
 
+    /**
+     * Base class for local variable inference analyzers.
+     */
+    abstract class RedundantLocalVarTypeAnalyzerBase<X extends JCStatement> extends StatementAnalyzer<X, X> {
+
+        RedundantLocalVarTypeAnalyzerBase(JCTree.Tag tag) {
+            super(AnalyzerMode.LOCAL, tag);
+        }
+
+        /**
+         * Map a variable tree into a new declaration using implicit type.
+         */
+        JCVariableDecl mapVar(JCVariableDecl oldTree, JCVariableDecl newTree){
+            newTree.vartype = null;
+            return newTree;
+        }
+
+        /**
+         * Analyze results of local variable inference.
+         */
+        void processVar(JCVariableDecl oldTree, JCVariableDecl newTree, boolean hasErrors){
+            if (!hasErrors) {
+                if (types.isSameType(oldTree.type, newTree.type)) {
+                    log.warning(oldTree, Warnings.LocalRedundantType);
+                }
+            }
+        }
+    }
+
+    /**
+     * This analyzer checks if a local variable declaration has redundant type.
+     */
+    class RedundantLocalVarTypeAnalyzer extends RedundantLocalVarTypeAnalyzerBase<JCVariableDecl> {
+
+        RedundantLocalVarTypeAnalyzer() {
+            super(VARDEF);
+        }
+
+        boolean match(JCVariableDecl tree){
+            return tree.sym.owner.kind == Kind.MTH &&
+                    tree.init != null && !tree.isImplicitlyTyped() &&
+                    attr.canInferLocalVarType(tree) == null;
+        }
+        @Override
+        JCVariableDecl map(JCVariableDecl oldTree, JCVariableDecl newTree){
+            return mapVar(oldTree, newTree);
+        }
+        @Override
+        void process(JCVariableDecl oldTree, JCVariableDecl newTree, boolean hasErrors){
+            processVar(oldTree, newTree, hasErrors);
+        }
+    }
+
+    /**
+     * This analyzer checks if a for each variable declaration has redundant type.
+     */
+    class RedundantLocalVarTypeAnalyzerForEach extends RedundantLocalVarTypeAnalyzerBase<JCEnhancedForLoop> {
+
+        RedundantLocalVarTypeAnalyzerForEach() {
+            super(FOREACHLOOP);
+        }
+
+        @Override
+        boolean match(JCEnhancedForLoop tree){
+            return !tree.var.isImplicitlyTyped();
+        }
+        @Override
+        JCEnhancedForLoop map(JCEnhancedForLoop oldTree, JCEnhancedForLoop newTree){
+            newTree.var = mapVar(oldTree.var, newTree.var);
+            newTree.body = make.Block(0, List.nil()); //ignore body for analysis purpose
+            return newTree;
+        }
+        @Override
+        void process(JCEnhancedForLoop oldTree, JCEnhancedForLoop newTree, boolean hasErrors){
+            processVar(oldTree.var, newTree.var, hasErrors);
+        }
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     StatementAnalyzer<JCTree, JCTree>[] analyzers = new StatementAnalyzer[] {
             new DiamondInitializer(),
             new LambdaAnalyzer(),
-            new RedundantTypeArgAnalyzer()
+            new RedundantTypeArgAnalyzer(),
+            new RedundantLocalVarTypeAnalyzer(),
+            new RedundantLocalVarTypeAnalyzerForEach()
     };
 
     /**

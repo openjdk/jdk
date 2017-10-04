@@ -32,7 +32,7 @@ public final class LoggingHelper {
      *     @run main/othervm/jul=logging.properties ClassUnderTest
      */
     public static void setupLogging() {
-        String path = System.getProperty("test.src") + File.separator + "logging.properties";
+        String path = System.getProperty("test.src", ".") + File.separator + "logging.properties";
         System.setProperty("java.util.logging.config.file", path);
     }
 }

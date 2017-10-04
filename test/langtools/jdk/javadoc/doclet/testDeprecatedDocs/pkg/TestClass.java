@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,18 @@ package pkg;
 public class TestClass {
 
     /**
-     * @deprecated class_test2 passes.
+     * @deprecated class_test2 passes. This is the second sentence of deprecated description for a field.
      */
     public int field;
 
     /**
-     * @deprecated class_test3 passes.
+     * @deprecated class_test3 passes. This is the second sentence of deprecated description for a constructor.
      */
     @Deprecated(forRemoval=true)
     public TestClass() {}
 
     /**
-     * @deprecated class_test4 passes.
+     * @deprecated class_test4 passes. This is the second sentence of deprecated description for a method.
      */
     public void method() {}
 }
