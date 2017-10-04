@@ -2238,9 +2238,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ release();
   // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
   __ stw(R0, thread_(thread_state));
-  if (UseMembar) {
-    __ fence();
-  }
 
 
   // The JNI call
@@ -2397,9 +2394,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ release();
   // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
   __ stw(R0, thread_(thread_state));
-  if (UseMembar) {
-    __ fence();
-  }
   __ bind(after_transition);
 
   // Reguard any pages if necessary.
