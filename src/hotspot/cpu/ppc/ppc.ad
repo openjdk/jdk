@@ -903,71 +903,43 @@ reg_class dbl_reg(
   F31, F31_H     // nv!
 );
 
-// Class for all 128bit vector registers
-reg_class vectorx_reg(VSR0,
-                      VSR1,
-                      VSR2,
-                      VSR3,
-                      VSR4,
-                      VSR5,
-                      VSR6,
-                      VSR7,
-                      VSR8,
-                      VSR9,
-                      VSR10,
-                      VSR11,
-                      VSR12,
-                      VSR13,
-                      VSR14,
-                      VSR15,
-                      VSR16,
-                      VSR17,
-                      VSR18,
-                      VSR19,
-                      VSR20,
-                      VSR21,
-                      VSR22,
-                      VSR23,
-                      VSR24,
-                      VSR25,
-                      VSR26,
-                      VSR27,
-                      VSR28,
-                      VSR29,
-                      VSR30,
-                      VSR31,
-                      VSR32,
-                      VSR33,
-                      VSR34,
-                      VSR35,
-                      VSR36,
-                      VSR37,
-                      VSR38,
-                      VSR39,
-                      VSR40,
-                      VSR41,
-                      VSR42,
-                      VSR43,
-                      VSR44,
-                      VSR45,
-                      VSR46,
-                      VSR47,
-                      VSR48,
-                      VSR49,
-                      VSR50,
-                      VSR51,
-                      VSR52,
-                      VSR53,
-                      VSR54,
-                      VSR55,
-                      VSR56,
-                      VSR57,
-                      VSR58,
-                      VSR59,
-                      VSR60,
-                      VSR61,
-                      VSR62,
-                      VSR63
+// ----------------------------
+// Vector-Scalar Register Class
+// ----------------------------
+
+reg_class vs_reg(
+  VSR32,
+  VSR33,
+  VSR34,
+  VSR35,
+  VSR36,
+  VSR37,
+  VSR38,
+  VSR39,
+  VSR40,
+  VSR41,
+  VSR42,
+  VSR43,
+  VSR44,
+  VSR45,
+  VSR46,
+  VSR47,
+  VSR48,
+  VSR49,
+  VSR50,
+  VSR51
+//  VSR52,     // nv!
+//  VSR53,     // nv!
+//  VSR54,     // nv!
+//  VSR55,     // nv!
+//  VSR56,     // nv!
+//  VSR57,     // nv!
+//  VSR58,     // nv!
+//  VSR59,     // nv!
+//  VSR60,     // nv!
+//  VSR61,     // nv!
+//  VSR62,     // nv!
+//  VSR63      // nv!
 );
 
  %}
@@ -4206,7 +4178,7 @@ ins_attrib ins_field_load_ic_node(0);
 // Formats are generated automatically for constants and base registers.
 
 operand vecX() %{
-  constraint(ALLOC_IN_RC(vectorx_reg));
+  constraint(ALLOC_IN_RC(vs_reg));
   match(VecX);
 
   format %{ %}
