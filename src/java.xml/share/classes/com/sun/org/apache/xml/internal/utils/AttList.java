@@ -45,9 +45,7 @@ public class AttList implements Attributes
   /**
    * Constructor AttList
    *
-   *
    * @param attrs List of attributes this will contain
-   * @param dh DOMHelper
    */
   public AttList(NamedNodeMap attrs)
   {

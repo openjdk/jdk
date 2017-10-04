@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -70,17 +71,17 @@ public class TransletOutputHandlerFactory {
     private ContentHandler _handler                 = null;
     private LexicalHandler _lexHandler              = null;
 
-    private boolean _useServicesMechanism;
+    private boolean _overrideDefaultParser;
 
     static public TransletOutputHandlerFactory newInstance() {
         return new TransletOutputHandlerFactory(true);
     }
-    static public TransletOutputHandlerFactory newInstance(boolean useServicesMechanism) {
-        return new TransletOutputHandlerFactory(useServicesMechanism);
+    static public TransletOutputHandlerFactory newInstance(boolean overrideDefaultParser) {
+        return new TransletOutputHandlerFactory(overrideDefaultParser);
     }
 
-    public TransletOutputHandlerFactory(boolean useServicesMechanism) {
-        _useServicesMechanism = useServicesMechanism;
+    public TransletOutputHandlerFactory(boolean overrideDefaultParser) {
+        _overrideDefaultParser = overrideDefaultParser;
     }
     public void setOutputType(int outputType) {
         _outputType = outputType;
@@ -195,7 +196,9 @@ public class TransletOutputHandlerFactory {
                 return result;
 
             case DOM :
-                _handler = (_node != null) ? new SAX2DOM(_node, _nextSibling, _useServicesMechanism) : new SAX2DOM(_useServicesMechanism);
+                _handler = (_node != null) ?
+                        new SAX2DOM(_node, _nextSibling, _overrideDefaultParser) :
+                        new SAX2DOM(_overrideDefaultParser);
                 _lexHandler = (LexicalHandler) _handler;
                 // falls through
             case STAX :
