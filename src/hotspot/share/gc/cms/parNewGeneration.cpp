@@ -493,7 +493,7 @@ void ParScanThreadStateSet::flush() {
 
 ParScanClosure::ParScanClosure(ParNewGeneration* g,
                                ParScanThreadState* par_scan_state) :
-  OopsInKlassOrGenClosure(g), _par_scan_state(par_scan_state), _g(g) {
+  OopsInClassLoaderDataOrGenClosure(g), _par_scan_state(par_scan_state), _g(g) {
   _boundary = _g->reserved().end();
 }
 
@@ -601,11 +601,8 @@ void ParNewGenTask::work(uint worker_id) {
 
   par_scan_state.set_young_old_boundary(_young_old_boundary);
 
-  KlassScanClosure klass_scan_closure(&par_scan_state.to_space_root_closure(),
-                                      gch->rem_set()->klass_rem_set());
-  CLDToKlassAndOopClosure cld_scan_closure(&klass_scan_closure,
-                                           &par_scan_state.to_space_root_closure(),
-                                           false);
+  CLDScanClosure cld_scan_closure(&par_scan_state.to_space_root_closure(),
+                                  gch->rem_set()->cld_rem_set()->accumulate_modified_oops());
 
   par_scan_state.start_strong_roots();
   gch->young_process_roots(_strong_roots_scope,
@@ -1281,7 +1278,7 @@ void ParNewGeneration::push_on_overflow_list(oop from_space_obj, ParScanThreadSt
     // XXX This is horribly inefficient when a promotion failure occurs
     // and should be fixed. XXX FIX ME !!!
 #ifndef PRODUCT
-    Atomic::inc_ptr(&_num_par_pushes);
+    Atomic::inc(&_num_par_pushes);
     assert(_num_par_pushes > 0, "Tautology");
 #endif
     if (from_space_obj->forwardee() == from_space_obj) {

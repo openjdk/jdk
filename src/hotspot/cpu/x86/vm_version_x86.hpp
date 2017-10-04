@@ -228,6 +228,15 @@ class VM_Version : public Abstract_VM_Version {
     } bits;
   };
 
+  union ExtCpuid1EEbx {
+    uint32_t value;
+    struct {
+      uint32_t                  : 8,
+               threads_per_core : 8,
+                                : 16;
+    } bits;
+  };
+
   union XemXcr0Eax {
     uint32_t value;
     struct {
@@ -398,6 +407,12 @@ protected:
     ExtCpuid8Ecx ext_cpuid8_ecx;
     uint32_t     ext_cpuid8_edx; // reserved
 
+    // cpuid function 0x8000001E // AMD 17h
+    uint32_t      ext_cpuid1E_eax;
+    ExtCpuid1EEbx ext_cpuid1E_ebx; // threads per core (AMD17h)
+    uint32_t      ext_cpuid1E_ecx;
+    uint32_t      ext_cpuid1E_edx; // unused currently
+
     // extended control register XCR0 (the XFEATURE_ENABLED_MASK register)
     XemXcr0Eax   xem_xcr0_eax;
     uint32_t     xem_xcr0_edx; // reserved
@@ -505,6 +520,14 @@ protected:
       result |= CPU_CLMUL;
     if (_cpuid_info.sef_cpuid7_ebx.bits.rtm != 0)
       result |= CPU_RTM;
+    if(_cpuid_info.sef_cpuid7_ebx.bits.adx != 0)
+       result |= CPU_ADX;
+    if(_cpuid_info.sef_cpuid7_ebx.bits.bmi2 != 0)
+      result |= CPU_BMI2;
+    if (_cpuid_info.sef_cpuid7_ebx.bits.sha != 0)
+      result |= CPU_SHA;
+    if (_cpuid_info.std_cpuid1_ecx.bits.fma != 0)
+      result |= CPU_FMA;
 
     // AMD features.
     if (is_amd()) {
@@ -518,16 +541,8 @@ protected:
     }
     // Intel features.
     if(is_intel()) {
-      if(_cpuid_info.sef_cpuid7_ebx.bits.adx != 0)
-         result |= CPU_ADX;
-      if(_cpuid_info.sef_cpuid7_ebx.bits.bmi2 != 0)
-        result |= CPU_BMI2;
-      if (_cpuid_info.sef_cpuid7_ebx.bits.sha != 0)
-        result |= CPU_SHA;
       if(_cpuid_info.ext_cpuid1_ecx.bits.lzcnt_intel != 0)
         result |= CPU_LZCNT;
-      if (_cpuid_info.std_cpuid1_ecx.bits.fma != 0)
-        result |= CPU_FMA;
       // for Intel, ecx.bits.misalignsse bit (bit 8) indicates support for prefetchw
       if (_cpuid_info.ext_cpuid1_ecx.bits.misalignsse != 0) {
         result |= CPU_3DNOW_PREFETCH;
@@ -590,6 +605,7 @@ public:
   static ByteSize ext_cpuid5_offset() { return byte_offset_of(CpuidInfo, ext_cpuid5_eax); }
   static ByteSize ext_cpuid7_offset() { return byte_offset_of(CpuidInfo, ext_cpuid7_eax); }
   static ByteSize ext_cpuid8_offset() { return byte_offset_of(CpuidInfo, ext_cpuid8_eax); }
+  static ByteSize ext_cpuid1E_offset() { return byte_offset_of(CpuidInfo, ext_cpuid1E_eax); }
   static ByteSize tpl_cpuidB0_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB0_eax); }
   static ByteSize tpl_cpuidB1_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB1_eax); }
   static ByteSize tpl_cpuidB2_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB2_eax); }
@@ -673,8 +689,12 @@ public:
     if (is_intel() && supports_processor_topology()) {
       result = _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
     } else if (_cpuid_info.std_cpuid1_edx.bits.ht != 0) {
-      result = _cpuid_info.std_cpuid1_ebx.bits.threads_per_cpu /
-               cores_per_cpu();
+      if (cpu_family() >= 0x17) {
+        result = _cpuid_info.ext_cpuid1E_ebx.bits.threads_per_core + 1;
+      } else {
+        result = _cpuid_info.std_cpuid1_ebx.bits.threads_per_cpu /
+                 cores_per_cpu();
+      }
     }
     return (result == 0 ? 1 : result);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -574,16 +574,10 @@ void ParallelScavengeHeap::print_gc_threads_on(outputStream* st) const {
 }
 
 void ParallelScavengeHeap::print_tracing_info() const {
-  if (TraceYoungGenTime) {
-    double time = PSScavenge::accumulated_time()->seconds();
-    tty->print_cr("[Accumulated GC generation 0 time %3.7f secs]", time);
-  }
-  if (TraceOldGenTime) {
-    double time = UseParallelOldGC ? PSParallelCompact::accumulated_time()->seconds() : PSMarkSweep::accumulated_time()->seconds();
-    tty->print_cr("[Accumulated GC generation 1 time %3.7f secs]", time);
-  }
-
   AdaptiveSizePolicyOutput::print();
+  log_debug(gc, heap, exit)("Accumulated young generation GC time %3.7f secs", PSScavenge::accumulated_time()->seconds());
+  log_debug(gc, heap, exit)("Accumulated old generation GC time %3.7f secs",
+      UseParallelOldGC ? PSParallelCompact::accumulated_time()->seconds() : PSMarkSweep::accumulated_time()->seconds());
 }
 
 

@@ -30,6 +30,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
+#include "oops/oopHandle.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/macros.hpp"
@@ -119,7 +120,7 @@ class Klass : public Metadata {
   // Ordered list of all primary supertypes
   Klass*      _primary_supers[_primary_super_limit];
   // java/lang/Class instance mirroring this class
-  oop       _java_mirror;
+  OopHandle _java_mirror;
   // Superclass
   Klass*      _super;
   // First subclass (NULL if none); _subklass->next_sibling() is next one
@@ -147,10 +148,6 @@ class Klass : public Metadata {
 
   // vtable length
   int _vtable_len;
-
-  // Remembered sets support for the oops in the klasses.
-  jbyte _modified_oops;             // Card Table Equivalent (YC/CMS support)
-  jbyte _accumulated_modified_oops; // Mod Union Equivalent (CMS support)
 
 private:
   // This is an index into FileMapHeader::_classpath_entry_table[], to
@@ -228,13 +225,15 @@ protected:
     }
   }
 
-  // store an oop into a field of a Klass
-  void klass_oop_store(oop* p, oop v);
-  void klass_oop_store(volatile oop* p, oop v);
-
   // java mirror
-  oop java_mirror() const              { return _java_mirror; }
-  void set_java_mirror(oop m) { klass_oop_store(&_java_mirror, m); }
+  oop java_mirror() const;
+  void set_java_mirror(Handle m);
+
+  // Temporary mirror switch used by RedefineClasses
+  // Both mirrors are on the ClassLoaderData::_handles list already so no
+  // barriers are needed.
+  void set_java_mirror_handle(OopHandle mirror) { _java_mirror = mirror; }
+  OopHandle java_mirror_handle() const          { return _java_mirror; }
 
   // modifier flags
   jint modifier_flags() const          { return _modifier_flags; }
@@ -259,17 +258,6 @@ protected:
   // class loader data
   ClassLoaderData* class_loader_data() const               { return _class_loader_data; }
   void set_class_loader_data(ClassLoaderData* loader_data) {  _class_loader_data = loader_data; }
-
-  // The Klasses are not placed in the Heap, so the Card Table or
-  // the Mod Union Table can't be used to mark when klasses have modified oops.
-  // The CT and MUT bits saves this information for the individual Klasses.
-  void record_modified_oops()            { _modified_oops = 1; }
-  void clear_modified_oops()             { _modified_oops = 0; }
-  bool has_modified_oops()               { return _modified_oops == 1; }
-
-  void accumulate_modified_oops()        { if (has_modified_oops()) _accumulated_modified_oops = 1; }
-  void clear_accumulated_modified_oops() { _accumulated_modified_oops = 0; }
-  bool has_accumulated_modified_oops()   { return _accumulated_modified_oops == 1; }
 
   int shared_classpath_index() const   {
     return _shared_class_path_index;
@@ -598,9 +586,6 @@ protected:
 
   TRACE_DEFINE_TRACE_ID_METHODS;
 
-  // garbage collection support
-  void oops_do(OopClosure* cl);
-
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return ClassType; }
 
@@ -687,11 +672,6 @@ protected:
 
   static Klass* decode_klass_not_null(narrowKlass v);
   static Klass* decode_klass(narrowKlass v);
-
- private:
-  // barriers used by klass_oop_store
-  void klass_update_barrier_set(oop v);
-  void klass_update_barrier_set_pre(oop* p, oop v);
 };
 
 // Helper to convert the oop iterate macro suffixes into bool values that can be used by template functions.

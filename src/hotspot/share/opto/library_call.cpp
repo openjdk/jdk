@@ -3453,7 +3453,8 @@ bool LibraryCallKit::inline_native_isInterrupted() {
 // Given a klass oop, load its java mirror (a java.lang.Class oop).
 Node* LibraryCallKit::load_mirror_from_klass(Node* klass) {
   Node* p = basic_plus_adr(klass, in_bytes(Klass::java_mirror_offset()));
-  return make_load(NULL, p, TypeInstPtr::MIRROR, T_OBJECT, MemNode::unordered);
+  Node* load = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered);
+  return make_load(NULL, load, TypeInstPtr::MIRROR, T_OBJECT, MemNode::unordered);
 }
 
 //-----------------------load_klass_from_mirror_common-------------------------

@@ -61,34 +61,16 @@ inline D Atomic::PlatformAdd<4>::fetch_and_add(I add_value, D volatile* dest) co
   return old_value;
 }
 
-inline void Atomic::inc    (volatile jint*     dest) {
-  __asm__ volatile (  "lock addl $1,(%0)" :
-                    : "r" (dest) : "cc", "memory");
-}
-
-inline void Atomic::inc_ptr(volatile void*     dest) {
-  inc_ptr((volatile intptr_t*)dest);
-}
-
-inline void Atomic::dec    (volatile jint*     dest) {
-  __asm__ volatile (  "lock subl $1,(%0)" :
-                    : "r" (dest) : "cc", "memory");
-}
-
-inline void Atomic::dec_ptr(volatile void*     dest) {
-  dec_ptr((volatile intptr_t*)dest);
-}
-
-inline jint     Atomic::xchg    (jint     exchange_value, volatile jint*     dest) {
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(T));
   __asm__ volatile (  "xchgl (%2),%0"
                     : "=r" (exchange_value)
                     : "0" (exchange_value), "r" (dest)
                     : "memory");
   return exchange_value;
-}
-
-inline void*    Atomic::xchg_ptr(void*    exchange_value, volatile void*     dest) {
-  return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
 }
 
 template<>
@@ -136,21 +118,11 @@ inline D Atomic::PlatformAdd<8>::fetch_and_add(I add_value, D volatile* dest) co
   return old_value;
 }
 
-inline void Atomic::inc_ptr(volatile intptr_t* dest) {
-  __asm__ __volatile__ (  "lock addq $1,(%0)"
-                        :
-                        : "r" (dest)
-                        : "cc", "memory");
-}
-
-inline void Atomic::dec_ptr(volatile intptr_t* dest) {
-  __asm__ __volatile__ (  "lock subq $1,(%0)"
-                        :
-                        : "r" (dest)
-                        : "cc", "memory");
-}
-
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
   __asm__ __volatile__ ("xchgq (%2),%0"
                         : "=r" (exchange_value)
                         : "0" (exchange_value), "r" (dest)
@@ -175,18 +147,6 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
 inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #else // !AMD64
-
-inline void Atomic::inc_ptr(volatile intptr_t* dest) {
-  inc((volatile jint*)dest);
-}
-
-inline void Atomic::dec_ptr(volatile intptr_t* dest) {
-  dec((volatile jint*)dest);
-}
-
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
-  return (intptr_t)xchg((jint)exchange_value, (volatile jint*)dest);
-}
 
 extern "C" {
   // defined in bsd_x86.s

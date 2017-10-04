@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -471,7 +471,7 @@ JVM_handle_linux_signal(int sig,
     // Info->si_addr need not be the exact address, it is only
     // guaranteed to be on the same page as the address that caused
     // the SIGSEGV.
-    if ((sig == SIGSEGV) &&
+    if ((sig == SIGSEGV) && !UseMembar &&
         (os::get_memory_serialize_page() ==
          (address)((uintptr_t)info->si_addr & ~(os::vm_page_size()-1)))) {
       return true;

@@ -51,7 +51,7 @@ public class Klass extends Metadata implements ClassConstants {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type    = db.lookupType("Klass");
-    javaMirror   = new OopField(type.getOopField("_java_mirror"), 0);
+    javaMirror   = type.getAddressField("_java_mirror");
     superField   = new MetadataField(type.getAddressField("_super"), 0);
     layoutHelper = new IntField(type.getJIntField("_layout_helper"), 0);
     name         = type.getAddressField("_name");
@@ -88,7 +88,7 @@ public class Klass extends Metadata implements ClassConstants {
   public boolean isKlass()             { return true; }
 
   // Fields
-  private static OopField  javaMirror;
+  private static AddressField   javaMirror;
   private static MetadataField  superField;
   private static IntField layoutHelper;
   private static AddressField  name;
@@ -109,7 +109,15 @@ public class Klass extends Metadata implements ClassConstants {
   }
 
   // Accessors for declared fields
-  public Instance getJavaMirror()       { return (Instance) javaMirror.getValue(this);   }
+  public Instance getJavaMirror() {
+    Address handle = javaMirror.getValue(getAddress());
+    if (handle != null) {
+      // Load through the handle
+      OopHandle refs = handle.getOopHandleAt(0);
+      return (Instance)VM.getVM().getObjectHeap().newOop(refs);
+    }
+    return null;
+  }
   public Klass    getSuper()            { return (Klass)    superField.getValue(this);   }
   public Klass    getJavaSuper()        { return null;  }
   public int      getLayoutHelper()     { return (int)           layoutHelper.getValue(this); }
@@ -185,7 +193,7 @@ public class Klass extends Metadata implements ClassConstants {
   }
 
   public void iterateFields(MetadataVisitor visitor) {
-      visitor.doOop(javaMirror, true);
+      // visitor.doOop(javaMirror, true);
     visitor.doMetadata(superField, true);
       visitor.doInt(layoutHelper, true);
       // visitor.doOop(name, true);
