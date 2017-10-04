@@ -677,7 +677,7 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
       * 2                                          // register halves
       + ConditionRegisterImpl::number_of_registers // condition code registers
       + SpecialRegisterImpl::number_of_registers   // special registers
-      + VectorRegisterImpl::number_of_registers    // VSX registers
+      + VectorSRegisterImpl::number_of_registers   // VSX registers
   };
 
   static const int max_gpr;

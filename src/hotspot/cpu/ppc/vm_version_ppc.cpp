@@ -107,7 +107,10 @@ void VM_Version::initialize() {
   // TODO: PPC port PdScheduling::power6SectorSize = 0x20;
   }
 
-  MaxVectorSize = 8;
+  if (VM_Version::has_vsx())
+    MaxVectorSize = 16;
+  else
+    MaxVectorSize = 8;
 #endif
 
   // Create and print feature-string.
