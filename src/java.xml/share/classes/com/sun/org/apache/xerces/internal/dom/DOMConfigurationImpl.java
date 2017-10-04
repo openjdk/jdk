@@ -259,7 +259,8 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
             SEND_PSVI,
             NAMESPACE_GROWTH,
             TOLERATE_DUPLICATES,
-            XMLConstants.USE_CATALOG
+            XMLConstants.USE_CATALOG,
+            JdkXmlUtils.OVERRIDE_PARSER
         };
         addRecognizedFeatures(recognizedFeatures);
 
@@ -273,6 +274,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
         setFeature(SEND_PSVI, true);
         setFeature(NAMESPACE_GROWTH, false);
         setFeature(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
+        setFeature(JdkXmlUtils.OVERRIDE_PARSER, JdkXmlUtils.OVERRIDE_PARSER_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties = {

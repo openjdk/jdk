@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public abstract class TransformerFactory {
      * @since 9
      */
     public static TransformerFactory newDefaultInstance() {
-        return TransformerFactoryImpl.newTransformerFactoryNoServiceLoader();
+        return new TransformerFactoryImpl();
     }
 
     /**
@@ -170,7 +170,7 @@ public abstract class TransformerFactory {
 
         //do not fallback if given classloader can't find the class, throw exception
         return  FactoryFinder.newInstance(TransformerFactory.class,
-                    factoryClassName, classLoader, false, false);
+                    factoryClassName, classLoader, false);
     }
     /**
      * Process the {@code Source} into a {@code Transformer}

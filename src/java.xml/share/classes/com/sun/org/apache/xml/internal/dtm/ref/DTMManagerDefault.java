@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,7 +20,6 @@
 
 package com.sun.org.apache.xml.internal.dtm.ref;
 
-import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Source;
@@ -43,6 +42,7 @@ import com.sun.org.apache.xml.internal.utils.PrefixResolver;
 import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
 import com.sun.org.apache.xml.internal.utils.XMLReaderManager;
 import com.sun.org.apache.xml.internal.utils.XMLStringFactory;
+import jdk.xml.internal.JdkXmlUtils;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -606,7 +606,7 @@ public class DTMManagerDefault extends DTMManager
       // If user did not supply a reader, ask for one from the reader manager
       if (null == reader) {
         if (m_readerManager == null) {
-            m_readerManager = XMLReaderManager.getInstance(super.useServicesMechnism());
+            m_readerManager = XMLReaderManager.getInstance(super.overrideDefaultParser());
         }
 
         reader = m_readerManager.getXMLReader();
@@ -765,8 +765,7 @@ public class DTMManagerDefault extends DTMManager
 
     try
     {
-      DocumentBuilderFactory dbf = FactoryImpl.getDOMFactory(super.useServicesMechnism());
-      dbf.setNamespaceAware(true);
+      DocumentBuilderFactory dbf = JdkXmlUtils.getDOMFactory(super.overrideDefaultParser());
 
       DocumentBuilder db = dbf.newDocumentBuilder();
       Document doc = db.newDocument();

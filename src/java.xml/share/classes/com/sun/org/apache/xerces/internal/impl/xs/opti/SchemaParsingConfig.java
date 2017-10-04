@@ -304,7 +304,8 @@ public class SchemaParsingConfig extends BasicParserConfiguration
             ALLOW_JAVA_ENCODINGS,       CONTINUE_AFTER_FATAL_ERROR,
             LOAD_EXTERNAL_DTD,          NOTIFY_BUILTIN_REFS,
             NOTIFY_CHAR_REFS, GENERATE_SYNTHETIC_ANNOTATIONS,
-            XMLConstants.USE_CATALOG
+            XMLConstants.USE_CATALOG,
+            JdkXmlUtils.OVERRIDE_PARSER
         };
         addRecognizedFeatures(recognizedFeatures);
         fFeatures.put(PARSER_SETTINGS, Boolean.TRUE);
@@ -319,6 +320,7 @@ public class SchemaParsingConfig extends BasicParserConfiguration
         fFeatures.put(NOTIFY_CHAR_REFS, Boolean.FALSE);
         fFeatures.put(GENERATE_SYNTHETIC_ANNOTATIONS, Boolean.FALSE);
         fFeatures.put(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
+        fFeatures.put(JdkXmlUtils.OVERRIDE_PARSER, JdkXmlUtils.OVERRIDE_PARSER_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties = {

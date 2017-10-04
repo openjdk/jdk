@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,6 @@ import javax.xml.xpath.XPathFunctionResolver;
 import javax.xml.xpath.XPathVariableResolver;
 import jdk.xml.internal.JdkXmlFeatures;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
 /**
@@ -47,8 +46,7 @@ public class XPathExpressionImpl extends XPathImplUtil implements XPathExpressio
      * from the context.
      */
     protected XPathExpressionImpl() {
-        this(null, null, null, null,
-             false, true, new JdkXmlFeatures(false));
+        this(null, null, null, null, false, new JdkXmlFeatures(false));
     };
 
     protected XPathExpressionImpl(com.sun.org.apache.xpath.internal.XPath xpath,
@@ -56,19 +54,20 @@ public class XPathExpressionImpl extends XPathImplUtil implements XPathExpressio
             XPathFunctionResolver functionResolver,
             XPathVariableResolver variableResolver) {
         this(xpath, prefixResolver, functionResolver, variableResolver,
-             false, true, new JdkXmlFeatures(false));
+             false, new JdkXmlFeatures(false));
     };
 
     protected XPathExpressionImpl(com.sun.org.apache.xpath.internal.XPath xpath,
             JAXPPrefixResolver prefixResolver,XPathFunctionResolver functionResolver,
             XPathVariableResolver variableResolver, boolean featureSecureProcessing,
-            boolean useServiceMechanism, JdkXmlFeatures featureManager) {
+            JdkXmlFeatures featureManager) {
         this.xpath = xpath;
         this.prefixResolver = prefixResolver;
         this.functionResolver = functionResolver;
         this.variableResolver = variableResolver;
         this.featureSecureProcessing = featureSecureProcessing;
-        this.useServiceMechanism = useServiceMechanism;
+        this.overrideDefaultParser = featureManager.getFeature(
+                JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
         this.featureManager = featureManager;
     };
 
