@@ -32,7 +32,7 @@
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
 
-define_pd_global(bool, ShareVtableStubs,      false); // Improves performance markedly for mtrt and compress.
+define_pd_global(bool, ShareVtableStubs,      true);
 define_pd_global(bool, NeedsDeoptSuspend,     false); // Only register window machines need this.
 
 
