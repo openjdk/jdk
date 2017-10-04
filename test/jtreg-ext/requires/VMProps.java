@@ -73,6 +73,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.aot", vmAOT());
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", vmCDS());
+        // vm.graal.enabled is true if Graal is used as JIT
+        map.put("vm.graal.enabled", isGraalEnabled());
         vmGC(map); // vm.gc.X = true/false
 
         VMProps.dump(map);
@@ -290,6 +292,41 @@ public class VMProps implements Callable<Map<String, String>> {
         } else {
             return "false";
         }
+    }
+
+    /**
+     * Check if Graal is used as JIT compiler.
+     *
+     * @return true if Graal is used as JIT compiler.
+     */
+    protected String isGraalEnabled() {
+        // Graal is enabled if following conditions are true:
+        // - we are not in Interpreter mode
+        // - UseJVMCICompiler flag is true
+        // - jvmci.Compiler variable is equal to 'graal'
+        // - TieredCompilation is not used or TieredStopAtLevel is greater than 3
+
+        Boolean useCompiler = WB.getBooleanVMFlag("UseCompiler");
+        if (useCompiler == null || !useCompiler)
+            return "false";
+
+        Boolean useJvmciComp = WB.getBooleanVMFlag("UseJVMCICompiler");
+        if (useJvmciComp == null || !useJvmciComp)
+            return "false";
+
+        // This check might be redundant but let's keep it for now.
+        String jvmciCompiler = System.getProperty("jvmci.Compiler");
+        if (jvmciCompiler == null || !jvmciCompiler.equals("graal")) {
+            return "false";
+        }
+
+        Boolean tieredCompilation = WB.getBooleanVMFlag("TieredCompilation");
+        Long compLevel = WB.getIntxVMFlag("TieredStopAtLevel");
+        // if TieredCompilation is enabled and compilation level is <= 3 then no Graal is used
+        if (tieredCompilation != null && tieredCompilation && compLevel != null && compLevel <= 3)
+            return "false";
+
+        return "true";
     }
 
     /**

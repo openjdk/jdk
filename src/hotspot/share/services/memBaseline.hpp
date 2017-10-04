@@ -65,6 +65,7 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
   // Summary information
   MallocMemorySnapshot   _malloc_memory_snapshot;
   VirtualMemorySnapshot  _virtual_memory_snapshot;
+  MetaspaceSnapshot      _metaspace_snapshot;
 
   size_t               _class_count;
 
@@ -101,6 +102,10 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
 
   VirtualMemorySnapshot* virtual_memory_snapshot() {
     return &_virtual_memory_snapshot;
+  }
+
+  MetaspaceSnapshot* metaspace_snapshot() {
+    return &_metaspace_snapshot;
   }
 
   MallocSiteIterator malloc_sites(SortingOrder order);

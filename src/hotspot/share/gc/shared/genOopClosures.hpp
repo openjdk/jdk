@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,24 +81,25 @@ class OopsInGenClosure : public ExtendedOopClosure {
 
 };
 
-// Super class for scan closures. It contains code to dirty scanned Klasses.
-class OopsInKlassOrGenClosure: public OopsInGenClosure {
-  Klass* _scanned_klass;
+// Super class for scan closures. It contains code to dirty scanned class loader data.
+class OopsInClassLoaderDataOrGenClosure: public OopsInGenClosure {
+  ClassLoaderData* _scanned_cld;
  public:
-  OopsInKlassOrGenClosure(Generation* g) : OopsInGenClosure(g), _scanned_klass(NULL) {}
-  void set_scanned_klass(Klass* k) {
-    assert(k == NULL || _scanned_klass == NULL, "Must be");
-    _scanned_klass = k;
+  OopsInClassLoaderDataOrGenClosure(Generation* g) : OopsInGenClosure(g), _scanned_cld(NULL) {}
+  void set_scanned_cld(ClassLoaderData* cld) {
+    assert(cld == NULL || _scanned_cld == NULL, "Must be");
+    _scanned_cld = cld;
   }
-  bool is_scanning_a_klass() { return _scanned_klass != NULL; }
-  void do_klass_barrier();
+  bool is_scanning_a_cld() { return _scanned_cld != NULL; }
+  void do_cld_barrier();
 };
+
 
 // Closure for scanning DefNewGeneration.
 //
 // This closure will perform barrier store calls for ALL
 // pointers in scanned oops.
-class ScanClosure: public OopsInKlassOrGenClosure {
+class ScanClosure: public OopsInClassLoaderDataOrGenClosure {
  protected:
   DefNewGeneration* _g;
   HeapWord*         _boundary;
@@ -117,7 +118,7 @@ class ScanClosure: public OopsInKlassOrGenClosure {
 // This closure only performs barrier store calls on
 // pointers into the DefNewGeneration. This is less
 // precise, but faster, than a ScanClosure
-class FastScanClosure: public OopsInKlassOrGenClosure {
+class FastScanClosure: public OopsInClassLoaderDataOrGenClosure {
  protected:
   DefNewGeneration* _g;
   HeapWord*         _boundary;
@@ -131,14 +132,15 @@ class FastScanClosure: public OopsInKlassOrGenClosure {
   inline void do_oop_nv(narrowOop* p);
 };
 
-class KlassScanClosure: public KlassClosure {
-  OopsInKlassOrGenClosure* _scavenge_closure;
+class CLDScanClosure: public CLDClosure {
+  OopsInClassLoaderDataOrGenClosure*   _scavenge_closure;
   // true if the the modified oops state should be saved.
-  bool                     _accumulate_modified_oops;
+  bool                                 _accumulate_modified_oops;
  public:
-  KlassScanClosure(OopsInKlassOrGenClosure* scavenge_closure,
-                   KlassRemSet* klass_rem_set_policy);
-  void do_klass(Klass* k);
+  CLDScanClosure(OopsInClassLoaderDataOrGenClosure* scavenge_closure,
+                 bool accumulate_modified_oops) :
+       _scavenge_closure(scavenge_closure), _accumulate_modified_oops(accumulate_modified_oops) {}
+  void do_cld(ClassLoaderData* cld);
 };
 
 class FilteringClosure: public ExtendedOopClosure {

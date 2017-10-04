@@ -1574,29 +1574,39 @@ void MacroAssembler::br_null_short(Register s1, Predict p, Label& L) {
   assert_not_delayed();
   if (use_cbcond(L)) {
     Assembler::cbcond(zero, ptr_cc, s1, 0, L);
-    return;
+  } else {
+    br_null(s1, false, p, L);
+    delayed()->nop();
   }
-  br_null(s1, false, p, L);
-  delayed()->nop();
 }
 
 void MacroAssembler::br_notnull_short(Register s1, Predict p, Label& L) {
   assert_not_delayed();
   if (use_cbcond(L)) {
     Assembler::cbcond(notZero, ptr_cc, s1, 0, L);
-    return;
+  } else {
+    br_notnull(s1, false, p, L);
+    delayed()->nop();
   }
-  br_notnull(s1, false, p, L);
-  delayed()->nop();
 }
 
 // Unconditional short branch
 void MacroAssembler::ba_short(Label& L) {
+  assert_not_delayed();
   if (use_cbcond(L)) {
     Assembler::cbcond(equal, icc, G0, G0, L);
-    return;
+  } else {
+    br(always, false, pt, L);
+    delayed()->nop();
   }
-  br(always, false, pt, L);
+}
+
+// Branch if 'icc' says zero or not (i.e. icc.z == 1|0).
+
+void MacroAssembler::br_icc_zero(bool iszero, Predict p, Label &L) {
+  assert_not_delayed();
+  Condition cf = (iszero ? Assembler::zero : Assembler::notZero);
+  br(cf, false, p, L);
   delayed()->nop();
 }
 
@@ -3834,6 +3844,7 @@ void MacroAssembler::load_mirror(Register mirror, Register method) {
   ld_ptr(mirror, in_bytes(ConstMethod::constants_offset()), mirror);
   ld_ptr(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
   ld_ptr(mirror, mirror_offset, mirror);
+  resolve_oop_handle(mirror);
 }
 
 void MacroAssembler::load_klass(Register src_oop, Register klass) {

@@ -412,6 +412,7 @@ C2V_VMENTRY(jobjectArray, readConfiguration, (JNIEnv *env))
       } else if (strcmp(vmField.typeString, "address") == 0 ||
                  strcmp(vmField.typeString, "intptr_t") == 0 ||
                  strcmp(vmField.typeString, "uintptr_t") == 0 ||
+                 strcmp(vmField.typeString, "OopHandle") == 0 ||
                  strcmp(vmField.typeString, "size_t") == 0 ||
                  // All foo* types are addresses.
                  vmField.typeString[strlen(vmField.typeString) - 1] == '*') {

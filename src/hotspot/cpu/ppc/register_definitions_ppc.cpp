@@ -31,3 +31,5 @@
 REGISTER_DEFINITION(Register, noreg);
 
 REGISTER_DEFINITION(FloatRegister, fnoreg);
+
+REGISTER_DEFINITION(VectorSRegister, vsnoreg);

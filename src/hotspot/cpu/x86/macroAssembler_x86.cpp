@@ -6617,6 +6617,7 @@ void MacroAssembler::load_mirror(Register mirror, Register method) {
   movptr(mirror, Address(mirror, ConstMethod::constants_offset()));
   movptr(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
   movptr(mirror, Address(mirror, mirror_offset));
+  resolve_oop_handle(mirror);
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {

@@ -107,13 +107,16 @@ void VM_Version::initialize() {
   // TODO: PPC port PdScheduling::power6SectorSize = 0x20;
   }
 
-  MaxVectorSize = 8;
+  if (VM_Version::has_vsx())
+    MaxVectorSize = 16;
+  else
+    MaxVectorSize = 8;
 #endif
 
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_fsqrt()   ? " fsqrt"   : ""),
                (has_isel()    ? " isel"    : ""),
                (has_lxarxeh() ? " lxarxeh" : ""),
@@ -130,7 +133,8 @@ void VM_Version::initialize() {
                (has_mfdscr()  ? " mfdscr"  : ""),
                (has_vsx()     ? " vsx"     : ""),
                (has_ldbrx()   ? " ldbrx"   : ""),
-               (has_stdbrx()  ? " stdbrx"  : "")
+               (has_stdbrx()  ? " stdbrx"  : ""),
+               (has_vshasig() ? " sha"     : "")
                // Make sure number of %s matches num_features!
               );
   _features_string = os::strdup(buf);
@@ -247,17 +251,49 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseFMA, true);
   }
 
-  if (UseSHA) {
-    warning("SHA instructions are not available on this CPU");
+  if (has_vshasig()) {
+    if (FLAG_IS_DEFAULT(UseSHA)) {
+      UseSHA = true;
+    }
+  } else if (UseSHA) {
+    if (!FLAG_IS_DEFAULT(UseSHA))
+      warning("SHA instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseSHA, false);
   }
-  if (UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics) {
-    warning("SHA intrinsics are not available on this CPU");
+
+  if (UseSHA1Intrinsics) {
+    warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
+  }
+
+  if (UseSHA && has_vshasig()) {
+    if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
+    }
+  } else if (UseSHA256Intrinsics) {
+    warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+  }
+
+  if (UseSHA && has_vshasig()) {
+    if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
+    }
+  } else if (UseSHA512Intrinsics) {
+    warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
+  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
+    FLAG_SET_DEFAULT(UseSHA, false);
+  }
+
+  if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
+    UseSquareToLenIntrinsic = true;
+  }
+  if (FLAG_IS_DEFAULT(UseMulAddIntrinsic)) {
+    UseMulAddIntrinsic = true;
+  }
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;
   }
@@ -657,6 +693,7 @@ void VM_Version::determine_features() {
   a->lxvd2x(VSR0, R3_ARG1);                    // code[14] -> vsx
   a->ldbrx(R7, R3_ARG1, R4_ARG2);              // code[15] -> ldbrx
   a->stdbrx(R7, R3_ARG1, R4_ARG2);             // code[16] -> stdbrx
+  a->vshasigmaw(VR0, VR1, 1, 0xF);             // code[17] -> vshasig
   a->blr();
 
   // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
@@ -708,6 +745,7 @@ void VM_Version::determine_features() {
   if (code[feature_cntr++]) features |= vsx_m;
   if (code[feature_cntr++]) features |= ldbrx_m;
   if (code[feature_cntr++]) features |= stdbrx_m;
+  if (code[feature_cntr++]) features |= vshasig_m;
 
   // Print the detection code.
   if (PrintAssembly) {

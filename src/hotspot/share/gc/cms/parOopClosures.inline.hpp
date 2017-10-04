@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,8 @@ inline void ParScanClosure::do_oop_work(T* p,
           (void)_par_scan_state->trim_queues(10 * ParallelGCThreads);
         }
       }
-      if (is_scanning_a_klass()) {
-        do_klass_barrier();
+      if (is_scanning_a_cld()) {
+        do_cld_barrier();
       } else if (gc_barrier) {
         // Now call parent closure
         par_do_barrier(p);
