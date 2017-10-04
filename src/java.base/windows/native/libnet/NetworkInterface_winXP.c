@@ -62,7 +62,8 @@ void printnifs (netif *netifPP, char *str) {
 
 #endif
 
-static int bufsize = 4096;
+const ULONG BUFF_SIZE = 15360;
+const int MAX_TRIES = 3;
 
 /*
  * return an array of IP_ADAPTER_ADDRESSES containing one element
@@ -80,23 +81,23 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
     int _ret = 0;
 
 
-    adapterInfo = (IP_ADAPTER_ADDRESSES *)malloc (bufsize);
+    adapterInfo = (IP_ADAPTER_ADDRESSES *) malloc(BUFF_SIZE);
     if (adapterInfo == NULL) {
         JNU_ThrowByName(env, "java/lang/OutOfMemoryError",
             "Native heap allocation failure");
         return -1;
     }
 
-    len = bufsize;
+    len = BUFF_SIZE;
     flags = GAA_FLAG_SKIP_DNS_SERVER;
     flags |= GAA_FLAG_SKIP_MULTICAST;
     flags |= GAA_FLAG_INCLUDE_PREFIX;
     ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
 
-    if (ret == ERROR_BUFFER_OVERFLOW) {
+    for (int try = 0; ret == ERROR_BUFFER_OVERFLOW && try < MAX_TRIES; ++try) {
         IP_ADAPTER_ADDRESSES * newAdapterInfo = NULL;
-        if (len  < (ULONG_MAX - bufsize)) {
-            len = len + bufsize;
+        if (len < (ULONG_MAX - BUFF_SIZE)) {
+            len += BUFF_SIZE;
         }
         newAdapterInfo =
             (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
@@ -159,21 +160,21 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     size_t error_msg_buf_size =
         strlen("IP Helper Library GetAdaptersAddresses function failed with error == ") + 10;
     int _ret = 0;
-    adapterInfo = (IP_ADAPTER_ADDRESSES *)malloc (bufsize);
+    adapterInfo = (IP_ADAPTER_ADDRESSES *) malloc(BUFF_SIZE);
     if (adapterInfo == NULL) {
         JNU_ThrowByName(env, "java/lang/OutOfMemoryError",
             "Native heap allocation failure");
         return NULL;
     }
-    len = bufsize;
+    len = BUFF_SIZE;
     flags = GAA_FLAG_SKIP_DNS_SERVER;
     flags |= GAA_FLAG_SKIP_MULTICAST;
     flags |= GAA_FLAG_INCLUDE_PREFIX;
     val = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
-    if (val == ERROR_BUFFER_OVERFLOW) {
+    for (int try = 0; val == ERROR_BUFFER_OVERFLOW && try < MAX_TRIES; ++try) {
         IP_ADAPTER_ADDRESSES * newAdapterInfo = NULL;
-        if (len  < (ULONG_MAX - bufsize)) {
-            len = len + bufsize;
+        if (len < (ULONG_MAX - BUFF_SIZE)) {
+            len += BUFF_SIZE;
         }
         newAdapterInfo =
                 (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
