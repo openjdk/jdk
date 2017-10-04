@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -330,7 +330,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
 
         // not for the scrolling tabs
         if (component == null && tabIndex >= 0) {
-            paintTitle(g2d, font, metrics, textRect, tabIndex, title);
+            String clippedTitle = SwingUtilities2.clipStringIfNecessary(tabPane, metrics,
+                    title, textRect.width);
+            paintTitle(g2d, font, metrics, textRect, tabIndex, clippedTitle);
         }
 
         if (icon != null) {
