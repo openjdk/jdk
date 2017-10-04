@@ -4,12 +4,6 @@ classpath of the jjs tool. Linker samples are named with the naming pattern
 "xyz_linker.js". These scripts build dynalink linker jar from java code and exec
 another jjs process with appropriate classpath set.
 
-Note: you need to build jdk9 forest and put "images/jdk/bin" in your PATH to use
-these scripts. This is because these scripts use javac to build dynalink jar and
-exec another jjs with classpath set! Alternatively, you can also manually build
-dynalink linker jars and invoke sample scripts by putting linker jar in jjs tool's
-classpath as well.
-
 Dynalink samples:
 
 * array_stream_linker.js

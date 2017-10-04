@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6786690 6820360 8025633 8026567 8175200
+ * @bug 6786690 6820360 8025633 8026567 8175200 8183511 8186332 8074407
  * @summary This test verifies the nesting of definition list tags.
  * @author Bhavesh Patel
  * @library ../lib
@@ -226,10 +226,11 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
-                "<span class=\"deprecatedLabel\">Deprecated.</span>"
-                + "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
+                "<span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
-                + "<code>setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "<code>setUndecorated(boolean)</code></a>.</div>\n"
+                + "</div>\n"
                 + "<div class=\"block\">This field indicates whether the C1 is "
                 + "undecorated.</div>\n"
                 + "&nbsp;\n"
@@ -241,10 +242,11 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
-                "<span class=\"deprecatedLabel\">Deprecated.</span>"
-                + "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
+                "<span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
-                + "<code>setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "<code>setUndecorated(boolean)</code></a>.</div>\n"
+                + "</div>\n"
                 + "<div class=\"block\">Reads the object stream.</div>\n"
                 + "<dl>\n"
                 + "<dt><span class=\"throwsLabel\">Throws:"
@@ -252,7 +254,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dd><code>java.io.IOException</code></dd>\n"
                 + "</dl>",
                 "<span class=\"deprecatedLabel\">Deprecated.</span>"
-                + "&nbsp;</div>\n"
+                + "</div>\n"
                 + "<div class=\"block\">The name for this class.</div>");
     }
 
@@ -332,10 +334,11 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
-                "<span class=\"deprecatedLabel\">Deprecated.</span>"
-                + "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
+                "<span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
-                + "<code>setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "<code>setUndecorated(boolean)</code></a>.</div>\n"
+                + "</div>\n"
                 + "<div class=\"block\">This field indicates whether the C1 is "
                 + "undecorated.</div>\n"
                 + "&nbsp;\n"
@@ -347,10 +350,11 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dd><a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
                 + "<code>C1.setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
-                "<span class=\"deprecatedLabel\">Deprecated.</span>"
-                + "&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
+                "<span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
                 + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
-                + "<code>setUndecorated(boolean)</code></a>.</span></div>\n"
+                + "<code>setUndecorated(boolean)</code></a>.</div>\n"
+                + "</div>\n"
                 + "<div class=\"block\">Reads the object stream.</div>\n"
                 + "<dl>\n"
                 + "<dt><span class=\"throwsLabel\">Throws:"
@@ -358,7 +362,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dd><code>java.io.IOException</code></dd>\n"
                 + "</dl>",
                 "<span class=\"deprecatedLabel\">Deprecated.</span>"
-                + "&nbsp;</div>\n"
+                + "</div>\n"
                 + "<div class=\"block\">"
                 + "The name for this class.</div>");
     }
@@ -367,12 +371,12 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         // Test with -nocomment and -nodeprecated options. The ClassDocs whould
         // not display definition lists for any member details.
         checkOutput("pkg1/C1.html", expectFound,
-                "<pre>public&nbsp;void&nbsp;readObject&#8203;()\n" +
+                "<pre>public&nbsp;void&nbsp;readObject()\n" +
                 "                throws java.io.IOException</pre>\n" +
                 "</li>");
 
         checkOutput("pkg1/C2.html", expectFound,
-                "<pre>public&nbsp;C2&#8203;()</pre>\n" +
+                "<pre>public&nbsp;C2()</pre>\n" +
                 "</li>");
 
         checkOutput("pkg1/C1.ModalExclusionType.html", expectFound,
@@ -385,16 +389,21 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         checkOutput("serialized-form.html", expectFound,
                 "<pre>boolean " +
                 "undecorated</pre>\n" +
-                "<div class=\"block\"><span class=\"deprecatedLabel\">" +
-                "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version 1.5, replaced by\n" +
-                " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>" +
-                "setUndecorated(boolean)</code></a>.</span></div>\n" +
+                "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">" +
+                "Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\">As of JDK version 1.5, replaced by\n"
+                + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\"><code>"
+                + "setUndecorated(boolean)</code></a>.</div>\n"
+                + "</div>\n"
+                +
                 "</li>",
-                "<span class=\"deprecatedLabel\">" +
-                "Deprecated.</span>&nbsp;<span class=\"deprecationComment\">As of JDK version" +
-                " 1.5, replaced by\n" +
-                " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">" +
-                "<code>setUndecorated(boolean)</code></a>.</span></div>\n" +
-                "</li>");
+                "<span class=\"deprecatedLabel\">"
+                + "Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\">As of JDK version"
+                + " 1.5, replaced by\n"
+                + " <a href=\"pkg1/C1.html#setUndecorated-boolean-\">"
+                + "<code>setUndecorated(boolean)</code></a>.</div>\n"
+                + "</div>\n"
+                + "</li>");
     }
 }

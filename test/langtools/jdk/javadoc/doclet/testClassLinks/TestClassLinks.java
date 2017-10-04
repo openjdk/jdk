@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8163800 8175200
+ * @bug 8163800 8175200 8186332
  * @summary The fix for JDK-8072052 shows up other minor incorrect use of styles
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -51,11 +51,11 @@ public class TestClassLinks extends JavadocTester {
 
         checkOutput("p/C1.html", true,
                 "<code><a href=\"../p/C2.html\" title=\"class in p\">C2</a></code>",
-                "<code><span class=\"memberNameLink\"><a href=\"../p/C1.html#C1--\">C1</a></span>&#8203;()</code>");
+                "<code><span class=\"memberNameLink\"><a href=\"../p/C1.html#C1--\">C1</a></span>()</code>");
 
         checkOutput("p/C2.html", true,
                 "<code><a href=\"../p/C3.html\" title=\"class in p\">C3</a></code>",
-                "<code><span class=\"memberNameLink\"><a href=\"../p/C2.html#C2--\">C2</a></span>&#8203;()</code>");
+                "<code><span class=\"memberNameLink\"><a href=\"../p/C2.html#C2--\">C2</a></span>()</code>");
 
         checkOutput("p/C3.html", true,
                 "<code><a href=\"../p/I1.html\" title=\"interface in p\">I1</a></code>, "
@@ -63,7 +63,7 @@ public class TestClassLinks extends JavadocTester {
                 + "<code><a href=\"../p/I2.html\" title=\"interface in p\">I2</a></code>, "
                 + "<code><a href=\"../p/IT1.html\" title=\"interface in p\">IT1</a>&lt;T&gt;</code>, "
                 + "<code><a href=\"../p/IT2.html\" title=\"interface in p\">IT2</a>&lt;java.lang.String&gt;</code>",
-                "<code><span class=\"memberNameLink\"><a href=\"../p/C3.html#C3--\">C3</a></span>&#8203;()</code>");
+                "<code><span class=\"memberNameLink\"><a href=\"../p/C3.html#C3--\">C3</a></span>()</code>");
 
         checkOutput("p/I1.html", true,
                 "<code><a href=\"../p/C3.html\" title=\"class in p\">C3</a></code>",

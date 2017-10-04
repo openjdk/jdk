@@ -801,7 +801,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
     }
 
     /**
-     * transfer waits until a poll occurs. The transfered element
+     * transfer waits until a poll occurs. The transferred element
      * is returned by the associated poll.
      */
     public void testTransfer2() throws InterruptedException {
@@ -882,7 +882,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
     }
 
     /**
-     * transfer waits until a take occurs. The transfered element
+     * transfer waits until a take occurs. The transferred element
      * is returned by the associated take.
      */
     public void testTransfer5() throws InterruptedException {

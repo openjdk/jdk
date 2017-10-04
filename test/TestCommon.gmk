@@ -273,7 +273,7 @@ BUNDLE_UP_AND_EXIT = \
 prep:
 	@$(MKDIR) -p $(ABS_TEST_OUTPUT_DIR)
 	@$(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`
-	@if [ ! -d $(TEST_ROOT)/../.hg ] ; then                                   \
+	@if [ ! -d $(TEST_ROOT)/../../.hg ] && [ ! -d $(TEST_ROOT)/../../../.hg ]; then  \
 	  $(FIND) $(TEST_ROOT) \( -name \*.dll -o -name \*.DLL -o -name \*.so \)  \
 	        -exec $(CHMOD) a+rx {} \; ;                                       \
 	fi

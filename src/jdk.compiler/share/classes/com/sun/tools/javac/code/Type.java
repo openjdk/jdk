@@ -1616,6 +1616,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         public TypeVar(Name name, Symbol owner, Type lower) {
             super(null, TypeMetadata.EMPTY);
+            Assert.checkNonNull(lower);
             tsym = new TypeVariableSymbol(0, name, this, owner);
             this.bound = null;
             this.lower = lower;
@@ -1628,6 +1629,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public TypeVar(TypeSymbol tsym, Type bound, Type lower,
                        TypeMetadata metadata) {
             super(tsym, metadata);
+            Assert.checkNonNull(lower);
             this.bound = bound;
             this.lower = lower;
         }

@@ -174,8 +174,6 @@
   <target name="compile" depends="prepare" description="Compiles nashorn">
     <javac srcdir="${dynalink.module.src.dir}"
            destdir="${dynalink.module.classes.dir}"
-           source="${javac.source}"
-           target="${javac.target}"
            debug="${javac.debug}"
            encoding="${javac.encoding}"
            includeantruntime="false" fork="true">
@@ -190,8 +188,6 @@
     </delete>
     <javac srcdir="${nashorn.module.src.dir}"
            destdir="${nashorn.module.classes.dir}"
-           source="${javac.source}"
-           target="${javac.target}"
            debug="${javac.debug}"
            encoding="${javac.encoding}"
            includeantruntime="false" fork="true">
@@ -207,8 +203,6 @@
     </delete>
     <javac srcdir="${nashorn.shell.module.src.dir}"
            destdir="${nashorn.shell.module.classes.dir}"
-           source="${javac.source}"
-           target="${javac.target}"
            debug="${javac.debug}"
            encoding="${javac.encoding}"
            includeantruntime="false" fork="true">
@@ -342,8 +336,6 @@
     <javac srcdir="${test.src.dir}"
            destdir="${build.test.classes.dir}"
            classpath="${javac.test.classpath}"
-           source="${javac.source}"
-           target="${javac.target}"
            debug="${javac.debug}"
            encoding="${javac.encoding}"
            includeantruntime="false" fork="true">
@@ -351,7 +343,7 @@
         <compilerarg value="-Xlint:unchecked"/>
         <compilerarg value="-Xlint:deprecation"/>
         <compilerarg value="-Xdiags:verbose"/>
-        <compilerarg line="${test.module.imports}"/>
+        <compilerarg line="${test.module.imports.compile.time}"/>
     </javac>
 
     <copy todir="${build.test.classes.dir}/META-INF/services">

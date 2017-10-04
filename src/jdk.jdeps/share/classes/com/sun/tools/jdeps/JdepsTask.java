@@ -234,49 +234,6 @@ class JdepsTask {
             }
         },
 
-        new Option(true, CommandOption.CHECK_MODULES) {
-            void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                if (task.command != null) {
-                    throw new BadArgs("err.command.set", task.command, opt);
-                }
-                Set<String> mods =  Set.of(arg.split(","));
-                task.options.addmods.addAll(mods);
-                task.command = task.checkModuleDeps(mods);
-            }
-        },
-        new Option(true, CommandOption.GENERATE_MODULE_INFO) {
-            void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                if (task.command != null) {
-                    throw new BadArgs("err.command.set", task.command, opt);
-                }
-                task.command = task.genModuleInfo(Paths.get(arg), false);
-            }
-        },
-        new Option(true, CommandOption.GENERATE_OPEN_MODULE) {
-            void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                if (task.command != null) {
-                    throw new BadArgs("err.command.set", task.command, opt);
-                }
-                task.command = task.genModuleInfo(Paths.get(arg), true);
-            }
-        },
-        new Option(false, CommandOption.LIST_DEPS) {
-            void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                if (task.command != null) {
-                    throw new BadArgs("err.command.set", task.command, opt);
-                }
-                task.command = task.listModuleDeps(false);
-            }
-        },
-        new Option(false, CommandOption.LIST_REDUCED_DEPS) {
-            void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                if (task.command != null) {
-                    throw new BadArgs("err.command.set", task.command, opt);
-                }
-                task.command = task.listModuleDeps(true);
-            }
-        },
-
         // ---- paths option ----
         new Option(true, "-cp", "-classpath", "--class-path") {
             void process(JdepsTask task, String opt, String arg) {
@@ -312,15 +269,6 @@ class JdepsTask {
                 task.options.addmods.addAll(mods);
             }
         },
-        new Option(true, "-m", "--module") {
-            void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                if (!task.options.rootModules.isEmpty()) {
-                    throw new BadArgs("err.option.already.specified", opt);
-                }
-                task.options.rootModules.add(arg);
-                task.options.addmods.add(arg);
-            }
-        },
         new Option(true, "--multi-release") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 if (arg.equalsIgnoreCase("base")) {
@@ -336,6 +284,70 @@ class JdepsTask {
                     }
                     task.options.multiRelease = Runtime.Version.parse(arg);
                 }
+            }
+        },
+        new Option(false, "-q", "-quiet") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.nowarning = true;
+            }
+        },
+        new Option(false, "-version", "--version") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.version = true;
+            }
+        },
+
+        // ---- module-specific options ----
+
+        new Option(true, "-m", "--module") {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                if (!task.options.rootModules.isEmpty()) {
+                    throw new BadArgs("err.option.already.specified", opt);
+                }
+                task.options.rootModules.add(arg);
+                task.options.addmods.add(arg);
+            }
+        },
+        new Option(true, CommandOption.GENERATE_MODULE_INFO) {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                if (task.command != null) {
+                    throw new BadArgs("err.command.set", task.command, opt);
+                }
+                task.command = task.genModuleInfo(Paths.get(arg), false);
+            }
+        },
+        new Option(true, CommandOption.GENERATE_OPEN_MODULE) {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                if (task.command != null) {
+                    throw new BadArgs("err.command.set", task.command, opt);
+                }
+                task.command = task.genModuleInfo(Paths.get(arg), true);
+            }
+        },
+        new Option(true, CommandOption.CHECK_MODULES) {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                if (task.command != null) {
+                    throw new BadArgs("err.command.set", task.command, opt);
+                }
+                Set<String> mods =  Set.of(arg.split(","));
+                task.options.addmods.addAll(mods);
+                task.command = task.checkModuleDeps(mods);
+            }
+        },
+        new Option(false, CommandOption.LIST_DEPS) {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                if (task.command != null) {
+                    throw new BadArgs("err.command.set", task.command, opt);
+                }
+                task.command = task.listModuleDeps(false);
+            }
+        },
+        new Option(false, CommandOption.LIST_REDUCED_DEPS) {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                if (task.command != null) {
+                    throw new BadArgs("err.command.set", task.command, opt);
+                }
+                task.command = task.listModuleDeps(true);
             }
         },
 
@@ -424,17 +436,6 @@ class JdepsTask {
             }
         },
 
-        new Option(false, "-q", "-quiet") {
-            void process(JdepsTask task, String opt, String arg) {
-                task.options.nowarning = true;
-            }
-        },
-
-        new Option(false, "-version", "--version") {
-            void process(JdepsTask task, String opt, String arg) {
-                task.options.version = true;
-            }
-        },
         new HiddenOption(false, "-fullversion") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.fullVersion = true;

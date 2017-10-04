@@ -86,9 +86,9 @@ public class Collection8Test extends JSR166TestCase {
 
     Object bomb() {
         return new Object() {
-                public boolean equals(Object x) { throw new AssertionError(); }
-                public int hashCode() { throw new AssertionError(); }
-            };
+            public boolean equals(Object x) { throw new AssertionError(); }
+            public int hashCode() { throw new AssertionError(); }
+        };
     }
 
     /** Checks properties of empty collections. */

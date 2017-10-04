@@ -1,7 +1,7 @@
 # buffer indexing linker example
 
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,10 +37,12 @@
 $EXEC.throwOnError=true
 
 // compile BufferIndexingLinkerExporter
-`javac -cp ../../dist/nashorn.jar BufferIndexingLinkerExporter.java`
+`javac BufferIndexingLinkerExporter.java`
+
+load("jarutil.js");
 
 // make a jar file out of pluggable linker
-`jar cvf buffer_indexing_linker.jar BufferIndexingLinkerExporter*.class META-INF/`
+makeJar("buffer_indexing_linker.jar");
 
 // run a sample script that uses pluggable linker
 // but make sure classpath points to the pluggable linker jar!

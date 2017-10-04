@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,10 +203,8 @@ abstract class VarHandleBaseTest {
 
     static List<TestAccessMode> testAccessModesOfType(TestAccessType... ats) {
         Stream<TestAccessMode> s = Stream.of(TestAccessMode.values());
-        for (TestAccessType at : ats) {
-            s = s.filter(e -> e.isOfType(at));
-        }
-        return s.collect(toList());
+        return s.filter(e -> Stream.of(ats).anyMatch(e::isOfType))
+                .collect(toList());
     }
 
     static List<VarHandle.AccessMode> accessModes() {
@@ -215,10 +213,9 @@ abstract class VarHandleBaseTest {
 
     static List<VarHandle.AccessMode> accessModesOfType(TestAccessType... ats) {
         Stream<TestAccessMode> s = Stream.of(TestAccessMode.values());
-        for (TestAccessType at : ats) {
-            s = s.filter(e -> e.isOfType(at));
-        }
-        return s.map(TestAccessMode::toAccessMode).collect(toList());
+        return s.filter(e -> Stream.of(ats).anyMatch(e::isOfType))
+                .map(TestAccessMode::toAccessMode)
+                .collect(toList());
     }
 
     static MethodHandle toMethodHandle(VarHandle vh, TestAccessMode tam, MethodType mt) {

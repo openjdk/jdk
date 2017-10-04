@@ -354,7 +354,7 @@ public class TypeHarness {
 
         public TypeVar TypeVariable(Type bound) {
             TypeSymbol tvsym = new TypeVariableSymbol(0, syntheticName(), null, predef.noSymbol);
-            tvsym.type = new TypeVar(tvsym, bound, null);
+            tvsym.type = new TypeVar(tvsym, bound, Type.noType);
             return (TypeVar)tvsym.type;
         }
 

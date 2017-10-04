@@ -51,57 +51,6 @@ public class AtomicLongFieldUpdaterTest extends JSR166TestCase {
         return new TestSuite(AtomicLongFieldUpdaterTest.class);
     }
 
-    // for testing subclass access
-    static class AtomicLongFieldUpdaterTestSubclass extends AtomicLongFieldUpdaterTest {
-        public void checkPrivateAccess() {
-            try {
-                AtomicLongFieldUpdater<AtomicLongFieldUpdaterTest> a =
-                    AtomicLongFieldUpdater.newUpdater
-                    (AtomicLongFieldUpdaterTest.class, "privateField");
-                shouldThrow();
-            } catch (RuntimeException success) {
-                assertNotNull(success.getCause());
-            }
-        }
-
-        public void checkCompareAndSetProtectedSub() {
-            AtomicLongFieldUpdater<AtomicLongFieldUpdaterTest> a =
-                AtomicLongFieldUpdater.newUpdater
-                (AtomicLongFieldUpdaterTest.class, "protectedField");
-            this.protectedField = 1;
-            assertTrue(a.compareAndSet(this, 1, 2));
-            assertTrue(a.compareAndSet(this, 2, -4));
-            assertEquals(-4, a.get(this));
-            assertFalse(a.compareAndSet(this, -5, 7));
-            assertEquals(-4, a.get(this));
-            assertTrue(a.compareAndSet(this, -4, 7));
-            assertEquals(7, a.get(this));
-        }
-    }
-
-    static class UnrelatedClass {
-        public void checkPackageAccess(AtomicLongFieldUpdaterTest obj) {
-            obj.x = 72L;
-            AtomicLongFieldUpdater<AtomicLongFieldUpdaterTest> a =
-                AtomicLongFieldUpdater.newUpdater
-                (AtomicLongFieldUpdaterTest.class, "x");
-            assertEquals(72L, a.get(obj));
-            assertTrue(a.compareAndSet(obj, 72L, 73L));
-            assertEquals(73L, a.get(obj));
-        }
-
-        public void checkPrivateAccess(AtomicLongFieldUpdaterTest obj) {
-            try {
-                AtomicLongFieldUpdater<AtomicLongFieldUpdaterTest> a =
-                    AtomicLongFieldUpdater.newUpdater
-                    (AtomicLongFieldUpdaterTest.class, "privateField");
-                throw new AssertionError("should throw");
-            } catch (RuntimeException success) {
-                assertNotNull(success.getCause());
-            }
-        }
-    }
-
     AtomicLongFieldUpdater<AtomicLongFieldUpdaterTest> updaterFor(String fieldName) {
         return AtomicLongFieldUpdater.newUpdater
             (AtomicLongFieldUpdaterTest.class, fieldName);
@@ -143,9 +92,8 @@ public class AtomicLongFieldUpdaterTest extends JSR166TestCase {
      * construction using private field from subclass throws RuntimeException
      */
     public void testPrivateFieldInSubclass() {
-        AtomicLongFieldUpdaterTestSubclass s =
-            new AtomicLongFieldUpdaterTestSubclass();
-        s.checkPrivateAccess();
+        new NonNestmates.AtomicLongFieldUpdaterTestSubclass()
+            .checkPrivateAccess();
     }
 
     /**
@@ -153,8 +101,8 @@ public class AtomicLongFieldUpdaterTest extends JSR166TestCase {
      * private access is not
      */
     public void testUnrelatedClassAccess() {
-        new UnrelatedClass().checkPackageAccess(this);
-        new UnrelatedClass().checkPrivateAccess(this);
+        new NonNestmates().checkPackageAccess(this);
+        new NonNestmates().checkPrivateAccess(this);
     }
 
     /**
@@ -223,9 +171,8 @@ public class AtomicLongFieldUpdaterTest extends JSR166TestCase {
      * equal to expected else fails
      */
     public void testCompareAndSetProtectedInSubclass() {
-        AtomicLongFieldUpdaterTestSubclass s =
-            new AtomicLongFieldUpdaterTestSubclass();
-        s.checkCompareAndSetProtectedSub();
+        new NonNestmates.AtomicLongFieldUpdaterTestSubclass()
+            .checkCompareAndSetProtectedSub();
     }
 
     /**
