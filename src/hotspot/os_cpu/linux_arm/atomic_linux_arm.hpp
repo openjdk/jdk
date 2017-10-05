@@ -44,39 +44,24 @@
  * kernel source or kernel_user_helpers.txt in Linux Doc.
  */
 
-inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
+#ifndef AARCH64
+template<>
+template<typename T>
+inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  return PrimitiveConversions::cast<T>(
+    (*os::atomic_load_long_func)(reinterpret_cast<const volatile jlong*>(src)));
+}
 
-inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
-inline jlong Atomic::load (const volatile jlong* src) {
-  assert(((intx)src & (sizeof(jlong)-1)) == 0, "Atomic load jlong mis-aligned");
-#ifdef AARCH64
-  return *src;
-#else
-  return (*os::atomic_load_long_func)(src);
+template<>
+template<typename T>
+inline void Atomic::PlatformStore<8>::operator()(T store_value,
+                                                 T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  (*os::atomic_store_long_func)(
+    PrimitiveConversions::cast<jlong>(store_value), reinterpret_cast<volatile jlong*>(dest));
+}
 #endif
-}
-
-inline void Atomic::store (jlong value, volatile jlong* dest) {
-  assert(((intx)dest & (sizeof(jlong)-1)) == 0, "Atomic store jlong mis-aligned");
-#ifdef AARCH64
-  *dest = value;
-#else
-  (*os::atomic_store_long_func)(value, dest);
-#endif
-}
-
-inline void Atomic::store (jlong value, jlong* dest) {
-  store(value, (volatile jlong*)dest);
-}
 
 // As per atomic.hpp all read-modify-write operations have to provide two-way
 // barriers semantics. For AARCH64 we are using load-acquire-with-reservation and
