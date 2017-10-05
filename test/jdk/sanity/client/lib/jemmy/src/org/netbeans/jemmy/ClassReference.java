@@ -25,6 +25,7 @@ package org.netbeans.jemmy;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 /**
  *
@@ -96,7 +97,7 @@ public class ClassReference {
         try {
             invokeMethod("main", methodParams, classes);
         } catch (IllegalAccessException | IllegalStateException e) {
-            e.printStackTrace();
+            throw new JemmyException("Failed to start application " + cl + " with params " + Arrays.toString(methodParams), e);
         }
     }
 

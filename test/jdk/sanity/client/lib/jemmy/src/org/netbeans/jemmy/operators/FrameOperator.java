@@ -508,8 +508,8 @@ public class FrameOperator extends WindowOperator implements Outputable {
             waiter.setOutput(output);
             return waiter.waitFrame(new FrameFinder(chooser), index);
         } catch (InterruptedException e) {
-            output.printStackTrace(e);
-            return null;
+            throw new JemmyException("Interrupted while waiting for a frame with " +
+                chooser + " and index = " + index, e);
         }
     }
 
