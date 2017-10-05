@@ -3077,7 +3077,7 @@ public class Attr extends JCTree.Visitor {
                 if (that.getMode() == ReferenceMode.INVOKE &&
                         TreeInfo.isStaticSelector(that.expr, names) &&
                         that.kind.isUnbound() &&
-                        !desc.getParameterTypes().head.isParameterized()) {
+                        lookupHelper.site.isRaw()) {
                     chk.checkRaw(that.expr, localEnv);
                 }
 
