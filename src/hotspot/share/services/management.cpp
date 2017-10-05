@@ -1160,7 +1160,8 @@ JVM_END
 //    locked_monitors - if true, dump locked object monitors
 //    locked_synchronizers - if true, dump locked JSR-166 synchronizers
 //
-JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboolean locked_monitors, jboolean locked_synchronizers))
+JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboolean locked_monitors,
+                                        jboolean locked_synchronizers, jint maxDepth))
   ResourceMark rm(THREAD);
 
   // make sure the AbstractOwnableSynchronizer klass is loaded before taking thread snapshots
@@ -1181,14 +1182,14 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
     do_thread_dump(&dump_result,
                    ids_ah,
                    num_threads,
-                   -1, /* entire stack */
+                   maxDepth, /* stack depth */
                    (locked_monitors ? true : false),      /* with locked monitors */
                    (locked_synchronizers ? true : false), /* with locked synchronizers */
                    CHECK_NULL);
   } else {
     // obtain thread dump of all threads
     VM_ThreadDump op(&dump_result,
-                     -1, /* entire stack */
+                     maxDepth, /* stack depth */
                      (locked_monitors ? true : false),     /* with locked monitors */
                      (locked_synchronizers ? true : false) /* with locked synchronizers */);
     VMThread::execute(&op);
@@ -2237,7 +2238,7 @@ const struct jmmInterface_1_ jmm_interface = {
 
 void* Management::get_jmm_interface(int version) {
 #if INCLUDE_MANAGEMENT
-  if (version == JMM_VERSION_1_0) {
+  if (version == JMM_VERSION) {
     return (void*) &jmm_interface;
   }
 #endif // INCLUDE_MANAGEMENT
