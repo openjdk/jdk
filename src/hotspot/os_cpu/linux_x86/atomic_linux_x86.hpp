@@ -27,19 +27,6 @@
 
 // Implementation of class atomic
 
-inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
-
-inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
-
 template<size_t byte_size>
 struct Atomic::PlatformAdd
   : Atomic::FetchAndAdd<Atomic::PlatformAdd<byte_size> >
@@ -102,8 +89,6 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
 }
 
 #ifdef AMD64
-inline void Atomic::store    (jlong    store_value, jlong*    dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, volatile jlong*    dest) { *dest = store_value; }
 
 template<>
 template<typename I, typename D>
@@ -144,8 +129,6 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
   return exchange_value;
 }
 
-inline jlong Atomic::load(const volatile jlong* src) { return *src; }
-
 #else // !AMD64
 
 extern "C" {
@@ -164,18 +147,21 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
   return cmpxchg_using_helper<jlong>(_Atomic_cmpxchg_long, exchange_value, dest, compare_value);
 }
 
-inline jlong Atomic::load(const volatile jlong* src) {
+template<>
+template<typename T>
+inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
+  STATIC_ASSERT(8 == sizeof(T));
   volatile jlong dest;
-  _Atomic_move_long(src, &dest);
-  return dest;
+  _Atomic_move_long(reinterpret_cast<const volatile jlong*>(src), reinterpret_cast<volatile jlong*>(&dest));
+  return PrimitiveConversions::cast<T>(dest);
 }
 
-inline void Atomic::store(jlong store_value, jlong* dest) {
-  _Atomic_move_long((volatile jlong*)&store_value, (volatile jlong*)dest);
-}
-
-inline void Atomic::store(jlong store_value, volatile jlong* dest) {
-  _Atomic_move_long((volatile jlong*)&store_value, dest);
+template<>
+template<typename T>
+inline void Atomic::PlatformStore<8>::operator()(T store_value,
+                                                 T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  _Atomic_move_long(reinterpret_cast<const volatile jlong*>(&store_value), reinterpret_cast<volatile jlong*>(dest));
 }
 
 #endif // AMD64

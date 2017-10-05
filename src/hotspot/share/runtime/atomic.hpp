@@ -64,24 +64,25 @@ class Atomic : AllStatic {
   // we can prove that a weaker form is sufficiently safe.
 
   // Atomically store to a location
-  inline static void store    (jbyte    store_value, jbyte*    dest);
-  inline static void store    (jshort   store_value, jshort*   dest);
-  inline static void store    (jint     store_value, jint*     dest);
-  // See comment above about using jlong atomics on 32-bit platforms
-  inline static void store    (jlong    store_value, jlong*    dest);
-  inline static void store_ptr(intptr_t store_value, intptr_t* dest);
-  inline static void store_ptr(void*    store_value, void*     dest);
+  // The type T must be either a pointer type convertible to or equal
+  // to D, an integral/enum type equal to D, or a type equal to D that
+  // is primitive convertible using PrimitiveConversions.
+  template<typename T, typename D>
+  inline static void store(T store_value, volatile D* dest);
 
-  inline static void store    (jbyte    store_value, volatile jbyte*    dest);
-  inline static void store    (jshort   store_value, volatile jshort*   dest);
-  inline static void store    (jint     store_value, volatile jint*     dest);
-  // See comment above about using jlong atomics on 32-bit platforms
-  inline static void store    (jlong    store_value, volatile jlong*    dest);
-  inline static void store_ptr(intptr_t store_value, volatile intptr_t* dest);
-  inline static void store_ptr(void*    store_value, volatile void*     dest);
+  inline static void store_ptr(intptr_t store_value, volatile intptr_t* dest) {
+    Atomic::store(store_value, dest);
+  }
 
-  // See comment above about using jlong atomics on 32-bit platforms
-  inline static jlong load(const volatile jlong* src);
+  inline static void store_ptr(void*    store_value, volatile void*     dest) {
+    Atomic::store(store_value, reinterpret_cast<void* volatile*>(dest));
+  }
+
+  // Atomically load from a location
+  // The type T must be either a pointer type, an integral/enum type,
+  // or a type that is primitive convertible using PrimitiveConversions.
+  template<typename T>
+  inline static T load(const volatile T* dest);
 
   // Atomically add to a location. Returns updated value. add*() provide:
   // <fence> add-value-to-dest <membar StoreLoad|StoreStore>
@@ -173,6 +174,57 @@ private:
   // Note: Provides the limited subset of C++11 std::is_convertible
   // that is needed here.
   template<typename From, typename To> struct IsPointerConvertible;
+
+  // Dispatch handler for store.  Provides type-based validity
+  // checking and limited conversions around calls to the platform-
+  // specific implementation layer provided by PlatformOp.
+  template<typename T, typename D, typename PlatformOp, typename Enable = void>
+  struct StoreImpl;
+
+  // Platform-specific implementation of store.  Support for sizes
+  // of 1, 2, 4, and (if different) pointer size bytes are required.
+  // The class is a function object that must be default constructable,
+  // with these requirements:
+  //
+  // either:
+  // - dest is of type D*, an integral, enum or pointer type.
+  // - new_value are of type T, an integral, enum or pointer type D or
+  //   pointer type convertible to D.
+  // or:
+  // - T and D are the same and are primitive convertible using PrimitiveConversions
+  // and either way:
+  // - platform_store is an object of type PlatformStore<sizeof(T)>.
+  //
+  // Then
+  //   platform_store(new_value, dest)
+  // must be a valid expression.
+  //
+  // The default implementation is a volatile store. If a platform
+  // requires more for e.g. 64 bit stores, a specialization is required
+  template<size_t byte_size> struct PlatformStore;
+
+  // Dispatch handler for load.  Provides type-based validity
+  // checking and limited conversions around calls to the platform-
+  // specific implementation layer provided by PlatformOp.
+  template<typename T, typename PlatformOp, typename Enable = void>
+  struct LoadImpl;
+
+  // Platform-specific implementation of load. Support for sizes of
+  // 1, 2, 4 bytes and (if different) pointer size bytes are required.
+  // The class is a function object that must be default
+  // constructable, with these requirements:
+  //
+  // - dest is of type T*, an integral, enum or pointer type, or
+  //   T is convertible to a primitive type using PrimitiveConversions
+  // - platform_load is an object of type PlatformLoad<sizeof(T)>.
+  //
+  // Then
+  //   platform_load(src)
+  // must be a valid expression, returning a result convertible to T.
+  //
+  // The default implementation is a volatile load. If a platform
+  // requires more for e.g. 64 bit loads, a specialization is required
+  template<size_t byte_size> struct PlatformLoad;
 
   // Dispatch handler for add.  Provides type-based validity checking
   // and limited conversions around calls to the platform-specific
@@ -344,6 +396,131 @@ struct Atomic::IsPointerConvertible<From*, To*> : AllStatic {
   static const bool value = (sizeof(yes) == sizeof(test(test_value)));
 };
 
+// Handle load for pointer, integral and enum types.
+template<typename T, typename PlatformOp>
+struct Atomic::LoadImpl<
+  T,
+  PlatformOp,
+  typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value || IsPointer<T>::value>::type>
+  VALUE_OBJ_CLASS_SPEC
+{
+  T operator()(T const volatile* dest) const {
+    // Forward to the platform handler for the size of T.
+    return PlatformOp()(dest);
+  }
+};
+
+// Handle load for types that have a translator.
+//
+// All the involved types must be identical.
+//
+// This translates the original call into a call on the decayed
+// arguments, and returns the recovered result of that translated
+// call.
+template<typename T, typename PlatformOp>
+struct Atomic::LoadImpl<
+  T,
+  PlatformOp,
+  typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
+  VALUE_OBJ_CLASS_SPEC
+{
+  T operator()(T const volatile* dest) const {
+    typedef PrimitiveConversions::Translate<T> Translator;
+    typedef typename Translator::Decayed Decayed;
+    STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
+    Decayed result = PlatformOp()(reinterpret_cast<Decayed const volatile*>(dest));
+    return Translator::recover(result);
+  }
+};
+
+// Default implementation of atomic load if a specific platform
+// does not provide a specialization for a certain size class.
+// For increased safety, the default implementation only allows
+// load types that are pointer sized or smaller. If a platform still
+// supports wide atomics, then it has to use specialization
+// of Atomic::PlatformLoad for that wider size class.
+template<size_t byte_size>
+struct Atomic::PlatformLoad VALUE_OBJ_CLASS_SPEC {
+  template<typename T>
+  T operator()(T const volatile* dest) const {
+    STATIC_ASSERT(sizeof(T) <= sizeof(void*)); // wide atomics need specialization
+    return *dest;
+  }
+};
+
+// Handle store for integral and enum types.
+//
+// All the involved types must be identical.
+template<typename T, typename PlatformOp>
+struct Atomic::StoreImpl<
+  T, T,
+  PlatformOp,
+  typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
+  VALUE_OBJ_CLASS_SPEC
+{
+  void operator()(T new_value, T volatile* dest) const {
+    // Forward to the platform handler for the size of T.
+    PlatformOp()(new_value, dest);
+  }
+};
+
+// Handle store for pointer types.
+//
+// The new_value must be implicitly convertible to the
+// destination's type; it must be type-correct to store the
+// new_value in the destination.
+template<typename T, typename D, typename PlatformOp>
+struct Atomic::StoreImpl<
+  T*, D*,
+  PlatformOp,
+  typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
+  VALUE_OBJ_CLASS_SPEC
+{
+  void operator()(T* new_value, D* volatile* dest) const {
+    // Allow derived to base conversion, and adding cv-qualifiers.
+    D* value = new_value;
+    PlatformOp()(value, dest);
+  }
+};
+
+// Handle store for types that have a translator.
+//
+// All the involved types must be identical.
+//
+// This translates the original call into a call on the decayed
+// arguments.
+template<typename T, typename PlatformOp>
+struct Atomic::StoreImpl<
+  T, T,
+  PlatformOp,
+  typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
+  VALUE_OBJ_CLASS_SPEC
+{
+  void operator()(T new_value, T volatile* dest) const {
+    typedef PrimitiveConversions::Translate<T> Translator;
+    typedef typename Translator::Decayed Decayed;
+    STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
+    PlatformOp()(Translator::decay(new_value),
+                 reinterpret_cast<Decayed volatile*>(dest));
+  }
+};
+
+// Default implementation of atomic store if a specific platform
+// does not provide a specialization for a certain size class.
+// For increased safety, the default implementation only allows
+// storing types that are pointer sized or smaller. If a platform still
+// supports wide atomics, then it has to use specialization
+// of Atomic::PlatformStore for that wider size class.
+template<size_t byte_size>
+struct Atomic::PlatformStore VALUE_OBJ_CLASS_SPEC {
+  template<typename T>
+  void operator()(T new_value,
+                  T volatile* dest) const {
+    STATIC_ASSERT(sizeof(T) <= sizeof(void*)); // wide atomics need specialization
+    (void)const_cast<T&>(*dest = new_value);
+  }
+};
+
 // Define FetchAndAdd and AddAndFetch helper classes before including
 // platform file, which may use these as base classes, requiring they
 // be complete.
@@ -423,6 +600,16 @@ struct Atomic::PlatformXchg VALUE_OBJ_CLASS_SPEC {
 #if (SIZE_MAX != UINTPTR_MAX)
 #error size_t is not WORD_SIZE, interesting platform, but missing implementation here
 #endif
+
+template<typename T>
+inline T Atomic::load(const volatile T* dest) {
+  return LoadImpl<T, PlatformLoad<sizeof(T)> >()(dest);
+}
+
+template<typename T, typename D>
+inline void Atomic::store(T store_value, volatile D* dest) {
+  StoreImpl<T, D, PlatformStore<sizeof(D)> >()(store_value, dest);
+}
 
 template<typename I, typename D>
 inline D Atomic::add(I add_value, D volatile* dest) {

@@ -25,20 +25,6 @@
 #ifndef OS_CPU_SOLARIS_X86_VM_ATOMIC_SOLARIS_X86_HPP
 #define OS_CPU_SOLARIS_X86_VM_ATOMIC_SOLARIS_X86_HPP
 
-inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-
-
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
-
-inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
 // For Sun Studio - implementation is in solaris_x86_64.il.
 
 extern "C" {
@@ -150,9 +136,5 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
                          reinterpret_cast<jlong volatile*>(dest),
                          PrimitiveConversions::cast<jlong>(compare_value)));
 }
-
-inline void Atomic::store    (jlong    store_value, jlong*             dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, volatile jlong*    dest) { *dest = store_value; }
-inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #endif // OS_CPU_SOLARIS_X86_VM_ATOMIC_SOLARIS_X86_HPP

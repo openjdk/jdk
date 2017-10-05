@@ -159,14 +159,6 @@ static inline int arm_lock_test_and_set(int newval, volatile int *ptr) {
 }
 #endif // ARM
 
-inline void Atomic::store(jint store_value, volatile jint* dest) {
-  *dest = store_value;
-}
-
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) {
-  *dest = store_value;
-}
-
 template<size_t byte_size>
 struct Atomic::PlatformAdd
   : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
@@ -269,18 +261,21 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
   return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
 }
 
-inline jlong Atomic::load(const volatile jlong* src) {
+template<>
+template<typename T>
+inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
+  STATIC_ASSERT(8 == sizeof(T));
   volatile jlong dest;
-  os::atomic_copy64(src, &dest);
-  return dest;
+  os::atomic_copy64(reinterpret_cast<const volatile jlong*>(src), reinterpret_cast<volatile jlong*>(&dest));
+  return PrimitiveConversions::cast<T>(dest);
 }
 
-inline void Atomic::store(jlong store_value, jlong* dest) {
-  os::atomic_copy64((volatile jlong*)&store_value, (volatile jlong*)dest);
-}
-
-inline void Atomic::store(jlong store_value, volatile jlong* dest) {
-  os::atomic_copy64((volatile jlong*)&store_value, dest);
+template<>
+template<typename T>
+inline void Atomic::PlatformStore<8>::operator()(T store_value,
+                                                 T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  os::atomic_copy64(reinterpret_cast<const volatile jlong*>(&store_value), reinterpret_cast<volatile jlong*>(dest));
 }
 
 #endif // OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_HPP

@@ -53,20 +53,6 @@
 // is an integer multiple of the data length. Furthermore, all stores are ordered:
 // a store which occurs conceptually before another store becomes visible to other CPUs
 // before the other store becomes visible.
-inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, jlong*    dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
-
-inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, volatile jlong*    dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
 
 //------------
 // Atomic::add
@@ -334,7 +320,5 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T xchg_val,
 
   return old;
 }
-
-inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #endif // OS_CPU_LINUX_S390_VM_ATOMIC_LINUX_S390_INLINE_HPP

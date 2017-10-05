@@ -34,19 +34,6 @@
 #define READ_MEM_BARRIER  __atomic_thread_fence(__ATOMIC_ACQUIRE);
 #define WRITE_MEM_BARRIER __atomic_thread_fence(__ATOMIC_RELEASE);
 
-inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
-
-inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
-
 template<size_t byte_size>
 struct Atomic::PlatformAdd
   : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
@@ -83,10 +70,5 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T exchange_value,
     return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
   }
 }
-
-inline void Atomic::store (jlong store_value, jlong* dest) { *dest = store_value; }
-inline void Atomic::store (jlong store_value, volatile jlong* dest) { *dest = store_value; }
-
-inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #endif // OS_CPU_LINUX_AARCH64_VM_ATOMIC_LINUX_AARCH64_HPP
