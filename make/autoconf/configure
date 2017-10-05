@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,12 @@ export _as_can_reexec=no
 
 conf_script_dir="$TOPDIR/make/autoconf"
 
-if [ "$CUSTOM_CONFIG_DIR" = "" ]; then
-  conf_custom_script_dir="$TOPDIR/closed/autoconf"
-else
-  conf_custom_script_dir="$CUSTOM_CONFIG_DIR"
+if test "x$CUSTOM_CONFIG_DIR" != x; then
+  if test ! -e $CUSTOM_CONFIG_DIR/generated-configure.sh; then
+    echo "CUSTOM_CONFIG_DIR not pointing to a proper custom config dir."
+    echo "Error: Cannot continue" 1>&2
+    exit 1
+  fi
 fi
 
 ###
@@ -76,10 +78,10 @@ check_autoconf_timestamps() {
     fi
   done
 
-  if test -e $conf_custom_script_dir/generated-configure.sh; then
+  if test "x$CUSTOM_CONFIG_DIR" != x; then
     # If custom source configure is available, make sure it is up-to-date as well.
-    for file in $conf_script_dir/configure.ac $conf_script_dir/*.m4 $conf_custom_script_dir/*.m4; do
-      if test $file -nt $conf_custom_script_dir/generated-configure.sh; then
+    for file in $conf_script_dir/configure.ac $conf_script_dir/*.m4 $CUSTOM_CONFIG_DIR/*.m4; do
+      if test $file -nt $CUSTOM_CONFIG_DIR/generated-configure.sh; then
         echo "Warning: The configure source files is newer than the custom generated files."
         run_autogen_or_fail
       fi
@@ -93,11 +95,9 @@ check_hg_updates() {
     if test "x$conf_updated_autoconf_files" != x; then
       echo "Configure source code has been updated, checking time stamps"
       check_autoconf_timestamps
-    fi
-
-    if test -e $conf_custom_script_dir; then
+    elif test "x$CUSTOM_CONFIG_DIR" != x; then
       # If custom source configure is available, make sure it is up-to-date as well.
-      conf_custom_updated_autoconf_files=`cd $conf_custom_script_dir && hg status -mard 2> /dev/null | grep autoconf`
+      conf_custom_updated_autoconf_files=`cd $CUSTOM_CONFIG_DIR && hg status -mard 2> /dev/null | grep autoconf`
       if test "x$conf_custom_updated_autoconf_files" != x; then
         echo "Configure custom source code has been updated, checking time stamps"
         check_autoconf_timestamps
@@ -109,11 +109,11 @@ check_hg_updates() {
 # Check for local changes
 check_hg_updates
 
-if test -e $conf_custom_script_dir/generated-configure.sh; then
+if test "x$CUSTOM_CONFIG_DIR" != x; then
   # Test if open configure is newer than custom configure, if so, custom needs to
   # be regenerated. This test is required to ensure consistency with custom source.
   conf_open_configure_timestamp=`grep DATE_WHEN_GENERATED= $conf_script_dir/generated-configure.sh  | cut -d"=" -f 2`
-  conf_custom_configure_timestamp=`grep DATE_WHEN_GENERATED= $conf_custom_script_dir/generated-configure.sh  | cut -d"=" -f 2`
+  conf_custom_configure_timestamp=`grep DATE_WHEN_GENERATED= $CUSTOM_CONFIG_DIR/generated-configure.sh  | cut -d"=" -f 2`
   if test $conf_open_configure_timestamp -gt $conf_custom_configure_timestamp; then
     echo "Warning: The generated configure file contains changes not present in the custom generated file."
     run_autogen_or_fail
@@ -241,10 +241,10 @@ conf_processed_arguments=("--enable-option-checking=fatal" "${conf_processed_arg
 ###
 ### Call the configure script
 ###
-if test -e $conf_custom_script_dir/generated-configure.sh; then
+if test "x$CUSTOM_CONFIG_DIR" != x; then
   # Custom source configure available; run that instead
   echo "Running custom generated-configure.sh"
-  conf_script_to_run=$conf_custom_script_dir/generated-configure.sh
+  conf_script_to_run=$CUSTOM_CONFIG_DIR/generated-configure.sh
 else
   echo "Running generated-configure.sh"
   conf_script_to_run=$conf_script_dir/generated-configure.sh

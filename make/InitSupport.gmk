@@ -35,8 +35,9 @@ _INITSUPPORT_GMK := 1
 ifeq ($(HAS_SPEC),)
 
   # Include the corresponding closed file, if present.
-  # Normal hook mechanism cannot be used since we have no SPEC.
-  -include $(topdir)/../closed/make/InitSupport.gmk
+  ifneq ($(CUSTOM_MAKE_DIR), )
+    -include $(CUSTOM_MAKE_DIR)/InitSupport.gmk
+  endif
 
   ##############################################################################
   # Helper functions for the initial part of Init.gmk, before the spec file is
