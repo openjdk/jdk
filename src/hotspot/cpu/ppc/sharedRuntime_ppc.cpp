@@ -480,11 +480,7 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm, int frame_siz
 // Is vector's size (in bytes) bigger than a size saved by default?
 bool SharedRuntime::is_wide_vector(int size) {
   // Note, MaxVectorSize == 8/16 on PPC64.
-  if (VM_Version::has_vsx()) {
-    assert(size <= 16, "%d bytes vectors are not supported", size);
-  } else {
-    assert(size <= 8, "%d bytes vectors are not supported", size);
-  }
+  assert(size <= (SuperwordUseVSX ? 16 : 8), "%d bytes vectors are not supported", size);
   return size > 8;
 }
 
