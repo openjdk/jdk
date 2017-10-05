@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,28 @@ public class JColorChooserOperator extends JComponentOperator
     public static final String SELECTED_PAGE_DPROP = "Selected page";
 
     private static final String RGB_TITLE = "RGB";
+    private static final String HSV_TITLE = "HSV";
+    private static final String HSL_TITLE = "HSL";
+    private static final String CMYK_TITLE = "CMYK";
+
+    private static final int HSV_HUE_INDEX = 0;
+    private static final int HSV_SATURATION_INDEX = 1;
+    private static final int HSV_VALUE_INDEX = 2;
+    private static final int HSV_TRANSPARENCY_INDEX = 3;
+    private static final int HSL_HUE_INDEX = 0;
+    private static final int HSL_SATURATION_INDEX = 1;
+    private static final int HSL_LIGHTNESS_INDEX = 2;
+    private static final int HSL_TRANSPARENCY_INDEX = 3;
+    private static final int RGB_RED_INDEX = 0;
+    private static final int RGB_GREEN_INDEX = 1;
+    private static final int RGB_BLUE_INDEX = 2;
+    private static final int RGB_ALPHA_INDEX = 3;
+    private static final int RGB_COLORCODE_TEXT_FIELD_INDEX = 4;
+    private static final int CMYK_CYAN_INDEX = 0;
+    private static final int CMYK_MAGENTA_INDEX = 1;
+    private static final int CMYK_YELLOW_INDEX = 2;
+    private static final int CMYK_BLACK_INDEX = 3;
+    private static final int CMYK_ALPHA_INDEX = 4;
 
     private TestOut output;
     private JTabbedPaneOperator tabbed;
@@ -397,6 +419,292 @@ public class JColorChooserOperator extends JComponentOperator
     }
 
     /**
+     * Returns a spinner operator used for modifying Hue value if HSV or HSL tab
+     * is already selected, else returns null.
+     *
+     * @return an operator for Hue <code>JSpinner<code> inside HSV or HSL
+     *         tab
+     */
+    public JSpinnerOperator getHueSpinnerOperator() {
+        return getSpinnerOperator(new String[]{HSV_TITLE, HSL_TITLE},
+                new int[]{HSV_HUE_INDEX, HSL_HUE_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying Saturation value if HSV or
+     * HSL tab is already selected, else returns null.
+     *
+     * @return an operator for Saturation <code>JSpinner<code> inside HSV or HSL tab
+     */
+    public JSpinnerOperator getSaturationSpinnerOperator() {
+        return getSpinnerOperator(new String[]{HSV_TITLE, HSL_TITLE},
+                new int[]{HSV_SATURATION_INDEX, HSL_SATURATION_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying value field if HSV tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for value <code>JSpinner<code> inside HSV tab
+     */
+    public JSpinnerOperator getValueSpinnerOperator() {
+        return getSpinnerOperator(new String[]{HSV_TITLE}, new int[]{HSV_VALUE_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying transparency value if HSV
+     * or HSL tab is already selected, else returns null.
+     *
+     * @return an operator for transparency <code>JSpinner<code> inside HSV or HSL tab
+     */
+    public JSpinnerOperator getTransparencySpinnerOperator() {
+        return getSpinnerOperator(new String[]{HSL_TITLE, HSV_TITLE},
+                new int[]{HSL_TRANSPARENCY_INDEX, HSV_TRANSPARENCY_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying Lightness value if HSL tab
+     * is already selected, else returns null.
+     *
+     * @return an operator for Lightness <code>JSpinner<code> inside HSL tab
+     */
+    public JSpinnerOperator getLightnessSpinnerOperator() {
+        return getSpinnerOperator(new String[]{HSL_TITLE}, new int[]{HSL_LIGHTNESS_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying Red value if RGB tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Red <code>JSpinner<code> inside RGB tab
+     */
+    public JSpinnerOperator getRedSpinnerOperator() {
+        return getSpinnerOperator(new String[]{RGB_TITLE}, new int[]{RGB_RED_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying Green value if RGB tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Green <code>JSpinner<code> inside RGB tab
+     */
+    public JSpinnerOperator getGreenSpinnerOperator() {
+        return getSpinnerOperator(new String[]{RGB_TITLE}, new int[]{RGB_GREEN_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying Blue value if RGB tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Blue <code>JSpinner<code> inside RGB tab
+     */
+    public JSpinnerOperator getBlueSpinnerOperator() {
+        return getSpinnerOperator(new String[]{RGB_TITLE}, new int[]{RGB_BLUE_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying Alpha value if RGB or CMYK
+     * tab is already selected, else returns null.
+     *
+     * @return an operator for Alpha <code>JSpinner<code> inside RGB/CMYK
+     *         tab
+     */
+    public JSpinnerOperator getAlphaSpinnerOperator() {
+        return getSpinnerOperator(new String[]{RGB_TITLE, CMYK_TITLE},
+                new int[]{RGB_ALPHA_INDEX, CMYK_ALPHA_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying Cyan value if CMYK tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Cyan <code>JSpinner<code> inside CMYK tab
+     */
+    public JSpinnerOperator getCyanSpinnerOperator() {
+        return getSpinnerOperator(new String[]{CMYK_TITLE}, new int[]{CMYK_CYAN_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying Magenta value if CMYK tab
+     * is already selected, else returns null.
+     *
+     * @return an operator for Magenta <code>JSpinner<code> inside CMYK tab
+     */
+    public JSpinnerOperator getMagentaSpinnerOperator() {
+        return getSpinnerOperator(new String[]{CMYK_TITLE}, new int[]{CMYK_MAGENTA_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying Yellow value if CMYK tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Yellow <code>JSpinner<code> inside CMYK tab
+     */
+    public JSpinnerOperator getYellowSpinnerOperator() {
+        return getSpinnerOperator(new String[]{CMYK_TITLE}, new int[]{CMYK_YELLOW_INDEX});
+    }
+
+    /**
+     * Returns a spinner operator used for modifying Black value if CMYK tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Black value <code>JSpinner<code> inside CMYK tab
+     */
+    public JSpinnerOperator getBlackSpinnerOperator() {
+        return getSpinnerOperator(new String[]{CMYK_TITLE}, new int[]{CMYK_BLACK_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying Hue value if HSV or HSL tab
+     * is already selected, else returns null.
+     *
+     * @return an operator for Hue <code>JSlider<code> inside HSV or HSL
+     *         tab
+     */
+    public JSliderOperator getHueSliderOperator() {
+        return getSliderOperator(new String[]{HSV_TITLE, HSL_TITLE},
+                new int[]{HSV_HUE_INDEX, HSL_HUE_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying Saturation value if HSV or
+     * HSL tab is already selected, else returns null.
+     *
+     * @return an operator for Saturation <code>JSlider<code> inside HSV or HSL tab
+     */
+    public JSliderOperator getSaturationSliderOperator() {
+        return getSliderOperator(new String[]{HSV_TITLE, HSL_TITLE},
+                new int[]{HSV_SATURATION_INDEX, HSL_SATURATION_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying value field if HSV tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for value <code>JSlider<code> inside HSV tab
+     */
+    public JSliderOperator getValueSliderOperator() {
+        return getSliderOperator(new String[]{HSV_TITLE}, new int[]{HSV_VALUE_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying transparency value if HSV or
+     * HSL tab is already selected, else returns null.
+     *
+     * @return an operator for transparency <code>JSlider<code> inside HSV or HSL tab
+     */
+    public JSliderOperator getTransparencySliderOperator() {
+        return getSliderOperator(new String[]{HSV_TITLE, HSL_TITLE},
+                new int[]{HSV_TRANSPARENCY_INDEX, HSL_TRANSPARENCY_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying Lightness value if HSL tab
+     * is already selected, else returns null.
+     *
+     * @return an operator for Lightness <code>JSlider<code> inside HSL tab
+     */
+    public JSliderOperator getLightnessSliderOperator() {
+        return getSliderOperator(new String[]{HSL_TITLE}, new int[]{HSL_LIGHTNESS_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying Red value if RGB tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Red <code>JSlider<code> inside RGB tab
+     */
+    public JSliderOperator getRedSliderOperator() {
+        return getSliderOperator(new String[]{RGB_TITLE}, new int[]{RGB_RED_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying Green value if RGB tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Green <code>JSlider<code> inside RGB tab
+     */
+    public JSliderOperator getGreenSliderOperator() {
+        return getSliderOperator(new String[]{RGB_TITLE}, new int[]{RGB_GREEN_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying Blue value if RGB tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Blue <code>JSlider<code> inside RGB tab
+     */
+    public JSliderOperator getBlueSliderOperator() {
+        return getSliderOperator(new String[]{RGB_TITLE}, new int[]{RGB_BLUE_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying Alpha value if RGB or CMYK
+     * tab is already selected, else returns null.
+     *
+     * @return an operator for Alpha <code>JSlider<code> inside RGB/CMYK
+     *         tab
+     */
+    public JSliderOperator getAlphaSliderOperator() {
+        return getSliderOperator(new String[]{RGB_TITLE, CMYK_TITLE},
+                new int[]{RGB_ALPHA_INDEX, CMYK_ALPHA_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying Cyan value if CMYK tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Cyan <code>JSlider<code> inside CMYK tab
+     */
+    public JSliderOperator getCyanSliderOperator() {
+        return getSliderOperator(new String[]{CMYK_TITLE}, new int[]{CMYK_CYAN_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying Magenta value if CMYK tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Magenta <code>JSlider<code> inside CMYK tab
+     */
+    public JSliderOperator getMagentaSliderOperator() {
+        return getSliderOperator(new String[]{CMYK_TITLE}, new int[]{CMYK_MAGENTA_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying Yellow value if CMYK tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Yellow <code>JSlider<code> inside CMYK tab
+     */
+    public JSliderOperator getYellowSliderOperator() {
+        return getSliderOperator(new String[]{CMYK_TITLE}, new int[]{CMYK_YELLOW_INDEX});
+    }
+
+    /**
+     * Returns a slider operator used for modifying Black value if CMYK tab is
+     * already selected, else returns null.
+     *
+     * @return an operator for Black <code>JSlider<code> inside CMYK tab
+     */
+    public JSliderOperator getBlackSliderOperator() {
+        return getSliderOperator(new String[]{CMYK_TITLE}, new int[]{CMYK_BLACK_INDEX});
+    }
+
+    /**
+     * Returns a textField operator used for modifying Color Code value if RGB
+     * tab is already selected, else returns null.
+     *
+     * @return an operator for Color Code value <code>JTextField<code> inside RGB tab
+     */
+    public JTextFieldOperator getColorCodeTextFieldOperator() {
+        JTextFieldOperator colorCode = null;
+        if (tabbed.getTitleAt(tabbed.getSelectedIndex()).equals(RGB_TITLE)) {
+            colorCode = new JTextFieldOperator(this, RGB_COLORCODE_TEXT_FIELD_INDEX);
+        }
+        return colorCode;
+    }
+
+    /**
      * Maps {@code JColorChooser.getSelectionModel()} through queue
      */
     public ColorSelectionModel getSelectionModel() {
@@ -545,4 +853,30 @@ public class JColorChooserOperator extends JComponentOperator
         }
     }
 
+    private JSliderOperator getSliderOperator(String[] tabs, int[] index) {
+        int selectedTabIndex = getSelectedTabIndex(tabs);
+        if (selectedTabIndex != -1) {
+            return new JSliderOperator(this, index[selectedTabIndex]);
+        } else {
+            return null;
+        }
+    }
+
+    private JSpinnerOperator getSpinnerOperator(String[] tabs, int[] index) {
+        int selectedTabIndex = getSelectedTabIndex(tabs);
+        if (selectedTabIndex != -1) {
+            return new JSpinnerOperator(this, index[selectedTabIndex]);
+        } else {
+            return null;
+        }
+    }
+
+    private int getSelectedTabIndex(String tabs[]) {
+        for (int i = 0; i < tabs.length; i++) {
+            if (tabbed.getTitleAt(tabbed.getSelectedIndex()).equals(tabs[i])) {
+                return i;
+            }
+        }
+        return -1;
+    }
 }
