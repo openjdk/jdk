@@ -39,7 +39,7 @@ include gensrc/GensrcAdlc.gmk
 include gensrc/GensrcDtrace.gmk
 include gensrc/GensrcJvmti.gmk
 
-$(eval $(call IncludeCustomExtension, , hotspot/gensrc/GenerateSources.gmk))
+$(eval $(call IncludeCustomExtension, hotspot/gensrc/GenerateSources.gmk))
 
 # While technically the rules below are "gendata" which can be done in parallel
 # with native compilation, let's keep it here for simplicity.

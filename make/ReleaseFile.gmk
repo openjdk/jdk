@@ -80,7 +80,7 @@ TARGETS += $(BASE_RELEASE_FILE)
 
 ################################################################################
 
-$(eval $(call IncludeCustomExtension, , ReleaseFile.gmk))
+$(eval $(call IncludeCustomExtension, ReleaseFile.gmk))
 
 ################################################################################
 

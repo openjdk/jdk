@@ -26,7 +26,7 @@
 include LibCommon.gmk
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , lib/Lib-jdk.management.gmk))
+$(eval $(call IncludeCustomExtension, lib/Lib-jdk.management.gmk))
 
 ################################################################################
 

@@ -51,7 +51,7 @@ include $(TOPDIR)/make/common/FindTests.gmk
 ALL_TARGETS :=
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , Main.gmk))
+$(eval $(call IncludeCustomExtension, Main.gmk))
 
 # All modules for the current target platform.
 ALL_MODULES := $(call FindAllModules)

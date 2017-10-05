@@ -36,7 +36,7 @@ include FindTests.gmk
 JTREG_TEST_TOPDIRS := $(TOPDIR) $(JTREG_TESTROOTS)
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , RunTests.gmk))
+$(eval $(call IncludeCustomExtension, RunTests.gmk))
 
 TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
 TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support

@@ -303,7 +303,7 @@ endif
 
 ################################################################################
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , CompileDemos.gmk))
+$(eval $(call IncludeCustomExtension, CompileDemos.gmk))
 
 all: $(TARGETS)
 images: $(IMAGES_TARGETS)
