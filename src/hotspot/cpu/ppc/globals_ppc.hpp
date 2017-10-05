@@ -103,6 +103,9 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
           "CPU Version: x for PowerX. Currently recognizes Power5 to "      \
           "Power8. Default is 0. Newer CPUs will be recognized as Power8.") \
                                                                             \
+  product(bool, SuperwordUseVSX, false,                                     \
+          "Use Power8 VSX instructions for superword optimization.")        \
+                                                                            \
   /* Reoptimize code-sequences of calls at runtime, e.g. replace an */      \
   /* indirect call by a direct call.                                */      \
   product(bool, ReoptimizeCallSequences, true,                              \
