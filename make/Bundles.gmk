@@ -40,7 +40,7 @@ ifeq ($(OPENJDK_BUILD_OS), windows)
 endif
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , Bundles-pre.gmk))
+$(eval $(call IncludeCustomExtension, Bundles-pre.gmk))
 ################################################################################
 # BUNDLE : Name of bundle to create
 # FILES : Files in BASE_DIRS to add to bundle
@@ -322,7 +322,7 @@ endif
 ################################################################################
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , Bundles.gmk))
+$(eval $(call IncludeCustomExtension, Bundles.gmk))
 
 ################################################################################
 

@@ -32,7 +32,7 @@ include SetupJavaCompilers.gmk
 
 ################################################################################
 
-$(eval $(call IncludeCustomExtension, , CompileTools.gmk))
+$(eval $(call IncludeCustomExtension, CompileTools.gmk))
 
 ################################################################################
 

@@ -23,7 +23,7 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, , gensrc/GensrcIcons.gmk))
+$(eval $(call IncludeCustomExtension, gensrc/GensrcIcons.gmk))
 
 GENSRC_AWT_ICONS :=
 GENSRC_AWT_ICONS_SRC :=

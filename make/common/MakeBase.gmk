@@ -991,6 +991,6 @@ ColonList = \
 ################################################################################
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , common/MakeBase.gmk))
+$(eval $(call IncludeCustomExtension, common/MakeBase.gmk))
 
 endif # _MAKEBASE_GMK

@@ -33,7 +33,7 @@ include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , CompileJavaModules.gmk))
+$(eval $(call IncludeCustomExtension, CompileJavaModules.gmk))
 
 ################################################################################
 # Module specific build settings
@@ -689,7 +689,7 @@ endif
 
 ################################################################################
 
-$(eval $(call IncludeCustomExtension, , CompileJavaModules-post.gmk))
+$(eval $(call IncludeCustomExtension, CompileJavaModules-post.gmk))
 
 ################################################################################
 

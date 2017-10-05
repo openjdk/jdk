@@ -23,7 +23,7 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, , hotspot/lib/JvmFeatures.gmk))
+$(eval $(call IncludeCustomExtension, hotspot/lib/JvmFeatures.gmk))
 
 ################################################################################
 # Setup CFLAGS and EXCLUDES for the libjvm compilation, depending on which

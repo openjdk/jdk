@@ -25,7 +25,7 @@
 
 include CopyCommon.gmk
 
-$(eval $(call IncludeCustomExtension, , copy/Copy-java.base.gmk))
+$(eval $(call IncludeCustomExtension, copy/Copy-java.base.gmk))
 
 ################################################################################
 #

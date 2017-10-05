@@ -104,4 +104,4 @@ ALL_TARGETS += jprt_bundle
 
 ################################################################################
 
-$(eval $(call IncludeCustomExtension, , Jprt.gmk))
+$(eval $(call IncludeCustomExtension, Jprt.gmk))

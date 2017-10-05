@@ -23,7 +23,7 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, , hotspot/lib/JvmMapfile.gmk))
+$(eval $(call IncludeCustomExtension, hotspot/lib/JvmMapfile.gmk))
 
 ################################################################################
 # Combine a list of static symbols

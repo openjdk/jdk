@@ -28,7 +28,7 @@
 include lib/JvmFeatures.gmk
 include lib/JvmOverrideFiles.gmk
 
-$(eval $(call IncludeCustomExtension, , hotspot/lib/CompileJvm.gmk))
+$(eval $(call IncludeCustomExtension, hotspot/lib/CompileJvm.gmk))
 
 ################################################################################
 # Setup compilation of the main Hotspot native library (libjvm).
