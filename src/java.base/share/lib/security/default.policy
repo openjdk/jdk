@@ -154,6 +154,10 @@ grant codeBase "jrt:/jdk.internal.vm.compiler" {
     permission java.security.AllPermission;
 };
 
+grant codeBase "jrt:/jdk.internal.vm.compiler.management" {
+    permission java.security.AllPermission;
+};
+
 grant codeBase "jrt:/jdk.jsobject" {
     permission java.security.AllPermission;
 };
