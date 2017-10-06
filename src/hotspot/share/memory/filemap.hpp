@@ -112,6 +112,7 @@ public:
     int    _version;                  // (from enum, above.)
     size_t _alignment;                // how shared archive should be aligned
     int    _obj_alignment;            // value of ObjectAlignmentInBytes
+    address _narrow_oop_base;         // compressed oop encoding base
     int    _narrow_oop_shift;         // compressed oop encoding shift
     bool   _compact_strings;          // value of CompactStrings
     uintx  _max_heap_size;            // java max heap size during dumping
@@ -203,12 +204,13 @@ public:
   int    version()                    { return _header->_version; }
   size_t alignment()                  { return _header->_alignment; }
   Universe::NARROW_OOP_MODE narrow_oop_mode() { return _header->_narrow_oop_mode; }
-  int    narrow_oop_shift()           { return _header->_narrow_oop_shift; }
-  uintx  max_heap_size()              { return _header->_max_heap_size; }
-  address narrow_klass_base() const   { return _header->_narrow_klass_base; }
+  address narrow_oop_base()    const  { return _header->_narrow_oop_base; }
+  int     narrow_oop_shift()   const  { return _header->_narrow_oop_shift; }
+  uintx   max_heap_size()      const  { return _header->_max_heap_size; }
+  address narrow_klass_base()  const  { return _header->_narrow_klass_base; }
   int     narrow_klass_shift() const  { return _header->_narrow_klass_shift; }
-  struct FileMapHeader* header()      { return _header; }
-  char* misc_data_patching_start()            { return _header->_misc_data_patching_start; }
+  struct  FileMapHeader* header()     { return _header; }
+  char*   misc_data_patching_start()          { return _header->_misc_data_patching_start; }
   void set_misc_data_patching_start(char* p)  { _header->_misc_data_patching_start = p; }
   char* read_only_tables_start()              { return _header->_read_only_tables_start; }
   void set_read_only_tables_start(char* p)    { _header->_read_only_tables_start = p; }

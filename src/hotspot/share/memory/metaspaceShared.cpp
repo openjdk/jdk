@@ -214,7 +214,42 @@ char* MetaspaceShared::read_only_space_alloc(size_t num_bytes) {
   return _ro_region.allocate(num_bytes);
 }
 
-void MetaspaceShared::initialize_shared_rs() {
+void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
+  assert(UseSharedSpaces, "Must be called when UseSharedSpaces is enabled");
+
+  // If using shared space, open the file that contains the shared space
+  // and map in the memory before initializing the rest of metaspace (so
+  // the addresses don't conflict)
+  address cds_address = NULL;
+  FileMapInfo* mapinfo = new FileMapInfo();
+
+  // Open the shared archive file, read and validate the header. If
+  // initialization fails, shared spaces [UseSharedSpaces] are
+  // disabled and the file is closed.
+  // Map in spaces now also
+  if (mapinfo->initialize() && map_shared_spaces(mapinfo)) {
+    size_t cds_total = core_spaces_size();
+    cds_address = (address)mapinfo->header()->region_addr(0);
+#ifdef _LP64
+    if (Metaspace::using_class_space()) {
+      char* cds_end = (char*)(cds_address + cds_total);
+      cds_end = (char *)align_up(cds_end, Metaspace::reserve_alignment());
+      // If UseCompressedClassPointers is set then allocate the metaspace area
+      // above the heap and above the CDS area (if it exists).
+      Metaspace::allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
+      // map_heap_regions() compares the current narrow oop and klass encodings
+      // with the archived ones, so it must be done after all encodings are determined.
+      mapinfo->map_heap_regions();
+    }
+#endif // _LP64
+  } else {
+    assert(!mapinfo->is_open() && !UseSharedSpaces,
+           "archive file not closed or shared spaces not disabled.");
+  }
+}
+
+void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
+  assert(DumpSharedSpaces, "should be called for dump time only");
   const size_t reserve_alignment = Metaspace::reserve_alignment();
   bool large_pages = false; // No large pages when dumping the CDS archive.
   char* shared_base = (char*)align_up((char*)SharedBaseAddress, reserve_alignment);
@@ -223,12 +258,12 @@ void MetaspaceShared::initialize_shared_rs() {
   // On 64-bit VM, the heap and class space layout will be the same as if
   // you're running in -Xshare:on mode:
   //
-  //                         +-- SharedBaseAddress (default = 0x800000000)
-  //                         v
-  // +-..---------+----+ ... +----+----+----+----+----+---------------+
-  // |    Heap    | ST |     | MC | RW | RO | MD | OD | class space   |
-  // +-..---------+----+ ... +----+----+----+----+----+---------------+
-  // |<--MaxHeapSize->|     |<-- UnscaledClassSpaceMax = 4GB ------->|
+  //                              +-- SharedBaseAddress (default = 0x800000000)
+  //                              v
+  // +-..---------+---------+ ... +----+----+----+----+----+---------------+
+  // |    Heap    | Archive |     | MC | RW | RO | MD | OD | class space   |
+  // +-..---------+---------+ ... +----+----+----+----+----+---------------+
+  // |<--   MaxHeapSize  -->|     |<-- UnscaledClassSpaceMax = 4GB ------->|
   //
   const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
   const size_t cds_total = align_down(UnscaledClassSpaceMax, reserve_alignment);
@@ -268,12 +303,9 @@ void MetaspaceShared::initialize_shared_rs() {
 
   // Set up compress class pointers.
   Universe::set_narrow_klass_base((address)_shared_rs.base());
-  if (UseAOT || cds_total > UnscaledClassSpaceMax) {
-    // AOT forces narrow_klass_shift=LogKlassAlignmentInBytes
-    Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
-  } else {
-    Universe::set_narrow_klass_shift(0);
-  }
+  // Set narrow_klass_shift to be LogKlassAlignmentInBytes. This is consistent
+  // with AOT.
+  Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
 
   Metaspace::initialize_class_space(tmp_class_space);
   tty->print_cr("narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
