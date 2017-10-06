@@ -158,6 +158,11 @@ bool VM_RedefineClasses::doit_prologue() {
         ClassLoaderData* cld = _scratch_classes[i]->class_loader_data();
         // Free the memory for this class at class unloading time.  Not before
         // because CMS might think this is still live.
+        InstanceKlass* ik = get_ik(_class_defs[i].klass);
+        if (ik->get_cached_class_file() == _scratch_classes[i]->get_cached_class_file()) {
+          // Don't double-free cached_class_file copied from the original class if error.
+          _scratch_classes[i]->set_cached_class_file(NULL);
+        }
         cld->add_to_deallocate_list(InstanceKlass::cast(_scratch_classes[i]));
       }
     }
@@ -3946,12 +3951,12 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // with them was cached on the scratch class, move to the_class.
   // Note: we still want to do this if nothing needed caching since it
   // should get cleared in the_class too.
-  if (the_class->get_cached_class_file_bytes() == 0) {
+  if (the_class->get_cached_class_file() == 0) {
     // the_class doesn't have a cache yet so copy it
     the_class->set_cached_class_file(scratch_class->get_cached_class_file());
   }
-  else if (scratch_class->get_cached_class_file_bytes() !=
-           the_class->get_cached_class_file_bytes()) {
+  else if (scratch_class->get_cached_class_file() !=
+           the_class->get_cached_class_file()) {
     // The same class can be present twice in the scratch classes list or there
     // are multiple concurrent RetransformClasses calls on different threads.
     // In such cases we have to deallocate scratch_class cached_class_file.
