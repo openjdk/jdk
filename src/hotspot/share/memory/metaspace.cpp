@@ -3103,10 +3103,16 @@ void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address 
 
   Universe::set_narrow_klass_base(lower_base);
 
-  if ((uint64_t)(higher_address - lower_base) <= UnscaledClassSpaceMax) {
+  // CDS uses LogKlassAlignmentInBytes for narrow_klass_shift. See
+  // MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() for
+  // how dump time narrow_klass_shift is set. Although, CDS can work
+  // with zero-shift mode also, to be consistent with AOT it uses
+  // LogKlassAlignmentInBytes for klass shift so archived java heap objects
+  // can be used at same time as AOT code.
+  if (!UseSharedSpaces
+      && (uint64_t)(higher_address - lower_base) <= UnscaledClassSpaceMax) {
     Universe::set_narrow_klass_shift(0);
   } else {
-    assert(!UseSharedSpaces, "Cannot shift with UseSharedSpaces");
     Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
   }
   AOTLoader::set_narrow_klass_shift();
@@ -3325,50 +3331,25 @@ void Metaspace::global_initialize() {
 
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
-    MetaspaceShared::initialize_shared_rs();
+    MetaspaceShared::initialize_dumptime_shared_and_meta_spaces();
   } else if (UseSharedSpaces) {
-    // If using shared space, open the file that contains the shared space
-    // and map in the memory before initializing the rest of metaspace (so
-    // the addresses don't conflict)
-    address cds_address = NULL;
-    FileMapInfo* mapinfo = new FileMapInfo();
-
-    // Open the shared archive file, read and validate the header. If
-    // initialization fails, shared spaces [UseSharedSpaces] are
-    // disabled and the file is closed.
-    // Map in spaces now also
-    if (mapinfo->initialize() && MetaspaceShared::map_shared_spaces(mapinfo)) {
-      size_t cds_total = MetaspaceShared::core_spaces_size();
-      cds_address = (address)mapinfo->header()->region_addr(0);
-#ifdef _LP64
-      if (using_class_space()) {
-        char* cds_end = (char*)(cds_address + cds_total);
-        cds_end = (char *)align_up(cds_end, _reserve_alignment);
-        // If UseCompressedClassPointers is set then allocate the metaspace area
-        // above the heap and above the CDS area (if it exists).
-        allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
-        // map_heap_regions() compares the current narrow oop and klass encodings
-        // with the archived ones, so it must be done after all encodings are determined.
-        mapinfo->map_heap_regions();
-      }
-#endif // _LP64
-    } else {
-      assert(!mapinfo->is_open() && !UseSharedSpaces,
-             "archive file not closed or shared spaces not disabled.");
-    }
+    // If any of the archived space fails to map, UseSharedSpaces
+    // is reset to false. Fall through to the
+    // (!DumpSharedSpaces && !UseSharedSpaces) case to set up class
+    // metaspace.
+    MetaspaceShared::initialize_runtime_shared_and_meta_spaces();
   }
-#endif // INCLUDE_CDS
 
+  if (!DumpSharedSpaces && !UseSharedSpaces)
+#endif // INCLUDE_CDS
+  {
 #ifdef _LP64
-  if (!UseSharedSpaces && using_class_space()) {
-    if (DumpSharedSpaces) {
-      // Already initialized inside MetaspaceShared::initialize_shared_rs()
-    } else {
+    if (using_class_space()) {
       char* base = (char*)align_up(Universe::heap()->reserved_region().end(), _reserve_alignment);
       allocate_metaspace_compressed_klass_ptrs(base, 0);
     }
-  }
 #endif // _LP64
+  }
 
   // Initialize these before initializing the VirtualSpaceList
   _first_chunk_word_size = InitialBootClassLoaderMetaspaceSize / BytesPerWord;
