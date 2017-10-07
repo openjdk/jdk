@@ -3263,6 +3263,9 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _buffer_blob = NULL;
   _compiler = NULL;
 
+  // Compiler uses resource area for compilation, let's bias it to mtCompiler
+  resource_area()->bias_to(mtCompiler);
+
 #ifndef PRODUCT
   _ideal_graph_printer = NULL;
 #endif
