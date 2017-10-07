@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.Observable;
 import java.util.Observer;
 
 import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObject;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
@@ -36,6 +37,7 @@ import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
+import sun.jvm.hotspot.utilities.Assert;
 
 // Mirror class for G1HeapRegionTable. It's essentially an index -> HeapRegion map.
 
@@ -131,5 +133,14 @@ public class G1HeapRegionTable extends VMObject {
 
     public G1HeapRegionTable(Address addr) {
         super(addr);
+    }
+
+    public HeapRegion getByAddress(Address addr) {
+        if (Assert.ASSERTS_ENABLED) {
+            Assert.that(addr instanceof OopHandle, "addr should be OopHandle");
+        }
+
+        long biasedIndex = addr.asLongValue() >>> shiftBy();
+        return new HeapRegion(addr.addOffsetToAsOopHandle(biasedIndex * HeapRegion.getPointerSize()));
     }
 }
