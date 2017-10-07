@@ -37,7 +37,6 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -307,36 +306,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
 
         PackageElement encl = configuration.utils.containingPackage(te);
         return (encl.isUnnamed()) ? "" : (encl.getQualifiedName() + ".");
-    }
-
-    /**
-     * Print the frames version of the Html file header.
-     * Called only when generating an HTML frames file.
-     *
-     * @param title Title of this HTML document
-     * @param configuration the configuration object
-     * @param body the body content tree to be added to the HTML document
-     * @throws DocFileIOException if there is an error writing the frames document
-     */
-    public void printFramesDocument(String title, HtmlConfiguration configuration,
-            HtmlTree body) throws DocFileIOException {
-        Content htmlDocType = configuration.isOutputHtml5()
-                ? DocType.HTML5
-                : DocType.TRANSITIONAL;
-        Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
-        Content head = new HtmlTree(HtmlTag.HEAD);
-        head.addContent(getGeneratedBy(!configuration.notimestamp));
-        Content windowTitle = HtmlTree.TITLE(new StringContent(title));
-        head.addContent(windowTitle);
-        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE, configuration.charset);
-        head.addContent(meta);
-        head.addContent(getStyleSheetProperties(configuration));
-        head.addContent(getFramesJavaScript());
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
-                head, body);
-        Content htmlDocument = new HtmlDocument(htmlDocType,
-                htmlComment, htmlTree);
-        write(htmlDocument);
     }
 
     /**
