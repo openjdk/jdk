@@ -70,7 +70,11 @@ public:
     return (char*)Amalloc(size, alloc_failmode);
   }
 
-  debug_only(int nesting() const { return _nesting; });
+  // Bias this resource area to specific memory type
+  // (by default, ResourceArea is tagged as mtThread, per-thread general purpose storage)
+  void bias_to(MEMFLAGS flags);
+
+  debug_only(int nesting() const { return _nesting; })
 };
 
 
