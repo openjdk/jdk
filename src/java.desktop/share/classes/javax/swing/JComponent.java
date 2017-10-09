@@ -778,7 +778,7 @@ public abstract class JComponent extends Container implements Serializable,
      * invoker super's implementation you must honor the opaque property,
      * that is
      * if this component is opaque, you must completely fill in the background
-     * in a non-opaque color. If you do not honor the opaque property you
+     * in an opaque color. If you do not honor the opaque property you
      * will likely see visual artifacts.
      * <p>
      * The passed in <code>Graphics</code> object might
