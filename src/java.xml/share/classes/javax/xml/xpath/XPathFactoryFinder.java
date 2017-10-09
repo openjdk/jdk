@@ -36,6 +36,7 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * Implementation of {@link XPathFactory#newInstance(String)}.
@@ -46,13 +47,12 @@ import java.util.function.Supplier;
 class XPathFactoryFinder  {
     private static final String DEFAULT_PACKAGE = "com.sun.org.apache.xpath.internal";
 
-    private static final SecuritySupport ss = new SecuritySupport() ;
     /** debug support code. */
     private static boolean debug = false;
     static {
         // Use try/catch block to support applets
         try {
-            debug = ss.getSystemProperty("jaxp.debug") != null;
+            debug = SecuritySupport.getSystemProperty("jaxp.debug") != null;
         } catch (Exception unused) {
             debug = false;
         }
@@ -103,7 +103,7 @@ class XPathFactoryFinder  {
 
     private void debugDisplayClassLoader() {
         try {
-            if( classLoader == ss.getContextClassLoader() ) {
+            if( classLoader == SecuritySupport.getContextClassLoader() ) {
                 debugPrintln(() -> "using thread context class loader ("+classLoader+") for search");
                 return;
             }
@@ -159,7 +159,7 @@ class XPathFactoryFinder  {
         // system property look up
         try {
             debugPrintln(()->"Looking up system property '"+propertyName+"'" );
-            String r = ss.getSystemProperty(propertyName);
+            String r = SecuritySupport.getSystemProperty(propertyName);
             if(r!=null) {
                 debugPrintln(()->"The value is '"+r+"'");
                 xpathFactory = createInstance(r, true);
@@ -175,7 +175,7 @@ class XPathFactoryFinder  {
             }
         }
 
-        String javah = ss.getSystemProperty( "java.home" );
+        String javah = SecuritySupport.getSystemProperty( "java.home" );
         String configFile = javah + File.separator +
         "conf" + File.separator + "jaxp.properties";
 
@@ -186,9 +186,9 @@ class XPathFactoryFinder  {
                     if(firstTime){
                         File f=new File( configFile );
                         firstTime = false;
-                        if(ss.doesFileExist(f)){
+                        if(SecuritySupport.doesFileExist(f)){
                             debugPrintln(()->"Read properties file " + f);
-                            cacheProps.load(ss.getFileInputStream(f));
+                            cacheProps.load(SecuritySupport.getFileInputStream(f));
                         }
                     }
                 }
@@ -407,7 +407,7 @@ class XPathFactoryFinder  {
 
     // Used for debugging purposes
     private static String which( Class<?> clazz ) {
-        return ss.getClassSource(clazz);
+        return SecuritySupport.getClassSource(clazz);
     }
 
 }

@@ -63,7 +63,7 @@ TARGETS += $(testing)
 
 ################################################################################
 
-$(eval $(call IncludeCustomExtension, , UpdateBuildDocs.gmk))
+$(eval $(call IncludeCustomExtension, UpdateBuildDocs.gmk))
 
 ################################################################################
 

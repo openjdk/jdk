@@ -26,7 +26,7 @@
 WIN_VERIFY_LIB := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libverify/verify.lib
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , lib/CoreLibraries.gmk))
+$(eval $(call IncludeCustomExtension, lib/CoreLibraries.gmk))
 
 
 ##########################################################################################

@@ -28,7 +28,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
-$(eval $(call IncludeCustomExtension, , gensrc/Gensrc-jdk.internal.vm.compiler.gmk))
+$(eval $(call IncludeCustomExtension, gensrc/Gensrc-jdk.internal.vm.compiler.gmk))
 
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)
 SRC_DIR := $(TOPDIR)/src/$(MODULE)/share/classes

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,10 +21,10 @@
 
 package com.sun.org.apache.xerces.internal.util;
 
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * Used to format SAX error messages using a specified locale.

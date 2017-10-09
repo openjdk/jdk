@@ -211,7 +211,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     }
 
     /**
-     * Increments i, mod modulus.
+     * Circularly increments i, mod modulus.
      * Precondition and postcondition: 0 <= i < modulus.
      */
     static final int inc(int i, int modulus) {
@@ -220,7 +220,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     }
 
     /**
-     * Decrements i, mod modulus.
+     * Circularly decrements i, mod modulus.
      * Precondition and postcondition: 0 <= i < modulus.
      */
     static final int dec(int i, int modulus) {
@@ -233,7 +233,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      * Precondition: 0 <= i < modulus, 0 <= distance <= modulus.
      * @return index 0 <= i < modulus
      */
-    static final int add(int i, int distance, int modulus) {
+    static final int inc(int i, int distance, int modulus) {
         if ((i += distance) - modulus >= 0) i -= modulus;
         return i;
     }
@@ -825,7 +825,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
             final int i, n;
             return ((n = sub(getFence(), i = cursor, es.length) >> 1) <= 0)
                 ? null
-                : new DeqSpliterator(i, cursor = add(i, n, es.length));
+                : new DeqSpliterator(i, cursor = inc(i, n, es.length));
         }
 
         public void forEachRemaining(Consumer<? super E> action) {

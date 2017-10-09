@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -87,7 +88,6 @@ import java.util.Stack;
 import java.util.Vector;
 import javax.xml.XMLConstants;
 import jdk.xml.internal.JdkXmlUtils;
-import jdk.xml.internal.SecuritySupport;
 
 /**
  * The XML Schema validator. The validator implements a document

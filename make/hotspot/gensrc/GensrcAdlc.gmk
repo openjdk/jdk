@@ -23,7 +23,7 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, , hotspot/gensrc/GensrcAdlc.gmk))
+$(eval $(call IncludeCustomExtension, hotspot/gensrc/GensrcAdlc.gmk))
 
 ifeq ($(call check-jvm-feature, compiler2), true)
 

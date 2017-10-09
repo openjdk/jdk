@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,12 @@
 
 package com.sun.xml.internal.stream.writers;
 
+import com.sun.org.apache.xerces.internal.impl.Constants;
+import com.sun.org.apache.xerces.internal.impl.PropertyManager;
+import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
+import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.xni.QName;
+import com.sun.xml.internal.stream.util.ReadOnlyIterator;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,26 +41,17 @@ import java.nio.charset.CharsetEncoder;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Random;
-import java.util.Vector;
-import java.util.Set;
 import java.util.Iterator;
-
+import java.util.Random;
+import java.util.Set;
+import java.util.Vector;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.stream.StreamResult;
-
-import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.impl.PropertyManager;
-import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
-import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
-import com.sun.org.apache.xerces.internal.xni.QName;
-
-import com.sun.xml.internal.stream.util.ReadOnlyIterator;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * This class implements a StAX XMLStreamWriter. It extends

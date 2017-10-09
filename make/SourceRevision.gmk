@@ -28,7 +28,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
-$(eval $(call IncludeCustomExtension, , SourceRevision.gmk))
+$(eval $(call IncludeCustomExtension, SourceRevision.gmk))
 
 ################################################################################
 # Keep track of what source revision is used to create the build, by creating

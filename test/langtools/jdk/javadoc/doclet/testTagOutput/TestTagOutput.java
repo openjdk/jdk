@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8026370 8026567 8183511
+ * @bug 8026370 8026567 8183511 8074407
  * @summary This test checks the generated tag output.
  * @author Bhavesh Patel
  * @library ../lib
@@ -47,12 +47,14 @@ public class TestTagOutput extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/DeprecatedTag.html", true,
-            "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>",
-            "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;" +
-            "<span class=\"deprecationComment\">Do not use this.</span></div>");
+                "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span></div>",
+                "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\">Do not use this.</div>\n"
+                + "</div>");
 
         checkOutput("pkg1/DeprecatedTag.html", false,
-            "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated." +
-            "</span>&nbsp;<span class=\"deprecationComment\"></span></div>");
+                "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span>\n"
+                + "<div class=\"deprecationComment\"></div>\n"
+                + "</div>");
     }
 }

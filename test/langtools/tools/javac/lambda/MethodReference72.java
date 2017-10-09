@@ -15,6 +15,6 @@ class MethodReference72 {
     <Z> void g(F<Z> f) { }
 
     void test() {
-        g(this::m1); //?
+        g(this::m1); //bad method reference argument type
     }
 }

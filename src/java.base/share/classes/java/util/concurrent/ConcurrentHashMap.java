@@ -1394,8 +1394,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Saves the state of the {@code ConcurrentHashMap} instance to a
-     * stream (i.e., serializes it).
+     * Saves this map to a stream (that is, serializes it).
+     *
      * @param s the stream
      * @throws java.io.IOException if an I/O error occurs
      * @serialData
@@ -1439,7 +1439,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Reconstitutes the instance from a stream (that is, deserializes it).
+     * Reconstitutes this map from a stream (that is, deserializes it).
      * @param s the stream
      * @throws ClassNotFoundException if the class of a serialized object
      *         could not be found

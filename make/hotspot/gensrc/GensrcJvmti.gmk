@@ -23,7 +23,7 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, , hotspot/gensrc/GensrcJvmti.gmk))
+$(eval $(call IncludeCustomExtension, hotspot/gensrc/GensrcJvmti.gmk))
 
 ################################################################################
 # Build tools needed for the JVMTI source code generation

@@ -179,7 +179,6 @@ public class TagletWriterImpl extends TagletWriter {
             if (utils.isDeprecated(element)) {
                 result.addContent(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
                         htmlWriter.getDeprecatedPhrase(element)));
-                result.addContent(RawHtml.nbsp);
                 if (!deprs.isEmpty()) {
                     List<? extends DocTree> commentTags = ch.getDescription(configuration, deprs.get(0));
                     if (!commentTags.isEmpty()) {
@@ -191,19 +190,17 @@ public class TagletWriterImpl extends TagletWriter {
             if (utils.isDeprecated(element)) {
                 result.addContent(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
                         htmlWriter.getDeprecatedPhrase(element)));
-                result.addContent(RawHtml.nbsp);
                 if (!deprs.isEmpty()) {
                     List<? extends DocTree> bodyTags = ch.getBody(configuration, deprs.get(0));
                     Content body = commentTagsToOutput(null, element, bodyTags, false);
                     if (!body.isEmpty())
-                        result.addContent(HtmlTree.SPAN(HtmlStyle.deprecationComment, body));
+                        result.addContent(HtmlTree.DIV(HtmlStyle.deprecationComment, body));
                 }
             } else {
                 Element ee = utils.getEnclosingTypeElement(element);
                 if (utils.isDeprecated(ee)) {
                     result.addContent(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
                         htmlWriter.getDeprecatedPhrase(ee)));
-                    result.addContent(RawHtml.nbsp);
                 }
             }
         }

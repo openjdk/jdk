@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,12 +23,10 @@ package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 import com.sun.org.apache.xalan.internal.XalanConstants;
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.dtm.DTM;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -51,6 +50,7 @@ import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.SecuritySupport;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
@@ -730,7 +730,7 @@ public final class XSLTC {
      */
     public boolean setDestDirectory(String dstDirName) {
         final File dir = new File(dstDirName);
-        if (SecuritySupport.getFileExists(dir) || dir.mkdirs()) {
+        if (SecuritySupport.doesFileExist(dir) || dir.mkdirs()) {
             _destDir = dir;
             return true;
         }
@@ -902,7 +902,7 @@ public final class XSLTC {
             String parentDir = outFile.getParent();
             if (parentDir != null) {
                 File parentFile = new File(parentDir);
-                if (!SecuritySupport.getFileExists(parentFile))
+                if (!SecuritySupport.doesFileExist(parentFile))
                     parentFile.mkdirs();
             }
         }

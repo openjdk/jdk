@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,10 +21,10 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.runtime.output;
 
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * @author Santiago Pericas-Geertsen

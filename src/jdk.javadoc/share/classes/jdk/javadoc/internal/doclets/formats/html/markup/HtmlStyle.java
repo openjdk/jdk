@@ -47,6 +47,7 @@ public enum HtmlStyle {
     circle,
     classUseContainer,
     colConstructorName,
+    colDeprecatedItemName,
     colFirst,
     colLast,
     colSecond,

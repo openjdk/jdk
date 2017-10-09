@@ -342,11 +342,13 @@ public enum TimeUnit {
      * using:
      *
      * <pre> {@code
-     * public synchronized Object poll(long timeout, TimeUnit unit)
+     * public E poll(long timeout, TimeUnit unit)
      *     throws InterruptedException {
-     *   while (empty) {
-     *     unit.timedWait(this, timeout);
-     *     ...
+     *   synchronized (lock) {
+     *     while (isEmpty()) {
+     *       unit.timedWait(lock, timeout);
+     *       ...
+     *     }
      *   }
      * }}</pre>
      *

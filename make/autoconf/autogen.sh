@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,15 +52,6 @@ else
   TIMESTAMP=`date +%s`
 fi
 
-if test "x$CUSTOM_CONFIG_DIR" = "x"; then
-  topdir=`cd $script_dir/../..  >/dev/null && pwd`
-  custom_script_dir="$topdir/closed/autoconf"
-else
-  custom_script_dir=$CUSTOM_CONFIG_DIR
-fi
-
-custom_hook=$custom_script_dir/custom-hook.m4
-
 AUTOCONF="`which autoconf 2> /dev/null | grep -v '^no autoconf in'`"
 
 if test "x${AUTOCONF}" = x; then
@@ -75,11 +66,16 @@ echo "Using autoconf at ${AUTOCONF} [$autoconf_version]"
 echo "Generating generated-configure.sh"
 generate_configure_script "$script_dir/generated-configure.sh" 'cat'
 
-if test -e $custom_hook; then
+if test "x$CUSTOM_CONFIG_DIR" != "x"; then
+  custom_hook=$CUSTOM_CONFIG_DIR/custom-hook.m4
+  if test ! -e $custom_hook; then
+    echo "CUSTOM_CONFIG_DIR set but $CUSTOM_CONFIG_DIR/custom-hook.m4 not present"
+    echo "Error: Cannot continue" 1>&2
+    exit 1
+  fi
+
   # We have custom sources available; also generate configure script
   # with custom hooks compiled in.
   echo "Generating custom generated-configure.sh"
-  generate_configure_script "$custom_script_dir/generated-configure.sh" 'sed -e "s|#CUSTOM_AUTOCONF_INCLUDE|m4_include([$custom_hook])|"'
-else
-  echo "(No custom hook found at $custom_hook)"
+  generate_configure_script "$CUSTOM_CONFIG_DIR/generated-configure.sh" 'sed -e "s|#CUSTOM_AUTOCONF_INCLUDE|m4_include([$custom_hook])|"'
 fi

@@ -25,7 +25,7 @@
 
 include NativeCompilation.gmk
 
-$(eval $(call IncludeCustomExtension, , hotspot/lib/Lib-jdk.hotspot.agent.gmk))
+$(eval $(call IncludeCustomExtension, hotspot/lib/Lib-jdk.hotspot.agent.gmk))
 
 ################################################################################
 

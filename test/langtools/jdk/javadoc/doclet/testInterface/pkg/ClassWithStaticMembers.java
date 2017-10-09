@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,18 @@
 
 package pkg;
 
-public class ClassWithStaticMethod implements InterfaceWithStaticMethod {
+public class ClassWithStaticMembers implements InterfaceWithStaticMembers {
 
-    public static void staticMethod() {
-    }
+    /** A hider inner class */
+    public static class InnerClass{}
+
+    /** A hider field */
+    public static int f = 1;
+
+    /** A hider method */
+    public static void m(){}
+
+    // no comment
+    public static void staticMethod() {}
 
 }

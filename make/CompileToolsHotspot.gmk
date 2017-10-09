@@ -35,7 +35,7 @@ include SetupJavaCompilers.gmk
 TARGETS :=
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , hotspot/CompileTools.gmk))
+$(eval $(call IncludeCustomExtension, hotspot/CompileTools.gmk))
 
 ifeq ($(INCLUDE_GRAAL), true)
   VM_CI_SRC_DIR := $(TOPDIR)/src/jdk.internal.vm.ci/share/classes

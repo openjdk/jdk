@@ -23,7 +23,7 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, , lib/Awt2dLibraries-pre.gmk))
+$(eval $(call IncludeCustomExtension, lib/Awt2dLibraries-pre.gmk))
 
 WIN_AWT_LIB := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt/awt.lib
 
@@ -1070,4 +1070,4 @@ endif
 ################################################################################
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , lib/Awt2dLibraries.gmk))
+$(eval $(call IncludeCustomExtension, lib/Awt2dLibraries.gmk))

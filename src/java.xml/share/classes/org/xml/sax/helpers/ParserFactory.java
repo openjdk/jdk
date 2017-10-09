@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 
 package org.xml.sax.helpers;
 
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * Java-specific class for dynamically loading SAX parsers.
@@ -66,7 +67,6 @@ package org.xml.sax.helpers;
 @SuppressWarnings( "deprecation" )
 @Deprecated(since="1.5")
 public class ParserFactory {
-    private static SecuritySupport ss = new SecuritySupport();
 
     /**
      * Private null constructor.
@@ -104,7 +104,7 @@ public class ParserFactory {
         NullPointerException,
         ClassCastException
     {
-        String className = ss.getSystemProperty("org.xml.sax.parser");
+        String className = SecuritySupport.getSystemProperty("org.xml.sax.parser");
         if (className == null) {
             throw new NullPointerException("No value for sax.parser property");
         } else {
@@ -140,7 +140,8 @@ public class ParserFactory {
         InstantiationException,
         ClassCastException
     {
-        return NewInstance.newInstance (org.xml.sax.Parser.class, ss.getClassLoader(), className);
+        return NewInstance.newInstance (org.xml.sax.Parser.class,
+                SecuritySupport.getClassLoader(), className);
     }
 
 }

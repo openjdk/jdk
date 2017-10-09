@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +26,7 @@
 
 package com.sun.org.apache.xalan.internal;
 
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * Commonly used constants.

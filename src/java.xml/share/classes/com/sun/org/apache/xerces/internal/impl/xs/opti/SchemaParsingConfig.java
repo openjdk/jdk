@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -19,9 +20,6 @@
  */
 
 package com.sun.org.apache.xerces.internal.impl.xs.opti;
-
-import java.io.IOException;
-import java.util.Locale;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XML11DTDScannerImpl;
@@ -50,6 +48,8 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDScanner;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentScanner;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLPullParserConfiguration;
+import java.io.IOException;
+import java.util.Locale;
 import javax.xml.XMLConstants;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;

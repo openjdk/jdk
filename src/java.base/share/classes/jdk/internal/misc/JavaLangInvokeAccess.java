@@ -40,6 +40,18 @@ public interface JavaLangInvokeAccess {
     String getName(Object mname);
 
     /**
+     * Returns the {@code MethodType} for the given MemberName.
+     * Used by {@see StackFrameInfo}.
+     */
+    MethodType getMethodType(Object mname);
+
+    /**
+     * Returns the descriptor for the given MemberName.
+     * Used by {@see StackFrameInfo}.
+     */
+    String getMethodDescriptor(Object mname);
+
+    /**
      * Returns {@code true} if the given MemberName is a native method. Used by
      * {@see StackFrameInfo}.
      */

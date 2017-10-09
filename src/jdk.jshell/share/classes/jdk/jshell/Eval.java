@@ -295,6 +295,10 @@ class Eval {
                 Range rtype = dis.treeToRange(baseType);
                 typeWrap = Wrap.rangeWrap(compileSource, rtype);
             } else {
+                AnalyzeTask at = trialCompile(Wrap.methodWrap(compileSource));
+                if (at.hasErrors()) {
+                    return compileFailResult(at, userSource, kindOfTree(unitTree));
+                }
                 Tree init = vt.getInitializer();
                 if (init != null) {
                     Range rinit = dis.treeToRange(init);
