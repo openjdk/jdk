@@ -147,11 +147,6 @@ public class HTTPSetAuthenticatorTest extends HTTPTest {
             throw new AssertionError("Authenticator #2 called " + count(count)
                 + " expected it to be called " + expected(expectedIncrement));
         }
-        count = authTwo.count.get();
-        if (count != expectedIncrement) {
-            throw new AssertionError("Authenticator #2 called " + count(count)
-                + " expected it to be called " + expected(expectedIncrement));
-        }
 
         // Connect to the server with a GET request, then with a
         // POST that contains "Hello World!"
