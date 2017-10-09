@@ -25,11 +25,15 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
+import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
+import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -110,12 +114,38 @@ public class FrameOutputWriter extends HtmlDocletWriter {
             body.addContent(frame);
         }
         if (configuration.windowtitle.length() > 0) {
-            printFramesDocument(configuration.windowtitle, configuration,
-                    body);
+            printFramesDocument(configuration.windowtitle, body);
         } else {
-            printFramesDocument(configuration.getText("doclet.Generated_Docs_Untitled"),
-                    configuration, body);
+            printFramesDocument(configuration.getText("doclet.Generated_Docs_Untitled"), body);
         }
+    }
+
+    /**
+     * Print the frames version of the Html file header.
+     * Called only when generating an HTML frames file.
+     *
+     * @param title Title of this HTML document
+     * @param body the body content tree to be added to the HTML document
+     * @throws DocFileIOException if there is an error writing the frames document
+     */
+    private void printFramesDocument(String title, HtmlTree body) throws DocFileIOException {
+        Content htmlDocType = configuration.isOutputHtml5()
+                ? DocType.HTML5
+                : DocType.TRANSITIONAL;
+        Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
+        Content head = new HtmlTree(HtmlTag.HEAD);
+        head.addContent(getGeneratedBy(!configuration.notimestamp));
+        Content windowTitle = HtmlTree.TITLE(new StringContent(title));
+        head.addContent(windowTitle);
+        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE, configuration.charset);
+        head.addContent(meta);
+        head.addContent(getStyleSheetProperties(configuration));
+        head.addContent(getFramesJavaScript());
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
+                head, body);
+        Content htmlDocument = new HtmlDocument(htmlDocType,
+                htmlComment, htmlTree);
+        write(htmlDocument);
     }
 
     /**

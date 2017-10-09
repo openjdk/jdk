@@ -30,6 +30,7 @@ import java.io.File;
 import java.net.URL;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.SecuritySupport;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -110,8 +111,6 @@ import org.xml.sax.SAXParseException;
  * @since 1.5
  */
 public abstract class SchemaFactory {
-
-     private static SecuritySupport ss = new SecuritySupport();
 
     /**
      * Constructor for derived classes.
@@ -235,7 +234,7 @@ public abstract class SchemaFactory {
      */
     public static SchemaFactory newInstance(String schemaLanguage) {
         ClassLoader cl;
-        cl = ss.getContextClassLoader();
+        cl = SecuritySupport.getContextClassLoader();
 
         if (cl == null) {
             //cl = ClassLoader.getSystemClassLoader();
@@ -299,7 +298,7 @@ public abstract class SchemaFactory {
         ClassLoader cl = classLoader;
 
         if (cl == null) {
-            cl = ss.getContextClassLoader();
+            cl = SecuritySupport.getContextClassLoader();
         }
 
         SchemaFactory f = new SchemaFactoryFinder(cl).createInstance(factoryClassName);

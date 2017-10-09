@@ -26,6 +26,7 @@
 package javax.xml.xpath;
 
 import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * <p>An {@code XPathFactory} instance can be used to create
@@ -61,11 +62,6 @@ public abstract class XPathFactory {
      * <p>Default Object Model URI.</p>
      */
     public static final String DEFAULT_OBJECT_MODEL_URI = "http://java.sun.com/jaxp/xpath/dom";
-
-    /**
-     *<p> Take care of restrictions imposed by java security model </p>
-     */
-    private static SecuritySupport ss = new SecuritySupport() ;
 
     /**
      * <p>Protected constructor as {@link #newInstance()} or {@link #newInstance(String uri)}
@@ -217,7 +213,7 @@ public abstract class XPathFactory {
                     "XPathFactory#newInstance(String uri) cannot be called with uri == \"\"");
         }
 
-        ClassLoader classLoader = ss.getContextClassLoader();
+        ClassLoader classLoader = SecuritySupport.getContextClassLoader();
 
         if (classLoader == null) {
             //use the current class loader
@@ -296,7 +292,7 @@ public abstract class XPathFactory {
         }
 
         if (cl == null) {
-            cl = ss.getContextClassLoader();
+            cl = SecuritySupport.getContextClassLoader();
         }
 
         XPathFactory f = new XPathFactoryFinder(cl).createInstance(factoryClassName);

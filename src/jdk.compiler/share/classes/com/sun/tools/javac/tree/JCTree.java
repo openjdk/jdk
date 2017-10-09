@@ -920,6 +920,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression init;
         /** symbol */
         public VarSymbol sym;
+        /** explicit start pos */
+        public int startPos = Position.NOPOS;
 
         protected JCVariableDecl(JCModifiers mods,
                          Name name,

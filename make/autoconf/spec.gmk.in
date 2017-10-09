@@ -847,9 +847,8 @@ CONFIGURE_CMD := $(TOPDIR)/configure
 # This macro is called to allow inclusion of closed source counterparts.
 # Unless overridden in closed sources, it expands to nothing.
 # Usage: This function is called in an open makefile, with the following
-# arguments:
-# $1 the name of the repo, or empty if the top-level repo.
-# $2 the name of the makefile
+# argument:
+# $1 the name of the makefile
 define IncludeCustomExtension
 endef
 

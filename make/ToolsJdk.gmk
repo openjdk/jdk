@@ -29,7 +29,7 @@ _TOOLS_GMK := 1
 include JavaCompilation.gmk
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , Tools.gmk))
+$(eval $(call IncludeCustomExtension, Tools.gmk))
 
 ################################################################################
 # To avoid reevaluating the compilation setup for the tools each time this file

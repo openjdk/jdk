@@ -137,15 +137,16 @@ ifeq ($(HAS_SPEC),)
 
     # The spec files depend on the autoconf source code. This check makes sure
     # the configuration is up to date after changes to configure.
-    CUSTOM_CONFIG_DIR ?= $(topdir)/closed/autoconf
-
-    $(SPECS): $(wildcard $(topdir)/common/autoconf/*) $(wildcard $(CUSTOM_CONFIG_DIR)/*)
+    $(SPECS): $(wildcard $(topdir)/make/autoconf/*) \
+            $(if $(CUSTOM_CONFIG_DIR), $(wildcard $(CUSTOM_CONFIG_DIR)/*))
         ifeq ($(CONF_CHECK), fail)
-	  @echo "Error: The configuration is not up to date for '$(lastword $(subst /, , $(dir $@)))'."
+	  @echo Error: The configuration is not up to date for \
+	      "'$(lastword $(subst /, , $(dir $@)))'."
 	  $(call PrintConfCheckFailed)
 	  @exit 2
         else ifeq ($(CONF_CHECK), auto)
-	  @echo "Note: The configuration is not up to date for '$(lastword $(subst /, , $(dir $@)))'."
+	  @echo Note: The configuration is not up to date for \
+	      "'$(lastword $(subst /, , $(dir $@)))'."
 	  @( cd $(topdir) && \
 	      $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/Init.gmk \
 	      SPEC=$@ HAS_SPEC=true ACTUAL_TOPDIR=$(topdir) \
@@ -266,6 +267,7 @@ else # HAS_SPEC=true
 	  $(ECHO) "Re-running configure using default settings"
         endif
 	( cd $(OUTPUTDIR) && PATH="$(ORIGINAL_PATH)" \
+	    CUSTOM_CONFIG_DIR="$(CUSTOM_CONFIG_DIR)" \
 	    $(BASH) $(CONFIGURE_CMD) $(CONFIGURE_COMMAND_LINE) )
 
   ##############################################################################

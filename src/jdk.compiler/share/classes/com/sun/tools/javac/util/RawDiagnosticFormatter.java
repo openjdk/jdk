@@ -34,7 +34,6 @@ import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.*;
 import com.sun.tools.javac.api.Formattable;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.util.AbstractDiagnosticFormatter.SimpleConfiguration;
 
 import static com.sun.tools.javac.api.DiagnosticFormatter.PositionKind.*;
 
@@ -52,6 +51,37 @@ import static com.sun.tools.javac.api.DiagnosticFormatter.PositionKind.*;
 public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
 
     /**
+     * The raw diagnostic helper.
+     */
+    RawDiagnosticPosHelper rawDiagnosticPosHelper;
+
+    /**
+     * Helper class to generate stable positions for AST nodes occurring in diagnostic arguments.
+     * If the AST node appears in the same line number as the main diagnostic, the line is information is omitted.
+     * Otherwise both line and column information is included, using the format @{code line:col}".
+     *
+     * Note: since subdiagnostics can be created without a diagnostic source, a position helper
+     * should always refer to the toplevel diagnostic source.
+     */
+    static class RawDiagnosticPosHelper {
+        private final JCDiagnostic diag;
+
+        RawDiagnosticPosHelper(JCDiagnostic diag) {
+            this.diag = diag;
+        }
+
+        String getPosition(JCExpression exp) {
+            DiagnosticSource diagSource = diag.getDiagnosticSource();
+            long diagLine = diag.getLineNumber();
+            long expLine = diagSource.getLineNumber(exp.pos);
+            long expCol = diagSource.getColumnNumber(exp.pos, false);
+            return (expLine == diagLine) ?
+                    String.valueOf(expCol) :
+                    expLine + ":" + expCol;
+        }
+    }
+
+    /**
      * Create a formatter based on the supplied options.
      * @param options
      */
@@ -65,6 +95,7 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
     //provide common default formats
     public String formatDiagnostic(JCDiagnostic d, Locale l) {
         try {
+            rawDiagnosticPosHelper = new RawDiagnosticPosHelper(d);
             StringBuilder buf = new StringBuilder();
             if (d.getPosition() != Position.NOPOS) {
                 buf.append(formatSource(d, false, null));
@@ -89,8 +120,9 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
             return buf.toString();
         }
         catch (Exception e) {
-            //e.printStackTrace();
             return null;
+        } finally {
+            rawDiagnosticPosHelper = null;
         }
     }
 
@@ -122,8 +154,8 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
         if (arg instanceof Formattable) {
             s = arg.toString();
         } else if (arg instanceof JCExpression) {
-            JCExpression tree = (JCExpression)arg;
-            s = "@" + tree.getStartPosition();
+            Assert.checkNonNull(rawDiagnosticPosHelper);
+            s = "@" + rawDiagnosticPosHelper.getPosition((JCExpression)arg);
         } else if (arg instanceof PathFileObject) {
             s = ((PathFileObject) arg).getShortName();
         } else {

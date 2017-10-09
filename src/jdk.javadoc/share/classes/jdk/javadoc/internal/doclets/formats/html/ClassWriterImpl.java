@@ -616,7 +616,6 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 DocTree dt = deprs.get(0);
                 List<? extends DocTree> commentTags = ch.getBody(configuration, dt);
                 if (!commentTags.isEmpty()) {
-                    div.addContent(Contents.SPACE);
                     addInlineDeprecatedComment(typeElement, deprs.get(0), div);
                 }
             }

@@ -43,7 +43,7 @@ AGGREGATOR_MODULES :=
 DOCS_MODULES :=
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , common/Modules.gmk))
+$(eval $(call IncludeCustomExtension, common/Modules.gmk))
 
 BOOT_MODULES += \
     java.base \

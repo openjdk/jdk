@@ -27,7 +27,7 @@ ifndef _FIND_TESTS_GMK
 _FIND_TESTS_GMK := 1
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , common/FindTests.gmk))
+$(eval $(call IncludeCustomExtension, common/FindTests.gmk))
 
 # JTREG_TESTROOTS might have been set by a custom extension
 JTREG_TESTROOTS += $(addprefix $(TOPDIR)/test/, hotspot/jtreg jdk langtools nashorn jaxp)

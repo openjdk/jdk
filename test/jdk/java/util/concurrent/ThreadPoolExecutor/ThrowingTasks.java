@@ -43,7 +43,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
@@ -55,26 +54,18 @@ public class ThrowingTasks {
         extends ConcurrentHashMap<Class<?>, Integer> {
 
         void inc(Class<?> key) {
-            for (;;) {
-                Integer i = get(key);
-                if (i == null) {
-                    if (putIfAbsent(key, 1) == null)
-                        return;
-                } else {
-                    if (replace(key, i, i + 1))
-                        return;
-                }
-            }
+            compute(key, (k, v) -> (v == null) ? 1 : v + 1);
         }
     }
 
+    /** Double-check that HashTable and ConcurrentHashMap are work-alikes. */
     @SuppressWarnings("serial")
     static class UncaughtExceptionsTable
         extends Hashtable<Class<?>, Integer> {
 
         synchronized void inc(Class<?> key) {
-            Integer i = get(key);
-            put(key, (i == null) ? 1 : i + 1);
+            Integer v = get(key);
+            put(key, (v == null) ? 1 : v + 1);
         }
     }
 
@@ -82,29 +73,12 @@ public class ThrowingTasks {
         = new UncaughtExceptions();
     static final UncaughtExceptionsTable uncaughtExceptionsTable
         = new UncaughtExceptionsTable();
-    static final AtomicLong totalUncaughtExceptions
-        = new AtomicLong(0);
+    static final AtomicInteger totalUncaughtExceptions
+        = new AtomicInteger(0);
     static final CountDownLatch uncaughtExceptionsLatch
         = new CountDownLatch(24);
 
-    static final Thread.UncaughtExceptionHandler handler
-        = new Thread.UncaughtExceptionHandler() {
-                public void uncaughtException(Thread t, Throwable e) {
-                    check(! Thread.currentThread().isInterrupted());
-                    totalUncaughtExceptions.getAndIncrement();
-                    uncaughtExceptions.inc(e.getClass());
-                    uncaughtExceptionsTable.inc(e.getClass());
-                    uncaughtExceptionsLatch.countDown();
-                }};
-
     static final ThreadGroup tg = new ThreadGroup("Flaky");
-
-    static final ThreadFactory tf = new ThreadFactory() {
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(tg, r);
-                t.setUncaughtExceptionHandler(handler);
-                return t;
-            }};
 
     static final RuntimeException rte = new RuntimeException();
     static final Error error = new Error();
@@ -112,7 +86,7 @@ public class ThrowingTasks {
     static final Exception checkedException = new Exception();
 
     static class Thrower implements Runnable {
-        Throwable t;
+        final Throwable t;
         Thrower(Throwable t) { this.t = t; }
         public void run() {
             if (t != null)
@@ -120,14 +94,12 @@ public class ThrowingTasks {
         }
     }
 
-    static final Thrower noThrower      = new Thrower(null);
-    static final Thrower rteThrower     = new Thrower(rte);
-    static final Thrower errorThrower   = new Thrower(error);
-    static final Thrower weirdThrower   = new Thrower(weird);
-    static final Thrower checkedThrower = new Thrower(checkedException);
-
     static final List<Thrower> throwers = Arrays.asList(
-        noThrower, rteThrower, errorThrower, weirdThrower, checkedThrower);
+        new Thrower(null),
+        new Thrower(rte),
+        new Thrower(error),
+        new Thrower(weird),
+        new Thrower(checkedException));
 
     static class Flaky implements Runnable {
         final Runnable beforeExecute;
@@ -190,7 +162,18 @@ public class ThrowingTasks {
             super(10, 10,
                   1L, TimeUnit.HOURS,
                   new LinkedBlockingQueue<Runnable>(),
-                  tf);
+                  (ThreadFactory) (runnable) -> {
+                      Thread thread = new Thread(tg, runnable);
+                      Thread.UncaughtExceptionHandler handler = (t, e) -> {
+                          check(! t.isInterrupted());
+                          totalUncaughtExceptions.getAndIncrement();
+                          uncaughtExceptions.inc(e.getClass());
+                          uncaughtExceptionsTable.inc(e.getClass());
+                          uncaughtExceptionsLatch.countDown();
+                      };
+                      thread.setUncaughtExceptionHandler(handler);
+                      return thread;
+                  });
         }
         @Override protected void beforeExecute(Thread t, Runnable r) {
             final boolean lessThanCorePoolSize;
@@ -262,19 +245,17 @@ public class ThrowingTasks {
         check(tpe.awaitTermination(10L, TimeUnit.MINUTES));
         checkTerminated(tpe);
 
-        //while (tg.activeCount() > 0) Thread.sleep(10);
-        //System.out.println(uncaughtExceptions);
         List<Map<Class<?>, Integer>> maps = new ArrayList<>();
         maps.add(uncaughtExceptions);
         maps.add(uncaughtExceptionsTable);
         for (Map<Class<?>, Integer> map : maps) {
-            equal(map.get(Exception.class), throwers.size());
-            equal(map.get(weird.getClass()), throwers.size());
-            equal(map.get(Error.class), throwers.size() + 1 + 2);
+            equal(map.get(Exception.class), throwers.size() + 1);
+            equal(map.get(weird.getClass()), throwers.size() + 1);
+            equal(map.get(Error.class), throwers.size() + 1);
             equal(map.get(RuntimeException.class), throwers.size() + 1);
             equal(map.size(), 4);
         }
-        equal(totalUncaughtExceptions.get(), 4L*throwers.size() + 4L);
+        equal(totalUncaughtExceptions.get(), 4*throwers.size() + 4);
 
         equal(beforeExecuteCount.get(), flakes.size());
         equal(afterExecuteCount.get(), throwers.size());

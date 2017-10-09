@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,9 +21,9 @@
 
 package com.sun.org.apache.xerces.internal.impl;
 
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * Commonly used constants.

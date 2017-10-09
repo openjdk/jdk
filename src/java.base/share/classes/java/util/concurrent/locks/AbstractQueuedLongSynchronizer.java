@@ -67,11 +67,11 @@ public abstract class AbstractQueuedLongSynchronizer
     private static final long serialVersionUID = 7373984972572414692L;
 
     /*
-      To keep sources in sync, the remainder of this source file is
-      exactly cloned from AbstractQueuedSynchronizer, replacing class
-      name and changing ints related with sync state to longs. Please
-      keep it that way.
-    */
+     * To keep sources in sync, the remainder of this source file is
+     * exactly cloned from AbstractQueuedSynchronizer, replacing class
+     * name and changing ints related with sync state to longs. Please
+     * keep it that way.
+     */
 
     /**
      * Creates a new {@code AbstractQueuedLongSynchronizer} instance
@@ -725,8 +725,7 @@ public abstract class AbstractQueuedLongSynchronizer
     /**
      * Returns {@code true} if synchronization is held exclusively with
      * respect to the current (calling) thread.  This method is invoked
-     * upon each call to a non-waiting {@link ConditionObject} method.
-     * (Waiting methods instead invoke {@link #release}.)
+     * upon each call to a {@link ConditionObject} method.
      *
      * <p>The default implementation throws {@link
      * UnsupportedOperationException}. This method is invoked
@@ -1366,9 +1365,8 @@ public abstract class AbstractQueuedLongSynchronizer
     }
 
     /**
-     * Condition implementation for a {@link
-     * AbstractQueuedLongSynchronizer} serving as the basis of a {@link
-     * Lock} implementation.
+     * Condition implementation for a {@link AbstractQueuedLongSynchronizer}
+     * serving as the basis of a {@link Lock} implementation.
      *
      * <p>Method documentation for this class describes mechanics,
      * not behavioral specifications from the point of view of Lock
@@ -1401,6 +1399,8 @@ public abstract class AbstractQueuedLongSynchronizer
          * @return its new wait node
          */
         private Node addConditionWaiter() {
+            if (!isHeldExclusively())
+                throw new IllegalMonitorStateException();
             Node t = lastWaiter;
             // If lastWaiter is cancelled, clean out.
             if (t != null && t.waitStatus != Node.CONDITION) {

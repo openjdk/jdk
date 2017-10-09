@@ -26,10 +26,12 @@ package java.lang;
 
 import jdk.internal.reflect.CallerSensitive;
 
-import java.util.*;
+import java.lang.invoke.MethodType;
+import java.util.EnumSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -96,7 +98,7 @@ public final class StackWalker {
      * @since 9
      * @jvms 2.6
      */
-    public static interface StackFrame {
+    public interface StackFrame {
         /**
          * Gets the <a href="ClassLoader.html#name">binary name</a>
          * of the declaring class of the method represented by this stack frame.
@@ -126,6 +128,47 @@ public final class StackWalker {
          *         Option.RETAIN_CLASS_REFERENCE}.
          */
         public Class<?> getDeclaringClass();
+
+        /**
+         * Returns the {@link MethodType} representing the parameter types and
+         * the return type for the method represented by this stack frame.
+         *
+         * @implSpec
+         * The default implementation throws {@code UnsupportedOperationException}.
+         *
+         * @return the {@code MethodType} for this stack frame
+         *
+         * @throws UnsupportedOperationException if this {@code StackWalker}
+         *         is not configured with {@link Option#RETAIN_CLASS_REFERENCE
+         *         Option.RETAIN_CLASS_REFERENCE}.
+         *
+         * @since 10
+         */
+        public default MethodType getMethodType() {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * Returns the <i>descriptor</i> of the method represented by
+         * this stack frame as defined by
+         * <cite>The Java Virtual Machine Specification</cite>.
+         *
+         * @implSpec
+         * The default implementation throws {@code UnsupportedOperationException}.
+         *
+         * @return the descriptor of the method represented by
+         *         this stack frame
+         *
+         * @see MethodType#fromMethodDescriptorString(String, ClassLoader)
+         * @see MethodType#toMethodDescriptorString()
+         * @jvms 4.3.3 Method Descriptor
+         *
+         * @since 10
+         */
+        public default String getDescriptor() {
+            throw new UnsupportedOperationException();
+        }
+
 
         /**
          * Returns the index to the code array of the {@code Code} attribute

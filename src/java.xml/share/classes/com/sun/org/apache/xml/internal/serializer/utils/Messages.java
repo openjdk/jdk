@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,11 +21,9 @@
 
 package com.sun.org.apache.xml.internal.serializer.utils;
 
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
-import java.util.ListResourceBundle;
 import java.util.Locale;
-import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * A utility class for issuing error messages.
@@ -99,7 +97,7 @@ public final class Messages
     private final Locale m_locale = Locale.getDefault();
 
     /** The language specific resource object for messages.  */
-    private ListResourceBundle m_resourceBundle;
+    private ResourceBundle m_resourceBundle;
 
     /** The class name of the error message string table with no language suffix. */
     private String m_resourceBundleName;
@@ -173,10 +171,8 @@ public final class Messages
      * @return The formatted message string.
      * @xsl.usage internal
      */
-    private final String createMsg(
-        ListResourceBundle fResourceBundle,
-        String msgKey,
-        Object args[]) //throws Exception
+    private final String createMsg(ResourceBundle fResourceBundle, String msgKey,
+            Object args[]) //throws Exception
     {
 
         String fmsg = null;

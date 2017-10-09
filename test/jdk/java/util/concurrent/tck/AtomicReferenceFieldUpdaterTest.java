@@ -53,57 +53,6 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
         return new TestSuite(AtomicReferenceFieldUpdaterTest.class);
     }
 
-    // for testing subclass access
-    static class AtomicReferenceFieldUpdaterTestSubclass extends AtomicReferenceFieldUpdaterTest {
-        public void checkPrivateAccess() {
-            try {
-                AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest,Integer> a =
-                    AtomicReferenceFieldUpdater.newUpdater
-                    (AtomicReferenceFieldUpdaterTest.class, Integer.class, "privateField");
-                shouldThrow();
-            } catch (RuntimeException success) {
-                assertNotNull(success.getCause());
-            }
-        }
-
-        public void checkCompareAndSetProtectedSub() {
-            AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest,Integer> a =
-                AtomicReferenceFieldUpdater.newUpdater
-                (AtomicReferenceFieldUpdaterTest.class, Integer.class, "protectedField");
-            this.protectedField = one;
-            assertTrue(a.compareAndSet(this, one, two));
-            assertTrue(a.compareAndSet(this, two, m4));
-            assertSame(m4, a.get(this));
-            assertFalse(a.compareAndSet(this, m5, seven));
-            assertNotSame(seven, a.get(this));
-            assertTrue(a.compareAndSet(this, m4, seven));
-            assertSame(seven, a.get(this));
-        }
-    }
-
-    static class UnrelatedClass {
-        public void checkPackageAccess(AtomicReferenceFieldUpdaterTest obj) {
-            obj.x = one;
-            AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest,Integer> a =
-                AtomicReferenceFieldUpdater.newUpdater
-                (AtomicReferenceFieldUpdaterTest.class, Integer.class, "x");
-            assertSame(one, a.get(obj));
-            assertTrue(a.compareAndSet(obj, one, two));
-            assertSame(two, a.get(obj));
-        }
-
-        public void checkPrivateAccess(AtomicReferenceFieldUpdaterTest obj) {
-            try {
-                AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest,Integer> a =
-                    AtomicReferenceFieldUpdater.newUpdater
-                    (AtomicReferenceFieldUpdaterTest.class, Integer.class, "privateField");
-                throw new AssertionError("should throw");
-            } catch (RuntimeException success) {
-                assertNotNull(success.getCause());
-            }
-        }
-    }
-
     static AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Integer> updaterFor(String fieldName) {
         return AtomicReferenceFieldUpdater.newUpdater
             (AtomicReferenceFieldUpdaterTest.class, Integer.class, fieldName);
@@ -155,9 +104,8 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
      * construction using private field from subclass throws RuntimeException
      */
     public void testPrivateFieldInSubclass() {
-        AtomicReferenceFieldUpdaterTestSubclass s =
-            new AtomicReferenceFieldUpdaterTestSubclass();
-        s.checkPrivateAccess();
+        new NonNestmates.AtomicReferenceFieldUpdaterTestSubclass()
+            .checkPrivateAccess();
     }
 
     /**
@@ -165,8 +113,8 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
      * private access is not
      */
     public void testUnrelatedClassAccess() {
-        new UnrelatedClass().checkPackageAccess(this);
-        new UnrelatedClass().checkPrivateAccess(this);
+        new NonNestmates().checkPackageAccess(this);
+        new NonNestmates().checkPrivateAccess(this);
     }
 
     /**
@@ -198,7 +146,7 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
     }
 
     /**
-     * compareAndSet succeeds in changing value if equal to expected else fails
+     * compareAndSet succeeds in changing value if same as expected else fails
      */
     public void testCompareAndSet() {
         AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Integer> a;
@@ -211,6 +159,15 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
         assertNotSame(seven, a.get(this));
         assertTrue(a.compareAndSet(this, m4, seven));
         assertSame(seven, a.get(this));
+    }
+
+    /**
+     * compareAndSet succeeds in changing protected field value if
+     * same as expected else fails
+     */
+    public void testCompareAndSetProtectedInSubclass() {
+        new NonNestmates.AtomicReferenceFieldUpdaterTestSubclass()
+            .checkCompareAndSetProtectedSub();
     }
 
     /**
@@ -236,8 +193,7 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
     }
 
     /**
-     * repeated weakCompareAndSet succeeds in changing value when equal
-     * to expected
+     * repeated weakCompareAndSet succeeds in changing value when same as expected
      */
     public void testWeakCompareAndSet() {
         AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Integer> a;

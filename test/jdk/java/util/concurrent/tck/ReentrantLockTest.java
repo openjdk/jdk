@@ -35,11 +35,13 @@
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -172,6 +174,11 @@ public class ReentrantLockTest extends JSR166TestCase {
     }
 
     enum AwaitMethod { await, awaitTimed, awaitNanos, awaitUntil }
+
+    static AwaitMethod randomAwaitMethod() {
+        AwaitMethod[] awaitMethods = AwaitMethod.values();
+        return awaitMethods[ThreadLocalRandom.current().nextInt(awaitMethods.length)];
+    }
 
     /**
      * Awaits condition "indefinitely" using the specified AwaitMethod.
@@ -1159,5 +1166,61 @@ public class ReentrantLockTest extends JSR166TestCase {
         assertTrue(lock.toString().contains("Locked by"));
         lock.unlock();
         assertTrue(lock.toString().contains("Unlocked"));
+    }
+
+    /**
+     * Tests scenario for JDK-8187408
+     * AbstractQueuedSynchronizer wait queue corrupted when thread awaits without holding the lock
+     */
+    public void testBug8187408() throws InterruptedException {
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final AwaitMethod awaitMethod = randomAwaitMethod();
+        final int nThreads = rnd.nextInt(2, 10);
+        final ReentrantLock lock = new ReentrantLock();
+        final Condition cond = lock.newCondition();
+        final CountDownLatch done = new CountDownLatch(nThreads);
+        final ArrayList<Thread> threads = new ArrayList<>();
+
+        Runnable rogue = () -> {
+            while (done.getCount() > 0) {
+                try {
+                    // call await without holding lock?!
+                    await(cond, awaitMethod);
+                    throw new AssertionError("should throw");
+                }
+                catch (IllegalMonitorStateException expected) {}
+                catch (Throwable fail) { threadUnexpectedException(fail); }}};
+        Thread rogueThread = new Thread(rogue, "rogue");
+        threads.add(rogueThread);
+        rogueThread.start();
+
+        Runnable waiter = () -> {
+            lock.lock();
+            try {
+                done.countDown();
+                cond.await();
+            } catch (Throwable fail) {
+                threadUnexpectedException(fail);
+            } finally {
+                lock.unlock();
+            }};
+        for (int i = 0; i < nThreads; i++) {
+            Thread thread = new Thread(waiter, "waiter");
+            threads.add(thread);
+            thread.start();
+        }
+
+        assertTrue(done.await(LONG_DELAY_MS, MILLISECONDS));
+        lock.lock();
+        try {
+            assertEquals(nThreads, lock.getWaitQueueLength(cond));
+        } finally {
+            cond.signalAll();
+            lock.unlock();
+        }
+        for (Thread thread : threads) {
+            thread.join(LONG_DELAY_MS);
+            assertFalse(thread.isAlive());
+        }
     }
 }

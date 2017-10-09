@@ -164,7 +164,7 @@ public abstract class Cache<K,V> {
     public static class EqualByteArray {
 
         private final byte[] b;
-        private volatile int hash;
+        private int hash;
 
         public EqualByteArray(byte[] b) {
             this.b = b;
@@ -172,12 +172,8 @@ public abstract class Cache<K,V> {
 
         public int hashCode() {
             int h = hash;
-            if (h == 0) {
-                h = b.length + 1;
-                for (int i = 0; i < b.length; i++) {
-                    h += (b[i] & 0xff) * 37;
-                }
-                hash = h;
+            if (h == 0 && b.length > 0) {
+                hash = h = Arrays.hashCode(b);
             }
             return h;
         }

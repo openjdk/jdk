@@ -900,6 +900,45 @@ var getJibProfilesProfiles = function (input, common, data) {
             }
         },
 
+        "windows-x64-open": {
+            artifacts: {
+                jdk: {
+                    local: "bundles/\\(jdk.*bin.tar.gz\\)",
+                    remote: [
+                        "bundles/openjdk/GPL/windows-x64/jdk-" + data.version
+                            + "_windows-x64_bin.tar.gz",
+                        "bundles/openjdk/GPL/windows-x64/\\1"
+                    ],
+                    subdir: "jdk-" + data.version
+                },
+                jre: {
+                    local: "bundles/\\(jre.*bin.tar.gz\\)",
+                    remote: "bundles/openjdk/GPL/windows-x64/\\1"
+                },
+                test: {
+                    local: "bundles/\\(jdk.*bin-tests.tar.gz\\)",
+                    remote: [
+                        "bundles/openjdk/GPL/windows-x64/jdk-" + data.version
+                            + "_windows-x64_bin-tests.tar.gz",
+                        "bundles/openjdk/GPL/windows-x64/\\1"
+                    ]
+                },
+                jdk_symbols: {
+                    local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
+                    remote: [
+                        "bundles/openjdk/GPL/windows-x64/jdk-" + data.version
+                            + "_windows-x64_bin-symbols.tar.gz",
+                        "bundles/openjdk/GPL/windows-x64/\\1"
+                    ],
+                    subdir: "jdk-" + data.version
+                },
+                jre_symbols: {
+                    local: "bundles/\\(jre.*bin-symbols.tar.gz\\)",
+                    remote: "bundles/openjdk/GPL/windows-x64/\\1",
+                }
+            }
+        },
+
         "linux-x86-open-debug": {
             artifacts: {
                 jdk: {
@@ -929,9 +968,10 @@ var getJibProfilesProfiles = function (input, common, data) {
     profiles["linux-x86-ri-debug"] = clone(profiles["linux-x86-open-debug"]);
     profiles["macosx-x64-ri"] = clone(profiles["macosx-x64-open"]);
     profiles["windows-x86-ri"] = clone(profiles["windows-x86-open"]);
+    profiles["windows-x64-ri"] = clone(profiles["windows-x64-open"]);
 
     // Generate artifacts for ri profiles
-    [ "linux-x64-ri", "linux-x86-ri", "linux-x86-ri-debug", "macosx-x64-ri", "windows-x86-ri" ]
+    [ "linux-x64-ri", "linux-x86-ri", "linux-x86-ri-debug", "macosx-x64-ri", "windows-x86-ri", "windows-x64-ri" ]
         .forEach(function (name) {
             // Rewrite all remote dirs to "bundles/openjdk/BCL/..."
             for (artifactName in profiles[name].artifacts) {
@@ -947,6 +987,11 @@ var getJibProfilesProfiles = function (input, common, data) {
             configure_args: "--with-freetype-license="
                 + input.get("freetype", "install_path")
                 + "/freetype-2.7.1-v120-x86/freetype.md"
+        },
+        "windows-x64-ri": {
+            configure_args: "--with-freetype-license="
+                + input.get("freetype", "install_path")
+                + "/freetype-2.7.1-v120-x64/freetype.md"
         }
     };
     profiles = concatObjects(profiles, profilesRiFreetype);

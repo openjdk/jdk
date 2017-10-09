@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,17 +21,16 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.dom;
 
-import java.text.CollationKey;
-import java.text.Collator;
-import java.util.Locale;
-
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.xsltc.CollatorFactory;
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xml.internal.utils.StringComparable;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
+import java.text.CollationKey;
+import java.text.Collator;
+import java.util.Locale;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * Base class for sort records containing application specific sort keys

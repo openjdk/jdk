@@ -26,7 +26,6 @@
 package com.sun.org.apache.xerces.internal.jaxp.datatype;
 
 import com.sun.org.apache.xerces.internal.util.DatatypeMessageFormatter;
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -42,6 +41,7 @@ import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * <p>Representation for W3C XML Schema 1.0 date/time datatypes.

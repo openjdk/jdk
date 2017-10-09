@@ -26,7 +26,7 @@
 include GensrcCommonJdk.gmk
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , gensrc/Gensrc-java.desktop.gmk))
+$(eval $(call IncludeCustomExtension, gensrc/Gensrc-java.desktop.gmk))
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
   include GensrcIcons.gmk

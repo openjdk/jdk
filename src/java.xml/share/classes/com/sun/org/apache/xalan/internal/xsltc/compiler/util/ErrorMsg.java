@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,13 +21,12 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler.util;
 
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.Stylesheet;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.SyntaxTreeNode;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
-
-import com.sun.org.apache.xalan.internal.xsltc.compiler.Stylesheet;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.SyntaxTreeNode;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * @author Jacek Ambroziak

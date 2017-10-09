@@ -34,7 +34,7 @@ JDK_TARGETS :=
 JRE_TARGETS :=
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , Images-pre.gmk))
+$(eval $(call IncludeCustomExtension, Images-pre.gmk))
 
 ############################################################################
 
@@ -426,7 +426,7 @@ $(call SetupCopyDebuginfo,JRE)
 
 # Include custom post hook here to make it possible to augment the target lists
 # before actual target prerequisites are declared.
-$(eval $(call IncludeCustomExtension, , Images-post.gmk))
+$(eval $(call IncludeCustomExtension, Images-post.gmk))
 
 ################################################################################
 
