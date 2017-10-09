@@ -74,16 +74,15 @@ abstract class Wrap implements GeneralWrap {
      * @param rdecl Type name and name
      * @return
      */
-    public static Wrap varWrap(String source, Range rtype, String brackets, Range rname, Range rinit) {
+    public static Wrap varWrap(String source, Wrap wtype, String brackets,
+                               Range rname, Wrap winit, Wrap anonDeclareWrap) {
         RangeWrap wname = new RangeWrap(source, rname);
-        RangeWrap wtype = new RangeWrap(source, rtype);
         Wrap wVarDecl = new VarDeclareWrap(wtype, brackets, wname);
         Wrap wmeth;
 
-        if (rinit == null) {
+        if (winit == null) {
             wmeth = new CompoundWrap(new NoWrap(" "), "   return null;\n");
         } else {
-            RangeWrap winit = new RangeWrap(source, rinit);
         // int x = y
             // int x_ = y; return x = x_;
             // decl + "_ = " + init ; + "return " + name + "=" + name + "_ ;"
@@ -93,7 +92,8 @@ abstract class Wrap implements GeneralWrap {
             );
         }
         Wrap wInitMeth = new DoitMethodWrap(wmeth);
-        return new CompoundWrap(wVarDecl, wInitMeth);
+        return anonDeclareWrap != null ? new CompoundWrap(wVarDecl, wInitMeth, anonDeclareWrap)
+                                       : new CompoundWrap(wVarDecl, wInitMeth);
     }
 
     public static Wrap tempVarWrap(String source, String typename, String name) {
@@ -110,6 +110,14 @@ abstract class Wrap implements GeneralWrap {
 
     public static Wrap simpleWrap(String source) {
         return new NoWrap(source);
+    }
+
+    public static Wrap identityWrap(String source) {
+        return new NoWrap(source);
+    }
+
+    public static Wrap rangeWrap(String source, Range range) {
+        return new RangeWrap(source, range);
     }
 
     public static Wrap classMemberWrap(String source) {

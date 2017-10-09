@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8025524 8031625 8081854 8175200
+ * @bug 8025524 8031625 8081854 8175200 8186332
  * @summary Test for constructor name which should be a non-qualified name.
  * @author Bhavesh Patel
  * @library ../lib
@@ -58,19 +58,19 @@ public class TestConstructors extends JavadocTester {
                 + "<a href=\"../pkg1/Outer.html#Outer-int-\"><code>Outer(int)</code></a>, "
                 + "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\"><code>"
                 + "NestedInner(int)</code></a>",
-                "<a href=\"../pkg1/Outer.html#Outer--\">Outer</a></span>&#8203;()",
+                "<a href=\"../pkg1/Outer.html#Outer--\">Outer</a></span>()",
                 "<a name=\"Outer--\">",
                 "<a href=\"../pkg1/Outer.html#Outer-int-\">Outer</a></span>&#8203;(int&nbsp;i)",
                 "<a name=\"Outer-int-\">");
 
         checkOutput("pkg1/Outer.Inner.html", true,
-                "<a href=\"../pkg1/Outer.Inner.html#Inner--\">Inner</a></span>&#8203;()",
+                "<a href=\"../pkg1/Outer.Inner.html#Inner--\">Inner</a></span>()",
                 "<a name=\"Inner--\">",
                 "<a href=\"../pkg1/Outer.Inner.html#Inner-int-\">Inner</a></span>&#8203;(int&nbsp;i)",
                 "<a name=\"Inner-int-\">");
 
         checkOutput("pkg1/Outer.Inner.NestedInner.html", true,
-                "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner--\">NestedInner</a></span>&#8203;()",
+                "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner--\">NestedInner</a></span>()",
                 "<a name=\"NestedInner--\">",
                 "<a href=\"../pkg1/Outer.Inner.NestedInner.html#NestedInner-int-\">NestedInner</a></span>&#8203;(int&nbsp;i)",
                 "<a name=\"NestedInner-int-\">");

@@ -37,10 +37,12 @@
 $EXEC.throwOnError=true
 
 // compile DOMLinkerExporter
-`javac -cp ../../dist/nashorn.jar DOMLinkerExporter.java`
+`javac DOMLinkerExporter.java`
+
+load("jarutil.js");
 
 // make a jar file out of pluggable linker
-`jar cvf dom_linker.jar DOMLinkerExporter*.class META-INF/`
+makeJar("dom_linker.jar");
 
 // run a sample script that uses pluggable linker
 // but make sure classpath points to the pluggable linker jar!

@@ -32,9 +32,11 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
+import com.sun.tools.javac.code.Type.IntersectionClassType;
 import com.sun.tools.javac.util.JavacMessages;
 import java.util.Locale;
 import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * Print types in source form.
@@ -45,10 +47,14 @@ class TypePrinter extends Printer {
 
     private final JavacMessages messages;
     private final BinaryOperator<String> fullClassNameAndPackageToClass;
+    private final boolean printEnhancedTypes;
 
-    TypePrinter(JavacMessages messages, BinaryOperator<String> fullClassNameAndPackageToClass) {
+    TypePrinter(JavacMessages messages,
+                BinaryOperator<String> fullClassNameAndPackageToClass,
+                boolean printEnhancedTypes) {
         this.messages = messages;
         this.fullClassNameAndPackageToClass = fullClassNameAndPackageToClass;
+        this.printEnhancedTypes = printEnhancedTypes;
     }
 
     String toString(Type t) {
@@ -92,8 +98,18 @@ class TypePrinter extends Printer {
     protected String className(ClassType t, boolean longform, Locale locale) {
         Symbol sym = t.tsym;
         if (sym.name.length() == 0 && (sym.flags() & COMPOUND) != 0) {
-            return OBJECT;
+            if (printEnhancedTypes) {
+                return ((IntersectionClassType) t).getExplicitComponents()
+                                                  .stream()
+                                                  .map(i -> visit(i, locale))
+                                                  .collect(Collectors.joining("&"));
+            } else {
+                return OBJECT;
+            }
         } else if (sym.name.length() == 0) {
+            if (printEnhancedTypes) {
+                return t.tsym.flatName().toString().substring(t.tsym.outermostClass().flatName().length());
+            }
             // Anonymous
             String s;
             ClassType norm = (ClassType) t.tsym.type;

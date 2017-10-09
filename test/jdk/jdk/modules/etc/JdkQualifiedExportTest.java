@@ -70,6 +70,7 @@ public class JdkQualifiedExportTest {
 
     static Set<String> KNOWN_EXCEPTIONS =
         Set.of("jdk.internal.vm.ci/jdk.vm.ci.services",
+               "jdk.internal.vm.ci/jdk.vm.ci.runtime",
                "jdk.jsobject/jdk.internal.netscape.javascript.spi");
 
     static void checkExports(ModuleDescriptor md) {

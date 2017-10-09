@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -463,20 +463,43 @@ public class ThreadImpl implements ThreadMXBean {
     public ThreadInfo[] getThreadInfo(long[] ids,
                                       boolean lockedMonitors,
                                       boolean lockedSynchronizers) {
+        return dumpThreads0(ids, lockedMonitors, lockedSynchronizers,
+                            Integer.MAX_VALUE);
+    }
+
+    public ThreadInfo[] getThreadInfo(long[] ids,
+                                      boolean lockedMonitors,
+                                      boolean lockedSynchronizers,
+                                      int maxDepth) {
+        if (maxDepth < 0) {
+            throw new IllegalArgumentException(
+                    "Invalid maxDepth parameter: " + maxDepth);
+        }
         verifyThreadIds(ids);
         // ids has been verified to be non-null
         // an empty array of ids should return an empty array of ThreadInfos
         if (ids.length == 0) return new ThreadInfo[0];
 
         verifyDumpThreads(lockedMonitors, lockedSynchronizers);
-        return dumpThreads0(ids, lockedMonitors, lockedSynchronizers);
+        return dumpThreads0(ids, lockedMonitors, lockedSynchronizers, maxDepth);
     }
 
     @Override
     public ThreadInfo[] dumpAllThreads(boolean lockedMonitors,
                                        boolean lockedSynchronizers) {
+        return dumpAllThreads(lockedMonitors, lockedSynchronizers,
+                              Integer.MAX_VALUE);
+    }
+
+    public ThreadInfo[] dumpAllThreads(boolean lockedMonitors,
+                                       boolean lockedSynchronizers,
+                                       int maxDepth) {
+        if (maxDepth < 0) {
+            throw new IllegalArgumentException(
+                    "Invalid maxDepth parameter: " + maxDepth);
+        }
         verifyDumpThreads(lockedMonitors, lockedSynchronizers);
-        return dumpThreads0(null, lockedMonitors, lockedSynchronizers);
+        return dumpThreads0(null, lockedMonitors, lockedSynchronizers, maxDepth);
     }
 
     // VM support where maxDepth == -1 to request entire stack dump
@@ -497,7 +520,8 @@ public class ThreadImpl implements ThreadMXBean {
     private static native void resetPeakThreadCount0();
     private static native ThreadInfo[] dumpThreads0(long[] ids,
                                                     boolean lockedMonitors,
-                                                    boolean lockedSynchronizers);
+                                                    boolean lockedSynchronizers,
+                                                    int maxDepth);
 
     // tid == 0 to reset contention times for all threads
     private static native void resetContentionTimes0(long tid);

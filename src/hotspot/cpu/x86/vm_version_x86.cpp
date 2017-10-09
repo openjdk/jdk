@@ -46,7 +46,7 @@ address VM_Version::_cpuinfo_segv_addr = 0;
 address VM_Version::_cpuinfo_cont_addr = 0;
 
 static BufferBlob* stub_blob;
-static const int stub_size = 1000;
+static const int stub_size = 1100;
 
 extern "C" {
   typedef void (*get_cpu_info_stub_t)(void*);
@@ -70,7 +70,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     bool use_evex = FLAG_IS_DEFAULT(UseAVX) || (UseAVX > 2);
 
     Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4;
-    Label sef_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7, done, wrapup;
+    Label sef_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7, ext_cpuid8, done, wrapup;
     Label legacy_setup, save_restore_except, legacy_save_restore, start_simd_check;
 
     StubCodeMark mark(this, "VM_Version", "get_cpu_info_stub");
@@ -267,14 +267,30 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ cmpl(rax, 0x80000000);     // Is cpuid(0x80000001) supported?
     __ jcc(Assembler::belowEqual, done);
     __ cmpl(rax, 0x80000004);     // Is cpuid(0x80000005) supported?
-    __ jccb(Assembler::belowEqual, ext_cpuid1);
+    __ jcc(Assembler::belowEqual, ext_cpuid1);
     __ cmpl(rax, 0x80000006);     // Is cpuid(0x80000007) supported?
     __ jccb(Assembler::belowEqual, ext_cpuid5);
     __ cmpl(rax, 0x80000007);     // Is cpuid(0x80000008) supported?
     __ jccb(Assembler::belowEqual, ext_cpuid7);
+    __ cmpl(rax, 0x80000008);     // Is cpuid(0x80000009 and above) supported?
+    __ jccb(Assembler::belowEqual, ext_cpuid8);
+    __ cmpl(rax, 0x8000001E);     // Is cpuid(0x8000001E) supported?
+    __ jccb(Assembler::below, ext_cpuid8);
+    //
+    // Extended cpuid(0x8000001E)
+    //
+    __ movl(rax, 0x8000001E);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid1E_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+    __ movl(Address(rsi, 8), rcx);
+    __ movl(Address(rsi,12), rdx);
+
     //
     // Extended cpuid(0x80000008)
     //
+    __ bind(ext_cpuid8);
     __ movl(rax, 0x80000008);
     __ cpuid();
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid8_offset())));
@@ -1109,11 +1125,27 @@ void VM_Version::get_processor_features() {
     }
 
 #ifdef COMPILER2
-    if (MaxVectorSize > 16) {
-      // Limit vectors size to 16 bytes on current AMD cpus.
+    if (cpu_family() < 0x17 && MaxVectorSize > 16) {
+      // Limit vectors size to 16 bytes on AMD cpus < 17h.
       FLAG_SET_DEFAULT(MaxVectorSize, 16);
     }
 #endif // COMPILER2
+
+    // Some defaults for AMD family 17h
+    if ( cpu_family() == 0x17 ) {
+      // On family 17h processors use XMM and UnalignedLoadStores for Array Copy
+      if (supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
+        FLAG_SET_DEFAULT(UseXMMForArrayCopy, true);
+      }
+      if (supports_sse2() && FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+        FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
+      }
+#ifdef COMPILER2
+      if (supports_sse4_2() && FLAG_IS_DEFAULT(UseFPUForSpilling)) {
+        FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      }
+#endif
+    }
   }
 
   if( is_intel() ) { // Intel cpus specific settings

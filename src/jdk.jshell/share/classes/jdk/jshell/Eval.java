@@ -40,6 +40,7 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.tools.javac.tree.JCTree;
@@ -59,6 +60,7 @@ import jdk.jshell.TaskFactory.AnalyzeTask;
 import jdk.jshell.TaskFactory.BaseTask;
 import jdk.jshell.TaskFactory.CompileTask;
 import jdk.jshell.TaskFactory.ParseTask;
+import jdk.jshell.Wrap.CompoundWrap;
 import jdk.jshell.Wrap.Range;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.spi.ExecutionControl.ClassBytecodes;
@@ -274,26 +276,119 @@ class Eval {
         for (Tree unitTree : units) {
             VariableTree vt = (VariableTree) unitTree;
             String name = vt.getName().toString();
-            String typeName = EvalPretty.prettyExpr((JCTree) vt.getType(), false);
-            Tree baseType = vt.getType();
+            String typeName;
+            String fullTypeName;
             TreeDependencyScanner tds = new TreeDependencyScanner();
-            tds.scan(baseType); // Not dependent on initializer
+            Wrap typeWrap;
+            Wrap anonDeclareWrap = null;
+            Wrap winit = null;
             StringBuilder sbBrackets = new StringBuilder();
-            while (baseType instanceof ArrayTypeTree) {
-                //TODO handle annotations too
-                baseType = ((ArrayTypeTree) baseType).getType();
-                sbBrackets.append("[]");
+            Tree baseType = vt.getType();
+            if (baseType != null) {
+                tds.scan(baseType); // Not dependent on initializer
+                fullTypeName = typeName = EvalPretty.prettyExpr((JCTree) vt.getType(), false);
+                while (baseType instanceof ArrayTypeTree) {
+                    //TODO handle annotations too
+                    baseType = ((ArrayTypeTree) baseType).getType();
+                    sbBrackets.append("[]");
+                }
+                Range rtype = dis.treeToRange(baseType);
+                typeWrap = Wrap.rangeWrap(compileSource, rtype);
+            } else {
+                Tree init = vt.getInitializer();
+                if (init != null) {
+                    Range rinit = dis.treeToRange(init);
+                    String initCode = rinit.part(compileSource);
+                    ExpressionInfo ei =
+                            ExpressionToTypeInfo.localVariableTypeForInitializer(initCode, state);
+                    typeName = ei == null ? "java.lang.Object" : ei.typeName;
+                    fullTypeName = ei == null ? "java.lang.Object" : ei.fullTypeName;
+                    if (ei != null && init.getKind() == Tree.Kind.NEW_CLASS &&
+                        ((NewClassTree) init).getClassBody() != null) {
+                        NewClassTree nct = (NewClassTree) init;
+                        StringBuilder constructor = new StringBuilder();
+                        constructor.append(fullTypeName).append("(");
+                        String sep = "";
+                        if (ei.enclosingInstanceType != null) {
+                            constructor.append(ei.enclosingInstanceType);
+                            constructor.append(" encl");
+                            sep = ", ";
+                        }
+                        int idx = 0;
+                        for (String type : ei.parameterTypes) {
+                            constructor.append(sep);
+                            constructor.append(type);
+                            constructor.append(" ");
+                            constructor.append("arg" + idx++);
+                            sep = ", ";
+                        }
+                        if (ei.enclosingInstanceType != null) {
+                            constructor.append(") { encl.super (");
+                        } else {
+                            constructor.append(") { super (");
+                        }
+                        sep = "";
+                        for (int i = 0; i < idx; i++) {
+                            constructor.append(sep);
+                            constructor.append("arg" + i++);
+                            sep = ", ";
+                        }
+                        constructor.append("); }");
+                        List<? extends Tree> members = nct.getClassBody().getMembers();
+                        Range bodyRange = dis.treeListToRange(members);
+                        Wrap bodyWrap;
+
+                        if (bodyRange != null) {
+                            bodyWrap = Wrap.rangeWrap(compileSource, bodyRange);
+                        } else {
+                            bodyWrap = Wrap.simpleWrap(" ");
+                        }
+
+                        Range argRange = dis.treeListToRange(nct.getArguments());
+                        Wrap argWrap;
+
+                        if (argRange != null) {
+                            argWrap = Wrap.rangeWrap(compileSource, argRange);
+                        } else {
+                            argWrap = Wrap.simpleWrap(" ");
+                        }
+
+                        if (ei.enclosingInstanceType != null) {
+                            Range enclosingRanges =
+                                    dis.treeToRange(nct.getEnclosingExpression());
+                            Wrap enclosingWrap = Wrap.rangeWrap(compileSource, enclosingRanges);
+                            argWrap = argRange != null ? new CompoundWrap(enclosingWrap,
+                                                                          Wrap.simpleWrap(","),
+                                                                          argWrap)
+                                                       : enclosingWrap;
+                        }
+                        Wrap hwrap = Wrap.simpleWrap("public static class " + fullTypeName +
+                                                     (ei.isClass ? " extends " : " implements ") +
+                                                     typeName + " { " + constructor);
+                        anonDeclareWrap = new CompoundWrap(hwrap, bodyWrap, Wrap.simpleWrap("}"));
+                        winit = new CompoundWrap("new " + fullTypeName + "(", argWrap, ")");
+
+                        String superType = typeName;
+
+                        typeName = fullTypeName;
+                        fullTypeName = ei.isClass ? "<anonymous class extending " + superType + ">"
+                                                  : "<anonymous class implementing " + superType + ">";
+                    }
+                    tds.scan(init);
+                } else {
+                    fullTypeName = typeName = "java.lang.Object";
+                }
+                typeWrap = Wrap.identityWrap(typeName);
             }
-            Range rtype = dis.treeToRange(baseType);
             Range runit = dis.treeToRange(vt);
             runit = new Range(runit.begin, runit.end - 1);
             ExpressionTree it = vt.getInitializer();
-            Range rinit = null;
             int nameMax = runit.end - 1;
             SubKind subkind;
             if (it != null) {
                 subkind = SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND;
-                rinit = dis.treeToRange(it);
+                Range rinit = dis.treeToRange(it);
+                winit = winit == null ? Wrap.rangeWrap(compileSource, rinit) : winit;
                 nameMax = rinit.begin - 1;
             } else {
                 subkind = SubKind.VAR_DECLARATION_SUBKIND;
@@ -304,10 +399,11 @@ class Eval {
             }
             int nameEnd = nameStart + name.length();
             Range rname = new Range(nameStart, nameEnd);
-            Wrap guts = Wrap.varWrap(compileSource, rtype, sbBrackets.toString(), rname, rinit);
-            DiagList modDiag = modifierDiagnostics(vt.getModifiers(), dis, true);
+            Wrap guts = Wrap.varWrap(compileSource, typeWrap, sbBrackets.toString(), rname,
+                                     winit, anonDeclareWrap);
+                        DiagList modDiag = modifierDiagnostics(vt.getModifiers(), dis, true);
             Snippet snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
-                    name, subkind, typeName,
+                    name, subkind, fullTypeName,
                     tds.declareReferences(), modDiag);
             snippets.add(snip);
         }

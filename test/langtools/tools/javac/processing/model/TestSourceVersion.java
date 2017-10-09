@@ -41,6 +41,7 @@ public class TestSourceVersion {
     public static void main(String... args) {
         testLatestSupported();
         testVersionVaryingKeywords();
+        testRestrictedKeywords();
     }
 
     private static void testLatestSupported() {
@@ -70,6 +71,27 @@ public class TestSourceVersion {
 
                 check(isKeyword,  isKeyword(key, version), "keyword", version);
                 check(!isKeyword, isName(key, version),    "name",    version);
+            }
+        }
+    }
+
+    private static void testRestrictedKeywords() {
+        // Restricted keywords are not full keywords
+
+        /*
+         * JLS 3.9
+         * " A further ten character sequences are restricted
+         * keywords: open, module, requires, transitive, exports,
+         * opens, to, uses, provides, and with"
+         */
+        Set<String> restrictedKeywords =
+            Set.of("open", "module", "requires", "transitive", "exports",
+                   "opens", "to", "uses", "provides", "with");
+
+        for(String key : restrictedKeywords) {
+            for(SourceVersion version : SourceVersion.values()) {
+                check(false, isKeyword(key, version), "keyword", version);
+                check(true,  isName(key, version),    "name",    version);
             }
         }
     }

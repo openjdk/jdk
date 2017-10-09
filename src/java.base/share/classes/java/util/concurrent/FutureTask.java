@@ -480,6 +480,41 @@ public class FutureTask<V> implements RunnableFuture<V> {
         }
     }
 
+    /**
+     * Returns a string representation of this FutureTask.
+     *
+     * @implSpec
+     * The default implementation returns a string identifying this
+     * FutureTask, as well as its completion state.  The state, in
+     * brackets, contains one of the strings {@code "Completed Normally"},
+     * {@code "Completed Exceptionally"}, {@code "Cancelled"}, or {@code
+     * "Not completed"}.
+     *
+     * @return a string representation of this FutureTask
+     */
+    public String toString() {
+        final String status;
+        switch (state) {
+        case NORMAL:
+            status = "[Completed normally]";
+            break;
+        case EXCEPTIONAL:
+            status = "[Completed exceptionally: " + outcome + "]";
+            break;
+        case CANCELLED:
+        case INTERRUPTING:
+        case INTERRUPTED:
+            status = "[Cancelled]";
+            break;
+        default:
+            final Callable<?> callable = this.callable;
+            status = (callable == null)
+                ? "[Not completed]"
+                : "[Not completed, task = " + callable + "]";
+        }
+        return super.toString() + status;
+    }
+
     // VarHandle mechanics
     private static final VarHandle STATE;
     private static final VarHandle RUNNER;

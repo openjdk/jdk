@@ -1553,9 +1553,10 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   assert(_collectorState != Idling || _modUnionTable.isAllClear(),
     "_modUnionTable should be clear if the baton was not passed");
   _modUnionTable.clear_all();
-  assert(_collectorState != Idling || _ct->klass_rem_set()->mod_union_is_clear(),
+  assert(_collectorState != Idling || _ct->cld_rem_set()->mod_union_is_clear(),
     "mod union for klasses should be clear if the baton was passed");
-  _ct->klass_rem_set()->clear_mod_union();
+  _ct->cld_rem_set()->clear_mod_union();
+
 
   // We must adjust the allocation statistics being maintained
   // in the free list space. We do so by reading and clearing
@@ -2025,7 +2026,7 @@ void CMSCollector::gc_prologue(bool full) {
   // that information. Tell the young collection to save the union of all
   // modified klasses.
   if (duringMarking) {
-    _ct->klass_rem_set()->set_accumulate_modified_oops(true);
+    _ct->cld_rem_set()->set_accumulate_modified_oops(true);
   }
 
   bool registerClosure = duringMarking;
@@ -2101,7 +2102,7 @@ void CMSCollector::gc_epilogue(bool full) {
   assert(haveFreelistLocks(), "must have freelist locks");
   assert_lock_strong(bitMapLock());
 
-  _ct->klass_rem_set()->set_accumulate_modified_oops(false);
+  _ct->cld_rem_set()->set_accumulate_modified_oops(false);
 
   _cmsGen->gc_epilogue_work(full);
 
@@ -2380,18 +2381,18 @@ void CMSCollector::verify_after_remark_work_1() {
   }
 }
 
-class VerifyKlassOopsKlassClosure : public KlassClosure {
-  class VerifyKlassOopsClosure : public OopClosure {
+class VerifyCLDOopsCLDClosure : public CLDClosure {
+  class VerifyCLDOopsClosure : public OopClosure {
     CMSBitMap* _bitmap;
    public:
-    VerifyKlassOopsClosure(CMSBitMap* bitmap) : _bitmap(bitmap) { }
+    VerifyCLDOopsClosure(CMSBitMap* bitmap) : _bitmap(bitmap) { }
     void do_oop(oop* p)       { guarantee(*p == NULL || _bitmap->isMarked((HeapWord*) *p), "Should be marked"); }
     void do_oop(narrowOop* p) { ShouldNotReachHere(); }
   } _oop_closure;
  public:
-  VerifyKlassOopsKlassClosure(CMSBitMap* bitmap) : _oop_closure(bitmap) {}
-  void do_klass(Klass* k) {
-    k->oops_do(&_oop_closure);
+  VerifyCLDOopsCLDClosure(CMSBitMap* bitmap) : _oop_closure(bitmap) {}
+  void do_cld(ClassLoaderData* cld) {
+    cld->oops_do(&_oop_closure, false, false);
   }
 };
 
@@ -2437,8 +2438,8 @@ void CMSCollector::verify_after_remark_work_2() {
   assert(verification_mark_stack()->isEmpty(), "Should have been drained");
   verify_work_stacks_empty();
 
-  VerifyKlassOopsKlassClosure verify_klass_oops(verification_mark_bm());
-  ClassLoaderDataGraph::classes_do(&verify_klass_oops);
+  VerifyCLDOopsCLDClosure verify_cld_oops(verification_mark_bm());
+  ClassLoaderDataGraph::cld_do(&verify_cld_oops);
 
   // Marking completed -- now verify that each bit marked in
   // verification_mark_bm() is also marked in markBitMap(); flag all
@@ -2911,7 +2912,7 @@ void CMSCollector::checkpointRootsInitialWork() {
        " or no bits are set in the gc_prologue before the start of the next "
        "subsequent marking phase.");
 
-  assert(_ct->klass_rem_set()->mod_union_is_clear(), "Must be");
+  assert(_ct->cld_rem_set()->mod_union_is_clear(), "Must be");
 
   // Save the end of the used_region of the constituent generations
   // to be used to limit the extent of sweep in each generation.
@@ -3848,7 +3849,7 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
     }
   }
 
-  preclean_klasses(&mrias_cl, _cmsGen->freelistLock());
+  preclean_cld(&mrias_cl, _cmsGen->freelistLock());
 
   curNumCards = preclean_card_table(_cmsGen, &smoac_cl);
   cumNumCards += curNumCards;
@@ -4067,21 +4068,21 @@ size_t CMSCollector::preclean_card_table(ConcurrentMarkSweepGeneration* old_gen,
   return cumNumDirtyCards;
 }
 
-class PrecleanKlassClosure : public KlassClosure {
-  KlassToOopClosure _cm_klass_closure;
+class PrecleanCLDClosure : public CLDClosure {
+  MetadataAwareOopsInGenClosure* _cm_closure;
  public:
-  PrecleanKlassClosure(OopClosure* oop_closure) : _cm_klass_closure(oop_closure) {}
-  void do_klass(Klass* k) {
-    if (k->has_accumulated_modified_oops()) {
-      k->clear_accumulated_modified_oops();
+  PrecleanCLDClosure(MetadataAwareOopsInGenClosure* oop_closure) : _cm_closure(oop_closure) {}
+  void do_cld(ClassLoaderData* cld) {
+    if (cld->has_accumulated_modified_oops()) {
+      cld->clear_accumulated_modified_oops();
 
-      _cm_klass_closure.do_klass(k);
+      _cm_closure->do_cld(cld);
     }
   }
 };
 
 // The freelist lock is needed to prevent asserts, is it really needed?
-void CMSCollector::preclean_klasses(MarkRefsIntoAndScanClosure* cl, Mutex* freelistLock) {
+void CMSCollector::preclean_cld(MarkRefsIntoAndScanClosure* cl, Mutex* freelistLock) {
 
   cl->set_freelistLock(freelistLock);
 
@@ -4089,8 +4090,8 @@ void CMSCollector::preclean_klasses(MarkRefsIntoAndScanClosure* cl, Mutex* freel
 
   // SSS: Add equivalent to ScanMarkedObjectsAgainCarefullyClosure::do_yield_check and should_abort_preclean?
   // SSS: We should probably check if precleaning should be aborted, at suitable intervals?
-  PrecleanKlassClosure preclean_klass_closure(cl);
-  ClassLoaderDataGraph::classes_do(&preclean_klass_closure);
+  PrecleanCLDClosure preclean_closure(cl);
+  ClassLoaderDataGraph::cld_do(&preclean_closure);
 
   verify_work_stacks_empty();
   verify_overflow_empty();
@@ -4250,7 +4251,7 @@ void CMSCollector::checkpointRootsFinalWork() {
   // Call isAllClear() under bitMapLock
   assert(_modUnionTable.isAllClear(),
       "Should be clear by end of the final marking");
-  assert(_ct->klass_rem_set()->mod_union_is_clear(),
+  assert(_ct->cld_rem_set()->mod_union_is_clear(),
       "Should be clear by end of the final marking");
 }
 
@@ -4332,26 +4333,26 @@ class CMSParRemarkTask: public CMSParMarkTask {
   void do_work_steal(int i, ParMarkRefsIntoAndScanClosure* cl, int* seed);
 };
 
-class RemarkKlassClosure : public KlassClosure {
-  KlassToOopClosure _cm_klass_closure;
+class RemarkCLDClosure : public CLDClosure {
+  CLDToOopClosure _cm_closure;
  public:
-  RemarkKlassClosure(OopClosure* oop_closure) : _cm_klass_closure(oop_closure) {}
-  void do_klass(Klass* k) {
-    // Check if we have modified any oops in the Klass during the concurrent marking.
-    if (k->has_accumulated_modified_oops()) {
-      k->clear_accumulated_modified_oops();
+  RemarkCLDClosure(OopClosure* oop_closure) : _cm_closure(oop_closure) {}
+  void do_cld(ClassLoaderData* cld) {
+    // Check if we have modified any oops in the CLD during the concurrent marking.
+    if (cld->has_accumulated_modified_oops()) {
+      cld->clear_accumulated_modified_oops();
 
       // We could have transfered the current modified marks to the accumulated marks,
       // like we do with the Card Table to Mod Union Table. But it's not really necessary.
-    } else if (k->has_modified_oops()) {
+    } else if (cld->has_modified_oops()) {
       // Don't clear anything, this info is needed by the next young collection.
     } else {
-      // No modified oops in the Klass.
+      // No modified oops in the ClassLoaderData.
       return;
     }
 
     // The klass has modified fields, need to scan the klass.
-    _cm_klass_closure.do_klass(k);
+    _cm_closure.do_cld(cld);
   }
 };
 
@@ -4439,24 +4440,24 @@ void CMSParRemarkTask::work(uint worker_id) {
     log_trace(gc, task)("Finished unhandled CLD scanning work in %dth thread: %3.3f sec", worker_id, _timer.seconds());
   }
 
-  // ---------- dirty klass scanning ----------
+  // We might have added oops to ClassLoaderData::_handles during the
+  // concurrent marking phase. These oops do not always point to newly allocated objects
+  // that are guaranteed to be kept alive.  Hence,
+  // we do have to revisit the _handles block during the remark phase.
+
+  // ---------- dirty CLD scanning ----------
   if (worker_id == 0) { // Single threaded at the moment.
     _timer.reset();
     _timer.start();
 
     // Scan all classes that was dirtied during the concurrent marking phase.
-    RemarkKlassClosure remark_klass_closure(&par_mrias_cl);
-    ClassLoaderDataGraph::classes_do(&remark_klass_closure);
+    RemarkCLDClosure remark_closure(&par_mrias_cl);
+    ClassLoaderDataGraph::cld_do(&remark_closure);
 
     _timer.stop();
-    log_trace(gc, task)("Finished dirty klass scanning work in %dth thread: %3.3f sec", worker_id, _timer.seconds());
+    log_trace(gc, task)("Finished dirty CLD scanning work in %dth thread: %3.3f sec", worker_id, _timer.seconds());
   }
 
-  // We might have added oops to ClassLoaderData::_handles during the
-  // concurrent marking phase. These oops point to newly allocated objects
-  // that are guaranteed to be kept alive. Either by the direct allocation
-  // code, or when the young collector processes the roots. Hence,
-  // we don't have to revisit the _handles block during the remark phase.
 
   // ---------- rescan dirty cards ------------
   _timer.reset();
@@ -4981,22 +4982,20 @@ void CMSCollector::do_remark_non_parallel() {
     verify_work_stacks_empty();
   }
 
+  // We might have added oops to ClassLoaderData::_handles during the
+  // concurrent marking phase. These oops do not point to newly allocated objects
+  // that are guaranteed to be kept alive.  Hence,
+  // we do have to revisit the _handles block during the remark phase.
   {
-    GCTraceTime(Trace, gc, phases) t("Dirty Klass Scan", _gc_timer_cm);
+    GCTraceTime(Trace, gc, phases) t("Dirty CLD Scan", _gc_timer_cm);
 
     verify_work_stacks_empty();
 
-    RemarkKlassClosure remark_klass_closure(&mrias_cl);
-    ClassLoaderDataGraph::classes_do(&remark_klass_closure);
+    RemarkCLDClosure remark_closure(&mrias_cl);
+    ClassLoaderDataGraph::cld_do(&remark_closure);
 
     verify_work_stacks_empty();
   }
-
-  // We might have added oops to ClassLoaderData::_handles during the
-  // concurrent marking phase. These oops point to newly allocated objects
-  // that are guaranteed to be kept alive. Either by the direct allocation
-  // code, or when the young collector processes the roots. Hence,
-  // we don't have to revisit the _handles block during the remark phase.
 
   verify_work_stacks_empty();
   // Restore evacuated mark words, if any, used for overflow list links

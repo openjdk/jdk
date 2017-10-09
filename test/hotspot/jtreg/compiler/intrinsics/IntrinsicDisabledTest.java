@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 8138651
+ *
+ * @requires !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  *

@@ -613,4 +613,56 @@ public class ExecutorsTest extends JSR166TestCase {
         } catch (NullPointerException success) {}
     }
 
+    /**
+     * callable(runnable, x).toString() contains toString of wrapped task
+     */
+    public void testCallable_withResult_toString() {
+        if (testImplementationDetails) {
+            Runnable r = () -> {};
+            Callable<String> c = Executors.callable(r, "");
+            assertEquals(
+                identityString(c) + "[Wrapped task = " + r.toString() + "]",
+                c.toString());
+        }
+    }
+
+    /**
+     * callable(runnable).toString() contains toString of wrapped task
+     */
+    public void testCallable_toString() {
+        if (testImplementationDetails) {
+            Runnable r = () -> {};
+            Callable<Object> c = Executors.callable(r);
+            assertEquals(
+                identityString(c) + "[Wrapped task = " + r.toString() + "]",
+                c.toString());
+        }
+    }
+
+    /**
+     * privilegedCallable(callable).toString() contains toString of wrapped task
+     */
+    public void testPrivilegedCallable_toString() {
+        if (testImplementationDetails) {
+            Callable<String> c = () -> "";
+            Callable<String> priv = Executors.privilegedCallable(c);
+            assertEquals(
+                identityString(priv) + "[Wrapped task = " + c.toString() + "]",
+                priv.toString());
+        }
+    }
+
+    /**
+     * privilegedCallableUsingCurrentClassLoader(callable).toString()
+     * contains toString of wrapped task
+     */
+    public void testPrivilegedCallableUsingCurrentClassLoader_toString() {
+        if (testImplementationDetails) {
+            Callable<String> c = () -> "";
+            Callable<String> priv = Executors.privilegedCallableUsingCurrentClassLoader(c);
+            assertEquals(
+                identityString(priv) + "[Wrapped task = " + c.toString() + "]",
+                priv.toString());
+        }
+    }
 }

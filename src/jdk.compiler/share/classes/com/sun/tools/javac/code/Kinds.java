@@ -71,6 +71,7 @@ public class Kinds {
         HIDDEN(Category.RESOLUTION_TARGET),                            // not overloaded   non-target
         STATICERR(Category.RESOLUTION_TARGET),                         // overloaded?      target
         MISSING_ENCL(Category.RESOLUTION),                             // not overloaded   non-target
+        BAD_VAR(Category.RESOLUTION),                                  // not overloaded   non-target
         ABSENT_VAR(Category.RESOLUTION_TARGET, KindName.VAR),          // not overloaded   non-target
         WRONG_MTHS(Category.RESOLUTION_TARGET, KindName.METHOD),       // overloaded       target
         WRONG_MTH(Category.RESOLUTION_TARGET, KindName.METHOD),        // not overloaded   target

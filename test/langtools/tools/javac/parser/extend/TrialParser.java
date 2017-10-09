@@ -224,7 +224,7 @@ class TrialParser extends JavacParser {
                             //mods.flags |= Flags.STATIC;
                             List<JCTree> defs
                                     = variableDeclaratorsRest(pos, mods, t, name, false, dc,
-                                            new ListBuffer<JCTree>()).toList();
+                                            new ListBuffer<JCTree>(), true).toList();
                             accept(SEMI);
                             storeEnd(defs.last(), S.prevToken().endPos);
                             return defs;

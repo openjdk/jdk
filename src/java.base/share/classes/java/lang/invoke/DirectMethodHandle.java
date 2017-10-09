@@ -753,48 +753,53 @@ class DirectMethodHandle extends MethodHandle {
         return nf;
     }
 
+    private static final MethodType OBJ_OBJ_TYPE = MethodType.methodType(Object.class, Object.class);
+
+    private static final MethodType LONG_OBJ_TYPE = MethodType.methodType(long.class, Object.class);
+
     private static NamedFunction createFunction(byte func) {
         try {
             switch (func) {
                 case NF_internalMemberName:
-                    return new NamedFunction(DirectMethodHandle.class
-                            .getDeclaredMethod("internalMemberName", Object.class));
+                    return getNamedFunction("internalMemberName", OBJ_OBJ_TYPE);
                 case NF_internalMemberNameEnsureInit:
-                    return new NamedFunction(DirectMethodHandle.class
-                            .getDeclaredMethod("internalMemberNameEnsureInit", Object.class));
+                    return getNamedFunction("internalMemberNameEnsureInit", OBJ_OBJ_TYPE);
                 case NF_ensureInitialized:
-                    return new NamedFunction(DirectMethodHandle.class
-                            .getDeclaredMethod("ensureInitialized", Object.class));
+                    return getNamedFunction("ensureInitialized", MethodType.methodType(void.class, Object.class));
                 case NF_fieldOffset:
-                    return new NamedFunction(DirectMethodHandle.class
-                            .getDeclaredMethod("fieldOffset", Object.class));
+                    return getNamedFunction("fieldOffset", LONG_OBJ_TYPE);
                 case NF_checkBase:
-                    return new NamedFunction(DirectMethodHandle.class
-                            .getDeclaredMethod("checkBase", Object.class));
+                    return getNamedFunction("checkBase", OBJ_OBJ_TYPE);
                 case NF_staticBase:
-                    return new NamedFunction(DirectMethodHandle.class
-                            .getDeclaredMethod("staticBase", Object.class));
+                    return getNamedFunction("staticBase", OBJ_OBJ_TYPE);
                 case NF_staticOffset:
-                    return new NamedFunction(DirectMethodHandle.class
-                            .getDeclaredMethod("staticOffset", Object.class));
+                    return getNamedFunction("staticOffset", LONG_OBJ_TYPE);
                 case NF_checkCast:
-                    return new NamedFunction(DirectMethodHandle.class
-                            .getDeclaredMethod("checkCast", Object.class, Object.class));
+                    return getNamedFunction("checkCast", MethodType.methodType(Object.class, Object.class, Object.class));
                 case NF_allocateInstance:
-                    return new NamedFunction(DirectMethodHandle.class
-                            .getDeclaredMethod("allocateInstance", Object.class));
+                    return getNamedFunction("allocateInstance", OBJ_OBJ_TYPE);
                 case NF_constructorMethod:
-                    return new NamedFunction(DirectMethodHandle.class
-                            .getDeclaredMethod("constructorMethod", Object.class));
+                    return getNamedFunction("constructorMethod", OBJ_OBJ_TYPE);
                 case NF_UNSAFE:
-                    return new NamedFunction(new MemberName(MethodHandleStatics.class
-                            .getDeclaredField("UNSAFE")));
+                    MemberName member = new MemberName(MethodHandleStatics.class, "UNSAFE", Unsafe.class, REF_getField);
+                    return new NamedFunction(
+                            MemberName.getFactory()
+                                    .resolveOrFail(REF_getField, member, DirectMethodHandle.class, NoSuchMethodException.class));
                 default:
                     throw newInternalError("Unknown function: " + func);
             }
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
+    }
+
+    private static NamedFunction getNamedFunction(String name, MethodType type)
+        throws ReflectiveOperationException
+    {
+        MemberName member = new MemberName(DirectMethodHandle.class, name, type, REF_invokeStatic);
+        return new NamedFunction(
+            MemberName.getFactory()
+                .resolveOrFail(REF_invokeStatic, member, DirectMethodHandle.class, NoSuchMethodException.class));
     }
 
     static {

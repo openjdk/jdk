@@ -162,6 +162,29 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
         return (MethodType) type;
     }
 
+    /** Return the descriptor of this member, which
+     *  must be a method or constructor.
+     */
+    String getMethodDescriptor() {
+        if (type == null) {
+            expandFromVM();
+            if (type == null) {
+                return null;
+            }
+        }
+        if (!isInvocable()) {
+            throw newIllegalArgumentException("not invocable, no method type");
+        }
+
+        // Get a snapshot of type which doesn't get changed by racing threads.
+        final Object type = this.type;
+        if (type instanceof String) {
+            return (String) type;
+        } else {
+            return getMethodType().toMethodDescriptorString();
+        }
+    }
+
     /** Return the actual type under which this method or constructor must be invoked.
      *  For non-static methods or constructors, this is the type with a leading parameter,
      *  a reference to declaring class.  For static methods, it is the same as the declared type.

@@ -550,10 +550,10 @@ void
 fileDescriptorClose(JNIEnv *env, jobject this)
 {
     FD fd = (*env)->GetLongField(env, this, IO_handle_fdID);
+    HANDLE h = (HANDLE)fd;
     if ((*env)->ExceptionOccurred(env)) {
         return;
     }
-    HANDLE h = (HANDLE)fd;
 
     if (h == INVALID_HANDLE_VALUE) {
         return;

@@ -84,6 +84,9 @@ public class ThreadLocalRandomTest extends JSR166TestCase {
      * possible values.
      */
     public void testNext() throws ReflectiveOperationException {
+        // Inhibit "An illegal reflective access operation has occurred"
+        if (!testImplementationDetails) return;
+
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         final java.lang.reflect.Method m;
         try {

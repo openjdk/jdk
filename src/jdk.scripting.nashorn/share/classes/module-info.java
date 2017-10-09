@@ -44,8 +44,7 @@ ScriptEngine nashornEngine = new ScriptEngineManager().getEngineByName("nashorn"
 </pre>
  *
  * and then use it just as you would any other JSR-223 script engine. See
- * <a href="jdk/nashorn/api/scripting/package-summary.html">
- * {@code jdk.nashorn.api.scripting}</a> package for details.
+ * {@link jdk.nashorn.api.scripting} package for details.
  * <h1>Compatibility</h1>
  * Nashorn is 100% compliant with the
  * <a href="http://www.ecma-international.org/publications/standards/Ecma-262.htm"

@@ -79,4 +79,24 @@ public class SanityTest {
             throw new RuntimeException("NPE expected");
         } catch (NullPointerException e) {}
     }
+
+
+    @Test
+    public static void testUOEFromGetDeclaringClass() {
+        try {
+            StackWalker sw = StackWalker.getInstance();
+            sw.forEach(StackWalker.StackFrame::getDeclaringClass);
+            throw new RuntimeException("UOE expected");
+        } catch (UnsupportedOperationException expected) {
+        }
+    }
+
+    @Test
+    public static void testUOEFromGetMethodType() {
+        try {
+            StackWalker sw = StackWalker.getInstance();
+            sw.forEach(StackWalker.StackFrame::getMethodType);
+            throw new RuntimeException("UOE expected");
+        } catch (UnsupportedOperationException expected) {}
+    }
 }

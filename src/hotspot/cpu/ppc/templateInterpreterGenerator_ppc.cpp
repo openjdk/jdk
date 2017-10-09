@@ -1470,10 +1470,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // TODO PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
   __ stw(R0, thread_(thread_state));
 
-  if (UseMembar) {
-    __ fence();
-  }
-
   //=============================================================================
   // Call the native method. Argument registers must not have been
   // overwritten since "__ call_stub(signature_handler);" (except for
@@ -1594,9 +1590,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ li(R0/*thread_state*/, _thread_in_Java);
   __ release();
   __ stw(R0/*thread_state*/, thread_(thread_state));
-  if (UseMembar) {
-    __ fence();
-  }
 
   if (CheckJNICalls) {
     // clear_pending_jni_exception_check

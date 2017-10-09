@@ -1786,6 +1786,18 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             }
 
             @Override
+            public MethodType getMethodType(Object mname) {
+                MemberName memberName = (MemberName)mname;
+                return memberName.getMethodType();
+            }
+
+            @Override
+            public String getMethodDescriptor(Object mname) {
+                MemberName memberName = (MemberName)mname;
+                return memberName.getMethodDescriptor();
+            }
+
+            @Override
             public boolean isNative(Object mname) {
                 MemberName memberName = (MemberName)mname;
                 return memberName.isNative();

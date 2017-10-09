@@ -26,8 +26,9 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
+ * Written by Doug Lea and Martin Buchholz with assistance from
+ * members of JCP JSR-166 Expert Group and released to the public
+ * domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
  * Other contributors include Andrew Wright, Jeffrey Hayes,
  * Pat Fisher, Mike Judd.
@@ -45,14 +46,25 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class ConcurrentHashMapTest extends JSR166TestCase {
     public static void main(String[] args) {
         main(suite(), args);
     }
     public static Test suite() {
-        return new TestSuite(ConcurrentHashMapTest.class);
+        class Implementation implements MapImplementation {
+            public Class<?> klazz() { return ConcurrentHashMap.class; }
+            public Map emptyMap() { return new ConcurrentHashMap(); }
+            public Object makeKey(int i) { return i; }
+            public Object makeValue(int i) { return i; }
+            public boolean isConcurrent() { return true; }
+            public boolean permitsNullKeys() { return false; }
+            public boolean permitsNullValues() { return false; }
+            public boolean supportsSetValue() { return true; }
+        }
+        return newTestSuite(
+            ConcurrentHashMapTest.class,
+            MapTest.testSuite(new Implementation()));
     }
 
     /**

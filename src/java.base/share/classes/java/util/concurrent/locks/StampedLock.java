@@ -151,18 +151,20 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *   }
  *
  *   double distanceFromOrigin() { // A read-only method
+ *     double currentX, currentY;
  *     long stamp = sl.tryOptimisticRead();
- *     double currentX = x, currentY = y;
- *     if (!sl.validate(stamp)) {
- *       stamp = sl.readLock();
+ *     do {
+ *       if (stamp == 0L)
+ *         stamp = sl.readLock();
  *       try {
+ *         // possibly racy reads
  *         currentX = x;
  *         currentY = y;
  *       } finally {
- *         sl.unlockRead(stamp);
+ *         stamp = sl.tryConvertToOptimisticRead(stamp);
  *       }
- *     }
- *     return Math.sqrt(currentX * currentX + currentY * currentY);
+ *     } while (stamp == 0);
+ *     return Math.hypot(currentX, currentY);
  *   }
  *
  *   void moveIfAtOrigin(double newX, double newY) { // upgrade

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982 8162363 8175200
+ * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982 8162363 8175200 8186332
  * @summary A simple test to ensure class-use files are correct.
  * @author jamieh
  * @library ../lib
@@ -134,7 +134,7 @@ public class TestUseOption extends JavadocTester {
             "<td class=\"colFirst\"><code>void</code></td>\n<th class=\"colSecond\" scope=\"row\"><span class="
             + "\"typeNameLabel\">C1.</span><code><span class=\"memberNameLink\">"
             + "<a href=\"../../pkg1/C1.html#methodInC1ThrowsThrowable--\">methodInC1ThrowsThrowable"
-            + "</a></span>&#8203;()</code></th>"
+            + "</a></span>()</code></th>"
         );
     }
 

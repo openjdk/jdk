@@ -61,6 +61,9 @@ public class AbstractQueuedSynchronizerTest extends JSR166TestCase {
      * methods/features of AbstractQueuedSynchronizer are tested via
      * other test classes, including those for ReentrantLock,
      * ReentrantReadWriteLock, and Semaphore.
+     *
+     * Unlike the javadoc sample, we don't track owner thread via
+     * AbstractOwnableSynchronizer methods.
      */
     static class Mutex extends AbstractQueuedSynchronizer {
         /** An eccentric value for locked synchronizer state. */
@@ -68,18 +71,19 @@ public class AbstractQueuedSynchronizerTest extends JSR166TestCase {
 
         static final int UNLOCKED = 0;
 
+        /** Owner thread is untracked, so this is really just isLocked(). */
         @Override public boolean isHeldExclusively() {
             int state = getState();
             assertTrue(state == UNLOCKED || state == LOCKED);
             return state == LOCKED;
         }
 
-        @Override public boolean tryAcquire(int acquires) {
+        @Override protected boolean tryAcquire(int acquires) {
             assertEquals(LOCKED, acquires);
             return compareAndSetState(UNLOCKED, LOCKED);
         }
 
-        @Override public boolean tryRelease(int releases) {
+        @Override protected boolean tryRelease(int releases) {
             if (getState() != LOCKED) throw new IllegalMonitorStateException();
             assertEquals(LOCKED, releases);
             setState(UNLOCKED);
@@ -110,13 +114,14 @@ public class AbstractQueuedSynchronizerTest extends JSR166TestCase {
             release(LOCKED);
         }
 
+        /** Faux-Implements Lock.newCondition(). */
         public ConditionObject newCondition() {
             return new ConditionObject();
         }
     }
 
     /**
-     * A simple latch class, to test shared mode.
+     * A minimal latch class, to test shared mode.
      */
     static class BooleanLatch extends AbstractQueuedSynchronizer {
         public boolean isSignalled() { return getState() != 0; }

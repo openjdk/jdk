@@ -107,7 +107,17 @@ void VM_Version::initialize() {
   // TODO: PPC port PdScheduling::power6SectorSize = 0x20;
   }
 
-  MaxVectorSize = 8;
+  if (PowerArchitecturePPC64 >= 8) {
+    if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
+      FLAG_SET_ERGO(bool, SuperwordUseVSX, true);
+    }
+  } else {
+    if (SuperwordUseVSX) {
+      warning("SuperwordUseVSX specified, but needs at least Power8.");
+      FLAG_SET_DEFAULT(SuperwordUseVSX, false);
+    }
+  }
+  MaxVectorSize = SuperwordUseVSX ? 16 : 8;
 #endif
 
   // Create and print feature-string.

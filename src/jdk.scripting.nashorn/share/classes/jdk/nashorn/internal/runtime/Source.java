@@ -336,6 +336,7 @@ public final class Source implements Loggable {
             }
         }
 
+        @SuppressWarnings("try")
         protected void loadMeta() throws IOException {
             if (length == 0 && lastModified == 0) {
                 final URLConnection c = url.openConnection();
