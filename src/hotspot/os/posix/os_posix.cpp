@@ -1770,6 +1770,12 @@ int os::PlatformEvent::park(jlong millis) {
 
   if (v == 0) { // Do this the hard way by blocking ...
     struct timespec abst;
+    // We have to watch for overflow when converting millis to nanos,
+    // but if millis is that large then we will end up limiting to
+    // MAX_SECS anyway, so just do that here.
+    if (millis / MILLIUNITS > MAX_SECS) {
+      millis = jlong(MAX_SECS) * MILLIUNITS;
+    }
     to_abstime(&abst, millis * (NANOUNITS / MILLIUNITS), false);
 
     int ret = OS_TIMEOUT;
