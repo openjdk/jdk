@@ -2299,6 +2299,7 @@ class Assembler : public AbstractAssembler {
   // Endianess specific concatenation of 2 loaded vectors.
   inline void load_perm(VectorRegister perm, Register addr);
   inline void vec_perm(VectorRegister first_dest, VectorRegister second, VectorRegister perm);
+  inline void vec_perm(VectorRegister dest, VectorRegister first, VectorRegister second, VectorRegister perm);
 
   // RegisterOrConstant versions.
   // These emitters choose between the versions using two registers and

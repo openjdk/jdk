@@ -2667,7 +2667,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Arguments for generated stub (little endian only):
+  // Arguments for generated stub:
   //   R3_ARG1   - source byte array address
   //   R4_ARG2   - destination byte array address
   //   R5_ARG3   - round key array
@@ -2686,7 +2686,6 @@ class StubGenerator: public StubCodeGenerator {
     Register keylen         = R8;
     Register temp           = R9;
     Register keypos         = R10;
-    Register hex            = R11;
     Register fifteen        = R12;
 
     VectorRegister vRet     = VR0;
@@ -2706,164 +2705,170 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vTmp3    = VR11;
     VectorRegister vTmp4    = VR12;
 
-    VectorRegister vLow     = VR13;
-    VectorRegister vHigh    = VR14;
-
-    __ li              (hex, 16);
     __ li              (fifteen, 15);
-    __ vspltisb        (fSplt, 0x0f);
 
     // load unaligned from[0-15] to vsRet
     __ lvx             (vRet, from);
     __ lvx             (vTmp1, fifteen, from);
     __ lvsl            (fromPerm, from);
+#ifdef VM_LITTLE_ENDIAN
+    __ vspltisb        (fSplt, 0x0f);
     __ vxor            (fromPerm, fromPerm, fSplt);
+#endif
     __ vperm           (vRet, vRet, vTmp1, fromPerm);
 
     // load keylen (44 or 52 or 60)
     __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT), key);
 
     // to load keys
-    __ lvsr            (keyPerm, key);
-    __ vxor            (vTmp2, vTmp2, vTmp2);
+    __ load_perm       (keyPerm, key);
+#ifdef VM_LITTLE_ENDIAN
     __ vspltisb        (vTmp2, -16);
     __ vrld            (keyPerm, keyPerm, vTmp2);
     __ vrld            (keyPerm, keyPerm, vTmp2);
     __ vsldoi          (keyPerm, keyPerm, keyPerm, 8);
+#endif
 
-    // load the 1st round key to vKey1
-    __ li              (keypos, 0);
+    // load the 1st round key to vTmp1
+    __ lvx             (vTmp1, key);
+    __ li              (keypos, 16);
     __ lvx             (vKey1, keypos, key);
-    __ addi            (keypos, keypos, 16);
-    __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey1, vTmp1, vKey1, keyPerm);
+    __ vec_perm        (vTmp1, vKey1, keyPerm);
 
     // 1st round
-    __ vxor (vRet, vRet, vKey1);
+    __ vxor            (vRet, vRet, vTmp1);
 
     // load the 2nd round key to vKey1
-    __ addi            (keypos, keypos, 16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
+    __ li              (keypos, 32);
+    __ lvx             (vKey2, keypos, key);
+    __ vec_perm        (vKey1, vKey2, keyPerm);
 
     // load the 3rd round key to vKey2
-    __ addi            (keypos, keypos, 16);
-    __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
+    __ li              (keypos, 48);
+    __ lvx             (vKey3, keypos, key);
+    __ vec_perm        (vKey2, vKey3, keyPerm);
 
     // load the 4th round key to vKey3
-    __ addi            (keypos, keypos, 16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey3, vTmp2, vTmp1, keyPerm);
+    __ li              (keypos, 64);
+    __ lvx             (vKey4, keypos, key);
+    __ vec_perm        (vKey3, vKey4, keyPerm);
 
     // load the 5th round key to vKey4
-    __ addi            (keypos, keypos, 16);
+    __ li              (keypos, 80);
     __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey4, vTmp1, vTmp2, keyPerm);
+    __ vec_perm        (vKey4, vTmp1, keyPerm);
 
     // 2nd - 5th rounds
-    __ vcipher (vRet, vRet, vKey1);
-    __ vcipher (vRet, vRet, vKey2);
-    __ vcipher (vRet, vRet, vKey3);
-    __ vcipher (vRet, vRet, vKey4);
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
+    __ vcipher         (vRet, vRet, vKey3);
+    __ vcipher         (vRet, vRet, vKey4);
 
     // load the 6th round key to vKey1
-    __ addi            (keypos, keypos, 16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
+    __ li              (keypos, 96);
+    __ lvx             (vKey2, keypos, key);
+    __ vec_perm        (vKey1, vTmp1, vKey2, keyPerm);
 
     // load the 7th round key to vKey2
-    __ addi            (keypos, keypos, 16);
-    __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
+    __ li              (keypos, 112);
+    __ lvx             (vKey3, keypos, key);
+    __ vec_perm        (vKey2, vKey3, keyPerm);
 
     // load the 8th round key to vKey3
-    __ addi            (keypos, keypos, 16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey3, vTmp2, vTmp1, keyPerm);
+    __ li              (keypos, 128);
+    __ lvx             (vKey4, keypos, key);
+    __ vec_perm        (vKey3, vKey4, keyPerm);
 
     // load the 9th round key to vKey4
-    __ addi            (keypos, keypos, 16);
+    __ li              (keypos, 144);
     __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey4, vTmp1, vTmp2, keyPerm);
+    __ vec_perm        (vKey4, vTmp1, keyPerm);
 
     // 6th - 9th rounds
-    __ vcipher (vRet, vRet, vKey1);
-    __ vcipher (vRet, vRet, vKey2);
-    __ vcipher (vRet, vRet, vKey3);
-    __ vcipher (vRet, vRet, vKey4);
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
+    __ vcipher         (vRet, vRet, vKey3);
+    __ vcipher         (vRet, vRet, vKey4);
 
     // load the 10th round key to vKey1
-    __ addi            (keypos, keypos, 16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
+    __ li              (keypos, 160);
+    __ lvx             (vKey2, keypos, key);
+    __ vec_perm        (vKey1, vTmp1, vKey2, keyPerm);
 
     // load the 11th round key to vKey2
-    __ addi            (keypos, keypos, 16);
+    __ li              (keypos, 176);
     __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
+    __ vec_perm        (vKey2, vTmp1, keyPerm);
 
     // if all round keys are loaded, skip next 4 rounds
     __ cmpwi           (CCR0, keylen, 44);
     __ beq             (CCR0, L_doLast);
 
     // 10th - 11th rounds
-    __ vcipher (vRet, vRet, vKey1);
-    __ vcipher (vRet, vRet, vKey2);
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
 
     // load the 12th round key to vKey1
-    __ addi            (keypos, keypos, 16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
+    __ li              (keypos, 192);
+    __ lvx             (vKey2, keypos, key);
+    __ vec_perm        (vKey1, vTmp1, vKey2, keyPerm);
 
     // load the 13th round key to vKey2
-    __ addi            (keypos, keypos, 16);
+    __ li              (keypos, 208);
     __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
+    __ vec_perm        (vKey2, vTmp1, keyPerm);
 
     // if all round keys are loaded, skip next 2 rounds
     __ cmpwi           (CCR0, keylen, 52);
     __ beq             (CCR0, L_doLast);
 
     // 12th - 13th rounds
-    __ vcipher (vRet, vRet, vKey1);
-    __ vcipher (vRet, vRet, vKey2);
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
 
     // load the 14th round key to vKey1
-    __ addi            (keypos, keypos, 16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
+    __ li              (keypos, 224);
+    __ lvx             (vKey2, keypos, key);
+    __ vec_perm        (vKey1, vTmp1, vKey2, keyPerm);
 
     // load the 15th round key to vKey2
-    __ addi            (keypos, keypos, 16);
+    __ li              (keypos, 240);
     __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
+    __ vec_perm        (vKey2, vTmp1, keyPerm);
 
     __ bind(L_doLast);
 
     // last two rounds
-    __ vcipher (vRet, vRet, vKey1);
-    __ vcipherlast (vRet, vRet, vKey2);
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipherlast     (vRet, vRet, vKey2);
 
-    __ neg             (temp, to);
-    __ lvsr            (toPerm, temp);
-    __ vspltisb        (vTmp2, -1);
-    __ vxor            (vTmp1, vTmp1, vTmp1);
-    __ vperm           (vTmp2, vTmp2, vTmp1, toPerm);
-    __ vxor            (toPerm, toPerm, fSplt);
+    // store result (unaligned)
+#ifdef VM_LITTLE_ENDIAN
+    __ lvsl            (toPerm, to);
+#else
+    __ lvsr            (toPerm, to);
+#endif
+    __ vspltisb        (vTmp3, -1);
+    __ vspltisb        (vTmp4, 0);
     __ lvx             (vTmp1, to);
-    __ vperm           (vRet, vRet, vRet, toPerm);
-    __ vsel            (vTmp1, vTmp1, vRet, vTmp2);
-    __ lvx             (vTmp4, fifteen, to);
+    __ lvx             (vTmp2, fifteen, to);
+#ifdef VM_LITTLE_ENDIAN
+    __ vperm           (vTmp3, vTmp3, vTmp4, toPerm); // generate select mask
+    __ vxor            (toPerm, toPerm, fSplt);       // swap bytes
+#else
+    __ vperm           (vTmp3, vTmp4, vTmp3, toPerm); // generate select mask
+#endif
+    __ vperm           (vTmp4, vRet, vRet, toPerm);   // rotate data
+    __ vsel            (vTmp2, vTmp4, vTmp2, vTmp3);
+    __ vsel            (vTmp1, vTmp1, vTmp4, vTmp3);
+    __ stvx            (vTmp2, fifteen, to);          // store this one first (may alias)
     __ stvx            (vTmp1, to);
-    __ vsel            (vRet, vRet, vTmp4, vTmp2);
-    __ stvx            (vRet, fifteen, to);
 
     __ blr();
      return start;
   }
 
-  // Arguments for generated stub (little endian only):
+  // Arguments for generated stub:
   //   R3_ARG1   - source byte array address
   //   R4_ARG2   - destination byte array address
   //   R5_ARG3   - K (key) in little endian int array
@@ -2885,7 +2890,6 @@ class StubGenerator: public StubCodeGenerator {
     Register keylen         = R8;
     Register temp           = R9;
     Register keypos         = R10;
-    Register hex            = R11;
     Register fifteen        = R12;
 
     VectorRegister vRet     = VR0;
@@ -2906,30 +2910,30 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vTmp3    = VR12;
     VectorRegister vTmp4    = VR13;
 
-    VectorRegister vLow     = VR14;
-    VectorRegister vHigh    = VR15;
-
-    __ li              (hex, 16);
     __ li              (fifteen, 15);
-    __ vspltisb        (fSplt, 0x0f);
 
     // load unaligned from[0-15] to vsRet
     __ lvx             (vRet, from);
     __ lvx             (vTmp1, fifteen, from);
     __ lvsl            (fromPerm, from);
+#ifdef VM_LITTLE_ENDIAN
+    __ vspltisb        (fSplt, 0x0f);
     __ vxor            (fromPerm, fromPerm, fSplt);
+#endif
     __ vperm           (vRet, vRet, vTmp1, fromPerm); // align [and byte swap in LE]
 
     // load keylen (44 or 52 or 60)
     __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT), key);
 
     // to load keys
-    __ lvsr            (keyPerm, key);
+    __ load_perm       (keyPerm, key);
+#ifdef VM_LITTLE_ENDIAN
     __ vxor            (vTmp2, vTmp2, vTmp2);
     __ vspltisb        (vTmp2, -16);
     __ vrld            (keyPerm, keyPerm, vTmp2);
     __ vrld            (keyPerm, keyPerm, vTmp2);
     __ vsldoi          (keyPerm, keyPerm, keyPerm, 8);
+#endif
 
     __ cmpwi           (CCR0, keylen, 44);
     __ beq             (CCR0, L_do44);
@@ -2937,32 +2941,32 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpwi           (CCR0, keylen, 52);
     __ beq             (CCR0, L_do52);
 
-    // load the 15th round key to vKey11
+    // load the 15th round key to vKey1
     __ li              (keypos, 240);
+    __ lvx             (vKey1, keypos, key);
+    __ li              (keypos, 224);
+    __ lvx             (vKey2, keypos, key);
+    __ vec_perm        (vKey1, vKey2, vKey1, keyPerm);
+
+    // load the 14th round key to vKey2
+    __ li              (keypos, 208);
+    __ lvx             (vKey3, keypos, key);
+    __ vec_perm        (vKey2, vKey3, vKey2, keyPerm);
+
+    // load the 13th round key to vKey3
+    __ li              (keypos, 192);
+    __ lvx             (vKey4, keypos, key);
+    __ vec_perm        (vKey3, vKey4, vKey3, keyPerm);
+
+    // load the 12th round key to vKey4
+    __ li              (keypos, 176);
+    __ lvx             (vKey5, keypos, key);
+    __ vec_perm        (vKey4, vKey5, vKey4, keyPerm);
+
+    // load the 11th round key to vKey5
+    __ li              (keypos, 160);
     __ lvx             (vTmp1, keypos, key);
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey1, vTmp1, vTmp2, keyPerm);
-
-    // load the 14th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey2, vTmp2, vTmp1, keyPerm);
-
-    // load the 13th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey3, vTmp1, vTmp2, keyPerm);
-
-    // load the 12th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey4, vTmp2, vTmp1, keyPerm);
-
-    // load the 11th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey5, vTmp1, vTmp2, keyPerm);
+    __ vec_perm        (vKey5, vTmp1, vKey5, keyPerm);
 
     // 1st - 5th rounds
     __ vxor            (vRet, vRet, vKey1);
@@ -2975,22 +2979,22 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind            (L_do52);
 
-    // load the 13th round key to vKey11
+    // load the 13th round key to vKey1
     __ li              (keypos, 208);
-    __ lvx             (vTmp1, keypos, key);
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey1, vTmp1, vTmp2, keyPerm);
+    __ lvx             (vKey1, keypos, key);
+    __ li              (keypos, 192);
+    __ lvx             (vKey2, keypos, key);
+    __ vec_perm        (vKey1, vKey2, vKey1, keyPerm);
 
-    // load the 12th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey2, vTmp2, vTmp1, keyPerm);
+    // load the 12th round key to vKey2
+    __ li              (keypos, 176);
+    __ lvx             (vKey3, keypos, key);
+    __ vec_perm        (vKey2, vKey3, vKey2, keyPerm);
 
-    // load the 11th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey3, vTmp1, vTmp2, keyPerm);
+    // load the 11th round key to vKey3
+    __ li              (keypos, 160);
+    __ lvx             (vTmp1, keypos, key);
+    __ vec_perm        (vKey3, vTmp1, vKey3, keyPerm);
 
     // 1st - 3rd rounds
     __ vxor            (vRet, vRet, vKey1);
@@ -3001,42 +3005,42 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind            (L_do44);
 
-    // load the 11th round key to vKey11
+    // load the 11th round key to vKey1
     __ li              (keypos, 176);
+    __ lvx             (vKey1, keypos, key);
+    __ li              (keypos, 160);
     __ lvx             (vTmp1, keypos, key);
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey1, vTmp1, vTmp2, keyPerm);
+    __ vec_perm        (vKey1, vTmp1, vKey1, keyPerm);
 
     // 1st round
     __ vxor            (vRet, vRet, vKey1);
 
     __ bind            (L_doLast);
 
-    // load the 10th round key to vKey10
-    __ addi            (keypos, keypos, -16);
+    // load the 10th round key to vKey1
+    __ li              (keypos, 144);
+    __ lvx             (vKey2, keypos, key);
+    __ vec_perm        (vKey1, vKey2, vTmp1, keyPerm);
+
+    // load the 9th round key to vKey2
+    __ li              (keypos, 128);
+    __ lvx             (vKey3, keypos, key);
+    __ vec_perm        (vKey2, vKey3, vKey2, keyPerm);
+
+    // load the 8th round key to vKey3
+    __ li              (keypos, 112);
+    __ lvx             (vKey4, keypos, key);
+    __ vec_perm        (vKey3, vKey4, vKey3, keyPerm);
+
+    // load the 7th round key to vKey4
+    __ li              (keypos, 96);
+    __ lvx             (vKey5, keypos, key);
+    __ vec_perm        (vKey4, vKey5, vKey4, keyPerm);
+
+    // load the 6th round key to vKey5
+    __ li              (keypos, 80);
     __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey1, vTmp2, vTmp1, keyPerm);
-
-    // load the 9th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey2, vTmp1, vTmp2, keyPerm);
-
-    // load the 8th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey3, vTmp2, vTmp1, keyPerm);
-
-    // load the 7th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey4, vTmp1, vTmp2, keyPerm);
-
-    // load the 6th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey5, vTmp2, vTmp1, keyPerm);
+    __ vec_perm        (vKey5, vTmp1, vKey5, keyPerm);
 
     // last 10th - 6th rounds
     __ vncipher        (vRet, vRet, vKey1);
@@ -3045,30 +3049,29 @@ class StubGenerator: public StubCodeGenerator {
     __ vncipher        (vRet, vRet, vKey4);
     __ vncipher        (vRet, vRet, vKey5);
 
-    // load the 5th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey1, vTmp1, vTmp2, keyPerm);
+    // load the 5th round key to vKey1
+    __ li              (keypos, 64);
+    __ lvx             (vKey2, keypos, key);
+    __ vec_perm        (vKey1, vKey2, vTmp1, keyPerm);
 
-    // load the 4th round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey2, vTmp2, vTmp1, keyPerm);
+    // load the 4th round key to vKey2
+    __ li              (keypos, 48);
+    __ lvx             (vKey3, keypos, key);
+    __ vec_perm        (vKey2, vKey3, vKey2, keyPerm);
 
-    // load the 3rd round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey3, vTmp1, vTmp2, keyPerm);
+    // load the 3rd round key to vKey3
+    __ li              (keypos, 32);
+    __ lvx             (vKey4, keypos, key);
+    __ vec_perm        (vKey3, vKey4, vKey3, keyPerm);
 
-    // load the 2nd round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp1, keypos, key);
-    __ vperm           (vKey4, vTmp2, vTmp1, keyPerm);
+    // load the 2nd round key to vKey4
+    __ li              (keypos, 16);
+    __ lvx             (vKey5, keypos, key);
+    __ vec_perm        (vKey4, vKey5, vKey4, keyPerm);
 
-    // load the 1st round key to vKey10
-    __ addi            (keypos, keypos, -16);
-    __ lvx             (vTmp2, keypos, key);
-    __ vperm           (vKey5, vTmp1, vTmp2, keyPerm);
+    // load the 1st round key to vKey5
+    __ lvx             (vTmp1, key);
+    __ vec_perm        (vKey5, vTmp1, vKey5, keyPerm);
 
     // last 5th - 1th rounds
     __ vncipher        (vRet, vRet, vKey1);
@@ -3077,19 +3080,27 @@ class StubGenerator: public StubCodeGenerator {
     __ vncipher        (vRet, vRet, vKey4);
     __ vncipherlast    (vRet, vRet, vKey5);
 
-    __ neg             (temp, to);
-    __ lvsr            (toPerm, temp);
-    __ vspltisb        (vTmp2, -1);
-    __ vxor            (vTmp1, vTmp1, vTmp1);
-    __ vperm           (vTmp2, vTmp2, vTmp1, toPerm);
-    __ vxor            (toPerm, toPerm, fSplt);
+    // store result (unaligned)
+#ifdef VM_LITTLE_ENDIAN
+    __ lvsl            (toPerm, to);
+#else
+    __ lvsr            (toPerm, to);
+#endif
+    __ vspltisb        (vTmp3, -1);
+    __ vspltisb        (vTmp4, 0);
     __ lvx             (vTmp1, to);
-    __ vperm           (vRet, vRet, vRet, toPerm);
-    __ vsel            (vTmp1, vTmp1, vRet, vTmp2);
-    __ lvx             (vTmp4, fifteen, to);
+    __ lvx             (vTmp2, fifteen, to);
+#ifdef VM_LITTLE_ENDIAN
+    __ vperm           (vTmp3, vTmp3, vTmp4, toPerm); // generate select mask
+    __ vxor            (toPerm, toPerm, fSplt);       // swap bytes
+#else
+    __ vperm           (vTmp3, vTmp4, vTmp3, toPerm); // generate select mask
+#endif
+    __ vperm           (vTmp4, vRet, vRet, toPerm);   // rotate data
+    __ vsel            (vTmp2, vTmp4, vTmp2, vTmp3);
+    __ vsel            (vTmp1, vTmp1, vTmp4, vTmp3);
+    __ stvx            (vTmp2, fifteen, to);          // store this one first (may alias)
     __ stvx            (vTmp1, to);
-    __ vsel            (vRet, vRet, vTmp4, vTmp2);
-    __ stvx            (vRet, fifteen, to);
 
     __ blr();
      return start;
