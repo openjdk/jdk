@@ -501,7 +501,7 @@ jchar oopDesc::char_field_acquire(int offset) const                   { return O
 void oopDesc::release_char_field_put(int offset, jchar contents)      { OrderAccess::release_store(char_field_addr(offset), contents); }
 
 jboolean oopDesc::bool_field_acquire(int offset) const                { return OrderAccess::load_acquire(bool_field_addr(offset));     }
-void oopDesc::release_bool_field_put(int offset, jboolean contents)   { OrderAccess::release_store(bool_field_addr(offset), (contents & 1)); }
+void oopDesc::release_bool_field_put(int offset, jboolean contents)   { OrderAccess::release_store(bool_field_addr(offset), jboolean(contents & 1)); }
 
 jint oopDesc::int_field_acquire(int offset) const                     { return OrderAccess::load_acquire(int_field_addr(offset));      }
 void oopDesc::release_int_field_put(int offset, jint contents)        { OrderAccess::release_store(int_field_addr(offset), contents);  }
