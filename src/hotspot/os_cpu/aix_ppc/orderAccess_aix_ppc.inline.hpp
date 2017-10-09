@@ -78,16 +78,17 @@ inline void OrderAccess::acquire()    { inlasm_lwsync(); }
 inline void OrderAccess::release()    { inlasm_lwsync(); }
 inline void OrderAccess::fence()      { inlasm_sync();   }
 
-template<> inline jbyte  OrderAccess::specialized_load_acquire<jbyte> (const volatile jbyte*  p) { register jbyte t = load(p);  inlasm_acquire_reg(t); return t; }
-template<> inline jshort OrderAccess::specialized_load_acquire<jshort>(const volatile jshort* p) { register jshort t = load(p); inlasm_acquire_reg(t); return t; }
-template<> inline jint   OrderAccess::specialized_load_acquire<jint>  (const volatile jint*   p) { register jint t = load(p);   inlasm_acquire_reg(t); return t; }
-template<> inline jlong  OrderAccess::specialized_load_acquire<jlong> (const volatile jlong*  p) { register jlong t = load(p);  inlasm_acquire_reg(t); return t; }
+template<size_t byte_size>
+struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  T operator()(const volatile T* p) const { register T t = Atomic::load(p); inlasm_acquire_reg(t); return t; }
+};
 
 #undef inlasm_sync
 #undef inlasm_lwsync
 #undef inlasm_eieio
 #undef inlasm_isync
-
-#define VM_HAS_GENERALIZED_ORDER_ACCESS 1
 
 #endif // OS_CPU_AIX_OJDKPPC_VM_ORDERACCESS_AIX_PPC_INLINE_HPP

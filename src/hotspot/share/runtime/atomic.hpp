@@ -44,7 +44,7 @@ enum cmpxchg_memory_order {
 };
 
 class Atomic : AllStatic {
- public:
+public:
   // Atomic operations on jlong types are not available on all 32-bit
   // platforms. If atomic ops on jlongs are defined here they must only
   // be used from code that verifies they are available at runtime and
@@ -175,6 +175,7 @@ private:
   // that is needed here.
   template<typename From, typename To> struct IsPointerConvertible;
 
+protected:
   // Dispatch handler for store.  Provides type-based validity
   // checking and limited conversions around calls to the platform-
   // specific implementation layer provided by PlatformOp.
@@ -226,6 +227,7 @@ private:
   // requires more for e.g. 64 bit loads, a specialization is required
   template<size_t byte_size> struct PlatformLoad;
 
+private:
   // Dispatch handler for add.  Provides type-based validity checking
   // and limited conversions around calls to the platform-specific
   // implementation layer provided by PlatformAdd.

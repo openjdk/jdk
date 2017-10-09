@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,5 @@ inline void OrderAccess::release()    { compiler_barrier(); }
 inline void OrderAccess::fence() {
   __asm__ volatile ("membar  #StoreLoad" : : : "memory");
 }
-
-#define VM_HAS_GENERALIZED_ORDER_ACCESS 1
 
 #endif // OS_CPU_LINUX_SPARC_VM_ORDERACCESS_LINUX_SPARC_INLINE_HPP

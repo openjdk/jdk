@@ -526,7 +526,7 @@ void Monitor::IUnlock(bool RelaxAssert) {
   // Note that the OrderAccess::storeload() fence that appears after unlock store
   // provides for progress conditions and succession and is _not related to exclusion
   // safety or lock release consistency.
-  OrderAccess::release_store(&_LockWord.Bytes[_LSBINDEX], 0); // drop outer lock
+  OrderAccess::release_store(&_LockWord.Bytes[_LSBINDEX], jbyte(0)); // drop outer lock
 
   OrderAccess::storeload();
   ParkEvent * const w = _OnDeck; // raw load as we will just return if non-NULL
