@@ -1437,10 +1437,18 @@ class Assembler : public AbstractAssembler {
     // unsigned arithmetic calculation instructions
     // Mask bit#0 is not used by these instructions.
     // There is no indication of overflow for these instr.
-    bcondLogZero             =  2,
-    bcondLogNotZero          =  5,
+    bcondLogZero_NoCarry     =  8,
+    bcondLogZero_Carry       =  2,
+    // bcondLogZero_Borrow      =  8,  // This CC is never generated.
+    bcondLogZero_NoBorrow    =  2,
+    bcondLogZero             =  bcondLogZero_Carry | bcondLogZero_NoCarry,
+    bcondLogNotZero_NoCarry  =  4,
+    bcondLogNotZero_Carry    =  1,
     bcondLogNotZero_Borrow   =  4,
     bcondLogNotZero_NoBorrow =  1,
+    bcondLogNotZero          =  bcondLogNotZero_Carry | bcondLogNotZero_NoCarry,
+    bcondLogCarry            =  bcondLogZero_Carry | bcondLogNotZero_Carry,
+    bcondLogBorrow           =  /* bcondLogZero_Borrow | */ bcondLogNotZero_Borrow,
     // string search instructions
     bcondFound       =  4,
     bcondNotFound    =  2,
@@ -2117,13 +2125,16 @@ class Assembler : public AbstractAssembler {
   inline void z_alsi( const Address& d, int64_t i2);              // add logical   *(d) += i2_imm8           ; uint32  -- z10
   inline void z_algsi(const Address& d, int64_t i2);              // add logical   *(d) += i2_imm8           ; uint64  -- z10
 
-  // negate
+  // sign adjustment
   inline void z_lcr(  Register r1, Register r2 = noreg);              // neg r1 = -r2   ; int32
   inline void z_lcgr( Register r1, Register r2 = noreg);              // neg r1 = -r2   ; int64
   inline void z_lcgfr(Register r1, Register r2);                      // neg r1 = -r2   ; int64 <- int32
   inline void z_lnr(  Register r1, Register r2 = noreg);              // neg r1 = -|r2| ; int32
   inline void z_lngr( Register r1, Register r2 = noreg);              // neg r1 = -|r2| ; int64
   inline void z_lngfr(Register r1, Register r2);                      // neg r1 = -|r2| ; int64 <- int32
+  inline void z_lpr(  Register r1, Register r2 = noreg);              //     r1 =  |r2| ; int32
+  inline void z_lpgr( Register r1, Register r2 = noreg);              //     r1 =  |r2| ; int64
+  inline void z_lpgfr(Register r1, Register r2);                      //     r1 =  |r2| ; int64 <- int32
 
   // subtract intstructions
   // sub registers

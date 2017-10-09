@@ -309,6 +309,9 @@ inline void Assembler::z_lcgfr(Register r1, Register r2) { emit_32( LCGFR_ZOPC |
 inline void Assembler::z_lnr(  Register r1, Register r2) { emit_16( LNR_ZOPC   | regt( r1,  8, 16) | reg((r2 == noreg) ? r1:r2, 12, 16)); }
 inline void Assembler::z_lngr( Register r1, Register r2) { emit_32( LNGR_ZOPC  | regt( r1, 24, 32) | reg((r2 == noreg) ? r1:r2, 28, 32)); }
 inline void Assembler::z_lngfr(Register r1, Register r2) { emit_32( LNGFR_ZOPC | regt( r1, 24, 32) | reg((r2 == noreg) ? r1:r2, 28, 32)); }
+inline void Assembler::z_lpr(  Register r1, Register r2) { emit_16( LPR_ZOPC   | regt( r1,  8, 16) | reg((r2 == noreg) ? r1:r2, 12, 16)); }
+inline void Assembler::z_lpgr( Register r1, Register r2) { emit_32( LPGR_ZOPC  | regt( r1, 24, 32) | reg((r2 == noreg) ? r1:r2, 28, 32)); }
+inline void Assembler::z_lpgfr(Register r1, Register r2) { emit_32( LPGFR_ZOPC | regt( r1, 24, 32) | reg((r2 == noreg) ? r1:r2, 28, 32)); }
 
 inline void Assembler::z_lrvr( Register r1, Register r2) { emit_32( LRVR_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_lrvgr(Register r1, Register r2) { emit_32( LRVGR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)); }

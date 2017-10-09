@@ -3149,7 +3149,7 @@ operand noArg_iRegI() %{
   interface(REG_INTER);
 %}
 
-// Revenregi and roddRegI constitute and even-odd-pair.
+// revenRegI and roddRegI constitute and even-odd-pair.
 operand revenRegI() %{
   constraint(ALLOC_IN_RC(z_rarg3_int_reg));
   match(iRegI);
@@ -3157,7 +3157,7 @@ operand revenRegI() %{
   interface(REG_INTER);
 %}
 
-// Revenregi and roddRegI constitute and even-odd-pair.
+// revenRegI and roddRegI constitute and even-odd-pair.
 operand roddRegI() %{
   constraint(ALLOC_IN_RC(z_rarg4_int_reg));
   match(iRegI);
@@ -3283,7 +3283,7 @@ operand memoryRegP() %{
   interface(REG_INTER);
 %}
 
-// Revenregp and roddRegP constitute and even-odd-pair.
+// revenRegP and roddRegP constitute and even-odd-pair.
 operand revenRegP() %{
   constraint(ALLOC_IN_RC(z_rarg3_ptr_reg));
   match(iRegP);
@@ -3291,7 +3291,7 @@ operand revenRegP() %{
   interface(REG_INTER);
 %}
 
-// Revenregl and roddRegL constitute and even-odd-pair.
+// revenRegP and roddRegP constitute and even-odd-pair.
 operand roddRegP() %{
   constraint(ALLOC_IN_RC(z_rarg4_ptr_reg));
   match(iRegP);
@@ -3380,7 +3380,7 @@ operand iRegL() %{
   interface(REG_INTER);
 %}
 
-// Revenregl and roddRegL constitute and even-odd-pair.
+// revenRegL and roddRegL constitute and even-odd-pair.
 operand revenRegL() %{
   constraint(ALLOC_IN_RC(z_rarg3_long_reg));
   match(iRegL);
@@ -3388,7 +3388,7 @@ operand revenRegL() %{
   interface(REG_INTER);
 %}
 
-// Revenregl and roddRegL constitute and even-odd-pair.
+// revenRegL and roddRegL constitute and even-odd-pair.
 operand roddRegL() %{
   constraint(ALLOC_IN_RC(z_rarg4_long_reg));
   match(iRegL);
@@ -6440,6 +6440,32 @@ instruct mulL_Reg_mem(iRegL dst, memory src)%{
   format %{ "MSG     $dst, $src\t # long" %}
   opcode(MSG_ZOPC, MSG_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct mulHiL_reg_reg(revenRegL Rdst, roddRegL Rsrc1, iRegL Rsrc2, iRegL Rtmp1, flagsReg cr)%{
+  match(Set Rdst (MulHiL Rsrc1 Rsrc2));
+  effect(TEMP_DEF Rdst, USE_KILL Rsrc1, TEMP Rtmp1, KILL cr);
+  ins_cost(7*DEFAULT_COST);
+  // TODO: s390 port size(VARIABLE_SIZE);
+  format %{ "MulHiL  $Rdst, $Rsrc1, $Rsrc2\t # Multiply High Long" %}
+  ins_encode%{
+    Register dst  = $Rdst$$Register;
+    Register src1 = $Rsrc1$$Register;
+    Register src2 = $Rsrc2$$Register;
+    Register tmp1 = $Rtmp1$$Register;
+    Register tmp2 = $Rdst$$Register;
+    // z/Architecture has only unsigned multiply (64 * 64 -> 128).
+    // implementing mulhs(a,b) = mulhu(a,b) – (a & (b>>63)) – (b & (a>>63))
+    __ z_srag(tmp2, src1, 63);  // a>>63
+    __ z_srag(tmp1, src2, 63);  // b>>63
+    __ z_ngr(tmp2, src2);       // b & (a>>63)
+    __ z_ngr(tmp1, src1);       // a & (b>>63)
+    __ z_agr(tmp1, tmp2);       // ((a & (b>>63)) + (b & (a>>63)))
+    __ z_mlgr(dst, src2);       // tricky: 128-bit product is written to even/odd pair (dst,src1),
+                                //         multiplicand is taken from oddReg (src1), multiplier in src2.
+    __ z_sgr(dst, tmp1);
+  %}
   ins_pipe(pipe_class_dummy);
 %}
 
