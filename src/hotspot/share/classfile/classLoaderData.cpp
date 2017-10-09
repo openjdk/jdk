@@ -98,7 +98,8 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
   _keep_alive((is_anonymous || h_class_loader.is_null()) ? 1 : 0),
   _metaspace(NULL), _unloading(false), _klasses(NULL),
   _modules(NULL), _packages(NULL),
-  _claimed(0), _jmethod_ids(NULL), _handles(), _deallocate_list(NULL),
+  _claimed(0), _modified_oops(true), _accumulated_modified_oops(false),
+  _jmethod_ids(NULL), _handles(), _deallocate_list(NULL),
   _next(NULL), _dependencies(dependencies),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
                             Monitor::_safepoint_check_never)) {
@@ -207,7 +208,7 @@ bool ClassLoaderData::ChunkedHandleList::contains(oop* p) {
   oops_do(&cl);
   return cl.found();
 }
-#endif
+#endif // ASSERT
 
 bool ClassLoaderData::claim() {
   if (_claimed == 1) {
@@ -236,19 +237,19 @@ void ClassLoaderData::dec_keep_alive() {
   }
 }
 
-void ClassLoaderData::oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {
+void ClassLoaderData::oops_do(OopClosure* f, bool must_claim, bool clear_mod_oops) {
   if (must_claim && !claim()) {
     return;
   }
 
+  // Only clear modified_oops after the ClassLoaderData is claimed.
+  if (clear_mod_oops) {
+    clear_modified_oops();
+  }
+
   f->do_oop(&_class_loader);
   _dependencies.oops_do(f);
-
   _handles.oops_do(f);
-
-  if (klass_closure != NULL) {
-    classes_do(klass_closure);
-  }
 }
 
 void ClassLoaderData::Dependencies::oops_do(OopClosure* f) {
@@ -368,6 +369,9 @@ void ClassLoaderData::record_dependency(const Klass* k, TRAPS) {
   // Must handle over GC point.
   Handle dependency(THREAD, to);
   from_cld->_dependencies.add(dependency, CHECK);
+
+  // Added a potentially young gen oop to the ClassLoaderData
+  record_modified_oops();
 }
 
 
@@ -764,6 +768,7 @@ Metaspace* ClassLoaderData::metaspace_non_null() {
 
 OopHandle ClassLoaderData::add_handle(Handle h) {
   MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+  record_modified_oops();
   return OopHandle(_handles.add(h()));
 }
 
@@ -875,8 +880,7 @@ void ClassLoaderData::dump(outputStream * const out) {
   if (Verbose) {
     Klass* k = _klasses;
     while (k != NULL) {
-      out->print_cr("klass " PTR_FORMAT ", %s, CT: %d, MUT: %d", k, k->name()->as_C_string(),
-          k->has_modified_oops(), k->has_accumulated_modified_oops());
+      out->print_cr("klass " PTR_FORMAT ", %s", p2i(k), k->name()->as_C_string());
       assert(k != k->next_link(), "no loops!");
       k = k->next_link();
     }
@@ -1003,25 +1007,25 @@ void ClassLoaderDataGraph::print_creation(outputStream* out, Handle loader, Clas
 }
 
 
-void ClassLoaderDataGraph::oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {
+void ClassLoaderDataGraph::oops_do(OopClosure* f, bool must_claim) {
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    cld->oops_do(f, klass_closure, must_claim);
+    cld->oops_do(f, must_claim);
   }
 }
 
-void ClassLoaderDataGraph::keep_alive_oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {
+void ClassLoaderDataGraph::keep_alive_oops_do(OopClosure* f, bool must_claim) {
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
     if (cld->keep_alive()) {
-      cld->oops_do(f, klass_closure, must_claim);
+      cld->oops_do(f, must_claim);
     }
   }
 }
 
-void ClassLoaderDataGraph::always_strong_oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {
+void ClassLoaderDataGraph::always_strong_oops_do(OopClosure* f, bool must_claim) {
   if (ClassUnloading) {
-    keep_alive_oops_do(f, klass_closure, must_claim);
+    keep_alive_oops_do(f, must_claim);
   } else {
-    oops_do(f, klass_closure, must_claim);
+    oops_do(f, must_claim);
   }
 }
 

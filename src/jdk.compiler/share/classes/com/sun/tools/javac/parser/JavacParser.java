@@ -179,6 +179,7 @@ public class JavacParser implements Parser {
         this.allowAnnotationsAfterTypeParams = source.allowAnnotationsAfterTypeParams();
         this.allowUnderscoreIdentifier = source.allowUnderscoreIdentifier();
         this.allowPrivateInterfaceMethods = source.allowPrivateInterfaceMethods();
+        this.allowLocalVariableTypeInference = source.allowLocalVariableTypeInference();
         this.keepDocComments = keepDocComments;
         this.parseModuleInfo = parseModuleInfo;
         docComments = newDocCommentTable(keepDocComments, fac);
@@ -270,10 +271,13 @@ public class JavacParser implements Parser {
      */
     boolean allowThisIdent;
 
+    /** Switch: is local variable inference allowed?
+     */
+    boolean allowLocalVariableTypeInference;
+
     /** The type of the method receiver, as specified by a first "this" parameter.
      */
     JCVariableDecl receiverParam;
-
 
     /** When terms are parsed, the mode determines which is expected:
      *     mode = EXPR        : an expression
@@ -808,12 +812,16 @@ public class JavacParser implements Parser {
      * parsing annotations.
      */
     public JCExpression parseType() {
-        List<JCAnnotation> annotations = typeAnnotationsOpt();
-        return parseType(annotations);
+        return parseType(false);
     }
 
-    public JCExpression parseType(List<JCAnnotation> annotations) {
-        JCExpression result = unannotatedType();
+    public JCExpression parseType(boolean allowVar) {
+        List<JCAnnotation> annotations = typeAnnotationsOpt();
+        return parseType(allowVar, annotations);
+    }
+
+    public JCExpression parseType(boolean allowVar, List<JCAnnotation> annotations) {
+        JCExpression result = unannotatedType(allowVar);
 
         if (annotations.nonEmpty()) {
             result = insertAnnotationsToMostInner(result, annotations, false);
@@ -822,9 +830,17 @@ public class JavacParser implements Parser {
         return result;
     }
 
-    public JCExpression unannotatedType() {
-        return term(TYPE);
+    public JCExpression unannotatedType(boolean allowVar) {
+        JCExpression result = term(TYPE);
+
+        if (!allowVar && isRestrictedLocalVarTypeName(result)) {
+            syntaxError(result.pos, "var.not.allowed.here");
+        }
+
+        return result;
     }
+
+
 
     protected JCExpression term(int newmode) {
         int prevmode = mode;
@@ -1152,11 +1168,11 @@ public class JavacParser implements Parser {
                        accept(LPAREN);
                        mode = TYPE;
                        int pos1 = pos;
-                       List<JCExpression> targets = List.of(t = term3());
+                       List<JCExpression> targets = List.of(t = parseType());
                        while (token.kind == AMP) {
                            checkIntersectionTypesInCast();
                            accept(AMP);
-                           targets = targets.prepend(term3());
+                           targets = targets.prepend(parseType());
                        }
                        if (targets.length() > 1) {
                            t = toP(F.at(pos1).TypeIntersection(targets.reverse()));
@@ -1912,7 +1928,7 @@ public class JavacParser implements Parser {
      */
     JCExpression typeArgument() {
         List<JCAnnotation> annotations = typeAnnotationsOpt();
-        if (token.kind != QUES) return parseType(annotations);
+        if (token.kind != QUES) return parseType(false, annotations);
         int pos = token.pos;
         nextToken();
         JCExpression result;
@@ -2425,13 +2441,8 @@ public class JavacParser implements Parser {
                 token.kind == ENUM) {
                 return List.of(classOrInterfaceOrEnumDeclaration(mods, dc));
             } else {
-                JCExpression t = parseType();
-                ListBuffer<JCStatement> stats =
-                        variableDeclarators(mods, t, new ListBuffer<JCStatement>());
-                // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
-                accept(SEMI);
-                storeEnd(stats.last(), S.prevToken().endPos);
-                return stats.toList();
+                JCExpression t = parseType(true);
+                return localVariableDeclarations(mods, t);
             }
         }
         case ABSTRACT: case STRICTFP: {
@@ -2458,12 +2469,7 @@ public class JavacParser implements Parser {
                 pos = token.pos;
                 JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
                 F.at(pos);
-                ListBuffer<JCStatement> stats =
-                        variableDeclarators(mods, t, new ListBuffer<JCStatement>());
-                // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
-                accept(SEMI);
-                storeEnd(stats.last(), S.prevToken().endPos);
-                return stats.toList();
+                return localVariableDeclarations(mods, t);
             } else {
                 // This Exec is an "ExpressionStatement"; it subsumes the terminating semicolon
                 t = checkExprStat(t);
@@ -2473,6 +2479,15 @@ public class JavacParser implements Parser {
             }
         }
     }
+    //where
+        private List<JCStatement> localVariableDeclarations(JCModifiers mods, JCExpression type) {
+            ListBuffer<JCStatement> stats =
+                    variableDeclarators(mods, type, new ListBuffer<>(), true);
+            // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
+            accept(SEMI);
+            storeEnd(stats.last(), S.prevToken().endPos);
+            return stats.toList();
+        }
 
     /** Statement =
      *       Block
@@ -2766,11 +2781,11 @@ public class JavacParser implements Parser {
         ListBuffer<JCStatement> stats = new ListBuffer<>();
         int pos = token.pos;
         if (token.kind == FINAL || token.kind == MONKEYS_AT) {
-            return variableDeclarators(optFinal(0), parseType(), stats).toList();
+            return variableDeclarators(optFinal(0), parseType(true), stats, true).toList();
         } else {
             JCExpression t = term(EXPR | TYPE);
             if ((lastmode & TYPE) != 0 && LAX_IDENTIFIER.accepts(token.kind)) {
-                return variableDeclarators(modifiersOpt(), t, stats).toList();
+                return variableDeclarators(modifiersOpt(), t, stats, true).toList();
             } else if ((lastmode & TYPE) != 0 && token.kind == COLON) {
                 error(pos, "bad.initializer", "for-loop");
                 return List.of((JCStatement)F.at(pos).VarDef(null, null, t, null));
@@ -2989,9 +3004,10 @@ public class JavacParser implements Parser {
      */
     public <T extends ListBuffer<? super JCVariableDecl>> T variableDeclarators(JCModifiers mods,
                                                                          JCExpression type,
-                                                                         T vdefs)
+                                                                         T vdefs,
+                                                                         boolean localDecl)
     {
-        return variableDeclaratorsRest(token.pos, mods, type, ident(), false, null, vdefs);
+        return variableDeclaratorsRest(token.pos, mods, type, ident(), false, null, vdefs, localDecl);
     }
 
     /** VariableDeclaratorsRest = VariableDeclaratorRest { "," VariableDeclarator }
@@ -3006,14 +3022,20 @@ public class JavacParser implements Parser {
                                                                      Name name,
                                                                      boolean reqInit,
                                                                      Comment dc,
-                                                                     T vdefs)
+                                                                     T vdefs,
+                                                                     boolean localDecl)
     {
-        vdefs.append(variableDeclaratorRest(pos, mods, type, name, reqInit, dc));
+        JCVariableDecl head = variableDeclaratorRest(pos, mods, type, name, reqInit, dc, localDecl);
+        boolean implicit = allowLocalVariableTypeInference && head.vartype == null;
+        vdefs.append(head);
         while (token.kind == COMMA) {
+            if (implicit) {
+                reportSyntaxError(pos, "var.not.allowed.compound");
+            }
             // All but last of multiple declarators subsume a comma
             storeEnd((JCTree)vdefs.last(), token.endPos);
             nextToken();
-            vdefs.append(variableDeclarator(mods, type, reqInit, dc));
+            vdefs.append(variableDeclarator(mods, type, reqInit, dc, localDecl));
         }
         return vdefs;
     }
@@ -3021,8 +3043,8 @@ public class JavacParser implements Parser {
     /** VariableDeclarator = Ident VariableDeclaratorRest
      *  ConstantDeclarator = Ident ConstantDeclaratorRest
      */
-    JCVariableDecl variableDeclarator(JCModifiers mods, JCExpression type, boolean reqInit, Comment dc) {
-        return variableDeclaratorRest(token.pos, mods, type, ident(), reqInit, dc);
+    JCVariableDecl variableDeclarator(JCModifiers mods, JCExpression type, boolean reqInit, Comment dc, boolean localDecl) {
+        return variableDeclaratorRest(token.pos, mods, type, ident(), reqInit, dc, localDecl);
     }
 
     /** VariableDeclaratorRest = BracketsOpt ["=" VariableInitializer]
@@ -3032,7 +3054,7 @@ public class JavacParser implements Parser {
      *  @param dc       The documentation comment for the variable declarations, or null.
      */
     JCVariableDecl variableDeclaratorRest(int pos, JCModifiers mods, JCExpression type, Name name,
-                                  boolean reqInit, Comment dc) {
+                                  boolean reqInit, Comment dc, boolean localDecl) {
         type = bracketsOpt(type);
         JCExpression init = null;
         if (token.kind == EQ) {
@@ -3040,10 +3062,38 @@ public class JavacParser implements Parser {
             init = variableInitializer();
         }
         else if (reqInit) syntaxError(token.pos, "expected", EQ);
+        JCTree elemType = TreeInfo.innermostType(type, true);
+        if (allowLocalVariableTypeInference && elemType.hasTag(IDENT)) {
+            Name typeName = ((JCIdent)elemType).name;
+            if (isRestrictedLocalVarTypeName(typeName)) {
+                if (type.hasTag(TYPEARRAY)) {
+                    //error - 'var' and arrays
+                    reportSyntaxError(pos, "var.not.allowed.array");
+                } else {
+                    //implicit type
+                    type = null;
+                }
+            }
+        }
         JCVariableDecl result =
             toP(F.at(pos).VarDef(mods, name, type, init));
         attach(result, dc);
         return result;
+    }
+
+    boolean isRestrictedLocalVarTypeName(JCExpression e) {
+        switch (e.getTag()) {
+            case IDENT:
+                return isRestrictedLocalVarTypeName(((JCIdent)e).name);
+            case TYPEARRAY:
+                return isRestrictedLocalVarTypeName(((JCArrayTypeTree)e).elemtype);
+            default:
+                return false;
+        }
+    }
+
+    boolean isRestrictedLocalVarTypeName(Name name) {
+        return allowLocalVariableTypeInference && name == names.var;
     }
 
     /** VariableDeclaratorId = Ident BracketsOpt
@@ -3111,13 +3161,13 @@ public class JavacParser implements Parser {
         int startPos = token.pos;
         if (token.kind == FINAL || token.kind == MONKEYS_AT) {
             JCModifiers mods = optFinal(Flags.FINAL);
-            JCExpression t = parseType();
-            return variableDeclaratorRest(token.pos, mods, t, ident(), true, null);
+            JCExpression t = parseType(true);
+            return variableDeclaratorRest(token.pos, mods, t, ident(), true, null, true);
         }
         JCExpression t = term(EXPR | TYPE);
         if ((lastmode & TYPE) != 0 && LAX_IDENTIFIER.accepts(token.kind)) {
             JCModifiers mods = toP(F.at(startPos).Modifiers(Flags.FINAL));
-            return variableDeclaratorRest(token.pos, mods, t, ident(), true, null);
+            return variableDeclaratorRest(token.pos, mods, t, ident(), true, null, true);
         } else {
             checkVariableInTryWithResources(startPos);
             if (!t.hasTag(IDENT) && !t.hasTag(SELECT)) {
@@ -3397,7 +3447,7 @@ public class JavacParser implements Parser {
     protected JCClassDecl classDeclaration(JCModifiers mods, Comment dc) {
         int pos = token.pos;
         accept(CLASS);
-        Name name = ident();
+        Name name = typeName();
 
         List<JCTypeParameter> typarams = typeParametersOpt();
 
@@ -3418,6 +3468,15 @@ public class JavacParser implements Parser {
         return result;
     }
 
+    Name typeName() {
+        int pos = token.pos;
+        Name name = ident();
+        if (isRestrictedLocalVarTypeName(name)) {
+            reportSyntaxError(pos, "var.not.allowed", name);
+        }
+        return name;
+    }
+
     /** InterfaceDeclaration = INTERFACE Ident TypeParametersOpt
      *                         [EXTENDS TypeList] InterfaceBody
      *  @param mods    The modifiers starting the interface declaration
@@ -3426,7 +3485,8 @@ public class JavacParser implements Parser {
     protected JCClassDecl interfaceDeclaration(JCModifiers mods, Comment dc) {
         int pos = token.pos;
         accept(INTERFACE);
-        Name name = ident();
+
+        Name name = typeName();
 
         List<JCTypeParameter> typarams = typeParametersOpt();
 
@@ -3449,7 +3509,8 @@ public class JavacParser implements Parser {
     protected JCClassDecl enumDeclaration(JCModifiers mods, Comment dc) {
         int pos = token.pos;
         accept(ENUM);
-        Name name = ident();
+
+        Name name = typeName();
 
         List<JCExpression> implementing = List.nil();
         if (token.kind == IMPLEMENTS) {
@@ -3647,7 +3708,7 @@ public class JavacParser implements Parser {
                     nextToken();
                 } else {
                     // method returns types are un-annotated types
-                    type = unannotatedType();
+                    type = unannotatedType(false);
                 }
                 if (token.kind == LPAREN && !isInterface && type.hasTag(IDENT)) {
                     if (isInterface || tk.name() != className)
@@ -3667,7 +3728,7 @@ public class JavacParser implements Parser {
                     } else if (!isVoid && typarams.isEmpty()) {
                         List<JCTree> defs =
                             variableDeclaratorsRest(pos, mods, type, name, isInterface, dc,
-                                                    new ListBuffer<JCTree>()).toList();
+                                                    new ListBuffer<JCTree>(), false).toList();
                         accept(SEMI);
                         storeEnd(defs.last(), S.prevToken().endPos);
                         return defs;
@@ -3809,7 +3870,7 @@ public class JavacParser implements Parser {
     JCTypeParameter typeParameter() {
         int pos = token.pos;
         List<JCAnnotation> annos = typeAnnotationsOpt();
-        Name name = ident();
+        Name name = typeName();
         ListBuffer<JCExpression> bounds = new ListBuffer<>();
         if (token.kind == EXTENDS) {
             nextToken();

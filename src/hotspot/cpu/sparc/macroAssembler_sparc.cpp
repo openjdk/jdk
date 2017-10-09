@@ -3844,6 +3844,7 @@ void MacroAssembler::load_mirror(Register mirror, Register method) {
   ld_ptr(mirror, in_bytes(ConstMethod::constants_offset()), mirror);
   ld_ptr(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
   ld_ptr(mirror, mirror_offset, mirror);
+  resolve_oop_handle(mirror);
 }
 
 void MacroAssembler::load_klass(Register src_oop, Register klass) {

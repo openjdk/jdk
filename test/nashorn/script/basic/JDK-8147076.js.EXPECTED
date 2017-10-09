@@ -1,0 +1,2 @@
+non-vararg invocation if arguments <= 125
+vararg invocation if arguments > 125

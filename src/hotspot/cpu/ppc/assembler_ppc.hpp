@@ -517,6 +517,9 @@ class Assembler : public AbstractAssembler {
     XXPERMDI_OPCODE= (60u << OPCODE_SHIFT |   10u << 3),
     XXMRGHW_OPCODE = (60u << OPCODE_SHIFT |   18u << 3),
     XXMRGLW_OPCODE = (60u << OPCODE_SHIFT |   50u << 3),
+    XXSPLTW_OPCODE = (60u << OPCODE_SHIFT |  164u << 2),
+    XXLXOR_OPCODE  = (60u << OPCODE_SHIFT |  154u << 3),
+    XXLEQV_OPCODE  = (60u << OPCODE_SHIFT |  186u << 3),
 
     // Vector Permute and Formatting
     VPKPX_OPCODE   = (4u  << OPCODE_SHIFT |  782u     ),
@@ -1125,6 +1128,7 @@ class Assembler : public AbstractAssembler {
   static int vsplti_sim(int        x)  { return  opp_u_field(x,             15, 11); } // for vsplti* instructions
   static int vsldoi_shb(int        x)  { return  opp_u_field(x,             25, 22); } // for vsldoi instruction
   static int vcmp_rc(   int        x)  { return  opp_u_field(x,             21, 21); } // for vcmp* instructions
+  static int xxsplt_uim(int        x)  { return  opp_u_field(x,             15, 14); } // for xxsplt* instructions
 
   //static int xo1(     int        x)  { return  opp_u_field(x,             29, 21); }// is contained in our opcodes
   //static int xo2(     int        x)  { return  opp_u_field(x,             30, 21); }// is contained in our opcodes
@@ -2155,6 +2159,11 @@ class Assembler : public AbstractAssembler {
   inline void xxpermdi( VectorSRegister d, VectorSRegister a, VectorSRegister b, int dm);
   inline void xxmrghw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxmrglw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void mtvsrd(   VectorSRegister d, Register a);
+  inline void mtvsrwz(  VectorSRegister d, Register a);
+  inline void xxspltw(  VectorSRegister d, VectorSRegister b, int ui2);
+  inline void xxlxor(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xxleqv(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
 
   // VSX Extended Mnemonics
   inline void xxspltd(  VectorSRegister d, VectorSRegister a, int x);

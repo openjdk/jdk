@@ -762,21 +762,21 @@ inline void Assembler::z_vpkh(   VectorRegister v1, VectorRegister v2, VectorReg
 inline void Assembler::z_vpkf(   VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpk(v1, v2, v3, VRET_FW); }       // vector element type 'F'
 inline void Assembler::z_vpkg(   VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpk(v1, v2, v3, VRET_DW); }       // vector element type 'G'
 
-inline void Assembler::z_vpks(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5) {emit_48(VPKS_ZOPC  | vreg(v1,  8) |  vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_HW, VRET_DW, 32) | vccc_mask(cc5, 24)); }
-inline void Assembler::z_vpksh(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_HW, VOP_CCIGN); }   // vector element type 'H', don't set CC
-inline void Assembler::z_vpksf(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_FW, VOP_CCIGN); }   // vector element type 'F', don't set CC
-inline void Assembler::z_vpksg(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_DW, VOP_CCIGN); }   // vector element type 'G', don't set CC
-inline void Assembler::z_vpkshs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_HW, VOP_CCSET); }   // vector element type 'H', set CC
-inline void Assembler::z_vpksfs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_FW, VOP_CCSET); }   // vector element type 'F', set CC
-inline void Assembler::z_vpksgs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_DW, VOP_CCSET); }   // vector element type 'G', set CC
+inline void Assembler::z_vpks(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5) {emit_48(VPKS_ZOPC  | vreg(v1,  8) |  vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_HW, VRET_DW, 32) | voprc_ccmask(cc5, 24)); }
+inline void Assembler::z_vpksh(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_HW, VOPRC_CCIGN); }   // vector element type 'H', don't set CC
+inline void Assembler::z_vpksf(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_FW, VOPRC_CCIGN); }   // vector element type 'F', don't set CC
+inline void Assembler::z_vpksg(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_DW, VOPRC_CCIGN); }   // vector element type 'G', don't set CC
+inline void Assembler::z_vpkshs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_HW, VOPRC_CCSET); }   // vector element type 'H', set CC
+inline void Assembler::z_vpksfs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_FW, VOPRC_CCSET); }   // vector element type 'F', set CC
+inline void Assembler::z_vpksgs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpks(v1, v2, v3, VRET_DW, VOPRC_CCSET); }   // vector element type 'G', set CC
 
-inline void Assembler::z_vpkls(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5) {emit_48(VPKLS_ZOPC | vreg(v1,  8) |  vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_HW, VRET_DW, 32) | vccc_mask(cc5, 24)); }
-inline void Assembler::z_vpklsh( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_HW, VOP_CCIGN); }  // vector element type 'H', don't set CC
-inline void Assembler::z_vpklsf( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_FW, VOP_CCIGN); }  // vector element type 'F', don't set CC
-inline void Assembler::z_vpklsg( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_DW, VOP_CCIGN); }  // vector element type 'G', don't set CC
-inline void Assembler::z_vpklshs(VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_HW, VOP_CCSET); }  // vector element type 'H', set CC
-inline void Assembler::z_vpklsfs(VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_FW, VOP_CCSET); }  // vector element type 'F', set CC
-inline void Assembler::z_vpklsgs(VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_DW, VOP_CCSET); }  // vector element type 'G', set CC
+inline void Assembler::z_vpkls(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5) {emit_48(VPKLS_ZOPC | vreg(v1,  8) |  vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_HW, VRET_DW, 32) | voprc_ccmask(cc5, 24)); }
+inline void Assembler::z_vpklsh( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_HW, VOPRC_CCIGN); }  // vector element type 'H', don't set CC
+inline void Assembler::z_vpklsf( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_FW, VOPRC_CCIGN); }  // vector element type 'F', don't set CC
+inline void Assembler::z_vpklsg( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_DW, VOPRC_CCIGN); }  // vector element type 'G', don't set CC
+inline void Assembler::z_vpklshs(VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_HW, VOPRC_CCSET); }  // vector element type 'H', set CC
+inline void Assembler::z_vpklsfs(VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_FW, VOPRC_CCSET); }  // vector element type 'F', set CC
+inline void Assembler::z_vpklsgs(VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vpkls(v1, v2, v3, VRET_DW, VOPRC_CCSET); }  // vector element type 'G', set CC
 
 // vector register unpack (sign-extended)
 inline void Assembler::z_vuph(   VectorRegister v1, VectorRegister v2, int64_t m3)                    {emit_48(VUPH_ZOPC  | vreg(v1,  8)     | vreg(v2, 12)     | vesc_mask(m3, VRET_BYTE, VRET_FW, 32)); }
@@ -967,33 +967,33 @@ inline void Assembler::z_vno(    VectorRegister v1, VectorRegister v2, VectorReg
 inline void Assembler::z_vo(     VectorRegister v1, VectorRegister v2, VectorRegister v3)             {emit_48(VO_ZOPC    | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16)); }
 
 // Comparison (element-wise)
-inline void Assembler::z_vceq(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5) {emit_48(VCEQ_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_BYTE, VRET_DW, 32) | vccc_mask(cc5, 24)); }
-inline void Assembler::z_vceqb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_BYTE, VOP_CCIGN); } // vector element type 'B', don't set CC
-inline void Assembler::z_vceqh(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_HW,   VOP_CCIGN); } // vector element type 'H', don't set CC
-inline void Assembler::z_vceqf(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_FW,   VOP_CCIGN); } // vector element type 'F', don't set CC
-inline void Assembler::z_vceqg(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_DW,   VOP_CCIGN); } // vector element type 'G', don't set CC
-inline void Assembler::z_vceqbs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_BYTE, VOP_CCSET); } // vector element type 'B', don't set CC
-inline void Assembler::z_vceqhs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_HW,   VOP_CCSET); } // vector element type 'H', don't set CC
-inline void Assembler::z_vceqfs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_FW,   VOP_CCSET); } // vector element type 'F', don't set CC
-inline void Assembler::z_vceqgs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_DW,   VOP_CCSET); } // vector element type 'G', don't set CC
-inline void Assembler::z_vch(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5) {emit_48(VCH_ZOPC   | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_BYTE, VRET_DW, 32) | vccc_mask(cc5, 24)); }
-inline void Assembler::z_vchb(   VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_BYTE,  VOP_CCIGN); }  // vector element type 'B', don't set CC
-inline void Assembler::z_vchh(   VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_HW,    VOP_CCIGN); }  // vector element type 'H', don't set CC
-inline void Assembler::z_vchf(   VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_FW,    VOP_CCIGN); }  // vector element type 'F', don't set CC
-inline void Assembler::z_vchg(   VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_DW,    VOP_CCIGN); }  // vector element type 'G', don't set CC
-inline void Assembler::z_vchbs(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_BYTE,  VOP_CCSET); }  // vector element type 'B', don't set CC
-inline void Assembler::z_vchhs(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_HW,    VOP_CCSET); }  // vector element type 'H', don't set CC
-inline void Assembler::z_vchfs(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_FW,    VOP_CCSET); }  // vector element type 'F', don't set CC
-inline void Assembler::z_vchgs(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_DW,    VOP_CCSET); }  // vector element type 'G', don't set CC
-inline void Assembler::z_vchl(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5) {emit_48(VCHL_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_BYTE, VRET_DW, 32) | vccc_mask(cc5, 24)); }
-inline void Assembler::z_vchlb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_BYTE, VOP_CCIGN); }  // vector element type 'B', don't set CC
-inline void Assembler::z_vchlh(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_HW,   VOP_CCIGN); }  // vector element type 'H', don't set CC
-inline void Assembler::z_vchlf(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_FW,   VOP_CCIGN); }  // vector element type 'F', don't set CC
-inline void Assembler::z_vchlg(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_DW,   VOP_CCIGN); }  // vector element type 'G', don't set CC
-inline void Assembler::z_vchlbs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_BYTE, VOP_CCSET); }  // vector element type 'B', don't set CC
-inline void Assembler::z_vchlhs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_HW,   VOP_CCSET); }  // vector element type 'H', don't set CC
-inline void Assembler::z_vchlfs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_FW,   VOP_CCSET); }  // vector element type 'F', don't set CC
-inline void Assembler::z_vchlgs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_DW,   VOP_CCSET); }  // vector element type 'G', don't set CC
+inline void Assembler::z_vceq(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5) {emit_48(VCEQ_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_BYTE, VRET_DW, 32) | voprc_ccmask(cc5, 24)); }
+inline void Assembler::z_vceqb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_BYTE, VOPRC_CCIGN); } // vector element type 'B', don't set CC
+inline void Assembler::z_vceqh(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_HW,   VOPRC_CCIGN); } // vector element type 'H', don't set CC
+inline void Assembler::z_vceqf(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_FW,   VOPRC_CCIGN); } // vector element type 'F', don't set CC
+inline void Assembler::z_vceqg(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_DW,   VOPRC_CCIGN); } // vector element type 'G', don't set CC
+inline void Assembler::z_vceqbs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_BYTE, VOPRC_CCSET); } // vector element type 'B', don't set CC
+inline void Assembler::z_vceqhs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_HW,   VOPRC_CCSET); } // vector element type 'H', don't set CC
+inline void Assembler::z_vceqfs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_FW,   VOPRC_CCSET); } // vector element type 'F', don't set CC
+inline void Assembler::z_vceqgs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vceq(v1, v2, v3, VRET_DW,   VOPRC_CCSET); } // vector element type 'G', don't set CC
+inline void Assembler::z_vch(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5) {emit_48(VCH_ZOPC   | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_BYTE, VRET_DW, 32) | voprc_ccmask(cc5, 24)); }
+inline void Assembler::z_vchb(   VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_BYTE,  VOPRC_CCIGN); }  // vector element type 'B', don't set CC
+inline void Assembler::z_vchh(   VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_HW,    VOPRC_CCIGN); }  // vector element type 'H', don't set CC
+inline void Assembler::z_vchf(   VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_FW,    VOPRC_CCIGN); }  // vector element type 'F', don't set CC
+inline void Assembler::z_vchg(   VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_DW,    VOPRC_CCIGN); }  // vector element type 'G', don't set CC
+inline void Assembler::z_vchbs(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_BYTE,  VOPRC_CCSET); }  // vector element type 'B', don't set CC
+inline void Assembler::z_vchhs(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_HW,    VOPRC_CCSET); }  // vector element type 'H', don't set CC
+inline void Assembler::z_vchfs(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_FW,    VOPRC_CCSET); }  // vector element type 'F', don't set CC
+inline void Assembler::z_vchgs(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vch(v1, v2, v3, VRET_DW,    VOPRC_CCSET); }  // vector element type 'G', don't set CC
+inline void Assembler::z_vchl(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5) {emit_48(VCHL_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_BYTE, VRET_DW, 32) | voprc_ccmask(cc5, 24)); }
+inline void Assembler::z_vchlb(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_BYTE, VOPRC_CCIGN); }  // vector element type 'B', don't set CC
+inline void Assembler::z_vchlh(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_HW,   VOPRC_CCIGN); }  // vector element type 'H', don't set CC
+inline void Assembler::z_vchlf(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_FW,   VOPRC_CCIGN); }  // vector element type 'F', don't set CC
+inline void Assembler::z_vchlg(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_DW,   VOPRC_CCIGN); }  // vector element type 'G', don't set CC
+inline void Assembler::z_vchlbs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_BYTE, VOPRC_CCSET); }  // vector element type 'B', don't set CC
+inline void Assembler::z_vchlhs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_HW,   VOPRC_CCSET); }  // vector element type 'H', don't set CC
+inline void Assembler::z_vchlfs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_FW,   VOPRC_CCSET); }  // vector element type 'F', don't set CC
+inline void Assembler::z_vchlgs( VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vchl(v1, v2, v3, VRET_DW,   VOPRC_CCSET); }  // vector element type 'G', don't set CC
 
 // Max/Min (element-wise)
 inline void Assembler::z_vmx(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4) {emit_48(VMX_ZOPC   | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_BYTE, VRET_DW, 32)); }
@@ -1090,6 +1090,31 @@ inline void Assembler::z_vsrlb(  VectorRegister v1, VectorRegister v2, VectorReg
 
 // Test under Mask
 inline void Assembler::z_vtm(    VectorRegister v1, VectorRegister v2)                                {emit_48(VTM_ZOPC   | vreg(v1,  8) | vreg(v2, 12)); }
+
+//---<  Vector String Instructions  >---
+inline void Assembler::z_vfae(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4, int64_t cc5) {emit_48(VFAE_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16)      | vesc_mask(imm4, VRET_BYTE, VRET_FW, 32) | voprc_any(cc5, 24) ); }  // Find any element
+inline void Assembler::z_vfaeb(  VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t cc5) {z_vfae(v1, v2, v3, VRET_BYTE, cc5); }
+inline void Assembler::z_vfaeh(  VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t cc5) {z_vfae(v1, v2, v3, VRET_HW,   cc5); }
+inline void Assembler::z_vfaef(  VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t cc5) {z_vfae(v1, v2, v3, VRET_FW,   cc5); }
+inline void Assembler::z_vfee(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4, int64_t cc5) {emit_48(VFEE_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16)      | vesc_mask(imm4, VRET_BYTE, VRET_FW, 32) | voprc_any(cc5, 24) ); }  // Find element equal
+inline void Assembler::z_vfeeb(  VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t cc5) {z_vfee(v1, v2, v3, VRET_BYTE, cc5); }
+inline void Assembler::z_vfeeh(  VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t cc5) {z_vfee(v1, v2, v3, VRET_HW,   cc5); }
+inline void Assembler::z_vfeef(  VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t cc5) {z_vfee(v1, v2, v3, VRET_FW,   cc5); }
+inline void Assembler::z_vfene(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4, int64_t cc5) {emit_48(VFENE_ZOPC | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16)      | vesc_mask(imm4, VRET_BYTE, VRET_FW, 32) | voprc_any(cc5, 24) ); }  // Find element not equal
+inline void Assembler::z_vfeneb( VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t cc5) {z_vfene(v1, v2, v3, VRET_BYTE, cc5); }
+inline void Assembler::z_vfeneh( VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t cc5) {z_vfene(v1, v2, v3, VRET_HW,   cc5); }
+inline void Assembler::z_vfenef( VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t cc5) {z_vfene(v1, v2, v3, VRET_FW,   cc5); }
+inline void Assembler::z_vstrc(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t imm5, int64_t cc6) {emit_48(VSTRC_ZOPC | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vreg(v4, 32)     | vesc_mask(imm5, VRET_BYTE, VRET_FW, 20) | voprc_any(cc6, 24) ); }  // String range compare
+inline void Assembler::z_vstrcb( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4,               int64_t cc6) {z_vstrc(v1, v2, v3, v4, VRET_BYTE, cc6); }
+inline void Assembler::z_vstrch( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4,               int64_t cc6) {z_vstrc(v1, v2, v3, v4, VRET_HW,   cc6); }
+inline void Assembler::z_vstrcf( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4,               int64_t cc6) {z_vstrc(v1, v2, v3, v4, VRET_FW,   cc6); }
+inline void Assembler::z_vistr(  VectorRegister v1, VectorRegister v2, int64_t imm3, int64_t cc5) {emit_48(VISTR_ZOPC  | vreg(v1,  8) | vreg(v2, 12) | vesc_mask(imm3, VRET_BYTE, VRET_FW, 32) | voprc_any(cc5, 24) ); }  // isolate string
+inline void Assembler::z_vistrb( VectorRegister v1, VectorRegister v2,               int64_t cc5) {z_vistr(v1, v2, VRET_BYTE, cc5); }
+inline void Assembler::z_vistrh( VectorRegister v1, VectorRegister v2,               int64_t cc5) {z_vistr(v1, v2, VRET_HW,   cc5); }
+inline void Assembler::z_vistrf( VectorRegister v1, VectorRegister v2,               int64_t cc5) {z_vistr(v1, v2, VRET_FW,   cc5); }
+inline void Assembler::z_vistrbs(VectorRegister v1, VectorRegister v2)                            {z_vistr(v1, v2, VRET_BYTE, VOPRC_CCSET); }
+inline void Assembler::z_vistrhs(VectorRegister v1, VectorRegister v2)                            {z_vistr(v1, v2, VRET_HW,   VOPRC_CCSET); }
+inline void Assembler::z_vistrfs(VectorRegister v1, VectorRegister v2)                            {z_vistr(v1, v2, VRET_FW,   VOPRC_CCSET); }
 
 
 //-------------------------------

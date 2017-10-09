@@ -58,6 +58,9 @@ public class AbstractQueuedLongSynchronizerTest extends JSR166TestCase {
     /**
      * A simple mutex class, adapted from the class javadoc.  Exclusive
      * acquire tests exercise this as a sample user extension.
+     *
+     * Unlike the javadoc sample, we don't track owner thread via
+     * AbstractOwnableSynchronizer methods.
      */
     static class Mutex extends AbstractQueuedLongSynchronizer {
         /** An eccentric value > 32 bits for locked synchronizer state. */
@@ -65,18 +68,19 @@ public class AbstractQueuedLongSynchronizerTest extends JSR166TestCase {
 
         static final long UNLOCKED = 0;
 
-        public boolean isHeldExclusively() {
+        /** Owner thread is untracked, so this is really just isLocked(). */
+        @Override public boolean isHeldExclusively() {
             long state = getState();
             assertTrue(state == UNLOCKED || state == LOCKED);
             return state == LOCKED;
         }
 
-        public boolean tryAcquire(long acquires) {
+        @Override protected boolean tryAcquire(long acquires) {
             assertEquals(LOCKED, acquires);
             return compareAndSetState(UNLOCKED, LOCKED);
         }
 
-        public boolean tryRelease(long releases) {
+        @Override protected boolean tryRelease(long releases) {
             if (getState() != LOCKED) throw new IllegalMonitorStateException();
             setState(UNLOCKED);
             return true;
@@ -106,13 +110,14 @@ public class AbstractQueuedLongSynchronizerTest extends JSR166TestCase {
             release(LOCKED);
         }
 
+        /** Faux-Implements Lock.newCondition(). */
         public ConditionObject newCondition() {
             return new ConditionObject();
         }
     }
 
     /**
-     * A simple latch class, to test shared mode.
+     * A minimal latch class, to test shared mode.
      */
     static class BooleanLatch extends AbstractQueuedLongSynchronizer {
         public boolean isSignalled() { return getState() != 0; }

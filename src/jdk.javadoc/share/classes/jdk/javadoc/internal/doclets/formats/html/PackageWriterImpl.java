@@ -171,7 +171,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         if (utils.isDeprecated(packageElement)) {
             CommentHelper ch = utils.getCommentHelper(packageElement);
             HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
-            deprDiv.addStyle(HtmlStyle.deprecatedContent);
+            deprDiv.addStyle(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
             deprDiv.addContent(deprPhrase);
             if (!deprs.isEmpty()) {

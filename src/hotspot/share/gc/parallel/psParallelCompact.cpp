@@ -838,11 +838,6 @@ PSParallelCompact::IsAliveClosure PSParallelCompact::_is_alive_closure;
 
 bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap()->is_marked(p); }
 
-void PSParallelCompact::AdjustKlassClosure::do_klass(Klass* klass) {
-  PSParallelCompact::AdjustPointerClosure closure(_cm);
-  klass->oops_do(&closure);
-}
-
 void PSParallelCompact::post_initialize() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   MemRegion mr = heap->reserved_region();
@@ -2162,7 +2157,6 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   ClassLoaderDataGraph::clear_claimed_marks();
 
   PSParallelCompact::AdjustPointerClosure oop_closure(cm);
-  PSParallelCompact::AdjustKlassClosure klass_closure(cm);
 
   // General strong roots.
   Universe::oops_do(&oop_closure);
@@ -2172,7 +2166,7 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   Management::oops_do(&oop_closure);
   JvmtiExport::oops_do(&oop_closure);
   SystemDictionary::oops_do(&oop_closure);
-  ClassLoaderDataGraph::oops_do(&oop_closure, &klass_closure, true);
+  ClassLoaderDataGraph::oops_do(&oop_closure, true);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)

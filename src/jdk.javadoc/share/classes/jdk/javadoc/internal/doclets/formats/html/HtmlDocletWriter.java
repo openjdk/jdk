@@ -1715,8 +1715,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content div;
         Content result = commentTagsToContent(null, element, tags, first);
         if (depr) {
-            Content italic = HtmlTree.SPAN(HtmlStyle.deprecationComment, result);
-            div = HtmlTree.DIV(HtmlStyle.block, italic);
+            div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
             htmltree.addContent(div);
         }
         else {

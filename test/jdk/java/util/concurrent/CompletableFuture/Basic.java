@@ -74,7 +74,7 @@ public class Basic {
         check(!cf.isCompletedExceptionally(), "Expected isCompletedExceptionally to return false");
         check(!cf.isCancelled(), "Expected isCancelled to be false");
         check(!cf.cancel(true), "Expected cancel to return false");
-        check(cf.toString().contains("[Completed normally]"));
+        check(cf.toString().matches(".*\\[.*Completed normally.*\\]"));
         check(cf.complete(null) == false, "Expected complete() to fail");
         check(cf.completeExceptionally(new Throwable()) == false,
               "Expected completeExceptionally() to fail");
@@ -106,7 +106,7 @@ public class Basic {
         check(cf.isCompletedExceptionally(), "Expected isCompletedExceptionally");
         check(cf.isCancelled() == cancelled, "Expected isCancelled: " + cancelled + ", got:"  + cf.isCancelled());
         check(cf.cancel(true) == cancelled, "Expected cancel: " + cancelled + ", got:"  + cf.cancel(true));
-        check(cf.toString().contains("[Completed exceptionally]"));  // ## TODO: 'E'xceptionally
+        check(cf.toString().matches(".*\\[.*Completed exceptionally.*\\]"));  // ## TODO: 'E'xceptionally
         check(cf.complete((T)new Object()) == false, "Expected complete() to fail");
         check(cf.completeExceptionally(new Throwable()) == false,
               "Expected completeExceptionally() to fail, already completed");

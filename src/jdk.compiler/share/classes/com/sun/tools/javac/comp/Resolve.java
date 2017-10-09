@@ -59,6 +59,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -105,6 +106,7 @@ public class Resolve {
     public final boolean allowModules;
     public final boolean checkVarargsAccessAfterResolution;
     private final boolean compactMethodDiags;
+    private final boolean allowLocalVariableTypeInference;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
 
     WriteableScope polymorphicSignatureScope;
@@ -116,7 +118,7 @@ public class Resolve {
         varNotFound = new SymbolNotFoundError(ABSENT_VAR);
         methodNotFound = new SymbolNotFoundError(ABSENT_MTH);
         typeNotFound = new SymbolNotFoundError(ABSENT_TYP);
-        referenceNotFound = new ReferenceLookupResult(methodNotFound, null);
+        referenceNotFound = ReferenceLookupResult.error(methodNotFound);
 
         names = Names.instance(context);
         log = Log.instance(context);
@@ -136,6 +138,7 @@ public class Resolve {
         Target target = Target.instance(context);
         allowMethodHandles = target.hasMethodHandles();
         allowFunctionalInterfaceMostSpecific = source.allowFunctionalInterfaceMostSpecific();
+        allowLocalVariableTypeInference = source.allowLocalVariableTypeInference();
         checkVarargsAccessAfterResolution =
                 source.allowPostApplicabilityVarargsAccessCheck();
         polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
@@ -2325,6 +2328,10 @@ public class Resolve {
      *                   (a subset of VAL, TYP, PCK).
      */
     Symbol findIdent(Env<AttrContext> env, Name name, KindSelector kind) {
+        return checkVarType(findIdentInternal(env, name, kind), name);
+    }
+
+    Symbol findIdentInternal(Env<AttrContext> env, Name name, KindSelector kind) {
         Symbol bestSoFar = typeNotFound;
         Symbol sym;
 
@@ -2353,6 +2360,11 @@ public class Resolve {
      *                   (a nonempty subset of TYP, PCK).
      */
     Symbol findIdentInPackage(Env<AttrContext> env, TypeSymbol pck,
+                              Name name, KindSelector kind) {
+        return checkVarType(findIdentInPackageInternal(env, pck, name, kind), name);
+    }
+
+    Symbol findIdentInPackageInternal(Env<AttrContext> env, TypeSymbol pck,
                               Name name, KindSelector kind) {
         Name fullname = TypeSymbol.formFullName(name, pck);
         Symbol bestSoFar = typeNotFound;
@@ -2383,6 +2395,11 @@ public class Resolve {
      */
     Symbol findIdentInType(Env<AttrContext> env, Type site,
                            Name name, KindSelector kind) {
+        return checkVarType(findIdentInTypeInternal(env, site, name, kind), name);
+    }
+
+    Symbol findIdentInTypeInternal(Env<AttrContext> env, Type site,
+                           Name name, KindSelector kind) {
         Symbol bestSoFar = typeNotFound;
         Symbol sym;
         if (kind.contains(KindSelector.VAL)) {
@@ -2395,6 +2412,14 @@ public class Resolve {
             sym = findMemberType(env, site, name, site.tsym);
             if (sym.exists()) return sym;
             else bestSoFar = bestOf(bestSoFar, sym);
+        }
+        return bestSoFar;
+    }
+
+    private Symbol checkVarType(Symbol bestSoFar, Name name) {
+        if (allowLocalVariableTypeInference && name.equals(names.var) &&
+                (bestSoFar.kind == TYP || bestSoFar.kind == ABSENT_TYP)) {
+            bestSoFar = new BadVarTypeError();
         }
         return bestSoFar;
     }
@@ -2944,10 +2969,10 @@ public class Resolve {
 
         //merge results
         Pair<Symbol, ReferenceLookupHelper> res;
-        Symbol bestSym = referenceChooser.result(boundRes, unboundRes);
-        res = new Pair<>(bestSym,
-                bestSym == unboundSym ? unboundLookupHelper : boundLookupHelper);
-        env.info.pendingResolutionPhase = bestSym == unboundSym ?
+        ReferenceLookupResult bestRes = referenceChooser.result(boundRes, unboundRes);
+        res = new Pair<>(bestRes.sym,
+                bestRes == unboundRes ? unboundLookupHelper : boundLookupHelper);
+        env.info.pendingResolutionPhase = bestRes == unboundRes ?
                 unboundEnv.info.pendingResolutionPhase :
                 boundEnv.info.pendingResolutionPhase;
 
@@ -3003,11 +3028,15 @@ public class Resolve {
         Symbol sym;
 
         ReferenceLookupResult(Symbol sym, MethodResolutionContext resolutionContext) {
-            this.staticKind = staticKind(sym, resolutionContext);
+            this(sym, staticKind(sym, resolutionContext));
+        }
+
+        private ReferenceLookupResult(Symbol sym, StaticKind staticKind) {
+            this.staticKind = staticKind;
             this.sym = sym;
         }
 
-        private StaticKind staticKind(Symbol sym, MethodResolutionContext resolutionContext) {
+        private static StaticKind staticKind(Symbol sym, MethodResolutionContext resolutionContext) {
             switch (sym.kind) {
                 case MTH:
                 case AMBIGUOUS:
@@ -3056,6 +3085,10 @@ public class Resolve {
                     return false;
             }
         }
+
+        static ReferenceLookupResult error(Symbol sym) {
+            return new ReferenceLookupResult(sym, StaticKind.UNDEFINED);
+        }
     }
 
     /**
@@ -3068,7 +3101,7 @@ public class Resolve {
          * Generate a result from a pair of lookup result objects. This method delegates to the
          * appropriate result generation routine.
          */
-        Symbol result(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes) {
+        ReferenceLookupResult result(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes) {
             return unboundRes != referenceNotFound ?
                     unboundResult(boundRes, unboundRes) :
                     boundResult(boundRes);
@@ -3077,12 +3110,12 @@ public class Resolve {
         /**
          * Generate a symbol from a given bound lookup result.
          */
-        abstract Symbol boundResult(ReferenceLookupResult boundRes);
+        abstract ReferenceLookupResult boundResult(ReferenceLookupResult boundRes);
 
         /**
          * Generate a symbol from a pair of bound/unbound lookup results.
          */
-        abstract Symbol unboundResult(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes);
+        abstract ReferenceLookupResult unboundResult(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes);
     }
 
     /**
@@ -3092,37 +3125,38 @@ public class Resolve {
     ReferenceChooser basicReferenceChooser = new ReferenceChooser() {
 
         @Override
-        Symbol boundResult(ReferenceLookupResult boundRes) {
+        ReferenceLookupResult boundResult(ReferenceLookupResult boundRes) {
             return !boundRes.isSuccess() || boundRes.hasKind(StaticKind.NON_STATIC) ?
-                    boundRes.sym : //the search produces a non-static method
-                    new BadMethodReferenceError(boundRes.sym, false);
+                    boundRes : //the search produces a non-static method
+                    ReferenceLookupResult.error(new BadMethodReferenceError(boundRes.sym, false));
         }
 
         @Override
-        Symbol unboundResult(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes) {
+        ReferenceLookupResult unboundResult(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes) {
             if (boundRes.hasKind(StaticKind.STATIC) &&
                     (!unboundRes.isSuccess() || unboundRes.hasKind(StaticKind.STATIC))) {
                 //the first search produces a static method and no non-static method is applicable
                 //during the second search
-                return boundRes.sym;
+                return boundRes;
             } else if (unboundRes.hasKind(StaticKind.NON_STATIC) &&
                     (!boundRes.isSuccess() || boundRes.hasKind(StaticKind.NON_STATIC))) {
                 //the second search produces a non-static method and no static method is applicable
                 //during the first search
-                return unboundRes.sym;
+                return unboundRes;
             } else if (boundRes.isSuccess() && unboundRes.isSuccess()) {
                 //both searches produce some result; ambiguity (error recovery)
-                return ambiguityError(boundRes.sym, unboundRes.sym);
+                return ReferenceLookupResult.error(ambiguityError(boundRes.sym, unboundRes.sym));
             } else if (boundRes.isSuccess() || unboundRes.isSuccess()) {
                 //Both searches failed to produce a result with correct staticness (i.e. first search
                 //produces an non-static method). Alternatively, a given search produced a result
                 //with the right staticness, but the other search has applicable methods with wrong
                 //staticness (error recovery)
-                return new BadMethodReferenceError(boundRes.isSuccess() ? boundRes.sym : unboundRes.sym, true);
+                return ReferenceLookupResult.error(new BadMethodReferenceError(boundRes.isSuccess() ?
+                        boundRes.sym : unboundRes.sym, true));
             } else {
                 //both searches fail to produce a result - pick 'better' error using heuristics (error recovery)
                 return (boundRes.canIgnore() && !unboundRes.canIgnore()) ?
-                        unboundRes.sym : boundRes.sym;
+                        unboundRes : boundRes;
             }
         }
     };
@@ -3134,28 +3168,29 @@ public class Resolve {
     ReferenceChooser structuralReferenceChooser = new ReferenceChooser() {
 
         @Override
-        Symbol boundResult(ReferenceLookupResult boundRes) {
+        ReferenceLookupResult boundResult(ReferenceLookupResult boundRes) {
             return (!boundRes.isSuccess() || !boundRes.hasKind(StaticKind.STATIC)) ?
-                    boundRes.sym : //the search has at least one applicable non-static method
-                    new BadMethodReferenceError(boundRes.sym, false);
+                    boundRes : //the search has at least one applicable non-static method
+                    ReferenceLookupResult.error(new BadMethodReferenceError(boundRes.sym, false));
         }
 
         @Override
-        Symbol unboundResult(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes) {
+        ReferenceLookupResult unboundResult(ReferenceLookupResult boundRes, ReferenceLookupResult unboundRes) {
             if (boundRes.isSuccess() && !boundRes.hasKind(StaticKind.NON_STATIC)) {
                 //the first serach has at least one applicable static method
-                return boundRes.sym;
+                return boundRes;
             } else if (unboundRes.isSuccess() && !unboundRes.hasKind(StaticKind.STATIC)) {
                 //the second search has at least one applicable non-static method
-                return unboundRes.sym;
+                return unboundRes;
             } else if (boundRes.isSuccess() || unboundRes.isSuccess()) {
                 //either the first search produces a non-static method, or second search produces
                 //a non-static method (error recovery)
-                return new BadMethodReferenceError(boundRes.isSuccess() ? boundRes.sym : unboundRes.sym, true);
+                return ReferenceLookupResult.error(new BadMethodReferenceError(boundRes.isSuccess() ?
+                        boundRes.sym : unboundRes.sym, true));
             } else {
                 //both searches fail to produce a result - pick 'better' error using heuristics (error recovery)
                 return (boundRes.canIgnore() && !unboundRes.canIgnore()) ?
-                        unboundRes.sym : boundRes.sym;
+                        unboundRes : boundRes;
             }
         }
     };
@@ -3774,6 +3809,17 @@ public class Resolve {
         }
     }
 
+    class BadVarTypeError extends ResolveError {
+        BadVarTypeError() {
+            super(Kind.BAD_VAR, "bad var use");
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+            return diags.create(dkind, log.currentSource(), pos, "illegal.ref.to.var.type", name);
+        }
+    }
+
     /**
      * InvalidSymbolError error class indicating that a symbol matching a
      * given name does not exists in a given site.
@@ -3995,12 +4041,33 @@ public class Resolve {
         }
         //where
             private Map<Symbol, JCDiagnostic> mapCandidates() {
-                Map<Symbol, JCDiagnostic> candidates = new LinkedHashMap<>();
+                MostSpecificMap candidates = new MostSpecificMap();
                 for (Candidate c : resolveContext.candidates) {
                     if (c.isApplicable()) continue;
-                    candidates.put(c.sym, c.details);
+                    candidates.put(c);
                 }
                 return candidates;
+            }
+
+            @SuppressWarnings("serial")
+            private class MostSpecificMap extends LinkedHashMap<Symbol, JCDiagnostic> {
+                private void put(Candidate c) {
+                    ListBuffer<Symbol> overridden = new ListBuffer<>();
+                    for (Symbol s : keySet()) {
+                        if (s == c.sym) {
+                            continue;
+                        }
+                        if (c.sym.overrides(s, (TypeSymbol)s.owner, types, false)) {
+                            overridden.add(s);
+                        } else if (s.overrides(c.sym, (TypeSymbol)c.sym.owner, types, false)) {
+                            return;
+                        }
+                    }
+                    for (Symbol s : overridden) {
+                        remove(s);
+                    }
+                    put(c.sym, c.details);
+                }
             }
 
             Map<Symbol, JCDiagnostic> filterCandidates(Map<Symbol, JCDiagnostic> candidatesMap) {

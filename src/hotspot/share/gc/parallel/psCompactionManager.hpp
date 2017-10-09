@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,17 +195,6 @@ private:
    public:
     FollowStackClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
     virtual void do_void();
-  };
-
-  // The one and only place to start following the classes.
-  // Should only be applied to the ClassLoaderData klasses list.
-  class FollowKlassClosure : public KlassClosure {
-   private:
-    MarkAndPushClosure* _mark_and_push_closure;
-   public:
-    FollowKlassClosure(MarkAndPushClosure* mark_and_push_closure) :
-        _mark_and_push_closure(mark_and_push_closure) { }
-    void do_klass(Klass* klass);
   };
 };
 

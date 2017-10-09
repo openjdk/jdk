@@ -63,7 +63,6 @@ class HRRSCleanupTask;
 class GenerationSpec;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
-class G1KlassScanClosure;
 class G1ParScanThreadState;
 class ObjectClosure;
 class SpaceClosure;

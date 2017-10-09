@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4951228 6290760 8025633 8026567 8081854 8162363 8175200 8177417
+ * @bug      4951228 6290760 8025633 8026567 8081854 8162363 8175200 8177417 8186332
  * @summary  Test the case where the overriden method returns a different
  *           type than the method in the child class.  Make sure the
  *           documentation is inherited but the return type isn't.
@@ -52,12 +52,12 @@ public class TestMemberSummary extends JavadocTester {
                 // Check return type in member summary.
                 "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"../pkg/PublicChild.html#returnTypeTest--\">"
-                + "returnTypeTest</a></span>&#8203;()</code>",
+                + "returnTypeTest</a></span>()</code>",
                 // Check return type in member detail.
                 "<pre>public&nbsp;<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">"
-                + "PublicChild</a>&nbsp;returnTypeTest&#8203;()</pre>",
+                + "PublicChild</a>&nbsp;returnTypeTest()</pre>",
                 "<th class=\"colConstructorName\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg/PublicChild.html#PublicChild--\">PublicChild</a></span>&#8203;()</code></th>");
+                + "<a href=\"../pkg/PublicChild.html#PublicChild--\">PublicChild</a></span>()</code></th>");
 
         checkOutput("pkg/PrivateParent.html", true,
                 "<td class=\"colFirst\"><code>private </code></td>\n"

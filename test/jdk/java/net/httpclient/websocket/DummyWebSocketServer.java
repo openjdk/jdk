@@ -105,7 +105,7 @@ public final class DummyWebSocketServer implements Closeable {
                         channel.configureBlocking(true);
                         StringBuilder request = new StringBuilder();
                         if (!readRequest(channel, request)) {
-                            throw new IOException("Bad request");
+                            throw new IOException("Bad request:" + request);
                         }
                         List<String> strings = asList(request.toString().split("\r\n"));
                         List<String> response = mapping.apply(strings);
@@ -156,6 +156,7 @@ public final class DummyWebSocketServer implements Closeable {
     public void close() {
         log.log(INFO, "Stopping: " + getURI());
         thread.interrupt();
+        close(ssc);
     }
 
     URI getURI() {
@@ -169,19 +170,21 @@ public final class DummyWebSocketServer implements Closeable {
             throws IOException
     {
         ByteBuffer buffer = ByteBuffer.allocate(512);
-        int num = channel.read(buffer);
-        if (num == -1) {
-            return false;
+        while (channel.read(buffer) != -1) {
+            // read the complete HTTP request headers, there should be no body
+            CharBuffer decoded;
+            buffer.flip();
+            try {
+                decoded = ISO_8859_1.newDecoder().decode(buffer);
+            } catch (CharacterCodingException e) {
+                throw new UncheckedIOException(e);
+            }
+            request.append(decoded);
+            if (Pattern.compile("\r\n\r\n").matcher(request).find())
+                return true;
+            buffer.clear();
         }
-        CharBuffer decoded;
-        buffer.flip();
-        try {
-            decoded = ISO_8859_1.newDecoder().decode(buffer);
-        } catch (CharacterCodingException e) {
-            throw new UncheckedIOException(e);
-        }
-        request.append(decoded);
-        return Pattern.compile("\r\n\r\n").matcher(request).find();
+        return false;
     }
 
     private void writeResponse(SocketChannel channel, List<String> response)

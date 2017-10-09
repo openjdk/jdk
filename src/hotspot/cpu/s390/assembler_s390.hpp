@@ -1276,6 +1276,13 @@ class Assembler : public AbstractAssembler {
 // Test under Mask
 #define VTM_ZOPC    (unsigned long)(0xe7L << 40 | 0xd8L << 0)   // Like TM, set CC according to state of selected bits.
 
+//---<  Vector String Instructions  >---
+#define VFAE_ZOPC   (unsigned long)(0xe7L << 40 | 0x82L << 0)   // Find any element
+#define VFEE_ZOPC   (unsigned long)(0xe7L << 40 | 0x80L << 0)   // Find element equal
+#define VFENE_ZOPC  (unsigned long)(0xe7L << 40 | 0x81L << 0)   // Find element not equal
+#define VSTRC_ZOPC  (unsigned long)(0xe7L << 40 | 0x8aL << 0)   // String range compare
+#define VISTR_ZOPC  (unsigned long)(0xe7L << 40 | 0x5cL << 0)   // Isolate String
+
 
 //--------------------------------
 //--  Miscellaneous Operations  --
@@ -1475,10 +1482,18 @@ class Assembler : public AbstractAssembler {
     VRET_QW     = 4
   };
 
-  // Vector Operation Condition Code Control.
-  enum VOpCCC {
-    VOP_CCIGN   = 0, // ignore, don't set CC
-    VOP_CCSET   = 1  // set the CC
+  // Vector Operation Result Control.
+  //   This is a set of flags used in some vector instructions to control
+  //   the result (side) effects of instruction execution.
+  enum VOpRC {
+    VOPRC_CCSET    = 0b0001, // set the CC.
+    VOPRC_CCIGN    = 0b0000, // ignore, don't set CC.
+    VOPRC_ZS       = 0b0010, // Zero Search. Additional, elementwise, comparison against zero.
+    VOPRC_NOZS     = 0b0000, // No Zero Search.
+    VOPRC_RTBYTEIX = 0b0100, // generate byte index to lowest element with true comparison.
+    VOPRC_RTBITVEC = 0b0000, // generate bit vector, all 1s for true, all 0s for false element comparisons.
+    VOPRC_INVERT   = 0b1000, // invert comparison results.
+    VOPRC_NOINVERT = 0b0000  // use comparison results as is, do not invert.
   };
 
   // Inverse condition code, i.e. determine "15 - cc" for a given condition code cc.
@@ -1625,10 +1640,15 @@ class Assembler : public AbstractAssembler {
     return uimm4(ix, pos, 48);
   }
 
-  // Vector Operation Condition Code Control. 4-bit field, one bit of which indicates if the condition code is to be set by the operation.
-  static int64_t vccc_mask(int64_t flag, int pos) {
-    assert((flag == VOP_CCIGN) || (flag == VOP_CCSET), "VCCC flag value out of range");
-    return uimm4(flag, pos, 48);
+  // Vector Operation Result Control. 4-bit field.
+  static int64_t voprc_any(int64_t flags, int pos, int64_t allowed_flags = 0b1111) {
+    assert((flags & allowed_flags) == flags, "Invalid VOPRC_* flag combination: %d", (int)flags);
+    return uimm4(flags, pos, 48);
+  }
+
+  // Vector Operation Result Control. Condition code setting.
+  static int64_t voprc_ccmask(int64_t flags, int pos) {
+    return voprc_any(flags, pos, VOPRC_CCIGN | VOPRC_CCSET);
   }
 
  public:
@@ -2771,6 +2791,31 @@ class Assembler : public AbstractAssembler {
 
   // Test under Mask
   inline void z_vtm(    VectorRegister v1, VectorRegister v2);
+
+  //---<  Vector String Instructions  >---
+  inline void z_vfae(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4, int64_t cc5);   // Find any element
+  inline void z_vfaeb(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfaeh(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfaef(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfee(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4, int64_t cc5);   // Find element equal
+  inline void z_vfeeb(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfeeh(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfeef(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfene(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4, int64_t cc5);   // Find element not equal
+  inline void z_vfeneb( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfeneh( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfenef( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vstrc(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t imm5, int64_t cc6);   // String range compare
+  inline void z_vstrcb( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t cc6);
+  inline void z_vstrch( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t cc6);
+  inline void z_vstrcf( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t cc6);
+  inline void z_vistr(  VectorRegister v1, VectorRegister v2, int64_t imm3, int64_t cc5);                      // Isolate String
+  inline void z_vistrb( VectorRegister v1, VectorRegister v2, int64_t cc5);
+  inline void z_vistrh( VectorRegister v1, VectorRegister v2, int64_t cc5);
+  inline void z_vistrf( VectorRegister v1, VectorRegister v2, int64_t cc5);
+  inline void z_vistrbs(VectorRegister v1, VectorRegister v2);
+  inline void z_vistrhs(VectorRegister v1, VectorRegister v2);
+  inline void z_vistrfs(VectorRegister v1, VectorRegister v2);
 
 
   // Floatingpoint instructions

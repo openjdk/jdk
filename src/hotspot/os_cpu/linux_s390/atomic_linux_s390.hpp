@@ -53,20 +53,6 @@
 // is an integer multiple of the data length. Furthermore, all stores are ordered:
 // a store which occurs conceptually before another store becomes visible to other CPUs
 // before the other store becomes visible.
-inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, jlong*    dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
-
-inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, volatile jlong*    dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
 
 //------------
 // Atomic::add
@@ -208,8 +194,12 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I inc, D volatile* dest) const {
 //
 // The return value is the (unchanged) value from memory as it was when the
 // replacement succeeded.
-inline jint Atomic::xchg (jint xchg_val, volatile jint* dest) {
-  unsigned int  old;
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(T));
+  T old;
 
   __asm__ __volatile__ (
     "   LLGF     %[old],%[mem]           \n\t" // get old value
@@ -219,16 +209,20 @@ inline jint Atomic::xchg (jint xchg_val, volatile jint* dest) {
     : [old] "=&d" (old)      // write-only, prev value irrelevant
     , [mem] "+Q"  (*dest)    // read/write, memory to be updated atomically
     //---<  inputs  >---
-    : [upd] "d"   (xchg_val) // read-only, value to be written to memory
+    : [upd] "d"   (exchange_value) // read-only, value to be written to memory
     //---<  clobbered  >---
     : "cc", "memory"
   );
 
-  return (jint)old;
+  return old;
 }
 
-inline intptr_t Atomic::xchg_ptr(intptr_t xchg_val, volatile intptr_t* dest) {
-  unsigned long old;
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  T old;
 
   __asm__ __volatile__ (
     "   LG       %[old],%[mem]           \n\t" // get old value
@@ -238,16 +232,12 @@ inline intptr_t Atomic::xchg_ptr(intptr_t xchg_val, volatile intptr_t* dest) {
     : [old] "=&d" (old)      // write-only, init from memory
     , [mem] "+Q"  (*dest)    // read/write, memory to be updated atomically
     //---<  inputs  >---
-    : [upd] "d"   (xchg_val) // read-only, value to be written to memory
+    : [upd] "d"   (exchange_value) // read-only, value to be written to memory
     //---<  clobbered  >---
     : "cc", "memory"
   );
 
-  return (intptr_t)old;
-}
-
-inline void *Atomic::xchg_ptr(void *exchange_value, volatile void *dest) {
-  return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
+  return old;
 }
 
 //----------------
@@ -330,7 +320,5 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T xchg_val,
 
   return old;
 }
-
-inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #endif // OS_CPU_LINUX_S390_VM_ATOMIC_LINUX_S390_INLINE_HPP

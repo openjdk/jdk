@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import jdk.nashorn.internal.runtime.options.Options;
  */
 public class LinkerCallSite extends ChainedCallSite {
     /** Maximum number of arguments passed directly. */
-    public static final int ARGLIMIT = 250;
+    public static final int ARGLIMIT = 125;
 
     private static final String PROFILEFILE = Options.getStringProperty("nashorn.profilefile", "NashornProfile.txt");
 

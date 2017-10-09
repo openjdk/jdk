@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6786688 8008164 8162363
+ * @bug      6786688 8008164 8162363 8169819
  * @summary  HTML tables should have table summary, caption and table headers.
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -129,9 +129,9 @@ public class TestHtmlTableTags extends JavadocTester {
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<table class=\"deprecatedSummary\" summary=\"Deprecated Fields table, listing deprecated fields, "
+                "<table class=\"deprecatedSummary\" summary=\"Fields table, listing fields, "
                 + "and an explanation\">",
-                "<table class=\"deprecatedSummary\" summary=\"Deprecated Methods table, listing deprecated methods, "
+                "<table class=\"deprecatedSummary\" summary=\"Methods table, listing methods, "
                 + "and an explanation\">");
 
         // Constant values
@@ -239,9 +239,9 @@ public class TestHtmlTableTags extends JavadocTester {
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<caption><span>Deprecated Fields</span><span class=\"tabEnd\">"
+                "<caption><span>Fields</span><span class=\"tabEnd\">"
                 + "&nbsp;</span></caption>",
-                "<caption><span>Deprecated Methods</span><span class=\"tabEnd\">"
+                "<caption><span>Methods</span><span class=\"tabEnd\">"
                 + "&nbsp;</span></caption>");
 
         // Constant values

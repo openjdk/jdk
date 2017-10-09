@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881 8181622 8182263
+ * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881 8181622 8182263 8074407
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -324,10 +324,10 @@ public class TestSearch extends JavadocTester {
                 "<dt><span class=\"memberNameLink\"><a href=\"pkg2/TestEnum.html#TWO\">TWO</a></span> - "
                 + "pkg2.<a href=\"pkg2/TestEnum.html\" title=\"enum in pkg2\">TestEnum</a></dt>");
         checkOutput("index-all.html", true,
-                "<div class=\"block\"><span class=\"deprecationComment\">class_test1 passes. Search tag"
-                + " <a id=\"SearchTagDeprecatedClass\" class=\"searchTagResult\">SearchTagDeprecatedClass</a></span></div>",
-                "<div class=\"block\"><span class=\"deprecationComment\">error_test3 passes. Search tag for\n"
-                + " method <a id=\"SearchTagDeprecatedMethod\" class=\"searchTagResult\">SearchTagDeprecatedMethod</a></span></div>");
+                "<div class=\"deprecationComment\">class_test1 passes. Search tag"
+                + " <a id=\"SearchTagDeprecatedClass\" class=\"searchTagResult\">SearchTagDeprecatedClass</a></div>",
+                "<div class=\"deprecationComment\">error_test3 passes. Search tag for\n"
+                + " method <a id=\"SearchTagDeprecatedMethod\" class=\"searchTagResult\">SearchTagDeprecatedMethod</a></div>");
     }
 
     void checkSplitIndex() {
@@ -403,10 +403,10 @@ public class TestSearch extends JavadocTester {
                 + "SearchTagDeprecatedClass</a></span> - Search tag in pkg2.TestClass</dt>",
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg/package-summary.html#SingleWord\">"
                 + "SingleWord</a></span> - Search tag in pkg</dt>",
-                "<div class=\"block\"><span class=\"deprecationComment\">class_test1 passes. Search tag"
-                + " <a id=\"SearchTagDeprecatedClass\">SearchTagDeprecatedClass</a></span></div>",
-                "<div class=\"block\"><span class=\"deprecationComment\">error_test3 passes. Search tag for\n"
-                + " method <a id=\"SearchTagDeprecatedMethod\">SearchTagDeprecatedMethod</a></span></div>");
+                "<div class=\"deprecationComment\">class_test1 passes. Search tag"
+                + " <a id=\"SearchTagDeprecatedClass\">SearchTagDeprecatedClass</a></div>",
+                "<div class=\"deprecationComment\">error_test3 passes. Search tag for\n"
+                + " method <a id=\"SearchTagDeprecatedMethod\">SearchTagDeprecatedMethod</a></div>");
         checkOutput("index-all.html", true,
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg2/TestEnum.html#searchphrasedeprecated\">"
                 + "search phrase deprecated</a></span> - Search tag in pkg2.TestEnum.ONE</dt>",
@@ -434,10 +434,10 @@ public class TestSearch extends JavadocTester {
                 + "search phrase deprecated</a></span> - Search tag in pkg2.TestEnum.ONE</dt>",
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg2/TestError.html#SearchTagDeprecatedMethod\">"
                 + "SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError</dt>",
-                "<div class=\"block\"><span class=\"deprecationComment\">class_test1 passes. Search tag"
-                + " <a id=\"SearchTagDeprecatedClass\">SearchTagDeprecatedClass</a></span></div>",
-                "<div class=\"block\"><span class=\"deprecationComment\">error_test3 passes. Search tag for\n"
-                + " method <a id=\"SearchTagDeprecatedMethod\">SearchTagDeprecatedMethod</a></span></div>");
+                "<div class=\"deprecationComment\">class_test1 passes. Search tag"
+                + " <a id=\"SearchTagDeprecatedClass\">SearchTagDeprecatedClass</a></div>",
+                "<div class=\"deprecationComment\">error_test3 passes. Search tag for\n"
+                + " method <a id=\"SearchTagDeprecatedMethod\">SearchTagDeprecatedMethod</a></div>");
     }
 
     void checkJavaFXOutput() {

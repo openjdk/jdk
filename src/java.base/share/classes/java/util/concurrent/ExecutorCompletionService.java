@@ -174,6 +174,10 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
         this.completionQueue = completionQueue;
     }
 
+    /**
+     * @throws RejectedExecutionException {@inheritDoc}
+     * @throws NullPointerException       {@inheritDoc}
+     */
     public Future<V> submit(Callable<V> task) {
         if (task == null) throw new NullPointerException();
         RunnableFuture<V> f = newTaskFor(task);
@@ -181,6 +185,10 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
         return f;
     }
 
+    /**
+     * @throws RejectedExecutionException {@inheritDoc}
+     * @throws NullPointerException       {@inheritDoc}
+     */
     public Future<V> submit(Runnable task, V result) {
         if (task == null) throw new NullPointerException();
         RunnableFuture<V> f = newTaskFor(task, result);
