@@ -448,10 +448,16 @@ JVM_handle_linux_signal(int sig,
     }
 
     else { // thread->thread_state() != _thread_in_Java
-      if (sig == SIGILL && VM_Version::is_determine_features_test_running()) {
-        // SIGILL must be caused by VM_Version::determine_features().
+      if ((sig == SIGILL) && VM_Version::is_determine_features_test_running()) {
+        // SIGILL must be caused by VM_Version::determine_features()
+        // when attempting to execute a non-existing instruction.
         //*(int *) (pc-6)=0; // Patch instruction to 0 to indicate that it causes a SIGILL.
                              // Flushing of icache is not necessary.
+        stub = pc; // Continue with next instruction.
+      } else if ((sig == SIGFPE) && VM_Version::is_determine_features_test_running()) {
+        // SIGFPE is known to be caused by trying to execute a vector instruction
+        // when the vector facility is installed, but operating system support is missing.
+        VM_Version::reset_has_VectorFacility();
         stub = pc; // Continue with next instruction.
       } else if (thread->thread_state() == _thread_in_vm &&
                  sig == SIGBUS && thread->doing_unsafe_access()) {
@@ -510,7 +516,7 @@ JVM_handle_linux_signal(int sig,
   // Note: this should be combined with the trap_pc handling above,
   // because it handles the same issue.
   if (sig == SIGILL || sig == SIGFPE) {
-    pc = (address) info->si_addr;
+    pc = (address)info->si_addr;
   }
 
   VMError::report_and_die(t, sig, pc, info, ucVoid);
