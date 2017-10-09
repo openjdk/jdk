@@ -1057,6 +1057,14 @@ inline void Assembler::vec_perm(VectorRegister first_dest, VectorRegister second
 #endif
 }
 
+inline void Assembler::vec_perm(VectorRegister dest, VectorRegister first, VectorRegister second, VectorRegister perm) {
+#if defined(VM_LITTLE_ENDIAN)
+  vperm(dest, second, first, perm);
+#else
+  vperm(dest, first, second, perm);
+#endif
+}
+
 inline void Assembler::load_const(Register d, void* x, Register tmp) {
    load_const(d, (long)x, tmp);
 }
