@@ -177,6 +177,15 @@ struct PrimitiveConversions::Translate<oop> : public TrueType {
             (void)const_cast<oop&>(oop::operator=(o));                     \
             return *this;                                                  \
        }                                                                   \
+   };                                                                      \
+                                                                           \
+   template<>                                                              \
+   struct PrimitiveConversions::Translate<type##Oop> : public TrueType {   \
+     typedef type##Oop Value;                                              \
+     typedef type##OopDesc* Decayed;                                       \
+                                                                           \
+     static Decayed decay(Value x) { return (type##OopDesc*)x.obj(); }     \
+     static Value recover(Decayed x) { return type##Oop(x); }              \
    };
 
 DEF_OOP(instance);

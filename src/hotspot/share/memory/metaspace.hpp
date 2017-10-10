@@ -179,6 +179,10 @@ class Metaspace : public CHeapObj<mtClass> {
     assert(DumpSharedSpaces, "sanity");
     DEBUG_ONLY(_frozen = true;)
   }
+#ifdef _LP64
+  static void allocate_metaspace_compressed_klass_ptrs(char* requested_addr, address cds_base);
+#endif
+
  private:
 
 #ifdef _LP64
@@ -186,8 +190,6 @@ class Metaspace : public CHeapObj<mtClass> {
 
   // Returns true if can use CDS with metaspace allocated as specified address.
   static bool can_use_cds_with_metaspace_addr(char* metaspace_base, address cds_base);
-
-  static void allocate_metaspace_compressed_klass_ptrs(char* requested_addr, address cds_base);
 
   static void initialize_class_space(ReservedSpace rs);
 #endif
@@ -273,7 +275,7 @@ class MetaspaceAux : AllStatic {
   // Running sum of space in all Metachunks that
   // are being used for metadata. One for each
   // type of Metadata.
-  static size_t _used_words[Metaspace:: MetadataTypeCount];
+  static volatile size_t _used_words[Metaspace:: MetadataTypeCount];
 
  public:
   // Decrement and increment _allocated_capacity_words

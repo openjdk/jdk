@@ -59,7 +59,7 @@ inline void Assembler::check_delay() {
 #endif
 }
 
-inline void Assembler::emit_int32(int x) {
+inline void Assembler::emit_int32(int32_t x) {
   check_delay();
 #ifdef VALIDATE_PIPELINE
   _hazard_state = NoHazard;
@@ -67,16 +67,16 @@ inline void Assembler::emit_int32(int x) {
   AbstractAssembler::emit_int32(x);
 }
 
-inline void Assembler::emit_data(int x) {
+inline void Assembler::emit_data(int32_t x) {
   emit_int32(x);
 }
 
-inline void Assembler::emit_data(int x, relocInfo::relocType rtype) {
+inline void Assembler::emit_data(int32_t x, relocInfo::relocType rtype) {
   relocate(rtype);
   emit_int32(x);
 }
 
-inline void Assembler::emit_data(int x, RelocationHolder const &rspec) {
+inline void Assembler::emit_data(int32_t x, RelocationHolder const &rspec) {
   relocate(rspec);
   emit_int32(x);
 }
@@ -359,6 +359,19 @@ inline void Assembler::fmadd(FloatRegisterImpl::Width w, FloatRegister s1, Float
   fmaf_only();
   emit_int32(op(arith_op) | fd(d, w) | op3(stpartialf_op3) | fs1(s1, w) | fs3(s3, w) | op5(w) | fs2(s2, w));
 }
+inline void Assembler::fmsub(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d) {
+  fmaf_only();
+  emit_int32(op(arith_op) | fd(d, w) | op3(stpartialf_op3) | fs1(s1, w) | fs3(s3, w) | op5(0x4 + w) | fs2(s2, w));
+}
+
+inline void Assembler::fnmadd(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d) {
+  fmaf_only();
+  emit_int32(op(arith_op) | fd(d, w) | op3(stpartialf_op3) | fs1(s1, w) | fs3(s3, w) | op5(0xc + w) | fs2(s2, w));
+}
+inline void Assembler::fnmsub(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d) {
+  fmaf_only();
+  emit_int32(op(arith_op) | fd(d, w) | op3(stpartialf_op3) | fs1(s1, w) | fs3(s3, w) | op5(0x8 + w) | fs2(s2, w));
+}
 
 inline void Assembler::flush(Register s1, Register s2) {
   emit_int32(op(arith_op) | op3(flush_op3) | rs1(s1) | rs2(s2));
@@ -400,6 +413,15 @@ inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, Register s2,
 }
 inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d, RelocationHolder const &rspec) {
   emit_data(op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec);
+}
+
+inline void Assembler::ldd(Register s1, Register s2, FloatRegister d) {
+  assert(d->is_even(), "not even");
+  ldf(FloatRegisterImpl::D, s1, s2, d);
+}
+inline void Assembler::ldd(Register s1, int simm13a, FloatRegister d) {
+  assert(d->is_even(), "not even");
+  ldf(FloatRegisterImpl::D, s1, simm13a, d);
 }
 
 inline void Assembler::ldxfsr(Register s1, Register s2) {
@@ -459,16 +481,6 @@ inline void Assembler::ldx(Register s1, Register s2, Register d) {
 }
 inline void Assembler::ldx(Register s1, int simm13a, Register d) {
   emit_data(op(ldst_op) | rd(d) | op3(ldx_op3) | rs1(s1) | immed(true) | simm(simm13a, 13));
-}
-inline void Assembler::ldd(Register s1, Register s2, Register d) {
-  v9_dep();
-  assert(d->is_even(), "not even");
-  emit_int32(op(ldst_op) | rd(d) | op3(ldd_op3) | rs1(s1) | rs2(s2));
-}
-inline void Assembler::ldd(Register s1, int simm13a, Register d) {
-  v9_dep();
-  assert(d->is_even(), "not even");
-  emit_data(op(ldst_op) | rd(d) | op3(ldd_op3) | rs1(s1) | immed(true) | simm(simm13a, 13));
 }
 
 inline void Assembler::ldsba(Register s1, Register s2, int ia, Register d) {
@@ -806,6 +818,15 @@ inline void Assembler::stf(FloatRegisterImpl::Width w, FloatRegister d, Register
   emit_data(op(ldst_op) | fd(d, w) | alt_op3(stf_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13));
 }
 
+inline void Assembler::std(FloatRegister d, Register s1, Register s2) {
+  assert(d->is_even(), "not even");
+  stf(FloatRegisterImpl::D, d, s1, s2);
+}
+inline void Assembler::std(FloatRegister d, Register s1, int simm13a) {
+  assert(d->is_even(), "not even");
+  stf(FloatRegisterImpl::D, d, s1, simm13a);
+}
+
 inline void Assembler::stxfsr(Register s1, Register s2) {
   emit_int32(op(ldst_op) | rd(G1) | op3(stfsr_op3) | rs1(s1) | rs2(s2));
 }
@@ -847,16 +868,6 @@ inline void Assembler::stx(Register d, Register s1, Register s2) {
 }
 inline void Assembler::stx(Register d, Register s1, int simm13a) {
   emit_data(op(ldst_op) | rd(d) | op3(stx_op3) | rs1(s1) | immed(true) | simm(simm13a, 13));
-}
-inline void Assembler::std(Register d, Register s1, Register s2) {
-  v9_dep();
-  assert(d->is_even(), "not even");
-  emit_int32(op(ldst_op) | rd(d) | op3(std_op3) | rs1(s1) | rs2(s2));
-}
-inline void Assembler::std(Register d, Register s1, int simm13a) {
-  v9_dep();
-  assert(d->is_even(), "not even");
-  emit_data(op(ldst_op) | rd(d) | op3(std_op3) | rs1(s1) | immed(true) | simm(simm13a, 13));
 }
 
 inline void Assembler::stba(Register d, Register s1, Register s2, int ia) {
@@ -1043,6 +1054,15 @@ inline void Assembler::bshuffle(FloatRegister s1, FloatRegister s2, FloatRegiste
 
 // VIS3 instructions
 
+inline void Assembler::addxc(Register s1, Register s2, Register d) {
+  vis3_only();
+  emit_int32(op(arith_op) | rd(d) | op3(addx_op3) | rs1(s1) | opf(addxc_opf) | rs2(s2));
+}
+inline void Assembler::addxccc(Register s1, Register s2, Register d) {
+  vis3_only();
+  emit_int32(op(arith_op) | rd(d) | op3(addx_op3) | rs1(s1) | opf(addxccc_opf) | rs2(s2));
+}
+
 inline void Assembler::movstosw(FloatRegister s, Register d) {
   vis3_only();
   emit_int32(op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mstosw_opf) | fs2(s, FloatRegisterImpl::S));
@@ -1073,6 +1093,10 @@ inline void Assembler::xmulxhi(Register s1, Register s2, Register d) {
   vis3_only();
   emit_int32(op(arith_op) | rd(d) | op3(xmulx_op3) | rs1(s1) | opf(xmulxhi_opf) | rs2(s2));
 }
+inline void Assembler::umulxhi(Register s1, Register s2, Register d) {
+  vis3_only();
+  emit_int32(op(arith_op) | rd(d) | op3(umulx_op3) | rs1(s1) | opf(umulxhi_opf) | rs2(s2));
+}
 
 // Crypto SHA instructions
 
@@ -1094,6 +1118,13 @@ inline void Assembler::sha512() {
 inline void Assembler::crc32c(FloatRegister s1, FloatRegister s2, FloatRegister d) {
   crc32c_only();
   emit_int32(op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(crc32c_op3) | fs1(s1, FloatRegisterImpl::D) | opf(crc32c_opf) | fs2(s2, FloatRegisterImpl::D));
+}
+
+// MPMUL instruction
+
+inline void Assembler::mpmul(int uimm5) {
+  mpmul_only();
+  emit_int32(op(arith_op) | rd(0) | op3(mpmul_op3) | rs1(0) | opf(mpmul_opf) | uimm(uimm5, 5));
 }
 
 #endif // CPU_SPARC_VM_ASSEMBLER_SPARC_INLINE_HPP

@@ -1094,6 +1094,7 @@ public final class Math {
      * @return the result
      * @since 9
      */
+    @HotSpotIntrinsicCandidate
     public static long multiplyHigh(long x, long y) {
         if (x < 0 || y < 0) {
             // Use technique from section 8-2 of Henry S. Warren, Jr.,

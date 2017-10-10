@@ -182,6 +182,7 @@ void FileMapInfo::FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
   _narrow_oop_mode = Universe::narrow_oop_mode();
+  _narrow_oop_base = Universe::narrow_oop_base();
   _narrow_oop_shift = Universe::narrow_oop_shift();
   _max_heap_size = MaxHeapSize;
   _narrow_klass_base = Universe::narrow_klass_base();
@@ -687,8 +688,14 @@ static int num_open_archive_heap_ranges = 0;
 // open archive objects.
 void FileMapInfo::map_heap_regions() {
   if (MetaspaceShared::is_heap_object_archiving_allowed()) {
+      log_info(cds)("Archived narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
+                    narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
+      log_info(cds)("Archived narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
+                    p2i(narrow_klass_base()), narrow_klass_shift());
+
     // Check that all the narrow oop and klass encodings match the archive
     if (narrow_oop_mode() != Universe::narrow_oop_mode() ||
+        narrow_oop_base() != Universe::narrow_oop_base() ||
         narrow_oop_shift() != Universe::narrow_oop_shift() ||
         narrow_klass_base() != Universe::narrow_klass_base() ||
         narrow_klass_shift() != Universe::narrow_klass_shift()) {
@@ -697,6 +704,11 @@ void FileMapInfo::map_heap_regions() {
                       "The current CompressedOops/CompressedClassPointers encoding differs from "
                       "that archived due to heap size change. The archive was dumped using max heap "
                       "size " UINTX_FORMAT "M.", max_heap_size()/M);
+        log_info(cds)("Current narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
+                      Universe::narrow_oop_mode(), p2i(Universe::narrow_oop_base()),
+                      Universe::narrow_oop_shift());
+        log_info(cds)("Current narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
+                      p2i(Universe::narrow_klass_base()), Universe::narrow_klass_shift());
       }
     } else {
       // First, map string regions as closed archive heap regions.

@@ -87,7 +87,7 @@ static inline int m68k_add_and_fetch(int add_value, volatile int *ptr) {
 
 /* Atomically write VALUE into `*PTR' and returns the previous
    contents of `*PTR'.  */
-static inline int m68k_lock_test_and_set(volatile int *ptr, int newval) {
+static inline int m68k_lock_test_and_set(int newval, volatile int *ptr) {
   for (;;) {
       // Loop until success.
       int prev = *ptr;
@@ -148,7 +148,7 @@ static inline int arm_add_and_fetch(int add_value, volatile int *ptr) {
 
 /* Atomically write VALUE into `*PTR' and returns the previous
    contents of `*PTR'.  */
-static inline int arm_lock_test_and_set(volatile int *ptr, int newval) {
+static inline int arm_lock_test_and_set(int newval, volatile int *ptr) {
   for (;;) {
       // Loop until a __kernel_cmpxchg succeeds.
       int prev = *ptr;
@@ -158,14 +158,6 @@ static inline int arm_lock_test_and_set(volatile int *ptr, int newval) {
     }
 }
 #endif // ARM
-
-inline void Atomic::store(jint store_value, volatile jint* dest) {
-  *dest = store_value;
-}
-
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) {
-  *dest = store_value;
-}
 
 template<size_t byte_size>
 struct Atomic::PlatformAdd
@@ -201,42 +193,22 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
   return __sync_add_and_fetch(dest, add_value);
 }
 
-inline void Atomic::inc(volatile jint* dest) {
-  add(1, dest);
-}
-
-inline void Atomic::inc_ptr(volatile intptr_t* dest) {
-  add_ptr(1, dest);
-}
-
-inline void Atomic::inc_ptr(volatile void* dest) {
-  add_ptr(1, dest);
-}
-
-inline void Atomic::dec(volatile jint* dest) {
-  add(-1, dest);
-}
-
-inline void Atomic::dec_ptr(volatile intptr_t* dest) {
-  add_ptr(-1, dest);
-}
-
-inline void Atomic::dec_ptr(volatile void* dest) {
-  add_ptr(-1, dest);
-}
-
-inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(T));
 #ifdef ARM
-  return arm_lock_test_and_set(dest, exchange_value);
+  return xchg_using_helper<int>(arm_lock_test_and_set, exchange_value, dest);
 #else
 #ifdef M68K
-  return m68k_lock_test_and_set(dest, exchange_value);
+  return xchg_using_helper<int>(m68k_lock_test_and_set, exchange_value, dest);
 #else
   // __sync_lock_test_and_set is a bizarrely named atomic exchange
   // operation.  Note that some platforms only support this with the
   // limitation that the only valid value to store is the immediate
   // constant 1.  There is a test for this in JNI_CreateJavaVM().
-  jint result = __sync_lock_test_and_set (dest, exchange_value);
+  T result = __sync_lock_test_and_set (dest, exchange_value);
   // All atomic operations are expected to be full memory barriers
   // (see atomic.hpp). However, __sync_lock_test_and_set is not
   // a full memory barrier, but an acquire barrier. Hence, this added
@@ -247,24 +219,14 @@ inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
 #endif // ARM
 }
 
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value,
-                                 volatile intptr_t* dest) {
-#ifdef ARM
-  return arm_lock_test_and_set(dest, exchange_value);
-#else
-#ifdef M68K
-  return m68k_lock_test_and_set(dest, exchange_value);
-#else
-  intptr_t result = __sync_lock_test_and_set (dest, exchange_value);
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  T result = __sync_lock_test_and_set (dest, exchange_value);
   __sync_synchronize();
   return result;
-#endif // M68K
-#endif // ARM
-}
-
-inline void* Atomic::xchg_ptr(void* exchange_value, volatile void* dest) {
-  return (void *) xchg_ptr((intptr_t) exchange_value,
-                           (volatile intptr_t*) dest);
 }
 
 // No direct support for cmpxchg of bytes; emulate using int.
@@ -299,18 +261,21 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
   return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
 }
 
-inline jlong Atomic::load(const volatile jlong* src) {
+template<>
+template<typename T>
+inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
+  STATIC_ASSERT(8 == sizeof(T));
   volatile jlong dest;
-  os::atomic_copy64(src, &dest);
-  return dest;
+  os::atomic_copy64(reinterpret_cast<const volatile jlong*>(src), reinterpret_cast<volatile jlong*>(&dest));
+  return PrimitiveConversions::cast<T>(dest);
 }
 
-inline void Atomic::store(jlong store_value, jlong* dest) {
-  os::atomic_copy64((volatile jlong*)&store_value, (volatile jlong*)dest);
-}
-
-inline void Atomic::store(jlong store_value, volatile jlong* dest) {
-  os::atomic_copy64((volatile jlong*)&store_value, dest);
+template<>
+template<typename T>
+inline void Atomic::PlatformStore<8>::operator()(T store_value,
+                                                 T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  os::atomic_copy64(reinterpret_cast<const volatile jlong*>(&store_value), reinterpret_cast<volatile jlong*>(dest));
 }
 
 #endif // OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_HPP

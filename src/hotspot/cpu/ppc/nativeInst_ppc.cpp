@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -221,13 +221,13 @@ address NativeMovConstReg::set_data_plain(intptr_t data, CodeBlob *cb) {
     // A calculation relative to the global TOC.
     if (MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr, cb->content_begin()) !=
         (address)data) {
-      const int invalidated_range =
-        MacroAssembler::patch_calculate_address_from_global_toc_at(addr, cb->content_begin(),
+      const address inst2_addr = addr;
+      const address inst1_addr =
+        MacroAssembler::patch_calculate_address_from_global_toc_at(inst2_addr, cb->content_begin(),
                                                                    (address)data);
-      const address start = invalidated_range < 0 ? addr + invalidated_range : addr;
-      // FIXME:
-      const int range = invalidated_range < 0 ? 4 - invalidated_range : 8;
-      ICache::ppc64_flush_icache_bytes(start, range);
+      assert(inst1_addr != NULL && inst1_addr < inst2_addr, "first instruction must be found");
+      const int range = inst2_addr - inst1_addr + BytesPerInstWord;
+      ICache::ppc64_flush_icache_bytes(inst1_addr, range);
     }
     next_address = addr + 1 * BytesPerInstWord;
   } else if (MacroAssembler::is_load_const_at(addr)) {
@@ -288,15 +288,15 @@ void NativeMovConstReg::set_data(intptr_t data) {
 }
 
 void NativeMovConstReg::set_narrow_oop(narrowOop data, CodeBlob *code /* = NULL */) {
-  address   addr = addr_at(0);
+  address   inst2_addr = addr_at(0);
   CodeBlob* cb = (code) ? code : CodeCache::find_blob(instruction_address());
-  if (MacroAssembler::get_narrow_oop(addr, cb->content_begin()) == (long)data) return;
-  const int invalidated_range =
-    MacroAssembler::patch_set_narrow_oop(addr, cb->content_begin(), (long)data);
-  const address start = invalidated_range < 0 ? addr + invalidated_range : addr;
-  // FIXME:
-  const int range = invalidated_range < 0 ? 4 - invalidated_range : 8;
-  ICache::ppc64_flush_icache_bytes(start, range);
+  if (MacroAssembler::get_narrow_oop(inst2_addr, cb->content_begin()) == (long)data)
+    return;
+  const address inst1_addr =
+    MacroAssembler::patch_set_narrow_oop(inst2_addr, cb->content_begin(), (long)data);
+  assert(inst1_addr != NULL && inst1_addr < inst2_addr, "first instruction must be found");
+  const int range = inst2_addr - inst1_addr + BytesPerInstWord;
+  ICache::ppc64_flush_icache_bytes(inst1_addr, range);
 }
 
 // Do not use an assertion here. Let clients decide whether they only

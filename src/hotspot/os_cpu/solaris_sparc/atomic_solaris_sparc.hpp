@@ -27,41 +27,6 @@
 
 // Implementation of class atomic
 
-inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
-
-inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
-inline void Atomic::inc    (volatile jint*     dest) { (void)add    (1, dest); }
-inline void Atomic::inc_ptr(volatile intptr_t* dest) { (void)add_ptr(1, dest); }
-inline void Atomic::inc_ptr(volatile void*     dest) { (void)add_ptr(1, dest); }
-
-inline void Atomic::dec    (volatile jint*     dest) { (void)add    (-1, dest); }
-inline void Atomic::dec_ptr(volatile intptr_t* dest) { (void)add_ptr(-1, dest); }
-inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); }
-
-
-inline void Atomic::store(jlong store_value, jlong* dest) { *dest = store_value; }
-inline void Atomic::store(jlong store_value, volatile jlong* dest) { *dest = store_value; }
-inline jlong Atomic::load(const volatile jlong* src) { return *src; }
-
-
-// This is the interface to the atomic instructions in solaris_sparc.il.
-// It's very messy because we need to support v8 and these instructions
-// are illegal there.  When sparc v8 is dropped, we can drop out lots of
-// this code.  Also compiler2 does not support v8 so the conditional code
-// omits the instruction set check.
-
-extern "C" jint     _Atomic_swap32(jint     exchange_value, volatile jint*     dest);
-extern "C" intptr_t _Atomic_swap64(intptr_t exchange_value, volatile intptr_t* dest);
-
 // Implement ADD using a CAS loop.
 template<size_t byte_size>
 struct Atomic::PlatformAdd VALUE_OBJ_CLASS_SPEC {
@@ -78,16 +43,30 @@ struct Atomic::PlatformAdd VALUE_OBJ_CLASS_SPEC {
   }
 };
 
-inline jint     Atomic::xchg    (jint     exchange_value, volatile jint*     dest) {
-  return _Atomic_swap32(exchange_value, dest);
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(T));
+  __asm__ volatile (  "swap [%2],%0"
+                    : "=r" (exchange_value)
+                    : "0" (exchange_value), "r" (dest)
+                    : "memory");
+  return exchange_value;
 }
 
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
-  return _Atomic_swap64(exchange_value, dest);
-}
-
-inline void*    Atomic::xchg_ptr(void*    exchange_value, volatile void*     dest) {
-  return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  T old_value = *dest;
+  while (true) {
+    T result = cmpxchg(exchange_value, dest, old_value);
+    if (result == old_value) break;
+    old_value = result;
+  }
+  return old_value;
 }
 
 // No direct support for cmpxchg of bytes; emulate using int.
