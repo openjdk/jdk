@@ -3751,8 +3751,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Final system initialization including security manager and system class loader
   call_initPhase3(CHECK_JNI_ERR);
 
-  // cache the system class loader
-  SystemDictionary::compute_java_system_loader(CHECK_(JNI_ERR));
+  // cache the system and platform class loaders
+  SystemDictionary::compute_java_loaders(CHECK_JNI_ERR);
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {

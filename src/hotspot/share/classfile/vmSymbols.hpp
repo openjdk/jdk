@@ -371,6 +371,7 @@
   template(deadChild_name,                            "deadChild")                                \
   template(getFromClass_name,                         "getFromClass")                             \
   template(dispatch_name,                             "dispatch")                                 \
+  template(getPlatformClassLoader_name,               "getPlatformClassLoader")                   \
   template(getSystemClassLoader_name,                 "getSystemClassLoader")                     \
   template(fillInStackTrace_name,                     "fillInStackTrace")                         \
   template(getCause_name,                             "getCause")                                 \
