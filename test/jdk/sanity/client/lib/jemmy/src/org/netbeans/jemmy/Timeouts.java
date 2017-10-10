@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,10 @@ import java.util.Properties;
 public class Timeouts {
 
     private static final long DELTA_TIME = 100;
-
-    private static Timeouts defaults;
-
-    private Hashtable<String, Long> timeouts;
+    private static final Timeouts defaults;
     private static double timeoutsScale = -1;
+
+    private final Hashtable<String, Long> timeouts;
 
     /**
      * Creates empty Timeouts object.
@@ -204,7 +203,6 @@ public class Timeouts {
         long oldValue = -1;
         if (contains(name)) {
             oldValue = getTimeout(name);
-            timeouts.remove(name);
         }
         timeouts.put(name, newValue);
         return oldValue;
