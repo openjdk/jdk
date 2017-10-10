@@ -35,7 +35,7 @@ include $(SPEC)
 include MakeBase.gmk
 include TestFilesCompilation.gmk
 
-$(eval $(call IncludeCustomExtension, hotspot/test/JtregNative.gmk))
+$(eval $(call IncludeCustomExtension, test/JtregNativeHotspot.gmk))
 
 ################################################################################
 # Targets for building the native tests themselves.
