@@ -45,7 +45,7 @@ JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
         return JNI_EVERSION; /* JNI version not supported */
     }
 
-    return JNI_VERSION_9;
+    return JNI_VERSION_10;
 }
 
 /*

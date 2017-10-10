@@ -2381,7 +2381,7 @@ public abstract class ClassLoader {
         private int jniVersion;
         // the class from which the library is loaded, also indicates
         // the loader this native library belongs.
-        private final Class<?> fromClass;
+        private Class<?> fromClass;
         // the canonicalized name of the native library.
         // or static library name
         String name;
@@ -2404,6 +2404,8 @@ public abstract class ClassLoader {
         protected void finalize() {
             synchronized (loadedLibraryNames) {
                 if (fromClass.getClassLoader() != null && loaded) {
+                    this.fromClass = null;   // no context when unloaded
+
                     /* remove the native library name */
                     int size = loadedLibraryNames.size();
                     for (int i = 0; i < size; i++) {
