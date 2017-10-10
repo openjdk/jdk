@@ -25,7 +25,7 @@
  * @test
  * @bug 8072016
  * @summary Infinite deoptimization/recompilation cycles in case of arraycopy with tightly coupled allocation
- * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management

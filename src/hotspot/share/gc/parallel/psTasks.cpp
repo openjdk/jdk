@@ -79,8 +79,8 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
 
     case class_loader_data:
     {
-      PSScavengeKlassClosure klass_closure(pm);
-      ClassLoaderDataGraph::oops_do(&roots_closure, &klass_closure, false);
+      PSScavengeCLDClosure cld_closure(pm);
+      ClassLoaderDataGraph::cld_do(&cld_closure);
     }
     break;
 

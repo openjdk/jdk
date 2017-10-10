@@ -64,7 +64,8 @@ module java.management {
     exports sun.management.counter.perf to
         jdk.management.agent;
     exports sun.management.spi to
-        jdk.management;
+        jdk.management,
+        jdk.internal.vm.compiler.management;
 
     uses javax.management.remote.JMXConnectorProvider;
     uses javax.management.remote.JMXConnectorServerProvider;

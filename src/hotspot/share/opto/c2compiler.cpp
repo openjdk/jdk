@@ -410,6 +410,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_multiplyExactL:
     if (!Matcher::match_rule_supported(Op_OverflowMulL)) return false;
     break;
+  case vmIntrinsics::_multiplyHigh:
+    if (!Matcher::match_rule_supported(Op_MulHiL)) return false;
+    break;
   case vmIntrinsics::_getCallerClass:
     if (SystemDictionary::reflect_CallerSensitive_klass() == NULL) return false;
     break;

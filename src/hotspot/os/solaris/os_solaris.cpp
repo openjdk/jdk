@@ -4076,6 +4076,7 @@ int_fnP_cond_tP os::Solaris::_cond_broadcast;
 int_fnP_cond_tP_i_vP os::Solaris::_cond_init;
 int_fnP_cond_tP os::Solaris::_cond_destroy;
 int os::Solaris::_cond_scope = USYNC_THREAD;
+bool os::Solaris::_synchronization_initialized;
 
 void os::Solaris::synchronization_init() {
   if (UseLWPSynchronization) {
@@ -4125,6 +4126,7 @@ void os::Solaris::synchronization_init() {
       os::Solaris::set_cond_destroy(::cond_destroy);
     }
   }
+  _synchronization_initialized = true;
 }
 
 bool os::Solaris::liblgrp_init() {
@@ -4197,9 +4199,6 @@ void os::init(void) {
   if (hdl) {
     dladdr1_func = CAST_TO_FN_PTR(dladdr1_func_type, dlsym(hdl, "dladdr1"));
   }
-
-  // (Solaris only) this switches to calls that actually do locking.
-  ThreadCritical::initialize();
 
   main_thread = thr_self();
 

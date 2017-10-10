@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,7 @@ class ParMarkFromRootsClosure;
 //       because some CMS OopClosures derive from OopsInGenClosure. It would be
 //       good to get rid of them completely.
 class MetadataAwareOopsInGenClosure: public OopsInGenClosure {
-  KlassToOopClosure _klass_closure;
  public:
-  MetadataAwareOopsInGenClosure() {
-    _klass_closure.initialize(this);
-  }
-
   virtual bool do_metadata()    { return do_metadata_nv(); }
   inline  bool do_metadata_nv() { return true; }
 

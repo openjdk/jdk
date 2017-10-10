@@ -185,7 +185,7 @@ inline void MacroAssembler::br( Condition c, bool a, Predict p, address d, reloc
 }
 
 inline void MacroAssembler::br( Condition c, bool a, Predict p, Label& L ) {
-  // See note[+] on 'avoid_pipeline_stalls()', in "assembler_sparc.inline.hpp".
+  // See note[+] on 'avoid_pipeline_stall()', in "assembler_sparc.inline.hpp".
   avoid_pipeline_stall();
   br(c, a, p, target(L));
 }

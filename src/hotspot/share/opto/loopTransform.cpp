@@ -666,7 +666,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   _local_loop_unroll_limit = LoopUnrollLimit;
   _local_loop_unroll_factor = 4;
   int future_unroll_ct = cl->unrolled_count() * 2;
-  if (!cl->do_unroll_only()) {
+  if (!cl->is_vectorized_loop()) {
     if (future_unroll_ct > LoopMaxUnroll) return false;
   } else {
     // obey user constraints on vector mapped loops with additional unrolling applied

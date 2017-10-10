@@ -562,16 +562,16 @@ void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth) {
     vframe* start_vf = _thread->last_java_vframe(&reg_map);
     int count = 0;
     for (vframe* f = start_vf; f; f = f->sender() ) {
+      if (maxDepth >= 0 && count == maxDepth) {
+        // Skip frames if more than maxDepth
+        break;
+      }
       if (f->is_java_frame()) {
         javaVFrame* jvf = javaVFrame::cast(f);
         add_stack_frame(jvf);
         count++;
       } else {
         // Ignore non-Java frames
-      }
-      if (maxDepth > 0 && count == maxDepth) {
-        // Skip frames if more than maxDepth
-        break;
       }
     }
   }
