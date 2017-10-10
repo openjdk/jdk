@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8043508
+ * @bug 8043508 8080084
  * @summary Drawing a very long string crashes VM
+ * @run main/othervm DrawStringCrash
  */
 
 import java.awt.*;
@@ -53,11 +54,11 @@ public class DrawStringCrash {
         while (len < maxLen) {
             try {
                 g2d.drawString(sb.toString(), 20, 20);
+                sb.append(sb);
+                len *= 2;
             } catch (OutOfMemoryError e) {
                 return;
             }
-            sb.append(sb);
-            len *= 2;
         }
         return;
     }
