@@ -53,7 +53,8 @@ requires.properties= \
     vm.rtm.os \
     vm.aot \
     vm.cds \
-    vm.graal.enabled
+    vm.graal.enabled \
+    docker.support
 
 # Minimum jtreg version
 requiredVersion=4.2 b08

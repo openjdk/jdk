@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -75,6 +76,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cds", vmCDS());
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", isGraalEnabled());
+        map.put("docker.support", dockerSupport());
         vmGC(map); // vm.gc.X = true/false
 
         VMProps.dump(map);
@@ -328,6 +330,38 @@ public class VMProps implements Callable<Map<String, String>> {
 
         return "true";
     }
+
+
+   /**
+     * A simple check for docker support
+     *
+     * @return true if docker is supported in a given environment
+     */
+    protected String dockerSupport() {
+        // currently docker testing is only supported for Linux-x64
+        if (! ( Platform.isLinux() && Platform.isX64() ) )
+            return "false";
+
+        boolean isSupported;
+        try {
+            isSupported = checkDockerSupport();
+        } catch (Exception e) {
+            isSupported = false;
+            System.err.println("dockerSupport() threw exception: " + e);
+        }
+
+        return (isSupported) ? "true" : "false";
+    }
+
+    private boolean checkDockerSupport() throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder("docker", "ps");
+        Process p = pb.start();
+        p.waitFor(10, TimeUnit.SECONDS);
+
+        return (p.exitValue() == 0);
+    }
+
+
 
     /**
      * Dumps the map to the file if the file name is given as the property.
