@@ -32,6 +32,7 @@
 
 jfieldID AwtMouseEvent::xID;
 jfieldID AwtMouseEvent::yID;
+jfieldID AwtMouseEvent::causedByTouchEventID;
 jfieldID AwtMouseEvent::buttonID;
 
 /************************************************************************
@@ -51,6 +52,11 @@ Java_java_awt_event_MouseEvent_initIDs(JNIEnv *env, jclass cls) {
     AwtMouseEvent::yID = env->GetFieldID(cls, "y", "I");
     DASSERT(AwtMouseEvent::yID != NULL);
     CHECK_NULL(AwtMouseEvent::yID);
+
+    AwtMouseEvent::causedByTouchEventID = env->GetFieldID(
+        cls, "causedByTouchEvent", "Z");
+    DASSERT(AwtMouseEvent::causedByTouchEventID != NULL);
+    CHECK_NULL(AwtMouseEvent::causedByTouchEventID);
 
     AwtMouseEvent::buttonID = env->GetFieldID(cls, "button", "I");
     DASSERT(AwtMouseEvent::buttonID != NULL);

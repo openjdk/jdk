@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.awt.IllegalComponentStateException;
 import java.awt.MouseInfo;
+
+import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 
 /**
@@ -332,6 +334,11 @@ public class MouseEvent extends InputEvent {
     int clickCount;
 
     /**
+     * Indicates whether the event is a result of a touch event.
+     */
+    private boolean causedByTouchEvent;
+
+    /**
      * Indicates which, if any, of the mouse buttons has changed state.
      *
      * The valid values are ranged from 0 to the value returned by the
@@ -399,6 +406,17 @@ public class MouseEvent extends InputEvent {
             //whatever besides SunToolkit) could also operate.
             cachedNumberOfButtons = 3;
         }
+        AWTAccessor.setMouseEventAccessor(
+            new AWTAccessor.MouseEventAccessor() {
+                public boolean isCausedByTouchEvent(MouseEvent ev) {
+                    return ev.causedByTouchEvent;
+                }
+
+                public void setCausedByTouchEvent(MouseEvent ev,
+                    boolean causedByTouchEvent) {
+                    ev.causedByTouchEvent = causedByTouchEvent;
+                }
+            });
     }
 
     /**

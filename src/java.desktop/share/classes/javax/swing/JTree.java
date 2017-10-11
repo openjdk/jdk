@@ -39,6 +39,8 @@ import javax.swing.tree.*;
 import javax.swing.text.Position;
 import javax.accessibility.*;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.MouseEventAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
 import static sun.swing.SwingUtilities2.Section.*;
@@ -1578,6 +1580,10 @@ public class JTree extends JComponent implements Scrollable, Accessible
                                               event.getClickCount(),
                                               event.isPopupTrigger(),
                                               MouseEvent.NOBUTTON);
+                    MouseEventAccessor meAccessor =
+                        AWTAccessor.getMouseEventAccessor();
+                    meAccessor.setCausedByTouchEvent(newEvent,
+                        meAccessor.isCausedByTouchEvent(event));
 
                     tip = ((JComponent)rComponent).getToolTipText(newEvent);
                 }

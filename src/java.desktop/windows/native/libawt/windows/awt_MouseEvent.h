@@ -39,6 +39,7 @@ public:
     /* java.awt.MouseEvent field ids */
     static jfieldID xID;
     static jfieldID yID;
+    static jfieldID causedByTouchEventID;
     static jfieldID buttonID;
 
 };

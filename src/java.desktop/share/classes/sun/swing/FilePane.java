@@ -44,6 +44,8 @@ import javax.swing.plaf.basic.*;
 import javax.swing.table.*;
 import javax.swing.text.*;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.MouseEventAccessor;
 import sun.awt.shell.*;
 
 /**
@@ -1858,13 +1860,17 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     // Make a new event with the list as source, placing the
                     // click in the corresponding list cell.
                     Rectangle r = list.getCellBounds(index, index);
-                    evt = new MouseEvent(list, evt.getID(),
+                    MouseEvent newEvent = new MouseEvent(list, evt.getID(),
                                          evt.getWhen(), evt.getModifiers(),
                                          r.x + 1, r.y + r.height/2,
                                          evt.getXOnScreen(),
                                          evt.getYOnScreen(),
                                          evt.getClickCount(), evt.isPopupTrigger(),
                                          evt.getButton());
+                    MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+                    meAccessor.setCausedByTouchEvent(newEvent,
+                        meAccessor.isCausedByTouchEvent(evt));
+                    evt = newEvent;
                 }
             } else {
                 return;

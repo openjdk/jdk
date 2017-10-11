@@ -37,6 +37,9 @@ import java.beans.PropertyChangeEvent;
 import java.beans.VetoableChangeListener;
 import java.beans.PropertyVetoException;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.MouseEventAccessor;
+
 /**
  * Class that manages a Motif title bar
  *
@@ -363,11 +366,15 @@ public class MotifInternalFrameTitlePane
         }
         @SuppressWarnings("deprecation")
         void forwardEventToParent(MouseEvent e) {
-            getParent().dispatchEvent(new MouseEvent(
+            MouseEvent newEvent = new MouseEvent(
                 getParent(), e.getID(), e.getWhen(), e.getModifiers(),
                 e.getX(), e.getY(),  e.getXOnScreen(),
                 e.getYOnScreen(), e.getClickCount(),
-                e.isPopupTrigger(),  MouseEvent.NOBUTTON));
+                e.isPopupTrigger(),  MouseEvent.NOBUTTON);
+            MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+            meAccessor.setCausedByTouchEvent(newEvent,
+                meAccessor.isCausedByTouchEvent(e));
+            getParent().dispatchEvent(newEvent);
         }
 
         public void paintComponent(Graphics g) {

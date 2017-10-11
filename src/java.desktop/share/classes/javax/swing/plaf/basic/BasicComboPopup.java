@@ -36,6 +36,8 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import java.io.Serializable;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.MouseEventAccessor;
 
 /**
  * This is a basic implementation of the <code>ComboPopup</code> interface.
@@ -534,13 +536,18 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
                     // Fix for 4234053. Filter out the Control Key from the list.
                     // ie., don't allow CTRL key deselection.
                     Toolkit toolkit = Toolkit.getDefaultToolkit();
-                    e = new MouseEvent((Component)e.getSource(), e.getID(), e.getWhen(),
+                    MouseEvent newEvent = new MouseEvent(
+                                       (Component)e.getSource(), e.getID(), e.getWhen(),
                                        e.getModifiers() ^ toolkit.getMenuShortcutKeyMask(),
                                        e.getX(), e.getY(),
                                        e.getXOnScreen(), e.getYOnScreen(),
                                        e.getClickCount(),
                                        e.isPopupTrigger(),
                                        MouseEvent.NOBUTTON);
+                    MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+                    meAccessor.setCausedByTouchEvent(newEvent,
+                        meAccessor.isCausedByTouchEvent(e));
+                    e = newEvent;
                 }
                 super.processMouseEvent(e);
             }
@@ -1251,6 +1258,9 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
                                               e.getClickCount(),
                                               e.isPopupTrigger(),
                                               MouseEvent.NOBUTTON );
+        MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+        meAccessor.setCausedByTouchEvent(newEvent,
+            meAccessor.isCausedByTouchEvent(e));
         return newEvent;
     }
 
