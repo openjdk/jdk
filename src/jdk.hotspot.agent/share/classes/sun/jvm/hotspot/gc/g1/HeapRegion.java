@@ -38,7 +38,6 @@ import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
-import sun.jvm.hotspot.utilities.Assert;
 
 // Mirror class for HeapRegion. Currently we don't actually include
 // any of its fields but only iterate over it.
@@ -76,12 +75,8 @@ public class HeapRegion extends CompactibleSpace {
 
     public HeapRegion(Address addr) {
         super(addr);
-
-        if (Assert.ASSERTS_ENABLED) {
-            Assert.that(addr instanceof OopHandle, "addr should be OopHandle");
-        }
-
-        Address typeAddr = addr.addOffsetToAsOopHandle(typeFieldOffset);
+        Address typeAddr = (addr instanceof OopHandle) ? addr.addOffsetToAsOopHandle(typeFieldOffset)
+                                                       : addr.addOffsetTo(typeFieldOffset);
         type = (HeapRegionType)VMObjectFactory.newObject(HeapRegionType.class, typeAddr);
     }
 
