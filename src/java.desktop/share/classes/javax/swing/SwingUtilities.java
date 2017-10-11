@@ -44,6 +44,8 @@ import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
 
 import sun.awt.AppContext;
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.MouseEventAccessor;
 
 /**
  * A collection of utility methods for Swing.
@@ -405,6 +407,9 @@ public class SwingUtilities implements SwingConstants
                                       sourceEvent.getClickCount(),
                                       sourceEvent.isPopupTrigger(),
                                       sourceEvent.getButton());
+            MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+            meAccessor.setCausedByTouchEvent(newEvent,
+                meAccessor.isCausedByTouchEvent(sourceEvent));
         }
         return newEvent;
     }

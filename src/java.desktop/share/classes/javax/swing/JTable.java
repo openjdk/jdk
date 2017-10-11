@@ -56,6 +56,8 @@ import java.util.List;
 import javax.print.attribute.*;
 import javax.print.PrintService;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.MouseEventAccessor;
 import sun.reflect.misc.ReflectUtil;
 
 import sun.swing.SwingUtilities2;
@@ -3420,6 +3422,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                                           event.getClickCount(),
                                           event.isPopupTrigger(),
                                           MouseEvent.NOBUTTON);
+                MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+                meAccessor.setCausedByTouchEvent(newEvent,
+                    meAccessor.isCausedByTouchEvent(event));
 
                 tip = ((JComponent)component).getToolTipText(newEvent);
             }

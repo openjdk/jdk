@@ -158,6 +158,48 @@ class CriticalSection {
                 GetCurrentThreadId(), &(cs), THIS_FILE, __LINE__); \
 }
 
+// Redefine WinAPI values related to touch input, if OS < Windows 7.
+#if (!defined(WINVER) || ((WINVER) < 0x0601))
+    /*
+     * RegisterTouchWindow flag values
+     */
+    #define TWF_FINETOUCH       (0x00000001)
+    #define TWF_WANTPALM        (0x00000002)
+
+    #define WM_TOUCH                        0x0240
+
+    /*
+     * Touch input handle
+     */
+    typedef HANDLE HTOUCHINPUT;
+
+    typedef struct tagTOUCHINPUT {
+        LONG x;
+        LONG y;
+        HANDLE hSource;
+        DWORD dwID;
+        DWORD dwFlags;
+        DWORD dwMask;
+        DWORD dwTime;
+        ULONG_PTR dwExtraInfo;
+        DWORD cxContact;
+        DWORD cyContact;
+    } TOUCHINPUT, *PTOUCHINPUT;
+    typedef TOUCHINPUT const * PCTOUCHINPUT;
+
+    /*
+     * Touch input flag values (TOUCHINPUT.dwFlags)
+     */
+    #define TOUCHEVENTF_MOVE            0x0001
+    #define TOUCHEVENTF_DOWN            0x0002
+    #define TOUCHEVENTF_UP              0x0004
+    #define TOUCHEVENTF_INRANGE         0x0008
+    #define TOUCHEVENTF_PRIMARY         0x0010
+    #define TOUCHEVENTF_NOCOALESCE      0x0020
+    #define TOUCHEVENTF_PEN             0x0040
+    #define TOUCHEVENTF_PALM            0x0080
+#endif
+
 /************************************************************************
  * AwtToolkit class
  */
@@ -195,6 +237,17 @@ public:
     BOOL areExtraMouseButtonsEnabled();
     void setExtraMouseButtonsEnabled(BOOL enable);
     static UINT GetNumberOfButtons();
+
+    bool IsWin8OrLater();
+    bool IsTouchKeyboardAutoShowEnabled();
+    bool IsAnyKeyboardAttached();
+    bool IsTouchKeyboardAutoShowSystemEnabled();
+    void ShowTouchKeyboard();
+    void HideTouchKeyboard();
+    BOOL TIRegisterTouchWindow(HWND hWnd, ULONG ulFlags);
+    BOOL TIGetTouchInputInfo(HTOUCHINPUT hTouchInput,
+        UINT cInputs, PTOUCHINPUT pInputs, int cbSize);
+    BOOL TICloseTouchInputHandle(HTOUCHINPUT hTouchInput);
 
     INLINE BOOL localPump() { return m_localPump; }
     INLINE BOOL VerifyComponents() { return FALSE; } // TODO: Use new DebugHelper class to set this flag
@@ -393,6 +446,9 @@ public:
 private:
     HWND CreateToolkitWnd(LPCTSTR name);
 
+    void InitTouchKeyboardExeFilePath();
+    HWND GetTouchKeyboardWindow();
+
     BOOL m_localPump;
     DWORD m_mainThreadId;
     HWND m_toolkitHWnd;
@@ -401,6 +457,18 @@ private:
     BOOL m_isActive; // set to FALSE at beginning of Dispose
     BOOL m_isDisposed; // set to TRUE at end of Dispose
     BOOL m_areExtraMouseButtonsEnabled;
+
+    typedef BOOL (WINAPI *RegisterTouchWindowFunc)(HWND hWnd, ULONG ulFlags);
+    typedef BOOL (WINAPI *GetTouchInputInfoFunc)(HTOUCHINPUT hTouchInput,
+        UINT cInputs, PTOUCHINPUT pInputs, int cbSize);
+    typedef BOOL (WINAPI *CloseTouchInputHandleFunc)(HTOUCHINPUT hTouchInput);
+
+    BOOL m_isWin8OrLater;
+    BOOL m_touchKbrdAutoShowIsEnabled;
+    TCHAR* m_touchKbrdExeFilePath;
+    RegisterTouchWindowFunc m_pRegisterTouchWindow;
+    GetTouchInputInfoFunc m_pGetTouchInputInfo;
+    CloseTouchInputHandleFunc m_pCloseTouchInputHandle;
 
     BOOL m_vmSignalled; // set to TRUE if QUERYENDSESSION has successfully
                         // raised SIGTERM

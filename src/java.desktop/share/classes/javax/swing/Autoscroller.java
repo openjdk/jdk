@@ -28,6 +28,9 @@ package javax.swing;
 import java.awt.*;
 import java.awt.event.*;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.MouseEventAccessor;
+
 /**
  * Autoscroller is responsible for generating synthetic mouse dragged
  * events. It is the responsibility of the Component (or its MouseListeners)
@@ -97,6 +100,9 @@ class Autoscroller implements ActionListener {
                                e.getYOnScreen(),
                                e.getClickCount(), e.isPopupTrigger(),
                                MouseEvent.NOBUTTON);
+        MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+        meAccessor.setCausedByTouchEvent(event,
+            meAccessor.isCausedByTouchEvent(e));
 
         if (timer == null) {
             timer = new Timer(100, this);
@@ -175,6 +181,9 @@ class Autoscroller implements ActionListener {
                                       event.getClickCount(),
                                       event.isPopupTrigger(),
                                       MouseEvent.NOBUTTON);
+        MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+        meAccessor.setCausedByTouchEvent(e,
+            meAccessor.isCausedByTouchEvent(event));
         component.superProcessMouseMotionEvent(e);
     }
 

@@ -30,6 +30,8 @@ import java.awt.event.*;
 import javax.swing.event.*;
 
 import sun.awt.AppContext;
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.MouseEventAccessor;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -308,6 +310,9 @@ public class MenuSelectionManager {
                                                               event.getClickCount(),
                                                               event.isPopupTrigger(),
                                                               MouseEvent.NOBUTTON);
+                        MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+                        meAccessor.setCausedByTouchEvent(exitEvent,
+                            meAccessor.isCausedByTouchEvent(event));
                         currentSelection[currentSelection.length-1].
                             processMouseEvent(exitEvent, path, this);
 
@@ -320,6 +325,8 @@ public class MenuSelectionManager {
                                                                event.getClickCount(),
                                                                event.isPopupTrigger(),
                                                                MouseEvent.NOBUTTON);
+                        meAccessor.setCausedByTouchEvent(enterEvent,
+                            meAccessor.isCausedByTouchEvent(event));
                         subElements[j].processMouseEvent(enterEvent, path, this);
                     }
                     MouseEvent mouseEvent = new MouseEvent(mc, event.getID(),event. getWhen(),
@@ -329,6 +336,9 @@ public class MenuSelectionManager {
                                                            event.getClickCount(),
                                                            event.isPopupTrigger(),
                                                            MouseEvent.NOBUTTON);
+                    MouseEventAccessor meAccessor = AWTAccessor.getMouseEventAccessor();
+                    meAccessor.setCausedByTouchEvent(mouseEvent,
+                        meAccessor.isCausedByTouchEvent(event));
                     subElements[j].processMouseEvent(mouseEvent, path, this);
                     success = true;
                     event.consume();

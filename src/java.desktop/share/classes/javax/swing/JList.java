@@ -48,6 +48,8 @@ import java.io.ObjectOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.MouseEventAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
 import static sun.swing.SwingUtilities2.Section.*;
@@ -1552,6 +1554,10 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                                               event.getClickCount(),
                                               event.isPopupTrigger(),
                                               MouseEvent.NOBUTTON);
+                    MouseEventAccessor meAccessor =
+                        AWTAccessor.getMouseEventAccessor();
+                    meAccessor.setCausedByTouchEvent(newEvent,
+                        meAccessor.isCausedByTouchEvent(event));
 
                     String tip = ((JComponent)rComponent).getToolTipText(
                                               newEvent);

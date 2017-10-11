@@ -29,6 +29,8 @@
 #include <signal.h>
 #include <windowsx.h>
 #include <process.h>
+#include <shellapi.h>
+#include <shlwapi.h>
 
 #include "awt_DrawingSurface.h"
 #include "awt_AWTEvent.h"
@@ -305,6 +307,13 @@ AwtToolkit::AwtToolkit() {
     m_isDynamicLayoutSet = FALSE;
     m_areExtraMouseButtonsEnabled = TRUE;
 
+    m_isWin8OrLater = FALSE;
+    m_touchKbrdAutoShowIsEnabled = FALSE;
+    m_touchKbrdExeFilePath = NULL;
+    m_pRegisterTouchWindow = NULL;
+    m_pGetTouchInputInfo = NULL;
+    m_pCloseTouchInputHandle = NULL;
+
     m_verifyComponents = FALSE;
     m_breakOnError = FALSE;
 
@@ -357,6 +366,149 @@ HWND AwtToolkit::CreateToolkitWnd(LPCTSTR name)
         NULL);                            /* lpParam */
     DASSERT(hwnd != NULL);
     return hwnd;
+}
+
+void AwtToolkit::InitTouchKeyboardExeFilePath() {
+    enum RegistryView { WOW64_32BIT, WOW64_64BIT };
+    const TCHAR tabTipCoKeyName[] = _T("SOFTWARE\\Classes\\CLSID\\")
+        _T("{054AAE20-4BEA-4347-8A35-64A533254A9D}\\LocalServer32");
+    HKEY hTabTipCoKey = NULL;
+    RegistryView regViewWithTabTipCoKey = WOW64_32BIT;
+
+    if (::RegOpenKeyEx(HKEY_LOCAL_MACHINE, tabTipCoKeyName, 0,
+            KEY_READ | KEY_WOW64_32KEY, &hTabTipCoKey) != ERROR_SUCCESS) {
+        if (::RegOpenKeyEx(HKEY_LOCAL_MACHINE, tabTipCoKeyName, 0,
+                KEY_READ | KEY_WOW64_64KEY, &hTabTipCoKey) != ERROR_SUCCESS) {
+            return;
+        } else {
+            regViewWithTabTipCoKey = WOW64_64BIT;
+        }
+    }
+
+    DWORD keyValType = 0;
+    DWORD bytesCopied = 0;
+    if ((::RegQueryValueEx(hTabTipCoKey, NULL, NULL, &keyValType, NULL,
+            &bytesCopied) != ERROR_SUCCESS) ||
+        ((keyValType != REG_EXPAND_SZ) && (keyValType != REG_SZ))) {
+        if (hTabTipCoKey != NULL) {
+            ::RegCloseKey(hTabTipCoKey);
+        }
+        return;
+    }
+
+    // Increase the buffer size for 1 additional null-terminating character.
+    bytesCopied += sizeof(TCHAR);
+    TCHAR* tabTipFilePath = new TCHAR[bytesCopied / sizeof(TCHAR)];
+    ::memset(tabTipFilePath, 0, bytesCopied);
+
+    DWORD oldBytesCopied = bytesCopied;
+    if (::RegQueryValueEx(hTabTipCoKey, NULL, NULL, NULL,
+            (LPBYTE)tabTipFilePath, &bytesCopied) == ERROR_SUCCESS) {
+        const TCHAR searchedStr[] = _T("%CommonProgramFiles%");
+        const size_t searchedStrLen = ::_tcslen(searchedStr);
+        int searchedStrStartIndex = -1;
+
+        TCHAR* commonFilesDirPath = NULL;
+        DWORD commonFilesDirPathLen = 0;
+
+        // Check, if '%CommonProgramFiles%' string is present in the defined
+        // path of the touch keyboard executable.
+        TCHAR* const searchedStrStart = ::_tcsstr(tabTipFilePath, searchedStr);
+        if (searchedStrStart != NULL) {
+            searchedStrStartIndex = searchedStrStart - tabTipFilePath;
+
+            // Get value of 'CommonProgramFiles' environment variable, if the
+            // file path of the touch keyboard executable was found in 32-bit
+            // registry view, otherwise get value of 'CommonProgramW6432'.
+            const TCHAR envVar32BitName[] = _T("CommonProgramFiles");
+            const TCHAR envVar64BitName[] = _T("CommonProgramW6432");
+            const TCHAR* envVarName = (regViewWithTabTipCoKey == WOW64_32BIT ?
+                envVar32BitName : envVar64BitName);
+
+            DWORD charsStored = ::GetEnvironmentVariable(envVarName, NULL, 0);
+            if (charsStored > 0) {
+                commonFilesDirPath = new TCHAR[charsStored];
+                ::memset(commonFilesDirPath, 0, charsStored * sizeof(TCHAR));
+
+                DWORD oldCharsStored = charsStored;
+                if (((charsStored = ::GetEnvironmentVariable(envVarName,
+                        commonFilesDirPath, charsStored)) > 0) &&
+                    (charsStored <= oldCharsStored)) {
+                    commonFilesDirPathLen = charsStored;
+                } else {
+                    delete[] commonFilesDirPath;
+                    commonFilesDirPath = NULL;
+                }
+            }
+        }
+
+        // Calculate 'm_touchKbrdExeFilePath' length in characters including
+        // the null-terminating character.
+        DWORD exeFilePathLen = oldBytesCopied / sizeof(TCHAR);
+        if (commonFilesDirPathLen > 0) {
+            exeFilePathLen = exeFilePathLen - searchedStrLen +
+                commonFilesDirPathLen;
+        }
+
+        if (m_touchKbrdExeFilePath != NULL) {
+            delete[] m_touchKbrdExeFilePath;
+            m_touchKbrdExeFilePath = NULL;
+        }
+        m_touchKbrdExeFilePath = new TCHAR[exeFilePathLen];
+        ::memset(m_touchKbrdExeFilePath, 0, exeFilePathLen * sizeof(TCHAR));
+
+        if (commonFilesDirPathLen > 0) {
+            ::_tcsncpy_s(m_touchKbrdExeFilePath, exeFilePathLen, tabTipFilePath,
+                searchedStrStartIndex);
+            DWORD charsCopied = searchedStrStartIndex;
+
+            ::_tcsncpy_s(m_touchKbrdExeFilePath + charsCopied,
+                exeFilePathLen - charsCopied, commonFilesDirPath,
+                commonFilesDirPathLen);
+            charsCopied += commonFilesDirPathLen;
+
+            ::_tcsncpy_s(m_touchKbrdExeFilePath + charsCopied,
+                exeFilePathLen - charsCopied, searchedStrStart + searchedStrLen,
+                bytesCopied / sizeof(TCHAR) -
+                    (searchedStrStartIndex + searchedStrLen));
+        } else {
+            ::_tcsncpy_s(m_touchKbrdExeFilePath, exeFilePathLen, tabTipFilePath,
+                bytesCopied / sizeof(TCHAR));
+        }
+
+        // Remove leading and trailing quotation marks.
+        ::StrTrim(m_touchKbrdExeFilePath, _T("\""));
+
+        // Verify that a file with the path 'm_touchKbrdExeFilePath' exists.
+        DWORD fileAttrs = ::GetFileAttributes(m_touchKbrdExeFilePath);
+        DWORD err = ::GetLastError();
+        if ((fileAttrs == INVALID_FILE_ATTRIBUTES) ||
+            (fileAttrs & FILE_ATTRIBUTE_DIRECTORY)) {
+            delete[] m_touchKbrdExeFilePath;
+            m_touchKbrdExeFilePath = NULL;
+        }
+
+        if (commonFilesDirPath != NULL) {
+            delete[] commonFilesDirPath;
+        }
+    }
+
+    if (tabTipFilePath != NULL) {
+        delete[] tabTipFilePath;
+    }
+    if (hTabTipCoKey != NULL) {
+        ::RegCloseKey(hTabTipCoKey);
+    }
+}
+
+HWND AwtToolkit::GetTouchKeyboardWindow() {
+    const TCHAR wndClassName[] = _T("IPTip_Main_Window");
+    HWND hwnd = ::FindWindow(wndClassName, NULL);
+    if ((hwnd != NULL) && ::IsWindow(hwnd) && ::IsWindowEnabled(hwnd) &&
+        ::IsWindowVisible(hwnd)) {
+        return hwnd;
+    }
+    return NULL;
 }
 
 
@@ -517,6 +669,52 @@ BOOL AwtToolkit::Initialize(BOOL localPump) {
 
     awt_dnd_initialize();
 
+    /*
+     * Initialization of the touch keyboard related variables.
+     */
+    tk.m_isWin8OrLater = IS_WIN8;
+
+    TRY;
+
+    JNIEnv* env = AwtToolkit::GetEnv();
+    jclass sunToolkitCls = env->FindClass("sun/awt/SunToolkit");
+    DASSERT(sunToolkitCls != 0);
+    CHECK_NULL_RETURN(sunToolkitCls, FALSE);
+
+    jmethodID isTouchKeyboardAutoShowEnabledMID = env->GetStaticMethodID(
+        sunToolkitCls, "isTouchKeyboardAutoShowEnabled", "()Z");
+    DASSERT(isTouchKeyboardAutoShowEnabledMID != 0);
+    CHECK_NULL_RETURN(isTouchKeyboardAutoShowEnabledMID, FALSE);
+
+    tk.m_touchKbrdAutoShowIsEnabled = env->CallStaticBooleanMethod(
+        sunToolkitCls, isTouchKeyboardAutoShowEnabledMID);
+
+    CATCH_BAD_ALLOC_RET(FALSE);
+
+    if (tk.m_isWin8OrLater && tk.m_touchKbrdAutoShowIsEnabled) {
+        tk.InitTouchKeyboardExeFilePath();
+        HMODULE hUser32Dll = ::LoadLibrary(_T("user32.dll"));
+        if (hUser32Dll != NULL) {
+            tk.m_pRegisterTouchWindow = (RegisterTouchWindowFunc)
+                ::GetProcAddress(hUser32Dll, "RegisterTouchWindow");
+            tk.m_pGetTouchInputInfo = (GetTouchInputInfoFunc)
+                ::GetProcAddress(hUser32Dll, "GetTouchInputInfo");
+            tk.m_pCloseTouchInputHandle = (CloseTouchInputHandleFunc)
+                ::GetProcAddress(hUser32Dll, "CloseTouchInputHandle");
+        }
+
+        if ((tk.m_pRegisterTouchWindow == NULL) ||
+            (tk.m_pGetTouchInputInfo == NULL) ||
+            (tk.m_pCloseTouchInputHandle == NULL)) {
+            tk.m_pRegisterTouchWindow = NULL;
+            tk.m_pGetTouchInputInfo = NULL;
+            tk.m_pCloseTouchInputHandle = NULL;
+        }
+    }
+    /*
+     * End of the touch keyboard related initialization code.
+     */
+
     return TRUE;
 }
 
@@ -540,6 +738,14 @@ BOOL AwtToolkit::Dispose() {
 
     awt_dnd_uninitialize();
     awt_clipboard_uninitialize((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2));
+
+    if (tk.m_touchKbrdExeFilePath != NULL) {
+        delete[] tk.m_touchKbrdExeFilePath;
+        tk.m_touchKbrdExeFilePath = NULL;
+    }
+    tk.m_pRegisterTouchWindow = NULL;
+    tk.m_pGetTouchInputInfo = NULL;
+    tk.m_pCloseTouchInputHandle = NULL;
 
     if (tk.m_inputMethodHWnd != NULL) {
         ::SendMessage(tk.m_inputMethodHWnd, WM_IME_CONTROL, IMC_OPENSTATUSWINDOW, 0);
@@ -2747,6 +2953,32 @@ Java_sun_awt_windows_WToolkit_getWindowsVersion(JNIEnv *env, jclass cls)
     CATCH_BAD_ALLOC_RET(NULL);
 }
 
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WToolkit_showTouchKeyboard(JNIEnv *env, jobject self,
+    jboolean causedByTouchEvent)
+{
+    AwtToolkit& tk = AwtToolkit::GetInstance();
+    if (!tk.IsWin8OrLater() || !tk.IsTouchKeyboardAutoShowEnabled()) {
+        return;
+    }
+
+    if (causedByTouchEvent ||
+        (tk.IsTouchKeyboardAutoShowSystemEnabled() &&
+            !tk.IsAnyKeyboardAttached())) {
+        tk.ShowTouchKeyboard();
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WToolkit_hideTouchKeyboard(JNIEnv *env, jobject self)
+{
+    AwtToolkit& tk = AwtToolkit::GetInstance();
+    if (!tk.IsWin8OrLater() || !tk.IsTouchKeyboardAutoShowEnabled()) {
+        return;
+    }
+    tk.HideTouchKeyboard();
+}
+
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_windows_WToolkit_syncNativeQueue(JNIEnv *env, jobject self, jlong timeout)
 {
@@ -2823,4 +3055,120 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WToolkit_getNumberOfButtonsImpl
 
 UINT AwtToolkit::GetNumberOfButtons() {
     return MOUSE_BUTTONS_WINDOWS_SUPPORTED;
+}
+
+bool AwtToolkit::IsWin8OrLater() {
+    return m_isWin8OrLater;
+}
+
+bool AwtToolkit::IsTouchKeyboardAutoShowEnabled() {
+    return m_touchKbrdAutoShowIsEnabled;
+}
+
+bool AwtToolkit::IsAnyKeyboardAttached() {
+    UINT numDevs = 0;
+    UINT numDevsRet = 0;
+    const UINT devListTypeSize = sizeof(RAWINPUTDEVICELIST);
+    if ((::GetRawInputDeviceList(NULL, &numDevs, devListTypeSize) != 0) ||
+        (numDevs == 0)) {
+        return false;
+    }
+
+    RAWINPUTDEVICELIST* pDevList = new RAWINPUTDEVICELIST[numDevs];
+    while (((numDevsRet = ::GetRawInputDeviceList(pDevList, &numDevs,
+            devListTypeSize)) == (UINT)-1) &&
+        (::GetLastError() == ERROR_INSUFFICIENT_BUFFER)) {
+        if (pDevList != NULL) {
+            delete[] pDevList;
+        }
+        pDevList = new RAWINPUTDEVICELIST[numDevs];
+    }
+
+    bool keyboardIsAttached = false;
+    if (numDevsRet != (UINT)-1) {
+        for (UINT i = 0; i < numDevsRet; i++) {
+            if (pDevList[i].dwType == RIM_TYPEKEYBOARD) {
+                keyboardIsAttached = true;
+                break;
+            }
+        }
+    }
+
+    if (pDevList != NULL) {
+        delete[] pDevList;
+    }
+    return keyboardIsAttached;
+}
+
+bool AwtToolkit::IsTouchKeyboardAutoShowSystemEnabled() {
+    const TCHAR tabTipKeyName[] = _T("SOFTWARE\\Microsoft\\TabletTip\\1.7");
+    HKEY hTabTipKey = NULL;
+    if (::RegOpenKeyEx(HKEY_CURRENT_USER, tabTipKeyName, 0, KEY_READ,
+            &hTabTipKey) != ERROR_SUCCESS) {
+        return false;
+    }
+
+    const TCHAR enableAutoInvokeValName[] = _T("EnableDesktopModeAutoInvoke");
+    DWORD keyValType = 0;
+    bool autoShowIsEnabled = false;
+    if (::RegQueryValueEx(hTabTipKey, enableAutoInvokeValName, NULL,
+            &keyValType, NULL, NULL) == ERROR_SUCCESS) {
+        if (keyValType == REG_DWORD) {
+            DWORD enableAutoInvokeVal = 0;
+            DWORD bytesCopied = sizeof(DWORD);
+            if (::RegQueryValueEx(hTabTipKey, enableAutoInvokeValName, NULL,
+                    NULL, (LPBYTE)(DWORD*)&enableAutoInvokeVal,
+                    &bytesCopied) == ERROR_SUCCESS) {
+                autoShowIsEnabled = (enableAutoInvokeVal == 0 ? false : true);
+            }
+        }
+    }
+
+    if (hTabTipKey != NULL) {
+        ::RegCloseKey(hTabTipKey);
+    }
+    return autoShowIsEnabled;
+}
+
+void AwtToolkit::ShowTouchKeyboard() {
+    if (m_isWin8OrLater && m_touchKbrdAutoShowIsEnabled &&
+        (m_touchKbrdExeFilePath != NULL)) {
+        HINSTANCE retVal = ::ShellExecute(NULL, _T("open"),
+            m_touchKbrdExeFilePath, NULL, NULL, SW_SHOW);
+        if ((int)retVal <= 32) {
+            DTRACE_PRINTLN1("AwtToolkit::ShowTouchKeyboard: Failed"
+                ", retVal='%d'", (int)retVal);
+        }
+    }
+}
+
+void AwtToolkit::HideTouchKeyboard() {
+    if (m_isWin8OrLater && m_touchKbrdAutoShowIsEnabled) {
+        HWND hwnd = GetTouchKeyboardWindow();
+        if (hwnd != NULL) {
+            ::PostMessage(hwnd, WM_SYSCOMMAND, SC_CLOSE, 0);
+        }
+    }
+}
+
+BOOL AwtToolkit::TIRegisterTouchWindow(HWND hWnd, ULONG ulFlags) {
+    if (m_pRegisterTouchWindow == NULL) {
+        return FALSE;
+    }
+    return m_pRegisterTouchWindow(hWnd, ulFlags);
+}
+
+BOOL AwtToolkit::TIGetTouchInputInfo(HTOUCHINPUT hTouchInput,
+    UINT cInputs, PTOUCHINPUT pInputs, int cbSize) {
+    if (m_pGetTouchInputInfo == NULL) {
+        return FALSE;
+    }
+    return m_pGetTouchInputInfo(hTouchInput, cInputs, pInputs, cbSize);
+}
+
+BOOL AwtToolkit::TICloseTouchInputHandle(HTOUCHINPUT hTouchInput) {
+    if (m_pCloseTouchInputHandle == NULL) {
+        return FALSE;
+    }
+    return m_pCloseTouchInputHandle(hTouchInput);
 }
