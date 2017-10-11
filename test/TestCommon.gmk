@@ -360,6 +360,9 @@ ifeq ($(LIMIT_JTREG_VM_MEMORY), true)
   JTREG_TESTVM_MEMORY_OPTION = -vmoption:-Xmx512m
   JTREG_TEST_OPTIONS += $(JTREG_TESTVM_MEMORY_OPTION)
 endif
+# Make it possible to specify the JIB_DATA_DIR for tests using the
+# JIB Artifact resolver
+JTREG_BASIC_OPTIONS += -e:JIB_DATA_DIR
 # Give tests access to JT_JAVA, see JDK-8141609
 JTREG_BASIC_OPTIONS += -e:JDK8_HOME=${JT_JAVA}
 # Give aot tests access to Visual Studio installation
