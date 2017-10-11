@@ -37,7 +37,6 @@ import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
-import sun.jvm.hotspot.utilities.Assert;
 
 // Mirror class for G1HeapRegionTable. It's essentially an index -> HeapRegion map.
 
@@ -136,11 +135,10 @@ public class G1HeapRegionTable extends VMObject {
     }
 
     public HeapRegion getByAddress(Address addr) {
-        if (Assert.ASSERTS_ENABLED) {
-            Assert.that(addr instanceof OopHandle, "addr should be OopHandle");
-        }
-
         long biasedIndex = addr.asLongValue() >>> shiftBy();
-        return new HeapRegion(addr.addOffsetToAsOopHandle(biasedIndex * HeapRegion.getPointerSize()));
+        long offset = biasedIndex * HeapRegion.getPointerSize();
+        Address result = (addr instanceof OopHandle) ? addr.addOffsetToAsOopHandle(offset)
+                                                     : addr.addOffsetTo(offset);
+        return new HeapRegion(result);
     }
 }
