@@ -83,6 +83,7 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 //   GenCollectedHeap
 //   G1CollectedHeap
 //   ParallelScavengeHeap
+//   CMSHeap
 //
 class CollectedHeap : public CHeapObj<mtInternal> {
   friend class VMStructs;
@@ -194,7 +195,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   enum Name {
     GenCollectedHeap,
     ParallelScavengeHeap,
-    G1CollectedHeap
+    G1CollectedHeap,
+    CMSHeap
   };
 
   static inline size_t filler_array_max_size() {
