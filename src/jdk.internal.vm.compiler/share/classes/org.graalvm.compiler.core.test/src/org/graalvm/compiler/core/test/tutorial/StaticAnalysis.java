@@ -256,7 +256,7 @@ public class StaticAnalysis {
                      * yet and the bytecode parser would only create a graph.
                      */
                     Plugins plugins = new Plugins(new InvocationPlugins());
-                    GraphBuilderConfiguration graphBuilderConfig = GraphBuilderConfiguration.getDefault(plugins).withEagerResolving(true);
+                    GraphBuilderConfiguration graphBuilderConfig = GraphBuilderConfiguration.getDefault(plugins).withEagerResolving(true).withUnresolvedIsError(true);
                     /*
                      * For simplicity, we ignore all exception handling during the static analysis.
                      * This is a constraint of this example code, a real static analysis needs to

@@ -30,6 +30,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -52,7 +54,10 @@ import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.calc.NormalizeCompareNode;
+import org.graalvm.compiler.nodes.calc.ObjectEqualsNode;
+import org.graalvm.compiler.nodes.extended.UnboxNode;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -256,6 +261,123 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                 }
             }
         }
+
+        if (tryEliminateBoxedReferenceEquals(tool)) {
+            return;
+        }
+    }
+
+    private boolean isUnboxedFrom(MetaAccessProvider meta, ValueNode x, ValueNode src) {
+        if (x == src) {
+            return true;
+        } else if (x instanceof UnboxNode) {
+            return isUnboxedFrom(meta, ((UnboxNode) x).getValue(), src);
+        } else if (x instanceof PiNode) {
+            PiNode pi = (PiNode) x;
+            return isUnboxedFrom(meta, pi.getOriginalNode(), src);
+        } else if (x instanceof LoadFieldNode) {
+            LoadFieldNode load = (LoadFieldNode) x;
+            ResolvedJavaType integerType = meta.lookupJavaType(Integer.class);
+            if (load.getValue().stamp().javaType(meta).equals(integerType)) {
+                return isUnboxedFrom(meta, load.getValue(), src);
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Attempts to replace the following pattern:
+     *
+     * <pre>
+     * Integer x = ...;
+     * Integer y = ...;
+     * if ((x == y) || x.equals(y)) { ... }
+     * </pre>
+     *
+     * with:
+     *
+     * <pre>
+     * Integer x = ...;
+     * Integer y = ...;
+     * if (x.equals(y)) { ... }
+     * </pre>
+     *
+     * whenever the probability that the reference check will pass is relatively small.
+     *
+     * See GR-1315 for more information.
+     */
+    private boolean tryEliminateBoxedReferenceEquals(SimplifierTool tool) {
+        if (!(condition instanceof ObjectEqualsNode)) {
+            return false;
+        }
+
+        MetaAccessProvider meta = tool.getMetaAccess();
+        ObjectEqualsNode equalsCondition = (ObjectEqualsNode) condition;
+        ValueNode x = equalsCondition.getX();
+        ValueNode y = equalsCondition.getY();
+        ResolvedJavaType integerType = meta.lookupJavaType(Integer.class);
+
+        // At least one argument for reference equal must be a boxed primitive.
+        if (!x.stamp().javaType(meta).equals(integerType) && !y.stamp().javaType(meta).equals(integerType)) {
+            return false;
+        }
+
+        // The reference equality check is usually more efficient compared to a boxing check.
+        // The success of the reference equals must therefore be relatively rare, otherwise it makes
+        // no sense to eliminate it.
+        if (getTrueSuccessorProbability() > 0.4) {
+            return false;
+        }
+
+        // True branch must be empty.
+        if (trueSuccessor instanceof BeginNode || trueSuccessor instanceof LoopExitNode) {
+            if (trueSuccessor.next() instanceof EndNode) {
+                // Empty true branch.
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+        // False branch must only check the unboxed values.
+        UnboxNode unbox = null;
+        FixedGuardNode unboxCheck = null;
+        for (FixedNode node : falseSuccessor.getBlockNodes()) {
+            if (!(node instanceof BeginNode || node instanceof UnboxNode || node instanceof FixedGuardNode || node instanceof EndNode ||
+                            node instanceof LoadFieldNode || node instanceof LoopExitNode)) {
+                return false;
+            }
+            if (node instanceof UnboxNode) {
+                if (unbox == null) {
+                    unbox = (UnboxNode) node;
+                } else {
+                    return false;
+                }
+            }
+            if (!(node instanceof FixedGuardNode)) {
+                continue;
+            }
+            FixedGuardNode fixed = (FixedGuardNode) node;
+            if (!(fixed.condition() instanceof IntegerEqualsNode)) {
+                continue;
+            }
+            IntegerEqualsNode equals = (IntegerEqualsNode) fixed.condition();
+            if ((isUnboxedFrom(meta, equals.getX(), x) && isUnboxedFrom(meta, equals.getY(), y)) || (isUnboxedFrom(meta, equals.getX(), y) && isUnboxedFrom(meta, equals.getY(), x))) {
+                unboxCheck = fixed;
+            }
+        }
+        if (unbox == null || unboxCheck == null) {
+            return false;
+        }
+
+        // Falsify the reference check.
+        setCondition(graph().addOrUnique(LogicConstantNode.contradiction()));
+
+        return true;
     }
 
     /**
