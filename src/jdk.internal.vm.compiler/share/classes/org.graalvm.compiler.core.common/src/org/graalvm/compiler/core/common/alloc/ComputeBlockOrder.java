@@ -253,13 +253,17 @@ public final class ComputeBlockOrder {
      * Comparator for sorting blocks based on loop depth and probability.
      */
     private static class BlockOrderComparator<T extends AbstractBlockBase<T>> implements Comparator<T> {
+        private static final double EPSILON = 1E-6;
 
         @Override
         public int compare(T a, T b) {
-            // Loop blocks before any loop exit block.
-            int diff = b.getLoopDepth() - a.getLoopDepth();
-            if (diff != 0) {
-                return diff;
+            // Loop blocks before any loop exit block. The only exception are blocks that are
+            // (almost) impossible to reach.
+            if (a.probability() > EPSILON && b.probability() > EPSILON) {
+                int diff = b.getLoopDepth() - a.getLoopDepth();
+                if (diff != 0) {
+                    return diff;
+                }
             }
 
             // Blocks with high probability before blocks with low probability.

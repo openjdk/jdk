@@ -1249,7 +1249,7 @@ public abstract class GraalCompilerTest extends GraalTest {
     }
 
     protected PhaseSuite<HighTierContext> getEagerGraphBuilderSuite() {
-        return getCustomGraphBuilderSuite(GraphBuilderConfiguration.getDefault(getDefaultGraphBuilderPlugins()).withEagerResolving(true));
+        return getCustomGraphBuilderSuite(GraphBuilderConfiguration.getDefault(getDefaultGraphBuilderPlugins()).withEagerResolving(true).withUnresolvedIsError(true));
     }
 
     /**

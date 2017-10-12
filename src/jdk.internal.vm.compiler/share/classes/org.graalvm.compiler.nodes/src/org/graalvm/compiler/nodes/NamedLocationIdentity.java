@@ -60,6 +60,11 @@ public class NamedLocationIdentity extends LocationIdentity implements FormatWit
      */
     public static final LocationIdentity ARRAY_LENGTH_LOCATION = NamedLocationIdentity.immutable("[].length");
 
+    /**
+     * Denotes an off-heap address.
+     */
+    public static final LocationIdentity OFF_HEAP_LOCATION = NamedLocationIdentity.mutable("OFF_HEAP_LOCATION");
+
     private final String name;
     private final boolean immutable;
 
@@ -81,7 +86,7 @@ public class NamedLocationIdentity extends LocationIdentity implements FormatWit
 
     /**
      * Creates a named unique location identity for read operations against immutable memory.
-     * Immutable memory will never have a visible write in the graph, which is more restictive than
+     * Immutable memory will never have a visible write in the graph, which is more restrictive than
      * Java final.
      *
      * @param name the name of the new location identity

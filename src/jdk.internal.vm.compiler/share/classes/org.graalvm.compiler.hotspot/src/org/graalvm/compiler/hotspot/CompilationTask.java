@@ -240,7 +240,7 @@ public class CompilationTask {
     }
 
     /**
-     * @return the compilation id plus a trailing '%' is the compilation is an OSR to match
+     * @return the compilation id plus a trailing '%' if the compilation is an OSR to match
      *         PrintCompilation style output
      */
     public String getIdString() {

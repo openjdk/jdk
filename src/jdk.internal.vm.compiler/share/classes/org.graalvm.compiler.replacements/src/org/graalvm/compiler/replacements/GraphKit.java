@@ -238,11 +238,11 @@ public class GraphKit implements GraphBuilderTool {
 
         if (frameStateBuilder != null) {
             if (invoke.getStackKind() != JavaKind.Void) {
-                frameStateBuilder.push(returnType.getJavaKind(), invoke);
+                frameStateBuilder.push(invoke.getStackKind(), invoke);
             }
             invoke.setStateAfter(frameStateBuilder.create(bci, invoke));
             if (invoke.getStackKind() != JavaKind.Void) {
-                frameStateBuilder.pop(returnType.getJavaKind());
+                frameStateBuilder.pop(invoke.getStackKind());
             }
         }
         return invoke;
@@ -475,11 +475,11 @@ public class GraphKit implements GraphBuilderTool {
         invoke.setNext(noExceptionEdge);
         if (frameStateBuilder != null) {
             if (invoke.getStackKind() != JavaKind.Void) {
-                frameStateBuilder.push(returnType.getJavaKind(), invoke);
+                frameStateBuilder.push(invoke.getStackKind(), invoke);
             }
             invoke.setStateAfter(frameStateBuilder.create(invokeBci, invoke));
             if (invoke.getStackKind() != JavaKind.Void) {
-                frameStateBuilder.pop(returnType.getJavaKind());
+                frameStateBuilder.pop(invoke.getStackKind());
             }
         }
         lastFixedNode = null;

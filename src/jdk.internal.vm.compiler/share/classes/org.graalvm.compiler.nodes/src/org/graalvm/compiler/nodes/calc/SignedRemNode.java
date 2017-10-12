@@ -60,12 +60,26 @@ public class SignedRemNode extends IntegerDivRemNode implements LIRLowerable {
                 return this; // this will trap, can not canonicalize
             }
             return ConstantNode.forIntegerStamp(stamp(), forX.asJavaConstant().asLong() % y);
-        } else if (forY.isConstant()) {
-            long c = forY.asJavaConstant().asLong();
-            if (c == 1 || c == -1) {
+        } else if (forY.isConstant() && forX.stamp() instanceof IntegerStamp && forY.stamp() instanceof IntegerStamp) {
+            long constY = forY.asJavaConstant().asLong();
+            IntegerStamp xStamp = (IntegerStamp) forX.stamp();
+            IntegerStamp yStamp = (IntegerStamp) forY.stamp();
+            if (constY < 0 && constY != CodeUtil.minValue(yStamp.getBits())) {
+                return new SignedRemNode(forX, ConstantNode.forIntegerStamp(yStamp, -constY)).canonical(tool);
+            }
+
+            if (constY == 1) {
                 return ConstantNode.forIntegerStamp(stamp(), 0);
-            } else if (c > 0 && CodeUtil.isPowerOf2(c) && forX.stamp() instanceof IntegerStamp && ((IntegerStamp) forX.stamp()).isPositive()) {
-                return new AndNode(forX, ConstantNode.forIntegerStamp(stamp(), c - 1));
+            } else if (CodeUtil.isPowerOf2(constY)) {
+                if (xStamp.isPositive()) {
+                    return new AndNode(forX, ConstantNode.forIntegerStamp(stamp(), constY - 1));
+                } else if (xStamp.isNegative()) {
+                    return new NegateNode(new AndNode(new NegateNode(forX), ConstantNode.forIntegerStamp(stamp(), constY - 1)));
+                } else {
+                    return new ConditionalNode(IntegerLessThanNode.create(forX, ConstantNode.forIntegerStamp(forX.stamp(), 0)),
+                                    new NegateNode(new AndNode(new NegateNode(forX), ConstantNode.forIntegerStamp(stamp(), constY - 1))),
+                                    new AndNode(forX, ConstantNode.forIntegerStamp(stamp(), constY - 1)));
+                }
             }
         }
         return this;
