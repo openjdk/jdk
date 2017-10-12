@@ -34,14 +34,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 /* @test
- * @bug 8184940
+ * @bug 8184940 8188869
  * @summary JDK 9 rejects zip files where the modified day or month is 0
+ *          or otherwise represent an invalid date, such as 1980-02-30 24:60:60
  * @author Liam Miller-Cushon
  */
 public class ZeroDate {
@@ -63,12 +65,19 @@ public class ZeroDate {
         Files.delete(path);
 
         // year, month, day are zero
-        testDate(data.clone(), 0, LocalDate.of(1979, 11, 30));
+        testDate(data.clone(), 0, LocalDate.of(1979, 11, 30).atStartOfDay());
         // only year is zero
-        testDate(data.clone(), 0 << 25 | 4 << 21 | 5 << 16, LocalDate.of(1980, 4, 5));
+        testDate(data.clone(), 0 << 25 | 4 << 21 | 5 << 16, LocalDate.of(1980, 4, 5).atStartOfDay());
+        // month is greater than 12
+        testDate(data.clone(), 0 << 25 | 13 << 21 | 1 << 16, LocalDate.of(1981, 1, 1).atStartOfDay());
+        // 30th of February
+        testDate(data.clone(), 0 << 25 | 2 << 21 | 30 << 16, LocalDate.of(1980, 3, 1).atStartOfDay());
+        // 30th of February, 24:60:60
+        testDate(data.clone(), 0 << 25 | 2 << 21 | 30 << 16 | 24 << 11 | 60 << 5 | 60 >> 1,
+                LocalDateTime.of(1980, 3, 2, 1, 1, 0));
     }
 
-    private static void testDate(byte[] data, int date, LocalDate expected) throws IOException {
+    private static void testDate(byte[] data, int date, LocalDateTime expected) throws IOException {
         // set the datetime
         int endpos = data.length - ENDHDR;
         int cenpos = u16(data, endpos + ENDOFF);
@@ -84,8 +93,7 @@ public class ZeroDate {
         try (ZipFile zf = new ZipFile(path.toFile())) {
             ZipEntry ze = zf.entries().nextElement();
             Instant actualInstant = ze.getLastModifiedTime().toInstant();
-            Instant expectedInstant =
-                    expected.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
+            Instant expectedInstant = expected.atZone(ZoneId.systemDefault()).toInstant();
             if (!actualInstant.equals(expectedInstant)) {
                 throw new AssertionError(
                         String.format("actual: %s, expected: %s", actualInstant, expectedInstant));
