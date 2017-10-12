@@ -922,7 +922,7 @@ public class JRootPane extends JComponent implements Accessible {
                 rd = new Dimension(Integer.MAX_VALUE,
                         Integer.MAX_VALUE - i.top - i.bottom - mbd.height - 1);
             }
-            return new Dimension(Math.min(rd.width, mbd.width) + i.left + i.right,
+            return new Dimension(Math.max(rd.width, mbd.width) + i.left + i.right,
                                          rd.height + mbd.height + i.top + i.bottom);
         }
 
