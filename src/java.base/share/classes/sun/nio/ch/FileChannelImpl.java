@@ -90,6 +90,18 @@ public class FileChannelImpl
     // Cleanable with an action which closes this channel's file descriptor
     private final Cleanable closer;
 
+    private static class Closer implements Runnable {
+        private final FileDescriptor fd;
+
+        Closer(FileDescriptor fd) {
+            this.fd = fd;
+        }
+
+        public void run() {
+            fdAccess.close(fd);
+        }
+    }
+
     private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
                             boolean writable, Object parent)
     {
@@ -101,8 +113,10 @@ public class FileChannelImpl
         this.nd = new FileDispatcherImpl();
         // Register a cleaning action if and only if there is no parent
         // as the parent will take care of closing the file descriptor.
-        this.closer= parent != null ? null :
-            CleanerFactory.cleaner().register(this, () -> fdAccess.close(fd));
+        // FileChannel is used by the LambdaMetaFactory so a lambda cannot
+        // be used here hence we use a nested class instead.
+        this.closer = parent != null ? null :
+            CleanerFactory.cleaner().register(this, new Closer(fd));
     }
 
     // Used by FileInputStream.getChannel(), FileOutputStream.getChannel
