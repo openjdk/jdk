@@ -70,7 +70,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="cpu/vm/templateTable_x86_32.cpp|cpu/vm/templateInterpreter_x86_32.cpp|cpu/vm/stubRoutines_x86_32.cpp|cpu/vm/stubGenerator_x86_32.cpp|cpu/vm/sharedRuntime_x86_32.cpp|cpu/vm/jniFastGetField_x86_32.cpp|cpu/vm/interpreterRT_x86_32.cpp|cpu/vm/interpreter_x86_32.cpp|cpu/vm/interp_masm_x86_32.cpp|cpu/vm/vtableStubs_x86_32.cpp" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name=""/>
+            <entry excluding="cpu/x86/templateTable_x86_32.cpp|cpu/x86/templateInterpreter_x86_32.cpp|cpu/x86/stubRoutines_x86_32.cpp|cpu/x86/stubGenerator_x86_32.cpp|cpu/x86/sharedRuntime_x86_32.cpp|cpu/x86/jniFastGetField_x86_32.cpp|cpu/x86/interpreterRT_x86_32.cpp|cpu/x86/interpreter_x86_32.cpp|cpu/x86/interp_masm_x86_32.cpp|cpu/x86/vtableStubs_x86_32.cpp" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
