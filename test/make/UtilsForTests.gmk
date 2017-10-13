@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,20 @@
 # questions.
 #
 
-default: all
+# This file contains utilities common for multiple test makefiles.
 
-include $(SPEC)
+# Assert two strings are equal
+# 1 - Tested value
+# 2 - Exepected value
+# 3 - Error message
+define assert-equals
+  ifneq ($$(strip $1),$$(strip $2))
+    $$(error $3 - Expected >$$(strip $2)< - Got >$$(strip $1)<)
+  endif
+endef
 
-make-base:
-	+$(MAKE) -f TestMakeBase.gmk $(TEST_SUBTARGET)
-
-java-compilation:
-	+$(MAKE) -f TestJavaCompilation.gmk $(TEST_SUBTARGET)
-
-copy-files:
-	+$(MAKE) -f TestCopyFiles.gmk $(TEST_SUBTARGET)
-
-test-idea:
-	+$(MAKE) -f TestIdea.gmk $(TEST_SUBTARGET)
-
-
-all: make-base java-compilation copy-files test-idea
-
-.PHONY: default all make-base java-compilation copy-files test-idea
+# On macosx, file system timestamps only have 1 second resultion so must add
+# sleeps to properly test dependencies.
+ifeq ($(OPENJDK_BUILD_OS), macosx)
+  SLEEP_ON_MAC := sleep 1
+endif
