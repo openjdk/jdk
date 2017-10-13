@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "code/codeCache.hpp"
 #include "gc/parallel/adjoiningGenerations.hpp"
 #include "gc/parallel/adjoiningVirtualSpaces.hpp"
 #include "gc/parallel/cardTableExtension.hpp"
@@ -167,10 +168,6 @@ bool ParallelScavengeHeap::is_in(const void* p) const {
 
 bool ParallelScavengeHeap::is_in_reserved(const void* p) const {
   return young_gen()->is_in_reserved(p) || old_gen()->is_in_reserved(p);
-}
-
-bool ParallelScavengeHeap::is_scavengable(const void* addr) {
-  return is_in_young((oop)addr);
 }
 
 // There are two levels of allocation policy here.
@@ -665,3 +662,15 @@ void ParallelScavengeHeap::gen_mangle_unused_area() {
   }
 }
 #endif
+
+bool ParallelScavengeHeap::is_scavengable(oop obj) {
+  return is_in_young(obj);
+}
+
+void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
+  CodeCache::register_scavenge_root_nmethod(nm);
+}
+
+void ParallelScavengeHeap::verify_nmethod(nmethod* nm) {
+  CodeCache::verify_scavenge_root_nmethod(nm);
+}

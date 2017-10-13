@@ -229,9 +229,13 @@ public:
   bool is_in_partial_collection(const void* p);
 #endif
 
-  virtual bool is_scavengable(const void* addr) {
-    return is_in_young((oop)addr);
+  virtual bool is_scavengable(oop obj) {
+    return is_in_young(obj);
   }
+
+  // Optimized nmethod scanning support routines
+  virtual void register_nmethod(nmethod* nm);
+  virtual void verify_nmethod(nmethod* nmethod);
 
   // Iteration functions.
   void oop_iterate_no_header(OopClosure* cl);

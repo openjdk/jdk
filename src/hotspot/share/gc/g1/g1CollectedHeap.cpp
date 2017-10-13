@@ -141,13 +141,6 @@ void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_region
   reset_from_card_cache(start_idx, num_regions);
 }
 
-// Returns true if the reference points to an object that
-// can move in an incremental collection.
-bool G1CollectedHeap::is_scavengable(const void* p) {
-  HeapRegion* hr = heap_region_containing(p);
-  return !hr->is_pinned();
-}
-
 // Private methods.
 
 HeapRegion*
@@ -5323,17 +5316,20 @@ public:
   void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
-void G1CollectedHeap::register_nmethod(nmethod* nm) {
-  CollectedHeap::register_nmethod(nm);
+// Returns true if the reference points to an object that
+// can move in an incremental collection.
+bool G1CollectedHeap::is_scavengable(oop obj) {
+  HeapRegion* hr = heap_region_containing(obj);
+  return !hr->is_pinned();
+}
 
+void G1CollectedHeap::register_nmethod(nmethod* nm) {
   guarantee(nm != NULL, "sanity");
   RegisterNMethodOopClosure reg_cl(this, nm);
   nm->oops_do(&reg_cl);
 }
 
 void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
-  CollectedHeap::unregister_nmethod(nm);
-
   guarantee(nm != NULL, "sanity");
   UnregisterNMethodOopClosure reg_cl(this, nm);
   nm->oops_do(&reg_cl, true);

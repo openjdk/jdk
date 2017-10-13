@@ -501,6 +501,14 @@ void GenCollectedHeap::do_collection(bool           full,
 #endif
 }
 
+void GenCollectedHeap::register_nmethod(nmethod* nm) {
+  CodeCache::register_scavenge_root_nmethod(nm);
+}
+
+void GenCollectedHeap::verify_nmethod(nmethod* nm) {
+  CodeCache::verify_scavenge_root_nmethod(nm);
+}
+
 HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   return gen_policy()->satisfy_failed_allocation(size, is_tlab);
 }

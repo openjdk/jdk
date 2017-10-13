@@ -539,7 +539,7 @@ bool oopDesc::is_gc_marked() const {
 }
 
 bool oopDesc::is_scavengable() const {
-  return Universe::heap()->is_scavengable(this);
+  return Universe::heap()->is_scavengable(oop(const_cast<oopDesc*>(this)));
 }
 
 // Used by scavengers
