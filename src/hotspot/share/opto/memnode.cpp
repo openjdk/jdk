@@ -1771,6 +1771,23 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
             Opcode() == Op_LoadKlass,
             "Field accesses must be precise" );
     // For klass/static loads, we expect the _type to be precise
+  } else if (tp->base() == Type::RawPtr && adr->is_Load() && off == 0) {
+    /* With mirrors being an indirect in the Klass*
+     * the VM is now using two loads. LoadKlass(LoadP(LoadP(Klass, mirror_offset), zero_offset))
+     * The LoadP from the Klass has a RawPtr type (see LibraryCallKit::load_mirror_from_klass).
+     *
+     * So check the type and klass of the node before the LoadP.
+     */
+    Node* adr2 = adr->in(MemNode::Address);
+    const TypeKlassPtr* tkls = phase->type(adr2)->isa_klassptr();
+    if (tkls != NULL && !StressReflectiveCode) {
+      ciKlass* klass = tkls->klass();
+      if (klass->is_loaded() && tkls->klass_is_exact() && tkls->offset() == in_bytes(Klass::java_mirror_offset())) {
+        assert(adr->Opcode() == Op_LoadP, "must load an oop from _java_mirror");
+        assert(Opcode() == Op_LoadP, "must load an oop from _java_mirror");
+        return TypeInstPtr::make(klass->java_mirror());
+      }
+    }
   }
 
   const TypeKlassPtr *tkls = tp->isa_klassptr();
@@ -1798,12 +1815,6 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
       }
       const Type* aift = load_array_final_field(tkls, klass);
       if (aift != NULL)  return aift;
-      if (tkls->offset() == in_bytes(Klass::java_mirror_offset())) {
-        // The field is Klass::_java_mirror.  Return its (constant) value.
-        // (Folds up the 2nd indirection in anObjConstant.getClass().)
-        assert(Opcode() == Op_LoadP, "must load an oop from _java_mirror");
-        return TypeInstPtr::make(klass->java_mirror());
-      }
     }
 
     // We can still check if we are loading from the primary_supers array at a
@@ -2203,22 +2214,24 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   // This improves reflective code, often making the Class
   // mirror go completely dead.  (Current exception:  Class
   // mirrors may appear in debug info, but we could clean them out by
-  // introducing a new debug info operator for Klass*.java_mirror).
+  // introducing a new debug info operator for Klass.java_mirror).
+
   if (toop->isa_instptr() && toop->klass() == phase->C->env()->Class_klass()
       && offset == java_lang_Class::klass_offset_in_bytes()) {
-    // We are loading a special hidden field from a Class mirror,
-    // the field which points to its Klass or ArrayKlass metaobject.
     if (base->is_Load()) {
-      Node* adr2 = base->in(MemNode::Address);
-      const TypeKlassPtr* tkls = phase->type(adr2)->isa_klassptr();
-      if (tkls != NULL && !tkls->empty()
-          && (tkls->klass()->is_instance_klass() ||
+      Node* base2 = base->in(MemNode::Address);
+      if (base2->is_Load()) { /* direct load of a load which is the oophandle */
+        Node* adr2 = base2->in(MemNode::Address);
+        const TypeKlassPtr* tkls = phase->type(adr2)->isa_klassptr();
+        if (tkls != NULL && !tkls->empty()
+            && (tkls->klass()->is_instance_klass() ||
               tkls->klass()->is_array_klass())
-          && adr2->is_AddP()
-          ) {
-        int mirror_field = in_bytes(Klass::java_mirror_offset());
-        if (tkls->offset() == mirror_field) {
-          return adr2->in(AddPNode::Base);
+            && adr2->is_AddP()
+           ) {
+          int mirror_field = in_bytes(Klass::java_mirror_offset());
+          if (tkls->offset() == mirror_field) {
+            return adr2->in(AddPNode::Base);
+          }
         }
       }
     }

@@ -79,8 +79,14 @@ public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         if ((config.vmVersionFeatures & 1L << config.sparc_DES) != 0) {
             features.add(CPUFeature.DES);
         }
+        if ((config.vmVersionFeatures & 1L << config.sparc_DICTUNP) != 0) {
+            features.add(CPUFeature.DICTUNP);
+        }
         if ((config.vmVersionFeatures & 1L << config.sparc_FMAF) != 0) {
             features.add(CPUFeature.FMAF);
+        }
+        if ((config.vmVersionFeatures & 1L << config.sparc_FPCMPSHL) != 0) {
+            features.add(CPUFeature.FPCMPSHL);
         }
         if ((config.vmVersionFeatures & 1L << config.sparc_HPC) != 0) {
             features.add(CPUFeature.HPC);
@@ -93,6 +99,9 @@ public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         }
         if ((config.vmVersionFeatures & 1L << config.sparc_MD5) != 0) {
             features.add(CPUFeature.MD5);
+        }
+        if ((config.vmVersionFeatures & 1L << config.sparc_MME) != 0) {
+            features.add(CPUFeature.MME);
         }
         if ((config.vmVersionFeatures & 1L << config.sparc_MONT) != 0) {
             features.add(CPUFeature.MONT);
@@ -112,17 +121,29 @@ public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         if ((config.vmVersionFeatures & 1L << config.sparc_POPC) != 0) {
             features.add(CPUFeature.POPC);
         }
+        if ((config.vmVersionFeatures & 1L << config.sparc_RLE) != 0) {
+            features.add(CPUFeature.RLE);
+        }
         if ((config.vmVersionFeatures & 1L << config.sparc_SHA1) != 0) {
             features.add(CPUFeature.SHA1);
         }
         if ((config.vmVersionFeatures & 1L << config.sparc_SHA256) != 0) {
             features.add(CPUFeature.SHA256);
         }
+        if ((config.vmVersionFeatures & 1L << config.sparc_SHA3) != 0) {
+            features.add(CPUFeature.SHA3);
+        }
         if ((config.vmVersionFeatures & 1L << config.sparc_SHA512) != 0) {
             features.add(CPUFeature.SHA512);
         }
         if ((config.vmVersionFeatures & 1L << config.sparc_SPARC5) != 0) {
             features.add(CPUFeature.SPARC5);
+        }
+        if ((config.vmVersionFeatures & 1L << config.sparc_SPARC5B) != 0) {
+            features.add(CPUFeature.SPARC5B);
+        }
+        if ((config.vmVersionFeatures & 1L << config.sparc_SPARC6) != 0) {
+            features.add(CPUFeature.SPARC6);
         }
         if ((config.vmVersionFeatures & 1L << config.sparc_V9) != 0) {
             features.add(CPUFeature.V9);
@@ -141,6 +162,9 @@ public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         }
         if ((config.vmVersionFeatures & 1L << config.sparc_VIS3B) != 0) {
             features.add(CPUFeature.VIS3B);
+        }
+        if ((config.vmVersionFeatures & 1L << config.sparc_VIS3C) != 0) {
+            features.add(CPUFeature.VIS3C);
         }
         if ((config.vmVersionFeatures & 1L << config.sparc_XMONT) != 0) {
             features.add(CPUFeature.XMONT);

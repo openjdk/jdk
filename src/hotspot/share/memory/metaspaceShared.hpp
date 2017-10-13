@@ -146,7 +146,8 @@ class MetaspaceShared : AllStatic {
   static size_t core_spaces_size() {
     return _core_spaces_size;
   }
-  static void initialize_shared_rs() NOT_CDS_RETURN;
+  static void initialize_dumptime_shared_and_meta_spaces() NOT_CDS_RETURN;
+  static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
 
   // Delta of this object from the bottom of the archive.
   static uintx object_delta(void* obj) {

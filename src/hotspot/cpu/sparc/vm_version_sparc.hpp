@@ -67,6 +67,16 @@ protected:
     ISA_PAUSE_NSEC,
     ISA_VAMASK,
 
+    ISA_SPARC6,
+    ISA_DICTUNP,
+    ISA_FPCMPSHL,
+    ISA_RLE,
+    ISA_SHA3,
+    ISA_FJATHPLUS2,
+    ISA_VIS3C,
+    ISA_SPARC5B,
+    ISA_MME,
+
     // Synthesised properties:
 
     CPU_FAST_IDIV,
@@ -79,7 +89,7 @@ protected:
   };
 
 private:
-  enum { ISA_last_feature = ISA_VAMASK,
+  enum { ISA_last_feature = ISA_MME,
          CPU_last_feature = CPU_BLK_ZEROING };
 
   enum {
@@ -119,6 +129,16 @@ private:
     ISA_pause_nsec_msk  = UINT64_C(1) << ISA_PAUSE_NSEC,
     ISA_vamask_msk      = UINT64_C(1) << ISA_VAMASK,
 
+    ISA_sparc6_msk      = UINT64_C(1) << ISA_SPARC6,
+    ISA_dictunp_msk     = UINT64_C(1) << ISA_DICTUNP,
+    ISA_fpcmpshl_msk    = UINT64_C(1) << ISA_FPCMPSHL,
+    ISA_rle_msk         = UINT64_C(1) << ISA_RLE,
+    ISA_sha3_msk        = UINT64_C(1) << ISA_SHA3,
+    ISA_fjathplus2_msk  = UINT64_C(1) << ISA_FJATHPLUS2,
+    ISA_vis3c_msk       = UINT64_C(1) << ISA_VIS3C,
+    ISA_sparc5b_msk     = UINT64_C(1) << ISA_SPARC5B,
+    ISA_mme_msk         = UINT64_C(1) << ISA_MME,
+
     CPU_fast_idiv_msk   = UINT64_C(1) << CPU_FAST_IDIV,
     CPU_fast_rdpc_msk   = UINT64_C(1) << CPU_FAST_RDPC,
     CPU_fast_bis_msk    = UINT64_C(1) << CPU_FAST_BIS,
@@ -153,40 +173,51 @@ private:
  *  UltraSPARC T2+:    (Victoria Falls, etc.)
  *    SPARC-V9, VIS, VIS2, ASI_BIS, POPC    (Crypto/hash in SPU)
  *
- *  UltraSPARC T3:     (Rainbow Falls/S2)
+ *  UltraSPARC T3:     (Rainbow Falls/C2)
  *    SPARC-V9, VIS, VIS2, ASI_BIS, POPC    (Crypto/hash in SPU)
  *
- *  Oracle SPARC T4/T5/M5:  (Core S3)
+ *  Oracle SPARC T4/T5/M5:  (Core C3)
  *    SPARC-V9, VIS, VIS2, VIS3, ASI_BIS, HPC, POPC, FMAF, IMA, PAUSE, CBCOND,
  *    AES, DES, Kasumi, Camellia, MD5, SHA1, SHA256, SHA512, CRC32C, MONT, MPMUL
  *
- *  Oracle SPARC M7:   (Core S4)
+ *  Oracle SPARC M7:   (Core C4)
  *    SPARC-V9, VIS, VIS2, VIS3, ASI_BIS, HPC, POPC, FMAF, IMA, PAUSE, CBCOND,
  *    AES, DES, Camellia, MD5, SHA1, SHA256, SHA512, CRC32C, MONT, MPMUL, VIS3b,
  *    ADI, SPARC5, MWAIT, XMPMUL, XMONT, PAUSE_NSEC, VAMASK
  *
+ *  Oracle SPARC M8:   (Core C5)
+ *    SPARC-V9, VIS, VIS2, VIS3, ASI_BIS, HPC, POPC, FMAF, IMA, PAUSE, CBCOND,
+ *    AES, DES, Camellia, MD5, SHA1, SHA256, SHA512, CRC32C, MONT, MPMUL, VIS3b,
+ *    ADI, SPARC5, MWAIT, XMPMUL, XMONT, PAUSE_NSEC, VAMASK, SPARC6, FPCMPSHL,
+ *    DICTUNP, RLE, SHA3, MME
+ *
+ *    NOTE: Oracle Number support ignored.
  */
   enum {
     niagara1_msk = ISA_v9_msk | ISA_vis1_msk | ISA_blk_init_msk,
     niagara2_msk = niagara1_msk | ISA_popc_msk,
 
-    core_S2_msk  = niagara2_msk | ISA_vis2_msk,
+    core_C2_msk  = niagara2_msk | ISA_vis2_msk,
 
-    core_S3_msk  = core_S2_msk | ISA_fmaf_msk | ISA_vis3_msk | ISA_hpc_msk |
+    core_C3_msk  = core_C2_msk | ISA_fmaf_msk | ISA_vis3_msk | ISA_hpc_msk |
         ISA_ima_msk | ISA_aes_msk | ISA_des_msk | ISA_kasumi_msk |
         ISA_camellia_msk | ISA_md5_msk | ISA_sha1_msk | ISA_sha256_msk |
         ISA_sha512_msk | ISA_mpmul_msk | ISA_mont_msk | ISA_pause_msk |
         ISA_cbcond_msk | ISA_crc32c_msk,
 
-    core_S4_msk  = core_S3_msk - ISA_kasumi_msk |
+    core_C4_msk  = core_C3_msk - ISA_kasumi_msk |
         ISA_vis3b_msk | ISA_adi_msk | ISA_sparc5_msk | ISA_mwait_msk |
         ISA_xmpmul_msk | ISA_xmont_msk | ISA_pause_nsec_msk | ISA_vamask_msk,
 
+    core_C5_msk = core_C4_msk | ISA_sparc6_msk | ISA_dictunp_msk |
+        ISA_fpcmpshl_msk | ISA_rle_msk | ISA_sha3_msk | ISA_mme_msk,
+
     ultra_sparc_t1_msk = niagara1_msk,
     ultra_sparc_t2_msk = niagara2_msk,
-    ultra_sparc_t3_msk = core_S2_msk,
-    ultra_sparc_m5_msk = core_S3_msk,   // NOTE: First out-of-order pipeline.
-    ultra_sparc_m7_msk = core_S4_msk
+    ultra_sparc_t3_msk = core_C2_msk,
+    ultra_sparc_m5_msk = core_C3_msk,   // NOTE: First out-of-order pipeline.
+    ultra_sparc_m7_msk = core_C4_msk,
+    ultra_sparc_m8_msk = core_C5_msk
   };
 
   static uint _L2_data_cache_line_size;
@@ -246,6 +277,16 @@ public:
   static bool has_xmont()        { return (_features & ISA_xmont_msk) != 0; }
   static bool has_pause_nsec()   { return (_features & ISA_pause_nsec_msk) != 0; }
   static bool has_vamask()       { return (_features & ISA_vamask_msk) != 0; }
+
+  static bool has_sparc6()       { return (_features & ISA_sparc6_msk) != 0; }
+  static bool has_dictunp()      { return (_features & ISA_dictunp_msk) != 0; }
+  static bool has_fpcmpshl()     { return (_features & ISA_fpcmpshl_msk) != 0; }
+  static bool has_rle()          { return (_features & ISA_rle_msk) != 0; }
+  static bool has_sha3()         { return (_features & ISA_sha3_msk) != 0; }
+  static bool has_athena_plus2() { return (_features & ISA_fjathplus2_msk) != 0; }
+  static bool has_vis3c()        { return (_features & ISA_vis3c_msk) != 0; }
+  static bool has_sparc5b()      { return (_features & ISA_sparc5b_msk) != 0; }
+  static bool has_mme()          { return (_features & ISA_mme_msk) != 0; }
 
   static bool has_fast_idiv()    { return (_features & CPU_fast_idiv_msk) != 0; }
   static bool has_fast_rdpc()    { return (_features & CPU_fast_rdpc_msk) != 0; }

@@ -25,28 +25,6 @@
 #ifndef OS_CPU_SOLARIS_X86_VM_ATOMIC_SOLARIS_X86_HPP
 #define OS_CPU_SOLARIS_X86_VM_ATOMIC_SOLARIS_X86_HPP
 
-inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-
-
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
-
-inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
-inline void Atomic::inc    (volatile jint*     dest) { (void)add    (1, dest); }
-inline void Atomic::inc_ptr(volatile intptr_t* dest) { (void)add_ptr(1, dest); }
-inline void Atomic::inc_ptr(volatile void*     dest) { (void)add_ptr(1, dest); }
-
-inline void Atomic::dec    (volatile jint*     dest) { (void)add    (-1, dest); }
-inline void Atomic::dec_ptr(volatile intptr_t* dest) { (void)add_ptr(-1, dest); }
-inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); }
-
 // For Sun Studio - implementation is in solaris_x86_64.il.
 
 extern "C" {
@@ -92,8 +70,26 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
                      reinterpret_cast<jlong volatile*>(dest)));
 }
 
-inline jint     Atomic::xchg       (jint     exchange_value, volatile jint*     dest) {
-  return _Atomic_xchg(exchange_value, dest);
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(T));
+  return PrimitiveConversions::cast<T>(
+    _Atomic_xchg(PrimitiveConversions::cast<jint>(exchange_value),
+                 reinterpret_cast<jint volatile*>(dest)));
+}
+
+extern "C" jlong _Atomic_xchg_long(jlong exchange_value, volatile jlong* dest);
+
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  return PrimitiveConversions::cast<T>(
+    _Atomic_xchg_long(PrimitiveConversions::cast<jlong>(exchange_value),
+                      reinterpret_cast<jlong volatile*>(dest)));
 }
 
 // Not using cmpxchg_using_helper here, because some configurations of
@@ -140,19 +136,5 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
                          reinterpret_cast<jlong volatile*>(dest),
                          PrimitiveConversions::cast<jlong>(compare_value)));
 }
-
-inline void Atomic::store    (jlong    store_value, jlong*             dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, volatile jlong*    dest) { *dest = store_value; }
-extern "C" jlong _Atomic_xchg_long(jlong exchange_value, volatile jlong* dest);
-
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
-  return (intptr_t)_Atomic_xchg_long((jlong)exchange_value, (volatile jlong*)dest);
-}
-
-inline void*    Atomic::xchg_ptr(void*    exchange_value, volatile void*     dest) {
-  return (void*)_Atomic_xchg_long((jlong)exchange_value, (volatile jlong*)dest);
-}
-
-inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #endif // OS_CPU_SOLARIS_X86_VM_ATOMIC_SOLARIS_X86_HPP

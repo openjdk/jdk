@@ -129,7 +129,7 @@ void MacroAssembler::calculate_address_from_global_toc(Register dst, address add
   }
 }
 
-int MacroAssembler::patch_calculate_address_from_global_toc_at(address a, address bound, address addr) {
+address MacroAssembler::patch_calculate_address_from_global_toc_at(address a, address bound, address addr) {
   const int offset = MacroAssembler::offset_to_global_toc(addr);
 
   const address inst2_addr = a;
@@ -155,7 +155,7 @@ int MacroAssembler::patch_calculate_address_from_global_toc_at(address a, addres
   assert(is_addis(inst1) && inv_ra_field(inst1) == 29 /* R29 */, "source must be global TOC");
   set_imm((int *)inst1_addr, MacroAssembler::largeoffset_si16_si16_hi(offset));
   set_imm((int *)inst2_addr, MacroAssembler::largeoffset_si16_si16_lo(offset));
-  return (int)((intptr_t)addr - (intptr_t)inst1_addr);
+  return inst1_addr;
 }
 
 address MacroAssembler::get_address_of_calculate_address_from_global_toc_at(address a, address bound) {
@@ -201,7 +201,7 @@ address MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr
 //    clrldi rx = rx & 0xFFFFffff // clearMS32b, optional
 //    ori rx = rx | const.lo
 // Clrldi will be passed by.
-int MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop data) {
+address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop data) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 
   const address inst2_addr = a;
@@ -227,7 +227,7 @@ int MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop dat
 
   set_imm((int *)inst1_addr, (short)(xc)); // see enc_load_con_narrow_hi/_lo
   set_imm((int *)inst2_addr,        (xd)); // unsigned int
-  return (int)((intptr_t)inst2_addr - (intptr_t)inst1_addr);
+  return inst1_addr;
 }
 
 // Get compressed oop or klass constant.
@@ -3382,6 +3382,7 @@ void MacroAssembler::load_mirror_from_const_method(Register mirror, Register con
   ld(mirror, in_bytes(ConstMethod::constants_offset()), const_method);
   ld(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
   ld(mirror, in_bytes(Klass::java_mirror_offset()), mirror);
+  resolve_oop_handle(mirror);
 }
 
 // Clear Array
@@ -5233,6 +5234,40 @@ void MacroAssembler::multiply_128_x_128_loop(Register x_xstart,
 
   bind(L_post_third_loop_done);
 }   // multiply_128_x_128_loop
+
+void MacroAssembler::muladd(Register out, Register in,
+                            Register offset, Register len, Register k,
+                            Register tmp1, Register tmp2, Register carry) {
+
+  // Labels
+  Label LOOP, SKIP;
+
+  // Make sure length is positive.
+  cmpdi  (CCR0,    len,     0);
+
+  // Prepare variables
+  subi   (offset,  offset,  4);
+  li     (carry,   0);
+  ble    (CCR0,    SKIP);
+
+  mtctr  (len);
+  subi   (len,     len,     1    );
+  sldi   (len,     len,     2    );
+
+  // Main loop
+  bind(LOOP);
+  lwzx   (tmp1,    len,     in   );
+  lwzx   (tmp2,    offset,  out  );
+  mulld  (tmp1,    tmp1,    k    );
+  add    (tmp2,    carry,   tmp2 );
+  add    (tmp2,    tmp1,    tmp2 );
+  stwx   (tmp2,    offset,  out  );
+  srdi   (carry,   tmp2,    32   );
+  subi   (offset,  offset,  4    );
+  subi   (len,     len,     4    );
+  bdnz   (LOOP);
+  bind(SKIP);
+}
 
 void MacroAssembler::multiply_to_len(Register x, Register xlen,
                                      Register y, Register ylen,

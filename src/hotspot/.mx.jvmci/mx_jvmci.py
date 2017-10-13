@@ -256,14 +256,10 @@ class HotSpotProject(mx.NativeProject):
         """
 
         roots = [
-            'ASSEMBLY_EXCEPTION',
-            'LICENSE',
-            'README',
-            'THIRD_PARTY_README',
-            'agent',
-            'make',
-            'src',
-            'test'
+            'cpu',
+            'os',
+            'os_cpu',
+            'share'
         ]
 
         for jvmVariant in _jdkJvmVariants:
@@ -605,6 +601,16 @@ def _get_openjdk_cpu():
 def _get_openjdk_os_cpu():
     return _get_openjdk_os() + '-' + _get_openjdk_cpu()
 
+def _get_jdk_dir():
+    suiteParentDir = dirname(_suite.dir)
+    # suitParentDir is now something like: /some_prefix/jdk10-hs/open/src
+    pathComponents = suiteParentDir.split(os.sep)
+    for i in range(0, len(pathComponents)):
+        if pathComponents[i] in ["open", "src"]:
+            del pathComponents[i:]
+            break
+    return os.path.join(os.sep, *pathComponents)
+
 def _get_jdk_build_dir(debugLevel=None):
     """
     Gets the directory into which the JDK is built. This directory contains
@@ -613,7 +619,7 @@ def _get_jdk_build_dir(debugLevel=None):
     if debugLevel is None:
         debugLevel = _vm.debugLevel
     name = '{}-{}-{}-{}'.format(_get_openjdk_os_cpu(), 'normal', _vm.jvmVariant, debugLevel)
-    return join(dirname(_suite.dir), 'build', name)
+    return join(_get_jdk_dir(), 'build', name)
 
 _jvmci_bootclasspath_prepends = []
 

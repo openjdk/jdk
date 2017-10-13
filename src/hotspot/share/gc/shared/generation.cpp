@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,22 +94,14 @@ void Generation::print_on(outputStream* st)  const {
               p2i(_virtual_space.high_boundary()));
 }
 
-void Generation::print_summary_info() { print_summary_info_on(tty); }
-
 void Generation::print_summary_info_on(outputStream* st) {
   StatRecord* sr = stat_record();
   double time = sr->accumulated_time.seconds();
-  // I didn't want to change the logging when removing the level concept,
-  // but I guess this logging could say young/old or something instead of 0/1.
-  uint level;
-  if (GenCollectedHeap::heap()->is_young_gen(this)) {
-    level = 0;
-  } else {
-    level = 1;
-  }
-  st->print_cr("[Accumulated GC generation %d time %3.7f secs, "
-               "%u GC's, avg GC time %3.7f]",
-               level, time, sr->invocations,
+  st->print_cr("Accumulated %s generation GC time %3.7f secs, "
+               "%u GC's, avg GC time %3.7f",
+               GenCollectedHeap::heap()->is_young_gen(this) ? "young" : "old" ,
+               time,
+               sr->invocations,
                sr->invocations > 0 ? time / sr->invocations : 0.0);
 }
 

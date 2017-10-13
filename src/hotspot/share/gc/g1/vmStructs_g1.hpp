@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,10 @@
   static_field(HeapRegion, GrainBytes,        size_t)                         \
   static_field(HeapRegion, LogOfHRGrainBytes, int)                            \
                                                                               \
+  nonstatic_field(HeapRegion, _type,          HeapRegionType)                 \
+                                                                              \
+  nonstatic_field(HeapRegionType, _tag,       HeapRegionType::Tag volatile)   \
+                                                                              \
   nonstatic_field(G1ContiguousSpace, _top,              HeapWord* volatile)   \
                                                                               \
   nonstatic_field(G1HeapRegionTable, _base,             address)              \
@@ -67,9 +71,16 @@
 
 
 #define VM_INT_CONSTANTS_G1(declare_constant, declare_constant_with_value)    \
+  declare_constant(HeapRegionType::FreeTag)                                   \
+  declare_constant(HeapRegionType::YoungMask)                                 \
+  declare_constant(HeapRegionType::HumongousMask)                             \
+  declare_constant(HeapRegionType::PinnedMask)                                \
+  declare_constant(HeapRegionType::OldMask)
 
 
-#define VM_TYPES_G1(declare_type, declare_toplevel_type)                      \
+#define VM_TYPES_G1(declare_type,                                             \
+                    declare_toplevel_type,                                    \
+                    declare_integer_type)                                     \
                                                                               \
   declare_toplevel_type(G1HeapRegionTable)                                    \
                                                                               \
@@ -81,9 +92,12 @@
   declare_toplevel_type(HeapRegionSetBase)                                    \
   declare_toplevel_type(G1MonitoringSupport)                                  \
   declare_toplevel_type(PtrQueue)                                             \
+  declare_toplevel_type(HeapRegionType)                                       \
                                                                               \
   declare_toplevel_type(G1CollectedHeap*)                                     \
   declare_toplevel_type(HeapRegion*)                                          \
   declare_toplevel_type(G1MonitoringSupport*)                                 \
+                                                                              \
+  declare_integer_type(HeapRegionType::Tag volatile)
 
 #endif // SHARE_VM_GC_G1_VMSTRUCTS_G1_HPP

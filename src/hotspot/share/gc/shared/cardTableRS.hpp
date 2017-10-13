@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@
 class Space;
 class OopsInGenClosure;
 
-// Helper to remember modified oops in all klasses.
-class KlassRemSet {
+// Helper to remember modified oops in all clds.
+class CLDRemSet {
   bool _accumulate_modified_oops;
  public:
-  KlassRemSet() : _accumulate_modified_oops(false) {}
+  CLDRemSet() : _accumulate_modified_oops(false) {}
   void set_accumulate_modified_oops(bool value) { _accumulate_modified_oops = value; }
   bool accumulate_modified_oops() { return _accumulate_modified_oops; }
   bool mod_union_is_clear();
@@ -64,7 +64,7 @@ class CardTableRS: public CHeapObj<mtGC> {
     return CardTableModRefBSForCTRS::card_is_dirty_wrt_gen_iter(cv);
   }
 
-  KlassRemSet _klass_rem_set;
+  CLDRemSet _cld_rem_set;
   BarrierSet* _bs;
 
   CardTableModRefBSForCTRS* _ct_bs;
@@ -121,7 +121,7 @@ public:
   // Set the barrier set.
   void set_bs(BarrierSet* bs) { _bs = bs; }
 
-  KlassRemSet* klass_rem_set() { return &_klass_rem_set; }
+  CLDRemSet* cld_rem_set() { return &_cld_rem_set; }
 
   CardTableModRefBSForCTRS* ct_bs() { return _ct_bs; }
 

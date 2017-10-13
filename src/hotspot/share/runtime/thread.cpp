@@ -3263,6 +3263,9 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _buffer_blob = NULL;
   _compiler = NULL;
 
+  // Compiler uses resource area for compilation, let's bias it to mtCompiler
+  resource_area()->bias_to(mtCompiler);
+
 #ifndef PRODUCT
   _ideal_graph_printer = NULL;
 #endif
@@ -3748,8 +3751,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Final system initialization including security manager and system class loader
   call_initPhase3(CHECK_JNI_ERR);
 
-  // cache the system class loader
-  SystemDictionary::compute_java_system_loader(CHECK_(JNI_ERR));
+  // cache the system and platform class loaders
+  SystemDictionary::compute_java_loaders(CHECK_JNI_ERR);
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
@@ -4192,6 +4195,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_1_6) return JNI_TRUE;
   if (version == JNI_VERSION_1_8) return JNI_TRUE;
   if (version == JNI_VERSION_9) return JNI_TRUE;
+  if (version == JNI_VERSION_10) return JNI_TRUE;
   return JNI_FALSE;
 }
 

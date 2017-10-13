@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,15 +85,15 @@ class PSRootsClosure: public OopClosure {
 typedef PSRootsClosure</*promote_immediately=*/false> PSScavengeRootsClosure;
 typedef PSRootsClosure</*promote_immediately=*/true> PSPromoteRootsClosure;
 
-// Scavenges a single oop in a Klass.
-class PSScavengeFromKlassClosure: public OopClosure {
+// Scavenges a single oop in a ClassLoaderData.
+class PSScavengeFromCLDClosure: public OopClosure {
  private:
   PSPromotionManager* _pm;
-  // Used to redirty a scanned klass if it has oops
+  // Used to redirty a scanned cld if it has oops
   // pointing to the young generation after being scanned.
-  Klass*             _scanned_klass;
+  ClassLoaderData*    _scanned_cld;
  public:
-  PSScavengeFromKlassClosure(PSPromotionManager* pm) : _pm(pm), _scanned_klass(NULL) { }
+  PSScavengeFromCLDClosure(PSPromotionManager* pm) : _pm(pm), _scanned_cld(NULL) { }
   void do_oop(narrowOop* p) { ShouldNotReachHere(); }
   void do_oop(oop* p)       {
     ParallelScavengeHeap* psh = ParallelScavengeHeap::heap();
@@ -111,48 +111,46 @@ class PSScavengeFromKlassClosure: public OopClosure {
       oopDesc::encode_store_heap_oop_not_null(p, new_obj);
 
       if (PSScavenge::is_obj_in_young(new_obj)) {
-        do_klass_barrier();
+        do_cld_barrier();
       }
     }
   }
 
-  void set_scanned_klass(Klass* klass) {
-    assert(_scanned_klass == NULL || klass == NULL, "Should always only handling one klass at a time");
-    _scanned_klass = klass;
+  void set_scanned_cld(ClassLoaderData* cld) {
+    assert(_scanned_cld == NULL || cld == NULL, "Should always only handling one cld at a time");
+    _scanned_cld = cld;
   }
 
  private:
-  void do_klass_barrier() {
-    assert(_scanned_klass != NULL, "Should not be called without having a scanned klass");
-    _scanned_klass->record_modified_oops();
+  void do_cld_barrier() {
+    assert(_scanned_cld != NULL, "Should not be called without having a scanned cld");
+    _scanned_cld->record_modified_oops();
   }
-
 };
 
-// Scavenges the oop in a Klass.
-class PSScavengeKlassClosure: public KlassClosure {
+// Scavenges the oop in a ClassLoaderData.
+class PSScavengeCLDClosure: public CLDClosure {
  private:
-  PSScavengeFromKlassClosure _oop_closure;
+  PSScavengeFromCLDClosure _oop_closure;
  protected:
  public:
-  PSScavengeKlassClosure(PSPromotionManager* pm) : _oop_closure(pm) { }
-  void do_klass(Klass* klass) {
-    // If the klass has not been dirtied we know that there's
+  PSScavengeCLDClosure(PSPromotionManager* pm) : _oop_closure(pm) { }
+  void do_cld(ClassLoaderData* cld) {
+    // If the cld has not been dirtied we know that there's
     // no references into  the young gen and we can skip it.
 
-    if (klass->has_modified_oops()) {
-      // Clean the klass since we're going to scavenge all the metadata.
-      klass->clear_modified_oops();
-
-      // Setup the promotion manager to redirty this klass
+    if (cld->has_modified_oops()) {
+      // Setup the promotion manager to redirty this cld
       // if references are left in the young gen.
-      _oop_closure.set_scanned_klass(klass);
+      _oop_closure.set_scanned_cld(cld);
 
-      klass->oops_do(&_oop_closure);
+      // Clean the cld since we're going to scavenge all the metadata.
+      cld->oops_do(&_oop_closure, false, /*clear_modified_oops*/true);
 
-      _oop_closure.set_scanned_klass(NULL);
+      _oop_closure.set_scanned_cld(NULL);
     }
   }
 };
+
 
 #endif // SHARE_VM_GC_PARALLEL_PSSCAVENGE_INLINE_HPP

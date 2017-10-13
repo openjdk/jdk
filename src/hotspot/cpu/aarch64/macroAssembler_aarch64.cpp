@@ -2840,6 +2840,44 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   bind(L_done);
 }
 
+// Code for BigInteger::mulAdd instrinsic
+// out     = r0
+// in      = r1
+// offset  = r2  (already out.length-offset)
+// len     = r3
+// k       = r4
+//
+// pseudo code from java implementation:
+// carry = 0;
+// offset = out.length-offset - 1;
+// for (int j=len-1; j >= 0; j--) {
+//     product = (in[j] & LONG_MASK) * kLong + (out[offset] & LONG_MASK) + carry;
+//     out[offset--] = (int)product;
+//     carry = product >>> 32;
+// }
+// return (int)carry;
+void MacroAssembler::mul_add(Register out, Register in, Register offset,
+      Register len, Register k) {
+    Label LOOP, END;
+    // pre-loop
+    cmp(len, zr); // cmp, not cbz/cbnz: to use condition twice => less branches
+    csel(out, zr, out, Assembler::EQ);
+    br(Assembler::EQ, END);
+    add(in, in, len, LSL, 2); // in[j+1] address
+    add(offset, out, offset, LSL, 2); // out[offset + 1] address
+    mov(out, zr); // used to keep carry now
+    BIND(LOOP);
+    ldrw(rscratch1, Address(pre(in, -4)));
+    madd(rscratch1, rscratch1, k, out);
+    ldrw(rscratch2, Address(pre(offset, -4)));
+    add(rscratch1, rscratch1, rscratch2);
+    strw(rscratch1, Address(offset));
+    lsr(out, rscratch1, 32);
+    subs(len, len, 1);
+    br(Assembler::NE, LOOP);
+    BIND(END);
+}
+
 /**
  * Emits code to update CRC-32 with a byte value according to constants in table
  *
@@ -3291,6 +3329,7 @@ void MacroAssembler::load_mirror(Register dst, Register method) {
   ldr(dst, Address(dst, ConstMethod::constants_offset()));
   ldr(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
   ldr(dst, Address(dst, mirror_offset));
+  resolve_oop_handle(dst);
 }
 
 void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp) {

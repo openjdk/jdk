@@ -592,8 +592,8 @@ public:
           range(8, 256)                                                     \
           constraint(ObjectAlignmentInBytesConstraintFunc,AtParse)          \
                                                                             \
-  product(bool, AssumeMP, false,                                            \
-          "Instruct the VM to assume multiple processors are available")    \
+  product(bool, AssumeMP, true,                                             \
+          "(Deprecated) Instruct the VM to assume multiple processors are available")\
                                                                             \
   /* UseMembar is theoretically a temp flag used for memory barrier      */ \
   /* removal testing.  It was supposed to be removed before FCS but has  */ \
@@ -2343,12 +2343,6 @@ public:
           "Initial size of the boot class loader data metaspace")           \
           range(30*K, max_uintx/BytesPerWord)                               \
           constraint(InitialBootClassLoaderMetaspaceSizeConstraintFunc, AfterErgo)\
-                                                                            \
-  product(bool, TraceYoungGenTime, false,                                   \
-          "Trace accumulated time for young collection")                    \
-                                                                            \
-  product(bool, TraceOldGenTime, false,                                     \
-          "Trace accumulated time for old collection")                      \
                                                                             \
   product(bool, PrintHeapAtSIGBREAK, true,                                  \
           "Print heap layout in response to SIGBREAK")                      \

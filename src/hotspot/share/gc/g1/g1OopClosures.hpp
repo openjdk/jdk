@@ -107,7 +107,7 @@ protected:
   G1CollectedHeap* _g1;
   G1ParScanThreadState* _par_scan_state;
   uint _worker_id;              // Cache value from par_scan_state.
-  Klass* _scanned_klass;
+  ClassLoaderData* _scanned_cld;
   G1ConcurrentMark* _cm;
 
   // Mark the object if it's not already marked. This is used to mark
@@ -124,13 +124,13 @@ protected:
   ~G1ParCopyHelper() { }
 
  public:
-  void set_scanned_klass(Klass* k) { _scanned_klass = k; }
-  template <class T> inline void do_klass_barrier(T* p, oop new_obj);
+  void set_scanned_cld(ClassLoaderData* cld) { _scanned_cld = cld; }
+  inline void do_cld_barrier(oop new_obj);
 };
 
 enum G1Barrier {
   G1BarrierNone,
-  G1BarrierKlass
+  G1BarrierCLD
 };
 
 enum G1Mark {
@@ -150,14 +150,16 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
-class G1KlassScanClosure : public KlassClosure {
+class G1CLDScanClosure : public CLDClosure {
  G1ParCopyHelper* _closure;
  bool             _process_only_dirty;
+ bool             _must_claim;
  int              _count;
  public:
-  G1KlassScanClosure(G1ParCopyHelper* closure, bool process_only_dirty)
-      : _process_only_dirty(process_only_dirty), _closure(closure), _count(0) {}
-  void do_klass(Klass* klass);
+  G1CLDScanClosure(G1ParCopyHelper* closure,
+                   bool process_only_dirty, bool must_claim)
+      : _process_only_dirty(process_only_dirty), _must_claim(must_claim), _closure(closure), _count(0) {}
+  void do_cld(ClassLoaderData* cld);
 };
 
 // Closure for iterating over object fields during concurrent marking

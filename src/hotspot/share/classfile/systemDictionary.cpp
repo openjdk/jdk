@@ -104,6 +104,7 @@ InstanceKlass*      SystemDictionary::_well_known_klasses[SystemDictionary::WKID
 InstanceKlass*      SystemDictionary::_box_klasses[T_VOID+1]      =  { NULL /*, NULL...*/ };
 
 oop         SystemDictionary::_java_system_loader         =  NULL;
+oop         SystemDictionary::_java_platform_loader       =  NULL;
 
 bool        SystemDictionary::_has_loadClassInternal      =  false;
 bool        SystemDictionary::_has_checkPackageAccess     =  false;
@@ -117,26 +118,37 @@ const int defaultProtectionDomainCacheSize = 1009;
 
 
 // ----------------------------------------------------------------------------
-// Java-level SystemLoader
+// Java-level SystemLoader and PlatformLoader
 
 oop SystemDictionary::java_system_loader() {
   return _java_system_loader;
 }
 
-void SystemDictionary::compute_java_system_loader(TRAPS) {
-  Klass* system_klass = WK_KLASS(ClassLoader_klass);
+oop SystemDictionary::java_platform_loader() {
+  return _java_platform_loader;
+}
+
+void SystemDictionary::compute_java_loaders(TRAPS) {
   JavaValue result(T_OBJECT);
+  InstanceKlass* class_loader_klass = SystemDictionary::ClassLoader_klass();
   JavaCalls::call_static(&result,
-                         WK_KLASS(ClassLoader_klass),
+                         class_loader_klass,
                          vmSymbols::getSystemClassLoader_name(),
                          vmSymbols::void_classloader_signature(),
                          CHECK);
 
   _java_system_loader = (oop)result.get_jobject();
 
+  JavaCalls::call_static(&result,
+                         class_loader_klass,
+                         vmSymbols::getPlatformClassLoader_name(),
+                         vmSymbols::void_classloader_signature(),
+                         CHECK);
+
+  _java_platform_loader = (oop)result.get_jobject();
+
   CDS_ONLY(SystemDictionaryShared::initialize(CHECK);)
 }
-
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, TRAPS) {
   if (class_loader() == NULL) return ClassLoaderData::the_null_class_loader_data();
@@ -169,7 +181,7 @@ bool SystemDictionary::is_system_class_loader(oop class_loader) {
     return false;
   }
   return (class_loader->klass() == SystemDictionary::jdk_internal_loader_ClassLoaders_AppClassLoader_klass() ||
-          class_loader == _java_system_loader);
+       class_loader == _java_system_loader);
 }
 
 // Returns true if the passed class loader is the platform class loader.
@@ -1940,6 +1952,7 @@ bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive,
 
 void SystemDictionary::roots_oops_do(OopClosure* strong, OopClosure* weak) {
   strong->do_oop(&_java_system_loader);
+  strong->do_oop(&_java_platform_loader);
   strong->do_oop(&_system_loader_lock_obj);
   CDS_ONLY(SystemDictionaryShared::roots_oops_do(strong);)
 
@@ -1964,6 +1977,7 @@ void SystemDictionary::roots_oops_do(OopClosure* strong, OopClosure* weak) {
 
 void SystemDictionary::oops_do(OopClosure* f) {
   f->do_oop(&_java_system_loader);
+  f->do_oop(&_java_platform_loader);
   f->do_oop(&_system_loader_lock_obj);
   CDS_ONLY(SystemDictionaryShared::oops_do(f);)
 

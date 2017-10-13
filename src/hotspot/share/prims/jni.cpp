@@ -92,7 +92,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_9;
+static jint CurrentVersion = JNI_VERSION_10;
 
 #ifdef _WIN32
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -401,29 +401,31 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
   // Find calling class
   Klass* k = thread->security_get_caller_class(0);
   if (k != NULL) {
-    loader = Handle(THREAD, k->class_loader());
     // Special handling to make sure JNI_OnLoad and JNI_OnUnload are executed
     // in the correct class context.
-    if (loader.is_null() &&
+    if (k->class_loader() == NULL &&
         k->name() == vmSymbols::java_lang_ClassLoader_NativeLibrary()) {
       JavaValue result(T_OBJECT);
       JavaCalls::call_static(&result, k,
                              vmSymbols::getFromClass_name(),
                              vmSymbols::void_class_signature(),
-                             thread);
-      if (HAS_PENDING_EXCEPTION) {
-        Handle ex(thread, thread->pending_exception());
-        CLEAR_PENDING_EXCEPTION;
-        THROW_HANDLE_0(ex);
-      }
+                             CHECK_NULL);
+      // When invoked from JNI_OnLoad, NativeLibrary::getFromClass returns
+      // a non-NULL Class object.  When invoked from JNI_OnUnload,
+      // it will return NULL to indicate no context.
       oop mirror = (oop) result.get_jobject();
-      loader = Handle(THREAD,
-        InstanceKlass::cast(java_lang_Class::as_Klass(mirror))->class_loader());
-      protection_domain = Handle(THREAD,
-        InstanceKlass::cast(java_lang_Class::as_Klass(mirror))->protection_domain());
+      if (mirror != NULL) {
+        Klass* fromClass = java_lang_Class::as_Klass(mirror);
+        loader = Handle(THREAD, fromClass->class_loader());
+        protection_domain = Handle(THREAD, fromClass->protection_domain());
+      }
+    } else {
+      loader = Handle(THREAD, k->class_loader());
     }
-  } else {
-    // We call ClassLoader.getSystemClassLoader to obtain the system class loader.
+  }
+
+  if (loader.is_null()) {
+    // No context and use the system class loader
     loader = Handle(THREAD, SystemDictionary::java_system_loader());
   }
 

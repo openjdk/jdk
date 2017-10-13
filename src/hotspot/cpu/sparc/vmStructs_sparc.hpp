@@ -101,6 +101,14 @@
   declare_constant(VM_Version::ISA_XMONT)               \
   declare_constant(VM_Version::ISA_PAUSE_NSEC)          \
   declare_constant(VM_Version::ISA_VAMASK)              \
+  declare_constant(VM_Version::ISA_SPARC6)              \
+  declare_constant(VM_Version::ISA_DICTUNP)             \
+  declare_constant(VM_Version::ISA_FPCMPSHL)            \
+  declare_constant(VM_Version::ISA_RLE)                 \
+  declare_constant(VM_Version::ISA_SHA3)                \
+  declare_constant(VM_Version::ISA_VIS3C)               \
+  declare_constant(VM_Version::ISA_SPARC5B)             \
+  declare_constant(VM_Version::ISA_MME)                 \
   declare_constant(VM_Version::CPU_FAST_IDIV)           \
   declare_constant(VM_Version::CPU_FAST_RDPC)           \
   declare_constant(VM_Version::CPU_FAST_BIS)            \
