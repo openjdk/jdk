@@ -29,6 +29,7 @@ include $(SPEC)
 include MakeBase.gmk
 include JarArchive.gmk
 include JavaCompilation.gmk
+include UtilsForTests.gmk
 
 THIS_FILE := $(TOPDIR)/test/make/TestJavaCompilation.gmk
 DEPS := $(THIS_FILE) \
@@ -90,8 +91,8 @@ $(OUTPUT_DIR)/_jar1_verified: $(BUILD_JAR1)
 create-jar2: $(OUTPUT_DIR)/_jar1_verified
 TEST_TARGETS += $(OUTPUT_DIR)/_jar1_verified
 
-# Change a source file and call this makefile again to force the jar to be 
-# updated. 
+# Change a source file and call this makefile again to force the jar to be
+# updated.
 $(OUTPUT_DIR)/_jar1_updated: $(OUTPUT_DIR)/_jar1_verified
 	$(ECHO) updated > $(JAR1_SRC_ROOT)/dir1/file1.class
 	$(ECHO) updated > $(JAR1_SRC_ROOT)/META-INF/metafile
@@ -104,6 +105,7 @@ update-jar1: $(OUTPUT_DIR)_jar1_updated
 # Change the manifest file and call this makefile again to force the jar
 # to be updated
 $(OUTPUT_DIR)/_jar1_updated_manifest: $(OUTPUT_DIR)/_jar1_updated
+	$(SLEEP_ON_MAC)
 	$(ECHO) "Test-Attribute: foobar" > $(JAR1_MANIFEST)
 	+$(MAKE) -f $(THIS_FILE) $(BUILD_JAR1)
 	$(RM) -r $(JAR1_UNZIP)

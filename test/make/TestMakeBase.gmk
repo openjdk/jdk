@@ -27,27 +27,12 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include UtilsForTests.gmk
 
 THIS_FILE := $(TOPDIR)/test/make/TestMakeBase.gmk
 DEPS := $(THIS_FILE) \
     $(TOPDIR)/make/common/MakeBase.gmk \
     #
-
-# Assert two strings are equal
-# 1 - Tested value
-# 2 - Exepected value
-# 3 - Error message
-define assert-equals
-  ifneq ($$(strip $1),$$(strip $2))
-    $$(error $3 - Expected >$$(strip $2)< - Got >$$(strip $1)<)
-  endif
-endef
-
-# On macosx, file system timestamps only have 1 second resultion so must add
-# sleeps to properly test dependencies.
-ifeq ($(OPENJDK_BUILD_OS), macosx)
-  SLEEP_ON_MAC := sleep 1
-endif
 
 OUTPUT_DIR := $(TESTMAKE_OUTPUTDIR)/make-base
 $(call MakeDir, $(OUTPUT_DIR))
