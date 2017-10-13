@@ -1472,12 +1472,7 @@ public class Parser extends AbstractParser implements Loggable {
      */
     private void verifyIdent(final IdentNode ident, final String contextString) {
         verifyStrictIdent(ident, contextString);
-        if (isES6()) {
-            final TokenType tokenType = TokenLookup.lookupKeyword(ident.getName().toCharArray(), 0, ident.getName().length());
-            if (tokenType != IDENT && tokenType.getKind() != TokenKind.FUTURESTRICT) {
-                throw error(expectMessage(IDENT));
-            }
-        }
+        checkEscapedKeyword(ident);
     }
 
     /**
@@ -1498,6 +1493,18 @@ public class Parser extends AbstractParser implements Loggable {
 
             if (ident.isFutureStrictName()) {
                 throw error(AbstractParser.message("strict.name", ident.getName(), contextString), ident.getToken());
+            }
+        }
+    }
+
+    /**
+     * ES6 11.6.2: A code point in a ReservedWord cannot be expressed by a | UnicodeEscapeSequence.
+     */
+    private void checkEscapedKeyword(final IdentNode ident) {
+        if (isES6() && ident.containsEscapes()) {
+            final TokenType tokenType = TokenLookup.lookupKeyword(ident.getName().toCharArray(), 0, ident.getName().length());
+            if (tokenType != IDENT && !(tokenType.getKind() == TokenKind.FUTURESTRICT && !isStrictMode)) {
+                throw error(AbstractParser.message("keyword.escaped.character"), ident.getToken());
             }
         }
     }
@@ -2646,7 +2653,7 @@ public class Parser extends AbstractParser implements Loggable {
                     });
                 } else {
                     // ECMA 12.4.1 strict mode restrictions
-                    verifyStrictIdent((IdentNode) exception, "catch argument");
+                    verifyIdent((IdentNode) exception, "catch argument");
                 }
 
 
@@ -2761,6 +2768,7 @@ public class Parser extends AbstractParser implements Loggable {
                 break;
             }
             detectSpecialProperty(ident);
+            checkEscapedKeyword(ident);
             return ident;
         case OCTAL_LEGACY:
             if (isStrictMode) {
@@ -3404,6 +3412,7 @@ public class Parser extends AbstractParser implements Loggable {
             // Catch special functions.
             if (lhs instanceof IdentNode) {
                 detectSpecialFunction((IdentNode)lhs);
+                checkEscapedKeyword((IdentNode)lhs);
             }
 
             lhs = new CallNode(callLine, callToken, finish, lhs, arguments, false);
@@ -3779,7 +3788,7 @@ public class Parser extends AbstractParser implements Loggable {
                 expect(IDENT);
             }
             name = getIdent();
-            verifyStrictIdent(name, "function name");
+            verifyIdent(name, "function name");
         } else if (isStatement) {
             // Nashorn extension: anonymous function statements.
             // Do not allow anonymous function statement if extensions
@@ -4871,7 +4880,7 @@ public class Parser extends AbstractParser implements Loggable {
         final String contextString = "function parameter";
         if (param instanceof IdentNode) {
             final IdentNode ident = (IdentNode)param;
-            verifyStrictIdent(ident, contextString);
+            verifyIdent(ident, contextString);
             final ParserContextFunctionNode currentFunction = lc.getCurrentFunction();
             if (currentFunction != null) {
                 currentFunction.addParameterBinding(ident);
