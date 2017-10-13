@@ -1477,6 +1477,8 @@ public final class ServiceLoader<S>
                 next = (Provider<T>) loadedProviders.get(index++);
             } else if (iterator.hasNext()) {
                 next = iterator.next();
+                loadedProviders.add((Provider<S>)next);
+                index++;
             } else {
                 loadedAllProviders = true;
             }
