@@ -102,21 +102,8 @@ import java.util.Locale;
  * suffice.
  * */
 public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory {
-    private static native void initGVIDs();
-    private static final boolean useICU;
     static {
         FontManagerNativeLibrary.load();
-        initGVIDs();
-        String le = java.security.AccessController.doPrivileged(
-            new sun.security.action.
-                GetPropertyAction("sun.font.layoutengine", ""));
-        useICU = le.equals("icu");
-        String verbose = java.security.AccessController.doPrivileged(
-            new sun.security.action.
-                GetPropertyAction("sun.font.layoutengine.verbose", ""));
-        if ("true".equalsIgnoreCase(verbose)) {
-            System.out.println("Using " + (useICU ? "icu." : "harfbuzz."));
-        }
     }
 
     private LayoutEngineKey key;
@@ -180,33 +167,18 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         Font2D font = key.font();
         FontStrike strike = font.getStrike(desc);
         long layoutTables = font.getLayoutTableCache();
-        if (useICU) {
-        nativeLayout(font, strike, mat, gmask, baseIndex,
-             tr.text, tr.start, tr.limit, tr.min, tr.max,
-             key.script(), key.lang(), typo_flags, pt, data,
-             font.getUnitsPerEm(), layoutTables);
-        } else {
-            long pNativeFont = font.getPlatformNativeFontPtr(); // used on OSX
-            // pScaler probably not needed long term.
-            long pScaler = 0L;
-            if (font instanceof FileFont) {
-                pScaler = ((FileFont)font).getScaler().nativeScaler;
-            }
-            shape(font, strike, ptSize, mat, pScaler, pNativeFont,
-                  layoutTables, isAAT(font),
-                  tr.text, data, key.script(),
-                  tr.start, tr.limit, baseIndex, pt,
-                  typo_flags, gmask);
-         }
+        long pNativeFont = font.getPlatformNativeFontPtr(); // used on OSX
+        // pScaler probably not needed long term.
+        long pScaler = 0L;
+        if (font instanceof FileFont) {
+            pScaler = ((FileFont)font).getScaler().nativeScaler;
+        }
+        shape(font, strike, ptSize, mat, pScaler, pNativeFont,
+              layoutTables, isAAT(font),
+              tr.text, data, key.script(),
+              tr.start, tr.limit, baseIndex, pt,
+              typo_flags, gmask);
     }
-
-    /* Native method to invoke ICU layout engine */
-    private static native void
-        nativeLayout(Font2D font, FontStrike strike, float[] mat, int gmask,
-             int baseIndex, char[] chars, int offset, int limit,
-             int min, int max, int script, int lang, int typo_flags,
-             Point2D.Float pt, GVData data, long upem, long layoutTables);
-
 
     /* Native method to invoke harfbuzz layout engine */
     private static native boolean
