@@ -25,9 +25,13 @@
 
 include LibCommon.gmk
 
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, lib/Lib-java.base.gmk))
+
 # Prepare the find cache.
-$(eval $(call FillCacheFind, $(wildcard $(TOPDIR)/src/java.base/*/native \
-    $(TOPDIR)/src/*/java.base/*/native)))
+LIB_java.base_SRC_DIRS += $(TOPDIR)/src/java.base/*/native
+
+$(eval $(call FillCacheFind, $(wildcard $(LIB_java.base_SRC_DIRS))))
 
 include CoreLibraries.gmk
 include NetworkingLibraries.gmk
