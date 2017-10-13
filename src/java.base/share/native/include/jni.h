@@ -1964,6 +1964,7 @@ JNI_OnUnload(JavaVM *vm, void *reserved);
 #define JNI_VERSION_1_6 0x00010006
 #define JNI_VERSION_1_8 0x00010008
 #define JNI_VERSION_9   0x00090000
+#define JNI_VERSION_10  0x000a0000
 
 #ifdef __cplusplus
 } /* extern "C" */

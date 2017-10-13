@@ -81,7 +81,6 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
   ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
-  ParCompactionManager::FollowKlassClosure follow_klass_closure(&mark_and_push_closure);
 
   switch (_root_type) {
     case universe:
@@ -117,7 +116,7 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
       break;
 
     case class_loader_data:
-      ClassLoaderDataGraph::always_strong_oops_do(&mark_and_push_closure, &follow_klass_closure, true);
+      ClassLoaderDataGraph::always_strong_oops_do(&mark_and_push_closure, true);
       break;
 
     case code_cache:

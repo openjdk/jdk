@@ -377,6 +377,7 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseConcMarkSweepGC",           JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "AssumeMP",                     JDK_Version::jdk(10),JDK_Version::undefined(), JDK_Version::undefined() },
   { "MonitorInUseLists",            JDK_Version::jdk(10),JDK_Version::undefined(), JDK_Version::undefined() },
   { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -4475,16 +4476,6 @@ jint Arguments::apply_ergo() {
 #endif
 
   set_shared_spaces_flags();
-
-#if defined(SPARC)
-  // BIS instructions require 'membar' instruction regardless of the number
-  // of CPUs because in virtualized/container environments which might use only 1
-  // CPU, BIS instructions may produce incorrect results.
-
-  if (FLAG_IS_DEFAULT(AssumeMP)) {
-    FLAG_SET_DEFAULT(AssumeMP, true);
-  }
-#endif
 
   // Check the GC selections again.
   if (!check_gc_consistency()) {

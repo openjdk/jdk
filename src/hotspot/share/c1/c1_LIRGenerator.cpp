@@ -1304,7 +1304,9 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
   // FIXME T_ADDRESS should actually be T_METADATA but it can't because the
   // meaning of these two is mixed up (see JDK-8026837).
   __ move(new LIR_Address(rcvr.result(), oopDesc::klass_offset_in_bytes(), T_ADDRESS), temp, info);
-  __ move_wide(new LIR_Address(temp, in_bytes(Klass::java_mirror_offset()), T_OBJECT), result);
+  __ move_wide(new LIR_Address(temp, in_bytes(Klass::java_mirror_offset()), T_ADDRESS), result);
+  // mirror = ((OopHandle)mirror)->resolve();
+  __ move_wide(new LIR_Address(result, T_OBJECT), result);
 }
 
 // java.lang.Class::isPrimitive()

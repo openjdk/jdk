@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 // Sorted according to sparc.
 
 // z/Architecture remembers branch targets, so don't share vtables.
-define_pd_global(bool,  ShareVtableStubs,            false);
+define_pd_global(bool,  ShareVtableStubs,            true);
 define_pd_global(bool,  NeedsDeoptSuspend,           false); // Only register window machines need this.
 
 define_pd_global(bool,  ImplicitNullChecks,          true);  // Generate code for implicit null checks.

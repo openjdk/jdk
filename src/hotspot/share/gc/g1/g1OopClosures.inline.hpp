@@ -195,10 +195,9 @@ inline void G1ScanObjsDuringScanRSClosure::do_oop_nv(T* p) {
   }
 }
 
-template <class T>
-void G1ParCopyHelper::do_klass_barrier(T* p, oop new_obj) {
+void G1ParCopyHelper::do_cld_barrier(oop new_obj) {
   if (_g1->heap_region_containing(new_obj)->is_young()) {
-    _scanned_klass->record_modified_oops();
+    _scanned_cld->record_modified_oops();
   }
 }
 
@@ -249,8 +248,8 @@ void G1ParCopyClosure<barrier, do_mark_object, use_ext>::do_oop_work(T* p) {
       mark_forwarded_object(obj, forwardee);
     }
 
-    if (barrier == G1BarrierKlass) {
-      do_klass_barrier(p, forwardee);
+    if (barrier == G1BarrierCLD) {
+      do_cld_barrier(forwardee);
     }
   } else {
     if (state.is_humongous()) {
@@ -267,5 +266,4 @@ void G1ParCopyClosure<barrier, do_mark_object, use_ext>::do_oop_work(T* p) {
     }
   }
 }
-
 #endif // SHARE_VM_GC_G1_G1OOPCLOSURES_INLINE_HPP

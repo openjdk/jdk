@@ -411,11 +411,8 @@ void nmethod::init_defaults() {
   _oops_do_mark_link       = NULL;
   _jmethod_id              = NULL;
   _osr_link                = NULL;
-  if (UseG1GC) {
-    _unloading_next        = NULL;
-  } else {
-    _scavenge_root_link    = NULL;
-  }
+  _unloading_next          = NULL;
+  _scavenge_root_link      = NULL;
   _scavenge_root_state     = 0;
 #if INCLUDE_RTM_OPT
   _rtm_state               = NoRTM;
@@ -599,12 +596,9 @@ nmethod::nmethod(
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
     if (ScavengeRootsInCode) {
-      if (detect_scavenge_root_oops()) {
-        CodeCache::add_scavenge_root_nmethod(this);
-      }
       Universe::heap()->register_nmethod(this);
     }
-    debug_only(verify_scavenge_root_oops());
+    debug_only(Universe::heap()->verify_nmethod(this));
     CodeCache::commit(this);
   }
 
@@ -754,12 +748,9 @@ nmethod::nmethod(
     debug_info->copy_to(this);
     dependencies->copy_to(this);
     if (ScavengeRootsInCode) {
-      if (detect_scavenge_root_oops()) {
-        CodeCache::add_scavenge_root_nmethod(this);
-      }
       Universe::heap()->register_nmethod(this);
     }
-    debug_only(verify_scavenge_root_oops());
+    debug_only(Universe::heap()->verify_nmethod(this));
 
     CodeCache::commit(this);
 
@@ -2137,7 +2128,7 @@ void nmethod::verify() {
   VerifyOopsClosure voc(this);
   oops_do(&voc);
   assert(voc.ok(), "embedded oops must be OK");
-  verify_scavenge_root_oops();
+  Universe::heap()->verify_nmethod(this);
 
   verify_scopes();
 }
@@ -2230,10 +2221,6 @@ public:
 };
 
 void nmethod::verify_scavenge_root_oops() {
-  if (UseG1GC) {
-    return;
-  }
-
   if (!on_scavenge_root_list()) {
     // Actually look inside, to verify the claim that it's clean.
     DebugScavengeRoot debug_scavenge_root(this);

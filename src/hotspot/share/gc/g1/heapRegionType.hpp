@@ -32,6 +32,8 @@
   assert(is_valid((tag)), "invalid HR type: %u", (uint) (tag))
 
 class HeapRegionType VALUE_OBJ_CLASS_SPEC {
+friend class VMStructs;
+
 private:
   // We encode the value of the heap region type so the generation can be
   // determined quickly. The tag is split into two parts:

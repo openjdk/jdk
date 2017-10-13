@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import sun.jvm.hotspot.compiler.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc.parallel.*;
 import sun.jvm.hotspot.gc.shared.*;
+import sun.jvm.hotspot.gc.g1.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
@@ -1078,6 +1079,26 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                             }
                           }
 
+                        } else if (collHeap instanceof G1CollectedHeap) {
+                          G1CollectedHeap heap = (G1CollectedHeap)collHeap;
+                          HeapRegion region = heap.hrm().getByAddress(handle);
+
+                          if (region.isFree()) {
+                            anno = "Free ";
+                            bad = false;
+                          } else if (region.isYoung()) {
+                            anno = "Young ";
+                            bad = false;
+                          } else if (region.isHumongous()) {
+                            anno = "Humongous ";
+                            bad = false;
+                          } else if (region.isPinned()) {
+                            anno = "Pinned ";
+                            bad = false;
+                          } else if (region.isOld()) {
+                            anno = "Old ";
+                            bad = false;
+                          }
                         } else if (collHeap instanceof ParallelScavengeHeap) {
                           ParallelScavengeHeap heap = (ParallelScavengeHeap) collHeap;
                           if (heap.youngGen().isIn(handle)) {

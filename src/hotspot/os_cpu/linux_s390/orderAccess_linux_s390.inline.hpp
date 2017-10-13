@@ -74,10 +74,13 @@ inline void OrderAccess::acquire()    { inlasm_zarch_acquire(); }
 inline void OrderAccess::release()    { inlasm_zarch_release(); }
 inline void OrderAccess::fence()      { inlasm_zarch_sync(); }
 
-template<> inline jbyte  OrderAccess::specialized_load_acquire<jbyte> (const volatile jbyte*  p) { register jbyte  t = *p; inlasm_zarch_acquire(); return t; }
-template<> inline jshort OrderAccess::specialized_load_acquire<jshort>(const volatile jshort* p) { register jshort t = *p; inlasm_zarch_acquire(); return t; }
-template<> inline jint   OrderAccess::specialized_load_acquire<jint>  (const volatile jint*   p) { register jint   t = *p; inlasm_zarch_acquire(); return t; }
-template<> inline jlong  OrderAccess::specialized_load_acquire<jlong> (const volatile jlong*  p) { register jlong  t = *p; inlasm_zarch_acquire(); return t; }
+template<size_t byte_size>
+struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  T operator()(const volatile T* p) const { register T t = *p; inlasm_zarch_acquire(); return t; }
+};
 
 #undef inlasm_compiler_barrier
 #undef inlasm_zarch_sync
@@ -85,8 +88,4 @@ template<> inline jlong  OrderAccess::specialized_load_acquire<jlong> (const vol
 #undef inlasm_zarch_acquire
 #undef inlasm_zarch_fence
 
-#define VM_HAS_GENERALIZED_ORDER_ACCESS 1
-
 #endif // OS_CPU_LINUX_S390_VM_ORDERACCESS_LINUX_S390_INLINE_HPP
-
-

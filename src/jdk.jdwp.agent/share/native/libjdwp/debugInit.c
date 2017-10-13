@@ -1301,6 +1301,9 @@ debugInit_exit(jvmtiError error, const char *msg)
 {
     enum exit_codes { EXIT_NO_ERRORS = 0, EXIT_JVMTI_ERROR = 1, EXIT_TRANSPORT_ERROR = 2 };
 
+    // Release commandLoop vmDeathLock if necessary
+    commandLoop_exitVmDeathLockOnError();
+
     // Prepare to exit. Log error and finish logging
     LOG_MISC(("Exiting with error %s(%d): %s", jvmtiErrorText(error), error,
                                                ((msg == NULL) ? "" : msg)));

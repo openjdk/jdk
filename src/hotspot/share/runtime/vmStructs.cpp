@@ -277,7 +277,7 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
   nonstatic_field(Klass,                       _primary_supers[0],                            Klass*)                                \
-  nonstatic_field(Klass,                       _java_mirror,                                  oop)                                   \
+  nonstatic_field(Klass,                       _java_mirror,                                  OopHandle)                             \
   nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
   nonstatic_field(Klass,                       _super,                                        Klass*)                                \
   nonstatic_field(Klass,                       _subklass,                                     Klass*)                                \
@@ -2726,8 +2726,12 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   /* JVMCI */                                                             \
   /****************/                                                      \
                                                                           \
-  declare_preprocessor_constant("INCLUDE_JVMCI", INCLUDE_JVMCI)
-
+  declare_preprocessor_constant("INCLUDE_JVMCI", INCLUDE_JVMCI)           \
+                                                                          \
+  /****************/                                                      \
+  /*  VMRegImpl   */                                                      \
+  /****************/                                                      \
+  declare_constant(VMRegImpl::stack_slot_size)
 
 //--------------------------------------------------------------------------------
 // VM_LONG_CONSTANTS
@@ -3009,7 +3013,8 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
   VM_TYPES_PARNEW(GENERATE_VM_TYPE_ENTRY)
 
   VM_TYPES_G1(GENERATE_VM_TYPE_ENTRY,
-              GENERATE_TOPLEVEL_VM_TYPE_ENTRY)
+              GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
+              GENERATE_INTEGER_VM_TYPE_ENTRY)
 #endif // INCLUDE_ALL_GCS
 
 #if INCLUDE_TRACE
@@ -3207,6 +3212,7 @@ VMStructs::init() {
   VM_TYPES_PARNEW(CHECK_VM_TYPE_ENTRY)
 
   VM_TYPES_G1(CHECK_VM_TYPE_ENTRY,
+              CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
               CHECK_SINGLE_ARG_VM_TYPE_NO_OP);
 
 #endif // INCLUDE_ALL_GCS
