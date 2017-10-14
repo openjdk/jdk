@@ -35,6 +35,11 @@
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import static java.util.concurrent.locks.StampedLock.isLockStamp;
+import static java.util.concurrent.locks.StampedLock.isOptimisticReadStamp;
+import static java.util.concurrent.locks.StampedLock.isReadLockStamp;
+import static java.util.concurrent.locks.StampedLock.isWriteLockStamp;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -1286,11 +1291,115 @@ public class StampedLockTest extends JSR166TestCase {
                 } while (stamp == 0);
                 return Math.hypot(currentX, currentY);
             }
+
+            double distanceFromOrigin2() {
+                long stamp = sl.tryOptimisticRead();
+                try {
+                    retryHoldingLock:
+                    for (;; stamp = sl.readLock()) {
+                        if (stamp == 0L)
+                            continue retryHoldingLock;
+                        // possibly racy reads
+                        double currentX = x;
+                        double currentY = y;
+                        if (!sl.validate(stamp))
+                            continue retryHoldingLock;
+                        return Math.hypot(currentX, currentY);
+                    }
+                } finally {
+                    if (StampedLock.isReadLockStamp(stamp))
+                        sl.unlockRead(stamp);
+                }
+            }
+
+            void moveIfAtOrigin(double newX, double newY) {
+                long stamp = sl.readLock();
+                try {
+                    while (x == 0.0 && y == 0.0) {
+                        long ws = sl.tryConvertToWriteLock(stamp);
+                        if (ws != 0L) {
+                            stamp = ws;
+                            x = newX;
+                            y = newY;
+                            return;
+                        }
+                        else {
+                            sl.unlockRead(stamp);
+                            stamp = sl.writeLock();
+                        }
+                    }
+                } finally {
+                    sl.unlock(stamp);
+                }
+            }
         }
 
         Point p = new Point();
         p.move(3.0, 4.0);
         assertEquals(5.0, p.distanceFromOrigin());
+        p.moveIfAtOrigin(5.0, 12.0);
+        assertEquals(5.0, p.distanceFromOrigin2());
+    }
+
+    /**
+     * Stamp inspection methods work as expected, and do not inspect
+     * the state of the lock itself.
+     */
+    public void testStampStateInspectionMethods() {
+        StampedLock lock = new StampedLock();
+
+        assertFalse(isWriteLockStamp(0L));
+        assertFalse(isReadLockStamp(0L));
+        assertFalse(isLockStamp(0L));
+        assertFalse(isOptimisticReadStamp(0L));
+
+        {
+            long stamp = lock.writeLock();
+            for (int i = 0; i < 2; i++) {
+                assertTrue(isWriteLockStamp(stamp));
+                assertFalse(isReadLockStamp(stamp));
+                assertTrue(isLockStamp(stamp));
+                assertFalse(isOptimisticReadStamp(stamp));
+                if (i == 0)
+                    lock.unlockWrite(stamp);
+            }
+        }
+
+        {
+            long stamp = lock.readLock();
+            for (int i = 0; i < 2; i++) {
+                assertFalse(isWriteLockStamp(stamp));
+                assertTrue(isReadLockStamp(stamp));
+                assertTrue(isLockStamp(stamp));
+                assertFalse(isOptimisticReadStamp(stamp));
+                if (i == 0)
+                    lock.unlockRead(stamp);
+            }
+        }
+
+        {
+            long optimisticStamp = lock.tryOptimisticRead();
+            long readStamp = lock.tryConvertToReadLock(optimisticStamp);
+            long writeStamp = lock.tryConvertToWriteLock(readStamp);
+            for (int i = 0; i < 2; i++) {
+                assertFalse(isWriteLockStamp(optimisticStamp));
+                assertFalse(isReadLockStamp(optimisticStamp));
+                assertFalse(isLockStamp(optimisticStamp));
+                assertTrue(isOptimisticReadStamp(optimisticStamp));
+
+                assertFalse(isWriteLockStamp(readStamp));
+                assertTrue(isReadLockStamp(readStamp));
+                assertTrue(isLockStamp(readStamp));
+                assertFalse(isOptimisticReadStamp(readStamp));
+
+                assertTrue(isWriteLockStamp(writeStamp));
+                assertFalse(isReadLockStamp(writeStamp));
+                assertTrue(isLockStamp(writeStamp));
+                assertFalse(isOptimisticReadStamp(writeStamp));
+                if (i == 0)
+                    lock.unlockWrite(writeStamp);
+            }
+        }
     }
 
 }
