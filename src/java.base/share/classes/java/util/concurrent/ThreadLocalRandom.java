@@ -1039,7 +1039,10 @@ public class ThreadLocalRandom extends Random {
      */
     private static final long SEEDER_INCREMENT = 0xbb67ae8584caa73bL;
 
-    // Constants from SplittableRandom
+    /**
+     * The least non-zero value returned by nextDouble(). This value
+     * is scaled by a random value of 53 bits to produce a result.
+     */
     private static final double DOUBLE_UNIT = 0x1.0p-53;  // 1.0  / (1L << 53)
     private static final float  FLOAT_UNIT  = 0x1.0p-24f; // 1.0f / (1 << 24)
 
