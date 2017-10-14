@@ -38,14 +38,16 @@ import java.util.ServiceLoader;
 import java.util.ServiceLoader.Provider;
 import static java.security.AccessController.doPrivileged;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeTest;
 import static org.testng.Assert.*;
 
 /**
- * Basic tests with a security manager to ensure that the provider code
- * is run with permissions restricted by whatever created the ServiceLoader
- * object.
+ * Tests ServiceLoader when running with a security manager, specifically
+ * tests to ensure that provider code is run with permissions restricted by
+ * the creater of ServiceLoader, and also testing of exceptions thrown
+ * when loading or initializing a provider.
  */
 
 public class Tests {
@@ -163,11 +165,35 @@ public class Tests {
         }
     }
 
+    @DataProvider(name = "failingServices")
+    public Object[][] failingServices() {
+        return new Object[][] {
+            { S3.class,    P3.Error3.class },
+            { S4.class,    P4.Error4.class },
+            { S5.class,    P5.Error5.class },
+            { S6.class,    P6.Error6.class },
+        };
+    }
+
+    @Test(dataProvider = "failingServices")
+    public void testFailingService(Class<?> service, Class<? extends Error> errorClass) {
+        ServiceLoader<?> sl = ServiceLoader.load(service);
+        try {
+            sl.iterator().next();
+            assertTrue(false);
+        } catch (ServiceConfigurationError e) {
+            assertTrue(e.getCause().getClass() == errorClass);
+        }
+    }
 
     // service types and implementations
 
     public static interface S1 { }
     public static interface S2 { }
+    public static interface S3 { }
+    public static interface S4 { }
+    public static interface S5 { }
+    public static interface S6 { }
 
     public static class P1 implements S1 {
         public P1() {
@@ -180,6 +206,38 @@ public class Tests {
         }
         public static S2 provider() {
             return new P2();
+        }
+    }
+
+    public static class P3 implements S3 {
+        static class Error3 extends Error { }
+        static {
+            if (1==1) throw new Error3();  // fail
+        }
+        public P3() { }
+    }
+
+    public static class P4 implements S4 {
+        static class Error4 extends Error { }
+        static {
+            if (1==1) throw new Error4();  // fail
+        }
+        public static S4 provider() {
+            return new P4();
+        }
+    }
+
+    public static class P5 implements S5 {
+        static class Error5 extends Error { }
+        public P5() {
+            throw new Error5();  // fail
+        }
+    }
+
+    public static class P6 implements S6 {
+        static class Error6 extends Error { }
+        public static S6 provider() {
+            throw new Error6();   // fail
         }
     }
 }
