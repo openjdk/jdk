@@ -231,15 +231,16 @@ public class ConcurrentLinkedDeque<E>
      *
      * The implementation is completely directionally symmetrical,
      * except that most public methods that iterate through the list
-     * follow next pointers ("forward" direction).
+     * follow next pointers, in the "forward" direction.
      *
-     * We believe (without full proof) that all single-element deque
-     * operations (e.g., addFirst, peekLast, pollLast) are linearizable
-     * (see Herlihy and Shavit's book).  However, some combinations of
+     * We believe (without full proof) that all single-element Deque
+     * operations that operate directly at the two ends of the Deque
+     * (e.g., addFirst, peekLast, pollLast) are linearizable (see
+     * Herlihy and Shavit's book).  However, some combinations of
      * operations are known not to be linearizable.  In particular,
-     * when an addFirst(A) is racing with pollFirst() removing B, it is
-     * possible for an observer iterating over the elements to observe
-     * A B C and subsequently observe A C, even though no interior
+     * when an addFirst(A) is racing with pollFirst() removing B, it
+     * is possible for an observer iterating over the elements to
+     * observe first [A B C] and then [A C], even though no interior
      * removes are ever performed.  Nevertheless, iterators behave
      * reasonably, providing the "weakly consistent" guarantees.
      *
@@ -865,21 +866,33 @@ public class ConcurrentLinkedDeque<E>
     }
 
     public E peekFirst() {
-        for (Node<E> p = first(); p != null; p = succ(p)) {
-            final E item;
-            if ((item = p.item) != null)
-                return item;
+        restart: for (;;) {
+            for (Node<E> first = first(), p = first;;) {
+                final E item;
+                if ((item = p.item) != null) {
+                    // recheck for linearizability
+                    if (first.prev != null) continue restart;
+                    return item;
+                }
+                if ((p = succ(p)) == null)
+                    return null;
+            }
         }
-        return null;
     }
 
     public E peekLast() {
-        for (Node<E> p = last(); p != null; p = pred(p)) {
-            final E item;
-            if ((item = p.item) != null)
-                return item;
+        restart: for (;;) {
+            for (Node<E> last = last(), p = last;;) {
+                final E item;
+                if ((item = p.item) != null) {
+                    // recheck for linearizability
+                    if (last.next != null) continue restart;
+                    return item;
+                }
+                if ((p = pred(p)) == null)
+                    return null;
+            }
         }
-        return null;
     }
 
     /**
@@ -897,27 +910,39 @@ public class ConcurrentLinkedDeque<E>
     }
 
     public E pollFirst() {
-        for (Node<E> p = first(); p != null; p = succ(p)) {
-            final E item;
-            if ((item = p.item) != null
-                && ITEM.compareAndSet(p, item, null)) {
-                unlink(p);
-                return item;
+        restart: for (;;) {
+            for (Node<E> first = first(), p = first;;) {
+                final E item;
+                if ((item = p.item) != null) {
+                    // recheck for linearizability
+                    if (first.prev != null) continue restart;
+                    if (ITEM.compareAndSet(p, item, null)) {
+                        unlink(p);
+                        return item;
+                    }
+                }
+                if ((p = succ(p)) == null)
+                    return null;
             }
         }
-        return null;
     }
 
     public E pollLast() {
-        for (Node<E> p = last(); p != null; p = pred(p)) {
-            final E item;
-            if ((item = p.item) != null
-                && ITEM.compareAndSet(p, item, null)) {
-                unlink(p);
-                return item;
+        restart: for (;;) {
+            for (Node<E> last = last(), p = last;;) {
+                final E item;
+                if ((item = p.item) != null) {
+                    // recheck for linearizability
+                    if (last.next != null) continue restart;
+                    if (ITEM.compareAndSet(p, item, null)) {
+                        unlink(p);
+                        return item;
+                    }
+                }
+                if ((p = pred(p)) == null)
+                    return null;
             }
         }
-        return null;
     }
 
     /**
@@ -1079,14 +1104,14 @@ public class ConcurrentLinkedDeque<E>
      * @return the number of elements in this deque
      */
     public int size() {
-        restartFromHead: for (;;) {
+        restart: for (;;) {
             int count = 0;
             for (Node<E> p = first(); p != null;) {
                 if (p.item != null)
                     if (++count == Integer.MAX_VALUE)
                         break;  // @see Collection.size()
                 if (p == (p = p.next))
-                    continue restartFromHead;
+                    continue restart;
             }
             return count;
         }
@@ -1183,7 +1208,7 @@ public class ConcurrentLinkedDeque<E>
 
     public String toString() {
         String[] a = null;
-        restartFromHead: for (;;) {
+        restart: for (;;) {
             int charLength = 0;
             int size = 0;
             for (Node<E> p = first(); p != null;) {
@@ -1198,7 +1223,7 @@ public class ConcurrentLinkedDeque<E>
                     charLength += s.length();
                 }
                 if (p == (p = p.next))
-                    continue restartFromHead;
+                    continue restart;
             }
 
             if (size == 0)
@@ -1210,7 +1235,7 @@ public class ConcurrentLinkedDeque<E>
 
     private Object[] toArrayInternal(Object[] a) {
         Object[] x = a;
-        restartFromHead: for (;;) {
+        restart: for (;;) {
             int size = 0;
             for (Node<E> p = first(); p != null;) {
                 final E item;
@@ -1222,7 +1247,7 @@ public class ConcurrentLinkedDeque<E>
                     x[size++] = item;
                 }
                 if (p == (p = p.next))
-                    continue restartFromHead;
+                    continue restart;
             }
             if (x == null)
                 return new Object[0];
