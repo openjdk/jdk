@@ -3898,7 +3898,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 #if defined(ZERO) && defined(ASSERT)
   {
     jint a = 0xcafebabe;
-    jint b = Atomic::xchg(0xdeadbeef, &a);
+    jint b = Atomic::xchg((jint) 0xdeadbeef, &a);
     void *c = &a;
     void *d = Atomic::xchg_ptr(&b, &c);
     assert(a == (jint) 0xdeadbeef && b == (jint) 0xcafebabe, "Atomic::xchg() works");
