@@ -1097,7 +1097,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
           ]
       )
     fi
-    if ! HOTSPOT_CHECK_JVM_VARIANT(zero) && ! HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
+    if ! HOTSPOT_CHECK_JVM_VARIANT(zero); then
       # Non-zero builds have stricter warnings
       $2JVM_CFLAGS="[$]$2JVM_CFLAGS -Wreturn-type -Wundef -Wformat=2"
     else

@@ -50,7 +50,7 @@ address Relocation::pd_get_address_from_code() {
 }
 
 address* Relocation::pd_address_in_code() {
-  // Relocations in Shark are just stored directly
+  ShouldNotCallThis();
   return (address *) addr();
 }
 

@@ -125,7 +125,6 @@ public:
   inline bool is_compiled_by_c1() const    { return _type == compiler_c1; };
   inline bool is_compiled_by_c2() const    { return _type == compiler_c2; };
   inline bool is_compiled_by_jvmci() const { return _type == compiler_jvmci; };
-  inline bool is_compiled_by_shark() const { return _type == compiler_shark; };
   const char* compiler_name() const;
 
   // Casting

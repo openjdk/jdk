@@ -53,9 +53,6 @@
 #include "utilities/events.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/xmlstream.hpp"
-#ifdef SHARK
-#include "shark/sharkCompiler.hpp"
-#endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
@@ -200,9 +197,6 @@ static java_nmethod_stats_struct c2_java_nmethod_stats;
 #if INCLUDE_JVMCI
 static java_nmethod_stats_struct jvmci_java_nmethod_stats;
 #endif
-#ifdef SHARK
-static java_nmethod_stats_struct shark_java_nmethod_stats;
-#endif
 static java_nmethod_stats_struct unknown_java_nmethod_stats;
 
 static native_nmethod_stats_struct native_nmethod_stats;
@@ -222,11 +216,6 @@ static void note_java_nmethod(nmethod* nm) {
 #if INCLUDE_JVMCI
   if (nm->is_compiled_by_jvmci()) {
     jvmci_java_nmethod_stats.note_nmethod(nm);
-  } else
-#endif
-#ifdef SHARK
-  if (nm->is_compiled_by_shark()) {
-    shark_java_nmethod_stats.note_nmethod(nm);
   } else
 #endif
   {
@@ -1325,10 +1314,6 @@ void nmethod::flush() {
     CodeCache::drop_scavenge_root_nmethod(this);
   }
 
-#ifdef SHARK
-  ((SharkCompiler *) compiler())->free_compiled_method(insts_begin());
-#endif // SHARK
-
   CodeBlob::flush();
   CodeCache::free(this);
 }
@@ -2241,8 +2226,6 @@ void nmethod::print() const {
     tty->print("(c1) ");
   } else if (is_compiled_by_c2()) {
     tty->print("(c2) ");
-  } else if (is_compiled_by_shark()) {
-    tty->print("(shark) ");
   } else if (is_compiled_by_jvmci()) {
     tty->print("(JVMCI) ");
   } else {
@@ -2863,9 +2846,6 @@ void nmethod::print_statistics() {
 #endif
 #if INCLUDE_JVMCI
   jvmci_java_nmethod_stats.print_nmethod_stats("JVMCI");
-#endif
-#ifdef SHARK
-  shark_java_nmethod_stats.print_nmethod_stats("Shark");
 #endif
   unknown_java_nmethod_stats.print_nmethod_stats("Unknown");
   DebugInformationRecorder::print_statistics();

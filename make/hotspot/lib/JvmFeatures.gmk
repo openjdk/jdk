@@ -52,14 +52,6 @@ ifeq ($(call check-jvm-feature, zero), true)
   endif
 endif
 
-ifeq ($(call check-jvm-feature, shark), true)
-  JVM_CFLAGS_FEATURES += -DSHARK $(LLVM_CFLAGS)
-  JVM_LDFLAGS_FEATURES += $(LLVM_LDFLAGS)
-  JVM_LIBS_FEATURES += $(LLVM_LIBS)
-else
-  JVM_EXCLUDES += shark
-endif
-
 ifeq ($(call check-jvm-feature, minimal), true)
   JVM_CFLAGS_FEATURES += -DMINIMAL_JVM -DVMTYPE=\"Minimal\"
   ifeq ($(OPENJDK_TARGET_OS), linux)

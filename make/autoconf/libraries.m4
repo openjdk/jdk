@@ -68,7 +68,7 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   fi
 
   # Check if ffi is needed
-  if HOTSPOT_CHECK_JVM_VARIANT(zero) || HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
+  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
     NEEDS_LIB_FFI=true
   else
     NEEDS_LIB_FFI=false
@@ -86,67 +86,9 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_FREETYPE
   LIB_SETUP_ALSA
   LIB_SETUP_LIBFFI
-  LIB_SETUP_LLVM
   LIB_SETUP_BUNDLED_LIBS
   LIB_SETUP_MISC_LIBS
   LIB_SETUP_SOLARIS_STLPORT
-])
-
-################################################################################
-# Setup llvm (Low-Level VM)
-################################################################################
-AC_DEFUN_ONCE([LIB_SETUP_LLVM],
-[
-  if HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
-    AC_CHECK_PROG([LLVM_CONFIG], [llvm-config], [llvm-config])
-
-    if test "x$LLVM_CONFIG" != xllvm-config; then
-      AC_MSG_ERROR([llvm-config not found in $PATH.])
-    fi
-
-    llvm_components="jit mcjit engine nativecodegen native"
-    unset LLVM_CFLAGS
-    for flag in $("$LLVM_CONFIG" --cxxflags); do
-      if echo "${flag}" | grep -q '^-@<:@ID@:>@'; then
-        if test "${flag}" != "-D_DEBUG" ; then
-          if test "${LLVM_CFLAGS}" != "" ; then
-            LLVM_CFLAGS="${LLVM_CFLAGS} "
-          fi
-          LLVM_CFLAGS="${LLVM_CFLAGS}${flag}"
-        fi
-      fi
-    done
-    llvm_version=$("${LLVM_CONFIG}" --version | $SED 's/\.//; s/svn.*//')
-    LLVM_CFLAGS="${LLVM_CFLAGS} -DSHARK_LLVM_VERSION=${llvm_version}"
-
-    unset LLVM_LDFLAGS
-    for flag in $("${LLVM_CONFIG}" --ldflags); do
-      if echo "${flag}" | grep -q '^-L'; then
-        if test "${LLVM_LDFLAGS}" != ""; then
-          LLVM_LDFLAGS="${LLVM_LDFLAGS} "
-        fi
-        LLVM_LDFLAGS="${LLVM_LDFLAGS}${flag}"
-      fi
-    done
-
-    unset LLVM_LIBS
-    for flag in $("${LLVM_CONFIG}" --libs ${llvm_components}); do
-      if echo "${flag}" | grep -q '^-l'; then
-        if test "${LLVM_LIBS}" != ""; then
-          LLVM_LIBS="${LLVM_LIBS} "
-        fi
-        LLVM_LIBS="${LLVM_LIBS}${flag}"
-      fi
-    done
-
-    # Due to https://llvm.org/bugs/show_bug.cgi?id=16902, llvm does not
-    # always properly detect -ltinfo
-    LLVM_LIBS="${LLVM_LIBS} -ltinfo"
-
-    AC_SUBST(LLVM_CFLAGS)
-    AC_SUBST(LLVM_LDFLAGS)
-    AC_SUBST(LLVM_LIBS)
-  fi
 ])
 
 ################################################################################

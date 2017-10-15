@@ -52,9 +52,6 @@ void ZeroStack::handle_overflow(TRAPS) {
     intptr_t *sp = thread->zero_stack()->sp();
     ZeroFrame *frame = thread->top_zero_frame();
     while (frame) {
-      if (frame->is_shark_frame())
-        break;
-
       if (frame->is_interpreter_frame()) {
         interpreterState istate =
           frame->as_interpreter_frame()->interpreter_state();

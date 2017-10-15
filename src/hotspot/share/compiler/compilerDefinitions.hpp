@@ -33,7 +33,6 @@ enum CompilerType {
   compiler_c1,
   compiler_c2,
   compiler_jvmci,
-  compiler_shark,
   compiler_number_of_types
 };
 
@@ -54,7 +53,7 @@ enum CompLevel {
   CompLevel_simple            = 1,         // C1
   CompLevel_limited_profile   = 2,         // C1, invocation & backedge counters
   CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
-  CompLevel_full_optimization = 4          // C2, Shark or JVMCI
+  CompLevel_full_optimization = 4          // C2 or JVMCI
 };
 
 extern CompLevel CompLevel_highest_tier;

@@ -50,9 +50,6 @@
 #include "stack_zero.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
-#ifdef SHARK
-#include "shark/shark_globals.hpp"
-#endif
 
 #ifdef CC_INTERP
 
