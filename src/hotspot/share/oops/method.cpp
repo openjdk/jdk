@@ -1165,15 +1165,11 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
   }
 
   OrderAccess::storestore();
-#ifdef SHARK
-  mh->_from_interpreted_entry = code->insts_begin();
-#else //!SHARK
   mh->_from_compiled_entry = code->verified_entry_point();
   OrderAccess::storestore();
   // Instantly compiled code can execute.
   if (!mh->is_method_handle_intrinsic())
     mh->_from_interpreted_entry = mh->get_i2c_entry();
-#endif //!SHARK
 }
 
 

@@ -3724,7 +3724,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // initialize compiler(s)
-#if defined(COMPILER1) || defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
+#if defined(COMPILER1) || defined(COMPILER2) || INCLUDE_JVMCI
   CompileBroker::compilation_init(CHECK_JNI_ERR);
 #endif
 

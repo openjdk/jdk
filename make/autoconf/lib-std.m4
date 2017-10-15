@@ -65,8 +65,7 @@ AC_DEFUN_ONCE([LIB_SETUP_STD_LIBS],
     # If dynamic was requested, it's available since it would fail above otherwise.
     # If dynamic wasn't requested, go with static unless it isn't available.
     AC_MSG_CHECKING([how to link with libstdc++])
-    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno \
-        || HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno ; then
       AC_MSG_RESULT([dynamic])
     else
       LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"

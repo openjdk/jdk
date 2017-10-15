@@ -294,7 +294,6 @@ int CompiledMethod::verify_icholder_relocations() {
 // Method that knows how to preserve outgoing arguments at call. This method must be
 // called with a frame corresponding to a Java invoke
 void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) {
-#ifndef SHARK
   if (method() != NULL && !method()->is_native()) {
     address pc = fr.pc();
     SimpleScopeDesc ssd(this, pc);
@@ -314,7 +313,6 @@ void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *
 
     fr.oops_compiled_arguments_do(signature, has_receiver, has_appendix, reg_map, f);
   }
-#endif // !SHARK
 }
 
 Method* CompiledMethod::attached_method(address call_instr) {

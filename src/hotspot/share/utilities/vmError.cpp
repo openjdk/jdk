@@ -189,20 +189,10 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
     if (!has_last_Java_frame)
       jt->set_last_Java_frame();
     st->print("Java frames:");
-
-    // If the top frame is a Shark frame and the frame anchor isn't
-    // set up then it's possible that the information in the frame
-    // is garbage: it could be from a previous decache, or it could
-    // simply have never been written.  So we print a warning...
-    StackFrameStream sfs(jt);
-    if (!has_last_Java_frame && !sfs.is_done()) {
-      if (sfs.current()->zeroframe()->is_shark_frame()) {
-        st->print(" (TOP FRAME MAY BE JUNK)");
-      }
-    }
     st->cr();
 
     // Print the frames
+    StackFrameStream sfs(jt);
     for(int i = 0; !sfs.is_done(); sfs.next(), i++) {
       sfs.current()->zero_print_on_error(i, st, buf, buflen);
       st->cr();

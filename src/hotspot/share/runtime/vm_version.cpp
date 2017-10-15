@@ -95,11 +95,7 @@ bool Abstract_VM_Version::_parallel_worker_threads_initialized = false;
     #define VMTYPE "Server"
   #else // TIERED
   #ifdef ZERO
-  #ifdef SHARK
-    #define VMTYPE "Shark"
-  #else // SHARK
     #define VMTYPE "Zero"
-  #endif // SHARK
   #else // ZERO
      #define VMTYPE COMPILER1_PRESENT("Client")   \
                     COMPILER2_PRESENT("Server")

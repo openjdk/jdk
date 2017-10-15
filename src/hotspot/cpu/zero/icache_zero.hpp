@@ -29,7 +29,7 @@
 // Interface for updating the instruction cache.  Whenever the VM
 // modifies code, part of the processor instruction cache potentially
 // has to be flushed.  This implementation is empty: Zero never deals
-// with code, and LLVM handles cache flushing for Shark.
+// with code.
 
 class ICache : public AbstractICache {
  public:

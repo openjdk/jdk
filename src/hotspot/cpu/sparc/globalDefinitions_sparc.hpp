@@ -43,7 +43,7 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 #elif defined(COMPILER1)
   // pure C1, 32-bit, small machine
   #define DEFAULT_CACHE_LINE_SIZE 16
-#elif defined(COMPILER2) || defined(SHARK)
+#elif defined(COMPILER2)
   // pure C2, 64-bit, large machine
   #define DEFAULT_CACHE_LINE_SIZE 128
 #endif

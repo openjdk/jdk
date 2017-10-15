@@ -171,7 +171,7 @@ DirectiveSet* CompilerDirectives::get_for(AbstractCompiler *comp) {
     return _c2_store;
   } else {
     // use c1_store as default
-    assert(comp->is_c1() || comp->is_jvmci() || comp->is_shark(), "");
+    assert(comp->is_c1() || comp->is_jvmci(), "");
     return _c1_store;
   }
 }
