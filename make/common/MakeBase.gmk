@@ -500,20 +500,20 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
   # so we fall back on regular copy, which isn't preserving symlinks.
   define install-file
 	$(call MakeDir, $(@D))
-	$(RM) "$(call DecodeSpace, $@)"
-	if [ "$(call DecodeSpace, $(dir $@))" != \
-	    "$(call DecodeSpace, $(dir $(call EncodeSpace, $<)))" ]; then \
-	  $(CP) -f -r -P "$(call DecodeSpace, $<)" "$(call DecodeSpace, $(@D))"; \
-	  if [ "$(call DecodeSpace, $(@F))" != \
-	      "$(call DecodeSpace, $(notdir $(call EncodeSpace, $(<))))" ]; then \
-	    $(MV) "$(call DecodeSpace, $(@D)/$(<F))" "$(call DecodeSpace, $@)"; \
+	$(RM) '$(call DecodeSpace, $@)'
+	if [ '$(call DecodeSpace, $(dir $@))' != \
+	    '$(call DecodeSpace, $(dir $(call EncodeSpace, $<)))' ]; then \
+	  $(CP) -f -r -P '$(call DecodeSpace, $<)' '$(call DecodeSpace, $(@D))'; \
+	  if [ '$(call DecodeSpace, $(@F))' != \
+	      '$(call DecodeSpace, $(notdir $(call EncodeSpace, $(<))))' ]; then \
+	    $(MV) '$(call DecodeSpace, $(@D)/$(<F))' '$(call DecodeSpace, $@)'; \
 	  fi; \
 	else \
-	  if [ -L "$(call DecodeSpace, $<)" ]; then \
+	  if [ -L '$(call DecodeSpace, $<)' ]; then \
 	    $(ECHO) "Source file is a symlink and target is in the same directory: $< $@" ; \
 	    exit 1; \
 	  fi; \
-	  $(CP) -f "$(call DecodeSpace, $<)" "$(call DecodeSpace, $@)"; \
+	  $(CP) -f '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
 	fi
   endef
 else ifeq ($(OPENJDK_TARGET_OS),macosx)
@@ -527,21 +527,21 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
   # weird errors.
   define install-file
 	$(call MakeDir, $(@D))
-	$(RM) "$(call DecodeSpace, $@)"
-	$(CP) -fRP "$(call DecodeSpace, $<)" "$(call DecodeSpace, $@)"
-	if [ -n "`$(XATTR) -l "$(call DecodeSpace, $@)"`" ]; then $(XATTR) -c "$(call DecodeSpace, $@)"; fi
+	$(RM) '$(call DecodeSpace, $@)'
+	$(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
+	if [ -n "`$(XATTR) -l '$(call DecodeSpace, $@)'`" ]; then $(XATTR) -c '$(call DecodeSpace, $@)'; fi
   endef
 else
   define install-file
 	$(call MakeDir, $(@D))
-	$(CP) -fP "$(call DecodeSpace, $<)" "$(call DecodeSpace, $@)"
+	$(CP) -fP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
   endef
 endif
 
 # Variant of install file that does not preserve symlinks
 define install-file-nolink
 	$(call MakeDir, $(@D))
-	$(CP) -f "$(call DecodeSpace, $<)" "$(call DecodeSpace, $@)"
+	$(CP) -f '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
 endef
 
 ################################################################################
@@ -591,14 +591,14 @@ RelativePath = \
 # the unix emulation environment.
 define link-file-relative
 	$(call MakeDir, $(@D))
-	$(RM) "$(call DecodeSpace, $@)"
-	$(LN) -s "$(call DecodeSpace, $(call RelativePath, $<, $(@D)))" "$(call DecodeSpace, $@)"
+	$(RM) '$(call DecodeSpace, $@)'
+	$(LN) -s '$(call DecodeSpace, $(call RelativePath, $<, $(@D)))' '$(call DecodeSpace, $@)'
 endef
 
 define link-file-absolute
 	$(call MakeDir, $(@D))
-	$(RM) "$(call DecodeSpace, $@)"
-	$(LN) -s "$(call DecodeSpace, $<)" "$(call DecodeSpace, $@)"
+	$(RM) '$(call DecodeSpace, $@)'
+	$(LN) -s '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
 endef
 
 ################################################################################
