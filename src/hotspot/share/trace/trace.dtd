@@ -65,7 +65,8 @@
                         is_instant     CDATA "false"
                         is_constant    CDATA "false"
                         is_requestable CDATA "false"
-                        experimental   CDATA "false">
+                        experimental   CDATA "false"
+                        cutoff         CDATA "false">
 <!ATTLIST struct        id             CDATA #REQUIRED>
 <!ATTLIST value         type           CDATA #REQUIRED
                         field          CDATA #REQUIRED
