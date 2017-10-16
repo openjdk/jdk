@@ -889,7 +889,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 
     // Setup indirection from klass->mirror
     // after any exceptions can happen during allocations.
-    k->set_java_mirror(mirror());
+    k->set_java_mirror(mirror);
 
     // Set the module field in the java_lang_Class instance.  This must be done
     // after the mirror is set.

@@ -27,6 +27,7 @@
 
 #if INCLUDE_NMT
 
+#include "memory/metaspace.hpp"
 #include "oops/instanceKlass.hpp"
 #include "services/memBaseline.hpp"
 #include "services/nmtCommon.hpp"
@@ -110,6 +111,8 @@ class MemSummaryReporter : public MemReporterBase {
   // Report summary for each memory type
   void report_summary_of_type(MEMFLAGS type, MallocMemory* malloc_memory,
     VirtualMemory* virtual_memory);
+
+  void report_metadata(Metaspace::MetadataType type) const;
 };
 
 /*
@@ -170,7 +173,9 @@ class MemSummaryDiffReporter : public MemReporterBase {
   // report the comparison of each memory type
   void diff_summary_of_type(MEMFLAGS type,
     const MallocMemory* early_malloc, const VirtualMemory* early_vm,
-    const MallocMemory* current_malloc, const VirtualMemory* current_vm) const;
+    const MetaspaceSnapshot* early_ms,
+    const MallocMemory* current_malloc, const VirtualMemory* current_vm,
+    const MetaspaceSnapshot* current_ms) const;
 
  protected:
   void print_malloc_diff(size_t current_amount, size_t current_count,
@@ -179,6 +184,11 @@ class MemSummaryDiffReporter : public MemReporterBase {
     size_t early_reserved, size_t early_committed) const;
   void print_arena_diff(size_t current_amount, size_t current_count,
     size_t early_amount, size_t early_count) const;
+
+  void print_metaspace_diff(const MetaspaceSnapshot* current_ms,
+                            const MetaspaceSnapshot* early_ms) const;
+  void print_metaspace_diff(Metaspace::MetadataType type,
+    const MetaspaceSnapshot* current_ms, const MetaspaceSnapshot* early_ms) const;
 };
 
 /*

@@ -3607,6 +3607,63 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_squareToLen() {
+    // squareToLen algorithm for sizes 1..127 described in java code works
+    // faster than multiply_to_len on some CPUs and slower on others, but
+    // multiply_to_len shows a bit better overall results
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "squareToLen");
+    address start = __ pc();
+
+    const Register x     = r0;
+    const Register xlen  = r1;
+    const Register z     = r2;
+    const Register zlen  = r3;
+    const Register y     = r4; // == x
+    const Register ylen  = r5; // == xlen
+
+    const Register tmp1  = r10;
+    const Register tmp2  = r11;
+    const Register tmp3  = r12;
+    const Register tmp4  = r13;
+    const Register tmp5  = r14;
+    const Register tmp6  = r15;
+    const Register tmp7  = r16;
+
+    RegSet spilled_regs = RegSet::of(y, ylen);
+    BLOCK_COMMENT("Entry:");
+    __ enter();
+    __ push(spilled_regs, sp);
+    __ mov(y, x);
+    __ mov(ylen, xlen);
+    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ pop(spilled_regs, sp);
+    __ leave();
+    __ ret(lr);
+    return start;
+  }
+
+  address generate_mulAdd() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "mulAdd");
+
+    address start = __ pc();
+
+    const Register out     = r0;
+    const Register in      = r1;
+    const Register offset  = r2;
+    const Register len     = r3;
+    const Register k       = r4;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter();
+    __ mul_add(out, in, offset, len, k);
+    __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
   void ghash_multiply(FloatRegister result_lo, FloatRegister result_hi,
                       FloatRegister a, FloatRegister b, FloatRegister a1_xor_a0,
                       FloatRegister tmp1, FloatRegister tmp2, FloatRegister tmp3, FloatRegister tmp4) {
@@ -4911,6 +4968,14 @@ class StubGenerator: public StubCodeGenerator {
 
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
+    }
+
+    if (UseSquareToLenIntrinsic) {
+      StubRoutines::_squareToLen = generate_squareToLen();
+    }
+
+    if (UseMulAddIntrinsic) {
+      StubRoutines::_mulAdd = generate_mulAdd();
     }
 
     if (UseMontgomeryMultiplyIntrinsic) {

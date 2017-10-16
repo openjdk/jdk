@@ -42,10 +42,9 @@
 static  mutex_t  global_mut;
 static  thread_t global_mut_owner = -1;
 static  int      global_mut_count = 0;
-static  bool     initialized = false;
 
 ThreadCritical::ThreadCritical() {
-  if (initialized) {
+  if (os::Solaris::synchronization_initialized()) {
     thread_t owner = thr_self();
     if (global_mut_owner != owner) {
       if (os::Solaris::mutex_lock(&global_mut))
@@ -62,7 +61,7 @@ ThreadCritical::ThreadCritical() {
 }
 
 ThreadCritical::~ThreadCritical() {
-  if (initialized) {
+  if (os::Solaris::synchronization_initialized()) {
     assert(global_mut_owner == thr_self(), "must have correct owner");
     assert(global_mut_count > 0, "must have correct count");
     --global_mut_count;
@@ -74,13 +73,4 @@ ThreadCritical::~ThreadCritical() {
   } else {
     assert (Threads::number_of_threads() == 0, "valid only during initialization");
   }
-}
-
-void ThreadCritical::initialize() {
-  // This method is called at the end of os::init(). Until
-  // then, we don't do real locking.
-  initialized = true;
-}
-
-void ThreadCritical::release() {
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,46 +60,57 @@ inline void OrderAccess::fence() {
 }
 
 template<>
-inline void OrderAccess::specialized_release_store_fence<jbyte> (volatile jbyte*  p, jbyte  v) {
-  __asm__ volatile (  "xchgb (%2),%0"
-                    : "=q" (v)
-                    : "0" (v), "r" (p)
-                    : "memory");
-}
+struct OrderAccess::PlatformOrderedStore<1, RELEASE_X_FENCE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm__ volatile (  "xchgb (%2),%0"
+                      : "=q" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
+  }
+};
+
 template<>
-inline void OrderAccess::specialized_release_store_fence<jshort>(volatile jshort* p, jshort v) {
-  __asm__ volatile (  "xchgw (%2),%0"
-                    : "=r" (v)
-                    : "0" (v), "r" (p)
-                    : "memory");
-}
+struct OrderAccess::PlatformOrderedStore<2, RELEASE_X_FENCE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm__ volatile (  "xchgw (%2),%0"
+                      : "=r" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
+  }
+};
+
 template<>
-inline void OrderAccess::specialized_release_store_fence<jint>  (volatile jint*   p, jint   v) {
-  __asm__ volatile (  "xchgl (%2),%0"
-                    : "=r" (v)
-                    : "0" (v), "r" (p)
-                    : "memory");
-}
+struct OrderAccess::PlatformOrderedStore<4, RELEASE_X_FENCE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm__ volatile (  "xchgl (%2),%0"
+                      : "=r" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
+  }
+};
 
 #ifdef AMD64
 template<>
-inline void OrderAccess::specialized_release_store_fence<jlong> (volatile jlong*  p, jlong  v) {
-  __asm__ volatile (  "xchgq (%2), %0"
-                    : "=r" (v)
-                    : "0" (v), "r" (p)
-                    : "memory");
-}
+struct OrderAccess::PlatformOrderedStore<8, RELEASE_X_FENCE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm__ volatile (  "xchgq (%2), %0"
+                      : "=r" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
+  }
+};
 #endif // AMD64
-
-template<>
-inline void OrderAccess::specialized_release_store_fence<jfloat> (volatile jfloat*  p, jfloat  v) {
-  release_store_fence((volatile jint*)p, jint_cast(v));
-}
-template<>
-inline void OrderAccess::specialized_release_store_fence<jdouble>(volatile jdouble* p, jdouble v) {
-  release_store_fence((volatile jlong*)p, jlong_cast(v));
-}
-
-#define VM_HAS_GENERALIZED_ORDER_ACCESS 1
 
 #endif // OS_CPU_LINUX_X86_VM_ORDERACCESS_LINUX_X86_INLINE_HPP

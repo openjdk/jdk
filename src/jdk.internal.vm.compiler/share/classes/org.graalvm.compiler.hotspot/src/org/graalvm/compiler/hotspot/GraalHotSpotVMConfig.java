@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,14 +280,14 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
         }
         if (offset == -1) {
             try {
-                offset = getFieldOffset(name, Integer.class, "jobject");
+                offset = getFieldOffset(name, Integer.class, "OopHandle");
                 isHandle = true;
             } catch (JVMCIError e) {
 
             }
         }
         if (offset == -1) {
-            throw new JVMCIError("cannot get offset of field " + name + " with type oop or jobject");
+            throw new JVMCIError("cannot get offset of field " + name + " with type oop or OopHandle");
         }
         classMirrorOffset = offset;
         classMirrorIsHandle = isHandle;

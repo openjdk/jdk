@@ -64,6 +64,7 @@ gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8179226 generic-all
 gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java 8177765 generic-all
+gc/logging/TestPrintReferences.java 8188245 generic-all
 
 #############################################################################
 

@@ -4768,8 +4768,6 @@ void os::init(void) {
 
   init_random(1234567);
 
-  ThreadCritical::initialize();
-
   Linux::set_page_size(sysconf(_SC_PAGESIZE));
   if (Linux::page_size() == -1) {
     fatal("os_linux.cpp: os::init: sysconf failed (%s)",

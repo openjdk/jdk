@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,7 +430,7 @@ public abstract class Frame implements Cloneable {
       // If it is passed in a register, it got spilled in the stub frame.
       return regMap.getLocation(reg);
     } else {
-      long spOffset = VM.getVM().getAddressSize() * reg.minus(stack0);
+      long spOffset = reg.reg2Stack() * VM.getVM().getVMRegImplInfo().getStackSlotSize();
       return getUnextendedSP().addOffsetTo(spOffset);
     }
   }

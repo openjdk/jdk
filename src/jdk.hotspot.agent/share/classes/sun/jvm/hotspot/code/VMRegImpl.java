@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ public class VMRegImpl {
   private static int stack0Val;
   private static Address stack0Addr;
   private static AddressField regNameField;
+  private static int stackSlotSize;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -53,6 +54,7 @@ public class VMRegImpl {
     stack0Val = (int) stack0Addr.hashCode();
     stack0 = new VMReg(stack0Val);
     regNameField = type.getAddressField("regName[0]");
+    stackSlotSize = db.lookupIntConstant("VMRegImpl::stack_slot_size");
   }
 
   public static VMReg getStack0() {
@@ -66,5 +68,9 @@ public class VMRegImpl {
     Address regName = regNameField.getStaticFieldAddress();
     long addrSize = VM.getVM().getAddressSize();
     return CStringUtilities.getString(regName.getAddressAt(index * addrSize));
+  }
+
+  public static int getStackSlotSize() {
+    return stackSlotSize;
   }
 }

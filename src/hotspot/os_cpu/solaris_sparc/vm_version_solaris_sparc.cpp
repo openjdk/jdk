@@ -380,7 +380,7 @@ void VM_Version::platform_features() {
   if (av & AV_SPARC_CRC32C)       features |= ISA_crc32c_msk;
 
 #ifndef AV2_SPARC_FJATHPLUS
-#define AV2_SPARC_FJATHPLUS  0x00000001 // Fujitsu Athena+
+#define AV2_SPARC_FJATHPLUS  0x00000001 // Fujitsu Athena+ insns
 #endif
 #ifndef AV2_SPARC_VIS3B
 #define AV2_SPARC_VIS3B      0x00000002 // VIS3 present on multiple chips
@@ -407,6 +407,34 @@ void VM_Version::platform_features() {
 #define AV2_SPARC_VAMASK     0x00000100 // Virtual Address masking
 #endif
 
+#ifndef AV2_SPARC_SPARC6
+#define AV2_SPARC_SPARC6     0x00000200 // REVB*, FPSLL*, RDENTROPY, LDM* and STM*
+#endif
+#ifndef AV2_SPARC_DICTUNP
+#define AV2_SPARC_DICTUNP    0x00002000 // Dictionary unpack instruction
+#endif
+#ifndef AV2_SPARC_FPCMPSHL
+#define AV2_SPARC_FPCMPSHL   0x00004000 // Partition compare with shifted result
+#endif
+#ifndef AV2_SPARC_RLE
+#define AV2_SPARC_RLE        0x00008000 // Run-length encoded burst and length
+#endif
+#ifndef AV2_SPARC_SHA3
+#define AV2_SPARC_SHA3       0x00010000 // SHA3 instructions
+#endif
+#ifndef AV2_SPARC_FJATHPLUS2
+#define AV2_SPARC_FJATHPLUS2 0x00020000 // Fujitsu Athena++ insns
+#endif
+#ifndef AV2_SPARC_VIS3C
+#define AV2_SPARC_VIS3C      0x00040000 // Subset of VIS3 insns provided by Athena++
+#endif
+#ifndef AV2_SPARC_SPARC5B
+#define AV2_SPARC_SPARC5B    0x00080000 // subset of SPARC5 insns (fpadd8, fpsub8)
+#endif
+#ifndef AV2_SPARC_MME
+#define AV2_SPARC_MME        0x00100000 // Misaligned Mitigation Enable
+#endif
+
   if (avn > 1) {
     uint32_t av2 = avs[AV_HW2_IDX];
 
@@ -419,19 +447,30 @@ void VM_Version::platform_features() {
     if (av2 & AV2_SPARC_XMONT)      features |= ISA_xmont_msk;
     if (av2 & AV2_SPARC_PAUSE_NSEC) features |= ISA_pause_nsec_msk;
     if (av2 & AV2_SPARC_VAMASK)     features |= ISA_vamask_msk;
+
+    if (av2 & AV2_SPARC_SPARC6)     features |= ISA_sparc6_msk;
+    if (av2 & AV2_SPARC_DICTUNP)    features |= ISA_dictunp_msk;
+    if (av2 & AV2_SPARC_FPCMPSHL)   features |= ISA_fpcmpshl_msk;
+    if (av2 & AV2_SPARC_RLE)        features |= ISA_rle_msk;
+    if (av2 & AV2_SPARC_SHA3)       features |= ISA_sha3_msk;
+    if (av2 & AV2_SPARC_FJATHPLUS2) features |= ISA_fjathplus2_msk;
+    if (av2 & AV2_SPARC_VIS3C)      features |= ISA_vis3c_msk;
+    if (av2 & AV2_SPARC_SPARC5B)    features |= ISA_sparc5b_msk;
+    if (av2 & AV2_SPARC_MME)        features |= ISA_mme_msk;
   }
 
   _features = features;     // ISA feature set completed, update state.
 
   Sysinfo machine(SI_MACHINE);
 
-  bool is_sun4v = machine.match("sun4v");   // All Oracle SPARC + Fujitsu Athena+
+  bool is_sun4v = machine.match("sun4v");   // All Oracle SPARC + Fujitsu Athena+/++
   bool is_sun4u = machine.match("sun4u");   // All other Fujitsu
 
-  // Handle Athena+ conservatively (simply because we are lacking info.).
+  // Handle Athena+/++ conservatively (simply because we are lacking info.).
 
-  bool do_sun4v = is_sun4v && !has_athena_plus();
-  bool do_sun4u = is_sun4u ||  has_athena_plus();
+  bool an_athena = has_athena_plus() || has_athena_plus2();
+  bool do_sun4v  = is_sun4v && !an_athena;
+  bool do_sun4u  = is_sun4u ||  an_athena;
 
   uint64_t synthetic = 0;
 
@@ -441,16 +480,16 @@ void VM_Version::platform_features() {
     // Fast IDIV, BIS and LD available on Niagara Plus.
     if (has_vis2()) {
       synthetic |= (CPU_fast_idiv_msk | CPU_fast_ld_msk);
-      // ...on Core S4 however, we prefer not to use BIS.
+      // ...on Core C4 however, we prefer not to use BIS.
       if (!has_sparc5()) {
         synthetic |= CPU_fast_bis_msk;
       }
     }
-    // Niagara Core S3 supports fast RDPC and block zeroing.
+    // SPARC Core C3 supports fast RDPC and block zeroing.
     if (has_ima()) {
       synthetic |= (CPU_fast_rdpc_msk | CPU_blk_zeroing_msk);
     }
-    // Niagara Core S3 and S4 have slow CMOVE.
+    // SPARC Core C3 and C4 have slow CMOVE.
     if (!has_ima()) {
       synthetic |= CPU_fast_cmove_msk;
     }

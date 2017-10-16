@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -73,6 +74,9 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.aot", vmAOT());
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", vmCDS());
+        // vm.graal.enabled is true if Graal is used as JIT
+        map.put("vm.graal.enabled", isGraalEnabled());
+        map.put("docker.support", dockerSupport());
         vmGC(map); // vm.gc.X = true/false
 
         VMProps.dump(map);
@@ -291,6 +295,73 @@ public class VMProps implements Callable<Map<String, String>> {
             return "false";
         }
     }
+
+    /**
+     * Check if Graal is used as JIT compiler.
+     *
+     * @return true if Graal is used as JIT compiler.
+     */
+    protected String isGraalEnabled() {
+        // Graal is enabled if following conditions are true:
+        // - we are not in Interpreter mode
+        // - UseJVMCICompiler flag is true
+        // - jvmci.Compiler variable is equal to 'graal'
+        // - TieredCompilation is not used or TieredStopAtLevel is greater than 3
+
+        Boolean useCompiler = WB.getBooleanVMFlag("UseCompiler");
+        if (useCompiler == null || !useCompiler)
+            return "false";
+
+        Boolean useJvmciComp = WB.getBooleanVMFlag("UseJVMCICompiler");
+        if (useJvmciComp == null || !useJvmciComp)
+            return "false";
+
+        // This check might be redundant but let's keep it for now.
+        String jvmciCompiler = System.getProperty("jvmci.Compiler");
+        if (jvmciCompiler == null || !jvmciCompiler.equals("graal")) {
+            return "false";
+        }
+
+        Boolean tieredCompilation = WB.getBooleanVMFlag("TieredCompilation");
+        Long compLevel = WB.getIntxVMFlag("TieredStopAtLevel");
+        // if TieredCompilation is enabled and compilation level is <= 3 then no Graal is used
+        if (tieredCompilation != null && tieredCompilation && compLevel != null && compLevel <= 3)
+            return "false";
+
+        return "true";
+    }
+
+
+   /**
+     * A simple check for docker support
+     *
+     * @return true if docker is supported in a given environment
+     */
+    protected String dockerSupport() {
+        // currently docker testing is only supported for Linux-x64
+        if (! ( Platform.isLinux() && Platform.isX64() ) )
+            return "false";
+
+        boolean isSupported;
+        try {
+            isSupported = checkDockerSupport();
+        } catch (Exception e) {
+            isSupported = false;
+            System.err.println("dockerSupport() threw exception: " + e);
+        }
+
+        return (isSupported) ? "true" : "false";
+    }
+
+    private boolean checkDockerSupport() throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder("docker", "ps");
+        Process p = pb.start();
+        p.waitFor(10, TimeUnit.SECONDS);
+
+        return (p.exitValue() == 0);
+    }
+
+
 
     /**
      * Dumps the map to the file if the file name is given as the property.

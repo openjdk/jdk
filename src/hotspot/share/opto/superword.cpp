@@ -145,6 +145,8 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   // Skip any loops already optimized by slp
   if (cl->is_vectorized_loop()) return;
 
+  if (cl->do_unroll_only()) return;
+
   if (cl->is_main_loop()) {
     // Check for pre-loop ending with CountedLoopEnd(Bool(Cmp(x,Opaque1(limit))))
     CountedLoopEndNode* pre_end = get_pre_loop_end(cl);
@@ -2163,7 +2165,15 @@ void SuperWord::print_loop(bool whole) {
 //------------------------------output---------------------------
 // Convert packs into vector node operations
 void SuperWord::output() {
-  if (_packset.length() == 0) return;
+  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
+  Compile* C = _phase->C;
+  if (_packset.length() == 0) {
+    // Instigate more unrolling for optimization when vectorization fails.
+    C->set_major_progress();
+    cl->set_notpassed_slp();
+    cl->mark_do_unroll_only();
+    return;
+  }
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
@@ -2172,7 +2182,6 @@ void SuperWord::output() {
   }
 #endif
 
-  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   if (cl->is_main_loop()) {
     // MUST ENSURE main loop's initial value is properly aligned:
     //  (iv_initial_value + min_iv_offset) % vector_width_in_bytes() == 0
@@ -2185,7 +2194,6 @@ void SuperWord::output() {
     }
   }
 
-  Compile* C = _phase->C;
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
   bool can_process_post_loop = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
@@ -4493,4 +4501,3 @@ bool SuperWord::hoist_loads_in_graph() {
 
   return true;
 }
-

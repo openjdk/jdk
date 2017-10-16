@@ -340,6 +340,14 @@ void VM_Version::get_processor_features() {
     UseMultiplyToLenIntrinsic = true;
   }
 
+  if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
+    UseSquareToLenIntrinsic = true;
+  }
+
+  if (FLAG_IS_DEFAULT(UseMulAddIntrinsic)) {
+    UseMulAddIntrinsic = true;
+  }
+
   if (FLAG_IS_DEFAULT(UseBarriersForVolatile)) {
     UseBarriersForVolatile = (_features & CPU_DMB_ATOMICS) != 0;
   }

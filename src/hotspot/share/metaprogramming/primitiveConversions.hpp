@@ -167,4 +167,24 @@ inline T PrimitiveConversions::cast(U x) {
   return Cast<T, U>()(x);
 }
 
+// jfloat and jdouble translation to integral types
+
+template<>
+struct PrimitiveConversions::Translate<jdouble> : public TrueType {
+  typedef double Value;
+  typedef int64_t Decayed;
+
+  static Decayed decay(Value x) { return PrimitiveConversions::cast<Decayed>(x); }
+  static Value recover(Decayed x) { return PrimitiveConversions::cast<Value>(x); }
+};
+
+template<>
+struct PrimitiveConversions::Translate<jfloat> : public TrueType {
+  typedef float Value;
+  typedef int32_t Decayed;
+
+  static Decayed decay(Value x) { return PrimitiveConversions::cast<Decayed>(x); }
+  static Value recover(Decayed x) { return PrimitiveConversions::cast<Value>(x); }
+};
+
 #endif // SHARE_VM_METAPROGRAMMING_PRIMITIVECONVERSIONS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par
   _g1(g1),
   _par_scan_state(par_scan_state),
   _worker_id(par_scan_state->worker_id()),
-  _scanned_klass(NULL),
+  _scanned_cld(NULL),
   _cm(_g1->concurrent_mark())
 { }
 
@@ -42,20 +42,20 @@ G1ScanClosureBase::G1ScanClosureBase(G1CollectedHeap* g1, G1ParScanThreadState* 
   _g1(g1), _par_scan_state(par_scan_state), _from(NULL)
 { }
 
-void G1KlassScanClosure::do_klass(Klass* klass) {
-  // If the klass has not been dirtied we know that there's
+void G1CLDScanClosure::do_cld(ClassLoaderData* cld) {
+  // If the class loader data has not been dirtied we know that there's
   // no references into  the young gen and we can skip it.
-  if (!_process_only_dirty || klass->has_modified_oops()) {
-    // Clean the klass since we're going to scavenge all the metadata.
-    klass->clear_modified_oops();
+  if (!_process_only_dirty || cld->has_modified_oops()) {
 
-    // Tell the closure that this klass is the Klass to scavenge
+    // Tell the closure that this class loader data is the CLD to scavenge
     // and is the one to dirty if oops are left pointing into the young gen.
-    _closure->set_scanned_klass(klass);
+    _closure->set_scanned_cld(cld);
 
-    klass->oops_do(_closure);
+    // Clean the cld since we're going to scavenge all the metadata.
+    // Clear modified oops only if this cld is claimed.
+    cld->oops_do(_closure, _must_claim, /*clear_modified_oops*/true);
 
-    _closure->set_scanned_klass(NULL);
+    _closure->set_scanned_cld(NULL);
   }
   _count++;
 }
