@@ -31,23 +31,34 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import jdk.nashorn.internal.runtime.options.Options;
 
 /**
- * Immutable hash map implementation for properties.  Properties are keyed on strings.
- * Copying and cloning is avoided by relying on immutability.
+ * Immutable hash map implementation for properties. Properties are keyed on strings
+ * or symbols (ES6). Copying and cloning is avoided by relying on immutability.
  * <p>
  * When adding an element to a hash table, only the head of a bin list is updated, thus
  * an add only requires the cloning of the bins array and adding an element to the head
  * of the bin list.  Similarly for removal, only a portion of a bin list is updated.
  * <p>
+ * For large tables with hundreds or thousands of elements, even just cloning the bins
+ * array when adding properties is an expensive operation. For this case, we put new
+ * elements in a separate list called {@link ElementQueue}.
+ * The list component is merged into the hash table at regular intervals during element
+ * insertion to keep it from growing too long. Also, when a map with a queue component
+ * is queried repeatedly, the map will replace itself with a pure hash table version
+ * of itself to optimize lookup performance.
+ * <p>
  * A separate chronological list is kept for quick generation of keys and values, and,
- * for rehashing.
+ * for rehashing. For very small maps where the overhead of the hash table would
+ * outweigh its benefits we deliberately avoid creating a hash structure and use the
+ * chronological list alone for element storage.
  * <p>
  * Details:
  * <p>
  * The main goal is to be able to retrieve properties from a map quickly, keying on
- * the property name (String.)  A secondary, but important goal, is to keep maps
- * immutable, so that a map can be shared by multiple objects in a context.
+ * the property name (String or Symbol). A secondary, but important goal, is to keep
+ * maps immutable, so that a map can be shared by multiple objects in a context.
  * Sharing maps allows objects to be categorized as having similar properties, a
  * fact that call site guards rely on.  In this discussion, immutability allows us
  * to significantly reduce the amount of duplication we have in our maps.
@@ -109,6 +120,9 @@ public final class PropertyHashMap implements Map <Object, Property> {
     /** Threshold before using bins. */
     private static final int LIST_THRESHOLD = 8;
 
+    /** Threshold before adding new elements to queue instead of directly adding to hash bins. */
+    private static final int QUEUE_THRESHOLD = Options.getIntProperty("nashorn.propmap.queue.threshold", 500);
+
     /** Initial map. */
     public static final PropertyHashMap EMPTY_HASHMAP = new PropertyHashMap();
 
@@ -122,7 +136,10 @@ public final class PropertyHashMap implements Map <Object, Property> {
     private final Element list;
 
     /** Hash map bins. */
-    private final Element[] bins;
+    private Element[] bins;
+
+    /** Queue for adding elements to large maps with delayed hashing. */
+    private ElementQueue queue;
 
     /** All properties as an array (lazy). */
     private Property[] properties;
@@ -134,33 +151,26 @@ public final class PropertyHashMap implements Map <Object, Property> {
         this.size      = 0;
         this.threshold = 0;
         this.bins      = null;
+        this.queue     = null;
         this.list      = null;
     }
 
     /**
-     * Clone Constructor
+     * Constructor used internally to create new maps
      *
-     * @param map Original {@link PropertyHashMap}.
+     * @param map the new map
      */
-    private PropertyHashMap(final PropertyHashMap map) {
+    private PropertyHashMap(final MapBuilder map) {
         this.size      = map.size;
-        this.threshold = map.threshold;
-        this.bins      = map.bins;
+        if (map.qhead == null) {
+            this.bins = map.bins;
+            this.queue = null;
+        } else {
+            this.bins = null;
+            this.queue = new ElementQueue(map.qhead, map.bins);
+        }
         this.list      = map.list;
-    }
-
-    /**
-     * Constructor used internally to extend a map
-     *
-     * @param size Size of the new {@link PropertyHashMap}.
-     * @param bins The hash bins.
-     * @param list The {@link Property} list.
-     */
-    private PropertyHashMap(final int size, final Element[] bins, final Element list) {
-        this.size      = size;
-        this.threshold = bins != null ? threeQuarters(bins.length) : 0;
-        this.bins      = bins;
-        this.list      = list;
+        this.threshold = map.bins != null ? threeQuarters(map.bins.length) : 0;
     }
 
     /**
@@ -173,7 +183,9 @@ public final class PropertyHashMap implements Map <Object, Property> {
     public PropertyHashMap immutableReplace(final Property property, final Property newProperty) {
         assert property.getKey().equals(newProperty.getKey()) : "replacing properties with different keys: '" + property.getKey() + "' != '" + newProperty.getKey() + "'";
         assert findElement(property.getKey()) != null         : "replacing property that doesn't exist in map: '" + property.getKey() + "'";
-        return cloneMap().replaceNoClone(property.getKey(), newProperty);
+        final MapBuilder builder = newMapBuilder(size);
+        builder.replaceProperty(property.getKey(), newProperty);
+        return new PropertyHashMap(builder);
     }
 
     /**
@@ -185,9 +197,9 @@ public final class PropertyHashMap implements Map <Object, Property> {
      */
     public PropertyHashMap immutableAdd(final Property property) {
         final int newSize = size + 1;
-        PropertyHashMap newMap = cloneMap(newSize);
-        newMap = newMap.addNoClone(property);
-        return newMap;
+        MapBuilder builder = newMapBuilder(newSize);
+        builder.addProperty(property);
+        return new PropertyHashMap(builder);
     }
 
     /**
@@ -199,11 +211,11 @@ public final class PropertyHashMap implements Map <Object, Property> {
      */
     public PropertyHashMap immutableAdd(final Property... newProperties) {
         final int newSize = size + newProperties.length;
-        PropertyHashMap newMap = cloneMap(newSize);
+        MapBuilder builder = newMapBuilder(newSize);
         for (final Property property : newProperties) {
-            newMap = newMap.addNoClone(property);
+            builder.addProperty(property);
         }
-        return newMap;
+        return new PropertyHashMap(builder);
     }
 
     /**
@@ -216,24 +228,13 @@ public final class PropertyHashMap implements Map <Object, Property> {
     public PropertyHashMap immutableAdd(final Collection<Property> newProperties) {
         if (newProperties != null) {
             final int newSize = size + newProperties.size();
-            PropertyHashMap newMap = cloneMap(newSize);
+            MapBuilder builder = newMapBuilder(newSize);
             for (final Property property : newProperties) {
-                newMap = newMap.addNoClone(property);
+                builder.addProperty(property);
             }
-            return newMap;
+            return new PropertyHashMap(builder);
         }
         return this;
-    }
-
-    /**
-     * Clone a {@link PropertyHashMap} and remove a {@link Property}.
-     *
-     * @param property {@link Property} to remove.
-     *
-     * @return New {@link PropertyHashMap}.
-     */
-    public PropertyHashMap immutableRemove(final Property property) {
-        return immutableRemove(property.getKey());
     }
 
     /**
@@ -244,22 +245,10 @@ public final class PropertyHashMap implements Map <Object, Property> {
      * @return New {@link PropertyHashMap}.
      */
     public PropertyHashMap immutableRemove(final Object key) {
-        if (bins != null) {
-            final int binIndex = binIndex(bins, key);
-            final Element bin = bins[binIndex];
-            if (findElement(bin, key) != null) {
-                final int newSize = size - 1;
-                Element[] newBins = null;
-                if (newSize >= LIST_THRESHOLD) {
-                    newBins = bins.clone();
-                    newBins[binIndex] = removeFromList(bin, key);
-                }
-                final Element newList = removeFromList(list, key);
-                return new PropertyHashMap(newSize, newBins, newList);
-            }
-        } else if (findElement(list, key) != null) {
-            final int newSize = size - 1;
-            return newSize != 0 ? new PropertyHashMap(newSize, null, removeFromList(list, key)) : EMPTY_HASHMAP;
+        MapBuilder builder = newMapBuilder(size);
+        builder.removeProperty(key);
+        if (builder.size < size) {
+            return builder.size != 0 ? new PropertyHashMap(builder) : EMPTY_HASHMAP;
         }
         return this;
     }
@@ -356,7 +345,9 @@ public final class PropertyHashMap implements Map <Object, Property> {
      * @return {@link Element} matching key or {@code null} if not found.
      */
     private Element findElement(final Object key) {
-        if (bins != null) {
+        if (queue != null) {
+            return queue.find(key);
+        } else if (bins != null) {
             final int binIndex = binIndex(bins, key);
             return findElement(bins[binIndex], key);
         }
@@ -380,73 +371,52 @@ public final class PropertyHashMap implements Map <Object, Property> {
         return null;
     }
 
-
-    private PropertyHashMap cloneMap() {
-        return new PropertyHashMap(size, bins == null ? null : bins.clone(), list);
-    }
-
     /**
-     * Clone {@link PropertyHashMap} to accommodate new size.
+     * Create a {@code MapBuilder} to add new elements to.
      *
      * @param newSize New size of {@link PropertyHashMap}.
      *
-     * @return Cloned {@link PropertyHashMap} with new size.
+     * @return {@link MapBuilder} for the new size.
      */
-    private PropertyHashMap cloneMap(final int newSize) {
-        Element[] newBins;
-        if (bins == null && newSize <= LIST_THRESHOLD) {
-            newBins = null;
+    private MapBuilder newMapBuilder(final int newSize) {
+        if (bins == null && newSize < LIST_THRESHOLD) {
+            return new MapBuilder(bins, list, size, false);
         } else if (newSize > threshold) {
-            newBins = rehash(list, binsNeeded(newSize));
+            return new MapBuilder(rehash(list, binsNeeded(newSize)), list, size, true);
+        } else if (shouldCloneBins(size, newSize)) {
+            return new MapBuilder(cloneBins(), list, size, true);
+        } else if (queue == null) {
+            return new MapBuilder(bins, list, size, false);
         } else {
-            newBins = bins.clone();
+            return new MapBuilder(queue, list, size, false);
         }
-        return new PropertyHashMap(newSize, newBins, list);
     }
-
-
 
     /**
-     * Add a {@link Property} to a temporary {@link PropertyHashMap}, that has
-     * been already cloned.  Removes duplicates if necessary.
+     * Create a cloned or new bins array and merge the elements in the queue into it if there are any.
      *
-     * @param property {@link Property} to add.
-     *
-     * @return New {@link PropertyHashMap}.
+     * @return the cloned bins array
      */
-    private PropertyHashMap addNoClone(final Property property) {
-        int newSize = size;
-        final Object key = property.getKey();
-        Element newList = list;
-        if (bins != null) {
-            final int binIndex = binIndex(bins, key);
-            Element bin = bins[binIndex];
-            if (findElement(bin, key) != null) {
-                newSize--;
-                bin = removeFromList(bin, key);
-                newList = removeFromList(list, key);
-            }
-            bins[binIndex] = new Element(bin, property);
-        } else {
-            if (findElement(list, key) != null) {
-                newSize--;
-                newList = removeFromList(list, key);
-            }
+    private Element[] cloneBins() {
+        if (queue != null) {
+            return queue.cloneAndMergeBins();
         }
-        newList = new Element(newList, property);
-        return new PropertyHashMap(newSize, bins, newList);
+
+        return bins.clone();
     }
 
-    private PropertyHashMap replaceNoClone(final Object key, final Property property) {
-        if (bins != null) {
-            final int binIndex = binIndex(bins, key);
-            Element bin = bins[binIndex];
-            bin = replaceInList(bin, key, property);
-            bins[binIndex] = bin;
-        }
-        Element newList = list;
-        newList = replaceInList(newList, key, property);
-        return new PropertyHashMap(size, bins, newList);
+    /**
+     * Used on insertion to determine whether the bins array should be cloned, or we should keep
+     * using the ancestor's bins array and put new elements into the queue.
+     *
+     * @param oldSize the old map size
+     * @param newSize the new map size
+     * @return whether to clone the bins array
+     */
+    private boolean shouldCloneBins(final int oldSize, final int newSize) {
+        // For maps with less than QUEUE_THRESHOLD elements we clone the bins array on every insertion.
+        // Above that threshold we put new elements into the queue and only merge every 512  elements.
+        return newSize < QUEUE_THRESHOLD || (newSize >>> 9) > (oldSize >>> 9);
     }
 
     /**
@@ -678,6 +648,212 @@ public final class PropertyHashMap implements Map <Object, Property> {
 
         Property getProperty() {
             return property;
+        }
+    }
+
+    /**
+     * A hybrid map/list structure to add elements to the map without the need to clone and rehash the main table.
+     * This is used for large maps to reduce the overhead of adding elements. Instances of this class can replace
+     * themselves with a pure hash map version of themselves to optimize query performance.
+     */
+    private class ElementQueue {
+
+        /** List of elements not merged into bins */
+        private final Element qhead;
+
+        /** Our own bins array. Differs from original PropertyHashMap bins when queue is merged. */
+        private final Element[] qbins;
+
+        /** Count searches to trigger merging of queue into bins. */
+        int searchCount = 0;
+
+        ElementQueue(final Element qhead, final Element[] qbins) {
+            this.qhead = qhead;
+            this.qbins = qbins;
+        }
+
+        Element find(final Object key) {
+            final int binIndex = binIndex(qbins, key);
+            final Element element = findElement(qbins[binIndex], key);
+            if (element != null) {
+                return element;
+            }
+            if (qhead != null) {
+                if (++searchCount > 2) {
+                    // Merge the queue into the hash bins if this map is queried more than a few times
+                    final Element[] newBins = cloneAndMergeBins();
+                    assert newBins != qbins;
+                    PropertyHashMap.this.queue = new ElementQueue(null, newBins);
+                    return PropertyHashMap.this.queue.find(key);
+                }
+                return findElement(qhead, key);
+            }
+            return null;
+        }
+
+        /**
+         * Create a cloned or new bins array and merge the elements in the queue into it if there are any.
+         *
+         * @return the cloned bins array
+         */
+        private Element[] cloneAndMergeBins() {
+            if (qhead == null) {
+                return qbins;
+            }
+
+            final Element[] newBins = qbins.clone();
+
+            for (Element element = qhead; element != null; element = element.getLink()) {
+                final Property property = element.getProperty();
+                final Object key = property.getKey();
+                final int binIndex = binIndex(newBins, key);
+
+                newBins[binIndex] = new Element(newBins[binIndex], property);
+            }
+
+            return newBins;
+        }
+
+    }
+
+    /**
+     * A builder class used for adding, replacing, or removing elements.
+     */
+    private static class MapBuilder {
+
+        /** Bins array - may be shared with map that created us. */
+        private Element[] bins;
+        /** Whether our bins are shared */
+        private boolean hasOwnBins;
+
+        /** Queue of unmerged elements */
+        private Element qhead;
+
+        /** Full property list. */
+        private Element list;
+
+        /** Number of properties. */
+        private int size;
+
+        MapBuilder(final Element[] bins, final Element list, final int size, final boolean hasOwnBins) {
+            this.bins  = bins;
+            this.hasOwnBins = hasOwnBins;
+            this.list  = list;
+            this.qhead = null;
+            this.size  = size;
+        }
+
+        MapBuilder(final ElementQueue queue, final Element list, final int size, final boolean hasOwnBins) {
+            this.bins  = queue.qbins;
+            this.hasOwnBins = hasOwnBins;
+            this.list  = list;
+            this.qhead = queue.qhead;
+            this.size  = size;
+        }
+
+        /**
+         * Add a {@link Property}. Removes duplicates if necessary.
+         *
+         * @param property {@link Property} to add.
+         */
+        private void addProperty(final Property property) {
+            final Object key = property.getKey();
+
+            if (bins != null) {
+                final int binIndex = binIndex(bins, key);
+                if (findElement(bins[binIndex], key) != null) {
+                    ensureOwnBins();
+                    bins[binIndex] = removeExistingElement(bins[binIndex], key);
+                } else if (findElement(qhead, key) != null) {
+                    qhead = removeExistingElement(qhead, key);
+                }
+                if (hasOwnBins) {
+                    bins[binIndex] = new Element(bins[binIndex], property);
+                } else {
+                    qhead = new Element(qhead, property);
+                }
+            } else {
+                if (findElement(list, key) != null) {
+                    list = removeFromList(list, key);
+                    size--;
+                }
+            }
+
+            list = new Element(list, property);
+            size++;
+        }
+
+        /**
+         * Replace an existing {@link Property} with a new one with the same key.
+         *
+         * @param key the property key
+         * @param property the property to replace the old one with
+         */
+        private void replaceProperty(final Object key, final Property property) {
+
+            if (bins != null) {
+                final int binIndex = binIndex(bins, key);
+                Element bin = bins[binIndex];
+                if (findElement(bin, key) != null) {
+                    ensureOwnBins();
+                    bins[binIndex] = replaceInList(bin, key, property);
+                } else if (qhead != null) {
+                    qhead = replaceInList(qhead, key, property);
+                }
+            }
+
+            list = replaceInList(list, key, property);
+        }
+
+        /**
+         * Remove a {@link Property} based on its key.
+         *
+         * @param key Key of {@link Property} to remove.
+         */
+        void removeProperty(final Object key) {
+
+            if (bins != null) {
+                final int binIndex = binIndex(bins, key);
+                final Element bin = bins[binIndex];
+                if (findElement(bin, key) != null) { ;
+                    if (size >= LIST_THRESHOLD) {
+                        ensureOwnBins();
+                        bins[binIndex] = removeFromList(bin, key);
+                    } else {
+                        // Go back to list-only representation for small maps
+                        bins = null;
+                        qhead = null;
+                    }
+                } else if (findElement(qhead, key) != null) {
+                    qhead = removeFromList(qhead, key);
+                }
+            }
+
+            list = removeFromList(list, key);
+            size--;
+        }
+
+        /**
+         * Removes an element known to exist from an element list and the main {@code list} and decreases {@code size}.
+         *
+         * @param element the element list
+         * @param key the key to remove
+         * @return the new element list
+         */
+        private Element removeExistingElement(Element element, Object key) {
+            size--;
+            list = removeFromList(list, key);
+            return removeFromList(element, key);
+        }
+
+        /**
+         * Make sure we own the bins we have, cloning them if necessary.
+         */
+        private void ensureOwnBins() {
+            if (!hasOwnBins) {
+                bins = bins.clone();
+            }
+            hasOwnBins = true;
         }
     }
 
