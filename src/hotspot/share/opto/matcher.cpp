@@ -69,7 +69,7 @@ Matcher::Matcher()
   _register_save_type(register_save_type),
   _ruleName(ruleName),
   _allocation_started(false),
-  _states_arena(Chunk::medium_size),
+  _states_arena(Chunk::medium_size, mtCompiler),
   _visited(&_states_arena),
   _shared(&_states_arena),
   _dontcare(&_states_arena) {

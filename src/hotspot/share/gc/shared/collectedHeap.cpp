@@ -135,14 +135,6 @@ void CollectedHeap::print_on_error(outputStream* st) const {
   _barrier_set->print_on(st);
 }
 
-void CollectedHeap::register_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-}
-
-void CollectedHeap::unregister_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-}
-
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const GCHeapSummary& heap_summary = create_heap_summary();
   gc_tracer->report_gc_heap_summary(when, heap_summary);

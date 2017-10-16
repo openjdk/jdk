@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.inline.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/cms/vmCMSOperations.hpp"
@@ -39,19 +40,19 @@
 //////////////////////////////////////////////////////////
 void VM_CMS_Operation::verify_before_gc() {
   if (VerifyBeforeGC &&
-      GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
+      CMSHeap::heap()->total_collections() >= VerifyGCStartAt) {
     GCTraceTime(Info, gc, phases, verify) tm("Verify Before", _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
     MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
-    GenCollectedHeap::heap()->prepare_for_verify();
+    CMSHeap::heap()->prepare_for_verify();
     Universe::verify();
   }
 }
 
 void VM_CMS_Operation::verify_after_gc() {
   if (VerifyAfterGC &&
-      GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
+      CMSHeap::heap()->total_collections() >= VerifyGCStartAt) {
     GCTraceTime(Info, gc, phases, verify) tm("Verify After", _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
@@ -112,13 +113,13 @@ void VM_CMS_Initial_Mark::doit() {
 
   _collector->_gc_timer_cm->register_gc_pause_start("Initial Mark");
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  GCCauseSetter gccs(gch, GCCause::_cms_initial_mark);
+  CMSHeap* heap = CMSHeap::heap();
+  GCCauseSetter gccs(heap, GCCause::_cms_initial_mark);
 
   VM_CMS_Operation::verify_before_gc();
 
   IsGCActiveMark x; // stop-world GC active
-  _collector->do_CMS_operation(CMSCollector::CMS_op_checkpointRootsInitial, gch->gc_cause());
+  _collector->do_CMS_operation(CMSCollector::CMS_op_checkpointRootsInitial, heap->gc_cause());
 
   VM_CMS_Operation::verify_after_gc();
 
@@ -140,13 +141,13 @@ void VM_CMS_Final_Remark::doit() {
 
   _collector->_gc_timer_cm->register_gc_pause_start("Final Mark");
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  GCCauseSetter gccs(gch, GCCause::_cms_final_remark);
+  CMSHeap* heap = CMSHeap::heap();
+  GCCauseSetter gccs(heap, GCCause::_cms_final_remark);
 
   VM_CMS_Operation::verify_before_gc();
 
   IsGCActiveMark x; // stop-world GC active
-  _collector->do_CMS_operation(CMSCollector::CMS_op_checkpointRootsFinal, gch->gc_cause());
+  _collector->do_CMS_operation(CMSCollector::CMS_op_checkpointRootsFinal, heap->gc_cause());
 
   VM_CMS_Operation::verify_after_gc();
 
@@ -162,8 +163,8 @@ void VM_GenCollectFullConcurrent::doit() {
   assert(Thread::current()->is_VM_thread(), "Should be VM thread");
   assert(GCLockerInvokesConcurrent || ExplicitGCInvokesConcurrent, "Unexpected");
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  if (_gc_count_before == gch->total_collections()) {
+  CMSHeap* heap = CMSHeap::heap();
+  if (_gc_count_before == heap->total_collections()) {
     // The "full" of do_full_collection call below "forces"
     // a collection; the second arg, 0, below ensures that
     // only the young gen is collected. XXX In the future,
@@ -173,21 +174,21 @@ void VM_GenCollectFullConcurrent::doit() {
     // for the future.
     assert(SafepointSynchronize::is_at_safepoint(),
       "We can only be executing this arm of if at a safepoint");
-    GCCauseSetter gccs(gch, _gc_cause);
-    gch->do_full_collection(gch->must_clear_all_soft_refs(), GenCollectedHeap::YoungGen);
+    GCCauseSetter gccs(heap, _gc_cause);
+    heap->do_full_collection(heap->must_clear_all_soft_refs(), GenCollectedHeap::YoungGen);
   } // Else no need for a foreground young gc
-  assert((_gc_count_before < gch->total_collections()) ||
+  assert((_gc_count_before < heap->total_collections()) ||
          (GCLocker::is_active() /* gc may have been skipped */
-          && (_gc_count_before == gch->total_collections())),
+          && (_gc_count_before == heap->total_collections())),
          "total_collections() should be monotonically increasing");
 
   MutexLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
-  assert(_full_gc_count_before <= gch->total_full_collections(), "Error");
-  if (gch->total_full_collections() == _full_gc_count_before) {
+  assert(_full_gc_count_before <= heap->total_full_collections(), "Error");
+  if (heap->total_full_collections() == _full_gc_count_before) {
     // Nudge the CMS thread to start a concurrent collection.
     CMSCollector::request_full_gc(_full_gc_count_before, _gc_cause);
   } else {
-    assert(_full_gc_count_before < gch->total_full_collections(), "Error");
+    assert(_full_gc_count_before < heap->total_full_collections(), "Error");
     FullGCCount_lock->notify_all();  // Inform the Java thread its work is done
   }
 }
@@ -197,11 +198,11 @@ bool VM_GenCollectFullConcurrent::evaluate_at_safepoint() const {
   assert(thr != NULL, "Unexpected tid");
   if (!thr->is_Java_thread()) {
     assert(thr->is_VM_thread(), "Expected to be evaluated by VM thread");
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    if (_gc_count_before != gch->total_collections()) {
+    CMSHeap* heap = CMSHeap::heap();
+    if (_gc_count_before != heap->total_collections()) {
       // No need to do a young gc, we'll just nudge the CMS thread
       // in the doit() method above, to be executed soon.
-      assert(_gc_count_before < gch->total_collections(),
+      assert(_gc_count_before < heap->total_collections(),
              "total_collections() should be monotonically increasing");
       return false;  // no need for foreground young gc
     }
@@ -227,9 +228,9 @@ void VM_GenCollectFullConcurrent::doit_epilogue() {
   // count overflows and wraps around. XXX fix me !!!
   // e.g. at the rate of 1 full gc per ms, this could
   // overflow in about 1000 years.
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  CMSHeap* heap = CMSHeap::heap();
   if (_gc_cause != GCCause::_gc_locker &&
-      gch->total_full_collections_completed() <= _full_gc_count_before) {
+      heap->total_full_collections_completed() <= _full_gc_count_before) {
     // maybe we should change the condition to test _gc_cause ==
     // GCCause::_java_lang_system_gc or GCCause::_dcmd_gc_run,
     // instead of _gc_cause != GCCause::_gc_locker
@@ -245,7 +246,7 @@ void VM_GenCollectFullConcurrent::doit_epilogue() {
     MutexLockerEx ml(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
     // Either a concurrent or a stop-world full gc is sufficient
     // witness to our request.
-    while (gch->total_full_collections_completed() <= _full_gc_count_before) {
+    while (heap->total_full_collections_completed() <= _full_gc_count_before) {
       FullGCCount_lock->wait(Mutex::_no_safepoint_check_flag);
     }
   }

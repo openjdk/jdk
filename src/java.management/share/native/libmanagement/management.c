@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ JNIEXPORT jint JNICALL
         return JNI_ERR;
     }
 
-    jmm_interface = (JmmInterface*) JVM_GetManagement(JMM_VERSION_1_0);
+    jmm_interface = (JmmInterface*) JVM_GetManagement(JMM_VERSION);
     if (jmm_interface == NULL) {
         JNU_ThrowInternalError(env, "Unsupported Management version");
         return JNI_ERR;

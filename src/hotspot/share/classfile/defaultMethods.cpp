@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -767,15 +767,14 @@ static void create_default_methods( InstanceKlass* klass,
 // This is the guts of the default methods implementation.  This is called just
 // after the classfile has been parsed if some ancestor has default methods.
 //
-// First if finds any name/signature slots that need any implementation (either
+// First it finds any name/signature slots that need any implementation (either
 // because they are miranda or a superclass's implementation is an overpass
 // itself).  For each slot, iterate over the hierarchy, to see if they contain a
 // signature that matches the slot we are looking at.
 //
-// For each slot filled, we generate an overpass method that either calls the
-// unique default method candidate using invokespecial, or throws an exception
-// (in the case of no default method candidates, or more than one valid
-// candidate).  These methods are then added to the class's method list.
+// For each slot filled, we either record the default method candidate in the
+// klass default_methods list or, only to handle exception cases, we create an
+// overpass method that throws an exception and add it to the klass methods list.
 // The JVM does not create bridges nor handle generic signatures here.
 void DefaultMethods::generate_default_methods(
     InstanceKlass* klass, const GrowableArray<Method*>* mirandas, TRAPS) {
@@ -901,6 +900,11 @@ static void switchover_constant_pool(BytecodeConstantPool* bpool,
 // This allows virtual methods to override the overpass, but ensures
 // that a local method search will find the exception rather than an abstract
 // or default method that is not a valid candidate.
+//
+// Note that if overpass method are ever created that are not exception
+// throwing methods then the loader constraint checking logic for vtable and
+// itable creation needs to be changed to check loader constraints for the
+// overpass methods that do not throw exceptions.
 static void create_defaults_and_exceptions(
     GrowableArray<EmptyVtableSlot*>* slots,
     InstanceKlass* klass, TRAPS) {

@@ -115,6 +115,18 @@ public:
   ConditionRegister as_ConditionRegister(PhaseRegAlloc *ra_, const Node *node, int idx) const {
     return ::as_ConditionRegister(reg(ra_, node, idx));
   }
+  VectorRegister as_VectorRegister(PhaseRegAlloc *ra_, const Node *node) const {
+    return ::as_VectorRegister(reg(ra_, node));
+  }
+  VectorRegister as_VectorRegister(PhaseRegAlloc *ra_, const Node *node, int idx) const {
+    return ::as_VectorRegister(reg(ra_, node, idx));
+  }
+  VectorSRegister as_VectorSRegister(PhaseRegAlloc *ra_, const Node *node) const {
+    return ::as_VectorSRegister(reg(ra_, node));
+  }
+  VectorSRegister as_VectorSRegister(PhaseRegAlloc *ra_, const Node *node, int idx) const {
+    return ::as_VectorSRegister(reg(ra_, node, idx));
+  }
 #endif
 
   virtual intptr_t  constant() const;

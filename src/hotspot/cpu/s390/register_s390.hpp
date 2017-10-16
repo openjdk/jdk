@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,6 @@ class VMRegImpl;
 
 typedef VMRegImpl* VMReg;
 
-// Use Register as shortcut.
-class RegisterImpl;
-typedef RegisterImpl* Register;
-
-// The implementation of integer registers for z/Architecture.
 
 // z/Architecture registers, see "LINUX for zSeries ELF ABI Supplement", IBM March 2001
 //
@@ -56,6 +51,17 @@ typedef RegisterImpl* Register;
 //   f0,f2,f4,f6 Parameters (volatile)
 //   f1,f3,f5,f7 General purpose (volatile)
 //   f8-f15      General purpose (nonvolatile)
+
+
+//===========================
+//===  Integer Registers  ===
+//===========================
+
+// Use Register as shortcut.
+class RegisterImpl;
+typedef RegisterImpl* Register;
+
+// The implementation of integer registers for z/Architecture.
 
 inline Register as_Register(int encoding) {
   return (Register)(long)encoding;
@@ -110,6 +116,11 @@ CONSTANT_REGISTER_DECLARATION(Register, Z_R13, (13));
 CONSTANT_REGISTER_DECLARATION(Register, Z_R14, (14));
 CONSTANT_REGISTER_DECLARATION(Register, Z_R15, (15));
 
+
+//=============================
+//===  Condition Registers  ===
+//=============================
+
 // Use ConditionRegister as shortcut
 class ConditionRegisterImpl;
 typedef ConditionRegisterImpl* ConditionRegister;
@@ -159,7 +170,7 @@ CONSTANT_REGISTER_DECLARATION(ConditionRegister, Z_CR, (0));
 // dangers of defines.
 // If a particular file has a problem with these defines then it's possible
 // to turn them off in that file by defining
-// DONT_USE_REGISTER_DEFINES. Register_definition_s390.cpp does that
+// DONT_USE_REGISTER_DEFINES. Register_definitions_s390.cpp does that
 // so that it's able to provide real definitions of these registers
 // for use in debuggers and such.
 
@@ -185,6 +196,11 @@ CONSTANT_REGISTER_DECLARATION(ConditionRegister, Z_CR, (0));
 
 #define Z_CR ((ConditionRegister)(Z_CR_ConditionRegisterEnumValue))
 #endif // DONT_USE_REGISTER_DEFINES
+
+
+//=========================
+//===  Float Registers  ===
+//=========================
 
 // Use FloatRegister as shortcut
 class FloatRegisterImpl;
@@ -263,22 +279,6 @@ CONSTANT_REGISTER_DECLARATION(FloatRegister, Z_F15, (15));
 #define Z_F15 ((FloatRegister)(  Z_F15_FloatRegisterEnumValue))
 #endif // DONT_USE_REGISTER_DEFINES
 
-// Need to know the total number of registers of all sorts for SharedInfo.
-// Define a class that exports it.
-
-class ConcreteRegisterImpl : public AbstractRegisterImpl {
- public:
-  enum {
-    number_of_registers =
-      (RegisterImpl::number_of_registers +
-      FloatRegisterImpl::number_of_registers)
-      * 2 // register halves
-      + 1 // condition code register
-  };
-  static const int max_gpr;
-  static const int max_fpr;
-};
-
 // Single, Double and Quad fp reg classes. These exist to map the ADLC
 // encoding for a floating point register, to the FloatRegister number
 // desired by the macroassembler. A FloatRegister is a number between
@@ -326,6 +326,161 @@ class QuadFloatRegisterImpl {
     assert(encoding < 32 && ((encoding & 2) == 0), "bad quad float register encoding");
     return as_FloatRegister(((encoding & 1) << 5) | (encoding & 0x1c));
   }
+};
+
+
+//==========================
+//===  Vector Registers  ===
+//==========================
+
+// Use VectorRegister as shortcut
+class VectorRegisterImpl;
+typedef VectorRegisterImpl* VectorRegister;
+
+// The implementation of vector registers for z/Architecture.
+
+inline VectorRegister as_VectorRegister(int encoding) {
+  return (VectorRegister)(long)encoding;
+}
+
+class VectorRegisterImpl: public AbstractRegisterImpl {
+ public:
+  enum {
+    number_of_registers     = 32,
+    number_of_arg_registers = 0
+  };
+
+  // construction
+  inline friend VectorRegister as_VectorRegister(int encoding);
+
+  inline VMReg as_VMReg();
+
+  // accessors
+  int encoding() const                                {
+     assert(is_valid(), "invalid register"); return value();
+  }
+
+  bool is_valid() const           { return  0 <= value() && value() < number_of_registers; }
+  bool is_volatile() const        { return true; }
+  bool is_nonvolatile() const     { return false; }
+
+  // Register fields in z/Architecture instructions are 4 bits wide, restricting the
+  // addressable register set size to 16.
+  // The vector register set size is 32, requiring an extension, by one bit, of the
+  // register encoding. This is accomplished by the introduction of a RXB field in the
+  // instruction. RXB = Register eXtension Bits.
+  // The RXB field contains the MSBs (most significant bit) of the vector register numbers
+  // used for this instruction. Assignment of MSB in RBX is by bit position of the
+  // register field in the instruction.
+  // Example:
+  //   The register field starting at bit position 12 in the instruction is assigned RXB bit 0b0100.
+  int64_t RXB_mask(int pos) {
+    if (encoding() >= number_of_registers/2) {
+      switch (pos) {
+        case 8:   return ((int64_t)0b1000) << 8; // actual bit pos: 36
+        case 12:  return ((int64_t)0b0100) << 8; // actual bit pos: 37
+        case 16:  return ((int64_t)0b0010) << 8; // actual bit pos: 38
+        case 32:  return ((int64_t)0b0001) << 8; // actual bit pos: 39
+        default:
+          ShouldNotReachHere();
+      }
+    }
+    return 0;
+  }
+
+  const char* name() const;
+
+  VectorRegister successor() const { return as_VectorRegister(encoding() + 1); }
+};
+
+// The Vector registers of z/Architecture.
+
+CONSTANT_REGISTER_DECLARATION(VectorRegister, vnoreg, (-1));
+
+CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V0,  (0));
+CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V1,  (1));
+CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V2,  (2));
+CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V3,  (3));
+CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V4,  (4));
+CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V5,  (5));
+CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V6,  (6));
+CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V7,  (7));
+CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V8,  (8));
+CONSTANT_REGISTER_DECLARATION(VectorRegister,  Z_V9,  (9));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V10, (10));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V11, (11));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V12, (12));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V13, (13));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V14, (14));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V15, (15));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V16, (16));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V17, (17));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V18, (18));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V19, (19));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V20, (20));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V21, (21));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V22, (22));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V23, (23));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V24, (24));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V25, (25));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V26, (26));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V27, (27));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V28, (28));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V29, (29));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V30, (30));
+CONSTANT_REGISTER_DECLARATION(VectorRegister, Z_V31, (31));
+
+#ifndef DONT_USE_REGISTER_DEFINES
+#define vnoreg ((VectorRegister)(vnoreg_VectorRegisterEnumValue))
+#define Z_V0  ((VectorRegister)(   Z_V0_VectorRegisterEnumValue))
+#define Z_V1  ((VectorRegister)(   Z_V1_VectorRegisterEnumValue))
+#define Z_V2  ((VectorRegister)(   Z_V2_VectorRegisterEnumValue))
+#define Z_V3  ((VectorRegister)(   Z_V3_VectorRegisterEnumValue))
+#define Z_V4  ((VectorRegister)(   Z_V4_VectorRegisterEnumValue))
+#define Z_V5  ((VectorRegister)(   Z_V5_VectorRegisterEnumValue))
+#define Z_V6  ((VectorRegister)(   Z_V6_VectorRegisterEnumValue))
+#define Z_V7  ((VectorRegister)(   Z_V7_VectorRegisterEnumValue))
+#define Z_V8  ((VectorRegister)(   Z_V8_VectorRegisterEnumValue))
+#define Z_V9  ((VectorRegister)(   Z_V9_VectorRegisterEnumValue))
+#define Z_V10 ((VectorRegister)(  Z_V10_VectorRegisterEnumValue))
+#define Z_V11 ((VectorRegister)(  Z_V11_VectorRegisterEnumValue))
+#define Z_V12 ((VectorRegister)(  Z_V12_VectorRegisterEnumValue))
+#define Z_V13 ((VectorRegister)(  Z_V13_VectorRegisterEnumValue))
+#define Z_V14 ((VectorRegister)(  Z_V14_VectorRegisterEnumValue))
+#define Z_V15 ((VectorRegister)(  Z_V15_VectorRegisterEnumValue))
+#define Z_V16 ((VectorRegister)(  Z_V16_VectorRegisterEnumValue))
+#define Z_V17 ((VectorRegister)(  Z_V17_VectorRegisterEnumValue))
+#define Z_V18 ((VectorRegister)(  Z_V18_VectorRegisterEnumValue))
+#define Z_V19 ((VectorRegister)(  Z_V19_VectorRegisterEnumValue))
+#define Z_V20 ((VectorRegister)(  Z_V20_VectorRegisterEnumValue))
+#define Z_V21 ((VectorRegister)(  Z_V21_VectorRegisterEnumValue))
+#define Z_V22 ((VectorRegister)(  Z_V22_VectorRegisterEnumValue))
+#define Z_V23 ((VectorRegister)(  Z_V23_VectorRegisterEnumValue))
+#define Z_V24 ((VectorRegister)(  Z_V24_VectorRegisterEnumValue))
+#define Z_V25 ((VectorRegister)(  Z_V25_VectorRegisterEnumValue))
+#define Z_V26 ((VectorRegister)(  Z_V26_VectorRegisterEnumValue))
+#define Z_V27 ((VectorRegister)(  Z_V27_VectorRegisterEnumValue))
+#define Z_V28 ((VectorRegister)(  Z_V28_VectorRegisterEnumValue))
+#define Z_V29 ((VectorRegister)(  Z_V29_VectorRegisterEnumValue))
+#define Z_V30 ((VectorRegister)(  Z_V30_VectorRegisterEnumValue))
+#define Z_V31 ((VectorRegister)(  Z_V31_VectorRegisterEnumValue))
+#endif // DONT_USE_REGISTER_DEFINES
+
+
+// Need to know the total number of registers of all sorts for SharedInfo.
+// Define a class that exports it.
+
+class ConcreteRegisterImpl : public AbstractRegisterImpl {
+ public:
+  enum {
+    number_of_registers =
+      (RegisterImpl::number_of_registers +
+      FloatRegisterImpl::number_of_registers)
+      * 2 // register halves
+      + 1 // condition code register
+  };
+  static const int max_gpr;
+  static const int max_fpr;
 };
 
 

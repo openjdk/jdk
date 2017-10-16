@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@
 #include "runtime/orderAccess.inline.hpp"
 
 template <class T> inline void CardTableModRefBS::inline_write_ref_field(T* field, oop newVal, bool release) {
-  jbyte* byte = byte_for((void*)field);
+  volatile jbyte* byte = byte_for((void*)field);
   if (release) {
     // Perform a releasing store if requested.
-    OrderAccess::release_store((volatile jbyte*) byte, dirty_card);
+    OrderAccess::release_store(byte, jbyte(dirty_card));
   } else {
     *byte = dirty_card;
   }

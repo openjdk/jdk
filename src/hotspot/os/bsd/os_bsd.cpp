@@ -3353,8 +3353,6 @@ void os::init(void) {
 
   init_random(1234567);
 
-  ThreadCritical::initialize();
-
   Bsd::set_page_size(getpagesize());
   if (Bsd::page_size() == -1) {
     fatal("os_bsd.cpp: os::init: sysconf failed (%s)", os::strerror(errno));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ typedef Padded<OopTaskQueue> ObjToScanQueue;
 typedef GenericTaskQueueSet<ObjToScanQueue, mtGC> ObjToScanQueueSet;
 class ParallelTaskTerminator;
 
-class ParScanClosure: public OopsInKlassOrGenClosure {
+class ParScanClosure: public OopsInClassLoaderDataOrGenClosure {
  protected:
   ParScanThreadState* _par_scan_state;
   ParNewGeneration*   _g;

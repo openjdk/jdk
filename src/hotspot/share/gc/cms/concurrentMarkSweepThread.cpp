@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.inline.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -225,7 +225,7 @@ void ConcurrentMarkSweepThread::wait_on_cms_lock_for_scavenge(long t_millis) {
   // Wait time in millis or 0 value representing infinite wait for a scavenge
   assert(t_millis >= 0, "Wait time for scavenge should be 0 or positive");
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  CMSHeap* heap = CMSHeap::heap();
   double start_time_secs = os::elapsedTime();
   double end_time_secs = start_time_secs + (t_millis / ((double) MILLIUNITS));
 
@@ -233,7 +233,7 @@ void ConcurrentMarkSweepThread::wait_on_cms_lock_for_scavenge(long t_millis) {
   unsigned int before_count;
   {
     MutexLockerEx hl(Heap_lock, Mutex::_no_safepoint_check_flag);
-    before_count = gch->total_collections();
+    before_count = heap->total_collections();
   }
 
   unsigned int loop_count = 0;
@@ -279,7 +279,7 @@ void ConcurrentMarkSweepThread::wait_on_cms_lock_for_scavenge(long t_millis) {
     unsigned int after_count;
     {
       MutexLockerEx hl(Heap_lock, Mutex::_no_safepoint_check_flag);
-      after_count = gch->total_collections();
+      after_count = heap->total_collections();
     }
 
     if(before_count != after_count) {

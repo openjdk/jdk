@@ -2049,6 +2049,7 @@ void TemplateTable::load_field_cp_cache_entry(Register Robj,
     __ ld_ptr(Rcache, cp_base_offset + ConstantPoolCacheEntry::f1_offset(), Robj);
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ ld_ptr( Robj, mirror_offset, Robj);
+    __ resolve_oop_handle(Robj);
   }
 }
 

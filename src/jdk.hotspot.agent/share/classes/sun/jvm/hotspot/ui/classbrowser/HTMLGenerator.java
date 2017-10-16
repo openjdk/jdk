@@ -34,6 +34,7 @@ import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.tools.jcore.*;
+import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
 public class HTMLGenerator implements /* imports */ ClassConstants {
@@ -1928,11 +1929,16 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          }
 
          if (!method.isStatic() && !method.isNative()) {
-            OopHandle oopHandle = vf.getLocals().oopHandleAt(0);
+            try {
+               OopHandle oopHandle = vf.getLocals().oopHandleAt(0);
 
-            if (oopHandle != null) {
-               buf.append(", oop = ");
-               buf.append(oopHandle.toString());
+               if (oopHandle != null) {
+                  buf.append(", oop = ");
+                  buf.append(oopHandle.toString());
+               }
+            } catch (WrongTypeException e) {
+              // Do nothing.
+              // It might be caused by JIT'ed inline frame.
             }
          }
 

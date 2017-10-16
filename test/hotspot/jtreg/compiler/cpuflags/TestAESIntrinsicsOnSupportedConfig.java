@@ -26,7 +26,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires vm.cpu.features ~= ".*aes.*"
+ * @requires vm.cpu.features ~= ".*aes.*" & !vm.graal.enabled
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
