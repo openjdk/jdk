@@ -25,19 +25,41 @@
 
 package build.tools.generatenimbus;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-
 class UIComponent extends UIRegion {
-    @XmlAttribute private String componentName;
+    private String componentName;
 
-    @XmlElement(name="stateType")
-    @XmlElementWrapper(name="stateTypes")
-    private List<UIStateType> stateTypes = new ArrayList<UIStateType>();
+    private List<UIStateType> stateTypes = new ArrayList<>();
+
+    UIComponent(XMLStreamReader reader) throws XMLStreamException {
+        super(reader, false);
+        componentName = reader.getAttributeValue(null, "componentName");
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "stateType":
+                            stateTypes.add(new UIStateType(reader));
+                            break;
+                        default:
+                            parse(reader);
+                    }
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "uiComponent":
+                            return;
+                    }
+                    break;
+            }
+        }
+    }
+
     public List<UIStateType> getStateTypes() { return stateTypes; }
 
     @Override public String getKey() {

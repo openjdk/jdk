@@ -25,31 +25,30 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElements;
-
+import javax.xml.stream.XMLStreamReader;
 
 public abstract class Shape {
-    @XmlElement
-    private PaintPoints paintPoints;
+    PaintPoints paintPoints;
+
     public double getPaintX1() { return paintPoints.x1; }
     public double getPaintX2() { return paintPoints.x2; }
     public double getPaintY1() { return paintPoints.y1; }
     public double getPaintY2() { return paintPoints.y2; }
 
-    @XmlElements({
-        @XmlElement(name = "matte", type = Matte.class),
-        @XmlElement(name = "gradient", type = Gradient.class),
-        @XmlElement(name = "radialGradient", type = RadialGradient.class)
-    })
-    private Paint paint;
+    Paint paint;
     public Paint getPaint() { return paint; }
 
     static class PaintPoints {
-        @XmlAttribute double x1;
-        @XmlAttribute double y1;
-        @XmlAttribute double x2;
-        @XmlAttribute double y2;
+        double x1;
+        double y1;
+        double x2;
+        double y2;
+
+        PaintPoints(XMLStreamReader reader) {
+            x1 = Double.parseDouble(reader.getAttributeValue(null, "x1"));
+            x2 = Double.parseDouble(reader.getAttributeValue(null, "x2"));
+            y1 = Double.parseDouble(reader.getAttributeValue(null, "y1"));
+            y2 = Double.parseDouble(reader.getAttributeValue(null, "y2"));
+        }
     }
 }

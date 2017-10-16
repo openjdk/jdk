@@ -25,15 +25,49 @@
 
 package build.tools.generatenimbus;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-
 class Path extends Shape {
-    @XmlElement(name="point")
-    @XmlElementWrapper(name="points")
     private List<Point> controlPoints = new ArrayList<Point>();
+
+    Path(XMLStreamReader reader) throws XMLStreamException {
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "points":
+                            controlPoints = new ArrayList<>();
+                            break;
+                        case "point":
+                            controlPoints.add(new Point(reader));
+                            break;
+                        case "matte":
+                            paint = new Matte(reader);
+                            break;
+                        case "gradient":
+                            paint = new Gradient(reader);
+                            break;
+                        case "radialGradient":
+                            paint = new RadialGradient(reader);
+                            break;
+                        case "paintPoints":
+                            paintPoints = new PaintPoints(reader);
+                            break;
+                    }
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "path":
+                            return;
+                    }
+                    break;
+            }
+        }
+    }
+
     public List<Point> getControlPoints() { return controlPoints; }
 }

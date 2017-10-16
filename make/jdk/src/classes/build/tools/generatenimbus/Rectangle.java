@@ -25,22 +25,23 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 class Rectangle extends Shape {
-    @XmlAttribute private double x1;
+    private double x1;
+
     public double getX1() { return x1; }
 
-    @XmlAttribute private double x2;
+    private double x2;
     public double getX2() { return x2; }
 
-    @XmlAttribute private double y1;
+    private double y1;
     public double getY1() { return y1; }
 
-    @XmlAttribute private double y2;
+    private double y2;
     public double getY2() { return y2; }
 
-    @XmlAttribute
     public double getRounding() {
         double rounding = Math.abs(roundingX - x1) * 2;
         return rounding > 2 ? rounding : 0;
@@ -58,4 +59,38 @@ class Rectangle extends Shape {
         return getRounding() > 0;
     }
 
+    Rectangle(XMLStreamReader reader) throws XMLStreamException {
+        x1 = Double.parseDouble(reader.getAttributeValue(null, "x1"));
+        x2 = Double.parseDouble(reader.getAttributeValue(null, "x2"));
+        y1 = Double.parseDouble(reader.getAttributeValue(null, "y1"));
+        y2 = Double.parseDouble(reader.getAttributeValue(null, "y2"));
+        setRounding(Double.parseDouble(reader.getAttributeValue(null, "rounding")));
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "matte":
+                            paint = new Matte(reader);
+                            break;
+                        case "gradient":
+                            paint = new Gradient(reader);
+                            break;
+                        case "radialGradient":
+                            paint = new RadialGradient(reader);
+                            break;
+                        case "paintPoints":
+                            paintPoints = new PaintPoints(reader);
+                            break;
+                    }
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "rectangle":
+                            return;
+                    }
+                    break;
+            }
+        }
+    }
 }

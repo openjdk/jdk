@@ -25,37 +25,86 @@
 
 package build.tools.generatenimbus;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-
 
 class UIStyle {
-    public static enum CacheMode {
+
+    public enum CacheMode {
         NO_CACHING, FIXED_SIZES, NINE_SQUARE_SCALE
     }
 
-    @XmlElement private UIColor textForeground = null;
-    @XmlElement(name="inherit-textForeground")
+    private UIColor textForeground = null;
     private boolean textForegroundInherited = true;
 
-    @XmlElement private UIColor textBackground = null;
-    @XmlElement(name="inherit-textBackground")
+    private UIColor textBackground = null;
     private boolean textBackgroundInherited = true;
 
-    @XmlElement private UIColor background = null;
-    @XmlElement(name="inherit-background")
+    private UIColor background = null;
     private boolean backgroundInherited = true;
 
-    @XmlElement private boolean cacheSettingsInherited = true;
-    @XmlElement CacheMode cacheMode = CacheMode.FIXED_SIZES;
-    @XmlElement String maxHozCachedImgScaling = "1.0";
-    @XmlElement String maxVertCachedImgScaling = "1.0";
+    private boolean cacheSettingsInherited = true;
+    CacheMode cacheMode = CacheMode.FIXED_SIZES;
+    String maxHozCachedImgScaling = "1.0";
+    String maxVertCachedImgScaling = "1.0";
 
-    @XmlElement(name="uiProperty")
-    @XmlElementWrapper(name="uiproperties")
-    private List<UIProperty> uiProperties = new ArrayList<UIProperty>();
+    private List<UIProperty> uiProperties = new ArrayList<>();
+
+    UIStyle() {
+    }
+
+    UIStyle(XMLStreamReader reader) throws XMLStreamException {
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "textForeground":
+                            textForeground = new UIColor(reader);
+                            break;
+                        case "textBackground":
+                            textBackground = new UIColor(reader);
+                            break;
+                        case "background":
+                            background = new UIColor(reader);
+                            break;
+                        case "uiProperty":
+                            uiProperties.add(new UIProperty(reader));
+                            break;
+                        case "inherit-textForeground":
+                            textForegroundInherited = Boolean.parseBoolean(reader.getElementText());
+                            break;
+                        case "inherit-textBackground":
+                            textBackgroundInherited = Boolean.parseBoolean(reader.getElementText());
+                            break;
+                        case "cacheSettingsInherited":
+                            cacheSettingsInherited = Boolean.parseBoolean(reader.getElementText());
+                            break;
+                        case "inherit-background":
+                            backgroundInherited = Boolean.parseBoolean(reader.getElementText());
+                            break;
+                        case "cacheMode":
+                            cacheMode = CacheMode.valueOf(reader.getElementText());
+                            break;
+                        case "maxHozCachedImgScaling":
+                            maxHozCachedImgScaling = reader.getElementText();
+                            break;
+                        case "maxVertCachedImgScaling":
+                            maxVertCachedImgScaling = reader.getElementText();
+                            break;
+                    }
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "style":
+                            return;
+                    }
+                    break;
+            }
+        }
+    }
 
     private UIStyle parentStyle = null;
     public void setParentStyle(UIStyle parentStyle) {

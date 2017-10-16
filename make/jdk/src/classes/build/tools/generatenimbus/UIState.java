@@ -25,29 +25,55 @@
 
 package build.tools.generatenimbus;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-
 class UIState {
-    @XmlAttribute private String stateKeys;
+    private String stateKeys;
+
     public String getStateKeys() { return stateKeys; }
 
     /** Indicates whether to invert the meaning of the 9-square stretching insets */
-    @XmlAttribute private boolean inverted;
+    private boolean inverted;
 
     /** A cached string representing the list of stateKeys deliminated with "+" */
     private String cachedName = null;
 
-    @XmlElement private Canvas canvas;
+    private Canvas canvas;
     public Canvas getCanvas() { return canvas; }
 
-    @XmlElement private UIStyle style;
+    private UIStyle style;
     public UIStyle getStyle() { return style; }
+
+    UIState(XMLStreamReader reader) throws XMLStreamException {
+        stateKeys = reader.getAttributeValue(null, "stateKeys");
+        inverted = Boolean.parseBoolean(reader.getAttributeValue(null, "inverted"));
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "canvas":
+                            canvas = new Canvas(reader);
+                            break;
+                        case "style":
+                            style = new UIStyle(reader);
+                            break;
+                    }
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "state":
+                            return;
+                    }
+                    break;
+            }
+        }
+    }
 
     public boolean hasCanvas() {
         return ! canvas.isBlank();

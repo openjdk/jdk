@@ -24,11 +24,12 @@
  */
 package build.tools.generatenimbus;
 
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
 
 /**
  * Generates the various Java artifacts based on a SynthModel.
@@ -105,9 +106,14 @@ public class Generator {
             System.out.println("   packagePrefix :" +packagePrefix);
             System.out.println("   lafName       :" +lafName);
 
-            JAXBContext ctx = JAXBContext.newInstance("build.tools.generatenimbus");
-            Unmarshaller u = ctx.createUnmarshaller();
-            SynthModel model = (SynthModel) u.unmarshal(skinFile);
+            SynthModel model;
+            XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+            XMLStreamReader reader;
+            try( InputStream fis = new FileInputStream(skinFile);
+                 InputStream is = new BufferedInputStream(fis)) {
+                reader = inputFactory.createXMLStreamReader(is);
+                model = new SynthModel(reader);
+            }
             Generator.init(full, buildDir, packagePrefix, lafName, model);
             Generator.getInstance().generate();
         }

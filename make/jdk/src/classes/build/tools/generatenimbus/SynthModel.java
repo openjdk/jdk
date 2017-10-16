@@ -25,25 +25,53 @@
 
 package build.tools.generatenimbus;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.util.ArrayList;
-import javax.xml.bind.annotation.*;
 
-
-@XmlRootElement(name="synthModel")
 public class SynthModel {
-    @XmlElement private UIStyle style;
+    private UIStyle style;
 
-    @XmlElement(name="uiColor")
-    @XmlElementWrapper(name="colors")
     private ArrayList<UIColor> colors;
 
-    @XmlElement(name="uiFont")
-    @XmlElementWrapper(name="fonts")
     private ArrayList<UIFont> fonts;
 
-    @XmlElement(name="uiComponent")
-    @XmlElementWrapper(name="components")
     private ArrayList<UIComponent> components;
+
+    SynthModel(XMLStreamReader reader) throws XMLStreamException {
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "style":
+                            style = new UIStyle(reader);
+                            break;
+                        case "colors":
+                            colors = new ArrayList<>();
+                            break;
+                        case "fonts":
+                            fonts = new ArrayList<>();
+                            break;
+                        case "components":
+                            components = new ArrayList<>();
+                            break;
+                        case "uiColor":
+                            colors.add(new UIColor(reader));
+                            break;
+                        case "uiFont":
+                            fonts.add(new UIFont(reader));
+                            break;
+                        case "uiComponent":
+                            components.add(new UIComponent(reader));
+                            break;
+                    }
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    break;
+            }
+        }
+    }
 
     public void initStyles() {
         for (UIComponent c: components) {

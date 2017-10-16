@@ -25,22 +25,60 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 class UIProperty extends UIDefault<String> {
-    public static enum PropertyType {
+    public enum PropertyType {
         BOOLEAN, INT, FLOAT, DOUBLE, STRING, FONT, COLOR, INSETS, DIMENSION, BORDER
     }
-    @XmlAttribute private PropertyType type;
+    private PropertyType type;
 
-    @XmlElement private Border border;
-    @XmlElement private Dimension dimension;
-    @XmlElement private Insets insets;
-    @XmlElement private Matte matte;
-    @XmlElement private Typeface typeface;
+    private Border border;
+    private Dimension dimension;
+    private Insets insets;
+    private Matte matte;
+    private Typeface typeface;
 
-    @XmlAttribute
+    UIProperty(XMLStreamReader reader) throws XMLStreamException {
+        name = reader.getAttributeValue(null, "name");
+        setValue(reader.getAttributeValue(null, "value"));
+        try {
+            type = PropertyType.valueOf(reader.getAttributeValue(null, "type"));
+        } catch (Exception e) {}
+
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "border":
+                            border = new Border(reader);
+                            break;
+                        case "dimension":
+                            dimension = new Dimension(reader);
+                            break;
+                        case "insets":
+                            insets = new Insets(reader);
+                            break;
+                        case "matte":
+                            matte = new Matte(reader);
+                            break;
+                        case "typeface":
+                            typeface = new Typeface(reader);
+                            break;
+                    }
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "uiProperty":
+                            return;
+                    }
+                    break;
+            }
+        }
+    }
+
     @Override public void setValue(String value) {
         super.setValue(value);
     }

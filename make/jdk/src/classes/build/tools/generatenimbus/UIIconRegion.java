@@ -25,10 +25,31 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 class UIIconRegion extends UIRegion {
-    @XmlAttribute private String basicKey;
+    private String basicKey;
+
+    UIIconRegion(XMLStreamReader reader) throws XMLStreamException {
+        super(reader, false);
+        basicKey = reader.getAttributeValue(null, "basicKey");
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    parse(reader);
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "uiIconRegion":
+                            return;
+                    }
+                    break;
+            }
+        }
+
+    }
 
     @Override public void write(StringBuilder sb, StringBuilder styleBuffer, UIComponent comp, String prefix, String pkg) {
         Dimension size = null;
