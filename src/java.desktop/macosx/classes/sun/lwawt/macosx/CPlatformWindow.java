@@ -674,6 +674,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                         CWrapper.NSWindow.orderWindow(ptr, CWrapper.NSWindow.NSWindowAbove, ownerPtr);
                     });
                 });
+                execute(CWrapper.NSWindow::orderFront);
                 applyWindowLevel(target);
             }
 
