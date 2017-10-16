@@ -25,11 +25,16 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.stream.XMLStreamReader;
 
 class Dimension {
-    @XmlAttribute int width;
-    @XmlAttribute int height;
+    int width;
+    int height;
+
+    Dimension(XMLStreamReader reader) {
+        width = Integer.parseInt(reader.getAttributeValue(null, "width"));
+        height = Integer.parseInt(reader.getAttributeValue(null, "height"));
+    }
 
     public String write(boolean uiResource) {
         String uiSuffix = (uiResource ? "UIResource" : "");

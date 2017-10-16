@@ -25,16 +25,41 @@
 
 package build.tools.generatenimbus;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlElement;
-
 class AbstractGradient extends Paint {
-    public static enum CycleMethod {
+    public enum CycleMethod {
         NO_CYCLE, REFLECT, REPEAT
     }
 
-    @XmlElement(name="stop") private ArrayList<GradientStop> stops;
+    private ArrayList<GradientStop> stops;
     public List<GradientStop> getStops() { return stops; }
+
+    AbstractGradient(XMLStreamReader reader) throws XMLStreamException {
+        stops = new ArrayList<>();
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "stop":
+                            stops.add(new GradientStop(reader));
+                            break;
+                    }
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "stop":
+                            break;
+                        default:
+                            return;
+                    }
+                    break;
+            }
+        }
+
+    }
 }

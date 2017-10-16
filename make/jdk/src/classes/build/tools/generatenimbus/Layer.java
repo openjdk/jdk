@@ -25,22 +25,45 @@
 
 package build.tools.generatenimbus;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlElements;
-
 class Layer {
     /** List of shapes in this layer, first shape is painted on top */
-    @XmlElements({
-        @XmlElement(name = "ellipse", type = Ellipse.class),
-        @XmlElement(name = "path", type = Path.class),
-        @XmlElement(name = "rectangle", type = Rectangle.class)
-    })
-    @XmlElementWrapper(name="shapes")
     private List<Shape> shapes = new ArrayList<Shape>();
+
+    Layer(XMLStreamReader reader) throws XMLStreamException {
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "shapes":
+                            shapes = new ArrayList<>();
+                            break;
+                        case "ellipse":
+                            shapes.add(new Ellipse(reader));
+                            break;
+                        case "path":
+                            shapes.add(new Path(reader));
+                            break;
+                        case "rectangle":
+                            shapes.add(new Rectangle(reader));
+                            break;
+                    }
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "layer":
+                            return;
+                    }
+                    break;
+            }
+        }
+    }
+
     public List<Shape> getShapes() { return shapes; }
 
     public boolean isEmpty() {

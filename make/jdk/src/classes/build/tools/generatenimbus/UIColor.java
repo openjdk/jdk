@@ -25,13 +25,23 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlElement;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 class UIColor extends UIDefault<Matte> {
 
-    @XmlElement
-    public void setMatte(Matte m) {
-        setValue(m);
+    UIColor(XMLStreamReader reader) throws XMLStreamException {
+        name = reader.getAttributeValue(null, "name");
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    setValue(new Matte(reader));
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    return;
+            }
+        }
     }
 
     public String write() {

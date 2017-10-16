@@ -25,20 +25,41 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlEnumValue;
+import javax.xml.stream.XMLStreamReader;
 
 class Border {
     enum BorderType {
-        @XmlEnumValue("empty") EMPTY,
-        @XmlEnumValue("painter") PAINTER
+        EMPTY,
+        PAINTER
     }
-    @XmlAttribute private BorderType type;
-    @XmlAttribute private String painter;
-    @XmlAttribute private int top;
-    @XmlAttribute private int left;
-    @XmlAttribute private int bottom;
-    @XmlAttribute private int right;
+
+    private BorderType type;
+
+    private String painter;
+
+    private int top;
+
+    private int left;
+
+    private int bottom;
+
+    private int right;
+
+    Border(XMLStreamReader reader) {
+        switch (reader.getAttributeValue(null, "type")) {
+            case "empty":
+                type = BorderType.EMPTY;
+                break;
+            case "painter":
+                type =BorderType.PAINTER;
+                break;
+        }
+        painter = reader.getAttributeValue(null, "painter");
+        top = Integer.parseInt(reader.getAttributeValue(null, "top"));
+        left = Integer.parseInt(reader.getAttributeValue(null, "left"));
+        bottom = Integer.parseInt(reader.getAttributeValue(null, "bottom"));
+        right = Integer.parseInt(reader.getAttributeValue(null, "right"));
+    }
 
     public String write() {
         switch (type) {

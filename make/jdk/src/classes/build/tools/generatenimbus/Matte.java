@@ -25,24 +25,47 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.stream.XMLStreamReader;
+import java.util.Optional;
 
 class Matte extends Paint {
-    @XmlAttribute private int red;
-    @XmlAttribute private int green;
-    @XmlAttribute private int blue;
-    @XmlAttribute private int alpha;
+    private int red;
+    private int green;
+    private int blue;
+    private int alpha;
 
-    @XmlAttribute private String uiDefaultParentName = null;
-    @XmlAttribute private float hueOffset = 0;
-    @XmlAttribute private float saturationOffset = 0;
-    @XmlAttribute private float brightnessOffset = 0;
-    @XmlAttribute private int alphaOffset = 0;
+    private String uiDefaultParentName = null;
+    private float hueOffset = 0;
+    private float saturationOffset = 0;
+    private float brightnessOffset = 0;
+    private int alphaOffset = 0;
 
-    @XmlAttribute private String componentPropertyName = null;
+    private String componentPropertyName = null;
+
     public String getComponentPropertyName() { return componentPropertyName; }
 
-    @XmlAttribute private boolean uiResource = true;
+    private boolean uiResource = true;
+
+    Matte(XMLStreamReader reader) {
+        red = Integer.parseInt(reader.getAttributeValue(null, "red"));
+        green = Integer.parseInt(reader.getAttributeValue(null, "green"));
+        blue = Integer.parseInt(reader.getAttributeValue(null, "blue"));
+        alpha = Integer.parseInt(reader.getAttributeValue(null, "alpha"));
+        uiDefaultParentName = reader.getAttributeValue(null,
+                "uiDefaultParentName");
+        hueOffset = Float.parseFloat(reader.getAttributeValue(null,
+                "hueOffset"));
+        saturationOffset = Float.parseFloat(reader.getAttributeValue(null,
+                "saturationOffset"));
+        brightnessOffset = Float.parseFloat(reader.getAttributeValue(null,
+                "brightnessOffset"));
+        alphaOffset = Integer.parseInt(reader.getAttributeValue(null,
+                "alphaOffset"));
+        componentPropertyName = reader.getAttributeValue(null,
+                "componentPropertyName");
+        uiResource = Boolean.parseBoolean(Optional.ofNullable(
+                reader.getAttributeValue(null, "uiResource")).orElse("true"));
+    }
 
     public boolean isAbsolute() {
         return uiDefaultParentName == null;

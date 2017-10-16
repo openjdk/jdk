@@ -25,16 +25,32 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 class GradientStop {
-    @XmlAttribute private float position;
+    private float position;
+
     public float getPosition() { return position; }
 
-    @XmlAttribute private float midpoint;
+    private float midpoint;
     public float getMidpoint() { return midpoint; }
 
-    @XmlElement private Matte matte;
+    private Matte matte;
     public Matte getColor() { return matte; }
+
+    GradientStop(XMLStreamReader reader) throws XMLStreamException {
+        position = Float.parseFloat(reader.getAttributeValue(null, "position"));
+        midpoint = Float.parseFloat(reader.getAttributeValue(null, "midpoint"));
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    matte = new Matte(reader);
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    return;
+            }
+        }
+    }
 }

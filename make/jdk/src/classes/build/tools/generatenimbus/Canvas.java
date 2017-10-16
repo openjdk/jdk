@@ -25,18 +25,49 @@
 
 package build.tools.generatenimbus;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlElement;
-
 class Canvas {
-    @XmlElement private Dimension size;
+    private Dimension size;
+
     public Dimension getSize() { return size; }
 
-    @XmlElement(name="layer") private List<Layer> layers;
+    private List<Layer> layers;
     public List<Layer> getLayers() { return layers; }
 
-    @XmlElement private Insets stretchingInsets = null;
+    private Insets stretchingInsets = null;
+
+    Canvas(XMLStreamReader reader) throws XMLStreamException {
+        layers = new ArrayList<>();
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "size":
+                            size = new Dimension(reader);
+                            break;
+                        case "layer":
+                            layers.add(new Layer(reader));
+                            break;
+                        case "stretchingInsets":
+                            stretchingInsets = new Insets(reader);
+                            break;
+                    }
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "canvas":
+                            return;
+                    }
+                    break;
+            }
+        }
+    }
+
     public Insets getStretchingInsets() { return stretchingInsets; }
 
     public boolean isBlank() {

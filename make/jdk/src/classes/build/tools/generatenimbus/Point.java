@@ -25,26 +25,36 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.stream.XMLStreamReader;
 
 class Point {
-    @XmlAttribute private double x;
+    private double x;
+
     public double getX() { return x; }
 
-    @XmlAttribute private double y;
+    private double y;
     public double getY() { return y; }
 
-    @XmlAttribute(name="cp1x") private double cp1x;
+    private double cp1x;
     public double getCp1X() { return cp1x; }
 
-    @XmlAttribute(name="cp1y") private double cp1y;
+    private double cp1y;
     public double getCp1Y() { return cp1y; }
 
-    @XmlAttribute(name="cp2x") private double cp2x;
+    private double cp2x;
     public double getCp2X() { return cp2x; }
 
-    @XmlAttribute(name="cp2y") private double cp2y;
+    private double cp2y;
     public double getCp2Y() { return cp2y; }
+
+    Point(XMLStreamReader reader) {
+        x = Double.parseDouble(reader.getAttributeValue(null, "x"));
+        y = Double.parseDouble(reader.getAttributeValue(null, "y"));
+        cp1x = Double.parseDouble(reader.getAttributeValue(null, "cp1x"));
+        cp1y = Double.parseDouble(reader.getAttributeValue(null, "cp1y"));
+        cp2x = Double.parseDouble(reader.getAttributeValue(null, "cp2x"));
+        cp2y = Double.parseDouble(reader.getAttributeValue(null, "cp2y"));
+    }
 
     public boolean isP1Sharp() {
         return cp1x == x && cp1y == y;

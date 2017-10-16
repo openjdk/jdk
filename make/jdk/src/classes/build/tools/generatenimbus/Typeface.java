@@ -25,11 +25,11 @@
 
 package build.tools.generatenimbus;
 
-import java.awt.Font;
-
-import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.stream.XMLStreamReader;
+import java.awt.*;
 
 class Typeface {
+
     public enum DeriveStyle {
         Default, Off, On;
 
@@ -42,12 +42,30 @@ class Typeface {
         }
     }
 
-    @XmlAttribute private String uiDefaultParentName;
-    @XmlAttribute(name="family") private String name;
-    @XmlAttribute private int size;
-    @XmlAttribute private DeriveStyle bold = DeriveStyle.Default;
-    @XmlAttribute private DeriveStyle italic = DeriveStyle.Default;
-    @XmlAttribute private float sizeOffset = 1f;
+    private String uiDefaultParentName;
+    private String name;
+    private int size;
+    private DeriveStyle bold = DeriveStyle.Default;
+    private DeriveStyle italic = DeriveStyle.Default;
+    private float sizeOffset = 1f;
+
+    Typeface(XMLStreamReader reader) {
+        uiDefaultParentName = reader.getAttributeValue(null, "uiDefaultParentName");
+        name = reader.getAttributeValue(null, "family");
+        try {
+            size = Integer.parseInt(reader.getAttributeValue(null, "size"));
+        } catch (Exception e) {}
+        try {
+            bold = DeriveStyle.valueOf(reader.getAttributeValue(null, "bold"));
+        } catch (Exception e) {}
+        try {
+            italic = DeriveStyle.valueOf(reader.getAttributeValue(null, "italic"));
+        } catch (Exception e) {}
+        try {
+            sizeOffset = Float.parseFloat(reader.getAttributeValue(null, "sizeOffset"));
+        } catch (Exception e) {}
+    }
+
 
     public boolean isAbsolute() {
         return uiDefaultParentName == null;

@@ -25,47 +25,91 @@
 
 package build.tools.generatenimbus;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlElements;
-
 class UIRegion {
-    @XmlAttribute protected String name;
-    @XmlAttribute protected String key;
-    @XmlAttribute private boolean opaque = false;
+    String name;
+    String key;
+    private boolean opaque = false;
 
-    @XmlElement private Insets contentMargins = new Insets(0, 0, 0, 0);
+    private Insets contentMargins = new Insets(0, 0, 0, 0);
 
-    @XmlElement(name="state")
-    @XmlElementWrapper(name="backgroundStates")
     protected List<UIState> backgroundStates = new ArrayList<UIState>();
+
     public List<UIState> getBackgroundStates() { return backgroundStates; }
 
-    @XmlElement(name="state")
-    @XmlElementWrapper(name="foregroundStates")
     protected List<UIState> foregroundStates = new ArrayList<UIState>();
     public List<UIState> getForegroundStates() { return foregroundStates; }
 
-    @XmlElement(name="state")
-    @XmlElementWrapper(name="borderStates")
     protected List<UIState> borderStates = new ArrayList<UIState>();
     public List<UIState> getBorderStates() { return borderStates; }
 
-    @XmlElement private UIStyle style = new UIStyle();
+    UIStyle style = new UIStyle();
 
-    @XmlElements({
-        @XmlElement(name = "region", type = UIRegion.class),
-        @XmlElement(name = "uiComponent", type = UIComponent.class),
-        @XmlElement(name = "uiIconRegion", type = UIIconRegion.class)
-    })
-    @XmlElementWrapper(name="regions")
-    private List<UIRegion> subRegions = new ArrayList<UIRegion>();
+    List<UIRegion> subRegions = new ArrayList<>();
     public List<UIRegion> getSubRegions() { return subRegions; }
+
+    UIRegion(XMLStreamReader reader, boolean parse)
+                                                     throws XMLStreamException {
+        name = reader.getAttributeValue(null, "name");
+        key = reader.getAttributeValue(null, "key");
+        opaque = Boolean.parseBoolean(reader.getAttributeValue(null, "opaque"));
+        if (!parse) {
+            return;
+        }
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    parse(reader);
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "region":
+                            return;
+                    }
+                    break;
+            }
+        }
+    }
+
+    private List<UIState> states = new ArrayList<UIState>();
+
+    void parse(XMLStreamReader reader) throws XMLStreamException {
+        switch (reader.getLocalName()) {
+            case "backgroundStates":
+                backgroundStates = states = new ArrayList<>();
+                break;
+            case "foregroundStates":
+                foregroundStates = states = new ArrayList<>();
+                break;
+            case "borderStates":
+                borderStates = states = new ArrayList<>();
+                break;
+            case "style":
+                style = new UIStyle(reader);
+                break;
+            case "region":
+                subRegions.add(new UIRegion(reader, true));
+                break;
+            case "uiComponent":
+                subRegions.add(new UIComponent(reader));
+                break;
+            case "uiIconRegion":
+                subRegions.add(new UIIconRegion(reader));
+                break;
+            case "contentMargins":
+                contentMargins = new Insets(reader);
+                break;
+            case "state":
+                states.add(new UIState(reader));
+                break;
+        }
+    }
 
     protected void initStyles(UIStyle parentStyle) {
         style.setParentStyle(parentStyle);

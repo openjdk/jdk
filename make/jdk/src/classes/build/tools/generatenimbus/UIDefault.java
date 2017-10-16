@@ -25,10 +25,8 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
-
 public class UIDefault<T> {
-    @XmlAttribute private String name;
+    String name;
     private T value;
 
     public String getName() {

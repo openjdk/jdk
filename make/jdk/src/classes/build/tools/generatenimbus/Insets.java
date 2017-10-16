@@ -25,13 +25,13 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.stream.XMLStreamReader;
 
 class Insets {
-    @XmlAttribute int top;
-    @XmlAttribute int left;
-    @XmlAttribute int bottom;
-    @XmlAttribute int right;
+    int top;
+    int left;
+    int bottom;
+    int right;
 
     public Insets() {
         this(0, 0, 0, 0);
@@ -42,6 +42,13 @@ class Insets {
         this.left = left;
         this.bottom = bottom;
         this.right = right;
+    }
+
+    Insets(XMLStreamReader reader) {
+        top = Integer.parseInt(reader.getAttributeValue(null, "top"));
+        left = Integer.parseInt(reader.getAttributeValue(null, "left"));
+        bottom = Integer.parseInt(reader.getAttributeValue(null, "bottom"));
+        right = Integer.parseInt(reader.getAttributeValue(null, "right"));
     }
 
     public String write(boolean uiResource) {

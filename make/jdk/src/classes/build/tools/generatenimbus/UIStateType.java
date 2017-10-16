@@ -25,13 +25,37 @@
 
 package build.tools.generatenimbus;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 class UIStateType {
-    @XmlAttribute private String key;
-    public String getKey() { return key; }
+    private String key;
 
-    @XmlElement private String codeSnippet;
+    public String
+    getKey() { return key; }
+
+    private String codeSnippet;
     public String getCodeSnippet() { return codeSnippet; }
+
+    UIStateType(XMLStreamReader reader) throws XMLStreamException {
+        key = reader.getAttributeValue(null, "key");
+        while (reader.hasNext()) {
+            int eventType = reader.next();
+            switch (eventType) {
+                case XMLStreamReader.START_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "codeSnippet":
+                            codeSnippet = reader.getElementText();
+                            break;
+                    }
+                    break;
+                case XMLStreamReader.END_ELEMENT:
+                    switch (reader.getLocalName()) {
+                        case "stateType":
+                            return;
+                    }
+                    break;
+            }
+        }
+    }
 }
