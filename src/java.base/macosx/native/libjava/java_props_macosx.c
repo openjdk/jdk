@@ -113,6 +113,12 @@ char *getMacOSXLocale(int cat) {
     }
 
     if (retVal != NULL) {
+        // convertToPOSIXLocale() does not expect any variant codes, so ignore
+        // '@' and anything following, if present.
+        char* rmAt = strchr(retVal, '@');
+        if (rmAt != NULL) {
+            *rmAt = '\0';
+        }
         return strdup(convertToPOSIXLocale(retVal));
     }
 
