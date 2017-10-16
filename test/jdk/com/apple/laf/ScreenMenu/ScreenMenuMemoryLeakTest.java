@@ -24,7 +24,7 @@
 /**
  * @test
  * @key headful
- * @bug 8158325
+ * @bug 8158325 8180821
  * @summary Memory leak in com.apple.laf.ScreenMenu: removed JMenuItems are still referenced
  * @requires (os.family == "mac")
  * @run main/timeout=300/othervm -Xmx16m ScreenMenuMemoryLeakTest
@@ -67,6 +67,7 @@ public class ScreenMenuMemoryLeakTest {
         });
         System.gc();
         System.runFinalization();
+        Thread.sleep(1000);
         JMenuItem menuItem = sMenuItem.get();
         EventQueue.invokeAndWait(new Runnable() {
             @Override
