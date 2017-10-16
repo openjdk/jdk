@@ -1134,7 +1134,6 @@ with_toolchain_path
 with_extra_path
 with_sdk_name
 with_conf_name
-with_output_base_dir
 with_output_sync
 with_default_make_target
 enable_headless_only
@@ -2043,7 +2042,6 @@ Optional Packages:
   --with-sdk-name         use the platform SDK of the given name. [macosx]
   --with-conf-name        use this as the name of the configuration [generated
                           from important configuration options]
-  --with-output-base-dir  override the default output base directory [./build]
   --with-output-sync      set make output sync type if supported by make.
                           [recurse]
   --with-default-make-target
@@ -5117,7 +5115,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1507635096
+DATE_WHEN_GENERATED=1508136203
 
 ###############################################################################
 #
@@ -17554,18 +17552,10 @@ if test "${with_conf_name+set}" = set; then :
 fi
 
 
-# Check whether --with-output-base-dir was given.
-if test "${with_output_base_dir+set}" = set; then :
-  withval=$with_output_base_dir;  OUTPUT_BASE=${with_output_base_dir}
-else
-   OUTPUT_BASE="$TOPDIR/build"
-fi
-
-
   # Test from where we are running configure, in or outside of src root.
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking where to store configuration" >&5
 $as_echo_n "checking where to store configuration... " >&6; }
-  if test "x$CURDIR" = "x$TOPDIR" || test "x$CURDIR" = "x$TOPDIR/common" \
+  if test "x$CURDIR" = "x$TOPDIR" || test "x$CURDIR" = "x$CUSTOM_ROOT" \
       || test "x$CURDIR" = "x$TOPDIR/make/autoconf" \
       || test "x$CURDIR" = "x$TOPDIR/make" ; then
     # We are running configure from the src root.
@@ -17578,7 +17568,12 @@ $as_echo "in default location" >&6; }
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: in build directory with custom name" >&5
 $as_echo "in build directory with custom name" >&6; }
     fi
-    OUTPUTDIR="${OUTPUT_BASE}/${CONF_NAME}"
+
+    if test "x$CUSTOM_ROOT" != x; then
+      OUTPUTDIR="${CUSTOM_ROOT}/build/${CONF_NAME}"
+    else
+      OUTPUTDIR="${TOPDIR}/build/${CONF_NAME}"
+    fi
     $MKDIR -p "$OUTPUTDIR"
     if test ! -d "$OUTPUTDIR"; then
       as_fn_error $? "Could not create build directory $OUTPUTDIR" "$LINENO" 5
