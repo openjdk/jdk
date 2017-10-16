@@ -333,7 +333,8 @@ void SafepointSynchronize::begin() {
     }
 
     if (sync_event.should_commit()) {
-      sync_event.set_safepointId(safepoint_counter());
+      // Group this event together with the ones committed after the counter is increased
+      sync_event.set_safepointId(safepoint_counter() + 1);
       sync_event.set_initialThreadCount(initial_running);
       sync_event.set_runningThreadCount(_waiting_to_block);
       sync_event.set_iterations(iterations);
