@@ -224,7 +224,7 @@ void VM_Version::initialize() {
   }
 
   // z/Architecture supports 8-byte compare-exchange operations
-  // (see Atomic::cmpxchg and StubGenerator::generate_atomic_cmpxchg_ptr)
+  // (see Atomic::cmpxchg)
   // and 'atomic long memory ops' (see Unsafe_GetLongVolatile).
   _supports_cx8 = true;
 

@@ -48,13 +48,11 @@ private:
   ClassPathEntry* volatile _next;
 public:
   // Next entry in class path
-  ClassPathEntry* next() const {
-    return (ClassPathEntry*) OrderAccess::load_ptr_acquire(&_next);
-  }
+  ClassPathEntry* next() const { return OrderAccess::load_acquire(&_next); }
   virtual ~ClassPathEntry() {}
   void set_next(ClassPathEntry* next) {
     // may have unlocked readers, so ensure visibility.
-    OrderAccess::release_store_ptr(&_next, next);
+    OrderAccess::release_store(&_next, next);
   }
   virtual bool is_jrt() = 0;
   virtual bool is_jar_file() const = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,11 @@
 #include "oops/arrayKlass.hpp"
 
 inline Klass* ArrayKlass::higher_dimension_acquire() const {
-  return (Klass*) OrderAccess::load_ptr_acquire(&_higher_dimension);
+  return OrderAccess::load_acquire(&_higher_dimension);
 }
 
 inline void ArrayKlass::release_set_higher_dimension(Klass* k) {
-  OrderAccess::release_store_ptr(&_higher_dimension, k);
+  OrderAccess::release_store(&_higher_dimension, k);
 }
 
 #endif // SHARE_VM_OOPS_ARRAYKLASS_INLINE_HPP

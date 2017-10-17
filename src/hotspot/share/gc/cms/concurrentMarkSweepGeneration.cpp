@@ -1077,7 +1077,7 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
 
   NOT_PRODUCT(
     Atomic::inc(&_numObjectsPromoted);
-    Atomic::add_ptr(alloc_sz, &_numWordsPromoted);
+    Atomic::add(alloc_sz, &_numWordsPromoted);
   )
 
   return obj;
@@ -3180,7 +3180,7 @@ void CMSConcMarkingTask::bump_global_finger(HeapWord* f) {
   HeapWord* cur  = read;
   while (f > read) {
     cur = read;
-    read = (HeapWord*) Atomic::cmpxchg_ptr(f, &_global_finger, cur);
+    read = Atomic::cmpxchg(f, &_global_finger, cur);
     if (cur == read) {
       // our cas succeeded
       assert(_global_finger >= f, "protocol consistency");
@@ -7853,7 +7853,7 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
     return false;
   }
   // Grab the entire list; we'll put back a suffix
-  oop prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
+  oop prefix = cast_to_oop(Atomic::xchg((oopDesc*)BUSY, &_overflow_list));
   Thread* tid = Thread::current();
   // Before "no_of_gc_threads" was introduced CMSOverflowSpinCount was
   // set to ParallelGCThreads.
@@ -7868,7 +7868,7 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
       return false;
     } else if (_overflow_list != BUSY) {
       // Try and grab the prefix
-      prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
+      prefix = cast_to_oop(Atomic::xchg((oopDesc*)BUSY, &_overflow_list));
     }
   }
   // If the list was found to be empty, or we spun long
@@ -7881,7 +7881,7 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
      if (prefix == NULL) {
        // Write back the NULL in case we overwrote it with BUSY above
        // and it is still the same value.
-       (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
+       Atomic::cmpxchg((oopDesc*)NULL, &_overflow_list, (oopDesc*)BUSY);
      }
      return false;
   }
@@ -7896,7 +7896,7 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
     // Write back the NULL in lieu of the BUSY we wrote
     // above, if it is still the same value.
     if (_overflow_list == BUSY) {
-      (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
+      Atomic::cmpxchg((oopDesc*)NULL, &_overflow_list, (oopDesc*)BUSY);
     }
   } else {
     // Chop off the suffix and return it to the global list.
@@ -7912,7 +7912,7 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
     bool attached = false;
     while (observed_overflow_list == BUSY || observed_overflow_list == NULL) {
       observed_overflow_list =
-        (oop) Atomic::cmpxchg_ptr(suffix_head, &_overflow_list, cur_overflow_list);
+        Atomic::cmpxchg((oopDesc*)suffix_head, &_overflow_list, (oopDesc*)cur_overflow_list);
       if (cur_overflow_list == observed_overflow_list) {
         attached = true;
         break;
@@ -7937,7 +7937,7 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
         }
         // ... and try to place spliced list back on overflow_list ...
         observed_overflow_list =
-          (oop) Atomic::cmpxchg_ptr(suffix_head, &_overflow_list, cur_overflow_list);
+          Atomic::cmpxchg((oopDesc*)suffix_head, &_overflow_list, (oopDesc*)cur_overflow_list);
       } while (cur_overflow_list != observed_overflow_list);
       // ... until we have succeeded in doing so.
     }
@@ -7958,7 +7958,7 @@ bool CMSCollector::par_take_from_overflow_list(size_t num,
   }
 #ifndef PRODUCT
   assert(_num_par_pushes >= n, "Too many pops?");
-  Atomic::add_ptr(-(intptr_t)n, &_num_par_pushes);
+  Atomic::sub(n, &_num_par_pushes);
 #endif
   return true;
 }
@@ -7987,7 +7987,7 @@ void CMSCollector::par_push_on_overflow_list(oop p) {
       p->set_mark(NULL);
     }
     observed_overflow_list =
-      (oop) Atomic::cmpxchg_ptr(p, &_overflow_list, cur_overflow_list);
+      Atomic::cmpxchg((oopDesc*)p, &_overflow_list, (oopDesc*)cur_overflow_list);
   } while (cur_overflow_list != observed_overflow_list);
 }
 #undef BUSY

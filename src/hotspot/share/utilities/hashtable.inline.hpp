@@ -78,7 +78,7 @@ template <MEMFLAGS F> inline void HashtableBucket<F>::set_entry(BasicHashtableEn
   //          SystemDictionary are read without locks.  The new entry must be
   //          complete before other threads can be allowed to see it
   //          via a store to _buckets[index].
-  OrderAccess::release_store_ptr(&_entry, l);
+  OrderAccess::release_store(&_entry, l);
 }
 
 
@@ -87,7 +87,7 @@ template <MEMFLAGS F> inline BasicHashtableEntry<F>* HashtableBucket<F>::get_ent
   //          SystemDictionary are read without locks.  The new entry must be
   //          complete before other threads can be allowed to see it
   //          via a store to _buckets[index].
-  return (BasicHashtableEntry<F>*) OrderAccess::load_ptr_acquire(&_entry);
+  return OrderAccess::load_acquire(&_entry);
 }
 
 

@@ -4701,13 +4701,12 @@ void Thread::SpinRelease(volatile int * adr) {
 //
 
 
-typedef volatile intptr_t MutexT;      // Mux Lock-word
-enum MuxBits { LOCKBIT = 1 };
+const intptr_t LOCKBIT = 1;
 
 void Thread::muxAcquire(volatile intptr_t * Lock, const char * LockName) {
-  intptr_t w = Atomic::cmpxchg_ptr(LOCKBIT, Lock, 0);
+  intptr_t w = Atomic::cmpxchg(LOCKBIT, Lock, (intptr_t)0);
   if (w == 0) return;
-  if ((w & LOCKBIT) == 0 && Atomic::cmpxchg_ptr (w|LOCKBIT, Lock, w) == w) {
+  if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(w|LOCKBIT, Lock, w) == w) {
     return;
   }
 
@@ -4720,7 +4719,7 @@ void Thread::muxAcquire(volatile intptr_t * Lock, const char * LockName) {
     // Optional spin phase: spin-then-park strategy
     while (--its >= 0) {
       w = *Lock;
-      if ((w & LOCKBIT) == 0 && Atomic::cmpxchg_ptr (w|LOCKBIT, Lock, w) == w) {
+      if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(w|LOCKBIT, Lock, w) == w) {
         return;
       }
     }
@@ -4733,7 +4732,7 @@ void Thread::muxAcquire(volatile intptr_t * Lock, const char * LockName) {
     for (;;) {
       w = *Lock;
       if ((w & LOCKBIT) == 0) {
-        if (Atomic::cmpxchg_ptr (w|LOCKBIT, Lock, w) == w) {
+        if (Atomic::cmpxchg(w|LOCKBIT, Lock, w) == w) {
           Self->OnList = 0;   // hygiene - allows stronger asserts
           return;
         }
@@ -4741,7 +4740,7 @@ void Thread::muxAcquire(volatile intptr_t * Lock, const char * LockName) {
       }
       assert(w & LOCKBIT, "invariant");
       Self->ListNext = (ParkEvent *) (w & ~LOCKBIT);
-      if (Atomic::cmpxchg_ptr(intptr_t(Self)|LOCKBIT, Lock, w) == w) break;
+      if (Atomic::cmpxchg(intptr_t(Self)|LOCKBIT, Lock, w) == w) break;
     }
 
     while (Self->OnList != 0) {
@@ -4751,9 +4750,9 @@ void Thread::muxAcquire(volatile intptr_t * Lock, const char * LockName) {
 }
 
 void Thread::muxAcquireW(volatile intptr_t * Lock, ParkEvent * ev) {
-  intptr_t w = Atomic::cmpxchg_ptr(LOCKBIT, Lock, 0);
+  intptr_t w = Atomic::cmpxchg(LOCKBIT, Lock, (intptr_t)0);
   if (w == 0) return;
-  if ((w & LOCKBIT) == 0 && Atomic::cmpxchg_ptr (w|LOCKBIT, Lock, w) == w) {
+  if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(w|LOCKBIT, Lock, w) == w) {
     return;
   }
 
@@ -4770,7 +4769,7 @@ void Thread::muxAcquireW(volatile intptr_t * Lock, ParkEvent * ev) {
     // Optional spin phase: spin-then-park strategy
     while (--its >= 0) {
       w = *Lock;
-      if ((w & LOCKBIT) == 0 && Atomic::cmpxchg_ptr (w|LOCKBIT, Lock, w) == w) {
+      if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(w|LOCKBIT, Lock, w) == w) {
         if (ReleaseAfter != NULL) {
           ParkEvent::Release(ReleaseAfter);
         }
@@ -4786,7 +4785,7 @@ void Thread::muxAcquireW(volatile intptr_t * Lock, ParkEvent * ev) {
     for (;;) {
       w = *Lock;
       if ((w & LOCKBIT) == 0) {
-        if (Atomic::cmpxchg_ptr (w|LOCKBIT, Lock, w) == w) {
+        if (Atomic::cmpxchg(w|LOCKBIT, Lock, w) == w) {
           ev->OnList = 0;
           // We call ::Release while holding the outer lock, thus
           // artificially lengthening the critical section.
@@ -4801,7 +4800,7 @@ void Thread::muxAcquireW(volatile intptr_t * Lock, ParkEvent * ev) {
       }
       assert(w & LOCKBIT, "invariant");
       ev->ListNext = (ParkEvent *) (w & ~LOCKBIT);
-      if (Atomic::cmpxchg_ptr(intptr_t(ev)|LOCKBIT, Lock, w) == w) break;
+      if (Atomic::cmpxchg(intptr_t(ev)|LOCKBIT, Lock, w) == w) break;
     }
 
     while (ev->OnList != 0) {
@@ -4837,7 +4836,7 @@ void Thread::muxAcquireW(volatile intptr_t * Lock, ParkEvent * ev) {
 // store (CAS) to the lock-word that releases the lock becomes globally visible.
 void Thread::muxRelease(volatile intptr_t * Lock)  {
   for (;;) {
-    const intptr_t w = Atomic::cmpxchg_ptr(0, Lock, LOCKBIT);
+    const intptr_t w = Atomic::cmpxchg((intptr_t)0, Lock, LOCKBIT);
     assert(w & LOCKBIT, "invariant");
     if (w == LOCKBIT) return;
     ParkEvent * const List = (ParkEvent *) (w & ~LOCKBIT);
@@ -4848,7 +4847,7 @@ void Thread::muxRelease(volatile intptr_t * Lock)  {
 
     // The following CAS() releases the lock and pops the head element.
     // The CAS() also ratifies the previously fetched lock-word value.
-    if (Atomic::cmpxchg_ptr (intptr_t(nxt), Lock, w) != w) {
+    if (Atomic::cmpxchg(intptr_t(nxt), Lock, w) != w) {
       continue;
     }
     List->OnList = 0;
