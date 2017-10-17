@@ -238,9 +238,9 @@ public class DiamondAndInnerClassTest extends ComboInstance<DiamondAndInnerClass
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate("#{DECL}")
-                .analyze());
+                .analyze(this::check);
     }
 
     void check(Result<?> res) {

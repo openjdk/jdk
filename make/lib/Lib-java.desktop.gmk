@@ -25,9 +25,13 @@
 
 include LibCommon.gmk
 
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, lib/Lib-java.desktop.gmk))
+
 # Prepare the find cache.
-$(eval $(call FillCacheFind, $(wildcard $(TOPDIR)/src/java.desktop/*/native \
-    $(TOPDIR)/src/*/java.desktop/*/native)))
+LIB_java.desktop_SRC_DIRS += $(TOPDIR)/src/java.desktop/*/native
+
+$(eval $(call FillCacheFind, $(wildcard $(LIB_java.desktop_SRC_DIRS))))
 
 include LibosxLibraries.gmk
 include PlatformLibraries.gmk

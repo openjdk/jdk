@@ -236,14 +236,15 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     private Tree.Kind guessKind(String code) {
-        ParseTask pt = proc.taskFactory.parse(code);
-        List<? extends Tree> units = pt.units();
-        if (units.isEmpty()) {
-            return Tree.Kind.BLOCK;
-        }
-        Tree unitTree = units.get(0);
-        proc.debug(DBG_COMPA, "Kind: %s -- %s\n", unitTree.getKind(), unitTree);
-        return unitTree.getKind();
+        return proc.taskFactory.parse(code, pt -> {
+            List<? extends Tree> units = pt.units();
+            if (units.isEmpty()) {
+                return Tree.Kind.BLOCK;
+            }
+            Tree unitTree = units.get(0);
+            proc.debug(DBG_COMPA, "Kind: %s -- %s\n", unitTree.getKind(), unitTree);
+            return unitTree.getKind();
+        });
     }
 
     //TODO: would be better handled through a lexer:
@@ -295,182 +296,183 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     private List<Suggestion> computeSuggestions(OuterWrap code, int cursor, int[] anchor) {
-        AnalyzeTask at = proc.taskFactory.new AnalyzeTask(code);
-        SourcePositions sp = at.trees().getSourcePositions();
-        CompilationUnitTree topLevel = at.firstCuTree();
-        List<Suggestion> result = new ArrayList<>();
-        TreePath tp = pathFor(topLevel, sp, code.snippetIndexToWrapIndex(cursor));
-        if (tp != null) {
-            Scope scope = at.trees().getScope(tp);
-            Predicate<Element> accessibility = createAccessibilityFilter(at, tp);
-            Predicate<Element> smartTypeFilter;
-            Predicate<Element> smartFilter;
-            Iterable<TypeMirror> targetTypes = findTargetType(at, tp);
-            if (targetTypes != null) {
-                smartTypeFilter = el -> {
-                    TypeMirror resultOf = resultTypeOf(el);
-                    return Util.stream(targetTypes)
-                            .anyMatch(targetType -> at.getTypes().isAssignable(resultOf, targetType));
-                };
+        return proc.taskFactory.analyze(code, at -> {
+            SourcePositions sp = at.trees().getSourcePositions();
+            CompilationUnitTree topLevel = at.firstCuTree();
+            List<Suggestion> result = new ArrayList<>();
+            TreePath tp = pathFor(topLevel, sp, code.snippetIndexToWrapIndex(cursor));
+            if (tp != null) {
+                Scope scope = at.trees().getScope(tp);
+                Predicate<Element> accessibility = createAccessibilityFilter(at, tp);
+                Predicate<Element> smartTypeFilter;
+                Predicate<Element> smartFilter;
+                Iterable<TypeMirror> targetTypes = findTargetType(at, tp);
+                if (targetTypes != null) {
+                    smartTypeFilter = el -> {
+                        TypeMirror resultOf = resultTypeOf(el);
+                        return Util.stream(targetTypes)
+                                .anyMatch(targetType -> at.getTypes().isAssignable(resultOf, targetType));
+                    };
 
-                smartFilter = IS_CLASS.negate()
-                                      .and(IS_INTERFACE.negate())
-                                      .and(IS_PACKAGE.negate())
-                                      .and(smartTypeFilter);
-            } else {
-                smartFilter = TRUE;
-                smartTypeFilter = TRUE;
-            }
-            switch (tp.getLeaf().getKind()) {
-                case MEMBER_SELECT: {
-                    MemberSelectTree mst = (MemberSelectTree)tp.getLeaf();
-                    if (mst.getIdentifier().contentEquals("*"))
-                        break;
-                    TreePath exprPath = new TreePath(tp, mst.getExpression());
-                    TypeMirror site = at.trees().getTypeMirror(exprPath);
-                    boolean staticOnly = isStaticContext(at, exprPath);
-                    ImportTree it = findImport(tp);
-                    boolean isImport = it != null;
+                    smartFilter = IS_CLASS.negate()
+                                          .and(IS_INTERFACE.negate())
+                                          .and(IS_PACKAGE.negate())
+                                          .and(smartTypeFilter);
+                } else {
+                    smartFilter = TRUE;
+                    smartTypeFilter = TRUE;
+                }
+                switch (tp.getLeaf().getKind()) {
+                    case MEMBER_SELECT: {
+                        MemberSelectTree mst = (MemberSelectTree)tp.getLeaf();
+                        if (mst.getIdentifier().contentEquals("*"))
+                            break;
+                        TreePath exprPath = new TreePath(tp, mst.getExpression());
+                        TypeMirror site = at.trees().getTypeMirror(exprPath);
+                        boolean staticOnly = isStaticContext(at, exprPath);
+                        ImportTree it = findImport(tp);
+                        boolean isImport = it != null;
 
-                    List<? extends Element> members = membersOf(at, site, staticOnly && !isImport);
-                    Predicate<Element> filter = accessibility;
-                    Function<Boolean, String> paren = DEFAULT_PAREN;
+                        List<? extends Element> members = membersOf(at, site, staticOnly && !isImport);
+                        Predicate<Element> filter = accessibility;
+                        Function<Boolean, String> paren = DEFAULT_PAREN;
 
-                    if (isNewClass(tp)) { // new xxx.|
-                        Predicate<Element> constructorFilter = accessibility.and(IS_CONSTRUCTOR)
-                            .and(el -> {
-                                if (el.getEnclosingElement().getEnclosingElement().getKind() == ElementKind.CLASS) {
-                                    return el.getEnclosingElement().getModifiers().contains(Modifier.STATIC);
-                                }
-                                return true;
-                            });
-                        addElements(membersOf(at, members), constructorFilter, smartFilter, result);
+                        if (isNewClass(tp)) { // new xxx.|
+                            Predicate<Element> constructorFilter = accessibility.and(IS_CONSTRUCTOR)
+                                .and(el -> {
+                                    if (el.getEnclosingElement().getEnclosingElement().getKind() == ElementKind.CLASS) {
+                                        return el.getEnclosingElement().getModifiers().contains(Modifier.STATIC);
+                                    }
+                                    return true;
+                                });
+                            addElements(membersOf(at, members), constructorFilter, smartFilter, result);
 
-                        filter = filter.and(IS_PACKAGE);
-                    } else if (isThrowsClause(tp)) {
-                        staticOnly = true;
-                        filter = filter.and(IS_PACKAGE.or(IS_CLASS).or(IS_INTERFACE));
-                        smartFilter = IS_PACKAGE.negate().and(smartTypeFilter);
-                    } else if (isImport) {
-                        paren = NO_PAREN;
-                        if (!it.isStatic()) {
+                            filter = filter.and(IS_PACKAGE);
+                        } else if (isThrowsClause(tp)) {
+                            staticOnly = true;
                             filter = filter.and(IS_PACKAGE.or(IS_CLASS).or(IS_INTERFACE));
-                        }
-                    } else {
-                        filter = filter.and(IS_CONSTRUCTOR.negate());
-                    }
-
-                    filter = filter.and(staticOnly ? STATIC_ONLY : INSTANCE_ONLY);
-
-                    addElements(members, filter, smartFilter, paren, result);
-                    break;
-                }
-                case IDENTIFIER:
-                    if (isNewClass(tp)) {
-                        Function<Element, Iterable<? extends Element>> listEnclosed =
-                                el -> el.getKind() == ElementKind.PACKAGE ? Collections.singletonList(el)
-                                                                          : el.getEnclosedElements();
-                        Predicate<Element> filter = accessibility.and(IS_CONSTRUCTOR.or(IS_PACKAGE));
-                        NewClassTree newClassTree = (NewClassTree)tp.getParentPath().getLeaf();
-                        ExpressionTree enclosingExpression = newClassTree.getEnclosingExpression();
-                        if (enclosingExpression != null) { // expr.new IDENT|
-                            TypeMirror site = at.trees().getTypeMirror(new TreePath(tp, enclosingExpression));
-                            filter = filter.and(el -> el.getEnclosingElement().getKind() == ElementKind.CLASS && !el.getEnclosingElement().getModifiers().contains(Modifier.STATIC));
-                            addElements(membersOf(at, membersOf(at, site, false)), filter, smartFilter, result);
+                            smartFilter = IS_PACKAGE.negate().and(smartTypeFilter);
+                        } else if (isImport) {
+                            paren = NO_PAREN;
+                            if (!it.isStatic()) {
+                                filter = filter.and(IS_PACKAGE.or(IS_CLASS).or(IS_INTERFACE));
+                            }
                         } else {
-                            addScopeElements(at, scope, listEnclosed, filter, smartFilter, result);
+                            filter = filter.and(IS_CONSTRUCTOR.negate());
                         }
+
+                        filter = filter.and(staticOnly ? STATIC_ONLY : INSTANCE_ONLY);
+
+                        addElements(members, filter, smartFilter, paren, result);
                         break;
                     }
-                    if (isThrowsClause(tp)) {
-                        Predicate<Element> accept = accessibility.and(STATIC_ONLY)
-                                .and(IS_PACKAGE.or(IS_CLASS).or(IS_INTERFACE));
-                        addScopeElements(at, scope, IDENTITY, accept, IS_PACKAGE.negate().and(smartTypeFilter), result);
+                    case IDENTIFIER:
+                        if (isNewClass(tp)) {
+                            Function<Element, Iterable<? extends Element>> listEnclosed =
+                                    el -> el.getKind() == ElementKind.PACKAGE ? Collections.singletonList(el)
+                                                                              : el.getEnclosedElements();
+                            Predicate<Element> filter = accessibility.and(IS_CONSTRUCTOR.or(IS_PACKAGE));
+                            NewClassTree newClassTree = (NewClassTree)tp.getParentPath().getLeaf();
+                            ExpressionTree enclosingExpression = newClassTree.getEnclosingExpression();
+                            if (enclosingExpression != null) { // expr.new IDENT|
+                                TypeMirror site = at.trees().getTypeMirror(new TreePath(tp, enclosingExpression));
+                                filter = filter.and(el -> el.getEnclosingElement().getKind() == ElementKind.CLASS && !el.getEnclosingElement().getModifiers().contains(Modifier.STATIC));
+                                addElements(membersOf(at, membersOf(at, site, false)), filter, smartFilter, result);
+                            } else {
+                                addScopeElements(at, scope, listEnclosed, filter, smartFilter, result);
+                            }
+                            break;
+                        }
+                        if (isThrowsClause(tp)) {
+                            Predicate<Element> accept = accessibility.and(STATIC_ONLY)
+                                    .and(IS_PACKAGE.or(IS_CLASS).or(IS_INTERFACE));
+                            addScopeElements(at, scope, IDENTITY, accept, IS_PACKAGE.negate().and(smartTypeFilter), result);
+                            break;
+                        }
+                        ImportTree it = findImport(tp);
+                        if (it != null) {
+                            // the context of the identifier is an import, look for
+                            // package names that start with the identifier.
+                            // If and when Java allows imports from the default
+                            // package to the the default package which would allow
+                            // JShell to change to use the default package, and that
+                            // change is done, then this should use some variation
+                            // of membersOf(at, at.getElements().getPackageElement("").asType(), false)
+                            addElements(listPackages(at, ""),
+                                    it.isStatic()
+                                            ? STATIC_ONLY.and(accessibility)
+                                            : accessibility,
+                                    smartFilter, result);
+                        }
+                        break;
+                    case CLASS: {
+                        Predicate<Element> accept = accessibility.and(IS_TYPE);
+                        addScopeElements(at, scope, IDENTITY, accept, smartFilter, result);
+                        addElements(primitivesOrVoid(at), TRUE, smartFilter, result);
                         break;
                     }
-                    ImportTree it = findImport(tp);
-                    if (it != null) {
-                        // the context of the identifier is an import, look for
-                        // package names that start with the identifier.
-                        // If and when Java allows imports from the default
-                        // package to the the default package which would allow
-                        // JShell to change to use the default package, and that
-                        // change is done, then this should use some variation
-                        // of membersOf(at, at.getElements().getPackageElement("").asType(), false)
-                        addElements(listPackages(at, ""),
-                                it.isStatic()
-                                        ? STATIC_ONLY.and(accessibility)
-                                        : accessibility,
-                                smartFilter, result);
-                    }
-                    break;
-                case CLASS: {
-                    Predicate<Element> accept = accessibility.and(IS_TYPE);
-                    addScopeElements(at, scope, IDENTITY, accept, smartFilter, result);
-                    addElements(primitivesOrVoid(at), TRUE, smartFilter, result);
-                    break;
-                }
-                case BLOCK:
-                case EMPTY_STATEMENT:
-                case ERRONEOUS: {
-                    boolean staticOnly = ReplResolve.isStatic(((JavacScope)scope).getEnv());
-                    Predicate<Element> accept = accessibility.and(staticOnly ? STATIC_ONLY : TRUE);
-                    if (isClass(tp)) {
-                        ClassTree clazz = (ClassTree) tp.getParentPath().getLeaf();
-                        if (clazz.getExtendsClause() == tp.getLeaf()) {
-                            accept = accept.and(IS_TYPE);
-                            smartFilter = smartFilter.and(el -> el.getKind() == ElementKind.CLASS);
-                        } else {
-                            Predicate<Element> f = smartFilterFromList(at, tp, clazz.getImplementsClause(), tp.getLeaf());
+                    case BLOCK:
+                    case EMPTY_STATEMENT:
+                    case ERRONEOUS: {
+                        boolean staticOnly = ReplResolve.isStatic(((JavacScope)scope).getEnv());
+                        Predicate<Element> accept = accessibility.and(staticOnly ? STATIC_ONLY : TRUE);
+                        if (isClass(tp)) {
+                            ClassTree clazz = (ClassTree) tp.getParentPath().getLeaf();
+                            if (clazz.getExtendsClause() == tp.getLeaf()) {
+                                accept = accept.and(IS_TYPE);
+                                smartFilter = smartFilter.and(el -> el.getKind() == ElementKind.CLASS);
+                            } else {
+                                Predicate<Element> f = smartFilterFromList(at, tp, clazz.getImplementsClause(), tp.getLeaf());
+                                if (f != null) {
+                                    accept = accept.and(IS_TYPE);
+                                    smartFilter = f.and(el -> el.getKind() == ElementKind.INTERFACE);
+                                }
+                            }
+                        } else if (isTypeParameter(tp)) {
+                            TypeParameterTree tpt = (TypeParameterTree) tp.getParentPath().getLeaf();
+                            Predicate<Element> f = smartFilterFromList(at, tp, tpt.getBounds(), tp.getLeaf());
                             if (f != null) {
                                 accept = accept.and(IS_TYPE);
-                                smartFilter = f.and(el -> el.getKind() == ElementKind.INTERFACE);
+                                smartFilter = f;
+                                if (!tpt.getBounds().isEmpty() && tpt.getBounds().get(0) != tp.getLeaf()) {
+                                    smartFilter = smartFilter.and(el -> el.getKind() == ElementKind.INTERFACE);
+                                }
+                            }
+                        } else if (isVariable(tp)) {
+                            VariableTree var = (VariableTree) tp.getParentPath().getLeaf();
+                            if (var.getType() == tp.getLeaf()) {
+                                accept = accept.and(IS_TYPE);
                             }
                         }
-                    } else if (isTypeParameter(tp)) {
-                        TypeParameterTree tpt = (TypeParameterTree) tp.getParentPath().getLeaf();
-                        Predicate<Element> f = smartFilterFromList(at, tp, tpt.getBounds(), tp.getLeaf());
-                        if (f != null) {
-                            accept = accept.and(IS_TYPE);
-                            smartFilter = f;
-                            if (!tpt.getBounds().isEmpty() && tpt.getBounds().get(0) != tp.getLeaf()) {
-                                smartFilter = smartFilter.and(el -> el.getKind() == ElementKind.INTERFACE);
-                            }
-                        }
-                    } else if (isVariable(tp)) {
-                        VariableTree var = (VariableTree) tp.getParentPath().getLeaf();
-                        if (var.getType() == tp.getLeaf()) {
-                            accept = accept.and(IS_TYPE);
-                        }
-                    }
 
-                    addScopeElements(at, scope, IDENTITY, accept, smartFilter, result);
+                        addScopeElements(at, scope, IDENTITY, accept, smartFilter, result);
 
-                    Tree parent = tp.getParentPath().getLeaf();
-                    switch (parent.getKind()) {
-                        case VARIABLE:
-                            accept = ((VariableTree)parent).getType() == tp.getLeaf() ?
-                                    IS_VOID.negate() :
-                                    TRUE;
-                            break;
-                        case PARAMETERIZED_TYPE: // TODO: JEP 218: Generics over Primitive Types
-                        case TYPE_PARAMETER:
-                        case CLASS:
-                        case INTERFACE:
-                        case ENUM:
-                            accept = FALSE;
-                            break;
-                        default:
-                            accept = TRUE;
-                            break;
+                        Tree parent = tp.getParentPath().getLeaf();
+                        switch (parent.getKind()) {
+                            case VARIABLE:
+                                accept = ((VariableTree)parent).getType() == tp.getLeaf() ?
+                                        IS_VOID.negate() :
+                                        TRUE;
+                                break;
+                            case PARAMETERIZED_TYPE: // TODO: JEP 218: Generics over Primitive Types
+                            case TYPE_PARAMETER:
+                            case CLASS:
+                            case INTERFACE:
+                            case ENUM:
+                                accept = FALSE;
+                                break;
+                            default:
+                                accept = TRUE;
+                                break;
+                        }
+                        addElements(primitivesOrVoid(at), accept, smartFilter, result);
+                        break;
                     }
-                    addElements(primitivesOrVoid(at), accept, smartFilter, result);
-                    break;
                 }
             }
-        }
-        anchor[0] = cursor;
-        return result;
+            anchor[0] = cursor;
+            return result;
+        });
     }
 
     private static final Set<Kind> CLASS_KINDS = EnumSet.of(
@@ -1167,78 +1169,79 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             return Collections.emptyList();
 
         OuterWrap codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
-        AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap, keepParameterNames);
-        SourcePositions sp = at.trees().getSourcePositions();
-        CompilationUnitTree topLevel = at.firstCuTree();
-        TreePath tp = pathFor(topLevel, sp, codeWrap.snippetIndexToWrapIndex(cursor));
+        return proc.taskFactory.analyze(codeWrap, List.of(keepParameterNames), at -> {
+            SourcePositions sp = at.trees().getSourcePositions();
+            CompilationUnitTree topLevel = at.firstCuTree();
+            TreePath tp = pathFor(topLevel, sp, codeWrap.snippetIndexToWrapIndex(cursor));
 
-        if (tp == null)
-            return Collections.emptyList();
+            if (tp == null)
+                return Collections.emptyList();
 
-        TreePath prevPath = null;
-        while (tp != null && tp.getLeaf().getKind() != Kind.METHOD_INVOCATION &&
-               tp.getLeaf().getKind() != Kind.NEW_CLASS && tp.getLeaf().getKind() != Kind.IDENTIFIER &&
-               tp.getLeaf().getKind() != Kind.MEMBER_SELECT) {
-            prevPath = tp;
-            tp = tp.getParentPath();
-        }
+            TreePath prevPath = null;
+            while (tp != null && tp.getLeaf().getKind() != Kind.METHOD_INVOCATION &&
+                   tp.getLeaf().getKind() != Kind.NEW_CLASS && tp.getLeaf().getKind() != Kind.IDENTIFIER &&
+                   tp.getLeaf().getKind() != Kind.MEMBER_SELECT) {
+                prevPath = tp;
+                tp = tp.getParentPath();
+            }
 
-        if (tp == null)
-            return Collections.emptyList();
+            if (tp == null)
+                return Collections.emptyList();
 
-        Stream<Element> elements;
-        Iterable<Pair<ExecutableElement, ExecutableType>> candidates;
-        List<? extends ExpressionTree> arguments;
+            Stream<Element> elements;
+            Iterable<Pair<ExecutableElement, ExecutableType>> candidates;
+            List<? extends ExpressionTree> arguments;
 
-        if (tp.getLeaf().getKind() == Kind.METHOD_INVOCATION || tp.getLeaf().getKind() == Kind.NEW_CLASS) {
-            if (tp.getLeaf().getKind() == Kind.METHOD_INVOCATION) {
-                MethodInvocationTree mit = (MethodInvocationTree) tp.getLeaf();
-                candidates = methodCandidates(at, tp);
-                arguments = mit.getArguments();
+            if (tp.getLeaf().getKind() == Kind.METHOD_INVOCATION || tp.getLeaf().getKind() == Kind.NEW_CLASS) {
+                if (tp.getLeaf().getKind() == Kind.METHOD_INVOCATION) {
+                    MethodInvocationTree mit = (MethodInvocationTree) tp.getLeaf();
+                    candidates = methodCandidates(at, tp);
+                    arguments = mit.getArguments();
+                } else {
+                    NewClassTree nct = (NewClassTree) tp.getLeaf();
+                    candidates = newClassCandidates(at, tp);
+                    arguments = nct.getArguments();
+                }
+
+                if (!isEmptyArgumentsContext(arguments)) {
+                    List<TypeMirror> actuals = computeActualInvocationTypes(at, arguments, prevPath);
+                    List<TypeMirror> fullActuals = actuals != null ? actuals : Collections.emptyList();
+
+                    candidates =
+                            this.filterExecutableTypesByArguments(at, candidates, fullActuals)
+                                .stream()
+                                .filter(method -> parameterType(method.fst, method.snd, fullActuals.size(), true).findAny().isPresent())
+                                .collect(Collectors.toList());
+                }
+
+                elements = Util.stream(candidates).map(method -> method.fst);
+            } else if (tp.getLeaf().getKind() == Kind.IDENTIFIER || tp.getLeaf().getKind() == Kind.MEMBER_SELECT) {
+                Element el = at.trees().getElement(tp);
+
+                if (el == null ||
+                    el.asType().getKind() == TypeKind.ERROR ||
+                    (el.getKind() == ElementKind.PACKAGE && el.getEnclosedElements().isEmpty())) {
+                    //erroneous element:
+                    return Collections.emptyList();
+                }
+
+                elements = Stream.of(el);
             } else {
-                NewClassTree nct = (NewClassTree) tp.getLeaf();
-                candidates = newClassCandidates(at, tp);
-                arguments = nct.getArguments();
-            }
-
-            if (!isEmptyArgumentsContext(arguments)) {
-                List<TypeMirror> actuals = computeActualInvocationTypes(at, arguments, prevPath);
-                List<TypeMirror> fullActuals = actuals != null ? actuals : Collections.emptyList();
-
-                candidates =
-                        this.filterExecutableTypesByArguments(at, candidates, fullActuals)
-                            .stream()
-                            .filter(method -> parameterType(method.fst, method.snd, fullActuals.size(), true).findAny().isPresent())
-                            .collect(Collectors.toList());
-            }
-
-            elements = Util.stream(candidates).map(method -> method.fst);
-        } else if (tp.getLeaf().getKind() == Kind.IDENTIFIER || tp.getLeaf().getKind() == Kind.MEMBER_SELECT) {
-            Element el = at.trees().getElement(tp);
-
-            if (el == null ||
-                el.asType().getKind() == TypeKind.ERROR ||
-                (el.getKind() == ElementKind.PACKAGE && el.getEnclosedElements().isEmpty())) {
-                //erroneous element:
                 return Collections.emptyList();
             }
 
-            elements = Stream.of(el);
-        } else {
-            return Collections.emptyList();
-        }
+            List<Documentation> result = Collections.emptyList();
 
-        List<Documentation> result = Collections.emptyList();
+            try (JavadocHelper helper = JavadocHelper.create(at.task, findSources())) {
+                result = elements.map(el -> constructDocumentation(at, helper, el, computeJavadoc))
+                                 .filter(Objects::nonNull)
+                                 .collect(Collectors.toList());
+            } catch (IOException ex) {
+                proc.debug(ex, "JavadocHelper.close()");
+            }
 
-        try (JavadocHelper helper = JavadocHelper.create(at.task, findSources())) {
-            result = elements.map(el -> constructDocumentation(at, helper, el, computeJavadoc))
-                             .filter(Objects::nonNull)
-                             .collect(Collectors.toList());
-        } catch (IOException ex) {
-            proc.debug(ex, "JavadocHelper.close()");
-        }
-
-        return result;
+            return result;
+        });
     }
 
     private Documentation constructDocumentation(AnalyzeTask at, JavadocHelper helper, Element el, boolean computeJavadoc) {
@@ -1494,51 +1497,52 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     @Override
     public QualifiedNames listQualifiedNames(String code, int cursor) {
-        code = code.substring(0, cursor);
-        if (code.trim().isEmpty()) {
+        String codeFin = code.substring(0, cursor);
+        if (codeFin.trim().isEmpty()) {
             return new QualifiedNames(Collections.emptyList(), -1, true, false);
         }
         OuterWrap codeWrap;
-        switch (guessKind(code)) {
+        switch (guessKind(codeFin)) {
             case IMPORT:
                 return new QualifiedNames(Collections.emptyList(), -1, true, false);
             case METHOD:
-                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(code));
+                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(codeFin));
                 break;
             default:
-                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
+                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(codeFin));
                 break;
         }
-        AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap);
-        SourcePositions sp = at.trees().getSourcePositions();
-        CompilationUnitTree topLevel = at.firstCuTree();
-        TreePath tp = pathFor(topLevel, sp, codeWrap.snippetIndexToWrapIndex(code.length()));
-        if (tp.getLeaf().getKind() != Kind.IDENTIFIER) {
-            return new QualifiedNames(Collections.emptyList(), -1, true, false);
-        }
-        Scope scope = at.trees().getScope(tp);
-        TypeMirror type = at.trees().getTypeMirror(tp);
-        Element el = at.trees().getElement(tp);
+        return proc.taskFactory.analyze(codeWrap, at -> {
+            SourcePositions sp = at.trees().getSourcePositions();
+            CompilationUnitTree topLevel = at.firstCuTree();
+            TreePath tp = pathFor(topLevel, sp, codeWrap.snippetIndexToWrapIndex(codeFin.length()));
+            if (tp.getLeaf().getKind() != Kind.IDENTIFIER) {
+                return new QualifiedNames(Collections.emptyList(), -1, true, false);
+            }
+            Scope scope = at.trees().getScope(tp);
+            TypeMirror type = at.trees().getTypeMirror(tp);
+            Element el = at.trees().getElement(tp);
 
-        boolean erroneous = (type.getKind() == TypeKind.ERROR && el.getKind() == ElementKind.CLASS) ||
-                            (el.getKind() == ElementKind.PACKAGE && el.getEnclosedElements().isEmpty());
-        String simpleName = ((IdentifierTree) tp.getLeaf()).getName().toString();
-        boolean upToDate;
-        List<String> result;
+            boolean erroneous = (type.getKind() == TypeKind.ERROR && el.getKind() == ElementKind.CLASS) ||
+                                (el.getKind() == ElementKind.PACKAGE && el.getEnclosedElements().isEmpty());
+            String simpleName = ((IdentifierTree) tp.getLeaf()).getName().toString();
+            boolean upToDate;
+            List<String> result;
 
-        synchronized (currentIndexes) {
-            upToDate = classpathVersion == indexVersion;
-            result = currentIndexes.values()
-                                   .stream()
-                                   .flatMap(idx -> idx.classSimpleName2FQN.getOrDefault(simpleName,
-                                                                                        Collections.emptyList()).stream())
-                                   .distinct()
-                                   .filter(fqn -> isAccessible(at, scope, fqn))
-                                   .sorted()
-                                   .collect(Collectors.toList());
-        }
+            synchronized (currentIndexes) {
+                upToDate = classpathVersion == indexVersion;
+                result = currentIndexes.values()
+                                       .stream()
+                                       .flatMap(idx -> idx.classSimpleName2FQN.getOrDefault(simpleName,
+                                                                                            Collections.emptyList()).stream())
+                                       .distinct()
+                                       .filter(fqn -> isAccessible(at, scope, fqn))
+                                       .sorted()
+                                       .collect(Collectors.toList());
+            }
 
-        return new QualifiedNames(result, simpleName.length(), upToDate, !erroneous);
+            return new QualifiedNames(result, simpleName.length(), upToDate, !erroneous);
+        });
     }
 
     private boolean isAccessible(AnalyzeTask at, Scope scope, String fqn) {

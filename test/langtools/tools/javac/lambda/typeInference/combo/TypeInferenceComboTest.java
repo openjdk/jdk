@@ -281,14 +281,14 @@ public class TypeInferenceComboTest extends ComboInstance<TypeInferenceComboTest
 
     @Override
     public void doWork() throws IOException {
-        Result<?> res = newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate("Sam", sam_template, this::samClass)
                 .withSourceFromTemplate("Client", client_template, this::clientContext)
-                .analyze();
-
-        if (res.hasErrors() == checkTypeInference()) {
-            fail("Unexpected compilation output when compiling instance: " + res.compilationInfo());
-        }
+                .analyze(res -> {
+            if (res.hasErrors() == checkTypeInference()) {
+                fail("Unexpected compilation output when compiling instance: " + res.compilationInfo());
+            }
+        });
     }
 
     ComboParameter samClass(String parameterName) {

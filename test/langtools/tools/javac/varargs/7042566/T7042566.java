@@ -224,9 +224,9 @@ public class T7042566 extends ComboInstance<T7042566> {
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate(source_template, this::getMethodDecl)
-                .generate());
+                .generate(this::check);
     }
 
     ComboParameter getMethodDecl(String parameterName) {

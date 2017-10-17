@@ -100,13 +100,14 @@ public class BitWiseOperators extends ComboInstance<BitWiseOperators> {
 
     @Override
     public void doWork() throws IOException {
-        Result<?> res = newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate(template)
-                .analyze();
-        if (res.hasErrors() == OperandType.compatible(opTypes[0], opTypes[1])) {
-            fail("Unexpected behavior. Type1: " + opTypes[0] +
-                    "; type2: " + opTypes[1] +
-                    "; " + res.compilationInfo());
-        }
+                .analyze(res -> {
+            if (res.hasErrors() == OperandType.compatible(opTypes[0], opTypes[1])) {
+                fail("Unexpected behavior. Type1: " + opTypes[0] +
+                        "; type2: " + opTypes[1] +
+                        "; " + res.compilationInfo());
+            }
+        });
     }
 }

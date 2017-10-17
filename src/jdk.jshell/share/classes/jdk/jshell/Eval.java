@@ -177,40 +177,41 @@ class Eval {
         if (compileSource.length() == 0) {
             return Collections.emptyList();
         }
-        ParseTask pt = state.taskFactory.parse(compileSource);
-        List<? extends Tree> units = pt.units();
-        if (units.isEmpty()) {
-            return compileFailResult(pt, userSource, Kind.ERRONEOUS);
-        }
-        Tree unitTree = units.get(0);
-        if (pt.getDiagnostics().hasOtherThanNotStatementErrors()) {
-            return compileFailResult(pt, userSource, kindOfTree(unitTree));
-        }
+        return state.taskFactory.parse(compileSource, pt -> {
+            List<? extends Tree> units = pt.units();
+            if (units.isEmpty()) {
+                return compileFailResult(pt, userSource, Kind.ERRONEOUS);
+            }
+            Tree unitTree = units.get(0);
+            if (pt.getDiagnostics().hasOtherThanNotStatementErrors()) {
+                return compileFailResult(pt, userSource, kindOfTree(unitTree));
+            }
 
-        // Erase illegal/ignored modifiers
-        compileSource = new MaskCommentsAndModifiers(compileSource, true).cleared();
+            // Erase illegal/ignored modifiers
+            String compileSourceInt = new MaskCommentsAndModifiers(compileSource, true).cleared();
 
-        state.debug(DBG_GEN, "Kind: %s -- %s\n", unitTree.getKind(), unitTree);
-        switch (unitTree.getKind()) {
-            case IMPORT:
-                return processImport(userSource, compileSource);
-            case VARIABLE:
-                return processVariables(userSource, units, compileSource, pt);
-            case EXPRESSION_STATEMENT:
-                return processExpression(userSource, compileSource);
-            case CLASS:
-                return processClass(userSource, unitTree, compileSource, SubKind.CLASS_SUBKIND, pt);
-            case ENUM:
-                return processClass(userSource, unitTree, compileSource, SubKind.ENUM_SUBKIND, pt);
-            case ANNOTATION_TYPE:
-                return processClass(userSource, unitTree, compileSource, SubKind.ANNOTATION_TYPE_SUBKIND, pt);
-            case INTERFACE:
-                return processClass(userSource, unitTree, compileSource, SubKind.INTERFACE_SUBKIND, pt);
-            case METHOD:
-                return processMethod(userSource, unitTree, compileSource, pt);
-            default:
-                return processStatement(userSource, compileSource);
-        }
+            state.debug(DBG_GEN, "Kind: %s -- %s\n", unitTree.getKind(), unitTree);
+            switch (unitTree.getKind()) {
+                case IMPORT:
+                    return processImport(userSource, compileSourceInt);
+                case VARIABLE:
+                    return processVariables(userSource, units, compileSourceInt, pt);
+                case EXPRESSION_STATEMENT:
+                    return processExpression(userSource, compileSourceInt);
+                case CLASS:
+                    return processClass(userSource, unitTree, compileSourceInt, SubKind.CLASS_SUBKIND, pt);
+                case ENUM:
+                    return processClass(userSource, unitTree, compileSourceInt, SubKind.ENUM_SUBKIND, pt);
+                case ANNOTATION_TYPE:
+                    return processClass(userSource, unitTree, compileSourceInt, SubKind.ANNOTATION_TYPE_SUBKIND, pt);
+                case INTERFACE:
+                    return processClass(userSource, unitTree, compileSourceInt, SubKind.INTERFACE_SUBKIND, pt);
+                case METHOD:
+                    return processMethod(userSource, unitTree, compileSourceInt, pt);
+                default:
+                    return processStatement(userSource, compileSourceInt);
+            }
+        });
     }
 
     private List<Snippet> processImport(String userSource, String compileSource) {
@@ -295,9 +296,9 @@ class Eval {
                 Range rtype = dis.treeToRange(baseType);
                 typeWrap = Wrap.rangeWrap(compileSource, rtype);
             } else {
-                AnalyzeTask at = trialCompile(Wrap.methodWrap(compileSource));
-                if (at.hasErrors()) {
-                    return compileFailResult(at, userSource, kindOfTree(unitTree));
+                DiagList dl = trialCompile(Wrap.methodWrap(compileSource));
+                if (dl.hasErrors()) {
+                    return compileFailResult(dl, userSource, kindOfTree(unitTree));
                 }
                 Tree init = vt.getInitializer();
                 if (init != null) {
@@ -459,13 +460,13 @@ class Eval {
             guts = Wrap.methodWrap(compileSource);
             if (ei == null) {
                 // We got no type info, check for not a statement by trying
-                AnalyzeTask at = trialCompile(guts);
-                if (at.getDiagnostics().hasNotStatement()) {
+                DiagList dl = trialCompile(guts);
+                if (dl.hasNotStatement()) {
                     guts = Wrap.methodReturnWrap(compileSource);
-                    at = trialCompile(guts);
+                    dl = trialCompile(guts);
                 }
-                if (at.hasErrors()) {
-                    return compileFailResult(at, userSource, Kind.EXPRESSION);
+                if (dl.hasErrors()) {
+                    return compileFailResult(dl, userSource, Kind.EXPRESSION);
                 }
             }
             snip = new StatementSnippet(state.keyMap.keyForStatement(), userSource, guts);
@@ -496,32 +497,32 @@ class Eval {
     private List<Snippet> processStatement(String userSource, String compileSource) {
         Wrap guts = Wrap.methodWrap(compileSource);
         // Check for unreachable by trying
-        AnalyzeTask at = trialCompile(guts);
-        if (at.hasErrors()) {
-            if (at.getDiagnostics().hasUnreachableError()) {
+        DiagList dl = trialCompile(guts);
+        if (dl.hasErrors()) {
+            if (dl.hasUnreachableError()) {
                 guts = Wrap.methodUnreachableSemiWrap(compileSource);
-                at = trialCompile(guts);
-                if (at.hasErrors()) {
-                    if (at.getDiagnostics().hasUnreachableError()) {
+                dl = trialCompile(guts);
+                if (dl.hasErrors()) {
+                    if (dl.hasUnreachableError()) {
                         // Without ending semicolon
                         guts = Wrap.methodUnreachableWrap(compileSource);
-                        at = trialCompile(guts);
+                        dl = trialCompile(guts);
                     }
-                    if (at.hasErrors()) {
-                        return compileFailResult(at, userSource, Kind.STATEMENT);
+                    if (dl.hasErrors()) {
+                        return compileFailResult(dl, userSource, Kind.STATEMENT);
                     }
                 }
             } else {
-                return compileFailResult(at, userSource, Kind.STATEMENT);
+                return compileFailResult(dl, userSource, Kind.STATEMENT);
             }
         }
         Snippet snip = new StatementSnippet(state.keyMap.keyForStatement(), userSource, guts);
         return singletonList(snip);
     }
 
-    private AnalyzeTask trialCompile(Wrap guts) {
+    private DiagList trialCompile(Wrap guts) {
         OuterWrap outer = state.outerMap.wrapInTrialClass(guts);
-        return state.taskFactory.new AnalyzeTask(outer);
+        return state.taskFactory.analyze(outer, AnalyzeTask::getDiagnostics);
     }
 
     private List<Snippet> processMethod(String userSource, Tree unitTree, String compileSource, ParseTask pt) {
@@ -751,19 +752,22 @@ class Eval {
 
             ins.stream().forEach(Unit::initialize);
             ins.stream().forEach(u -> u.setWrap(ins, ins));
-            AnalyzeTask at = state.taskFactory.new AnalyzeTask(outerWrapSet(ins));
-            ins.stream().forEach(u -> u.setDiagnostics(at));
+            state.taskFactory.analyze(outerWrapSet(ins), at -> {
+                ins.stream().forEach(u -> u.setDiagnostics(at));
 
-            // corral any Snippets that need it
-            AnalyzeTask cat;
-            if (ins.stream().anyMatch(u -> u.corralIfNeeded(ins))) {
-                // if any were corralled, re-analyze everything
-                cat = state.taskFactory.new AnalyzeTask(outerWrapSet(ins));
-                ins.stream().forEach(u -> u.setCorralledDiagnostics(cat));
-            } else {
-                cat = at;
-            }
-            ins.stream().forEach(u -> u.setStatus(cat));
+                // corral any Snippets that need it
+                if (ins.stream().anyMatch(u -> u.corralIfNeeded(ins))) {
+                    // if any were corralled, re-analyze everything
+                    state.taskFactory.analyze(outerWrapSet(ins), cat -> {
+                        ins.stream().forEach(u -> u.setCorralledDiagnostics(cat));
+                        ins.stream().forEach(u -> u.setStatus(cat));
+                        return null;
+                    });
+                } else {
+                    ins.stream().forEach(u -> u.setStatus(at));
+                }
+                return null;
+            });
             // compile and load the legit snippets
             boolean success;
             while (true) {
@@ -780,37 +784,45 @@ class Eval {
                     legit.stream().forEach(u -> u.setWrap(ins, legit));
 
                     // generate class files for those capable
-                    CompileTask ct = state.taskFactory.new CompileTask(outerWrapSet(legit));
-                    if (!ct.compile()) {
-                        // oy! compile failed because of recursive new unresolved
-                        if (legit.stream()
-                                .filter(u -> u.smashingErrorDiagnostics(ct))
-                                .count() > 0) {
-                            // try again, with the erroreous removed
-                            continue;
-                        } else {
-                            state.debug(DBG_GEN, "Should never happen error-less failure - %s\n",
-                                    legit);
+                    Result res = state.taskFactory.compile(outerWrapSet(legit), ct -> {
+                        if (!ct.compile()) {
+                            // oy! compile failed because of recursive new unresolved
+                            if (legit.stream()
+                                    .filter(u -> u.smashingErrorDiagnostics(ct))
+                                    .count() > 0) {
+                                // try again, with the erroreous removed
+                                return Result.CONTINUE;
+                            } else {
+                                state.debug(DBG_GEN, "Should never happen error-less failure - %s\n",
+                                        legit);
+                            }
                         }
+
+                        // load all new classes
+                        load(legit.stream()
+                                .flatMap(u -> u.classesToLoad(ct.classList(u.snippet().outerWrap())))
+                                .collect(toSet()));
+                        // attempt to redefine the remaining classes
+                        List<Unit> toReplace = legit.stream()
+                                .filter(u -> !u.doRedefines())
+                                .collect(toList());
+
+                        // prevent alternating redefine/replace cyclic dependency
+                        // loop by replacing all that have been replaced
+                        if (!toReplace.isEmpty()) {
+                            replaced.addAll(toReplace);
+                            replaced.stream().forEach(Unit::markForReplacement);
+                        }
+
+                        return toReplace.isEmpty() ? Result.SUCESS : Result.FAILURE;
+                    });
+
+                    switch (res) {
+                        case CONTINUE: continue;
+                        case SUCESS: success = true; break;
+                        default:
+                        case FAILURE: success = false; break;
                     }
-
-                    // load all new classes
-                    load(legit.stream()
-                            .flatMap(u -> u.classesToLoad(ct.classList(u.snippet().outerWrap())))
-                            .collect(toSet()));
-                    // attempt to redefine the remaining classes
-                    List<Unit> toReplace = legit.stream()
-                            .filter(u -> !u.doRedefines())
-                            .collect(toList());
-
-                    // prevent alternating redefine/replace cyclic dependency
-                    // loop by replacing all that have been replaced
-                    if (!toReplace.isEmpty()) {
-                        replaced.addAll(toReplace);
-                        replaced.stream().forEach(Unit::markForReplacement);
-                    }
-
-                    success = toReplace.isEmpty();
                 }
                 break;
             }
@@ -830,6 +842,8 @@ class Eval {
             }
         }
     }
+    //where:
+        enum Result {SUCESS, FAILURE, CONTINUE}
 
     /**
      * If there are classes to load, loads by calling the execution engine.
@@ -893,6 +907,8 @@ class Eval {
 
             final boolean fatal;
             final String message;
+            long start;
+            long end;
 
             ModifierDiagnostic(List<Modifier> list, boolean fatal) {
                 this.fatal = fatal;
@@ -910,6 +926,8 @@ class Eval {
                             ? "jshell.diag.modifier.single.fatal"
                             : "jshell.diag.modifier.single.ignore";
                 this.message = state.messageFormat(key, sb.toString());
+                start = dis.getStartPosition(modtree);
+                end = dis.getEndPosition(modtree);
             }
 
             @Override
@@ -919,17 +937,17 @@ class Eval {
 
             @Override
             public long getPosition() {
-                return dis.getStartPosition(modtree);
+                return start;
             }
 
             @Override
             public long getStartPosition() {
-                return dis.getStartPosition(modtree);
+                return start;
             }
 
             @Override
             public long getEndPosition() {
-                return dis.getEndPosition(modtree);
+                return end;
             }
 
             @Override
