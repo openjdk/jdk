@@ -1842,6 +1842,14 @@ void G1CollectedHeap::stop() {
   }
 }
 
+void G1CollectedHeap::safepoint_synchronize_begin() {
+  SuspendibleThreadSet::synchronize();
+}
+
+void G1CollectedHeap::safepoint_synchronize_end() {
+  SuspendibleThreadSet::desynchronize();
+}
+
 size_t G1CollectedHeap::conservative_max_heap_alignment() {
   return HeapRegion::max_region_size();
 }

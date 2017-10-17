@@ -79,6 +79,8 @@ public:
   }
 
   void stop();
+  void safepoint_synchronize_begin();
+  void safepoint_synchronize_end();
 
   // If "young_gen_as_roots" is false, younger generations are
   // not scanned as roots; in this case, the caller must be arranging to

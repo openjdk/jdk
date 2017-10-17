@@ -221,6 +221,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Stop any onging concurrent work and prepare for exit.
   virtual void stop() {}
 
+  // Stop and resume concurrent GC threads interfering with safepoint operations
+  virtual void safepoint_synchronize_begin() {}
+  virtual void safepoint_synchronize_end() {}
+
   void initialize_reserved_region(HeapWord *start, HeapWord *end);
   MemRegion reserved_region() const { return _reserved; }
   address base() const { return (address)reserved_region().start(); }
