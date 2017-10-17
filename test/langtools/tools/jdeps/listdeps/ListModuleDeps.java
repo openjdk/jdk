@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8167057
- * @summary Tests --list-deps and --list-reduced-deps options
+ * @summary Tests --list-deps, --list-reduced-deps, --print-module-deps options
  * @modules java.logging
  *          java.xml
  *          jdk.compiler
@@ -38,6 +38,7 @@
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
@@ -139,8 +140,7 @@ public class ListModuleDeps {
                                 "java.logging",
                                 "java.sql",
                                 "java.xml/jdk.xml.internal",
-                                "jdk.unsupported",
-                                "unnamed module: lib"
+                                "jdk.unsupported"
                             }
             },
 
@@ -153,8 +153,7 @@ public class ListModuleDeps {
                                 "java.base",
                                 "java.logging",
                                 "java.sql",
-                                "java.xml",
-                                "unnamed module: lib"
+                                "java.xml"
                             }
             },
 
@@ -166,7 +165,7 @@ public class ListModuleDeps {
 
             { UNSAFE_CLASS, new String[] {
                                 "java.base/jdk.internal.misc",
-                                "jdk.unsupported",
+                                "jdk.unsupported"
                             }
             },
         };
@@ -182,8 +181,7 @@ public class ListModuleDeps {
                                 "java.base/sun.security.util",
                                 "java.sql",
                                 "java.xml/jdk.xml.internal",
-                                "jdk.unsupported",
-                                "unnamed module: lib"
+                                "jdk.unsupported"
                             }
             },
 
@@ -193,8 +191,8 @@ public class ListModuleDeps {
             },
 
             { FOO_CLASS,    new String[] {
-                                "java.sql",
-                                "unnamed module: lib"
+                                "java.base",
+                                "java.sql"
                             }
             },
 
@@ -206,10 +204,36 @@ public class ListModuleDeps {
 
             { UNSAFE_CLASS, new String[] {
                                 "java.base/jdk.internal.misc",
-                                "jdk.unsupported",
+                                "jdk.unsupported"
                             }
             },
         };
     }
 
+    @Test(dataProvider = "moduledeps")
+    public void testPrintModuleDeps(Path classes, String expected) {
+        JdepsRunner jdeps = JdepsRunner.run(
+            "--class-path", LIB_DIR.toString(),
+            "--print-module-deps", classes.toString()
+        );
+        String output = Arrays.stream(jdeps.output())
+            .map(s -> s.trim())
+            .collect(Collectors.joining(","));
+        assertEquals(output, expected);
+    }
+
+
+    @DataProvider(name = "moduledeps")
+    public Object[][] moduledeps() {
+        Path barClass = CLASSES_DIR.resolve("z").resolve("Bar.class");
+
+        return new Object[][] {
+            // java.xml is an implied reads edge from java.sql
+            { CLASSES_DIR,  "java.base,java.sql,jdk.unsupported"},
+            { HI_CLASS,     "java.base"},
+            { FOO_CLASS,    "java.base,java.sql"},
+            { BAR_CLASS,    "java.base,java.xml"},
+            { UNSAFE_CLASS, "java.base,jdk.unsupported"},
+        };
+    }
 }
