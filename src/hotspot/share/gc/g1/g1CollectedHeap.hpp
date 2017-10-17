@@ -968,6 +968,8 @@ public:
   jint initialize();
 
   virtual void stop();
+  virtual void safepoint_synchronize_begin();
+  virtual void safepoint_synchronize_end();
 
   // Return the (conservative) maximum heap alignment for any G1 heap
   static size_t conservative_max_heap_alignment();

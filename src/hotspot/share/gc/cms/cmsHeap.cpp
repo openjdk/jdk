@@ -134,6 +134,14 @@ void CMSHeap::stop() {
   ConcurrentMarkSweepThread::cmst()->stop();
 }
 
+void CMSHeap::safepoint_synchronize_begin() {
+  ConcurrentMarkSweepThread::synchronize(false);
+}
+
+void CMSHeap::safepoint_synchronize_end() {
+  ConcurrentMarkSweepThread::desynchronize(false);
+}
+
 void CMSHeap::cms_process_roots(StrongRootsScope* scope,
                                 bool young_gen_as_roots,
                                 ScanningOption so,
