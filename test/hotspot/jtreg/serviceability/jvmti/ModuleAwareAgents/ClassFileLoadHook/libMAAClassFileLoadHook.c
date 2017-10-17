@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiEventCallbacks callbacks;
     jvmtiError err;
 
+    printf("agent options: %s\n", options);
     if (options != NULL) {
         if (strstr(options, "with_early_vmstart") != NULL) {
             with_early_vm_start_capability = JNI_TRUE;
@@ -205,9 +206,9 @@ Java_MAAClassFileLoadHook_check(JNIEnv *env, jclass cls) {
     }
 
     /*
-     * Expecting that we always get ClassFileLoadHook events in the VM Start phase.
+     * Expecting ClassFileLoadHook events in the VM Start phase if early_vm_start is enabled.
      */
-    if (cflh_events_vm_start_count == 0) {
+    if (with_early_vm_start_capability == JNI_TRUE && cflh_events_vm_start_count == 0) {
         throw_exc(env, "Didn't get ClassFileLoadHook events in start phase!\n");
         return FAILED;
     }
