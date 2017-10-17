@@ -54,28 +54,13 @@ inline T OrderAccess::load_acquire(const volatile T* p) {
   return LoadImpl<T, PlatformOrderedLoad<sizeof(T), X_ACQUIRE> >()(p);
 }
 
-inline intptr_t OrderAccess::load_ptr_acquire(const volatile intptr_t*   p) {
-  return load_acquire(p);
-}
-
-inline void*    OrderAccess::load_ptr_acquire(const volatile void*       p) {
-  return load_acquire(static_cast<void* const volatile *>(p));
-}
-
 template <typename T, typename D>
 inline void OrderAccess::release_store(volatile D* p, T v) {
   StoreImpl<T, D, PlatformOrderedStore<sizeof(D), RELEASE_X> >()(v, p);
 }
 
-inline void     OrderAccess::release_store_ptr(volatile intptr_t* p, intptr_t v) { release_store(p, v); }
-inline void     OrderAccess::release_store_ptr(volatile void*     p, void*    v) { release_store(static_cast<void* volatile*>(p), v); }
-
 template <typename T, typename D>
 inline void OrderAccess::release_store_fence(volatile D* p, T v) {
   StoreImpl<T, D, PlatformOrderedStore<sizeof(D), RELEASE_X_FENCE> >()(v, p);
 }
-
-inline void     OrderAccess::release_store_ptr_fence(volatile intptr_t* p, intptr_t v) { release_store_fence(p, v); }
-inline void     OrderAccess::release_store_ptr_fence(volatile void*     p, void*    v) { release_store_fence(static_cast<void* volatile*>(p), v); }
-
 #endif // SHARE_VM_RUNTIME_ORDERACCESS_INLINE_HPP

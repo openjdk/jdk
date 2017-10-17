@@ -84,6 +84,7 @@
 #include "utilities/preserveException.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/cms/cmsCollectorPolicy.hpp"
+#include "gc/cms/cmsHeap.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
@@ -536,7 +537,7 @@ bool Universe::has_reference_pending_list() {
 
 oop Universe::swap_reference_pending_list(oop list) {
   assert_pll_locked(is_locked);
-  return (oop)Atomic::xchg_ptr(list, &_reference_pending_list);
+  return Atomic::xchg(list, &_reference_pending_list);
 }
 
 #undef assert_pll_locked
@@ -758,7 +759,7 @@ CollectedHeap* Universe::create_heap() {
   } else if (UseG1GC) {
     return Universe::create_heap_with_policy<G1CollectedHeap, G1CollectorPolicy>();
   } else if (UseConcMarkSweepGC) {
-    return Universe::create_heap_with_policy<GenCollectedHeap, ConcurrentMarkSweepPolicy>();
+    return Universe::create_heap_with_policy<CMSHeap, ConcurrentMarkSweepPolicy>();
 #endif
   } else if (UseSerialGC) {
     return Universe::create_heap_with_policy<GenCollectedHeap, MarkSweepPolicy>();

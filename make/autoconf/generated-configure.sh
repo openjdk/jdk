@@ -1134,7 +1134,6 @@ with_toolchain_path
 with_extra_path
 with_sdk_name
 with_conf_name
-with_output_base_dir
 with_output_sync
 with_default_make_target
 enable_headless_only
@@ -2043,7 +2042,6 @@ Optional Packages:
   --with-sdk-name         use the platform SDK of the given name. [macosx]
   --with-conf-name        use this as the name of the configuration [generated
                           from important configuration options]
-  --with-output-base-dir  override the default output base directory [./build]
   --with-output-sync      set make output sync type if supported by make.
                           [recurse]
   --with-default-make-target
@@ -5117,7 +5115,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1506397140
+DATE_WHEN_GENERATED=1508136203
 
 ###############################################################################
 #
@@ -17554,18 +17552,10 @@ if test "${with_conf_name+set}" = set; then :
 fi
 
 
-# Check whether --with-output-base-dir was given.
-if test "${with_output_base_dir+set}" = set; then :
-  withval=$with_output_base_dir;  OUTPUT_BASE=${with_output_base_dir}
-else
-   OUTPUT_BASE="$TOPDIR/build"
-fi
-
-
   # Test from where we are running configure, in or outside of src root.
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking where to store configuration" >&5
 $as_echo_n "checking where to store configuration... " >&6; }
-  if test "x$CURDIR" = "x$TOPDIR" || test "x$CURDIR" = "x$TOPDIR/common" \
+  if test "x$CURDIR" = "x$TOPDIR" || test "x$CURDIR" = "x$CUSTOM_ROOT" \
       || test "x$CURDIR" = "x$TOPDIR/make/autoconf" \
       || test "x$CURDIR" = "x$TOPDIR/make" ; then
     # We are running configure from the src root.
@@ -17578,7 +17568,12 @@ $as_echo "in default location" >&6; }
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: in build directory with custom name" >&5
 $as_echo "in build directory with custom name" >&6; }
     fi
-    OUTPUTDIR="${OUTPUT_BASE}/${CONF_NAME}"
+
+    if test "x$CUSTOM_ROOT" != x; then
+      OUTPUTDIR="${CUSTOM_ROOT}/build/${CONF_NAME}"
+    else
+      OUTPUTDIR="${TOPDIR}/build/${CONF_NAME}"
+    fi
     $MKDIR -p "$OUTPUTDIR"
     if test ! -d "$OUTPUTDIR"; then
       as_fn_error $? "Could not create build directory $OUTPUTDIR" "$LINENO" 5
@@ -31482,6 +31477,45 @@ $as_echo "no" >&6; }
 $as_echo_n "checking if Boot JDK is 32 or 64 bits... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK_BITS" >&5
 $as_echo "$BOOT_JDK_BITS" >&6; }
+
+  # Try to enable CDS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for local Boot JDK Class Data Sharing (CDS)" >&5
+$as_echo_n "checking for local Boot JDK Class Data Sharing (CDS)... " >&6; }
+  BOOT_JDK_CDS_ARCHIVE=$CONFIGURESUPPORT_OUTPUTDIR/classes.jsa
+
+  $ECHO "Check if jvm arg is ok: -XX:+UnlockDiagnosticVMOptions -XX:-VerifySharedSpaces -XX:SharedArchiveFile=$BOOT_JDK_CDS_ARCHIVE" >&5
+  $ECHO "Command: $JAVA -XX:+UnlockDiagnosticVMOptions -XX:-VerifySharedSpaces -XX:SharedArchiveFile=$BOOT_JDK_CDS_ARCHIVE -version" >&5
+  OUTPUT=`$JAVA -XX:+UnlockDiagnosticVMOptions -XX:-VerifySharedSpaces -XX:SharedArchiveFile=$BOOT_JDK_CDS_ARCHIVE -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | $GREP -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | $GREP " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_cds_args="$boot_jdk_cds_args -XX:+UnlockDiagnosticVMOptions -XX:-VerifySharedSpaces -XX:SharedArchiveFile=$BOOT_JDK_CDS_ARCHIVE"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  if test "x$boot_jdk_cds_args" != x; then
+    # Try creating a CDS archive
+    "$JAVA" $boot_jdk_cds_args -Xshare:dump > /dev/null 2>&1
+    if test $? -eq 0; then
+      BOOTJDK_USE_LOCAL_CDS=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, created" >&5
+$as_echo "yes, created" >&6; }
+    else
+      # Generation failed, don't use CDS.
+      BOOTJDK_USE_LOCAL_CDS=false
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, creation failed" >&5
+$as_echo "no, creation failed" >&6; }
+    fi
+  else
+    BOOTJDK_USE_LOCAL_CDS=false
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, -XX:SharedArchiveFile not supported" >&5
+$as_echo "no, -XX:SharedArchiveFile not supported" >&6; }
+  fi
 
 
 
@@ -66232,6 +66266,42 @@ $as_echo_n "checking flags for boot jdk java command ... " >&6; }
   fi
 
 
+  if test "x$BOOTJDK_USE_LOCAL_CDS" = xtrue; then
+    # Use our own CDS archive
+
+  $ECHO "Check if jvm arg is ok: $boot_jdk_cds_args -Xshare:auto" >&5
+  $ECHO "Command: $JAVA $boot_jdk_cds_args -Xshare:auto -version" >&5
+  OUTPUT=`$JAVA $boot_jdk_cds_args -Xshare:auto -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | $GREP -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | $GREP " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs="$boot_jdk_jvmargs $boot_jdk_cds_args -Xshare:auto"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+  else
+    # Otherwise optimistically use the system-wide one, if one is present
+
+  $ECHO "Check if jvm arg is ok: -Xshare:auto" >&5
+  $ECHO "Command: $JAVA -Xshare:auto -version" >&5
+  OUTPUT=`$JAVA -Xshare:auto -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | $GREP -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | $GREP " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs="$boot_jdk_jvmargs -Xshare:auto"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+  fi
+
   # Apply user provided options.
 
   $ECHO "Check if jvm arg is ok: $with_boot_jdk_jvmargs" >&5
@@ -66254,7 +66324,6 @@ $as_echo "$boot_jdk_jvmargs" >&6; }
 
   # For now, general JAVA_FLAGS are the same as the boot jdk jvmargs
   JAVA_FLAGS=$boot_jdk_jvmargs
-
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command for big workloads" >&5

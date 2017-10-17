@@ -219,7 +219,7 @@ void os::initialize_thread(Thread* thr) {
 // Atomics and Stub Functions
 
 typedef jint      xchg_func_t            (jint,     volatile jint*);
-typedef intptr_t  xchg_ptr_func_t        (intptr_t, volatile intptr_t*);
+typedef intptr_t  xchg_long_func_t       (jlong,    volatile jlong*);
 typedef jint      cmpxchg_func_t         (jint,     volatile jint*,  jint);
 typedef jbyte     cmpxchg_byte_func_t    (jbyte,    volatile jbyte*, jbyte);
 typedef jlong     cmpxchg_long_func_t    (jlong,    volatile jlong*, jlong);
@@ -243,12 +243,12 @@ jint os::atomic_xchg_bootstrap(jint exchange_value, volatile jint* dest) {
   return old_value;
 }
 
-intptr_t os::atomic_xchg_ptr_bootstrap(intptr_t exchange_value, volatile intptr_t* dest) {
+intptr_t os::atomic_xchg_long_bootstrap(jlong exchange_value, volatile jlong* dest) {
   // try to use the stub:
-  xchg_ptr_func_t* func = CAST_TO_FN_PTR(xchg_ptr_func_t*, StubRoutines::atomic_xchg_ptr_entry());
+  xchg_long_func_t* func = CAST_TO_FN_PTR(xchg_long_func_t*, StubRoutines::atomic_xchg_long_entry());
 
   if (func != NULL) {
-    os::atomic_xchg_ptr_func = func;
+    os::atomic_xchg_long_func = func;
     return (*func)(exchange_value, dest);
   }
   assert(Threads::number_of_threads() == 0, "for bootstrap only");
@@ -338,7 +338,7 @@ intptr_t os::atomic_add_ptr_bootstrap(intptr_t add_value, volatile intptr_t* des
 }
 
 xchg_func_t*         os::atomic_xchg_func         = os::atomic_xchg_bootstrap;
-xchg_ptr_func_t*     os::atomic_xchg_ptr_func     = os::atomic_xchg_ptr_bootstrap;
+xchg_long_func_t*    os::atomic_xchg_long_func    = os::atomic_xchg_long_bootstrap;
 cmpxchg_func_t*      os::atomic_cmpxchg_func      = os::atomic_cmpxchg_bootstrap;
 cmpxchg_byte_func_t* os::atomic_cmpxchg_byte_func = os::atomic_cmpxchg_byte_bootstrap;
 add_func_t*          os::atomic_add_func          = os::atomic_add_bootstrap;

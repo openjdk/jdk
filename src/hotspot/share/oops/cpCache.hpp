@@ -136,7 +136,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 
  private:
   volatile intx     _indices;  // constant pool index & rewrite bytecodes
-  volatile Metadata*   _f1;       // entry specific metadata field
+  Metadata* volatile   _f1;       // entry specific metadata field
   volatile intx        _f2;       // entry specific int/metadata field
   volatile intx     _flags;    // flags
 
@@ -144,7 +144,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   void set_bytecode_1(Bytecodes::Code code);
   void set_bytecode_2(Bytecodes::Code code);
   void set_f1(Metadata* f1) {
-    Metadata* existing_f1 = (Metadata*)_f1; // read once
+    Metadata* existing_f1 = _f1; // read once
     assert(existing_f1 == NULL || existing_f1 == f1, "illegal field change");
     _f1 = f1;
   }
@@ -160,7 +160,6 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   }
   int make_flags(TosState state, int option_bits, int field_index_or_method_params);
   void set_flags(intx flags)                     { _flags = flags; }
-  bool init_flags_atomic(intx flags);
   void set_field_flags(TosState field_type, int option_bits, int field_index) {
     assert((field_index & field_index_mask) == field_index, "field_index in range");
     set_flags(make_flags(field_type, option_bits | (1 << is_field_entry_shift), field_index));
@@ -168,10 +167,6 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   void set_method_flags(TosState return_type, int option_bits, int method_params) {
     assert((method_params & parameter_size_mask) == method_params, "method_params in range");
     set_flags(make_flags(return_type, option_bits, method_params));
-  }
-  bool init_method_flags_atomic(TosState return_type, int option_bits, int method_params) {
-    assert((method_params & parameter_size_mask) == method_params, "method_params in range");
-    return init_flags_atomic(make_flags(return_type, option_bits, method_params));
   }
 
  public:
@@ -332,11 +327,11 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 
   // Accessors
   int indices() const                            { return _indices; }
-  int indices_ord() const                        { return (intx)OrderAccess::load_ptr_acquire(&_indices); }
+  int indices_ord() const                        { return OrderAccess::load_acquire(&_indices); }
   int constant_pool_index() const                { return (indices() & cp_index_mask); }
   Bytecodes::Code bytecode_1() const             { return Bytecodes::cast((indices_ord() >> bytecode_1_shift) & bytecode_1_mask); }
   Bytecodes::Code bytecode_2() const             { return Bytecodes::cast((indices_ord() >> bytecode_2_shift) & bytecode_2_mask); }
-  Metadata* f1_ord() const                       { return (Metadata *)OrderAccess::load_ptr_acquire(&_f1); }
+  Metadata* f1_ord() const                       { return (Metadata *)OrderAccess::load_acquire(&_f1); }
   Method*   f1_as_method() const                 { Metadata* f1 = f1_ord(); assert(f1 == NULL || f1->is_method(), ""); return (Method*)f1; }
   Klass*    f1_as_klass() const                  { Metadata* f1 = f1_ord(); assert(f1 == NULL || f1->is_klass(), ""); return (Klass*)f1; }
   // Use the accessor f1() to acquire _f1's value. This is needed for

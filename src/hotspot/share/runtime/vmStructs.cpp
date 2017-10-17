@@ -61,6 +61,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/heap.hpp"
 #include "memory/metachunk.hpp"
+#include "memory/padded.hpp"
 #include "memory/referenceType.hpp"
 #include "memory/universe.hpp"
 #include "memory/virtualspace.hpp"
@@ -197,6 +198,8 @@ typedef Hashtable<InstanceKlass*, mtClass>       KlassHashtable;
 typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
 typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
+
+typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
 
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
@@ -359,7 +362,7 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   /***********************/                                                                                                          \
                                                                                                                                      \
   volatile_nonstatic_field(ConstantPoolCacheEntry,      _indices,                             intx)                                  \
-  nonstatic_field(ConstantPoolCacheEntry,               _f1,                                  volatile Metadata*)                    \
+  volatile_nonstatic_field(ConstantPoolCacheEntry,      _f1,                                  Metadata*)                             \
   volatile_nonstatic_field(ConstantPoolCacheEntry,      _f2,                                  intx)                                  \
   volatile_nonstatic_field(ConstantPoolCacheEntry,      _flags,                               intx)                                  \
                                                                                                                                      \
@@ -1052,7 +1055,7 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   volatile_nonstatic_field(BasicLock,          _displaced_header,                             markOop)                               \
   nonstatic_field(BasicObjectLock,             _lock,                                         BasicLock)                             \
   nonstatic_field(BasicObjectLock,             _obj,                                          oop)                                   \
-  static_ptr_volatile_field(ObjectSynchronizer, gBlockList,                                   ObjectMonitor*)                        \
+  static_ptr_volatile_field(ObjectSynchronizer, gBlockList,                                   PaddedObjectMonitor*)                  \
                                                                                                                                      \
   /*********************/                                                                                                            \
   /* Matcher (C2 only) */                                                                                                            \
@@ -1680,6 +1683,7 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   /************/                                                          \
                                                                           \
   declare_toplevel_type(ObjectMonitor)                                    \
+  declare_toplevel_type(PaddedObjectMonitor)                              \
   declare_toplevel_type(ObjectSynchronizer)                               \
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
@@ -2154,6 +2158,7 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   declare_toplevel_type(nmethod*)                                         \
   COMPILER2_PRESENT(declare_unsigned_integer_type(node_idx_t))            \
   declare_toplevel_type(ObjectMonitor*)                                   \
+  declare_toplevel_type(PaddedObjectMonitor*)                             \
   declare_toplevel_type(oop*)                                             \
   declare_toplevel_type(OopMap**)                                         \
   declare_toplevel_type(OopMapCache*)                                     \

@@ -734,8 +734,11 @@ void DefNewGeneration::remove_forwarding_pointers() {
   RemoveForwardedPointerClosure rspc;
   eden()->object_iterate(&rspc);
   from()->object_iterate(&rspc);
+  restore_preserved_marks();
+}
 
-  SharedRestorePreservedMarksTaskExecutor task_executor(GenCollectedHeap::heap()->workers());
+void DefNewGeneration::restore_preserved_marks() {
+  SharedRestorePreservedMarksTaskExecutor task_executor(NULL);
   _preserved_marks_set.restore(&task_executor);
 }
 

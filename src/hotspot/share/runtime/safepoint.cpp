@@ -63,10 +63,6 @@
 #include "trace/traceMacros.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/cms/concurrentMarkSweepThread.hpp"
-#include "gc/g1/suspendibleThreadSet.hpp"
-#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
 #endif
@@ -94,15 +90,7 @@ void SafepointSynchronize::begin() {
     _ts_of_current_safepoint = tty->time_stamp().seconds();
   }
 
-#if INCLUDE_ALL_GCS
-  if (UseConcMarkSweepGC) {
-    // In the future we should investigate whether CMS can use the
-    // more-general mechanism below.  DLD (01/05).
-    ConcurrentMarkSweepThread::synchronize(false);
-  } else if (UseG1GC) {
-    SuspendibleThreadSet::synchronize();
-  }
-#endif // INCLUDE_ALL_GCS
+  Universe::heap()->safepoint_synchronize_begin();
 
   // By getting the Threads_lock, we assure that no threads are about to start or
   // exit. It is released again in SafepointSynchronize::end().
@@ -333,7 +321,8 @@ void SafepointSynchronize::begin() {
     }
 
     if (sync_event.should_commit()) {
-      sync_event.set_safepointId(safepoint_counter());
+      // Group this event together with the ones committed after the counter is increased
+      sync_event.set_safepointId(safepoint_counter() + 1);
       sync_event.set_initialThreadCount(initial_running);
       sync_event.set_runningThreadCount(_waiting_to_block);
       sync_event.set_iterations(iterations);
@@ -511,14 +500,7 @@ void SafepointSynchronize::end() {
     Threads_lock->unlock();
 
   }
-#if INCLUDE_ALL_GCS
-  // If there are any concurrent GC threads resume them.
-  if (UseConcMarkSweepGC) {
-    ConcurrentMarkSweepThread::desynchronize(false);
-  } else if (UseG1GC) {
-    SuspendibleThreadSet::desynchronize();
-  }
-#endif // INCLUDE_ALL_GCS
+  Universe::heap()->safepoint_synchronize_end();
   // record this time so VMThread can keep track how much time has elapsed
   // since last safepoint.
   _end_of_last_safepoint = os::javaTimeMillis();
@@ -581,7 +563,7 @@ public:
 
   void work(uint worker_id) {
     // All threads deflate monitors and mark nmethods (if necessary).
-    Threads::parallel_java_threads_do(&_cleanup_threads_cl);
+    Threads::possibly_parallel_threads_do(true, &_cleanup_threads_cl);
 
     if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
       const char* name = "deflating idle monitors";

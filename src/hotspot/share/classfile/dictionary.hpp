@@ -161,10 +161,10 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   void set_pd_set(ProtectionDomainEntry* new_head) {  _pd_set = new_head; }
 
   ProtectionDomainEntry* pd_set_acquire() const    {
-    return (ProtectionDomainEntry*)OrderAccess::load_ptr_acquire(&_pd_set);
+    return OrderAccess::load_acquire(&_pd_set);
   }
   void release_set_pd_set(ProtectionDomainEntry* new_head) {
-    OrderAccess::release_store_ptr(&_pd_set, new_head);
+    OrderAccess::release_store(&_pd_set, new_head);
   }
 
   // Tells whether the initiating class' protection domain can access the klass in this entry
