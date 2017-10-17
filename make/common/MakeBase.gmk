@@ -463,11 +463,22 @@ define NamedParamsMacroTemplate
 endef
 
 ################################################################################
+# Replace question marks with space in string. This macro needs to be called on
+# files from CacheFind in case any of them contains space in their file name,
+# since CacheFind replaces space with ?.
+# Param 1 - String to replace in
+DecodeSpace = \
+    $(subst ?,$(SPACE),$(strip $1))
+EncodeSpace = \
+    $(subst $(SPACE),?,$(strip $1))
+
+################################################################################
 # Make directory without forking mkdir if not needed
 # 1: List of directories to create
 MakeDir = \
     $(strip \
-        $(eval MakeDir_dirs_to_make := $(strip $(foreach d, $1, $(if $(wildcard $d), , $d)))) \
+        $(eval MakeDir_dirs_to_make := $(strip $(foreach d, $1, $(if $(wildcard $d), , \
+            "$(call DecodeSpace, $d)")))) \
         $(if $(MakeDir_dirs_to_make), $(shell $(MKDIR) -p $(MakeDir_dirs_to_make))) \
     )
 
@@ -479,6 +490,7 @@ SetIfEmpty = \
     $(if $($(strip $1)),,$(eval $(strip $1) := $2))
 
 ################################################################################
+# All install-file and related macros automatically call DecodeSpace when needed.
 
 ifeq ($(OPENJDK_TARGET_OS),solaris)
   # On Solaris, if the target is a symlink and exists, cp won't overwrite.
@@ -487,19 +499,21 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
   # If the source and target parent directories are the same, recursive copy doesn't work
   # so we fall back on regular copy, which isn't preserving symlinks.
   define install-file
-	$(MKDIR) -p '$(@D)'
-	$(RM) '$@'
-	if [ "$(@D)" != "$(<D)" ]; then \
-	  $(CP) -f -r -P '$<' '$(@D)'; \
-	  if [ "$(@F)" != "$(<F)" ]; then \
-	    $(MV) '$(@D)/$(<F)' '$@'; \
+	$(call MakeDir, $(@D))
+	$(RM) '$(call DecodeSpace, $@)'
+	if [ '$(call DecodeSpace, $(dir $@))' != \
+	    '$(call DecodeSpace, $(dir $(call EncodeSpace, $<)))' ]; then \
+	  $(CP) -f -r -P '$(call DecodeSpace, $<)' '$(call DecodeSpace, $(@D))'; \
+	  if [ '$(call DecodeSpace, $(@F))' != \
+	      '$(call DecodeSpace, $(notdir $(call EncodeSpace, $(<))))' ]; then \
+	    $(MV) '$(call DecodeSpace, $(@D)/$(<F))' '$(call DecodeSpace, $@)'; \
 	  fi; \
 	else \
-	  if [ -L '$<' ]; then \
+	  if [ -L '$(call DecodeSpace, $<)' ]; then \
 	    $(ECHO) "Source file is a symlink and target is in the same directory: $< $@" ; \
 	    exit 1; \
 	  fi; \
-	  $(CP) -f '$<' '$@'; \
+	  $(CP) -f '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
 	fi
   endef
 else ifeq ($(OPENJDK_TARGET_OS),macosx)
@@ -512,22 +526,22 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
   # If copying a soft link to a directory, need to delete the target first to avoid
   # weird errors.
   define install-file
-	$(MKDIR) -p '$(@D)'
-	$(RM) '$@'
-	$(CP) -fRP '$<' '$@'
-	if [ -n "`$(XATTR) -l '$@'`" ]; then $(XATTR) -c '$@'; fi
+	$(call MakeDir, $(@D))
+	$(RM) '$(call DecodeSpace, $@)'
+	$(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
+	if [ -n "`$(XATTR) -l '$(call DecodeSpace, $@)'`" ]; then $(XATTR) -c '$(call DecodeSpace, $@)'; fi
   endef
 else
   define install-file
 	$(call MakeDir, $(@D))
-	$(CP) -fP '$<' '$@'
+	$(CP) -fP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
   endef
 endif
 
 # Variant of install file that does not preserve symlinks
 define install-file-nolink
 	$(call MakeDir, $(@D))
-	$(CP) -f '$<' '$@'
+	$(CP) -f '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
 endef
 
 ################################################################################
@@ -577,14 +591,14 @@ RelativePath = \
 # the unix emulation environment.
 define link-file-relative
 	$(call MakeDir, $(@D))
-	$(RM) $@
-	$(LN) -s $(call RelativePath, $<, $(@D)) $@
+	$(RM) '$(call DecodeSpace, $@)'
+	$(LN) -s '$(call DecodeSpace, $(call RelativePath, $<, $(@D)))' '$(call DecodeSpace, $@)'
 endef
 
 define link-file-absolute
 	$(call MakeDir, $(@D))
-	$(RM) $@
-	$(LN) -s $< $@
+	$(RM) '$(call DecodeSpace, $@)'
+	$(LN) -s '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
 endef
 
 ################################################################################
@@ -651,6 +665,13 @@ ifneq ($(DISABLE_CACHE_FIND), true)
   # This macro can be called multiple times to add to the cache. Only finds files
   # with no filters.
   #
+  # Files containing space will get spaces replaced with ? because GNU Make
+  # cannot handle lists of files with space in them. By using ?, make will match
+  # the wildcard to space in many situations so we don't need to replace back
+  # to space on every use. While not a complete solution it does allow some uses
+  # of CacheFind to function with spaces in file names, including for
+  # SetupCopyFiles.
+  #
   # Needs to be called with $(eval )
   #
   # Even if the performance benifit is negligible on other platforms, keep the
@@ -668,7 +689,8 @@ ifneq ($(DISABLE_CACHE_FIND), true)
     ifneq ($$(FIND_CACHE_NEW_DIRS), )
       # Remove any trailing slash from dirs in the cache dir list
       FIND_CACHE_DIRS += $$(patsubst %/,%, $$(FIND_CACHE_NEW_DIRS))
-      FIND_CACHE := $$(sort $$(FIND_CACHE) $$(shell $(FIND) $$(FIND_CACHE_NEW_DIRS) \( -type f -o -type l \) $2))
+      FIND_CACHE := $$(sort $$(FIND_CACHE) $$(shell $(FIND) $$(FIND_CACHE_NEW_DIRS) \
+          \( -type f -o -type l \) $2 | $(TR) ' ' '?'))
     endif
   endef
 
@@ -684,7 +706,8 @@ ifneq ($(DISABLE_CACHE_FIND), true)
   # Param 2 - (optional) specialization. Normally "-a \( ... \)" expression.
   define CacheFind
     $(if $(filter-out $(addsuffix /%,- $(FIND_CACHE_DIRS)) $(FIND_CACHE_DIRS),$1), \
-      $(if $(wildcard $1), $(shell $(FIND) $1 \( -type f -o -type l \) $2)), \
+      $(if $(wildcard $1), $(shell $(FIND) $1 \( -type f -o -type l \) $2 \
+          | $(TR) ' ' '?')), \
       $(filter $(addsuffix /%,$(patsubst %/,%,$1)) $1,$(FIND_CACHE)))
   endef
 
@@ -693,7 +716,7 @@ else
   # Param 1 - Dirs to find in
   # Param 2 - (optional) specialization. Normally "-a \( ... \)" expression.
   define CacheFind
-    $(shell $(FIND) $1 \( -type f -o -type l \) $2)
+    $(shell $(FIND) $1 \( -type f -o -type l \) $2 | $(TR) ' ' '?')
   endef
 endif
 
@@ -707,7 +730,7 @@ define AddFileToCopy
   # 4 : Macro to call for copy operation
   # 5 : Action text to log
   $2: $1
-	$$(call LogInfo, $(strip $5) $$(patsubst $(OUTPUTDIR)/%,%,$$@))
+	$$(call LogInfo, $(strip $5) $$(patsubst $(OUTPUTDIR)/%,%,$$(call DecodeSpace, $$@)))
 	$$($$(strip $4))
 
   $3 += $2
@@ -758,10 +781,19 @@ define SetupCopyFilesBody
   $1_SRC := $$(patsubst %/,%,$$($1_SRC))
   $1_DEST := $$(patsubst %/,%,$$($1_DEST))
 
+  # Need to wrap arguments in DoubleDollar because of the eval nested inside an
+  # eval macro body.
   $$(foreach f, $$(patsubst $$($1_SRC)/%,%,$$($1_FILES)), \
-      $$(eval $$(call AddFileToCopy, $$($1_SRC)/$$f, \
-      $$($1_DEST)/$$(call $$(strip $$($1_NAME_MACRO)),$$(if $$($1_FLATTEN),$$(notdir $$f),$$f)), \
-      $1, $$($1_MACRO), $$($1_LOG_ACTION))))
+    $$(eval $$(call AddFileToCopy, \
+        $$(call DoubleDollar, $$($1_SRC)/$$f), \
+        $$(call DoubleDollar, \
+            $$($1_DEST)/$$(call $$(strip $$($1_NAME_MACRO)),$$(if $$($1_FLATTEN),$$(notdir $$f),$$f)) \
+        ), \
+        $1, \
+        $$($1_MACRO), \
+        $$($1_LOG_ACTION) \
+    )) \
+  )
 
 endef
 

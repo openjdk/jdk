@@ -33,10 +33,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.sun.tools.jdeps.Analyzer.NOT_FOUND;
 
 /**
  * Analyze module dependences and any reference to JDK internal APIs.
@@ -50,17 +49,23 @@ import static com.sun.tools.jdeps.Analyzer.NOT_FOUND;
 public class ModuleExportsAnalyzer extends DepsAnalyzer {
     // source archive to its dependences and JDK internal APIs it references
     private final Map<Archive, Map<Archive,Set<String>>> deps = new HashMap<>();
+    private final boolean showJdkInternals;
     private final boolean reduced;
     private final PrintWriter writer;
+    private final String separator;
     public ModuleExportsAnalyzer(JdepsConfiguration config,
                                  JdepsFilter filter,
+                                 boolean showJdkInternals,
                                  boolean reduced,
-                                 PrintWriter writer) {
+                                 PrintWriter writer,
+                                 String separator) {
         super(config, filter, null,
               Analyzer.Type.PACKAGE,
               false /* all classes */);
+        this.showJdkInternals = showJdkInternals;
         this.reduced = reduced;
         this.writer = writer;
+        this.separator = separator;
     }
 
     @Override
@@ -76,7 +81,7 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
                     .computeIfAbsent(targetArchive, _k -> new HashSet<>());
 
             Module module = targetArchive.getModule();
-            if (originArchive.getModule() != module &&
+            if (showJdkInternals && originArchive.getModule() != module &&
                     module.isJDK() && !module.isExported(target)) {
                 // use of JDK internal APIs
                 jdkInternals.add(target);
@@ -89,35 +94,19 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
             .sorted(Comparator.comparing(Archive::getName))
             .forEach(archive -> analyzer.visitDependences(archive, visitor));
 
-
-        // print the dependences on named modules
-        printDependences();
-
-        // print the dependences on unnamed module
-        deps.values().stream()
-            .flatMap(map -> map.keySet().stream())
-            .filter(archive -> !archive.getModule().isNamed())
-            .map(archive -> archive != NOT_FOUND
-                                ? "unnamed module: " + archive.getPathName()
-                                : archive.getPathName())
-            .distinct()
-            .sorted()
-            .forEach(archive -> writer.format("   %s%n", archive));
-
+        Set<Module> modules = modules();
+        if (showJdkInternals) {
+            // print modules and JDK internal API dependences
+            printDependences(modules);
+        } else {
+            // print module dependences
+            writer.println(modules.stream().map(Module::name).sorted()
+                                  .collect(Collectors.joining(separator)));
+        }
         return rc;
     }
 
-    private void printDependences() {
-        // find use of JDK internals
-        Map<Module, Set<String>> jdkinternals = new HashMap<>();
-        dependenceStream()
-            .flatMap(map -> map.entrySet().stream())
-            .filter(e -> e.getValue().size() > 0)
-            .forEach(e -> jdkinternals.computeIfAbsent(e.getKey().getModule(),
-                                                       _k -> new HashSet<>())
-                                      .addAll(e.getValue()));
-
-
+    private Set<Module> modules() {
         // build module graph
         ModuleGraphBuilder builder = new ModuleGraphBuilder(configuration);
         Module root = new RootModule("root");
@@ -126,43 +115,38 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
         dependenceStream()
             .flatMap(map -> map.keySet().stream())
             .filter(m -> m.getModule().isNamed()
-                            && !configuration.rootModules().contains(m))
+                && !configuration.rootModules().contains(m))
             .map(Archive::getModule)
             .forEach(m -> builder.addEdge(root, m));
 
-        // module dependences
-        Set<Module> modules = builder.build().adjacentNodes(root);
-
+        // build module dependence graph
         // if reduced is set, apply transition reduction
-        Set<Module> reducedSet;
-        if (reduced) {
-            Set<Module> nodes = builder.reduced().adjacentNodes(root);
-            if (nodes.size() == 1) {
-                // java.base only
-                reducedSet = nodes;
-            } else {
-                // java.base is mandated and can be excluded from the reduced graph
-                reducedSet = nodes.stream()
-                    .filter(m -> !"java.base".equals(m.name()) ||
-                                    jdkinternals.containsKey("java.base"))
-                    .collect(Collectors.toSet());
-            }
-        } else {
-            reducedSet = modules;
-        }
+        Graph<Module> g = reduced ? builder.reduced() : builder.build();
+        return g.adjacentNodes(root);
+    }
 
-        modules.stream()
-               .sorted(Comparator.comparing(Module::name))
-               .forEach(m -> {
-                    if (jdkinternals.containsKey(m)) {
-                        jdkinternals.get(m).stream()
-                            .sorted()
-                            .forEach(pn -> writer.format("   %s/%s%n", m, pn));
-                    } else if (reducedSet.contains(m)){
-                        // if the transition reduction is applied, show the reduced graph
-                        writer.format("   %s%n", m);
-                    }
-            });
+    private void printDependences(Set<Module> modules) {
+        // find use of JDK internals
+        Map<Module, Set<String>> jdkinternals = new HashMap<>();
+        dependenceStream()
+            .flatMap(map -> map.entrySet().stream())
+            .filter(e -> e.getValue().size() > 0)
+            .forEach(e -> jdkinternals.computeIfAbsent(e.getKey().getModule(),
+                                                       _k -> new TreeSet<>())
+                                      .addAll(e.getValue()));
+
+        // print modules and JDK internal API dependences
+        Stream.concat(modules.stream(), jdkinternals.keySet().stream())
+              .sorted(Comparator.comparing(Module::name))
+              .distinct()
+              .forEach(m -> {
+                  if (jdkinternals.containsKey(m)) {
+                      jdkinternals.get(m).stream()
+                          .forEach(pn -> writer.format("   %s/%s%s", m, pn, separator));
+                  } else {
+                      writer.format("   %s%s", m, separator);
+                  }
+              });
     }
 
     /*

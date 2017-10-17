@@ -38,8 +38,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.ToIntFunction;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
@@ -157,6 +155,7 @@ class JdepsTask {
         GENERATE_OPEN_MODULE("--generate-open-module"),
         LIST_DEPS("--list-deps"),
         LIST_REDUCED_DEPS("--list-reduced-deps"),
+        PRINT_MODULE_DEPS("--print-module-deps"),
         CHECK_MODULES("--check");
 
         private final String[] names;
@@ -339,7 +338,7 @@ class JdepsTask {
                 if (task.command != null) {
                     throw new BadArgs("err.command.set", task.command, opt);
                 }
-                task.command = task.listModuleDeps(false);
+                task.command = task.listModuleDeps(CommandOption.LIST_DEPS);
             }
         },
         new Option(false, CommandOption.LIST_REDUCED_DEPS) {
@@ -347,7 +346,15 @@ class JdepsTask {
                 if (task.command != null) {
                     throw new BadArgs("err.command.set", task.command, opt);
                 }
-                task.command = task.listModuleDeps(true);
+                task.command = task.listModuleDeps(CommandOption.LIST_REDUCED_DEPS);
+            }
+        },
+        new Option(false, CommandOption.PRINT_MODULE_DEPS) {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                if (task.command != null) {
+                    throw new BadArgs("err.command.set", task.command, opt);
+                }
+                task.command = task.listModuleDeps(CommandOption.PRINT_MODULE_DEPS);
             }
         },
 
@@ -534,14 +541,15 @@ class JdepsTask {
 
     boolean run() throws IOException {
         try (JdepsConfiguration config = buildConfig(command.allModules())) {
-
-            // detect split packages
-            config.splitPackages().entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(e -> log.println(getMessage("split.package",
-                                                     e.getKey(),
-                                                     e.getValue().toString())));
+            if (!options.nowarning) {
+                // detect split packages
+                config.splitPackages().entrySet()
+                      .stream()
+                      .sorted(Map.Entry.comparingByKey())
+                      .forEach(e -> warning("warn.split.package",
+                                            e.getKey(),
+                                            e.getValue().stream().collect(joining(" "))));
+            }
 
             // check if any module specified in --add-modules, --require, and -m is missing
             options.addmods.stream()
@@ -606,9 +614,17 @@ class JdepsTask {
         return new GenModuleInfo(dir, openModule);
     }
 
-    private ListModuleDeps listModuleDeps(boolean reduced) throws BadArgs {
-        return reduced ? new ListReducedDeps()
-                       : new ListModuleDeps();
+    private ListModuleDeps listModuleDeps(CommandOption option) throws BadArgs {
+        switch (option) {
+            case LIST_DEPS:
+                return new ListModuleDeps(option, true, false);
+            case LIST_REDUCED_DEPS:
+                return new ListModuleDeps(option, true, true);
+            case PRINT_MODULE_DEPS:
+                return new ListModuleDeps(option, false, true, ",");
+            default:
+                throw new IllegalArgumentException(option.toString());
+        }
     }
 
     private CheckModuleDeps checkModuleDeps(Set<String> mods) throws BadArgs {
@@ -964,20 +980,18 @@ class JdepsTask {
         }
     }
 
-    class ListReducedDeps extends ListModuleDeps {
-        ListReducedDeps() {
-            super(CommandOption.LIST_REDUCED_DEPS, true);
-        }
-    }
-
     class ListModuleDeps extends Command {
+        final boolean jdkinternals;
         final boolean reduced;
-        ListModuleDeps() {
-            this(CommandOption.LIST_DEPS, false);
+        final String separator;
+        ListModuleDeps(CommandOption option, boolean jdkinternals, boolean reduced) {
+            this(option, jdkinternals, reduced, System.getProperty("line.separator"));
         }
-        ListModuleDeps(CommandOption option, boolean reduced) {
+        ListModuleDeps(CommandOption option, boolean jdkinternals, boolean reduced, String sep) {
             super(option);
+            this.jdkinternals = jdkinternals;
             this.reduced = reduced;
+            this.separator = sep;
         }
 
         @Override
@@ -1007,8 +1021,10 @@ class JdepsTask {
         boolean run(JdepsConfiguration config) throws IOException {
             return new ModuleExportsAnalyzer(config,
                                              dependencyFilter(config),
+                                             jdkinternals,
                                              reduced,
-                                             log).run();
+                                             log,
+                                             separator).run();
         }
     }
 

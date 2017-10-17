@@ -27,10 +27,12 @@ package jdk.nio.zipfs;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.regex.PatternSyntaxException;
 import java.util.concurrent.TimeUnit;
 
@@ -106,26 +108,32 @@ class ZipUtils {
      * Converts DOS time to Java time (number of milliseconds since epoch).
      */
     public static long dosToJavaTime(long dtime) {
-        int year;
-        int month;
-        int day;
+        int year = (int) (((dtime >> 25) & 0x7f) + 1980);
+        int month = (int) ((dtime >> 21) & 0x0f);
+        int day = (int) ((dtime >> 16) & 0x1f);
         int hour = (int) ((dtime >> 11) & 0x1f);
         int minute = (int) ((dtime >> 5) & 0x3f);
         int second = (int) ((dtime << 1) & 0x3e);
-        if ((dtime >> 16) == 0) {
-            // Interpret the 0 DOS date as 1979-11-30 for compatibility with
-            // other implementations.
-            year = 1979;
-            month = 11;
-            day = 30;
-        } else {
-            year = (int) (((dtime >> 25) & 0x7f) + 1980);
-            month = (int) ((dtime >> 21) & 0x0f);
-            day = (int) ((dtime >> 16) & 0x1f);
+
+        if (month > 0 && month < 13 && day > 0 && hour < 24 && minute < 60 && second < 60) {
+            try {
+                LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, minute, second);
+                return TimeUnit.MILLISECONDS.convert(ldt.toEpochSecond(
+                        ZoneId.systemDefault().getRules().getOffset(ldt)), TimeUnit.SECONDS);
+            } catch (DateTimeException dte) {
+                // ignore
+            }
         }
-        LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, minute, second);
-        return TimeUnit.MILLISECONDS.convert(ldt.toEpochSecond(
-                ZoneId.systemDefault().getRules().getOffset(ldt)), TimeUnit.SECONDS);
+        return overflowDosToJavaTime(year, month, day, hour, minute, second);
+    }
+
+    /*
+     * Deal with corner cases where an arguably mal-formed DOS time is used
+     */
+    @SuppressWarnings("deprecation") // Use of Date constructor
+    private static long overflowDosToJavaTime(int year, int month, int day,
+                                              int hour, int minute, int second) {
+        return new Date(year - 1900, month - 1, day, hour, minute, second).getTime();
     }
 
     /*

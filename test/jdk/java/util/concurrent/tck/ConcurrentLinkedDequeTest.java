@@ -40,7 +40,10 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.LongAdder;
 
 import junit.framework.Test;
 
@@ -930,6 +933,80 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
                 assertFalse(q.removeLastOccurrence(null));
                 shouldThrow();
             } catch (NullPointerException success) {}
+        }
+    }
+
+    /**
+     * Non-traversing Deque operations are linearizable.
+     * https://bugs.openjdk.java.net/browse/JDK-8188900
+     * ant -Djsr166.expensiveTests=true -Djsr166.tckTestClass=ConcurrentLinkedDequeTest -Djsr166.methodFilter=testBug8188900 tck
+     */
+    public void testBug8188900() {
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final LongAdder nulls = new LongAdder(), zeros = new LongAdder();
+        for (int n = expensiveTests ? 100_000 : 10; n--> 0; ) {
+            ConcurrentLinkedDeque<Integer> d = new ConcurrentLinkedDeque<>();
+
+            boolean peek = rnd.nextBoolean();
+            Runnable getter = () -> {
+                Integer x = peek ? d.peekFirst() : d.pollFirst();
+                if (x == null) nulls.increment();
+                else if (x == 0) zeros.increment();
+                else
+                    throw new AssertionError(
+                        String.format(
+                            "unexpected value %d after %d nulls and %d zeros",
+                            x, nulls.sum(), zeros.sum()));
+            };
+
+            Runnable adder = () -> {
+                d.addFirst(0);
+                d.addLast(42);
+            };
+
+            boolean b = rnd.nextBoolean();
+            Runnable r1 = b ? getter : adder;
+            Runnable r2 = b ? adder : getter;
+            CompletableFuture<Void> f1 = CompletableFuture.runAsync(r1);
+            CompletableFuture<Void> f2 = CompletableFuture.runAsync(r2);
+            f1.join();
+            f2.join();
+        }
+    }
+
+    /**
+     * Reverse direction variant of testBug8188900
+     */
+    public void testBug8188900_reverse() {
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final LongAdder nulls = new LongAdder(), zeros = new LongAdder();
+        for (int n = expensiveTests ? 100_000 : 10; n--> 0; ) {
+            ConcurrentLinkedDeque<Integer> d = new ConcurrentLinkedDeque<>();
+
+            boolean peek = rnd.nextBoolean();
+            Runnable getter = () -> {
+                Integer x = peek ? d.peekLast() : d.pollLast();
+                if (x == null) nulls.increment();
+                else if (x == 0) zeros.increment();
+                else
+                    throw new AssertionError(
+                        String.format(
+                            "unexpected value %d after %d nulls and %d zeros",
+                            x, nulls.sum(), zeros.sum()));
+            };
+
+            Runnable adder = () -> {
+                d.addLast(0);
+                d.addFirst(42);
+            };
+
+            boolean b = rnd.nextBoolean();
+            Runnable r1 = b ? getter : adder;
+            Runnable r2 = b ? adder : getter;
+            CompletableFuture<Void> f1 = CompletableFuture.runAsync(r1);
+            CompletableFuture<Void> f2 = CompletableFuture.runAsync(r2);
+            f1.join();
+            f2.join();
         }
     }
 }

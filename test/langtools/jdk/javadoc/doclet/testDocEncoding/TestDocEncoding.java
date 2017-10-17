@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@
  * @run main TestDocEncoding
  */
 
+import java.nio.charset.Charset;
+
 public class TestDocEncoding extends JavadocTester {
 
     public static void main(String... args) throws Exception {
@@ -53,6 +55,13 @@ public class TestDocEncoding extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
+        checkOutput("stylesheet.css", true,
+                "body {\n"
+                + "    background-color:#ffffff;");
+
+        // reset the charset, for a negative test, that the -docencoding
+        // was effective and that the output is not in UTF-8.
+        charset = Charset.forName("UTF-8");
         checkOutput("stylesheet.css", false,
                 "body {\n"
                 + "    background-color:#ffffff;");

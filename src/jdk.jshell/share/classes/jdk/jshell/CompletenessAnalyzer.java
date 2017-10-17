@@ -45,6 +45,7 @@ import jdk.jshell.SourceCodeAnalysis.Completeness;
 import com.sun.source.tree.Tree;
 import static jdk.jshell.CompletenessAnalyzer.TK.*;
 import jdk.jshell.TaskFactory.ParseTask;
+import jdk.jshell.TaskFactory.Worker;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -85,7 +86,7 @@ class CompletenessAnalyzer {
         try {
             Parser parser = new Parser(
                     () -> new Matched(scannerFactory.newScanner(s, false)),
-                    () -> proc.taskFactory.parse(s));
+                    worker -> proc.taskFactory.parse(s, worker));
             Completeness stat = parser.parseUnit();
             int endPos = stat == Completeness.UNKNOWN
                     ? s.length()
@@ -561,12 +562,13 @@ class CompletenessAnalyzer {
     private static class Parser {
 
         private final Supplier<Matched> matchedFactory;
-        private final Supplier<ParseTask> parseFactory;
+        private final Function<Worker<ParseTask, Completeness>, Completeness> parseFactory;
         private Matched in;
         private CT token;
         private Completeness checkResult;
 
-        Parser(Supplier<Matched> matchedFactory, Supplier<ParseTask> parseFactory) {
+        Parser(Supplier<Matched> matchedFactory,
+               Function<Worker<ParseTask, Completeness>, Completeness> parseFactory) {
             this.matchedFactory = matchedFactory;
             this.parseFactory = parseFactory;
             resetInput();
@@ -692,30 +694,31 @@ class CompletenessAnalyzer {
 
         public Completeness disambiguateDeclarationVsExpression() {
             // String folding messes up position information.
-            ParseTask pt = parseFactory.get();
-            List<? extends Tree> units = pt.units();
-            if (units.isEmpty()) {
-                return error();
-            }
-            Tree unitTree = units.get(0);
-            switch (unitTree.getKind()) {
-                case EXPRESSION_STATEMENT:
-                    return parseExpressionOptionalSemi();
-                case LABELED_STATEMENT:
-                    if (shouldAbort(IDENTIFIER))  return checkResult;
-                    if (shouldAbort(COLON))  return checkResult;
-                return parseStatement();
-                case VARIABLE:
-                case IMPORT:
-                case CLASS:
-                case ENUM:
-                case ANNOTATION_TYPE:
-                case INTERFACE:
-                case METHOD:
-                    return parseDeclaration();
-                default:
+            return parseFactory.apply(pt -> {
+                List<? extends Tree> units = pt.units();
+                if (units.isEmpty()) {
                     return error();
-            }
+                }
+                Tree unitTree = units.get(0);
+                switch (unitTree.getKind()) {
+                    case EXPRESSION_STATEMENT:
+                        return parseExpressionOptionalSemi();
+                    case LABELED_STATEMENT:
+                        if (shouldAbort(IDENTIFIER))  return checkResult;
+                        if (shouldAbort(COLON))  return checkResult;
+                    return parseStatement();
+                    case VARIABLE:
+                    case IMPORT:
+                    case CLASS:
+                    case ENUM:
+                    case ANNOTATION_TYPE:
+                    case INTERFACE:
+                    case METHOD:
+                        return parseDeclaration();
+                    default:
+                        return error();
+                }
+            });
         }
 
         public Completeness parseExpressionStatement() {

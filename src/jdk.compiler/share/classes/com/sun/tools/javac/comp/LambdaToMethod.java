@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -2096,9 +2097,12 @@ public class LambdaToMethod extends TreeTranslator {
                             }
                             break;
                         case CAPTURED_OUTER_THIS:
-                            if (lambdaIdent.sym.owner.kind == TYP && m.containsKey(lambdaIdent.sym.owner)) {
+                            Optional<Symbol> proxy = m.keySet().stream()
+                                    .filter(out -> lambdaIdent.sym.isMemberOf(out.type.tsym, types))
+                                    .reduce((a, b) -> a.isEnclosedBy((ClassSymbol)b) ? a : b);
+                            if (proxy.isPresent()) {
                                 // Transform outer instance variable references anchoring them to the captured synthetic.
-                                Symbol tSym = m.get(lambdaIdent.sym.owner);
+                                Symbol tSym = m.get(proxy.get());
                                 JCExpression t = make.Ident(tSym).setType(lambdaIdent.sym.owner.type);
                                 t = make.Select(t, lambdaIdent.name);
                                 t.setType(lambdaIdent.type);

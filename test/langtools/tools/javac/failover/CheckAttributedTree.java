@@ -67,6 +67,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 import javax.lang.model.element.Element;
 import javax.swing.DefaultComboBoxModel;
@@ -287,61 +288,54 @@ public class CheckAttributedTree {
                     errWriter.println(file);
                 fileCount.incrementAndGet();
                 NPETester p = new NPETester();
-                p.test(read(file));
-            } catch (AttributionException e) {
+                readAndCheck(file, p::test);
+            } catch (Throwable t) {
                 if (!quiet) {
-                    error("Error attributing " + file + "\n" + e.getMessage());
+                    error("Error checking " + file + "\n" + t.getMessage());
                 }
-            } catch (IOException e) {
-                error("Error reading " + file + ": " + e);
             }
         }
 
         /**
-         * Read a file.
+         * Read and check a file.
          * @param file the file to be read
          * @return the tree for the content of the file
          * @throws IOException if any IO errors occur
          * @throws AttributionException if any errors occur while analyzing the file
          */
-        List<Pair<JCCompilationUnit, JCTree>> read(File file) throws IOException, AttributionException {
-            try {
-                Iterable<? extends JavaFileObject> files = fileManager().getJavaFileObjects(file);
-                final List<Element> analyzedElems = new ArrayList<>();
-                final List<CompilationUnitTree> trees = new ArrayList<>();
-                Iterable<? extends Element> elems = newCompilationTask()
-                    .withWriter(pw)
-                        .withOption("--should-stop:at=ATTR")
-                        .withOption("-XDverboseCompilePolicy")
-                        .withSource(files.iterator().next())
-                        .withListener(new TaskListener() {
-                            public void started(TaskEvent e) {
-                                if (e.getKind() == TaskEvent.Kind.ANALYZE)
-                                analyzedElems.add(e.getTypeElement());
-                        }
+        void readAndCheck(File file, BiConsumer<JCCompilationUnit, JCTree> c) throws IOException {
+            Iterable<? extends JavaFileObject> files = fileManager().getJavaFileObjects(file);
+            final List<Element> analyzedElems = new ArrayList<>();
+            final List<CompilationUnitTree> trees = new ArrayList<>();
+            newCompilationTask()
+                .withWriter(pw)
+                    .withOption("--should-stop:at=ATTR")
+                    .withOption("-XDverboseCompilePolicy")
+                    .withSource(files.iterator().next())
+                    .withListener(new TaskListener() {
+                        public void started(TaskEvent e) {
+                            if (e.getKind() == TaskEvent.Kind.ANALYZE)
+                            analyzedElems.add(e.getTypeElement());
+                    }
 
-                        public void finished(TaskEvent e) {
-                            if (e.getKind() == Kind.PARSE)
-                                trees.add(e.getCompilationUnit());
-                        }
-                    }).analyze().get();
+                    public void finished(TaskEvent e) {
+                        if (e.getKind() == Kind.PARSE)
+                            trees.add(e.getCompilationUnit());
+                    }
+                }).analyze(res -> {
+                Iterable<? extends Element> elems = res.get();
                 if (!elems.iterator().hasNext())
-                    throw new AttributionException("No results from analyze");
-                List<Pair<JCCompilationUnit, JCTree>> res = new ArrayList<>();
+                    throw new AssertionError("No results from analyze");
                 for (CompilationUnitTree t : trees) {
                    JCCompilationUnit cu = (JCCompilationUnit)t;
                    for (JCTree def : cu.defs) {
                        if (def.hasTag(CLASSDEF) &&
                                analyzedElems.contains(((JCTree.JCClassDecl)def).sym)) {
-                           res.add(new Pair<>(cu, def));
+                           c.accept(cu, def);
                        }
                    }
                 }
-                return res;
-            }
-            catch (Throwable t) {
-                throw new AttributionException("Exception while attributing file: " + file);
-            }
+            });
         }
 
         /**
@@ -361,13 +355,11 @@ public class CheckAttributedTree {
          * left uninitialized after attribution
          */
         private class NPETester extends TreeScanner {
-            void test(List<Pair<JCCompilationUnit, JCTree>> trees) {
-                for (Pair<JCCompilationUnit, JCTree> p : trees) {
-                    sourcefile = p.fst.sourcefile;
-                    endPosTable = p.fst.endPositions;
-                    encl = new Info(p.snd, endPosTable);
-                    p.snd.accept(this);
-                }
+            void test(JCCompilationUnit cut, JCTree tree) {
+                sourcefile = cut.sourcefile;
+                endPosTable = cut.endPositions;
+                encl = new Info(tree, endPosTable);
+                tree.accept(this);
             }
 
             @Override
@@ -533,21 +525,6 @@ public class CheckAttributedTree {
                 }
             }
             return buf;
-        }
-    }
-
-    /**
-     * Thrown when errors are found parsing a java file.
-     */
-    private static class ParseException extends Exception {
-        ParseException(String msg) {
-            super(msg);
-        }
-    }
-
-    private static class AttributionException extends Exception {
-        AttributionException(String msg) {
-            super(msg);
         }
     }
 

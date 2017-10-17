@@ -59,7 +59,8 @@ public abstract class HtmlDocWriter extends HtmlWriter {
 
     public static final String CONTENT_TYPE = "text/html";
 
-    DocPath pathToRoot;
+    private final HtmlConfiguration configuration;
+    private final DocPath pathToRoot;
 
     /**
      * Constructor. Initializes the destination file name through the super
@@ -68,8 +69,9 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param configuration the configuration for this doclet
      * @param filename String file name.
      */
-    public HtmlDocWriter(BaseConfiguration configuration, DocPath filename) {
+    public HtmlDocWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
+        this.configuration = configuration;
         this.pathToRoot = filename.parent().invert();
         Messages messages = configuration.getMessages();
         messages.notice("doclet.Generating_0",
@@ -80,7 +82,9 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Accessor for configuration.
      * @return the configuration for this doclet
      */
-    public abstract BaseConfiguration configuration();
+    public BaseConfiguration configuration() {
+        return configuration;
+    }
 
     public Content getHyperLink(DocPath link, String label) {
         return getHyperLink(link, new StringContent(label), false, "", "", "");
@@ -166,8 +170,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @return a valid HTML name string.
      */
     public String getName(String name) {
-        StringBuilder sb = new StringBuilder();
-        char ch;
         /* The HTML 4 spec at http://www.w3.org/TR/html4/types.html#h-6.2 mentions
          * that the name/id should begin with a letter followed by other valid characters.
          * The HTML 5 spec (draft) is more permissive on names/ids where the only restriction
@@ -178,8 +180,14 @@ public abstract class HtmlDocWriter extends HtmlWriter {
          * substitute it accordingly, "_" and "$" can appear at the beginning of a member name.
          * The method substitutes "$" with "Z:Z:D" and will prefix "_" with "Z:Z".
          */
+
+        if (configuration.isOutputHtml5()) {
+            return name.replaceAll(" +", "");
+        }
+
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < name.length(); i++) {
-            ch = name.charAt(i);
+            char ch = name.charAt(i);
             switch (ch) {
                 case '(':
                 case ')':

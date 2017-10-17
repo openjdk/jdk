@@ -121,10 +121,10 @@ public class TestLambdaToMethodStats extends ComboInstance<TestLambdaToMethodSta
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withOption("--debug:dumpLambdaToMethodStats")
                 .withSourceFromTemplate(template)
-                .generate());
+                .generate(this::check);
     }
 
     void check(Result<?> res) {

@@ -316,6 +316,11 @@ public abstract class PathFileObject implements JavaFileObject {
             return isPathNameCompatible(userPath, simpleName, kind);
         }
 
+        @Override @DefinedBy(Api.COMPILER)
+        public URI toUri() {
+            return userPath.toUri().normalize();
+        }
+
         @Override
         PathFileObject getSibling(String baseName) {
             return new SimpleFileObject(fileManager,

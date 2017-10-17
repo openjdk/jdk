@@ -28,6 +28,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +39,12 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+
+import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.api.JavacTaskPool;
 
 /**
  * An helper class for defining combinatorial (aka "combo" tests). A combo test is made up of one
@@ -93,8 +100,8 @@ public class ComboTestHelper<X extends ComboInstance<X>> {
     /** Shared file manager used across all combo test instances. */
     StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
 
-    /** Shared context used across all combo instances. */
-    ReusableContext context = new ReusableContext();
+    /** JavacTask pool shared across all combo instances. */
+    JavacTaskPool pool = new JavacTaskPool(1);
 
     /**
      * Set failure mode for this combo test.
@@ -248,7 +255,7 @@ public class ComboTestHelper<X extends ComboInstance<X>> {
         } catch (IOException ex) {
             throw new AssertionError("Failure when closing down shared file manager; ", ex);
         } finally {
-            info.dump();
+            info.dump(this);
         }
     }
 
@@ -375,19 +382,16 @@ public class ComboTestHelper<X extends ComboInstance<X>> {
         int passCount;
         int comboCount;
         int skippedCount;
-        int ctxReusedCount;
-        int ctxDroppedCount;
         Optional<String> lastFailure = Optional.empty();
         Optional<Throwable> lastError = Optional.empty();
 
-        void dump() {
+        void dump(ComboTestHelper<?> helper) {
             System.err.println(String.format("%d total checks executed", comboCount));
             System.err.println(String.format("%d successes found", passCount));
             System.err.println(String.format("%d failures found", failCount));
             System.err.println(String.format("%d errors found", errCount));
             System.err.println(String.format("%d skips found", skippedCount));
-            System.err.println(String.format("%d contexts shared", ctxReusedCount));
-            System.err.println(String.format("%d contexts dropped", ctxDroppedCount));
+            helper.pool.printStatistics(System.err);
         }
 
         public boolean hasFailures() {
@@ -400,7 +404,7 @@ public class ComboTestHelper<X extends ComboInstance<X>> {
     }
 
     /**
-     * THe execution environment for a given combo test instance. An environment contains the
+     * The execution environment for a given combo test instance. An environment contains the
      * bindings for all the dimensions, along with the combo parameter cache (this is non-empty
      * only if one or more dimensions are subclasses of the {@code ComboParameter} interface).
      */
@@ -430,12 +434,8 @@ public class ComboTestHelper<X extends ComboInstance<X>> {
             return comp;
         }
 
-        ReusableContext context() {
-            return context;
-        }
-
-        ReusableContext setContext(ReusableContext context) {
-            return ComboTestHelper.this.context = context;
+        JavacTaskPool pool() {
+            return pool;
         }
     }
 }
