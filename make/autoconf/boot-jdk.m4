@@ -325,6 +325,27 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   fi
   AC_MSG_CHECKING([if Boot JDK is 32 or 64 bits])
   AC_MSG_RESULT([$BOOT_JDK_BITS])
+
+  # Try to enable CDS
+  AC_MSG_CHECKING([for local Boot JDK Class Data Sharing (CDS)])
+  BOOT_JDK_CDS_ARCHIVE=$CONFIGURESUPPORT_OUTPUTDIR/classes.jsa
+  ADD_JVM_ARG_IF_OK([-XX:+UnlockDiagnosticVMOptions -XX:-VerifySharedSpaces -XX:SharedArchiveFile=$BOOT_JDK_CDS_ARCHIVE],boot_jdk_cds_args,[$JAVA])
+
+  if test "x$boot_jdk_cds_args" != x; then
+    # Try creating a CDS archive
+    "$JAVA" $boot_jdk_cds_args -Xshare:dump > /dev/null 2>&1
+    if test $? -eq 0; then
+      BOOTJDK_USE_LOCAL_CDS=true
+      AC_MSG_RESULT([yes, created])
+    else
+      # Generation failed, don't use CDS.
+      BOOTJDK_USE_LOCAL_CDS=false
+      AC_MSG_RESULT([no, creation failed])
+    fi
+  else
+    BOOTJDK_USE_LOCAL_CDS=false
+    AC_MSG_RESULT([no, -XX:SharedArchiveFile not supported])
+  fi
 ])
 
 AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
@@ -346,6 +367,14 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   # Force en-US environment
   ADD_JVM_ARG_IF_OK([-Duser.language=en -Duser.country=US],boot_jdk_jvmargs,[$JAVA])
 
+  if test "x$BOOTJDK_USE_LOCAL_CDS" = xtrue; then
+    # Use our own CDS archive
+    ADD_JVM_ARG_IF_OK([$boot_jdk_cds_args -Xshare:auto],boot_jdk_jvmargs,[$JAVA])
+  else
+    # Otherwise optimistically use the system-wide one, if one is present
+    ADD_JVM_ARG_IF_OK([-Xshare:auto],boot_jdk_jvmargs,[$JAVA])
+  fi
+
   # Apply user provided options.
   ADD_JVM_ARG_IF_OK([$with_boot_jdk_jvmargs],boot_jdk_jvmargs,[$JAVA])
 
@@ -354,7 +383,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   # For now, general JAVA_FLAGS are the same as the boot jdk jvmargs
   JAVA_FLAGS=$boot_jdk_jvmargs
   AC_SUBST(JAVA_FLAGS)
-
 
   AC_MSG_CHECKING([flags for boot jdk java command for big workloads])
 

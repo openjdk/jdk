@@ -3777,7 +3777,7 @@ void copy_jni_function_table(const struct JNINativeInterface_ *new_jni_NativeInt
   intptr_t *a = (intptr_t *) jni_functions();
   intptr_t *b = (intptr_t *) new_jni_NativeInterface;
   for (uint i=0; i <  sizeof(struct JNINativeInterface_)/sizeof(void *); i++) {
-    Atomic::store_ptr(*b++, a++);
+    Atomic::store(*b++, a++);
   }
 }
 
@@ -3898,11 +3898,11 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 #if defined(ZERO) && defined(ASSERT)
   {
     jint a = 0xcafebabe;
-    jint b = Atomic::xchg(0xdeadbeef, &a);
+    jint b = Atomic::xchg((jint) 0xdeadbeef, &a);
     void *c = &a;
-    void *d = Atomic::xchg_ptr(&b, &c);
+    void *d = Atomic::xchg(&b, &c);
     assert(a == (jint) 0xdeadbeef && b == (jint) 0xcafebabe, "Atomic::xchg() works");
-    assert(c == &b && d == &a, "Atomic::xchg_ptr() works");
+    assert(c == &b && d == &a, "Atomic::xchg() works");
   }
 #endif // ZERO && ASSERT
 

@@ -194,7 +194,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
       Chunk(Chunk* c) : _next(c), _size(0) { }
     };
 
-    Chunk* _head;
+    Chunk* volatile _head;
 
     void oops_do_chunk(OopClosure* f, Chunk* c, const juint size);
 

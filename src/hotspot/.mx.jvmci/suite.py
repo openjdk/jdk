@@ -24,9 +24,7 @@ suite = {
 
   "defaultLicense" : "GPLv2-CPE",
 
-  # This puts mx/ as a sibling of the JDK build configuration directories
-  # (e.g., macosx-x86_64-normal-server-release).
-  "outputRoot" : "../build/mx/hotspot",
+  "outputRoot" : "../../build/mx/hotspot",
 
     # ------------- Libraries -------------
 
@@ -43,7 +41,7 @@ suite = {
     # ------------- JVMCI:Service -------------
 
     "jdk.vm.ci.services" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "javaCompliance" : "9",
       "workingSets" : "API,JVMCI",
@@ -52,7 +50,7 @@ suite = {
     # ------------- JVMCI:API -------------
 
     "jdk.vm.ci.common" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "9",
@@ -60,7 +58,7 @@ suite = {
     },
 
     "jdk.vm.ci.meta" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "9",
@@ -68,7 +66,7 @@ suite = {
     },
 
     "jdk.vm.ci.code" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.meta"],
       "checkstyle" : "jdk.vm.ci.services",
@@ -77,7 +75,7 @@ suite = {
     },
 
     "jdk.vm.ci.code.test" : {
-      "subDir" : "test/compiler/jvmci",
+      "subDir" : "../../test/hotspot/jtreg/compiler/jvmci",
       "sourceDirs" : ["src"],
       "dependencies" : [
         "mx:JUNIT",
@@ -92,7 +90,7 @@ suite = {
     },
 
     "jdk.vm.ci.runtime" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
         "jdk.vm.ci.code",
@@ -104,7 +102,7 @@ suite = {
     },
 
     "jdk.vm.ci.runtime.test" : {
-      "subDir" : "test/compiler/jvmci",
+      "subDir" : "../../test/hotspot/jtreg/compiler/jvmci",
       "sourceDirs" : ["src"],
       "dependencies" : [
         "mx:JUNIT",
@@ -119,7 +117,7 @@ suite = {
     # ------------- JVMCI:HotSpot -------------
 
     "jdk.vm.ci.aarch64" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
       "checkstyle" : "jdk.vm.ci.services",
@@ -128,7 +126,7 @@ suite = {
     },
 
     "jdk.vm.ci.amd64" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
       "checkstyle" : "jdk.vm.ci.services",
@@ -137,7 +135,7 @@ suite = {
     },
 
     "jdk.vm.ci.sparc" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
       "checkstyle" : "jdk.vm.ci.services",
@@ -146,7 +144,7 @@ suite = {
     },
 
     "jdk.vm.ci.hotspot" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
         "jdk.vm.ci.common",
@@ -163,7 +161,7 @@ suite = {
     },
 
     "jdk.vm.ci.hotspot.test" : {
-      "subDir" : "test/compiler/jvmci",
+      "subDir" : "../../test/hotspot/jtreg/compiler/jvmci",
       "sourceDirs" : ["src"],
       "dependencies" : [
         "TESTNG",
@@ -175,7 +173,7 @@ suite = {
     },
 
     "jdk.vm.ci.hotspot.aarch64" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
         "jdk.vm.ci.aarch64",
@@ -187,7 +185,7 @@ suite = {
     },
 
     "jdk.vm.ci.hotspot.amd64" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
         "jdk.vm.ci.amd64",
@@ -199,7 +197,7 @@ suite = {
     },
 
     "jdk.vm.ci.hotspot.sparc" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
         "jdk.vm.ci.sparc",
@@ -221,12 +219,12 @@ suite = {
     # ------------- Distributions -------------
 
     "JVMCI_SERVICES" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "dependencies" : ["jdk.vm.ci.services"],
     },
 
     "JVMCI_API" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "dependencies" : [
         "jdk.vm.ci.runtime",
         "jdk.vm.ci.common",
@@ -240,7 +238,7 @@ suite = {
     },
 
     "JVMCI_HOTSPOT" : {
-      "subDir" : "src/jdk.internal.vm.ci/share/classes",
+      "subDir" : "../jdk.internal.vm.ci/share/classes",
       "dependencies" : [
         "jdk.vm.ci.hotspot.aarch64",
         "jdk.vm.ci.hotspot.amd64",
@@ -253,7 +251,7 @@ suite = {
     },
 
     "JVMCI_TEST" : {
-      "subDir" : "test/compiler/jvmci",
+      "subDir" : "../../test/hotspot/jtreg/compiler/jvmci",
       "dependencies" : [
         "jdk.vm.ci.runtime.test",
       ],

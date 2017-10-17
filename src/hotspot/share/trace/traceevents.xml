@@ -104,6 +104,24 @@ Declares a structure type that can be used in other events.
     <value type="INFLATECAUSE" field="cause" label="Monitor Inflation Cause" description="Cause of inflation"/>
   </event>
 
+  <event id="BiasedLockRevocation" path="java/biased_lock_revocation" label="Biased Lock Revocation"
+         description="Revoked bias of object" has_thread="true" has_stacktrace="true" is_instant="false">
+    <value type="CLASS" field="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked"/>
+    <value type="INTEGER" field="safepointId" label="Safepoint Identifier" relation="SafepointId"/>
+  </event>
+
+  <event id="BiasedLockSelfRevocation" path="java/biased_lock_self_revocation" label="Biased Lock Self Revocation"
+         description="Revoked bias of object biased towards own thread" has_thread="true" has_stacktrace="true" is_instant="false">
+    <value type="CLASS" field="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked"/>
+  </event>
+
+  <event id="BiasedLockClassRevocation" path="java/biased_lock_class_revocation" label="Biased Lock Class Revocation"
+         description="Revoked biases for all instances of a class" has_thread="true" has_stacktrace="true" is_instant="false">
+    <value type="CLASS" field="revokedClass" label="Revoked Class" description="Class whose biased locks were revoked"/>
+    <value type="BOOLEAN" field="disableBiasing" label="Disable Further Biasing" description="Whether further biasing for instances of this class will be allowed"/>
+    <value type="INTEGER" field="safepointId" label="Safepoint Identifier" relation="SafepointId"/>
+  </event>
+
   <event id="ReservedStackActivation" path="vm/runtime/reserved_stack_activation" label="Reserved Stack Activation"
          description="Activation of Reserved Stack Area caused by stack overflow with ReservedStackAccess annotated method in call stack"
          has_thread="true" has_stacktrace="true" is_instant="true">

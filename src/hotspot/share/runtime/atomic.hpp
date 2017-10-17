@@ -70,14 +70,6 @@ public:
   template<typename T, typename D>
   inline static void store(T store_value, volatile D* dest);
 
-  inline static void store_ptr(intptr_t store_value, volatile intptr_t* dest) {
-    Atomic::store(store_value, dest);
-  }
-
-  inline static void store_ptr(void*    store_value, volatile void*     dest) {
-    Atomic::store(store_value, reinterpret_cast<void* volatile*>(dest));
-  }
-
   // Atomically load from a location
   // The type T must be either a pointer type, an integral/enum type,
   // or a type that is primitive convertible using PrimitiveConversions.
@@ -90,13 +82,8 @@ public:
   template<typename I, typename D>
   inline static D add(I add_value, D volatile* dest);
 
-  inline static intptr_t add_ptr(intptr_t add_value, volatile intptr_t* dest) {
-    return add(add_value, dest);
-  }
-
-  inline static void* add_ptr(intptr_t add_value, volatile void* dest) {
-    return add(add_value, reinterpret_cast<char* volatile*>(dest));
-  }
+  template<typename I, typename D>
+  inline static D sub(I sub_value, D volatile* dest);
 
   // Atomically increment location. inc() provide:
   // <fence> increment-dest <membar StoreLoad|StoreStore>
@@ -123,14 +110,6 @@ public:
   template<typename T, typename D>
   inline static D xchg(T exchange_value, volatile D* dest);
 
-  inline static intptr_t xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
-    return xchg(exchange_value, dest);
-  }
-
-  inline static void*    xchg_ptr(void*    exchange_value, volatile void*     dest) {
-    return xchg(exchange_value, reinterpret_cast<void* volatile*>(dest));
-  }
-
   // Performs atomic compare of *dest and compare_value, and exchanges
   // *dest with exchange_value if the comparison succeeded. Returns prior
   // value of *dest. cmpxchg*() provide:
@@ -150,23 +129,6 @@ public:
   template<typename T, typename D>
   inline static bool replace_if_null(T* value, D* volatile* dest,
                                      cmpxchg_memory_order order = memory_order_conservative);
-
-  inline static intptr_t cmpxchg_ptr(intptr_t exchange_value,
-                                     volatile intptr_t* dest,
-                                     intptr_t compare_value,
-                                     cmpxchg_memory_order order = memory_order_conservative) {
-    return cmpxchg(exchange_value, dest, compare_value, order);
-  }
-
-  inline static void* cmpxchg_ptr(void* exchange_value,
-                                  volatile void* dest,
-                                  void* compare_value,
-                                  cmpxchg_memory_order order = memory_order_conservative) {
-    return cmpxchg(exchange_value,
-                   reinterpret_cast<void* volatile*>(dest),
-                   compare_value,
-                   order);
-  }
 
 private:
   // Test whether From is implicitly convertible to To.
@@ -553,6 +515,23 @@ inline void Atomic::dec(D volatile* dest) {
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146)
   Atomic::add(I(-1), dest);
+}
+
+template<typename I, typename D>
+inline D Atomic::sub(I sub_value, D volatile* dest) {
+  STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
+  STATIC_ASSERT(IsIntegral<I>::value);
+  // If D is a pointer type, use [u]intptr_t as the addend type,
+  // matching signedness of I.  Otherwise, use D as the addend type.
+  typedef typename Conditional<IsSigned<I>::value, intptr_t, uintptr_t>::type PI;
+  typedef typename Conditional<IsPointer<D>::value, PI, D>::type AddendType;
+  // Only allow conversions that can't change the value.
+  STATIC_ASSERT(IsSigned<I>::value == IsSigned<AddendType>::value);
+  STATIC_ASSERT(sizeof(I) <= sizeof(AddendType));
+  AddendType addend = sub_value;
+  // Assumes two's complement integer representation.
+  #pragma warning(suppress: 4146) // In case AddendType is not signed.
+  return Atomic::add(-addend, dest);
 }
 
 // Define the class before including platform file, which may specialize

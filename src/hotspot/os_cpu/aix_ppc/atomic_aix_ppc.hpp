@@ -137,7 +137,7 @@ template<typename T>
 inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
                                              T volatile* dest) const {
   STATIC_ASSERT(4 == sizeof(T));
-  // Note that xchg_ptr doesn't necessarily do an acquire
+  // Note that xchg doesn't necessarily do an acquire
   // (see synchronizer.cpp).
 
   T old_value;
@@ -176,7 +176,7 @@ template<typename T>
 inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
                                              T volatile* dest) const {
   STATIC_ASSERT(8 == sizeof(T));
-  // Note that xchg_ptr doesn't necessarily do an acquire
+  // Note that xchg doesn't necessarily do an acquire
   // (see synchronizer.cpp).
 
   T old_value;
