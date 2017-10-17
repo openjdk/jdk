@@ -3451,10 +3451,10 @@ private:
 
   // Variables used to claim nmethods.
   CompiledMethod* _first_nmethod;
-  volatile CompiledMethod* _claimed_nmethod;
+  CompiledMethod* volatile _claimed_nmethod;
 
   // The list of nmethods that need to be processed by the second pass.
-  volatile CompiledMethod* _postponed_list;
+  CompiledMethod* volatile _postponed_list;
   volatile uint            _num_entered_barrier;
 
  public:
@@ -3473,7 +3473,7 @@ private:
     if(iter.next_alive()) {
       _first_nmethod = iter.method();
     }
-    _claimed_nmethod = (volatile CompiledMethod*)_first_nmethod;
+    _claimed_nmethod = _first_nmethod;
   }
 
   ~G1CodeCacheUnloadingTask() {
@@ -3489,9 +3489,9 @@ private:
   void add_to_postponed_list(CompiledMethod* nm) {
       CompiledMethod* old;
       do {
-        old = (CompiledMethod*)_postponed_list;
+        old = _postponed_list;
         nm->set_unloading_next(old);
-      } while ((CompiledMethod*)Atomic::cmpxchg_ptr(nm, &_postponed_list, old) != old);
+      } while (Atomic::cmpxchg(nm, &_postponed_list, old) != old);
   }
 
   void clean_nmethod(CompiledMethod* nm) {
@@ -3520,7 +3520,7 @@ private:
     do {
       *num_claimed_nmethods = 0;
 
-      first = (CompiledMethod*)_claimed_nmethod;
+      first = _claimed_nmethod;
       last = CompiledMethodIterator(first);
 
       if (first != NULL) {
@@ -3534,7 +3534,7 @@ private:
         }
       }
 
-    } while ((CompiledMethod*)Atomic::cmpxchg_ptr(last.method(), &_claimed_nmethod, first) != first);
+    } while (Atomic::cmpxchg(last.method(), &_claimed_nmethod, first) != first);
   }
 
   CompiledMethod* claim_postponed_nmethod() {
@@ -3542,14 +3542,14 @@ private:
     CompiledMethod* next;
 
     do {
-      claim = (CompiledMethod*)_postponed_list;
+      claim = _postponed_list;
       if (claim == NULL) {
         return NULL;
       }
 
       next = claim->unloading_next();
 
-    } while ((CompiledMethod*)Atomic::cmpxchg_ptr(next, &_postponed_list, claim) != claim);
+    } while (Atomic::cmpxchg(next, &_postponed_list, claim) != claim);
 
     return claim;
   }

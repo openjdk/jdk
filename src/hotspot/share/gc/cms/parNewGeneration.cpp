@@ -1297,7 +1297,7 @@ void ParNewGeneration::push_on_overflow_list(oop from_space_obj, ParScanThreadSt
         from_space_obj->set_klass_to_list_ptr(NULL);
       }
       observed_overflow_list =
-        (oop)Atomic::cmpxchg_ptr(from_space_obj, &_overflow_list, cur_overflow_list);
+        Atomic::cmpxchg((oopDesc*)from_space_obj, &_overflow_list, (oopDesc*)cur_overflow_list);
     } while (cur_overflow_list != observed_overflow_list);
   }
 }
@@ -1340,7 +1340,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
   if (_overflow_list == NULL) return false;
 
   // Otherwise, there was something there; try claiming the list.
-  oop prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
+  oop prefix = cast_to_oop(Atomic::xchg((oopDesc*)BUSY, &_overflow_list));
   // Trim off a prefix of at most objsFromOverflow items
   Thread* tid = Thread::current();
   size_t spin_count = ParallelGCThreads;
@@ -1354,7 +1354,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
       return false;
     } else if (_overflow_list != BUSY) {
      // try and grab the prefix
-     prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
+     prefix = cast_to_oop(Atomic::xchg((oopDesc*)BUSY, &_overflow_list));
     }
   }
   if (prefix == NULL || prefix == BUSY) {
@@ -1362,7 +1362,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
      if (prefix == NULL) {
        // Write back the NULL in case we overwrote it with BUSY above
        // and it is still the same value.
-       (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
+       (void) Atomic::cmpxchg((oopDesc*)NULL, &_overflow_list, (oopDesc*)BUSY);
      }
      return false;
   }
@@ -1381,7 +1381,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
     // Write back the NULL in lieu of the BUSY we wrote
     // above and it is still the same value.
     if (_overflow_list == BUSY) {
-      (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
+      (void) Atomic::cmpxchg((oopDesc*)NULL, &_overflow_list, (oopDesc*)BUSY);
     }
   } else {
     assert(suffix != BUSY, "Error");
@@ -1395,7 +1395,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
     bool attached = false;
     while (observed_overflow_list == BUSY || observed_overflow_list == NULL) {
       observed_overflow_list =
-        (oop) Atomic::cmpxchg_ptr(suffix, &_overflow_list, cur_overflow_list);
+        Atomic::cmpxchg((oopDesc*)suffix, &_overflow_list, (oopDesc*)cur_overflow_list);
       if (cur_overflow_list == observed_overflow_list) {
         attached = true;
         break;
@@ -1421,7 +1421,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
           last->set_klass_to_list_ptr(NULL);
         }
         observed_overflow_list =
-          (oop)Atomic::cmpxchg_ptr(suffix, &_overflow_list, cur_overflow_list);
+          Atomic::cmpxchg((oopDesc*)suffix, &_overflow_list, (oopDesc*)cur_overflow_list);
       } while (cur_overflow_list != observed_overflow_list);
     }
   }
@@ -1453,7 +1453,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
   TASKQUEUE_STATS_ONLY(par_scan_state->note_overflow_refill(n));
 #ifndef PRODUCT
   assert(_num_par_pushes >= n, "Too many pops?");
-  Atomic::add_ptr(-(intptr_t)n, &_num_par_pushes);
+  Atomic::sub(n, &_num_par_pushes);
 #endif
   return true;
 }

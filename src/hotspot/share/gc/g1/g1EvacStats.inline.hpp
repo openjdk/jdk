@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,17 @@
 #include "runtime/atomic.hpp"
 
 inline void G1EvacStats::add_direct_allocated(size_t value) {
-  Atomic::add_ptr(value, &_direct_allocated);
+  Atomic::add(value, &_direct_allocated);
 }
 
 inline void G1EvacStats::add_region_end_waste(size_t value) {
-  Atomic::add_ptr(value, &_region_end_waste);
-  Atomic::add_ptr(1, &_regions_filled);
+  Atomic::add(value, &_region_end_waste);
+  Atomic::inc(&_regions_filled);
 }
 
 inline void G1EvacStats::add_failure_used_and_waste(size_t used, size_t waste) {
-  Atomic::add_ptr(used, &_failure_used);
-  Atomic::add_ptr(waste, &_failure_waste);
+  Atomic::add(used, &_failure_used);
+  Atomic::add(waste, &_failure_waste);
 }
 
 #endif // SHARE_VM_GC_G1_G1EVACSTATS_INLINE_HPP

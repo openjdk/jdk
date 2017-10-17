@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,19 @@
 #include "utilities/macros.hpp"
 
 inline Klass* InstanceKlass::array_klasses_acquire() const {
-  return (Klass*) OrderAccess::load_ptr_acquire(&_array_klasses);
+  return OrderAccess::load_acquire(&_array_klasses);
 }
 
 inline void InstanceKlass::release_set_array_klasses(Klass* k) {
-  OrderAccess::release_store_ptr(&_array_klasses, k);
+  OrderAccess::release_store(&_array_klasses, k);
 }
 
 inline jmethodID* InstanceKlass::methods_jmethod_ids_acquire() const {
-  return (jmethodID*)OrderAccess::load_ptr_acquire(&_methods_jmethod_ids);
+  return OrderAccess::load_acquire(&_methods_jmethod_ids);
 }
 
 inline void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
-  OrderAccess::release_store_ptr(&_methods_jmethod_ids, jmeths);
+  OrderAccess::release_store(&_methods_jmethod_ids, jmeths);
 }
 
 // The iteration over the oops in objects is a hot path in the GC code.
