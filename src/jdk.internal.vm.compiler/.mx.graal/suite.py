@@ -1093,7 +1093,7 @@ suite = {
     },
 
     "jdk.tools.jaotc.test" : {
-      "subDir" : "../../test/compiler/aot",
+      "subDir" : "../../test/hotspot/jtreg/compiler/aot",
       "sourceDirs" : ["src"],
       "dependencies" : [
         "mx:JUNIT",
