@@ -247,3 +247,19 @@ $(eval $(call SetupCopyFiles, COPY_JDK_NOTICES, \
 ))
 
 TARGETS += $(COPY_JDK_NOTICES)
+
+################################################################################
+# Optionally copy libffi.so.? into the the image
+
+ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
+  $(eval $(call SetupCopyFiles, COPY_LIBFFI, \
+      FILES := $(LIBFFI_LIB_FILE), \
+      DEST := $(call FindLibDirForModule, $(MODULE)), \
+      FLATTEN := true, \
+      MACRO := install-file-nolink, \
+  ))
+
+  TARGETS += $(COPY_LIBFFI)
+endif
+
+################################################################################
