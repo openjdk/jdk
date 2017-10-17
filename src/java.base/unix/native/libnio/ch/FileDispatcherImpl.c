@@ -34,6 +34,7 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <sys/statvfs.h>
 #if defined(__linux__)
 #include <linux/fs.h>
 #include <sys/ioctl.h>
@@ -322,4 +323,59 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_closeIntFD(JNIEnv *env, jclass clazz, jint fd)
 {
     closeFileDescriptor(env, fd);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_FileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
+                                           jobject fdo)
+{
+    jint fd = fdval(env, fdo);
+    jint result;
+#ifdef MACOSX
+    struct statvfs file_stat;
+#else
+    struct statvfs64 file_stat;
+#endif
+
+#if defined(O_DIRECT) || defined(F_NOCACHE) || defined(DIRECTIO_ON)
+#ifdef O_DIRECT
+    jint orig_flag;
+    orig_flag = fcntl(fd, F_GETFL);
+    if (orig_flag == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+        return -1;
+    }
+    result = fcntl(fd, F_SETFL, orig_flag | O_DIRECT);
+    if (result == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+        return result;
+    }
+#elif F_NOCACHE
+    result = fcntl(fd, F_NOCACHE, 1);
+    if (result == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+        return result;
+    }
+#elif DIRECTIO_ON
+    result = directio(fd, DIRECTIO_ON);
+    if (result == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+        return result;
+    }
+#endif
+#ifdef MACOSX
+    result = fstatvfs(fd, &file_stat);
+#else
+    result = fstatvfs64(fd, &file_stat);
+#endif
+    if(result == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+        return result;
+    } else {
+        result = (int)file_stat.f_frsize;
+    }
+#else
+    result == -1;
+#endif
+    return result;
 }

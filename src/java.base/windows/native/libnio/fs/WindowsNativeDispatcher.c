@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,8 @@ static jfieldID volumeInfo_flags;
 static jfieldID diskSpace_bytesAvailable;
 static jfieldID diskSpace_totalBytes;
 static jfieldID diskSpace_totalFree;
+
+static jfieldID diskSpace_bytesPerSector;
 
 static jfieldID account_domain;
 static jfieldID account_name;
@@ -121,6 +123,8 @@ Java_sun_nio_fs_WindowsNativeDispatcher_initIDs(JNIEnv* env, jclass this)
     CHECK_NULL(diskSpace_totalBytes);
     diskSpace_totalFree = (*env)->GetFieldID(env, clazz, "totalNumberOfFreeBytes", "J");
     CHECK_NULL(diskSpace_totalFree);
+    diskSpace_bytesPerSector = (*env)->GetFieldID(env, clazz, "bytesPerSector", "J");
+    CHECK_NULL(diskSpace_bytesPerSector);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$Account");
     CHECK_NULL(clazz);
@@ -582,6 +586,30 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetDiskFreeSpaceEx0(JNIEnv* env, jclass 
         long_to_jlong(totalNumberOfFreeBytes.QuadPart));
 }
 
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_GetDiskFreeSpace0(JNIEnv* env, jclass this,
+    jlong address, jobject obj)
+{
+    DWORD sectorsPerCluster;
+    DWORD bytesPerSector;
+    DWORD numberOfFreeClusters;
+    DWORD totalNumberOfClusters;
+    LPCWSTR lpRootPathName = jlong_to_ptr(address);
+
+
+    BOOL res = GetDiskFreeSpaceW(lpRootPathName,
+                                 &sectorsPerCluster,
+                                 &bytesPerSector,
+                                 &numberOfFreeClusters,
+                                 &totalNumberOfClusters);
+    if (res == 0) {
+        throwWindowsException(env, GetLastError());
+        return;
+    }
+
+    (*env)->SetLongField(env, obj, diskSpace_bytesPerSector,
+        long_to_jlong(bytesPerSector));
+}
 
 JNIEXPORT jstring JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_GetVolumePathName0(JNIEnv* env, jclass this,

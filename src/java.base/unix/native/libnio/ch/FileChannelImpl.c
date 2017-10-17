@@ -50,7 +50,7 @@
 #define mmap64 mmap
 #endif
 
-static jfieldID chan_fd;        /* jobject 'fd' in sun.io.FileChannelImpl */
+static jfieldID chan_fd;        /* jobject 'fd' in sun.nio.ch.FileChannelImpl */
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)

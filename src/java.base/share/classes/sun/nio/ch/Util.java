@@ -37,7 +37,7 @@ import java.util.Iterator;
 import java.util.Set;
 import jdk.internal.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
-
+import java.io.IOException;
 
 public class Util {
 
@@ -234,6 +234,33 @@ public class Util {
             }
             return ByteBuffer.allocateDirect(size);
         }
+    }
+
+    /**
+     * Returns a temporary buffer of at least the given size and
+     * aligned to the alignment
+     */
+    public static ByteBuffer getTemporaryAlignedDirectBuffer(int size,
+                                                             int alignment) {
+        if (isBufferTooLarge(size)) {
+            return ByteBuffer.allocateDirect(size + alignment - 1)
+                    .alignedSlice(alignment);
+        }
+
+        BufferCache cache = bufferCache.get();
+        ByteBuffer buf = cache.get(size);
+        if (buf != null) {
+            if (buf.alignmentOffset(0, alignment) == 0) {
+                return buf;
+            }
+        } else {
+            if (!cache.isEmpty()) {
+                buf = cache.removeFirst();
+                free(buf);
+            }
+        }
+        return ByteBuffer.allocateDirect(size + alignment - 1)
+                .alignedSlice(alignment);
     }
 
     /**
@@ -458,5 +485,38 @@ public class Util {
             throw new InternalError(e);
         }
         return dbb;
+    }
+
+    static void checkBufferPositionAligned(ByteBuffer bb,
+                                                     int pos, int alignment)
+        throws IOException
+    {
+        if (bb.alignmentOffset(pos, alignment) != 0) {
+            throw new IOException("Current location of the bytebuffer ("
+                + pos + ") is not a multiple of the block size ("
+                + alignment + ")");
+        }
+    }
+
+    static void checkRemainingBufferSizeAligned(int rem,
+                                                          int alignment)
+        throws IOException
+    {
+        if (rem % alignment != 0) {
+            throw new IOException("Number of remaining bytes ("
+                + rem + ") is not a multiple of the block size ("
+                + alignment + ")");
+        }
+    }
+
+    static void checkChannelPositionAligned(long position,
+                                                      int alignment)
+        throws IOException
+    {
+        if (position % alignment != 0) {
+           throw new IOException("Channel position (" + position
+               + ") is not a multiple of the block size ("
+               + alignment + ")");
+        }
     }
 }
