@@ -781,10 +781,19 @@ define SetupCopyFilesBody
   $1_SRC := $$(patsubst %/,%,$$($1_SRC))
   $1_DEST := $$(patsubst %/,%,$$($1_DEST))
 
+  # Need to wrap arguments in DoubleDollar because of the eval nested inside an
+  # eval macro body.
   $$(foreach f, $$(patsubst $$($1_SRC)/%,%,$$($1_FILES)), \
-      $$(eval $$(call AddFileToCopy, $$($1_SRC)/$$f, \
-      $$($1_DEST)/$$(call $$(strip $$($1_NAME_MACRO)),$$(if $$($1_FLATTEN),$$(notdir $$f),$$f)), \
-      $1, $$($1_MACRO), $$($1_LOG_ACTION))))
+    $$(eval $$(call AddFileToCopy, \
+        $$(call DoubleDollar, $$($1_SRC)/$$f), \
+        $$(call DoubleDollar, \
+            $$($1_DEST)/$$(call $$(strip $$($1_NAME_MACRO)),$$(if $$($1_FLATTEN),$$(notdir $$f),$$f)) \
+        ), \
+        $1, \
+        $$($1_MACRO), \
+        $$($1_LOG_ACTION) \
+    )) \
+  )
 
 endef
 

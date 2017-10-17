@@ -299,7 +299,7 @@ ifneq ($(filter images, $(MAKECMDGOALS)), )
   $(eval $(call SetupCopyFiles, COPY_TO_TEST_IMAGE, \
       SRC := $(SUPPORT_OUTPUTDIR)/demos/image, \
       DEST := $(TEST_IMAGE_DIR)/jdk/demos, \
-      FILES := $(call DoubleDollar, $(call CacheFind, $(SUPPORT_OUTPUTDIR)/demos/image)), \
+      FILES := $(call CacheFind, $(SUPPORT_OUTPUTDIR)/demos/image), \
   ))
 
   IMAGES_TARGETS := $(COPY_TO_TEST_IMAGE)
