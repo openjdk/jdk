@@ -563,7 +563,7 @@ public:
 
   void work(uint worker_id) {
     // All threads deflate monitors and mark nmethods (if necessary).
-    Threads::parallel_java_threads_do(&_cleanup_threads_cl);
+    Threads::possibly_parallel_threads_do(true, &_cleanup_threads_cl);
 
     if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
       const char* name = "deflating idle monitors";

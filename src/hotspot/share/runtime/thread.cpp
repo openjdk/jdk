@@ -3349,20 +3349,17 @@ void Threads::threads_do(ThreadClosure* tc) {
   // If CompilerThreads ever become non-JavaThreads, add them here
 }
 
-void Threads::parallel_java_threads_do(ThreadClosure* tc) {
+void Threads::possibly_parallel_threads_do(bool is_par, ThreadClosure* tc) {
   int cp = Threads::thread_claim_parity();
   ALL_JAVA_THREADS(p) {
-    if (p->claim_oops_do(true, cp)) {
+    if (p->claim_oops_do(is_par, cp)) {
       tc->do_thread(p);
     }
   }
-  // Thread claiming protocol requires us to claim the same interesting
-  // threads on all paths. Notably, Threads::possibly_parallel_threads_do
-  // claims all Java threads *and* the VMThread. To avoid breaking the
-  // claiming protocol, we have to claim VMThread on this path too, even
-  // if we do not apply the closure to the VMThread.
   VMThread* vmt = VMThread::vm_thread();
-  (void)vmt->claim_oops_do(true, cp);
+  if (vmt->claim_oops_do(is_par, cp)) {
+    tc->do_thread(vmt);
+  }
 }
 
 // The system initialization in the library has three phases.
@@ -4324,17 +4321,20 @@ void Threads::assert_all_threads_claimed() {
 }
 #endif // ASSERT
 
+class ParallelOopsDoThreadClosure : public ThreadClosure {
+private:
+  OopClosure* _f;
+  CodeBlobClosure* _cf;
+public:
+  ParallelOopsDoThreadClosure(OopClosure* f, CodeBlobClosure* cf) : _f(f), _cf(cf) {}
+  void do_thread(Thread* t) {
+    t->oops_do(_f, _cf);
+  }
+};
+
 void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf) {
-  int cp = Threads::thread_claim_parity();
-  ALL_JAVA_THREADS(p) {
-    if (p->claim_oops_do(is_par, cp)) {
-      p->oops_do(f, cf);
-    }
-  }
-  VMThread* vmt = VMThread::vm_thread();
-  if (vmt->claim_oops_do(is_par, cp)) {
-    vmt->oops_do(f, cf);
-  }
+  ParallelOopsDoThreadClosure tc(f, cf);
+  possibly_parallel_threads_do(is_par, &tc);
 }
 
 #if INCLUDE_ALL_GCS
