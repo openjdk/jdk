@@ -24,10 +24,13 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/weakProcessor.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/jniHandles.hpp"
 
 void WeakProcessor::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, VoidClosure* complete) {
   JNIHandles::weak_oops_do(is_alive, keep_alive);
+  JvmtiExport::weak_oops_do(is_alive, keep_alive);
+
   if (complete != NULL) {
     complete->do_void();
   }
@@ -35,5 +38,5 @@ void WeakProcessor::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_a
 
 void WeakProcessor::oops_do(OopClosure* closure) {
   AlwaysTrueClosure always_true;
-  JNIHandles::weak_oops_do(&always_true, closure);
+  weak_oops_do(&always_true, closure, NULL);
 }
