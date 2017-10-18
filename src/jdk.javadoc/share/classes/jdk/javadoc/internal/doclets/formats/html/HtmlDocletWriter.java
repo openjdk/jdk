@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
@@ -74,6 +75,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlVersion;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
@@ -1468,20 +1470,18 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (isProperty) {
             return executableElement.getSimpleName().toString();
         }
-        String signature = utils.signature(executableElement);
-        StringBuilder signatureParsed = new StringBuilder();
-        int counter = 0;
-        for (int i = 0; i < signature.length(); i++) {
-            char c = signature.charAt(i);
-            if (c == '<') {
-                counter++;
-            } else if (c == '>') {
-                counter--;
-            } else if (counter == 0) {
-                signatureParsed.append(c);
-            }
+        String member = anchorName(executableElement);
+        String erasedSignature = utils.makeSignature(executableElement, true, true);
+        return member + erasedSignature;
+    }
+
+    public String anchorName(Element member) {
+        if (member.getKind() == ElementKind.CONSTRUCTOR
+                && configuration.isOutputHtml5()) {
+            return "<init>";
+        } else {
+            return utils.getSimpleName(member);
         }
-        return utils.getSimpleName(executableElement) + signatureParsed.toString();
     }
 
     public Content seeTagToContent(Element element, DocTree see) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,7 @@ public:
     _cells[index] = value;
   }
   void release_set_cell_at(int index, intptr_t value) {
-    OrderAccess::release_store_ptr(&_cells[index], value);
+    OrderAccess::release_store(&_cells[index], value);
   }
   intptr_t cell_at(int index) const {
     return _cells[index];

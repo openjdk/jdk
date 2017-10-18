@@ -82,11 +82,6 @@
 #include "trace/tracing.hpp"
 #endif
 
-// helper function to avoid in-line casts
-template <typename T> static T* load_ptr_acquire(T* volatile *p) {
-  return static_cast<T*>(OrderAccess::load_ptr_acquire(p));
-}
-
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = NULL;
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Dependencies dependencies) :
@@ -152,7 +147,7 @@ ClassLoaderData::ChunkedHandleList::~ChunkedHandleList() {
 oop* ClassLoaderData::ChunkedHandleList::add(oop o) {
   if (_head == NULL || _head->_size == Chunk::CAPACITY) {
     Chunk* next = new Chunk(_head);
-    OrderAccess::release_store_ptr(&_head, next);
+    OrderAccess::release_store(&_head, next);
   }
   oop* handle = &_head->_data[_head->_size];
   *handle = o;
@@ -169,7 +164,7 @@ inline void ClassLoaderData::ChunkedHandleList::oops_do_chunk(OopClosure* f, Chu
 }
 
 void ClassLoaderData::ChunkedHandleList::oops_do(OopClosure* f) {
-  Chunk* head = (Chunk*) OrderAccess::load_ptr_acquire(&_head);
+  Chunk* head = OrderAccess::load_acquire(&_head);
   if (head != NULL) {
     // Must be careful when reading size of head
     oops_do_chunk(f, head, OrderAccess::load_acquire(&head->_size));
@@ -257,24 +252,24 @@ void ClassLoaderData::Dependencies::oops_do(OopClosure* f) {
 }
 
 void ClassLoaderData::classes_do(KlassClosure* klass_closure) {
-  // Lock-free access requires load_ptr_acquire
-  for (Klass* k = load_ptr_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  // Lock-free access requires load_acquire
+  for (Klass* k = OrderAccess::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
     klass_closure->do_klass(k);
     assert(k != k->next_link(), "no loops!");
   }
 }
 
 void ClassLoaderData::classes_do(void f(Klass * const)) {
-  // Lock-free access requires load_ptr_acquire
-  for (Klass* k = load_ptr_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  // Lock-free access requires load_acquire
+  for (Klass* k = OrderAccess::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
     f(k);
     assert(k != k->next_link(), "no loops!");
   }
 }
 
 void ClassLoaderData::methods_do(void f(Method*)) {
-  // Lock-free access requires load_ptr_acquire
-  for (Klass* k = load_ptr_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  // Lock-free access requires load_acquire
+  for (Klass* k = OrderAccess::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
     if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded()) {
       InstanceKlass::cast(k)->methods_do(f);
     }
@@ -282,8 +277,8 @@ void ClassLoaderData::methods_do(void f(Method*)) {
 }
 
 void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
-  // Lock-free access requires load_ptr_acquire
-  for (Klass* k = load_ptr_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  // Lock-free access requires load_acquire
+  for (Klass* k = OrderAccess::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
     // Do not filter ArrayKlass oops here...
     if (k->is_array_klass() || (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded())) {
       klass_closure->do_klass(k);
@@ -292,8 +287,8 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
 }
 
 void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
-  // Lock-free access requires load_ptr_acquire
-  for (Klass* k = load_ptr_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  // Lock-free access requires load_acquire
+  for (Klass* k = OrderAccess::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
     if (k->is_instance_klass()) {
       f(InstanceKlass::cast(k));
     }
@@ -449,7 +444,7 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
     k->set_next_link(old_value);
     // Link the new item into the list, making sure the linked class is stable
     // since the list can be walked without a lock
-    OrderAccess::release_store_ptr(&_klasses, k);
+    OrderAccess::release_store(&_klasses, k);
   }
 
   if (publicize && k->class_loader_data() != NULL) {
@@ -589,8 +584,8 @@ void ClassLoaderData::unload() {
 
 ModuleEntryTable* ClassLoaderData::modules() {
   // Lazily create the module entry table at first request.
-  // Lock-free access requires load_ptr_acquire.
-  ModuleEntryTable* modules = load_ptr_acquire(&_modules);
+  // Lock-free access requires load_acquire.
+  ModuleEntryTable* modules = OrderAccess::load_acquire(&_modules);
   if (modules == NULL) {
     MutexLocker m1(Module_lock);
     // Check if _modules got allocated while we were waiting for this lock.
@@ -600,7 +595,7 @@ ModuleEntryTable* ClassLoaderData::modules() {
       {
         MutexLockerEx m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
         // Ensure _modules is stable, since it is examined without a lock
-        OrderAccess::release_store_ptr(&_modules, modules);
+        OrderAccess::release_store(&_modules, modules);
       }
     }
   }
@@ -737,8 +732,8 @@ Metaspace* ClassLoaderData::metaspace_non_null() {
   // to create smaller arena for Reflection class loaders also.
   // The reason for the delayed allocation is because some class loaders are
   // simply for delegating with no metadata of their own.
-  // Lock-free access requires load_ptr_acquire.
-  Metaspace* metaspace = load_ptr_acquire(&_metaspace);
+  // Lock-free access requires load_acquire.
+  Metaspace* metaspace = OrderAccess::load_acquire(&_metaspace);
   if (metaspace == NULL) {
     MutexLockerEx ml(_metaspace_lock,  Mutex::_no_safepoint_check_flag);
     // Check if _metaspace got allocated while we were waiting for this lock.
@@ -760,7 +755,7 @@ Metaspace* ClassLoaderData::metaspace_non_null() {
         metaspace = new Metaspace(_metaspace_lock, Metaspace::StandardMetaspaceType);
       }
       // Ensure _metaspace is stable, since it is examined without a lock
-      OrderAccess::release_store_ptr(&_metaspace, metaspace);
+      OrderAccess::release_store(&_metaspace, metaspace);
     }
   }
   return metaspace;
@@ -914,8 +909,8 @@ void ClassLoaderData::verify() {
 }
 
 bool ClassLoaderData::contains_klass(Klass* klass) {
-  // Lock-free access requires load_ptr_acquire
-  for (Klass* k = load_ptr_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  // Lock-free access requires load_acquire
+  for (Klass* k = OrderAccess::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
     if (k == klass) return true;
   }
   return false;
@@ -948,7 +943,7 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
   if (!is_anonymous) {
     ClassLoaderData** cld_addr = java_lang_ClassLoader::loader_data_addr(loader());
     // First, Atomically set it
-    ClassLoaderData* old = (ClassLoaderData*) Atomic::cmpxchg_ptr(cld, cld_addr, NULL);
+    ClassLoaderData* old = Atomic::cmpxchg(cld, cld_addr, (ClassLoaderData*)NULL);
     if (old != NULL) {
       delete cld;
       // Returns the data.
@@ -963,7 +958,7 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
 
   do {
     cld->set_next(next);
-    ClassLoaderData* exchanged = (ClassLoaderData*)Atomic::cmpxchg_ptr(cld, list_head, next);
+    ClassLoaderData* exchanged = Atomic::cmpxchg(cld, list_head, next);
     if (exchanged == next) {
       LogTarget(Debug, class, loader, data) lt;
       if (lt.is_enabled()) {
@@ -1387,7 +1382,7 @@ Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass() {
   while (head != NULL) {
     Klass* next = next_klass_in_cldg(head);
 
-    Klass* old_head = (Klass*)Atomic::cmpxchg_ptr(next, &_next_klass, head);
+    Klass* old_head = Atomic::cmpxchg(next, &_next_klass, head);
 
     if (old_head == head) {
       return head; // Won the CAS.

@@ -73,7 +73,7 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
   }
 
 DEFINE_STUB_XCHG(4, jint, os::atomic_xchg_func)
-DEFINE_STUB_XCHG(8, jlong, os::atomic_xchg_ptr_func)
+DEFINE_STUB_XCHG(8, jlong, os::atomic_xchg_long_func)
 
 #undef DEFINE_STUB_XCHG
 

@@ -477,4 +477,14 @@ public final class IdentNode extends Expression implements PropertyKey, Function
     public IdentNode setIsDestructuredParameter() {
         return new IdentNode(this, name, type, flags | DESTRUCTURED_PARAMETER, programPoint, conversion);
     }
+
+    /**
+     * Checks whether the source code for this ident contains a unicode escape sequence by comparing
+     * the length of its name with its length in source code.
+     *
+     * @return true if ident source contains a unicode escape sequence
+     */
+    public boolean containsEscapes() {
+        return Token.descLength(getToken()) != name.length();
+    }
 }

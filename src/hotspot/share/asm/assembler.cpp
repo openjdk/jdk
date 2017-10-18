@@ -236,11 +236,9 @@ DelayedConstant* DelayedConstant::add(BasicType type,
     if (dcon->match(type, cfn))
       return dcon;
     if (dcon->value_fn == NULL) {
-      // (cmpxchg not because this is multi-threaded but because I'm paranoid)
-      if (Atomic::cmpxchg_ptr(CAST_FROM_FN_PTR(void*, cfn), &dcon->value_fn, NULL) == NULL) {
+        dcon->value_fn = cfn;
         dcon->type = type;
         return dcon;
-      }
     }
   }
   // If this assert is hit (in pre-integration testing!) then re-evaluate

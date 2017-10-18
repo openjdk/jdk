@@ -35,11 +35,11 @@ clean-idea:
 
 verify-idea:
 	$(MKDIR) -p $(IDEA_OUTPUT_DIR)
-	$(BASH) $(TOPDIR)/common/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea1
-	$(BASH) $(TOPDIR)/common/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea2 java.base
-	$(BASH) $(TOPDIR)/common/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea3 java.base jdk.compiler
+	MAKEFLAGS= MFLAGS= $(BASH) $(TOPDIR)/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea1
+	MAKEFLAGS= MFLAGS= $(BASH) $(TOPDIR)/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea2 java.base
+	MAKEFLAGS= MFLAGS= $(BASH) $(TOPDIR)/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea3 java.base jdk.compiler
 
-TEST_TARGETS += verify-idea 
+TEST_TARGETS += verify-idea
 
 all: $(TEST_TARGETS)
 

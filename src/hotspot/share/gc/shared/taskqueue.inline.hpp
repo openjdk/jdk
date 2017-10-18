@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,9 +259,7 @@ GenericTaskQueueSet<T, F>::steal(uint queue_num, int* seed, E& t) {
 
 template <unsigned int N, MEMFLAGS F>
 inline typename TaskQueueSuper<N, F>::Age TaskQueueSuper<N, F>::Age::cmpxchg(const Age new_age, const Age old_age) volatile {
-  return (size_t) Atomic::cmpxchg_ptr((intptr_t)new_age._data,
-                                      (volatile intptr_t *)&_data,
-                                      (intptr_t)old_age._data);
+  return Atomic::cmpxchg(new_age._data, &_data, old_age._data);
 }
 
 template<class E, MEMFLAGS F, unsigned int N>

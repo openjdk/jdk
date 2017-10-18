@@ -35,6 +35,7 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
+#include "trace/tracing.hpp"
 
 static bool _biased_locking_enabled = false;
 BiasedLockingCounters BiasedLocking::_counters;
@@ -643,23 +644,43 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
       // stale epoch.
       ResourceMark rm;
       log_info(biasedlocking)("Revoking bias by walking my own stack:");
+      EventBiasedLockSelfRevocation event;
       BiasedLocking::Condition cond = revoke_bias(obj(), false, false, (JavaThread*) THREAD);
       ((JavaThread*) THREAD)->set_cached_monitor_info(NULL);
       assert(cond == BIAS_REVOKED, "why not?");
+      if (event.should_commit()) {
+        event.set_lockClass(k);
+        event.commit();
+      }
       return cond;
     } else {
+      EventBiasedLockRevocation event;
       VM_RevokeBias revoke(&obj, (JavaThread*) THREAD);
       VMThread::execute(&revoke);
+      if (event.should_commit() && (revoke.status_code() != NOT_BIASED)) {
+        event.set_lockClass(k);
+        // Subtract 1 to match the id of events committed inside the safepoint
+        event.set_safepointId(SafepointSynchronize::safepoint_counter() - 1);
+        event.commit();
+      }
       return revoke.status_code();
     }
   }
 
   assert((heuristics == HR_BULK_REVOKE) ||
          (heuristics == HR_BULK_REBIAS), "?");
+  EventBiasedLockClassRevocation event;
   VM_BulkRevokeBias bulk_revoke(&obj, (JavaThread*) THREAD,
                                 (heuristics == HR_BULK_REBIAS),
                                 attempt_rebias);
   VMThread::execute(&bulk_revoke);
+  if (event.should_commit()) {
+    event.set_revokedClass(obj->klass());
+    event.set_disableBiasing((heuristics != HR_BULK_REBIAS));
+    // Subtract 1 to match the id of events committed inside the safepoint
+    event.set_safepointId(SafepointSynchronize::safepoint_counter() - 1);
+    event.commit();
+  }
   return bulk_revoke.status_code();
 }
 

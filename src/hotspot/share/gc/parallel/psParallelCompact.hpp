@@ -586,7 +586,7 @@ inline void ParallelCompactData::RegionData::set_highest_ref(HeapWord* addr)
 #ifdef ASSERT
   HeapWord* tmp = _highest_ref;
   while (addr > tmp) {
-    tmp = (HeapWord*)Atomic::cmpxchg_ptr(addr, &_highest_ref, tmp);
+    tmp = Atomic::cmpxchg(addr, &_highest_ref, tmp);
   }
 #endif  // #ifdef ASSERT
 }
