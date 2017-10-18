@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,12 +23,14 @@ package com.sun.org.apache.xpath.internal.patterns;
 
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMIterator;
+import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xpath.internal.Expression;
 import com.sun.org.apache.xpath.internal.ExpressionOwner;
 import com.sun.org.apache.xpath.internal.XPathContext;
 import com.sun.org.apache.xpath.internal.XPathVisitor;
 import com.sun.org.apache.xpath.internal.objects.XNumber;
 import com.sun.org.apache.xpath.internal.objects.XObject;
+import java.util.List;
 
 /**
  * Match pattern step that contains a function.
@@ -80,7 +82,7 @@ public class FunctionPattern extends StepPattern
    * in the stack frame (but variables above the globalsTop value will need
    * to be offset to the current stack frame).
    */
-  public void fixupVariables(java.util.Vector vars, int globalsSize)
+  public void fixupVariables(List<QName> vars, int globalsSize)
   {
     super.fixupVariables(vars, globalsSize);
     m_functionExpr.fixupVariables(vars, globalsSize);

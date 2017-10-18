@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,6 +27,7 @@ import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -53,7 +54,7 @@ public class ValidationState implements ValidationContext {
     private Locale fLocale                      = null;
 
     private HashSet<String> fIds;
-    private ArrayList<String> fIdRefList;
+    private List<String> fIdRefList;
 
     //
     // public methods
@@ -91,15 +92,15 @@ public class ValidationState implements ValidationContext {
      * otherwise return an iterator for all the IDREF values without
      * a matching ID value.
      */
-    public Iterator checkIDRefID () {
-        HashSet missingIDs = null;
+    public Iterator<String> checkIDRefID () {
+        HashSet<String> missingIDs = null;
         if (fIdRefList != null) {
             String key;
             for (int i = 0; i < fIdRefList.size(); i++) {
                 key = fIdRefList.get(i);
                 if (fIds == null || !fIds.contains(key)) {
                     if (missingIDs == null) {
-                        missingIDs = new HashSet();
+                        missingIDs = new HashSet<>();
                     }
                     missingIDs.add(key);
                 }
@@ -177,7 +178,7 @@ public class ValidationState implements ValidationContext {
 
     // idref
     public void addIdRef(String name) {
-        if (fIdRefList == null) fIdRefList = new ArrayList();
+        if (fIdRefList == null) fIdRefList = new ArrayList<>();
         fIdRefList.add(name);
     }
     // get symbols

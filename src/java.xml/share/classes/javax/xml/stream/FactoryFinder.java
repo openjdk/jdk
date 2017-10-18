@@ -94,7 +94,7 @@ class FactoryFinder {
      *
      * Use bootstrap classLoader if cl = null and useBSClsLoader is true
      */
-    static private Class getProviderClass(String className, ClassLoader cl,
+    static private Class<?> getProviderClass(String className, ClassLoader cl,
             boolean doFallback, boolean useBSClsLoader) throws ClassNotFoundException
     {
         try {

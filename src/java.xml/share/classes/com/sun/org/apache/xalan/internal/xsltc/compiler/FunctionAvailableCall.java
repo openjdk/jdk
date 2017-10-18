@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,19 +21,18 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.List;
 
 /**
  * @author G. Todd Miller
@@ -52,9 +51,9 @@ final class FunctionAvailableCall extends FunctionCall {
      * a list of arguments where the arguments must be instances of
      * LiteralExpression.
      */
-    public FunctionAvailableCall(QName fname, Vector arguments) {
+    public FunctionAvailableCall(QName fname, List<Expression> arguments) {
         super(fname, arguments);
-        _arg = (Expression)arguments.elementAt(0);
+        _arg = (Expression)arguments.get(0);
         _type = null;
 
         if (_arg instanceof LiteralExpr) {
@@ -131,7 +130,7 @@ final class FunctionAvailableCall extends FunctionCall {
           methodName = replaceDash(methodName);
 
         try {
-            final Class clazz = ObjectFactory.findProviderClass(className, true);
+            final Class<?> clazz = ObjectFactory.findProviderClass(className, true);
 
             if (clazz == null) {
                 return false;

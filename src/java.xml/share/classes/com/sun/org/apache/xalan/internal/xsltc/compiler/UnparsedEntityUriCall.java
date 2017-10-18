@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,8 +21,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
@@ -31,6 +29,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.StringType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -40,7 +39,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 final class UnparsedEntityUriCall extends FunctionCall {
     private Expression _entity;
 
-    public UnparsedEntityUriCall(QName fname, Vector arguments) {
+    public UnparsedEntityUriCall(QName fname, List<Expression> arguments) {
         super(fname, arguments);
         _entity = argument();
     }

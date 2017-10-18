@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,18 +21,6 @@
 
 package com.sun.org.apache.xerces.internal.xinclude;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-
 import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.impl.io.ASCIIReader;
@@ -44,6 +32,17 @@ import com.sun.org.apache.xerces.internal.util.MessageFormatter;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * This class is used for reading resources requested in &lt;include&gt; elements,
@@ -133,10 +132,10 @@ public class XIncludeTextReader {
                     final HTTPInputSource httpInputSource = (HTTPInputSource) source;
 
                     // set request properties
-                    Iterator propIter = httpInputSource.getHTTPRequestProperties();
+                    Iterator<Map.Entry<String, String>> propIter = httpInputSource.getHTTPRequestProperties();
                     while (propIter.hasNext()) {
-                        Map.Entry entry = (Map.Entry) propIter.next();
-                        urlConnection.setRequestProperty((String) entry.getKey(), (String) entry.getValue());
+                        Map.Entry<String, String> entry = propIter.next();
+                        urlConnection.setRequestProperty(entry.getKey(), entry.getValue());
                     }
 
                     // set preference for redirection

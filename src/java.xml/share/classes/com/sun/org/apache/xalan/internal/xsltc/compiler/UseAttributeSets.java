@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +21,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.StringTokenizer;
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
@@ -32,6 +29,9 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * @author Jacek Ambroziak
@@ -45,7 +45,7 @@ final class UseAttributeSets extends Instruction {
         "";
 
     // Contains the names of all references attribute sets
-    private final Vector _sets = new Vector(2);
+    private final List<QName> _sets = new ArrayList<>(2);
 
     /**
      * Constructur - define initial attribute sets to use
@@ -87,10 +87,7 @@ final class UseAttributeSets extends Instruction {
         final InstructionList il = methodGen.getInstructionList();
         final SymbolTable symbolTable = getParser().getSymbolTable();
 
-        // Go through each attribute set and generate a method call
-        for (int i=0; i<_sets.size(); i++) {
-            // Get the attribute set name
-            final QName name = (QName)_sets.elementAt(i);
+        for (QName name : _sets) {
             // Get the AttributeSet reference from the symbol table
             final AttributeSet attrs = symbolTable.lookupAttributeSet(name);
             // Compile the call to the set's method if the set exists
@@ -102,7 +99,7 @@ final class UseAttributeSets extends Instruction {
                 il.append(methodGen.loadHandler());
                 il.append(methodGen.loadCurrentNode());
                 final int method = cpg.addMethodref(classGen.getClassName(),
-                                                    methodName, ATTR_SET_SIG);
+                        methodName, ATTR_SET_SIG);
                 il.append(new INVOKESPECIAL(method));
             }
             // Generate an error if the attribute set does not exist

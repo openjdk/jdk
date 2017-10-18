@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +21,8 @@
 
 package com.sun.org.apache.xerces.internal.xs.datatypes;
 
-import java.util.List;
-
 import com.sun.org.apache.xerces.internal.xs.XSException;
+import java.util.List;
 
 /**
  * <p>The <code>ByteList</code> is an immutable ordered collection of
@@ -32,7 +31,7 @@ import com.sun.org.apache.xerces.internal.xs.XSException;
  * @author Ankit Pasricha, IBM
  *
  */
-public interface ByteList extends List {
+public interface ByteList extends List<Byte> {
 
     /**
      * The number of <code>byte</code>s in the list. The range of

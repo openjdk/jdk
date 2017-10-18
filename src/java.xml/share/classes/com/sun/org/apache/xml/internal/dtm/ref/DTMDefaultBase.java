@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,20 +22,15 @@
 package com.sun.org.apache.xml.internal.dtm.ref;
 
 import com.sun.org.apache.xml.internal.dtm.*;
-import com.sun.org.apache.xml.internal.utils.SuballocatedIntVector;
+import com.sun.org.apache.xml.internal.res.XMLErrorResources;
+import com.sun.org.apache.xml.internal.res.XMLMessages;
 import com.sun.org.apache.xml.internal.utils.BoolStack;
-
-import java.util.Vector;
-
-import javax.xml.transform.Source;
-
+import com.sun.org.apache.xml.internal.utils.SuballocatedIntVector;
 import com.sun.org.apache.xml.internal.utils.XMLString;
 import com.sun.org.apache.xml.internal.utils.XMLStringFactory;
-
-import com.sun.org.apache.xml.internal.res.XMLMessages;
-import com.sun.org.apache.xml.internal.res.XMLErrorResources;
-
 import java.io.*; // for dumpDTM
+import java.util.Vector;
+import javax.xml.transform.Source;
 
 /**
  * The <code>DTMDefaultBase</code> class serves as a helper base for DTMs.
@@ -74,7 +69,7 @@ public abstract class DTMDefaultBase implements DTM
   protected SuballocatedIntVector m_parent;
 
   /** Vector of SuballocatedIntVectors of NS decl sets */
-  protected Vector m_namespaceDeclSets = null;
+  protected Vector<SuballocatedIntVector> m_namespaceDeclSets = null;
 
   /** SuballocatedIntVector  of elements at which corresponding
    * namespaceDeclSets were defined */
@@ -1241,12 +1236,9 @@ public abstract class DTMDefaultBase implements DTM
     return DTM.NULL;
   }
 
-  /** Lazily created namespace lists. */
-  private Vector m_namespaceLists = null;  // on demand
-
 
   /** Build table of namespace declaration
-   * locations during DTM construction. Table is a Vector of
+   * locations during DTM construction. Table is aArrayList<>of
    * SuballocatedIntVectors containing the namespace node HANDLES declared at
    * that ID, plus an SuballocatedIntVector of the element node INDEXES at which
    * these declarations appeared.
@@ -1267,9 +1259,9 @@ public abstract class DTMDefaultBase implements DTM
         // First
         m_namespaceDeclSetElements=new SuballocatedIntVector(32);
         m_namespaceDeclSetElements.addElement(elementNodeIndex);
-        m_namespaceDeclSets=new Vector();
+        m_namespaceDeclSets=new Vector<>();
         nsList=new SuballocatedIntVector(32);
-        m_namespaceDeclSets.addElement(nsList);
+        m_namespaceDeclSets.add(nsList);
       }
     else
       {
@@ -1279,7 +1271,7 @@ public abstract class DTMDefaultBase implements DTM
 
         if(last>=0 && elementNodeIndex==m_namespaceDeclSetElements.elementAt(last))
           {
-            nsList=(SuballocatedIntVector)m_namespaceDeclSets.elementAt(last);
+            nsList=m_namespaceDeclSets.get(last);
           }
       }
     if(nsList==null)
@@ -1308,7 +1300,7 @@ public abstract class DTMDefaultBase implements DTM
             nsList=new SuballocatedIntVector(32);
         }
 
-        m_namespaceDeclSets.addElement(nsList);
+        m_namespaceDeclSets.add(nsList);
       }
 
     // Handle overwriting inherited.
@@ -1344,7 +1336,7 @@ public abstract class DTMDefaultBase implements DTM
         int wouldBeAt=findInSortedSuballocatedIntVector(m_namespaceDeclSetElements,
                                             elementNodeIndex);
         if(wouldBeAt>=0) // Found it
-          return (SuballocatedIntVector) m_namespaceDeclSets.elementAt(wouldBeAt);
+          return m_namespaceDeclSets.get(wouldBeAt);
         if(wouldBeAt == -1) // -1-wouldbeat == 0
           return null; // Not after anything; definitely not found
 
@@ -1372,7 +1364,7 @@ public abstract class DTMDefaultBase implements DTM
           }
 
           if (candidate == uppermostNSCandidateID) {
-            return (SuballocatedIntVector)m_namespaceDeclSets.elementAt(wouldBeAt);
+            return m_namespaceDeclSets.get(wouldBeAt);
           }
         }
 
@@ -1380,7 +1372,7 @@ public abstract class DTMDefaultBase implements DTM
           {
             if (candidate==ancestor) {
                 // Found ancestor in list
-                return (SuballocatedIntVector)m_namespaceDeclSets.elementAt(wouldBeAt);
+                return m_namespaceDeclSets.get(wouldBeAt);
             } else if (candidate<ancestor) {
                 // Too deep in tree
                 do {

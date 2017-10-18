@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -19,9 +20,6 @@
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
-
-import java.util.ArrayList;
-import java.util.Vector;
 
 import com.sun.org.apache.bcel.internal.classfile.Field;
 import com.sun.org.apache.bcel.internal.generic.ALOAD;
@@ -53,6 +51,8 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.dtm.Axis;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -69,7 +69,7 @@ final class Sort extends Instruction implements Closure {
     private String         _lang; // bug! see 26869
 
     private String _className = null;
-    private ArrayList<VariableRefBase> _closureVars = null;
+    private List<VariableRefBase> _closureVars = null;
     private boolean _needsSortRecordFactory = false;
 
     // -- Begin Closure interface --------------------
@@ -233,7 +233,7 @@ final class Sort extends Instruction implements Closure {
     public static void translateSortIterator(ClassGenerator classGen,
                                       MethodGenerator methodGen,
                                       Expression nodeSet,
-                                      Vector<Sort> sortObjects)
+                                      List<Sort> sortObjects)
     {
         final ConstantPoolGen cpg = classGen.getConstantPool();
         final InstructionList il = methodGen.getInstructionList();
@@ -299,7 +299,7 @@ final class Sort extends Instruction implements Closure {
      * Compiles code that instantiates a NodeSortRecordFactory object which
      * will produce NodeSortRecord objects of a specific type.
      */
-    public static void compileSortRecordFactory(Vector<Sort> sortObjects,
+    public static void compileSortRecordFactory(List<Sort> sortObjects,
         ClassGenerator classGen, MethodGenerator methodGen)
     {
         String sortRecordClass =
@@ -308,7 +308,7 @@ final class Sort extends Instruction implements Closure {
         boolean needsSortRecordFactory = false;
         final int nsorts = sortObjects.size();
         for (int i = 0; i < nsorts; i++) {
-            final Sort sort = sortObjects.elementAt(i);
+            final Sort sort = sortObjects.get(i);
             needsSortRecordFactory |= sort._needsSortRecordFactory;
         }
 
@@ -339,7 +339,7 @@ final class Sort extends Instruction implements Closure {
         il.append(new PUSH(cpg, nsorts));
         il.append(new ANEWARRAY(cpg.addClass(STRING)));
         for (int level = 0; level < nsorts; level++) {
-            final Sort sort = (Sort)sortObjects.elementAt(level);
+            final Sort sort = sortObjects.get(level);
             il.append(DUP);
             il.append(new PUSH(cpg, level));
             sort.translateSortOrder(classGen, methodGen);
@@ -354,7 +354,7 @@ final class Sort extends Instruction implements Closure {
         il.append(new PUSH(cpg, nsorts));
         il.append(new ANEWARRAY(cpg.addClass(STRING)));
         for (int level = 0; level < nsorts; level++) {
-            final Sort sort = (Sort)sortObjects.elementAt(level);
+            final Sort sort = sortObjects.get(level);
             il.append(DUP);
             il.append(new PUSH(cpg, level));
             sort.translateSortType(classGen, methodGen);
@@ -369,7 +369,7 @@ final class Sort extends Instruction implements Closure {
         il.append(new PUSH(cpg, nsorts));
         il.append(new ANEWARRAY(cpg.addClass(STRING)));
         for (int level = 0; level < nsorts; level++) {
-              final Sort sort = (Sort)sortObjects.elementAt(level);
+              final Sort sort = sortObjects.get(level);
               il.append(DUP);
               il.append(new PUSH(cpg, level));
               sort.translateLang(classGen, methodGen);
@@ -384,7 +384,7 @@ final class Sort extends Instruction implements Closure {
         il.append(new PUSH(cpg, nsorts));
         il.append(new ANEWARRAY(cpg.addClass(STRING)));
         for (int level = 0; level < nsorts; level++) {
-            final Sort sort = (Sort)sortObjects.elementAt(level);
+            final Sort sort = sortObjects.get(level);
             il.append(DUP);
             il.append(new PUSH(cpg, level));
             sort.translateCaseOrder(classGen, methodGen);
@@ -416,7 +416,7 @@ final class Sort extends Instruction implements Closure {
                     + "[" + STRING_SIG + ")V")));
 
         // Initialize closure variables in sortRecordFactory
-        final ArrayList<VariableRefBase> dups = new ArrayList<>();
+        final List<VariableRefBase> dups = new ArrayList<>();
 
         for (int j = 0; j < nsorts; j++) {
             final Sort sort = (Sort) sortObjects.get(j);
@@ -442,11 +442,11 @@ final class Sort extends Instruction implements Closure {
         }
     }
 
-    public static String compileSortRecordFactory(Vector<Sort> sortObjects,
+    public static String compileSortRecordFactory(List<Sort> sortObjects,
         ClassGenerator classGen, MethodGenerator methodGen,
         String sortRecordClass)
     {
-        final XSLTC xsltc = (sortObjects.firstElement()).getXSLTC();
+        final XSLTC xsltc = (sortObjects.get(0)).getXSLTC();
         final String className = xsltc.getHelperClassName();
 
         final NodeSortRecordFactGenerator sortRecordFactory =
@@ -461,7 +461,7 @@ final class Sort extends Instruction implements Closure {
 
         // Add a new instance variable for each var in closure
         final int nsorts = sortObjects.size();
-        final ArrayList<VariableRefBase> dups = new ArrayList<>();
+        final List<VariableRefBase> dups = new ArrayList<>();
 
         for (int j = 0; j < nsorts; j++) {
             final Sort sort = sortObjects.get(j);
@@ -587,10 +587,10 @@ final class Sort extends Instruction implements Closure {
     /**
      * Create a new auxillary class extending NodeSortRecord.
      */
-    private static String compileSortRecord(Vector<Sort> sortObjects,
+    private static String compileSortRecord(List<Sort> sortObjects,
                                             ClassGenerator classGen,
                                             MethodGenerator methodGen) {
-        final XSLTC  xsltc = sortObjects.firstElement().getXSLTC();
+        final XSLTC  xsltc = sortObjects.get(0).getXSLTC();
         final String className = xsltc.getHelperClassName();
 
         // This generates a new class for handling this specific sort
@@ -606,7 +606,7 @@ final class Sort extends Instruction implements Closure {
 
         // Add a new instance variable for each var in closure
         final int nsorts = sortObjects.size();
-        final ArrayList<VariableRefBase> dups = new ArrayList<>();
+        final List<VariableRefBase> dups = new ArrayList<>();
 
         for (int j = 0; j < nsorts; j++) {
             final Sort sort = sortObjects.get(j);
@@ -673,7 +673,7 @@ final class Sort extends Instruction implements Closure {
     /**
      * Compiles a method that overloads NodeSortRecord.extractValueFromDOM()
      */
-    private static MethodGenerator compileExtract(Vector<Sort> sortObjects,
+    private static MethodGenerator compileExtract(List<Sort> sortObjects,
                                          NodeSortRecordGenerator sortRecord,
                                          ConstantPoolGen cpg,
                                          String className) {
@@ -715,7 +715,7 @@ final class Sort extends Instruction implements Closure {
         // Append all the cases for the switch statment
         for (int level = 0; level < levels; level++) {
             match[level] = level;
-            final Sort sort = sortObjects.elementAt(level);
+            final Sort sort = sortObjects.get(level);
             target[level] = il.append(NOP);
             sort.translateSelect(sortRecord, extractMethod);
             il.append(ARETURN);

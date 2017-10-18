@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -59,7 +60,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
     /**
      * A mapping from a document node to the mapping between values and nodesets
      */
-    private Map<Integer, Map> _rootToIndexMap = new HashMap<>();
+    private Map<Integer, Map<String, IntegerArray>> _rootToIndexMap = new HashMap<>();
 
     /**
      * The node set associated to the current value passed

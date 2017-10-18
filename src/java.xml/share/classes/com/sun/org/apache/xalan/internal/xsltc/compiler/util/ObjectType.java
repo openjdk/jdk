@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,8 +31,8 @@ import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
 import com.sun.org.apache.bcel.internal.generic.Instruction;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.Constants;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.Constants;
 
 /**
  * @author Todd Miller
@@ -41,7 +41,7 @@ import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 public final class ObjectType extends Type {
 
     private String _javaClassName = "java.lang.Object";
-    private Class  _clazz = java.lang.Object.class;
+    private Class<?>  _clazz = java.lang.Object.class;
 
     /**
      * Used to represent a Java Class type such is required to support
@@ -59,7 +59,7 @@ public final class ObjectType extends Type {
         }
     }
 
-    protected ObjectType(Class clazz) {
+    protected ObjectType(Class<?> clazz) {
         _clazz = clazz;
         _javaClassName = clazz.getName();
     }
@@ -80,7 +80,7 @@ public final class ObjectType extends Type {
         return _javaClassName;
     }
 
-    public Class getJavaClass() {
+    public Class<?> getJavaClass() {
         return _clazz;
     }
 
@@ -149,7 +149,7 @@ public final class ObjectType extends Type {
      * when external functions are called.
      */
     public void translateTo(ClassGenerator classGen, MethodGenerator methodGen,
-                            Class clazz) {
+                            Class<?> clazz) {
         if (clazz.isAssignableFrom(_clazz))
             methodGen.getInstructionList().append(NOP);
         else {
@@ -163,7 +163,7 @@ public final class ObjectType extends Type {
      * Translates an external Java type into an Object type
      */
     public void translateFrom(ClassGenerator classGen,
-                              MethodGenerator methodGen, Class clazz) {
+                              MethodGenerator methodGen, Class<?> clazz) {
         methodGen.getInstructionList().append(NOP);
     }
 

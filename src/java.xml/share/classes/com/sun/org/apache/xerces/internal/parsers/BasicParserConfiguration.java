@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,11 +21,6 @@
 
 package com.sun.org.apache.xerces.internal.parsers;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.util.FeatureState;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
@@ -44,6 +39,11 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLEntityResolver;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * A very basic parser configuration. This configuration class can
@@ -156,7 +156,7 @@ public abstract class BasicParserConfiguration
     protected Locale fLocale;
 
     /** Components. */
-    protected ArrayList fComponents;
+    protected List<XMLComponent> fComponents;
 
     // handlers
 
@@ -202,11 +202,11 @@ public abstract class BasicParserConfiguration
         super(parentSettings);
 
         // create a vector to hold all the components in use
-        fComponents = new ArrayList();
+        fComponents = new ArrayList<>();
 
         // create table for features and properties
-        fFeatures = new HashMap();
-        fProperties = new HashMap();
+        fFeatures = new HashMap<>();
+        fProperties = new HashMap<>();
 
         // add default recognized features
         final String[] recognizedFeatures = {
@@ -442,9 +442,7 @@ public abstract class BasicParserConfiguration
         throws XMLConfigurationException {
 
         // forward to every component
-        int count = fComponents.size();
-        for (int i = 0; i < count; i++) {
-            XMLComponent c = (XMLComponent) fComponents.get(i);
+        for (XMLComponent c : fComponents) {
             c.setFeature(featureId, state);
         }
         // save state if noone "objects"
@@ -462,9 +460,7 @@ public abstract class BasicParserConfiguration
         throws XMLConfigurationException {
 
         // forward to every component
-        int count = fComponents.size();
-        for (int i = 0; i < count; i++) {
-            XMLComponent c = (XMLComponent) fComponents.get(i);
+        for (XMLComponent c : fComponents) {
             c.setProperty(propertyId, value);
         }
 
@@ -498,14 +494,10 @@ public abstract class BasicParserConfiguration
      * reset all components before parsing and namespace context
      */
     protected void reset() throws XNIException {
-
         // reset every component
-        int count = fComponents.size();
-        for (int i = 0; i < count; i++) {
-            XMLComponent c = (XMLComponent) fComponents.get(i);
+        for (XMLComponent c : fComponents) {
             c.reset(this);
         }
-
     } // reset()
 
     /**

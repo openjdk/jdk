@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,16 +24,16 @@
 
 package com.sun.org.apache.xml.internal.dtm.ref;
 
-import java.util.Vector;
-
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMDOMException;
 import com.sun.org.apache.xpath.internal.NodeSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Comment;
+import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
@@ -46,10 +46,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.ProcessingInstruction;
 import org.w3c.dom.Text;
-
-import org.w3c.dom.UserDataHandler;
-import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.TypeInfo;
+import org.w3c.dom.UserDataHandler;
 
 /**
  * <code>DTMNodeProxy</code> presents a DOM Node API front-end to the DTM model.
@@ -782,7 +780,7 @@ public class DTMNodeProxy
   @Override
   public final NodeList getElementsByTagName(String tagname)
   {
-       Vector listVector = new Vector();
+       List<Node> listVector = new ArrayList<>();
        Node retNode = dtm.getNode(node);
        if (retNode != null)
        {
@@ -804,7 +802,7 @@ public class DTMNodeProxy
        NodeSet nodeSet = new NodeSet(size);
        for (int i = 0; i < size; i++)
        {
-         nodeSet.addNode((Node) listVector.elementAt(i));
+         nodeSet.addNode(listVector.get(i));
        }
        return (NodeList) nodeSet;
   }
@@ -819,12 +817,8 @@ public class DTMNodeProxy
    *
    * Private method to be used for recursive iterations to obtain elements by tag name.
    */
-  private final void traverseChildren
-  (
-    Vector listVector,
-    Node tempNode,
-    String tagname,
-    boolean isTagNameWildCard) {
+  private final void traverseChildren(List<Node> listVector, Node tempNode,
+          String tagname, boolean isTagNameWildCard) {
     if (tempNode == null)
     {
       return;
@@ -913,7 +907,7 @@ public class DTMNodeProxy
   public final NodeList getElementsByTagNameNS(String namespaceURI,
                                                String localName)
   {
-    Vector listVector = new Vector();
+    List<Node> listVector = new ArrayList<>();
     Node retNode = dtm.getNode(node);
     if (retNode != null)
     {
@@ -936,7 +930,7 @@ public class DTMNodeProxy
     NodeSet nodeSet = new NodeSet(size);
     for (int i = 0; i < size; i++)
     {
-      nodeSet.addNode((Node)listVector.elementAt(i));
+      nodeSet.addNode(listVector.get(i));
     }
     return (NodeList) nodeSet;
   }
@@ -952,14 +946,9 @@ public class DTMNodeProxy
    * Private method to be used for recursive iterations to obtain elements by tag name
    * and namespaceURI.
    */
-  private final void traverseChildren
-  (
-   Vector listVector,
-   Node tempNode,
-   String namespaceURI,
-   String localname,
-   boolean isNamespaceURIWildCard,
-   boolean isLocalNameWildCard)
+  private final void traverseChildren(List<Node> listVector, Node tempNode,
+          String namespaceURI, String localname, boolean isNamespaceURIWildCard,
+          boolean isLocalNameWildCard)
    {
     if (tempNode == null)
     {

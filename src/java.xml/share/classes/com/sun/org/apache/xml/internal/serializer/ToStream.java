@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -566,7 +566,7 @@ abstract public class ToStream extends SerializerBase {
             // and the non-default values after that,
             // just in case there is some unexpected
             // residual values left over from over-ridden default values
-            Enumeration propNames;
+            Enumeration<?> propNames;
             propNames = format.propertyNames();
             while (propNames.hasMoreElements()) {
                 String key = (String) propNames.nextElement();
@@ -2649,14 +2649,14 @@ abstract public class ToStream extends SerializerBase {
      *
      * This method is essentially a copy of getQNameProperties() from
      * OutputProperties. Eventually this method should go away and a call
-     * to setCdataSectionElements(ArrayList<String> v) should be made directly.
+     * to setCdataSectionElements(List<String> v) should be made directly.
      */
     private void setCdataSectionElements(String key, Properties props) {
         String s = props.getProperty(key);
 
         if (null != s) {
-            // ArrayList<String> of URI/LocalName pairs
-            ArrayList<String> al = new ArrayList<>();
+            // List<String> of URI/LocalName pairs
+            List<String> al = new ArrayList<>();
             int l = s.length();
             boolean inCurly = false;
             StringBuilder buf = new StringBuilder();
@@ -2706,7 +2706,7 @@ abstract public class ToStream extends SerializerBase {
      *
      * @return a QName object
      */
-    private void addCdataSectionElement(String URI_and_localName, ArrayList<String> al) {
+    private void addCdataSectionElement(String URI_and_localName, List<String> al) {
         StringTokenizer tokenizer = new StringTokenizer(URI_and_localName, "{}", false);
         String s1 = tokenizer.nextToken();
         String s2 = tokenizer.hasMoreTokens() ? tokenizer.nextToken() : null;
@@ -2729,7 +2729,7 @@ abstract public class ToStream extends SerializerBase {
      *
      * @param URI_and_localNames an ArrayList of pairs of Strings (URI/local)
      */
-    public void setCdataSectionElements(ArrayList<String> URI_and_localNames) {
+    public void setCdataSectionElements(List<String> URI_and_localNames) {
         // convert to the new way.
         if (URI_and_localNames != null) {
             final int len = URI_and_localNames.size() - 1;

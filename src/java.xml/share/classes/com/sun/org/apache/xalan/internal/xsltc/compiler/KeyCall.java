@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,28 +21,16 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
-import com.sun.org.apache.bcel.internal.generic.ALOAD;
-import com.sun.org.apache.bcel.internal.generic.ASTORE;
-import com.sun.org.apache.bcel.internal.generic.BranchHandle;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
-import com.sun.org.apache.bcel.internal.generic.GOTO;
-import com.sun.org.apache.bcel.internal.generic.IFGT;
-import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
-import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
-import com.sun.org.apache.bcel.internal.generic.InstructionHandle;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
-import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
-import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.StringType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+import java.util.List;
 
 /**
  * @author Morten Jorgensen
@@ -82,7 +70,7 @@ final class KeyCall extends FunctionCall {
      * @param fname The function name (should be 'key' or 'id')
      * @param arguments A vector containing the arguments the the function
      */
-    public KeyCall(QName fname, Vector arguments) {
+    public KeyCall(QName fname, List<Expression> arguments) {
         super(fname, arguments);
         switch(argumentCount()) {
         case 1:

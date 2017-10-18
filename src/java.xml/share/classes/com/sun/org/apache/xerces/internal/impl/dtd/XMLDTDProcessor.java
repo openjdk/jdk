@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,13 +20,6 @@
  */
 
 package com.sun.org.apache.xerces.internal.impl.dtd;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.StringTokenizer;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
@@ -51,6 +44,12 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDContentModelFilter;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDContentModelSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDFilter;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDSource;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * The DTD processor. The processor implements a DTD
@@ -239,28 +238,28 @@ public class XMLDTDProcessor
     private final XMLEntityDecl fEntityDecl = new XMLEntityDecl();
 
     /** Notation declaration hash. */
-    private final HashMap fNDataDeclNotations = new HashMap();
+    private final Map<String, String> fNDataDeclNotations = new HashMap<>();
 
     /** DTD element declaration name. */
     private String fDTDElementDeclName = null;
 
     /** Mixed element type "hash". */
-    private final ArrayList fMixedElementTypes = new ArrayList();
+    private final List<String> fMixedElementTypes = new ArrayList<>();
 
     /** Element declarations in DTD. */
-    private final ArrayList fDTDElementDecls = new ArrayList();
+    private final List<String> fDTDElementDecls = new ArrayList<>();
 
     // to check for duplicate ID or ANNOTATION attribute declare in
     // ATTLIST, and misc VCs
 
     /** ID attribute names. */
-    private HashMap fTableOfIDAttributeNames;
+    private Map<String, String> fTableOfIDAttributeNames;
 
     /** NOTATION attribute names. */
-    private HashMap fTableOfNOTATIONAttributeNames;
+    private Map<String, String> fTableOfNOTATIONAttributeNames;
 
     /** NOTATION enumeration values. */
-    private HashMap fNotationEnumVals;
+    private Map<String, String> fNotationEnumVals;
 
     //
     // Constructors
@@ -351,12 +350,12 @@ public class XMLDTDProcessor
         if (fValidation) {
 
             if (fNotationEnumVals == null) {
-                fNotationEnumVals = new HashMap();
+                fNotationEnumVals = new HashMap<>();
             }
             fNotationEnumVals.clear();
 
-            fTableOfIDAttributeNames = new HashMap();
-            fTableOfNOTATIONAttributeNames = new HashMap();
+            fTableOfIDAttributeNames = new HashMap<>();
+            fTableOfNOTATIONAttributeNames = new HashMap<>();
         }
 
     }
@@ -888,7 +887,7 @@ public class XMLDTDProcessor
                         //basis of error or warning thrown. - nb.
 
                         if(!duplicateAttributeDef){
-                                String previousIDAttributeName = (String)fTableOfIDAttributeNames.get( elementName );//rule a)
+                                String previousIDAttributeName = fTableOfIDAttributeNames.get( elementName );//rule a)
                                 fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                                                "MSG_MORE_THAN_ONE_ID_ATTRIBUTE",
                                                new Object[]{ elementName, previousIDAttributeName, attributeName},
@@ -912,16 +911,16 @@ public class XMLDTDProcessor
                     fTableOfNOTATIONAttributeNames.put( elementName, attributeName);
                 }
                 else {
-                        //we should not report an error, when there is duplicate attribute definition for given element type
-                        //according to XML 1.0 spec, When more than one definition is provided for the same attribute of a given
-                        //element type, the first declaration is binding and later declaration are *ignored*. So processor should
-                        //ignore the second declarations, however an application would be warned of the duplicate attribute definition
-                        // if http://apache.org/xml/features/validation/warn-on-duplicate-attdef feature is set to true, Application behavior may differ on the basis of error or
-                        //warning thrown. - nb.
+                    //we should not report an error, when there is duplicate attribute definition for given element type
+                    //according to XML 1.0 spec, When more than one definition is provided for the same attribute of a given
+                    //element type, the first declaration is binding and later declaration are *ignored*. So processor should
+                    //ignore the second declarations, however an application would be warned of the duplicate attribute definition
+                    // if http://apache.org/xml/features/validation/warn-on-duplicate-attdef feature is set to true,
+                    // Application behavior may differ on the basis of error or warning thrown. - nb.
 
                         if(!duplicateAttributeDef){
 
-                                String previousNOTATIONAttributeName = (String) fTableOfNOTATIONAttributeNames.get( elementName );
+                                String previousNOTATIONAttributeName = fTableOfNOTATIONAttributeNames.get( elementName );
                                 fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                                                "MSG_MORE_THAN_ONE_NOTATION_ATTRIBUTE",
                                                new Object[]{ elementName, previousNOTATIONAttributeName, attributeName},
@@ -1274,44 +1273,36 @@ public class XMLDTDProcessor
         if (fValidation) {
             DTDGrammar grammar = (fDTDGrammar != null? fDTDGrammar: fGrammarBucket.getActiveGrammar());
 
-            // VC : Notation Declared. for external entity declaration [Production 76].
-            Iterator entities = fNDataDeclNotations.entrySet().iterator();
-            while (entities.hasNext()) {
-                Map.Entry entry = (Map.Entry) entities.next();
-                String notation = (String) entry.getValue();
+            // VC: Notation Declared. for external entity declaration [Production 76].
+            for (Map.Entry<String, String> entry : fNDataDeclNotations.entrySet()) {
+                String notation = entry.getValue();
                 if (grammar.getNotationDeclIndex(notation) == -1) {
-                    String entity = (String) entry.getKey();
+                    String entity = entry.getKey();
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
-                                               "MSG_NOTATION_NOT_DECLARED_FOR_UNPARSED_ENTITYDECL",
-                                               new Object[]{entity, notation},
-                                               XMLErrorReporter.SEVERITY_ERROR);
+                            "MSG_NOTATION_NOT_DECLARED_FOR_UNPARSED_ENTITYDECL",
+                            new Object[]{entity, notation},
+                            XMLErrorReporter.SEVERITY_ERROR);
                 }
             }
 
-            // VC: Notation Attributes:
-            //     all notation names in the (attribute) declaration must be declared.
-            Iterator notationVals = fNotationEnumVals.entrySet().iterator();
-            while (notationVals.hasNext()) {
-                Map.Entry entry = (Map.Entry) notationVals.next();
-                String notation = (String) entry.getKey();
+            for (Map.Entry<String, String> entry : fNotationEnumVals.entrySet()) {
+                String notation = entry.getKey();
                 if (grammar.getNotationDeclIndex(notation) == -1) {
-                    String attributeName = (String) entry.getValue();
+                    String attributeName = entry.getValue();
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
-                                               "MSG_NOTATION_NOT_DECLARED_FOR_NOTATIONTYPE_ATTRIBUTE",
-                                               new Object[]{attributeName, notation},
-                                               XMLErrorReporter.SEVERITY_ERROR);
+                            "MSG_NOTATION_NOT_DECLARED_FOR_NOTATIONTYPE_ATTRIBUTE",
+                            new Object[]{attributeName, notation},
+                            XMLErrorReporter.SEVERITY_ERROR);
                 }
             }
 
             // VC: No Notation on Empty Element
             // An attribute of type NOTATION must not be declared on an element declared EMPTY.
-            Iterator elementsWithNotations = fTableOfNOTATIONAttributeNames.entrySet().iterator();
-            while (elementsWithNotations.hasNext()) {
-                Map.Entry entry = (Map.Entry) elementsWithNotations.next();
-                String elementName = (String) entry.getKey();
+            for (Map.Entry<String, String> entry : fTableOfNOTATIONAttributeNames.entrySet()) {
+                String elementName = entry.getKey();
                 int elementIndex = grammar.getElementDeclIndex(elementName);
                 if (grammar.getContentSpecType(elementIndex) == XMLElementDecl.TYPE_EMPTY) {
-                    String attributeName = (String) entry.getValue();
+                    String attributeName = entry.getValue();
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                                                "NoNotationOnEmptyElement",
                                                new Object[]{elementName, attributeName},

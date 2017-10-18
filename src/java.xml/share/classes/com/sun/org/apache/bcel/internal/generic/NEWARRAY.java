@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,11 +21,10 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-
 import com.sun.org.apache.bcel.internal.ExceptionConst;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 /**
  * NEWARRAY -  Create new array of basic type (int, short, ...)
@@ -107,7 +106,7 @@ public class NEWARRAY extends Instruction implements AllocationInstruction, Exce
 
     @Override
     public Class<?>[] getExceptions() {
-        return new Class[] {
+        return new Class<?>[] {
             ExceptionConst.NEGATIVE_ARRAY_SIZE_EXCEPTION
         };
     }

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +21,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.StringTokenizer;
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ALOAD;
 import com.sun.org.apache.bcel.internal.generic.BranchHandle;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
@@ -40,6 +37,9 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * @author Morten Jorgensen
@@ -63,7 +63,7 @@ final class Whitespace extends TopLevelElement {
     /**
      * Auxillary class for encapsulating a single strip/preserve rule
      */
-    private final static class WhitespaceRule {
+    final static class WhitespaceRule {
         private final int _action;
         private String _namespace; // Should be replaced by NS type (int)
         private String _element;   // Should be replaced by node type (int)
@@ -174,8 +174,8 @@ final class Whitespace extends TopLevelElement {
      * De-tokenize the elements listed in the 'elements' attribute and
      * instanciate a set of strip/preserve rules.
      */
-    public Vector getRules() {
-        final Vector rules = new Vector();
+    public List<WhitespaceRule> getRules() {
+        final List<WhitespaceRule> rules = new ArrayList<>();
         // Go through each element and instanciate strip/preserve-object
         final StringTokenizer list = new StringTokenizer(_elementList);
         while (list.hasMoreElements()) {
@@ -191,35 +191,33 @@ final class Whitespace extends TopLevelElement {
      * Scans through the rules vector and looks for a rule of higher
      * priority that contradicts the current rule.
      */
-    private static WhitespaceRule findContradictingRule(Vector rules,
+    private static WhitespaceRule findContradictingRule(List<WhitespaceRule> rules,
                                                         WhitespaceRule rule) {
-        for (int i = 0; i < rules.size(); i++) {
-            // Get the next rule in the prioritized list
-            WhitespaceRule currentRule = (WhitespaceRule)rules.elementAt(i);
+        for (WhitespaceRule currentRule : rules) {
             // We only consider rules with higher priority
             if (currentRule == rule) {
                 return null;
             }
 
             /*
-             * See if there is a contradicting rule with higher priority.
-             * If the rules has the same action then this rule is redundant,
-             * if they have different action then this rule will never win.
-             */
+            * See if there is a contradicting rule with higher priority.
+            * If the rules has the same action then this rule is redundant,
+            * if they have different action then this rule will never win.
+            */
             switch (currentRule.getStrength()) {
-            case RULE_ALL:
-                return currentRule;
-
-            case RULE_ELEMENT:
-                if (!rule.getElement().equals(currentRule.getElement())) {
-                    break;
-                }
-                // intentional fall-through
-            case RULE_NAMESPACE:
-                if (rule.getNamespace().equals(currentRule.getNamespace())) {
+                case RULE_ALL:
                     return currentRule;
-                }
-                break;
+
+                case RULE_ELEMENT:
+                    if (!rule.getElement().equals(currentRule.getElement())) {
+                        break;
+                    }
+                // intentional fall-through
+                case RULE_NAMESPACE:
+                    if (rule.getNamespace().equals(currentRule.getNamespace())) {
+                        return currentRule;
+                    }
+                    break;
             }
         }
         return null;
@@ -230,7 +228,7 @@ final class Whitespace extends TopLevelElement {
      * Orders a set or rules by priority, removes redundant rules and rules
      * that are shadowed by stronger, contradicting rules.
      */
-    private static int prioritizeRules(Vector rules) {
+    private static int prioritizeRules(List<WhitespaceRule> rules) {
         WhitespaceRule currentRule;
         int defaultAction = PRESERVE_SPACE;
 
@@ -242,20 +240,20 @@ final class Whitespace extends TopLevelElement {
         // elements and signal that all whitespaces should be preserved
         boolean strip = false;
         for (int i = 0; i < rules.size(); i++) {
-            currentRule = (WhitespaceRule)rules.elementAt(i);
+            currentRule = rules.get(i);
             if (currentRule.getAction() == STRIP_SPACE) {
                 strip = true;
             }
         }
         // Return with default action: PRESERVE_SPACE
         if (!strip) {
-            rules.removeAllElements();
+            rules.clear();
             return PRESERVE_SPACE;
         }
 
         // Remove all rules that are contradicted by rules with higher priority
         for (int idx = 0; idx < rules.size(); ) {
-            currentRule = (WhitespaceRule)rules.elementAt(idx);
+            currentRule = rules.get(idx);
 
             // Remove this single rule if it has no purpose
             if (findContradictingRule(rules,currentRule) != null) {
@@ -266,7 +264,7 @@ final class Whitespace extends TopLevelElement {
                 if (currentRule.getStrength() == RULE_ALL) {
                     defaultAction = currentRule.getAction();
                     for (int i = idx; i < rules.size(); i++) {
-                        rules.removeElementAt(i);
+                        rules.remove(i);
                     }
                 }
                 // Skip to next rule (there might not be any)...
@@ -275,16 +273,16 @@ final class Whitespace extends TopLevelElement {
         }
 
         // The rules vector could be empty if first rule has strength RULE_ALL
-        if (rules.size() == 0) {
+        if (rules.isEmpty()) {
             return defaultAction;
         }
 
         // Now work backwards and strip away all rules that have the same
         // action as the default rule (no reason the check them at the end).
         do {
-            currentRule = (WhitespaceRule)rules.lastElement();
+            currentRule = rules.get(rules.size() - 1);
             if (currentRule.getAction() == defaultAction) {
-                rules.removeElementAt(rules.size() - 1);
+                rules.remove(rules.size() - 1);
             }
             else {
                 break;
@@ -330,7 +328,7 @@ final class Whitespace extends TopLevelElement {
     /**
      * Compiles the predicate method
      */
-    private static void compilePredicate(Vector rules,
+    private static void compilePredicate(List<WhitespaceRule> rules,
                                          int defaultAction,
                                          ClassGenerator classGen) {
         final ConstantPoolGen cpg = classGen.getConstantPool();
@@ -363,7 +361,7 @@ final class Whitespace extends TopLevelElement {
         // Traverse all strip/preserve rules
         for (int i = 0; i<rules.size(); i++) {
             // Get the next rule in the prioritised list
-            WhitespaceRule rule = (WhitespaceRule)rules.elementAt(i);
+            WhitespaceRule rule = rules.get(i);
 
             // Returns the namespace for a node in the DOM
             final int gns = cpg.addInterfaceMethodref(DOM_INTF,
@@ -467,7 +465,7 @@ final class Whitespace extends TopLevelElement {
      *    - STRIP_SPACE    (always strip whitespace text-nodes)
      *    - PRESERVE_SPACE (always preserve whitespace text-nodes)
      */
-    public static int translateRules(Vector rules,
+    public static int translateRules(List<WhitespaceRule> rules,
                                      ClassGenerator classGen) {
         // Get the core rules in prioritized order
         final int defaultAction = prioritizeRules(rules);
@@ -485,7 +483,7 @@ final class Whitespace extends TopLevelElement {
     /**
      * Sorts a range of rules with regard to PRIORITY only
      */
-    private static void quicksort(Vector rules, int p, int r) {
+    private static void quicksort(List<WhitespaceRule> rules, int p, int r) {
         while (p < r) {
             final int q = partition(rules, p, r);
             quicksort(rules, p, q);
@@ -496,18 +494,18 @@ final class Whitespace extends TopLevelElement {
     /**
      * Used with quicksort method above
      */
-    private static int partition(Vector rules, int p, int r) {
-        final WhitespaceRule x = (WhitespaceRule)rules.elementAt((p+r) >>> 1);
+    private static int partition(List<WhitespaceRule> rules, int p, int r) {
+        final WhitespaceRule x = rules.get((p+r) >>> 1);
         int i = p - 1, j = r + 1;
         while (true) {
-            while (x.compareTo((WhitespaceRule)rules.elementAt(--j)) < 0) {
+            while (x.compareTo(rules.get(--j)) < 0) {
             }
-            while (x.compareTo((WhitespaceRule)rules.elementAt(++i)) > 0) {
+            while (x.compareTo(rules.get(++i)) > 0) {
             }
             if (i < j) {
-                final WhitespaceRule tmp = (WhitespaceRule)rules.elementAt(i);
-                rules.setElementAt(rules.elementAt(j), i);
-                rules.setElementAt(tmp, j);
+                final WhitespaceRule tmp = rules.get(i);
+                rules.set(i, rules.get(j));
+                rules.set(j, tmp);
             }
             else {
                 return j;

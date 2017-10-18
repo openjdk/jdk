@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -65,7 +65,7 @@ final class SoftReferenceGrammarPool implements XMLGrammarPool {
     protected int fGrammarCount = 0;
 
     /** Reference queue for cleared grammar references */
-    protected final ReferenceQueue fReferenceQueue = new ReferenceQueue();
+    protected final ReferenceQueue<Grammar> fReferenceQueue = new ReferenceQueue<>();
 
     //
     // Constructors
@@ -370,7 +370,7 @@ final class SoftReferenceGrammarPool implements XMLGrammarPool {
      * Removes stale entries from the pool.
      */
     private void clean() {
-        Reference ref = fReferenceQueue.poll();
+        Reference<? extends Grammar> ref = fReferenceQueue.poll();
         while (ref != null) {
             Entry entry = ((SoftGrammarReference) ref).entry;
             if (entry != null) {
@@ -393,7 +393,8 @@ final class SoftReferenceGrammarPool implements XMLGrammarPool {
         public XMLGrammarDescription desc;
         public SoftGrammarReference grammar;
 
-        protected Entry(int hash, int bucket, XMLGrammarDescription desc, Grammar grammar, Entry next, ReferenceQueue queue) {
+        protected Entry(int hash, int bucket, XMLGrammarDescription desc, Grammar grammar,
+                Entry next, ReferenceQueue<Grammar> queue) {
             this.hash = hash;
             this.bucket = bucket;
             this.prev = null;
@@ -422,11 +423,11 @@ final class SoftReferenceGrammarPool implements XMLGrammarPool {
      * This class stores a soft reference to a grammar object. It keeps a reference
      * to its associated entry, so that it can be easily removed from the pool.
      */
-    static final class SoftGrammarReference extends SoftReference {
+    static final class SoftGrammarReference extends SoftReference<Grammar> {
 
         public Entry entry;
 
-        protected SoftGrammarReference(Entry entry, Grammar grammar, ReferenceQueue queue) {
+        protected SoftGrammarReference(Entry entry, Grammar grammar, ReferenceQueue<Grammar> queue) {
             super(grammar, queue);
             this.entry = entry;
         }

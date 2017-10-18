@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -98,7 +98,7 @@ public final class NodeSetType extends Type {
      * Expects the Java object on the stack, pushes the internal type
      */
     public void translateFrom(ClassGenerator classGen,
-        MethodGenerator methodGen, Class clazz)
+        MethodGenerator methodGen, Class<?> clazz)
     {
 
         InstructionList il = methodGen.getInstructionList();
@@ -242,7 +242,7 @@ public final class NodeSetType extends Type {
      * type after coercion.
      */
     public void translateTo(ClassGenerator classGen, MethodGenerator methodGen,
-                            Class clazz) {
+                            Class<?> clazz) {
         final ConstantPoolGen cpg = classGen.getConstantPool();
         final InstructionList il = methodGen.getInstructionList();
         final String className = clazz.getName();

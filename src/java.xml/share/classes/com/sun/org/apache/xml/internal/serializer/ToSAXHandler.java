@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,7 +21,7 @@
 
 package com.sun.org.apache.xml.internal.serializer;
 
-import java.util.ArrayList;
+import java.util.List;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
@@ -209,9 +210,9 @@ public abstract class ToSAXHandler extends SerializerBase {
     /**
      * Does nothing. The setting of CDATA section elements has an impact on
      * stream serializers.
-     * @see SerializationHandler#setCdataSectionElements(java.util.ArrayList<String>)
+     * @see SerializationHandler#setCdataSectionElements(java.util.List<String>)
      */
-    public void setCdataSectionElements(ArrayList<String> URI_and_localNames) {
+    public void setCdataSectionElements(List<String> URI_and_localNames) {
         // do nothing
     }
 

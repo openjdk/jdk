@@ -30,9 +30,9 @@
 
 package org.xml.sax.helpers;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.xml.sax.AttributeList;
-
-import java.util.Vector;
 
 
 /**
@@ -163,9 +163,9 @@ public class AttributeListImpl implements AttributeList
      */
     public void addAttribute (String name, String type, String value)
     {
-        names.addElement(name);
-        types.addElement(type);
-        values.addElement(value);
+        names.add(name);
+        types.add(type);
+        values.add(value);
     }
 
 
@@ -188,9 +188,9 @@ public class AttributeListImpl implements AttributeList
         int i = names.indexOf(name);
 
         if (i >= 0) {
-            names.removeElementAt(i);
-            types.removeElementAt(i);
-            values.removeElementAt(i);
+            names.remove(i);
+            types.remove(i);
+            values.remove(i);
         }
     }
 
@@ -207,9 +207,9 @@ public class AttributeListImpl implements AttributeList
      */
     public void clear ()
     {
-        names.removeAllElements();
-        types.removeAllElements();
-        values.removeAllElements();
+        names.clear();
+        types.clear();
+        values.clear();
     }
 
 
@@ -245,8 +245,8 @@ public class AttributeListImpl implements AttributeList
             return null;
         }
         try {
-            return (String)names.elementAt(i);
-        } catch (ArrayIndexOutOfBoundsException e) {
+            return names.get(i);
+        } catch (IndexOutOfBoundsException e) {
             return null;
         }
     }
@@ -268,8 +268,8 @@ public class AttributeListImpl implements AttributeList
             return null;
         }
         try {
-            return (String)types.elementAt(i);
-        } catch (ArrayIndexOutOfBoundsException e) {
+            return types.get(i);
+        } catch (IndexOutOfBoundsException e) {
             return null;
         }
     }
@@ -289,8 +289,8 @@ public class AttributeListImpl implements AttributeList
             return null;
         }
         try {
-            return (String)values.elementAt(i);
-        } catch (ArrayIndexOutOfBoundsException e) {
+            return values.get(i);
+        } catch (IndexOutOfBoundsException e) {
             return null;
         }
     }
@@ -328,9 +328,9 @@ public class AttributeListImpl implements AttributeList
     // Internal state.
     ////////////////////////////////////////////////////////////////////
 
-    Vector names = new Vector();
-    Vector types = new Vector();
-    Vector values = new Vector();
+    List<String> names = new ArrayList<>();
+    List<String> types = new ArrayList<>();
+    List<String> values = new ArrayList<>();
 
 }
 

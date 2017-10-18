@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,11 +20,6 @@
  */
 
 package com.sun.org.apache.xerces.internal.parsers;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XML11DTDScannerImpl;
@@ -61,14 +56,21 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLEntityResolver;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLPullParserConfiguration;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * This class is the non vlaidating parser configuration
  * used to parse XML 1.0 and XML 1.1 documents.
  *
- * Xerces parser that uses this configuration is <strong>not</strong> <a href="http://www.w3.org/TR/REC-xml#sec-conformance">conformant</a>
- * non-validating XML processor, since conformant non-validating processor is required
- * to process "all the declarations they read in the internal DTD subset ... must use the information in those declarations to normalize attribute values,
+ * Xerces parser that uses this configuration is <strong>not</strong>
+ * <a href="http://www.w3.org/TR/REC-xml#sec-conformance">conformant</a>
+ * non-validating XML processor, since conformant non-validating processor is
+ * required to process "all the declarations they read in the internal DTD subset
+ * ... must use the information in those declarations to normalize attribute values,
  * include the replacement text of internal entities, and supply default attribute values".
 
  * @author Elena Litani, IBM
@@ -178,13 +180,13 @@ public class XML11NonValidatingConfiguration extends ParserConfigurationSettings
     protected Locale fLocale;
 
     /** XML 1.0 Components. */
-    protected ArrayList fComponents;
+    protected List<XMLComponent> fComponents;
 
     /** XML 1.1. Components. */
-    protected ArrayList fXML11Components = null;
+    protected List<XMLComponent> fXML11Components = null;
 
     /** Common components: XMLEntityManager, XMLErrorReporter */
-    protected ArrayList fCommonComponents = null;
+    protected List<XMLComponent> fCommonComponents = null;
 
     /** The document handler. */
     protected XMLDocumentHandler fDocumentHandler;
@@ -322,15 +324,15 @@ public class XML11NonValidatingConfiguration extends ParserConfigurationSettings
 
                 // create a vector to hold all the components in use
                 // XML 1.0 specialized components
-                fComponents = new ArrayList();
+                fComponents = new ArrayList<>();
                 // XML 1.1 specialized components
-                fXML11Components = new ArrayList();
+                fXML11Components = new ArrayList<>();
                 // Common components for XML 1.1. and XML 1.0
-                fCommonComponents = new ArrayList();
+                fCommonComponents = new ArrayList<>();
 
                 // create table for features and properties
-                fFeatures = new HashMap();
-                fProperties = new HashMap();
+                fFeatures = new HashMap<>();
+                fProperties = new HashMap<>();
 
         // add default recognized features
         final String[] recognizedFeatures =
@@ -725,28 +727,21 @@ public class XML11NonValidatingConfiguration extends ParserConfigurationSettings
                 throws XMLConfigurationException {
                 fConfigUpdated = true;
                 // forward to every XML 1.0 component
-                int count = fComponents.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = (XMLComponent) fComponents.get(i);
-                        c.setFeature(featureId, state);
+                for (XMLComponent c : fComponents) {
+                    c.setFeature(featureId, state);
                 }
                 // forward it to common components
-                count = fCommonComponents.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = (XMLComponent) fCommonComponents.get(i);
-                        c.setFeature(featureId, state);
+                for (XMLComponent c : fCommonComponents) {
+                    c.setFeature(featureId, state);
                 }
-
                 // forward to every XML 1.1 component
-                count = fXML11Components.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = (XMLComponent) fXML11Components.get(i);
-                        try{
-                                c.setFeature(featureId, state);
-                        }
-                        catch (Exception e){
-                                // no op
-                        }
+                for (XMLComponent c : fXML11Components) {
+                    try {
+                        c.setFeature(featureId, state);
+                    }
+                    catch (Exception e){
+                        // no op
+                    }
                 }
                 // save state if noone "objects"
                 super.setFeature(featureId, state);
@@ -763,29 +758,22 @@ public class XML11NonValidatingConfiguration extends ParserConfigurationSettings
                 throws XMLConfigurationException {
                 fConfigUpdated = true;
                 // forward to every XML 1.0 component
-                int count = fComponents.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = (XMLComponent) fComponents.get(i);
-                        c.setProperty(propertyId, value);
+                for (XMLComponent c : fComponents) {
+                    c.setProperty(propertyId, value);
                 }
                 // forward it to every common Component
-                count = fCommonComponents.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = (XMLComponent) fCommonComponents.get(i);
-                        c.setProperty(propertyId, value);
+                for (XMLComponent c : fCommonComponents) {
+                    c.setProperty(propertyId, value);
                 }
                 // forward it to every XML 1.1 component
-                count = fXML11Components.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = (XMLComponent) fXML11Components.get(i);
-                        try{
-                                c.setProperty(propertyId, value);
-                        }
-                        catch (Exception e){
-                                // ignore it
-                        }
+                for (XMLComponent c : fXML11Components) {
+                    try {
+                        c.setProperty(propertyId, value);
+                    }
+                    catch (Exception e){
+                        // no op
+                    }
                 }
-
                 // store value if noone "objects"
                 super.setProperty(propertyId, value);
 
@@ -801,25 +789,19 @@ public class XML11NonValidatingConfiguration extends ParserConfigurationSettings
          * reset all XML 1.0 components before parsing and namespace context
          */
         protected void reset() throws XNIException {
-                int count = fComponents.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = (XMLComponent) fComponents.get(i);
-                        c.reset(this);
-                }
-
+            for (XMLComponent c : fComponents) {
+                c.reset(this);
+            }
         } // reset()
 
         /**
          * reset all common components before parsing
          */
         protected void resetCommon() throws XNIException {
-                // reset common components
-                int count = fCommonComponents.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = (XMLComponent) fCommonComponents.get(i);
-                        c.reset(this);
-                }
-
+            // reset common components
+            for (XMLComponent c : fCommonComponents) {
+                c.reset(this);
+            }
         } // resetCommon()
 
 
@@ -827,13 +809,10 @@ public class XML11NonValidatingConfiguration extends ParserConfigurationSettings
          * reset all components before parsing and namespace context
          */
         protected void resetXML11() throws XNIException {
-                // reset every component
-                int count = fXML11Components.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = (XMLComponent) fXML11Components.get(i);
-                        c.reset(this);
-                }
-
+            // reset every component
+            for (XMLComponent c : fXML11Components) {
+                c.reset(this);
+            }
         } // resetXML11()
 
 

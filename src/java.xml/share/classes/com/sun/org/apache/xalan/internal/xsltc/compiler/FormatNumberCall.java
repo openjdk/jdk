@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,8 +21,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
@@ -34,6 +32,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.RealType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.StringType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -46,7 +45,7 @@ final class FormatNumberCall extends FunctionCall {
     private Expression _name;
     private QName      _resolvedQName = null;
 
-    public FormatNumberCall(QName fname, Vector arguments) {
+    public FormatNumberCall(QName fname, List<Expression> arguments) {
         super(fname, arguments);
         _value = argument(0);
         _format = argument(1);

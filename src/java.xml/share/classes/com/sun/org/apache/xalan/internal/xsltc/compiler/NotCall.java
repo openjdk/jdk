@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,20 +21,19 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.BranchHandle;
 import com.sun.org.apache.bcel.internal.generic.GOTO;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
  */
 final class NotCall extends FunctionCall {
-    public NotCall(QName fname, Vector arguments) {
+    public NotCall(QName fname, List<Expression> arguments) {
         super(fname, arguments);
     }
 

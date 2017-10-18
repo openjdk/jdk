@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,27 +21,27 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Iterator;
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.BranchHandle;
 import com.sun.org.apache.bcel.internal.generic.InstructionHandle;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
  */
 public final class FlowList {
-    private Vector _elements;
+    private List<InstructionHandle> _elements;
 
     public FlowList() {
         _elements = null;
     }
 
     public FlowList(InstructionHandle bh) {
-        _elements = new Vector();
-        _elements.addElement(bh);
+        _elements = new ArrayList<>();
+        _elements.add(bh);
     }
 
     public FlowList(FlowList list) {
@@ -50,9 +50,9 @@ public final class FlowList {
 
     public FlowList add(InstructionHandle bh) {
         if (_elements == null) {
-            _elements = new Vector();
+            _elements = new ArrayList<>();
         }
-        _elements.addElement(bh);
+        _elements.add(bh);
         return this;
     }
 
@@ -61,11 +61,11 @@ public final class FlowList {
             _elements = right._elements;
         }
         else {
-            final Vector temp = right._elements;
+            final List<InstructionHandle> temp = right._elements;
             if (temp != null) {
                 final int n = temp.size();
                 for (int i = 0; i < n; i++) {
-                    _elements.addElement(temp.elementAt(i));
+                    _elements.add(temp.get(i));
                 }
             }
         }
@@ -79,7 +79,7 @@ public final class FlowList {
         if (_elements != null) {
             final int n = _elements.size();
             for (int i = 0; i < n; i++) {
-                BranchHandle bh = (BranchHandle)_elements.elementAt(i);
+                BranchHandle bh = (BranchHandle)_elements.get(i);
                 bh.setTarget(target);
             }
             _elements.clear();          // avoid backpatching more than once
@@ -99,15 +99,15 @@ public final class FlowList {
         }
 
         final int n = _elements.size();
-        final Iterator oldIter = oldList.iterator();
-        final Iterator newIter = newList.iterator();
+        final Iterator<InstructionHandle> oldIter = oldList.iterator();
+        final Iterator<InstructionHandle> newIter = newList.iterator();
 
         while (oldIter.hasNext()) {
-            final InstructionHandle oldIh = (InstructionHandle) oldIter.next();
-            final InstructionHandle newIh = (InstructionHandle) newIter.next();
+            final InstructionHandle oldIh = oldIter.next();
+            final InstructionHandle newIh = newIter.next();
 
             for (int i = 0; i < n; i++) {
-                if (_elements.elementAt(i) == oldIh) {
+                if (_elements.get(i) == oldIh) {
                     result.add(newIh);
                 }
             }

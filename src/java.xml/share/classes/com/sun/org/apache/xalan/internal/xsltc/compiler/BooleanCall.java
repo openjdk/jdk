@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,12 +21,11 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -36,7 +35,7 @@ final class BooleanCall extends FunctionCall {
 
     private Expression _arg = null;
 
-    public BooleanCall(QName fname, Vector arguments) {
+    public BooleanCall(QName fname, List<Expression> arguments) {
         super(fname, arguments);
         _arg = argument(0);
     }

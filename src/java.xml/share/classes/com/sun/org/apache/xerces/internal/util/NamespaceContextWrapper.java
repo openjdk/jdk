@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package com.sun.org.apache.xerces.internal.util;
 
-import java.util.Enumeration;
-import java.util.Vector;
+import java.util.Iterator;
+import java.util.List;
 import javax.xml.namespace.NamespaceContext;
 
 /**
@@ -69,12 +69,12 @@ public class NamespaceContextWrapper implements NamespaceContext {
      * TODO: Namespace doesn't give information giving multiple prefixes for
      * the same namespaceURI.
      */
-    public java.util.Iterator getPrefixes(String namespaceURI) {
+    public Iterator<String> getPrefixes(String namespaceURI) {
         if (namespaceURI == null) {
             throw new IllegalArgumentException("URI can't be null.");
         }
         else {
-            Vector vector =
+           List<String> vector =
                 ((NamespaceSupport) fNamespaceContext).getPrefixes(namespaceURI.intern());
             return vector.iterator();
         }

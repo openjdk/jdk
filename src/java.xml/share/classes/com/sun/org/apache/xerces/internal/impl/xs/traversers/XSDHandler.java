@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -97,10 +97,10 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
-import java.util.Vector;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.stream.XMLEventReader;
@@ -283,7 +283,7 @@ public class XSDHandler {
 
     // Stores XSDocumentInfo (keyed by component name), to check for duplicate
     // components declared within the same xsd document
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private Map<String, XSDocumentInfo> fUnparsedRegistriesExt[] = new HashMap[] {
         null,
         null, // ATTRIBUTE_TYPE
@@ -298,18 +298,18 @@ public class XSDHandler {
     // this map is keyed on by XSDocumentInfo objects.  Its values
     // are Vectors containing the XSDocumentInfo objects <include>d,
     // <import>ed or <redefine>d by the key XSDocumentInfo.
-    private Map<XSDocumentInfo, Vector<XSDocumentInfo>> fDependencyMap = new HashMap<>();
+    private Map<XSDocumentInfo, List<XSDocumentInfo>> fDependencyMap = new HashMap<>();
 
     // this map is keyed on by a target namespace.  Its values
     // are Vectors containing namespaces imported by schema documents
     // with the key target namespace.
     // if an imported schema has absent namespace, the value "null" is stored.
-    private Map<String, Vector> fImportMap = new HashMap<> ();
+    private Map<String, List<String>> fImportMap = new HashMap<> ();
 
     // all namespaces that imports other namespaces
     // if the importing schema has absent namespace, empty string is stored.
     // (because the key of a map can't be null.)
-    private Vector<String> fAllTNSs = new Vector<>();
+    private List<String> fAllTNSs = new ArrayList<>();
 
     // stores instance document mappings between namespaces and schema hints
     private Map<String, XMLSchemaLoader.LocationArray> fLocationPairs = null;
@@ -356,18 +356,18 @@ public class XSDHandler {
 
     // map between <redefine> elements and the XSDocumentInfo
     // objects that correspond to the documents being redefined.
-    private Map fRedefine2XSDMap = null;
+    private Map<Element, XSDocumentInfo> fRedefine2XSDMap = null;
 
     // map between <redefine> elements and the namespace support
-    private Map fRedefine2NSSupport = null;
+    private Map<Element, SchemaNamespaceSupport> fRedefine2NSSupport = null;
 
     // these objects store a mapping between the names of redefining
     // groups/attributeGroups and the groups/AttributeGroups which
     // they redefine by restriction (implicitly).  It is up to the
     // Group and AttributeGroup traversers to check these restrictions for
     // validity.
-    private Map fRedefinedRestrictedAttributeGroupRegistry = new HashMap();
-    private Map fRedefinedRestrictedGroupRegistry = new HashMap();
+    private final Map<String, String> fRedefinedRestrictedAttributeGroupRegistry = new HashMap<>();
+    private final Map<String, String> fRedefinedRestrictedGroupRegistry = new HashMap<>();
 
     // a variable storing whether the last schema document
     // processed (by getSchema) was a duplicate.
@@ -639,7 +639,7 @@ public class XSDHandler {
         buildGlobalNameRegistries();
 
         // third phase:  call traversers
-        ArrayList annotationInfo = fValidateAnnotations ? new ArrayList() : null;
+        List<Object> annotationInfo = fValidateAnnotations ? new ArrayList<>() : null;
         traverseSchemas(annotationInfo);
 
         // fourth phase: handle local element decls
@@ -656,9 +656,10 @@ public class XSDHandler {
         // for all grammars with <import>s
         for (int i = fAllTNSs.size() - 1; i >= 0; i--) {
             // get its target namespace
-            String tns = fAllTNSs.elementAt(i);
+            String tns = fAllTNSs.get(i);
             // get all namespaces it imports
-            Vector ins = (Vector)fImportMap.get(tns);
+            List<String> ins = fImportMap.get(tns);
+            List<SchemaGrammar> grammars = new ArrayList<>();
             // get the grammar
             SchemaGrammar sg = fGrammarBucket.getGrammar(emptyString2Null(tns));
             if (sg == null)
@@ -668,14 +669,14 @@ public class XSDHandler {
             int count = 0;
             for (int j = 0; j < ins.size(); j++) {
                 // get imported grammar
-                isg = fGrammarBucket.getGrammar((String)ins.elementAt(j));
+                isg = fGrammarBucket.getGrammar(ins.get(j));
                 // reuse the same vector
-                if (isg != null)
-                    ins.setElementAt(isg, count++);
+                if (isg != null) {
+                    grammars.add(isg);
+                }
             }
-            ins.setSize(count);
             // set the imported grammars
-            sg.setImportedGrammars(ins);
+            sg.setImportedGrammars(grammars);
         }
 
         /** validate annotations **/
@@ -687,7 +688,7 @@ public class XSDHandler {
         return fGrammarBucket.getGrammar(fRoot.fTargetNamespace);
     } // end parseSchema
 
-    private void validateAnnotations(ArrayList annotationInfo) {
+    private void validateAnnotations(List<Object> annotationInfo) {
         if (fAnnotationValidator == null) {
             createAnnotationValidator();
         }
@@ -909,7 +910,7 @@ public class XSDHandler {
         sg.addDocument(null, fDoc2SystemId.get(currSchemaInfo.fSchemaElement));
 
         fDoc2XSDocumentMap.put(schemaRoot, currSchemaInfo);
-        Vector<XSDocumentInfo> dependencies = new Vector<>();
+        List<XSDocumentInfo> dependencies = new ArrayList<>();
         Element rootNode = schemaRoot;
 
         Element newSchemaRoot = null;
@@ -978,17 +979,17 @@ public class XSDHandler {
                 // convert null to ""
                 String tns = null2EmptyString(currSchemaInfo.fTargetNamespace);
                 // get all namespaces imported by this one
-                Vector ins = (Vector)fImportMap.get(tns);
-                // if no namespace was imported, create new Vector
+               List<String> ins = fImportMap.get(tns);
+                // if no namespace was imported, create new ArrayList<>
                 if (ins == null) {
                     // record that this one imports other(s)
-                    fAllTNSs.addElement(tns);
-                    ins = new Vector();
+                    fAllTNSs.add(tns);
+                    ins = new ArrayList<>();
                     fImportMap.put(tns, ins);
-                    ins.addElement(schemaNamespace);
+                    ins.add(schemaNamespace);
                 }
                 else if (!ins.contains(schemaNamespace)){
-                    ins.addElement(schemaNamespace);
+                    ins.add(schemaNamespace);
                 }
 
                 fSchemaGrammarDescription.reset();
@@ -1037,7 +1038,7 @@ public class XSDHandler {
                 schemaHint = (String)includeAttrs[XSAttributeChecker.ATTIDX_SCHEMALOCATION];
                 // store the namespace decls of the redefine element
                 if (localName.equals(SchemaSymbols.ELT_REDEFINE)) {
-                    if (fRedefine2NSSupport == null) fRedefine2NSSupport = new HashMap();
+                    if (fRedefine2NSSupport == null) fRedefine2NSSupport = new HashMap<>();
                     fRedefine2NSSupport.put(child, new SchemaNamespaceSupport(currSchemaInfo.fNamespaceSupport));
                 }
 
@@ -1052,10 +1053,13 @@ public class XSDHandler {
                             sg.addAnnotation(
                                     fElementTraverser.traverseAnnotationDecl(includeChild, includeAttrs, true, currSchemaInfo));
                         } else {
-                            reportSchemaError("s4s-elt-must-match.1", new Object [] {localName, "annotation?", includeComponentType}, child);
+                            reportSchemaError("s4s-elt-must-match.1",
+                                    new Object [] {localName, "annotation?", includeComponentType}, child);
                         }
                         if(DOMUtil.getNextSiblingElement(includeChild) != null) {
-                            reportSchemaError("s4s-elt-must-match.1", new Object [] {localName, "annotation?", DOMUtil.getLocalName(DOMUtil.getNextSiblingElement(includeChild))}, child);
+                            reportSchemaError("s4s-elt-must-match.1",
+                                    new Object [] {localName, "annotation?",
+                                        DOMUtil.getLocalName(DOMUtil.getNextSiblingElement(includeChild))}, child);
                         }
                     }
                     else {
@@ -1148,12 +1152,12 @@ public class XSDHandler {
                     newSchemaInfo != null) {
                 // must record which schema we're redefining so that we can
                 // rename the right things later!
-                if (fRedefine2XSDMap == null) fRedefine2XSDMap = new HashMap();
+                if (fRedefine2XSDMap == null) fRedefine2XSDMap = new HashMap<>();
                 fRedefine2XSDMap.put(child, newSchemaInfo);
             }
             if (newSchemaRoot != null) {
                 if (newSchemaInfo != null)
-                    dependencies.addElement(newSchemaInfo);
+                    dependencies.add(newSchemaInfo);
                 newSchemaRoot = null;
             }
         }
@@ -1189,10 +1193,10 @@ public class XSDHandler {
      * newer version.
      */
     private void updateImportListFor(SchemaGrammar grammar) {
-        Vector importedGrammars = grammar.getImportedGrammars();
+       List<SchemaGrammar> importedGrammars = grammar.getImportedGrammars();
         if (importedGrammars != null) {
             for (int i=0; i<importedGrammars.size(); i++) {
-                SchemaGrammar isg1 = (SchemaGrammar) importedGrammars.elementAt(i);
+                SchemaGrammar isg1 = importedGrammars.get(i);
                 SchemaGrammar isg2 = fGrammarBucket.getGrammar(isg1.getTargetNamespace());
                 if (isg2 != null && isg1 != isg2) {
                     importedGrammars.set(i, isg2);
@@ -1215,11 +1219,12 @@ public class XSDHandler {
         for (int i = 0; i < schemaGrammars.length; ++i) {
             SchemaGrammar sg = schemaGrammars[i];
             if (sg != newGrammar) {
-                Vector importedGrammars = sg.getImportedGrammars();
+                List<SchemaGrammar> importedGrammars = sg.getImportedGrammars();
                 if (importedGrammars != null) {
                     for (int j=0; j<importedGrammars.size(); j++) {
-                        SchemaGrammar isg = (SchemaGrammar) importedGrammars.elementAt(j);
-                        if (null2EmptyString(isg.getTargetNamespace()).equals(null2EmptyString(newGrammar.getTargetNamespace()))) {
+                        SchemaGrammar isg = importedGrammars.get(j);
+                        if (null2EmptyString(isg.getTargetNamespace()).equals(
+                                null2EmptyString(newGrammar.getTargetNamespace()))) {
                             if (isg != newGrammar) {
                                 importedGrammars.set(j, newGrammar);
                             }
@@ -1249,12 +1254,11 @@ public class XSDHandler {
         // stack of schemas that we haven't yet finished processing; this
         // is a depth-first traversal.
 
-        Stack schemasToProcess = new Stack();
+        Stack<XSDocumentInfo> schemasToProcess = new Stack<>();
         schemasToProcess.push(fRoot);
 
         while (!schemasToProcess.empty()) {
-            XSDocumentInfo currSchemaDoc =
-                (XSDocumentInfo)schemasToProcess.pop();
+            XSDocumentInfo currSchemaDoc = schemasToProcess.pop();
             Element currDoc = currSchemaDoc.fSchemaElement;
             if(DOMUtil.isHidden(currDoc, fHiddenNodes)){
                 // must have processed this already!
@@ -1365,9 +1369,9 @@ public class XSDHandler {
             // now we're done with this one!
             DOMUtil.setHidden(currDoc, fHiddenNodes);
             // now add the schemas this guy depends on
-            Vector<XSDocumentInfo> currSchemaDepends = fDependencyMap.get(currSchemaDoc);
-            for (int i = 0; i < currSchemaDepends.size(); i++) {
-                schemasToProcess.push(currSchemaDepends.elementAt(i));
+            List<XSDocumentInfo> currSchemaDepends = fDependencyMap.get(currSchemaDoc);
+            for (XSDocumentInfo currSchemaDepend : currSchemaDepends) {
+                schemasToProcess.push(currSchemaDepend);
             }
         } // while
 
@@ -1384,17 +1388,16 @@ public class XSDHandler {
     // as traversed (or hidden) in order to avoid infinite loops.  It completes
     // when it has visited all XSDocumentInfo objects in the
     // DependencyMap and marked them as traversed.
-    protected void traverseSchemas(ArrayList annotationInfo) {
+    protected void traverseSchemas(List<Object> annotationInfo) {
         // the process here is very similar to that in
         // buildGlobalRegistries, except we can't set our schemas as
         // hidden for a second time; so make them all visible again
         // first!
         setSchemasVisible(fRoot);
-        Stack schemasToProcess = new Stack();
+        Stack<XSDocumentInfo> schemasToProcess = new Stack<>();
         schemasToProcess.push(fRoot);
         while (!schemasToProcess.empty()) {
-            XSDocumentInfo currSchemaDoc =
-                (XSDocumentInfo)schemasToProcess.pop();
+            XSDocumentInfo currSchemaDoc = schemasToProcess.pop();
             Element currDoc = currSchemaDoc.fSchemaElement;
 
             SchemaGrammar currSG = fGrammarBucket.getGrammar(currSchemaDoc.fTargetNamespace);
@@ -1415,7 +1418,8 @@ public class XSDHandler {
                 // includes and imports will not show up here!
                 if (DOMUtil.getLocalName(globalComp).equals(SchemaSymbols.ELT_REDEFINE)) {
                     // use the namespace decls for the redefine, instead of for the parent <schema>
-                    currSchemaDoc.backupNSSupport((fRedefine2NSSupport!=null)?(SchemaNamespaceSupport)fRedefine2NSSupport.get(globalComp):null);
+                    currSchemaDoc.backupNSSupport((fRedefine2NSSupport!=null) ?
+                            fRedefine2NSSupport.get(globalComp) : null);
                     for (Element redefinedComp = DOMUtil.getFirstVisibleChildElement(globalComp, fHiddenNodes);
                     redefinedComp != null;
                     redefinedComp = DOMUtil.getNextVisibleSiblingElement(redefinedComp, fHiddenNodes)) {
@@ -1495,25 +1499,25 @@ public class XSDHandler {
             DOMUtil.setHidden(currDoc, fHiddenNodes);
 
             // now add the schemas this guy depends on
-            Vector<XSDocumentInfo> currSchemaDepends = fDependencyMap.get(currSchemaDoc);
-            for (int i = 0; i < currSchemaDepends.size(); i++) {
-                schemasToProcess.push(currSchemaDepends.elementAt(i));
+            List<XSDocumentInfo> currSchemaDepends = fDependencyMap.get(currSchemaDoc);
+            for (XSDocumentInfo currSchemaDepend : currSchemaDepends) {
+                schemasToProcess.push(currSchemaDepend);
             }
         } // while
     } // end traverseSchemas
 
     // store whether we have reported an error about that no grammar
     // is found for the given namespace uri
-    private Vector fReportedTNS = null;
+    private List<String> fReportedTNS = null;
     // check whether we need to report an error against the given uri.
     // if we have reported an error, then we don't need to report again;
     // otherwise we reported the error, and remember this fact.
     private final boolean needReportTNSError(String uri) {
         if (fReportedTNS == null)
-            fReportedTNS = new Vector();
+            fReportedTNS = new ArrayList<>();
         else if (fReportedTNS.contains(uri))
             return false;
-        fReportedTNS.addElement(uri);
+        fReportedTNS.add(uri);
         return true;
     }
 
@@ -1892,7 +1896,8 @@ public class XSDHandler {
         return retObj;
     }
 
-    protected Object traverseGlobalDecl(int declType, Element decl, XSDocumentInfo schemaDoc, SchemaGrammar grammar) {
+    protected Object traverseGlobalDecl(int declType, Element decl,
+            XSDocumentInfo schemaDoc, SchemaGrammar grammar) {
         Object retObj = null;
 
         DOMUtil.setHidden(decl, fHiddenNodes);
@@ -1900,7 +1905,7 @@ public class XSDHandler {
         // if the parent is <redefine> use the namespace delcs for it.
         Element parent = DOMUtil.getParent(decl);
         if (DOMUtil.getLocalName(parent).equals(SchemaSymbols.ELT_REDEFINE))
-            nsSupport = (fRedefine2NSSupport!=null)?(SchemaNamespaceSupport)fRedefine2NSSupport.get(parent):null;
+            nsSupport = (fRedefine2NSSupport!=null) ? fRedefine2NSSupport.get(parent) : null;
         // back up the current SchemaNamespaceSupport, because we need to provide
         // a fresh one to the traverseGlobal methods.
         schemaDoc.backupNSSupport(nsSupport);
@@ -1962,10 +1967,10 @@ public class XSDHandler {
         String nameToFind = null;
         switch (type) {
         case ATTRIBUTEGROUP_TYPE:
-            nameToFind = (String)fRedefinedRestrictedAttributeGroupRegistry.get(realName);
+            nameToFind = fRedefinedRestrictedAttributeGroupRegistry.get(realName);
             break;
         case GROUP_TYPE:
-            nameToFind = (String)fRedefinedRestrictedGroupRegistry.get(realName);
+            nameToFind = fRedefinedRestrictedGroupRegistry.get(realName);
             break;
         default:
             return null;
@@ -2013,11 +2018,11 @@ public class XSDHandler {
 
     // an accessor method.  Just makes sure callers
     // who want the Identity constraint registry vaguely know what they're about.
-    protected Map getIDRegistry() {
+    protected Map<String, Element> getIDRegistry() {
         return fUnparsedIdentityConstraintRegistry;
     }
     // an accessor method.
-    protected Map getIDRegistry_sub() {
+    protected Map<String, XSDocumentInfo> getIDRegistry_sub() {
         return fUnparsedIdentityConstraintRegistrySub;
     }
 
@@ -2535,7 +2540,7 @@ public class XSDHandler {
         short referType = desc.getContextType();
 
         if (grammars != null && grammars.length > 0) {
-            Vector expandedGrammars = expandGrammars(grammars);
+           List<SchemaGrammar> expandedGrammars = expandGrammars(grammars);
             // check for existing grammars in our bucket
             // and if there exist any, and namespace growth is
             // not enabled - we do nothing
@@ -2549,8 +2554,8 @@ public class XSDHandler {
         else {
             XSObject[] components = schemaSource.getComponents();
             if (components != null && components.length > 0) {
-                Map<String, Vector> importDependencies = new HashMap();
-                Vector expandedComponents = expandComponents(components, importDependencies);
+                Map<String, List<String>> importDependencies = new HashMap<>();
+                List<XSObject> expandedComponents = expandComponents(components, importDependencies);
                 if (fNamespaceGrowth || canAddComponents(expandedComponents)) {
                     addGlobalComponents(expandedComponents, importDependencies);
                     if (referType == XSDDescription.CONTEXT_PREPARSE) {
@@ -2562,8 +2567,8 @@ public class XSDHandler {
         return null;
     } // getSchemaDocument(String, XSInputSource, boolean, short, Element): Element
 
-    private Vector expandGrammars(SchemaGrammar[] grammars) {
-        Vector currGrammars = new Vector();
+    private List<SchemaGrammar> expandGrammars(SchemaGrammar[] grammars) {
+        List<SchemaGrammar> currGrammars = new ArrayList<>();
 
         for (int i=0; i<grammars.length; i++) {
             if (!currGrammars.contains(grammars[i])) {
@@ -2573,10 +2578,10 @@ public class XSDHandler {
 
         // for all (recursively) imported grammars
         SchemaGrammar sg1, sg2;
-        Vector gs;
+        List<SchemaGrammar> gs;
         for (int i = 0; i < currGrammars.size(); i++) {
             // get the grammar
-            sg1 = (SchemaGrammar)currGrammars.elementAt(i);
+            sg1 = (SchemaGrammar)currGrammars.get(i);
             // we need to add grammars imported by sg1 too
             gs = sg1.getImportedGrammars();
             // for all grammars imported by sg2, but not in the vector
@@ -2586,9 +2591,9 @@ public class XSDHandler {
             }
 
             for (int j = gs.size() - 1; j >= 0; j--) {
-                sg2 = (SchemaGrammar)gs.elementAt(j);
+                sg2 = (SchemaGrammar)gs.get(j);
                 if (!currGrammars.contains(sg2)) {
-                    currGrammars.addElement(sg2);
+                    currGrammars.add(sg2);
                 }
             }
         }
@@ -2596,12 +2601,12 @@ public class XSDHandler {
         return currGrammars;
     }
 
-    private boolean existingGrammars(Vector grammars) {
+    private boolean existingGrammars(List<SchemaGrammar> grammars) {
         int length = grammars.size();
         final XSDDescription desc = new XSDDescription();
 
         for (int i=0; i < length; i++) {
-            final SchemaGrammar sg1 = (SchemaGrammar)grammars.elementAt(i);
+            final SchemaGrammar sg1 = (SchemaGrammar)grammars.get(i);
             desc.setNamespace(sg1.getTargetNamespace());
 
             final SchemaGrammar sg2 = findGrammar(desc, false);
@@ -2613,11 +2618,11 @@ public class XSDHandler {
         return false;
     }
 
-    private boolean canAddComponents(Vector components) {
+    private boolean canAddComponents(List<XSObject> components) {
         final int size = components.size();
         final XSDDescription desc = new XSDDescription();
         for (int i=0; i<size; i++) {
-            XSObject component = (XSObject) components.elementAt(i);
+            XSObject component = (XSObject) components.get(i);
             if (!canAddComponent(component, desc)) {
                 return false;
             }
@@ -2678,12 +2683,12 @@ public class XSDHandler {
         return false;
     }
 
-    private void addGrammars(Vector grammars) {
+    private void addGrammars(List<SchemaGrammar> grammars) {
         int length = grammars.size();
         XSDDescription desc = new XSDDescription();
 
         for (int i=0; i < length; i++) {
-            final SchemaGrammar sg1 = (SchemaGrammar)grammars.elementAt(i);
+            final SchemaGrammar sg1 = grammars.get(i);
             desc.setNamespace(sg1.getTargetNamespace());
 
             final SchemaGrammar sg2 = findGrammar(desc, fNamespaceGrowth);
@@ -2737,13 +2742,14 @@ public class XSDHandler {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void addNewImportedGrammars(SchemaGrammar srcGrammar, SchemaGrammar dstGrammar) {
-        final Vector igs1 = srcGrammar.getImportedGrammars();
+        final ArrayList<SchemaGrammar> igs1 = (ArrayList<SchemaGrammar>)srcGrammar.getImportedGrammars();
         if (igs1 != null) {
-            Vector igs2 = dstGrammar.getImportedGrammars();
+           ArrayList<SchemaGrammar> igs2 = (ArrayList<SchemaGrammar>)dstGrammar.getImportedGrammars();
 
             if (igs2 == null) {
-                igs2 = ((Vector) igs1.clone());
+                igs2 = (ArrayList<SchemaGrammar>)igs1.clone();
                 dstGrammar.setImportedGrammars(igs2);
             }
             else {
@@ -2752,12 +2758,12 @@ public class XSDHandler {
         }
     }
 
-    private void updateImportList(Vector importedSrc, Vector importedDst)
+    private void updateImportList(List<SchemaGrammar> importedSrc, List<SchemaGrammar> importedDst)
     {
         final int size = importedSrc.size();
 
         for (int i=0; i<size; i++) {
-            final SchemaGrammar sg = (SchemaGrammar) importedSrc.elementAt(i);
+            final SchemaGrammar sg = (SchemaGrammar) importedSrc.get(i);
             if (!containedImportedGrammar(importedDst, sg)) {
                 importedDst.add(sg);
             }
@@ -3002,8 +3008,8 @@ public class XSDHandler {
         }
     }
 
-    private Vector expandComponents(XSObject[] components, Map<String, Vector> dependencies) {
-        Vector newComponents = new Vector();
+    private List<XSObject> expandComponents(XSObject[] components, Map<String, List<String>> dependencies) {
+        List<XSObject> newComponents = new ArrayList<>();
 
         for (int i=0; i<components.length; i++) {
             if (!newComponents.contains(components[i])) {
@@ -3012,14 +3018,14 @@ public class XSDHandler {
         }
 
         for (int i=0; i<newComponents.size(); i++) {
-            final XSObject component = (XSObject) newComponents.elementAt(i);
+            final XSObject component = newComponents.get(i);
             expandRelatedComponents(component, newComponents, dependencies);
         }
 
         return newComponents;
     }
 
-    private void expandRelatedComponents(XSObject component, Vector componentList, Map<String, Vector> dependencies) {
+    private void expandRelatedComponents(XSObject component,List<XSObject>componentList, Map<String, List<String>> dependencies) {
         short componentType = component.getType();
         switch (componentType) {
         case XSConstants.TYPE_DEFINITION :
@@ -3044,7 +3050,7 @@ public class XSDHandler {
         }
     }
 
-    private void expandRelatedAttributeComponents(XSAttributeDeclaration decl, Vector componentList, String namespace, Map<String, Vector> dependencies) {
+    private void expandRelatedAttributeComponents(XSAttributeDeclaration decl, List<XSObject> componentList, String namespace, Map<String, List<String>> dependencies) {
         addRelatedType(decl.getTypeDefinition(), componentList, namespace, dependencies);
 
         /*final XSComplexTypeDefinition enclosingType = decl.getEnclosingCTDefinition();
@@ -3053,7 +3059,7 @@ public class XSDHandler {
         }*/
     }
 
-    private void expandRelatedElementComponents(XSElementDeclaration decl, Vector componentList, String namespace, Map<String, Vector> dependencies) {
+    private void expandRelatedElementComponents(XSElementDeclaration decl, List<XSObject> componentList, String namespace, Map<String, List<String>> dependencies) {
         addRelatedType(decl.getTypeDefinition(), componentList, namespace, dependencies);
 
         /*final XSTypeDefinition enclosingType = decl.getEnclosingCTDefinition();
@@ -3067,7 +3073,7 @@ public class XSDHandler {
         }
     }
 
-    private void expandRelatedTypeComponents(XSTypeDefinition type, Vector componentList, String namespace, Map<String, Vector> dependencies) {
+    private void expandRelatedTypeComponents(XSTypeDefinition type, List<XSObject> componentList, String namespace, Map<String, List<String>> dependencies) {
         if (type instanceof XSComplexTypeDecl) {
             expandRelatedComplexTypeComponents((XSComplexTypeDecl) type, componentList, namespace, dependencies);
         }
@@ -3076,17 +3082,17 @@ public class XSDHandler {
         }
     }
 
-    private void expandRelatedModelGroupDefinitionComponents(XSModelGroupDefinition modelGroupDef, Vector componentList,
-            String namespace, Map<String, Vector> dependencies) {
+    private void expandRelatedModelGroupDefinitionComponents(XSModelGroupDefinition modelGroupDef, List<XSObject>componentList,
+            String namespace, Map<String, List<String>> dependencies) {
         expandRelatedModelGroupComponents(modelGroupDef.getModelGroup(), componentList, namespace, dependencies);
     }
 
-    private void expandRelatedAttributeGroupComponents(XSAttributeGroupDefinition attrGroup, Vector componentList
-            , String namespace, Map<String, Vector> dependencies) {
+    private void expandRelatedAttributeGroupComponents(XSAttributeGroupDefinition attrGroup, List<XSObject> componentList
+            , String namespace, Map<String, List<String>> dependencies) {
         expandRelatedAttributeUsesComponents(attrGroup.getAttributeUses(), componentList, namespace, dependencies);
     }
 
-    private void expandRelatedComplexTypeComponents(XSComplexTypeDecl type, Vector componentList, String namespace, Map<String, Vector> dependencies) {
+    private void expandRelatedComplexTypeComponents(XSComplexTypeDecl type, List<XSObject> componentList, String namespace, Map<String, List<String>> dependencies) {
         addRelatedType(type.getBaseType(), componentList, namespace, dependencies);
         expandRelatedAttributeUsesComponents(type.getAttributeUses(), componentList, namespace, dependencies);
         final XSParticle particle = type.getParticle();
@@ -3095,7 +3101,7 @@ public class XSDHandler {
         }
     }
 
-    private void expandRelatedSimpleTypeComponents(XSSimpleTypeDefinition type, Vector componentList, String namespace, Map<String, Vector> dependencies) {
+    private void expandRelatedSimpleTypeComponents(XSSimpleTypeDefinition type, List<XSObject> componentList, String namespace, Map<String, List<String>> dependencies) {
         final XSTypeDefinition baseType = type.getBaseType();
         if (baseType != null) {
             addRelatedType(baseType, componentList, namespace, dependencies);
@@ -3119,21 +3125,21 @@ public class XSDHandler {
         }
     }
 
-    private void expandRelatedAttributeUsesComponents(XSObjectList attrUses, Vector componentList,
-            String namespace, Map<String, Vector> dependencies) {
+    private void expandRelatedAttributeUsesComponents(XSObjectList attrUses, List<XSObject> componentList,
+            String namespace, Map<String, List<String>> dependencies) {
         final int attrUseSize = (attrUses == null) ? 0 : attrUses.size();
         for (int i=0; i<attrUseSize; i++) {
             expandRelatedAttributeUseComponents((XSAttributeUse)attrUses.item(i), componentList, namespace, dependencies);
         }
     }
 
-    private void expandRelatedAttributeUseComponents(XSAttributeUse component, Vector componentList,
-            String namespace, Map<String, Vector> dependencies) {
+    private void expandRelatedAttributeUseComponents(XSAttributeUse component, List<XSObject> componentList,
+            String namespace, Map<String, List<String>> dependencies) {
         addRelatedAttribute(component.getAttrDeclaration(), componentList, namespace, dependencies);
     }
 
-    private void expandRelatedParticleComponents(XSParticle component, Vector componentList,
-            String namespace, Map<String, Vector> dependencies) {
+    private void expandRelatedParticleComponents(XSParticle component, List<XSObject> componentList,
+            String namespace, Map<String, List<String>> dependencies) {
         XSTerm term = component.getTerm();
         switch (term.getType()) {
         case XSConstants.ELEMENT_DECLARATION :
@@ -3147,8 +3153,8 @@ public class XSDHandler {
         }
     }
 
-    private void expandRelatedModelGroupComponents(XSModelGroup modelGroup, Vector componentList,
-            String namespace, Map<String, Vector> dependencies) {
+    private void expandRelatedModelGroupComponents(XSModelGroup modelGroup, List<XSObject> componentList,
+            String namespace, Map<String, List<String>> dependencies) {
         XSObjectList particles = modelGroup.getParticles();
         final int length = (particles == null) ? 0 : particles.getLength();
         for (int i=0; i<length; i++) {
@@ -3156,11 +3162,11 @@ public class XSDHandler {
         }
     }
 
-    private void addRelatedType(XSTypeDefinition type, Vector componentList, String namespace, Map<String, Vector> dependencies) {
+    private void addRelatedType(XSTypeDefinition type, List<XSObject> componentList, String namespace, Map<String, List<String>> dependencies) {
         if (!type.getAnonymous()) {
             if (!type.getNamespace().equals(SchemaSymbols.URI_SCHEMAFORSCHEMA)) { //REVISIT - do we use == instead
                 if (!componentList.contains(type)) {
-                    final Vector importedNamespaces = findDependentNamespaces(namespace, dependencies);
+                    final List<String> importedNamespaces = findDependentNamespaces(namespace, dependencies);
                     addNamespaceDependency(namespace, type.getNamespace(), importedNamespaces);
                     componentList.add(type);
                 }
@@ -3171,10 +3177,10 @@ public class XSDHandler {
         }
     }
 
-    private void addRelatedElement(XSElementDeclaration decl, Vector componentList, String namespace, Map<String, Vector> dependencies) {
+    private void addRelatedElement(XSElementDeclaration decl, List<XSObject> componentList, String namespace, Map<String, List<String>> dependencies) {
         if (decl.getScope() == XSConstants.SCOPE_GLOBAL) {
             if (!componentList.contains(decl)) {
-                Vector importedNamespaces = findDependentNamespaces(namespace, dependencies);
+               List<String> importedNamespaces = findDependentNamespaces(namespace, dependencies);
                 addNamespaceDependency(namespace, decl.getNamespace(), importedNamespaces);
                 componentList.add(decl);
             }
@@ -3184,10 +3190,10 @@ public class XSDHandler {
         }
     }
 
-    private void addRelatedAttribute(XSAttributeDeclaration decl, Vector componentList, String namespace, Map<String, Vector> dependencies) {
+    private void addRelatedAttribute(XSAttributeDeclaration decl, List<XSObject> componentList, String namespace, Map<String, List<String>> dependencies) {
         if (decl.getScope() == XSConstants.SCOPE_GLOBAL) {
             if (!componentList.contains(decl)) {
-                Vector importedNamespaces = findDependentNamespaces(namespace, dependencies);
+                List<String> importedNamespaces = findDependentNamespaces(namespace, dependencies);
                 addNamespaceDependency(namespace, decl.getNamespace(), importedNamespaces);
                 componentList.add(decl);
             }
@@ -3197,12 +3203,12 @@ public class XSDHandler {
         }
     }
 
-    private void addGlobalComponents(Vector components, Map<String, Vector> importDependencies) {
+    private void addGlobalComponents(List<XSObject> components, Map<String, List<String>> importDependencies) {
         final XSDDescription desc = new XSDDescription();
         final int size = components.size();
 
         for (int i=0; i<size; i++) {
-            addGlobalComponent((XSObject) components.elementAt(i), desc);
+            addGlobalComponent(components.get(i), desc);
         }
         updateImportDependencies(importDependencies);
     }
@@ -3286,12 +3292,12 @@ public class XSDHandler {
         }
     }
 
-    private void updateImportDependencies(Map<String, Vector> table) {
+    private void updateImportDependencies(Map<String, List<String>> table) {
         if (table == null) return;
         String namespace;
-        Vector importList;
+        List<String> importList;
 
-        for(Map.Entry<String, Vector> entry : table.entrySet()){
+        for(Map.Entry<String, List<String>> entry : table.entrySet()){
             namespace = entry.getKey();
             importList = entry.getValue();
             if (importList.size() > 0) {
@@ -3300,13 +3306,13 @@ public class XSDHandler {
         }
     }
 
-    private void expandImportList(String namespace, Vector namespaceList) {
+    private void expandImportList(String namespace, List<String> namespaceList) {
         SchemaGrammar sg = fGrammarBucket.getGrammar(namespace);
         // shouldn't be null
         if (sg != null) {
-            Vector isgs = sg.getImportedGrammars();
+            List<SchemaGrammar> isgs = sg.getImportedGrammars();
             if (isgs == null) {
-                isgs = new Vector();
+                isgs = new ArrayList<>();
                 addImportList(sg, isgs, namespaceList);
                 sg.setImportedGrammars(isgs);
             }
@@ -3316,12 +3322,12 @@ public class XSDHandler {
         }
     }
 
-    private void addImportList(SchemaGrammar sg, Vector importedGrammars, Vector namespaceList) {
+    private void addImportList(SchemaGrammar sg, List<SchemaGrammar> importedGrammars, List<String> namespaceList) {
         final int size = namespaceList.size();
         SchemaGrammar isg;
 
         for (int i=0; i<size; i++) {
-            isg = fGrammarBucket.getGrammar((String)namespaceList.elementAt(i));
+            isg = fGrammarBucket.getGrammar(namespaceList.get(i));
             if (isg != null) {
                 importedGrammars.add(isg);
             }
@@ -3331,12 +3337,13 @@ public class XSDHandler {
         }
     }
 
-    private void updateImportList(SchemaGrammar sg, Vector importedGrammars, Vector namespaceList) {
+    private void updateImportList(SchemaGrammar sg, List<SchemaGrammar> importedGrammars,
+            List<String> namespaceList) {
         final int size = namespaceList.size();
         SchemaGrammar isg;
 
         for (int i=0; i<size; i++) {
-            isg = fGrammarBucket.getGrammar((String)namespaceList.elementAt(i));
+            isg = fGrammarBucket.getGrammar(namespaceList.get(i));
             if (isg != null) {
                 if (!containedImportedGrammar(importedGrammars, isg)) {
                     importedGrammars.add(isg);
@@ -3348,12 +3355,12 @@ public class XSDHandler {
         }
     }
 
-    private boolean containedImportedGrammar(Vector importedGrammar, SchemaGrammar grammar) {
+    private boolean containedImportedGrammar(List<SchemaGrammar> importedGrammar, SchemaGrammar grammar) {
         final int size = importedGrammar.size();
         SchemaGrammar sg;
 
         for (int i=0; i<size; i++) {
-            sg = (SchemaGrammar) importedGrammar.elementAt(i);
+            sg = (SchemaGrammar) importedGrammar.get(i);
             if (null2EmptyString(sg.getTargetNamespace()).equals(null2EmptyString(grammar.getTargetNamespace()))) {
                 return true;
             }
@@ -3377,19 +3384,20 @@ public class XSDHandler {
         return sg;
     }
 
-    private Vector findDependentNamespaces(String namespace, Map table) {
+    private List<String> findDependentNamespaces(String namespace,
+            Map<String, List<String>> table) {
         final String ns = null2EmptyString(namespace);
-        Vector namespaceList = (Vector) getFromMap(table, ns);
+        List<String> namespaceList = getFromMap(table, ns);
 
         if (namespaceList == null) {
-            namespaceList = new Vector();
+            namespaceList = new ArrayList<>();
             table.put(ns, namespaceList);
         }
 
         return namespaceList;
     }
 
-    private void addNamespaceDependency(String namespace1, String namespace2, Vector list) {
+    private void addNamespaceDependency(String namespace1, String namespace2, List<String> list) {
         final String ns1 = null2EmptyString(namespace1);
         final String ns2 = null2EmptyString(namespace2);
         if (!ns1.equals(ns2)) {
@@ -3464,7 +3472,7 @@ public class XSDHandler {
         fDoc2XSDocumentMap.clear();
         if (fRedefine2XSDMap != null) fRedefine2XSDMap.clear();
         if (fRedefine2NSSupport != null) fRedefine2NSSupport.clear();
-        fAllTNSs.removeAllElements();
+        fAllTNSs.clear();
         fImportMap.clear();
         fRoot = null;
 
@@ -3765,7 +3773,7 @@ public class XSDHandler {
             // (the parent of the colliding element is a redefine)
             boolean collidedWithRedefine = true;
             if ((DOMUtil.getLocalName((elemParent = DOMUtil.getParent(collidingElem))).equals(SchemaSymbols.ELT_REDEFINE))) {
-                redefinedSchema = (fRedefine2XSDMap != null)?(XSDocumentInfo) (fRedefine2XSDMap.get(elemParent)): null;
+                redefinedSchema = (fRedefine2XSDMap != null)? fRedefine2XSDMap.get(elemParent) : null;
                 // case where we're a redefining element.
             }
             else if ((DOMUtil.getLocalName(DOMUtil.getParent(currComp)).equals(SchemaSymbols.ELT_REDEFINE))) {
@@ -3828,7 +3836,7 @@ public class XSDHandler {
         // store the lastest current document info
         if (fTolerateDuplicates) {
             if (fUnparsedRegistriesExt[declType] == null)
-                fUnparsedRegistriesExt[declType] = new HashMap();
+                fUnparsedRegistriesExt[declType] = new HashMap<>();
             fUnparsedRegistriesExt[declType].put(qName, currSchema);
         }
 
@@ -4120,9 +4128,9 @@ public class XSDHandler {
         if (DOMUtil.isHidden(startSchema.fSchemaElement, fHiddenNodes)) {
             // make it visible
             DOMUtil.setVisible(startSchema.fSchemaElement, fHiddenNodes);
-            Vector<XSDocumentInfo> dependingSchemas = fDependencyMap.get(startSchema);
+            List<XSDocumentInfo> dependingSchemas = fDependencyMap.get(startSchema);
             for (int i = 0; i < dependingSchemas.size(); i++) {
-                setSchemasVisible(dependingSchemas.elementAt(i));
+                setSchemasVisible(dependingSchemas.get(i));
             }
         }
         // if it's visible already than so must be its children
@@ -4175,7 +4183,7 @@ public class XSDHandler {
         return registry.get(declKey);
     }
 
-    private Object getFromMap(Map registry, String key) {
+    private List<String> getFromMap(Map<String, List<String>> registry, String key) {
         if (registry == null) return null;
         return registry.get(key);
     }

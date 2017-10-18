@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,13 +21,11 @@
 
 package com.sun.org.apache.xerces.internal.impl.dtd;
 
-import java.util.ArrayList;
-import java.util.Vector;
-
-import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
-import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
-import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
+import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
+import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
+import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
+import java.util.List;
 
 /**
  * All information specific to DTD grammars.
@@ -47,7 +45,7 @@ public class XMLDTDDescription extends XMLResourceIdentifierImpl
 
     // if we don't know the root name, this stores all elements that
     // could serve; fPossibleRoots and fRootName cannot both be non-null
-    protected ArrayList fPossibleRoots = null;
+    protected List<String> fPossibleRoots = null;
 
     // Constructors:
     public XMLDTDDescription(XMLResourceIdentifier id, String rootName) {
@@ -91,13 +89,8 @@ public class XMLDTDDescription extends XMLResourceIdentifierImpl
     }
 
     /** Set possible roots **/
-    public void setPossibleRoots(ArrayList possibleRoots) {
+    public void setPossibleRoots(List<String> possibleRoots) {
         fPossibleRoots = possibleRoots;
-    }
-
-    /** Set possible roots **/
-    public void setPossibleRoots(Vector possibleRoots) {
-        fPossibleRoots = (possibleRoots != null) ? new ArrayList(possibleRoots) : null;
     }
 
     /**
@@ -139,9 +132,7 @@ public class XMLDTDDescription extends XMLResourceIdentifierImpl
             }
             else {
                 boolean found = false;
-                final int size = fPossibleRoots.size();
-                for (int i = 0; i < size; ++i) {
-                    String root = (String) fPossibleRoots.get(i);
+                for (String root : fPossibleRoots) {
                     found = dtdDesc.fPossibleRoots.contains(root);
                     if (found) break;
                 }

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,19 +24,17 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
-
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -43,7 +42,7 @@ import java.util.List;
  */
 final class UnsupportedElement extends SyntaxTreeNode {
 
-    private Vector _fallbacks = null;
+    private List<SyntaxTreeNode> _fallbacks = null;
     private ErrorMsg _message = null;
     private boolean _isExtension = false;
 
@@ -94,9 +93,9 @@ final class UnsupportedElement extends SyntaxTreeNode {
                     fallback.activate();
                     fallback.parseContents(parser);
                     if (_fallbacks == null) {
-                        _fallbacks = new Vector();
+                        _fallbacks = new ArrayList<>();
                     }
-                    _fallbacks.addElement(child);
+                    _fallbacks.add(child);
                 }
             }
         }
@@ -116,7 +115,7 @@ final class UnsupportedElement extends SyntaxTreeNode {
         if (_fallbacks != null) {
             int count = _fallbacks.size();
             for (int i = 0; i < count; i++) {
-                Fallback fallback = (Fallback)_fallbacks.elementAt(i);
+                Fallback fallback = (Fallback)_fallbacks.get(i);
                 fallback.typeCheck(stable);
             }
         }
@@ -130,7 +129,7 @@ final class UnsupportedElement extends SyntaxTreeNode {
         if (_fallbacks != null) {
             int count = _fallbacks.size();
             for (int i = 0; i < count; i++) {
-                Fallback fallback = (Fallback)_fallbacks.elementAt(i);
+                Fallback fallback = (Fallback)_fallbacks.get(i);
                 fallback.translate(classGen, methodGen);
             }
         }

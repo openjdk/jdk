@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -81,7 +81,7 @@ final class ProcessingInstructionPattern extends StepPattern {
             // Type check all the predicates (e -> position() = e)
             final int n = _predicates.size();
             for (int i = 0; i < n; i++) {
-                final Predicate pred = (Predicate)_predicates.elementAt(i);
+                final Predicate pred = _predicates.get(i);
                 pred.typeCheck(stable);
             }
         }
@@ -133,7 +133,7 @@ final class ProcessingInstructionPattern extends StepPattern {
         if (hasPredicates()) {
             final int n = _predicates.size();
             for (int i = 0; i < n; i++) {
-                Predicate pred = (Predicate)_predicates.elementAt(i);
+                Predicate pred = _predicates.get(i);
                 Expression exp = pred.getExpr();
                 exp.translateDesynthesized(classGen, methodGen);
                 _trueList.append(exp._trueList);

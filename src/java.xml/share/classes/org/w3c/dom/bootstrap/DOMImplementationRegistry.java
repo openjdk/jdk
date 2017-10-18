@@ -42,17 +42,18 @@
 
 package org.w3c.dom.bootstrap;
 
-import java.util.StringTokenizer;
-import java.util.Vector;
-import org.w3c.dom.DOMImplementationSource;
-import org.w3c.dom.DOMImplementationList;
-import org.w3c.dom.DOMImplementation;
-import java.io.InputStream;
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.DOMImplementationList;
+import org.w3c.dom.DOMImplementationSource;
 
 /**
  * A factory that enables applications to obtain instances of
@@ -98,7 +99,7 @@ public final class DOMImplementationRegistry {
     /**
      * The list of DOMImplementationSources.
      */
-    private Vector sources;
+    private List<DOMImplementationSource> sources;
 
     /**
      * Default class name.
@@ -109,9 +110,9 @@ public final class DOMImplementationRegistry {
             "com.sun.org.apache.xerces.internal.dom";
     /**
      * Private constructor.
-     * @param srcs Vector List of DOMImplementationSources
+     * @param srcs List of DOMImplementationSources
      */
-    private DOMImplementationRegistry(final Vector srcs) {
+    private DOMImplementationRegistry(final List<DOMImplementationSource> srcs) {
         sources = srcs;
     }
 
@@ -148,7 +149,7 @@ public final class DOMImplementationRegistry {
         InstantiationException,
         IllegalAccessException,
         ClassCastException {
-        Vector sources = new Vector();
+        List<DOMImplementationSource> sources = new ArrayList<>();
 
         ClassLoader classLoader = getClassLoader();
         // fetch system property:
@@ -164,7 +165,7 @@ public final class DOMImplementationRegistry {
             //
             // DOM Implementations can modify here to add *additional* fallback
             // mechanisms to access a list of default DOMImplementationSources.
-            //fall back to JAXP implementation class com.sun.org.apache.xerces.internal.dom.DOMXSImplementationSourceImpl
+            //fall back to JAXP implementation class DOMXSImplementationSourceImpl
             p = FALLBACK_CLASS;
         }
         if (p != null) {
@@ -178,7 +179,7 @@ public final class DOMImplementationRegistry {
                         internal = true;
                     }
                 }
-                Class sourceClass = null;
+                Class<?> sourceClass = null;
                 if (classLoader != null && !internal) {
                     sourceClass = classLoader.loadClass(sourceName);
                 } else {
@@ -187,7 +188,7 @@ public final class DOMImplementationRegistry {
                 try {
                     DOMImplementationSource source =
                         (DOMImplementationSource) sourceClass.getConstructor().newInstance();
-                    sources.addElement(source);
+                    sources.add(source);
                 } catch (NoSuchMethodException | InvocationTargetException e) {
                     throw new InstantiationException(e.getMessage());
                 }
@@ -213,7 +214,7 @@ public final class DOMImplementationRegistry {
         String name = null;
         for (int i = 0; i < size; i++) {
             DOMImplementationSource source =
-                (DOMImplementationSource) sources.elementAt(i);
+                (DOMImplementationSource) sources.get(i);
             DOMImplementation impl = source.getDOMImplementation(features);
             if (impl != null) {
                 return impl;
@@ -234,16 +235,16 @@ public final class DOMImplementationRegistry {
      * @return A list of DOMImplementations that support the desired features.
      */
     public DOMImplementationList getDOMImplementationList(final String features) {
-        final Vector implementations = new Vector();
+        final List<DOMImplementation> implementations = new ArrayList<>();
         int size = sources.size();
         for (int i = 0; i < size; i++) {
             DOMImplementationSource source =
-                (DOMImplementationSource) sources.elementAt(i);
+                (DOMImplementationSource) sources.get(i);
             DOMImplementationList impls =
                 source.getDOMImplementationList(features);
             for (int j = 0; j < impls.getLength(); j++) {
                 DOMImplementation impl = impls.item(j);
-                implementations.addElement(impl);
+                implementations.add(impl);
             }
         }
         return new DOMImplementationList() {
@@ -251,8 +252,8 @@ public final class DOMImplementationRegistry {
                     if (index >= 0 && index < implementations.size()) {
                         try {
                             return (DOMImplementation)
-                                implementations.elementAt(index);
-                        } catch (ArrayIndexOutOfBoundsException e) {
+                                implementations.get(index);
+                        } catch (IndexOutOfBoundsException e) {
                             return null;
                         }
                     }
@@ -275,7 +276,7 @@ public final class DOMImplementationRegistry {
             throw new NullPointerException();
         }
         if (!sources.contains(s)) {
-            sources.addElement(s);
+            sources.add(s);
         }
     }
 
@@ -343,7 +344,7 @@ public final class DOMImplementationRegistry {
      * @return The Context Classloader
      */
     private static ClassLoader getContextClassLoader() {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
+        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
                 @Override
                 public ClassLoader run() {
                     ClassLoader classLoader = null;
@@ -365,7 +366,7 @@ public final class DOMImplementationRegistry {
      * @return the system property
      */
     private static String getSystemProperty(final String name) {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
+        return AccessController.doPrivileged(new PrivilegedAction<String>() {
                     @Override
                     public String run() {
                         return System.getProperty(name);
@@ -384,7 +385,7 @@ public final class DOMImplementationRegistry {
      */
     private static InputStream getResourceAsStream(final ClassLoader classLoader,
                                                    final String name) {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
+        return AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
                 @Override
                 public InputStream run() {
                     InputStream ris;

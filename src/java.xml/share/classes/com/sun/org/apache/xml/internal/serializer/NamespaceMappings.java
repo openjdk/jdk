@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,7 +24,6 @@ package com.sun.org.apache.xml.internal.serializer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Stack;
-
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -79,7 +78,7 @@ public class NamespaceMappings
      * mappings at deeper depths push later on such a stack.  Mappings pushed
      * earlier on the stack will have smaller values for MappingRecord.m_declarationDepth.
      */
-    private HashMap m_namespaces = new HashMap();
+    private HashMap<String, Stack<MappingRecord>> m_namespaces = new HashMap<>();
 
     /**
      * The top of this stack contains the MapRecord
@@ -93,7 +92,7 @@ public class NamespaceMappings
      * Used to ensure prefix/uri map scopes are closed correctly
      *
      */
-    private Stack m_nodeStack = new Stack();
+    private Stack<MappingRecord> m_nodeStack = new Stack<>();
 
     private static final String EMPTYSTRING = "";
     private static final String XML_PREFIX = "xml"; // was "xmlns"
@@ -116,11 +115,11 @@ public class NamespaceMappings
 
 
         // Define the default namespace (initially maps to "" uri)
-        Stack stack;
-        m_namespaces.put(EMPTYSTRING, stack = new Stack());
+        Stack<MappingRecord> stack;
+        m_namespaces.put(EMPTYSTRING, stack = new Stack<>());
         stack.push(new MappingRecord(EMPTYSTRING,EMPTYSTRING,0));
 
-        m_namespaces.put(XML_PREFIX, stack = new Stack());
+        m_namespaces.put(XML_PREFIX, stack = new Stack<>());
         stack.push(new MappingRecord( XML_PREFIX,
             "http://www.w3.org/XML/1998/namespace",0));
 
@@ -136,15 +135,13 @@ public class NamespaceMappings
      */
     public String lookupNamespace(String prefix)
     {
-        final Stack stack = (Stack) m_namespaces.get(prefix);
-        return stack != null && !stack.isEmpty() ?
-            ((MappingRecord) stack.peek()).m_uri : null;
+        final Stack<MappingRecord> stack = m_namespaces.get(prefix);
+        return stack != null && !stack.isEmpty() ? (stack.peek()).m_uri : null;
     }
 
     MappingRecord getMappingFromPrefix(String prefix) {
-        final Stack stack = (Stack) m_namespaces.get(prefix);
-        return stack != null && !stack.isEmpty() ?
-            ((MappingRecord) stack.peek()) : null;
+        final Stack<MappingRecord> stack = m_namespaces.get(prefix);
+        return stack != null && !stack.isEmpty() ? (stack.peek()) : null;
     }
 
     /**
@@ -199,8 +196,8 @@ public class NamespaceMappings
             return false;
         }
 
-        Stack stack;
-        if ((stack = (Stack) m_namespaces.get(prefix)) != null)
+        Stack<MappingRecord> stack;
+        if ((stack = m_namespaces.get(prefix)) != null)
         {
             stack.pop();
             return true;
@@ -222,14 +219,14 @@ public class NamespaceMappings
             return false;
         }
 
-        Stack stack;
+        Stack<MappingRecord> stack;
         // Get the stack that contains URIs for the specified prefix
-        if ((stack = (Stack) m_namespaces.get(prefix)) == null)
+        if ((stack = m_namespaces.get(prefix)) == null)
         {
-            m_namespaces.put(prefix, stack = new Stack());
+            m_namespaces.put(prefix, stack = new Stack<>());
         }
 
-        if (!stack.empty() && uri.equals(((MappingRecord)stack.peek()).m_uri))
+        if (!stack.empty() && uri.equals((stack.peek()).m_uri))
         {
             return false;
         }
@@ -293,10 +290,11 @@ public class NamespaceMappings
      * This method makes a clone of this object.
      *
      */
+    @SuppressWarnings("unchecked")
     public Object clone() throws CloneNotSupportedException {
         NamespaceMappings clone = new NamespaceMappings();
-        clone.m_nodeStack = (Stack) m_nodeStack.clone();
-        clone.m_namespaces = (HashMap) m_namespaces.clone();
+        clone.m_nodeStack = (Stack<MappingRecord>) m_nodeStack.clone();
+        clone.m_namespaces = (HashMap<String, Stack<MappingRecord>>) m_namespaces.clone();
         clone.count = count;
         return clone;
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,7 +40,6 @@ import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
 import com.sun.org.apache.xerces.internal.xs.PSVIProvider;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import javax.xml.XMLConstants;
@@ -387,8 +387,8 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
      */
     public static class JAXPSAXParser extends com.sun.org.apache.xerces.internal.parsers.SAXParser {
 
-        private final HashMap fInitFeatures = new HashMap();
-        private final HashMap fInitProperties = new HashMap();
+        private final Map<String, Boolean> fInitFeatures = new HashMap<>();
+        private final Map<String, Object> fInitProperties = new HashMap<>();
         private final SAXParserImpl fSAXParser;
         private XMLSecurityManager fSecurityManager;
         private XMLSecurityPropertyManager fSecurityPropertyMgr;
@@ -605,22 +605,17 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
 
         synchronized void restoreInitState()
             throws SAXNotRecognizedException, SAXNotSupportedException {
-            Iterator iter;
             if (!fInitFeatures.isEmpty()) {
-                iter = fInitFeatures.entrySet().iterator();
-                while (iter.hasNext()) {
-                    Map.Entry entry = (Map.Entry) iter.next();
-                    String name = (String) entry.getKey();
-                    boolean value = ((Boolean) entry.getValue()).booleanValue();
+                for (Map.Entry<String, Boolean> entry : fInitFeatures.entrySet()) {
+                    String name = entry.getKey();
+                    boolean value = (entry.getValue());
                     super.setFeature(name, value);
                 }
                 fInitFeatures.clear();
             }
             if (!fInitProperties.isEmpty()) {
-                iter = fInitProperties.entrySet().iterator();
-                while (iter.hasNext()) {
-                    Map.Entry entry = (Map.Entry) iter.next();
-                    String name = (String) entry.getKey();
+                for (Map.Entry<String, Object> entry : fInitProperties.entrySet()) {
+                    String name = entry.getKey();
                     Object value = entry.getValue();
                     super.setProperty(name, value);
                 }

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,17 +21,17 @@
 
 package com.sun.org.apache.xpath.internal;
 
-import javax.xml.transform.ErrorListener;
-import javax.xml.transform.TransformerException;
-
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMIterator;
+import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xml.internal.utils.XMLString;
 import com.sun.org.apache.xpath.internal.objects.XNodeSet;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
-
+import java.util.List;
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.TransformerException;
 import org.xml.sax.ContentHandler;
 
 /**
@@ -341,7 +341,7 @@ public abstract class Expression implements java.io.Serializable, ExpressionNode
    * to be offset to the current stack frame).
    * NEEDSDOC @param globalsSize
    */
-  public abstract void fixupVariables(java.util.Vector vars, int globalsSize);
+  public abstract void fixupVariables(List<QName> vars, int globalsSize);
 
   /**
    * Compare this object with another object and see

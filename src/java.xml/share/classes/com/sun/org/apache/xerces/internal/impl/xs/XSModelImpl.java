@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -46,9 +46,9 @@ import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
 import java.lang.reflect.Array;
 import java.util.AbstractList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-import java.util.Vector;
 
 /**
  * Implements XSModel:  a read-only interface that represents an XML Schema,
@@ -59,7 +59,8 @@ import java.util.Vector;
  * @author Sandy Gao, IBM
  *
  */
-public final class XSModelImpl extends AbstractList implements XSModel, XSNamespaceItemList {
+@SuppressWarnings("unchecked") // method <T>toArray(T[])
+public final class XSModelImpl extends AbstractList<XSNamespaceItem> implements XSModel, XSNamespaceItemList {
 
     // the max index / the max value of XSObject type
     private static final short MAX_COMP_IDX = XSTypeDefinition.SIMPLE_TYPE;
@@ -139,7 +140,7 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
         }
 
         SchemaGrammar sg1, sg2;
-        Vector gs;
+        List<SchemaGrammar> gs;
         int i, j, k;
         // and recursively get all imported grammars, add them to our arrays
         for (i = 0; i < len; i++) {
@@ -148,7 +149,7 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
             gs = sg1.getImportedGrammars();
             // for each imported grammar
             for (j = gs == null ? -1 : gs.size() - 1; j >= 0; j--) {
-                sg2 = (SchemaGrammar)gs.elementAt(j);
+                sg2 = gs.get(j);
                 // check whether this grammar is already in the list
                 for (k = 0; k < len; k++) {
                     if (sg2 == grammarList[k]) {
@@ -751,7 +752,7 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
     // java.util.List methods
     //
 
-    public Object get(int index) {
+    public XSNamespaceItem get(int index) {
         if (index >= 0 && index < fGrammarCount) {
             return fGrammarList[index];
         }
@@ -762,22 +763,22 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
         return getLength();
     }
 
-    public Iterator iterator() {
+    public Iterator<XSNamespaceItem> iterator() {
         return listIterator0(0);
     }
 
-    public ListIterator listIterator() {
+    public ListIterator<XSNamespaceItem> listIterator() {
         return listIterator0(0);
     }
 
-    public ListIterator listIterator(int index) {
+    public ListIterator<XSNamespaceItem> listIterator(int index) {
         if (index >= 0 && index < fGrammarCount) {
             return listIterator0(index);
         }
         throw new IndexOutOfBoundsException("Index: " + index);
     }
 
-    private ListIterator listIterator0(int index) {
+    private ListIterator<XSNamespaceItem> listIterator0(int index) {
         return new XSNamespaceItemListIterator(index);
     }
 
@@ -789,8 +790,8 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
 
     public Object[] toArray(Object[] a) {
         if (a.length < fGrammarCount) {
-            Class arrayClass = a.getClass();
-            Class componentType = arrayClass.getComponentType();
+            Class<?> arrayClass = a.getClass();
+            Class<?> componentType = arrayClass.getComponentType();
             a = (Object[]) Array.newInstance(componentType, fGrammarCount);
         }
         toArray0(a);
@@ -806,7 +807,7 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
         }
     }
 
-    private final class XSNamespaceItemListIterator implements ListIterator {
+    private final class XSNamespaceItemListIterator implements ListIterator<XSNamespaceItem> {
         private int index;
         public XSNamespaceItemListIterator(int index) {
             this.index = index;
@@ -814,7 +815,7 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
         public boolean hasNext() {
             return (index < fGrammarCount);
         }
-        public Object next() {
+        public XSNamespaceItem next() {
             if (index < fGrammarCount) {
                 return fGrammarList[index++];
             }
@@ -823,7 +824,7 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
         public boolean hasPrevious() {
             return (index > 0);
         }
-        public Object previous() {
+        public XSNamespaceItem previous() {
             if (index > 0) {
                 return fGrammarList[--index];
             }
@@ -838,10 +839,10 @@ public final class XSModelImpl extends AbstractList implements XSModel, XSNamesp
         public void remove() {
             throw new UnsupportedOperationException();
         }
-        public void set(Object o) {
+        public void set(XSNamespaceItem o) {
             throw new UnsupportedOperationException();
         }
-        public void add(Object o) {
+        public void add(XSNamespaceItem o) {
             throw new UnsupportedOperationException();
         }
     }

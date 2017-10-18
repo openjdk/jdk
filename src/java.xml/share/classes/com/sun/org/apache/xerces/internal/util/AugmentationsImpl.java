@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,7 +25,6 @@ import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -88,7 +88,7 @@ public class AugmentationsImpl implements Augmentations{
      * Returns an enumeration of the keys in the Augmentations structure
      *
      */
-    public Enumeration keys (){
+    public Enumeration<Object> keys (){
         return fAugmentationsContainer.keys();
     }
 
@@ -107,7 +107,7 @@ public class AugmentationsImpl implements Augmentations{
         abstract public Object putItem(Object key, Object item);
         abstract public Object getItem(Object key);
         abstract public Object removeItem(Object key);
-        abstract public Enumeration keys();
+        abstract public Enumeration<Object> keys();
         abstract public void clear();
         abstract public boolean isFull();
         abstract public AugmentationsItemsContainer expand();
@@ -118,7 +118,7 @@ public class AugmentationsImpl implements Augmentations{
         final Object[] fAugmentations = new Object[SIZE_LIMIT*2];
         int fNumEntries = 0;
 
-        public Enumeration keys() {
+        public Enumeration<Object> keys() {
             return new SmallContainerKeyEnumeration();
         }
 
@@ -213,7 +213,7 @@ public class AugmentationsImpl implements Augmentations{
             return buff.toString();
         }
 
-        class SmallContainerKeyEnumeration implements Enumeration {
+        class SmallContainerKeyEnumeration implements Enumeration<Object> {
             Object [] enumArray = new Object[fNumEntries];
             int next = 0;
 
@@ -256,7 +256,7 @@ public class AugmentationsImpl implements Augmentations{
             return fAugmentations.remove(key);
         }
 
-        public Enumeration keys() {
+        public Enumeration<Object> keys() {
             return Collections.enumeration(fAugmentations.keySet());
         }
 

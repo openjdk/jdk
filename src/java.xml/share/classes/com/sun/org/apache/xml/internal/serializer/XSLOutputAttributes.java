@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,7 +21,7 @@
 
 package com.sun.org.apache.xml.internal.serializer;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This interface has methods associated with the XSLT xsl:output attribues
@@ -124,7 +124,7 @@ interface XSLOutputAttributes {
      * relevant in specifying which elements have their text to be output as
      * CDATA sections.
      */
-    public void setCdataSectionElements(ArrayList<String> URI_and_localNames);
+    public void setCdataSectionElements(List<String> URI_and_localNames);
 
     /** Set the value coming from the xsl:output doctype-public and doctype-system stylesheet properties
      * @param system the system identifier to be used in the DOCTYPE declaration

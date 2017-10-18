@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,8 +20,6 @@
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
-
-import java.util.ArrayList;
 
 import com.sun.org.apache.bcel.internal.classfile.Field;
 import com.sun.org.apache.bcel.internal.generic.ASTORE;
@@ -47,6 +45,8 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.Operators;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -92,7 +92,7 @@ final class Predicate extends Expression implements Closure {
     /**
      * List of variables in closure.
      */
-    private ArrayList _closureVars = null;
+    private List<VariableRefBase> _closureVars = null;
 
     /**
      * Reference to parent closure.
@@ -208,7 +208,7 @@ final class Predicate extends Expression implements Closure {
      */
     public void addVariable(VariableRefBase variableRef) {
         if (_closureVars == null) {
-            _closureVars = new ArrayList();
+            _closureVars = new ArrayList<>();
         }
 
         // Only one reference per variable
@@ -372,7 +372,7 @@ final class Predicate extends Expression implements Closure {
 
         // Add a new instance variable for each var in closure
         for (int i = 0; i < length; i++) {
-            VariableBase var = ((VariableRefBase) _closureVars.get(i)).getVariable();
+            VariableBase var = (_closureVars.get(i)).getVariable();
 
             filterGen.addField(new Field(ACC_PUBLIC,
                                         cpg.addUtf8(var.getEscapedName()),
@@ -559,7 +559,7 @@ final class Predicate extends Expression implements Closure {
         final int length = (_closureVars == null) ? 0 : _closureVars.size();
 
         for (int i = 0; i < length; i++) {
-            VariableRefBase varRef = (VariableRefBase) _closureVars.get(i);
+            VariableRefBase varRef = _closureVars.get(i);
             VariableBase var = varRef.getVariable();
             Type varType = var.getType();
 

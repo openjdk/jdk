@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,19 +21,21 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.models;
 
-import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.impl.dtd.models.CMNode;
 import com.sun.org.apache.xerces.internal.impl.dtd.models.CMStateSet;
 import com.sun.org.apache.xerces.internal.impl.xs.SchemaSymbols;
 import com.sun.org.apache.xerces.internal.impl.xs.SubstitutionGroupHandler;
-import com.sun.org.apache.xerces.internal.impl.xs.XSElementDecl;
-import com.sun.org.apache.xerces.internal.impl.xs.XSParticleDecl;
-import com.sun.org.apache.xerces.internal.impl.xs.XSModelGroupImpl;
-import com.sun.org.apache.xerces.internal.impl.xs.XSWildcardDecl;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaException;
 import com.sun.org.apache.xerces.internal.impl.xs.XSConstraints;
+import com.sun.org.apache.xerces.internal.impl.xs.XSElementDecl;
+import com.sun.org.apache.xerces.internal.impl.xs.XSModelGroupImpl;
+import com.sun.org.apache.xerces.internal.impl.xs.XSParticleDecl;
+import com.sun.org.apache.xerces.internal.impl.xs.XSWildcardDecl;
+import com.sun.org.apache.xerces.internal.xni.QName;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * DFAContentModel is the implementation of XSCMValidator that does
@@ -720,7 +723,7 @@ public class XSDFACM
          * a large content model such as, "(t001+|t002+|.... |t500+)".
          */
 
-        HashMap stateTable = new HashMap();
+        Map<CMStateSet, Integer> stateTable = new HashMap<>();
 
         /* Optimization(Jan, 2001) */
 
@@ -789,8 +792,8 @@ public class XSDFACM
                     //
 
                     /* Optimization(Jan, 2001) */
-                    Integer stateObj = (Integer)stateTable.get(newSet);
-                    int stateIndex = (stateObj == null ? curState : stateObj.intValue());
+                    Integer stateObj = stateTable.get(newSet);
+                    int stateIndex = (stateObj == null ? curState : stateObj);
                     /* Optimization(Jan, 2001) */
 
                     // If we did not find it, then add it
@@ -1170,7 +1173,7 @@ public class XSDFACM
      * @return       a list whose entries are instances of
      *               either XSWildcardDecl or XSElementDecl.
      */
-    public ArrayList whatCanGoHere(int[] state) {
+    public List<Object> whatCanGoHere(int[] state) {
         int curState = state[0];
         if (curState < 0)
             curState = state[1];
@@ -1178,7 +1181,9 @@ public class XSDFACM
                 fCountingStates[curState] : null;
         int count = state[2];
 
-        ArrayList ret = new ArrayList();
+        // Can be XSElementDecl or XSWildcardDecl, but eventually the content is
+        // only used to evaluate toString
+        List<Object> ret = new ArrayList<>();
         for (int elemIndex = 0; elemIndex < fElemMapSize; elemIndex++) {
             int nextState = fTransTable[curState][elemIndex];
             if (nextState != -1) {
@@ -1217,8 +1222,8 @@ public class XSDFACM
      * is associated with the error code that preceeds it in
      * the list.
      */
-    public ArrayList checkMinMaxBounds() {
-        ArrayList result = null;
+    public List<String> checkMinMaxBounds() {
+        List<String> result = null;
         for (int elemIndex = 0; elemIndex < fElemMapSize; elemIndex++) {
             int count = fElemMapCounter[elemIndex];
             if (count == -1) {
@@ -1227,12 +1232,12 @@ public class XSDFACM
             final int minOccurs = fElemMapCounterLowerBound[elemIndex];
             final int maxOccurs = fElemMapCounterUpperBound[elemIndex];
             if (count < minOccurs) {
-                if (result == null) result = new ArrayList();
+                if (result == null) result = new ArrayList<>();
                 result.add("cvc-complex-type.2.4.b");
                 result.add("{" + fElemMap[elemIndex] + "}");
             }
             if (maxOccurs != -1 && count > maxOccurs) {
-                if (result == null) result = new ArrayList();
+                if (result == null) result = new ArrayList<>();
                 result.add("cvc-complex-type.2.4.d.1");
                 result.add("{" + fElemMap[elemIndex] + "}");
             }

@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -93,13 +93,14 @@ public final class XMLLimitAnalyzer {
     /**
      * Maintain values of the top 10 elements in the process of parsing
      */
-    private final Map[] caches;
+    private final Map<String, Integer>[] caches;
 
     private String entityStart, entityEnd;
     /**
      * Default constructor. Establishes default values for known security
      * vulnerabilities.
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public XMLLimitAnalyzer() {
         values = new int[Limit.values().length];
         totalValue = new int[Limit.values().length];

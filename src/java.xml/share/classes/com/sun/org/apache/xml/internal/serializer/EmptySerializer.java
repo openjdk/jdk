@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,7 +24,7 @@ package com.sun.org.apache.xml.internal.serializer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.Transformer;
@@ -136,7 +137,7 @@ public class EmptySerializer implements SerializationHandler
     /**
      * @see SerializationHandler#setCdataSectionElements(java.util.ArrayList<String>)
      */
-    public void setCdataSectionElements(ArrayList<String> URI_and_localNames) {
+    public void setCdataSectionElements(List<String> URI_and_localNames) {
         aMethodIsCalled();
     }
 

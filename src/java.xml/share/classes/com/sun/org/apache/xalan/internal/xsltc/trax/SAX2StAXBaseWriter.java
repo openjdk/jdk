@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +26,11 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
-import java.util.Vector;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLReporter;
 import javax.xml.stream.XMLStreamException;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
@@ -48,7 +48,7 @@ public abstract class SAX2StAXBaseWriter extends DefaultHandler
 
         protected StringBuffer CDATABuffer;
 
-        protected Vector namespaces;
+        protected List<String> namespaces;
 
         protected Locator docLocator;
 
@@ -92,7 +92,7 @@ public abstract class SAX2StAXBaseWriter extends DefaultHandler
         }
 
         public void startDocument() throws SAXException {
-                    namespaces = new Vector(2);
+                    namespaces = new ArrayList<>(2);
         }
 
         public void endDocument() throws SAXException {
@@ -119,10 +119,10 @@ public abstract class SAX2StAXBaseWriter extends DefaultHandler
                 }
 
                 if (namespaces == null) {
-                    namespaces = new Vector(2);
+                    namespaces = new ArrayList<>(2);
                 }
-                namespaces.addElement(prefix);
-                namespaces.addElement(uri);
+                namespaces.add(prefix);
+                namespaces.add(uri);
         }
 
 

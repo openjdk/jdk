@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,11 +21,6 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.traversers;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.Vector;
-
 import com.sun.org.apache.xerces.internal.impl.dv.InvalidDatatypeValueException;
 import com.sun.org.apache.xerces.internal.impl.dv.XSSimpleType;
 import com.sun.org.apache.xerces.internal.impl.xs.SchemaGrammar;
@@ -42,7 +38,11 @@ import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xs.XSConstants;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
@@ -145,9 +145,9 @@ public class XSAttributeChecker {
 
     // used to store the map from element name to attribute list
     // for 14 global elements
-    private static final Map fEleAttrsMapG = new HashMap(29);
+    private static final Map<String, Container> fEleAttrsMapG = new HashMap<>(29);
     // for 39 local elememnts
-    private static final Map fEleAttrsMapL = new HashMap(79);
+    private static final Map<String, Container> fEleAttrsMapL = new HashMap<>(79);
 
     // used to initialize fEleAttrsMap
     // step 1: all possible data types
@@ -926,10 +926,10 @@ public class XSAttributeChecker {
     protected SymbolTable fSymbolTable = null;
 
     // used to store the mapping from processed element to attributes
-    protected Map fNonSchemaAttrs = new HashMap();
+    protected Map<String, List<String>> fNonSchemaAttrs = new HashMap<>();
 
     // temprory vector, used to hold the namespace list
-    protected Vector fNamespaceList = new Vector();
+    protected List<String> fNamespaceList = new ArrayList<>();
 
     // whether this attribute appeared in the current element
     protected boolean[] fSeen = new boolean[ATTIDX_COUNT];
@@ -974,6 +974,7 @@ public class XSAttributeChecker {
      * @param enumAsQName  whether to tread enumeration value as QName
      * @return             an array containing attribute values
      */
+    @SuppressWarnings("unchecked")
     public Object[] checkAttributes(Element element, boolean isGlobal,
                                     XSDocumentInfo schemaDoc, boolean enumAsQName) {
         if (element == null)
@@ -992,7 +993,7 @@ public class XSAttributeChecker {
             reportSchemaError("s4s-elt-schema-ns", new Object[] {elName}, element);
         }
 
-        Map eleAttrsMap = fEleAttrsMapG;
+        Map<String, Container> eleAttrsMap = fEleAttrsMapG;
         String lookupName = elName;
 
         // REVISIT: only local element and attribute are different from others.
@@ -1015,7 +1016,7 @@ public class XSAttributeChecker {
         }
 
         // get desired attribute list of this element
-        Container attrList = (Container)eleAttrsMap.get(lookupName);
+        Container attrList = eleAttrsMap.get(lookupName);
         if (attrList == null) {
             // should never gets here.
             // when this method is called, the call already knows that
@@ -1066,29 +1067,33 @@ public class XSAttributeChecker {
                     reportSchemaError ("s4s-att-not-allowed", new Object[] {elName, attrName}, element);
                 }
                 else {
+                    List<String> temp;
                     if(attrValues[ATTIDX_NONSCHEMA] == null) {
                         // these are usually small
-                        attrValues[ATTIDX_NONSCHEMA] = new Vector(4,2);
+                        temp = new ArrayList<>(4);
+                    } else {
+                        temp = (List<String>)attrValues[ATTIDX_NONSCHEMA];
                     }
-                    ((Vector)attrValues[ATTIDX_NONSCHEMA]).addElement(attrName);
-                    ((Vector)attrValues[ATTIDX_NONSCHEMA]).addElement(attrVal);
+                    temp.add(attrName);
+                    temp.add(attrVal);
+                    attrValues[ATTIDX_NONSCHEMA] = temp;
                     // for attributes from other namespace
                     // store them in a list, and TRY to validate them after
                     // schema traversal (because it's "lax")
                     //otherValues.put(attrName, attrVal);
                     // REVISIT:  actually use this some day...
                     // String attrRName = attrURI + "," + attrName;
-                    // Vector values = (Vector)fNonSchemaAttrs.get(attrRName);
+                    // List<String> values = (ArrayList<String>)fNonSchemaAttrs.get(attrRName);
                     // if (values == null) {
-                        // values = new Vector();
-                        // values.addElement(attrName);
-                        // values.addElement(elName);
-                        // values.addElement(attrVal);
+                        // values = new ArrayList<>();
+                        // values.add(attrName);
+                        // values.add(elName);
+                        // values.add(attrVal);
                         // fNonSchemaAttrs.put(attrRName, values);
                     // }
                     // else {
-                        // values.addElement(elName);
-                        // values.addElement(attrVal);
+                        // values.add(elName);
+                        // values.add(attrVal);
                     // }
                 }
                 continue;
@@ -1227,7 +1232,7 @@ public class XSAttributeChecker {
 
         String value = XMLChar.trim(ivalue);
         Object retValue = null;
-        Vector memberType;
+        List<QName> memberType;
         int choice;
 
         switch (dvIndex) {
@@ -1286,7 +1291,9 @@ public class XSAttributeChecker {
                         choice |= XSConstants.DERIVATION_SUBSTITUTION;
                     }
                     else {
-                        throw new InvalidDatatypeValueException("cvc-datatype-valid.1.2.3", new Object[]{value, "(#all | List of (extension | restriction | substitution))"});
+                        throw new InvalidDatatypeValueException(
+                                "cvc-datatype-valid.1.2.3", new Object[]{value,
+                                    "(#all | List of (extension | restriction | substitution))"});
                     }
                 }
             }
@@ -1436,7 +1443,7 @@ public class XSAttributeChecker {
             break;
         case DT_MEMBERTYPES:
             // memberTypes = List of QName
-            memberType = new Vector();
+            memberType = new ArrayList<>();
             try {
                 StringTokenizer t = new StringTokenizer(value, " \n\t\r");
                 while (t.hasMoreTokens()) {
@@ -1445,7 +1452,7 @@ public class XSAttributeChecker {
                     // kludge to handle chameleon includes/redefines...
                     if(qname.prefix == XMLSymbols.EMPTY_STRING && qname.uri == null && schemaDoc.fIsChameleonSchema)
                         qname.uri = schemaDoc.fTargetNamespace;
-                    memberType.addElement(qname);
+                    memberType.add(qname);
                 }
                 retValue = memberType;
             }
@@ -1479,7 +1486,7 @@ public class XSAttributeChecker {
                 // list
                 retValue = INT_ANY_LIST;
 
-                fNamespaceList.removeAllElements();
+                fNamespaceList.clear();
 
                 // tokenize
                 StringTokenizer tokens = new StringTokenizer(value, " \n\t\r");
@@ -1501,17 +1508,19 @@ public class XSAttributeChecker {
 
                         //check for duplicate namespaces in the list
                         if (!fNamespaceList.contains(tempNamespace)) {
-                            fNamespaceList.addElement(tempNamespace);
+                            fNamespaceList.add(tempNamespace);
                         }
                     }
                 } catch (InvalidDatatypeValueException ide) {
-                    throw new InvalidDatatypeValueException("cvc-datatype-valid.1.2.3", new Object[]{value, "((##any | ##other) | List of (anyURI | (##targetNamespace | ##local)) )"});
+                    throw new InvalidDatatypeValueException("cvc-datatype-valid.1.2.3",
+                            new Object[]{value,
+                                "((##any | ##other) | List of (anyURI | (##targetNamespace | ##local)) )"});
                 }
 
                 // convert the vector to an array
                 int num = fNamespaceList.size();
                 String[] list = new String[num];
-                fNamespaceList.copyInto(list);
+                list = fNamespaceList.toArray(list);
                 attrValues[ATTIDX_NAMESPACE_LIST] = list;
             }
             break;
@@ -1570,12 +1579,10 @@ public class XSAttributeChecker {
     // REVISIT: pass the proper element node to reportSchemaError
     public void checkNonSchemaAttributes(XSGrammarBucket grammarBucket) {
         // for all attributes
-        Iterator entries = fNonSchemaAttrs.entrySet().iterator();
         XSAttributeDecl attrDecl;
-        while (entries.hasNext()) {
-            Map.Entry entry = (Map.Entry) entries.next();
+        for (Map.Entry<String, List<String>> entry : fNonSchemaAttrs.entrySet()) {
             // get name, uri, localpart
-            String attrRName = (String) entry.getKey();
+            String attrRName = entry.getKey();
             String attrURI = attrRName.substring(0,attrRName.indexOf(','));
             String attrLocal = attrRName.substring(attrRName.indexOf(',')+1);
             // find associated grammar
@@ -1594,18 +1601,18 @@ public class XSAttributeChecker {
             }
 
             // get all values appeared with this attribute name
-            Vector values = (Vector) entry.getValue();
+            List<String> values = entry.getValue();
             String elName;
-            String attrName = (String)values.elementAt(0);
+            String attrName = values.get(0);
             // for each of the values
             int count = values.size();
             for (int i = 1; i < count; i += 2) {
-                elName = (String)values.elementAt(i);
+                elName = (String)values.get(i);
                 try {
                     // and validate it using the XSSimpleType
                     // REVISIT: what would be the proper validation context?
                     //          guess we need to save that in the vectors too.
-                    dv.validate((String)values.elementAt(i+1), null, null);
+                    dv.validate(values.get(i+1), null, null);
                 } catch(InvalidDatatypeValueException ide) {
                     reportSchemaError ("s4s-att-invalid-value",
                                        new Object[] {elName, attrName, ide.getMessage()},
@@ -1621,7 +1628,7 @@ public class XSAttributeChecker {
         if (len == 0 || ws == XSSimpleType.WS_PRESERVE)
             return content;
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (ws == XSSimpleType.WS_REPLACE) {
             char ch;
             // when it's replace, just replace #x9, #xa, #xd by #x20
@@ -1703,6 +1710,7 @@ public class XSAttributeChecker {
     }
 
     // return an array back to the pool
+    @SuppressWarnings("unchecked")
     public void returnAttrArray(Object[] attrArray, XSDocumentInfo schemaDoc) {
         // pop the namespace context
         if (schemaDoc != null)
@@ -1714,7 +1722,7 @@ public class XSAttributeChecker {
         if (fPoolPos == 0 ||
             attrArray == null ||
             attrArray.length != ATTIDX_COUNT ||
-            ((Boolean)attrArray[ATTIDX_ISRETURNED]).booleanValue()) {
+                ((Boolean)attrArray[ATTIDX_ISRETURNED])) {
             return;
         }
 
@@ -1722,7 +1730,7 @@ public class XSAttributeChecker {
         attrArray[ATTIDX_ISRETURNED] = Boolean.TRUE;
         // better clear nonschema vector
         if(attrArray[ATTIDX_NONSCHEMA] != null)
-            ((Vector)attrArray[ATTIDX_NONSCHEMA]).clear();
+            ((List<String>)attrArray[ATTIDX_NONSCHEMA]).clear();
         // and put it into the pool
         fArrayPool[--fPoolPos] = attrArray;
     }
@@ -1806,9 +1814,9 @@ class SmallContainer extends Container {
 }
 
 class LargeContainer extends Container {
-    Map items;
+    Map<String, OneAttr> items;
     LargeContainer(int size) {
-        items = new HashMap(size*2+1);
+        items = new HashMap<>(size*2+1);
         values = new OneAttr[size];
     }
     void put(String key, OneAttr value) {

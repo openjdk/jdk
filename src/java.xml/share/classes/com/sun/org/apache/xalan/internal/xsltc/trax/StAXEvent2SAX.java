@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +26,21 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
+import com.sun.org.apache.xalan.internal.xsltc.dom.SAXImpl;
 import java.io.IOException;
 import java.util.Iterator;
-
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.Attribute;
+import javax.xml.stream.events.Characters;
+import javax.xml.stream.events.EndElement;
+import javax.xml.stream.events.Namespace;
+import javax.xml.stream.events.ProcessingInstruction;
+import javax.xml.stream.events.StartDocument;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.DTDHandler;
@@ -40,22 +53,8 @@ import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.LexicalHandler;
-import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.ext.Locator2;
-import com.sun.org.apache.xalan.internal.xsltc.dom.SAXImpl;
-
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.Characters;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.Namespace;
-import javax.xml.stream.events.ProcessingInstruction;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
-import javax.xml.stream.events.StartDocument;
+import org.xml.sax.helpers.AttributesImpl;
 
 
 /**
@@ -337,8 +336,8 @@ public class StAXEvent2SAX implements XMLReader, Locator {
                 qname);
 
             // end namespace bindings
-            for( Iterator i = event.getNamespaces(); i.hasNext();) {
-                String prefix = (String)i.next();
+            for( Iterator<Namespace> i = event.getNamespaces(); i.hasNext();) {
+                String prefix = (i.next()).getPrefix();
                 if( prefix == null ) { // true for default namespace
                     prefix = "";
                 }
@@ -353,8 +352,8 @@ public class StAXEvent2SAX implements XMLReader, Locator {
         throws XMLStreamException {
         try {
             // start namespace bindings
-            for (Iterator i = event.getNamespaces(); i.hasNext();) {
-                String prefix = ((Namespace)i.next()).getPrefix();
+            for (Iterator<Namespace> i = event.getNamespaces(); i.hasNext();) {
+                String prefix = (i.next()).getPrefix();
                 if (prefix == null) { // true for default namespace
                     prefix = "";
                 }
@@ -402,8 +401,8 @@ public class StAXEvent2SAX implements XMLReader, Locator {
         // we don't use it.) So don't add xmlns:* to attributes.
 
         // gather non-namespace attrs
-        for (Iterator i = event.getAttributes(); i.hasNext();) {
-            Attribute staxAttr = (javax.xml.stream.events.Attribute)i.next();
+        for (Iterator<Attribute> i = event.getAttributes(); i.hasNext();) {
+            Attribute staxAttr = i.next();
 
             String uri = staxAttr.getName().getNamespaceURI();
             if (uri == null) {

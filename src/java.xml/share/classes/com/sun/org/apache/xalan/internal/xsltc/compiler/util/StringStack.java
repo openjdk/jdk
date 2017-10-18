@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,17 +27,17 @@ import java.util.Stack;
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
  */
-public final class StringStack extends Stack {
+public final class StringStack extends Stack<String> {
     static final long serialVersionUID = -1506910875640317898L;
     public String peekString() {
-        return (String) super.peek();
+        return super.peek();
     }
 
     public String popString() {
-        return (String) super.pop();
+        return super.pop();
     }
 
     public String pushString(String val) {
-        return (String) super.push(val);
+        return super.push(val);
     }
 }

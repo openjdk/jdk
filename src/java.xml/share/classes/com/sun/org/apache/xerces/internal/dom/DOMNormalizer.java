@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,10 +22,6 @@
 package com.sun.org.apache.xerces.internal.dom;
 
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.io.StringReader;
-import java.util.Vector;
 
 import com.sun.org.apache.xerces.internal.dom.AbortException;
 import com.sun.org.apache.xerces.internal.impl.Constants;
@@ -59,6 +56,11 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xs.AttributePSVI;
 import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
 import org.w3c.dom.DOMError;
@@ -146,7 +148,7 @@ public class DOMNormalizer implements XMLDocumentHandler {
     protected final NamespaceContext fLocalNSBinder = new NamespaceSupport();
 
     /** list of attributes */
-    protected final ArrayList fAttributeList = new ArrayList(5);
+    protected final List<Node> fAttributeList = new ArrayList<>(5);
 
     /** DOM Locator -  for namespace fixup algorithm */
     protected final DOMLocatorImpl fLocator = new DOMLocatorImpl();
@@ -1445,7 +1447,7 @@ public class DOMNormalizer implements XMLDocumentHandler {
         protected CoreDocumentImpl fDocument;
         protected ElementImpl fElement;
 
-        protected final Vector fAugmentations = new Vector(5);
+        protected final Vector<Augmentations> fAugmentations = new Vector<>(5);
 
 
         public void setAttributes(AttributeMap attributes, CoreDocumentImpl doc, ElementImpl elem) {

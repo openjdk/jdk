@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +21,8 @@
 
 package com.sun.org.apache.xpath.internal.functions;
 
-import java.util.Vector;
-
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
+import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xpath.internal.Expression;
 import com.sun.org.apache.xpath.internal.ExpressionNode;
 import com.sun.org.apache.xpath.internal.ExpressionOwner;
@@ -34,6 +33,8 @@ import com.sun.org.apache.xpath.internal.objects.XNull;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
 import com.sun.org.apache.xpath.internal.res.XPATHMessages;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An object of this class represents an extension call expression.  When
@@ -70,7 +71,7 @@ public class FuncExtFunction extends Function
    *  function.
    *  @serial
    */
-  Vector m_argVec = new Vector();
+  List<Expression> m_argVec = new ArrayList<>();
 
   /**
    * This function is used to fixup variables from QNames to stack frame
@@ -83,7 +84,7 @@ public class FuncExtFunction extends Function
    * to be offset to the current stack frame).
    * NEEDSDOC @param globalsSize
    */
-  public void fixupVariables(java.util.Vector vars, int globalsSize)
+  public void fixupVariables(List<QName> vars, int globalsSize)
   {
 
     if (null != m_argVec)
@@ -92,7 +93,7 @@ public class FuncExtFunction extends Function
 
       for (int i = 0; i < nArgs; i++)
       {
-        Expression arg = (Expression) m_argVec.elementAt(i);
+        Expression arg = m_argVec.get(i);
 
         arg.fixupVariables(vars, globalsSize);
       }
@@ -137,7 +138,7 @@ public class FuncExtFunction extends Function
    */
   public Expression getArg(int n) {
     if (n >= 0 && n < m_argVec.size())
-      return (Expression) m_argVec.elementAt(n);
+      return m_argVec.get(n);
     else
       return null;
   }
@@ -190,19 +191,19 @@ public class FuncExtFunction extends Function
           new Object[] {toString()}));
 
     XObject result;
-    Vector argVec = new Vector();
+    List<XObject> argVec = new ArrayList<>();
     int nArgs = m_argVec.size();
 
     for (int i = 0; i < nArgs; i++)
     {
-      Expression arg = (Expression) m_argVec.elementAt(i);
+      Expression arg = m_argVec.get(i);
 
       XObject xobj = arg.execute(xctxt);
       /*
        * Should cache the arguments for func:function
        */
       xobj.allowDetachToRelease(false);
-      argVec.addElement(xobj);
+      argVec.add(xobj);
     }
     //dml
     ExtensionsProvider extProvider = (ExtensionsProvider)xctxt.getOwnerObject();
@@ -233,7 +234,7 @@ public class FuncExtFunction extends Function
   public void setArg(Expression arg, int argNum)
           throws WrongNumberArgsException
   {
-    m_argVec.addElement(arg);
+    m_argVec.add(arg);
     arg.exprSetParent(this);
   }
 
@@ -285,7 +286,7 @@ public class FuncExtFunction extends Function
   {
       for (int i = 0; i < m_argVec.size(); i++)
       {
-         Expression exp = (Expression)m_argVec.elementAt(i);
+         Expression exp = m_argVec.get(i);
          exp.callVisitors(new ArgExtOwner(exp), visitor);
       }
 
@@ -307,7 +308,7 @@ public class FuncExtFunction extends Function
 
     for (int i = 0; i < nArgs; i++)
     {
-      Expression arg = (Expression) m_argVec.elementAt(i);
+      Expression arg = m_argVec.get(i);
 
       arg.exprSetParent(n);
     }

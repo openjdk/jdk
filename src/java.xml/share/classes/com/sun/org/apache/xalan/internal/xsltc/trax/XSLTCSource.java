@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,9 +22,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.StripFilter;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
@@ -32,7 +29,8 @@ import com.sun.org.apache.xalan.internal.xsltc.dom.DOMWSFilter;
 import com.sun.org.apache.xalan.internal.xsltc.dom.SAXImpl;
 import com.sun.org.apache.xalan.internal.xsltc.dom.XSLTCDTMManager;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
-
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
 import org.xml.sax.SAXException;
 
 /**
@@ -42,7 +40,7 @@ public final class XSLTCSource implements Source {
 
     private String     _systemId = null;
     private Source     _source   = null;
-    private ThreadLocal _dom     = new ThreadLocal();
+    private ThreadLocal<SAXImpl> _dom     = new ThreadLocal<>();
 
     /**
      * Create a new XSLTC-specific source from a system ID

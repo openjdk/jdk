@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -64,7 +65,7 @@ class Encodings
     // note that the size of this Map
     // is bounded by the number of encodings recognized by EncodingMap;
     // therefore it poses no static mutability risk.
-    private static final Map<String, EncodingInfo> _encodings = new ConcurrentHashMap();
+    private static final Map<String, EncodingInfo> _encodings = new ConcurrentHashMap<>();
 
     /**
      * @param encoding a MIME charset name, or null.
