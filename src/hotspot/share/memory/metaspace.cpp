@@ -3323,6 +3323,24 @@ void Metaspace::ergo_initialize() {
 
   CompressedClassSpaceSize = align_down_bounded(CompressedClassSpaceSize, _reserve_alignment);
   set_compressed_class_space_size(CompressedClassSpaceSize);
+
+  // Initial virtual space size will be calculated at global_initialize()
+  size_t min_metaspace_sz =
+      VIRTUALSPACEMULTIPLIER * InitialBootClassLoaderMetaspaceSize;
+  if (UseCompressedClassPointers) {
+    if ((min_metaspace_sz + CompressedClassSpaceSize) >  MaxMetaspaceSize) {
+      if (min_metaspace_sz >= MaxMetaspaceSize) {
+        vm_exit_during_initialization("MaxMetaspaceSize is too small.");
+      } else {
+        FLAG_SET_ERGO(size_t, CompressedClassSpaceSize,
+                      MaxMetaspaceSize - min_metaspace_sz);
+      }
+    }
+  } else if (min_metaspace_sz >= MaxMetaspaceSize) {
+    FLAG_SET_ERGO(size_t, InitialBootClassLoaderMetaspaceSize,
+                  min_metaspace_sz);
+  }
+
 }
 
 void Metaspace::global_initialize() {
