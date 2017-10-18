@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,8 +21,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.ILOAD;
 import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
@@ -33,6 +31,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.StringType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+import java.util.List;
 
 /**
  * @author Morten Jorgensen
@@ -45,7 +44,7 @@ final class LangCall extends FunctionCall {
      * Get the parameters passed to function:
      *   lang(string)
      */
-    public LangCall(QName fname, Vector arguments) {
+    public LangCall(QName fname, List<Expression> arguments) {
         super(fname, arguments);
         _lang = argument(0);
     }

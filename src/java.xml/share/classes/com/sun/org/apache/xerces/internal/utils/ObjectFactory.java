@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -157,7 +157,7 @@ public final class ObjectFactory {
     {
         // assert(className != null);
         try{
-            Class providerClass = findProviderClass(className, cl, doFallback);
+            Class<?> providerClass = findProviderClass(className, cl, doFallback);
             Object instance = providerClass.getConstructor().newInstance();
             debugPrintln(()->"created new instance of " + providerClass +
                              " using ClassLoader: " + cl);
@@ -176,7 +176,7 @@ public final class ObjectFactory {
      * Find a Class using the same classloader for the ObjectFactory by default
      * or bootclassloader when Security Manager is in place
      */
-    public static Class findProviderClass(String className, boolean doFallback)
+    public static Class<?> findProviderClass(String className, boolean doFallback)
         throws ClassNotFoundException, ConfigurationError
     {
         return findProviderClass (className,
@@ -185,7 +185,7 @@ public final class ObjectFactory {
     /**
      * Find a Class using the specified ClassLoader
      */
-    public static Class findProviderClass(String className, ClassLoader cl,
+    public static Class<?> findProviderClass(String className, ClassLoader cl,
                                       boolean doFallback)
         throws ClassNotFoundException, ConfigurationError
     {
@@ -203,7 +203,7 @@ public final class ObjectFactory {
                 security.checkPackageAccess(packageName);
             }
         }
-        Class providerClass;
+        Class<?> providerClass;
         if (cl == null) {
             //use the bootstrap ClassLoader.
             providerClass = Class.forName(className, false, ObjectFactory.class.getClassLoader());

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,7 +27,6 @@ import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xml.internal.utils.StringComparable;
-import java.text.CollationKey;
 import java.text.Collator;
 import java.util.Locale;
 import jdk.xml.internal.SecuritySupport;
@@ -157,6 +156,7 @@ public abstract class NodeSortRecord {
      * element. The value is extracted from the DOM if it is not already in
      * our sort key vector.
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private final Comparable stringValue(int level) {
         // Get value from our array if possible
         if (_scanned <= level) {
@@ -167,10 +167,8 @@ public abstract class NodeSortRecord {
             // Get value from DOM if accessed for the first time
             final String str = extractValueFromDOM(_dom, _node, level,
                                                    translet, _last);
-            final Comparable key =
-                StringComparable.getComparator(str, locales[level],
-                                               _collators[level],
-                                               caseOrder[level]);
+            final Comparable key = StringComparable.getComparator(
+                    str, locales[level], _collators[level], caseOrder[level]);
             _values[_scanned++] = key;
             return(key);
         }
@@ -206,6 +204,7 @@ public abstract class NodeSortRecord {
      *
      * !!!!MUST OPTIMISE - THIS IS REALLY, REALLY SLOW!!!!
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public int compareTo(NodeSortRecord other) {
         int cmp, level;
         int[] sortOrder = _settings.getSortOrders();

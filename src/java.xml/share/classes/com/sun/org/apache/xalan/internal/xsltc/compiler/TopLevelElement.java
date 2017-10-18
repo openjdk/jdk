@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,8 +21,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
@@ -30,6 +28,8 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+import java.util.ArrayList;
+import java.util.List;
 
 class TopLevelElement extends SyntaxTreeNode {
 
@@ -37,7 +37,7 @@ class TopLevelElement extends SyntaxTreeNode {
      * List of dependencies with other variables, parameters or
      * keys defined at the top level.
      */
-    protected Vector _dependencies = null;
+    protected List<SyntaxTreeNode> _dependencies = null;
 
     /**
      * Type check all the children of this node.
@@ -80,10 +80,10 @@ class TopLevelElement extends SyntaxTreeNode {
      */
     public void addDependency(TopLevelElement other) {
         if (_dependencies == null) {
-            _dependencies = new Vector();
+            _dependencies = new ArrayList<>();
         }
         if (!_dependencies.contains(other)) {
-            _dependencies.addElement(other);
+            _dependencies.add(other);
         }
     }
 
@@ -91,7 +91,7 @@ class TopLevelElement extends SyntaxTreeNode {
      * Get the list of dependencies with other top-level elements
      * like variables, parameteres or keys.
      */
-    public Vector getDependencies() {
+    public List<SyntaxTreeNode> getDependencies() {
         return _dependencies;
     }
 

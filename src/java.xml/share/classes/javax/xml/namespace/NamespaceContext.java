@@ -270,5 +270,5 @@ public interface NamespaceContext {
      * @throws IllegalArgumentException When {@code namespaceURI} is
      *   {@code null}
      */
-    Iterator getPrefixes(String namespaceURI);
+    Iterator<String> getPrefixes(String namespaceURI);
 }

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -59,7 +59,9 @@ import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSWildcard;
 import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
 import java.lang.ref.SoftReference;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.xml.sax.SAXException;
 
 /**
@@ -119,8 +121,8 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
     // symbol table for constructing parsers (annotation support)
     private SymbolTable fSymbolTable = null;
     // parsers for annotation support
-    private SoftReference fSAXParser = null;
-    private SoftReference fDOMParser = null;
+    private SoftReference<SAXParser> fSAXParser = null;
+    private SoftReference<DOMParser> fDOMParser = null;
 
     // is this grammar immutable?  (fully constructed and not changeable)
     private boolean fIsImmutable = false;
@@ -242,16 +244,16 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
 
         // List of imported grammars
         if (grammar.fImported != null) {
-            fImported = new Vector();
+            fImported = new ArrayList<>();
             for (int i=0; i<grammar.fImported.size(); i++) {
-                fImported.add(grammar.fImported.elementAt(i));
+                fImported.add(grammar.fImported.get(i));
             }
         }
 
         // Locations
         if (grammar.fLocations != null) {
             for (int k=0; k<grammar.fLocations.size(); k++) {
-                addDocument(null, (String)grammar.fLocations.elementAt(k));
+                addDocument(null, grammar.fLocations.get(k));
             }
         }
 
@@ -406,7 +408,7 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
 
         // override these methods solely so that these
         // objects cannot be modified once they're created.
-        public void setImportedGrammars(Vector importedGrammars) {
+        public void setImportedGrammars(List<SchemaGrammar> importedGrammars) {
             // ignore
         }
         public void addGlobalAttributeDecl(XSAttributeDecl decl) {
@@ -657,7 +659,7 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
 
         // override these methods solely so that these
         // objects cannot be modified once they're created.
-        public void setImportedGrammars(Vector importedGrammars) {
+        public void setImportedGrammars(List<SchemaGrammar> importedGrammars) {
             // ignore
         }
         public void addGlobalAttributeDecl(XSAttributeDecl decl) {
@@ -801,13 +803,13 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
         return true;
     } // isNamespaceAware():boolean
 
-    Vector fImported = null;
+    List<SchemaGrammar> fImported = null;
 
-    public void setImportedGrammars(Vector importedGrammars) {
+    public void setImportedGrammars(List<SchemaGrammar> importedGrammars) {
         fImported = importedGrammars;
     }
 
-    public Vector getImportedGrammars() {
+    public List<SchemaGrammar> getImportedGrammars() {
         return fImported;
     }
 
@@ -1357,24 +1359,26 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
 
     // store the documents and their locations contributing to this namespace
     // REVISIT: use StringList and XSObjectList for there fields.
-    private Vector fDocuments = null;
-    private Vector fLocations = null;
+    // fDocuments is never used
+    private List<Object> fDocuments = null;
+    private List<String> fLocations = null;
 
     public synchronized void addDocument(Object document, String location) {
         if (fDocuments == null) {
-            fDocuments = new Vector();
-            fLocations = new Vector();
+            // Parsing schema is not thread safe, synchronized may be removed
+            fDocuments = new CopyOnWriteArrayList<>();
+            fLocations = new CopyOnWriteArrayList<>();
         }
-        fDocuments.addElement(document);
-        fLocations.addElement(location);
+        fDocuments.add(document);
+        fLocations.add(location);
     }
 
     public synchronized void removeDocument(int index) {
         if (fDocuments != null &&
             index >= 0 &&
             index < fDocuments.size()) {
-            fDocuments.removeElementAt(index);
-            fLocations.removeElementAt(index);
+            fDocuments.remove(index);
+            fLocations.remove(index);
         }
     }
 
@@ -1390,7 +1394,7 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
     // annotation support
     synchronized DOMParser getDOMParser() {
         if (fDOMParser != null) {
-            DOMParser parser = (DOMParser) fDOMParser.get();
+            DOMParser parser = fDOMParser.get();
             if (parser != null) {
                 return parser;
             }
@@ -1409,13 +1413,13 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
             parser.setFeature(Constants.XERCES_FEATURE_PREFIX + Constants.DEFER_NODE_EXPANSION_FEATURE, false);
         }
         catch (SAXException exc) {}
-        fDOMParser = new SoftReference(parser);
+        fDOMParser = new SoftReference<DOMParser>(parser);
         return parser;
     }
 
     synchronized SAXParser getSAXParser() {
         if (fSAXParser != null) {
-            SAXParser parser = (SAXParser) fSAXParser.get();
+            SAXParser parser = fSAXParser.get();
             if (parser != null) {
                 return parser;
             }
@@ -1429,7 +1433,7 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
         config.setFeature(Constants.SAX_FEATURE_PREFIX + Constants.NAMESPACES_FEATURE, true);
         config.setFeature(Constants.SAX_FEATURE_PREFIX + Constants.VALIDATION_FEATURE, false);
         SAXParser parser = new SAXParser(config);
-        fSAXParser = new SoftReference(parser);
+        fSAXParser = new SoftReference<SAXParser>(parser);
         return parser;
     }
 

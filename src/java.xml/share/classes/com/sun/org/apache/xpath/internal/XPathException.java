@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,7 +22,6 @@
 package com.sun.org.apache.xpath.internal;
 
 import javax.xml.transform.TransformerException;
-
 import org.w3c.dom.Node;
 
 /**
@@ -268,7 +267,7 @@ public class XPathException extends TransformerException
 
     boolean isJdk14OrHigher = false;
     try {
-        Throwable.class.getMethod("getCause", (Class[]) null);
+        Throwable.class.getMethod("getCause", (Class<?>[]) null);
         isJdk14OrHigher = true;
     } catch (NoSuchMethodException nsme) {
         // do nothing

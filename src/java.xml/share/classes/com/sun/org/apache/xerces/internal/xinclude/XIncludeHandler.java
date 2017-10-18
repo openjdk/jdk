@@ -1,5 +1,8 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
+ * @modifiedBy: Oracle Inc.
+ * @modifiedOn: Nov 2015, Sept 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,15 +23,6 @@
 
 package com.sun.org.apache.xerces.internal.xinclude;
 
-import java.io.CharConversionException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Stack;
-import java.util.StringTokenizer;
-import javax.xml.XMLConstants;
-
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
@@ -41,13 +35,15 @@ import com.sun.org.apache.xerces.internal.util.HTTPInputSource;
 import com.sun.org.apache.xerces.internal.util.IntStack;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
 import com.sun.org.apache.xerces.internal.util.URI;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
-import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
+import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
+import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
@@ -70,9 +66,16 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import com.sun.org.apache.xerces.internal.xpointer.XPointerHandler;
 import com.sun.org.apache.xerces.internal.xpointer.XPointerProcessor;
-import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
+import java.io.CharConversionException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Stack;
+import java.util.StringTokenizer;
+import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
@@ -306,13 +309,13 @@ public class XIncludeHandler
     // these are needed for XML Base processing
     protected XMLResourceIdentifier fCurrentBaseURI;
     protected IntStack fBaseURIScope;
-    protected Stack fBaseURI;
-    protected Stack fLiteralSystemID;
-    protected Stack fExpandedSystemID;
+    protected Stack<String> fBaseURI;
+    protected Stack<String> fLiteralSystemID;
+    protected Stack<String> fExpandedSystemID;
 
     // these are needed for Language Fixup
     protected IntStack fLanguageScope;
-    protected Stack fLanguageStack;
+    protected Stack<String> fLanguageStack;
     protected String fCurrentLanguage;
 
     // used for passing features on to child XIncludeHandler objects
@@ -343,8 +346,8 @@ public class XIncludeHandler
     private int[] fState = new int[INITIAL_SIZE];
 
     // buffering the necessary DTD events
-    private final ArrayList<Notation> fNotations;
-    private final ArrayList<UnparsedEntity> fUnparsedEntities;
+    private final List<Notation> fNotations;
+    private final List<UnparsedEntity> fUnparsedEntities;
 
     // flags which control whether base URI or language fixup is performed.
     private boolean fFixupBaseURIs = true;
@@ -388,13 +391,13 @@ public class XIncludeHandler
         fUnparsedEntities = new ArrayList<>();
 
         fBaseURIScope = new IntStack();
-        fBaseURI = new Stack();
-        fLiteralSystemID = new Stack();
-        fExpandedSystemID = new Stack();
+        fBaseURI = new Stack<>();
+        fLiteralSystemID = new Stack<>();
+        fExpandedSystemID = new Stack<>();
         fCurrentBaseURI = new XMLResourceIdentifierImpl();
 
         fLanguageScope = new IntStack();
-        fLanguageStack = new Stack();
+        fLanguageStack = new Stack<>();
         fCurrentLanguage = null;
     }
 
@@ -2091,9 +2094,9 @@ public class XIncludeHandler
             }
 
             // Modify attributes of included items to do namespace-fixup. (spec 4.5.4)
-            Enumeration inscopeNS = fNamespaceContext.getAllPrefixes();
+            Enumeration<String> inscopeNS = fNamespaceContext.getAllPrefixes();
             while (inscopeNS.hasMoreElements()) {
-                String prefix = (String)inscopeNS.nextElement();
+                String prefix = inscopeNS.nextElement();
                 String parentURI =
                     fNamespaceContext.getURIFromIncludeParent(prefix);
                 String uri = fNamespaceContext.getURI(prefix);
@@ -2524,7 +2527,7 @@ public class XIncludeHandler
         ent.name = entName;
         int index = fUnparsedEntities.indexOf(ent);
         if (index != -1) {
-            ent = (UnparsedEntity)fUnparsedEntities.get(index);
+            ent = fUnparsedEntities.get(index);
             // first check the notation of the unparsed entity
             checkNotation(ent.notation);
             checkAndSendUnparsedEntity(ent);
@@ -2543,7 +2546,7 @@ public class XIncludeHandler
         not.name = notName;
         int index = fNotations.indexOf(not);
         if (index != -1) {
-            not = (Notation)fNotations.get(index);
+            not = fNotations.get(index);
             checkAndSendNotation(not);
         }
     }
@@ -2582,8 +2585,7 @@ public class XIncludeHandler
                 }
             }
             else {
-                UnparsedEntity localEntity =
-                    (UnparsedEntity)fUnparsedEntities.get(index);
+                UnparsedEntity localEntity = fUnparsedEntities.get(index);
                 if (!ent.isDuplicate(localEntity)) {
                     reportFatalError(
                         "NonDuplicateUnparsedEntity",
@@ -2620,7 +2622,7 @@ public class XIncludeHandler
                 }
             }
             else {
-                Notation localNotation = (Notation)fNotations.get(index);
+                Notation localNotation = fNotations.get(index);
                 if (!not.isDuplicate(localNotation)) {
                     reportFatalError(
                         "NonDuplicateNotation",
@@ -2681,7 +2683,7 @@ public class XIncludeHandler
     protected void copyFeatures(
         XMLComponentManager from,
         ParserConfigurationSettings to) {
-        Enumeration features = Constants.getXercesFeatures();
+        Enumeration<Object> features = Constants.getXercesFeatures();
         copyFeatures1(features, Constants.XERCES_FEATURE_PREFIX, from, to);
         features = Constants.getSAXFeatures();
         copyFeatures1(features, Constants.SAX_FEATURE_PREFIX, from, to);
@@ -2690,14 +2692,14 @@ public class XIncludeHandler
     protected void copyFeatures(
         XMLComponentManager from,
         XMLParserConfiguration to) {
-        Enumeration features = Constants.getXercesFeatures();
+        Enumeration<Object> features = Constants.getXercesFeatures();
         copyFeatures1(features, Constants.XERCES_FEATURE_PREFIX, from, to);
         features = Constants.getSAXFeatures();
         copyFeatures1(features, Constants.SAX_FEATURE_PREFIX, from, to);
     }
 
     private void copyFeatures1(
-        Enumeration features,
+        Enumeration<Object> features,
         String featurePrefix,
         XMLComponentManager from,
         ParserConfigurationSettings to) {
@@ -2717,7 +2719,7 @@ public class XIncludeHandler
     }
 
     private void copyFeatures1(
-        Enumeration features,
+        Enumeration<Object> features,
         String featurePrefix,
         XMLComponentManager from,
         XMLParserConfiguration to) {
@@ -2872,7 +2874,7 @@ public class XIncludeHandler
      */
     public String getBaseURI(int depth) {
         int scope = scopeOfBaseURI(depth);
-        return (String)fExpandedSystemID.elementAt(scope);
+        return fExpandedSystemID.get(scope);
     }
 
     /**
@@ -2882,7 +2884,7 @@ public class XIncludeHandler
      */
     public String getLanguage(int depth) {
         int scope = scopeOfLanguage(depth);
-        return (String)fLanguageStack.elementAt(scope);
+        return fLanguageStack.get(scope);
     }
 
     /**
@@ -2902,9 +2904,9 @@ public class XIncludeHandler
             // If that is the last system id, then we don't need a relative URI
             return "";
         }
-        URI uri = new URI("file", (String)fLiteralSystemID.elementAt(start));
+        URI uri = new URI("file", fLiteralSystemID.get(start));
         for (int i = start + 1; i < fBaseURIScope.size(); i++) {
-            uri = new URI(uri, (String)fLiteralSystemID.elementAt(i));
+            uri = new URI(uri, fLiteralSystemID.get(i));
         }
         return uri.getPath();
     }

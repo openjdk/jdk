@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,17 +21,13 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ALOAD;
 import com.sun.org.apache.bcel.internal.generic.ASTORE;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.ILOAD;
-import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
-import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
-import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.ISTORE;
+import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
@@ -41,6 +37,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ReferenceType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -57,9 +54,9 @@ class FilterExpr extends Expression {
     /**
      * Array of predicates in '(e)[p1]...[pn]'.
      */
-    private final Vector _predicates;
+    private final List<Expression> _predicates;
 
-    public FilterExpr(Expression primary, Vector predicates) {
+    public FilterExpr(Expression primary, List<Expression> predicates) {
         _primary = primary;
         _predicates = predicates;
         primary.setParent(this);
@@ -78,7 +75,7 @@ class FilterExpr extends Expression {
         if (_predicates != null) {
             final int n = _predicates.size();
             for (int i = 0; i < n; i++) {
-                final Expression exp = (Expression)_predicates.elementAt(i);
+                final Expression exp = (Expression)_predicates.get(i);
                 exp.setParser(parser);
                 exp.setParent(this);
             }
@@ -112,7 +109,7 @@ class FilterExpr extends Expression {
         // Type check predicates and turn all optimizations off if appropriate
         int n = _predicates.size();
         for (int i = 0; i < n; i++) {
-            Predicate pred = (Predicate) _predicates.elementAt(i);
+            Predicate pred = (Predicate) _predicates.get(i);
 
             if (!canOptimize) {
                 pred.dontOptimize();

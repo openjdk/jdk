@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,19 +21,17 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.util;
 
+import com.sun.org.apache.xerces.internal.util.SymbolHash;
+import com.sun.org.apache.xerces.internal.xs.XSNamedMap;
+import com.sun.org.apache.xerces.internal.xs.XSObject;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
-
-import com.sun.org.apache.xerces.internal.util.SymbolHash;
-import com.sun.org.apache.xerces.internal.xs.XSNamedMap;
-import com.sun.org.apache.xerces.internal.xs.XSObject;
 
 /**
  * Containts the map between qnames and XSObject's.
@@ -43,7 +41,7 @@ import com.sun.org.apache.xerces.internal.xs.XSObject;
  * @author Sandy Gao, IBM
  *
  */
-public class XSNamedMapImpl extends AbstractMap implements XSNamedMap {
+public class XSNamedMapImpl extends AbstractMap<QName, XSObject> implements XSNamedMap {
 
     /**
      * An immutable empty map.
@@ -63,7 +61,7 @@ public class XSNamedMapImpl extends AbstractMap implements XSNamedMap {
     // used when this map is accessed as a list.
     int fLength = -1;
     // Set of Map.Entry<QName,XSObject> for the java.util.Map methods
-    private Set fEntrySet = null;
+    private Set<Map.Entry<QName,XSObject>> fEntrySet = null;
 
     /**
      * Construct an XSNamedMap implementation for one namespace
@@ -206,7 +204,7 @@ public class XSNamedMapImpl extends AbstractMap implements XSNamedMap {
         return (get(key) != null);
     }
 
-    public Object get(Object key) {
+    public XSObject get(Object key) {
         if (key instanceof QName) {
             final QName name = (QName) key;
             String namespaceURI = name.getNamespaceURI();
@@ -223,7 +221,7 @@ public class XSNamedMapImpl extends AbstractMap implements XSNamedMap {
         return getLength();
     }
 
-    public synchronized Set entrySet() {
+    public synchronized Set<Map.Entry<QName,XSObject>> entrySet() {
         // Defer creation of the entry set until it is actually needed.
         if (fEntrySet == null) {
             final int length = getLength();
@@ -233,14 +231,14 @@ public class XSNamedMapImpl extends AbstractMap implements XSNamedMap {
                 entries[i] = new XSNamedMapEntry(new QName(xso.getNamespace(), xso.getName()), xso);
             }
             // Create a view of this immutable map.
-            fEntrySet = new AbstractSet() {
-                public Iterator iterator() {
-                    return new Iterator() {
+            fEntrySet = new AbstractSet<Map.Entry<QName,XSObject>>() {
+                public Iterator<Map.Entry<QName,XSObject>> iterator() {
+                    return new Iterator<Map.Entry<QName,XSObject>>() {
                         private int index = 0;
                         public boolean hasNext() {
                             return (index < length);
                         }
-                        public Object next() {
+                        public Map.Entry<QName,XSObject> next() {
                             if (index < length) {
                                 return entries[index++];
                             }
@@ -260,27 +258,27 @@ public class XSNamedMapImpl extends AbstractMap implements XSNamedMap {
     }
 
     /** An entry in the XSNamedMap. **/
-    private static final class XSNamedMapEntry implements Map.Entry {
+    private static final class XSNamedMapEntry implements Map.Entry<QName, XSObject> {
         private final QName key;
         private final XSObject value;
         public XSNamedMapEntry(QName key, XSObject value) {
             this.key = key;
             this.value = value;
         }
-        public Object getKey() {
+        public QName getKey() {
             return key;
         }
-        public Object getValue() {
+        public XSObject getValue() {
             return value;
         }
-        public Object setValue(Object value) {
+        public XSObject setValue(XSObject value) {
             throw new UnsupportedOperationException();
         }
-        public boolean equals(Object o) {
+        public boolean equals(XSNamedMapEntry o) {
             if (o instanceof Map.Entry) {
-                Map.Entry e = (Map.Entry) o;
-                Object otherKey = e.getKey();
-                Object otherValue = e.getValue();
+                Map.Entry<QName, XSObject> e = (Map.Entry<QName, XSObject>) o;
+                QName otherKey = e.getKey();
+                XSObject otherValue = e.getValue();
                 return (key == null ? otherKey == null : key.equals(otherKey)) &&
                     (value == null ? otherValue == null : value.equals(otherValue));
             }
@@ -291,7 +289,7 @@ public class XSNamedMapImpl extends AbstractMap implements XSNamedMap {
                 ^ (value == null ? 0 : value.hashCode());
         }
         public String toString() {
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             buffer.append(String.valueOf(key));
             buffer.append('=');
             buffer.append(String.valueOf(value));

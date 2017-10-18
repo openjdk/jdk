@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,8 +21,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
 import com.sun.org.apache.bcel.internal.generic.InstructionHandle;
@@ -34,6 +33,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.utils.XML11Char;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -60,7 +60,7 @@ public final class Template extends TopLevelElement {
 
     // The list of parameters in this template. This is only used
     // for simple named templates.
-    private Vector<Param> _parameters = new Vector<>();
+    private List<Param> _parameters = new ArrayList<>();
 
     public boolean hasParams() {
         return _parameters.size() > 0;
@@ -79,10 +79,10 @@ public final class Template extends TopLevelElement {
     }
 
     public void addParameter(Param param) {
-        _parameters.addElement(param);
+        _parameters.add(param);
     }
 
-    public Vector<Param> getParameters() {
+    public List<Param> getParameters() {
         return _parameters;
     }
 
@@ -328,7 +328,7 @@ public final class Template extends TopLevelElement {
 
             // Update load/store instructions to access Params from the stack
             for (int i = 0; i < numParams; i++) {
-                Param param = (Param)_parameters.elementAt(i);
+                Param param = _parameters.get(i);
                 param.setLoadInstruction(namedMethodGen.loadParameter(i));
                 param.setStoreInstruction(namedMethodGen.storeParameter(i));
             }

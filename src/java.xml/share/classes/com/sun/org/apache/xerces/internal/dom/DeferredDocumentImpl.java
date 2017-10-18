@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,6 +23,7 @@ package com.sun.org.apache.xerces.internal.dom;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -132,7 +134,7 @@ public class DeferredDocumentImpl
     // private data
     //
     private transient final StringBuilder fBufferStr = new StringBuilder();
-    private transient final ArrayList fStrChunks = new ArrayList();
+    private transient final List<String> fStrChunks = new ArrayList<>();
 
     //
     // Constructors
@@ -1144,7 +1146,7 @@ public class DeferredDocumentImpl
 
                 // add to the buffer in the correct order.
                 for (int i = chunkCount - 1; i >= 0; i--) {
-                    fBufferStr.append((String)fStrChunks.get(i));
+                    fBufferStr.append(fStrChunks.get(i));
                 }
 
                 value = fBufferStr.toString();
@@ -1170,7 +1172,7 @@ public class DeferredDocumentImpl
                 }
                 // add to the buffer in the correct order.
                 for (int i=fStrChunks.size()-1; i>=0; i--) {
-                     fBufferStr.append((String)fStrChunks.get(i));
+                     fBufferStr.append(fStrChunks.get(i));
                 }
 
                 value = fBufferStr.toString();

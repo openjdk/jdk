@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,7 +22,7 @@
 package com.sun.org.apache.xerces.internal.jaxp.validation;
 
 import java.util.HashMap;
-
+import java.util.Map;
 import javax.xml.validation.Schema;
 import javax.xml.validation.Validator;
 import javax.xml.validation.ValidatorHandler;
@@ -39,17 +39,17 @@ abstract class AbstractXMLSchema extends Schema implements
      * Map containing the initial values of features for
      * validators created using this grammar pool container.
      */
-    private final HashMap fFeatures;
+    private final Map<String, Boolean> fFeatures;
 
     /**
      * Map containing the initial values of properties for
      * validators created using this grammar pool container.
      */
-    private final HashMap fProperties;
+    private final Map<String, Object> fProperties;
 
     public AbstractXMLSchema() {
-        fFeatures = new HashMap();
-        fProperties = new HashMap();
+        fFeatures = new HashMap<>();
+        fProperties = new HashMap<>();
     }
 
     /*
@@ -80,7 +80,7 @@ abstract class AbstractXMLSchema extends Schema implements
      * should use the default value.
      */
     public final Boolean getFeature(String featureId) {
-        return (Boolean) fFeatures.get(featureId);
+        return fFeatures.get(featureId);
     }
 
     /*

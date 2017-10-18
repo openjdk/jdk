@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,10 +21,10 @@
 
 package com.sun.org.apache.xerces.internal.impl.dtd.models;
 
-import java.util.HashMap;
-
 import com.sun.org.apache.xerces.internal.impl.dtd.XMLContentSpec;
 import com.sun.org.apache.xerces.internal.xni.QName;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
 
@@ -594,7 +595,7 @@ public class DFAContentModel
              * a large content model such as, "(t001+|t002+|.... |t500+)".
              */
 
-        HashMap stateTable = new HashMap();
+        Map<CMStateSet, Integer> stateTable = new HashMap<>();
 
             /* Optimization(Jan, 2001) */
 
@@ -667,7 +668,7 @@ public class DFAContentModel
                     //
 
             /* Optimization(Jan, 2001) */
-            Integer stateObj = (Integer)stateTable.get(newSet);
+            Integer stateObj = stateTable.get(newSet);
             int stateIndex = (stateObj == null ? curState : stateObj.intValue());
             /* Optimization(Jan, 2001) */
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -83,6 +83,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.Vector;
@@ -431,7 +432,7 @@ public class XMLSchemaValidator
 
         // store error codes; starting position of the errors for each element;
         // number of element (depth); and whether to record error
-        Vector fErrors = new Vector();
+        Vector<String> fErrors = new Vector<>();
         int[] fContext = new int[INITIAL_STACK_SIZE];
         int fContextCount;
 
@@ -474,7 +475,7 @@ public class XMLSchemaValidator
             // copy errors from the list to an string array
             String[] errors = new String[size];
             for (int i = 0; i < size; i++) {
-                errors[i] = (String) fErrors.elementAt(contextPos + i);
+                errors[i] = fErrors.get(contextPos + i);
             }
             // remove errors of the current element
             fErrors.setSize(contextPos);
@@ -498,7 +499,7 @@ public class XMLSchemaValidator
             // copy errors from the list to an string array
             String[] errors = new String[size];
             for (int i = 0; i < size; i++) {
-                errors[i] = (String) fErrors.elementAt(contextPos + i);
+                errors[i] = fErrors.get(contextPos + i);
             }
             // don't resize the vector: leave the errors for this attribute
             // to the containing element
@@ -509,8 +510,8 @@ public class XMLSchemaValidator
             throws XNIException {
             String message = fErrorReporter.reportError(domain, key, arguments, severity);
             if (fAugPSVI) {
-                fErrors.addElement(key);
-                fErrors.addElement(message);
+                fErrors.add(key);
+                fErrors.add(message);
             }
         } // reportError(String,String,Object[],short)
 
@@ -523,8 +524,8 @@ public class XMLSchemaValidator
             throws XNIException {
             String message = fErrorReporter.reportError(location, domain, key, arguments, severity);
             if (fAugPSVI) {
-                fErrors.addElement(key);
-                fErrors.addElement(message);
+                fErrors.add(key);
+                fErrors.add(message);
             }
         } // reportError(XMLLocator,String,String,Object[],short)
     }
@@ -1935,7 +1936,7 @@ public class XMLSchemaValidator
             if (fCurrCMState[0] == XSCMValidator.FIRST_ERROR) {
                 XSComplexTypeDecl ctype = (XSComplexTypeDecl) fCurrentType;
                 //REVISIT: is it the only case we will have particle = null?
-                ArrayList next;
+                List<Object> next;
                 if (ctype.fParticle != null
                     && (next = fCurrentCM.whatCanGoHere(fCurrCMState)).size() > 0) {
                     String expected = expectedStr(next);
@@ -2447,7 +2448,7 @@ public class XMLSchemaValidator
         // have we reached the end tag of the validation root?
         if (fElementDepth == 0) {
             // 7 If the element information item is the validation root, it must be valid per Validation Root Valid (ID/IDREF) (3.3.4).
-            Iterator invIdRefs = fValidationState.checkIDRefID();
+            Iterator<String> invIdRefs = fValidationState.checkIDRefID();
             fValidationState.resetIDTables();
             if (invIdRefs != null) {
                 while (invIdRefs.hasNext()) {
@@ -3509,11 +3510,10 @@ public class XMLSchemaValidator
                     // After the DFA has completed, check minOccurs and maxOccurs
                     // for all elements and wildcards in this content model where
                     // a{n,m} is subsumed to a* or a+
-                    ArrayList errors = fCurrentCM.checkMinMaxBounds();
+                    List<String> errors = fCurrentCM.checkMinMaxBounds();
                     if (errors != null) {
                         for (int i = 0; i < errors.size(); i += 2) {
-                            reportSchemaError(
-                                (String) errors.get(i),
+                            reportSchemaError(errors.get(i),
                                 new Object[] { element.rawname, errors.get(i + 1) });
                         }
                     }
@@ -3591,7 +3591,7 @@ public class XMLSchemaValidator
                 XMLErrorReporter.SEVERITY_ERROR);
     }
 
-    private String expectedStr(ArrayList expected) {
+    private String expectedStr(List<Object> expected) {
         StringBuilder ret = new StringBuilder("{");
         int size = expected.size();
         for (int i = 0; i < size; i++) {
@@ -3720,9 +3720,9 @@ public class XMLSchemaValidator
         protected int fValuesCount;
 
         /** global data */
-        public final Vector fValues = new Vector();
+        public final Vector<Object> fValues = new Vector<>();
         public ShortVector fValueTypes = null;
-        public Vector fItemValueTypes = null;
+        public Vector<ShortList> fItemValueTypes = null;
 
         private boolean fUseValueTypeVector = false;
         private int fValueTypesLength = 0;
@@ -3778,7 +3778,7 @@ public class XMLSchemaValidator
         // appends the contents of one ValueStore to those of us.
         public void append(ValueStoreBase newVal) {
             for (int i = 0; i < newVal.fValues.size(); i++) {
-                fValues.addElement(newVal.fValues.elementAt(i));
+                fValues.add(newVal.fValues.get(i));
             }
         } // append(ValueStoreBase)
 
@@ -3893,7 +3893,7 @@ public class XMLSchemaValidator
                 checkDuplicateValues();
                 // store values
                 for (i = 0; i < fFieldCount; i++) {
-                    fValues.addElement(fLocalValues[i]);
+                    fValues.add(fLocalValues[i]);
                     addValueType(fLocalValueTypes[i]);
                     addItemValueType(fLocalItemValueTypes[i]);
                 }
@@ -3912,7 +3912,7 @@ public class XMLSchemaValidator
                 next = i + fFieldCount;
                 for (int j = 0; j < fFieldCount; j++) {
                     Object value1 = fLocalValues[j];
-                    Object value2 = fValues.elementAt(i);
+                    Object value2 = fValues.get(i);
                     short valueType1 = fLocalValueTypes[j];
                     short valueType2 = getValueTypeAt(i);
                     if (value1 == null || value2 == null || valueType1 != valueType2 || !(value1.equals(value2))) {
@@ -3940,12 +3940,12 @@ public class XMLSchemaValidator
          */
         public int contains(ValueStoreBase vsb) {
 
-            final Vector values = vsb.fValues;
+            final Vector<Object> values = vsb.fValues;
             final int size1 = values.size();
             if (fFieldCount <= 1) {
                 for (int i = 0; i < size1; ++i) {
                     short val = vsb.getValueTypeAt(i);
-                    if (!valueTypeContains(val) || !fValues.contains(values.elementAt(i))) {
+                    if (!valueTypeContains(val) || !fValues.contains(values.get(i))) {
                         return i;
                     }
                     else if(val == XSConstants.LIST_DT || val == XSConstants.LISTOFUNION_DT) {
@@ -3964,8 +3964,8 @@ public class XMLSchemaValidator
                     /** Check whether this set is contained in the value store. **/
                     INNER: for (int j = 0; j < size2; j += fFieldCount) {
                         for (int k = 0; k < fFieldCount; ++k) {
-                            final Object value1 = values.elementAt(i+k);
-                            final Object value2 = fValues.elementAt(j+k);
+                            final Object value1 = values.get(i+k);
+                            final Object value2 = fValues.get(j+k);
                             final short valueType1 = vsb.getValueTypeAt(i+k);
                             final short valueType2 = getValueTypeAt(j+k);
                             if (value1 != value2 && (valueType1 != valueType2 || value1 == null || !value1.equals(value2))) {
@@ -4019,7 +4019,7 @@ public class XMLSchemaValidator
         } // toString(Object[]):String
 
         /** Returns a string of the specified values. */
-        protected String toString(Vector values, int start, int length) {
+        protected String toString(Vector<Object> values, int start, int length) {
 
             // no values
             if (length == 0) {
@@ -4028,7 +4028,7 @@ public class XMLSchemaValidator
 
             // one value
             if (length == 1) {
-                return String.valueOf(values.elementAt(start));
+                return String.valueOf(values.get(start));
             }
 
             // construct value string
@@ -4037,7 +4037,7 @@ public class XMLSchemaValidator
                 if (i > 0) {
                     str.append(',');
                 }
-                str.append(values.elementAt(start + i));
+                str.append(values.get(start + i));
             }
             return str.toString();
 
@@ -4109,7 +4109,7 @@ public class XMLSchemaValidator
                     (fItemValueType != null && fItemValueType.equals(itemValueType)))) {
                 fUseItemValueTypeVector = true;
                 if (fItemValueTypes == null) {
-                    fItemValueTypes = new Vector(fItemValueTypesLength * 2);
+                    fItemValueTypes = new Vector<>(fItemValueTypesLength * 2);
                 }
                 for (int i = 1; i < fItemValueTypesLength; ++i) {
                     fItemValueTypes.add(fItemValueType);
@@ -4120,7 +4120,7 @@ public class XMLSchemaValidator
 
         private ShortList getItemValueTypeAt(int index) {
             if (fUseItemValueTypeVector) {
-                return (ShortList) fItemValueTypes.elementAt(index);
+                return (ShortList) fItemValueTypes.get(index);
             }
             return fItemValueType;
         }
@@ -4292,7 +4292,7 @@ public class XMLSchemaValidator
         // values stores
 
         /** stores all global Values stores. */
-        protected final ArrayList fValueStores = new ArrayList();
+        protected final List<ValueStoreBase> fValueStores = new ArrayList<>();
 
         /**
          * Values stores associated to specific identity constraints.
@@ -4352,11 +4352,12 @@ public class XMLSchemaValidator
 
         // startElement:  pushes the current fGlobalIDConstraintMap
         // onto fGlobalMapStack and clears fGlobalIDConstraint map.
+        @SuppressWarnings("unchecked")
         public void startElement() {
             // only clone the map when there are elements
             if (fGlobalIDConstraintMap.size() > 0)
                 fGlobalMapStack.push((Map<IdentityConstraint, ValueStoreBase>)
-                        ((HashMap)fGlobalIDConstraintMap).clone());
+                        ((HashMap<IdentityConstraint, ValueStoreBase>)fGlobalIDConstraintMap).clone());
             else
                 fGlobalMapStack.push(null);
             fGlobalIDConstraintMap.clear();
@@ -4483,9 +4484,7 @@ public class XMLSchemaValidator
         /** Check identity constraints. */
         public void endDocument() {
 
-            int count = fValueStores.size();
-            for (int i = 0; i < count; i++) {
-                ValueStoreBase valueStore = (ValueStoreBase) fValueStores.get(i);
+            for (ValueStoreBase valueStore : fValueStores) {
                 valueStore.endDocument();
             }
 

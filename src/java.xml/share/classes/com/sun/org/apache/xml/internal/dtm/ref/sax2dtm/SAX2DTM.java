@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,6 +43,7 @@ import com.sun.org.apache.xml.internal.utils.XMLString;
 import com.sun.org.apache.xml.internal.utils.XMLStringFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import javax.xml.transform.Source;
@@ -176,7 +178,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * Vector of entities.  Each record is composed of four Strings:
    *  publicId, systemID, notationName, and name.
    */
-  private ArrayList<String> m_entities = null;
+  private List<String> m_entities = null;
 
   /** m_entities public ID offset. */
   private static final int ENTITY_FIELD_PUBLICID = 0;
@@ -1359,7 +1361,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
       } while ((uriIndex & 0x01) == 0);
 
       if (uriIndex >= 0) {
-        prefix = m_prefixMappings.elementAt(uriIndex - 1);
+        prefix = m_prefixMappings.get(uriIndex - 1);
       } else if (null != qname) {
         int indexOfNSSep = qname.indexOf(':');
 
@@ -1425,7 +1427,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
     } while ((prefixIndex >= 0) && (prefixIndex & 0x01) == 0x01);
 
     if (prefixIndex > -1) {
-      uri = m_prefixMappings.elementAt(prefixIndex + 1);
+      uri = m_prefixMappings.get(prefixIndex + 1);
     }
 
     return uri;
@@ -1685,8 +1687,8 @@ public class SAX2DTM extends DTMDefaultBaseIterators
 
     if(null == prefix)
       prefix = "";
-    m_prefixMappings.addElement(prefix);  // JDK 1.1.x compat -sc
-    m_prefixMappings.addElement(uri);  // JDK 1.1.x compat -sc
+    m_prefixMappings.add(prefix);
+    m_prefixMappings.add(uri);
   }
 
   /**
@@ -1740,7 +1742,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
     int nDecls = prefixMappings.size();
 
     for (int i = startDecls; i < nDecls; i += 2) {
-      String prefixDecl = prefixMappings.elementAt(i);
+      String prefixDecl = prefixMappings.get(i);
 
       if (prefixDecl == null)
         continue;
@@ -1834,12 +1836,12 @@ public class SAX2DTM extends DTMDefaultBaseIterators
     }
 
     for (int i = startDecls; i < nDecls; i += 2) {
-      prefix = m_prefixMappings.elementAt(i);
+      prefix = m_prefixMappings.get(i);
 
       if (prefix == null)
         continue;
 
-      String declURL = m_prefixMappings.elementAt(i + 1);
+      String declURL = m_prefixMappings.get(i + 1);
 
       exName = m_expandedNameTable.getExpandedTypeID(null, prefix, DTM.NAMESPACE_NODE);
 

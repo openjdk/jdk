@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,15 +21,13 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.CHECKCAST;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
-import com.sun.org.apache.bcel.internal.generic.Instruction;
-import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
+import com.sun.org.apache.bcel.internal.generic.Instruction;
+import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
@@ -40,6 +39,8 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ResultTreeType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.utils.XML11Char;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -61,7 +62,7 @@ class VariableBase extends TopLevelElement {
     protected String      select;            // Textual repr. of variable expr.
 
     // References to this variable (when local)
-    protected Vector<VariableRefBase> _refs = new Vector<>(2);
+    protected List<VariableRefBase> _refs = new ArrayList<>(2);
 
     // Used to make sure parameter field is not added twice
     protected boolean    _ignore = false;
@@ -78,7 +79,7 @@ class VariableBase extends TopLevelElement {
      * expression contains a reference to this variable.
      */
     public void addReference(VariableRefBase vref) {
-        _refs.addElement(vref);
+        _refs.add(vref);
     }
 
     /**

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +21,6 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.traversers;
 
-import java.util.Locale;
-import java.util.Vector;
-
 import com.sun.org.apache.xerces.internal.impl.dv.InvalidDatatypeValueException;
 import com.sun.org.apache.xerces.internal.impl.dv.XSFacets;
 import com.sun.org.apache.xerces.internal.impl.dv.XSSimpleType;
@@ -42,10 +39,14 @@ import com.sun.org.apache.xerces.internal.impl.xs.util.XSObjectListImpl;
 import com.sun.org.apache.xerces.internal.util.DOMUtil;
 import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xs.XSAttributeUse;
 import com.sun.org.apache.xerces.internal.xs.XSObjectList;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import org.w3c.dom.Element;
 
 /**
@@ -142,15 +143,16 @@ abstract class XSDAbstractTraverser {
         // find the grammar; fSchemaHandler must be known!
         SchemaGrammar grammar = fSchemaHandler.getGrammar(schemaDoc.fTargetNamespace);
         // fish out local attributes passed from parent
-        Vector annotationLocalAttrs = (Vector)parentAttrs[XSAttributeChecker.ATTIDX_NONSCHEMA];
+        @SuppressWarnings("unchecked")
+        List<String> annotationLocalAttrs = (ArrayList<String>)parentAttrs[XSAttributeChecker.ATTIDX_NONSCHEMA];
         // optimize for case where there are no local attributes
         if(annotationLocalAttrs != null && !annotationLocalAttrs.isEmpty()) {
-            StringBuffer localStrBuffer = new StringBuffer(64);
+            StringBuilder localStrBuffer = new StringBuilder(64);
             localStrBuffer.append(" ");
-            // Vector should contain rawname value pairs
+            //ArrayList<>should contain rawname value pairs
             int i = 0;
             while (i < annotationLocalAttrs.size()) {
-                String rawname = (String)annotationLocalAttrs.elementAt(i++);
+                String rawname = annotationLocalAttrs.get(i++);
                 int colonIndex = rawname.indexOf(':');
                 String prefix, localpart;
                 if (colonIndex == -1) {
@@ -168,14 +170,14 @@ abstract class XSDAbstractTraverser {
                 }
                 localStrBuffer.append(rawname)
                 .append("=\"");
-                String value = (String)annotationLocalAttrs.elementAt(i++);
+                String value = annotationLocalAttrs.get(i++);
                 // search for pesky "s and <s within attr value:
                 value = processAttValue(value);
                 localStrBuffer.append(value)
                 .append("\" ");
             }
             // and now splice it into place; immediately after the annotation token, for simplicity's sake
-            StringBuffer contentBuffer = new StringBuffer(contents.length() + localStrBuffer.length());
+            StringBuilder contentBuffer = new StringBuilder(contents.length() + localStrBuffer.length());
             int annotationTokenEnd = contents.indexOf(SchemaSymbols.ELT_ANNOTATION);
             // annotation must occur somewhere or we're in big trouble...
             if(annotationTokenEnd == -1) return null;
@@ -205,15 +207,16 @@ abstract class XSDAbstractTraverser {
         // find the grammar; fSchemaHandler must be known!
         SchemaGrammar grammar = fSchemaHandler.getGrammar(schemaDoc.fTargetNamespace);
         // fish out local attributes passed from parent
-        Vector annotationLocalAttrs = (Vector)parentAttrs[XSAttributeChecker.ATTIDX_NONSCHEMA];
+        @SuppressWarnings("unchecked")
+        List<String> annotationLocalAttrs = (ArrayList<String>)parentAttrs[XSAttributeChecker.ATTIDX_NONSCHEMA];
         // optimize for case where there are no local attributes
         if (annotationLocalAttrs != null && !annotationLocalAttrs.isEmpty()) {
-            StringBuffer localStrBuffer = new StringBuffer(64);
+            StringBuilder localStrBuffer = new StringBuilder(64);
             localStrBuffer.append(" ");
-            // Vector should contain rawname value pairs
+            //ArrayList<>should contain rawname value pairs
             int i = 0;
             while (i < annotationLocalAttrs.size()) {
-                String rawname = (String)annotationLocalAttrs.elementAt(i++);
+                String rawname = annotationLocalAttrs.get(i++);
                 int colonIndex = rawname.indexOf(':');
                 String prefix, localpart;
                 if (colonIndex == -1) {
@@ -227,14 +230,14 @@ abstract class XSDAbstractTraverser {
                 String uri = schemaDoc.fNamespaceSupport.getURI(fSymbolTable.addSymbol(prefix));
                 localStrBuffer.append(rawname)
                 .append("=\"");
-                String value = (String)annotationLocalAttrs.elementAt(i++);
+                String value = annotationLocalAttrs.get(i++);
                 // search for pesky "s and <s within attr value:
                 value = processAttValue(value);
                 localStrBuffer.append(value)
                 .append("\" ");
             }
             // and now splice it into place; immediately after the annotation token, for simplicity's sake
-            StringBuffer contentBuffer = new StringBuffer(contents.length() + localStrBuffer.length());
+            StringBuilder contentBuffer = new StringBuilder(contents.length() + localStrBuffer.length());
             int annotationTokenEnd = contents.indexOf(SchemaSymbols.ELT_ANNOTATION);
             // annotation must occur somewhere or we're in big trouble...
             if(annotationTokenEnd == -1) return null;
@@ -258,7 +261,7 @@ abstract class XSDAbstractTraverser {
     // the QName simple type used to resolve qnames
     private static final XSSimpleType fQNameDV = (XSSimpleType)SchemaGrammar.SG_SchemaNS.getGlobalTypeDecl(SchemaSymbols.ATTVAL_QNAME);
     // Temp data structures to be re-used in traversing facets
-    private StringBuffer fPattern = new StringBuffer();
+    private StringBuilder fPattern = new StringBuilder();
     private final XSFacets xsFacets = new XSFacets();
 
     static final class FacetInfo {
@@ -284,10 +287,10 @@ abstract class XSDAbstractTraverser {
         short facetsFixed = 0; // facets that have fixed="true"
         String facet;
         boolean hasQName = containsQName(baseValidator);
-        Vector enumData = null;
+        List<String> enumData = null;
         XSObjectListImpl enumAnnotations = null;
         XSObjectListImpl patternAnnotations = null;
-        Vector enumNSDecls = hasQName ? new Vector() : null;
+        List<NamespaceContext> enumNSDecls = hasQName ? new ArrayList<>() : null;
         int currentFacet = 0;
         xsFacets.reset();
         while (content != null) {
@@ -335,13 +338,13 @@ abstract class XSDAbstractTraverser {
                     schemaDoc.fValidationContext.setNamespaceSupport(schemaDoc.fNamespaceSupport);
                 }
                 if (enumData == null){
-                    enumData = new Vector();
+                    enumData = new ArrayList<>();
                     enumAnnotations = new XSObjectListImpl();
                 }
-                enumData.addElement(enumVal);
+                enumData.add(enumVal);
                 enumAnnotations.addXSObject(null);
                 if (hasQName)
-                    enumNSDecls.addElement(nsDecls);
+                    enumNSDecls.add(nsDecls);
                 Element child = DOMUtil.getFirstChildElement( content );
 
                 if (child != null &&
@@ -819,7 +822,7 @@ abstract class XSDAbstractTraverser {
     private static String escapeAttValue(String original, int from) {
         int i;
         final int length = original.length();
-        StringBuffer newVal = new StringBuffer(length);
+        StringBuilder newVal = new StringBuilder(length);
         newVal.append(original.substring(0, from));
         for (i = from; i < length; ++i) {
             char currChar = original.charAt(i);

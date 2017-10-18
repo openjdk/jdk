@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -45,9 +45,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import javax.xml.XMLConstants;
@@ -841,7 +841,7 @@ public class TransformerFactoryImpl
     /**
      * Pass warning messages from the compiler to the error listener
      */
-    private void passWarningsToListener(ArrayList<ErrorMsg> messages)
+    private void passWarningsToListener(List<ErrorMsg> messages)
         throws TransformerException
     {
         if (_errorListener == null || messages == null) {
@@ -864,7 +864,7 @@ public class TransformerFactoryImpl
     /**
      * Pass error messages from the compiler to the error listener
      */
-    private void passErrorsToListener(ArrayList<ErrorMsg> messages) {
+    private void passErrorsToListener(List<ErrorMsg> messages) {
         try {
             if (_errorListener == null || messages == null) {
                 return;
@@ -1062,7 +1062,7 @@ public class TransformerFactoryImpl
 
         // Check that the transformation went well before returning
         if (bytecodes == null) {
-            ArrayList<ErrorMsg> errs = xsltc.getErrors();
+            List<ErrorMsg> errs = xsltc.getErrors();
             ErrorMsg err;
             if (errs != null) {
                 err = errs.get(errs.size()-1);
@@ -1443,7 +1443,7 @@ public class TransformerFactoryImpl
         }
 
         // Load the translet into a bytecode array.
-        Vector bytecodes = new Vector();
+        List<byte[]> bytecodes = new ArrayList<>();
         int fileLength = (int)transletFile.length();
         if (fileLength > 0) {
             FileInputStream input;
@@ -1463,7 +1463,7 @@ public class TransformerFactoryImpl
                 return null;
             }
 
-            bytecodes.addElement(bytes);
+            bytecodes.add(bytes);
         }
         else
             return null;
@@ -1509,16 +1509,16 @@ public class TransformerFactoryImpl
                     continue;
                 }
 
-                bytecodes.addElement(bytes);
+                bytecodes.add(bytes);
             }
         }
 
-        // Convert the Vector of byte[] to byte[][].
+        // Convert the ArrayList of byte[] to byte[][].
         final int count = bytecodes.size();
         if ( count > 0) {
             final byte[][] result = new byte[count][1];
             for (int i = 0; i < count; i++) {
-                result[i] = (byte[])bytecodes.elementAt(i);
+                result[i] = (byte[])bytecodes.get(i);
             }
 
             return result;
@@ -1579,11 +1579,11 @@ public class TransformerFactoryImpl
         String transletAuxPrefix = transletPath + "$";
         String transletFullName = transletPath + ".class";
 
-        Vector bytecodes = new Vector();
+        List<byte[]> bytecodes = new ArrayList<>();
 
         // Iterate through all entries in the jar file to find the
         // translet and auxiliary classes.
-        Enumeration entries = jarFile.entries();
+        Enumeration<? extends ZipEntry> entries = jarFile.entries();
         while (entries.hasMoreElements())
         {
             ZipEntry entry = (ZipEntry)entries.nextElement();
@@ -1599,7 +1599,7 @@ public class TransformerFactoryImpl
                     byte[] bytes = new byte[size];
                     readFromInputStream(bytes, input, size);
                     input.close();
-                    bytecodes.addElement(bytes);
+                    bytecodes.add(bytes);
                 }
                 catch (IOException e) {
                     return null;
@@ -1607,12 +1607,12 @@ public class TransformerFactoryImpl
             }
         }
 
-        // Convert the Vector of byte[] to byte[][].
+        // Convert the ArrayList of byte[] to byte[][].
         final int count = bytecodes.size();
         if (count > 0) {
             final byte[][] result = new byte[count][1];
             for (int i = 0; i < count; i++) {
-                result[i] = (byte[])bytecodes.elementAt(i);
+                result[i] = (byte[])bytecodes.get(i);
             }
 
             return result;

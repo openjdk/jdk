@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,10 +23,12 @@ package com.sun.org.apache.xpath.internal.objects;
 
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 import com.sun.org.apache.xml.internal.dtm.DTMIterator;
+import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xml.internal.utils.XMLString;
 import com.sun.org.apache.xpath.internal.Expression;
 import com.sun.org.apache.xpath.internal.XPathContext;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
+import java.util.List;
 
 /**
  * This class makes an select statement act like an result tree fragment.
@@ -49,7 +51,7 @@ public class XRTreeFragSelectWrapper extends XRTreeFrag implements Cloneable
    * in the stack frame (but variables above the globalsTop value will need
    * to be offset to the current stack frame).
    */
-  public void fixupVariables(java.util.Vector vars, int globalsSize)
+  public void fixupVariables(List<QName> vars, int globalsSize)
   {
     ((Expression)m_obj).fixupVariables(vars, globalsSize);
   }

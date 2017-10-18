@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -456,7 +456,7 @@ public final class Encodings extends Object
                 final Properties props = loadProperties();
 
                 // create instances of EncodingInfo from the loaded mapping
-                Enumeration keys = props.keys();
+                Enumeration<Object> keys = props.keys();
                 Map<String, EncodingInfo> canonicals = new HashMap<>();
                 while (keys.hasMoreElements()) {
                     final String javaName = (String) keys.nextElement();

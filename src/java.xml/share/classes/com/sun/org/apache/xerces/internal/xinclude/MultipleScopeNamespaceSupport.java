@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,11 +21,10 @@
 
 package com.sun.org.apache.xerces.internal.xinclude;
 
-import java.util.Enumeration;
-
 import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
+import java.util.Enumeration;
 
 /**
  * This implementation of NamespaceContext has the ability to maintain multiple
@@ -66,7 +65,7 @@ public class MultipleScopeNamespaceSupport extends NamespaceSupport {
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xni.NamespaceContext#getAllPrefixes()
      */
-    public Enumeration getAllPrefixes() {
+    public Enumeration<String> getAllPrefixes() {
         int count = 0;
         if (fPrefixes.length < (fNamespace.length / 2)) {
             // resize prefix array

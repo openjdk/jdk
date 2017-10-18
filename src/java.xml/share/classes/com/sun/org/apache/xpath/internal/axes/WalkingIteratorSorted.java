@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,7 +23,9 @@ package com.sun.org.apache.xpath.internal.axes;
 
 import com.sun.org.apache.xml.internal.dtm.Axis;
 import com.sun.org.apache.xml.internal.utils.PrefixResolver;
+import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xpath.internal.compiler.Compiler;
+import java.util.List;
 
 /**
  * This class iterates over set of nodes that needs to be sorted.
@@ -194,7 +196,7 @@ public class WalkingIteratorSorted extends WalkingIterator
    * in the stack frame (but variables above the globalsTop value will need
    * to be offset to the current stack frame).
    */
-  public void fixupVariables(java.util.Vector vars, int globalsSize)
+  public void fixupVariables(List<QName> vars, int globalsSize)
   {
     super.fixupVariables(vars, globalsSize);
 

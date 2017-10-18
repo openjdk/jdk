@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,15 +21,13 @@
 
 package com.sun.org.apache.xml.internal.dtm.ref;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xerces.internal.parsers.SAXParser;
 import com.sun.org.apache.xml.internal.res.XMLErrorResources;
 import com.sun.org.apache.xml.internal.res.XMLMessages;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
-
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -57,7 +56,7 @@ public class IncrementalSAXSource_Xerces
   Method fConfigSetInput=null; // Xerces2 method
   Method fConfigParse=null; // Xerces2 method
   Method fSetInputSource=null; // Xerces2 pull control method
-  Constructor fConfigInputSourceCtor=null; // Xerces2 initialization method
+  Constructor<?> fConfigInputSourceCtor=null; // Xerces2 initialization method
   Method fConfigSetByteStream=null; // Xerces2 initialization method
   Method fConfigSetCharStream=null; // Xerces2 initialization method
   Method fConfigSetEncoding=null; // Xerces2 initialization method
@@ -100,16 +99,16 @@ public class IncrementalSAXSource_Xerces
                         // this will simplify significantly.
 
                         // If we can't get the magic constructor, no need to look further.
-                        Class xniConfigClass=ObjectFactory.findProviderClass(
+                        Class<?> xniConfigClass=ObjectFactory.findProviderClass(
                             "com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration",
                             true);
-                        Class[] args1={xniConfigClass};
-                        Constructor ctor=SAXParser.class.getConstructor(args1);
+                        Class<?>[] args1={xniConfigClass};
+                        Constructor<?> ctor=SAXParser.class.getConstructor(args1);
 
                         // Build the parser configuration object. StandardParserConfiguration
                         // happens to implement XMLPullParserConfiguration, which is the API
                         // we're going to want to use.
-                        Class xniStdConfigClass=ObjectFactory.findProviderClass(
+                        Class<?> xniStdConfigClass=ObjectFactory.findProviderClass(
                             "com.sun.org.apache.xerces.internal.parsers.StandardParserConfiguration",
                             true);
                         fPullParserConfig=xniStdConfigClass.getConstructor().newInstance();
@@ -119,24 +118,24 @@ public class IncrementalSAXSource_Xerces
                         // Preload all the needed the configuration methods... I want to know they're
                         // all here before we commit to trying to use them, just in case the
                         // API changes again.
-                        Class fXniInputSourceClass=ObjectFactory.findProviderClass(
+                        Class<?> fXniInputSourceClass=ObjectFactory.findProviderClass(
                             "com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource",
                             true);
-                        Class[] args3={fXniInputSourceClass};
+                        Class<?>[] args3={fXniInputSourceClass};
                         fConfigSetInput=xniStdConfigClass.getMethod("setInputSource",args3);
 
-                        Class[] args4={String.class,String.class,String.class};
+                        Class<?>[] args4={String.class,String.class,String.class};
                         fConfigInputSourceCtor=fXniInputSourceClass.getConstructor(args4);
-                        Class[] args5={java.io.InputStream.class};
+                        Class<?>[] args5={java.io.InputStream.class};
                         fConfigSetByteStream=fXniInputSourceClass.getMethod("setByteStream",args5);
-                        Class[] args6={java.io.Reader.class};
+                        Class<?>[] args6={java.io.Reader.class};
                         fConfigSetCharStream=fXniInputSourceClass.getMethod("setCharacterStream",args6);
-                        Class[] args7={String.class};
+                        Class<?>[] args7={String.class};
                         fConfigSetEncoding=fXniInputSourceClass.getMethod("setEncoding",args7);
 
-                        Class[] argsb={Boolean.TYPE};
+                        Class<?>[] argsb={Boolean.TYPE};
                         fConfigParse=xniStdConfigClass.getMethod("parse",argsb);
-                        Class[] noargs=new Class[0];
+                        Class<?>[] noargs=new Class<?>[0];
                         fReset=fIncrementalParser.getClass().getMethod("reset",noargs);
                 }
                 catch(Exception e)
@@ -172,10 +171,10 @@ public class IncrementalSAXSource_Xerces
                 // Xerces2 incremental support is made available on previously
                 // constructed SAXParser instances.
     fIncrementalParser=parser;
-                Class me=parser.getClass();
-    Class[] parms={InputSource.class};
+                Class<?> me=parser.getClass();
+    Class<?>[] parms={InputSource.class};
     fParseSomeSetup=me.getMethod("parseSomeSetup",parms);
-    parms=new Class[0];
+    parms=new Class<?>[0];
     fParseSome=me.getMethod("parseSome",parms);
     // Fallback if this fails (implemented in createIncrementalSAXSource) is
     // to use IncrementalSAXSource_Filter rather than Xerces-specific code.

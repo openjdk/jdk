@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,7 +22,6 @@
 package com.sun.org.apache.xerces.internal.xs;
 
 import java.util.List;
-
 import org.w3c.dom.ls.LSInput;
 
 /**
@@ -30,7 +29,7 @@ import org.w3c.dom.ls.LSInput;
  * ordered collection of <code>LSInput</code>s, without defining or
  * constraining how this collection is implemented.
  */
-public interface LSInputList extends List {
+public interface LSInputList extends List<LSInput> {
     /**
      *  The number of <code>LSInput</code>s in the list. The range of valid
      * child object indices is 0 to <code>length-1</code> inclusive.

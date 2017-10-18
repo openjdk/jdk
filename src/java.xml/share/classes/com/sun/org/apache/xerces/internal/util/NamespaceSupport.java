@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,12 +21,12 @@
 
 package com.sun.org.apache.xerces.internal.util;
 
+import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Vector;
-
-import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 
 /**
  * Namespace support for XML document handlers. This class doesn't
@@ -90,9 +90,9 @@ public class NamespaceSupport implements NamespaceContext {
     public NamespaceSupport(NamespaceContext context) {
         pushContext();
         // copy declaration in the context
-        Enumeration prefixes = context.getAllPrefixes();
+        Enumeration<String> prefixes = context.getAllPrefixes();
         while (prefixes.hasMoreElements()){
-            String prefix = (String)prefixes.nextElement();
+            String prefix = prefixes.nextElement();
             String uri = context.getURI(prefix);
             declarePrefix(prefix, uri);
         }
@@ -240,7 +240,7 @@ public class NamespaceSupport implements NamespaceContext {
         return fNamespace[fContext[fCurrentContext] + index * 2];
     } // getDeclaredPrefixAt(int):String
 
-    public Iterator getPrefixes(){
+    public Iterator<String> getPrefixes(){
         int count = 0;
         if (fPrefixes.length < (fNamespace.length/2)) {
             // resize prefix array
@@ -267,7 +267,7 @@ public class NamespaceSupport implements NamespaceContext {
     /**
      * @see com.sun.org.apache.xerces.internal.xni.NamespaceContext#getAllPrefixes()
      */
-    public Enumeration getAllPrefixes() {
+    public Enumeration<String> getAllPrefixes() {
         int count = 0;
         if (fPrefixes.length < (fNamespace.length/2)) {
             // resize prefix array
@@ -292,11 +292,11 @@ public class NamespaceSupport implements NamespaceContext {
         return new Prefixes(fPrefixes, count);
     }
 
-    public  Vector getPrefixes(String uri){
+    public List<String> getPrefixes(String uri){
         int count = 0;
         String prefix = null;
         boolean unique = true;
-        Vector prefixList = new Vector();
+        List<String> prefixList = new ArrayList<>();
         for (int i = fNamespaceSize; i >0 ; i -= 2) {
             if(fNamespace[i-1] == uri){
                 if(!prefixList.contains(fNamespace[i-2]))
@@ -352,7 +352,7 @@ public class NamespaceSupport implements NamespaceContext {
         return false;
     }
 
-    protected final class IteratorPrefixes implements Iterator  {
+    protected final class IteratorPrefixes implements Iterator<String>  {
         private String[] prefixes;
         private int counter = 0;
         private int size = 0;
@@ -375,7 +375,7 @@ public class NamespaceSupport implements NamespaceContext {
         /**
          * @see java.util.Enumeration#nextElement()
          */
-        public Object next() {
+        public String next() {
             if (counter< size){
                 return fPrefixes[counter++];
             }
@@ -383,7 +383,7 @@ public class NamespaceSupport implements NamespaceContext {
         }
 
         public String toString(){
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             for (int i=0;i<size;i++){
                 buf.append(prefixes[i]);
                 buf.append(" ");
@@ -398,7 +398,7 @@ public class NamespaceSupport implements NamespaceContext {
     }
 
 
-    protected final class Prefixes implements Enumeration {
+    protected final class Prefixes implements Enumeration<String> {
         private String[] prefixes;
         private int counter = 0;
         private int size = 0;
@@ -421,7 +421,7 @@ public class NamespaceSupport implements NamespaceContext {
         /**
          * @see java.util.Enumeration#nextElement()
          */
-        public Object nextElement() {
+        public String nextElement() {
             if (counter< size){
                 return fPrefixes[counter++];
             }
@@ -429,7 +429,7 @@ public class NamespaceSupport implements NamespaceContext {
         }
 
         public String toString(){
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             for (int i=0;i<size;i++){
                 buf.append(prefixes[i]);
                 buf.append(" ");

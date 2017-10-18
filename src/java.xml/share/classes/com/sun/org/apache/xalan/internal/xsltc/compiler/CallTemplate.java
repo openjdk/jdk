@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,8 +31,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.utils.XML11Char;
-
-import java.util.Vector;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -205,11 +205,11 @@ final class CallTemplate extends Instruction {
     private void buildParameterList() {
         // Put the parameters from the called template into the array first.
         // This is to ensure the order of the parameters.
-        Vector<Param> defaultParams = _calleeTemplate.getParameters();
+        List<Param> defaultParams = _calleeTemplate.getParameters();
         int numParams = defaultParams.size();
         _parameters = new SyntaxTreeNode[numParams];
         for (int i = 0; i < numParams; i++) {
-            _parameters[i] = defaultParams.elementAt(i);
+            _parameters[i] = defaultParams.get(i);
         }
 
         // Replace a Param with a WithParam if they have the same name.

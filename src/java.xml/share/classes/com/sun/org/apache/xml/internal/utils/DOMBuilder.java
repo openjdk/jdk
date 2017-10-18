@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,18 +21,16 @@
 
 package com.sun.org.apache.xml.internal.utils;
 
-import java.util.Stack;
-
 import com.sun.org.apache.xml.internal.res.XMLErrorResources;
 import com.sun.org.apache.xml.internal.res.XMLMessages;
-
+import java.util.List;
+import java.util.Stack;
+import org.w3c.dom.CDATASection;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
-import org.w3c.dom.CDATASection;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
@@ -62,8 +60,8 @@ public class DOMBuilder
   /** First node of document fragment or null if not a DocumentFragment     */
   public DocumentFragment m_docFrag = null;
 
-  /** Vector of element nodes          */
-  protected Stack m_elemStack = new Stack();
+  /** Stack of element nodes          */
+  protected Stack<Node> m_elemStack = new Stack<>();
 
   /**
    * DOMBuilder instance constructor... it will add the DOM nodes
@@ -402,7 +400,7 @@ public class DOMBuilder
           throws org.xml.sax.SAXException
   {
     m_elemStack.pop();
-    m_currentNode = m_elemStack.isEmpty() ? null : (Node)m_elemStack.peek();
+    m_currentNode = m_elemStack.isEmpty() ? null : m_elemStack.peek();
   }
 
   /**

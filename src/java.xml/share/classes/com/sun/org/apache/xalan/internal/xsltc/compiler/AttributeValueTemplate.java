@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,11 +24,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Enumeration;
-import java.util.Vector;
-import java.util.StringTokenizer;
-import java.util.NoSuchElementException;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
@@ -41,6 +37,8 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
 
 /**
  * @author Jacek Ambroziak
@@ -86,7 +84,7 @@ final class AttributeValueTemplate extends AttributeValue {
           */
         String t = null;
         String lookahead = null;
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         int state = OUT_EXPR;
 
         while (tokenizer.hasMoreTokens()) {
@@ -220,7 +218,7 @@ final class AttributeValueTemplate extends AttributeValue {
     }
 
     public String toString() {
-        final StringBuffer buffer = new StringBuffer("AVT:[");
+        final StringBuilder buffer = new StringBuilder("AVT:[");
         final int count = elementCount();
         for (int i = 0; i < count; i++) {
             buffer.append(elementAt(i).toString());
@@ -252,7 +250,7 @@ final class AttributeValueTemplate extends AttributeValue {
             il.append(new NEW(cpg.addClass(STRING_BUFFER_CLASS)));
             il.append(DUP);
             il.append(new INVOKESPECIAL(initBuffer));
-            // StringBuffer is on the stack
+            // StringBuilder is on the stack
             final Iterator<SyntaxTreeNode> elements = elements();
             while (elements.hasNext()) {
                 final Expression exp = (Expression)elements.next();

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,15 +21,15 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.dom;
 
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.Translet;
 import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xml.internal.utils.LocaleUtility;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Locale;
 import java.text.Collator;
+import java.util.Locale;
 
 public class NodeSortRecordFactory {
 
@@ -37,7 +38,7 @@ public class NodeSortRecordFactory {
 
     private final DOM      _dom;
     private final String   _className;
-    private Class _class;
+    private Class<?> _class;
     private SortSettings _sortSettings;
 
     /**

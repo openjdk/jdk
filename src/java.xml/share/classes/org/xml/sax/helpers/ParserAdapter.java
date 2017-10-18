@@ -32,8 +32,9 @@
 package org.xml.sax.helpers;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Vector;
+import java.util.List;
 import jdk.xml.internal.SecuritySupport;
 import org.xml.sax.AttributeList; // deprecated
 import org.xml.sax.Attributes;
@@ -508,7 +509,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
                                 // first pass; they should be
                                 // ignored if there's a second pass,
                                 // but reported otherwise.
-        Vector exceptions = null;
+        List<SAXException> exceptions = null;
 
                                 // If we're not doing Namespace
                                 // processing, dispatch this quickly.
@@ -602,8 +603,8 @@ public class ParserAdapter implements XMLReader, DocumentHandler
                                   type, value);
             } catch (SAXException e) {
                 if (exceptions == null)
-                    exceptions = new Vector();
-                exceptions.addElement(e);
+                    exceptions = new ArrayList<>();
+                exceptions.add(e);
                 atts.addAttribute("", attQName, attQName, type, value);
             }
         }
@@ -612,7 +613,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
         if (exceptions != null && errorHandler != null) {
             for (int i = 0; i < exceptions.size(); i++)
                 errorHandler.error((SAXParseException)
-                                (exceptions.elementAt(i)));
+                                (exceptions.get(i)));
         }
 
                                 // OK, finally report the event.
@@ -648,9 +649,9 @@ public class ParserAdapter implements XMLReader, DocumentHandler
         String names[] = processName(qName, false, false);
         if (contentHandler != null) {
             contentHandler.endElement(names[0], names[1], names[2]);
-            Enumeration prefixes = nsSupport.getDeclaredPrefixes();
-            while (prefixes.hasMoreElements()) {
-                String prefix = (String)prefixes.nextElement();
+            Enumeration<String> ePrefixes = nsSupport.getDeclaredPrefixes();
+            while (ePrefixes.hasMoreElements()) {
+                String prefix = ePrefixes.nextElement();
                 contentHandler.endPrefixMapping(prefix);
             }
         }

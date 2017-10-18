@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -51,6 +52,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Stack;
 import java.util.StringTokenizer;
@@ -334,7 +336,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
     public void setFilter (LSParserFilter filter) {
         fDOMFilter = filter;
         if (fSkippedElemStack == null) {
-            fSkippedElemStack = new Stack ();
+            fSkippedElemStack = new Stack<>();
         }
     }
 
@@ -519,7 +521,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
                             // tokenize location string
                             StringTokenizer t = new StringTokenizer (fSchemaLocation, " \n\t\r");
                             if (t.hasMoreTokens()) {
-                                ArrayList locations = new ArrayList();
+                                List<String> locations = new ArrayList<>();
                                 locations.add (t.nextToken());
                                 while (t.hasMoreTokens()) {
                                     locations.add (t.nextToken());
@@ -862,7 +864,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
      */
     public DOMStringList getParameterNames () {
         if (fRecognizedParameters == null){
-            ArrayList parameters = new ArrayList();
+            List<String> parameters = new ArrayList<>();
 
             // REVISIT: add Xerces recognized properties/features
             parameters.add(Constants.DOM_NAMESPACES);

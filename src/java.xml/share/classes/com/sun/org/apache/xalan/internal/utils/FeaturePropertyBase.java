@@ -62,7 +62,7 @@ public abstract class FeaturePropertyBase {
      * @param state the state of the property
      * @param value the value of the property
      */
-    public void setValue(Enum property, State state, String value) {
+    public void setValue(Enum<?> property, State state, String value) {
         //only update if it shall override
         if (state.compareTo(states[property.ordinal()]) >= 0) {
             values[property.ordinal()] = value;
@@ -128,7 +128,7 @@ public abstract class FeaturePropertyBase {
      * @param property the property
      * @return the value of the property
      */
-    public String getValue(Enum property) {
+    public String getValue(Enum<?> property) {
         return values[property.ordinal()];
     }
 
@@ -195,7 +195,7 @@ public abstract class FeaturePropertyBase {
      * @param property the property
      * @param systemProperty the name of the system property
      */
-    void getSystemProperty(Enum property, String systemProperty) {
+    void getSystemProperty(Enum<?> property, String systemProperty) {
         try {
             String value = SecuritySupport.getSystemProperty(systemProperty);
             if (value != null) {

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,12 +21,12 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.dom;
 
-import java.util.Vector;
-
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.Translet;
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -52,8 +52,8 @@ public abstract class NodeCounter {
 
     private boolean _separFirst = true;
     private boolean _separLast = false;
-    private Vector _separToks = new Vector();
-    private Vector _formatToks = new Vector();
+    private List<String> _separToks = new ArrayList<>();
+    private List<String> _formatToks = new ArrayList<>();
     private int _nSepars  = 0;
     private int _nFormats = 0;
 
@@ -204,10 +204,10 @@ public abstract class NodeCounter {
                  }
                  if (i > j) {
                      if (isFirst) {
-                         _separToks.addElement(".");
+                         _separToks.add(".");
                          isFirst = _separFirst = false;
                      }
-                     _formatToks.addElement(format.substring(j, i));
+                     _formatToks.add(format.substring(j, i));
                  }
 
                  if (i == length) break;
@@ -219,7 +219,7 @@ public abstract class NodeCounter {
                      isFirst = false;
                  }
                  if (i > j) {
-                     _separToks.addElement(format.substring(j, i));
+                     _separToks.add(format.substring(j, i));
                  }
              }
 
@@ -230,7 +230,7 @@ public abstract class NodeCounter {
          if (_separFirst) _nSepars--;
          if (_separLast) _nSepars--;
          if (_nSepars == 0) {
-             _separToks.insertElementAt(".", 1);
+             _separToks.add(1, ".");
              _nSepars++;
          }
          if (_separFirst) _nSepars ++;
@@ -305,14 +305,14 @@ public abstract class NodeCounter {
     final StringBuilder buffer = _tempBuffer;
 
     // Append separation token before first digit/letter/numeral
-    if (_separFirst) buffer.append((String)_separToks.elementAt(0));
+    if (_separFirst) buffer.append(_separToks.get(0));
 
     // Append next digit/letter/numeral and separation token
     while (n < nValues) {
         final int value = values[n];
         if (value != Integer.MIN_VALUE) {
-        if (!isFirst) buffer.append((String) _separToks.elementAt(s++));
-        formatValue(value, (String)_formatToks.elementAt(t++), buffer);
+        if (!isFirst) buffer.append(_separToks.get(s++));
+        formatValue(value, _formatToks.get(t++), buffer);
         if (t == _nFormats) t--;
         if (s >= _nSepars) s--;
         isFirst = false;
@@ -321,7 +321,7 @@ public abstract class NodeCounter {
     }
 
     // Append separation token after last digit/letter/numeral
-    if (_separLast) buffer.append((String)_separToks.lastElement());
+    if (_separLast) buffer.append(_separToks.get(_separToks.size() - 1));
     return buffer.toString();
     }
 

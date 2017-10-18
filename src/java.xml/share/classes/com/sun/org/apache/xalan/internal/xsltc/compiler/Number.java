@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,23 +21,21 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.ArrayList;
-
 import com.sun.org.apache.bcel.internal.classfile.Field;
 import com.sun.org.apache.bcel.internal.generic.ALOAD;
-import com.sun.org.apache.bcel.internal.generic.ILOAD;
 import com.sun.org.apache.bcel.internal.generic.ASTORE;
 import com.sun.org.apache.bcel.internal.generic.BranchHandle;
 import com.sun.org.apache.bcel.internal.generic.CHECKCAST;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
+import com.sun.org.apache.bcel.internal.generic.D2I;
 import com.sun.org.apache.bcel.internal.generic.GETFIELD;
 import com.sun.org.apache.bcel.internal.generic.GOTO;
 import com.sun.org.apache.bcel.internal.generic.IFNONNULL;
+import com.sun.org.apache.bcel.internal.generic.ILOAD;
 import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
 import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
-import com.sun.org.apache.bcel.internal.generic.D2I;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
@@ -50,6 +48,8 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.RealType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -86,7 +86,7 @@ final class Number extends Instruction implements Closure {
     private boolean _formatNeeded = false;
 
     private String _className = null;
-    private ArrayList _closureVars = null;
+    private List<VariableRefBase> _closureVars = null;
 
      // -- Begin Closure interface --------------------
 
@@ -118,7 +118,7 @@ final class Number extends Instruction implements Closure {
      */
     public void addVariable(VariableRefBase variableRef) {
         if (_closureVars == null) {
-            _closureVars = new ArrayList();
+            _closureVars = new ArrayList<>();
         }
 
         // Only one reference per variable
@@ -395,8 +395,7 @@ final class Number extends Instruction implements Closure {
             _closureVars.size();
 
         for (int i = 0; i < closureLen; i++) {
-            VariableBase var =
-                ((VariableRefBase) _closureVars.get(i)).getVariable();
+            VariableBase var = (_closureVars.get(i)).getVariable();
 
             nodeCounterGen.addField(new Field(ACC_PUBLIC,
                                         cpg.addUtf8(var.getEscapedName()),

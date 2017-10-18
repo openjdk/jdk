@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,12 +21,12 @@
 
 package com.sun.org.apache.xml.internal.utils;
 
-import java.util.ArrayList;
-
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xml.internal.res.XMLErrorResources;
 import com.sun.org.apache.xml.internal.res.XMLMessages;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -38,21 +39,21 @@ public class ObjectPool implements java.io.Serializable
 
   /** Type of objects in this pool.
    *  @serial          */
-  private final Class objectType;
+  private final Class<?> objectType;
 
   /** Stack of given objects this points to.
    *  @serial          */
-  private final ArrayList freeStack;
+  private final List<Object> freeStack;
 
   /**
    * Constructor ObjectPool
    *
    * @param type Type of objects for this pool
    */
-  public ObjectPool(Class type)
+  public ObjectPool(Class<?> type)
   {
     objectType = type;
-    freeStack = new ArrayList();
+    freeStack = new ArrayList<>();
   }
 
   /**
@@ -70,7 +71,7 @@ public class ObjectPool implements java.io.Serializable
     {
       throw new WrappedRuntimeException(cnfe);
     }
-    freeStack = new ArrayList();
+    freeStack = new ArrayList<>();
   }
 
 
@@ -81,10 +82,10 @@ public class ObjectPool implements java.io.Serializable
    * @param type Type of objects for this pool
    * @param size Size of vector to allocate
    */
-  public ObjectPool(Class type, int size)
+  public ObjectPool(Class<?> type, int size)
   {
     objectType = type;
-    freeStack = new ArrayList(size);
+    freeStack = new ArrayList<>(size);
   }
 
   /**
@@ -94,7 +95,7 @@ public class ObjectPool implements java.io.Serializable
   public ObjectPool()
   {
     objectType = null;
-    freeStack = new ArrayList();
+    freeStack = new ArrayList<>();
   }
 
   /**

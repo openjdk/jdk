@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -46,6 +47,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDContentModelSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDSource;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -798,7 +800,7 @@ public class DTDGrammar
             int chunk, index = 0;
             String currName = null;
             final int size = fElementDeclCount;
-            ArrayList elements = new ArrayList(size);
+            List<String> elements = new ArrayList<>(size);
             for (int i = 0; i < size; ++i) {
                 chunk = i >> CHUNK_SHIFT;
                 index = i & CHUNK_MASK;
