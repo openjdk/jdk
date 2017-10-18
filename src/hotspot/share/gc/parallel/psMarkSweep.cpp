@@ -47,6 +47,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -542,6 +543,11 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     pt.print_all_references();
   }
 
+  {
+    GCTraceTime(Debug, gc, phases) t("Weak Processing", _gc_timer);
+    WeakProcessor::weak_oops_do(is_alive_closure(), mark_and_push_closure(), follow_stack_closure());
+  }
+
   // This is the point where the entire marking should have completed.
   assert(_marking_stack.is_empty(), "Marking should have completed");
 
@@ -617,7 +623,7 @@ void PSMarkSweep::mark_sweep_phase3() {
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   // Global (weak) JNI handles
-  JNIHandles::weak_oops_do(adjust_pointer_closure());
+  WeakProcessor::oops_do(adjust_pointer_closure());
 
   CodeBlobToOopClosure adjust_from_blobs(adjust_pointer_closure(), CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);
