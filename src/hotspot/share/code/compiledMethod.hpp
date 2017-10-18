@@ -288,7 +288,7 @@ public:
   // Note: _exception_cache may be read concurrently. We rely on memory_order_consume here.
   ExceptionCache* exception_cache() const         { return _exception_cache; }
   void set_exception_cache(ExceptionCache *ec)    { _exception_cache = ec; }
-  void release_set_exception_cache(ExceptionCache *ec) { OrderAccess::release_store_ptr(&_exception_cache, ec); }
+  void release_set_exception_cache(ExceptionCache *ec) { OrderAccess::release_store(&_exception_cache, ec); }
   address handler_for_exception_and_pc(Handle exception, address pc);
   void add_handler_for_exception_and_pc(Handle exception, address pc, address handler);
   void clean_exception_cache(BoolObjectClosure* is_alive);

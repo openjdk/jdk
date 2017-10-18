@@ -70,10 +70,10 @@ ifeq ($(HAS_SPEC),)
       $(subst \ ,\#,$(MAKEOVERRIDES))))
 
   # Setup information about available configurations, if any.
-  ifeq ($(CUSTOM_BUILD_DIR), )
-    build_dir=$(topdir)/build
+  ifneq ($(CUSTOM_ROOT), )
+    build_dir=$(CUSTOM_ROOT)/build
   else
-    build_dir=$(CUSTOM_BUILD_DIR)
+    build_dir=$(topdir)/build
   endif
   all_spec_files=$(wildcard $(build_dir)/*/spec.gmk)
   # Extract the configuration names from the path
@@ -227,7 +227,11 @@ ifeq ($(HAS_SPEC),)
     else
       # Use spec.gmk files in the build output directory
       ifeq ($$(all_spec_files),)
-        $$(info Error: No configurations found for $$(topdir).)
+        ifneq ($(CUSTOM_ROOT), )
+          $$(info Error: No configurations found for $$(CUSTOM_ROOT).)
+        else
+          $$(info Error: No configurations found for $$(topdir).)
+        endif
         $$(info Please run 'bash configure' to create a configuration.)
         $$(info )
         $$(error Cannot continue)

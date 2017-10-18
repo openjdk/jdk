@@ -37,7 +37,7 @@
 #include "utilities/macros.hpp"
 
 // Must be included after jvmti.h.
-#include "code/jvmticmlr.h"
+#include "jvmticmlr.h"
 
 // Forward declarations
 

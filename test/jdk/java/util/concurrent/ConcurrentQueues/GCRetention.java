@@ -35,7 +35,7 @@
  * @bug 6785442
  * @summary Benchmark that tries to GC-tenure head, followed by
  * many add/remove operations.
- * @run main GCRetention 12345
+ * @run main GCRetention just-testing
  */
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -60,8 +60,8 @@ import java.util.Queue;
 import java.util.Map;
 
 public class GCRetention {
-    // Suitable for benchmarking.  Overridden by args[0] for testing.
-    int count = 1024 * 1024;
+    boolean benchmarkMode;
+    int count;
 
     /** No guarantees, but effective in practice. */
     static void forceFullGc() {
@@ -124,8 +124,9 @@ public class GCRetention {
     }
 
     void test(String[] args) {
-        if (args.length > 0)
-            count = Integer.valueOf(args[0]);
+        benchmarkMode = ! (args.length > 0 && args[0].equals("just-testing"));
+        count = benchmarkMode ? 1024 * 1024 : 30;
+
         // Warmup
         for (Queue<Boolean> queue : queues())
             test(queue);
@@ -140,7 +141,7 @@ public class GCRetention {
         long t0 = System.nanoTime();
         for (int i = 0; i < count; i++)
             check(q.add(Boolean.TRUE));
-        forceFullGc();
+        if (benchmarkMode) forceFullGc();
         // forceFullGc();
         Boolean x;
         while ((x = q.poll()) != null)

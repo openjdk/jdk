@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
     HeapWord* obj = top();
     if (pointer_delta(end(), obj) >= size) {
       HeapWord* new_top = obj + size;
-      HeapWord* result = (HeapWord*)Atomic::cmpxchg_ptr(new_top, top_addr(), obj);
+      HeapWord* result = Atomic::cmpxchg(new_top, top_addr(), obj);
       // result can be one of two:
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.
@@ -211,7 +211,7 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
 // Try to deallocate previous allocation. Returns true upon success.
 bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
   HeapWord* expected_top = obj + size;
-  return (HeapWord*)Atomic::cmpxchg_ptr(obj, top_addr(), expected_top) == expected_top;
+  return Atomic::cmpxchg(obj, top_addr(), expected_top) == expected_top;
 }
 
 void MutableSpace::oop_iterate_no_header(OopClosure* cl) {

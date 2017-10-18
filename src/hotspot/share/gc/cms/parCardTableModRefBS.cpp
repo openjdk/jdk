@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/cms/cmsHeap.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/virtualspace.hpp"
@@ -394,7 +394,7 @@ get_LNC_array_for_space(Space* sp,
   // Do a dirty read here. If we pass the conditional then take the rare
   // event lock and do the read again in case some other thread had already
   // succeeded and done the resize.
-  int cur_collection = GenCollectedHeap::heap()->total_collections();
+  int cur_collection = CMSHeap::heap()->total_collections();
   // Updated _last_LNC_resizing_collection[i] must not be visible before
   // _lowest_non_clean and friends are visible. Therefore use acquire/release
   // to guarantee this on non TSO architecures.

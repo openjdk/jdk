@@ -766,13 +766,10 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_ARG_WITH(conf-name, [AS_HELP_STRING([--with-conf-name],
       [use this as the name of the configuration @<:@generated from important configuration options@:>@])],
       [ CONF_NAME=${with_conf_name} ])
-  AC_ARG_WITH(output-base-dir, [AS_HELP_STRING([--with-output-base-dir],
-      [override the default output base directory @<:@./build@:>@])],
-      [ OUTPUT_BASE=${with_output_base_dir} ], [ OUTPUT_BASE="$TOPDIR/build" ] )
 
   # Test from where we are running configure, in or outside of src root.
   AC_MSG_CHECKING([where to store configuration])
-  if test "x$CURDIR" = "x$TOPDIR" || test "x$CURDIR" = "x$TOPDIR/common" \
+  if test "x$CURDIR" = "x$TOPDIR" || test "x$CURDIR" = "x$CUSTOM_ROOT" \
       || test "x$CURDIR" = "x$TOPDIR/make/autoconf" \
       || test "x$CURDIR" = "x$TOPDIR/make" ; then
     # We are running configure from the src root.
@@ -783,7 +780,12 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     else
       AC_MSG_RESULT([in build directory with custom name])
     fi
-    OUTPUTDIR="${OUTPUT_BASE}/${CONF_NAME}"
+
+    if test "x$CUSTOM_ROOT" != x; then
+      OUTPUTDIR="${CUSTOM_ROOT}/build/${CONF_NAME}"
+    else
+      OUTPUTDIR="${TOPDIR}/build/${CONF_NAME}"
+    fi
     $MKDIR -p "$OUTPUTDIR"
     if test ! -d "$OUTPUTDIR"; then
       AC_MSG_ERROR([Could not create build directory $OUTPUTDIR])

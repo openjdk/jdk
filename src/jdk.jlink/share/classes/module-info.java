@@ -38,14 +38,13 @@
  * or the {@link java.util.ServiceLoader service loader} with the name
  * {@code "jlink"} or {@code "jmod"} as appropriate.
  *
- * <p> <em>{@extLink jimage_tool_reference jimage}</em> only exists
+ * <p> <em>jimage</em> only exists
  * as a command-line tool, and does not provide any direct API.
  *
  * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
  * <dt class="simpleTagLabel">Tool Guides:
  * <dd>{@extLink jlink_tool_reference jlink},
- *     {@extLink jmod_tool_reference jmod},
- *     {@extLink jimage_tool_reference jimage}
+ *     {@extLink jmod_tool_reference jmod}
  * </dl>
  *
  * @provides java.util.spi.ToolProvider

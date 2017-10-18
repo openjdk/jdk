@@ -91,7 +91,7 @@ void ConstantPoolCacheEntry::set_bytecode_1(Bytecodes::Code code) {
   assert(c == 0 || c == code || code == 0, "update must be consistent");
 #endif
   // Need to flush pending stores here before bytecode is written.
-  OrderAccess::release_store_ptr(&_indices, _indices | ((u_char)code << bytecode_1_shift));
+  OrderAccess::release_store(&_indices, _indices | ((u_char)code << bytecode_1_shift));
 }
 
 void ConstantPoolCacheEntry::set_bytecode_2(Bytecodes::Code code) {
@@ -101,19 +101,13 @@ void ConstantPoolCacheEntry::set_bytecode_2(Bytecodes::Code code) {
   assert(c == 0 || c == code || code == 0, "update must be consistent");
 #endif
   // Need to flush pending stores here before bytecode is written.
-  OrderAccess::release_store_ptr(&_indices, _indices | ((u_char)code << bytecode_2_shift));
+  OrderAccess::release_store(&_indices, _indices | ((u_char)code << bytecode_2_shift));
 }
 
 // Sets f1, ordering with previous writes.
 void ConstantPoolCacheEntry::release_set_f1(Metadata* f1) {
   assert(f1 != NULL, "");
-  OrderAccess::release_store_ptr((HeapWord*) &_f1, f1);
-}
-
-// Sets flags, but only if the value was previously zero.
-bool ConstantPoolCacheEntry::init_flags_atomic(intptr_t flags) {
-  intptr_t result = Atomic::cmpxchg_ptr(flags, &_flags, 0);
-  return (result == 0);
+  OrderAccess::release_store(&_f1, f1);
 }
 
 // Note that concurrent update of both bytecodes can leave one of them
@@ -154,7 +148,8 @@ void ConstantPoolCacheEntry::set_parameter_size(int value) {
   // bother trying to update it once it's nonzero but always make
   // sure that the final parameter size agrees with what was passed.
   if (_flags == 0) {
-    Atomic::cmpxchg_ptr((value & parameter_size_mask), &_flags, 0);
+    intx newflags = (value & parameter_size_mask);
+    Atomic::cmpxchg(newflags, &_flags, (intx)0);
   }
   guarantee(parameter_size() == value,
             "size must not change: parameter_size=%d, value=%d", parameter_size(), value);

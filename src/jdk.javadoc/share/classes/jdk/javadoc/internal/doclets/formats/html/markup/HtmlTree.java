@@ -181,36 +181,63 @@ public class HtmlTree extends Content {
         return s;
     }
 
-    /**
-     * A set of ASCII URI characters to be left unencoded.
+    /*
+     * The sets of ASCII URI characters to be left unencoded.
+     * See "Uniform Resource Identifier (URI): Generic Syntax"
+     * IETF RFC 3986. https://tools.ietf.org/html/rfc3986
      */
-    public static final BitSet NONENCODING_CHARS = new BitSet(256);
+    public static final BitSet MAIN_CHARS;
+    public static final BitSet QUERY_FRAGMENT_CHARS;
 
     static {
-        // alphabetic characters
-        for (int i = 'a'; i <= 'z'; i++) {
-            NONENCODING_CHARS.set(i);
-        }
-        for (int i = 'A'; i <= 'Z'; i++) {
-            NONENCODING_CHARS.set(i);
-        }
-        // numeric characters
-        for (int i = '0'; i <= '9'; i++) {
-            NONENCODING_CHARS.set(i);
-        }
-        // Reserved characters as per RFC 3986. These are set of delimiting characters.
-        String noEnc = ":/?#[]@!$&'()*+,;=";
-        // Unreserved characters as per RFC 3986 which should not be percent encoded.
-        noEnc += "-._~";
-        for (int i = 0; i < noEnc.length(); i++) {
-            NONENCODING_CHARS.set(noEnc.charAt(i));
-        }
+        BitSet alphaDigit = bitSet(bitSet('A', 'Z'), bitSet('a', 'z'), bitSet('0', '9'));
+        BitSet unreserved = bitSet(alphaDigit, bitSet("-._~"));
+        BitSet genDelims = bitSet(":/?#[]@");
+        BitSet subDelims = bitSet("!$&'()*+,;=");
+        MAIN_CHARS = bitSet(unreserved, genDelims, subDelims);
+        BitSet pchar = bitSet(unreserved, subDelims, bitSet(":@"));
+        QUERY_FRAGMENT_CHARS = bitSet(pchar, bitSet("/?"));
     }
 
+    private static BitSet bitSet(String s) {
+        BitSet result = new BitSet();
+        for (int i = 0; i < s.length(); i++) {
+           result.set(s.charAt(i));
+        }
+        return result;
+    }
+
+    private static BitSet bitSet(char from, char to) {
+        BitSet result = new BitSet();
+        result.set(from, to + 1);
+        return result;
+    }
+
+    private static BitSet bitSet(BitSet... sets) {
+        BitSet result = new BitSet();
+        for (BitSet set : sets) {
+            result.or(set);
+        }
+        return result;
+    }
+
+    /**
+     * Apply percent-encoding to a URL.
+     * This is similar to {@link java.net.URLEncoder} but
+     * is less aggressive about encoding some characters,
+     * like '(', ')', ',' which are used in the anchor
+     * names for Java methods in HTML5 mode.
+     */
     private static String encodeURL(String url) {
+        BitSet nonEncodingChars = MAIN_CHARS;
         StringBuilder sb = new StringBuilder();
         for (byte c : url.getBytes(Charset.forName("UTF-8"))) {
-            if (NONENCODING_CHARS.get(c & 0xFF)) {
+            if (c == '?' || c == '#') {
+                sb.append((char) c);
+                // switch to the more restrictive set inside
+                // the query and/or fragment
+                nonEncodingChars = QUERY_FRAGMENT_CHARS;
+            } else if (nonEncodingChars.get(c & 0xFF)) {
                 sb.append((char) c);
             } else {
                 sb.append(String.format("%%%02X", c & 0xFF));

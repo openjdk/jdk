@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881 8181622 8182263 8074407
+ * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
+ *      8181622 8182263 8074407 8187521
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -64,7 +65,7 @@ public class TestSearch extends JavadocTester {
         checkExit(Exit.OK);
         checkInvalidUsageIndexTag();
         checkSearchOutput(true);
-        checkSingleIndex(true);
+        checkSingleIndex(true, false);
         checkSingleIndexSearchTagDuplication();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
@@ -86,7 +87,7 @@ public class TestSearch extends JavadocTester {
         checkExit(Exit.ERROR);
         checkDocLintErrors();
         checkSearchOutput(true);
-        checkSingleIndex(true);
+        checkSingleIndex(true, false);
         checkSingleIndexSearchTagDuplication();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
@@ -128,7 +129,7 @@ public class TestSearch extends JavadocTester {
                 "-use", "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(true);
-        checkSingleIndex(true);
+        checkSingleIndex(true, true);
         checkSingleIndexSearchTagDuplication();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
@@ -280,7 +281,9 @@ public class TestSearch extends JavadocTester {
                 "<div class=\"fixedNav\">");
     }
 
-    void checkSingleIndex(boolean expectedOutput) {
+    void checkSingleIndex(boolean expectedOutput, boolean html5) {
+        String html_span_see_span = html5 ? "html%3Cspan%3Esee%3C/span%3E" : "html-span-see-/span-";
+
         // Test for search tags markup in index file.
         checkOutput("index-all.html", expectedOutput,
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg/package-summary.html#phrasewithspaces\">"
@@ -313,7 +316,7 @@ public class TestSearch extends JavadocTester {
                 + "#nested%7B@indexnested_tag_test%7D\">nested {@index nested_tag_test}</a></span> - "
                 + "Search tag in pkg.AnotherClass.ModalExclusionType.NO_EXCLUDE</dt>",
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg/AnotherClass.ModalExclusionType.html"
-                + "#html-span-see-/span-\">html &lt;span&gt; see &lt;/span&gt;</a></span> - Search "
+                + "#" + html_span_see_span + "\">html &lt;span&gt; see &lt;/span&gt;</a></span> - Search "
                 + "tag in pkg.AnotherClass.ModalExclusionType.APPLICATION_EXCLUDE</dt>",
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg/AnotherClass.html#quoted\">quoted</a>"
                 + "</span> - Search tag in pkg.AnotherClass.CONSTANT1</dt>",

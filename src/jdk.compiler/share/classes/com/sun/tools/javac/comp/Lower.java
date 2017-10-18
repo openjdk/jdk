@@ -308,8 +308,8 @@ public class Lower extends TreeTranslator {
         void visitSymbol(Symbol _sym) {
             Symbol sym = _sym;
             if (sym.kind == VAR || sym.kind == MTH) {
-                while (sym != null && sym.owner != owner)
-                    sym = proxies.findFirst(proxyName(sym.name));
+                if (sym != null && sym.owner != owner)
+                    sym = proxies.get(sym);
                 if (sym != null && sym.owner == owner) {
                     VarSymbol v = (VarSymbol)sym;
                     if (v.getConstValue() == null) {
@@ -1084,7 +1084,7 @@ public class Lower extends TreeTranslator {
                 return makeLit(sym.type, cv);
             }
             // Otherwise replace the variable by its proxy.
-            sym = proxies.findFirst(proxyName(sym.name));
+            sym = proxies.get(sym);
             Assert.check(sym != null && (sym.flags_field & FINAL) != 0);
             tree = make.at(tree.pos).Ident(sym);
         }
@@ -1359,14 +1359,12 @@ public class Lower extends TreeTranslator {
  * Free variables proxies and this$n
  *************************************************************************/
 
-    /** A scope containing all free variable proxies for currently translated
-     *  class, as well as its this$n symbol (if needed).
-     *  Proxy scopes are nested in the same way classes are.
-     *  Inside a constructor, proxies and any this$n symbol are duplicated
-     *  in an additional innermost scope, where they represent the constructor
-     *  parameters.
+    /** A map which allows to retrieve the translated proxy variable for any given symbol of an
+     *  enclosing scope that is accessed (the accessed symbol could be the synthetic 'this$n' symbol).
+     *  Inside a constructor, the map temporarily overrides entries corresponding to proxies and any
+     *  'this$n' symbols, where they represent the constructor parameters.
      */
-    WriteableScope proxies;
+    Map<Symbol, Symbol> proxies;
 
     /** A scope containing all unnamed resource variables/saved
      *  exception variables for translated TWR blocks
@@ -1383,8 +1381,12 @@ public class Lower extends TreeTranslator {
 
     /** The name of a free variable proxy.
      */
-    Name proxyName(Name name) {
-        return names.fromString("val" + target.syntheticNameChar() + name);
+    Name proxyName(Name name, int index) {
+        Name proxyName = names.fromString("val" + target.syntheticNameChar() + name);
+        if (index > 0) {
+            proxyName = proxyName.append(names.fromString("" + target.syntheticNameChar() + index));
+        }
+        return proxyName;
     }
 
     /** Proxy definitions for all free variables in given list, in reverse order.
@@ -1400,11 +1402,17 @@ public class Lower extends TreeTranslator {
             long additionalFlags) {
         long flags = FINAL | SYNTHETIC | additionalFlags;
         List<JCVariableDecl> defs = List.nil();
+        Set<Name> proxyNames = new HashSet<>();
         for (List<VarSymbol> l = freevars; l.nonEmpty(); l = l.tail) {
             VarSymbol v = l.head;
+            int index = 0;
+            Name proxyName;
+            do {
+                proxyName = proxyName(v.name, index++);
+            } while (!proxyNames.add(proxyName));
             VarSymbol proxy = new VarSymbol(
-                flags, proxyName(v.name), v.erasure(types), owner);
-            proxies.enter(proxy);
+                flags, proxyName, v.erasure(types), owner);
+            proxies.put(v, proxy);
             JCVariableDecl vd = make.at(pos).VarDef(proxy, null);
             vd.vartype = access(vd.vartype);
             defs = defs.prepend(vd);
@@ -1843,11 +1851,8 @@ public class Lower extends TreeTranslator {
     /** Return tree simulating the assignment {@code this.name = name}, where
      *  name is the name of a free variable.
      */
-    JCStatement initField(int pos, Name name) {
-        Iterator<Symbol> it = proxies.getSymbolsByName(name).iterator();
-        Symbol rhs = it.next();
+    JCStatement initField(int pos, Symbol rhs, Symbol lhs) {
         Assert.check(rhs.owner.kind == MTH);
-        Symbol lhs = it.next();
         Assert.check(rhs.owner.owner == lhs.owner);
         make.at(pos);
         return
@@ -2207,7 +2212,8 @@ public class Lower extends TreeTranslator {
 
         classdefs.put(currentClass, tree);
 
-        proxies = proxies.dup(currentClass);
+        Map<Symbol, Symbol> prevProxies = proxies;
+        proxies = new HashMap<>(proxies);
         List<VarSymbol> prevOuterThisStack = outerThisStack;
 
         // If this is an enum definition
@@ -2270,7 +2276,7 @@ public class Lower extends TreeTranslator {
             enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
         }
 
-        proxies = proxies.leave();
+        proxies = prevProxies;
         outerThisStack = prevOuterThisStack;
 
         // Append translated tree to `translated' queue.
@@ -2488,7 +2494,8 @@ public class Lower extends TreeTranslator {
 
             // Push a new proxy scope for constructor parameters.
             // and create definitions for any this$n and proxy parameters.
-            proxies = proxies.dup(m);
+            Map<Symbol, Symbol> prevProxies = proxies;
+            proxies = new HashMap<>(proxies);
             List<VarSymbol> prevOuterThisStack = outerThisStack;
             List<VarSymbol> fvs = freevars(currentClass);
             JCVariableDecl otdef = null;
@@ -2523,13 +2530,12 @@ public class Lower extends TreeTranslator {
             if (fvs.nonEmpty()) {
                 List<Type> addedargtypes = List.nil();
                 for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
-                    final Name pName = proxyName(l.head.name);
                     m.capturedLocals =
                         m.capturedLocals.prepend((VarSymbol)
-                                                (proxies.findFirst(pName)));
+                                                (proxies.get(l.head)));
                     if (TreeInfo.isInitialConstructor(tree)) {
                         added = added.prepend(
-                          initField(tree.body.pos, pName));
+                          initField(tree.body.pos, proxies.get(l.head), prevProxies.get(l.head)));
                     }
                     addedargtypes = addedargtypes.prepend(l.head.erasure(types));
                 }
@@ -2547,7 +2553,7 @@ public class Lower extends TreeTranslator {
             }
 
             // pop local variables from proxy stack
-            proxies = proxies.leave();
+            proxies = prevProxies;
 
             // recursively translate following local statements and
             // combine with this- or super-call
@@ -3714,7 +3720,7 @@ public class Lower extends TreeTranslator {
             classdefs = new HashMap<>();
             actualSymbols = new HashMap<>();
             freevarCache = new HashMap<>();
-            proxies = WriteableScope.create(syms.noSymbol);
+            proxies = new HashMap<>();
             twrVars = WriteableScope.create(syms.noSymbol);
             outerThisStack = List.nil();
             accessNums = new HashMap<>();

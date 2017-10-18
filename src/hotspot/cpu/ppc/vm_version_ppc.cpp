@@ -149,8 +149,7 @@ void VM_Version::initialize() {
     print_features();
   }
 
-  // PPC64 supports 8-byte compare-exchange operations (see
-  // Atomic::cmpxchg and StubGenerator::generate_atomic_cmpxchg_ptr)
+  // PPC64 supports 8-byte compare-exchange operations (see Atomic::cmpxchg)
   // and 'atomic long memory ops' (see Unsafe_GetLongVolatile).
   _supports_cx8 = true;
 

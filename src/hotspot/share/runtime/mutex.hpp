@@ -67,13 +67,6 @@ union SplitWord {   // full-word with separately addressable LSB
   volatile jbyte Bytes [sizeof(intptr_t)] ;
 } ;
 
-// Endian-ness ... index of least-significant byte in SplitWord.Bytes[]
-#ifdef VM_LITTLE_ENDIAN
- #define _LSBINDEX 0
-#else
- #define _LSBINDEX (sizeof(intptr_t)-1)
-#endif
-
 class ParkEvent ;
 
 // See orderAccess.hpp.  We assume throughout the VM that mutex lock and
@@ -128,7 +121,6 @@ class Monitor : public CHeapObj<mtInternal> {
 
  protected:                              // Monitor-Mutex metadata
   SplitWord _LockWord ;                  // Contention queue (cxq) colocated with Lock-byte
-  enum LockWordBits { _LBIT=1 } ;
   Thread * volatile _owner;              // The owner of the lock
                                          // Consider sequestering _owner on its own $line
                                          // to aid future synchronization mechanisms.

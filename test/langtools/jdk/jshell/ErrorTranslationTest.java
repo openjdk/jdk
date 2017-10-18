@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8188225
  * @summary Tests for shell error translation
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -56,6 +57,13 @@ public class ErrorTranslationTest extends ReplToolTesting {
                 a -> assertDiagnostic(a, "static void f();", newExpectedDiagnostic(0, 16, 0, -1, -1, Diagnostic.Kind.ERROR)),
                 a -> assertDiagnostic(a, "synchronized void f();", newExpectedDiagnostic(0, 12, 0, -1, -1, Diagnostic.Kind.ERROR)),
                 a -> assertDiagnostic(a, "default void f();", newExpectedDiagnostic(0, 7, 0, -1, -1, Diagnostic.Kind.ERROR))
+        );
+    }
+
+    public void testlvtiErrors() {
+        test(
+                a -> assertDiagnostic(a, "var broken = () -> {};", newExpectedDiagnostic(0, 22, 0, -1, -1, Diagnostic.Kind.ERROR)),
+                a -> assertDiagnostic(a, "void t () { var broken = () -> {}; }", newExpectedDiagnostic(12, 34, 0, -1, -1, Diagnostic.Kind.ERROR))
         );
     }
 
@@ -117,19 +125,16 @@ public class ErrorTranslationTest extends ReplToolTesting {
             }
             String kind = getKind(expectedDiagnostic.getKind());
             assertEquals(lines[0], kind);
-            String source;
-            String markingLine;
-            switch (expectedDiagnostic.getKind()) {
-                case ERROR:
-                case WARNING:
-                    source = lines[2];
-                    markingLine = lines[3];
-                    break;
-                default:
-                    throw new AssertionError("Unsupported diagnostic kind: " + expectedDiagnostic.getKind());
+            boolean found = false;
+            for (int i = 0; i < lines.length; i++) {
+                if (lines[i].endsWith(expectedSource)) {
+                    assertEquals(lines[i + 1], expectedMarkingLine, "Input: " + expectedSource + ", marking line: ");
+                    found = true;
+                }
             }
-            assertTrue(source.endsWith(expectedSource), "Expected: " + expectedSource + ", found: " + source);
-            assertEquals(markingLine, expectedMarkingLine, "Input: " + expectedSource + ", marking line: ");
+            if (!found) {
+                throw new AssertionError("Did not find: " + expectedSource + " in: " + s);
+            }
         };
     }
 

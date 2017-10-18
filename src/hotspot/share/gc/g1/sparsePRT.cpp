@@ -292,9 +292,7 @@ void SparsePRT::add_to_expanded_list(SparsePRT* sprt) {
   SparsePRT* hd = _head_expanded_list;
   while (true) {
     sprt->_next_expanded = hd;
-    SparsePRT* res =
-      (SparsePRT*)
-      Atomic::cmpxchg_ptr(sprt, &_head_expanded_list, hd);
+    SparsePRT* res = Atomic::cmpxchg(sprt, &_head_expanded_list, hd);
     if (res == hd) return;
     else hd = res;
   }
@@ -305,9 +303,7 @@ SparsePRT* SparsePRT::get_from_expanded_list() {
   SparsePRT* hd = _head_expanded_list;
   while (hd != NULL) {
     SparsePRT* next = hd->next_expanded();
-    SparsePRT* res =
-      (SparsePRT*)
-      Atomic::cmpxchg_ptr(next, &_head_expanded_list, hd);
+    SparsePRT* res = Atomic::cmpxchg(next, &_head_expanded_list, hd);
     if (res == hd) {
       hd->set_next_expanded(NULL);
       return hd;
