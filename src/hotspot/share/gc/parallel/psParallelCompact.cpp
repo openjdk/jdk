@@ -52,6 +52,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -2118,6 +2119,11 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     pt.print_all_references();
   }
 
+  {
+    GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
+    WeakProcessor::weak_oops_do(is_alive_closure(), &mark_and_push_closure, &follow_stack_closure);
+  }
+
   // This is the point where the entire marking should have completed.
   assert(cm->marking_stacks_empty(), "Marking should have completed");
 
@@ -2170,8 +2176,7 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
-  // Global (weak) JNI handles
-  JNIHandles::weak_oops_do(&oop_closure);
+  WeakProcessor::oops_do(&oop_closure);
 
   CodeBlobToOopClosure adjust_from_blobs(&oop_closure, CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);

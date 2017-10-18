@@ -55,6 +55,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
@@ -5222,6 +5223,11 @@ void CMSCollector::refProcessingWork() {
     }
     _gc_tracer_cm->report_gc_reference_stats(stats);
     pt.print_all_references();
+  }
+
+  {
+    GCTraceTime(Debug, gc, phases) t("Weak Processing", _gc_timer_cm);
+    WeakProcessor::weak_oops_do(&_is_alive_closure, &cmsKeepAliveClosure, &cmsDrainMarkingStackClosure);
   }
 
   // This is the point where the entire marking should have completed.
