@@ -42,6 +42,7 @@
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
@@ -652,7 +653,7 @@ void GenCollectedHeap::full_process_roots(StrongRootsScope* scope,
 }
 
 void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
-  JNIHandles::weak_oops_do(root_closure);
+  WeakProcessor::oops_do(root_closure);
   _young_gen->ref_processor()->weak_oops_do(root_closure);
   _old_gen->ref_processor()->weak_oops_do(root_closure);
 }

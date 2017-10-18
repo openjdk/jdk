@@ -246,10 +246,6 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
                                   AbstractRefProcTaskExecutor*  task_executor,
                                   ReferenceProcessorPhaseTimes* phase_times);
 
-  void process_phaseJNI(BoolObjectClosure* is_alive,
-                        OopClosure*        keep_alive,
-                        VoidClosure*       complete_gc);
-
   // Work methods used by the method process_discovered_reflist
   // Phase1: keep alive all those referents that are otherwise
   // dead but which must be kept alive by policy (and their closure).
@@ -340,9 +336,6 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
                                         HeapWord* discovered_addr);
 
   void clear_discovered_references(DiscoveredList& refs_list);
-
-  // Calculate the number of jni handles.
-  size_t count_jni_refs();
 
   void log_reflist_counts(DiscoveredList ref_lists[], uint active_length, size_t total_count) PRODUCT_RETURN;
 
