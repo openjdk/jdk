@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
-#include "gc/g1/suspendibleThreadSet.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "runtime/mutexLocker.hpp"
 
 G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() :
