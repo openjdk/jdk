@@ -26,7 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1CardLiveData.inline.hpp"
-#include "gc/g1/suspendibleThreadSet.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
