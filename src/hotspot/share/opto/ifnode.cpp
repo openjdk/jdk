@@ -477,6 +477,9 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
 // if this IfNode follows a range check pattern return the projection
 // for the failed path
 ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
+  if (outcnt() != 2) {
+    return NULL;
+  }
   Node* b = in(1);
   if (b == NULL || !b->is_Bool())  return NULL;
   BoolNode* bn = b->as_Bool();
