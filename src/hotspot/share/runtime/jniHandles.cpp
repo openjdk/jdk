@@ -27,7 +27,6 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
@@ -424,12 +423,6 @@ void JNIHandleBlock::weak_oops_do(BoolObjectClosure* is_alive,
       break;
     }
   }
-
-  /*
-   * JVMTI data structures may also contain weak oops.  The iteration of them
-   * is placed here so that we don't need to add it to each of the collectors.
-   */
-  JvmtiExport::weak_oops_do(is_alive, f);
 }
 
 

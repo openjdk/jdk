@@ -41,6 +41,7 @@
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -657,6 +658,8 @@ void DefNewGeneration::collect(bool   full,
   gc_tracer.report_gc_reference_stats(stats);
   gc_tracer.report_tenuring_threshold(tenuring_threshold());
   pt.print_all_references();
+
+  WeakProcessor::weak_oops_do(&is_alive, &keep_alive, &evacuate_followers);
 
   if (!_promotion_failed) {
     // Swap the survivor spaces.

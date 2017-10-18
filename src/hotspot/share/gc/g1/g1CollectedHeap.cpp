@@ -57,7 +57,6 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
-#include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -68,8 +67,10 @@
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -4128,17 +4129,6 @@ public:
   }
 };
 
-void G1CollectedHeap::process_weak_jni_handles() {
-  double ref_proc_start = os::elapsedTime();
-
-  G1STWIsAliveClosure is_alive(this);
-  G1KeepAliveClosure keep_alive(this);
-  JNIHandles::weak_oops_do(&is_alive, &keep_alive);
-
-  double ref_proc_time = os::elapsedTime() - ref_proc_start;
-  g1_policy()->phase_times()->record_ref_proc_time(ref_proc_time * 1000.0);
-}
-
 void G1CollectedHeap::preserve_cm_referents(G1ParScanThreadStateSet* per_thread_states) {
   // Any reference objects, in the collection set, that were 'discovered'
   // by the CM ref processor should have already been copied (either by
@@ -4369,14 +4359,23 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
     process_discovered_references(per_thread_states);
   } else {
     ref_processor_stw()->verify_no_references_recorded();
-    process_weak_jni_handles();
+  }
+
+  G1STWIsAliveClosure is_alive(this);
+  G1KeepAliveClosure keep_alive(this);
+
+  {
+    double start = os::elapsedTime();
+
+    WeakProcessor::weak_oops_do(&is_alive, &keep_alive);
+
+    double time_ms = (os::elapsedTime() - start) * 1000.0;
+    g1_policy()->phase_times()->record_ref_proc_time(time_ms);
   }
 
   if (G1StringDedup::is_enabled()) {
     double fixup_start = os::elapsedTime();
 
-    G1STWIsAliveClosure is_alive(this);
-    G1KeepAliveClosure keep_alive(this);
     G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive, true, g1_policy()->phase_times());
 
     double fixup_time_ms = (os::elapsedTime() - fixup_start) * 1000.0;
