@@ -46,6 +46,7 @@
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -998,6 +999,8 @@ void ParNewGeneration::collect(bool   full,
   _gc_tracer.report_gc_reference_stats(stats);
   _gc_tracer.report_tenuring_threshold(tenuring_threshold());
   pt.print_all_references();
+
+  WeakProcessor::weak_oops_do(&is_alive, &keep_alive, &evacuate_followers);
 
   if (!promotion_failed()) {
     // Swap the survivor spaces.

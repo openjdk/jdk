@@ -48,6 +48,7 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
@@ -1603,6 +1604,23 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   // Is alive closure.
   G1CMIsAliveClosure g1_is_alive(g1h);
 
+  // Instances of the 'Keep Alive' and 'Complete GC' closures used
+  // in serial reference processing. Note these closures are also
+  // used for serially processing (by the the current thread) the
+  // JNI references during parallel reference processing.
+  //
+  // These closures do not need to synchronize with the worker
+  // threads involved in parallel reference processing as these
+  // instances are executed serially by the current thread (e.g.
+  // reference processing is not multi-threaded and is thus
+  // performed by the current thread instead of a gang worker).
+  //
+  // The gang tasks involved in parallel reference processing create
+  // their own instances of these closures, which do their own
+  // synchronization among themselves.
+  G1CMKeepAliveAndDrainClosure g1_keep_alive(this, task(0), true /* is_serial */);
+  G1CMDrainMarkingStackClosure g1_drain_mark_stack(this, task(0), true /* is_serial */);
+
   // Inner scope to exclude the cleaning of the string and symbol
   // tables from the displayed time.
   {
@@ -1616,23 +1634,6 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     // Set the soft reference policy
     rp->setup_policy(clear_all_soft_refs);
     assert(_global_mark_stack.is_empty(), "mark stack should be empty");
-
-    // Instances of the 'Keep Alive' and 'Complete GC' closures used
-    // in serial reference processing. Note these closures are also
-    // used for serially processing (by the the current thread) the
-    // JNI references during parallel reference processing.
-    //
-    // These closures do not need to synchronize with the worker
-    // threads involved in parallel reference processing as these
-    // instances are executed serially by the current thread (e.g.
-    // reference processing is not multi-threaded and is thus
-    // performed by the current thread instead of a gang worker).
-    //
-    // The gang tasks involved in parallel reference processing create
-    // their own instances of these closures, which do their own
-    // synchronization among themselves.
-    G1CMKeepAliveAndDrainClosure g1_keep_alive(this, task(0), true /* is_serial */);
-    G1CMDrainMarkingStackClosure g1_drain_mark_stack(this, task(0), true /* is_serial */);
 
     // We need at least one active thread. If reference processing
     // is not multi-threaded we use the current (VMThread) thread,
@@ -1685,6 +1686,11 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     pt.print_enqueue_phase();
 
     assert(!rp->discovery_enabled(), "Post condition");
+  }
+
+  {
+    GCTraceTime(Debug, gc, phases) debug("Weak Processing", _gc_timer_cm);
+    WeakProcessor::weak_oops_do(&g1_is_alive, &g1_keep_alive, &g1_drain_mark_stack);
   }
 
   if (has_overflown()) {
