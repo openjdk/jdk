@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -783,7 +783,10 @@ getModuleObject(jvmtiEnv*               jvmti,
     int len = (last_slash == NULL) ? 0 : (int)(last_slash - cname);
     char* pkg_name_buf = (char*)malloc(len + 1);
 
-    jplis_assert_msg(pkg_name_buf != NULL, "OOM error in native tmp buffer allocation");
+    if (pkg_name_buf == NULL) {
+        fprintf(stderr, "OOM error in native tmp buffer allocation");
+        return NULL;
+    }
     if (last_slash != NULL) {
         strncpy(pkg_name_buf, cname, len);
     }
