@@ -585,9 +585,6 @@ A short summary follows:
 	-plp, --print-lower-parse (Print the parse tree after lowering.)
 		param: [true|false]   default: false
 
-	--print-mem-usage (Print memory usage of IR after each compile stage.)
-		param: [true|false]   default: false
-
 	--print-no-newline (Print function will not print new line char.)
 		param: [true|false]   default: false
 
