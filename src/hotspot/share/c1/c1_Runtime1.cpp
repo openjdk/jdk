@@ -1372,8 +1372,6 @@ template <class T> int obj_arraycopy_work(oopDesc* src, T* src_addr,
   // barrier. The assert will fail if this is not the case.
   // Note that we use the non-virtual inlineable variant of write_ref_array.
   BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
-  assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
   if (src == dst) {
     // same object, no check
     bs->write_ref_array_pre(dst_addr, length);
