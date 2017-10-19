@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8173914
+ * @bug 8173914 8188035
  * @summary JavaFileManager.setLocationForModule
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -42,8 +42,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
@@ -112,13 +114,34 @@ public class SetLocationForModule extends TestRunner {
             checkEqual("override setting 1",
                     fm.getLocationAsPaths(m), override1);
 
+            checkEqual("override setting 1b",
+                       fm.getLocationAsPaths(fm.listLocationsForModules(locn).iterator().next().iterator().next()),
+                       override1);
+
+            try (StandardJavaFileManager fm2 = comp.getStandardFileManager(null, null, null)) {
+                fm2.setLocationForModule(locn, "m", List.of(override1));
+                checkEqual("override setting 2",
+                           fm2.getLocationAsPaths(m), override1);
+
+                checkEqual("override setting 2b",
+                           fm2.getLocationAsPaths(fm2.listLocationsForModules(locn).iterator().next().iterator().next()),
+                           override1);
+            }
+
             Path override2 = Files.createDirectories(base.resolve("override2"));
             fm.setLocationFromPaths(m, List.of(override2));
-            checkEqual("override setting 2",
+            checkEqual("override setting 3",
                     fm.getLocationAsPaths(m), override2);
 
             Path modules2 = Files.createDirectories(base.resolve("modules2"));
+            new JavacTask(tb)
+                    .outdir(modules2)
+                    .options("--module-source-path", src.toString())
+                    .files(tb.findJavaFiles(src))
+                    .run();
             fm.setLocationFromPaths(locn, List.of(modules2));
+
+            m = fm.getLocationForModule(locn, "m");
 
             checkEqual("updated setting",
                     fm.getLocationAsPaths(m), modules2.resolve("m"));
@@ -147,6 +170,10 @@ public class SetLocationForModule extends TestRunner {
             checkEqual("override setting 1",
                     fm.getLocationAsPaths(m), override1);
 
+            checkEqual("override setting 1b",
+                       fm.getLocationAsPaths(fm.listLocationsForModules(locn).iterator().next().iterator().next()),
+                       override1);
+
             Path override2 = Files.createDirectories(base.resolve("override2"));
             tb.writeJavaFiles(override2, "module m { }");
             fm.setLocationFromPaths(m, List.of(override2));
@@ -158,6 +185,8 @@ public class SetLocationForModule extends TestRunner {
             tb.writeJavaFiles(src2_m, "module m { }");
 //            fm.setLocationFromPaths(locn, List.of(src2));
             fm.handleOption("--module-source-path", List.of(src2.toString()).iterator());
+
+            m = fm.getLocationForModule(locn, "m");
 
             checkEqual("updated setting",
                     fm.getLocationAsPaths(m), src2.resolve("m"));
@@ -181,6 +210,10 @@ public class SetLocationForModule extends TestRunner {
             checkEqual("override setting 1",
                     fm.getLocationAsPaths(m), override1);
 
+            checkEqual("override setting 1b",
+                       fm.getLocationAsPaths(fm.listLocationsForModules(locn).iterator().next().iterator().next()),
+                       override1);
+
             Path override2 = Files.createDirectories(base.resolve("override2"));
             fm.setLocationFromPaths(m, List.of(override2));
             checkEqual("override setting 2",
@@ -188,6 +221,8 @@ public class SetLocationForModule extends TestRunner {
 
             Path out2 = Files.createDirectories(base.resolve("out2"));
             fm.setLocationFromPaths(locn, List.of(out2));
+
+            m = fm.getLocationForModule(locn, "m");
 
             checkEqual("updated setting",
                     fm.getLocationAsPaths(m), out2.resolve("m"));
@@ -259,11 +294,31 @@ public class SetLocationForModule extends TestRunner {
             checkEqual("override setting 1",
                     fm.getLocationAsPaths(javaCompiler), override1);
 
+            checkEqual("override setting 1b",
+                       fm.getLocationAsPaths(findLocation(fm, fm.listLocationsForModules(locn), "java.compiler")),
+                       override1);
+
             Path override2 = Files.createDirectories(base.resolve("override2"));
             fm.setLocationFromPaths(javaCompiler, List.of(override2));
             checkEqual("override setting 2",
                     fm.getLocationAsPaths(javaCompiler), override2);
         }
+    }
+
+    private Location findLocation(JavaFileManager fm, Iterable<Set<Location>> locations, String moduleName) {
+        for (Set<Location> locs : locations) {
+            for (Location loc : locs) {
+                try {
+                    if (moduleName.equals(fm.inferModuleName(loc))) {
+                        return loc;
+                    }
+                } catch (IOException ex) {
+                    throw new IllegalStateException(ex);
+                }
+            }
+        }
+
+        throw new IllegalStateException();
     }
 
     @Test
@@ -302,7 +357,7 @@ public class SetLocationForModule extends TestRunner {
     void checkEqual(String message, Iterable<? extends Path> found, Path... expect) {
         List<Path> fList = asList(found);
         List<Path> eList = List.of(expect);
-        if (!Objects.equals(fList, fList)) {
+        if (!Objects.equals(fList, eList)) {
             error(message + ": lists not equal\n"
                     + "expect: " + eList + "\n"
                     + " found: " + fList);
