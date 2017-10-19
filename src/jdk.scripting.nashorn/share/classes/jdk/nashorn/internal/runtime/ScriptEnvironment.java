@@ -189,9 +189,6 @@ public final class ScriptEnvironment {
     /** List of functions to write to the print code dir, optional */
     public final String _print_code_func;
 
-    /** Print memory usage for IR after each phase */
-    public final boolean _print_mem_usage;
-
     /** Print function will no print newline characters */
     public final boolean _print_no_newline;
 
@@ -301,7 +298,6 @@ public final class ScriptEnvironment {
         _print_ast            = options.getBoolean("print.ast");
         _print_lower_ast      = options.getBoolean("print.lower.ast");
         _print_code           = options.getString("print.code") != null;
-        _print_mem_usage      = options.getBoolean("print.mem.usage");
         _print_no_newline     = options.getBoolean("print.no.newline");
         _print_parse          = options.getBoolean("print.parse");
         _print_lower_parse    = options.getBoolean("print.lower.parse");
