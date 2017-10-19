@@ -207,6 +207,7 @@ java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-
 # jdk_security
 
 sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
+sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8186098 linux-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
