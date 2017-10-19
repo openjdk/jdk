@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jni.h"
 #include "classfile/classFileStream.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
@@ -30,7 +31,6 @@
 #include "oops/fieldStreams.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jni.h"
 #include "prims/jvm.h"
 #include "prims/unsafe.hpp"
 #include "runtime/atomic.hpp"
