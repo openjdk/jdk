@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jni.h"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -51,7 +52,6 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
-#include "prims/jni.h"
 #include "prims/jniCheck.hpp"
 #include "prims/jniExport.hpp"
 #include "prims/jniFastGetField.hpp"
