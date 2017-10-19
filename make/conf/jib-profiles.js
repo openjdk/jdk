@@ -381,6 +381,11 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
+    common.boot_jdk_version = "9";
+    common.boot_jdk_home = input.get("boot_jdk", "home_path") + "/jdk-"
+        + common.boot_jdk_version
+        + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
+
     return common;
 };
 
@@ -1008,10 +1013,6 @@ var getJibProfilesDependencies = function (input, common) {
         ? input.target_os + "_x64"
         : input.target_platform);
 
-    var boot_jdk_version = "9";
-    var boot_jdk_home = input.get("boot_jdk", "home_path") + "/jdk-"
-        + boot_jdk_version
-        + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
     var boot_jdk_platform = (input.build_os == "macosx" ? "osx" : input.build_os)
         + "-" + input.build_cpu;
 
@@ -1020,12 +1021,12 @@ var getJibProfilesDependencies = function (input, common) {
         boot_jdk: {
             server: "jpg",
             product: "jdk",
-            version: boot_jdk_version,
+            version: common.boot_jdk_version,
             build_number: "181",
-            file: "bundles/" + boot_jdk_platform + "/jdk-" + boot_jdk_version + "_"
+            file: "bundles/" + boot_jdk_platform + "/jdk-" + common.boot_jdk_version + "_"
                 + boot_jdk_platform + "_bin.tar.gz",
-            configure_args: "--with-boot-jdk=" + boot_jdk_home,
-            environment_path: boot_jdk_home + "/bin"
+            configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
+            environment_path: common.boot_jdk_home + "/bin"
         },
 
         devkit: {
