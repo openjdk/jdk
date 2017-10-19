@@ -38,7 +38,6 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -54,8 +53,6 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.Optimistic;
-import jdk.nashorn.internal.ir.debug.ClassHistogramElement;
-import jdk.nashorn.internal.ir.debug.ObjectSizeCalculator;
 import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
@@ -668,10 +665,6 @@ public final class Compiler implements Loggable {
 
             log.fine(phase, " done for function ", quote(name));
 
-            if (env._print_mem_usage) {
-                printMemoryUsage(functionNode, phase.toString());
-            }
-
             time += (env.isTimingEnabled() ? phase.getEndTime() - phase.getStartTime() : 0L);
         }
 
@@ -846,46 +839,4 @@ public final class Compiler implements Loggable {
         return invalidatedProgramPoints.get(programPoint);
     }
 
-    private void printMemoryUsage(final FunctionNode functionNode, final String phaseName) {
-        if (!log.isEnabled()) {
-            return;
-        }
-
-        log.info(phaseName, "finished. Doing IR size calculation...");
-
-        final ObjectSizeCalculator osc = new ObjectSizeCalculator(ObjectSizeCalculator.getEffectiveMemoryLayoutSpecification());
-        osc.calculateObjectSize(functionNode);
-
-        final List<ClassHistogramElement> list      = osc.getClassHistogram();
-        final StringBuilder               sb        = new StringBuilder();
-        final long                        totalSize = osc.calculateObjectSize(functionNode);
-
-        sb.append(phaseName).
-        append(" Total size = ").
-        append(totalSize / 1024 / 1024).
-        append("MB");
-        log.info(sb);
-
-        Collections.sort(list, new Comparator<ClassHistogramElement>() {
-            @Override
-            public int compare(final ClassHistogramElement o1, final ClassHistogramElement o2) {
-                final long diff = o1.getBytes() - o2.getBytes();
-                if (diff < 0) {
-                    return 1;
-                } else if (diff > 0) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-            }
-        });
-        for (final ClassHistogramElement e : list) {
-            final String line = String.format("    %-48s %10d bytes (%8d instances)", e.getClazz(), e.getBytes(), e.getInstances());
-            log.info(line);
-            if (e.getBytes() < totalSize / 200) {
-                log.info("    ...");
-                break; // never mind, so little memory anyway
-            }
-        }
-    }
 }
