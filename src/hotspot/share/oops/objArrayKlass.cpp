@@ -226,8 +226,6 @@ template <class T> void ObjArrayKlass::do_copy(arrayOop s, T* src,
   // For performance reasons, we assume we are that the write barrier we
   // are using has optimized modes for arrays of references.  At least one
   // of the asserts below will fail if this is not the case.
-  assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
-  assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
 
   if (s == d) {
     // since source and destination are equal we do not need conversion checks.

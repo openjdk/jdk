@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,15 @@ class CardTableModRefBS: public ModRefBarrierSet {
   size_t          _byte_map_size;    // in bytes
   jbyte*          _byte_map;         // the card marking array
 
+  // Some barrier sets create tables whose elements correspond to parts of
+  // the heap; the CardTableModRefBS is an example.  Such barrier sets will
+  // normally reserve space for such tables, and commit parts of the table
+  // "covering" parts of the heap that are committed. At most one covered
+  // region per generation is needed.
+  static const int _max_covered_regions = 2;
+
   int _cur_covered_regions;
+
   // The covered regions should be in address order.
   MemRegion* _covered;
   // The committed regions correspond one-to-one to the covered regions.
@@ -89,7 +97,6 @@ class CardTableModRefBS: public ModRefBarrierSet {
   // uncommit the MemRegion for that page.
   MemRegion _guard_region;
 
- protected:
   inline size_t compute_byte_map_size();
 
   // Finds and return the index of the region, if any, to which the given
@@ -135,7 +142,6 @@ class CardTableModRefBS: public ModRefBarrierSet {
     return byte_for(p) + 1;
   }
 
- protected:
   // Dirty the bytes corresponding to "mr" (not all of which must be
   // covered.)
   void dirty_MemRegion(MemRegion mr);
@@ -144,7 +150,7 @@ class CardTableModRefBS: public ModRefBarrierSet {
   // all of which must be covered.)
   void clear_MemRegion(MemRegion mr);
 
-public:
+ public:
   // Constants
   enum SomePublicConstants {
     card_shift                  = 9,
@@ -163,8 +169,6 @@ public:
 
   // *** Barrier set functions.
 
-  bool has_write_ref_pre_barrier() { return false; }
-
   // Initialization utilities; covered_words is the size of the covered region
   // in, um, words.
   inline size_t cards_required(size_t covered_words) {
@@ -173,8 +177,7 @@ public:
     return words / card_size_in_words + 1;
   }
 
-protected:
-
+ protected:
   CardTableModRefBS(MemRegion whole_heap, const BarrierSet::FakeRtti& fake_rtti);
   ~CardTableModRefBS();
 
@@ -185,29 +188,18 @@ protected:
 
   void write_ref_field_work(oop obj, size_t offset, oop newVal);
   virtual void write_ref_field_work(void* field, oop newVal, bool release);
-public:
 
-  bool has_write_ref_array_opt() { return true; }
-  bool has_write_region_opt() { return true; }
-
-  inline void inline_write_region(MemRegion mr) {
-    dirty_MemRegion(mr);
-  }
-protected:
+ protected:
   void write_region_work(MemRegion mr) {
-    inline_write_region(mr);
-  }
-public:
-
-  inline void inline_write_ref_array(MemRegion mr) {
     dirty_MemRegion(mr);
   }
-protected:
-  void write_ref_array_work(MemRegion mr) {
-    inline_write_ref_array(mr);
-  }
-public:
 
+ protected:
+  void write_ref_array_work(MemRegion mr) {
+    dirty_MemRegion(mr);
+  }
+
+ public:
   bool is_aligned(HeapWord* addr) {
     return is_card_aligned(addr);
   }
