@@ -39,6 +39,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
+import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 
 /**
@@ -56,7 +57,7 @@ public class TransitiveDependencies {
             return ;
         }
 
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        JavaCompiler compiler = JavacTool.create();
         List<String> options = Arrays.asList("-source", "10",
                                              "-target", "10",
                                              "-proc:only",
