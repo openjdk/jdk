@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.java.swing.plaf.windows;
 
-import java.awt.*;
-import java.beans.*;
-import java.lang.ref.*;
-import javax.swing.*;
-import javax.swing.plaf.*;
+package sun.swing.plaf;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+
+import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.FontUIResource;
+
 import sun.awt.AppContext;
 
 /**
@@ -37,10 +50,7 @@ import sun.awt.AppContext;
  * <code>createValue</code>. If the underlying desktop property changes this
  * will force the UIs to update all known Frames. You can invoke
  * <code>invalidate</code> to force the value to be fetched again.
- *
  */
-// NOTE: Don't rely on this class staying in this location. It is likely
-// to move to a different package in the future.
 public class DesktopProperty implements UIDefaults.ActiveValue {
     private static final StringBuilder DESKTOP_PROPERTY_UPDATE_PENDING_KEY =
             new StringBuilder("DesktopPropertyUpdatePending");
@@ -72,7 +82,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
      * Cleans up any lingering state held by unrefeernced
      * DesktopProperties.
      */
-    static void flushUnreferencedProperties() {
+    public static void flushUnreferencedProperties() {
         WeakPCL pcl;
 
         while ((pcl = (WeakPCL)queue.poll()) != null) {
@@ -100,13 +110,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
     /**
      * Updates the UIs of all the known Frames.
      */
-    private static void updateAllUIs() {
-        // Check if the current UI is WindowsLookAndfeel and flush the XP style map.
-        // Note: Change the package test if this class is moved to a different package.
-        Class<?> uiClass = UIManager.getLookAndFeel().getClass();
-        if (uiClass.getPackage().equals(DesktopProperty.class.getPackage())) {
-            XPStyle.invalidateStyle();
-        }
+    protected void updateAllUIs() {
         Frame appFrames[] = Frame.getFrames();
         for (Frame appFrame : appFrames) {
             updateWindowUI(appFrame);
@@ -246,8 +250,6 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
     protected String getKey() {
         return key;
     }
-
-
 
     /**
      * As there is typically only one Toolkit, the PropertyChangeListener
