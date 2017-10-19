@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -39,9 +39,9 @@ import java.util.NoSuchElementException;
  */
 public class NamespaceSupport {
 
-        static final String PREFIX_XML = "xml".intern();
+    static final String PREFIX_XML = "xml".intern();
 
-        static final String PREFIX_XMLNS = "xmlns".intern();
+    static final String PREFIX_XMLNS = "xmlns".intern();
 
     /**
      * The XML Namespace ("http://www.w3.org/XML/1998/namespace"). This is
@@ -246,32 +246,32 @@ public class NamespaceSupport {
         /**
          * @see org.apache.xerces.xni.NamespaceContext#getAllPrefixes()
          */
-        public Enumeration getAllPrefixes() {
-        int count = 0;
-        if (fPrefixes.length < (fNamespace.length/2)) {
-            // resize prefix array
-            String[] prefixes = new String[fNamespaceSize];
-            fPrefixes = prefixes;
-        }
-        String prefix = null;
-        boolean unique = true;
-        for (int i = 2; i < (fNamespaceSize-2); i += 2) {
-            prefix = fNamespace[i + 2];
-            for (int k=0;k<count;k++){
-                if (fPrefixes[k]==prefix){
-                    unique = false;
-                    break;
+        public Enumeration<String> getAllPrefixes() {
+            int count = 0;
+            if (fPrefixes.length < (fNamespace.length/2)) {
+                // resize prefix array
+                String[] prefixes = new String[fNamespaceSize];
+                fPrefixes = prefixes;
+            }
+            String prefix = null;
+            boolean unique = true;
+            for (int i = 2; i < (fNamespaceSize-2); i += 2) {
+                prefix = fNamespace[i + 2];
+                for (int k=0;k<count;k++){
+                    if (fPrefixes[k]==prefix){
+                        unique = false;
+                        break;
+                    }
                 }
+                if (unique){
+                    fPrefixes[count++] = prefix;
+                }
+                unique = true;
             }
-            if (unique){
-                fPrefixes[count++] = prefix;
-            }
-            unique = true;
-        }
-                return new Prefixes(fPrefixes, count);
+            return new Prefixes(fPrefixes, count);
         }
 
-    protected final class Prefixes implements Enumeration {
+    protected final class Prefixes implements Enumeration<String> {
         private String[] prefixes;
         private int counter = 0;
         private int size = 0;
@@ -294,15 +294,15 @@ public class NamespaceSupport {
                 /**
                  * @see java.util.Enumeration#nextElement()
                  */
-                public Object nextElement() {
-            if (counter< size){
-                return fPrefixes[counter++];
-            }
-                        throw new NoSuchElementException("Illegal access to Namespace prefixes enumeration.");
+                public String nextElement() {
+                    if (counter< size){
+                        return fPrefixes[counter++];
+                    }
+                    throw new NoSuchElementException("Illegal access to Namespace prefixes enumeration.");
                 }
 
         public String toString(){
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             for (int i=0;i<size;i++){
                 buf.append(prefixes[i]);
                 buf.append(" ");

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,15 +34,14 @@ import com.sun.org.apache.xalan.internal.xsltc.runtime.output.TransletOutputHand
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;
 import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
-import com.sun.org.apache.xml.internal.serializer.ToStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -71,7 +71,7 @@ public abstract class AbstractTranslet implements Translet {
     public String  _doctypeSystem = null;
     public boolean _indent = false;
     public String  _mediaType = null;
-    public ArrayList<String> _cdata = null;
+    public List<String> _cdata = null;
     public int _indentamount = -1;
 
     public static final int FIRST_TRANSLET_VERSION = 100;
@@ -149,7 +149,7 @@ public abstract class AbstractTranslet implements Translet {
     // Parameter's stack: <tt>pbase</tt> and <tt>pframe</tt> are used
     // to denote the current parameter frame.
     protected int pbase = 0, pframe = 0;
-    protected ArrayList paramsStack = new ArrayList();
+    protected List<Object> paramsStack = new ArrayList<>();
 
     /**
      * Push a new parameter frame.
@@ -164,7 +164,7 @@ public abstract class AbstractTranslet implements Translet {
      */
     public final void popParamFrame() {
         if (pbase > 0) {
-            final int oldpbase = ((Integer)paramsStack.get(--pbase)).intValue();
+            final int oldpbase = ((Integer)paramsStack.get(--pbase));
             for (int i = pframe - 1; i >= pbase; i--) {
                 paramsStack.remove(i);
             }
@@ -716,7 +716,7 @@ public abstract class AbstractTranslet implements Translet {
 
     private Map<String, Class<?>> _auxClasses = null;
 
-    public void addAuxiliaryClass(Class auxClass) {
+    public void addAuxiliaryClass(Class<?> auxClass) {
         if (_auxClasses == null) _auxClasses = new HashMap<>();
         _auxClasses.put(auxClass.getName(), auxClass);
     }
@@ -725,7 +725,7 @@ public abstract class AbstractTranslet implements Translet {
         _auxClasses = auxClasses;
     }
 
-    public Class getAuxiliaryClass(String className) {
+    public Class<?> getAuxiliaryClass(String className) {
         if (_auxClasses == null) return null;
         return((Class)_auxClasses.get(className));
     }

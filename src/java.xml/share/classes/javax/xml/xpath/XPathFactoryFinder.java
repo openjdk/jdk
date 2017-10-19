@@ -236,7 +236,7 @@ class XPathFactoryFinder  {
      * @return Created class or <code>null</code>.
      */
     private Class<?> createClass(String className) {
-        Class clazz;
+        Class<?> clazz;
         // make sure we have access to restricted packages
         boolean internal = false;
         if (System.getSecurityManager() != null) {

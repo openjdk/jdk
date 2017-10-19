@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,9 +24,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Enumeration;
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.BranchHandle;
 import com.sun.org.apache.bcel.internal.generic.GOTO;
 import com.sun.org.apache.bcel.internal.generic.IFEQ;
@@ -37,7 +35,11 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -61,7 +63,7 @@ final class Choose extends Instruction {
      * <xsl:when> elements and default to the <xsl:otherwise> if present.
      */
     public void translate(ClassGenerator classGen, MethodGenerator methodGen) {
-        final Vector whenElements = new Vector();
+        final List<SyntaxTreeNode> whenElements = new ArrayList<>();
         Otherwise otherwise = null;
         Iterator<SyntaxTreeNode> elements = elements();
 
@@ -74,7 +76,7 @@ final class Choose extends Instruction {
             SyntaxTreeNode element = elements.next();
             // Add a When child element
             if (element instanceof When) {
-                whenElements.addElement(element);
+                whenElements.add(element);
             }
             // Add an Otherwise child element
             else if (element instanceof Otherwise) {
@@ -108,10 +110,10 @@ final class Choose extends Instruction {
         // next element will hold a handle to the beginning of next
         // When/Otherwise if test on current When fails
         BranchHandle nextElement = null;
-        Vector exitHandles = new Vector();
+        List<InstructionHandle> exitHandles = new ArrayList<>();
         InstructionHandle exit = null;
 
-        Enumeration whens = whenElements.elements();
+        Enumeration<SyntaxTreeNode> whens = Collections.enumeration(whenElements);
         while (whens.hasMoreElements()) {
             final When when = (When)whens.nextElement();
             final Expression test = when.getTest();
@@ -142,7 +144,7 @@ final class Choose extends Instruction {
             if (!when.ignore()) when.translateContents(classGen, methodGen);
 
             // goto exit after executing the body of when
-            exitHandles.addElement(il.append(new GOTO(null)));
+            exitHandles.add(il.append(new GOTO(null)));
             if (whens.hasMoreElements() || otherwise != null) {
                 nextElement = il.append(new GOTO(null));
                 test.backPatchFalseList(nextElement);
@@ -160,7 +162,7 @@ final class Choose extends Instruction {
         }
 
         // now that end is known set targets of exit gotos
-        Enumeration exitGotos = exitHandles.elements();
+        Enumeration<InstructionHandle> exitGotos = Collections.enumeration(exitHandles);
         while (exitGotos.hasMoreElements()) {
             BranchHandle gotoExit = (BranchHandle)exitGotos.nextElement();
             gotoExit.setTarget(exit);

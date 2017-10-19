@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,8 +21,6 @@
 
 package com.sun.org.apache.xerces.internal.jaxp;
 
-import java.util.HashMap;
-
 import com.sun.org.apache.xerces.internal.impl.validation.EntityState;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
@@ -33,6 +31,8 @@ import com.sun.org.apache.xerces.internal.xni.XMLString;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDFilter;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDSource;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p>This filter records which unparsed entities have been
@@ -51,7 +51,7 @@ final class UnparsedEntityHandler implements XMLDTDFilter, EntityState {
     private final ValidationManager fValidationManager;
 
     /** Map for tracking unparsed entities. */
-    private HashMap fUnparsedEntities = null;
+    private Map<String, String> fUnparsedEntities = null;
 
     UnparsedEntityHandler(ValidationManager manager) {
         fValidationManager = manager;
@@ -172,7 +172,7 @@ final class UnparsedEntityHandler implements XMLDTDFilter, EntityState {
             XMLResourceIdentifier identifier, String notation,
             Augmentations augmentations) throws XNIException {
         if (fUnparsedEntities == null) {
-            fUnparsedEntities = new HashMap();
+            fUnparsedEntities = new HashMap<>();
         }
         fUnparsedEntities.put(name, name);
         if (fDTDHandler != null) {

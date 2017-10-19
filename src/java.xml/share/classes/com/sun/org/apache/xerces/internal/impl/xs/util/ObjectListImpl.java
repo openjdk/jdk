@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,10 +21,9 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.util;
 
+import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
 import java.lang.reflect.Array;
 import java.util.AbstractList;
-
-import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
 
 /**
  * Contains a list of Objects.
@@ -32,7 +31,8 @@ import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
  * @xerces.internal
  *
  */
-public final class ObjectListImpl extends AbstractList implements ObjectList {
+@SuppressWarnings("unchecked") // method <T>toArray(T[])
+public final class ObjectListImpl extends AbstractList<Object> implements ObjectList {
 
     /**
      * An immutable empty list.
@@ -99,8 +99,8 @@ public final class ObjectListImpl extends AbstractList implements ObjectList {
 
     public Object[] toArray(Object[] a) {
         if (a.length < fLength) {
-            Class arrayClass = a.getClass();
-            Class componentType = arrayClass.getComponentType();
+            Class<?> arrayClass = a.getClass();
+            Class<?> componentType = arrayClass.getComponentType();
             a = (Object[]) Array.newInstance(componentType, fLength);
         }
         toArray0(a);

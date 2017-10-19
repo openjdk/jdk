@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,7 +28,7 @@ import com.sun.org.apache.xpath.internal.objects.XNodeSet;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.List;
 import javax.xml.namespace.QName;
 import javax.xml.xpath.XPathFunction;
 import javax.xml.xpath.XPathFunctionException;
@@ -97,7 +98,7 @@ public class JAXPExtensionsProvider implements ExtensionsProvider {
     /**
      * Execute the extension function.
      */
-    public Object extFunction(String ns, String funcName, Vector argVec,
+    public Object extFunction(String ns, String funcName, List<XObject> argVec,
         Object methodKey) throws javax.xml.transform.TransformerException {
         try {
 
@@ -128,9 +129,9 @@ public class JAXPExtensionsProvider implements ExtensionsProvider {
                 resolver.resolveFunction ( myQName, arity );
 
             // not using methodKey
-            ArrayList argList = new ArrayList( arity);
+            List<Object> argList = new ArrayList<>( arity);
             for ( int i=0; i<arity; i++ ) {
-                Object argument = argVec.elementAt( i );
+                XObject argument = argVec.get( i );
                 // XNodeSet object() returns NodeVector and not NodeList
                 // Explicitly getting NodeList by using nodelist()
                 if ( argument instanceof XNodeSet ) {
@@ -157,8 +158,7 @@ public class JAXPExtensionsProvider implements ExtensionsProvider {
     /**
      * Execute the extension function.
      */
-    public Object extFunction(FuncExtFunction extFunction,
-                              Vector argVec)
+    public Object extFunction(FuncExtFunction extFunction, List<XObject> argVec)
         throws javax.xml.transform.TransformerException {
         try {
             String namespace = extFunction.getNamespace();
@@ -172,16 +172,17 @@ public class JAXPExtensionsProvider implements ExtensionsProvider {
             // throw XPathFunctionException
             if ( extensionInvocationDisabled ) {
                 String fmsg = XSLMessages.createXPATHMessage(
-                    XPATHErrorResources.ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED,                    new Object[] { myQName.toString() } );
+                    XPATHErrorResources.ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED,
+                        new Object[] { myQName.toString() } );
                 throw new XPathFunctionException ( fmsg );
             }
 
             XPathFunction xpathFunction =
                 resolver.resolveFunction( myQName, arity );
 
-            ArrayList argList = new ArrayList( arity);
+            List<Object> argList = new ArrayList<>( arity);
             for ( int i=0; i<arity; i++ ) {
-                Object argument = argVec.elementAt( i );
+                XObject argument = argVec.get( i );
                 // XNodeSet object() returns NodeVector and not NodeList
                 // Explicitly getting NodeList by using nodelist()
                 if ( argument instanceof XNodeSet ) {

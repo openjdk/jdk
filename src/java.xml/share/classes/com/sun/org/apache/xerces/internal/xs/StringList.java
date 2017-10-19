@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,7 +27,7 @@ import java.util.List;
  *  The <code>StringList</code> is an immutable ordered collection of
  * <code>GenericString</code>.
  */
-public interface StringList extends List {
+public interface StringList extends List<String> {
     /**
      *  The number of <code>GenericString</code>s in the list. The range of
      * valid child object indices is 0 to <code>length-1</code> inclusive.

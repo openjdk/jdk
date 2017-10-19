@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,7 +36,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -156,7 +156,7 @@ public class XMLGrammarPreparser {
         if(loader == null) { // none specified!
             if(KNOWN_LOADERS.containsKey(grammarType)) {
                 // got one; just instantiate it...
-                String loaderName = (String)KNOWN_LOADERS.get(grammarType);
+                String loaderName = KNOWN_LOADERS.get(grammarType);
                 try {
                     XMLGrammarLoader gl = (XMLGrammarLoader)(ObjectFactory.newInstance(loaderName, true));
                     fLoaders.put(grammarType, gl);

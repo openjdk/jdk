@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,13 +21,10 @@
 
 package com.sun.org.apache.xpath.internal.operations;
 
-import javax.xml.transform.TransformerException;
-
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xpath.internal.Expression;
 import com.sun.org.apache.xpath.internal.ExpressionOwner;
-import com.sun.org.apache.xpath.internal.XPath;
 import com.sun.org.apache.xpath.internal.XPathContext;
 import com.sun.org.apache.xpath.internal.XPathVisitor;
 import com.sun.org.apache.xpath.internal.axes.PathComponent;
@@ -35,6 +32,8 @@ import com.sun.org.apache.xpath.internal.axes.WalkerFactory;
 import com.sun.org.apache.xpath.internal.objects.XNodeSet;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
+import java.util.List;
+import javax.xml.transform.TransformerException;
 
 
 /**
@@ -115,14 +114,14 @@ public class Variable extends Expression implements PathComponent
    * in the stack frame (but variables above the globalsTop value will need
    * to be offset to the current stack frame).
    */
-  public void fixupVariables(java.util.Vector vars, int globalsSize)
+  public void fixupVariables(List<QName> vars, int globalsSize)
   {
     m_fixUpWasCalled = true;
     int sz = vars.size();
 
     for (int i = vars.size()-1; i >= 0; i--)
     {
-      QName qn = (QName)vars.elementAt(i);
+      QName qn = vars.get(i);
       // System.out.println("qn: "+qn);
       if(qn.equals(m_qname))
       {

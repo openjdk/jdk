@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,11 +21,10 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.util;
 
+import com.sun.org.apache.xerces.internal.xs.StringList;
 import java.lang.reflect.Array;
 import java.util.AbstractList;
-import java.util.Vector;
-
-import com.sun.org.apache.xerces.internal.xs.StringList;
+import java.util.List;
 
 /**
  * Containts a list of Object's.
@@ -35,7 +34,8 @@ import com.sun.org.apache.xerces.internal.xs.StringList;
  * @author Sandy Gao, IBM
  *
  */
-public final class StringListImpl extends AbstractList implements StringList {
+@SuppressWarnings("unchecked") // method <T>toArray(T[])
+public final class StringListImpl extends AbstractList<String> implements StringList {
 
     /**
      * An immutable empty list.
@@ -49,9 +49,9 @@ public final class StringListImpl extends AbstractList implements StringList {
 
     // REVISIT: this is temp solution. In general we need to use this class
     //          instead of the Vector.
-    private final Vector fVector;
+    private final List<String> fVector;
 
-    public StringListImpl(Vector v) {
+    public StringListImpl(List<String> v) {
         fVector = v;
         fLength = (v == null) ? 0 : v.size();
         fArray = null;
@@ -109,7 +109,7 @@ public final class StringListImpl extends AbstractList implements StringList {
             return null;
         }
         if (fVector != null) {
-            return (String)fVector.elementAt(index);
+            return fVector.get(index);
         }
         return fArray[index];
     }
@@ -118,10 +118,10 @@ public final class StringListImpl extends AbstractList implements StringList {
      * List methods
      */
 
-    public Object get(int index) {
+    public String get(int index) {
         if (index >= 0 && index < fLength) {
             if (fVector != null) {
-                return fVector.elementAt(index);
+                return fVector.get(index);
             }
             return fArray[index];
         }
@@ -146,8 +146,8 @@ public final class StringListImpl extends AbstractList implements StringList {
             return fVector.toArray(a);
         }
         if (a.length < fLength) {
-            Class arrayClass = a.getClass();
-            Class componentType = arrayClass.getComponentType();
+            Class<?> arrayClass = a.getClass();
+            Class<?> componentType = arrayClass.getComponentType();
             a = (Object[]) Array.newInstance(componentType, fLength);
         }
         toArray0(a);

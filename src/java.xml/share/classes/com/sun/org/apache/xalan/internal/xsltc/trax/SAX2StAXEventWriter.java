@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +33,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import javax.xml.stream.XMLEventFactory;
+import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.*;
-import javax.xml.stream.XMLEventWriter;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.ext.Locator2;
@@ -54,7 +53,7 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
     private XMLEventFactory eventFactory;
 
 
-    private List namespaceStack = new ArrayList();
+    private List<Collection<Namespace>> namespaceStack = new ArrayList<>();
 
 
     private boolean needToCallStartDocument = false;
@@ -169,6 +168,7 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
 
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
 
         if (needToCallStartDocument) {
@@ -216,8 +216,8 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
         parseQName(qName, qname);
 
         // get namespaces
-        Collection nsList = (Collection) namespaceStack.remove(namespaceStack.size() - 1);
-        Iterator nsIter = nsList.iterator();
+        Collection<Namespace> nsList = namespaceStack.remove(namespaceStack.size() - 1);
+        Iterator<Namespace> nsIter = nsList.iterator();
 
         try {
 
@@ -327,21 +327,21 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
 
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    protected void createStartEvents(Attributes attributes, Collection<Attribute>[] events) {
 
-    protected void createStartEvents(Attributes attributes, Collection[] events) {
-
-        Map nsMap = null;
-        List attrs = null;
+        Map<String, Attribute> nsMap = null;
+        List<Attribute> attrs = null;
 
         // create namespaces
         if (namespaces != null) {
             final int nDecls = namespaces.size();
             for (int i = 0; i < nDecls; i++) {
-                final String prefix = (String) namespaces.elementAt(i++);
-                String uri = (String) namespaces.elementAt(i);
+                final String prefix = (String) namespaces.get(i++);
+                String uri = (String) namespaces.get(i);
                 Namespace ns = createNamespace(prefix, uri);
                 if (nsMap == null) {
-                    nsMap = new HashMap();
+                    nsMap = new HashMap<>();
                 }
                 nsMap.put(prefix, ns);
             }
@@ -365,7 +365,7 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
                 // namespace has already been declared, skip it, otherwise
                 // write it as an namespace
                 if (nsMap == null) {
-                    nsMap = new HashMap();
+                    nsMap = new HashMap<>();
                 }
 
                 if (!nsMap.containsKey(attrLocal)) {
@@ -389,9 +389,7 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
                 }
 
                 if (attrs == null) {
-
-                    attrs = new ArrayList();
-
+                    attrs = new ArrayList<>();
                 }
                 attrs.add(attribute);
 

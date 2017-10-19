@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -512,7 +512,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 }
                 for (int i = size - 1; i >= 0 ; i--) {
                     Entity.ScannedEntity externalEntity =
-                            (Entity.ScannedEntity)fEntityStack.elementAt(i);
+                            (Entity.ScannedEntity)fEntityStack.get(i);
                     if (externalEntity.entityLocation != null && externalEntity.entityLocation.getExpandedSystemId() != null) {
                         baseSystemId = externalEntity.entityLocation.getExpandedSystemId();
                         break;
@@ -1267,11 +1267,11 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         for (int i = size; i >= 0; i--) {
             Entity activeEntity = i == size
                     ? fCurrentEntity
-                    : fEntityStack.elementAt(i);
+                    : fEntityStack.get(i);
             if (activeEntity.name == entityName) {
                 String path = entityName;
                 for (int j = i + 1; j < size; j++) {
-                    activeEntity = fEntityStack.elementAt(j);
+                    activeEntity = fEntityStack.get(j);
                     path = path + " -> " + activeEntity.name;
                 }
                 path = path + " -> " + fCurrentEntity.name;
@@ -1441,7 +1441,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
      */
     public Entity.ScannedEntity getTopLevelEntity() {
         return (Entity.ScannedEntity)
-            (fEntityStack.empty() ? null : fEntityStack.elementAt(0));
+            (fEntityStack.empty() ? null : fEntityStack.get(0));
     }
 
 
@@ -2645,7 +2645,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 int size = fEntityStack.size();
                 for (int i = size - 1; i >= 0 ; i--) {
                     Entity.ScannedEntity externalEntity =
-                            (Entity.ScannedEntity)fEntityStack.elementAt(i);
+                            (Entity.ScannedEntity)fEntityStack.get(i);
 
                     if (externalEntity.entityLocation != null &&
                             externalEntity.entityLocation.getExpandedSystemId() != null) {
@@ -2677,7 +2677,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 int size = fEntityStack.size();
                 for (int i = size - 1; i >= 0 ; i--) {
                     Entity.ScannedEntity externalEntity =
-                            (Entity.ScannedEntity)fEntityStack.elementAt(i);
+                            (Entity.ScannedEntity)fEntityStack.get(i);
 
                     if (externalEntity.entityLocation != null &&
                             externalEntity.entityLocation.getLiteralSystemId() != null) {
@@ -2715,7 +2715,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 // search for the first external entity on the stack
                 int size = fEntityStack.size();
                 for (int i=size-1; i>0 ; i--) {
-                    Entity.ScannedEntity firstExternalEntity = (Entity.ScannedEntity)fEntityStack.elementAt(i);
+                    Entity.ScannedEntity firstExternalEntity = (Entity.ScannedEntity)fEntityStack.get(i);
                     if (firstExternalEntity.isExternal()) {
                         return firstExternalEntity.lineNumber;
                     }
@@ -2757,7 +2757,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 // search for the first external entity on the stack
                 int size = fEntityStack.size();
                 for (int i=size-1; i>0 ; i--) {
-                    Entity.ScannedEntity firstExternalEntity = (Entity.ScannedEntity)fEntityStack.elementAt(i);
+                    Entity.ScannedEntity firstExternalEntity = (Entity.ScannedEntity)fEntityStack.get(i);
                     if (firstExternalEntity.isExternal()) {
                         return firstExternalEntity.columnNumber;
                     }

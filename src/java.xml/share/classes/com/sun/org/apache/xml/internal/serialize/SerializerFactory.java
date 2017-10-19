@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -51,7 +51,7 @@ public abstract class SerializerFactory
     public static final String FactoriesProperty = "com.sun.org.apache.xml.internal.serialize.factories";
 
 
-    private static final Map<String, SerializerFactory>  _factories = Collections.synchronizedMap(new HashMap());
+    private static final Map<String, SerializerFactory>  _factories = Collections.synchronizedMap(new HashMap<>());
 
 
     static

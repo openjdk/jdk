@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public class NamespaceSupport
     /**
      * An empty enumeration.
      */
-    private final static Enumeration EMPTY_ENUMERATION =
+    private final static Enumeration<String> EMPTY_ENUMERATION =
             Collections.enumeration(new ArrayList<String>());
 
 
@@ -409,7 +409,7 @@ public class NamespaceSupport
      * @see #getDeclaredPrefixes
      * @see #getURI
      */
-    public Enumeration getPrefixes ()
+    public Enumeration<String> getPrefixes ()
     {
         return currentContext.getPrefixes();
     }
@@ -463,12 +463,12 @@ public class NamespaceSupport
      * @see #getDeclaredPrefixes
      * @see #getURI
      */
-    public Enumeration getPrefixes (String uri)
+    public Enumeration<String> getPrefixes (String uri)
     {
         List<String> prefixes = new ArrayList<>();
-        Enumeration allPrefixes = getPrefixes();
+        Enumeration<String> allPrefixes = getPrefixes();
         while (allPrefixes.hasMoreElements()) {
-            String prefix = (String)allPrefixes.nextElement();
+            String prefix = allPrefixes.nextElement();
             if (uri.equals(getURI(prefix))) {
                 prefixes.add(prefix);
             }
@@ -489,7 +489,7 @@ public class NamespaceSupport
      * @see #getPrefixes
      * @see #getURI
      */
-    public Enumeration getDeclaredPrefixes ()
+    public Enumeration<String> getDeclaredPrefixes ()
     {
         return currentContext.getDeclaredPrefixes();
     }
@@ -766,7 +766,7 @@ public class NamespaceSupport
          * @return An enumeration of prefixes (possibly empty).
          * @see org.xml.sax.helpers.NamespaceSupport#getDeclaredPrefixes
          */
-        Enumeration getDeclaredPrefixes ()
+        Enumeration<String> getDeclaredPrefixes ()
         {
             if (declarations == null) {
                 return EMPTY_ENUMERATION;
@@ -784,7 +784,7 @@ public class NamespaceSupport
          * @return An enumeration of prefixes (never empty).
          * @see org.xml.sax.helpers.NamespaceSupport#getPrefixes
          */
-        Enumeration getPrefixes ()
+        Enumeration<String> getPrefixes ()
         {
             if (prefixTable == null) {
                 return EMPTY_ENUMERATION;

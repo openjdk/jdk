@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,8 @@
 
 package com.sun.org.apache.xerces.internal.util;
 
-//java imports
-import java.util.Iterator ;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
-
-//xerces imports
-import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl ;
 
 /**
  *
@@ -47,7 +43,8 @@ import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl ;
  * much as possible. - NB.
  */
 
-public class XMLAttributesIteratorImpl extends XMLAttributesImpl implements Iterator {
+public class XMLAttributesIteratorImpl extends XMLAttributesImpl implements
+        Iterator<XMLAttributesImpl.Attribute> {
 
     //pointer to current position.
     protected int fCurrent = 0 ;
@@ -62,7 +59,7 @@ public class XMLAttributesIteratorImpl extends XMLAttributesImpl implements Iter
         return fCurrent < getLength() ? true : false ;
     }//hasNext()
 
-    public Object next() {
+    public XMLAttributesImpl.Attribute next() {
         if(hasNext()){
             // should this be of type javax.xml.stream.Attribute ?
             return fLastReturnedItem = fAttributes[fCurrent++] ;

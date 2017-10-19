@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
 package javax.xml.namespace;
 
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import javax.xml.XMLConstants;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * <p><code>QName</code> represents a <strong>qualified name</strong>
@@ -106,14 +104,11 @@ public class QName implements Serializable {
     static {
         try {
             // use a privileged block as reading a system property
-            String valueUseCompatibleSerialVersionUID = (String) AccessController.doPrivileged(
-                    new PrivilegedAction() {
-                        public Object run() {
-                            return System.getProperty("com.sun.xml.namespace.QName.useCompatibleSerialVersionUID");
-                        }
-                    }
-            );
-            useDefaultSerialVersionUID = (valueUseCompatibleSerialVersionUID != null && valueUseCompatibleSerialVersionUID.equals("1.0")) ? false : true;
+            String valueUseCompatibleSerialVersionUID = SecuritySupport.getSystemProperty(
+                    "com.sun.xml.namespace.QName.useCompatibleSerialVersionUID");
+
+            useDefaultSerialVersionUID = (valueUseCompatibleSerialVersionUID != null
+                    && valueUseCompatibleSerialVersionUID.equals("1.0")) ? false : true;
         } catch (Exception exception) {
             // use default if any Exceptions
             useDefaultSerialVersionUID = true;

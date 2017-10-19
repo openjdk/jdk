@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,12 +21,13 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.models;
 
-import com.sun.org.apache.xerces.internal.xni.QName;
-import com.sun.org.apache.xerces.internal.impl.xs.XSElementDecl;
 import com.sun.org.apache.xerces.internal.impl.xs.SubstitutionGroupHandler;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaException;
 import com.sun.org.apache.xerces.internal.impl.xs.XSConstraints;
+import com.sun.org.apache.xerces.internal.impl.xs.XSElementDecl;
+import com.sun.org.apache.xerces.internal.xni.QName;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * XSAllCM implements XSCMValidator and handles &lt;all&gt;.
@@ -203,8 +205,8 @@ public class XSAllCM implements XSCMValidator {
      * @return       a list whose entries are instances of
      *               either XSWildcardDecl or XSElementDecl.
      */
-    public ArrayList whatCanGoHere(int[] state) {
-        ArrayList ret = new ArrayList();
+    public List<Object> whatCanGoHere(int[] state) {
+        List<Object> ret = new ArrayList<>();
         for (int i = 0; i < fNumElements; i++) {
             // we only try to look for a matching decl if we have not seen
             // this element yet.
@@ -215,7 +217,7 @@ public class XSAllCM implements XSCMValidator {
         return ret;
     }
 
-    public ArrayList checkMinMaxBounds() {
+    public List<String> checkMinMaxBounds() {
         return null;
     }
 

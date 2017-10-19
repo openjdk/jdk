@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,16 +21,16 @@
 
 package com.sun.org.apache.xpath.internal.axes;
 
-import java.util.Vector;
-
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMFilter;
 import com.sun.org.apache.xml.internal.dtm.DTMIterator;
 import com.sun.org.apache.xml.internal.dtm.DTMManager;
 import com.sun.org.apache.xml.internal.utils.NodeVector;
+import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xpath.internal.NodeSetDTM;
 import com.sun.org.apache.xpath.internal.XPathContext;
 import com.sun.org.apache.xpath.internal.objects.XObject;
+import java.util.List;
 
 /**
  * This class is the dynamic wrapper for a Xalan DTMIterator instance, and
@@ -713,7 +713,7 @@ public class NodeSequence extends XObject
   /**
    * @see org.apache.xpath.Expression#fixupVariables(Vector, int)
    */
-  public void fixupVariables(Vector vars, int globalsSize)
+  public void fixupVariables(List<QName> vars, int globalsSize)
   {
         super.fixupVariables(vars, globalsSize);
   }
@@ -766,7 +766,7 @@ public class NodeSequence extends XObject
 
       // checkDups();
       return insertIndex;
-    } // end addNodeInDocOrder(Vector v, Object obj)
+    } // end addNodeInDocOrder(List<QName> v, Object obj)
 
    /**
     * It used to be that many locations in the code simply

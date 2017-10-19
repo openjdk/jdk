@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,10 +21,9 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.util;
 
+import com.sun.org.apache.xerces.internal.xs.LSInputList;
 import java.lang.reflect.Array;
 import java.util.AbstractList;
-
-import com.sun.org.apache.xerces.internal.xs.LSInputList;
 import org.w3c.dom.ls.LSInput;
 
 /**
@@ -35,7 +34,8 @@ import org.w3c.dom.ls.LSInput;
  * @author Michael Glavassevich, IBM
  *
  */
-public final class LSInputListImpl extends AbstractList implements LSInputList {
+@SuppressWarnings("unchecked") // method <T>toArray(T[])
+public final class LSInputListImpl extends AbstractList<LSInput> implements LSInputList {
 
     /**
      * An immutable empty list.
@@ -86,7 +86,7 @@ public final class LSInputListImpl extends AbstractList implements LSInputList {
      * List methods
      */
 
-    public Object get(int index) {
+    public LSInput get(int index) {
         if (index >= 0 && index < fLength) {
             return fArray[index];
         }
@@ -105,8 +105,8 @@ public final class LSInputListImpl extends AbstractList implements LSInputList {
 
     public Object[] toArray(Object[] a) {
         if (a.length < fLength) {
-            Class arrayClass = a.getClass();
-            Class componentType = arrayClass.getComponentType();
+            Class<?> arrayClass = a.getClass();
+            Class<?> componentType = arrayClass.getComponentType();
             a = (Object[]) Array.newInstance(componentType, fLength);
         }
         toArray0(a);

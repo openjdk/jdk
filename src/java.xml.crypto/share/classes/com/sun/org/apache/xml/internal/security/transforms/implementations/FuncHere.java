@@ -27,12 +27,14 @@ import javax.xml.transform.TransformerException;
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.security.utils.I18n;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
+import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xpath.internal.NodeSetDTM;
 import com.sun.org.apache.xpath.internal.XPathContext;
 import com.sun.org.apache.xpath.internal.functions.Function;
 import com.sun.org.apache.xpath.internal.objects.XNodeSet;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
+import java.util.List;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -145,8 +147,7 @@ public class FuncHere extends Function {
      * @param vars
      * @param globalsSize
      */
-    @SuppressWarnings("rawtypes")
-    public void fixupVariables(java.util.Vector vars, int globalsSize) {
+    public void fixupVariables(List<QName> vars, int globalsSize) {
         // do nothing
     }
 }

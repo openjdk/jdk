@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -76,7 +76,7 @@ public abstract class Type implements Constants {
      * Factory method to instantiate object types. Returns a pre-defined
      * instance for java.lang.Object.class and java.lang.String.class.
      */
-    public static Type newObjectType(Class clazz) {
+    public static Type newObjectType(Class<?> clazz) {
         if (clazz == java.lang.Object.class) {
             return Type.Object;
         }
@@ -189,7 +189,7 @@ public abstract class Type implements Constants {
      * when external functions are called.
      */
     public void translateTo(ClassGenerator classGen, MethodGenerator methodGen,
-                            Class clazz) {
+                            Class<?> clazz) {
         ErrorMsg err = new ErrorMsg(ErrorMsg.DATA_CONVERSION_ERR,
                                     toString(), clazz.getClass().toString());
         classGen.getParser().reportError(Constants.FATAL, err);
@@ -201,7 +201,7 @@ public abstract class Type implements Constants {
      * when external functions are called.
      */
     public void translateFrom(ClassGenerator classGen, MethodGenerator methodGen,
-                              Class clazz) {
+                              Class<?> clazz) {
         ErrorMsg err = new ErrorMsg(ErrorMsg.DATA_CONVERSION_ERR,
                                     clazz.getClass().toString(), toString());
         classGen.getParser().reportError(Constants.FATAL, err);

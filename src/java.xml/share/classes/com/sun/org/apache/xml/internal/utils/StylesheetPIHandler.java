@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,23 +21,21 @@
 
 package com.sun.org.apache.xml.internal.utils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
-import java.util.Vector;
-
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.sax.SAXSource;
-
-import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Search for the xml-stylesheet processing instructions in an XML document.
- * @see <a href="http://www.w3.org/TR/xml-stylesheet/">Associating Style Sheets with XML documents, Version 1.0</a>
+ * @see <a href="http://www.w3.org/TR/xml-stylesheet/">
+ * Associating Style Sheets with XML documents, Version 1.0</a>
  */
 public class StylesheetPIHandler extends DefaultHandler
 {
@@ -54,7 +52,7 @@ public class StylesheetPIHandler extends DefaultHandler
   String m_charset;
 
   /** A list of SAXSource objects that match the criteria.  */
-  Vector m_stylesheets = new Vector();
+  List<Source> m_stylesheets = new ArrayList<>();
 
   // Add code to use a URIResolver. Patch from Dmitri Ilyin.
 
@@ -120,7 +118,7 @@ public class StylesheetPIHandler extends DefaultHandler
 
     if (sz > 0)
     {
-      Source source = (Source) m_stylesheets.elementAt(sz-1);
+      Source source = m_stylesheets.get(sz-1);
       return source;
     }
     else
@@ -136,7 +134,8 @@ public class StylesheetPIHandler extends DefaultHandler
    * @throws org.xml.sax.SAXException Any SAX exception, possibly
    *            wrapping another exception.
    * @see org.xml.sax.ContentHandler#processingInstruction
-   * @see <a href="http://www.w3.org/TR/xml-stylesheet/">Associating Style Sheets with XML documents, Version 1.0</a>
+   * @see <a href="http://www.w3.org/TR/xml-stylesheet/">
+   * Associating Style Sheets with XML documents, Version 1.0</a>
    */
   public void processingInstruction(String target, String data)
           throws org.xml.sax.SAXException
@@ -299,7 +298,7 @@ public class StylesheetPIHandler extends DefaultHandler
             return;
         }
 
-        m_stylesheets.addElement(source);
+        m_stylesheets.add(source);
       }
     }
   }

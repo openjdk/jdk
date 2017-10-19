@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -137,11 +137,11 @@ final class LogicalExpr extends Expression {
         // Yes, the operation is supported
         if (haveType != null) {
             // Check if left-hand side operand must be type casted
-            Type arg1 = (Type)haveType.argsType().elementAt(0);
+            Type arg1 = (Type)haveType.argsType().get(0);
             if (!arg1.identicalTo(tleft))
                 _left = new CastExpr(_left, arg1);
             // Check if right-hand side operand must be type casted
-            Type arg2 = (Type) haveType.argsType().elementAt(1);
+            Type arg2 = (Type) haveType.argsType().get(1);
             if (!arg2.identicalTo(tright))
                 _right = new CastExpr(_right, arg1);
             // Return the result type for the operator we will use

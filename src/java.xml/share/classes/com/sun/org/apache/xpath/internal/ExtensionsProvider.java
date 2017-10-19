@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +21,9 @@
 
 package com.sun.org.apache.xpath.internal;
 
-import java.util.Vector;
-
 import com.sun.org.apache.xpath.internal.functions.FuncExtFunction;
+import com.sun.org.apache.xpath.internal.objects.XObject;
+import java.util.List;
 
 /**
  * Interface that XPath objects can call to obtain access to an
@@ -48,14 +48,13 @@ public interface ExtensionsProvider
   /**
    * Execute the extension function.
    */
-  public Object extFunction(String ns, String funcName,
-                            Vector argVec, Object methodKey)
+  public Object extFunction(String ns, String funcName, List<XObject> argVec,
+          Object methodKey)
             throws javax.xml.transform.TransformerException;
 
   /**
    * Execute the extension function.
    */
-  public Object extFunction(FuncExtFunction extFunction,
-                            Vector argVec)
+  public Object extFunction(FuncExtFunction extFunction, List<XObject> argVec)
             throws javax.xml.transform.TransformerException;
 }

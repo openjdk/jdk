@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,8 +21,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.BranchHandle;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.GOTO_W;
@@ -37,6 +35,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.NodeSetType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -193,12 +192,12 @@ abstract class Expression extends SyntaxTreeNode {
     public MethodType lookupPrimop(SymbolTable stable, String op,
                                    MethodType ctype) {
         MethodType result = null;
-        final Vector primop = stable.lookupPrimop(op);
+        final List<MethodType> primop = stable.lookupPrimop(op);
         if (primop != null) {
             final int n = primop.size();
             int minDistance = Integer.MAX_VALUE;
             for (int i = 0; i < n; i++) {
-                final MethodType ptype = (MethodType) primop.elementAt(i);
+                final MethodType ptype = primop.get(i);
                 // Skip if different arity
                 if (ptype.argsCount() != ctype.argsCount()) {
                     continue;

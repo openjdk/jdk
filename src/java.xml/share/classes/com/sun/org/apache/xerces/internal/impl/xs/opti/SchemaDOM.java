@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,14 +21,14 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.opti;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLAttributes;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Element;
@@ -366,7 +366,7 @@ public class SchemaDOM extends DefaultDocument {
         // for other namespaces so that we can also include them.
         // optimized for simplicity and the case that not many
         // namespaces are declared on this annotation...
-        ArrayList namespaces = new ArrayList();
+        List<String> namespaces = new ArrayList<>();
         for (int i = 0; i < attributes.getLength(); ++i) {
             String aValue = attributes.getValue(i);
             String aPrefix = attributes.getPrefix(i);
@@ -380,9 +380,9 @@ public class SchemaDOM extends DefaultDocument {
         }
         // now we have to look through currently in-scope namespaces to see what
         // wasn't declared here
-        Enumeration currPrefixes = namespaceContext.getAllPrefixes();
+        Enumeration<String> currPrefixes = namespaceContext.getAllPrefixes();
         while(currPrefixes.hasMoreElements()) {
-            String prefix = (String)currPrefixes.nextElement();
+            String prefix = currPrefixes.nextElement();
             String uri = namespaceContext.getURI(prefix);
             if (uri == null) {
                 uri = XMLSymbols.EMPTY_STRING;

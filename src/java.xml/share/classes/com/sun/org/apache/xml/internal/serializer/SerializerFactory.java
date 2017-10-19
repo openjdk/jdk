@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,13 +21,11 @@
 
 package com.sun.org.apache.xml.internal.serializer;
 
-import java.util.Properties;
-
-import javax.xml.transform.OutputKeys;
-
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import java.util.Properties;
+import javax.xml.transform.OutputKeys;
 import org.xml.sax.ContentHandler;
 
 /**
@@ -120,7 +119,7 @@ public final class SerializerFactory
 
 
 
-        Class cls = ObjectFactory.findProviderClass(className, true);
+        Class<?> cls = ObjectFactory.findProviderClass(className, true);
 
         // _serializers.put(method, cls);
 

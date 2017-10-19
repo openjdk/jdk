@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -55,7 +56,7 @@ public class CustomStringPool extends DTMStringPool {
     }
 
     public void removeAllElements() {
-        m_intToString.removeAllElements();
+        m_intToString.clear();
         if (m_stringToInt != null) {
             m_stringToInt.clear();
         }
@@ -63,13 +64,13 @@ public class CustomStringPool extends DTMStringPool {
 
     /**
      * @return string whose value is uniquely identified by this integer index.
-     * @throws java.lang.ArrayIndexOutOfBoundsException if index doesn't map to
+     * @throws java.lang.IndexOutOfBoundsException if index doesn't map to
      * a string.
      */
     @Override
     public String indexToString(int i)
-            throws java.lang.ArrayIndexOutOfBoundsException {
-        return (String) m_intToString.elementAt(i);
+            throws IndexOutOfBoundsException {
+        return m_intToString.get(i);
     }
 
     /**
@@ -82,7 +83,7 @@ public class CustomStringPool extends DTMStringPool {
         }
         Integer iobj = m_stringToInt.get(s);
         if (iobj == null) {
-            m_intToString.addElement(s);
+            m_intToString.add(s);
             iobj = m_intToString.size();
             m_stringToInt.put(s, iobj);
         }

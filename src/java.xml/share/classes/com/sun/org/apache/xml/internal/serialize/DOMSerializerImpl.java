@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -19,14 +20,6 @@
  */
 package com.sun.org.apache.xml.internal.serialize;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-
 import com.sun.org.apache.xerces.internal.dom.AbortException;
 import com.sun.org.apache.xerces.internal.dom.CoreDocumentImpl;
 import com.sun.org.apache.xerces.internal.dom.DOMErrorImpl;
@@ -41,6 +34,14 @@ import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XML11Char;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
 import org.w3c.dom.DOMConfiguration;
@@ -334,7 +335,7 @@ public class DOMSerializerImpl implements LSSerializer, DOMConfiguration {
     public DOMStringList getParameterNames() {
 
         if (fRecognizedParameters == null) {
-            ArrayList parameters = new ArrayList();
+            List<String> parameters = new ArrayList<>();
 
             //Add DOM recognized parameters
             //REVISIT: Would have been nice to have a list of
@@ -873,7 +874,7 @@ public class DOMSerializerImpl implements LSSerializer, DOMConfiguration {
                     ? (Document) node
                     : node.getOwnerDocument();
             try {
-                versionChanged = document.getClass().getMethod("isXMLVersionChanged()", new Class[]{});
+                versionChanged = document.getClass().getMethod("isXMLVersionChanged()", new Class<?>[]{});
                 if (versionChanged != null) {
                     verifyNames = ((Boolean) versionChanged.invoke(document, (Object[]) null)).booleanValue();
                 }

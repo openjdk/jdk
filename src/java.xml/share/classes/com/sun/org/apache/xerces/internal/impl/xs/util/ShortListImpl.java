@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,10 +21,9 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.util;
 
-import java.util.AbstractList;
-
 import com.sun.org.apache.xerces.internal.xs.ShortList;
 import com.sun.org.apache.xerces.internal.xs.XSException;
+import java.util.AbstractList;
 
 /**
  * Containts a list of Object's.
@@ -33,7 +33,7 @@ import com.sun.org.apache.xerces.internal.xs.XSException;
  * @author Sandy Gao, IBM
  *
  */
-public final class ShortListImpl extends AbstractList implements ShortList {
+public final class ShortListImpl extends AbstractList<Short> implements ShortList {
 
     /**
      * An immutable empty list.
@@ -109,7 +109,7 @@ public final class ShortListImpl extends AbstractList implements ShortList {
      * List methods
      */
 
-    public Object get(int index) {
+    public Short get(int index) {
         if (index >= 0 && index < fLength) {
             return fArray[index];
         }

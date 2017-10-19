@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -2010,10 +2011,7 @@ final class DOM3TreeWalker {
      * to be used while serializing the DOM.
      */
     protected void initProperties(Properties properties) {
-
-        for (Enumeration keys = properties.keys(); keys.hasMoreElements();) {
-
-            final String key = (String) keys.nextElement();
+        for(String key : properties.stringPropertyNames()) {
 
             // caonical-form
             // Other features will be enabled or disabled when this is set to true or false.

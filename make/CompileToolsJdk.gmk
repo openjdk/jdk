@@ -42,13 +42,22 @@ BUILD_TOOLS_SRC_DIRS += \
     $(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes \
     #
 
-$(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
+$(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(BUILD_TOOLS_SRC_DIRS), \
-    EXCLUDES := build/tools/deps \
-                build/tools/docs \
-                build/tools/jigsaw, \
-    BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes))
+    EXCLUDES := \
+        build/tools/deps \
+        build/tools/docs \
+        build/tools/jigsaw \
+        , \
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
+    ADD_JAVAC_FLAGS := \
+        --add-modules java.xml.bind \
+        --add-exports java.desktop/sun.awt=ALL-UNNAMED \
+        --add-exports java.xml.bind/javax.xml.bind.annotation=ALL-UNNAMED \
+        --add-exports java.base/sun.text=ALL-UNNAMED \
+        , \
+))
 
 TARGETS += $(BUILD_TOOLS_JDK)
 

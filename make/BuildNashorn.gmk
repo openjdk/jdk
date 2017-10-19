@@ -69,17 +69,12 @@ $(eval $(call SetupJavaCompilation, BUILD_NASGEN, \
 NASHORN_CLASSES_DIR := $(JDK_OUTPUTDIR)/modules/jdk.scripting.nashorn
 NASGEN_RUN_FILE := $(NASHORN_CLASSES_DIR)/_the.nasgen.run
 
-ifeq ($(BOOT_JDK_MODULAR), true)
-  NASGEN_OPTIONS := \
-      -cp $(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
-      --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
-      --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
-      --add-exports java.base/jdk.internal.org.objectweb.asm.util=ALL-UNNAMED \
-      #
-else
-  NASGEN_OPTIONS := \
-      -Xbootclasspath/p:$(BUILDTOOLS_OUTPUTDIR)/nasgen_classes
-endif
+NASGEN_OPTIONS := \
+    -cp $(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
+    --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
+    --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.org.objectweb.asm.util=ALL-UNNAMED \
+    #
 
 # Copy classes to final classes dir and run nasgen to modify classes in jdk.nashorn.internal.objects package
 $(NASGEN_RUN_FILE): $(BUILD_NASGEN) $(jdk.scripting.nashorn)

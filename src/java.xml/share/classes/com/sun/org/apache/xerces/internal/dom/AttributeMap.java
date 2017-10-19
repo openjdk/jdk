@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,7 +23,6 @@ package com.sun.org.apache.xerces.internal.dom;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Node;
 
@@ -118,7 +117,7 @@ public class AttributeMap extends NamedNodeMapImpl {
         } else {
             i = -1 - i; // Insert point (may be end of list)
             if (null == nodes) {
-                nodes = new ArrayList(5);
+                nodes = new ArrayList<>(5);
             }
             nodes.add(i, arg);
         }
@@ -194,7 +193,7 @@ public class AttributeMap extends NamedNodeMapImpl {
             } else {
                 i = -1 - i; // Insert point (may be end of list)
                 if (null == nodes) {
-                    nodes = new ArrayList(5);
+                    nodes = new ArrayList<>(5);
                 }
                 nodes.add(i, arg);
             }
@@ -488,12 +487,12 @@ public class AttributeMap extends NamedNodeMapImpl {
      * Override parent's method to set the ownerNode correctly
      */
     protected void cloneContent(NamedNodeMapImpl srcmap) {
-        List srcnodes = srcmap.nodes;
+        List<Node> srcnodes = srcmap.nodes;
         if (srcnodes != null) {
             int size = srcnodes.size();
             if (size != 0) {
                 if (nodes == null) {
-                    nodes = new ArrayList(size);
+                    nodes = new ArrayList<>(size);
                 }
                 else {
                     nodes.clear();
@@ -592,7 +591,7 @@ public class AttributeMap extends NamedNodeMapImpl {
             else {
                 i = -1 - i; // Insert point (may be end of list)
                 if (null == nodes) {
-                    nodes = new ArrayList(5);
+                    nodes = new ArrayList<>(5);
                 }
                 nodes.add(i, arg);
             }

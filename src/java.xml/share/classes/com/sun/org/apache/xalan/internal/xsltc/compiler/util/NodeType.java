@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -251,7 +251,7 @@ public final class NodeType extends Type {
      * type after coercion.
      */
     public void translateTo(ClassGenerator classGen, MethodGenerator methodGen,
-                            Class clazz) {
+                            Class<?> clazz) {
         final ConstantPoolGen cpg = classGen.getConstantPool();
         final InstructionList il = methodGen.getInstructionList();
 

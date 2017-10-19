@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,9 +24,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Enumeration;
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.BranchHandle;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.GOTO;
@@ -42,7 +40,9 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ResultTreeType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -97,12 +97,12 @@ final class ForEach extends Instruction {
         il.append(methodGen.loadIterator());
 
         // Collect sort objects associated with this instruction
-        final Vector sortObjects = new Vector();
+        final List<Sort> sortObjects = new ArrayList<>();
         Iterator<SyntaxTreeNode> children = elements();
         while (children.hasNext()) {
-            final Object child = children.next();
+            final SyntaxTreeNode child = children.next();
             if (child instanceof Sort) {
-                sortObjects.addElement(child);
+                sortObjects.add((Sort)child);
             }
         }
 

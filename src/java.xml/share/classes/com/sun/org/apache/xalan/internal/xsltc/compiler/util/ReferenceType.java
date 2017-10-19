@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,7 +21,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler.util;
 
-import com.sun.org.apache.bcel.internal.generic.PUSH;
 import com.sun.org.apache.bcel.internal.generic.ALOAD;
 import com.sun.org.apache.bcel.internal.generic.ASTORE;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
@@ -31,10 +30,9 @@ import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 import com.sun.org.apache.bcel.internal.generic.Instruction;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
-
+import com.sun.org.apache.bcel.internal.generic.PUSH;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Constants;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.FlowList;
-
 import com.sun.org.apache.xml.internal.dtm.DTM;
 
 /**
@@ -224,7 +222,7 @@ public final class ReferenceType extends Type {
      * Translates a reference into the Java type denoted by <code>clazz</code>.
      */
     public void translateTo(ClassGenerator classGen, MethodGenerator methodGen,
-                            Class clazz) {
+                            Class<?> clazz) {
         final ConstantPoolGen cpg = classGen.getConstantPool();
         final InstructionList il = methodGen.getInstructionList();
 
@@ -326,7 +324,7 @@ public final class ReferenceType extends Type {
      * allowed is from java.lang.Object.
      */
     public void translateFrom(ClassGenerator classGen, MethodGenerator methodGen,
-                              Class clazz) {
+                              Class<?> clazz) {
         if (clazz.getName().equals("java.lang.Object")) {
             methodGen.getInstructionList().append(NOP);
         }

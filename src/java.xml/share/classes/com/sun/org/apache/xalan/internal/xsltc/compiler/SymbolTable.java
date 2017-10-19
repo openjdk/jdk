@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,11 +25,12 @@
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodType;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.StringTokenizer;
-import java.util.Vector;
 
 /**
  * @author Jacek Ambroziak
@@ -39,7 +41,7 @@ final class SymbolTable {
 
     // These maps are used for all stylesheets
     private final Map<String, Stylesheet> _stylesheets = new HashMap<>();
-    private final Map<String, Vector> _primops     = new HashMap<>();
+    private final Map<String, List<MethodType>> _primops = new HashMap<>();
 
     // These maps are used for some stylesheets
     private Map<String, VariableBase> _variables = null;
@@ -138,18 +140,18 @@ final class SymbolTable {
      * is prepended.
      */
     public void addPrimop(String name, MethodType mtype) {
-        Vector methods = _primops.get(name);
+        List<MethodType> methods = _primops.get(name);
         if (methods == null) {
-            _primops.put(name, methods = new Vector());
+            _primops.put(name, methods = new ArrayList<>());
         }
-        methods.addElement(mtype);
+        methods.add(mtype);
     }
 
     /**
      * Lookup a primitive operator or function in the symbol table by
      * prepending the prefix <tt>PrimopPrefix</tt>.
      */
-    public Vector lookupPrimop(String name) {
+    public List<MethodType> lookupPrimop(String name) {
         return _primops.get(name);
     }
 
@@ -272,7 +274,7 @@ final class SymbolTable {
      */
     public void pushExcludedNamespacesContext() {
         if (_excludedURIStack == null) {
-            _excludedURIStack = new Stack();
+            _excludedURIStack = new Stack<>();
         }
         _excludedURIStack.push(_excludedURI);
         _excludedURI = null;

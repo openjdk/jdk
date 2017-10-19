@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +21,9 @@
 
 package com.sun.org.apache.xml.internal.dtm.ref;
 
-import java.util.Vector;
-
 import com.sun.org.apache.xml.internal.utils.IntVector;
+import java.util.ArrayList;
+import java.util.List;
 
 /** <p>DTMStringPool is an "interning" mechanism for strings. It will
  * create a stable 1:1 mapping between a set of string values and a set of
@@ -56,7 +56,7 @@ import com.sun.org.apache.xml.internal.utils.IntVector;
  * */
 public class DTMStringPool
 {
-  Vector m_intToString;
+  List<String> m_intToString;
   static final int HASHPRIME=101;
   int[] m_hashStart=new int[HASHPRIME];
   IntVector m_hashChain;
@@ -69,8 +69,8 @@ public class DTMStringPool
    */
   public DTMStringPool(int chainSize)
     {
-      m_intToString=new Vector();
-      m_hashChain=new IntVector(chainSize);
+      m_intToString = new ArrayList<>();
+      m_hashChain= new IntVector(chainSize);
       removeAllElements();
 
       // -sb Add this to force empty strings to be index 0.
@@ -84,21 +84,21 @@ public class DTMStringPool
 
   public void removeAllElements()
     {
-      m_intToString.removeAllElements();
+      m_intToString.clear();
       for(int i=0;i<HASHPRIME;++i)
         m_hashStart[i]=NULL;
       m_hashChain.removeAllElements();
     }
 
   /** @return string whose value is uniquely identified by this integer index.
-   * @throws java.lang.ArrayIndexOutOfBoundsException
+   * @throws java.lang.IndexOutOfBoundsException
    *  if index doesn't map to a string.
    * */
   public String indexToString(int i)
-    throws java.lang.ArrayIndexOutOfBoundsException
+    throws java.lang.IndexOutOfBoundsException
     {
       if(i==NULL) return null;
-      return (String) m_intToString.elementAt(i);
+      return m_intToString.get(i);
     }
 
   /** @return integer index uniquely identifying the value of this string. */
@@ -114,7 +114,7 @@ public class DTMStringPool
       int hashcandidate=hashlast;
       while(hashcandidate!=NULL)
         {
-          if(m_intToString.elementAt(hashcandidate).equals(s))
+          if(m_intToString.get(hashcandidate).equals(s))
             return hashcandidate;
 
           hashlast=hashcandidate;
@@ -123,7 +123,7 @@ public class DTMStringPool
 
       // New value. Add to tables.
       int newIndex=m_intToString.size();
-      m_intToString.addElement(s);
+      m_intToString.add(s);
 
       m_hashChain.addElement(NULL);     // Initialize to no-following-same-hash
       if(hashlast==NULL)  // First for this hash

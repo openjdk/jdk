@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,20 +21,6 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.traversers;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.Namespace;
-import javax.xml.stream.events.ProcessingInstruction;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
-
 import com.sun.org.apache.xerces.internal.impl.xs.opti.SchemaDOMParser;
 import com.sun.org.apache.xerces.internal.util.JAXPNamespaceContextWrapper;
 import com.sun.org.apache.xerces.internal.util.StAXLocationWrapper;
@@ -46,6 +32,19 @@ import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.events.Attribute;
+import javax.xml.stream.events.EndElement;
+import javax.xml.stream.events.Namespace;
+import javax.xml.stream.events.ProcessingInstruction;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
 import org.w3c.dom.Document;
 
 /**
@@ -83,7 +82,7 @@ final class StAXSchemaParser {
     private final QName fAttributeQName = new QName();
     private final XMLAttributesImpl fAttributes = new XMLAttributesImpl();
     private final XMLString fTempString = new XMLString();
-    private final ArrayList fDeclaredPrefixes = new ArrayList();
+    private final List<String> fDeclaredPrefixes = new ArrayList<>();
     private final XMLStringBuffer fStringBuffer = new XMLStringBuffer();
     private int fDepth;
 
@@ -314,9 +313,9 @@ final class StAXSchemaParser {
 
     private void fillXMLAttributes(StartElement event) {
         fAttributes.removeAllAttributes();
-        final Iterator attrs = event.getAttributes();
+        final Iterator<Attribute> attrs = event.getAttributes();
         while (attrs.hasNext()) {
-            Attribute attr = (Attribute) attrs.next();
+            Attribute attr = attrs.next();
             fillQName(fAttributeQName, attr.getName());
             String type = attr.getDTDType();
             int idx = fAttributes.getLength();
@@ -346,9 +345,9 @@ final class StAXSchemaParser {
         String nsPrefix = null;
         String nsURI = null;
 
-        final Iterator iter = fDeclaredPrefixes.iterator();
+        final Iterator<String> iter = fDeclaredPrefixes.iterator();
         while (iter.hasNext()) {
-            nsPrefix = (String) iter.next();
+            nsPrefix = iter.next();
             nsURI = fNamespaceContext.getURI(nsPrefix);
             if (nsPrefix.length() > 0) {
                 prefix = XMLSymbols.PREFIX_XMLNS;
@@ -381,10 +380,10 @@ final class StAXSchemaParser {
     }
 
     /** Fills in the list of declared prefixes. */
-    private void fillDeclaredPrefixes(Iterator namespaces) {
+    private void fillDeclaredPrefixes(Iterator<Namespace> namespaces) {
         fDeclaredPrefixes.clear();
         while (namespaces.hasNext()) {
-            Namespace ns = (Namespace) namespaces.next();
+            Namespace ns = namespaces.next();
             String prefix = ns.getPrefix();
             fDeclaredPrefixes.add(prefix != null ? prefix : "");
         }
