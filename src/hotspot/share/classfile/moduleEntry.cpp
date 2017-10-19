@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "jni.h"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/symbol.hpp"
-#include "prims/jni.h"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "trace/traceMacros.hpp"

@@ -25,9 +25,9 @@
 #ifndef CPU_SPARC_VM_JNITYPES_SPARC_HPP
 #define CPU_SPARC_VM_JNITYPES_SPARC_HPP
 
+#include "jni.h"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
-#include "prims/jni.h"
 
 // This file holds platform-dependent routines used to write primitive jni
 // types to the array of arguments passed into JavaCalls::call
