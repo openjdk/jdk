@@ -198,18 +198,6 @@ public class TreeInfo {
         }
     }
 
-    /** Return true if the given tree represents a type elided anonymous class instance creation. */
-    public static boolean isAnonymousDiamond(JCTree tree) {
-        switch(tree.getTag()) {
-            case NEWCLASS:  {
-                JCNewClass nc = (JCNewClass)tree;
-                return nc.def != null && isDiamond(nc.clazz);
-            }
-            case ANNOTATED_TYPE: return isAnonymousDiamond(((JCAnnotatedType)tree).underlyingType);
-            default: return false;
-        }
-    }
-
     public static boolean isEnumInit(JCTree tree) {
         switch (tree.getTag()) {
             case VARDEF:
