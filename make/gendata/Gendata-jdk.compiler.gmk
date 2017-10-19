@@ -41,22 +41,22 @@ CT_MODULESOURCEPATH := $(call GetModuleSrcPath)
 
 CT_DATA_DESCRIPTION ?= $(TOPDIR)/make/data/symbols/symbols
 
+COMPILECREATESYMBOLS_ADD_EXPORTS := \
+    --add-exports jdk.compiler.interim/com.sun.tools.javac.api=ALL-UNNAMED \
+    --add-exports jdk.compiler.interim/com.sun.tools.javac.code=ALL-UNNAMED \
+    --add-exports jdk.compiler.interim/com.sun.tools.javac.util=ALL-UNNAMED \
+    --add-exports jdk.compiler.interim/com.sun.tools.javac.jvm=ALL-UNNAMED \
+    --add-exports jdk.jdeps.interim/com.sun.tools.classfile=ALL-UNNAMED \
+    #
+
 $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(TOPDIR)/make/langtools/src/classes, \
     INCLUDES := build/tools/symbolgenerator, \
-    ADD_JAVAC_FLAGS := -Xbootclasspath/p:"$(INTERIM_LANGTOOLS_JAR)", \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols, \
+    ADD_JAVAC_FLAGS := $(INTERIM_LANGTOOLS_ARGS) \
+        $(COMPILECREATESYMBOLS_ADD_EXPORTS), \
 ))
-
-ifeq ($(BOOT_JDK_MODULAR), true)
-  COMPILECREATESYMBOLS_ADD_EXPORTS := \
-      --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
-      --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED \
-      --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
-      --add-exports=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
-      --add-exports=jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED
-endif
 
 $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols: \
     $(COMPILE_CREATE_SYMBOLS) \

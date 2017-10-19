@@ -40,12 +40,8 @@ BUILD_TOOLS_JDK := $(call SetupJavaCompilationCompileTarget, \
 
 ################################################################################
 
-ifeq ($(BOOT_JDK_MODULAR), true)
-  COMPILEFONTCONFIG_ADD_EXPORTS := --add-exports java.desktop/sun.awt=ALL-UNNAMED
-endif
-
 TOOL_COMPILEFONTCONFIG = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
-    $(COMPILEFONTCONFIG_ADD_EXPORTS) \
+    --add-exports java.desktop/sun.awt=ALL-UNNAMED \
     build.tools.compilefontconfig.CompileFontConfig
 
 TOOL_COMPILEPROPERTIES = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
@@ -95,13 +91,8 @@ TOOL_CHARSETMAPPING = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classe
 TOOL_SPP = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes build.tools.spp.Spp
 
 # Nimbus is used somewhere in the swing build.
-
-ifeq ($(BOOT_JDK_MODULAR), true)
-  COMPILENIMBUS_ADD_MODS := --add-modules java.xml.bind
-endif
-
 TOOL_GENERATENIMBUS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
-    $(COMPILENIMBUS_ADD_MODS) \
+    --add-modules java.xml.bind \
     build.tools.generatenimbus.Generator
 
 TOOL_WRAPPERGENERATOR = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \

@@ -122,6 +122,8 @@ ifneq ($(CREATING_BUILDJDK), true)
   $(foreach m, $(GENSRC_MODULES), $(eval $m-gensrc: $m-gensrc-src))
 
   LANGTOOLS_GENSRC_TARGETS := $(filter $(addsuffix -%, $(LANGTOOLS_MODULES)), $(GENSRC_TARGETS))
+  INTERIM_LANGTOOLS_GENSRC_TARGETS := $(filter $(addsuffix -%, \
+      $(INTERIM_LANGTOOLS_BASE_MODULES)), $(GENSRC_TARGETS))
   CORBA_GENSRC_TARGETS := $(filter $(addsuffix -%, $(CORBA_MODULES)), $(GENSRC_TARGETS))
   HOTSPOT_GENSRC_TARGETS := $(filter $(addsuffix -%, $(HOTSPOT_MODULES)), $(GENSRC_TARGETS))
   JDK_GENSRC_TARGETS := $(filter-out $(LANGTOOLS_GENSRC_TARGETS) \
@@ -602,7 +604,7 @@ ifneq ($(findstring -only, $(MAKECMDGOALS)), )
 else
   $(LANGTOOLS_GENSRC_TARGETS): buildtools-langtools
 
-  interim-langtools: $(LANGTOOLS_GENSRC_TARGETS)
+  interim-langtools: $(INTERIM_LANGTOOLS_GENSRC_TARGETS)
 
   buildtools-jdk: interim-langtools interim-cldrconverter
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -94,5 +94,16 @@ $(eval $(call SetupJavaCompiler,GENERATE_USINGJDKBYTECODE, \
     FLAGS := --upgrade-module-path $(JDK_OUTPUTDIR)/modules --system none $(DISABLE_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
+
+# Use boot javac to generate JDK 8 compatible class files explicitly
+$(eval $(call SetupJavaCompiler,GENERATE_8_BYTECODE, \
+    JAVAC := $(JAVAC), \
+    FLAGS := \
+        $(JAVA_TOOL_FLAGS_SMALL) \
+        --release 8 \
+        -XDignore.symbol.file=true -g \
+        -Xlint:all -Werror, \
+    DISABLE_SJAVAC := true, \
+))
 
 endif # _SETUP_GMK

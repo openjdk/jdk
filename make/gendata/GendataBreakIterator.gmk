@@ -60,19 +60,13 @@ $(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR_LD, \
         $(TEXT_PKG_LD)/BreakIteratorInfo_th.java, \
     BIN := $(BREAK_ITERATOR_CLASSES)/jdk.localedata))
 
-ifeq ($(BOOT_JDK_MODULAR), true)
-  BREAK_ITERATOR_BOOTCLASSPATH := \
-      --patch-module java.base=$(BREAK_ITERATOR_CLASSES)/java.base \
-      --patch-module jdk.localedata=$(BREAK_ITERATOR_CLASSES)/jdk.localedata \
-      --add-exports java.base/sun.text=ALL-UNNAMED \
-      --add-exports java.base/sun.text.resources=ALL-UNNAMED \
-      --add-exports jdk.localedata/sun.text.resources.ext=ALL-UNNAMED \
-      #
-else
-  BREAK_ITERATOR_BOOTCLASSPATH := -Xbootclasspath/p:$(call PathList, \
-      $(BREAK_ITERATOR_CLASSES)/java.base \
-      $(BREAK_ITERATOR_CLASSES)/jdk.localedata)
-endif
+BREAK_ITERATOR_BOOTCLASSPATH := \
+    --patch-module java.base=$(BREAK_ITERATOR_CLASSES)/java.base \
+    --patch-module jdk.localedata=$(BREAK_ITERATOR_CLASSES)/jdk.localedata \
+    --add-exports java.base/sun.text=ALL-UNNAMED \
+    --add-exports java.base/sun.text.resources=ALL-UNNAMED \
+    --add-exports jdk.localedata/sun.text.resources.ext=ALL-UNNAMED \
+    #
 
 # Generate data resource files.
 # input

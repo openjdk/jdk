@@ -561,38 +561,35 @@ JAVAC_FLAGS?=@JAVAC_FLAGS@
 BUILD_JAVA_FLAGS := @BOOTCYCLE_JVM_ARGS_BIG@
 BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
 
-# Use ?= as this can be overridden from bootcycle-spec.gmk
-BOOT_JDK_MODULAR ?= @BOOT_JDK_MODULAR@
+# Interim langtools and rmic modules and arguments
+INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.jdeps jdk.javadoc
+INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
+INTERIM_LANGTOOLS_ADD_EXPORTS := \
+    --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.util.jar=jdk.jdeps.interim \
+    --add-exports java.base/jdk.internal.misc=jdk.jdeps.interim \
+    #
+INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
+    $(INTERIM_LANGTOOLS_MODULES))))
+INTERIM_LANGTOOLS_ARGS := \
+    --limit-modules java.base,jdk.zipfs,$(INTERIM_LANGTOOLS_MODULES_COMMA) \
+    --add-modules $(INTERIM_LANGTOOLS_MODULES_COMMA) \
+    --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_modules \
+    $(INTERIM_LANGTOOLS_ADD_EXPORTS) \
+    #
+JAVAC_MAIN_CLASS = -m jdk.compiler.interim/com.sun.tools.javac.Main
+JAVADOC_MAIN_CLASS = -m jdk.javadoc.interim/jdk.javadoc.internal.tool.Main
 
-INTERIM_LANGTOOLS_OVERRIDE_MODULES := java.compiler jdk.compiler \
-    jdk.jdeps jdk.javadoc
-INTERIM_RMIC_OVERRIDE_MODULES := jdk.rmic
-ifeq ($(BOOT_JDK_MODULAR), true)
-  INTERIM_LANGTOOLS_OVERRIDE_MODULES_ARGS = $(foreach m, \
-      $(INTERIM_LANGTOOLS_OVERRIDE_MODULES), \
-      --patch-module $m=$(BUILDTOOLS_OUTPUTDIR)/override_modules/$m)
-  INTERIM_RMIC_OVERRIDE_MODULES_ARGS = $(foreach m, \
-      $(INTERIM_LANGTOOLS_OVERRIDE_MODULES) \
-      $(INTERIM_RMIC_OVERRIDE_MODULES), \
-      --patch-module $m=$(BUILDTOOLS_OUTPUTDIR)/override_modules/$m)
-  INTERIM_LANGTOOLS_ARGS = $(INTERIM_LANGTOOLS_OVERRIDE_MODULES_ARGS)
-  JAVAC_MAIN_CLASS = -m jdk.compiler/com.sun.tools.javac.Main
-  JAVADOC_MAIN_CLASS = -m jdk.javadoc/jdk.javadoc.internal.tool.Main
-else
-  INTERIM_LANGTOOLS_OVERRIDE_MODULES_ARGS = \
-      -Xbootclasspath/p:$(call PathList, \
-          $(addprefix $(BUILDTOOLS_OUTPUTDIR)/override_modules/, \
-              $(INTERIM_LANGTOOLS_OVERRIDE_MODULES)))
-  INTERIM_RMIC_OVERRIDE_MODULES_ARGS = \
-      -Xbootclasspath/p:$(call PathList, \
-          $(addprefix $(BUILDTOOLS_OUTPUTDIR)/override_modules/, \
-              $(INTERIM_LANGTOOLS_OVERRIDE_MODULES) \
-              $(INTERIM_RMIC_OVERRIDE_MODULES)))
-  INTERIM_LANGTOOLS_ARGS = $(INTERIM_LANGTOOLS_OVERRIDE_MODULES_ARGS) \
-      -cp $(BUILDTOOLS_OUTPUTDIR)/override_modules/jdk.compiler
-  JAVAC_MAIN_CLASS = com.sun.tools.javac.Main
-  JAVADOC_MAIN_CLASS = jdk.javadoc.internal.tool.Main
-endif
+INTERIM_RMIC_BASE_MODULES := jdk.rmic
+INTERIM_RMIC_MODULES := $(addsuffix .interim, $(INTERIM_RMIC_BASE_MODULES))
+INTERIM_RMIC_ADD_EXPORTS := \
+    --add-exports java.corba/com.sun.corba.se.impl.util=jdk.rmic.interim \
+    #
+INTERIM_RMIC_ARGS := --limit-modules java.base,jdk.compiler,jdk.javadoc,java.corba \
+    --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_modules \
+    $(INTERIM_RMIC_ADD_EXPORTS) \
+    #
+
 # You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
 # Use = assignment to be able to override in bootcycle-spec.gmk
 NEW_JAVAC   = $(INTERIM_LANGTOOLS_ARGS) $(JAVAC_MAIN_CLASS)
