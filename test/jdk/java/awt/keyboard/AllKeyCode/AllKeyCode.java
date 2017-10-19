@@ -24,7 +24,7 @@
 /**
  * @test
  * @key headful
- * @bug 8149456 8147834 8150230 8155740
+ * @bug 8149456 8147834 8150230 8155740 8163265
  * @requires os.family == "mac"
  * @summary Tests key codes for all keys supported in Java for Mac OS X.
  * @run main AllKeyCode

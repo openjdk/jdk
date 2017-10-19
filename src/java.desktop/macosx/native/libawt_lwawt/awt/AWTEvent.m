@@ -482,7 +482,8 @@ NsCharToJavaVirtualKeyCode(unichar ch, BOOL isDeadChar,
         offset = ch - '0';
         // make sure in range for decimal digits
         if (offset >= 0 && offset <= 9)    {
-            jboolean numpad = (flags & NSNumericPadKeyMask) != 0;
+            jboolean numpad = ((flags & NSNumericPadKeyMask) &&
+                               (key > 81 && key < 93));
             *postsTyped = YES;
             if (numpad) {
                 *keyCode = offset + java_awt_event_KeyEvent_VK_NUMPAD0;
