@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,7 +37,7 @@ import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 final class WeakReferenceXMLSchema extends AbstractXMLSchema {
 
     /** Weak reference to grammar pool. */
-    private WeakReference fGrammarPool = new WeakReference(null);
+    private WeakReference<XMLGrammarPool> fGrammarPool = new WeakReference<>(null);
 
     public WeakReferenceXMLSchema() {}
 
@@ -46,12 +46,12 @@ final class WeakReferenceXMLSchema extends AbstractXMLSchema {
      */
 
     public synchronized XMLGrammarPool getGrammarPool() {
-        XMLGrammarPool grammarPool = (XMLGrammarPool) fGrammarPool.get();
+        XMLGrammarPool grammarPool = fGrammarPool.get();
         // If there's no grammar pool then either we haven't created one
         // yet or the garbage collector has already cleaned out the previous one.
         if (grammarPool == null) {
             grammarPool = new SoftReferenceGrammarPool();
-            fGrammarPool = new WeakReference(grammarPool);
+            fGrammarPool = new WeakReference<>(grammarPool);
         }
         return grammarPool;
     }

@@ -30,39 +30,63 @@ include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
+include Modules.gmk
+
+################################################################################
+# Generate interim versions of the module-info.java files for the interim
+# langtools modules. Each interim module has ".interim" added as suffix to the
+# original module name.
+
+INTERIM_MODULEINFO_PATTERN := \
+    $(foreach m, $(INTERIM_LANGTOOLS_BASE_MODULES), -e 's/$m\([,; ]\)/$m.interim\1/g')
+
+$(BUILDTOOLS_OUTPUTDIR)/gensrc/%.interim/module-info.java: \
+    $(TOPDIR)/src/%/share/classes/module-info.java
+	$(call LogInfo, Generating module-info.java for $*.interim)
+	$(call MakeDir, $(@D))
+	$(SED) $(INTERIM_MODULEINFO_PATTERN) $< > $@
+
+TARGETS += $(patsubst %, $(BUILDTOOLS_OUTPUTDIR)/gensrc/%/module-info.java, \
+    $(INTERIM_LANGTOOLS_MODULES))
 
 ################################################################################
 # Setup the rules to build interim langtools, which is compiled by the boot
-# javac and can be run on the boot jdk. This will be used to compile
-# the rest of the product. Each module is compiled separately to allow a modular
-# boot jdk to override system classes using -Xoverride:.
+# javac and can be run on the boot jdk. This will be used to compile the rest of
+# the product. Each module is compiled separately because a multi module setup
+# would require the source files to be copied into directories named after the
+# actual interim modules.
 
 # Param 1 - Name of module to compile
-# Param 2 - Name of modules to depend on
 define SetupInterimModule
-  $$(eval $$(call SetupJavaCompilation,BUILD_INTERIM_$(strip $1), \
+  $$(eval $$(call SetupJavaCompilation, BUILD_$1.interim, \
       SETUP := BOOT_JAVAC, \
       DISABLE_SJAVAC := true, \
-      SRC := $(TOPDIR)/src/$(strip $1)/share/classes \
-          $$(wildcard $(SUPPORT_OUTPUTDIR)/gensrc/$(strip $1)), \
-      EXCLUDES := sun com/sun/tools/jdeps com/sun/tools/javap \
-          com/sun/tools/jdeprscan, \
-      EXCLUDE_FILES := module-info.java JavacToolProvider.java \
-	  JavadocToolProvider.java Standard.java, \
+      SRC := $(BUILDTOOLS_OUTPUTDIR)/gensrc/$1.interim \
+          $$(wildcard $(SUPPORT_OUTPUTDIR)/gensrc/$1) \
+          $(TOPDIR)/src/$1/share/classes, \
+      EXCLUDES := sun, \
+      EXCLUDE_FILES := $(TOPDIR)/src/$1/share/classes/module-info.java \
+          Standard.java, \
+      EXTRA_FILES := $(BUILDTOOLS_OUTPUTDIR)/gensrc/$1.interim/module-info.java, \
       COPY := .gif .png .xml .css .js javax.tools.JavaCompilerTool, \
-      BIN := $(BUILDTOOLS_OUTPUTDIR)/override_modules/$(strip $1), \
-      ADD_JAVAC_FLAGS := -Xbootclasspath/p:$$(call PathList, \
-          $$(foreach m, $2, $(BUILDTOOLS_OUTPUTDIR)/override_modules/$$m)), \
+      BIN := $(BUILDTOOLS_OUTPUTDIR)/interim_modules/$1.interim, \
+      ADD_JAVAC_FLAGS := --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_modules \
+          $$(INTERIM_LANGTOOLS_ADD_EXPORTS) \
+          -Xlint:-module, \
   ))
 
-  $$(BUILD_INTERIM_$(strip $1)): $$(foreach m, $2, $$(BUILD_INTERIM_$(strip $$m)))
+  $1_DEPS_INTERIM := $$(addsuffix .interim, $$(filter \
+      $$(INTERIM_LANGTOOLS_BASE_MODULES), $$(call FindTransitiveDepsForModule, $1)))
 
-  TARGETS += $$(BUILD_INTERIM_$(strip $1))
+  $$(BUILD_$1.interim): $$(foreach d, $$($1_DEPS_INTERIM), $$(BUILD_$$d))
+
+  TARGETS += $$(BUILD_$1.interim)
 endef
 
-$(eval $(call SetupInterimModule, java.compiler))
-$(eval $(call SetupInterimModule, jdk.compiler, java.compiler))
-$(eval $(call SetupInterimModule, jdk.jdeps, jdk.compiler java.compiler))
-$(eval $(call SetupInterimModule, jdk.javadoc, java.compiler jdk.compiler))
+$(foreach m, $(INTERIM_LANGTOOLS_BASE_MODULES), \
+  $(eval $(call SetupInterimModule,$m)) \
+)
+
+################################################################################
 
 all: $(TARGETS)

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,7 +28,7 @@ import java.util.List;
  * an immutable ordered collection of <code>XSNamespaceItem</code>s, without
  * defining or constraining how this collection is implemented.
  */
-public interface XSNamespaceItemList extends List {
+public interface XSNamespaceItemList extends List<XSNamespaceItem> {
     /**
      *  The number of <code>XSNamespaceItem</code>s in the list. The range of
      * valid child object indices is 0 to <code>length-1</code> inclusive.

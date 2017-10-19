@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,11 +21,11 @@
 
 package com.sun.org.apache.xerces.internal.impl.dv;
 
-import java.util.Vector;
-
+import com.sun.org.apache.xerces.internal.impl.xs.util.XSObjectListImpl;
+import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xs.XSAnnotation;
 import com.sun.org.apache.xerces.internal.xs.XSObjectList;
-import com.sun.org.apache.xerces.internal.impl.xs.util.XSObjectListImpl;
+import java.util.List;
 
 /**
  * The class used to pass all facets to {@link XSSimpleType#applyFacets}.
@@ -74,16 +74,16 @@ public class XSFacets {
     public String pattern;
 
     /**
-     * Vector containing values of Enumeration facet, as String's.
+     * ArrayList containing values of Enumeration facet, as String's.
      */
-    public Vector enumeration;
+    public List<String> enumeration;
 
     /**
      * An array parallel to "Vector enumeration". It contains namespace context
      * of each enumeration value. Elements of this vector are NamespaceContext
      * objects.
      */
-    public Vector enumNSDecls;
+    public List<NamespaceContext> enumNSDecls;
 
     /**
      * value of maxInclusive facet.

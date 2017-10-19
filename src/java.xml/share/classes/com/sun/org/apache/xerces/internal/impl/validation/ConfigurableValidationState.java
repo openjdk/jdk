@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -77,7 +77,7 @@ public final class ConfigurableValidationState extends ValidationState {
      * @return null, if ID/IDREF checking is turned off
      *         otherwise, returns the value of the super implementation
      */
-    public Iterator checkIDRefID() {
+    public Iterator<String> checkIDRefID() {
         return (fIdIdrefChecking) ? super.checkIDRefID() : null;
     }
 

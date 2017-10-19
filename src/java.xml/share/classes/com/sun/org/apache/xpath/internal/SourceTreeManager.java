@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,19 +21,17 @@
 
 package com.sun.org.apache.xpath.internal;
 
+import com.sun.org.apache.xml.internal.dtm.DTM;
+import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
 import java.io.IOException;
-import java.util.Vector;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.transform.Source;
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
-
-import com.sun.org.apache.xml.internal.dtm.DTM;
-import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
-
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
@@ -45,8 +44,8 @@ import org.xml.sax.helpers.XMLReaderFactory;
 public class SourceTreeManager
 {
 
-  /** Vector of SourceTree objects that this manager manages. */
-  private Vector m_sourceTree = new Vector();
+  /** List of SourceTree objects that this manager manages. */
+  private List<SourceTree> m_sourceTree = new ArrayList<>();
 
   /**
    * Reset the list of SourceTree objects that this manager manages.
@@ -54,7 +53,7 @@ public class SourceTreeManager
    */
   public void reset()
   {
-    m_sourceTree = new Vector();
+    m_sourceTree = new ArrayList<>();
   }
 
   /** The TrAX URI resolver used to obtain source trees. */
@@ -94,7 +93,7 @@ public class SourceTreeManager
 
     for (int i = 0; i < n; i++)
     {
-      SourceTree sTree = (SourceTree) m_sourceTree.elementAt(i);
+      SourceTree sTree = m_sourceTree.get(i);
 
       if (owner == sTree.m_root)
         return sTree.m_url;
@@ -149,10 +148,10 @@ public class SourceTreeManager
       return;
     for(int i=m_sourceTree.size()-1;i>=0;--i)
     {
-      SourceTree st=(SourceTree)m_sourceTree.elementAt(i);
+      SourceTree st= m_sourceTree.get(i);
       if(st!=null && st.m_root==n)
       {
-        m_sourceTree.removeElementAt(i);
+        m_sourceTree.remove(i);
         return;
       }
     }
@@ -183,7 +182,7 @@ public class SourceTreeManager
     }
     if (null != source.getSystemId())
     {
-      m_sourceTree.addElement(new SourceTree(n, source.getSystemId()));
+      m_sourceTree.add(new SourceTree(n, source.getSystemId()));
     }
   }
 
@@ -211,7 +210,7 @@ public class SourceTreeManager
     // System.out.println("getNode: "+n);
     for (int i = 0; i < n; i++)
     {
-      SourceTree sTree = (SourceTree) m_sourceTree.elementAt(i);
+      SourceTree sTree = m_sourceTree.get(i);
 
       // System.out.println("getNode -         url: "+url);
       // System.out.println("getNode - sTree.m_url: "+sTree.m_url);

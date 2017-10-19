@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,7 +28,7 @@ import java.util.List;
  * immutable ordered collection of <code>XSObject</code>s, without defining
  * or constraining how this collection is implemented.
  */
-public interface XSObjectList extends List {
+public interface XSObjectList extends List<XSObject> {
     /**
      *  The number of <code>XSObjects</code> in the list. The range of valid
      * child object indices is 0 to <code>length-1</code> inclusive.

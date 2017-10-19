@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -53,6 +54,7 @@ import java.net.UnknownServiceException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -914,7 +916,7 @@ public final class TransformerImpl extends Transformer
         throws IllegalArgumentException
     {
         if (properties != null) {
-            final Enumeration names = properties.propertyNames();
+            final Enumeration<?> names = properties.propertyNames();
 
             while (names.hasMoreElements()) {
                 final String name = (String) names.nextElement();
@@ -967,7 +969,7 @@ public final class TransformerImpl extends Transformer
         if (_properties == null) return;
 
         // Get a list of all the defined properties
-        Enumeration names = _properties.propertyNames();
+        Enumeration<?> names = _properties.propertyNames();
         while (names.hasMoreElements()) {
             // Note the use of get() instead of getProperty()
             String name  = (String) names.nextElement();
@@ -1046,7 +1048,7 @@ public final class TransformerImpl extends Transformer
         String doctypeSystem = null;
 
         // Get a list of all the defined properties
-        Enumeration names = _properties.propertyNames();
+        Enumeration<?> names = _properties.propertyNames();
         while (names.hasMoreElements()) {
             // Note the use of get() instead of getProperty()
             String name  = (String) names.nextElement();
@@ -1097,7 +1099,7 @@ public final class TransformerImpl extends Transformer
             else if (name.equals(OutputKeys.CDATA_SECTION_ELEMENTS)) {
                 if (value != null) {
                     StringTokenizer e = new StringTokenizer(value);
-                    ArrayList<String> uriAndLocalNames = null;
+                    List<String> uriAndLocalNames = null;
                     while (e.hasMoreTokens()) {
                         final String token = e.nextToken();
 
@@ -1147,7 +1149,7 @@ public final class TransformerImpl extends Transformer
         // Copy propeties set in stylesheet to base
         final Properties base = new Properties(defaults);
         if (outputProperties != null) {
-            final Enumeration names = outputProperties.propertyNames();
+            final Enumeration<?> names = outputProperties.propertyNames();
             while (names.hasMoreElements()) {
                 final String name = (String) names.nextElement();
                 base.setProperty(name, outputProperties.getProperty(name));
@@ -1184,12 +1186,12 @@ public final class TransformerImpl extends Transformer
                 final Properties method_props =
                         OutputPropertiesFactory.getDefaultMethodProperties(method);
                 {
-                        final Enumeration names = method_props.propertyNames();
-                        while (names.hasMoreElements())
-                        {
-                                final String name = (String)names.nextElement();
-                                props.setProperty(name, method_props.getProperty(name));
-                        }
+                    final Enumeration<?> names = method_props.propertyNames();
+                    while (names.hasMoreElements())
+                    {
+                        final String name = (String)names.nextElement();
+                        props.setProperty(name, method_props.getProperty(name));
+                    }
                 }
         }
     /**

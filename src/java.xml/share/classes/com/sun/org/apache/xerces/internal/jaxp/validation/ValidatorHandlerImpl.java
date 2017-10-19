@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,22 +21,6 @@
 
 package com.sun.org.apache.xerces.internal.jaxp.validation;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.HashMap;
-
-import javax.xml.XMLConstants;
-import javax.xml.parsers.FactoryConfigurationError;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.sax.SAXResult;
-import javax.xml.transform.sax.SAXSource;
-import javax.xml.validation.TypeInfoProvider;
-import javax.xml.validation.ValidatorHandler;
-
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
@@ -52,8 +37,8 @@ import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.URI;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
@@ -71,7 +56,21 @@ import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
 import com.sun.org.apache.xerces.internal.xs.ItemPSVI;
 import com.sun.org.apache.xerces.internal.xs.PSVIProvider;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
-import javax.xml.catalog.CatalogFeatures;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.HashMap;
+import java.util.Map;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.FactoryConfigurationError;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.sax.SAXResult;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.validation.TypeInfoProvider;
+import javax.xml.validation.ValidatorHandler;
 import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.TypeInfo;
 import org.w3c.dom.ls.LSInput;
@@ -169,7 +168,7 @@ final class ValidatorHandlerImpl extends ValidatorHandler implements
     private boolean fNeedPushNSContext = true;
 
     /** Map for tracking unparsed entities. */
-    private HashMap fUnparsedEntities = null;
+    private Map<String, String> fUnparsedEntities = null;
 
     /** Flag used to track whether XML names and Namespace URIs have been internalized. */
     private boolean fStringsInternalized = false;
@@ -653,7 +652,7 @@ final class ValidatorHandlerImpl extends ValidatorHandler implements
     public void unparsedEntityDecl(String name, String publicId,
             String systemId, String notationName) throws SAXException {
         if (fUnparsedEntities == null) {
-            fUnparsedEntities = new HashMap();
+            fUnparsedEntities = new HashMap<>();
         }
         fUnparsedEntities.put(name, name);
     }

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,8 +21,6 @@
 
 package com.sun.org.apache.xml.internal.dtm.ref.sax2dtm;
 
-import javax.xml.transform.Source;
-
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMManager;
 import com.sun.org.apache.xml.internal.dtm.DTMWSFilter;
@@ -30,7 +28,8 @@ import com.sun.org.apache.xml.internal.utils.IntStack;
 import com.sun.org.apache.xml.internal.utils.IntVector;
 import com.sun.org.apache.xml.internal.utils.StringVector;
 import com.sun.org.apache.xml.internal.utils.XMLStringFactory;
-
+import java.util.Vector;
+import javax.xml.transform.Source;
 import org.xml.sax.SAXException;
 
 /**
@@ -225,7 +224,7 @@ public class SAX2RTFDTM extends SAX2DTM
   {
     // Re-initialize the tree append process
     m_endDocumentOccured = false;
-    m_prefixMappings = new java.util.Vector();
+    m_prefixMappings = new Vector<>();
     m_contextIndexes = new IntStack();
     m_parents = new IntStack();
 

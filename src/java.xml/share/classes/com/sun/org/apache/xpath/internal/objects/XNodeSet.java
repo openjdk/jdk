@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,7 +27,8 @@ import com.sun.org.apache.xml.internal.dtm.DTMManager;
 import com.sun.org.apache.xml.internal.utils.XMLString;
 import com.sun.org.apache.xpath.internal.NodeSetDTM;
 import com.sun.org.apache.xpath.internal.axes.NodeSequence;
-
+import java.util.ArrayList;
+import java.util.List;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.traversal.NodeIterator;
 
@@ -495,7 +496,7 @@ public class XNodeSet extends NodeSequence
       DTMIterator list1 = iterRaw();
       DTMIterator list2 = ((XNodeSet) obj2).iterRaw();
       int node1;
-      java.util.Vector node2Strings = null;
+      List<XMLString> node2Strings = null;
 
       while (DTM.NULL != (node1 = list1.nextNode()))
       {
@@ -517,9 +518,9 @@ public class XNodeSet extends NodeSequence
             }
 
             if (null == node2Strings)
-              node2Strings = new java.util.Vector();
+              node2Strings = new ArrayList<>();
 
-            node2Strings.addElement(s2);
+            node2Strings.add(s2);
           }
         }
         else
@@ -528,7 +529,7 @@ public class XNodeSet extends NodeSequence
 
           for (int i = 0; i < n; i++)
           {
-            if (comparator.compareStrings(s1, (XMLString)node2Strings.elementAt(i)))
+            if (comparator.compareStrings(s1, node2Strings.get(i)))
             {
               result = true;
 

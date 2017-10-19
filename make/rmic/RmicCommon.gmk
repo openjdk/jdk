@@ -31,13 +31,9 @@ include RMICompilation.gmk
 
 ################################################################################
 
-ifeq ($(BOOT_JDK_MODULAR), true)
-  RMIC_MAIN_CLASS := -m jdk.rmic/sun.rmi.rmic.Main
-else
-  RMIC_MAIN_CLASS := sun.rmi.rmic.Main
-endif
+RMIC_MAIN_CLASS := -m jdk.rmic.interim/sun.rmi.rmic.Main
 
-RMIC := $(JAVA_SMALL) $(INTERIM_RMIC_OVERRIDE_MODULES_ARGS) $(RMIC_MAIN_CLASS)
+RMIC := $(JAVA_SMALL) $(INTERIM_RMIC_ARGS) $(RMIC_MAIN_CLASS)
 
 CLASSES_DIR := $(JDK_OUTPUTDIR)/modules
 # NOTE: If the smart javac dependency management is reintroduced, these classes

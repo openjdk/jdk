@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -36,12 +36,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.Vector;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -87,19 +86,19 @@ public final class XSLTC {
 
     // Name index tables
     private int       _nextGType;  // Next available element type
-    private Vector    _namesIndex; // Index of all registered QNames
+    private List<String>   _namesIndex; // Index of all registered QNames
     private Map<String, Integer> _elements;   // Map of all registered elements
     private Map<String, Integer> _attributes; // Map of all registered attributes
 
     // Namespace index tables
     private int       _nextNSType; // Next available namespace type
-    private Vector    _namespaceIndex; // Index of all registered namespaces
+    private List<String>   _namespaceIndex; // Index of all registered namespaces
     private Map<String, Integer> _namespaces; // Map of all registered namespaces
     private Map<String, Integer> _namespacePrefixes;// Map of all registered namespace prefixes
 
 
     // All literal text in the stylesheet
-    private ArrayList<StringBuilder> m_characterData;
+    private List<StringBuilder> m_characterData;
 
     // These define the various methods for outputting the translet
     public static final int JAR_OUTPUT         = 1;
@@ -117,8 +116,8 @@ public final class XSLTC {
     private File    _destDir = null;     // -d <directory-name>
     private int     _outputType = BYTEARRAY_OUTPUT; // by default
 
-    private ArrayList<ByteArrayOutputStream>  _classes;
-    private ArrayList<JavaClass>  _bcelClasses;
+    private List<ByteArrayOutputStream>  _classes;
+    private List<JavaClass>  _bcelClasses;
     private boolean _callsNodeset = false;
     private boolean _multiDocument = false;
     private boolean _hasIdCall = false;
@@ -309,8 +308,8 @@ public final class XSLTC {
      * The filtering of function types (external,internal) takes place in FunctionCall class
      *
      */
-    Class loadExternalFunction(String name) throws ClassNotFoundException {
-        Class loaded = null;
+    Class<?> loadExternalFunction(String name) throws ClassNotFoundException {
+        Class<?> loaded = null;
         //Check if the function is not loaded already
         if (_externalExtensionFunctions.containsKey(name)) {
             loaded = _externalExtensionFunctions.get(name);
@@ -322,7 +321,7 @@ public final class XSLTC {
             throw new ClassNotFoundException(name);
         }
         //Return loaded class
-        return (Class) loaded;
+        return loaded;
     }
 
     /*
@@ -342,8 +341,8 @@ public final class XSLTC {
         _attributes     = new HashMap<>();
         _namespaces     = new HashMap<>();
         _namespaces.put("", _nextNSType);
-        _namesIndex     = new Vector(128);
-        _namespaceIndex = new Vector(32);
+        _namesIndex     = new ArrayList<>(128);
+        _namespaceIndex = new ArrayList<>(32);
         _namespacePrefixes = new HashMap<>();
         _stylesheet     = null;
         _parser.init();
@@ -458,7 +457,7 @@ public final class XSLTC {
      */
     public boolean compile(InputSource input, String name) {
         try {
-            // Reset globals in case we're called by compile(Vector v);
+            // Reset globals in case we're called by compile(ArrayList v);
             reset();
 
             // The systemId may not be set, so we'll have to check the URL
@@ -531,11 +530,11 @@ public final class XSLTC {
     }
 
     /**
-     * Compiles a set of stylesheets pointed to by a Vector of URLs
-     * @param stylesheets A Vector containing URLs pointing to the stylesheets
+     * Compiles a set of stylesheets pointed to by a List of URLs
+     * @param stylesheets A List containing URLs pointing to the stylesheets
      * @return 'true' if the compilation was successful
      */
-    public boolean compile(Vector stylesheets) {
+    public boolean compile(List<URL> stylesheets) {
         // Get the number of stylesheets (ie. URLs) in the vector
         final int count = stylesheets.size();
 
@@ -545,21 +544,13 @@ public final class XSLTC {
         // Special handling needed if the URL count is one, becuase the
         // _className global must not be reset if it was set explicitly
         if (count == 1) {
-            final Object url = stylesheets.firstElement();
-            if (url instanceof URL)
-                return compile((URL)url);
-            else
-                return false;
+            return compile(stylesheets.get(0));
         }
         else {
             // Traverse all elements in the vector and compile
-            final Enumeration urls = stylesheets.elements();
-            while (urls.hasMoreElements()) {
+            for (URL url : stylesheets) {
                 _className = null; // reset, so that new name will be computed
-                final Object url = urls.nextElement();
-                if (url instanceof URL) {
-                    if (!compile((URL)url)) return false;
-                }
+                if (!compile(url)) return false;
             }
         }
         return true;
@@ -623,7 +614,7 @@ public final class XSLTC {
      * Get a list of all compile error messages
      * @return A List containing all compile error messages
      */
-    public ArrayList<ErrorMsg> getErrors() {
+    public List<ErrorMsg> getErrors() {
         return _parser.getErrors();
     }
 
@@ -631,7 +622,7 @@ public final class XSLTC {
      * Get a list of all compile warning messages
      * @return A List containing all compile error messages
      */
-    public ArrayList<ErrorMsg> getWarnings() {
+    public List<ErrorMsg> getWarnings() {
         return _parser.getWarnings();
     }
 
@@ -685,7 +676,7 @@ public final class XSLTC {
     /**
      * Set the class name for the generated translet. This class name is
      * overridden if multiple stylesheets are compiled in one go using the
-     * compile(Vector urls) method.
+     * compile(List urls) method.
      * @param className The name to assign to the translet class
      */
     public void setClassName(String className) {
@@ -791,9 +782,9 @@ public final class XSLTC {
             final String uri = name.getNamespace();
             final String local = "@"+name.getLocalPart();
             if ((uri != null) && (!uri.equals("")))
-                _namesIndex.addElement(uri+":"+local);
+                _namesIndex.add(uri+":"+local);
             else
-                _namesIndex.addElement(local);
+                _namesIndex.add(local);
             if (name.getLocalPart().equals("*")) {
                 registerNamespace(name.getNamespace());
             }
@@ -810,7 +801,7 @@ public final class XSLTC {
         Integer code = _elements.get(name.toString());
         if (code == null) {
             _elements.put(name.toString(), code = _nextGType++);
-            _namesIndex.addElement(name.toString());
+            _namesIndex.add(name.toString());
         }
         if (name.getLocalPart().equals("*")) {
             registerNamespace(name.getNamespace());
@@ -832,9 +823,9 @@ public final class XSLTC {
         final String uri = name.getNamespace();
         if ((uri != null) && (!uri.equals(""))){
             // namespace::ext2:ped2 will be made empty in TypedNamespaceIterator
-            _namesIndex.addElement("?");
+            _namesIndex.add("?");
         } else{
-           _namesIndex.addElement("?"+name.getLocalPart());
+           _namesIndex.add("?"+name.getLocalPart());
         }
     }
     return code.intValue();
@@ -849,7 +840,7 @@ public final class XSLTC {
         if (code == null) {
             code = _nextNSType++;
             _namespaces.put(namespaceURI,code);
-            _namespaceIndex.addElement(namespaceURI);
+            _namespaceIndex.add(namespaceURI);
         }
         return code;
     }
@@ -878,11 +869,11 @@ public final class XSLTC {
         return _attributeSetSerial++;
     }
 
-    public Vector getNamesIndex() {
+    public List<String> getNamesIndex() {
         return _namesIndex;
     }
 
-    public Vector getNamespaceIndex() {
+    public List<String> getNamespaceIndex() {
         return _namespaceIndex;
     }
 

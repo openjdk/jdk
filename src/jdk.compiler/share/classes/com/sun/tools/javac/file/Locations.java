@@ -88,7 +88,7 @@ import com.sun.tools.javac.util.JDK9Wrappers;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.jvm.ModuleNameReader;
-import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.Iterators;
 import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.StringUtils;
 
@@ -964,6 +964,7 @@ public class Locations {
         private final String name;
         private final String moduleName;
         private final boolean output;
+        boolean explicit;
         Collection<Path> searchPath;
 
         ModuleLocationHandler(LocationHandler parent, String name, String moduleName,
@@ -1083,6 +1084,14 @@ public class Locations {
         Set<Location> locations() {
             return Collections.unmodifiableSet(nameMap.values().stream().collect(Collectors.toSet()));
         }
+
+        Set<Location> explicitLocations() {
+            return Collections.unmodifiableSet(nameMap.entrySet()
+                                                      .stream()
+                                                      .filter(e -> e.getValue().explicit)
+                                                      .map(e -> e.getValue())
+                                                      .collect(Collectors.toSet()));
+        }
     }
 
     /**
@@ -1119,10 +1128,20 @@ public class Locations {
 
         @Override
         Iterable<Set<Location>> listLocationsForModules() {
-            if (searchPath == null)
-                return Collections.emptyList();
+            Set<Location> explicitLocations = moduleTable != null ?
+                    moduleTable.explicitLocations() : Collections.emptySet();
+            Iterable<Set<Location>> explicitLocationsList = !explicitLocations.isEmpty()
+                    ? Collections.singletonList(explicitLocations)
+                    : Collections.emptyList();
 
-            return ModulePathIterator::new;
+            if (searchPath == null)
+                return explicitLocationsList;
+
+            Iterable<Set<Location>> searchPathLocations =
+                    () -> new ModulePathIterator();
+            return () -> Iterators.createCompoundIterator(Arrays.asList(explicitLocationsList,
+                                                                        searchPathLocations),
+                                                          Iterable::iterator);
         }
 
         @Override
@@ -1159,6 +1178,7 @@ public class Locations {
                 l.searchPath = checkedPaths;
                 moduleTable.updatePaths(l);
             }
+            l.explicit = true;
         }
 
         private List<Path> checkPaths(Iterable<? extends Path> paths) throws IOException {

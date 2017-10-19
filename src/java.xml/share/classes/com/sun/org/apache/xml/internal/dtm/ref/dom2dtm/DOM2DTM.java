@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,11 +21,6 @@
 
 package com.sun.org.apache.xml.internal.dtm.ref.dom2dtm;
 
-import java.util.Vector;
-
-import javax.xml.transform.SourceLocator;
-import javax.xml.transform.dom.DOMSource;
-
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMManager;
 import com.sun.org.apache.xml.internal.dtm.DTMWSFilter;
@@ -42,6 +37,10 @@ import com.sun.org.apache.xml.internal.utils.TreeWalker;
 import com.sun.org.apache.xml.internal.utils.XMLCharacterRecognizer;
 import com.sun.org.apache.xml.internal.utils.XMLString;
 import com.sun.org.apache.xml.internal.utils.XMLStringFactory;
+import java.util.ArrayList;
+import java.util.List;
+import javax.xml.transform.SourceLocator;
+import javax.xml.transform.dom.DOMSource;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
@@ -102,7 +101,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
    * Text/CDATASection nodes in the DOM have been coalesced into a
    * single DTM Text node); this table points only to the first in
    * that sequence. */
-  protected Vector m_nodes = new Vector();
+  protected List<Node> m_nodes = new ArrayList<>();
 
   /**
    * Construct a DOM2DTM object from a DOM node.
@@ -243,7 +242,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
       }
     }
 
-    m_nodes.addElement(node);
+    m_nodes.add(node);
 
     m_firstch.setElementAt(NOTPROCESSED,nodeIndex);
     m_nextsib.setElementAt(NOTPROCESSED,nodeIndex);
@@ -606,7 +605,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
 
     int identity = makeNodeIdentity(nodeHandle);
 
-    return (Node) m_nodes.elementAt(identity);
+    return m_nodes.get(identity);
   }
 
   /**
@@ -618,7 +617,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
    */
   protected Node lookupNode(int nodeIdentity)
   {
-    return (Node) m_nodes.elementAt(nodeIdentity);
+    return m_nodes.get(nodeIdentity);
   }
 
   /**
@@ -672,7 +671,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
       {
         for (; i < len; i++)
         {
-          if (m_nodes.elementAt(i) == node)
+          if (m_nodes.get(i) == node)
             return makeNodeHandle(i);
         }
 
@@ -1025,7 +1024,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
     {
       int id=makeNodeIdentity(nodeHandle);
       if(NULL==id) return null;
-      Node newnode=(Node)m_nodes.elementAt(id);
+      Node newnode=m_nodes.get(id);
       String newname=newnode.getLocalName();
       if (null == newname)
       {
@@ -1145,7 +1144,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
     {
       int id=makeNodeIdentity(nodeHandle);
       if(id==NULL) return null;
-      Node node=(Node)m_nodes.elementAt(id);
+      Node node=m_nodes.get(id);
       return node.getNamespaceURI();
     }
     else

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -73,8 +73,8 @@ public final class ExceptionConst {
     private static final Class<?>[] EXCS_FIELD_AND_METHOD_RESOLUTION = {
             NO_SUCH_FIELD_ERROR, ILLEGAL_ACCESS_ERROR, NO_SUCH_METHOD_ERROR
     }; // Chapter 5.2
-    private static final Class<?>[] EXCS_INTERFACE_METHOD_RESOLUTION = new Class[0]; // Chapter 5.3 (as below)
-    private static final Class<?>[] EXCS_STRING_RESOLUTION = new Class[0];
+    private static final Class<?>[] EXCS_INTERFACE_METHOD_RESOLUTION = new Class<?>[0]; // Chapter 5.3 (as below)
+    private static final Class<?>[] EXCS_STRING_RESOLUTION = new Class<?>[0];
     // Chapter 5.4 (no errors but the ones that _always_ could happen! How stupid.)
     private static final Class<?>[] EXCS_ARRAY_EXCEPTION = {
             NULL_POINTER_EXCEPTION, ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION

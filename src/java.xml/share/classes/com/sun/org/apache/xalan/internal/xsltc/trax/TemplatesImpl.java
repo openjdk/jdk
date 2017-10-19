@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -97,7 +97,7 @@ public final class TemplatesImpl implements Templates, Serializable {
      * Contains the translet class definition(s). These are created when
      * this Templates is created or when it is read back from disk.
      */
-    private Class[] _class = null;
+    private Class<?>[] _class = null;
 
     /**
      * The index of the main translet class in the arrays _class[] and
@@ -133,7 +133,7 @@ public final class TemplatesImpl implements Templates, Serializable {
      * multiple threads.
      * Declaring it transient to fix bug 22438
      */
-    private transient ThreadLocal _sdom = new ThreadLocal();
+    private transient ThreadLocal<DOM> _sdom = new ThreadLocal<>();
 
     /**
      * A reference to the transformer factory that this templates
@@ -199,11 +199,11 @@ public final class TemplatesImpl implements Templates, Serializable {
         /**
          * Access to final protected superclass member from outer class.
          */
-        Class defineClass(final byte[] b) {
+        Class<?> defineClass(final byte[] b) {
             return defineClass(null, b, 0, b.length);
         }
 
-        Class defineClass(final byte[] b, ProtectionDomain pd) {
+        Class<?> defineClass(final byte[] b, ProtectionDomain pd) {
             return defineClass(null, b, 0, b.length, pd);
         }
     }
@@ -275,7 +275,7 @@ public final class TemplatesImpl implements Templates, Serializable {
         ObjectInputStream.GetField gf = is.readFields();
         _name = (String)gf.get("_name", null);
         _bytecodes = (byte[][])gf.get("_bytecodes", null);
-        _class = (Class[])gf.get("_class", null);
+        _class = (Class<?>[])gf.get("_class", null);
         _transletIndex = gf.get("_transletIndex", -1);
 
         _outputProperties = (Properties)gf.get("_outputProperties", null);
@@ -368,7 +368,7 @@ public final class TemplatesImpl implements Templates, Serializable {
      * that the privateness of this method is maintained (that
      * is why it wasn't removed).
      */
-    private synchronized Class[] getTransletClasses() {
+    private synchronized Class<?>[] getTransletClasses() {
         try {
             if (_class == null) defineTransletClasses();
         }
@@ -461,16 +461,17 @@ public final class TemplatesImpl implements Templates, Serializable {
             throw new TransformerConfigurationException(err.toString());
         }
 
-        TransletClassLoader loader = (TransletClassLoader)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return new TransletClassLoader(ObjectFactory.findClassLoader(),_tfactory.getExternalExtensionsMap());
+        TransletClassLoader loader =
+                AccessController.doPrivileged(new PrivilegedAction<TransletClassLoader>() {
+                public TransletClassLoader run() {
+                    return new TransletClassLoader(ObjectFactory.findClassLoader(),
+                            _tfactory.getExternalExtensionsMap());
                 }
             });
 
         try {
             final int classCount = _bytecodes.length;
-            _class = new Class[classCount];
+            _class = new Class<?>[classCount];
 
             if (classCount > 1) {
                 _auxClasses = new HashMap<>();
@@ -511,7 +512,7 @@ public final class TemplatesImpl implements Templates, Serializable {
 
             for (int i = 0; i < classCount; i++) {
                 _class[i] = loader.defineClass(_bytecodes[i], pd);
-                final Class superClass = _class[i].getSuperclass();
+                final Class<?> superClass = _class[i].getSuperclass();
 
                 // Check if this is the main class
                 if (superClass.getName().equals(ABSTRACT_TRANSLET)) {

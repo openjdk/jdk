@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,11 +21,10 @@
 
 package com.sun.org.apache.xpath.internal.objects;
 
-import java.io.Serializable;
-
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMIterator;
+import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xml.internal.utils.XMLString;
 import com.sun.org.apache.xpath.internal.Expression;
 import com.sun.org.apache.xpath.internal.ExpressionOwner;
@@ -33,7 +33,8 @@ import com.sun.org.apache.xpath.internal.XPathContext;
 import com.sun.org.apache.xpath.internal.XPathException;
 import com.sun.org.apache.xpath.internal.XPathVisitor;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
-
+import java.io.Serializable;
+import java.util.List;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.traversal.NodeIterator;
@@ -714,7 +715,7 @@ public class XObject extends Expression implements Serializable, Cloneable
   /**
    * XObjects should not normally need to fix up variables.
    */
-  public void fixupVariables(java.util.Vector vars, int globalsSize)
+  public void fixupVariables(List<QName> vars, int globalsSize)
   {
     // no-op
   }

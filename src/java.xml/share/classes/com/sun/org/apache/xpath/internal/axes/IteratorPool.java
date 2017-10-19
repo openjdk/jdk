@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,10 +21,10 @@
 
 package com.sun.org.apache.xpath.internal.axes;
 
-import java.util.ArrayList;
-
 import com.sun.org.apache.xml.internal.dtm.DTMIterator;
 import com.sun.org.apache.xml.internal.utils.WrappedRuntimeException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Pool of object of a given type to pick from to help memory usage
@@ -42,7 +42,7 @@ public final class IteratorPool implements java.io.Serializable
   /**
    * Stack of given objects this points to.
    */
-  private final ArrayList m_freeStack;
+  private final List<DTMIterator> m_freeStack;
 
   /**
    * Constructor IteratorPool
@@ -52,7 +52,7 @@ public final class IteratorPool implements java.io.Serializable
   public IteratorPool(DTMIterator original)
   {
     m_orig = original;
-    m_freeStack = new ArrayList();
+    m_freeStack = new ArrayList<>();
   }
 
   /**
@@ -73,7 +73,7 @@ public final class IteratorPool implements java.io.Serializable
     else
     {
       // Remove object from end of free pool.
-      DTMIterator result = (DTMIterator)m_freeStack.remove(m_freeStack.size() - 1);
+      DTMIterator result = m_freeStack.remove(m_freeStack.size() - 1);
       return result;
     }
   }
@@ -102,7 +102,7 @@ public final class IteratorPool implements java.io.Serializable
     else
     {
       // Remove object from end of free pool.
-      DTMIterator result = (DTMIterator)m_freeStack.remove(m_freeStack.size() - 1);
+      DTMIterator result = m_freeStack.remove(m_freeStack.size() - 1);
       return result;
     }
   }

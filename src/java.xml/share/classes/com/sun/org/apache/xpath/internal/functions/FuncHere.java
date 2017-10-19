@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,15 +22,17 @@
  */
 package com.sun.org.apache.xpath.internal.functions;
 
-import javax.xml.transform.TransformerException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import com.sun.org.apache.xml.internal.dtm.DTM;
+import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xpath.internal.NodeSetDTM;
 import com.sun.org.apache.xpath.internal.XPathContext;
 import com.sun.org.apache.xpath.internal.objects.XNodeSet;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
+import java.util.List;
+import javax.xml.transform.TransformerException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 /**
  * Execute the XML Signature here() function.
@@ -103,5 +106,5 @@ public final class FuncHere extends Function {
     }
 
     @Override
-    public void fixupVariables(java.util.Vector vars, int globalsSize) { }
+    public void fixupVariables(List<QName> vars, int globalsSize) { }
 }

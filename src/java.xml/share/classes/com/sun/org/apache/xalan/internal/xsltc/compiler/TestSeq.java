@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,9 +29,9 @@ import com.sun.org.apache.bcel.internal.generic.InstructionHandle;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
-import java.util.Dictionary;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 /**
  * A test sequence is a sequence of patterns that
@@ -56,10 +57,10 @@ final class TestSeq {
     private int _kernelType;
 
     /**
-     * Vector of all patterns in the test sequence. May include
+     * ArrayList of all patterns in the test sequence. May include
      * patterns with "*", "@*" or "node()" kernel.
      */
-    private Vector _patterns = null;
+    private List<LocationPathPattern> _patterns = null;
 
     /**
      * A reference to the Mode object.
@@ -84,11 +85,11 @@ final class TestSeq {
     /**
      * Creates a new test sequence given a set of patterns and a mode.
      */
-    public TestSeq(Vector patterns, Mode mode) {
+    public TestSeq(List<LocationPathPattern> patterns, Mode mode) {
         this(patterns, -2, mode);
     }
 
-    public TestSeq(Vector patterns, int kernelType, Mode mode) {
+    public TestSeq(List<LocationPathPattern> patterns, int kernelType, Mode mode) {
         _patterns = patterns;
         _kernelType = kernelType;
         _mode = mode;
@@ -104,8 +105,7 @@ final class TestSeq {
         final StringBuffer result = new StringBuffer();
 
         for (int i = 0; i < count; i++) {
-            final LocationPathPattern pattern =
-                (LocationPathPattern) _patterns.elementAt(i);
+            final LocationPathPattern pattern = _patterns.get(i);
 
             if (i == 0) {
                 result.append("Testseq for kernel ").append(_kernelType)
@@ -131,8 +131,8 @@ final class TestSeq {
      * of the default pattern.
      */
     public double getPriority() {
-        final Template template = (_patterns.size() == 0) ? _default
-            : ((Pattern) _patterns.elementAt(0)).getTemplate();
+        final Template template = (_patterns.isEmpty()) ? _default
+            : ((Pattern) _patterns.get(0)).getTemplate();
         return template.getPriority();
     }
 
@@ -141,8 +141,8 @@ final class TestSeq {
      * this test sequence.
      */
     public int getPosition() {
-        final Template template = (_patterns.size() == 0) ? _default
-            : ((Pattern) _patterns.elementAt(0)).getTemplate();
+        final Template template = (_patterns.isEmpty()) ? _default
+            : ((Pattern) _patterns.get(0)).getTemplate();
         return template.getPosition();
     }
 
@@ -152,13 +152,9 @@ final class TestSeq {
      * finds a patterns that is fully reduced.
      */
     public void reduce() {
-        final Vector newPatterns = new Vector();
+        final List<LocationPathPattern> newPatterns = new ArrayList<>();
 
-        final int count = _patterns.size();
-        for (int i = 0; i < count; i++) {
-            final LocationPathPattern pattern =
-                (LocationPathPattern)_patterns.elementAt(i);
-
+        for (LocationPathPattern pattern : _patterns) {
             // Reduce this pattern
             pattern.reduceKernelPattern();
 
@@ -168,7 +164,7 @@ final class TestSeq {
                 break;          // Ignore following patterns
             }
             else {
-                newPatterns.addElement(pattern);
+                newPatterns.add(pattern);
             }
         }
         _patterns = newPatterns;
@@ -183,9 +179,7 @@ final class TestSeq {
         if (_default != null) {
             templates.put(_default, this);
         }
-        for (int i = 0; i < _patterns.size(); i++) {
-            final LocationPathPattern pattern =
-                (LocationPathPattern)_patterns.elementAt(i);
+        for (LocationPathPattern pattern : _patterns) {
             templates.put(pattern.getTemplate(), this);
         }
     }
@@ -204,7 +198,7 @@ final class TestSeq {
      * Returns pattern n in this test sequence
      */
     private LocationPathPattern getPattern(int n) {
-        return (LocationPathPattern)_patterns.elementAt(n);
+        return _patterns.get(n);
     }
 
     /**

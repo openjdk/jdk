@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -208,7 +209,7 @@ public final class RealType extends NumberType {
      * type after coercion.
      */
     public void translateTo(ClassGenerator classGen, MethodGenerator methodGen,
-                            final Class clazz) {
+                            final Class<?> clazz) {
         final InstructionList il = methodGen.getInstructionList();
         if (clazz == Character.TYPE) {
             il.append(D2I);
@@ -250,7 +251,7 @@ public final class RealType extends NumberType {
      * object on the stack and pushes a real (i.e., a double).
      */
     public void translateFrom(ClassGenerator classGen, MethodGenerator methodGen,
-                              Class clazz) {
+                              Class<?> clazz) {
         InstructionList il = methodGen.getInstructionList();
 
         if (clazz == Character.TYPE || clazz == Byte.TYPE ||

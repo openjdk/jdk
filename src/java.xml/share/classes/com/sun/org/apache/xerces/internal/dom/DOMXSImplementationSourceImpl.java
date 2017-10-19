@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,14 +22,17 @@
 package com.sun.org.apache.xerces.internal.dom;
 
 import com.sun.org.apache.xerces.internal.impl.xs.XSImplementationImpl;
-import org.w3c.dom.DOMImplementationList;
+import java.util.ArrayList;
+import java.util.List;
 import org.w3c.dom.DOMImplementation;
-import java.util.Vector;
+import org.w3c.dom.DOMImplementationList;
 
 /**
  * Allows to retrieve <code>XSImplementation</code>, DOM Level 3 Core and LS implementations
  * and PSVI implementation.
- * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#DOMImplementationSource'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ * <p>See also the
+ * <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#DOMImplementationSource'>
+ * Document Object Model (DOM) Level 3 Core Specification</a>.
  *
  * @xerces.internal
  *
@@ -78,23 +81,23 @@ public class DOMXSImplementationSourceImpl
      *   features.
      */
     public DOMImplementationList getDOMImplementationList(String features) {
-        final Vector implementations = new Vector();
+        final List<DOMImplementation> implementations = new ArrayList<>();
 
         // first check whether the CoreDOMImplementation would do
         DOMImplementationList list = super.getDOMImplementationList(features);
         //Add core DOMImplementations
         for (int i=0; i < list.getLength(); i++ ) {
-            implementations.addElement(list.item(i));
+            implementations.add(list.item(i));
         }
 
         DOMImplementation impl = PSVIDOMImplementationImpl.getDOMImplementation();
         if (testImpl(impl, features)) {
-            implementations.addElement(impl);
+            implementations.add(impl);
         }
 
         impl = XSImplementationImpl.getDOMImplementation();
         if (testImpl(impl, features)) {
-            implementations.addElement(impl);
+            implementations.add(impl);
         }
         return new DOMImplementationListImpl(implementations);
     }

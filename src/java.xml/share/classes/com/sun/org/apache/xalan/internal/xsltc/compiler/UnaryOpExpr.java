@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -66,7 +66,7 @@ final class UnaryOpExpr extends Expression {
                                                              tleft));
 
         if (ptype != null) {
-            final Type arg1 = (Type) ptype.argsType().elementAt(0);
+            final Type arg1 = ptype.argsType().get(0);
             if (!arg1.identicalTo(tleft)) {
                 _left = new CastExpr(_left, arg1);
             }

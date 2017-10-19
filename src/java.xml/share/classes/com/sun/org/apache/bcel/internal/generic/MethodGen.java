@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1165,7 +1166,7 @@ public class MethodGen extends FieldGenOrMethodGen {
             if (attribute instanceof ParameterAnnotations) {
                 // Initialize param_annotations
                 if (!hasParameterAnnotations) {
-                    @SuppressWarnings("unchecked") // OK
+                    @SuppressWarnings({"rawtypes", "unchecked"})
                     final List<AnnotationEntryGen>[] parmList = new List[arg_types.length];
                     param_annotations = parmList;
                     for (int j = 0; j < arg_types.length; j++) {
@@ -1213,7 +1214,7 @@ public class MethodGen extends FieldGenOrMethodGen {
             final AnnotationEntryGen annotation) {
         ensureExistingParameterAnnotationsUnpacked();
         if (!hasParameterAnnotations) {
-            @SuppressWarnings("unchecked") // OK
+            @SuppressWarnings({"rawtypes", "unchecked"})
             final List<AnnotationEntryGen>[] parmList = new List[arg_types.length];
             param_annotations = parmList;
             hasParameterAnnotations = true;

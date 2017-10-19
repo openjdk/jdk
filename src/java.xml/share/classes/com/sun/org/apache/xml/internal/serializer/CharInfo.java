@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,6 +33,7 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import javax.xml.transform.TransformerException;
@@ -51,7 +52,7 @@ import jdk.xml.internal.SecuritySupport;
 final class CharInfo
 {
     /** Given a character, lookup a String to output (e.g. a decorated entity reference). */
-    private HashMap m_charToString = new HashMap();
+    private Map<CharKey, String> m_charToString = new HashMap<>();
 
     /**
      * The name of the HTML entities file.
@@ -187,9 +188,9 @@ final class CharInfo
         } catch (Exception e) {}
 
         if (entities != null) {
-            Enumeration keys = entities.getKeys();
+            Enumeration<String> keys = entities.getKeys();
             while (keys.hasMoreElements()){
-                String name = (String) keys.nextElement();
+                String name = keys.nextElement();
                 String value = entities.getString(name);
                 int code = Integer.parseInt(value);
                 defineEntity(name, (char) code);
@@ -402,7 +403,7 @@ final class CharInfo
     {
         CharKey charKey = new CharKey();
         charKey.setChar(value);
-        return (String) m_charToString.get(charKey);
+        return m_charToString.get(charKey);
     }
 
     /**
@@ -477,7 +478,7 @@ final class CharInfo
      */
     static CharInfo getCharInfoInternal(String entitiesFileName, String method)
     {
-        CharInfo charInfo = (CharInfo) m_getCharInfoCache.get(entitiesFileName);
+        CharInfo charInfo = m_getCharInfoCache.get(entitiesFileName);
         if (charInfo != null) {
             return charInfo;
         }
@@ -533,7 +534,7 @@ final class CharInfo
     }
 
     /** Table of user-specified char infos. */
-    private static HashMap m_getCharInfoCache = new HashMap();
+    private static Map<String, CharInfo> m_getCharInfoCache = new HashMap<>();
 
     /**
      * Returns the array element holding the bit value for the

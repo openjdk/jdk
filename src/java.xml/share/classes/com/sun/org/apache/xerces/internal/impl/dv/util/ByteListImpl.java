@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,10 +21,9 @@
 
 package com.sun.org.apache.xerces.internal.impl.dv.util;
 
-import java.util.AbstractList;
-
 import com.sun.org.apache.xerces.internal.xs.XSException;
 import com.sun.org.apache.xerces.internal.xs.datatypes.ByteList;
+import java.util.AbstractList;
 
 /**
  * Implementation of <code>com.sun.org.apache.xerces.internal.xs.datatypes.ByteList</code>.
@@ -33,7 +33,7 @@ import com.sun.org.apache.xerces.internal.xs.datatypes.ByteList;
  * @author Ankit Pasricha, IBM
  *
  */
-public class ByteListImpl extends AbstractList implements ByteList {
+public class ByteListImpl extends AbstractList<Byte> implements ByteList {
 
     // actually data stored in a byte array
     protected final byte[] data;
@@ -93,7 +93,7 @@ public class ByteListImpl extends AbstractList implements ByteList {
      * List methods
      */
 
-    public Object get(int index) {
+    public Byte get(int index) {
         if (index >= 0 && index < data.length) {
             return data[index];
         }

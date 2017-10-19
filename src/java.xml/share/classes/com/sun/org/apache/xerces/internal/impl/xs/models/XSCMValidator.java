@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,10 +21,10 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.models;
 
-import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.impl.xs.SubstitutionGroupHandler;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaException;
-import java.util.ArrayList;
+import com.sun.org.apache.xerces.internal.xni.QName;
+import java.util.List;
 
 /**
  * Note: State of the content model is stored in the validator
@@ -88,7 +89,7 @@ public interface XSCMValidator {
      * @return       a list whose entries are instances of
      *               either XSWildcardDecl or XSElementDecl.
      */
-    public ArrayList whatCanGoHere(int[] state);
+    public List<Object> whatCanGoHere(int[] state);
 
     /**
      * Used by constant space algorithm for a{n,m} for n > 1 and
@@ -104,7 +105,7 @@ public interface XSCMValidator {
      * is associated with the error code that proceeds it in
      * the list.
      */
-    public ArrayList checkMinMaxBounds();
+    public List<String> checkMinMaxBounds();
 
      /**
      * <p>Returns an array containing information about the current repeating term

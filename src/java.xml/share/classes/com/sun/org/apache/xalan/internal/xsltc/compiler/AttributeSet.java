@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,10 +35,8 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.utils.XML11Char;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Vector;
 
 
 /**

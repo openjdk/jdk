@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,9 +21,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Enumeration;
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
@@ -38,7 +36,8 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.utils.XML11Char;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -119,10 +118,10 @@ final class ApplyTemplates extends Instruction {
         final int current = methodGen.getLocalIndex("current");
 
         // check if sorting nodes is required
-        final Vector<Sort> sortObjects = new Vector<>();
+        final List<Sort> sortObjects = new ArrayList<>();
         for (final SyntaxTreeNode child : getContents()) {
             if (child instanceof Sort) {
-                sortObjects.addElement((Sort)child);
+                sortObjects.add((Sort)child);
             }
         }
 

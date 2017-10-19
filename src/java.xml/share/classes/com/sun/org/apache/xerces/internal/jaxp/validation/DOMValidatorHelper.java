@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,17 +21,6 @@
 
 package com.sun.org.apache.xerces.internal.jaxp.validation;
 
-import java.io.IOException;
-import java.util.Enumeration;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.dom.DOMSource;
-
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.impl.validation.EntityState;
@@ -48,6 +37,15 @@ import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
+import java.io.IOException;
+import java.util.Enumeration;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Comment;
@@ -542,7 +540,7 @@ final class DOMValidatorHelper implements ValidatorHelper, EntityState {
             return fNamespaceContext.getDeclaredPrefixAt(index);
         }
 
-        public Enumeration getAllPrefixes() {
+        public Enumeration<String> getAllPrefixes() {
             return fNamespaceContext.getAllPrefixes();
         }
 

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,19 +21,17 @@
 
 package com.sun.org.apache.xml.internal.utils;
 
-import java.util.Vector;
+import java.text.CollationElementIterator;
 import java.text.Collator;
 import java.text.RuleBasedCollator;
-import java.text.CollationElementIterator;
 import java.util.Locale;
-import java.text.CollationKey;
 
 
 /**
 * International friendly string comparison with case-order
  * @author Igor Hersht, igorh@ca.ibm.com
 */
-public class StringComparable implements Comparable  {
+public class StringComparable implements Comparable<StringComparable>  {
 
      public final static int UNKNOWN_CASE = -1;
      public final static int UPPER_CASE = 1;
@@ -45,7 +43,8 @@ public class StringComparable implements Comparable  {
      private String m_caseOrder;
      private int m_mask = 0xFFFFFFFF;
 
-    public StringComparable(final String text, final Locale locale, final Collator collator, final String caseOrder){
+    public StringComparable(final String text, final Locale locale,
+            final Collator collator, final String caseOrder){
          m_text =  text;
          m_locale = locale;
          m_collator = (RuleBasedCollator)collator;
@@ -53,23 +52,25 @@ public class StringComparable implements Comparable  {
          m_mask = getMask(m_collator.getStrength());
     }
 
-   public final static Comparable getComparator( final String text, final Locale locale, final Collator collator, final String caseOrder){
-       if((caseOrder == null) ||(caseOrder.length() == 0)){// no case-order specified
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public final static Comparable getComparator( final String text, final Locale locale,
+            final Collator collator, final String caseOrder){
+        if((caseOrder == null) ||(caseOrder.length() == 0)){// no case-order specified
             return  ((RuleBasedCollator)collator).getCollationKey(text);
-       }else{
+        }else{
             return new StringComparable(text, locale, collator, caseOrder);
-       }
-   }
+        }
+    }
 
    public final String toString(){return m_text;}
 
-   public int compareTo(Object o) {
-   final String pattern = ((StringComparable)o).toString();
-   if(m_text.equals(pattern)){//Code-point equals
-      return 0;
-   }
-   final int savedStrength = m_collator.getStrength();
-   int comp = 0;
+     public int compareTo(StringComparable o) {
+     final String pattern = o.toString();
+     if(m_text.equals(pattern)){//Code-point equals
+        return 0;
+     }
+     final int savedStrength = m_collator.getStrength();
+     int comp = 0;
       // Is there difference more significant than case-order?
      if(((savedStrength == Collator.PRIMARY) || (savedStrength == Collator.SECONDARY))){
          comp = m_collator.compare(m_text, pattern );

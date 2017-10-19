@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -102,6 +103,7 @@ final class LiteralElement extends Instruction {
 
         // Check if we have any declared namespaces
         if (_accessedPrefixes == null) {
+            // use Hashtable for behavior compatibility
             _accessedPrefixes = new Hashtable<>();
         }
         else {

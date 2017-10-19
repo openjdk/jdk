@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -51,6 +51,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
@@ -195,7 +196,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
     protected SymbolTable fSymbolTable;
 
     /** Components. */
-    protected ArrayList<XMLComponent> fComponents;
+    protected List<XMLComponent> fComponents;
 
     protected ValidationManager fValidationManager;
 
@@ -244,8 +245,8 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
 
 
         // create table for features and properties
-        fFeatures = new HashMap();
-        fProperties = new HashMap();
+        fFeatures = new HashMap<>();
+        fProperties = new HashMap<>();
 
         // add default recognized features
         final String[] recognizedFeatures = {
@@ -990,7 +991,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
      */
     public DOMStringList getParameterNames() {
         if (fRecognizedParameters == null){
-            ArrayList parameters = new ArrayList();
+            List<String> parameters = new ArrayList<>();
 
             //Add DOM recognized parameters
             //REVISIT: Would have been nice to have a list of

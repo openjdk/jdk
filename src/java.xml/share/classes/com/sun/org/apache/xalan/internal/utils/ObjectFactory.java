@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -124,7 +124,7 @@ public class ObjectFactory {
     {
         ClassLoader cl = System.getSecurityManager()!=null ? null : findClassLoader();
         try{
-            Class providerClass = findProviderClass(className, cl, doFallback);
+            Class<?> providerClass = findProviderClass(className, cl, doFallback);
             Object instance = providerClass.getConstructor().newInstance();
             debugPrintln(()->"created new instance of " + providerClass +
                              " using ClassLoader: " + cl);

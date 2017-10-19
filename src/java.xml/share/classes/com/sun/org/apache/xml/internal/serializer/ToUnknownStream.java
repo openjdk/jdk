@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,8 +24,9 @@ package com.sun.org.apache.xml.internal.serializer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.util.Properties;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.Transformer;
 import org.w3c.dom.Node;
@@ -94,13 +96,13 @@ public final class ToUnknownStream extends SerializerBase
      * A collection of namespace URI's (only for first element).
      * _namespacePrefix has the matching prefix for these URI's
      */
-    private ArrayList<String> m_namespaceURI = null;
+    private List<String> m_namespaceURI = null;
 
     /**
      * A collection of namespace Prefix (only for first element)
      * _namespaceURI has the matching URIs for these prefix'
      */
-    private ArrayList<String> m_namespacePrefix = null;
+    private List<String> m_namespacePrefix = null;
 
     /**
      * true if startDocument() was called before the underlying handler
@@ -1066,11 +1068,11 @@ public final class ToUnknownStream extends SerializerBase
     }
 
     /**
-     * @param URI_and_localNames Vector a list of pairs of URI/localName
+     * @param URI_and_localNames a list of pairs of URI/localName
      * specified in the cdata-section-elements attribute.
-     * @see SerializationHandler#setCdataSectionElements(java.util.Vector)
+     * @see SerializationHandler#setCdataSectionElements(List)
      */
-    public void setCdataSectionElements(ArrayList<String> URI_and_localNames) {
+    public void setCdataSectionElements(List<String> URI_and_localNames) {
         m_handler.setCdataSectionElements(URI_and_localNames);
     }
 

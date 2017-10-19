@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,15 +29,16 @@ import com.sun.org.apache.xml.internal.dtm.DTMWSFilter;
 import com.sun.org.apache.xml.internal.dtm.ref.DTMDefaultBase;
 import com.sun.org.apache.xml.internal.dtm.ref.ExpandedNameTable;
 import com.sun.org.apache.xml.internal.dtm.ref.ExtendedType;
+import com.sun.org.apache.xml.internal.res.XMLErrorResources;
+import com.sun.org.apache.xml.internal.res.XMLMessages;
+import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
 import com.sun.org.apache.xml.internal.utils.FastStringBuffer;
+import com.sun.org.apache.xml.internal.utils.SuballocatedIntVector;
 import com.sun.org.apache.xml.internal.utils.XMLString;
 import com.sun.org.apache.xml.internal.utils.XMLStringDefault;
 import com.sun.org.apache.xml.internal.utils.XMLStringFactory;
-import com.sun.org.apache.xml.internal.res.XMLMessages;
-import com.sun.org.apache.xml.internal.res.XMLErrorResources;
-import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
-import com.sun.org.apache.xml.internal.utils.SuballocatedIntVector;
 import java.util.ArrayList;
+import java.util.List;
 import javax.xml.transform.Source;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -1267,7 +1269,6 @@ public class SAX2DTM2 extends SAX2DTM
         _startNode = node;
 
         while (nodeID != END) {
-          //m_ancestors.addElement(node);
           if (m_size >= m_ancestors.length)
           {
             int[] newAncestors = new int[m_size * 2];
@@ -1746,13 +1747,13 @@ public class SAX2DTM2 extends SAX2DTM
   // %OPT% Cache the array of extended types in this class
   protected ExtendedType[] m_extendedTypes;
 
-  // A Vector which is used to store the values of attribute, namespace,
+  // A List which is used to store the values of attribute, namespace,
   // comment and PI nodes.
   //
   // %OPT% These values are unlikely to be equal. Storing
-  // them in a plain Vector is more efficient than storing in the
+  // them in a plain List is more efficient than storing in the
   // DTMStringPool because we can save the cost for hash calculation.
-  protected ArrayList<String> m_values;
+  protected List<String> m_values;
 
   // The current index into the m_values Vector.
   private int m_valueIndex = 0;
@@ -1873,7 +1874,7 @@ public class SAX2DTM2 extends SAX2DTM
    */
   public final int _exptype2(int identity)
   {
-    //return m_exptype.elementAt(identity);
+    //return m_exptype.get(identity);
 
     if (identity < m_blocksize)
       return m_exptype_map0[identity];
@@ -1889,7 +1890,7 @@ public class SAX2DTM2 extends SAX2DTM
    */
   public final int _nextsib2(int identity)
   {
-    //return m_nextsib.elementAt(identity);
+    //return m_nextsib.get(identity);
 
     if (identity < m_blocksize)
       return m_nextsib_map0[identity];
@@ -2063,12 +2064,12 @@ public class SAX2DTM2 extends SAX2DTM
     }
 
     for (int i = startDecls; i < nDecls; i += 2) {
-      prefix = m_prefixMappings.elementAt(i);
+      prefix = m_prefixMappings.get(i);
 
       if (prefix == null)
         continue;
 
-      String declURL = m_prefixMappings.elementAt(i + 1);
+      String declURL = m_prefixMappings.get(i + 1);
 
       exName = m_expandedNameTable.getExpandedTypeID(null, prefix,
                                                      DTM.NAMESPACE_NODE);
@@ -3185,9 +3186,7 @@ public class SAX2DTM2 extends SAX2DTM
         // doing anything.
         if (m_namespaceDeclSetElements != null &&
             m_namespaceDeclSetElements.size() == 1 &&
-            m_namespaceDeclSets != null &&
-            ((SuballocatedIntVector)m_namespaceDeclSets.elementAt(0))
-            .size() == 1)
+            m_namespaceDeclSets != null && (m_namespaceDeclSets.get(0)).size() == 1)
             return;
 
         SuballocatedIntVector nsContext = null;

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,12 +21,10 @@
 
 package com.sun.org.apache.xml.internal.utils;
 
-import java.util.Stack;
-import java.util.StringTokenizer;
-
 import com.sun.org.apache.xml.internal.res.XMLErrorResources;
 import com.sun.org.apache.xml.internal.res.XMLMessages;
-
+import java.util.Stack;
+import java.util.StringTokenizer;
 import org.w3c.dom.Element;
 
 /**
@@ -230,7 +228,7 @@ public class QName implements java.io.Serializable
    * @param qname Qualified name to resolve
    * @param namespaces Namespace stack to use to resolve namespace
    */
-  public QName(String qname, Stack namespaces)
+  public QName(String qname, Stack<NameSpace> namespaces)
   {
     this(qname, namespaces, false);
   }
@@ -245,7 +243,7 @@ public class QName implements java.io.Serializable
    * @param validate If true the new QName will be validated and an IllegalArgumentException will
    *                 be thrown if it is invalid.
    */
-  public QName(String qname, Stack namespaces, boolean validate)
+  public QName(String qname, Stack<NameSpace> namespaces, boolean validate)
   {
 
     String namespace = null;
@@ -271,7 +269,7 @@ public class QName implements java.io.Serializable
 
         for (int i = depth - 1; i >= 0; i--)
         {
-          NameSpace ns = (NameSpace) namespaces.elementAt(i);
+          NameSpace ns = namespaces.get(i);
 
           while (null != ns)
           {

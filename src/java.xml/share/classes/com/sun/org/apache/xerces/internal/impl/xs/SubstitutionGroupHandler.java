@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,9 +27,10 @@ import com.sun.org.apache.xerces.internal.xs.XSElementDeclaration;
 import com.sun.org.apache.xerces.internal.xs.XSObjectList;
 import com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 /**
  * To store and validate information about substitutionGroup
@@ -196,22 +198,23 @@ public class SubstitutionGroupHandler {
     /**
      * add a list of substitution group information.
      */
+    @SuppressWarnings("unchecked")
     public void addSubstitutionGroup(XSElementDecl[] elements) {
         XSElementDecl subHead, element;
-        Vector subGroup;
+        List<XSElementDecl> subGroup;
         // for all elements with substitution group affiliation
         for (int i = elements.length-1; i >= 0; i--) {
             element = elements[i];
             subHead = element.fSubGroup;
             // check whether this an entry for this element
-            subGroup = (Vector)fSubGroupsB.get(subHead);
+            subGroup = (List<XSElementDecl>)fSubGroupsB.get(subHead);
             if (subGroup == null) {
                 // if not, create a new one
-                subGroup = new Vector();
+                subGroup = new ArrayList<>();
                 fSubGroupsB.put(subHead, subGroup);
             }
             // add to the vactor
-            subGroup.addElement(element);
+            subGroup.add(element);
         }
     }
 
@@ -272,21 +275,23 @@ public class SubstitutionGroupHandler {
             return (OneSubGroup[])subGroup;
 
         // we only have the *direct* substitutions
-        Vector group = (Vector)subGroup, newGroup = new Vector();
+        @SuppressWarnings("unchecked")
+        List<XSElementDecl> group = (ArrayList<XSElementDecl>)subGroup;
+        List<OneSubGroup> newGroup = new ArrayList<>();
         OneSubGroup[] group1;
         // then for each of the direct substitutions, get its substitution
         // group, and combine the groups together.
         short dMethod, bMethod, dSubMethod, bSubMethod;
         for (int i = group.size()-1, j; i >= 0; i--) {
             // Check whether this element is blocked. If so, ignore it.
-            XSElementDecl sub = (XSElementDecl)group.elementAt(i);
+            XSElementDecl sub = (XSElementDecl)group.get(i);
             if (!getDBMethods(sub.fType, element.fType, methods))
                 continue;
             // Remember derivation methods and blocks from the types
             dMethod = methods.dMethod;
             bMethod = methods.bMethod;
             // Add this one to potential group
-            newGroup.addElement(new OneSubGroup(sub, methods.dMethod, methods.bMethod));
+            newGroup.add(new OneSubGroup(sub, methods.dMethod, methods.bMethod));
             // Get potential group for this element
             group1 = getSubGroupB(sub, methods);
             for (j = group1.length-1; j >= 0; j--) {
@@ -296,13 +301,13 @@ public class SubstitutionGroupHandler {
                 // Ignore it if it's blocked
                 if ((dSubMethod & bSubMethod) != 0)
                     continue;
-                newGroup.addElement(new OneSubGroup(group1[j].sub, dSubMethod, bSubMethod));
+                newGroup.add(new OneSubGroup(group1[j].sub, dSubMethod, bSubMethod));
             }
         }
         // Convert to an array
         OneSubGroup[] ret = new OneSubGroup[newGroup.size()];
         for (int i = newGroup.size()-1; i >= 0; i--) {
-            ret[i] = (OneSubGroup)newGroup.elementAt(i);
+            ret[i] = (OneSubGroup)newGroup.get(i);
         }
         // Store the potential sub group
         fSubGroupsB.put(element, ret);

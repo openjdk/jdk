@@ -381,24 +381,10 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    var boot_jdk_revision = "8";
-    var boot_jdk_subdirpart = "1.8.0";
-    // JDK 8 does not work on sparc M7 cpus, need a newer update when building
-    // on such hardware.
-    if (input.build_cpu == "sparcv9") {
-       var cpu_brand = $EXEC("bash -c \"kstat -m cpu_info | grep brand | head -n1 | awk '{ print \$2 }'\"");
-       if (cpu_brand.trim().match('SPARC-.[78]')) {
-           boot_jdk_revision = "8u20";
-           boot_jdk_subdirpart = "1.8.0_20";
-       }
-    }
-    common.boot_jdk_revision = boot_jdk_revision;
-    common.boot_jdk_subdirpart = boot_jdk_subdirpart;
-    common.boot_jdk_home = input.get("boot_jdk", "home_path") + "/jdk"
-        + common.boot_jdk_subdirpart
+    common.boot_jdk_version = "9";
+    common.boot_jdk_home = input.get("boot_jdk", "home_path") + "/jdk-"
+        + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
-    common.boot_jdk_platform = input.build_os + "-"
-        + (input.build_cpu == "x86" ? "i586" : input.build_cpu);
 
     return common;
 };
@@ -1027,15 +1013,18 @@ var getJibProfilesDependencies = function (input, common) {
         ? input.target_os + "_x64"
         : input.target_platform);
 
+    var boot_jdk_platform = (input.build_os == "macosx" ? "osx" : input.build_os)
+        + "-" + input.build_cpu;
+
     var dependencies = {
 
         boot_jdk: {
-            server: "javare",
-            module: "jdk",
-            revision: common.boot_jdk_revision,
-            checksum_file: common.boot_jdk_platform + "/MD5_VALUES",
-            file: common.boot_jdk_platform + "/jdk-" + common.boot_jdk_revision
-                + "-" + common.boot_jdk_platform + ".tar.gz",
+            server: "jpg",
+            product: "jdk",
+            version: common.boot_jdk_version,
+            build_number: "181",
+            file: "bundles/" + boot_jdk_platform + "/jdk-" + common.boot_jdk_version + "_"
+                + boot_jdk_platform + "_bin.tar.gz",
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
         },

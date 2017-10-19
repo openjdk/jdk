@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -65,6 +65,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLPullParserConfiguration;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
@@ -316,13 +317,13 @@ public class XML11Configuration extends ParserConfigurationSettings
     protected Locale fLocale;
 
     /** XML 1.0 Components. */
-    protected ArrayList<XMLComponent> fComponents;
+    protected List<XMLComponent> fComponents;
 
     /** XML 1.1. Components. */
-    protected ArrayList<XMLComponent> fXML11Components = null;
+    protected List<XMLComponent> fXML11Components = null;
 
     /** Common components: XMLEntityManager, XMLErrorReporter, XMLSchemaValidator */
-    protected ArrayList<XMLComponent> fCommonComponents = null;
+    protected List<XMLComponent> fCommonComponents = null;
 
     /** The document handler. */
     protected XMLDocumentHandler fDocumentHandler;
@@ -934,28 +935,21 @@ public class XML11Configuration extends ParserConfigurationSettings
                 throws XMLConfigurationException {
                 fConfigUpdated = true;
                 // forward to every XML 1.0 component
-                int count = fComponents.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = fComponents.get(i);
-                        c.setFeature(featureId, state);
+                for (XMLComponent c : fComponents) {
+                    c.setFeature(featureId, state);
                 }
                 // forward it to common components
-                count = fCommonComponents.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = fCommonComponents.get(i);
-                        c.setFeature(featureId, state);
+                for (XMLComponent c : fCommonComponents) {
+                    c.setFeature(featureId, state);
                 }
-
                 // forward to every XML 1.1 component
-                count = fXML11Components.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = fXML11Components.get(i);
-                        try{
-                                c.setFeature(featureId, state);
-                        }
-                        catch (Exception e){
-                                // no op
-                        }
+                for (XMLComponent c : fXML11Components) {
+                    try {
+                        c.setFeature(featureId, state);
+                    }
+                    catch (Exception e){
+                        // no op
+                    }
                 }
                 // save state if noone "objects"
                 super.setFeature(featureId, state);
@@ -995,27 +989,21 @@ public class XML11Configuration extends ParserConfigurationSettings
                     setLocale((Locale) value);
                 }
                 // forward to every XML 1.0 component
-                int count = fComponents.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = fComponents.get(i);
-                        c.setProperty(propertyId, value);
+                for (XMLComponent c : fComponents) {
+                    c.setProperty(propertyId, value);
                 }
                 // forward it to every common Component
-                count = fCommonComponents.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = fCommonComponents.get(i);
-                        c.setProperty(propertyId, value);
+                for (XMLComponent c : fCommonComponents) {
+                    c.setProperty(propertyId, value);
                 }
                 // forward it to every XML 1.1 component
-                count = fXML11Components.size();
-                for (int i = 0; i < count; i++) {
-                        XMLComponent c = fXML11Components.get(i);
-                        try{
-                                c.setProperty(propertyId, value);
-                        }
-                        catch (Exception e){
+                for (XMLComponent c : fXML11Components) {
+                    try {
+                        c.setProperty(propertyId, value);
+                    }
+                    catch (Exception e){
                                 // ignore it
-                        }
+                    }
                 }
 
                 // store value if noone "objects"

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,6 +26,7 @@ import com.sun.org.apache.xalan.internal.xsltc.runtime.BasisLibrary;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import org.w3c.dom.NamedNodeMap;
@@ -103,7 +105,7 @@ public class DOM2SAX implements XMLReader, Locator {
             }
         } else {
             _sax.startPrefixMapping(prefix, uri);
-            _nsPrefixes.put(prefix, uriStack = new Stack());
+            _nsPrefixes.put(prefix, uriStack = new Stack<>());
             uriStack.push(uri);
         }
         return pushed;
@@ -194,7 +196,7 @@ public class DOM2SAX implements XMLReader, Locator {
             break;
         case Node.ELEMENT_NODE:
             String prefix;
-            ArrayList<String> pushedPrefixes = new ArrayList<>();
+            List<String> pushedPrefixes = new ArrayList<>();
             final AttributesImpl attrs = new AttributesImpl();
             final NamedNodeMap map = node.getAttributes();
             final int length = map.getLength();

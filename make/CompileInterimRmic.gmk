@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,25 @@ include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
 
-##########################################################################################
+################################################################################
+# Generate interim versions of the module-info.java files for the interim
+# langtools modules. Each interim module has ".interim" added as suffix to the
+# original module name.
+
+INTERIM_MODULEINFO_PATTERN := \
+    $(foreach m, $(INTERIM_RMIC_BASE_MODULES), -e 's/$m\([,; ]\)/$m.interim\1/g') \
+    -e '/ToolProvider[,; ]/d'
+
+$(BUILDTOOLS_OUTPUTDIR)/gensrc/%.interim/module-info.java: \
+    $(TOPDIR)/src/%/share/classes/module-info.java
+	$(call LogInfo, Generating module-info.java for $*.interim)
+	$(call MakeDir, $(@D))
+	$(SED) $(INTERIM_MODULEINFO_PATTERN) $< > $@
+
+TARGETS += $(patsubst %, $(BUILDTOOLS_OUTPUTDIR)/gensrc/%/module-info.java, \
+    $(INTERIM_RMIC_MODULES))
+
+################################################################################
 
 RMIC_PKGS := \
     sun/rmi/rmic \
@@ -41,14 +59,23 @@ RMIC_PKGS := \
     sun/tools/util \
     #
 
-$(eval $(call SetupJavaCompilation,BUILD_INTERIM_RMIC, \
+$(eval $(call SetupJavaCompilation, BUILD_jdk.rmic.interim, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(TOPDIR)/src/jdk.rmic/share/classes, \
-    EXCLUDE_FILES := module-info.java, \
+    EXCLUDE_FILES := $(TOPDIR)/src/jdk.rmic/share/classes/module-info.java, \
+    EXTRA_FILES := $(BUILDTOOLS_OUTPUTDIR)/gensrc/jdk.rmic.interim/module-info.java, \
     INCLUDES := $(RMIC_PKGS), \
-    BIN := $(BUILDTOOLS_OUTPUTDIR)/override_modules/jdk.rmic, \
-    COPY := .properties))
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/interim_modules/jdk.rmic.interim, \
+    COPY := .properties, \
+    ADD_JAVAC_FLAGS := \
+        --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_modules \
+        --add-modules java.corba \
+        --add-exports java.corba/com.sun.corba.se.impl.util=jdk.rmic.interim \
+        $(INTERIM_RMIC_ADD_EXPORTS), \
+))
+
+TARGETS += $(BUILD_jdk.rmic.interim)
 
 ##########################################################################################
 
-all: $(BUILD_INTERIM_RMIC)
+all: $(TARGETS)

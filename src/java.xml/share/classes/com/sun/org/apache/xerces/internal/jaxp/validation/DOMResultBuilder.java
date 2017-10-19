@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,10 +20,6 @@
  */
 
 package com.sun.org.apache.xerces.internal.jaxp.validation;
-
-import java.util.ArrayList;
-
-import javax.xml.transform.dom.DOMResult;
 
 import com.sun.org.apache.xerces.internal.dom.AttrImpl;
 import com.sun.org.apache.xerces.internal.dom.CoreDocumentImpl;
@@ -50,7 +46,9 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
 import com.sun.org.apache.xerces.internal.xs.AttributePSVI;
 import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
-
+import java.util.ArrayList;
+import java.util.List;
+import javax.xml.transform.dom.DOMResult;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
@@ -109,7 +107,7 @@ final class DOMResultBuilder implements DOMDocumentHandler {
     private Node fCurrentNode;
     private Node fFragmentRoot;
 
-    private final ArrayList fTargetChildren = new ArrayList();
+    private final List<Node> fTargetChildren = new ArrayList<>();
 
     private boolean fIgnoreChars;
 
@@ -334,15 +332,14 @@ final class DOMResultBuilder implements DOMDocumentHandler {
     public void endCDATA(Augmentations augs) throws XNIException {}
 
     public void endDocument(Augmentations augs) throws XNIException {
-        final int length = fTargetChildren.size();
         if (fNextSibling == null) {
-            for (int i = 0; i < length; ++i) {
-                fTarget.appendChild((Node) fTargetChildren.get(i));
+            for (Node node : fTargetChildren) {
+                fTarget.appendChild(node);
             }
         }
         else {
-            for (int i = 0; i < length; ++i) {
-                fTarget.insertBefore((Node) fTargetChildren.get(i), fNextSibling);
+            for (Node node : fTargetChildren) {
+                fTarget.insertBefore(node, fNextSibling);
             }
         }
     }

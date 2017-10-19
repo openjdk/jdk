@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,14 +21,13 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.util;
 
+import com.sun.org.apache.xerces.internal.xs.XSObject;
+import com.sun.org.apache.xerces.internal.xs.XSObjectList;
 import java.lang.reflect.Array;
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-
-import com.sun.org.apache.xerces.internal.xs.XSObject;
-import com.sun.org.apache.xerces.internal.xs.XSObjectList;
 
 /**
  * Containts a list of XSObject's.
@@ -38,23 +37,25 @@ import com.sun.org.apache.xerces.internal.xs.XSObjectList;
  * @author Sandy Gao, IBM
  *
  */
-public class XSObjectListImpl extends AbstractList implements XSObjectList {
+@SuppressWarnings("unchecked") // method <T>toArray(T[])
+public class XSObjectListImpl extends AbstractList<XSObject> implements XSObjectList {
 
     /**
      * An immutable empty list.
      */
     public static final XSObjectListImpl EMPTY_LIST = new XSObjectListImpl(new XSObject[0], 0);
-    private static final ListIterator EMPTY_ITERATOR = new ListIterator() {
+    private static final ListIterator<XSObject> EMPTY_ITERATOR = new EmptyIterator();
+    static class EmptyIterator implements ListIterator<XSObject> {
         public boolean hasNext() {
             return false;
         }
-        public Object next() {
+        public XSObject next() {
             throw new NoSuchElementException();
         }
         public boolean hasPrevious() {
             return false;
         }
-        public Object previous() {
+        public XSObject previous() {
             throw new NoSuchElementException();
         }
         public int nextIndex() {
@@ -66,14 +67,13 @@ public class XSObjectListImpl extends AbstractList implements XSObjectList {
         public void remove() {
             throw new UnsupportedOperationException();
         }
-        public void set(Object object) {
+        public void set(XSObject object) {
             throw new UnsupportedOperationException();
         }
-        public void add(Object object) {
+        public void add(XSObject object) {
             throw new UnsupportedOperationException();
         }
-    };
-
+    }
     private static final int DEFAULT_SIZE = 4;
 
     // The array to hold all data
@@ -151,7 +151,7 @@ public class XSObjectListImpl extends AbstractList implements XSObjectList {
         return (value == null) ? containsNull() : containsObject(value);
     }
 
-    public Object get(int index) {
+    public XSObject get(int index) {
         if (index >= 0 && index < fLength) {
             return fArray[index];
         }
@@ -162,22 +162,22 @@ public class XSObjectListImpl extends AbstractList implements XSObjectList {
         return getLength();
     }
 
-    public Iterator iterator() {
+    public Iterator<XSObject> iterator() {
         return listIterator0(0);
     }
 
-    public ListIterator listIterator() {
+    public ListIterator<XSObject> listIterator() {
         return listIterator0(0);
     }
 
-    public ListIterator listIterator(int index) {
+    public ListIterator<XSObject> listIterator(int index) {
         if (index >= 0 && index < fLength) {
             return listIterator0(index);
         }
         throw new IndexOutOfBoundsException("Index: " + index);
     }
 
-    private ListIterator listIterator0(int index) {
+    private ListIterator<XSObject> listIterator0(int index) {
         return fLength == 0 ? EMPTY_ITERATOR : new XSObjectListIterator(index);
     }
 
@@ -207,8 +207,8 @@ public class XSObjectListImpl extends AbstractList implements XSObjectList {
 
     public Object[] toArray(Object[] a) {
         if (a.length < fLength) {
-            Class arrayClass = a.getClass();
-            Class componentType = arrayClass.getComponentType();
+            Class<?> arrayClass = a.getClass();
+            Class<?> componentType = arrayClass.getComponentType();
             a = (Object[]) Array.newInstance(componentType, fLength);
         }
         toArray0(a);
@@ -224,7 +224,7 @@ public class XSObjectListImpl extends AbstractList implements XSObjectList {
         }
     }
 
-    private final class XSObjectListIterator implements ListIterator {
+    private final class XSObjectListIterator implements ListIterator<XSObject> {
         private int index;
         public XSObjectListIterator(int index) {
             this.index = index;
@@ -232,7 +232,7 @@ public class XSObjectListImpl extends AbstractList implements XSObjectList {
         public boolean hasNext() {
             return (index < fLength);
         }
-        public Object next() {
+        public XSObject next() {
             if (index < fLength) {
                 return fArray[index++];
             }
@@ -241,7 +241,7 @@ public class XSObjectListImpl extends AbstractList implements XSObjectList {
         public boolean hasPrevious() {
             return (index > 0);
         }
-        public Object previous() {
+        public XSObject previous() {
             if (index > 0) {
                 return fArray[--index];
             }
@@ -256,10 +256,10 @@ public class XSObjectListImpl extends AbstractList implements XSObjectList {
         public void remove() {
             throw new UnsupportedOperationException();
         }
-        public void set(Object o) {
+        public void set(XSObject o) {
             throw new UnsupportedOperationException();
         }
-        public void add(Object o) {
+        public void add(XSObject o) {
             throw new UnsupportedOperationException();
         }
     }

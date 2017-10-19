@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,8 +22,7 @@
 package com.sun.org.apache.xerces.internal.dom;
 
 import java.util.ArrayList;
-import java.util.Vector;
-
+import java.util.List;
 import org.w3c.dom.DOMStringList;
 
 /**
@@ -38,27 +37,20 @@ import org.w3c.dom.DOMStringList;
 public class DOMStringListImpl implements DOMStringList {
 
     // A collection of DOMString values
-    private final ArrayList fStrings;
+    private final List<String> fStrings;
 
     /**
      * Construct an empty list of DOMStringListImpl
      */
     public DOMStringListImpl() {
-        fStrings = new ArrayList();
+        fStrings = new ArrayList<>();
     }
 
     /**
      * Construct a DOMStringListImpl from an ArrayList
      */
-    public DOMStringListImpl(ArrayList params) {
+    public DOMStringListImpl(List<String> params) {
         fStrings = params;
-    }
-
-    /**
-     * Construct a DOMStringListImpl from a Vector
-     */
-    public DOMStringListImpl(Vector params) {
-        fStrings = new ArrayList(params);
     }
 
     /**

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,7 +39,7 @@ public class LDIV extends ArithmeticInstruction implements ExceptionThrower {
 
     @Override
     public Class<?>[] getExceptions() {
-        return new Class[] {
+        return new Class<?>[] {
             ExceptionConst.ARITHMETIC_EXCEPTION
         };
     }

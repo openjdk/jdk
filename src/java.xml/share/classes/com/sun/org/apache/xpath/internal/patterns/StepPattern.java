@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,6 +25,7 @@ import com.sun.org.apache.xml.internal.dtm.Axis;
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisTraverser;
 import com.sun.org.apache.xml.internal.dtm.DTMFilter;
+import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xpath.internal.Expression;
 import com.sun.org.apache.xpath.internal.ExpressionOwner;
 import com.sun.org.apache.xpath.internal.XPathContext;
@@ -32,6 +33,7 @@ import com.sun.org.apache.xpath.internal.XPathVisitor;
 import com.sun.org.apache.xpath.internal.axes.SubContextList;
 import com.sun.org.apache.xpath.internal.compiler.PsuedoNames;
 import com.sun.org.apache.xpath.internal.objects.XObject;
+import java.util.List;
 
 /**
  * This class represents a single pattern match step.
@@ -156,7 +158,7 @@ public class StepPattern extends NodeTest implements SubContextList, ExpressionO
    * to be offset to the current stack frame).
    * @param globalsSize The number of variables in the global variable area.
    */
-  public void fixupVariables(java.util.Vector vars, int globalsSize)
+  public void fixupVariables(List<QName> vars, int globalsSize)
   {
 
     super.fixupVariables(vars, globalsSize);

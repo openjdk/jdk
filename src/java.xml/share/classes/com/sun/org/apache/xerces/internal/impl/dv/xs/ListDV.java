@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,11 +21,10 @@
 
 package com.sun.org.apache.xerces.internal.impl.dv.xs;
 
-import java.util.AbstractList;
-
 import com.sun.org.apache.xerces.internal.impl.dv.InvalidDatatypeValueException;
 import com.sun.org.apache.xerces.internal.impl.dv.ValidationContext;
 import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
+import java.util.AbstractList;
 
 /**
  * Represent the schema list types
@@ -39,12 +38,15 @@ import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
 public class ListDV extends TypeValidator{
 
     public short getAllowedFacets(){
-          return (XSSimpleTypeDecl.FACET_LENGTH | XSSimpleTypeDecl.FACET_MINLENGTH | XSSimpleTypeDecl.FACET_MAXLENGTH | XSSimpleTypeDecl.FACET_PATTERN | XSSimpleTypeDecl.FACET_ENUMERATION | XSSimpleTypeDecl.FACET_WHITESPACE );
+          return (XSSimpleTypeDecl.FACET_LENGTH | XSSimpleTypeDecl.FACET_MINLENGTH |
+                  XSSimpleTypeDecl.FACET_MAXLENGTH | XSSimpleTypeDecl.FACET_PATTERN |
+                  XSSimpleTypeDecl.FACET_ENUMERATION | XSSimpleTypeDecl.FACET_WHITESPACE );
     }
 
     // this method should never be called: XSSimpleTypeDecl is responsible for
     // calling the item type for the convertion
-    public Object getActualValue(String content, ValidationContext context) throws InvalidDatatypeValueException{
+    public Object getActualValue(String content, ValidationContext context)
+            throws InvalidDatatypeValueException{
         return content;
     }
 
@@ -53,7 +55,7 @@ public class ListDV extends TypeValidator{
         return ((ListData)value).getLength();
     }
 
-    final static class ListData extends AbstractList implements ObjectList {
+    final static class ListData extends AbstractList<Object> implements ObjectList {
         final Object[] data;
         private String canonical;
         public ListData(Object[] data) {

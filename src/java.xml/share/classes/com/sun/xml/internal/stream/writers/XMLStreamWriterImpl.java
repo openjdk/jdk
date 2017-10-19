@@ -42,9 +42,10 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.Vector;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLOutputFactory;
@@ -111,12 +112,12 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
     /**
      * Collects attributes when the writer is in reparing mode.
      */
-    private ArrayList<Attribute> fAttributeCache;
+    private List<Attribute> fAttributeCache;
 
     /**
      * Collects namespace declarations when the writer is in reparing mode.
      */
-    private ArrayList<QName> fNamespaceDecls;
+    private List<QName> fNamespaceDecls;
 
     /**
      * Namespace context encapsulating user specified context
@@ -164,7 +165,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
      * the same uri as the default namespace; It's added to avoid changing the
      * current impl. which has many redundant code for the repair mode
      */
-    HashMap<String, String> fAttrNamespace = null;
+    Map<String, String> fAttrNamespace = null;
 
     /**
      * Creates a new instance of XMLStreamWriterImpl. Uses platform's default
@@ -2146,7 +2147,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
 
         //Cleanup note: leaving these warnings to a xerces.internal.util cleanup
         public Iterator<String> getPrefixes(String uri) {
-            Vector prefixes = null;
+            List<String> prefixes = null;
             Iterator<String> itr = null;
 
             if (uri != null) {

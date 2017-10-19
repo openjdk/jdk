@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,18 +34,16 @@
 
 package com.sun.org.apache.xml.internal.serialize;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Writer;
-import java.util.Iterator;
-import java.util.Map;
-
 import com.sun.org.apache.xerces.internal.dom.DOMMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.util.Map;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMError;
 import org.w3c.dom.Document;
@@ -341,12 +340,10 @@ extends BaseMarkupSerializer {
             }
 
             if (_prefixes != null) {
-                Iterator entries = _prefixes.entrySet().iterator();
-                while (entries.hasNext()) {
+                for (Map.Entry<String, String> entry : _prefixes.entrySet()) {
                     _printer.printSpace();
-                    Map.Entry entry = (Map.Entry) entries.next();
-                    value = (String) entry.getKey();
-                    name = (String) entry.getValue();
+                    value = entry.getKey();
+                    name = entry.getValue();
                     if (name.length() == 0) {
                         _printer.printText( "xmlns=\"" );
                         printEscaped( value );

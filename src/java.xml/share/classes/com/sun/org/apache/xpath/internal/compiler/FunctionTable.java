@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -25,6 +26,7 @@ package com.sun.org.apache.xpath.internal.compiler;
 import com.sun.org.apache.xpath.internal.functions.Function;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.Map;
 import javax.xml.transform.TransformerException;
 
 /**
@@ -146,20 +148,20 @@ public class FunctionTable
   /**
    * The function table.
    */
-  private static Class m_functions[];
+  private static Class<?> m_functions[];
 
   /** Table of function name to function ID associations. */
-  private static final HashMap<String, Integer> m_functionID = new HashMap<>();
+  private static final Map<String, Integer> m_functionID = new HashMap<>();
 
   /**
    * The function table contains customized functions
    */
-  private Class m_functions_customer[] = new Class[NUM_ALLOWABLE_ADDINS];
+  private Class<?> m_functions_customer[] = new Class<?>[NUM_ALLOWABLE_ADDINS];
 
   /**
    * Table of function name to function ID associations for customized functions
    */
-  private HashMap<String, Integer> m_functionID_customer = new HashMap<>();
+  private Map<String, Integer> m_functionID_customer = new HashMap<>();
 
   /**
    * Number of built in functions.  Be sure to update this as
@@ -179,7 +181,7 @@ public class FunctionTable
 
   static
   {
-    m_functions = new Class[NUM_BUILT_IN_FUNCS];
+    m_functions = new Class<?>[NUM_BUILT_IN_FUNCS];
     m_functions[FUNC_CURRENT] = com.sun.org.apache.xpath.internal.functions.FuncCurrent.class;
     m_functions[FUNC_LAST] = com.sun.org.apache.xpath.internal.functions.FuncLast.class;
     m_functions[FUNC_POSITION] = com.sun.org.apache.xpath.internal.functions.FuncPosition.class;
@@ -370,7 +372,7 @@ public class FunctionTable
    * @param func A Implementation of an XPath Function object.
    * @return the position of the function in the internal index.
    */
-  public int installFunction(String name, Class func)
+  public int installFunction(String name, Class<?> func)
   {
 
     int funcIndex;

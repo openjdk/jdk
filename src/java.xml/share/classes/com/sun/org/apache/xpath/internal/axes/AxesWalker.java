@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,8 +21,6 @@
 
 package com.sun.org.apache.xpath.internal.axes;
 
-import java.util.Vector;
-
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisTraverser;
@@ -33,6 +31,7 @@ import com.sun.org.apache.xpath.internal.XPathContext;
 import com.sun.org.apache.xpath.internal.XPathVisitor;
 import com.sun.org.apache.xpath.internal.compiler.Compiler;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
+import java.util.List;
 
 /**
  * Serves as common interface for axes Walkers, and stores common
@@ -111,7 +110,7 @@ public class AxesWalker extends PredicatedNodeTest
    * @return non-null clone, which may be a new clone, or may be a clone
    *         contained on the cloneList.
    */
-  AxesWalker cloneDeep(WalkingIterator cloneOwner, Vector cloneList)
+  AxesWalker cloneDeep(WalkingIterator cloneOwner, List<AxesWalker> cloneList)
      throws CloneNotSupportedException
   {
     AxesWalker clone = findClone(this, cloneList);
@@ -121,8 +120,8 @@ public class AxesWalker extends PredicatedNodeTest
     clone.setLocPathIterator(cloneOwner);
     if(null != cloneList)
     {
-      cloneList.addElement(this);
-      cloneList.addElement(clone);
+      cloneList.add(this);
+      cloneList.add(clone);
     }
 
     if(wi().m_lastUsedWalker == this)
@@ -155,7 +154,7 @@ public class AxesWalker extends PredicatedNodeTest
    *
    * @return A clone that corresponds to the key, or null if key not found.
    */
-  static AxesWalker findClone(AxesWalker key, Vector cloneList)
+  static AxesWalker findClone(AxesWalker key, List<AxesWalker> cloneList)
   {
     if(null != cloneList)
     {
@@ -163,8 +162,8 @@ public class AxesWalker extends PredicatedNodeTest
       int n = cloneList.size();
       for (int i = 0; i < n; i+=2)
       {
-        if(key == cloneList.elementAt(i))
-          return (AxesWalker)cloneList.elementAt(i+1);
+        if(key == cloneList.get(i))
+          return cloneList.get(i+1);
       }
     }
     return null;

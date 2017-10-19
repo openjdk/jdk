@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,8 +24,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ALOAD;
 import com.sun.org.apache.bcel.internal.generic.ASTORE;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
@@ -40,7 +39,6 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
-
 import com.sun.org.apache.xml.internal.serializer.ElemDesc;
 import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
 import com.sun.org.apache.xml.internal.utils.XML11Char;

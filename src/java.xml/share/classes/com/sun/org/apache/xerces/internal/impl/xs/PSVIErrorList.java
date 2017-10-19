@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +21,8 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs;
 
-import java.util.AbstractList;
-
 import com.sun.org.apache.xerces.internal.xs.StringList;
+import java.util.AbstractList;
 
 /**
  * StringList implementation for schema error codes and error messages.
@@ -33,7 +32,7 @@ import com.sun.org.apache.xerces.internal.xs.StringList;
  * @author Michael Glavassevich, IBM
  *
  */
-final class PSVIErrorList extends AbstractList implements StringList {
+final class PSVIErrorList extends AbstractList<String> implements StringList {
 
     private final String[] fArray;
     private final int fLength;
@@ -78,7 +77,7 @@ final class PSVIErrorList extends AbstractList implements StringList {
      * List methods
      */
 
-    public Object get(int index) {
+    public String get(int index) {
         if (index >= 0 && index < fLength) {
             return fArray[(index << 1) + fOffset];
         }

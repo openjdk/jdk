@@ -77,10 +77,10 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
           BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $HEAD -n 1`
 
           # Extra M4 quote needed to protect [] in grep expression.
-          [FOUND_CORRECT_VERSION=`$ECHO $BOOT_JDK_VERSION | $EGREP '\"10([\.+-].*)?\"|\"9([\.+-].*)?\"|(1\.[89]\.)'`]
+          [FOUND_CORRECT_VERSION=`$ECHO $BOOT_JDK_VERSION | $EGREP '\"10([\.+-].*)?\"|\"9([\.+-].*)?\"'`]
           if test "x$FOUND_CORRECT_VERSION" = x; then
             AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring])
-            AC_MSG_NOTICE([(Your Boot JDK must be version 8, 9 or 10)])
+            AC_MSG_NOTICE([(Your Boot JDK must be version 9 or 10)])
             BOOT_JDK_FOUND=no
           else
             # We're done! :-)
@@ -301,19 +301,10 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
 
   # Finally, set some other options...
 
-  # When compiling code to be executed by the Boot JDK, force jdk8 compatibility.
-  BOOT_JDK_SOURCETARGET="-source 8 -target 8"
+  # When compiling code to be executed by the Boot JDK, force compatibility with the
+  # oldest supported bootjdk.
+  BOOT_JDK_SOURCETARGET="-source 9 -target 9"
   AC_SUBST(BOOT_JDK_SOURCETARGET)
-
-  AC_MSG_CHECKING([if Boot JDK supports modules])
-  if "$JAVA" --list-modules > /dev/null 2>&1; then
-    AC_MSG_RESULT([yes])
-    BOOT_JDK_MODULAR="true"
-  else
-    AC_MSG_RESULT([no])
-    BOOT_JDK_MODULAR="false"
-  fi
-  AC_SUBST(BOOT_JDK_MODULAR)
 
   AC_SUBST(JAVAC_FLAGS)
 

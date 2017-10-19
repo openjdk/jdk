@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,7 +30,7 @@ import java.util.List;
  * @author Ankit Pasricha, IBM
  *
  */
-public interface ObjectList extends List {
+public interface ObjectList extends List<Object> {
 
     /**
      * The number of <code>Object</code>s in the list. The range of
