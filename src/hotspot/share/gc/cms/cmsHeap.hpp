@@ -106,7 +106,7 @@ private:
   )
 
   // Returns success or failure.
-  void create_cms_collector();
+  bool create_cms_collector();
 
   // In support of ExplicitGCInvokesConcurrent functionality
   bool should_do_concurrent_full_gc(GCCause::Cause cause);

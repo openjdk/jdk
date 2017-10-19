@@ -47,7 +47,9 @@ jint CMSHeap::initialize() {
   // If we are running CMS, create the collector responsible
   // for collecting the CMS generations.
   assert(collector_policy()->is_concurrent_mark_sweep_policy(), "must be CMS policy");
-  create_cms_collector();
+  if (!create_cms_collector()) {
+    return JNI_ENOMEM;
+  }
 
   return JNI_OK;
 }
@@ -84,7 +86,7 @@ void CMSHeap::print_on_error(outputStream* st) const {
   CMSCollector::print_on_error(st);
 }
 
-void CMSHeap::create_cms_collector() {
+bool CMSHeap::create_cms_collector() {
   assert(old_gen()->kind() == Generation::ConcurrentMarkSweep,
          "Unexpected generation kinds");
   assert(gen_policy()->is_concurrent_mark_sweep_policy(), "Unexpected policy type");
@@ -93,9 +95,14 @@ void CMSHeap::create_cms_collector() {
                      rem_set(),
                      gen_policy()->as_concurrent_mark_sweep_policy());
 
-  if (!collector->completed_initialization()) {
+  if (collector == NULL || !collector->completed_initialization()) {
+    if (collector) {
+      delete collector; // Be nice in embedded situation
+    }
     vm_shutdown_during_initialization("Could not create CMS collector");
+    return false;
   }
+  return true; // success
 }
 
 void CMSHeap::collect(GCCause::Cause cause) {
