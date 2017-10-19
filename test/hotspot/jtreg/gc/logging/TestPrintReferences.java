@@ -23,7 +23,7 @@
 
 /*
  * @test TestPrintReferences
- * @bug 8136991 8186402 8186465
+ * @bug 8136991 8186402 8186465 8188245
  * @summary Validate the reference processing logging
  * @key gc
  * @library /test/lib
@@ -32,6 +32,7 @@
  */
 
 import java.lang.ref.SoftReference;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -108,7 +109,7 @@ public class TestPrintReferences {
   }
 
   // After getting time value, update 'output' for next use.
-  public static double getTimeValue(String name, int indentCount) {
+  public static BigDecimal getTimeValue(String name, int indentCount) {
     // Pattern of 'name', 'value' and some extra strings.
     String patternString = gcLogTimeRegex + indent(indentCount) + name + ": " + "(" + doubleRegex + ")";
     Matcher m = Pattern.compile(patternString).matcher(output);
@@ -126,59 +127,63 @@ public class TestPrintReferences {
       output = output.substring(index, output.length());
     }
 
-    return result;
+    // Convert to BigDecimal to control the precision of floating point arithmetic.
+    return BigDecimal.valueOf(result);
   }
 
   // Reference log is printing 1 decimal place of elapsed time.
   // So sum of each sub-phases could be slightly larger than the enclosing phase in some cases.
-  // As the maximum of sub-phases is 3, allow 0.1 of TOLERANCE.
-  // e.g. Actual value:  SoftReference(5.55) = phase1(1.85) + phase2(1.85) + phase3(1.85)
+  // e.g. If there are 3 sub-phases:
+  //      Actual value:  SoftReference(5.55) = phase1(1.85) + phase2(1.85) + phase3(1.85)
   //      Log value:     SoftReference(5.6) = phase1(1.9) + phase2(1.9) + phase3(1.9)
   //      When checked:  5.6 < 5.7 (sum of phase1~3)
-  public static boolean approximatelyEqual(double a, double b) {
-    final double TOLERANCE = 0.1;
+  public static boolean approximatelyEqual(BigDecimal phaseTime, BigDecimal sumOfSubPhasesTime, BigDecimal tolerance) {
+    BigDecimal abs = phaseTime.subtract(sumOfSubPhasesTime).abs();
 
-    return Math.abs(a - b) <= TOLERANCE;
+    int result = abs.compareTo(tolerance);
+
+    // result == -1, abs is less than tolerance.
+    // result == 0,  abs is equal to tolerance.
+    // result == 1,  abs is greater than tolerance.
+    return (result != 1);
   }
 
-  // Return false, if 'total' is larger and not approximately equal to 'refTime'.
-  public static boolean compare(double refTime, double total) {
-    return (refTime < total) && (!approximatelyEqual(refTime, total));
-  }
-
-  public static double checkRefTime(String refType) {
-    double refTime = getTimeValue(refType, 2);
-    double total = 0.0;
+  public static BigDecimal checkPhaseTime(String refType) {
+    BigDecimal phaseTime = getTimeValue(refType, 2);
+    BigDecimal sumOfSubPhasesTime = BigDecimal.valueOf(0.0);
 
     if (softReference.equals(refType)) {
-      total += getTimeValue(phase1, 4);
+      sumOfSubPhasesTime = sumOfSubPhasesTime.add(getTimeValue(phase1, 4));
     }
-    total += getTimeValue(phase2, 4);
-    total += getTimeValue(phase3, 4);
+    sumOfSubPhasesTime = sumOfSubPhasesTime.add(getTimeValue(phase2, 4));
+    sumOfSubPhasesTime = sumOfSubPhasesTime.add(getTimeValue(phase3, 4));
 
-    if (compare(refTime, total)) {
-      throw new RuntimeException(refType +" time(" + refTime +
-                                 "ms) is less than the sum(" + total + "ms) of each phases");
+    // If there are 3 sub-phases, we should allow 0.1 tolerance.
+    final BigDecimal toleranceFor3SubPhases = BigDecimal.valueOf(0.1);
+    if (!approximatelyEqual(phaseTime, sumOfSubPhasesTime, toleranceFor3SubPhases)) {
+      throw new RuntimeException(refType +" time(" + phaseTime +
+                                 "ms) is less than the sum(" + sumOfSubPhasesTime + "ms) of each phases");
     }
 
-    return refTime;
+    return phaseTime;
   }
 
-  // Find the first concurrent Reference Processing log and compare sub-time vs. total.
+  // Find the first concurrent Reference Processing log and compare phase time vs. sum of sub-phases.
   public static void checkLogValue(OutputAnalyzer out) {
     output = out.getStdout();
 
-    double refProcTime = getTimeValue(referenceProcessing, 0);
+    BigDecimal refProcTime = getTimeValue(referenceProcessing, 0);
 
-    double total = 0.0;
-    total += checkRefTime(softReference);
-    total += checkRefTime(weakReference);
-    total += checkRefTime(finalReference);
-    total += checkRefTime(phantomReference);
+    BigDecimal sumOfSubPhasesTime = checkPhaseTime(softReference);
+    sumOfSubPhasesTime = sumOfSubPhasesTime.add(checkPhaseTime(weakReference));
+    sumOfSubPhasesTime = sumOfSubPhasesTime.add(checkPhaseTime(finalReference));
+    sumOfSubPhasesTime = sumOfSubPhasesTime.add(checkPhaseTime(phantomReference));
 
-    if (compare(refProcTime, total)) {
+    // If there are 4 sub-phases, we should allow 0.2 tolerance.
+    final BigDecimal toleranceFor4SubPhases = BigDecimal.valueOf(0.2);
+    if (!approximatelyEqual(refProcTime, sumOfSubPhasesTime, toleranceFor4SubPhases)) {
       throw new RuntimeException("Reference Processing time(" + refProcTime + "ms) is less than the sum("
-                                 + total + "ms) of each phases");
+                                 + sumOfSubPhasesTime + "ms) of each phases");
     }
   }
 
