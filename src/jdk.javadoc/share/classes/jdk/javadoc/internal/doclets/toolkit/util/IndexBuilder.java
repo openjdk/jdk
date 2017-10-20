@@ -35,6 +35,7 @@ import javax.lang.model.element.TypeElement;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.Kind;
 
 /**
  * Build the mapping of each Unicode character with it's member lists
@@ -164,7 +165,8 @@ public class IndexBuilder {
     protected void putMembersInIndexMap(TypeElement te) {
         adjustIndexMap(utils.getAnnotationFields(te));
         adjustIndexMap(utils.getFields(te));
-        adjustIndexMap(utils.getMethods(te));
+        VisibleMemberMap vmm = configuration.getVisibleMemberMap(te, Kind.METHODS);
+        adjustIndexMap(vmm.getMembers(te));
         adjustIndexMap(utils.getConstructors(te));
         adjustIndexMap(utils.getEnumConstants(te));
     }

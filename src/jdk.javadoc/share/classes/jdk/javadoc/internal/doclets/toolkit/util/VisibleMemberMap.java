@@ -29,11 +29,13 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
@@ -121,7 +123,7 @@ public class VisibleMemberMap {
     /**
      * Member kind: InnerClasses/Fields/Methods?
      */
-    private final Kind kind;
+    public final Kind kind;
 
     /**
      * The configuration this VisibleMemberMap was created with.
@@ -173,11 +175,41 @@ public class VisibleMemberMap {
     }
 
     /**
+     * Returns the first method where the given method is visible.
+     * @param e the method whose visible enclosing type is to be found.
+     * @return the method found or null
+     */
+    public ExecutableElement getVisibleMethod(ExecutableElement e) {
+        if (kind != Kind.METHODS || e.getKind() != ElementKind.METHOD) {
+            throw new AssertionError("incompatible member type or visible member map" + e);
+        }
+        // start with the current class
+        for (Element m : getMembers(typeElement)) {
+            ExecutableElement mthd = (ExecutableElement)m;
+            if (utils.executableMembersEqual(mthd, e)) {
+                return mthd;
+            }
+        }
+
+        for (TypeElement te : visibleClasses) {
+            if (te == typeElement)
+                continue;
+            for (Element m : getMembers(te)) {
+                ExecutableElement mthd = (ExecutableElement)m;
+                if (utils.executableMembersEqual(mthd, e)) {
+                    return mthd;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Returns the property field documentation belonging to the given member.
      * @param element the member for which the property documentation is needed.
      * @return the property field documentation, null if there is none.
      */
-    public Element getPropertyMemberDoc(Element element) {
+    public Element getPropertyElement(Element element) {
         return classPropertiesMap.get(element);
     }
 
@@ -220,7 +252,12 @@ public class VisibleMemberMap {
     }
 
     /**
-     * Returns a list of visible enclosed members of the type being mapped.
+     * Returns a list of visible enclosed members of the mapped type element.
+     *
+     * In the case of methods, the list may contain those methods that are
+     * extended with no specification changes as indicated by the existence
+     * of a sole &commat;inheritDoc or devoid of any API commments.
+     *
      * This list may also contain appended members, inherited by inaccessible
      * super types. These members are documented in the subtype when the
      * super type is not documented.
@@ -230,9 +267,20 @@ public class VisibleMemberMap {
 
     public List<Element> getLeafMembers() {
         List<Element> result = new ArrayList<>();
-        result.addAll(classMap.get(typeElement).members);
+        result.addAll(getMembers(typeElement));
         result.addAll(getInheritedPackagePrivateMethods());
         return result;
+    }
+
+    private boolean hasOverridden(ExecutableElement method) {
+        for (TypeElement t : visibleClasses) {
+            for (ExecutableElement inheritedMethod : ElementFilter.methodsIn(classMap.get(t).members)) {
+                if (utils.elementUtils.overrides(method, inheritedMethod, t)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -243,7 +291,22 @@ public class VisibleMemberMap {
      * @return a list of enclosed members
      */
     public List<Element> getMembers(TypeElement typeElement) {
-        return classMap.get(typeElement).members;
+        List<Element> result = new ArrayList<>();
+        if (this.kind == Kind.METHODS) {
+            for (Element member : classMap.get(typeElement).members) {
+                ExecutableElement method = (ExecutableElement)member;
+                if (hasOverridden(method)) {
+                    if (!utils.isSimpleOverride(method)) {
+                        result.add(method);
+                    }
+                } else {
+                    result.add(method);
+                }
+            }
+        } else {
+            result.addAll(classMap.get(typeElement).members);
+        }
+        return result;
     }
 
     public boolean hasMembers(TypeElement typeElement) {
@@ -282,10 +345,14 @@ public class VisibleMemberMap {
             members.add(element);
         }
 
-        public boolean isEqual(ExecutableElement member) {
-            for (Element element : members) {
-                if (utils.executableMembersEqual(member, (ExecutableElement) element)) {
-                    members.add(member);
+        public boolean isEqual(ExecutableElement method) {
+            for (Element member : members) {
+                if (member.getKind() != ElementKind.METHOD)
+                    continue;
+                ExecutableElement thatMethod = (ExecutableElement) member;
+                if (utils.executableMembersEqual(method, thatMethod) &&
+                        !utils.isSimpleOverride(thatMethod)) {
+                    members.add(method);
                     return true;
                 }
             }

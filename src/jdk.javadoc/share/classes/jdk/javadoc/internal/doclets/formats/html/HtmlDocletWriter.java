@@ -96,6 +96,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.ImplementedMethods;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
 import static jdk.javadoc.internal.doclets.toolkit.util.CommentHelper.SPACER;
@@ -1569,6 +1570,16 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             // Must be a member reference since refClass is not null and refMemName is not null.
             // refMem is not null, so this @see tag must be referencing a valid member.
             TypeElement containing = utils.getEnclosingTypeElement(refMem);
+
+            // Find the enclosing type where the method is actually visible
+            // in the inheritance hierarchy.
+            if (refMem.getKind() == ElementKind.METHOD) {
+                VisibleMemberMap vmm = configuration.getVisibleMemberMap(containing,
+                        VisibleMemberMap.Kind.METHODS);
+                ExecutableElement overriddenMethod = vmm.getVisibleMethod((ExecutableElement)refMem);
+                if (overriddenMethod != null)
+                    containing = utils.getEnclosingTypeElement(overriddenMethod);
+            }
             if (ch.getText(see).trim().startsWith("#") &&
                 ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
                 // Since the link is relative and the holder is not even being

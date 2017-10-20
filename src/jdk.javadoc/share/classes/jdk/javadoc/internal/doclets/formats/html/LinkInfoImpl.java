@@ -326,7 +326,7 @@ public class LinkInfoImpl extends LinkInfo {
 
     /**
      * Set the target to be used for the link.
-     * @param styleName  String style of text defined in style sheet.
+     * @param target the target name.
      */
     public LinkInfoImpl target(String target) {
         this.target = target;

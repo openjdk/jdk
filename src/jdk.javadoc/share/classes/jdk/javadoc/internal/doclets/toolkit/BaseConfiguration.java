@@ -282,6 +282,13 @@ public abstract class BaseConfiguration {
      */
     public boolean quiet = false;
 
+    /**
+     * Specifies whether those methods that override a super-type's method
+     * with no changes to the API contract should be summarized in the
+     * footnote section.
+     */
+    public boolean summarizeOverriddenMethods = false;
+
     // A list containing urls
     private final List<String> linkList = new ArrayList<>();
 
@@ -596,6 +603,25 @@ public abstract class BaseConfiguration {
                         return true;
                     }
                 },
+                new Option(resources, "--override-methods", 1) {
+                    @Override
+                    public boolean process(String opt,  List<String> args) {
+                        String o = args.get(0);
+                        switch (o) {
+                            case "summary":
+                                summarizeOverriddenMethods = true;
+                                break;
+                            case "detail":
+                                summarizeOverriddenMethods = false;
+                                break;
+                            default:
+                                reporter.print(ERROR, getText("doclet.Option_invalid",
+                                        o, "--override-methods"));
+                                return false;
+                        }
+                        return true;
+                    }
+                },
                 new Hidden(resources, "-quiet") {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -878,7 +904,6 @@ public abstract class BaseConfiguration {
      * platform.
      *
      * @param docencoding output file encoding.
-     * @param reporter    used to report errors.
      */
     private boolean checkOutputFileEncoding(String docencoding) {
         OutputStream ost = new ByteArrayOutputStream();

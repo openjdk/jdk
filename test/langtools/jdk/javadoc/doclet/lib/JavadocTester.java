@@ -552,7 +552,7 @@ public abstract class JavadocTester {
         int prevIndex = -1;
         for (String s : strings) {
             s = s.replace("\n", NL); // normalize new lines
-            int currentIndex = fileString.indexOf(s);
+            int currentIndex = fileString.indexOf(s, prevIndex + 1);
             checking(s + " at index " + currentIndex);
             if (currentIndex == -1) {
                 failed(s + " not found.");

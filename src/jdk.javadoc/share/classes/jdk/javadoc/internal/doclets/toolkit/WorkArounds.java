@@ -61,6 +61,7 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.model.JavacElements;
@@ -283,11 +284,17 @@ public class WorkArounds {
         MethodSymbol sym = (MethodSymbol)method;
         ClassSymbol origin = (ClassSymbol) sym.owner;
         for (com.sun.tools.javac.code.Type t = toolEnv.getTypes().supertype(origin.type);
-                t.hasTag(com.sun.tools.javac.code.TypeTag.CLASS);
+                t.hasTag(TypeTag.CLASS);
                 t = toolEnv.getTypes().supertype(t)) {
             ClassSymbol c = (ClassSymbol) t.tsym;
             for (com.sun.tools.javac.code.Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
                 if (sym.overrides(sym2, origin, toolEnv.getTypes(), true)) {
+                    // Ignore those methods that may be a simple override
+                    // and allow the real API method to be found.
+                    if (sym2.type.hasTag(TypeTag.METHOD) &&
+                            utils.isSimpleOverride((MethodSymbol)sym2)) {
+                        continue;
+                    }
                     return t;
                 }
             }

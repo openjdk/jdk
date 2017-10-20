@@ -269,10 +269,16 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
         Content classLink = writer.getPreQualifiedClassLink(
                 LinkInfoImpl.Kind.MEMBER, typeElement, false);
-        Content label = new StringContent(
-                utils.isClass(typeElement)
-                       ? configuration.getText("doclet.Properties_Inherited_From_Class")
-                       : configuration.getText("doclet.Properties_Inherited_From_Interface"));
+        Content label;
+        if (configuration.summarizeOverriddenMethods) {
+            label = new StringContent(utils.isClass(typeElement)
+                    ? configuration.getText("doclet.Properties_Declared_In_Class")
+                    : configuration.getText("doclet.Properties_Declared_In_Interface"));
+        } else {
+            label = new StringContent(utils.isClass(typeElement)
+                    ? configuration.getText("doclet.Properties_Inherited_From_Class")
+                    : configuration.getText("doclet.Properties_Inherited_From_Interface"));
+        }
         Content labelHeading = HtmlTree.HEADING(HtmlConstants.INHERITED_SUMMARY_HEADING,
                 label);
         labelHeading.addContent(Contents.SPACE);

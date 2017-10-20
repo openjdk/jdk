@@ -78,6 +78,7 @@ import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
+import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
@@ -892,9 +893,12 @@ public class Utils {
             if (te == null) {
                 return null;
             }
-            List<? extends Element> methods = te.getEnclosedElements();
+            VisibleMemberMap vmm = configuration.getVisibleMemberMap(te,
+                    VisibleMemberMap.Kind.METHODS);
+            List<? extends Element> methods = vmm.getMembers(te);
             for (ExecutableElement ee : ElementFilter.methodsIn(methods)) {
-                if (configuration.workArounds.overrides(method, ee, origin)) {
+                if (configuration.workArounds.overrides(method, ee, origin) &&
+                        !isSimpleOverride(ee)) {
                     return ee;
                 }
             }
@@ -1462,9 +1466,11 @@ public class Utils {
             if (!getFullBody(e).isEmpty()) // ignore if already set
                 continue;
             if (ee.getSimpleName().contentEquals("values") && ee.getParameters().isEmpty()) {
+                removeCommentHelper(ee); // purge previous entry
                 configuration.cmtUtils.setEnumValuesTree(configuration, e);
             }
             if (ee.getSimpleName().contentEquals("valueOf") && ee.getParameters().size() == 1) {
+                removeCommentHelper(ee); // purge previous entry
                 configuration.cmtUtils.setEnumValueOfTree(configuration, e);
             }
         }
@@ -1555,6 +1561,25 @@ public class Utils {
             return true;
         }
         return hasBlockTag(e, DocTree.Kind.HIDDEN);
+    }
+
+    /**
+     * Returns true if the method has no comments, or a lone &commat;inheritDoc.
+     * @param m a method
+     * @return true if there are no comments, false otherwise
+     */
+    public boolean isSimpleOverride(ExecutableElement m) {
+        if (!configuration.summarizeOverriddenMethods ||
+                !isIncluded(m)) {
+            return false;
+        }
+
+        if (!getBlockTags(m).isEmpty())
+            return false;
+
+        List<? extends DocTree> fullBody = getFullBody(m);
+        return fullBody.isEmpty() ||
+                (fullBody.size() == 1 && fullBody.get(0).getKind().equals(Kind.INHERIT_DOC));
     }
 
     /**
