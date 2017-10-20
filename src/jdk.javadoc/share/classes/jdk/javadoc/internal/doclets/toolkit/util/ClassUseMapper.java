@@ -39,6 +39,7 @@ import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
+import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor9;
 import javax.lang.model.util.SimpleTypeVisitor9;
@@ -46,6 +47,7 @@ import javax.lang.model.util.Types;
 
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.Kind;
 
 /**
  * Map all class uses for a given class.
@@ -241,7 +243,8 @@ public class ClassUseMapper {
                 mapExecutable(ctor);
             }
 
-            List<ExecutableElement> methods = utils.getMethods(aClass);
+            VisibleMemberMap vmm = configuration.getVisibleMemberMap(aClass, Kind.METHODS);
+            List<ExecutableElement> methods = ElementFilter.methodsIn(vmm.getMembers(aClass));
             for (ExecutableElement method : methods) {
                 mapExecutable(method);
                 mapTypeParameters(classToMethodTypeParam, method, method);

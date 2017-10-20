@@ -245,7 +245,7 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     /**
      * Constructor. Initializes resource for the
-     * {@link com.sun.tools.doclets.internal.toolkit.util.MessageRetriever MessageRetriever}.
+     * {@link jdk.javadoc.internal.tool.Messager Messager}.
      */
     public HtmlConfiguration(Doclet doclet) {
         super(doclet);

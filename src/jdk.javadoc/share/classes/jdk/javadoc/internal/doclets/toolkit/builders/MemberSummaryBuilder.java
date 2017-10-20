@@ -79,9 +79,8 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
     /**
      * Construct a new MemberSummaryBuilder.
      *
-     * @param classWriter   the writer for the class whose members are being
-     *                      summarized.
      * @param context       the build context.
+     * @param typeElement   the type element.
      */
     private MemberSummaryBuilder(Context context, TypeElement typeElement) {
         super(context);
@@ -337,7 +336,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             List<Content> tableContents = new LinkedList<>();
             int counter = 0;
             for (Element member : members) {
-                final Element property = visibleMemberMap.getPropertyMemberDoc(member);
+                final Element property = visibleMemberMap.getPropertyElement(member);
                 if (property != null) {
                     processProperty(visibleMemberMap, member, property);
                 }
@@ -475,28 +474,55 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
      */
     private void buildInheritedSummary(MemberSummaryWriter writer,
             VisibleMemberMap visibleMemberMap, LinkedList<Content> summaryTreeList) {
-        for (TypeElement inhclass : visibleMemberMap.getVisibleClasses()) {
-            if (!(utils.isPublic(inhclass) || utils.isLinkable(inhclass))) {
+        for (TypeElement inheritedClass : visibleMemberMap.getVisibleClasses()) {
+            if (!(utils.isPublic(inheritedClass) || utils.isLinkable(inheritedClass))) {
                 continue;
             }
-            if (inhclass == typeElement) {
+            if (inheritedClass == typeElement) {
                 continue;
             }
-            SortedSet<Element> inhmembers = asSortedSet(visibleMemberMap.getMembers(inhclass));
-            if (!inhmembers.isEmpty()) {
-                Content inheritedTree = writer.getInheritedSummaryHeader(inhclass);
-                Content linksTree = writer.getInheritedSummaryLinksTree();
-                for (Element member : inhmembers) {
-                    TypeElement t= inhclass;
-                    if (utils.isPackagePrivate(inhclass) && !utils.isLinkable(inhclass)) {
-                        t = typeElement;
+            SortedSet<Element> inheritedMembersFromMap = asSortedSet(
+                    visibleMemberMap.getMembers(inheritedClass));
+
+            if (!inheritedMembersFromMap.isEmpty()) {
+                SortedSet<Element> inheritedMembers = new TreeSet<>(comparator);
+                List<ExecutableElement> enclosedSuperMethods = utils.getMethods(inheritedClass);
+                for (Element inheritedMember : inheritedMembersFromMap) {
+                    if (visibleMemberMap.kind != VisibleMemberMap.Kind.METHODS) {
+                        inheritedMembers.add(inheritedMember);
+                        continue;
                     }
-                    writer.addInheritedMemberSummary(t, member, inhmembers.first() == member,
-                            inhmembers.last() == member, linksTree);
+
+                    // If applicable, filter those overridden methods that
+                    // should not be documented in the summary/detail sections,
+                    // and instead document them in the footnote. Care must be taken
+                    // to handle JavaFX property methods, which have no source comments,
+                    // but comments for these are synthesized on the output.
+                    ExecutableElement inheritedMethod = (ExecutableElement)inheritedMember;
+                    if (enclosedSuperMethods.stream()
+                            .anyMatch(e -> utils.executableMembersEqual(inheritedMethod, e)
+                                    && (!utils.isSimpleOverride(e)
+                                    || visibleMemberMap.getPropertyElement(e) != null))) {
+                        inheritedMembers.add(inheritedMember);
+                    }
                 }
+
+                Content inheritedTree = writer.getInheritedSummaryHeader(inheritedClass);
+                Content linksTree = writer.getInheritedSummaryLinksTree();
+                addSummaryFootNote(inheritedClass, inheritedMembers, linksTree, writer);
                 inheritedTree.addContent(linksTree);
                 summaryTreeList.add(writer.getMemberTree(inheritedTree));
             }
+        }
+    }
+
+    private void addSummaryFootNote(TypeElement inheritedClass, SortedSet<Element> inheritedMembers,
+                                    Content linksTree, MemberSummaryWriter writer) {
+        for (Element member : inheritedMembers) {
+            TypeElement t = (utils.isPackagePrivate(inheritedClass) && !utils.isLinkable(inheritedClass))
+                    ? typeElement : inheritedClass;
+            writer.addInheritedMemberSummary(t, member, inheritedMembers.first() == member,
+                    inheritedMembers.last() == member, linksTree);
         }
     }
 
