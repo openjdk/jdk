@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,19 @@
  *
  */
 
-package sun.jvm.hotspot.gc.shared;
+package sun.jvm.hotspot.gc.cms;
 
-/** Mimics the enums in the VM under CollectedHeap::Name */
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.gc.shared.GenCollectedHeap;
+import sun.jvm.hotspot.gc.shared.CollectedHeapName;
 
-public class CollectedHeapName {
-  private String name;
+public class CMSHeap extends GenCollectedHeap {
 
-  private CollectedHeapName(String name) { this.name = name; }
+  public CMSHeap(Address addr) {
+    super(addr);
+  }
 
-  public static final CollectedHeapName GEN_COLLECTED_HEAP = new CollectedHeapName("GenCollectedHeap");
-  public static final CollectedHeapName CMS_HEAP = new CollectedHeapName("CMSHeap");
-  public static final CollectedHeapName G1_COLLECTED_HEAP = new CollectedHeapName("G1CollectedHeap");
-  public static final CollectedHeapName PARALLEL_SCAVENGE_HEAP = new CollectedHeapName("ParallelScavengeHeap");
-
-  public String toString() {
-    return name;
+  public CollectedHeapName kind() {
+    return CollectedHeapName.CMS_HEAP;
   }
 }
