@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import javax.xml.ws.WebServiceException;
@@ -122,13 +124,21 @@ public abstract class JAXWSExceptionBase
         String resourceBundleName = (String) in.readObject();
         String key = (String) in.readObject();
         int len = in.readInt();
-        if (len == -1) {
+        if (len < -1) {
+            throw new NegativeArraySizeException();
+        } else if (len == -1) {
             args = null;
-        } else {
+        } else if (len < 255) {
             args = new Object[len];
             for (int i = 0; i < args.length; i++) {
                 args[i] = in.readObject();
             }
+        } else {
+            List<Object> argList = new ArrayList<>(Math.min(len, 1024));
+            for (int i = 0; i < len; i++) {
+                argList.add(in.readObject());
+            }
+            args = argList.toArray(new Object[argList.size()]);
         }
         msg = new LocalizableMessageFactory(resourceBundleName).getMessage(key,args);
     }

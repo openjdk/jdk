@@ -38,6 +38,7 @@ import java.io.Serializable;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * Resizable-array implementation of the {@link Deque} interface.  Array
@@ -1194,6 +1195,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
 
         // Read in size and allocate array
         int size = s.readInt();
+        SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Object[].class, size + 1);
         elements = new Object[size + 1];
         this.tail = size;
 

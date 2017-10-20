@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.BiFunction;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * This class implements a hash table, which maps keys to values. Any
@@ -1291,6 +1292,10 @@ public class Hashtable<K,V>
         if (length > elements && (length & 1) == 0)
             length--;
         length = Math.min(length, origlength);
+
+        // Check Map.Entry[].class since it's the nearest public type to
+        // what we're actually creating.
+        SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Map.Entry[].class, length);
         table = new Entry<?,?>[length];
         threshold = (int)Math.min(length * loadFactor, MAX_ARRAY_SIZE + 1);
         count = 0;

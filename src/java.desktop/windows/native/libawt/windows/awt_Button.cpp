@@ -65,6 +65,7 @@ LPCTSTR AwtButton::GetClassName() {
 /* Create a new AwtButton object and window. */
 AwtButton* AwtButton::Create(jobject self, jobject parent)
 {
+    DASSERT(AwtToolkit::IsMainThread());
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     /* the result */
@@ -88,7 +89,6 @@ AwtButton* AwtButton::Create(jobject self, jobject parent)
 
         JNI_CHECK_PEER_GOTO(parent, done);
         awtParent = (AwtCanvas*)pData;
-        JNI_CHECK_NULL_GOTO(awtParent, "awtParent", done);
 
         target = env->GetObjectField(self, AwtObject::targetID);
         JNI_CHECK_NULL_GOTO(target, "target", done);
@@ -375,9 +375,6 @@ Java_sun_awt_windows_WButtonPeer_setLabel(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(self);
-
     SetLabelStruct *sls = new SetLabelStruct;
     sls->button = env->NewGlobalRef(self);
     sls->label = (label != NULL) ? (jstring)env->NewGlobalRef(label) : NULL;
@@ -399,13 +396,8 @@ Java_sun_awt_windows_WButtonPeer_create(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(parent);
-
     AwtToolkit::CreateComponent(
         self, parent, (AwtToolkit::ComponentFactory)AwtButton::Create);
-
-    JNI_CHECK_PEER_CREATION_RETURN(self);
 
     CATCH_BAD_ALLOC;
 }

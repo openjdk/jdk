@@ -32,6 +32,7 @@ import com.sun.jmx.remote.util.EnvHelp;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputFilter;
 import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.rmi.server.RMIClientSocketFactory;
@@ -101,19 +102,59 @@ public class RMIConnectorServer extends JMXConnectorServer {
         "jmx.remote.rmi.server.socket.factory";
 
     /**
-    * Name of the attribute that specifies a list of class names acceptable
-    * as parameters to the {@link RMIServer#newClient(java.lang.Object) RMIServer.newClient()}
+    * Name of the attribute that specifies an
+    * {@link ObjectInputFilter} pattern string to filter classes acceptable
+    * for {@link RMIServer#newClient(java.lang.Object) RMIServer.newClient()}
     * remote method call.
     * <p>
-    * This list of classes should correspond to the transitive closure of the
-    * credentials class (or classes) used by the installed {@linkplain JMXAuthenticator}
-    * associated with the {@linkplain RMIServer} implementation.
+    * The filter pattern must be in same format as used in
+    * {@link java.io.ObjectInputFilter.Config#createFilter}
     * <p>
-    * If the attribute is not set, or is null, then any class is
-    * deemed acceptable.
+    * This list of classes allowed by filter should correspond to the
+    * transitive closure of the credentials class (or classes) used by the
+    * installed {@linkplain JMXAuthenticator} associated with the
+    * {@linkplain RMIServer} implementation.
+    * If the attribute is not set then any class is deemed acceptable.
+    * @see ObjectInputFilter
     */
-    public static final String CREDENTIAL_TYPES =
-            "jmx.remote.rmi.server.credential.types";
+    public static final String CREDENTIALS_FILTER_PATTERN =
+        "jmx.remote.rmi.server.credentials.filter.pattern";
+
+    /**
+     * This attribute defines a pattern from which to create a
+     * {@link java.io.ObjectInputFilter} that will be used when deserializing
+     * objects sent to the {@code JMXConnectorServer} by any client.
+     * <p>
+     * The filter will be called for any class found in the serialized
+     * stream sent to server by client, including all JMX defined classes
+     * (such as {@link javax.management.ObjectName}), all method parameters,
+     * and, if present in the stream, all classes transitively referred by
+     * the serial form of any deserialized object.
+     * The pattern must be in same format as used in
+     * {@link java.io.ObjectInputFilter.Config#createFilter}.
+     * It may define a white list of permitted classes, a black list of
+     * rejected classes, a maximum depth for the deserialized objects,
+     * etc.
+     * <p>
+     * To be functional, the filter should allow at least all the
+     * concrete types in the transitive closure of all objects that
+     * might get serialized when serializing all JMX classes referred
+     * as parameters in the {@link
+     * javax.management.remote.rmi.RMIConnection} interface,
+     * plus all classes that a {@link javax.management.remote.rmi.RMIConnector client}
+     * might need to transmit wrapped in {@linkplain java.rmi.MarshalledObject
+     * marshalled objects} in order to interoperate with the MBeans registered
+     * in the {@code MBeanServer}. That would potentially include all the
+     * concrete {@linkplain javax.management.openmbean  JMX OpenTypes} and the
+     * classes they use in their serial form.
+     * <p>
+     * Care must be taken when defining such a filter, as defining
+     * a white list too restrictive or a too wide a black list may
+     * prevent legitimate clients from interoperating with the
+     * {@code JMXConnectorServer}.
+     */
+    public static final String SERIAL_FILTER_PATTERN =
+       "jmx.remote.rmi.server.serial.filter.pattern";
 
     /**
      * <p>Makes an <code>RMIConnectorServer</code>.

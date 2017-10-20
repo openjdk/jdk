@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,12 @@ import java.security.spec.*;
 import javax.crypto.spec.DHParameterSpec;
 
 import sun.security.provider.ParameterCache;
+import static sun.security.util.SecurityProviderConstants.*;
 
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+
 
 import sun.security.rsa.RSAKeyFactory;
 
@@ -98,7 +100,7 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
         // override lower limit to disallow unsecure keys being generated
         // override upper limit to deter DOS attack
         if (algorithm.equals("EC")) {
-            keySize = 256;
+            keySize = DEF_EC_KEY_SIZE;
             if ((minKeyLen == -1) || (minKeyLen < 112)) {
                 minKeyLen = 112;
             }
@@ -107,13 +109,11 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
             }
         } else {
             if (algorithm.equals("DSA")) {
-                // keep default keysize at 1024 since larger keysizes may be
-                // incompatible with SHA1withDSA and SHA-2 Signature algs
-                // may not be supported by native pkcs11 implementations
-                keySize = 1024;
+                keySize = DEF_DSA_KEY_SIZE;
+            } else if (algorithm.equals("RSA")) {
+                keySize = DEF_RSA_KEY_SIZE;
             } else {
-                // RSA and DH
-                keySize = 2048;
+                keySize = DEF_DH_KEY_SIZE;
             }
             if ((minKeyLen == -1) || (minKeyLen < 512)) {
                 minKeyLen = 512;

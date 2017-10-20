@@ -36,9 +36,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
 import javax.net.ssl.SSLEngineResult;
@@ -165,6 +167,11 @@ public class SerialFilterTest implements Serializable {
                 interfaces, (p, m, args) -> p);
 
         Runnable runnable = (Runnable & Serializable) SerialFilterTest::noop;
+
+        List<Class<?>> classList = new ArrayList<>();
+        classList.add(HashSet.class);
+        classList.addAll(Collections.nCopies(21, Map.Entry[].class));
+
         Object[][] objects = {
                 { null, 0, -1, 0, 0, 0,
                         Arrays.asList()},        // no callback, no values
@@ -184,8 +191,7 @@ public class SerialFilterTest implements Serializable {
                                 objArray.getClass(),
                                 SerialFilterTest.class,
                                 java.lang.invoke.SerializedLambda.class)},
-                { deepHashSet(10), 48, -1, 50, 11, 619,
-                        Arrays.asList(HashSet.class)},
+                { deepHashSet(10), 69, 4, 50, 11, 619, classList },
                 { proxy.getClass(), 3, -1, 2, 2, 112,
                         Arrays.asList(Runnable.class,
                                 java.lang.reflect.Proxy.class,

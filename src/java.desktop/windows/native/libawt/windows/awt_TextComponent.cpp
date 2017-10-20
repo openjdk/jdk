@@ -95,10 +95,9 @@ AwtTextComponent* AwtTextComponent::Create(jobject peer, jobject parent, BOOL is
 
         PDATA pData;
         AwtCanvas* awtParent;
-        JNI_CHECK_PEER_GOTO(parent, done);
 
+        JNI_CHECK_PEER_GOTO(parent, done);
         awtParent = (AwtCanvas*)pData;
-        JNI_CHECK_NULL_GOTO(awtParent, "null awtParent", done);
 
         target = env->GetObjectField(peer, AwtObject::targetID);
         JNI_CHECK_NULL_GOTO(target, "null target", done);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 
 import sun.security.jca.JCAUtil;
+import static sun.security.util.SecurityProviderConstants.DEF_RSA_KEY_SIZE;
 
 /**
  * RSA keypair generation. Standard algorithm, minimum key length 512 bit.
@@ -55,7 +56,7 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
 
     public RSAKeyPairGenerator() {
         // initialize to default in case the app does not call initialize()
-        initialize(2048, null);
+        initialize(DEF_RSA_KEY_SIZE, null);
     }
 
     // initialize the generator. See JCA doc

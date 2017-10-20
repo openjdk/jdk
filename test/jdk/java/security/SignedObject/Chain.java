@@ -32,7 +32,7 @@ import java.util.Arrays;
 
 /*
  * @test
- * @bug 8050374
+ * @bug 8050374 8181048
  * @summary Verify a chain of signed objects
  */
 public class Chain {
@@ -97,22 +97,28 @@ public class Chain {
         final Provider provider;
         final KeyAlg keyAlg;
         final SigAlg sigAlg;
+        final int keySize;
 
-        Test(SigAlg sigAlg, KeyAlg keyAlg, Provider privider) {
-            this.provider = privider;
+        Test(SigAlg sigAlg, KeyAlg keyAlg, Provider provider) {
+            this(sigAlg, keyAlg, provider, -1);
+        }
+
+        Test(SigAlg sigAlg, KeyAlg keyAlg, Provider provider, int keySize) {
+            this.provider = provider;
             this.keyAlg = keyAlg;
             this.sigAlg = sigAlg;
+            this.keySize = keySize;
         }
     }
 
     private static final Test[] tests = {
-        new Test(SigAlg.SHA1withDSA, KeyAlg.DSA, Provider.Default),
+        new Test(SigAlg.SHA1withDSA, KeyAlg.DSA, Provider.Default, 1024),
         new Test(SigAlg.MD2withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.MD5withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.SHA1withRSA, KeyAlg.RSA, Provider.Default),
-        new Test(SigAlg.SHA1withDSA, KeyAlg.DSA, Provider.Sun),
-        new Test(SigAlg.SHA224withDSA, KeyAlg.DSA, Provider.Sun),
-        new Test(SigAlg.SHA256withDSA, KeyAlg.DSA, Provider.Sun),
+        new Test(SigAlg.SHA1withDSA, KeyAlg.DSA, Provider.Sun, 1024),
+        new Test(SigAlg.SHA224withDSA, KeyAlg.DSA, Provider.Sun, 2048),
+        new Test(SigAlg.SHA256withDSA, KeyAlg.DSA, Provider.Sun, 2048),
     };
 
     private static final String str = "to-be-signed";
@@ -148,6 +154,9 @@ public class Chain {
                 kpg = KeyPairGenerator.getInstance(test.keyAlg.name);
             }
             for (int j=0; j < N; j++) {
+                if (test.keySize != -1) {
+                    kpg.initialize(test.keySize);
+                }
                 KeyPair kp = kpg.genKeyPair();
                 KeyPair anotherKp = kpg.genKeyPair();
                 privKeys[j] = kp.getPrivate();
