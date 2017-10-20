@@ -630,6 +630,7 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     FAIL_NO_SRC := $(FAIL_NO_SRC), \
     BIN := $(if $($(MODULE)_BIN), $($(MODULE)_BIN), $(JDK_OUTPUTDIR)/modules), \
     HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
+    CREATE_API_DIGEST := true, \
     ADD_JAVAC_FLAGS := \
         $($(MODULE)_ADD_JAVAC_FLAGS) \
         --module-source-path $(MODULESOURCEPATH) \
@@ -645,7 +646,7 @@ TARGETS += $($(MODULE)) $($(MODULE)_COPY_EXTRA)
 # Only the javac compilation actually depends on other modules so limit
 # dependency declaration to that by using the *_COMPILE_TARGET variable.
 $($(MODULE)_COMPILE_TARGET): $(foreach d, $(call FindDepsForModule, $(MODULE)), \
-    $(call SetupJavaCompilationCompileTarget, $d, \
+    $(call SetupJavaCompilationApiTarget, $d, \
         $(if $($d_BIN), $($d_BIN), $(JDK_OUTPUTDIR)/modules/$d)))
 
 ################################################################################
