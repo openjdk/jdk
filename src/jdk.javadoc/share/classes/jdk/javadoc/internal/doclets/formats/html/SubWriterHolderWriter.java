@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.Element;
@@ -105,7 +104,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         Content table = (configuration.isOutputHtml5())
                 ? HtmlTree.TABLE(HtmlStyle.memberSummary, caption)
                 : HtmlTree.TABLE(HtmlStyle.memberSummary, mw.getTableSummary(), caption);
-        table.addContent(getSummaryTableHeader(mw.getSummaryTableHeader(typeElement), "col"));
+        table.addContent(mw.getSummaryTableHeader(typeElement).toContent());
         for (Content tableContent : tableContents) {
             table.addContent(tableContent);
         }
@@ -356,6 +355,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      *
      * @param style the style class to be added to the content tree
      * @param contentTree the tree used to generate the complete member tree
+     * @return the member tree
      */
     public Content getMemberTree(HtmlStyle style, Content contentTree) {
         Content div = HtmlTree.DIV(style, getMemberTree(contentTree));

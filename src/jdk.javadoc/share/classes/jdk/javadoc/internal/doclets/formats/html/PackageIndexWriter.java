@@ -128,7 +128,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         Content table = (configuration.isOutputHtml5())
                 ? HtmlTree.TABLE(HtmlStyle.overviewSummary, getTableCaption(new RawHtml(text)))
                 : HtmlTree.TABLE(HtmlStyle.overviewSummary, tableSummary, getTableCaption(new RawHtml(text)));
-        table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
+        table.addContent(getPackageTableHeader().toContent());
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         addPackagesList(packages, tbody);
         table.addContent(tbody);

@@ -36,6 +36,7 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.internal.doclets.formats.html.TableHeader;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -123,7 +124,7 @@ public abstract class AbstractMemberWriter {
      * @param member the member to be documented
      * @return the summary table header
      */
-    public abstract List<String> getSummaryTableHeader(Element member);
+    public abstract TableHeader getSummaryTableHeader(Element member);
 
     /**
      * Add inherited summary label for the member.
@@ -428,8 +429,7 @@ public abstract class AbstractMemberWriter {
             for (Element element : members) {
                 TypeElement te = utils.getEnclosingTypeElement(element);
                 if (!printedUseTableHeader) {
-                    table.addContent(writer.getSummaryTableHeader(
-                            this.getSummaryTableHeader(element), "col"));
+                    table.addContent(getSummaryTableHeader(element).toContent());
                     printedUseTableHeader = true;
                 }
                 HtmlTree tr = new HtmlTree(HtmlTag.TR);
