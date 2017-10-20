@@ -33,12 +33,16 @@ import jdk.tools.jaotc.utils.NativeOrderOutputStream;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 
+
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.Infopoint;
 import jdk.vm.ci.code.site.Mark;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotMetaData;
+
+import static jdk.tools.jaotc.AOTCompiledClass.getType;
+import static jdk.tools.jaotc.AOTCompiledClass.metadataName;
 
 final class MetadataBuilder {
 
@@ -168,7 +172,7 @@ final class MetadataBuilder {
     }
 
     private static int addMetadataEntries(BinaryContainer binaryContainer, HotSpotMetaData metaData, CompiledMethodInfo methodInfo) {
-        String[] metaDataEntries = metaData.metadataEntries();
+        Object[] metaDataEntries = metaData.metadataEntries();
 
         if (metaDataEntries.length == 0) {
             return 0;
@@ -177,20 +181,13 @@ final class MetadataBuilder {
         int metadataGotSlotsStart = binaryContainer.getMetadataGotContainer().getByteStreamSize(); // binaryContainer.reserveMetadataGOTSlots(metaDataEntries.length);
 
         for (int index = 0; index < metaDataEntries.length; index++) {
-            String name = metaDataEntries[index];
-            addMetadataEntry(binaryContainer, name);
+            Object ref = metaDataEntries[index];
+            String name = metadataName(ref);
             // Create GOT cells for klasses referenced in metadata
-            String klassName = name;
-            int len = name.length();
-            int parenthesesIndex = name.lastIndexOf('(', len - 1);
-            if (parenthesesIndex > 0) {  // Method name
-                int dotIndex = name.lastIndexOf('.', parenthesesIndex - 1);
-                assert dotIndex > 0 : "method's full name should have '.' : " + name;
-                klassName = name.substring(0, dotIndex);
-            }
+            addMetadataEntry(binaryContainer, name);
             // We should already have added entries for this klass
-            assert AOTCompiledClass.getAOTKlassData(klassName) != null;
-            assert methodInfo.getDependentKlassData(klassName) != null;
+            assert AOTCompiledClass.getAOTKlassData(getType(ref)) != null;
+            assert methodInfo.getDependentKlassData(getType(ref)) != null;
         }
 
         return metadataGotSlotsStart;
