@@ -125,6 +125,7 @@
   nonstatic_field(ConstMethod,                 _code_size,                             u2)                                           \
   nonstatic_field(ConstMethod,                 _name_index,                            u2)                                           \
   nonstatic_field(ConstMethod,                 _signature_index,                       u2)                                           \
+  nonstatic_field(ConstMethod,                 _method_idnum,                          u2)                                           \
   nonstatic_field(ConstMethod,                 _max_stack,                             u2)                                           \
   nonstatic_field(ConstMethod,                 _max_locals,                            u2)                                           \
                                                                                                                                      \
@@ -157,6 +158,7 @@
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _source_file_name_index,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _init_state,                                   u1)                                    \
+  nonstatic_field(InstanceKlass,               _misc_flags,                                   u2)                                    \
                                                                                                                                      \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_pc,                                 address)                               \
@@ -521,6 +523,7 @@
                                                                           \
   declare_constant(InstanceKlass::linked)                                 \
   declare_constant(InstanceKlass::fully_initialized)                      \
+  declare_constant(InstanceKlass::_misc_is_anonymous)                     \
                                                                           \
   declare_constant(JumpData::taken_off_set)                               \
   declare_constant(JumpData::displacement_off_set)                        \

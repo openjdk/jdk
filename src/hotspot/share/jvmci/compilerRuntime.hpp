@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ class CompilerRuntime : AllStatic {
                                        const char* signature_name, int signature_name_len);
   // Resolution methods for aot compiled code.
   static void resolve_string_by_symbol(JavaThread *thread, void* string_result, const char* name);
+  static void resolve_dynamic_invoke(JavaThread *thread, oop* appendix_result);
+
   static Klass* resolve_klass_by_symbol(JavaThread *thread, Klass** klass_result, const char* name);
   static Klass* initialize_klass_by_symbol(JavaThread *thread, Klass** klass_result, const char* name);
   static MethodCounters* resolve_method_by_symbol_and_load_counters(JavaThread *thread, MethodCounters** counters_result, Klass* klass_hint, const char* data);
