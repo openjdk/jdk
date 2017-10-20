@@ -53,6 +53,7 @@ char*                    PerfMemory::_top = NULL;
 size_t                   PerfMemory::_capacity = 0;
 jint                     PerfMemory::_initialized = false;
 PerfDataPrologue*        PerfMemory::_prologue = NULL;
+bool                     PerfMemory::_destroyed = false;
 
 void perfMemory_init() {
 
@@ -64,7 +65,7 @@ void perfMemory_init() {
 void perfMemory_exit() {
 
   if (!UsePerfData) return;
-  if (!PerfMemory::is_initialized()) return;
+  if (!PerfMemory::is_usable()) return;
 
   // Only destroy PerfData objects if we're at a safepoint and the
   // StatSampler is not active. Otherwise, we risk removing PerfData
@@ -88,7 +89,7 @@ void perfMemory_exit() {
 
 void PerfMemory::initialize() {
 
-  if (_prologue != NULL)
+  if (is_initialized())
     // initialization already performed
     return;
 
@@ -160,7 +161,7 @@ void PerfMemory::initialize() {
 
 void PerfMemory::destroy() {
 
-  if (_prologue == NULL) return;
+  if (!is_usable()) return;
 
   if (_start != NULL && _prologue->overflow != 0) {
 
@@ -196,11 +197,7 @@ void PerfMemory::destroy() {
     delete_memory_region();
   }
 
-  _start = NULL;
-  _end = NULL;
-  _top = NULL;
-  _prologue = NULL;
-  _capacity = 0;
+  _destroyed = true;
 }
 
 // allocate an aligned block of memory from the PerfData memory
@@ -213,7 +210,7 @@ char* PerfMemory::alloc(size_t size) {
 
   MutexLocker ml(PerfDataMemAlloc_lock);
 
-  assert(_prologue != NULL, "called before initialization");
+  assert(is_usable(), "called before init or after destroy");
 
   // check that there is enough memory for this request
   if ((_top + size) >= _end) {
@@ -237,6 +234,8 @@ char* PerfMemory::alloc(size_t size) {
 
 void PerfMemory::mark_updated() {
   if (!UsePerfData) return;
+
+  assert(is_usable(), "called before init or after destroy");
 
   _prologue->mod_time_stamp = os::elapsed_counter();
 }
@@ -267,4 +266,8 @@ char* PerfMemory::get_perfdata_file_path() {
                "%s_%d", PERFDATA_NAME, os::current_process_id());
 
   return dest_file;
+}
+
+bool PerfMemory::is_initialized() {
+  return OrderAccess::load_acquire(&_initialized) != 0;
 }
