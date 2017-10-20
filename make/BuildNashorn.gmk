@@ -55,7 +55,18 @@ $(eval $(call SetupJavaCompilation, jdk.scripting.nashorn, \
     MODULE := jdk.scripting.nashorn, \
     SRC := $(TOPDIR)/src/jdk.scripting.nashorn/share/classes, \
     COPY := .properties .js, \
-    BIN := $(SUPPORT_OUTPUTDIR)/special_classes))
+    BIN := $(SUPPORT_OUTPUTDIR)/special_classes, \
+    CREATE_API_DIGEST := true, \
+))
+
+# Declare dependencies between java compilations of different modules.
+# Since the other modules are declared in different invocations of this file,
+# use the macro to find the correct target file to depend on.
+# Only the javac compilation actually depends on other modules so limit
+# dependency declaration to that by using the *_COMPILE_TARGET variable.
+$(jdk.scripting.nashorn_COMPILE_TARGET): $(foreach d, $(call FindDepsForModule, jdk.scripting.nashorn), \
+    $(call SetupJavaCompilationApiTarget, $d, \
+        $(if $($d_BIN), $($d_BIN), $(JDK_OUTPUTDIR)/modules/$d)))
 
 NASGEN_SRC := $(TOPDIR)/make/nashorn/buildtools/nasgen/src
 ASM_SRC := $(TOPDIR)/src/java.base/share/classes/jdk/internal/org/objectweb/asm

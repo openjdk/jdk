@@ -147,6 +147,8 @@ endef
 # Parameter 1 is the name of the rule. This name is used as variable prefix,
 # and the targets generated are listed in a variable by that name.
 #
+# The target for public API digest is returned in $1_API_TARGET.
+#
 # Remaining parameters are named arguments. These include:
 #   SETUP:=must point to a previously setup java compiler, for example: SETUP:=BOOTJAVAC
 #   JVM:=path to ..bin/java
@@ -175,6 +177,9 @@ endef
 #   FAIL_NO_SRC:=Set to false to not fail the build if no source files are found,
 #        default is true.
 #   DEBUG_SYMBOLS:=Set to false to disable generation of debug symbols.
+#   CREATE_API_DIGEST:=Set to true to use a javac plugin to generate a public API
+#        hash which can be used for down stream dependencies to only rebuild
+#        when the API changes. Implicitly used in sjavac.
 SetupJavaCompilation = $(NamedParamsMacroTemplate)
 define SetupJavaCompilationBody
 
@@ -327,6 +332,7 @@ define SetupJavaCompilationBody
         $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_SERVER_JVM) $$($1_SJAVAC))))
 
     $1_COMPILE_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch
+    $1_API_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi
 
     ifeq ($$($1_DISABLE_SJAVAC)x$$(ENABLE_SJAVAC),xyes)
       # Using sjavac to compile.
@@ -386,13 +392,11 @@ define SetupJavaCompilationBody
                 # Create a pubapi file that only changes when the pubapi changes. Dependent
                 # compilations can use this file to only get recompiled when pubapi has changed.
                 # Grep returns 1 if no matching lines are found. Do not fail for this.
-		$(GREP) -e "^I" $$($1_BIN)$$($1_MODULE_SUBDIR)/javac_state > $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi.tmp \
-		    || test "$$$$?" = "1"
-		if [ ! -f $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi ] \
-		    || [ "`$(DIFF) $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi \
-		        $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi.tmp`" != "" ]; then \
-		  $(MV) $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi.tmp \
-		      $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi; \
+		$(GREP) -e "^I" $$($1_BIN)$$($1_MODULE_SUBDIR)/javac_state \
+		    > $$($1_API_TARGET).tmp || test "$$$$?" = "1"
+		if [ ! -f $$($1_API_TARGET) ] \
+		    || [ "`$(DIFF) $$($1_API_TARGET) $$($1_API_TARGET).tmp`" != "" ]; then \
+		  $(MV) $$($1_API_TARGET).tmp $$($1_API_TARGET); \
 		fi
 
     else
@@ -432,15 +436,26 @@ define SetupJavaCompilationBody
         $1_JAVAC_CMD := $$($1_JAVAC)
       endif
 
+      ifeq ($$($1_CREATE_API_DIGEST), true)
+        $1_API_DIGEST_FLAGS := \
+            -classpath $(BUILDTOOLS_OUTPUTDIR)/depend \
+            -Xplugin:"depend $$($1_API_TARGET)" \
+            #
+
+        $1_EXTRA_DEPS := $(BUILDTOOLS_OUTPUTDIR)/depend/_the.COMPILE_DEPEND_batch
+      endif
+
       # When not using sjavac, pass along all sources to javac using an @file.
-      $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
+      $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE) \
+          $$($1_EXTRA_DEPS)
 		$$(call MakeDir, $$(@D))
 		$$(eval $$(call ListPathsSafely,$1_SRCS, $$@.tmp))
 		$$(call LogWarn, Compiling $$(words $$($1_SRCS)) files for $1)
 		$$(call ExecuteWithLog, $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$$($1_SAFE_NAME)_batch, \
 		    $$($1_JVM) $$($1_JAVAC_CMD) $$($1_FLAGS) \
 		        -implicit:none \
-			-d $$($1_BIN) $$($1_HEADERS_ARG) @$$@.tmp) && \
+		        $$($1_API_DIGEST_FLAGS) \
+		        -d $$($1_BIN) $$($1_HEADERS_ARG) @$$@.tmp) && \
 		$(MV) $$@.tmp $$@
     endif
 
@@ -497,9 +512,10 @@ endef
 # to declare and evaluate it again.
 # param 1 is for example BUILD_MYPACKAGE
 # param 2 is the output directory (BIN)
-define SetupJavaCompilationCompileTarget
-  $(if $(findstring yes, $(ENABLE_SJAVAC)), $(strip $2)/_the.$(strip $1)_pubapi, \
-      $(strip $2)/_the.$(strip $1)_batch)
-endef
+SetupJavaCompilationCompileTarget = \
+    $(strip $2)/_the.$(strip $1)_batch
+
+SetupJavaCompilationApiTarget = \
+    $(strip $2)/_the.$(strip $1)_pubapi
 
 endif # _JAVA_COMPILATION_GMK
