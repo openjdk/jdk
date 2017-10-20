@@ -148,7 +148,7 @@ import sun.awt.AWTAccessor;
  * in which case a default <code>Frame</code> is used as the parent,
  * and the dialog will be
  * centered on the screen (depending on the {@literal L&F}).
- * <dt><a id=message>message</a><dd>
+ * <dt>message<dd>
  * A descriptive message to be placed in the dialog box.
  * In the most common usage, message is just a <code>String</code> or
  * <code>String</code> constant.

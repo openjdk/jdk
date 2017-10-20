@@ -768,13 +768,13 @@ public class Desktop {
      * Installs the handler which is notified when the application is asked to
      * open a list of files.
      *
-     * @implNote Please note that for Mac OS, notifications
+     * @implNote Please note that for macOS, notifications
      * are only sent if the Java app is a bundled application,
      * with a {@code CFBundleDocumentTypes} array present in its
-     * Info.plist. See the
-     * <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">
-     * Info.plist Key Reference</a> for more information about adding a
-     * {@code CFBundleDocumentTypes} key to your app's Info.plist.
+     * {@code Info.plist}. Check the
+     * <a href="https://developer.apple.com/documentation">
+     * Apple Developer Documentation</a> for more information about
+     * {@code Info.plist}.
      *
      * @param openFileHandler handler
      *
@@ -800,13 +800,13 @@ public class Desktop {
      * Installs the handler which is notified when the application is asked to
      * print a list of files.
      *
-     * @implNote Please note that for Mac OS, notifications
+     * @implNote Please note that for macOS, notifications
      * are only sent if the Java app is a bundled application,
      * with a {@code CFBundleDocumentTypes} array present in its
-     * Info.plist. See the
-     * <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">
-     * Info.plist Key Reference</a> for more information about adding a
-     * {@code CFBundleDocumentTypes} key to your app's Info.plist.
+     * {@code Info.plist}. Check the
+     * <a href="https://developer.apple.com/documentation">
+     * Apple Developer Documentation</a> for more information about
+     * {@code Info.plist}.
      *
      * @param printFileHandler handler
      * @throws SecurityException if a security manager exists and its
@@ -835,13 +835,13 @@ public class Desktop {
      * {@link OpenURIHandler#openURI(OpenURIEvent)} requests to be
      * enqueued until another handler is set.
      *
-     * @implNote Please note that for Mac OS, notifications
+     * @implNote Please note that for macOS, notifications
      * are only sent if the Java app is a bundled application,
      * with a {@code CFBundleDocumentTypes} array present in its
-     * Info.plist. See the
-     * <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">
-     * Info.plist Key Reference</a> for more information about adding a
-     * {@code CFBundleDocumentTypes} key to your app's Info.plist.
+     * {@code Info.plist}. Check the
+     * <a href="https://developer.apple.com/documentation">
+     * Apple Developer Documentation</a> for more information about
+     * {@code Info.plist}.
      *
      * @param openURIHandler handler
      *
