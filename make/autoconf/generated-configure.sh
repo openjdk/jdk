@@ -5114,7 +5114,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1508415370
+DATE_WHEN_GENERATED=1508497666
 
 ###############################################################################
 #
@@ -67755,7 +67755,15 @@ $as_echo_n "checking if build directory is on local disk... " >&6; }
       OUTPUT_DIR_IS_LOCAL="yes"
     fi
   else
-    if $DF -l $OUTPUTDIR > /dev/null 2>&1; then
+    # JDK-8189619
+    # df on AIX does not understand -l. On modern AIXes it understands "-T local" which
+    # is the same. On older AIXes we just continue to live with a "not local build" warning.
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      DF_LOCAL_ONLY_OPTION='-T local'
+    else
+      DF_LOCAL_ONLY_OPTION='-l'
+    fi
+    if $DF $DF_LOCAL_ONLY_OPTION $OUTPUTDIR > /dev/null 2>&1; then
       OUTPUT_DIR_IS_LOCAL="yes"
     else
       OUTPUT_DIR_IS_LOCAL="no"
