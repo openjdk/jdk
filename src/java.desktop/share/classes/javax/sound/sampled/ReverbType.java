@@ -75,44 +75,44 @@ package javax.sound.sampled;
  * early intensity, and early delay</caption>
  * <thead>
  *   <tr>
- *     <th>Type
- *     <th>Decay Time (ms)
- *     <th>Late Intensity (dB)
- *     <th>Late Delay (ms)
- *     <th>Early Intensity (dB)
- *     <th>Early Delay(ms)
+ *     <th scope="col">Type
+ *     <th scope="col">Decay Time (ms)
+ *     <th scope="col">Late Intensity (dB)
+ *     <th scope="col">Late Delay (ms)
+ *     <th scope="col">Early Intensity (dB)
+ *     <th scope="col">Early Delay(ms)
  * </thead>
  * <tbody>
  *   <tr>
- *     <td>Cavern
+ *     <th scope="row">Cavern
  *     <td>2250
  *     <td>-2.0
  *     <td>41.3
  *     <td>-1.4
  *     <td>10.3
  *   <tr>
- *     <td>Dungeon
+ *     <th scope="row">Dungeon
  *     <td>1600
  *     <td>-1.0
  *     <td>10.3
  *     <td>-0.7
  *     <td>2.6
  *   <tr>
- *     <td>Garage
+ *     <th scope="row">Garage
  *     <td>900
  *     <td>-6.0
  *     <td>14.7
  *     <td>-4.0
  *     <td>3.9
  *   <tr>
- *     <td>Acoustic Lab
+ *     <th scope="row">Acoustic Lab
  *     <td>280
  *     <td>-3.0
  *     <td>8.0
  *     <td>-2.0
  *     <td>2.0
  *   <tr>
- *     <td>Closet
+ *     <th scope="row">Closet
  *     <td>150
  *     <td>-10.0
  *     <td>2.5

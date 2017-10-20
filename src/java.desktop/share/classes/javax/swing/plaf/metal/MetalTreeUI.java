@@ -47,24 +47,25 @@ import javax.swing.plaf.basic.*;
  * <table class="striped">
  * <caption>Descriptions of supported hints: Angled, Horizontal, and None
  * </caption>
- *  <tr>
- *    <th>Angled</th>
- *    <td>A line is drawn connecting the child to the parent. For handling
- *          of the root node refer to
- *          {@link javax.swing.JTree#setRootVisible} and
- *          {@link javax.swing.JTree#setShowsRootHandles}.
- *    </td>
- *  </tr>
- *  <tr>
- *     <th>Horizontal</th>
- *     <td>A horizontal line is drawn dividing the children of the root node.</td>
- *  </tr>
- *  <tr>
- *      <th>None</th>
- *      <td>Do not draw any visual indication between nodes.</td>
- *  </tr>
+ * <thead>
+ *   <tr>
+ *     <th scope="col">Hint
+ *     <th scope="col">Description
+ * </thead>
+ * <tbody>
+ *   <tr>
+ *     <th scope="row">Angled
+ *     <td>A line is drawn connecting the child to the parent. For handling of
+ *     the root node refer to {@link JTree#setRootVisible} and
+ *     {@link JTree#setShowsRootHandles}.
+ *   <tr>
+ *     <th scope="row">Horizontal
+ *     <td>A horizontal line is drawn dividing the children of the root node.
+ *   <tr>
+ *     <th scope="row">None
+ *     <td>Do not draw any visual indication between nodes.
+ * </tbody>
  * </table>
- *
  * <p>
  * As it is typically impractical to obtain the <code>TreeUI</code> from
  * the <code>JTree</code> and cast to an instance of <code>MetalTreeUI</code>

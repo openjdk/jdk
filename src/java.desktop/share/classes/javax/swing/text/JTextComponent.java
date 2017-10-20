@@ -160,34 +160,39 @@ import sun.swing.SwingAccessor;
  * <table class="striped">
  * <caption>Stages of keyboard and input method event handling</caption>
  * <thead>
- * <tr>
- * <th id="stage">Stage</th>
- * <th id="ke">KeyEvent</th>
- * <th id="ime">InputMethodEvent</th></tr>
+ *   <tr>
+ *     <th scope="col">Stage
+ *     <th scope="col">KeyEvent
+ *     <th scope="col">InputMethodEvent
  * </thead>
  * <tbody>
- * <tr><td headers="stage">1.   </td>
- *     <td headers="ke">input methods </td>
- *     <td headers="ime">(generated here)</td></tr>
- * <tr><td headers="stage">2.   </td>
- *     <td headers="ke">focus manager </td>
- *     <td headers="ime"></td>
- * </tr>
- * <tr>
- *     <td headers="stage">3.   </td>
- *     <td headers="ke">registered key listeners</td>
- *     <td headers="ime">registered input method listeners</tr>
- * <tr>
- *     <td headers="stage">4.   </td>
- *     <td headers="ke"></td>
- *     <td headers="ime">input method handling in JTextComponent</tr>
- * <tr>
- *     <td headers="stage">5.   </td><td headers="ke ime" colspan=2>keymap handling using the current keymap</td></tr>
- * <tr><td headers="stage">6.   </td><td headers="ke">keyboard handling in JComponent (e.g. accelerators, component navigation, etc.)</td>
- *     <td headers="ime"></td></tr>
+ *   <tr>
+ *     <th scope="row">1.
+ *     <td>input methods
+ *     <td>(generated here)
+ *   <tr>
+ *     <th scope="row" headers="stage">2.
+ *     <td>focus manager
+ *     <td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row">3.
+ *     <td>registered key listeners
+ *     <td>registered input method listeners
+ *   <tr>
+ *     <th scope="row">4.
+ *     <td>
+ *     <td>input method handling in JTextComponent
+ *   <tr>
+ *     <th scope="row">5.
+ *     <td colspan=2>keymap handling using the current keymap
+ *   <tr>
+ *     <th scope="row">6.
+ *     <td>keyboard handling in JComponent (e.g. accelerators, component
+ *     navigation, etc.)
+ *     <td>
  * </tbody>
  * </table>
- *
  * <p>
  * To maintain compatibility with applications that listen to key
  * events but are not aware of input method events, the input

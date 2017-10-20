@@ -98,102 +98,88 @@ import java.beans.*;
  * <caption>Supported Action properties</caption>
  * <thead>
  *  <tr>
- *    <th>Component Property
- *    <th>Components
- *    <th>Action Key
- *    <th>Notes
+ *    <th scope="col">Component Property
+ *    <th scope="col">Components
+ *    <th scope="col">Action Key
+ *    <th scope="col">Notes
  * </thead>
  * <tbody>
- *  <tr valign="top" style="text-align:left">
- *      <td><b><code>enabled</code></b>
- *      <td>All
- *      <td>The <code>isEnabled</code> method
- *      <td>&nbsp;
- *  <tr valign="top" style="text-align:left">
- *      <td><b><code>toolTipText</code></b>
- *      <td>All
- *      <td><code>SHORT_DESCRIPTION</code>
- *      <td>&nbsp;
- *  <tr valign="top" style="text-align:left">
- *      <td><b><code>actionCommand</code></b>
- *      <td>All
- *      <td><code>ACTION_COMMAND_KEY</code>
- *      <td>&nbsp;
- *  <tr valign="top" style="text-align:left">
- *      <td><b><code>mnemonic</code></b>
- *      <td>All buttons
- *      <td><code>MNEMONIC_KEY</code>
- *      <td>A <code>null</code> value or <code>Action</code> results in the
- *          button's <code>mnemonic</code> property being set to
- *          <code>'\0'</code>.
- *  <tr valign="top" style="text-align:left">
- *      <td><b><code>text</code></b>
- *      <td>All buttons
- *      <td><code>NAME</code>
- *      <td>If you do not want the text of the button to mirror that
- *          of the <code>Action</code>, set the property
- *          <code>hideActionText</code> to <code>true</code>.  If
- *          <code>hideActionText</code> is <code>true</code>, setting the
- *          <code>Action</code> changes the text of the button to
- *          <code>null</code> and any changes to <code>NAME</code>
- *          are ignored.  <code>hideActionText</code> is useful for
- *          tool bar buttons that typically only show an <code>Icon</code>.
- *          <code>JToolBar.add(Action)</code> sets the property to
- *          <code>true</code> if the <code>Action</code> has a
- *          non-<code>null</code> value for <code>LARGE_ICON_KEY</code> or
- *          <code>SMALL_ICON</code>.
- *  <tr valign="top" style="text-align:left">
- *      <td><b><code>displayedMnemonicIndex</code></b>
- *      <td>All buttons
- *      <td><code>DISPLAYED_MNEMONIC_INDEX_KEY</code>
- *      <td>If the value of <code>DISPLAYED_MNEMONIC_INDEX_KEY</code> is
- *          beyond the bounds of the text, it is ignored.  When
- *          <code>setAction</code> is called, if the value from the
- *          <code>Action</code> is <code>null</code>, the displayed
- *          mnemonic index is not updated.  In any subsequent changes to
- *          <code>DISPLAYED_MNEMONIC_INDEX_KEY</code>, <code>null</code>
- *          is treated as -1.
- *  <tr valign="top" style="text-align:left">
- *      <td><b><code>icon</code></b>
- *      <td>All buttons except of <code>JCheckBox</code>,
- *      <code>JToggleButton</code> and <code>JRadioButton</code>.
- *      <td>either <code>LARGE_ICON_KEY</code> or
- *          <code>SMALL_ICON</code>
- *     <td>The <code>JMenuItem</code> subclasses only use
- *         <code>SMALL_ICON</code>.  All other buttons will use
- *         <code>LARGE_ICON_KEY</code>; if the value is <code>null</code> they
- *         use <code>SMALL_ICON</code>.
- *  <tr valign="top" style="text-align:left">
- *      <td><b><code>accelerator</code></b>
- *      <td>All <code>JMenuItem</code> subclasses, with the exception of
- *          <code>JMenu</code>.
- *      <td><code>ACCELERATOR_KEY</code>
- *      <td>&nbsp;
- *  <tr valign="top" style="text-align:left">
- *      <td><b><code>selected</code></b>
- *      <td><code>JToggleButton</code>, <code>JCheckBox</code>,
- *          <code>JRadioButton</code>, <code>JCheckBoxMenuItem</code> and
- *          <code>JRadioButtonMenuItem</code>
- *      <td><code>SELECTED_KEY</code>
- *      <td>Components that honor this property only use
- *          the value if it is {@code non-null}. For example, if
- *          you set an {@code Action} that has a {@code null}
- *          value for {@code SELECTED_KEY} on a {@code JToggleButton}, the
- *          {@code JToggleButton} will not update it's selected state in
- *          any way. Similarly, any time the {@code JToggleButton}'s
- *          selected state changes it will only set the value back on
- *          the {@code Action} if the {@code Action} has a {@code non-null}
- *          value for {@code SELECTED_KEY}.
- *          <br>
- *          Components that honor this property keep their selected state
- *          in sync with this property. When the same {@code Action} is used
- *          with multiple components, all the components keep their selected
- *          state in sync with this property. Mutually exclusive
- *          buttons, such as {@code JToggleButton}s in a {@code ButtonGroup},
- *          force only one of the buttons to be selected. As such, do not
- *          use the same {@code Action} that defines a value for the
- *          {@code SELECTED_KEY} property with multiple mutually
- *          exclusive buttons.
+ *  <tr>
+ *    <th scope="row">{@code enabled}
+ *    <td>All
+ *    <td>The {@code isEnabled} method
+ *    <td>&nbsp;
+ *  <tr>
+ *    <th scope="row">{@code toolTipText}
+ *    <td>All
+ *    <td>{@code SHORT_DESCRIPTION}
+ *    <td>&nbsp;
+ *  <tr>
+ *    <th scope="row">{@code actionCommand}
+ *    <td>All
+ *    <td>{@code ACTION_COMMAND_KEY}
+ *    <td>&nbsp;
+ *  <tr>
+ *    <th scope="row">{@code mnemonic}
+ *    <td>All buttons
+ *    <td>{@code MNEMONIC_KEY}
+ *    <td>A {@code null} value or {@code Action} results in the button's
+ *    {@code mnemonic} property being set to {@code '\0'}.
+ *  <tr>
+ *    <th scope="row">{@code text}
+ *    <td>All buttons
+ *    <td>{@code NAME}
+ *    <td>If you do not want the text of the button to mirror that of the
+ *    {@code Action}, set the property {@code hideActionText} to {@code true}.
+ *    If {@code hideActionText} is {@code true}, setting the {@code Action}
+ *    changes the text of the button to {@code null} and any changes to
+ *    {@code NAME} are ignored. {@code hideActionText} is useful for tool bar
+ *    buttons that typically only show an {@code Icon}.
+ *    {@code JToolBar.add(Action)} sets the property to {@code true} if the
+ *    {@code Action} has a non-{@code null} value for {@code LARGE_ICON_KEY} or
+ *    {@code SMALL_ICON}.
+ *  <tr>
+ *    <th scope="row">{@code displayedMnemonicIndex}
+ *    <td>All buttons
+ *    <td>{@code DISPLAYED_MNEMONIC_INDEX_KEY}
+ *    <td>If the value of {@code DISPLAYED_MNEMONIC_INDEX_KEY} is beyond the
+ *    bounds of the text, it is ignored. When {@code setAction} is called, if
+ *    the value from the {@code Action} is {@code null}, the displayed mnemonic
+ *    index is not updated. In any subsequent changes to
+ *    {@code DISPLAYED_MNEMONIC_INDEX_KEY}, {@code null} is treated as -1.
+ *  <tr>
+ *    <th scope="row">{@code icon}
+ *    <td>All buttons except of {@code JCheckBox}, {@code JToggleButton} and
+ *    {@code JRadioButton}.
+ *    <td>either {@code LARGE_ICON_KEY} or {@code SMALL_ICON}
+ *    <td>The {@code JMenuItem} subclasses only use {@code SMALL_ICON}. All
+ *    other buttons will use {@code LARGE_ICON_KEY}; if the value is
+ *    {@code null} they use {@code SMALL_ICON}.
+ *  <tr>
+ *    <th scope="row">{@code accelerator}
+ *    <td>All {@code JMenuItem} subclasses, with the exception of {@code JMenu}.
+ *    <td>{@code ACCELERATOR_KEY}
+ *    <td>&nbsp;
+ *  <tr>
+ *    <th scope="row">{@code selected}
+ *    <td>{@code JToggleButton}, {@code JCheckBox}, {@code JRadioButton},
+ *    {@code JCheckBoxMenuItem} and {@code JRadioButtonMenuItem}
+ *    <td>{@code SELECTED_KEY}
+ *    <td>Components that honor this property only use the value if it is
+ *    {@code non-null}. For example, if you set an {@code Action} that has a
+ *    {@code null} value for {@code SELECTED_KEY} on a {@code JToggleButton},
+ *    the {@code JToggleButton} will not update it's selected state in any way.
+ *    Similarly, any time the {@code JToggleButton}'s selected state changes it
+ *    will only set the value back on the {@code Action} if the {@code Action}
+ *    has a {@code non-null} value for {@code SELECTED_KEY}.
+ *    <br>
+ *    Components that honor this property keep their selected state in sync with
+ *    this property. When the same {@code Action} is used with multiple
+ *    components, all the components keep their selected state in sync with this
+ *    property. Mutually exclusive buttons, such as {@code JToggleButton}s in a
+ *    {@code ButtonGroup}, force only one of the buttons to be selected. As
+ *    such, do not use the same {@code Action} that defines a value for the
+ *    {@code SELECTED_KEY} property with multiple mutually exclusive buttons.
  * </tbody>
  * </table>
  * <p>

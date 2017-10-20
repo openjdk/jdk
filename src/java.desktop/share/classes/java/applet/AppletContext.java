@@ -117,24 +117,30 @@ public interface AppletContext {
      * <table class="striped">
      * <caption>Target arguments and their descriptions</caption>
      * <thead>
-     * <tr><th>Target Argument</th>
-     * <th>Description</th></tr>
+     *   <tr>
+     *     <th scope="col">Target Argument
+     *     <th scope="col">Description
      * </thead>
      * <tbody>
-     * <tr><td>{@code "_self"}  <td>Show in the window and frame that
-     *                                   contain the applet.</tr>
-     * <tr><td>{@code "_parent"}<td>Show in the applet's parent frame. If
-     *                                   the applet's frame has no parent frame,
-     *                                   acts the same as "_self".</tr>
-     * <tr><td>{@code "_top"}   <td>Show in the top-level frame of the applet's
-     *                                   window. If the applet's frame is the
-     *                                   top-level frame, acts the same as "_self".</tr>
-     * <tr><td>{@code "_blank"} <td>Show in a new, unnamed
-     *                                   top-level window.</tr>
-     * <tr><td><i>name</i><td>Show in the frame or window named <i>name</i>. If
-     *                        a target named <i>name</i> does not already exist, a
-     *                        new top-level window with the specified name is created,
-     *                        and the document is shown there.</tr>
+     *   <tr>
+     *     <th scope="row">{@code "_self"}
+     *     <td>Show in the window and frame that contain the applet.
+     *   <tr>
+     *     <th scope="row">{@code "_parent"}
+     *     <td>Show in the applet's parent frame. If the applet's frame has no
+     *     parent frame, acts the same as "_self".
+     *   <tr>
+     *     <th scope="row">{@code "_top"}
+     *     <td>Show in the top-level frame of the applet's window. If the
+     *     applet's frame is the top-level frame, acts the same as "_self".
+     *   <tr>
+     *     <th scope="row">{@code "_blank"}
+     *     <td>Show in a new, unnamed top-level window.
+     *   <tr>
+     *     <th scope="row"><i>name</i>
+     *     <td>Show in the frame or window named <i>name</i>. If a target named
+     *     <i>name</i> does not already exist, a new top-level window with the
+     *     specified name is created, and the document is shown there.
      * </tbody>
      * </table>
      * <p>

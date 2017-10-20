@@ -75,32 +75,32 @@ import com.sun.media.sound.JDK13Services;
  * <caption>Audio System Property Keys</caption>
  * <thead>
  *   <tr>
- *     <th>Property Key
- *     <th>Interface
- *     <th>Affected Method(s)
+ *     <th scope="col">Property Key
+ *     <th scope="col">Interface
+ *     <th scope="col">Affected Method(s)
  * </thead>
  * <tbody>
  *   <tr>
- *     <td>{@code javax.sound.sampled.Clip}
+ *     <th scope="row">{@code javax.sound.sampled.Clip}
  *     <td>{@link Clip}
  *     <td>{@link #getLine}, {@link #getClip}
  *   <tr>
- *     <td>{@code javax.sound.sampled.Port}
+ *     <th scope="row">{@code javax.sound.sampled.Port}
  *     <td>{@link Port}
  *     <td>{@link #getLine}
  *   <tr>
- *     <td>{@code javax.sound.sampled.SourceDataLine}
+ *     <th scope="row">{@code javax.sound.sampled.SourceDataLine}
  *     <td>{@link SourceDataLine}
  *     <td>{@link #getLine}, {@link #getSourceDataLine}
  *   <tr>
- *     <td>{@code javax.sound.sampled.TargetDataLine}
+ *     <th scope="row">{@code javax.sound.sampled.TargetDataLine}
  *     <td>{@link TargetDataLine}
  *     <td>{@link #getLine}, {@link #getTargetDataLine}
  * </tbody>
  * </table>
  *
  * The property value consists of the provider class name and the mixer name,
- * separated by the hash mark (&quot;#&quot;). The provider class name is the
+ * separated by the hash mark ("#"). The provider class name is the
  * fully-qualified name of a concrete {@link MixerProvider mixer provider}
  * class. The mixer name is matched against the {@code String} returned by the
  * {@code getName} method of {@code Mixer.Info}. Either the class name, or the
