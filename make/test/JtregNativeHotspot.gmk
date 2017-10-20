@@ -50,6 +50,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/8025979 \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/8033445 \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/checked \
+    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/FindClass \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/PrivateInterfaceMethods \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/ToStringInInterfaceTest \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/CalleeSavedRegisters \
