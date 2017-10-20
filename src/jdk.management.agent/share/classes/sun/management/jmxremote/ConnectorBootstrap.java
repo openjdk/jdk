@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
+import java.io.ObjectInputFilter;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -45,14 +45,12 @@ import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
-import java.rmi.server.RMISocketFactory;
 import java.rmi.server.RemoteObject;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -84,6 +82,7 @@ import jdk.internal.agent.FileSystem;
 import sun.rmi.server.UnicastRef;
 import sun.rmi.server.UnicastServerRef;
 import sun.rmi.server.UnicastServerRef2;
+import sun.rmi.transport.LiveRef;
 
 /**
  * This class initializes and starts the RMIConnectorServer for JSR 163
@@ -142,6 +141,8 @@ public final class ConnectorBootstrap {
                 "com.sun.management.jmxremote.ssl.need.client.auth";
         public static final String SSL_CONFIG_FILE_NAME =
                 "com.sun.management.jmxremote.ssl.config.file";
+        public static final String SERIAL_FILTER_PATTERN =
+                "com.sun.management.jmxremote.serial.filter.pattern";
     }
 
     /**
@@ -182,7 +183,8 @@ public final class ConnectorBootstrap {
         public Remote exportObject(Remote obj,
                 int port,
                 RMIClientSocketFactory csf,
-                RMIServerSocketFactory ssf)
+                RMIServerSocketFactory ssf,
+                ObjectInputFilter filter)
                 throws RemoteException {
 
             synchronized (this) {
@@ -193,9 +195,9 @@ public final class ConnectorBootstrap {
 
             final UnicastServerRef ref;
             if (csf == null && ssf == null) {
-                ref = new UnicastServerRef(port);
+                ref = new UnicastServerRef(new LiveRef(port), filter);
             } else {
-                ref = new UnicastServerRef2(port, csf, ssf);
+                ref = new UnicastServerRef2(port, csf, ssf, filter);
             }
             return ref.exportObject(obj, null, true);
         }
@@ -435,6 +437,7 @@ public final class ConnectorBootstrap {
 
         final String bindAddress =
                 props.getProperty(PropertyNames.HOST);
+        final String jmxRmiFilter = props.getProperty(PropertyNames.SERIAL_FILTER_PATTERN);
 
         if (logger.isLoggable(Level.DEBUG)) {
             logger.log(Level.DEBUG, "startRemoteConnectorServer",
@@ -471,7 +474,7 @@ public final class ConnectorBootstrap {
                     sslConfigFileName, enabledCipherSuitesList,
                     enabledProtocolsList, sslNeedClientAuth,
                     useAuthentication, loginConfigName,
-                    passwordFileName, accessFileName, bindAddress);
+                    passwordFileName, accessFileName, bindAddress, jmxRmiFilter);
             cs = data.jmxConnectorServer;
             url = data.jmxRemoteURL;
             config("startRemoteConnectorServer",
@@ -511,9 +514,7 @@ public final class ConnectorBootstrap {
         // This RMI server should not keep the VM alive
         Map<String, Object> env = new HashMap<>();
         env.put(RMIExporter.EXPORTER_ATTRIBUTE, new PermanentExporter());
-        env.put(RMIConnectorServer.CREDENTIAL_TYPES, new String[]{
-            String[].class.getName(), String.class.getName()
-        });
+        env.put(RMIConnectorServer.CREDENTIALS_FILTER_PATTERN, String.class.getName() + ";!*");
 
         // The local connector server need only be available via the
         // loopback connection.
@@ -729,7 +730,8 @@ public final class ConnectorBootstrap {
             String loginConfigName,
             String passwordFileName,
             String accessFileName,
-            String bindAddress)
+            String bindAddress,
+            String jmxRmiFilter)
             throws IOException, MalformedURLException {
 
         /* Make sure we use non-guessable RMI object IDs.  Otherwise
@@ -744,9 +746,11 @@ public final class ConnectorBootstrap {
         PermanentExporter exporter = new PermanentExporter();
 
         env.put(RMIExporter.EXPORTER_ATTRIBUTE, exporter);
-        env.put(RMIConnectorServer.CREDENTIAL_TYPES, new String[]{
-            String[].class.getName(), String.class.getName()
-        });
+        env.put(RMIConnectorServer.CREDENTIALS_FILTER_PATTERN, String.class.getName() + ";!*");
+
+        if(jmxRmiFilter != null && !jmxRmiFilter.isEmpty()) {
+            env.put(RMIConnectorServer.SERIAL_FILTER_PATTERN, jmxRmiFilter);
+        }
 
         boolean useSocketFactory = bindAddress != null && !useSsl;
 

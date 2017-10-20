@@ -59,6 +59,7 @@ LPCTSTR AwtCanvas::GetClassName() {
  */
 AwtCanvas* AwtCanvas::Create(jobject self, jobject hParent)
 {
+    DASSERT(AwtToolkit::IsMainThread());
     TRY;
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
@@ -74,12 +75,11 @@ AwtCanvas* AwtCanvas::Create(jobject self, jobject hParent)
             return NULL;
         }
 
+        PDATA pData;
         AwtComponent* parent;
 
-        JNI_CHECK_NULL_GOTO(hParent, "null hParent", done);
-
-        parent = (AwtComponent*)JNI_GET_PDATA(hParent);
-        JNI_CHECK_NULL_GOTO(parent, "null parent", done);
+        JNI_CHECK_PEER_GOTO(hParent, done);
+        parent = (AwtCanvas*)pData;
 
         target = env->GetObjectField(self, AwtObject::targetID);
         JNI_CHECK_NULL_GOTO(target, "null target", done);
@@ -236,12 +236,9 @@ Java_sun_awt_windows_WCanvasPeer_create(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(parent);
     AwtToolkit::CreateComponent(self, parent,
                                 (AwtToolkit::ComponentFactory)
                                 AwtCanvas::Create);
-    JNI_CHECK_PEER_CREATION_RETURN(self);
 
     CATCH_BAD_ALLOC;
 }

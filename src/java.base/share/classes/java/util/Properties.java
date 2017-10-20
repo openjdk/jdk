@@ -42,6 +42,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.util.xml.PropertiesDefaultHandler;
 
 /**
@@ -1440,6 +1441,16 @@ class Properties extends Hashtable<Object,Object> {
         if (elements < 0) {
             throw new StreamCorruptedException("Illegal # of Elements: " + elements);
         }
+
+        // Constructing the backing map will lazily create an array when the first element is
+        // added, so check it before construction. Note that CHM's constructor takes a size
+        // that is the number of elements to be stored -- not the table size -- so it must be
+        // inflated by the default load factor of 0.75, then inflated to the next power of two.
+        // (CHM uses the same power-of-two computation as HashMap, and HashMap.tableSizeFor is
+        // accessible here.) Check Map.Entry[].class since it's the nearest public type to
+        // what is actually created.
+        SharedSecrets.getJavaObjectInputStreamAccess()
+                     .checkArray(s, Map.Entry[].class, HashMap.tableSizeFor((int)(elements / 0.75)));
 
         // create CHM of appropriate capacity
         map = new ConcurrentHashMap<>(elements);

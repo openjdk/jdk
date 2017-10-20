@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 
 import sun.security.rsa.RSAKeyFactory;
+import static sun.security.util.SecurityProviderConstants.DEF_RSA_KEY_SIZE;
 
 /**
  * RSA keypair generator.
@@ -45,14 +46,13 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     // Supported by Microsoft Base, Strong and Enhanced Cryptographic Providers
     static final int KEY_SIZE_MIN = 512; // disallow MSCAPI min. of 384
     static final int KEY_SIZE_MAX = 16384;
-    private static final int KEY_SIZE_DEFAULT = 2048;
 
     // size of the key to generate, KEY_SIZE_MIN <= keySize <= KEY_SIZE_MAX
     private int keySize;
 
     public RSAKeyPairGenerator() {
         // initialize to default in case the app does not call initialize()
-        initialize(KEY_SIZE_DEFAULT, null);
+        initialize(DEF_RSA_KEY_SIZE, null);
     }
 
     // initialize the generator. See JCA doc
@@ -76,7 +76,7 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
 
         int tmpSize;
         if (params == null) {
-            tmpSize = KEY_SIZE_DEFAULT;
+            tmpSize = DEF_RSA_KEY_SIZE;
         } else if (params instanceof RSAKeyGenParameterSpec) {
 
             if (((RSAKeyGenParameterSpec) params).getPublicExponent() != null) {

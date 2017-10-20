@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,7 +257,7 @@ public final class ARCFOURCipher extends CipherSpi {
     // see JCE spec
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encodedKey = getEncodedKey(key);
-        return encodedKey.length << 3;
+        return Math.multiplyExact(encodedKey.length, 8);
     }
 
 }

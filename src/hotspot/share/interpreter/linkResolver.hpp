@@ -233,11 +233,10 @@ class LinkResolver: AllStatic {
   static methodHandle linktime_resolve_interface_method (const LinkInfo& link_info, TRAPS);
 
   static void runtime_resolve_special_method    (CallInfo& result,
+                                                 const LinkInfo& link_info,
                                                  const methodHandle& resolved_method,
-                                                 Klass* resolved_klass,
-                                                 Klass* current_klass,
-                                                 Handle recv,
-                                                 bool check_access, TRAPS);
+                                                 Handle recv, TRAPS);
+
   static void runtime_resolve_virtual_method    (CallInfo& result,
                                                  const methodHandle& resolved_method,
                                                  Klass* resolved_klass,

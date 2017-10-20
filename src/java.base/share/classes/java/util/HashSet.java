@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.util;
 
 import java.io.InvalidObjectException;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * This class implements the {@code Set} interface, backed by a hash table
@@ -321,6 +322,13 @@ public class HashSet<E>
         // the HashMap is at least 25% full but clamping to maximum capacity.
         capacity = (int) Math.min(size * Math.min(1 / loadFactor, 4.0f),
                 HashMap.MAXIMUM_CAPACITY);
+
+        // Constructing the backing map will lazily create an array when the first element is
+        // added, so check it before construction. Call HashMap.tableSizeFor to compute the
+        // actual allocation size. Check Map.Entry[].class since it's the nearest public type to
+        // what is actually created.
+        SharedSecrets.getJavaObjectInputStreamAccess()
+                     .checkArray(s, Map.Entry[].class, HashMap.tableSizeFor(capacity));
 
         // Create backing HashMap
         map = (((HashSet<?>)this) instanceof LinkedHashSet ?

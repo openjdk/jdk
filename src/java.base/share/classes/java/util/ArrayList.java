@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.util;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * Resizable-array implementation of the {@code List} interface.  Implements
@@ -814,6 +815,7 @@ public class ArrayList<E> extends AbstractList<E>
 
         if (size > 0) {
             // like clone(), allocate array based upon size not capacity
+            SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Object[].class, size);
             Object[] elements = new Object[size];
 
             // Read in all elements in the proper order.

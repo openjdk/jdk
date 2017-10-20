@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.rmi.server.ObjID;
 import java.rmi.server.Unreferenced;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 import sun.rmi.runtime.Log;
 import sun.rmi.runtime.NewThreadAction;
@@ -322,27 +323,15 @@ public final class Target {
             Remote obj = getImpl();
             if (obj instanceof Unreferenced) {
                 final Unreferenced unrefObj = (Unreferenced) obj;
-                final Thread t =
-                    java.security.AccessController.doPrivileged(
-                        new NewThreadAction(new Runnable() {
-                            public void run() {
-                                unrefObj.unreferenced();
-                            }
-                        }, "Unreferenced-" + nextThreadNum++, false, true));
-                // REMIND: access to nextThreadNum not synchronized; you care?
-                /*
-                 * We must manually set the context class loader appropriately
-                 * for threads that may invoke user code (see bugid 4171278).
-                 */
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
-                        public Void run() {
-                        t.setContextClassLoader(ccl);
-                        return null;
-                    }
-                });
-
-                t.start();
+                AccessController.doPrivileged(
+                    new NewThreadAction(() -> {
+                        Thread.currentThread().setContextClassLoader(ccl);
+                        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                            unrefObj.unreferenced();
+                            return null;
+                        }, acc);
+                    }, "Unreferenced-" + nextThreadNum++, false, true)).start();
+                    // REMIND: access to nextThreadNum not synchronized; you care?
             }
 
             unpinImpl();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4800108 8072452
+ * @bug 4800108 8072452 8181048
  * @summary verify that precomputed DSA parameters are always used (512, 768,
  *          1024, 2048, 3072 bit)
  * @run main/othervm/timeout=15 TestKeyPairGenerator
@@ -59,15 +59,12 @@ public class TestKeyPairGenerator {
         // on JDKs that do not have the fix
         kpg = KeyPairGenerator.getInstance("DSA", "SUN");
         kp = kpg.generateKeyPair();
-        checkKeyLength(kp, 1024);
 
         kpg = KeyPairGenerator.getInstance("DSA", "SUN");
         kp = kpg.generateKeyPair();
-        checkKeyLength(kp, 1024);
 
         // some other basic tests
         kp = kpg.generateKeyPair();
-        checkKeyLength(kp, 1024);
 
         kpg.initialize(1024);
         kp = kpg.generateKeyPair();

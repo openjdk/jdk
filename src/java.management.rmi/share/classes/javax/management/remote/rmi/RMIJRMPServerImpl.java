@@ -26,6 +26,7 @@
 package javax.management.remote.rmi;
 
 import java.io.IOException;
+import java.io.ObjectInputFilter;
 import java.rmi.NoSuchObjectException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -39,15 +40,13 @@ import javax.security.auth.Subject;
 
 import com.sun.jmx.remote.internal.rmi.RMIExporter;
 import com.sun.jmx.remote.util.EnvHelp;
-import java.io.ObjectStreamClass;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import sun.reflect.misc.ReflectUtil;
-import sun.rmi.server.DeserializationChecker;
 import sun.rmi.server.UnicastServerRef;
 import sun.rmi.server.UnicastServerRef2;
+import sun.rmi.transport.LiveRef;
 
 /**
  * <p>An {@link RMIServer} object that is exported through JRMP and that
@@ -59,8 +58,6 @@ import sun.rmi.server.UnicastServerRef2;
  * @since 1.5
  */
 public class RMIJRMPServerImpl extends RMIServerImpl {
-
-    private final ExportedWrapper exportedWrapper;
 
     /**
      * <p>Creates a new {@link RMIServer} object that will be exported
@@ -100,33 +97,48 @@ public class RMIJRMPServerImpl extends RMIServerImpl {
         this.ssf = ssf;
         this.env = (env == null) ? Collections.<String, Object>emptyMap() : env;
 
+        // This attribute was represented by RMIConnectorServer.CREDENTIALS_TYPES.
+        // This attribute is superceded by
+        // RMIConnectorServer.CREDENTIALS_FILTER_PATTERN.
+        // Retaining this for backward compatibility.
         String[] credentialsTypes
-                = (String[]) this.env.get(RMIConnectorServer.CREDENTIAL_TYPES);
-        List<String> types = null;
-        if (credentialsTypes != null) {
-            types = new ArrayList<>();
-            for (String type : credentialsTypes) {
-                if (type == null) {
-                    throw new IllegalArgumentException("A credential type is null.");
-                }
-                ReflectUtil.checkPackageAccess(type);
-                types.add(type);
-            }
+                = (String[]) this.env.get("jmx.remote.rmi.server.credential.types");
+
+        String credentialsFilter
+                = (String) this.env.get(RMIConnectorServer.CREDENTIALS_FILTER_PATTERN);
+
+        // It is impossible for both attributes to be specified
+        if(credentialsTypes != null && credentialsFilter != null)
+            throw new IllegalArgumentException("Cannot specify both \""
+                    + "jmx.remote.rmi.server.credential.types" + "\" and \""
+           + RMIConnectorServer.CREDENTIALS_FILTER_PATTERN + "\"");
+        else if(credentialsFilter != null){
+            cFilter = ObjectInputFilter.Config.createFilter(credentialsFilter);
+            allowedTypes = null;
         }
-        exportedWrapper = types != null ?
-                new ExportedWrapper(this, types) :
-                null;
+        else if (credentialsTypes != null) {
+            allowedTypes = Arrays.stream(credentialsTypes).filter(
+                    s -> s!= null).collect(Collectors.toSet());
+            allowedTypes.stream().forEach(ReflectUtil::checkPackageAccess);
+            cFilter = this::newClientCheckInput;
+        } else {
+            allowedTypes = null;
+            cFilter = null;
+        }
+
+        String userJmxFilter =
+                (String) this.env.get(RMIConnectorServer.SERIAL_FILTER_PATTERN);
+        if(userJmxFilter != null && !userJmxFilter.isEmpty())
+            jmxRmiFilter = ObjectInputFilter.Config.createFilter(userJmxFilter);
+        else
+            jmxRmiFilter = null;
     }
 
     protected void export() throws IOException {
-        if (exportedWrapper != null) {
-            export(exportedWrapper);
-        } else {
-            export(this);
-        }
+        export(this, cFilter);
     }
 
-    private void export(Remote obj) throws RemoteException {
+    private void export(Remote obj, ObjectInputFilter typeFilter) throws RemoteException {
         final RMIExporter exporter =
             (RMIExporter) env.get(RMIExporter.EXPORTER_ATTRIBUTE);
         final boolean daemon = EnvHelp.isServerDaemon(env);
@@ -137,16 +149,14 @@ public class RMIJRMPServerImpl extends RMIServerImpl {
                     " cannot be used to specify an exporter!");
         }
 
-        if (daemon) {
-            if (csf == null && ssf == null) {
-                new UnicastServerRef(port).exportObject(obj, null, true);
-            } else {
-                new UnicastServerRef2(port, csf, ssf).exportObject(obj, null, true);
-            }
-        } else if (exporter != null) {
-            exporter.exportObject(obj, port, csf, ssf);
+        if (exporter != null) {
+            exporter.exportObject(obj, port, csf, ssf, typeFilter);
         } else {
-            UnicastRemoteObject.exportObject(obj, port, csf, ssf);
+            if (csf == null && ssf == null) {
+                new UnicastServerRef(new LiveRef(port), typeFilter).exportObject(obj, null, daemon);
+            } else {
+                new UnicastServerRef2(port, csf, ssf, typeFilter).exportObject(obj, null, daemon);
+            }
         }
     }
 
@@ -173,11 +183,7 @@ public class RMIJRMPServerImpl extends RMIServerImpl {
      *            RMIJRMPServerImpl has not been exported yet.
      */
     public Remote toStub() throws IOException {
-        if (exportedWrapper != null) {
-            return RemoteObject.toStub(exportedWrapper);
-        } else {
-            return RemoteObject.toStub(this);
-        }
+        return RemoteObject.toStub(this);
     }
 
     /**
@@ -207,7 +213,7 @@ public class RMIJRMPServerImpl extends RMIServerImpl {
         RMIConnection client =
             new RMIConnectionImpl(this, connectionId, getDefaultClassLoader(),
                                   subject, env);
-        export(client);
+        export(client, jmxRmiFilter);
         return client;
     }
 
@@ -224,56 +230,39 @@ public class RMIJRMPServerImpl extends RMIServerImpl {
      * server failed.
      */
     protected void closeServer() throws IOException {
-        if (exportedWrapper != null) {
-            unexport(exportedWrapper, true);
-        } else {
-            unexport(this, true);
+        unexport(this, true);
+    }
+
+    /**
+     * Check that a type in the remote invocation of {@link RMIServerImpl#newClient}
+     * is one of the {@code allowedTypes}.
+     *
+     * @param clazz       the class; may be null
+     * @param size        the size for arrays, otherwise is 0
+     * @param nObjectRefs the current number of object references
+     * @param depth       the current depth
+     * @param streamBytes the current number of bytes consumed
+     * @return {@code ObjectInputFilter.Status.ALLOWED} if the class is allowed,
+     *          otherwise {@code ObjectInputFilter.Status.REJECTED}
+     */
+    ObjectInputFilter.Status newClientCheckInput(ObjectInputFilter.FilterInfo filterInfo) {
+        ObjectInputFilter.Status status = ObjectInputFilter.Status.UNDECIDED;
+        if (allowedTypes != null && filterInfo.serialClass() != null) {
+            // If enabled, check type
+            String type = filterInfo.serialClass().getName();
+            if (allowedTypes.contains(type))
+                status = ObjectInputFilter.Status.ALLOWED;
+            else
+                status = ObjectInputFilter.Status.REJECTED;
         }
+        return status;
     }
 
     private final int port;
     private final RMIClientSocketFactory csf;
     private final RMIServerSocketFactory ssf;
     private final Map<String, ?> env;
-
-    private static class ExportedWrapper implements RMIServer, DeserializationChecker {
-        private final RMIServer impl;
-        private final List<String> allowedTypes;
-
-        private ExportedWrapper(RMIServer impl, List<String> credentialsTypes) {
-            this.impl = impl;
-            allowedTypes = credentialsTypes;
-        }
-
-        @Override
-        public String getVersion() throws RemoteException {
-            return impl.getVersion();
-        }
-
-        @Override
-        public RMIConnection newClient(Object credentials) throws IOException {
-            return impl.newClient(credentials);
-        }
-
-        @Override
-        public void check(Method method, ObjectStreamClass descriptor,
-                int paramIndex, int callID) {
-            String type = descriptor.getName();
-            if (!allowedTypes.contains(type)) {
-                throw new ClassCastException("Unsupported type: " + type);
-            }
-        }
-
-        @Override
-        public void checkProxyClass(Method method, String[] ifaces,
-                int paramIndex, int callID) {
-            if (ifaces != null && ifaces.length > 0) {
-                for (String iface : ifaces) {
-                    if (!allowedTypes.contains(iface)) {
-                        throw new ClassCastException("Unsupported type: " + iface);
-                    }
-                }
-            }
-        }
-    }
+    private final Set<String> allowedTypes;
+    private final ObjectInputFilter jmxRmiFilter;
+    private final ObjectInputFilter cFilter;
 }

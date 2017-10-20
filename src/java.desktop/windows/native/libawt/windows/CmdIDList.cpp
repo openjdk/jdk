@@ -61,29 +61,36 @@ INLINE void AwtCmdIDList::BuildFreeList(UINT first_index)
     m_first_free = first_index; // head of the free list
 }
 
+
+jboolean AwtCmdIDList::isFreeIDAvailable() {
+    CriticalSection::Lock l(m_lock);
+
+    if (m_first_free == -1) {   // out of free ids
+        if (m_capacity == ARRAY_MAXIMUM_SIZE) {
+            return JNI_FALSE;
+        }
+    }
+    return JNI_TRUE;
+}
+
 // Assign an id to the object.  Recycle the first free entry from the
 // head of the free list or allocate more memory for a new free list.
 UINT AwtCmdIDList::Add(AwtObject* obj)
 {
     CriticalSection::Lock l(m_lock);
+    if (!isFreeIDAvailable()) {
+        throw std::bad_alloc(); // fatal error
+    }
 
     if (m_first_free == -1) {   // out of free ids
-        if (m_capacity == ARRAY_MAXIMUM_SIZE) {
-            // Really bad - out of ids.  Since we hardly can have *so*
-            // many items simultaneously in existence, we have an id
-            // leak somewhere.
-            DASSERT(FALSE);
-            return 0;
-        }
-        else {                  // snarf a bigger arena
-            UINT old_capacity = m_capacity; // will be the first free entry
-            m_capacity += ARRAY_SIZE_INCREMENT;
-            if (m_capacity > ARRAY_MAXIMUM_SIZE)
-                m_capacity = ARRAY_MAXIMUM_SIZE;
-            m_array = (CmdIDEntry *)SAFE_SIZE_ARRAY_REALLOC(safe_Realloc, m_array,
-                                        m_capacity, sizeof(CmdIDEntry*));
-            BuildFreeList(old_capacity);
-        }
+        // snarf a bigger arena
+        UINT old_capacity = m_capacity; // will be the first free entry
+        m_capacity += ARRAY_SIZE_INCREMENT;
+        if (m_capacity > ARRAY_MAXIMUM_SIZE)
+            m_capacity = ARRAY_MAXIMUM_SIZE;
+        m_array = (CmdIDEntry *)SAFE_SIZE_ARRAY_REALLOC(safe_Realloc, m_array,
+                                    m_capacity, sizeof(CmdIDEntry*));
+        BuildFreeList(old_capacity);
     }
 
     DASSERT(m_first_free != -1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.DSAParameterSpec;
 
 import sun.security.jca.JCAUtil;
+import static sun.security.util.SecurityProviderConstants.DEF_DSA_KEY_SIZE;
+import static sun.security.util.SecurityProviderConstants.getDefDSASubprimeSize;
 
 /**
  * This class generates DSA key parameters and public/private key
@@ -45,15 +47,14 @@ import sun.security.jca.JCAUtil;
  * @author Andreas Sterbenz
  *
  */
-public class DSAKeyPairGenerator extends KeyPairGenerator
-        implements java.security.interfaces.DSAKeyPairGenerator {
+class DSAKeyPairGenerator extends KeyPairGenerator {
 
     /* Length for prime P and subPrime Q in bits */
     private int plen;
     private int qlen;
 
     /* whether to force new parameters to be generated for each KeyPair */
-    private boolean forceNewParameters;
+    boolean forceNewParameters;
 
     /* preset algorithm parameters. */
     private DSAParameterSpec params;
@@ -61,9 +62,9 @@ public class DSAKeyPairGenerator extends KeyPairGenerator
     /* The source of random bits to use */
     private SecureRandom random;
 
-    public DSAKeyPairGenerator() {
+    DSAKeyPairGenerator(int defaultKeySize) {
         super("DSA");
-        initialize(1024, null);
+        initialize(defaultKeySize, null);
     }
 
     private static void checkStrength(int sizeP, int sizeQ) {
@@ -84,61 +85,7 @@ public class DSAKeyPairGenerator extends KeyPairGenerator
     }
 
     public void initialize(int modlen, SecureRandom random) {
-        // generate new parameters when no precomputed ones available.
-        initialize(modlen, true, random);
-        this.forceNewParameters = false;
-    }
-
-    /**
-     * Initializes the DSA key pair generator. If <code>genParams</code>
-     * is false, a set of pre-computed parameters is used.
-     */
-    @Override
-    public void initialize(int modlen, boolean genParams, SecureRandom random)
-            throws InvalidParameterException {
-
-        int subPrimeLen = -1;
-        if (modlen <= 1024) {
-            subPrimeLen = 160;
-        } else if (modlen == 2048) {
-            subPrimeLen = 224;
-        } else if (modlen == 3072) {
-            subPrimeLen = 256;
-        }
-        checkStrength(modlen, subPrimeLen);
-        if (genParams) {
-            params = null;
-        } else {
-            params = ParameterCache.getCachedDSAParameterSpec(modlen,
-                subPrimeLen);
-            if (params == null) {
-                throw new InvalidParameterException
-                    ("No precomputed parameters for requested modulus size "
-                     + "available");
-            }
-
-        }
-        this.plen = modlen;
-        this.qlen = subPrimeLen;
-        this.random = random;
-        this.forceNewParameters = genParams;
-    }
-
-    /**
-     * Initializes the DSA object using a DSA parameter object.
-     *
-     * @param params a fully initialized DSA parameter object.
-     */
-    @Override
-    public void initialize(DSAParams params, SecureRandom random)
-            throws InvalidParameterException {
-
-        if (params == null) {
-            throw new InvalidParameterException("Params must not be null");
-        }
-        DSAParameterSpec spec = new DSAParameterSpec
-                                (params.getP(), params.getQ(), params.getG());
-        initialize0(spec, random);
+        init(modlen, random, false);
     }
 
     /**
@@ -157,10 +104,21 @@ public class DSAKeyPairGenerator extends KeyPairGenerator
             throw new InvalidAlgorithmParameterException
                 ("Inappropriate parameter");
         }
-        initialize0((DSAParameterSpec)params, random);
+        init((DSAParameterSpec)params, random, false);
     }
 
-    private void initialize0(DSAParameterSpec params, SecureRandom random) {
+    void init(int modlen, SecureRandom random, boolean forceNew) {
+        int subPrimeLen = getDefDSASubprimeSize(modlen);
+        checkStrength(modlen, subPrimeLen);
+        this.plen = modlen;
+        this.qlen = subPrimeLen;
+        this.params = null;
+        this.random = random;
+        this.forceNewParameters = forceNew;
+    }
+
+    void init(DSAParameterSpec params, SecureRandom random,
+        boolean forceNew) {
         int sizeP = params.getP().bitLength();
         int sizeQ = params.getQ().bitLength();
         checkStrength(sizeP, sizeQ);
@@ -168,7 +126,7 @@ public class DSAKeyPairGenerator extends KeyPairGenerator
         this.qlen = sizeQ;
         this.params = params;
         this.random = random;
-        this.forceNewParameters = false;
+        this.forceNewParameters = forceNew;
     }
 
     /**
@@ -197,7 +155,7 @@ public class DSAKeyPairGenerator extends KeyPairGenerator
         return generateKeyPair(spec.getP(), spec.getQ(), spec.getG(), random);
     }
 
-    public KeyPair generateKeyPair(BigInteger p, BigInteger q, BigInteger g,
+    private KeyPair generateKeyPair(BigInteger p, BigInteger q, BigInteger g,
                                    SecureRandom random) {
 
         BigInteger x = generateX(random, q);
@@ -252,4 +210,55 @@ public class DSAKeyPairGenerator extends KeyPairGenerator
         return y;
     }
 
+    public static final class Current extends DSAKeyPairGenerator {
+        public Current() {
+            super(DEF_DSA_KEY_SIZE);
+        }
+    }
+
+    public static final class Legacy extends DSAKeyPairGenerator
+        implements java.security.interfaces.DSAKeyPairGenerator {
+
+        public Legacy() {
+            super(1024);
+        }
+
+        /**
+         * Initializes the DSA key pair generator. If <code>genParams</code>
+         * is false, a set of pre-computed parameters is used.
+         */
+        @Override
+        public void initialize(int modlen, boolean genParams,
+            SecureRandom random) throws InvalidParameterException {
+            if (genParams) {
+                super.init(modlen, random, true);
+            } else {
+                DSAParameterSpec cachedParams =
+                    ParameterCache.getCachedDSAParameterSpec(modlen,
+                        getDefDSASubprimeSize(modlen));
+                if (cachedParams == null) {
+                    throw new InvalidParameterException
+                        ("No precomputed parameters for requested modulus" +
+                         " size available");
+                }
+                super.init(cachedParams, random, false);
+            }
+        }
+
+        /**
+         * Initializes the DSA object using a DSA parameter object.
+         *
+         * @param params a fully initialized DSA parameter object.
+         */
+        @Override
+        public void initialize(DSAParams params, SecureRandom random)
+            throws InvalidParameterException {
+            if (params == null) {
+                throw new InvalidParameterException("Params must not be null");
+             }
+             DSAParameterSpec spec = new DSAParameterSpec
+                 (params.getP(), params.getQ(), params.getG());
+             super.init(spec, random, false);
+        }
+    }
 }

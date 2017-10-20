@@ -38,7 +38,11 @@ struct SetValuesStruct {
     jint value;
     jint visible;
     jint min, max;
-
+};
+// struct for _SetLineIncrement()/_SetPageIncrement() methods
+struct SetIncrementStruct {
+    jobject scrollbar;
+    jint increment;
 };
 /************************************************************************
  * AwtScrollbar fields
@@ -108,10 +112,9 @@ AwtScrollbar::Create(jobject peer, jobject parent)
 
         PDATA pData;
         AwtCanvas* awtParent;
-        JNI_CHECK_PEER_GOTO(parent, done);
 
+        JNI_CHECK_PEER_GOTO(parent, done);
         awtParent = (AwtCanvas*)pData;
-        JNI_CHECK_NULL_GOTO(awtParent, "null awtParent", done);
 
         target = env->GetObjectField(peer, AwtObject::targetID);
         JNI_CHECK_NULL_GOTO(target, "null target", done);
@@ -471,6 +474,52 @@ ret:
     delete svs;
 }
 
+void AwtScrollbar::_SetLineIncrement(void *param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    SetIncrementStruct *sis = (SetIncrementStruct *)param;
+    jobject self = sis->scrollbar;
+    jint increment = sis->increment;
+
+    AwtScrollbar *sb = NULL;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    sb = (AwtScrollbar *)pData;
+    if (::IsWindow(sb->GetHWnd()))
+    {
+        sb->SetLineIncrement(increment);
+    }
+ret:
+    env->DeleteGlobalRef(self);
+
+    delete sis;
+}
+
+void AwtScrollbar::_SetPageIncrement(void *param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    SetIncrementStruct *sis = (SetIncrementStruct *)param;
+    jobject self = sis->scrollbar;
+    jint increment = sis->increment;
+
+    AwtScrollbar *sb = NULL;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    sb = (AwtScrollbar *)pData;
+    if (::IsWindow(sb->GetHWnd()))
+    {
+        sb->SetPageIncrement(increment);
+    }
+ret:
+    env->DeleteGlobalRef(self);
+
+    delete sis;
+}
+
 /************************************************************************
  * Scrollbar native methods
  */
@@ -546,10 +595,12 @@ Java_sun_awt_windows_WScrollbarPeer_setLineIncrement(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(self);
-    AwtScrollbar* c = (AwtScrollbar*)pData;
-    c->SetLineIncrement(increment);
+    SetIncrementStruct *sis = new SetIncrementStruct;
+    sis->scrollbar = env->NewGlobalRef(self);
+    sis->increment = increment;
+
+    AwtToolkit::GetInstance().SyncCall(AwtScrollbar::_SetLineIncrement, sis);
+    // global ref and svs are deleted in _SetValues
 
     CATCH_BAD_ALLOC;
 }
@@ -565,10 +616,12 @@ Java_sun_awt_windows_WScrollbarPeer_setPageIncrement(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(self);
-    AwtScrollbar* c = (AwtScrollbar*)pData;
-    c->SetPageIncrement(increment);
+    SetIncrementStruct *sis = new SetIncrementStruct;
+    sis->scrollbar = env->NewGlobalRef(self);
+    sis->increment = increment;
+
+    AwtToolkit::GetInstance().SyncCall(AwtScrollbar::_SetPageIncrement, sis);
+    // global ref and svs are deleted in _SetValues
 
     CATCH_BAD_ALLOC;
 }
@@ -584,12 +637,9 @@ Java_sun_awt_windows_WScrollbarPeer_create(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(parent);
     AwtToolkit::CreateComponent(self, parent,
                                 (AwtToolkit::ComponentFactory)
                                 AwtScrollbar::Create);
-    JNI_CHECK_PEER_CREATION_RETURN(self);
 
     CATCH_BAD_ALLOC;
 }
