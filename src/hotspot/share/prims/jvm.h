@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_PRIMS_JVM_H
 #define SHARE_VM_PRIMS_JVM_H
 
-#include "prims/jni.h"
+#include "jni.h"
 #include "utilities/macros.hpp"
 
 #include OS_HEADER_H(jvm)

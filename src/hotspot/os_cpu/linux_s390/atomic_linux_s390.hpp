@@ -53,20 +53,6 @@
 // is an integer multiple of the data length. Furthermore, all stores are ordered:
 // a store which occurs conceptually before another store becomes visible to other CPUs
 // before the other store becomes visible.
-inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, jlong*    dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
-
-inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, volatile jlong*    dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
 
 //------------
 // Atomic::add
@@ -192,219 +178,6 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I inc, D volatile* dest) const {
 }
 
 
-//------------
-// Atomic::inc
-//------------
-// These methods force the value in memory to be incremented (augmented by 1).
-// Both, memory value and increment, are treated as 32bit signed binary integers.
-// No overflow exceptions are recognized, and the condition code does not hold
-// information about the value in memory.
-//
-// The value in memory is updated by using a compare-and-swap instruction. The
-// instruction is retried as often as required.
-
-inline void Atomic::inc(volatile jint* dest) {
-  unsigned int old, upd;
-
-  if (VM_Version::has_LoadAndALUAtomicV1()) {
-//  tty->print_cr("Atomic::inc     called... dest @%p", dest);
-    __asm__ __volatile__ (
-      "   LGHI     2,1                     \n\t" // load increment
-      "   LA       3,%[mem]                \n\t" // force data address into ARG2
-//    "   LAA      %[upd],%[inc],%[mem]    \n\t" // increment and get old value
-//    "   LAA      2,2,0(3)                \n\t" // actually coded instruction
-      "   .byte    0xeb                    \n\t" // LAA main opcode
-      "   .byte    0x22                    \n\t" // R1,R3
-      "   .byte    0x30                    \n\t" // R2,disp1
-      "   .byte    0x00                    \n\t" // disp2,disp3
-      "   .byte    0x00                    \n\t" // disp4,disp5
-      "   .byte    0xf8                    \n\t" // LAA minor opcode
-      "   AGHI     2,1                     \n\t" // calc new value in register
-      "   LR       %[upd],2                \n\t" // move to result register
-      //---<  outputs  >---
-      : [upd]  "=&d" (upd)    // write-only, updated counter value
-      , [mem]  "+Q"  (*dest)  // read/write, memory to be updated atomically
-      //---<  inputs  >---
-      :
-//    : [inc]  "a"   (inc)    // read-only.
-      //---<  clobbered  >---
-      : "cc", "r2", "r3", "memory"
-    );
-  } else {
-    __asm__ __volatile__ (
-      "   LLGF     %[old],%[mem]           \n\t" // get old value
-      "0: LA       %[upd],1(,%[old])       \n\t" // calc result
-      "   CS       %[old],%[upd],%[mem]    \n\t" // try to xchg res with mem
-      "   JNE      0b                      \n\t" // no success? -> retry
-      //---<  outputs  >---
-      : [old] "=&a" (old)    // write-only, old counter value
-      , [upd] "=&d" (upd)    // write-only, updated counter value
-      , [mem] "+Q"  (*dest)  // read/write, memory to be updated atomically
-      //---<  inputs  >---
-      :
-      //---<  clobbered  >---
-      : "cc", "memory"
-    );
-  }
-}
-
-inline void Atomic::inc_ptr(volatile intptr_t* dest) {
-  unsigned long old, upd;
-
-  if (VM_Version::has_LoadAndALUAtomicV1()) {
-    __asm__ __volatile__ (
-      "   LGHI     2,1                     \n\t" // load increment
-      "   LA       3,%[mem]                \n\t" // force data address into ARG2
-//    "   LAAG     %[upd],%[inc],%[mem]    \n\t" // increment and get old value
-//    "   LAAG     2,2,0(3)                \n\t" // actually coded instruction
-      "   .byte    0xeb                    \n\t" // LAA main opcode
-      "   .byte    0x22                    \n\t" // R1,R3
-      "   .byte    0x30                    \n\t" // R2,disp1
-      "   .byte    0x00                    \n\t" // disp2,disp3
-      "   .byte    0x00                    \n\t" // disp4,disp5
-      "   .byte    0xe8                    \n\t" // LAA minor opcode
-      "   AGHI     2,1                     \n\t" // calc new value in register
-      "   LR       %[upd],2                \n\t" // move to result register
-      //---<  outputs  >---
-      : [upd]  "=&d" (upd)    // write-only, updated counter value
-      , [mem]  "+Q"  (*dest)  // read/write, memory to be updated atomically
-      //---<  inputs  >---
-      :
-//    : [inc]  "a"   (inc)    // read-only.
-      //---<  clobbered  >---
-      : "cc", "r2", "r3", "memory"
-    );
-  } else {
-    __asm__ __volatile__ (
-      "   LG       %[old],%[mem]           \n\t" // get old value
-      "0: LA       %[upd],1(,%[old])       \n\t" // calc result
-      "   CSG      %[old],%[upd],%[mem]    \n\t" // try to xchg res with mem
-      "   JNE      0b                      \n\t" // no success? -> retry
-      //---<  outputs  >---
-      : [old] "=&a" (old)    // write-only, old counter value
-      , [upd] "=&d" (upd)    // write-only, updated counter value
-      , [mem] "+Q"  (*dest)  // read/write, memory to be updated atomically
-      //---<  inputs  >---
-      :
-      //---<  clobbered  >---
-      : "cc", "memory"
-    );
-  }
-}
-
-inline void Atomic::inc_ptr(volatile void* dest) {
-  inc_ptr((volatile intptr_t*)dest);
-}
-
-//------------
-// Atomic::dec
-//------------
-// These methods force the value in memory to be decremented (augmented by -1).
-// Both, memory value and decrement, are treated as 32bit signed binary integers.
-// No overflow exceptions are recognized, and the condition code does not hold
-// information about the value in memory.
-//
-// The value in memory is updated by using a compare-and-swap instruction. The
-// instruction is retried as often as required.
-
-inline void Atomic::dec(volatile jint* dest) {
-  unsigned int old, upd;
-
-  if (VM_Version::has_LoadAndALUAtomicV1()) {
-    __asm__ __volatile__ (
-      "   LGHI     2,-1                    \n\t" // load increment
-      "   LA       3,%[mem]                \n\t" // force data address into ARG2
-//    "   LAA      %[upd],%[inc],%[mem]    \n\t" // increment and get old value
-//    "   LAA      2,2,0(3)                \n\t" // actually coded instruction
-      "   .byte    0xeb                    \n\t" // LAA main opcode
-      "   .byte    0x22                    \n\t" // R1,R3
-      "   .byte    0x30                    \n\t" // R2,disp1
-      "   .byte    0x00                    \n\t" // disp2,disp3
-      "   .byte    0x00                    \n\t" // disp4,disp5
-      "   .byte    0xf8                    \n\t" // LAA minor opcode
-      "   AGHI     2,-1                    \n\t" // calc new value in register
-      "   LR       %[upd],2                \n\t" // move to result register
-      //---<  outputs  >---
-      : [upd]  "=&d" (upd)    // write-only, updated counter value
-      , [mem]  "+Q"  (*dest)  // read/write, memory to be updated atomically
-      //---<  inputs  >---
-      :
-//    : [inc]  "a"   (inc)    // read-only.
-      //---<  clobbered  >---
-      : "cc", "r2", "r3", "memory"
-    );
-  } else {
-    __asm__ __volatile__ (
-      "   LLGF     %[old],%[mem]           \n\t" // get old value
-  // LAY not supported by inline assembler
-  //  "0: LAY      %[upd],-1(,%[old])      \n\t" // calc result
-      "0: LR       %[upd],%[old]           \n\t" // calc result
-      "   AHI      %[upd],-1               \n\t"
-      "   CS       %[old],%[upd],%[mem]    \n\t" // try to xchg res with mem
-      "   JNE      0b                      \n\t" // no success? -> retry
-      //---<  outputs  >---
-      : [old] "=&a" (old)    // write-only, old counter value
-      , [upd] "=&d" (upd)    // write-only, updated counter value
-      , [mem] "+Q"  (*dest)  // read/write, memory to be updated atomically
-      //---<  inputs  >---
-      :
-      //---<  clobbered  >---
-      : "cc", "memory"
-    );
-  }
-}
-
-inline void Atomic::dec_ptr(volatile intptr_t* dest) {
-  unsigned long old, upd;
-
-  if (VM_Version::has_LoadAndALUAtomicV1()) {
-    __asm__ __volatile__ (
-      "   LGHI     2,-1                    \n\t" // load increment
-      "   LA       3,%[mem]                \n\t" // force data address into ARG2
-//    "   LAAG     %[upd],%[inc],%[mem]    \n\t" // increment and get old value
-//    "   LAAG     2,2,0(3)                \n\t" // actually coded instruction
-      "   .byte    0xeb                    \n\t" // LAA main opcode
-      "   .byte    0x22                    \n\t" // R1,R3
-      "   .byte    0x30                    \n\t" // R2,disp1
-      "   .byte    0x00                    \n\t" // disp2,disp3
-      "   .byte    0x00                    \n\t" // disp4,disp5
-      "   .byte    0xe8                    \n\t" // LAA minor opcode
-      "   AGHI     2,-1                    \n\t" // calc new value in register
-      "   LR       %[upd],2                \n\t" // move to result register
-      //---<  outputs  >---
-      : [upd]  "=&d" (upd)    // write-only, updated counter value
-      , [mem]  "+Q"  (*dest)  // read/write, memory to be updated atomically
-      //---<  inputs  >---
-      :
-//    : [inc]  "a"   (inc)    // read-only.
-      //---<  clobbered  >---
-      : "cc", "r2", "r3", "memory"
-    );
-  } else {
-    __asm__ __volatile__ (
-      "   LG       %[old],%[mem]           \n\t" // get old value
-//    LAY not supported by inline assembler
-//    "0: LAY      %[upd],-1(,%[old])      \n\t" // calc result
-      "0: LGR      %[upd],%[old]           \n\t" // calc result
-      "   AGHI     %[upd],-1               \n\t"
-      "   CSG      %[old],%[upd],%[mem]    \n\t" // try to xchg res with mem
-      "   JNE      0b                      \n\t" // no success? -> retry
-      //---<  outputs  >---
-      : [old] "=&a" (old)    // write-only, old counter value
-      , [upd] "=&d" (upd)    // write-only, updated counter value
-      , [mem] "+Q"  (*dest)  // read/write, memory to be updated atomically
-      //---<  inputs  >---
-      :
-      //---<  clobbered  >---
-      : "cc", "memory"
-    );
-  }
-}
-
-inline void Atomic::dec_ptr(volatile void* dest) {
-  dec_ptr((volatile intptr_t*)dest);
-}
-
 //-------------
 // Atomic::xchg
 //-------------
@@ -421,8 +194,12 @@ inline void Atomic::dec_ptr(volatile void* dest) {
 //
 // The return value is the (unchanged) value from memory as it was when the
 // replacement succeeded.
-inline jint Atomic::xchg (jint xchg_val, volatile jint* dest) {
-  unsigned int  old;
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(T));
+  T old;
 
   __asm__ __volatile__ (
     "   LLGF     %[old],%[mem]           \n\t" // get old value
@@ -432,16 +209,20 @@ inline jint Atomic::xchg (jint xchg_val, volatile jint* dest) {
     : [old] "=&d" (old)      // write-only, prev value irrelevant
     , [mem] "+Q"  (*dest)    // read/write, memory to be updated atomically
     //---<  inputs  >---
-    : [upd] "d"   (xchg_val) // read-only, value to be written to memory
+    : [upd] "d"   (exchange_value) // read-only, value to be written to memory
     //---<  clobbered  >---
     : "cc", "memory"
   );
 
-  return (jint)old;
+  return old;
 }
 
-inline intptr_t Atomic::xchg_ptr(intptr_t xchg_val, volatile intptr_t* dest) {
-  unsigned long old;
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  T old;
 
   __asm__ __volatile__ (
     "   LG       %[old],%[mem]           \n\t" // get old value
@@ -451,16 +232,12 @@ inline intptr_t Atomic::xchg_ptr(intptr_t xchg_val, volatile intptr_t* dest) {
     : [old] "=&d" (old)      // write-only, init from memory
     , [mem] "+Q"  (*dest)    // read/write, memory to be updated atomically
     //---<  inputs  >---
-    : [upd] "d"   (xchg_val) // read-only, value to be written to memory
+    : [upd] "d"   (exchange_value) // read-only, value to be written to memory
     //---<  clobbered  >---
     : "cc", "memory"
   );
 
-  return (intptr_t)old;
-}
-
-inline void *Atomic::xchg_ptr(void *exchange_value, volatile void *dest) {
-  return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
+  return old;
 }
 
 //----------------
@@ -543,7 +320,5 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T xchg_val,
 
   return old;
 }
-
-inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #endif // OS_CPU_LINUX_S390_VM_ATOMIC_LINUX_S390_INLINE_HPP

@@ -28,6 +28,7 @@
 #include "runtime/handles.hpp"
 
 class AOTCodeHeap;
+class AOTCompiledMethod;
 class AOTLib;
 class CodeBlob;
 template <class T> class GrowableArray;
@@ -71,6 +72,7 @@ public:
   static void flush_evol_dependents_on(InstanceKlass* dependee) NOT_AOT_RETURN;
 #endif // HOTSWAP
 
+  static bool reconcile_dynamic_invoke(InstanceKlass* holder, int index, Method* adapter_method, Klass *appendix_klass) NOT_AOT({ return true; });
 };
 
 #endif // SHARE_VM_AOT_AOTLOADER_HPP

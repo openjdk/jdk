@@ -777,7 +777,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   // Does precleaning work, returning a quantity indicative of
   // the amount of "useful work" done.
   size_t preclean_work(bool clean_refs, bool clean_survivors);
-  void preclean_klasses(MarkRefsIntoAndScanClosure* cl, Mutex* freelistLock);
+  void preclean_cld(MarkRefsIntoAndScanClosure* cl, Mutex* freelistLock);
   void abortable_preclean(); // Preclean while looking for possible abort
   void initialize_sequential_subtasks_for_young_gen_rescan(int i);
   // Helper function for above; merge-sorts the per-thread plab samples

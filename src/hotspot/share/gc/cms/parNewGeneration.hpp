@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "memory/padded.hpp"
 
 class ChunkArray;
+class CMSHeap;
 class ParScanWithoutBarrierClosure;
 class ParScanWithBarrierClosure;
 class ParRootScanWithoutBarrierClosure;
@@ -259,11 +260,11 @@ class KeepAliveClosure: public DefNewGeneration::KeepAliveClosure {
 
 class EvacuateFollowersClosureGeneral: public VoidClosure {
  private:
-  GenCollectedHeap* _gch;
+  CMSHeap* _heap;
   OopsInGenClosure* _scan_cur_or_nonheap;
   OopsInGenClosure* _scan_older;
  public:
-  EvacuateFollowersClosureGeneral(GenCollectedHeap* gch,
+  EvacuateFollowersClosureGeneral(CMSHeap* heap,
                                   OopsInGenClosure* cur,
                                   OopsInGenClosure* older);
   virtual void do_void();
@@ -336,7 +337,7 @@ class ParNewGeneration: public DefNewGeneration {
   static oop real_forwardee_slow(oop obj);
   static void waste_some_time();
 
-  void handle_promotion_failed(GenCollectedHeap* gch, ParScanThreadStateSet& thread_state_set);
+  void handle_promotion_failed(CMSHeap* gch, ParScanThreadStateSet& thread_state_set);
 
  protected:
 
@@ -344,6 +345,8 @@ class ParNewGeneration: public DefNewGeneration {
 
   bool survivor_overflow() { return _survivor_overflow; }
   void set_survivor_overflow(bool v) { _survivor_overflow = v; }
+
+  void restore_preserved_marks();
 
  public:
   ParNewGeneration(ReservedSpace rs, size_t initial_byte_size);

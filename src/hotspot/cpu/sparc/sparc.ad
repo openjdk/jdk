@@ -2628,7 +2628,6 @@ enc_class fsqrtd (dflt_reg dst, dflt_reg src) %{
 %}
 
 
-
 enc_class fmadds (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
     MacroAssembler _masm(&cbuf);
 
@@ -2651,7 +2650,71 @@ enc_class fmaddd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
     __ fmadd(FloatRegisterImpl::D, Fra, Frb, Frc, Frd);
 %}
 
+enc_class fmsubs (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
+    MacroAssembler _masm(&cbuf);
 
+    FloatRegister Frd = reg_to_SingleFloatRegister_object($dst$$reg);
+    FloatRegister Fra = reg_to_SingleFloatRegister_object($a$$reg);
+    FloatRegister Frb = reg_to_SingleFloatRegister_object($b$$reg);
+    FloatRegister Frc = reg_to_SingleFloatRegister_object($c$$reg);
+
+    __ fmsub(FloatRegisterImpl::S, Fra, Frb, Frc, Frd);
+%}
+
+enc_class fmsubd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
+    MacroAssembler _masm(&cbuf);
+
+    FloatRegister Frd = reg_to_DoubleFloatRegister_object($dst$$reg);
+    FloatRegister Fra = reg_to_DoubleFloatRegister_object($a$$reg);
+    FloatRegister Frb = reg_to_DoubleFloatRegister_object($b$$reg);
+    FloatRegister Frc = reg_to_DoubleFloatRegister_object($c$$reg);
+
+    __ fmsub(FloatRegisterImpl::D, Fra, Frb, Frc, Frd);
+%}
+
+enc_class fnmadds (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
+    MacroAssembler _masm(&cbuf);
+
+    FloatRegister Frd = reg_to_SingleFloatRegister_object($dst$$reg);
+    FloatRegister Fra = reg_to_SingleFloatRegister_object($a$$reg);
+    FloatRegister Frb = reg_to_SingleFloatRegister_object($b$$reg);
+    FloatRegister Frc = reg_to_SingleFloatRegister_object($c$$reg);
+
+    __ fnmadd(FloatRegisterImpl::S, Fra, Frb, Frc, Frd);
+%}
+
+enc_class fnmaddd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
+    MacroAssembler _masm(&cbuf);
+
+    FloatRegister Frd = reg_to_DoubleFloatRegister_object($dst$$reg);
+    FloatRegister Fra = reg_to_DoubleFloatRegister_object($a$$reg);
+    FloatRegister Frb = reg_to_DoubleFloatRegister_object($b$$reg);
+    FloatRegister Frc = reg_to_DoubleFloatRegister_object($c$$reg);
+
+    __ fnmadd(FloatRegisterImpl::D, Fra, Frb, Frc, Frd);
+%}
+
+enc_class fnmsubs (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
+    MacroAssembler _masm(&cbuf);
+
+    FloatRegister Frd = reg_to_SingleFloatRegister_object($dst$$reg);
+    FloatRegister Fra = reg_to_SingleFloatRegister_object($a$$reg);
+    FloatRegister Frb = reg_to_SingleFloatRegister_object($b$$reg);
+    FloatRegister Frc = reg_to_SingleFloatRegister_object($c$$reg);
+
+    __ fnmsub(FloatRegisterImpl::S, Fra, Frb, Frc, Frd);
+%}
+
+enc_class fnmsubd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
+    MacroAssembler _masm(&cbuf);
+
+    FloatRegister Frd = reg_to_DoubleFloatRegister_object($dst$$reg);
+    FloatRegister Fra = reg_to_DoubleFloatRegister_object($a$$reg);
+    FloatRegister Frb = reg_to_DoubleFloatRegister_object($b$$reg);
+    FloatRegister Frc = reg_to_DoubleFloatRegister_object($c$$reg);
+
+    __ fnmsub(FloatRegisterImpl::D, Fra, Frb, Frc, Frd);
+%}
 
 
 enc_class fmovs (dflt_reg dst, dflt_reg src) %{
@@ -7597,7 +7660,7 @@ instruct sqrtD_reg_reg(regD dst, regD src) %{
   ins_pipe(fdivD_reg_reg);
 %}
 
-// Single precision fused floating-point multiply-add (d = a * b + c).
+// Single/Double precision fused floating-point multiply-add (d = a * b + c).
 instruct fmaF_regx4(regF dst, regF a, regF b, regF c) %{
   predicate(UseFMA);
   match(Set dst (FmaF c (Binary a b)));
@@ -7606,12 +7669,71 @@ instruct fmaF_regx4(regF dst, regF a, regF b, regF c) %{
   ins_pipe(fmaF_regx4);
 %}
 
-// Double precision fused floating-point multiply-add (d = a * b + c).
 instruct fmaD_regx4(regD dst, regD a, regD b, regD c) %{
   predicate(UseFMA);
   match(Set dst (FmaD c (Binary a b)));
   format %{ "fmaddd $a,$b,$c,$dst\t# $dst = $a * $b + $c" %}
   ins_encode(fmaddd(dst, a, b, c));
+  ins_pipe(fmaD_regx4);
+%}
+
+// Additional patterns matching complement versions that we can map directly to
+// variants of the fused multiply-add instructions.
+
+// Single/Double precision fused floating-point multiply-sub (d = a * b - c)
+instruct fmsubF_regx4(regF dst, regF a, regF b, regF c) %{
+  predicate(UseFMA);
+  match(Set dst (FmaF (NegF c) (Binary a b)));
+  format %{ "fmsubs $a,$b,$c,$dst\t# $dst = $a * $b - $c" %}
+  ins_encode(fmsubs(dst, a, b, c));
+  ins_pipe(fmaF_regx4);
+%}
+
+instruct fmsubD_regx4(regD dst, regD a, regD b, regD c) %{
+  predicate(UseFMA);
+  match(Set dst (FmaD (NegD c) (Binary a b)));
+  format %{ "fmsubd $a,$b,$c,$dst\t# $dst = $a * $b - $c" %}
+  ins_encode(fmsubd(dst, a, b, c));
+  ins_pipe(fmaD_regx4);
+%}
+
+// Single/Double precision fused floating-point neg. multiply-add,
+//      d = -1 * a * b - c = -(a * b + c)
+instruct fnmaddF_regx4(regF dst, regF a, regF b, regF c) %{
+  predicate(UseFMA);
+  match(Set dst (FmaF (NegF c) (Binary (NegF a) b)));
+  match(Set dst (FmaF (NegF c) (Binary a (NegF b))));
+  format %{ "fnmadds $a,$b,$c,$dst\t# $dst = -($a * $b + $c)" %}
+  ins_encode(fnmadds(dst, a, b, c));
+  ins_pipe(fmaF_regx4);
+%}
+
+instruct fnmaddD_regx4(regD dst, regD a, regD b, regD c) %{
+  predicate(UseFMA);
+  match(Set dst (FmaD (NegD c) (Binary (NegD a) b)));
+  match(Set dst (FmaD (NegD c) (Binary a (NegD b))));
+  format %{ "fnmaddd $a,$b,$c,$dst\t# $dst = -($a * $b + $c)" %}
+  ins_encode(fnmaddd(dst, a, b, c));
+  ins_pipe(fmaD_regx4);
+%}
+
+// Single/Double precision fused floating-point neg. multiply-sub,
+//      d = -1 * a * b + c = -(a * b - c)
+instruct fnmsubF_regx4(regF dst, regF a, regF b, regF c) %{
+  predicate(UseFMA);
+  match(Set dst (FmaF c (Binary (NegF a) b)));
+  match(Set dst (FmaF c (Binary a (NegF b))));
+  format %{ "fnmsubs $a,$b,$c,$dst\t# $dst = -($a * $b - $c)" %}
+  ins_encode(fnmsubs(dst, a, b, c));
+  ins_pipe(fmaF_regx4);
+%}
+
+instruct fnmsubD_regx4(regD dst, regD a, regD b, regD c) %{
+  predicate(UseFMA);
+  match(Set dst (FmaD c (Binary (NegD a) b)));
+  match(Set dst (FmaD c (Binary a (NegD b))));
+  format %{ "fnmsubd $a,$b,$c,$dst\t# $dst = -($a * $b - $c)" %}
+  ins_encode(fnmsubd(dst, a, b, c));
   ins_pipe(fmaD_regx4);
 %}
 

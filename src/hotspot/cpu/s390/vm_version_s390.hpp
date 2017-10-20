@@ -473,6 +473,8 @@ class VM_Version: public Abstract_VM_Version {
   static void set_has_CryptoExt5()                { _features[0] |= CryptoExtension5Mask; }
   static void set_has_VectorFacility()            { _features[2] |= VectorFacilityMask; }
 
+  static void reset_has_VectorFacility()          { _features[2] &= ~VectorFacilityMask; }
+
   // Assembler testing.
   static void allow_all();
   static void revert();

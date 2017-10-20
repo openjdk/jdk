@@ -134,7 +134,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   // can be moved in a partial collection.  For currently implemented
   // generational collectors that means during a collection of
   // the young gen.
-  virtual bool is_scavengable(const void* addr);
+  virtual bool is_scavengable(oop obj);
+  virtual void register_nmethod(nmethod* nm);
+  virtual void verify_nmethod(nmethod* nmethod);
 
   size_t max_capacity() const;
 

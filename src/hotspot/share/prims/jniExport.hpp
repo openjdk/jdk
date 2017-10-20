@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_PRIMS_JNI_EXPORT_HPP
 #define SHARE_VM_PRIMS_JNI_EXPORT_HPP
 
-#include "prims/jni.h"
+#include "jni.h"
 #include "prims/jvmtiExport.hpp"
 
 class JniExportedInterface {

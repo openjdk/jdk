@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "code/codeCache.hpp"
 #include "gc/parallel/adjoiningGenerations.hpp"
 #include "gc/parallel/adjoiningVirtualSpaces.hpp"
 #include "gc/parallel/cardTableExtension.hpp"
@@ -167,10 +168,6 @@ bool ParallelScavengeHeap::is_in(const void* p) const {
 
 bool ParallelScavengeHeap::is_in_reserved(const void* p) const {
   return young_gen()->is_in_reserved(p) || old_gen()->is_in_reserved(p);
-}
-
-bool ParallelScavengeHeap::is_scavengable(const void* addr) {
-  return is_in_young((oop)addr);
 }
 
 // There are two levels of allocation policy here.
@@ -574,16 +571,10 @@ void ParallelScavengeHeap::print_gc_threads_on(outputStream* st) const {
 }
 
 void ParallelScavengeHeap::print_tracing_info() const {
-  if (TraceYoungGenTime) {
-    double time = PSScavenge::accumulated_time()->seconds();
-    tty->print_cr("[Accumulated GC generation 0 time %3.7f secs]", time);
-  }
-  if (TraceOldGenTime) {
-    double time = UseParallelOldGC ? PSParallelCompact::accumulated_time()->seconds() : PSMarkSweep::accumulated_time()->seconds();
-    tty->print_cr("[Accumulated GC generation 1 time %3.7f secs]", time);
-  }
-
   AdaptiveSizePolicyOutput::print();
+  log_debug(gc, heap, exit)("Accumulated young generation GC time %3.7f secs", PSScavenge::accumulated_time()->seconds());
+  log_debug(gc, heap, exit)("Accumulated old generation GC time %3.7f secs",
+      UseParallelOldGC ? PSParallelCompact::accumulated_time()->seconds() : PSMarkSweep::accumulated_time()->seconds());
 }
 
 
@@ -671,3 +662,15 @@ void ParallelScavengeHeap::gen_mangle_unused_area() {
   }
 }
 #endif
+
+bool ParallelScavengeHeap::is_scavengable(oop obj) {
+  return is_in_young(obj);
+}
+
+void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
+  CodeCache::register_scavenge_root_nmethod(nm);
+}
+
+void ParallelScavengeHeap::verify_nmethod(nmethod* nm) {
+  CodeCache::verify_scavenge_root_nmethod(nm);
+}

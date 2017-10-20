@@ -27,6 +27,7 @@ import static jdk.vm.ci.sparc.SPARCKind.XWORD;
 import static org.graalvm.compiler.lir.LIRValueUtil.asConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 
+import org.graalvm.compiler.asm.sparc.SPARCAssembler;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
@@ -255,7 +256,7 @@ public class SPARCHotSpotLIRGenerator extends SPARCLIRGenerator implements HotSp
     @Override
     public void emitPrefetchAllocate(Value address) {
         SPARCAddressValue addr = asAddressValue(address);
-        append(new SPARCPrefetchOp(addr, config.allocatePrefetchInstr));
+        append(new SPARCPrefetchOp(addr, SPARCAssembler.Fcn.SeveralWritesAndPossiblyReads));
     }
 
     public StackSlot getDeoptimizationRescueSlot() {

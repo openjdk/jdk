@@ -223,8 +223,8 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
     result->set_cached_class_file(cached_class_file);
   }
 
-  if (InstanceKlass::should_store_fingerprint()) {
-    result->store_fingerprint(!result->is_anonymous() ? stream->compute_fingerprint() : 0);
+  if (result->should_store_fingerprint()) {
+    result->store_fingerprint(stream->compute_fingerprint());
   }
 
   TRACE_KLASS_CREATION(result, parser, THREAD);

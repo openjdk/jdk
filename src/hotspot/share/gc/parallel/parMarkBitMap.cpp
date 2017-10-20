@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,8 @@ ParMarkBitMap::mark_obj(HeapWord* addr, size_t size)
     const idx_t end_bit = addr_to_bit(addr + size - 1);
     bool end_bit_ok = _end_bits.par_set_bit(end_bit);
     assert(end_bit_ok, "concurrency problem");
-    DEBUG_ONLY(Atomic::inc_ptr(&mark_bitmap_count));
-    DEBUG_ONLY(Atomic::add_ptr(size, &mark_bitmap_size));
+    DEBUG_ONLY(Atomic::inc(&mark_bitmap_count));
+    DEBUG_ONLY(Atomic::add(size, &mark_bitmap_size));
     return true;
   }
   return false;

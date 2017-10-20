@@ -2276,6 +2276,10 @@ private:
     if (strcmp(rep_var,"$XMMRegister") == 0)   return "as_XMMRegister";
 #endif
     if (strcmp(rep_var,"$CondRegister") == 0)  return "as_ConditionRegister";
+#if defined(PPC64)
+    if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
+    if (strcmp(rep_var,"$VectorSRegister") == 0)  return "as_VectorSRegister";
+#endif
     return NULL;
   }
 

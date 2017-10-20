@@ -45,6 +45,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
@@ -306,7 +307,9 @@ bool PSScavenge::invoke_no_policy() {
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(false /* not full GC */,gc_cause);
 
-    if (TraceYoungGenTime) accumulated_time()->start();
+    if (log_is_enabled(Debug, gc, heap, exit)) {
+      accumulated_time()->start();
+    }
 
     // Let the size policy know we're starting
     size_policy->minor_collection_begin();
@@ -404,14 +407,15 @@ bool PSScavenge::invoke_no_policy() {
 
     scavenge_midpoint.update();
 
+    PSKeepAliveClosure keep_alive(promotion_manager);
+    PSEvacuateFollowersClosure evac_followers(promotion_manager);
+
     // Process reference objects discovered during scavenge
     {
       GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
       reference_processor()->setup_policy(false); // not always_clear
       reference_processor()->set_active_mt_degree(active_workers);
-      PSKeepAliveClosure keep_alive(promotion_manager);
-      PSEvacuateFollowersClosure evac_followers(promotion_manager);
       ReferenceProcessorStats stats;
       ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->num_q());
       if (reference_processor()->processing_is_mt()) {
@@ -436,6 +440,11 @@ bool PSScavenge::invoke_no_policy() {
       }
 
       pt.print_enqueue_phase();
+    }
+
+    {
+      GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
+      WeakProcessor::weak_oops_do(&_is_alive_closure, &keep_alive, &evac_followers);
     }
 
     {
@@ -607,7 +616,9 @@ bool PSScavenge::invoke_no_policy() {
       CardTableExtension::verify_all_young_refs_imprecise();
     }
 
-    if (TraceYoungGenTime) accumulated_time()->stop();
+    if (log_is_enabled(Debug, gc, heap, exit)) {
+      accumulated_time()->stop();
+    }
 
     young_gen->print_used_change(pre_gc_values.young_gen_used());
     old_gen->print_used_change(pre_gc_values.old_gen_used());

@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
@@ -73,7 +72,6 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
     protected CompilerConfigurationFactory(String name, int autoSelectionPriority) {
         this.name = name;
         this.autoSelectionPriority = autoSelectionPriority;
-        assert checkAndAddNewFactory(this);
     }
 
     public abstract CompilerConfiguration createCompilerConfiguration();
@@ -127,18 +125,18 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
     }
 
     /**
-     * List used to assert uniqueness of {@link #name} and {@link #autoSelectionPriority} across all
-     * {@link CompilerConfigurationFactory} instances.
+     * Asserts uniqueness of {@link #name} and {@link #autoSelectionPriority} for {@code factory} in
+     * {@code factories}.
      */
-    private static final List<CompilerConfigurationFactory> factories = Assertions.assertionsEnabled() ? new ArrayList<>() : null;
-
-    private static boolean checkAndAddNewFactory(CompilerConfigurationFactory factory) {
+    private static boolean checkUnique(CompilerConfigurationFactory factory, List<CompilerConfigurationFactory> factories) {
         for (CompilerConfigurationFactory other : factories) {
-            assert !other.name.equals(factory.name) : factory.getClass().getName() + " cannot have the same selector as " + other.getClass().getName() + ": " + factory.name;
-            assert other.autoSelectionPriority != factory.autoSelectionPriority : factory.getClass().getName() + " cannot have the same auto-selection priority as " + other.getClass().getName() +
-                            ": " + factory.autoSelectionPriority;
+            if (other != factory) {
+                assert !other.name.equals(factory.name) : factory.getClass().getName() + " cannot have the same selector as " + other.getClass().getName() + ": " + factory.name;
+                assert other.autoSelectionPriority != factory.autoSelectionPriority : factory.getClass().getName() + " cannot have the same auto-selection priority as " +
+                                other.getClass().getName() +
+                                ": " + factory.autoSelectionPriority;
+            }
         }
-        factories.add(factory);
         return true;
     }
 
@@ -148,6 +146,7 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
     private static List<CompilerConfigurationFactory> getAllCandidates() {
         List<CompilerConfigurationFactory> candidates = new ArrayList<>();
         for (CompilerConfigurationFactory candidate : GraalServices.load(CompilerConfigurationFactory.class)) {
+            assert checkUnique(candidate, candidates);
             candidates.add(candidate);
         }
         Collections.sort(candidates);

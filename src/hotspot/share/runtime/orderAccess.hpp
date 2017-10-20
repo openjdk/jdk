@@ -26,6 +26,7 @@
 #define SHARE_VM_RUNTIME_ORDERACCESS_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 //                Memory Access Ordering Model
 //
@@ -252,7 +253,7 @@ class ScopedFence : public ScopedFenceGeneral<T> {
   void postfix() { ScopedFenceGeneral<T>::postfix(); }
 };
 
-class OrderAccess : AllStatic {
+class OrderAccess : private Atomic {
  public:
   // barriers
   static void     loadload();
@@ -264,47 +265,14 @@ class OrderAccess : AllStatic {
   static void     release();
   static void     fence();
 
-  static jbyte    load_acquire(const volatile jbyte*   p);
-  static jshort   load_acquire(const volatile jshort*  p);
-  static jint     load_acquire(const volatile jint*    p);
-  static jlong    load_acquire(const volatile jlong*   p);
-  static jubyte   load_acquire(const volatile jubyte*  p);
-  static jushort  load_acquire(const volatile jushort* p);
-  static juint    load_acquire(const volatile juint*   p);
-  static julong   load_acquire(const volatile julong*  p);
-  static jfloat   load_acquire(const volatile jfloat*  p);
-  static jdouble  load_acquire(const volatile jdouble* p);
+  template <typename T>
+  static T        load_acquire(const volatile T* p);
 
-  static intptr_t load_ptr_acquire(const volatile intptr_t* p);
-  static void*    load_ptr_acquire(const volatile void*     p);
+  template <typename T, typename D>
+  static void     release_store(volatile D* p, T v);
 
-  static void     release_store(volatile jbyte*   p, jbyte   v);
-  static void     release_store(volatile jshort*  p, jshort  v);
-  static void     release_store(volatile jint*    p, jint    v);
-  static void     release_store(volatile jlong*   p, jlong   v);
-  static void     release_store(volatile jubyte*  p, jubyte  v);
-  static void     release_store(volatile jushort* p, jushort v);
-  static void     release_store(volatile juint*   p, juint   v);
-  static void     release_store(volatile julong*  p, julong  v);
-  static void     release_store(volatile jfloat*  p, jfloat  v);
-  static void     release_store(volatile jdouble* p, jdouble v);
-
-  static void     release_store_ptr(volatile intptr_t* p, intptr_t v);
-  static void     release_store_ptr(volatile void*     p, void*    v);
-
-  static void     release_store_fence(volatile jbyte*   p, jbyte   v);
-  static void     release_store_fence(volatile jshort*  p, jshort  v);
-  static void     release_store_fence(volatile jint*    p, jint    v);
-  static void     release_store_fence(volatile jlong*   p, jlong   v);
-  static void     release_store_fence(volatile jubyte*  p, jubyte  v);
-  static void     release_store_fence(volatile jushort* p, jushort v);
-  static void     release_store_fence(volatile juint*   p, juint   v);
-  static void     release_store_fence(volatile julong*  p, julong  v);
-  static void     release_store_fence(volatile jfloat*  p, jfloat  v);
-  static void     release_store_fence(volatile jdouble* p, jdouble v);
-
-  static void     release_store_ptr_fence(volatile intptr_t* p, intptr_t v);
-  static void     release_store_ptr_fence(volatile void*     p, void*    v);
+  template <typename T, typename D>
+  static void     release_store_fence(volatile D* p, T v);
 
  private:
   // This is a helper that invokes the StubRoutines::fence_entry()
@@ -313,45 +281,34 @@ class OrderAccess : AllStatic {
   static void StubRoutines_fence();
 
   // Give platforms a variation point to specialize.
-  template<typename T> static T    specialized_load_acquire       (const volatile T* p);
-  template<typename T> static void specialized_release_store      (volatile T* p, T v);
-  template<typename T> static void specialized_release_store_fence(volatile T* p, T v);
+  template<size_t byte_size, ScopedFenceType type> struct PlatformOrderedStore;
+  template<size_t byte_size, ScopedFenceType type> struct PlatformOrderedLoad;
 
   template<typename FieldType, ScopedFenceType FenceType>
   static void ordered_store(volatile FieldType* p, FieldType v);
 
   template<typename FieldType, ScopedFenceType FenceType>
   static FieldType ordered_load(const volatile FieldType* p);
+};
 
-  static void    store(volatile jbyte*   p, jbyte   v);
-  static void    store(volatile jshort*  p, jshort  v);
-  static void    store(volatile jint*    p, jint    v);
-  static void    store(volatile jlong*   p, jlong   v);
-  static void    store(volatile jdouble* p, jdouble v);
-  static void    store(volatile jfloat*  p, jfloat  v);
+// The following methods can be specialized using simple template specialization
+// in the platform specific files for optimization purposes. Otherwise the
+// generalized variant is used.
 
-  static jbyte   load(const volatile jbyte*   p);
-  static jshort  load(const volatile jshort*  p);
-  static jint    load(const volatile jint*    p);
-  static jlong   load(const volatile jlong*   p);
-  static jdouble load(const volatile jdouble* p);
-  static jfloat  load(const volatile jfloat*  p);
+template<size_t byte_size, ScopedFenceType type>
+struct OrderAccess::PlatformOrderedStore VALUE_OBJ_CLASS_SPEC {
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    ordered_store<T, type>(p, v);
+  }
+};
 
-  // The following store_fence methods are deprecated and will be removed
-  // when all repos conform to the new generalized OrderAccess.
-  static void    store_fence(jbyte*   p, jbyte   v);
-  static void    store_fence(jshort*  p, jshort  v);
-  static void    store_fence(jint*    p, jint    v);
-  static void    store_fence(jlong*   p, jlong   v);
-  static void    store_fence(jubyte*  p, jubyte  v);
-  static void    store_fence(jushort* p, jushort v);
-  static void    store_fence(juint*   p, juint   v);
-  static void    store_fence(julong*  p, julong  v);
-  static void    store_fence(jfloat*  p, jfloat  v);
-  static void    store_fence(jdouble* p, jdouble v);
-
-  static void    store_ptr_fence(intptr_t* p, intptr_t v);
-  static void    store_ptr_fence(void**    p, void*    v);
+template<size_t byte_size, ScopedFenceType type>
+struct OrderAccess::PlatformOrderedLoad VALUE_OBJ_CLASS_SPEC {
+  template <typename T>
+  T operator()(const volatile T* p) const {
+    return ordered_load<T, type>(p);
+  }
 };
 
 #endif // SHARE_VM_RUNTIME_ORDERACCESS_HPP

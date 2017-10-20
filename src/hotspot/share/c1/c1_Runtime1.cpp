@@ -1221,11 +1221,6 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
     MutexLockerEx ml_code (CodeCache_lock, Mutex::_no_safepoint_check_flag);
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     guarantee(nm != NULL, "only nmethods can contain non-perm oops");
-    if (!nm->on_scavenge_root_list() &&
-        ((mirror.not_null() && mirror()->is_scavengable()) ||
-         (appendix.not_null() && appendix->is_scavengable()))) {
-      CodeCache::add_scavenge_root_nmethod(nm);
-    }
 
     // Since we've patched some oops in the nmethod,
     // (re)register it with the heap.
@@ -1377,8 +1372,6 @@ template <class T> int obj_arraycopy_work(oopDesc* src, T* src_addr,
   // barrier. The assert will fail if this is not the case.
   // Note that we use the non-virtual inlineable variant of write_ref_array.
   BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
-  assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
   if (src == dst) {
     // same object, no check
     bs->write_ref_array_pre(dst_addr, length);

@@ -87,9 +87,9 @@ class ClassLoaderDataGraph : public AllStatic {
   static void purge();
   static void clear_claimed_marks();
   // oops do
-  static void oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim);
-  static void keep_alive_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
-  static void always_strong_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
+  static void oops_do(OopClosure* f, bool must_claim);
+  static void keep_alive_oops_do(OopClosure* blk, bool must_claim);
+  static void always_strong_oops_do(OopClosure* blk, bool must_claim);
   // cld do
   static void cld_do(CLDClosure* cl);
   static void cld_unloading_do(CLDClosure* cl);
@@ -194,7 +194,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
       Chunk(Chunk* c) : _next(c), _size(0) { }
     };
 
-    Chunk* _head;
+    Chunk* volatile _head;
 
     void oops_do_chunk(OopClosure* f, Chunk* c, const juint size);
 
@@ -230,10 +230,16 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   Mutex* _metaspace_lock;  // Locks the metaspace for allocations and setup.
   bool _unloading;         // true if this class loader goes away
   bool _is_anonymous;      // if this CLD is for an anonymous class
+
+  // Remembered sets support for the oops in the class loader data.
+  bool _modified_oops;             // Card Table Equivalent (YC/CMS support)
+  bool _accumulated_modified_oops; // Mod Union Equivalent (CMS support)
+
   s2 _keep_alive;          // if this CLD is kept alive without a keep_alive_object().
                            // Used for anonymous classes and the boot class
                            // loader. _keep_alive does not need to be volatile or
                            // atomic since there is one unique CLD per anonymous class.
+
   volatile int _claimed;   // true if claimed, for example during GC traces.
                            // To avoid applying oop closure more than once.
                            // Has to be an int because we cas it.
@@ -275,6 +281,19 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void clear_claimed()          { _claimed = 0; }
   bool claimed() const          { return _claimed == 1; }
   bool claim();
+
+  // The CLD are not placed in the Heap, so the Card Table or
+  // the Mod Union Table can't be used to mark when CLD have modified oops.
+  // The CT and MUT bits saves this information for the whole class loader data.
+  void clear_modified_oops()             { _modified_oops = false; }
+ public:
+  void record_modified_oops()            { _modified_oops = true; }
+  bool has_modified_oops()               { return _modified_oops; }
+
+  void accumulate_modified_oops()        { if (has_modified_oops()) _accumulated_modified_oops = true; }
+  void clear_accumulated_modified_oops() { _accumulated_modified_oops = false; }
+  bool has_accumulated_modified_oops()   { return _accumulated_modified_oops; }
+ private:
 
   void unload();
   bool keep_alive() const       { return _keep_alive > 0; }
@@ -346,8 +365,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   inline unsigned int identity_hash() const { return (unsigned int)(((intptr_t)this) >> 3); }
 
-  // Used when tracing from klasses.
-  void oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim);
+  void oops_do(OopClosure* f, bool must_claim, bool clear_modified_oops = false);
 
   void classes_do(KlassClosure* klass_closure);
   Klass* klasses() { return _klasses; }

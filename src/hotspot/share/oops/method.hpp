@@ -136,9 +136,9 @@ class Method : public Metadata {
 
 
   static address make_adapters(const methodHandle& mh, TRAPS);
-  volatile address from_compiled_entry() const   { return (address)OrderAccess::load_ptr_acquire(&_from_compiled_entry); }
-  volatile address from_compiled_entry_no_trampoline() const;
-  volatile address from_interpreted_entry() const{ return (address)OrderAccess::load_ptr_acquire(&_from_interpreted_entry); }
+  address from_compiled_entry() const   { return OrderAccess::load_acquire(&_from_compiled_entry); }
+  address from_compiled_entry_no_trampoline() const;
+  address from_interpreted_entry() const{ return OrderAccess::load_acquire(&_from_interpreted_entry); }
 
   // access flag
   AccessFlags access_flags() const               { return _access_flags;  }
@@ -337,7 +337,7 @@ class Method : public Metadata {
     // The store into method must be released. On platforms without
     // total store order (TSO) the reference may become visible before
     // the initialization of data otherwise.
-    OrderAccess::release_store_ptr((volatile void *)&_method_data, data);
+    OrderAccess::release_store(&_method_data, data);
   }
 
   MethodCounters* method_counters() const {
@@ -348,10 +348,7 @@ class Method : public Metadata {
     _method_counters = NULL;
   }
 
-  bool init_method_counters(MethodCounters* counters) {
-    // Try to install a pointer to MethodCounters, return true on success.
-    return Atomic::cmpxchg_ptr(counters, (volatile void*)&_method_counters, NULL) == NULL;
-  }
+  bool init_method_counters(MethodCounters* counters);
 
 #ifdef TIERED
   // We are reusing interpreter_invocation_count as a holder for the previous event count!
@@ -452,7 +449,7 @@ class Method : public Metadata {
   // nmethod/verified compiler entry
   address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
-  CompiledMethod* volatile code() const                 { assert( check_code(), "" ); return (CompiledMethod *)OrderAccess::load_ptr_acquire(&_code); }
+  CompiledMethod* volatile code() const                 { assert( check_code(), "" ); return OrderAccess::load_acquire(&_code); }
   void clear_code(bool acquire_lock = true);    // Clear out any compiled code
   static void set_code(const methodHandle& mh, CompiledMethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {

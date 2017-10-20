@@ -224,16 +224,12 @@ public class SnippetTemplate {
         }
 
         /**
-         * Times instantiations of all templates derived form this snippet.
-         *
-         * @see SnippetTemplate#instantiationTimer
+         * Times instantiations of all templates derived from this snippet.
          */
         private final TimerKey instantiationTimer;
 
         /**
          * Counts instantiations of all templates derived from this snippet.
-         *
-         * @see SnippetTemplate#instantiationCounter
          */
         private final CounterKey instantiationCounter;
 
@@ -706,8 +702,6 @@ public class SnippetTemplate {
 
         Object[] constantArgs = getConstantArgs(args);
         StructuredGraph snippetGraph = providers.getReplacements().getSnippet(args.info.method, args.info.original, constantArgs);
-        instantiationTimer = DebugContext.timer("SnippetTemplateInstantiationTime[%#s]", args);
-        instantiationCounter = DebugContext.counter("SnippetTemplateInstantiationCount[%#s]", args);
 
         ResolvedJavaMethod method = snippetGraph.method();
         Signature signature = method.getSignature();
@@ -1078,20 +1072,6 @@ public class SnippetTemplate {
     private final ArrayList<Node> nodes;
 
     /**
-     * Times instantiations of this template.
-     *
-     * @see SnippetInfo#instantiationTimer
-     */
-    private final TimerKey instantiationTimer;
-
-    /**
-     * Counts instantiations of this template.
-     *
-     * @see SnippetInfo#instantiationCounter
-     */
-    private final CounterKey instantiationCounter;
-
-    /**
      * Gets the instantiation-time bindings to this template's parameters.
      *
      * @return the map that will be used to bind arguments to parameters when inlining this template
@@ -1406,9 +1386,8 @@ public class SnippetTemplate {
     public UnmodifiableEconomicMap<Node, Node> instantiate(MetaAccessProvider metaAccess, FixedNode replacee, UsageReplacer replacer, Arguments args, boolean killReplacee) {
         DebugContext debug = replacee.getDebug();
         assert assertSnippetKills(replacee);
-        try (DebugCloseable a = args.info.instantiationTimer.start(debug); DebugCloseable b = instantiationTimer.start(debug)) {
+        try (DebugCloseable a = args.info.instantiationTimer.start(debug)) {
             args.info.instantiationCounter.increment(debug);
-            instantiationCounter.increment(debug);
             // Inline the snippet nodes, replacing parameters with the given args in the process
             StartNode entryPointNode = snippet.start();
             FixedNode firstCFGNode = entryPointNode.next();
@@ -1561,7 +1540,6 @@ public class SnippetTemplate {
         assert assertSnippetKills(replacee);
         try (DebugCloseable a = args.info.instantiationTimer.start(debug)) {
             args.info.instantiationCounter.increment(debug);
-            instantiationCounter.increment(debug);
 
             // Inline the snippet nodes, replacing parameters with the given args in the process
             StartNode entryPointNode = snippet.start();
@@ -1614,7 +1592,6 @@ public class SnippetTemplate {
         assert assertSnippetKills(replacee);
         try (DebugCloseable a = args.info.instantiationTimer.start(debug)) {
             args.info.instantiationCounter.increment(debug);
-            instantiationCounter.increment(debug);
 
             // Inline the snippet nodes, replacing parameters with the given args in the process
             StartNode entryPointNode = snippet.start();

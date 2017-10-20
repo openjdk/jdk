@@ -28,10 +28,8 @@
 #include "utilities/decoder.hpp"
 #include "utilities/vmError.hpp"
 
-#if defined(_WINDOWS)
-  #include "decoder_windows.hpp"
-  #include "windbghelp.hpp"
-#elif defined(__APPLE__)
+#ifndef _WINDOWS
+#if defined(__APPLE__)
   #include "decoder_machO.hpp"
 #elif defined(AIX)
   #include "decoder_aix.hpp"
@@ -67,9 +65,7 @@ AbstractDecoder* Decoder::get_error_handler_instance() {
 
 AbstractDecoder* Decoder::create_decoder() {
   AbstractDecoder* decoder;
-#if defined(_WINDOWS)
-  decoder = new (std::nothrow) WindowsDecoder();
-#elif defined (__APPLE__)
+#if defined (__APPLE__)
   decoder = new (std::nothrow)MachODecoder();
 #elif defined(AIX)
   decoder = new (std::nothrow)AIXDecoder();
@@ -136,36 +132,12 @@ bool Decoder::demangle(const char* symbol, char* buf, int buflen) {
   return decoder->demangle(symbol, buf, buflen);
 }
 
-bool Decoder::can_decode_C_frame_in_vm() {
-  assert(_shared_decoder_lock != NULL, "Just check");
-  bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
-  MutexLockerEx locker(error_handling_thread ? NULL : _shared_decoder_lock, true);
-  AbstractDecoder* decoder = error_handling_thread ?
-    get_error_handler_instance(): get_shared_instance();
-  assert(decoder != NULL, "null decoder");
-  return decoder->can_decode_C_frame_in_vm();
-}
-
-/*
- * Shutdown shared decoder and replace it with
- * _do_nothing_decoder. Do nothing with error handler
- * instance, since the JVM is going down.
- */
-void Decoder::shutdown() {
-  assert(_shared_decoder_lock != NULL, "Just check");
-  MutexLockerEx locker(_shared_decoder_lock, true);
-
-  if (_shared_decoder != NULL &&
-    _shared_decoder != &_do_nothing_decoder) {
-    delete _shared_decoder;
-  }
-
-  _shared_decoder = &_do_nothing_decoder;
-}
-
 void Decoder::print_state_on(outputStream* st) {
-#ifdef _WINDOWS
-  WindowsDbgHelp::print_state_on(st);
-#endif
 }
+
+bool Decoder::get_source_info(address pc, char* buf, size_t buflen, int* line) {
+  return false;
+}
+
+#endif // !_WINDOWS
 

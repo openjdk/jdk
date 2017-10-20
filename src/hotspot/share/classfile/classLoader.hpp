@@ -37,13 +37,6 @@
 // Name of boot "modules" image
 #define  MODULES_IMAGE_NAME "modules"
 
-// Name of the resource containing mapping from module names to defining class loader type
-#define MODULE_LOADER_MAP "jdk/internal/vm/cds/resources/ModuleLoaderMap.dat"
-
-// Initial sizes of the following arrays are based on the generated ModuleLoaderMap.dat
-#define INITIAL_BOOT_MODULES_ARRAY_SIZE 30
-#define INITIAL_PLATFORM_MODULES_ARRAY_SIZE  15
-
 // Class path entry (directory or zip file)
 
 class JImageFile;
@@ -55,13 +48,11 @@ private:
   ClassPathEntry* volatile _next;
 public:
   // Next entry in class path
-  ClassPathEntry* next() const {
-    return (ClassPathEntry*) OrderAccess::load_ptr_acquire(&_next);
-  }
+  ClassPathEntry* next() const { return OrderAccess::load_acquire(&_next); }
   virtual ~ClassPathEntry() {}
   void set_next(ClassPathEntry* next) {
     // may have unlocked readers, so ensure visibility.
-    OrderAccess::release_store_ptr(&_next, next);
+    OrderAccess::release_store(&_next, next);
   }
   virtual bool is_jrt() = 0;
   virtual bool is_jar_file() const = 0;
@@ -403,7 +394,8 @@ class ClassLoader: AllStatic {
   static int compute_Object_vtable();
 
   static ClassPathEntry* classpath_entry(int n) {
-    assert(n >= 0 && n < _num_entries, "sanity");
+    assert(n >= 0, "sanity");
+    assert(!has_jrt_entry() || n < _num_entries, "sanity");
     if (n == 0) {
       assert(has_jrt_entry(), "No class path entry at 0 for exploded module builds");
       return ClassLoader::_jrt_entry;
@@ -438,10 +430,6 @@ class ClassLoader: AllStatic {
   static bool  check_shared_paths_misc_info(void* info, int size);
   static void  exit_with_path_failure(const char* error, const char* message);
 
-  static s2 module_to_classloader(const char* module_name);
-  static void initialize_module_loader_map(JImageFile* jimage);
-  static s2 classloader_type(Symbol* class_name, ClassPathEntry* e,
-                             int classpath_index, TRAPS);
   static void record_shared_class_loader_type(InstanceKlass* ik, const ClassFileStream* stream);
 #endif
   static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,

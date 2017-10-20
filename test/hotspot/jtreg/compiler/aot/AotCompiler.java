@@ -145,13 +145,37 @@ public class AotCompiler {
                 + " [-compile <compileItems>]* [-extraopt <java option>]*");
     }
 
+    // runs ld -v (or ld -V on solaris) and check its exit code
+    private static boolean checkLd(Path bin) {
+        try {
+            return 0 == ProcessTools.executeCommand(bin.toString(),
+                                                    Platform.isSolaris() ? "-V" : "-v")
+                                    .getExitValue();
+        } catch (Throwable t) {
+            // any errors mean ld doesn't work
+            return false;
+        }
+    }
+
     public static String resolveLinker() {
         Path linker = null;
-        // 1st, check if PATH has ld
-        for (String path : System.getenv("PATH").split(File.pathSeparator)) {
-            if (Files.exists(Paths.get(path).resolve("ld"))) {
-                // there is ld in PATH, jaotc is supposed to find it by its own
-                return null;
+        // if non windows, 1st, check if PATH has ld
+        if (!Platform.isWindows()) {
+            String bin = "ld";
+            for (String path : System.getenv("PATH").split(File.pathSeparator)) {
+                Path ld = Paths.get(path).resolve("ld");
+                if (Files.exists(ld)) {
+                    // there is ld in PATH
+                    if (checkLd(ld)) {
+                        System.out.println("found working linker: " + ld);
+                        // ld works, jaotc is supposed to find and use it
+                        return null;
+                    } else {
+                        System.out.println("found broken linker: " + ld);
+                        // ld exists in PATH, but doesn't work, have to use devkit
+                        break;
+                    }
+                }
             }
         }
         // there is no ld in PATH, will use ld from devkit
@@ -275,7 +299,9 @@ public class AotCompiler {
                 }
             }
         } catch (FileNotFoundException e) {
-            throw new Error("artifact resolution error: " + e, e);
+            System.err.println("artifact resolution error: " + e);
+            // let jaotc try to find linker
+            return null;
         }
         if (linker != null) {
             return linker.toAbsolutePath().toString();

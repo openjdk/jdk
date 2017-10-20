@@ -42,6 +42,7 @@ import org.graalvm.compiler.hotspot.nodes.aot.LoadConstantIndirectlyFixedNode;
 import org.graalvm.compiler.hotspot.nodes.aot.LoadConstantIndirectlyNode;
 import org.graalvm.compiler.hotspot.nodes.aot.LoadMethodCountersNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveConstantNode;
+import org.graalvm.compiler.hotspot.nodes.aot.ResolveDynamicConstantNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveMethodAndLoadCountersNode;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
@@ -107,6 +108,7 @@ public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
         // @formatter:off
         return n instanceof LoadConstantIndirectlyNode      ||
                n instanceof LoadConstantIndirectlyFixedNode ||
+               n instanceof ResolveDynamicConstantNode      ||
                n instanceof ResolveConstantNode             ||
                n instanceof InitializeKlassNode;
         // @formatter:on

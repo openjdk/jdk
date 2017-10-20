@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,11 @@ template <class T> inline void OopsInGenClosure::par_do_barrier(T* p) {
   }
 }
 
-inline void OopsInKlassOrGenClosure::do_klass_barrier() {
-  assert(_scanned_klass != NULL, "Must be");
-  _scanned_klass->record_modified_oops();
+inline void OopsInClassLoaderDataOrGenClosure::do_cld_barrier() {
+  assert(_scanned_cld != NULL, "Must be");
+  if (!_scanned_cld->has_modified_oops()) {
+    _scanned_cld->record_modified_oops();
+  }
 }
 
 // NOTE! Any changes made here should also be made
@@ -87,8 +89,8 @@ template <class T> inline void ScanClosure::do_oop_work(T* p) {
       oopDesc::encode_store_heap_oop_not_null(p, new_obj);
     }
 
-    if (is_scanning_a_klass()) {
-      do_klass_barrier();
+    if (is_scanning_a_cld()) {
+      do_cld_barrier();
     } else if (_gc_barrier) {
       // Now call parent closure
       do_barrier(p);
@@ -111,8 +113,8 @@ template <class T> inline void FastScanClosure::do_oop_work(T* p) {
       oop new_obj = obj->is_forwarded() ? obj->forwardee()
                                         : _g->copy_to_survivor_space(obj);
       oopDesc::encode_store_heap_oop_not_null(p, new_obj);
-      if (is_scanning_a_klass()) {
-        do_klass_barrier();
+      if (is_scanning_a_cld()) {
+        do_cld_barrier();
       } else if (_gc_barrier) {
         // Now call parent closure
         do_barrier(p);

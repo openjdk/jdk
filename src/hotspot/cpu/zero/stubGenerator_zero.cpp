@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -253,9 +253,8 @@ class StubGenerator: public StubCodeGenerator {
 
     // atomic calls
     StubRoutines::_atomic_xchg_entry         = ShouldNotCallThisStub();
-    StubRoutines::_atomic_xchg_ptr_entry     = ShouldNotCallThisStub();
+    StubRoutines::_atomic_xchg_long_entry    = ShouldNotCallThisStub();
     StubRoutines::_atomic_cmpxchg_entry      = ShouldNotCallThisStub();
-    StubRoutines::_atomic_cmpxchg_ptr_entry  = ShouldNotCallThisStub();
     StubRoutines::_atomic_cmpxchg_byte_entry = ShouldNotCallThisStub();
     StubRoutines::_atomic_cmpxchg_long_entry = ShouldNotCallThisStub();
     StubRoutines::_atomic_add_entry          = ShouldNotCallThisStub();

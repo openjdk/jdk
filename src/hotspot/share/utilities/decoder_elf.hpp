@@ -39,8 +39,6 @@ public:
   }
   virtual ~ElfDecoder();
 
-  bool can_decode_C_frame_in_vm() const { return true; }
-
   bool demangle(const char* symbol, char *buf, int buflen);
   bool decode(address addr, char *buf, int buflen, int* offset, const char* filepath, bool demangle);
   bool decode(address addr, char *buf, int buflen, int* offset, const void *base) {
