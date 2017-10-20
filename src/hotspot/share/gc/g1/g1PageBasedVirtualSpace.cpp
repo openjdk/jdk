@@ -251,7 +251,7 @@ public:
   virtual void work(uint worker_id) {
     size_t const actual_chunk_size = MAX2(chunk_size(), _page_size);
     while (true) {
-      char* touch_addr = (char*)Atomic::add_ptr((intptr_t)actual_chunk_size, (volatile void*) &_cur_addr) - actual_chunk_size;
+      char* touch_addr = Atomic::add(actual_chunk_size, &_cur_addr) - actual_chunk_size;
       if (touch_addr < _start_addr || touch_addr >= _end_addr) {
         break;
       }

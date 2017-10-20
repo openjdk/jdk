@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2867,46 +2867,51 @@ class StubGenerator: public StubCodeGenerator {
   //  Blows all volatile registers (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR) except for callee_saved_regs.
   void gen_write_ref_array_pre_barrier(Register addr, Register count, int callee_saved_regs) {
     BarrierSet* bs = Universe::heap()->barrier_set();
-    if (bs->has_write_ref_pre_barrier()) {
-      assert(bs->has_write_ref_array_pre_opt(),
-             "Else unsupported barrier set.");
+    switch (bs->kind()) {
+    case BarrierSet::G1SATBCTLogging:
+      {
+        assert( addr->encoding() < callee_saved_regs, "addr must be saved");
+        assert(count->encoding() < callee_saved_regs, "count must be saved");
 
-      assert( addr->encoding() < callee_saved_regs, "addr must be saved");
-      assert(count->encoding() < callee_saved_regs, "count must be saved");
-
-      BLOCK_COMMENT("PreBarrier");
-
-#ifdef AARCH64
-      callee_saved_regs = align_up(callee_saved_regs, 2);
-      for (int i = 0; i < callee_saved_regs; i += 2) {
-        __ raw_push(as_Register(i), as_Register(i+1));
-      }
-#else
-      RegisterSet saved_regs = RegisterSet(R0, as_Register(callee_saved_regs-1));
-      __ push(saved_regs | R9ifScratched);
-#endif // AARCH64
-
-      if (addr != R0) {
-        assert_different_registers(count, R0);
-        __ mov(R0, addr);
-      }
-#ifdef AARCH64
-      __ zero_extend(R1, count, 32); // BarrierSet::static_write_ref_array_pre takes size_t
-#else
-      if (count != R1) {
-        __ mov(R1, count);
-      }
-#endif // AARCH64
-
-      __ call(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre));
+        BLOCK_COMMENT("PreBarrier");
 
 #ifdef AARCH64
-      for (int i = callee_saved_regs - 2; i >= 0; i -= 2) {
-        __ raw_pop(as_Register(i), as_Register(i+1));
-      }
+        callee_saved_regs = align_up(callee_saved_regs, 2);
+        for (int i = 0; i < callee_saved_regs; i += 2) {
+          __ raw_push(as_Register(i), as_Register(i+1));
+        }
 #else
-      __ pop(saved_regs | R9ifScratched);
+        RegisterSet saved_regs = RegisterSet(R0, as_Register(callee_saved_regs-1));
+        __ push(saved_regs | R9ifScratched);
 #endif // AARCH64
+
+        if (addr != R0) {
+          assert_different_registers(count, R0);
+          __ mov(R0, addr);
+        }
+#ifdef AARCH64
+        __ zero_extend(R1, count, 32); // BarrierSet::static_write_ref_array_pre takes size_t
+#else
+        if (count != R1) {
+          __ mov(R1, count);
+        }
+#endif // AARCH64
+
+        __ call(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre));
+
+#ifdef AARCH64
+        for (int i = callee_saved_regs - 2; i >= 0; i -= 2) {
+          __ raw_pop(as_Register(i), as_Register(i+1));
+        }
+#else
+        __ pop(saved_regs | R9ifScratched);
+#endif // AARCH64
+      }
+    case BarrierSet::CardTableForRS:
+    case BarrierSet::CardTableExtension:
+      break;
+    default:
+      ShouldNotReachHere();
     }
   }
 #endif // INCLUDE_ALL_GCS

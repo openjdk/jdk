@@ -42,6 +42,7 @@
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
@@ -58,28 +59,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
 #include "utilities/vmError.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/cms/concurrentMarkSweepThread.hpp"
-#include "gc/cms/vmCMSOperations.hpp"
-#endif // INCLUDE_ALL_GCS
-
-NOT_PRODUCT(size_t GenCollectedHeap::_skip_header_HeapWords = 0;)
-
-// The set of potentially parallel tasks in root scanning.
-enum GCH_strong_roots_tasks {
-  GCH_PS_Universe_oops_do,
-  GCH_PS_JNIHandles_oops_do,
-  GCH_PS_ObjectSynchronizer_oops_do,
-  GCH_PS_Management_oops_do,
-  GCH_PS_SystemDictionary_oops_do,
-  GCH_PS_ClassLoaderDataGraph_oops_do,
-  GCH_PS_jvmti_oops_do,
-  GCH_PS_CodeCache_oops_do,
-  GCH_PS_aot_oops_do,
-  GCH_PS_younger_gens,
-  // Leave this one last.
-  GCH_PS_NumElements
-};
 
 GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
   CollectedHeap(),
@@ -89,15 +68,6 @@ GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
   _full_collections_completed(0)
 {
   assert(policy != NULL, "Sanity check");
-  if (UseConcMarkSweepGC) {
-    _workers = new WorkGang("GC Thread", ParallelGCThreads,
-                            /* are_GC_task_threads */true,
-                            /* are_ConcurrentGC_threads */false);
-    _workers->initialize_workers();
-  } else {
-    // Serial GC does not use workers.
-    _workers = NULL;
-  }
 }
 
 jint GenCollectedHeap::initialize() {
@@ -138,15 +108,6 @@ jint GenCollectedHeap::initialize() {
   _old_gen = gen_policy()->old_gen_spec()->init(old_rs, rem_set());
   clear_incremental_collection_failed();
 
-#if INCLUDE_ALL_GCS
-  // If we are running CMS, create the collector responsible
-  // for collecting the CMS generations.
-  if (collector_policy()->is_concurrent_mark_sweep_policy()) {
-    bool success = create_cms_collector();
-    if (!success) return JNI_ENOMEM;
-  }
-#endif // INCLUDE_ALL_GCS
-
   return JNI_OK;
 }
 
@@ -183,19 +144,20 @@ char* GenCollectedHeap::allocate(size_t alignment,
 
 void GenCollectedHeap::post_initialize() {
   ref_processing_init();
-  assert((_young_gen->kind() == Generation::DefNew) ||
-         (_young_gen->kind() == Generation::ParNew),
-    "Wrong youngest generation type");
+  check_gen_kinds();
   DefNewGeneration* def_new_gen = (DefNewGeneration*)_young_gen;
-
-  assert(_old_gen->kind() == Generation::ConcurrentMarkSweep ||
-         _old_gen->kind() == Generation::MarkSweepCompact,
-    "Wrong generation kind");
 
   _gen_policy->initialize_size_policy(def_new_gen->eden()->capacity(),
                                       _old_gen->capacity(),
                                       def_new_gen->from()->capacity());
   _gen_policy->initialize_gc_policy_counters();
+}
+
+void GenCollectedHeap::check_gen_kinds() {
+  assert(young_gen()->kind() == Generation::DefNew,
+         "Wrong youngest generation type");
+  assert(old_gen()->kind() == Generation::MarkSweepCompact,
+         "Wrong generation kind");
 }
 
 void GenCollectedHeap::ref_processing_init() {
@@ -307,19 +269,6 @@ HeapWord* GenCollectedHeap::mem_allocate(size_t size,
 bool GenCollectedHeap::must_clear_all_soft_refs() {
   return _gc_cause == GCCause::_metadata_GC_clear_soft_refs ||
          _gc_cause == GCCause::_wb_full_gc;
-}
-
-bool GenCollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
-  if (!UseConcMarkSweepGC) {
-    return false;
-  }
-
-  switch (cause) {
-    case GCCause::_gc_locker:           return GCLockerInvokesConcurrent;
-    case GCCause::_java_lang_system_gc:
-    case GCCause::_dcmd_gc_run:         return ExplicitGCInvokesConcurrent;
-    default:                            return false;
-  }
 }
 
 void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t size,
@@ -553,6 +502,14 @@ void GenCollectedHeap::do_collection(bool           full,
 #endif
 }
 
+void GenCollectedHeap::register_nmethod(nmethod* nm) {
+  CodeCache::register_scavenge_root_nmethod(nm);
+}
+
+void GenCollectedHeap::verify_nmethod(nmethod* nm) {
+  CodeCache::verify_scavenge_root_nmethod(nm);
+}
+
 HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   return gen_policy()->satisfy_failed_allocation(size, is_tlab);
 }
@@ -674,31 +631,6 @@ void GenCollectedHeap::young_process_roots(StrongRootsScope* scope,
   _process_strong_tasks->all_tasks_completed(scope->n_threads());
 }
 
-void GenCollectedHeap::cms_process_roots(StrongRootsScope* scope,
-                                         bool young_gen_as_roots,
-                                         ScanningOption so,
-                                         bool only_strong_roots,
-                                         OopsInGenClosure* root_closure,
-                                         CLDClosure* cld_closure) {
-  MarkingCodeBlobClosure mark_code_closure(root_closure, !CodeBlobToOopClosure::FixRelocations);
-  OopsInGenClosure* weak_roots = only_strong_roots ? NULL : root_closure;
-  CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;
-
-  process_roots(scope, so, root_closure, weak_roots, cld_closure, weak_cld_closure, &mark_code_closure);
-  if (!only_strong_roots) {
-    process_string_table_roots(scope, root_closure);
-  }
-
-  if (young_gen_as_roots &&
-      !_process_strong_tasks->is_task_claimed(GCH_PS_younger_gens)) {
-    root_closure->set_generation(_young_gen);
-    _young_gen->oop_iterate(root_closure);
-    root_closure->reset_generation();
-  }
-
-  _process_strong_tasks->all_tasks_completed(scope->n_threads());
-}
-
 void GenCollectedHeap::full_process_roots(StrongRootsScope* scope,
                                           bool is_adjust_phase,
                                           ScanningOption so,
@@ -721,7 +653,7 @@ void GenCollectedHeap::full_process_roots(StrongRootsScope* scope,
 }
 
 void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
-  JNIHandles::weak_oops_do(root_closure);
+  WeakProcessor::oops_do(root_closure);
   _young_gen->ref_processor()->weak_oops_do(root_closure);
   _old_gen->ref_processor()->weak_oops_do(root_closure);
 }
@@ -763,14 +695,7 @@ HeapWord** GenCollectedHeap::end_addr() const {
 // public collection interfaces
 
 void GenCollectedHeap::collect(GCCause::Cause cause) {
-  if (should_do_concurrent_full_gc(cause)) {
-#if INCLUDE_ALL_GCS
-    // Mostly concurrent full collection.
-    collect_mostly_concurrent(cause);
-#else  // INCLUDE_ALL_GCS
-    ShouldNotReachHere();
-#endif // INCLUDE_ALL_GCS
-  } else if (cause == GCCause::_wb_young_gc) {
+  if (cause == GCCause::_wb_young_gc) {
     // Young collection for the WhiteBox API.
     collect(cause, YoungGen);
   } else {
@@ -816,44 +741,6 @@ void GenCollectedHeap::collect_locked(GCCause::Cause cause, GenerationType max_g
     VMThread::execute(&op);
   }
 }
-
-#if INCLUDE_ALL_GCS
-bool GenCollectedHeap::create_cms_collector() {
-
-  assert(_old_gen->kind() == Generation::ConcurrentMarkSweep,
-         "Unexpected generation kinds");
-  // Skip two header words in the block content verification
-  NOT_PRODUCT(_skip_header_HeapWords = CMSCollector::skip_header_HeapWords();)
-  assert(_gen_policy->is_concurrent_mark_sweep_policy(), "Unexpected policy type");
-  CMSCollector* collector =
-    new CMSCollector((ConcurrentMarkSweepGeneration*)_old_gen,
-                     _rem_set,
-                     _gen_policy->as_concurrent_mark_sweep_policy());
-
-  if (collector == NULL || !collector->completed_initialization()) {
-    if (collector) {
-      delete collector;  // Be nice in embedded situation
-    }
-    vm_shutdown_during_initialization("Could not create CMS collector");
-    return false;
-  }
-  return true;  // success
-}
-
-void GenCollectedHeap::collect_mostly_concurrent(GCCause::Cause cause) {
-  assert(!Heap_lock->owned_by_self(), "Should not own Heap_lock");
-
-  MutexLocker ml(Heap_lock);
-  // Read the GC counts while holding the Heap_lock
-  unsigned int full_gc_count_before = total_full_collections();
-  unsigned int gc_count_before      = total_collections();
-  {
-    MutexUnlocker mu(Heap_lock);
-    VM_GenCollectFullConcurrent op(gc_count_before, full_gc_count_before, cause);
-    VMThread::execute(&op);
-  }
-}
-#endif // INCLUDE_ALL_GCS
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs) {
    do_full_collection(clear_all_soft_refs, OldGen);
@@ -1097,8 +984,9 @@ void GenCollectedHeap::save_marks() {
 GenCollectedHeap* GenCollectedHeap::heap() {
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "Uninitialized access to GenCollectedHeap::heap()");
-  assert(heap->kind() == CollectedHeap::GenCollectedHeap, "Not a GenCollectedHeap");
-  return (GenCollectedHeap*)heap;
+  assert(heap->kind() == CollectedHeap::GenCollectedHeap ||
+         heap->kind() == CollectedHeap::CMSHeap, "Not a GenCollectedHeap");
+  return (GenCollectedHeap*) heap;
 }
 
 void GenCollectedHeap::prepare_for_compaction() {
@@ -1126,42 +1014,16 @@ void GenCollectedHeap::print_on(outputStream* st) const {
 }
 
 void GenCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
-  if (workers() != NULL) {
-    workers()->threads_do(tc);
-  }
-#if INCLUDE_ALL_GCS
-  if (UseConcMarkSweepGC) {
-    ConcurrentMarkSweepThread::threads_do(tc);
-  }
-#endif // INCLUDE_ALL_GCS
 }
 
 void GenCollectedHeap::print_gc_threads_on(outputStream* st) const {
-#if INCLUDE_ALL_GCS
-  if (UseConcMarkSweepGC) {
-    workers()->print_worker_threads_on(st);
-    ConcurrentMarkSweepThread::print_all_on(st);
-  }
-#endif // INCLUDE_ALL_GCS
-}
-
-void GenCollectedHeap::print_on_error(outputStream* st) const {
-  this->CollectedHeap::print_on_error(st);
-
-#if INCLUDE_ALL_GCS
-  if (UseConcMarkSweepGC) {
-    st->cr();
-    CMSCollector::print_on_error(st);
-  }
-#endif // INCLUDE_ALL_GCS
 }
 
 void GenCollectedHeap::print_tracing_info() const {
-  if (TraceYoungGenTime) {
-    _young_gen->print_summary_info();
-  }
-  if (TraceOldGenTime) {
-    _old_gen->print_summary_info();
+  if (log_is_enabled(Debug, gc, heap, exit)) {
+    LogStreamHandle(Debug, gc, heap, exit) lsh;
+    _young_gen->print_summary_info_on(&lsh);
+    _old_gen->print_summary_info_on(&lsh);
   }
 }
 
@@ -1185,7 +1047,6 @@ class GenGCPrologueClosure: public GenCollectedHeap::GenClosure {
 void GenCollectedHeap::gc_prologue(bool full) {
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
 
-  always_do_update_barrier = false;
   // Fill TLAB's and such
   CollectedHeap::accumulate_statistics_all_tlabs();
   ensure_parsability(true);   // retire TLABs
@@ -1223,8 +1084,6 @@ void GenCollectedHeap::gc_epilogue(bool full) {
 
   MetaspaceCounters::update_performance_counters();
   CompressedClassSpaceCounters::update_performance_counters();
-
-  always_do_update_barrier = UseConcMarkSweepGC;
 };
 
 #ifndef PRODUCT
@@ -1304,12 +1163,4 @@ jlong GenCollectedHeap::millis_since_last_gc() {
     return 0;
   }
   return retVal;
-}
-
-void GenCollectedHeap::stop() {
-#if INCLUDE_ALL_GCS
-  if (UseConcMarkSweepGC) {
-    ConcurrentMarkSweepThread::cmst()->stop();
-  }
-#endif
 }

@@ -669,7 +669,6 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
 
   // Store check (mark entire object and let gc sort it out)
   BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->has_write_region_opt(), "Barrier set does not have write_region");
   bs->write_region(MemRegion((HeapWord*)new_obj_oop, size));
 
   Handle new_obj(THREAD, new_obj_oop);

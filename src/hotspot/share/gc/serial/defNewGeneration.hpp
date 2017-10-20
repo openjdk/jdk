@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,8 @@ protected:
   // the subsequent full collection will look at from-space objects:
   // therefore we must remove their forwarding pointers.
   void remove_forwarding_pointers();
+
+  virtual void restore_preserved_marks();
 
   // Preserved marks
   PreservedMarksSet _preserved_marks_set;

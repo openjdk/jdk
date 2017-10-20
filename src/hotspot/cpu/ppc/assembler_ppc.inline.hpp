@@ -164,6 +164,7 @@ inline void Assembler::divwo_(  Register d, Register a, Register b) { emit_int32
 inline void Assembler::li(   Register d, int si16)             { Assembler::addi_r0ok( d, R0, si16); }
 inline void Assembler::lis(  Register d, int si16)             { Assembler::addis_r0ok(d, R0, si16); }
 inline void Assembler::addir(Register d, int si16, Register a) { Assembler::addi(d, a, si16); }
+inline void Assembler::subi( Register d, Register a, int si16) { Assembler::addi(d, a, -si16); }
 
 // PPC 1, section 3.3.9, Fixed-Point Compare Instructions
 inline void Assembler::cmpi(  ConditionRegister f, int l, Register a, int si16)   { emit_int32( CMPI_OPCODE  | bf(f) | l10(l) | ra(a) | simm(si16,16)); }
@@ -760,9 +761,14 @@ inline void Assembler::lvsr(  VectorRegister d, Register s1, Register s2) { emit
 // Vector-Scalar (VSX) instructions.
 inline void Assembler::lxvd2x(  VectorSRegister d, Register s1)              { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra(0) | rb(s1)); }
 inline void Assembler::lxvd2x(  VectorSRegister d, Register s1, Register s2) { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra0mem(s1) | rb(s2)); }
-inline void Assembler::stxvd2x( VectorSRegister d, Register s1)              { emit_int32( STXVD2X_OPCODE | vsrt(d) | ra(0) | rb(s1)); }
-inline void Assembler::stxvd2x( VectorSRegister d, Register s1, Register s2) { emit_int32( STXVD2X_OPCODE | vsrt(d) | ra0mem(s1) | rb(s2)); }
-inline void Assembler::mtvrd(   VectorRegister  d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
+inline void Assembler::stxvd2x( VectorSRegister d, Register s1)              { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra(0) | rb(s1)); }
+inline void Assembler::stxvd2x( VectorSRegister d, Register s1, Register s2) { emit_int32( STXVD2X_OPCODE | vsrs(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::mtvsrd(  VectorSRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d)  | ra(a)); }
+inline void Assembler::mtvsrwz( VectorSRegister d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d) | ra(a)); }
+inline void Assembler::xxspltw( VectorSRegister d, VectorSRegister b, int ui2)           { emit_int32( XXSPLTW_OPCODE | vsrt(d) | vsrb(b) | xxsplt_uim(uimm(ui2,2))); }
+inline void Assembler::xxlxor(  VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXLXOR_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xxleqv(  VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXLEQV_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::mtvrd(    VectorRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mfvrd(   Register        a, VectorRegister d)         { emit_int32( MFVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mtvrwz(  VectorRegister  d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mfvrwz(  Register        a, VectorRegister d)         { emit_int32( MFVSRWZ_OPCODE | vsrt(d->to_vsr()) | ra(a)); }
@@ -925,7 +931,8 @@ inline void Assembler::vncipherlast(VectorRegister d, VectorRegister a, VectorRe
 inline void Assembler::vsbox(       VectorRegister d, VectorRegister a)                   { emit_int32( VSBOX_OPCODE        | vrt(d) | vra(a)         ); }
 
 // SHA (introduced with Power 8)
-// Not yet implemented.
+inline void Assembler::vshasigmad(VectorRegister d, VectorRegister a, bool st, int six) { emit_int32( VSHASIGMAD_OPCODE | vrt(d) | vra(a) | vst(st) | vsix(six)); }
+inline void Assembler::vshasigmaw(VectorRegister d, VectorRegister a, bool st, int six) { emit_int32( VSHASIGMAW_OPCODE | vrt(d) | vra(a) | vst(st) | vsix(six)); }
 
 // Vector Binary Polynomial Multiplication (introduced with Power 8)
 inline void Assembler::vpmsumb(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPMSUMB_OPCODE | vrt(d) | vra(a) | vrb(b)); }
@@ -1033,6 +1040,30 @@ inline void Assembler::stvx(  VectorRegister d, Register s2) { emit_int32( STVX_
 inline void Assembler::stvxl( VectorRegister d, Register s2) { emit_int32( STVXL_OPCODE  | vrt(d) | rb(s2)); }
 inline void Assembler::lvsl(  VectorRegister d, Register s2) { emit_int32( LVSL_OPCODE   | vrt(d) | rb(s2)); }
 inline void Assembler::lvsr(  VectorRegister d, Register s2) { emit_int32( LVSR_OPCODE   | vrt(d) | rb(s2)); }
+
+inline void Assembler::load_perm(VectorRegister perm, Register addr) {
+#if defined(VM_LITTLE_ENDIAN)
+  lvsr(perm, addr);
+#else
+  lvsl(perm, addr);
+#endif
+}
+
+inline void Assembler::vec_perm(VectorRegister first_dest, VectorRegister second, VectorRegister perm) {
+#if defined(VM_LITTLE_ENDIAN)
+  vperm(first_dest, second, first_dest, perm);
+#else
+  vperm(first_dest, first_dest, second, perm);
+#endif
+}
+
+inline void Assembler::vec_perm(VectorRegister dest, VectorRegister first, VectorRegister second, VectorRegister perm) {
+#if defined(VM_LITTLE_ENDIAN)
+  vperm(dest, second, first, perm);
+#else
+  vperm(dest, first, second, perm);
+#endif
+}
 
 inline void Assembler::load_const(Register d, void* x, Register tmp) {
    load_const(d, (long)x, tmp);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -862,7 +862,7 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   if (p != NULL) {
     HeapWord* cur_top, *cur_chunk_top = p + size;
     while ((cur_top = top()) < cur_chunk_top) { // Keep _top updated.
-      if (Atomic::cmpxchg_ptr(cur_chunk_top, top_addr(), cur_top) == cur_top) {
+      if (Atomic::cmpxchg(cur_chunk_top, top_addr(), cur_top) == cur_top) {
         break;
       }
     }

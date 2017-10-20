@@ -122,6 +122,7 @@ class Assembler : public AbstractAssembler {
     fpop1_op3    = 0x34,
     fpop2_op3    = 0x35,
     impdep1_op3  = 0x36,
+    addx_op3     = 0x36,
     aes3_op3     = 0x36,
     sha_op3      = 0x36,
     bmask_op3    = 0x36,
@@ -133,6 +134,8 @@ class Assembler : public AbstractAssembler {
     fzero_op3    = 0x36,
     fsrc_op3     = 0x36,
     fnot_op3     = 0x36,
+    mpmul_op3    = 0x36,
+    umulx_op3    = 0x36,
     xmulx_op3    = 0x36,
     crc32c_op3   = 0x36,
     impdep2_op3  = 0x37,
@@ -195,6 +198,9 @@ class Assembler : public AbstractAssembler {
     fnegs_opf          = 0x05,
     fnegd_opf          = 0x06,
 
+    addxc_opf          = 0x11,
+    addxccc_opf        = 0x13,
+    umulxhi_opf        = 0x16,
     alignaddr_opf      = 0x18,
     bmask_opf          = 0x19,
 
@@ -240,7 +246,8 @@ class Assembler : public AbstractAssembler {
     sha256_opf         = 0x142,
     sha512_opf         = 0x143,
 
-    crc32c_opf         = 0x147
+    crc32c_opf         = 0x147,
+    mpmul_opf          = 0x148
   };
 
   enum op5s {
@@ -380,7 +387,7 @@ class Assembler : public AbstractAssembler {
     assert_signed_range(x, nbits + 2);
   }
 
-  static void assert_unsigned_const(int x, int nbits) {
+  static void assert_unsigned_range(int x, int nbits) {
     assert(juint(x) < juint(1 << nbits), "unsigned constant out of range");
   }
 
@@ -534,6 +541,12 @@ class Assembler : public AbstractAssembler {
     return x & ((1 << nbits) - 1);
   }
 
+  // unsigned immediate, in low bits, at most nbits long.
+  static int uimm(int x, int nbits) {
+    assert_unsigned_range(x, nbits);
+    return x & ((1 << nbits) - 1);
+  }
+
   // compute inverse of wdisp16
   static intptr_t inv_wdisp16(int x, intptr_t pos) {
     int lo = x & ((1 << 14) - 1);
@@ -630,6 +643,9 @@ class Assembler : public AbstractAssembler {
 
   // FMAf instructions supported only on certain processors
   static void fmaf_only() { assert(VM_Version::has_fmaf(), "This instruction only works on SPARC with FMAf"); }
+
+  // MPMUL instruction supported only on certain processors
+  static void mpmul_only() { assert(VM_Version::has_mpmul(), "This instruction only works on SPARC with MPMUL"); }
 
   // instruction only in VIS1
   static void vis1_only() { assert(VM_Version::has_vis1(), "This instruction only works on SPARC with VIS1"); }
@@ -772,11 +788,12 @@ class Assembler : public AbstractAssembler {
     AbstractAssembler::flush();
   }
 
-  inline void emit_int32(int);  // shadows AbstractAssembler::emit_int32
-  inline void emit_data(int);
-  inline void emit_data(int, RelocationHolder const &rspec);
-  inline void emit_data(int, relocInfo::relocType rtype);
-  // helper for above functions
+  inline void emit_int32(int32_t);  // shadows AbstractAssembler::emit_int32
+  inline void emit_data(int32_t);
+  inline void emit_data(int32_t, RelocationHolder const&);
+  inline void emit_data(int32_t, relocInfo::relocType rtype);
+
+  // Helper for the above functions.
   inline void check_delay();
 
 
@@ -929,6 +946,10 @@ class Assembler : public AbstractAssembler {
   // fmaf instructions.
 
   inline void fmadd(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void fmsub(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+
+  inline void fnmadd(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void fnmsub(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
 
   // pp 165
 
@@ -960,6 +981,8 @@ class Assembler : public AbstractAssembler {
   inline void ldf(FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d,
                   RelocationHolder const &rspec = RelocationHolder());
 
+  inline void ldd(Register s1, Register s2, FloatRegister d);
+  inline void ldd(Register s1, int simm13a, FloatRegister d);
 
   inline void ldfsr(Register s1, Register s2);
   inline void ldfsr(Register s1, int simm13a);
@@ -987,8 +1010,6 @@ class Assembler : public AbstractAssembler {
   inline void lduw(Register s1, int simm13a, Register d);
   inline void ldx(Register s1, Register s2, Register d);
   inline void ldx(Register s1, int simm13a, Register d);
-  inline void ldd(Register s1, Register s2, Register d);
-  inline void ldd(Register s1, int simm13a, Register d);
 
   // pp 177
 
@@ -1157,6 +1178,9 @@ class Assembler : public AbstractAssembler {
   inline void stf(FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2);
   inline void stf(FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a);
 
+  inline void std(FloatRegister d, Register s1, Register s2);
+  inline void std(FloatRegister d, Register s1, int simm13a);
+
   inline void stfsr(Register s1, Register s2);
   inline void stfsr(Register s1, int simm13a);
   inline void stxfsr(Register s1, Register s2);
@@ -1177,8 +1201,6 @@ class Assembler : public AbstractAssembler {
   inline void stw(Register d, Register s1, int simm13a);
   inline void stx(Register d, Register s1, Register s2);
   inline void stx(Register d, Register s1, int simm13a);
-  inline void std(Register d, Register s1, Register s2);
-  inline void std(Register d, Register s1, int simm13a);
 
   // pp 177
 
@@ -1267,6 +1289,9 @@ class Assembler : public AbstractAssembler {
 
   // VIS3 instructions
 
+  inline void addxc(Register s1, Register s2, Register d);
+  inline void addxccc(Register s1, Register s2, Register d);
+
   inline void movstosw(FloatRegister s, Register d);
   inline void movstouw(FloatRegister s, Register d);
   inline void movdtox(FloatRegister s, Register d);
@@ -1276,6 +1301,7 @@ class Assembler : public AbstractAssembler {
 
   inline void xmulx(Register s1, Register s2, Register d);
   inline void xmulxhi(Register s1, Register s2, Register d);
+  inline void umulxhi(Register s1, Register s2, Register d);
 
   // Crypto SHA instructions
 
@@ -1286,6 +1312,10 @@ class Assembler : public AbstractAssembler {
   // CRC32C instruction
 
   inline void crc32c(FloatRegister s1, FloatRegister s2, FloatRegister d);
+
+  // MPMUL instruction
+
+  inline void mpmul(int uimm5);
 
   // Creation
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {

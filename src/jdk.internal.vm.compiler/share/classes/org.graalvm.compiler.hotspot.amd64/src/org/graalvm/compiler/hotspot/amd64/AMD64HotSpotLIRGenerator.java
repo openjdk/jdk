@@ -28,6 +28,10 @@ import static org.graalvm.compiler.hotspot.HotSpotBackend.INITIALIZE_KLASS_BY_SY
 import static org.graalvm.compiler.hotspot.HotSpotBackend.RESOLVE_KLASS_BY_SYMBOL;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.RESOLVE_METHOD_BY_SYMBOL_AND_LOAD_COUNTERS;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.RESOLVE_STRING_BY_SYMBOL;
+import static org.graalvm.compiler.hotspot.HotSpotBackend.RESOLVE_DYNAMIC_INVOKE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction.RESOLVE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction.INITIALIZE;
+import static org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction.LOAD_COUNTERS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +43,7 @@ import org.graalvm.compiler.core.amd64.AMD64LIRKindTool;
 import org.graalvm.compiler.core.amd64.AMD64MoveFactoryBase.BackupSlotProvider;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.spi.LIRKindTool;
 import org.graalvm.compiler.debug.DebugContext;
@@ -415,49 +420,49 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
         return result;
     }
 
-    @Override
-    public Value emitObjectConstantRetrieval(Constant constant, Value constantDescription, LIRFrameState frameState) {
-        ForeignCallLinkage linkage = getForeignCalls().lookupForeignCall(RESOLVE_STRING_BY_SYMBOL);
-        Constant[] constants = new Constant[]{constant};
-        AllocatableValue[] constantDescriptions = new AllocatableValue[]{asAllocatable(constantDescription)};
-        Object[] notes = new Object[]{HotSpotConstantLoadAction.RESOLVE};
+    private Value emitConstantRetrieval(ForeignCallDescriptor foreignCall, Object[] notes, Constant[] constants, AllocatableValue[] constantDescriptions, LIRFrameState frameState) {
+        ForeignCallLinkage linkage = getForeignCalls().lookupForeignCall(foreignCall);
         append(new AMD64HotSpotConstantRetrievalOp(constants, constantDescriptions, frameState, linkage, notes));
         AllocatableValue result = linkage.getOutgoingCallingConvention().getReturn();
         return emitMove(result);
+    }
+
+    private Value emitConstantRetrieval(ForeignCallDescriptor foreignCall, HotSpotConstantLoadAction action, Constant constant, AllocatableValue[] constantDescriptions, LIRFrameState frameState) {
+        Constant[] constants = new Constant[]{constant};
+        Object[] notes = new Object[]{action};
+        return emitConstantRetrieval(foreignCall, notes, constants, constantDescriptions, frameState);
+    }
+
+    private Value emitConstantRetrieval(ForeignCallDescriptor foreignCall, HotSpotConstantLoadAction action, Constant constant, Value constantDescription, LIRFrameState frameState) {
+        AllocatableValue[] constantDescriptions = new AllocatableValue[]{asAllocatable(constantDescription)};
+        return emitConstantRetrieval(foreignCall, action, constant, constantDescriptions, frameState);
+    }
+
+    @Override
+    public Value emitObjectConstantRetrieval(Constant constant, Value constantDescription, LIRFrameState frameState) {
+        return emitConstantRetrieval(RESOLVE_STRING_BY_SYMBOL, RESOLVE, constant, constantDescription, frameState);
     }
 
     @Override
     public Value emitMetaspaceConstantRetrieval(Constant constant, Value constantDescription, LIRFrameState frameState) {
-        ForeignCallLinkage linkage = getForeignCalls().lookupForeignCall(RESOLVE_KLASS_BY_SYMBOL);
-        Constant[] constants = new Constant[]{constant};
-        AllocatableValue[] constantDescriptions = new AllocatableValue[]{asAllocatable(constantDescription)};
-        Object[] notes = new Object[]{HotSpotConstantLoadAction.RESOLVE};
-        append(new AMD64HotSpotConstantRetrievalOp(constants, constantDescriptions, frameState, linkage, notes));
-        AllocatableValue result = linkage.getOutgoingCallingConvention().getReturn();
-        return emitMove(result);
-    }
-
-    @Override
-    public Value emitResolveMethodAndLoadCounters(Constant method, Value klassHint, Value methodDescription, LIRFrameState frameState) {
-        ForeignCallLinkage linkage = getForeignCalls().lookupForeignCall(RESOLVE_METHOD_BY_SYMBOL_AND_LOAD_COUNTERS);
-        Constant[] constants = new Constant[]{method};
-        AllocatableValue[] constantDescriptions = new AllocatableValue[]{asAllocatable(klassHint), asAllocatable(methodDescription)};
-        Object[] notes = new Object[]{HotSpotConstantLoadAction.LOAD_COUNTERS};
-        append(new AMD64HotSpotConstantRetrievalOp(constants, constantDescriptions, frameState, linkage, notes));
-        AllocatableValue result = linkage.getOutgoingCallingConvention().getReturn();
-        return emitMove(result);
-
+        return emitConstantRetrieval(RESOLVE_KLASS_BY_SYMBOL, RESOLVE, constant, constantDescription, frameState);
     }
 
     @Override
     public Value emitKlassInitializationAndRetrieval(Constant constant, Value constantDescription, LIRFrameState frameState) {
-        ForeignCallLinkage linkage = getForeignCalls().lookupForeignCall(INITIALIZE_KLASS_BY_SYMBOL);
-        Constant[] constants = new Constant[]{constant};
-        AllocatableValue[] constantDescriptions = new AllocatableValue[]{asAllocatable(constantDescription)};
-        Object[] notes = new Object[]{HotSpotConstantLoadAction.INITIALIZE};
-        append(new AMD64HotSpotConstantRetrievalOp(constants, constantDescriptions, frameState, linkage, notes));
-        AllocatableValue result = linkage.getOutgoingCallingConvention().getReturn();
-        return emitMove(result);
+        return emitConstantRetrieval(INITIALIZE_KLASS_BY_SYMBOL, INITIALIZE, constant, constantDescription, frameState);
+    }
+
+    @Override
+    public Value emitResolveMethodAndLoadCounters(Constant method, Value klassHint, Value methodDescription, LIRFrameState frameState) {
+        AllocatableValue[] constantDescriptions = new AllocatableValue[]{asAllocatable(klassHint), asAllocatable(methodDescription)};
+        return emitConstantRetrieval(RESOLVE_METHOD_BY_SYMBOL_AND_LOAD_COUNTERS, LOAD_COUNTERS, method, constantDescriptions, frameState);
+    }
+
+    @Override
+    public Value emitResolveDynamicInvoke(Constant appendix, LIRFrameState frameState) {
+        AllocatableValue[] constantDescriptions = new AllocatableValue[0];
+        return emitConstantRetrieval(RESOLVE_DYNAMIC_INVOKE, INITIALIZE, appendix, constantDescriptions, frameState);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,11 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.gc.shared.CompactibleSpace;
 import sun.jvm.hotspot.memory.MemRegion;
 import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.runtime.VMObjectFactory;
 import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
@@ -44,6 +46,10 @@ public class HeapRegion extends CompactibleSpace {
     // static int GrainBytes;
     static private CIntegerField grainBytesField;
     static private AddressField topField;
+    private static long typeFieldOffset;
+    private static long pointerSize;
+
+    private HeapRegionType type;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -58,7 +64,9 @@ public class HeapRegion extends CompactibleSpace {
 
         grainBytesField = type.getCIntegerField("GrainBytes");
         topField = type.getAddressField("_top");
+        typeFieldOffset = type.getField("_type").getOffset();
 
+        pointerSize = db.lookupType("HeapRegion*").getSize();
     }
 
     static public long grainBytes() {
@@ -67,6 +75,9 @@ public class HeapRegion extends CompactibleSpace {
 
     public HeapRegion(Address addr) {
         super(addr);
+        Address typeAddr = (addr instanceof OopHandle) ? addr.addOffsetToAsOopHandle(typeFieldOffset)
+                                                       : addr.addOffsetTo(typeFieldOffset);
+        type = (HeapRegionType)VMObjectFactory.newObject(HeapRegionType.class, typeAddr);
     }
 
     public Address top() {
@@ -88,5 +99,29 @@ public class HeapRegion extends CompactibleSpace {
     @Override
     public long free() {
         return end().minus(top());
+    }
+
+    public boolean isFree() {
+        return type.isFree();
+    }
+
+    public boolean isYoung() {
+        return type.isYoung();
+    }
+
+    public boolean isHumongous() {
+        return type.isHumongous();
+    }
+
+    public boolean isPinned() {
+        return type.isPinned();
+    }
+
+    public boolean isOld() {
+        return type.isOld();
+    }
+
+    public static long getPointerSize() {
+        return pointerSize;
     }
 }

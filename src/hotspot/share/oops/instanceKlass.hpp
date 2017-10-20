@@ -731,7 +731,8 @@ class InstanceKlass: public Klass {
   }
   bool supers_have_passed_fingerprint_checks();
 
-  static bool should_store_fingerprint();
+  static bool should_store_fingerprint(bool is_anonymous);
+  bool should_store_fingerprint() const { return should_store_fingerprint(is_anonymous()); }
   bool has_stored_fingerprint() const;
   uint64_t get_stored_fingerprint() const;
   void store_fingerprint(uint64_t fingerprint);

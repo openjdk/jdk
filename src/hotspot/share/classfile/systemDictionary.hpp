@@ -484,11 +484,14 @@ public:
   static bool Object_klass_loaded()         { return WK_KLASS(Object_klass) != NULL; }
   static bool ClassLoader_klass_loaded()    { return WK_KLASS(ClassLoader_klass) != NULL; }
 
-  // Returns default system loader
+  // Returns java system loader
   static oop java_system_loader();
 
-  // Compute the default system loader
-  static void compute_java_system_loader(TRAPS);
+  // Returns java platform loader
+  static oop java_platform_loader();
+
+  // Compute the java system and platform loaders
+  static void compute_java_loaders(TRAPS);
 
   // Register a new class loader
   static ClassLoaderData* register_loader(Handle class_loader, TRAPS);
@@ -700,6 +703,7 @@ protected:
   static InstanceKlass* _box_klasses[T_VOID+1];
 
   static oop  _java_system_loader;
+  static oop  _java_platform_loader;
 
   static bool _has_loadClassInternal;
   static bool _has_checkPackageAccess;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #ifndef SHARE_VM_GC_CMS_PAROOPCLOSURES_INLINE_HPP
 #define SHARE_VM_GC_CMS_PAROOPCLOSURES_INLINE_HPP
 
+#include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/parNewGeneration.hpp"
 #include "gc/cms/parOopClosures.hpp"
 #include "gc/shared/cardTableRS.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -72,9 +72,9 @@ template <class T>
 inline void ParScanClosure::do_oop_work(T* p,
                                         bool gc_barrier,
                                         bool root_scan) {
-  assert((!GenCollectedHeap::heap()->is_in_reserved(p) ||
+  assert((!CMSHeap::heap()->is_in_reserved(p) ||
           generation()->is_in_reserved(p))
-         && (GenCollectedHeap::heap()->is_young_gen(generation()) || gc_barrier),
+         && (CMSHeap::heap()->is_young_gen(generation()) || gc_barrier),
          "The gen must be right, and we must be doing the barrier "
          "in older generations.");
   T heap_oop = oopDesc::load_heap_oop(p);
@@ -85,8 +85,8 @@ inline void ParScanClosure::do_oop_work(T* p,
       if (_g->to()->is_in_reserved(obj)) {
         Log(gc) log;
         log.error("Scanning field (" PTR_FORMAT ") twice?", p2i(p));
-        GenCollectedHeap* gch = GenCollectedHeap::heap();
-        Space* sp = gch->space_containing(p);
+        CMSHeap* heap = CMSHeap::heap();
+        Space* sp = heap->space_containing(p);
         oop obj = oop(sp->block_start(p));
         assert((HeapWord*)obj < (HeapWord*)p, "Error");
         log.error("Object: " PTR_FORMAT, p2i((void *)obj));
@@ -96,7 +96,7 @@ inline void ParScanClosure::do_oop_work(T* p,
         log.error("-----");
         log.error("Heap:");
         log.error("-----");
-        gch->print_on(&ls);
+        heap->print_on(&ls);
         ShouldNotReachHere();
       }
 #endif
@@ -126,8 +126,8 @@ inline void ParScanClosure::do_oop_work(T* p,
           (void)_par_scan_state->trim_queues(10 * ParallelGCThreads);
         }
       }
-      if (is_scanning_a_klass()) {
-        do_klass_barrier();
+      if (is_scanning_a_cld()) {
+        do_cld_barrier();
       } else if (gc_barrier) {
         // Now call parent closure
         par_do_barrier(p);

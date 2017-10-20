@@ -57,7 +57,6 @@ public final class OptionType<T> {
      */
     public OptionType(String name, T defaultValue, Function<String, T> stringConverter, Consumer<T> validator) {
         Objects.requireNonNull(name);
-        Objects.requireNonNull(defaultValue);
         Objects.requireNonNull(stringConverter);
         Objects.requireNonNull(validator);
         this.name = name;
@@ -133,7 +132,7 @@ public final class OptionType<T> {
         return "OptionType[name=" + name + ", defaultValue=" + defaultValue + "]";
     }
 
-    private static Map<Class<?>, OptionType<?>> DEFAULTTYPES = new HashMap<>();
+    private static final Map<Class<?>, OptionType<?>> DEFAULTTYPES = new HashMap<>();
     static {
         DEFAULTTYPES.put(Boolean.class, new OptionType<>("Boolean", false, new Function<String, Boolean>() {
             public Boolean apply(String t) {
@@ -200,13 +199,24 @@ public final class OptionType<T> {
 
     /**
      * Returns the default option type for a given value. Returns <code>null</code> if no default
-     * option type is available for this Java type.
+     * option type is available for the Java type of this value.
      *
      * @since 1.0
      */
     @SuppressWarnings("unchecked")
-    public static <T> OptionType<T> defaultType(Object value) {
-        return (OptionType<T>) DEFAULTTYPES.get(value.getClass());
+    public static <T> OptionType<T> defaultType(T value) {
+        return defaultType((Class<T>) value.getClass());
+    }
+
+    /**
+     * Returns the default option type for a class. Returns <code>null</code> if no default option
+     * type is available for this Java type.
+     *
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> OptionType<T> defaultType(Class<T> clazz) {
+        return (OptionType<T>) DEFAULTTYPES.get(clazz);
     }
 
 }

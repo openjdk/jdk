@@ -50,7 +50,9 @@ module jdk.internal.vm.compiler {
     exports org.graalvm.compiler.core.target            to jdk.aot;
     exports org.graalvm.compiler.debug                  to jdk.aot;
     exports org.graalvm.compiler.graph                  to jdk.aot;
-    exports org.graalvm.compiler.hotspot                to jdk.aot;
+    exports org.graalvm.compiler.hotspot                to
+        jdk.aot,
+        jdk.internal.vm.compiler.management;
     exports org.graalvm.compiler.hotspot.meta           to jdk.aot;
     exports org.graalvm.compiler.hotspot.replacements   to jdk.aot;
     exports org.graalvm.compiler.hotspot.stubs          to jdk.aot;

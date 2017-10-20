@@ -777,4 +777,8 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         }
         return compilerToVM().hasCompiledCodeForOSR(this, entryBCI, level);
     }
+
+    public int methodIdnum() {
+        return UNSAFE.getChar(getConstMethod() + config().constMethodMethodIdnumOffset);
+    }
 }

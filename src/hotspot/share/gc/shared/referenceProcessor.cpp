@@ -36,7 +36,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/jniHandles.hpp"
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -245,49 +244,14 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
                                is_alive, keep_alive, complete_gc, task_executor, phase_times);
   }
 
-  // Weak global JNI references. It would make more sense (semantically) to
-  // traverse these simultaneously with the regular weak references above, but
-  // that is not how the JDK1.2 specification is. See #4126360. Native code can
-  // thus use JNI weak references to circumvent the phantom references and
-  // resurrect a "post-mortem" object.
-  {
-    GCTraceTime(Debug, gc, ref) tt("JNI Weak Reference", phase_times->gc_timer());
-    if (task_executor != NULL) {
-      task_executor->set_single_threaded_mode();
-    }
-    process_phaseJNI(is_alive, keep_alive, complete_gc);
+  if (task_executor != NULL) {
+    // Record the work done by the parallel workers.
+    task_executor->set_single_threaded_mode();
   }
 
   phase_times->set_total_time_ms((os::elapsedTime() - start_time) * 1000);
 
-  log_develop_trace(gc, ref)("JNI Weak Reference count: " SIZE_FORMAT, count_jni_refs());
-
   return stats;
-}
-
-#ifndef PRODUCT
-// Calculate the number of jni handles.
-size_t ReferenceProcessor::count_jni_refs() {
-  class CountHandleClosure: public OopClosure {
-  private:
-    size_t _count;
-  public:
-    CountHandleClosure(): _count(0) {}
-    void do_oop(oop* unused)       { _count++; }
-    void do_oop(narrowOop* unused) { ShouldNotReachHere(); }
-    size_t count() { return _count; }
-  };
-  CountHandleClosure global_handle_count;
-  JNIHandles::weak_oops_do(&global_handle_count);
-  return global_handle_count.count();
-}
-#endif
-
-void ReferenceProcessor::process_phaseJNI(BoolObjectClosure* is_alive,
-                                          OopClosure*        keep_alive,
-                                          VoidClosure*       complete_gc) {
-  JNIHandles::weak_oops_do(is_alive, keep_alive);
-  complete_gc->do_void();
 }
 
 void ReferenceProcessor::enqueue_discovered_references(AbstractRefProcTaskExecutor*  task_executor,

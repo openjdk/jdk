@@ -2297,6 +2297,7 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
                                         ConstantPoolCacheEntry::f1_offset())));
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ ldr(obj, Address(obj, mirror_offset));
+    __ resolve_oop_handle(obj);
   }
 }
 

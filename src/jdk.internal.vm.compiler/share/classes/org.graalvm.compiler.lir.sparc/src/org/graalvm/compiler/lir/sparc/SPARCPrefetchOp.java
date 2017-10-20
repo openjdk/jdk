@@ -34,18 +34,17 @@ public final class SPARCPrefetchOp extends SPARCLIRInstruction {
     public static final LIRInstructionClass<SPARCPrefetchOp> TYPE = LIRInstructionClass.create(SPARCPrefetchOp.class);
     public static final SizeEstimate SIZE = SizeEstimate.create(1);
 
-    private final int instr;  // AllocatePrefetchInstr
+    private final SPARCAssembler.Fcn fcn;
     @Alive({COMPOSITE}) protected SPARCAddressValue address;
 
-    public SPARCPrefetchOp(SPARCAddressValue address, int instr) {
+    public SPARCPrefetchOp(SPARCAddressValue address, SPARCAssembler.Fcn fcn) {
         super(TYPE, SIZE);
         this.address = address;
-        this.instr = instr;
+        this.fcn = fcn;
     }
 
     @Override
     public void emitCode(CompilationResultBuilder crb, SPARCMacroAssembler masm) {
-        assert instr >= 0 && instr < SPARCAssembler.Fcn.values().length : instr;
-        masm.prefetch(address.toAddress(), SPARCAssembler.Fcn.values()[instr]);
+        masm.prefetch(address.toAddress(), fcn);
     }
 }
