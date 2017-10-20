@@ -26,6 +26,7 @@
  * @summary Negative tests for jlink
  * @bug 8130861
  * @bug 8174718
+ * @bug 8189671
  * @author Andrei Eremeev
  * @library ../lib
  * @modules java.base/jdk.internal.jimage
@@ -39,6 +40,8 @@
  * @run testng JLinkNegativeTest
  */
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.module.ModuleDescriptor;
@@ -52,6 +55,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 import jdk.internal.module.ModuleInfoWriter;
 import org.testng.SkipException;
@@ -196,6 +201,49 @@ public class JLinkNegativeTest {
                     .call().assertFailure("Error: java.io.IOException: Invalid JMOD file");
         } finally {
             deleteDirectory(jmod);
+        }
+    }
+
+    private static File createJarFile(File dir, String filename, String pkg, String name) throws IOException {
+        File jarFile = new File(dir, filename + ".jar");
+
+        try (JarOutputStream output = new JarOutputStream(new FileOutputStream(jarFile))) {
+            JarEntry entry = new JarEntry(filename + "/" + pkg + "/" + name);
+            output.putNextEntry(entry);
+        }
+
+        return jarFile;
+    }
+
+    public void testAutomaticModuleAsRoot() throws IOException {
+        Path imageFile = helper.createNewImageDir("test");
+        String jarName = "myautomod";
+        File jarFile = createJarFile(new File("jars"), jarName, "com/acme", "Bar.class");
+        try {
+            JImageGenerator.getJLinkTask()
+                    .output(imageFile)
+                    .addMods(jarName)
+                    .modulePath(helper.defaultModulePath())
+                    .call().assertFailure("Error: automatic module cannot be used with jlink: " + jarName);
+        } finally {
+            jarFile.delete();
+        }
+    }
+
+    public void testAutomaticModuleAsDependency() throws IOException {
+        Path imageFile = helper.createNewImageDir("test");
+        String autoJarName = "myautomod";
+        File autoJarFile = createJarFile(new File("jars"), autoJarName, "com/acme", "Bar.class");
+        String rootMod = "autodepender";
+        helper.generateDefaultJModule(rootMod, autoJarName).assertSuccess();
+        try {
+            JImageGenerator.getJLinkTask()
+                    .output(imageFile)
+                    .addMods(rootMod)
+                    .modulePath(helper.defaultModulePath())
+                    .call().assertFailure("Error: automatic module cannot be used with jlink: " + autoJarName);
+        } finally {
+            autoJarFile.delete();
         }
     }
 
