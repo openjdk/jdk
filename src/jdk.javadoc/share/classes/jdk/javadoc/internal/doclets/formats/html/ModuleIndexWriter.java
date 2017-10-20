@@ -30,7 +30,6 @@ import java.util.*;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -145,7 +144,8 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
         Content table = (configuration.isOutputHtml5())
                 ? HtmlTree.TABLE(HtmlStyle.overviewSummary, getTableCaption(new RawHtml(text)))
                 : HtmlTree.TABLE(HtmlStyle.overviewSummary, tableSummary, getTableCaption(new RawHtml(text)));
-        table.addContent(getSummaryTableHeader(moduleTableHeader, "col"));
+        Content header = new TableHeader(contents.moduleLabel, contents.descriptionLabel).toContent();
+        table.addContent(header);
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         addModulesList(modules, tbody);
         table.addContent(tbody);

@@ -75,12 +75,10 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlVersion;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
-import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
@@ -388,46 +386,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getTargetModuleLink(String target, Content label, ModuleElement mdle) {
         return getHyperLink(pathToRoot.resolve(
                 DocPaths.moduleSummary(mdle)), label, "", target);
-    }
-
-    public void addClassesSummary(SortedSet<TypeElement> classes, String label,
-            String tableSummary, List<String> tableHeader, Content summaryContentTree) {
-        if (!classes.isEmpty()) {
-            Content caption = getTableCaption(new RawHtml(label));
-            Content table = (configuration.isOutputHtml5())
-                    ? HtmlTree.TABLE(HtmlStyle.typeSummary, caption)
-                    : HtmlTree.TABLE(HtmlStyle.typeSummary, tableSummary, caption);
-            table.addContent(getSummaryTableHeader(tableHeader, "col"));
-            Content tbody = new HtmlTree(HtmlTag.TBODY);
-            boolean altColor = true;
-            for (TypeElement te : classes) {
-                if (!utils.isCoreClass(te) ||
-                    !configuration.isGeneratedDoc(te)) {
-                    continue;
-                }
-                Content classContent = getLink(new LinkInfoImpl(
-                        configuration, LinkInfoImpl.Kind.PACKAGE, te));
-                Content tdClass = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, classContent);
-                HtmlTree tr = HtmlTree.TR(tdClass);
-                tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-                altColor = !altColor;
-                HtmlTree tdClassDescription = new HtmlTree(HtmlTag.TD);
-                tdClassDescription.addStyle(HtmlStyle.colLast);
-                if (utils.isDeprecated(te)) {
-                    tdClassDescription.addContent(getDeprecatedPhrase(te));
-                    List<? extends DocTree> tags = utils.getDeprecatedTrees(te);
-                    if (!tags.isEmpty()) {
-                        addSummaryDeprecatedComment(te, tags.get(0), tdClassDescription);
-                    }
-                } else {
-                    addSummaryComment(te, tdClassDescription);
-                }
-                tr.addContent(tdClassDescription);
-                tbody.addContent(tr);
-            }
-            table.addContent(tbody);
-            summaryContentTree.addContent(table);
-        }
     }
 
     /**
@@ -939,41 +897,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Get summary table header.
-     *
-     * @param header the header for the table
-     * @param scope the scope of the headers
-     * @return a content tree for the header
-     */
-    public Content getSummaryTableHeader(List<String> header, String scope) {
-        Content tr = new HtmlTree(HtmlTag.TR);
-        final int size = header.size();
-        Content tableHeader;
-        if (size == 2) {
-            tableHeader = new StringContent(header.get(0));
-            tr.addContent(HtmlTree.TH(HtmlStyle.colFirst, scope, tableHeader));
-            tableHeader = new StringContent(header.get(1));
-            tr.addContent(HtmlTree.TH(HtmlStyle.colLast, scope, tableHeader));
-            return tr;
-        }
-        for (int i = 0; i < size; i++) {
-            tableHeader = new StringContent(header.get(i));
-            if (i == 0)
-                tr.addContent(HtmlTree.TH(HtmlStyle.colFirst, scope, tableHeader));
-            else if (i == 1)
-                tr.addContent(HtmlTree.TH(HtmlStyle.colSecond, scope, tableHeader));
-            else if (i == (size - 1))
-                tr.addContent(HtmlTree.TH(HtmlStyle.colLast, scope, tableHeader));
-            else
-                tr.addContent(HtmlTree.TH(scope, tableHeader));
-        }
-        return tr;
-    }
-
-    /**
      * Get table caption.
      *
-     * @param rawText the caption for the table which could be raw Html
+     * @param title the content for the caption
      * @return a content tree for the caption
      */
     public Content getTableCaption(Content title) {
@@ -2615,13 +2541,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }.visit(annotationValue);
     }
 
-    /**
-     * Return the configuration for this doclet.
-     *
-     * @return the configuration for this doclet.
-     */
-    @Override
-    public BaseConfiguration configuration() {
-        return configuration;
+    protected TableHeader getPackageTableHeader() {
+        return new TableHeader(contents.packageLabel, contents.descriptionLabel);
     }
 }

@@ -33,7 +33,6 @@ import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.SectionName;
-import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -76,14 +75,6 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         Messages messages = configuration.getMessages();
         messages.notice("doclet.Generating_0",
             DocFile.createFileForOutput(configuration, filename).getPath());
-    }
-
-    /**
-     * Accessor for configuration.
-     * @return the configuration for this doclet
-     */
-    public BaseConfiguration configuration() {
-        return configuration;
     }
 
     public Content getHyperLink(DocPath link, String label) {

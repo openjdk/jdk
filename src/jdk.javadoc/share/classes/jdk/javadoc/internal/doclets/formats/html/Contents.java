@@ -56,15 +56,20 @@ public class Contents {
     public final Content allPackagesLabel;
     public final Content allSuperinterfacesLabel;
     public final Content also;
+    public final Content annotationTypeOptionalMemberLabel;
+    public final Content annotationTypeRequiredMemberLabel;
     public final Content annotateTypeOptionalMemberSummaryLabel;
     public final Content annotateTypeRequiredMemberSummaryLabel;
     public final Content annotationType;
     public final Content annotationTypeDetailsLabel;
     public final Content annotationTypeMemberDetail;
+    public final Content annotationtypes;
     public final Content annotationTypes;
     public final Content classLabel;
     public final Content classes;
+    public final Content constantFieldLabel;
     public final Content constantsSummaryTitle;
+    public final Content constructorLabel;
     public final Content constructorDetailsLabel;
     public final Content constructorSummaryLabel;
     public final Content constructors;
@@ -81,16 +86,21 @@ public class Contents {
     public final Content detailLabel;
     public final Content enclosingClassLabel;
     public final Content enclosingInterfaceLabel;
+    public final Content enumConstantLabel;
     public final Content enumConstantDetailLabel;
     public final Content enumConstantSummary;
     public final Content enum_;
     public final Content enums;
+    public final Content error;
     public final Content errors;
+    public final Content exception;
     public final Content exceptions;
+    public final Content fieldLabel;
     public final Content fieldDetailsLabel;
     public final Content fieldSummaryLabel;
     public final Content fields;
     public final Content framesLabel;
+    public final Content fromLabel;
     public final Content functionalInterface;
     public final Content functionalInterfaceMessage;
     public final Content helpLabel;
@@ -100,11 +110,15 @@ public class Contents {
     public final Content inClass;
     public final Content inInterface;
     public final Content indexLabel;
+    public final Content interfaceLabel;
     public final Content interfaces;
     public final Content interfacesItalic;
     public final Content methodDetailLabel;
+    public final Content methodLabel;
     public final Content methodSummary;
     public final Content methods;
+    public final Content modifierAndTypeLabel;
+    public final Content modifierLabel;
     public final Content moduleLabel;
     public final Content module_;
     public final Content moduleSubNavLabel;
@@ -143,6 +157,7 @@ public class Contents {
     public final Content prevModuleLabel;
     public final Content prevPackageLabel;
     public final Content properties;
+    public final Content propertyLabel;
     public final Content propertyDetailsLabel;
     public final Content propertySummary;
     public final Content seeLabel;
@@ -152,7 +167,9 @@ public class Contents {
     public final Content subinterfacesLabel;
     public final Content summaryLabel;
     public final Content treeLabel;
+    public final Content typeLabel;
     public final Content useLabel;
+    public final Content valueLabel;
 
     private final Resources resources;
 
@@ -171,15 +188,20 @@ public class Contents {
         allPackagesLabel = getNonBreakContent("doclet.All_Packages");
         allSuperinterfacesLabel = getContent("doclet.All_Superinterfaces");
         also = getContent("doclet.also");
+        annotationTypeOptionalMemberLabel = getContent("doclet.Annotation_Type_Optional_Member");
+        annotationTypeRequiredMemberLabel = getContent("doclet.Annotation_Type_Required_Member");
         annotateTypeOptionalMemberSummaryLabel = getContent("doclet.Annotation_Type_Optional_Member_Summary");
         annotateTypeRequiredMemberSummaryLabel = getContent("doclet.Annotation_Type_Required_Member_Summary");
         annotationType = getContent("doclet.AnnotationType");
         annotationTypeDetailsLabel = getContent("doclet.Annotation_Type_Member_Detail");
         annotationTypeMemberDetail = getContent("doclet.Annotation_Type_Member_Detail");
         annotationTypes = getContent("doclet.AnnotationTypes");
+        annotationtypes = getContent("doclet.annotationtypes");
         classLabel = getContent("doclet.Class");
         classes = getContent("doclet.Classes");
+        constantFieldLabel = getContent("doclet.ConstantField");
         constantsSummaryTitle = getContent("doclet.Constants_Summary");
+        constructorLabel = getContent("doclet.Constructor");
         constructorDetailsLabel = getContent("doclet.Constructor_Detail");
         constructorSummaryLabel = getContent("doclet.Constructor_Summary");
         constructors = getContent("doclet.Constructors");
@@ -196,16 +218,21 @@ public class Contents {
         detailLabel = getContent("doclet.Detail");
         enclosingClassLabel = getContent("doclet.Enclosing_Class");
         enclosingInterfaceLabel = getContent("doclet.Enclosing_Interface");
+        enumConstantLabel = getContent("doclet.Enum_Constant");
         enumConstantDetailLabel = getContent("doclet.Enum_Constant_Detail");
         enumConstantSummary = getContent("doclet.Enum_Constant_Summary");
         enum_ = getContent("doclet.Enum");
         enums = getContent("doclet.Enums");
+        error = getContent("doclet.Error");
         errors = getContent("doclet.Errors");
+        exception = getContent("doclet.Exception");
         exceptions = getContent("doclet.Exceptions");
         fieldDetailsLabel = getContent("doclet.Field_Detail");
         fieldSummaryLabel = getContent("doclet.Field_Summary");
+        fieldLabel = getContent("doclet.Field");
         fields = getContent("doclet.Fields");
         framesLabel = getContent("doclet.Frames");
+        fromLabel = getContent("doclet.From");
         functionalInterface = getContent("doclet.Functional_Interface");
         functionalInterfaceMessage = getContent("doclet.Functional_Interface_Message");
         helpLabel = getContent("doclet.Help");
@@ -215,11 +242,15 @@ public class Contents {
         inClass = getContent("doclet.in_class");
         inInterface = getContent("doclet.in_interface");
         indexLabel = getContent("doclet.Index");
+        interfaceLabel = getContent("doclet.Interface");
         interfaces = getContent("doclet.Interfaces");
         interfacesItalic = getContent("doclet.Interfaces_Italic");
         methodDetailLabel = getContent("doclet.Method_Detail");
         methodSummary = getContent("doclet.Method_Summary");
+        methodLabel = getContent("doclet.Method");
         methods = getContent("doclet.Methods");
+        modifierLabel = getContent("doclet.Modifier");
+        modifierAndTypeLabel = getContent("doclet.Modifier_and_Type");
         moduleLabel = getContent("doclet.Module");
         module_ = getContent("doclet.module");
         moduleSubNavLabel = getContent("doclet.Module_Sub_Nav");
@@ -258,6 +289,7 @@ public class Contents {
         prevModuleLabel = getNonBreakContent("doclet.Prev_Module");
         prevPackageLabel = getNonBreakContent("doclet.Prev_Package");
         properties = getContent("doclet.Properties");
+        propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
         propertySummary = getContent("doclet.Property_Summary");
         seeLabel = getContent("doclet.See");
@@ -267,7 +299,9 @@ public class Contents {
         subinterfacesLabel = getContent("doclet.Subinterfaces");
         summaryLabel = getContent("doclet.Summary");
         treeLabel = getContent("doclet.Tree");
+        typeLabel = getContent("doclet.Type");
         useLabel = getContent("doclet.navClassUse");
+        valueLabel = getContent("doclet.Value");
     }
 
     /**
@@ -286,7 +320,6 @@ public class Contents {
      * a given key in the doclet's resources, formatted with
      * given arguments.
      *
-     * @param key the key to look for in the configuration fil
      * @param key the key for the desired string
      * @param o0  string or content argument to be formatted into the result
      * @return a content tree for the text

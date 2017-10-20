@@ -25,12 +25,10 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.Arrays;
-import java.util.List;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.formats.html.TableHeader;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -77,6 +75,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
         writer.addMemberTree(memberSummaryTree, memberTree);
     }
@@ -113,14 +112,14 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public List<String> getSummaryTableHeader(Element member) {
+    public TableHeader getSummaryTableHeader(Element member) {
         if (utils.isInterface(member)) {
-            return Arrays.asList(writer.getModifierTypeHeader(),
-                    resources.getText("doclet.Interface"), resources.getText("doclet.Description"));
+            return new TableHeader(contents.modifierAndTypeLabel, contents.interfaceLabel,
+                    contents.descriptionLabel);
 
         } else {
-            return Arrays.asList(writer.getModifierTypeHeader(),
-                    resources.getText("doclet.Class"), resources.getText("doclet.Description"));
+            return new TableHeader(contents.modifierAndTypeLabel, contents.classLabel,
+                    contents.descriptionLabel);
         }
     }
 

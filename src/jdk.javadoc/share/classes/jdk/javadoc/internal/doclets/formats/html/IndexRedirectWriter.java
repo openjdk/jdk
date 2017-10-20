@@ -29,7 +29,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;

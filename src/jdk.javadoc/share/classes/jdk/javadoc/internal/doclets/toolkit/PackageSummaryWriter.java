@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.util.List;
 import java.util.SortedSet;
 
 import javax.lang.model.element.TypeElement;
@@ -69,16 +68,58 @@ public interface PackageSummaryWriter {
     public abstract Content getSummaryHeader();
 
     /**
-     * Adds the table of classes to the documentation tree.
+     * Adds the table of interfaces to the documentation tree.
      *
-     * @param classes the array of classes to document.
-     * @param label the label for this table.
-     * @param tableSummary the summary string for the table
-     * @param tableHeader array of table headers
+     * @param interfaces the interfaces to document.
      * @param summaryContentTree the content tree to which the summaries will be added
      */
-    public abstract void addClassesSummary(SortedSet<TypeElement> classes, String label,
-            String tableSummary, List<String> tableHeader, Content summaryContentTree);
+    public abstract void addInterfaceSummary(SortedSet<TypeElement> interfaces,
+            Content summaryContentTree);
+
+    /**
+     * Adds the table of classes to the documentation tree.
+     *
+     * @param classes the classes to document.
+     * @param summaryContentTree the content tree to which the summaries will be added
+     */
+    public abstract void addClassSummary(SortedSet<TypeElement> classes,
+            Content summaryContentTree);
+
+    /**
+     * Adds the table of enums to the documentation tree.
+     *
+     * @param enums the enums to document.
+     * @param summaryContentTree the content tree to which the summaries will be added
+     */
+    public abstract void addEnumSummary(SortedSet<TypeElement> enums,
+            Content summaryContentTree);
+
+    /**
+     * Adds the table of exceptions to the documentation tree.
+     *
+     * @param exceptions the exceptions to document.
+     * @param summaryContentTree the content tree to which the summaries will be added
+     */
+    public abstract void addExceptionSummary(SortedSet<TypeElement> exceptions,
+            Content summaryContentTree);
+
+    /**
+     * Adds the table of errors to the documentation tree.
+     *
+     * @param errors the errors to document.
+     * @param summaryContentTree the content tree to which the summaries will be added
+     */
+    public abstract void addErrorSummary(SortedSet<TypeElement> errors,
+            Content summaryContentTree);
+
+    /**
+     * Adds the table of annotation types to the documentation tree.
+     *
+     * @param annoTypes the annotation types to document.
+     * @param summaryContentTree the content tree to which the summaries will be added
+     */
+    public abstract void addAnnotationTypeSummary(SortedSet<TypeElement> annoTypes,
+            Content summaryContentTree);
 
     /**
      * Adds the package description from the "packages.html" file to the documentation
