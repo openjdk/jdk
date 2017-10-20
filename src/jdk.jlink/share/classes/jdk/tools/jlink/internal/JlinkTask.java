@@ -438,6 +438,16 @@ public class JlinkTask {
         Configuration cf = bindService ? config.resolveAndBind()
                                        : config.resolve();
 
+        cf.modules().stream()
+            .map(ResolvedModule::reference)
+            .filter(mref -> mref.descriptor().isAutomatic())
+            .findAny()
+            .ifPresent(mref -> {
+                String loc = mref.location().map(URI::toString).orElse("<unknown>");
+                throw new IllegalArgumentException(
+                    taskHelper.getMessage("err.automatic.module", mref.descriptor().name(), loc));
+            });
+
         if (verbose && log != null) {
             // print modules to be linked in
             cf.modules().stream()
