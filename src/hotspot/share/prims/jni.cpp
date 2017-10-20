@@ -396,10 +396,11 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
   }
 
   //%note jni_3
-  Handle loader;
   Handle protection_domain;
   // Find calling class
   Klass* k = thread->security_get_caller_class(0);
+  // default to the system loader when no context
+  Handle loader(THREAD, SystemDictionary::java_system_loader());
   if (k != NULL) {
     // Special handling to make sure JNI_OnLoad and JNI_OnUnload are executed
     // in the correct class context.
@@ -422,11 +423,6 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
     } else {
       loader = Handle(THREAD, k->class_loader());
     }
-  }
-
-  if (loader.is_null()) {
-    // No context and use the system class loader
-    loader = Handle(THREAD, SystemDictionary::java_system_loader());
   }
 
   TempNewSymbol sym = SymbolTable::new_symbol(name, CHECK_NULL);
