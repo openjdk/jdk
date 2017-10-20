@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,32 @@ import com.sun.imageio.plugins.bmp.BMPCompressionTypes;
  * listed in the following
  * table:
  *
- * <table border=1>
- * <caption><b>Compression Types</b></caption>
- * <tr><th>Type String</th> <th>Description</th>  <th>Image Types</th></tr>
- * <tr><td>BI_RGB</td>  <td>Uncompressed RLE</td> <td>{@literal <= } 8-bits/sample</td></tr>
- * <tr><td>BI_RLE8</td> <td>8-bit Run Length Encoding</td> <td>{@literal <=} 8-bits/sample</td></tr>
- * <tr><td>BI_RLE4</td> <td>4-bit Run Length Encoding</td> <td>{@literal <=} 4-bits/sample</td></tr>
- * <tr><td>BI_BITFIELDS</td> <td>Packed data</td> <td> 16 or 32 bits/sample</td></tr>
+ * <table class="striped">
+ * <caption>Compression Types</caption>
+ * <thead>
+ *   <tr>
+ *     <th scope="col">Type String
+ *     <th scope="col">Description
+ *     <th scope="col">Image Types
+ * </thead>
+ * <tbody>
+ *   <tr>
+ *     <th scope="row">BI_RGB
+ *     <td>Uncompressed RLE
+ *     <td>{@literal <= } 8-bits/sample
+ *   <tr>
+ *     <th scope="row">BI_RLE8
+ *     <td>8-bit Run Length Encoding
+ *     <td>{@literal <=} 8-bits/sample
+ *   <tr>
+ *     <th scope="row">BI_RLE4
+ *     <td>4-bit Run Length Encoding
+ *     <td>{@literal <=} 4-bits/sample
+ *   <tr>
+ *     <th scope="row">BI_BITFIELDS
+ *     <td>Packed data
+ *     <td>16 or 32 bits/sample
+ * </tbody>
  * </table>
  */
 public class BMPImageWriteParam extends ImageWriteParam {

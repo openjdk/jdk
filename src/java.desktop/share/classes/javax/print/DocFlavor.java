@@ -175,21 +175,21 @@ import java.io.Serializable;
  *   <caption>MIME-Types and their descriptions</caption>
  *   <thead>
  *     <tr>
- *       <th>MIME-Type
- *       <th>Description
+ *       <th scope="col">MIME-Type
+ *       <th scope="col">Description
  *   </thead>
  *   <tbody>
  *     <tr>
- *       <td>{@code "text/plain"}
+ *       <th scope="row">{@code "text/plain"}
  *       <td>Plain text in the default character set (US-ASCII)
  *     <tr>
- *       <td><code> "text/plain; charset=<i>xxx</i>"</code>
+ *       <th scope="row"><code> "text/plain; charset=<i>xxx</i>"</code>
  *       <td>Plain text in character set <i>xxx</i>
  *     <tr>
- *       <td>{@code "text/html"}
+ *       <th scope="row">{@code "text/html"}
  *       <td>HyperText Markup Language in the default character set (US-ASCII)
  *     <tr>
- *       <td><code> "text/html; charset=<i>xxx</i>"</code>
+ *       <th scope="row"><code> "text/html; charset=<i>xxx</i>"</code>
  *       <td>HyperText Markup Language in character set <i>xxx</i>
  *   </tbody>
  *   </table>
@@ -201,18 +201,18 @@ import java.io.Serializable;
  *   <caption>MIME-Types and their descriptions</caption>
  *   <thead>
  *     <tr>
- *       <th>MIME-Type
- *       <th>Description
+ *       <th scope="col">MIME-Type
+ *       <th scope="col">Description
  *   </thead>
  *   <tbody>
  *     <tr>
- *       <td>{@code "application/pdf"}
+ *       <th scope="row">{@code "application/pdf"}
  *       <td>Portable Document Format document
  *     <tr>
- *       <td>{@code "application/postscript"}
+ *       <th scope="row">{@code "application/postscript"}
  *       <td>PostScript document
  *     <tr>
- *       <td>{@code "application/vnd.hp-PCL"}
+ *       <th scope="row">{@code "application/vnd.hp-PCL"}
  *       <td>Printer Control Language document
  *   </tbody>
  *   </table>
@@ -223,18 +223,18 @@ import java.io.Serializable;
  *   <caption>MIME-Types and their descriptions</caption>
  *   <thead>
  *     <tr>
- *       <th>MIME-Type
- *       <th>Description
+ *       <th scope="col">MIME-Type
+ *       <th scope="col">Description
  *   </thead>
  *   <tbody>
  *     <tr>
- *       <td>{@code "image/gif"}
+ *       <th scope="row">{@code "image/gif"}
  *       <td>Graphics Interchange Format image
  *     <tr>
- *       <td>{@code "image/jpeg"}
+ *       <th scope="row">{@code "image/jpeg"}
  *       <td>Joint Photographic Experts Group image
  *     <tr>
- *       <td>{@code "image/png"}
+ *       <th scope="row">{@code "image/png"}
  *       <td>Portable Network Graphics image
  *   </tbody>
  *   </table>
@@ -245,12 +245,12 @@ import java.io.Serializable;
  *   <caption>MIME-Types and their descriptions</caption>
  *   <thead>
  *     <tr>
- *       <th>MIME-Type
- *       <th>Description
+ *       <th scope="col">MIME-Type
+ *       <th scope="col">Description
  *   </thead>
  *   <tbody>
  *     <tr>
- *       <td>{@code "application/octet-stream"}
+ *       <th scope="row">{@code "application/octet-stream"}
  *       <td>The print data format is unspecified (just an octet stream)
  *   </tbody>
  *   </table>

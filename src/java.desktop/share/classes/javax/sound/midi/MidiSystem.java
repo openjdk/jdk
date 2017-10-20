@@ -78,32 +78,32 @@ import com.sun.media.sound.ReferenceCountingDevice;
  * <caption>MIDI System Property Keys</caption>
  * <thead>
  *   <tr>
- *     <th>Property Key
- *     <th>Interface
- *     <th>Affected Method
+ *     <th scope="col">Property Key
+ *     <th scope="col">Interface
+ *     <th scope="col">Affected Method
  * </thead>
  * <tbody>
  *   <tr>
- *     <td>{@code javax.sound.midi.Receiver}
+ *     <th scope="row">{@code javax.sound.midi.Receiver}
  *     <td>{@link Receiver}
  *     <td>{@link #getReceiver}
  *   <tr>
- *     <td>{@code javax.sound.midi.Sequencer}
+ *     <th scope="row">{@code javax.sound.midi.Sequencer}
  *     <td>{@link Sequencer}
  *     <td>{@link #getSequencer}
  *   <tr>
- *     <td>{@code javax.sound.midi.Synthesizer}
+ *     <th scope="row">{@code javax.sound.midi.Synthesizer}
  *     <td>{@link Synthesizer}
  *     <td>{@link #getSynthesizer}
  *   <tr>
- *     <td>{@code javax.sound.midi.Transmitter}
+ *     <th scope="row">{@code javax.sound.midi.Transmitter}
  *     <td>{@link Transmitter}
  *     <td>{@link #getTransmitter}
  * </tbody>
  * </table>
  *
  * The property value consists of the provider class name and the device name,
- * separated by the hash mark (&quot;#&quot;). The provider class name is the
+ * separated by the hash mark ("#"). The provider class name is the
  * fully-qualified name of a concrete
  * {@link MidiDeviceProvider MIDI device provider} class. The device name is
  * matched against the {@code String} returned by the {@code getName} method of

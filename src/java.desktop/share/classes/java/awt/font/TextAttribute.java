@@ -96,159 +96,141 @@ import jdk.internal.misc.SharedSecrets;
  * </UL>
  *
  * <h4>Summary of attributes</h4>
- * <table style="float:center;width:95%" class="striped">
- * <caption>Key, value type, principal constants, and
- * default value behavior of all TextAttributes</caption>
+ *
+ * <table style="width:95%;margin: 0px auto" class="striped">
+ * <caption>Key, value type, principal constants, and default value behavior of
+ * all TextAttributes</caption>
  * <thead>
- * <tr>
- * <th valign="TOP" style="text-align:center">Key</th>
- * <th valign="TOP" style="text-align:center">Value Type</th>
- * <th valign="TOP" style="text-align:center">Principal Constants</th>
- * <th valign="TOP" style="text-align:center">Default Value</th>
- * </tr>
+ *   <tr>
+ *     <th scope="col">Key
+ *     <th scope="col">Value Type
+ *     <th scope="col">Principal Constants
+ *     <th scope="col">Default Value
  * </thead>
  * <tbody>
- * <tr>
- * <td valign="TOP">{@link #FAMILY}</td>
- * <td valign="TOP">String</td>
- * <td valign="TOP">See Font {@link java.awt.Font#DIALOG DIALOG},
- * {@link java.awt.Font#DIALOG_INPUT DIALOG_INPUT},<br> {@link java.awt.Font#SERIF SERIF},
- * {@link java.awt.Font#SANS_SERIF SANS_SERIF}, and {@link java.awt.Font#MONOSPACED MONOSPACED}.
- * </td>
- * <td valign="TOP">"Default" (use platform default)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #WEIGHT}</td>
- * <td valign="TOP">Number</td>
- * <td valign="TOP">WEIGHT_REGULAR, WEIGHT_BOLD</td>
- * <td valign="TOP">WEIGHT_REGULAR</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #WIDTH}</td>
- * <td valign="TOP">Number</td>
- * <td valign="TOP">WIDTH_CONDENSED, WIDTH_REGULAR,<br>WIDTH_EXTENDED</td>
- * <td valign="TOP">WIDTH_REGULAR</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #POSTURE}</td>
- * <td valign="TOP">Number</td>
- * <td valign="TOP">POSTURE_REGULAR, POSTURE_OBLIQUE</td>
- * <td valign="TOP">POSTURE_REGULAR</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #SIZE}</td>
- * <td valign="TOP">Number</td>
- * <td valign="TOP">none</td>
- * <td valign="TOP">12.0</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #TRANSFORM}</td>
- * <td valign="TOP">{@link TransformAttribute}</td>
- * <td valign="TOP">See TransformAttribute {@link TransformAttribute#IDENTITY IDENTITY}</td>
- * <td valign="TOP">TransformAttribute.IDENTITY</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #SUPERSCRIPT}</td>
- * <td valign="TOP">Integer</td>
- * <td valign="TOP">SUPERSCRIPT_SUPER, SUPERSCRIPT_SUB</td>
- * <td valign="TOP">0 (use the standard glyphs and metrics)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #FONT}</td>
- * <td valign="TOP">{@link java.awt.Font}</td>
- * <td valign="TOP">none</td>
- * <td valign="TOP">null (do not override font resolution)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #CHAR_REPLACEMENT}</td>
- * <td valign="TOP">{@link GraphicAttribute}</td>
- * <td valign="TOP">none</td>
- * <td valign="TOP">null (draw text using font glyphs)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #FOREGROUND}</td>
- * <td valign="TOP">{@link java.awt.Paint}</td>
- * <td valign="TOP">none</td>
- * <td valign="TOP">null (use current graphics paint)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #BACKGROUND}</td>
- * <td valign="TOP">{@link java.awt.Paint}</td>
- * <td valign="TOP">none</td>
- * <td valign="TOP">null (do not render background)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #UNDERLINE}</td>
- * <td valign="TOP">Integer</td>
- * <td valign="TOP">UNDERLINE_ON</td>
- * <td valign="TOP">-1 (do not render underline)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #STRIKETHROUGH}</td>
- * <td valign="TOP">Boolean</td>
- * <td valign="TOP">STRIKETHROUGH_ON</td>
- * <td valign="TOP">false (do not render strikethrough)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #RUN_DIRECTION}</td>
- * <td valign="TOP">Boolean</td>
- * <td valign="TOP">RUN_DIRECTION_LTR<br>RUN_DIRECTION_RTL</td>
- * <td valign="TOP">null (use {@link java.text.Bidi} standard default)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #BIDI_EMBEDDING}</td>
- * <td valign="TOP">Integer</td>
- * <td valign="TOP">none</td>
- * <td valign="TOP">0 (use base line direction)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #JUSTIFICATION}</td>
- * <td valign="TOP">Number</td>
- * <td valign="TOP">JUSTIFICATION_FULL</td>
- * <td valign="TOP">JUSTIFICATION_FULL</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #INPUT_METHOD_HIGHLIGHT}</td>
- * <td valign="TOP">{@link java.awt.im.InputMethodHighlight},<br>{@link java.text.Annotation}</td>
- * <td valign="TOP">(see class)</td>
- * <td valign="TOP">null (do not apply input highlighting)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #INPUT_METHOD_UNDERLINE}</td>
- * <td valign="TOP">Integer</td>
- * <td valign="TOP">UNDERLINE_LOW_ONE_PIXEL,<br>UNDERLINE_LOW_TWO_PIXEL</td>
- * <td valign="TOP">-1 (do not render underline)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #SWAP_COLORS}</td>
- * <td valign="TOP">Boolean</td>
- * <td valign="TOP">SWAP_COLORS_ON</td>
- * <td valign="TOP">false (do not swap colors)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #NUMERIC_SHAPING}</td>
- * <td valign="TOP">{@link java.awt.font.NumericShaper}</td>
- * <td valign="TOP">none</td>
- * <td valign="TOP">null (do not shape digits)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #KERNING}</td>
- * <td valign="TOP">Integer</td>
- * <td valign="TOP">KERNING_ON</td>
- * <td valign="TOP">0 (do not request kerning)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #LIGATURES}</td>
- * <td valign="TOP">Integer</td>
- * <td valign="TOP">LIGATURES_ON</td>
- * <td valign="TOP">0 (do not form optional ligatures)</td>
- * </tr>
- * <tr>
- * <td valign="TOP">{@link #TRACKING}</td>
- * <td valign="TOP">Number</td>
- * <td valign="TOP">TRACKING_LOOSE, TRACKING_TIGHT</td>
- * <td valign="TOP">0 (do not add tracking)</td>
- * </tr>
+ *   <tr>
+ *     <th scope="row">{@link #FAMILY}
+ *     <td>String
+ *     <td>See Font {@link java.awt.Font#DIALOG DIALOG},
+ *     {@link java.awt.Font#DIALOG_INPUT DIALOG_INPUT},
+ *     <br>
+ *     {@link java.awt.Font#SERIF SERIF},
+ *     {@link java.awt.Font#SANS_SERIF SANS_SERIF}, and
+ *     {@link java.awt.Font#MONOSPACED MONOSPACED}.
+ *     <td>"Default" (use platform default)
+ *   <tr>
+ *     <th scope="row">{@link #WEIGHT}
+ *     <td>Number
+ *     <td>WEIGHT_REGULAR, WEIGHT_BOLD
+ *     <td>WEIGHT_REGULAR
+ *   <tr>
+ *     <th scope="row">{@link #WIDTH}
+ *     <td>Number
+ *     <td>WIDTH_CONDENSED, WIDTH_REGULAR,<br>WIDTH_EXTENDED
+ *     <td>WIDTH_REGULAR
+ *   <tr>
+ *     <th scope="row">{@link #POSTURE}
+ *     <td>Number
+ *     <td>POSTURE_REGULAR, POSTURE_OBLIQUE
+ *     <td>POSTURE_REGULAR
+ *   <tr>
+ *     <th scope="row">{@link #SIZE}
+ *     <td>Number
+ *     <td>none
+ *     <td>12.0
+ *   <tr>
+ *     <th scope="row">{@link #TRANSFORM}
+ *     <td>{@link TransformAttribute}
+ *     <td>See TransformAttribute {@link TransformAttribute#IDENTITY IDENTITY}
+ *     <td>TransformAttribute.IDENTITY
+ *   <tr>
+ *     <th scope="row">{@link #SUPERSCRIPT}
+ *     <td>Integer
+ *     <td>SUPERSCRIPT_SUPER, SUPERSCRIPT_SUB
+ *     <td>0 (use the standard glyphs and metrics)
+ *   <tr>
+ *     <th scope="row">{@link #FONT}
+ *     <td>{@link java.awt.Font}
+ *     <td>none
+ *     <td>null (do not override font resolution)
+ *   <tr>
+ *     <th scope="row">{@link #CHAR_REPLACEMENT}
+ *     <td>{@link GraphicAttribute}
+ *     <td>none
+ *     <td>null (draw text using font glyphs)
+ *   <tr>
+ *     <th scope="row">{@link #FOREGROUND}
+ *     <td>{@link java.awt.Paint}
+ *     <td>none
+ *     <td>null (use current graphics paint)
+ *   <tr>
+ *     <th scope="row">{@link #BACKGROUND}
+ *     <td>{@link java.awt.Paint}
+ *     <td>none
+ *     <td>null (do not render background)
+ *   <tr>
+ *     <th scope="row">{@link #UNDERLINE}
+ *     <td>Integer
+ *     <td>UNDERLINE_ON
+ *     <td>-1 (do not render underline)
+ *   <tr>
+ *     <th scope="row">{@link #STRIKETHROUGH}
+ *     <td>Boolean
+ *     <td>STRIKETHROUGH_ON
+ *     <td>false (do not render strikethrough)
+ *   <tr>
+ *     <th scope="row">{@link #RUN_DIRECTION}
+ *     <td>Boolean
+ *     <td>RUN_DIRECTION_LTR<br>RUN_DIRECTION_RTL
+ *     <td>null (use {@link java.text.Bidi} standard default)
+ *   <tr>
+ *     <th scope="row">{@link #BIDI_EMBEDDING}
+ *     <td>Integer
+ *     <td>none
+ *     <td>0 (use base line direction)
+ *   <tr>
+ *     <th scope="row">{@link #JUSTIFICATION}
+ *     <td>Number
+ *     <td>JUSTIFICATION_FULL
+ *     <td>JUSTIFICATION_FULL
+ *   <tr>
+ *     <th scope="row">{@link #INPUT_METHOD_HIGHLIGHT}
+ *     <td>{@link java.awt.im.InputMethodHighlight},
+ *     <br>
+ *     {@link java.text.Annotation}
+ *     <td>(see class)
+ *     <td>null (do not apply input highlighting)
+ *   <tr>
+ *     <th scope="row">{@link #INPUT_METHOD_UNDERLINE}
+ *     <td>Integer
+ *     <td>UNDERLINE_LOW_ONE_PIXEL,<br>UNDERLINE_LOW_TWO_PIXEL
+ *     <td>-1 (do not render underline)
+ *   <tr>
+ *     <th scope="row">{@link #SWAP_COLORS}
+ *     <td>Boolean
+ *     <td>SWAP_COLORS_ON
+ *     <td>false (do not swap colors)
+ *   <tr>
+ *     <th scope="row">{@link #NUMERIC_SHAPING}
+ *     <td>{@link java.awt.font.NumericShaper}
+ *     <td>none
+ *     <td>null (do not shape digits)
+ *   <tr>
+ *     <th scope="row">{@link #KERNING}
+ *     <td>Integer
+ *     <td>KERNING_ON
+ *     <td>0 (do not request kerning)
+ *   <tr>
+ *     <th scope="row">{@link #LIGATURES}
+ *     <td>Integer
+ *     <td>LIGATURES_ON
+ *     <td>0 (do not form optional ligatures)
+ *   <tr>
+ *     <th scope="row">{@link #TRACKING}
+ *     <td>Number
+ *     <td>TRACKING_LOOSE, TRACKING_TIGHT
+ *     <td>0 (do not add tracking)
+ *   </tr>
  * </tbody>
  * </table>
  *

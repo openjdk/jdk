@@ -46,13 +46,13 @@ import java.security.BasicPermission;
  * risks</caption>
  * <thead>
  *   <tr>
- *     <th>Permission Target Name
- *     <th>What the Permission Allows
- *     <th>Risks of Allowing this Permission
+ *     <th scope="col">Permission Target Name
+ *     <th scope="col">What the Permission Allows
+ *     <th scope="col">Risks of Allowing this Permission
  * </thead>
  * <tbody>
  *   <tr>
- *     <td>play
+ *     <th scope="row">play
  *     <td>Audio playback through the audio device or devices on the system.
  *     Allows the application to obtain and manipulate lines and mixers for
  *     audio playback (rendering).
@@ -61,7 +61,7 @@ import java.security.BasicPermission;
  *     audio being played on the system, or because manipulation of a mixer
  *     affects the audio for all lines using that mixer.
  *   <tr>
- *     <td>record
+ *     <th scope="row">record
  *     <td>Audio recording through the audio device or devices on the system.
  *     Allows the application to obtain and manipulate lines and mixers for
  *     audio recording (capture).

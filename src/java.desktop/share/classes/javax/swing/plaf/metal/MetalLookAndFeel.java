@@ -295,87 +295,87 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      * <caption>Metal's system color mapping</caption>
      * <thead>
      *  <tr>
-     *    <th>Key
-     *    <th>Value
+     *    <th scope="col">Key
+     *    <th scope="col">Value
      * </thead>
      * <tbody>
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"desktop"
+     *  <tr>
+     *    <th scope="row">"desktop"
      *    <td>{@code theme.getDesktopColor()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"activeCaption"
+     *  <tr>
+     *    <th scope="row">"activeCaption"
      *    <td>{@code theme.getWindowTitleBackground()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"activeCaptionText"
+     *  <tr>
+     *    <th scope="row">"activeCaptionText"
      *    <td>{@code theme.getWindowTitleForeground()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"activeCaptionBorder"
+     *  <tr>
+     *    <th scope="row">"activeCaptionBorder"
      *    <td>{@code theme.getPrimaryControlShadow()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"inactiveCaption"
+     *  <tr>
+     *    <th scope="row">"inactiveCaption"
      *    <td>{@code theme.getWindowTitleInactiveBackground()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"inactiveCaptionText"
+     *  <tr>
+     *    <th scope="row">"inactiveCaptionText"
      *    <td>{@code theme.getWindowTitleInactiveForeground()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"inactiveCaptionBorder"
+     *  <tr>
+     *    <th scope="row">"inactiveCaptionBorder"
      *    <td>{@code theme.getControlShadow()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"window"
+     *  <tr>
+     *    <th scope="row">"window"
      *    <td>{@code theme.getWindowBackground()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"windowBorder"
+     *  <tr>
+     *    <th scope="row">"windowBorder"
      *    <td>{@code theme.getControl()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"windowText"
+     *  <tr>
+     *    <th scope="row">"windowText"
      *    <td>{@code theme.getUserTextColor()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"menu"
+     *  <tr>
+     *    <th scope="row">"menu"
      *    <td>{@code theme.getMenuBackground()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"menuText"
+     *  <tr>
+     *    <th scope="row">"menuText"
      *    <td>{@code theme.getMenuForeground()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"text"
+     *  <tr>
+     *    <th scope="row">"text"
      *    <td>{@code theme.getWindowBackground()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"textText"
+     *  <tr>
+     *    <th scope="row">"textText"
      *    <td>{@code theme.getUserTextColor()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"textHighlight"
+     *  <tr>
+     *    <th scope="row">"textHighlight"
      *    <td>{@code theme.getTextHighlightColor()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"textHighlightText"
+     *  <tr>
+     *    <th scope="row">"textHighlightText"
      *    <td>{@code theme.getHighlightedTextColor()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"textInactiveText"
+     *  <tr>
+     *    <th scope="row">"textInactiveText"
      *    <td>{@code theme.getInactiveSystemTextColor()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"control"
+     *  <tr>
+     *    <th scope="row">"control"
      *    <td>{@code theme.getControl()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"controlText"
+     *  <tr>
+     *    <th scope="row">"controlText"
      *    <td>{@code theme.getControlTextColor()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"controlHighlight"
+     *  <tr>
+     *    <th scope="row">"controlHighlight"
      *    <td>{@code theme.getControlHighlight()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"controlLtHighlight"
+     *  <tr>
+     *    <th scope="row">"controlLtHighlight"
      *    <td>{@code theme.getControlHighlight()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"controlShadow"
+     *  <tr>
+     *    <th scope="row">"controlShadow"
      *    <td>{@code theme.getControlShadow()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"controlDkShadow"
+     *  <tr>
+     *    <th scope="row">"controlDkShadow"
      *    <td>{@code theme.getControlDarkShadow()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"scrollbar"
+     *  <tr>
+     *    <th scope="row">"scrollbar"
      *    <td>{@code theme.getControl()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"info"
+     *  <tr>
+     *    <th scope="row">"info"
      *    <td>{@code theme.getPrimaryControl()}
-     *  <tr valign="top" style="text-align:left">
-     *    <td>"infoText"
+     *  <tr>
+     *    <th scope="row">"infoText"
      *    <td>{@code theme.getPrimaryControlInfo()}
      * </tbody>
      * </table>

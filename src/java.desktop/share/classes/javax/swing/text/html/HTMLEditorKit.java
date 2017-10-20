@@ -1122,83 +1122,116 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * <caption>Describes the tag and view created by this factory by default
      * </caption>
      * <thead>
-     * <tr>
-     * <th>Tag
-     * <th>View created
-     * </tr>
+     *   <tr>
+     *     <th scope="col">Tag
+     *     <th scope="col">View created
      * </thead>
      * <tbody>
-     * <tr>
-     * <td>HTML.Tag.CONTENT<td>InlineView
-     * </tr><tr>
-     * <td>HTML.Tag.IMPLIED<td>javax.swing.text.html.ParagraphView
-     * </tr><tr>
-     * <td>HTML.Tag.P<td>javax.swing.text.html.ParagraphView
-     * </tr><tr>
-     * <td>HTML.Tag.H1<td>javax.swing.text.html.ParagraphView
-     * </tr><tr>
-     * <td>HTML.Tag.H2<td>javax.swing.text.html.ParagraphView
-     * </tr><tr>
-     * <td>HTML.Tag.H3<td>javax.swing.text.html.ParagraphView
-     * </tr><tr>
-     * <td>HTML.Tag.H4<td>javax.swing.text.html.ParagraphView
-     * </tr><tr>
-     * <td>HTML.Tag.H5<td>javax.swing.text.html.ParagraphView
-     * </tr><tr>
-     * <td>HTML.Tag.H6<td>javax.swing.text.html.ParagraphView
-     * </tr><tr>
-     * <td>HTML.Tag.DT<td>javax.swing.text.html.ParagraphView
-     * </tr><tr>
-     * <td>HTML.Tag.MENU<td>ListView
-     * </tr><tr>
-     * <td>HTML.Tag.DIR<td>ListView
-     * </tr><tr>
-     * <td>HTML.Tag.UL<td>ListView
-     * </tr><tr>
-     * <td>HTML.Tag.OL<td>ListView
-     * </tr><tr>
-     * <td>HTML.Tag.LI<td>BlockView
-     * </tr><tr>
-     * <td>HTML.Tag.DL<td>BlockView
-     * </tr><tr>
-     * <td>HTML.Tag.DD<td>BlockView
-     * </tr><tr>
-     * <td>HTML.Tag.BODY<td>BlockView
-     * </tr><tr>
-     * <td>HTML.Tag.HTML<td>BlockView
-     * </tr><tr>
-     * <td>HTML.Tag.CENTER<td>BlockView
-     * </tr><tr>
-     * <td>HTML.Tag.DIV<td>BlockView
-     * </tr><tr>
-     * <td>HTML.Tag.BLOCKQUOTE<td>BlockView
-     * </tr><tr>
-     * <td>HTML.Tag.PRE<td>BlockView
-     * </tr><tr>
-     * <td>HTML.Tag.BLOCKQUOTE<td>BlockView
-     * </tr><tr>
-     * <td>HTML.Tag.PRE<td>BlockView
-     * </tr><tr>
-     * <td>HTML.Tag.IMG<td>ImageView
-     * </tr><tr>
-     * <td>HTML.Tag.HR<td>HRuleView
-     * </tr><tr>
-     * <td>HTML.Tag.BR<td>BRView
-     * </tr><tr>
-     * <td>HTML.Tag.TABLE<td>javax.swing.text.html.TableView
-     * </tr><tr>
-     * <td>HTML.Tag.INPUT<td>FormView
-     * </tr><tr>
-     * <td>HTML.Tag.SELECT<td>FormView
-     * </tr><tr>
-     * <td>HTML.Tag.TEXTAREA<td>FormView
-     * </tr><tr>
-     * <td>HTML.Tag.OBJECT<td>ObjectView
-     * </tr><tr>
-     * <td>HTML.Tag.FRAMESET<td>FrameSetView
-     * </tr><tr>
-     * <td>HTML.Tag.FRAME<td>FrameView
-     * </tr>
+     *   <tr>
+     *     <th scope="row">HTML.Tag.CONTENT
+     *     <td>InlineView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.IMPLIED
+     *     <td>javax.swing.text.html.ParagraphView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.P
+     *     <td>javax.swing.text.html.ParagraphView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.H1
+     *     <td>javax.swing.text.html.ParagraphView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.H2
+     *     <td>javax.swing.text.html.ParagraphView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.H3
+     *     <td>javax.swing.text.html.ParagraphView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.H4
+     *     <td>javax.swing.text.html.ParagraphView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.H5
+     *     <td>javax.swing.text.html.ParagraphView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.H6
+     *     <td>javax.swing.text.html.ParagraphView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.DT
+     *     <td>javax.swing.text.html.ParagraphView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.MENU
+     *     <td>ListView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.DIR
+     *     <td>ListView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.UL
+     *     <td>ListView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.OL
+     *     <td>ListView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.LI
+     *     <td>BlockView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.DL
+     *     <td>BlockView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.DD
+     *     <td>BlockView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.BODY
+     *     <td>BlockView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.HTML
+     *     <td>BlockView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.CENTER
+     *     <td>BlockView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.DIV
+     *     <td>BlockView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.BLOCKQUOTE
+     *     <td>BlockView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.PRE
+     *     <td>BlockView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.BLOCKQUOTE
+     *     <td>BlockView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.PRE
+     *     <td>BlockView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.IMG
+     *     <td>ImageView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.HR
+     *     <td>HRuleView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.BR
+     *     <td>BRView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.TABLE
+     *     <td>javax.swing.text.html.TableView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.INPUT
+     *     <td>FormView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.SELECT
+     *     <td>FormView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.TEXTAREA
+     *     <td>FormView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.OBJECT
+     *     <td>ObjectView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.FRAMESET
+     *     <td>FrameSetView
+     *   <tr>
+     *     <th scope="row">HTML.Tag.FRAME
+     *     <td>FrameView
      * </tbody>
      * </table>
      */
