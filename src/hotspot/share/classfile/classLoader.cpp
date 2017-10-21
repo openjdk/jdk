@@ -578,8 +578,8 @@ void ClassPathImageEntry::compile_the_world(Handle loader, TRAPS) {
 }
 #endif
 
-bool ClassPathImageEntry::is_jrt() {
-  return ClassLoader::is_jrt(name());
+bool ClassPathImageEntry::is_modules_image() const {
+  return ClassLoader::is_modules_image(name());
 }
 
 #if INCLUDE_CDS
@@ -795,7 +795,7 @@ void ClassLoader::setup_search_path(const char *class_path, bool bootstrap_searc
         // Check for a jimage
         if (Arguments::has_jimage()) {
           assert(_jrt_entry == NULL, "should not setup bootstrap class search path twice");
-          assert(new_entry != NULL && new_entry->is_jrt(), "No java runtime image present");
+          assert(new_entry != NULL && new_entry->is_modules_image(), "No java runtime image present");
           _jrt_entry = new_entry;
           ++_num_entries;
 #if INCLUDE_CDS
@@ -1846,7 +1846,7 @@ void ClassLoader::compile_the_world() {
   // Iterate over all bootstrap class path appended entries
   ClassPathEntry* e = _first_append_entry;
   while (e != NULL) {
-    assert(!e->is_jrt(), "A modular java runtime image is present on the list of appended entries");
+    assert(!e->is_modules_image(), "A modular java runtime image is present on the list of appended entries");
     e->compile_the_world(system_class_loader, CATCH);
     e = e->next();
   }

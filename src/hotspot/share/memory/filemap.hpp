@@ -60,7 +60,7 @@ public:
     return _timestamp != 0;
   }
   bool is_dir() { return _is_dir; }
-  bool is_jrt() { return ClassLoader::is_jrt(name()); }
+  bool is_modules_image() { return ClassLoader::is_modules_image(name()); }
   time_t timestamp() const { return _timestamp; }
   long   filesize()  const { return _filesize; }
   const char* name() const { return _name->data(); }

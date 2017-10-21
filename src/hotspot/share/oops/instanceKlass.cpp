@@ -3113,7 +3113,7 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
   if (cfs != NULL) {
     if (cfs->source() != NULL) {
       if (module_name != NULL) {
-        if (ClassLoader::is_jrt(cfs->source())) {
+        if (ClassLoader::is_modules_image(cfs->source())) {
           info_stream.print(" source: jrt:/%s", module_name);
         } else {
           info_stream.print(" source: %s", cfs->source());
