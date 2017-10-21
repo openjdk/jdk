@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/cms/parNewGeneration.inline.hpp"
@@ -45,6 +46,7 @@
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -124,7 +126,7 @@ bool ParScanThreadState::should_be_partially_scanned(oop new_obj, oop old_obj) c
 void ParScanThreadState::scan_partial_array_and_push_remainder(oop old) {
   assert(old->is_objArray(), "must be obj array");
   assert(old->is_forwarded(), "must be forwarded");
-  assert(GenCollectedHeap::heap()->is_in_reserved(old), "must be in heap.");
+  assert(CMSHeap::heap()->is_in_reserved(old), "must be in heap.");
   assert(!old_gen()->is_in(old), "must be in young generation.");
 
   objArrayOop obj = objArrayOop(old->forwardee());
@@ -205,9 +207,9 @@ bool ParScanThreadState::take_from_overflow_stack() {
   for (size_t i = 0; i != num_take_elems; i++) {
     oop cur = of_stack->pop();
     oop obj_to_push = cur->forwardee();
-    assert(GenCollectedHeap::heap()->is_in_reserved(cur), "Should be in heap");
+    assert(CMSHeap::heap()->is_in_reserved(cur), "Should be in heap");
     assert(!old_gen()->is_in_reserved(cur), "Should be in young gen");
-    assert(GenCollectedHeap::heap()->is_in_reserved(obj_to_push), "Should be in heap");
+    assert(CMSHeap::heap()->is_in_reserved(obj_to_push), "Should be in heap");
     if (should_be_partially_scanned(obj_to_push, cur)) {
       assert(arrayOop(cur)->length() == 0, "entire array remaining to be scanned");
       obj_to_push = cur;
@@ -590,7 +592,7 @@ ParNewGenTask::ParNewGenTask(ParNewGeneration* young_gen,
 {}
 
 void ParNewGenTask::work(uint worker_id) {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  CMSHeap* heap = CMSHeap::heap();
   // Since this is being done in a separate thread, need new resource
   // and handle marks.
   ResourceMark rm;
@@ -602,10 +604,10 @@ void ParNewGenTask::work(uint worker_id) {
   par_scan_state.set_young_old_boundary(_young_old_boundary);
 
   CLDScanClosure cld_scan_closure(&par_scan_state.to_space_root_closure(),
-                                  gch->rem_set()->cld_rem_set()->accumulate_modified_oops());
+                                  heap->rem_set()->cld_rem_set()->accumulate_modified_oops());
 
   par_scan_state.start_strong_roots();
-  gch->young_process_roots(_strong_roots_scope,
+  heap->young_process_roots(_strong_roots_scope,
                            &par_scan_state.to_space_root_closure(),
                            &par_scan_state.older_gen_closure(),
                            &cld_scan_closure);
@@ -687,7 +689,7 @@ void /*ParNewGeneration::*/ParKeepAliveClosure::do_oop_work(T* p) {
 
   _par_cl->do_oop_nv(p);
 
-  if (GenCollectedHeap::heap()->is_in_reserved(p)) {
+  if (CMSHeap::heap()->is_in_reserved(p)) {
     oop obj = oopDesc::load_decode_heap_oop_not_null(p);
     _rs->write_ref_field_gc_par(p, obj);
   }
@@ -714,7 +716,7 @@ void /*ParNewGeneration::*/KeepAliveClosure::do_oop_work(T* p) {
 
   _cl->do_oop_nv(p);
 
-  if (GenCollectedHeap::heap()->is_in_reserved(p)) {
+  if (CMSHeap::heap()->is_in_reserved(p)) {
     oop obj = oopDesc::load_decode_heap_oop_not_null(p);
     _rs->write_ref_field_gc_par(p, obj);
   }
@@ -804,7 +806,7 @@ public:
 };
 
 void ParNewRefProcTaskExecutor::execute(ProcessTask& task) {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  CMSHeap* gch = CMSHeap::heap();
   WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   _state_set.reset(workers->active_workers(), _young_gen.promotion_failed());
@@ -816,7 +818,7 @@ void ParNewRefProcTaskExecutor::execute(ProcessTask& task) {
 }
 
 void ParNewRefProcTaskExecutor::execute(EnqueueTask& task) {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  CMSHeap* gch = CMSHeap::heap();
   WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   ParNewRefEnqueueTaskProxy enq_task(task);
@@ -825,8 +827,8 @@ void ParNewRefProcTaskExecutor::execute(EnqueueTask& task) {
 
 void ParNewRefProcTaskExecutor::set_single_threaded_mode() {
   _state_set.flush();
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  gch->save_marks();
+  CMSHeap* heap = CMSHeap::heap();
+  heap->save_marks();
 }
 
 ScanClosureWithParBarrier::
@@ -835,10 +837,10 @@ ScanClosureWithParBarrier(ParNewGeneration* g, bool gc_barrier) :
 { }
 
 EvacuateFollowersClosureGeneral::
-EvacuateFollowersClosureGeneral(GenCollectedHeap* gch,
+EvacuateFollowersClosureGeneral(CMSHeap* heap,
                                 OopsInGenClosure* cur,
                                 OopsInGenClosure* older) :
-  _gch(gch),
+  _heap(heap),
   _scan_cur_or_nonheap(cur), _scan_older(older)
 { }
 
@@ -846,15 +848,15 @@ void EvacuateFollowersClosureGeneral::do_void() {
   do {
     // Beware: this call will lead to closure applications via virtual
     // calls.
-    _gch->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen,
-                                       _scan_cur_or_nonheap,
-                                       _scan_older);
-  } while (!_gch->no_allocs_since_save_marks());
+    _heap->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen,
+                                        _scan_cur_or_nonheap,
+                                        _scan_older);
+  } while (!_heap->no_allocs_since_save_marks());
 }
 
 // A Generation that does parallel young-gen collection.
 
-void ParNewGeneration::handle_promotion_failed(GenCollectedHeap* gch, ParScanThreadStateSet& thread_state_set) {
+void ParNewGeneration::handle_promotion_failed(CMSHeap* gch, ParScanThreadStateSet& thread_state_set) {
   assert(_promo_failure_scan_stack.is_empty(), "post condition");
   _promo_failure_scan_stack.clear(true); // Clear cached segments.
 
@@ -883,7 +885,7 @@ void ParNewGeneration::collect(bool   full,
                                bool   is_tlab) {
   assert(full || size > 0, "otherwise we don't want to collect");
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  CMSHeap* gch = CMSHeap::heap();
 
   _gc_timer->register_gc_start();
 
@@ -998,6 +1000,8 @@ void ParNewGeneration::collect(bool   full,
   _gc_tracer.report_tenuring_threshold(tenuring_threshold());
   pt.print_all_references();
 
+  WeakProcessor::weak_oops_do(&is_alive, &keep_alive, &evacuate_followers);
+
   if (!promotion_failed()) {
     // Swap the survivor spaces.
     eden()->clear(SpaceDecorator::Mangle);
@@ -1064,7 +1068,7 @@ void ParNewGeneration::collect(bool   full,
 }
 
 size_t ParNewGeneration::desired_plab_sz() {
-  return _plab_stats.desired_plab_sz(GenCollectedHeap::heap()->workers()->active_workers());
+  return _plab_stats.desired_plab_sz(CMSHeap::heap()->workers()->active_workers());
 }
 
 static int sum;
@@ -1168,7 +1172,7 @@ oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
   } else {
     // Is in to-space; do copying ourselves.
     Copy::aligned_disjoint_words((HeapWord*)old, (HeapWord*)new_obj, sz);
-    assert(GenCollectedHeap::heap()->is_in_reserved(new_obj), "illegal forwarding pointer value.");
+    assert(CMSHeap::heap()->is_in_reserved(new_obj), "illegal forwarding pointer value.");
     forward_ptr = old->forward_to_atomic(new_obj);
     // Restore the mark word copied above.
     new_obj->set_mark(m);
@@ -1296,7 +1300,7 @@ void ParNewGeneration::push_on_overflow_list(oop from_space_obj, ParScanThreadSt
         from_space_obj->set_klass_to_list_ptr(NULL);
       }
       observed_overflow_list =
-        (oop)Atomic::cmpxchg_ptr(from_space_obj, &_overflow_list, cur_overflow_list);
+        Atomic::cmpxchg((oopDesc*)from_space_obj, &_overflow_list, (oopDesc*)cur_overflow_list);
     } while (cur_overflow_list != observed_overflow_list);
   }
 }
@@ -1339,7 +1343,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
   if (_overflow_list == NULL) return false;
 
   // Otherwise, there was something there; try claiming the list.
-  oop prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
+  oop prefix = cast_to_oop(Atomic::xchg((oopDesc*)BUSY, &_overflow_list));
   // Trim off a prefix of at most objsFromOverflow items
   Thread* tid = Thread::current();
   size_t spin_count = ParallelGCThreads;
@@ -1353,7 +1357,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
       return false;
     } else if (_overflow_list != BUSY) {
      // try and grab the prefix
-     prefix = cast_to_oop(Atomic::xchg_ptr(BUSY, &_overflow_list));
+     prefix = cast_to_oop(Atomic::xchg((oopDesc*)BUSY, &_overflow_list));
     }
   }
   if (prefix == NULL || prefix == BUSY) {
@@ -1361,7 +1365,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
      if (prefix == NULL) {
        // Write back the NULL in case we overwrote it with BUSY above
        // and it is still the same value.
-       (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
+       (void) Atomic::cmpxchg((oopDesc*)NULL, &_overflow_list, (oopDesc*)BUSY);
      }
      return false;
   }
@@ -1380,7 +1384,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
     // Write back the NULL in lieu of the BUSY we wrote
     // above and it is still the same value.
     if (_overflow_list == BUSY) {
-      (void) Atomic::cmpxchg_ptr(NULL, &_overflow_list, BUSY);
+      (void) Atomic::cmpxchg((oopDesc*)NULL, &_overflow_list, (oopDesc*)BUSY);
     }
   } else {
     assert(suffix != BUSY, "Error");
@@ -1394,7 +1398,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
     bool attached = false;
     while (observed_overflow_list == BUSY || observed_overflow_list == NULL) {
       observed_overflow_list =
-        (oop) Atomic::cmpxchg_ptr(suffix, &_overflow_list, cur_overflow_list);
+        Atomic::cmpxchg((oopDesc*)suffix, &_overflow_list, (oopDesc*)cur_overflow_list);
       if (cur_overflow_list == observed_overflow_list) {
         attached = true;
         break;
@@ -1420,7 +1424,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
           last->set_klass_to_list_ptr(NULL);
         }
         observed_overflow_list =
-          (oop)Atomic::cmpxchg_ptr(suffix, &_overflow_list, cur_overflow_list);
+          Atomic::cmpxchg((oopDesc*)suffix, &_overflow_list, (oopDesc*)cur_overflow_list);
       } while (cur_overflow_list != observed_overflow_list);
     }
   }
@@ -1452,7 +1456,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
   TASKQUEUE_STATS_ONLY(par_scan_state->note_overflow_refill(n));
 #ifndef PRODUCT
   assert(_num_par_pushes >= n, "Too many pops?");
-  Atomic::add_ptr(-(intptr_t)n, &_num_par_pushes);
+  Atomic::sub(n, &_num_par_pushes);
 #endif
   return true;
 }
@@ -1475,3 +1479,9 @@ void ParNewGeneration::ref_processor_init() {
 const char* ParNewGeneration::name() const {
   return "par new generation";
 }
+
+void ParNewGeneration::restore_preserved_marks() {
+  SharedRestorePreservedMarksTaskExecutor task_executor(CMSHeap::heap()->workers());
+  _preserved_marks_set.restore(&task_executor);
+}
+

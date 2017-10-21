@@ -74,6 +74,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#include "symbolengine.hpp"
 #include "windbghelp.hpp"
 
 
@@ -134,6 +135,8 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
     if (ForceTimeHighResolution) {
       timeBeginPeriod(1L);
     }
+    WindowsDbgHelp::pre_initialize();
+    SymbolEngine::pre_initialize();
     break;
   case DLL_PROCESS_DETACH:
     if (ForceTimeHighResolution) {
@@ -1319,6 +1322,8 @@ static int _print_module(const char* fname, address base_address,
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   void * result = LoadLibrary(name);
   if (result != NULL) {
+    // Recalculate pdb search path if a DLL was loaded successfully.
+    SymbolEngine::recalc_search_path();
     return result;
   }
 
@@ -4031,6 +4036,8 @@ jint os::init_2(void) {
   if (initSock() != JNI_OK) {
     return JNI_ERR;
   }
+
+  SymbolEngine::recalc_search_path();
 
   return JNI_OK;
 }

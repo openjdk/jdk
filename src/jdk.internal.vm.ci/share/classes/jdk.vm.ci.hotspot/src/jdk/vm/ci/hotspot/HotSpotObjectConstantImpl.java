@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Represents a constant non-{@code null} object reference, within the compiler and across the
  * compiler/runtime interface.
  */
-final class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
+class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
 
     static JavaConstant forObject(Object object) {
         return forObject(object, false);
@@ -73,7 +73,7 @@ final class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     private final Object object;
     private final boolean compressed;
 
-    private HotSpotObjectConstantImpl(Object object, boolean compressed) {
+    protected HotSpotObjectConstantImpl(Object object, boolean compressed) {
         this.object = object;
         this.compressed = compressed;
         assert object != null;

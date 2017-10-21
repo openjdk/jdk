@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #ifndef CPU_ARM_VM_JNITYPES_ARM_HPP
 #define CPU_ARM_VM_JNITYPES_ARM_HPP
 
+#include "jni.h"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
-#include "prims/jni.h"
 
 // This file holds platform-dependent routines used to write primitive jni
 // types to the array of arguments passed into JavaCalls::call

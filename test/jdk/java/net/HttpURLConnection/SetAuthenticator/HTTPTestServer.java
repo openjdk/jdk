@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -148,62 +149,139 @@ public class HTTPTestServer extends HTTPTest {
     }
 
     /**
-     * The HttpServerFactory ensures that the local port used by an HttpServer
-     * previously created by the current test/VM will not get reused by
-     * a subsequent test in the same VM. This is to avoid having the
-     * AuthCache reuse credentials from previous tests - which would
-     * invalidate the assumptions made by the current test on when
-     * the default authenticator should be called.
+     * The SocketBindableFactory ensures that the local port used by an HttpServer
+     * or a proxy ServerSocket previously created by the current test/VM will not
+     * get reused by a subsequent test in the same VM. This is to avoid having the
+     * AuthCache reuse credentials from previous tests - which would invalidate the
+     * assumptions made by the current test on when the default authenticator should
+     * be called.
      */
-    private static final class HttpServerFactory {
+    private static abstract class SocketBindableFactory<B> {
         private static final int MAX = 10;
         private static final CopyOnWriteArrayList<String> addresses =
             new CopyOnWriteArrayList<>();
-        private static HttpServer newHttpServer(HttpProtocolType protocol)
-                throws IOException {
-            switch (protocol) {
-               case HTTP:  return HttpServer.create();
-               case HTTPS: return HttpsServer.create();
-               default: throw new InternalError("Unsupported protocol " + protocol);
-            }
-        }
-        static <T extends HttpServer> T create(HttpProtocolType protocol)
-                throws IOException {
+        protected B createInternal() throws IOException {
             final int max = addresses.size() + MAX;
-            final List<HttpServer> toClose = new ArrayList<>();
+            final List<B> toClose = new ArrayList<>();
             try {
                 for (int i = 1; i <= max; i++) {
-                    HttpServer server = newHttpServer(protocol);
-                    server.bind(new InetSocketAddress("127.0.0.1", 0), 0);
-                    InetSocketAddress address = server.getAddress();
+                    B bindable = createBindable();
+                    SocketAddress address = getAddress(bindable);
                     String key = address.toString();
                     if (addresses.addIfAbsent(key)) {
-                       System.out.println("Server bound to: " + key
+                       System.out.println("Socket bound to: " + key
                                           + " after " + i + " attempt(s)");
-                       return (T) server;
+                       return bindable;
                     }
                     System.out.println("warning: address " + key
                                        + " already used. Retrying bind.");
                     // keep the port bound until we get a port that we haven't
                     // used already
-                    toClose.add(server);
+                    toClose.add(bindable);
                 }
             } finally {
-                // if we had to retry, then close the servers we're not
+                // if we had to retry, then close the socket we're not
                 // going to use.
-                for (HttpServer s : toClose) {
-                  try { s.stop(1); } catch (Exception x) { /* ignore */ }
+                for (B b : toClose) {
+                  try { close(b); } catch (Exception x) { /* ignore */ }
                 }
             }
-            throw new IOException("Couldn't bind servers after " + max + " attempts: "
+            throw new IOException("Couldn't bind socket after " + max + " attempts: "
                                   + "addresses used before: " + addresses);
+        }
+
+        protected abstract B createBindable() throws IOException;
+
+        protected abstract SocketAddress getAddress(B bindable);
+
+        protected abstract void close(B bindable) throws IOException;
+    }
+
+    /*
+     * Used to create ServerSocket for a proxy.
+     */
+    private static final class ServerSocketFactory
+            extends SocketBindableFactory<ServerSocket> {
+        private static final ServerSocketFactory instance = new ServerSocketFactory();
+
+        static ServerSocket create() throws IOException {
+            return instance.createInternal();
+        }
+
+        @Override
+        protected ServerSocket createBindable() throws IOException {
+            return new ServerSocket(0, 0, InetAddress.getByName("127.0.0.1"));
+        }
+
+        @Override
+        protected SocketAddress getAddress(ServerSocket socket) {
+            return socket.getLocalSocketAddress();
+        }
+
+        @Override
+        protected void close(ServerSocket socket) throws IOException {
+            socket.close();
+        }
+    }
+
+    /*
+     * Used to create HttpServer for a NTLMTestServer.
+     */
+    private static abstract class WebServerFactory<S extends HttpServer>
+            extends SocketBindableFactory<S> {
+        @Override
+        protected S createBindable() throws IOException {
+            S server = newHttpServer();
+            server.bind(new InetSocketAddress("127.0.0.1", 0), 0);
+            return server;
+        }
+
+        @Override
+        protected SocketAddress getAddress(S server) {
+            return server.getAddress();
+        }
+
+        @Override
+        protected void close(S server) throws IOException {
+            server.stop(1);
+        }
+
+        /*
+         * Returns a HttpServer or a HttpsServer in different subclasses.
+         */
+        protected abstract S newHttpServer() throws IOException;
+    }
+
+    private static final class HttpServerFactory extends WebServerFactory<HttpServer> {
+        private static final HttpServerFactory instance = new HttpServerFactory();
+
+        static HttpServer create() throws IOException {
+            return instance.createInternal();
+        }
+
+        @Override
+        protected HttpServer newHttpServer() throws IOException {
+            return HttpServer.create();
+        }
+    }
+
+    private static final class HttpsServerFactory extends WebServerFactory<HttpsServer> {
+        private static final HttpsServerFactory instance = new HttpsServerFactory();
+
+        static HttpsServer create() throws IOException {
+            return instance.createInternal();
+        }
+
+        @Override
+        protected HttpsServer newHttpServer() throws IOException {
+            return HttpsServer.create();
         }
     }
 
     static HttpServer createHttpServer(HttpProtocolType protocol) throws IOException {
         switch (protocol) {
-            case HTTP:  return HttpServerFactory.create(protocol);
-            case HTTPS: return configure(HttpServerFactory.create(protocol));
+            case HTTP:  return HttpServerFactory.create();
+            case HTTPS: return configure(HttpsServerFactory.create());
             default: throw new InternalError("Unsupported protocol " + protocol);
         }
     }
@@ -894,7 +972,7 @@ public class HTTPTestServer extends HTTPTest {
             super(server, target, delegate);
             System.out.flush();
             System.err.println("WARNING: HttpsProxyTunnel is an experimental test class");
-            ss = new ServerSocket(0, 0, InetAddress.getByName("127.0.0.1"));
+            ss = ServerSocketFactory.create();
             start();
         }
 

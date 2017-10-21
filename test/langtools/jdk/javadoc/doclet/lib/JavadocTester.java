@@ -37,6 +37,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -46,6 +48,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 
@@ -150,6 +153,9 @@ public abstract class JavadocTester {
     /** The output directory used in the most recent call of javadoc. */
     protected File outputDir;
 
+    /** The output charset used in the most recent call of javadoc. */
+    protected Charset charset = Charset.defaultCharset();
+
     /** The exit code of the most recent call of javadoc. */
     private int exitCode;
 
@@ -158,6 +164,8 @@ public abstract class JavadocTester {
 
     /** A cache of file content, to avoid reading files unnecessarily. */
     private final Map<File,SoftReference<String>> fileContentCache = new HashMap<>();
+    /** The charset used for files in the fileContentCache. */
+    private Charset fileContentCacheCharset = null;
 
     /** Stream used for logging messages. */
     protected final PrintStream out = System.out;
@@ -293,13 +301,46 @@ public abstract class JavadocTester {
             out.println("Running javadoc (run "
                                     + javadocRunNum + ")...");
         }
+
         outputDir = new File(".");
+        String charsetArg = null;
+        String docencodingArg = null;
+        String encodingArg = null;
         for (int i = 0; i < args.length - 2; i++) {
-            if (args[i].equals("-d")) {
-                outputDir = new File(args[++i]);
-                break;
+            switch (args[i]) {
+                case "-d":
+                    outputDir = new File(args[++i]);
+                    break;
+                case "-charset":
+                    charsetArg = args[++i];
+                    break;
+                case "-docencoding":
+                    docencodingArg = args[++i];
+                    break;
+                case "-encoding":
+                    encodingArg = args[++i];
+                    break;
             }
         }
+
+        // The following replicates HtmlConfiguration.finishOptionSettings0
+        // and sets up the charset used to read files.
+        String cs;
+        if (docencodingArg == null) {
+            if (charsetArg == null) {
+                cs = (encodingArg == null) ? "UTF-8" : encodingArg;
+            } else {
+                cs = charsetArg;
+            }
+        } else {
+           cs = docencodingArg;
+        }
+        try {
+            charset = Charset.forName(cs);
+        } catch (UnsupportedCharsetException e) {
+            charset = Charset.defaultCharset();
+        }
+
         out.println("args: " + Arrays.toString(args));
 //        log.setOutDir(outputDir);
 
@@ -637,6 +678,10 @@ public abstract class JavadocTester {
      * @return          the file in string format
      */
     private String readFile(File baseDir, String fileName) throws Error {
+        if (!Objects.equals(fileContentCacheCharset, charset)) {
+            fileContentCache.clear();
+            fileContentCacheCharset = charset;
+        }
         try {
             File file = new File(baseDir, fileName);
             SoftReference<String> ref = fileContentCache.get(file);
@@ -644,7 +689,8 @@ public abstract class JavadocTester {
             if (content != null)
                 return content;
 
-            content = new String(Files.readAllBytes(file.toPath()));
+            // charset defaults to a value inferred from latest javadoc run
+            content = new String(Files.readAllBytes(file.toPath()), charset);
             fileContentCache.put(file, new SoftReference<>(content));
             return content;
         } catch (FileNotFoundException e) {

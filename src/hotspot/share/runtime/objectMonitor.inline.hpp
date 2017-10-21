@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,11 @@ inline intptr_t ObjectMonitor::is_entered(TRAPS) const {
 
 inline markOop ObjectMonitor::header() const {
   return _header;
+}
+
+inline volatile markOop* ObjectMonitor::header_addr() {
+  assert((intptr_t)this == (intptr_t)&_header, "sync code expects this");
+  return &_header;
 }
 
 inline void ObjectMonitor::set_header(markOop hdr) {

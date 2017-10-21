@@ -267,8 +267,9 @@ else # HAS_SPEC=true
 	  $(ECHO) "Re-running configure using default settings"
         endif
 	( cd $(OUTPUTDIR) && PATH="$(ORIGINAL_PATH)" \
+	    CUSTOM_ROOT="$(CUSTOM_ROOT)" \
 	    CUSTOM_CONFIG_DIR="$(CUSTOM_CONFIG_DIR)" \
-	    $(BASH) $(CONFIGURE_CMD) $(CONFIGURE_COMMAND_LINE) )
+	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
 
   ##############################################################################
   # The main target, for delegating into Main.gmk

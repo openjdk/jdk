@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,6 @@ public:
   // pre-marking object graph.
   static void enqueue(oop pre_val);
 
-  virtual bool has_write_ref_pre_barrier() { return true; }
-
   // We export this to make it available in cases where the static
   // type of the barrier set is known.  Note that it is non-virtual.
   template <class T> inline void inline_write_ref_field_pre(T* field, oop newVal);
@@ -63,9 +61,6 @@ public:
   // These are the more general virtual versions.
   inline virtual void write_ref_field_pre_work(oop* field, oop new_val);
   inline virtual void write_ref_field_pre_work(narrowOop* field, oop new_val);
-  virtual void write_ref_field_pre_work(void* field, oop new_val) {
-    guarantee(false, "Not needed");
-  }
 
   template <class T> void write_ref_array_pre_work(T* dst, int count);
   virtual void write_ref_array_pre(oop* dst, int count, bool dest_uninitialized);

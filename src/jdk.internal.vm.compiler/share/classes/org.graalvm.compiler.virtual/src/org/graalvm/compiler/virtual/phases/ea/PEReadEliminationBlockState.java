@@ -25,6 +25,8 @@ package org.graalvm.compiler.virtual.phases.ea;
 import java.util.Iterator;
 import java.util.List;
 
+import org.graalvm.compiler.core.common.type.IntegerStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.FieldLocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -49,11 +51,15 @@ public final class PEReadEliminationBlockState extends PartialEscapeBlockState<P
         public final int index;
         public final JavaKind kind;
 
-        ReadCacheEntry(LocationIdentity identity, ValueNode object, int index, JavaKind kind) {
+        /* This flag does not affect hashCode or equals implementations. */
+        public final boolean overflowAccess;
+
+        ReadCacheEntry(LocationIdentity identity, ValueNode object, int index, JavaKind kind, boolean overflowAccess) {
             this.identity = identity;
             this.object = object;
             this.index = index;
             this.kind = kind;
+            this.overflowAccess = overflowAccess;
         }
 
         @Override
@@ -94,12 +100,38 @@ public final class PEReadEliminationBlockState extends PartialEscapeBlockState<P
         return super.toString() + " " + readCache;
     }
 
+    private static JavaKind stampToJavaKind(Stamp stamp) {
+        if (stamp instanceof IntegerStamp) {
+            switch (((IntegerStamp) stamp).getBits()) {
+                case 1:
+                    return JavaKind.Boolean;
+                case 8:
+                    return JavaKind.Byte;
+                case 16:
+                    return ((IntegerStamp) stamp).isPositive() ? JavaKind.Char : JavaKind.Short;
+                case 32:
+                    return JavaKind.Int;
+                case 64:
+                    return JavaKind.Long;
+                default:
+                    throw new IllegalArgumentException("unexpected IntegerStamp " + stamp);
+            }
+        } else {
+            return stamp.getStackKind();
+        }
+    }
+
     @Override
     protected void objectMaterialized(VirtualObjectNode virtual, AllocatedObjectNode representation, List<ValueNode> values) {
         if (virtual instanceof VirtualInstanceNode) {
             VirtualInstanceNode instance = (VirtualInstanceNode) virtual;
             for (int i = 0; i < instance.entryCount(); i++) {
-                readCache.put(new ReadCacheEntry(new FieldLocationIdentity(instance.field(i)), representation, -1, instance.field(i).getJavaKind()), values.get(i));
+                JavaKind declaredKind = instance.field(i).getJavaKind();
+                if (declaredKind == stampToJavaKind(values.get(i).stamp())) {
+                    // We won't cache unaligned field writes upon instantiation unless we add
+                    // support for non-array objects in PEReadEliminationClosure.processUnsafeLoad.
+                    readCache.put(new ReadCacheEntry(new FieldLocationIdentity(instance.field(i)), representation, -1, declaredKind, false), values.get(i));
+                }
             }
         }
     }
@@ -112,7 +144,7 @@ public final class PEReadEliminationBlockState extends PartialEscapeBlockState<P
         return super.equivalentTo(other);
     }
 
-    public void addReadCache(ValueNode object, LocationIdentity identity, int index, JavaKind kind, ValueNode value, PartialEscapeClosure<?> closure) {
+    public void addReadCache(ValueNode object, LocationIdentity identity, int index, JavaKind kind, boolean overflowAccess, ValueNode value, PartialEscapeClosure<?> closure) {
         ValueNode cacheObject;
         ObjectState obj = closure.getObjectState(this, object);
         if (obj != null) {
@@ -121,7 +153,7 @@ public final class PEReadEliminationBlockState extends PartialEscapeBlockState<P
         } else {
             cacheObject = object;
         }
-        readCache.put(new ReadCacheEntry(identity, cacheObject, index, kind), value);
+        readCache.put(new ReadCacheEntry(identity, cacheObject, index, kind, overflowAccess), value);
     }
 
     public ValueNode getReadCache(ValueNode object, LocationIdentity identity, int index, JavaKind kind, PartialEscapeClosure<?> closure) {
@@ -133,7 +165,7 @@ public final class PEReadEliminationBlockState extends PartialEscapeBlockState<P
         } else {
             cacheObject = object;
         }
-        ValueNode cacheValue = readCache.get(new ReadCacheEntry(identity, cacheObject, index, kind));
+        ValueNode cacheValue = readCache.get(new ReadCacheEntry(identity, cacheObject, index, kind, false));
         obj = closure.getObjectState(this, cacheValue);
         if (obj != null) {
             assert !obj.isVirtual();
@@ -153,7 +185,7 @@ public final class PEReadEliminationBlockState extends PartialEscapeBlockState<P
         Iterator<ReadCacheEntry> iter = readCache.getKeys().iterator();
         while (iter.hasNext()) {
             ReadCacheEntry entry = iter.next();
-            if (entry.identity.equals(identity) && (index == -1 || entry.index == -1 || index == entry.index)) {
+            if (entry.identity.equals(identity) && (index == -1 || entry.index == -1 || index == entry.index || entry.overflowAccess)) {
                 iter.remove();
             }
         }

@@ -786,15 +786,9 @@ public class Lexer extends Scanner {
             if (ch0 == '\\' && ch1 == 'u') {
                 skip(2);
                 final int ch = hexSequence(4, TokenType.IDENT);
-                if (isWhitespace((char)ch)) {
-                    return null;
-                }
-                if (ch < 0) {
-                    sb.append('\\');
-                    sb.append('u');
-                } else {
-                    sb.append((char)ch);
-                }
+                assert ! isWhitespace((char)ch);
+                assert ch >= 0;
+                sb.append((char)ch);
             } else {
                 // Add regular character.
                 sb.append(ch0);
@@ -994,9 +988,6 @@ public class Lexer extends Scanner {
             if (ch0 == '\\') {
                 type = ESCSTRING;
                 skip(1);
-                if (! isEscapeCharacter(ch0)) {
-                    error(Lexer.message("invalid.escape.char"), STRING, position, limit);
-                }
                 if (isEOL(ch0)) {
                     // Multiline string literal
                     skipEOL(false);
@@ -1093,9 +1084,6 @@ public class Lexer extends Scanner {
             } else if (ch0 == '\\') {
                 skip(1);
                 // EscapeSequence
-                if (!isEscapeCharacter(ch0)) {
-                    error(Lexer.message("invalid.escape.char"), TEMPLATE, position, limit);
-                }
                 if (isEOL(ch0)) {
                     // LineContinuation
                     skipEOL(false);
@@ -1112,16 +1100,6 @@ public class Lexer extends Scanner {
         }
 
         error(Lexer.message("missing.close.quote"), TEMPLATE, position, limit);
-    }
-
-    /**
-     * Is the given character a valid escape char after "\" ?
-     *
-     * @param ch character to be checked
-     * @return if the given character is valid after "\"
-     */
-    protected boolean isEscapeCharacter(final char ch) {
-        return true;
     }
 
     /**

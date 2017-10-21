@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,9 +26,9 @@
 #ifndef CPU_PPC_VM_JNITYPES_PPC_HPP
 #define CPU_PPC_VM_JNITYPES_PPC_HPP
 
+#include "jni.h"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
-#include "prims/jni.h"
 
 // This file holds platform-dependent routines used to write primitive
 // jni types to the array of arguments passed into JavaCalls::call.

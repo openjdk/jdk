@@ -33,6 +33,7 @@ import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
+import org.graalvm.compiler.hotspot.meta.HotSpotInvokeDynamicPlugin;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.phases.LIRSuites;
@@ -63,13 +64,13 @@ final class AOTBackend {
     private final PhaseSuite<HighTierContext> graphBuilderSuite;
     private final HighTierContext highTierContext;
 
-    AOTBackend(Main main, OptionValues graalOptions, HotSpotBackend backend) {
+    AOTBackend(Main main, OptionValues graalOptions, HotSpotBackend backend, HotSpotInvokeDynamicPlugin inokeDynamicPlugin) {
         this.main = main;
         this.graalOptions = graalOptions;
         this.backend = backend;
         providers = backend.getProviders();
         codeCache = providers.getCodeCache();
-        graphBuilderSuite = initGraphBuilderSuite(backend, main.options.compileWithAssertions);
+        graphBuilderSuite = initGraphBuilderSuite(backend, main.options.compileWithAssertions, inokeDynamicPlugin);
         highTierContext = new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL);
     }
 
@@ -146,13 +147,14 @@ final class AOTBackend {
         return null;
     }
 
-    private static PhaseSuite<HighTierContext> initGraphBuilderSuite(HotSpotBackend backend, boolean compileWithAssertions) {
+    private static PhaseSuite<HighTierContext> initGraphBuilderSuite(HotSpotBackend backend, boolean compileWithAssertions, HotSpotInvokeDynamicPlugin inokeDynamicPlugin) {
         PhaseSuite<HighTierContext> graphBuilderSuite = backend.getSuites().getDefaultGraphBuilderSuite().copy();
         ListIterator<BasePhase<? super HighTierContext>> iterator = graphBuilderSuite.findPhase(GraphBuilderPhase.class);
         GraphBuilderConfiguration baseConfig = ((GraphBuilderPhase) iterator.previous()).getGraphBuilderConfig();
 
         // Use all default plugins.
         Plugins plugins = baseConfig.getPlugins();
+        plugins.setInvokeDynamicPlugin(inokeDynamicPlugin);
         GraphBuilderConfiguration aotConfig = GraphBuilderConfiguration.getDefault(plugins).withEagerResolving(true).withOmitAssertions(!compileWithAssertions);
 
         iterator.next();

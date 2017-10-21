@@ -1499,7 +1499,7 @@ size_t MetaspaceGC::delta_capacity_until_GC(size_t bytes) {
 }
 
 size_t MetaspaceGC::capacity_until_GC() {
-  size_t value = (size_t)OrderAccess::load_ptr_acquire(&_capacity_until_GC);
+  size_t value = OrderAccess::load_acquire(&_capacity_until_GC);
   assert(value >= MetaspaceSize, "Not initialized properly?");
   return value;
 }
@@ -1507,16 +1507,16 @@ size_t MetaspaceGC::capacity_until_GC() {
 bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size_t* old_cap_until_GC) {
   assert_is_aligned(v, Metaspace::commit_alignment());
 
-  size_t capacity_until_GC = (size_t) _capacity_until_GC;
-  size_t new_value = capacity_until_GC + v;
+  intptr_t capacity_until_GC = _capacity_until_GC;
+  intptr_t new_value = capacity_until_GC + v;
 
   if (new_value < capacity_until_GC) {
     // The addition wrapped around, set new_value to aligned max value.
     new_value = align_down(max_uintx, Metaspace::commit_alignment());
   }
 
-  intptr_t expected = (intptr_t) capacity_until_GC;
-  intptr_t actual = Atomic::cmpxchg_ptr((intptr_t) new_value, &_capacity_until_GC, expected);
+  intptr_t expected = _capacity_until_GC;
+  intptr_t actual = Atomic::cmpxchg(new_value, &_capacity_until_GC, expected);
 
   if (expected != actual) {
     return false;
@@ -1534,7 +1534,7 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
 size_t MetaspaceGC::dec_capacity_until_GC(size_t v) {
   assert_is_aligned(v, Metaspace::commit_alignment());
 
-  return (size_t)Atomic::add_ptr(-(intptr_t)v, &_capacity_until_GC);
+  return (size_t)Atomic::sub((intptr_t)v, &_capacity_until_GC);
 }
 
 void MetaspaceGC::initialize() {
@@ -2398,7 +2398,7 @@ void SpaceManager::inc_size_metrics(size_t words) {
 
 void SpaceManager::inc_used_metrics(size_t words) {
   // Add to the per SpaceManager total
-  Atomic::add_ptr(words, &_allocated_blocks_words);
+  Atomic::add(words, &_allocated_blocks_words);
   // Add to the global total
   MetaspaceAux::inc_used(mdtype(), words);
 }
@@ -2753,8 +2753,7 @@ void MetaspaceAux::dec_used(Metaspace::MetadataType mdtype, size_t words) {
   // sweep which is a concurrent phase.  Protection by the expand_lock()
   // is not enough since allocation is on a per Metaspace basis
   // and protected by the Metaspace lock.
-  jlong minus_words = (jlong) - (jlong) words;
-  Atomic::add_ptr(minus_words, &_used_words[mdtype]);
+  Atomic::sub(words, &_used_words[mdtype]);
 }
 
 void MetaspaceAux::inc_used(Metaspace::MetadataType mdtype, size_t words) {
@@ -2762,7 +2761,7 @@ void MetaspaceAux::inc_used(Metaspace::MetadataType mdtype, size_t words) {
   // each piece of metadata.  Those allocations are
   // generally done concurrently by different application
   // threads so must be done atomically.
-  Atomic::add_ptr(words, &_used_words[mdtype]);
+  Atomic::add(words, &_used_words[mdtype]);
 }
 
 size_t MetaspaceAux::used_bytes_slow(Metaspace::MetadataType mdtype) {
@@ -3324,6 +3323,24 @@ void Metaspace::ergo_initialize() {
 
   CompressedClassSpaceSize = align_down_bounded(CompressedClassSpaceSize, _reserve_alignment);
   set_compressed_class_space_size(CompressedClassSpaceSize);
+
+  // Initial virtual space size will be calculated at global_initialize()
+  size_t min_metaspace_sz =
+      VIRTUALSPACEMULTIPLIER * InitialBootClassLoaderMetaspaceSize;
+  if (UseCompressedClassPointers) {
+    if ((min_metaspace_sz + CompressedClassSpaceSize) >  MaxMetaspaceSize) {
+      if (min_metaspace_sz >= MaxMetaspaceSize) {
+        vm_exit_during_initialization("MaxMetaspaceSize is too small.");
+      } else {
+        FLAG_SET_ERGO(size_t, CompressedClassSpaceSize,
+                      MaxMetaspaceSize - min_metaspace_sz);
+      }
+    }
+  } else if (min_metaspace_sz >= MaxMetaspaceSize) {
+    FLAG_SET_ERGO(size_t, InitialBootClassLoaderMetaspaceSize,
+                  min_metaspace_sz);
+  }
+
 }
 
 void Metaspace::global_initialize() {

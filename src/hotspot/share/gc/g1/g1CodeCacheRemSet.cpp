@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,19 +155,19 @@ G1CodeRootSet::~G1CodeRootSet() {
 }
 
 G1CodeRootSetTable* G1CodeRootSet::load_acquire_table() {
-  return (G1CodeRootSetTable*) OrderAccess::load_ptr_acquire(&_table);
+  return OrderAccess::load_acquire(&_table);
 }
 
 void G1CodeRootSet::allocate_small_table() {
   G1CodeRootSetTable* temp = new G1CodeRootSetTable(SmallSize);
 
-  OrderAccess::release_store_ptr(&_table, temp);
+  OrderAccess::release_store(&_table, temp);
 }
 
 void G1CodeRootSetTable::purge_list_append(G1CodeRootSetTable* table) {
   for (;;) {
     table->_purge_next = _purge_list;
-    G1CodeRootSetTable* old = (G1CodeRootSetTable*) Atomic::cmpxchg_ptr(table, &_purge_list, table->_purge_next);
+    G1CodeRootSetTable* old = Atomic::cmpxchg(table, &_purge_list, table->_purge_next);
     if (old == table->_purge_next) {
       break;
     }
@@ -191,7 +191,7 @@ void G1CodeRootSet::move_to_large() {
 
   G1CodeRootSetTable::purge_list_append(_table);
 
-  OrderAccess::release_store_ptr(&_table, temp);
+  OrderAccess::release_store(&_table, temp);
 }
 
 void G1CodeRootSet::purge() {

@@ -49,22 +49,17 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
     BUNDLE_VENDOR := $(COMPANY_NAME)
   endif
 
-  JDK_FILE_LIST := $(shell $(FIND) $(JDK_IMAGE_DIR))
-  JRE_FILE_LIST := $(shell $(FIND) $(JRE_IMAGE_DIR))
+  $(eval $(call SetupCopyFiles, COPY_JDK_IMAGE, \
+      SRC := $(JDK_IMAGE_DIR), \
+      DEST := $(JDK_MACOSX_CONTENTS_DIR)/Home, \
+      FILES := $(call CacheFind, $(JDK_IMAGE_DIR)), \
+  ))
 
-  JDK_TARGET_LIST := $(subst $(JDK_IMAGE_DIR)/,$(JDK_MACOSX_CONTENTS_DIR)/Home/,$(JDK_FILE_LIST))
-  JRE_TARGET_LIST := $(subst $(JRE_IMAGE_DIR)/,$(JRE_MACOSX_CONTENTS_DIR)/Home/,$(JRE_FILE_LIST))
-
-  # Copy empty directories (jre/lib/applet).
-  $(JDK_MACOSX_CONTENTS_DIR)/Home/%: $(JDK_IMAGE_DIR)/%
-	$(call LogInfo, Copying $(patsubst $(OUTPUTDIR)/%,%,$@))
-	$(MKDIR) -p $(@D)
-	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -P '$<' '$@'; fi
-
-  $(JRE_MACOSX_CONTENTS_DIR)/Home/%: $(JRE_IMAGE_DIR)/%
-	$(call LogInfo, Copying $(patsubst $(OUTPUTDIR)/%,%,$@))
-	$(MKDIR) -p $(@D)
-	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -P '$<' '$@'; fi
+  $(eval $(call SetupCopyFiles, COPY_JRE_IMAGE, \
+      SRC := $(JRE_IMAGE_DIR), \
+      DEST := $(JRE_MACOSX_CONTENTS_DIR)/Home, \
+      FILES := $(call CacheFind, $(JRE_IMAGE_DIR)), \
+  ))
 
   $(JDK_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib:
 	$(call LogInfo, Creating link $(patsubst $(OUTPUTDIR)/%,%,$@))
@@ -102,11 +97,11 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           @@VENDOR@@ => $(BUNDLE_VENDOR) , \
   ))
 
-  jdk-bundle: $(JDK_TARGET_LIST) $(JDK_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib \
+  jdk-bundle: $(COPY_JDK_IMAGE) $(JDK_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib \
       $(BUILD_JDK_PLIST)
 	$(SETFILE) -a B $(dir $(JDK_MACOSX_CONTENTS_DIR))
 
-  jre-bundle: $(JRE_TARGET_LIST) $(JRE_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib \
+  jre-bundle: $(COPY_JRE_IMAGE) $(JRE_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib \
       $(BUILD_JRE_PLIST)
 	$(SETFILE) -a B $(dir $(JRE_MACOSX_CONTENTS_DIR))
 

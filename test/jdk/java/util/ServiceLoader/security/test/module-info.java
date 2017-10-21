@@ -26,8 +26,16 @@ import p.Tests.*;
 module test {
     uses S1;
     uses S2;
+    uses S3;
+    uses S4;
+    uses S5;
+    uses S6;
     provides S1 with P1;
     provides S2 with P2;
+    provides S3 with P3;
+    provides S4 with P4;
+    provides S5 with P5;
+    provides S6 with P6;
     requires testng;
     exports p to testng;
 }

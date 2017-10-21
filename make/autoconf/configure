@@ -23,18 +23,17 @@
 #
 
 if test "x$1" != xCHECKME; then
-  echo "WARNING: Calling the wrapper script directly is deprecated and unsupported."
-  echo "Not all features of configure will be available."
+  echo "ERROR: Calling this wrapper script directly is not supported."
   echo "Use the 'configure' script in the top-level directory instead."
-  TOPDIR=$(cd $(dirname $0)/../.. > /dev/null && pwd)
-else
-  # Now the next argument is the absolute top-level directory path.
-  # The TOPDIR variable is passed on to configure.ac.
-  TOPDIR="$2"
-  # Remove these two arguments to get to the user supplied arguments
-  shift
-  shift
+  exit 1
 fi
+
+# The next argument is the absolute top-level directory path.
+# The TOPDIR variable is passed on to configure.ac.
+TOPDIR="$2"
+# Remove these two arguments to get to the user supplied arguments
+shift
+shift
 
 if test "x$BASH" = x; then
   echo "Error: This script must be run using bash." 1>&2

@@ -43,6 +43,7 @@
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/space.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -181,6 +182,13 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     pt.print_all_references();
   }
 
+  {
+    GCTraceTime(Debug, gc, phases) trace("Weak Processing", gc_timer());
+    WeakProcessor::weak_oops_do(&GenMarkSweep::is_alive,
+                                &GenMarkSweep::keep_alive,
+                                &GenMarkSweep::follow_stack_closure);
+  }
+
   // This is the point where the entire marking should have completed.
   assert(GenMarkSweep::_marking_stack.is_empty(), "Marking should have completed");
 
@@ -272,7 +280,7 @@ void G1MarkSweep::mark_sweep_phase3() {
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
-  JNIHandles::weak_oops_do(&GenMarkSweep::adjust_pointer_closure);
+  WeakProcessor::oops_do(&GenMarkSweep::adjust_pointer_closure);
 
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::oops_do(&GenMarkSweep::adjust_pointer_closure);

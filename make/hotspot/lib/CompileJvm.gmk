@@ -58,6 +58,7 @@ JVM_CFLAGS_INCLUDES += \
     -I$(JVM_VARIANT_OUTPUTDIR)/gensrc \
     -I$(TOPDIR)/src/hotspot/share/precompiled \
     -I$(TOPDIR)/src/hotspot/share/prims \
+    -I$(TOPDIR)/src/java.base/share/native/include \
     #
 
 # INCLUDE_SUFFIX_* is only meant for including the proper

@@ -35,9 +35,6 @@ class MachODecoder : public AbstractDecoder {
  public:
   MachODecoder() { }
   virtual ~MachODecoder() { }
-  virtual bool can_decode_C_frame_in_vm() const {
-    return true;
-  }
   virtual bool demangle(const char* symbol, char* buf, int buflen);
   virtual bool decode(address pc, char* buf, int buflen, int* offset,
                       const void* base);

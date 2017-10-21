@@ -46,11 +46,13 @@ public class UnsafeReadEliminationTest extends GraalCompilerTest {
     public static double SideEffectD;
     public static double SideEffectL;
 
+    private static final long booleanArrayBaseOffset;
     private static final long byteArrayBaseOffset;
     private static final long intArrayBaseOffset;
     private static final long longArrayBaseOffset;
 
     static {
+        booleanArrayBaseOffset = UNSAFE.arrayBaseOffset(boolean[].class);
         byteArrayBaseOffset = UNSAFE.arrayBaseOffset(byte[].class);
         intArrayBaseOffset = UNSAFE.arrayBaseOffset(int[].class);
         longArrayBaseOffset = UNSAFE.arrayBaseOffset(long[].class);
@@ -210,6 +212,79 @@ public class UnsafeReadEliminationTest extends GraalCompilerTest {
     @Test
     public void testWriteFloatToIntArray() {
         test("testWriteFloatToIntArraySnippet");
+    }
+
+    public static final byte[] FINAL_BYTE_ARRAY = new byte[16];
+
+    public static boolean alignedKill() {
+        int beforeKill = UNSAFE.getInt(FINAL_BYTE_ARRAY, byteArrayBaseOffset);
+        FINAL_BYTE_ARRAY[0] = 1;
+        int afterKill = UNSAFE.getInt(FINAL_BYTE_ARRAY, byteArrayBaseOffset);
+
+        FINAL_BYTE_ARRAY[0] = 0; // reset
+        return beforeKill == afterKill;
+    }
+
+    @Test
+    public void testAlignedKill() {
+        test("alignedKill");
+    }
+
+    public static boolean unalignedKill() {
+        int beforeKill = UNSAFE.getInt(FINAL_BYTE_ARRAY, byteArrayBaseOffset);
+        FINAL_BYTE_ARRAY[1] = 1;
+        int afterKill = UNSAFE.getInt(FINAL_BYTE_ARRAY, byteArrayBaseOffset);
+
+        FINAL_BYTE_ARRAY[1] = 0; // reset
+        return beforeKill == afterKill;
+    }
+
+    @Test
+    public void testUnalignedKill() {
+        test("unalignedKill");
+    }
+
+    public static final boolean[] FINAL_BOOLEAN_ARRAY = new boolean[16];
+
+    public static boolean killBooleanAccessToBooleanArrayViaBASTORE() {
+        boolean beforeKill = UNSAFE.getBoolean(FINAL_BOOLEAN_ARRAY, booleanArrayBaseOffset);
+        FINAL_BOOLEAN_ARRAY[0] = true;
+        boolean afterKill = UNSAFE.getBoolean(FINAL_BOOLEAN_ARRAY, booleanArrayBaseOffset);
+
+        FINAL_BOOLEAN_ARRAY[0] = false; // reset
+        return beforeKill == afterKill;
+    }
+
+    @Test
+    public void testKillBooleanAccessToBooleanArrayViaBASTORE() {
+        test("killBooleanAccessToBooleanArrayViaBASTORE");
+    }
+
+    public static boolean killByteAccessToBooleanArrayViaBASTORE() {
+        byte beforeKill = UNSAFE.getByte(FINAL_BOOLEAN_ARRAY, booleanArrayBaseOffset);
+        FINAL_BOOLEAN_ARRAY[0] = true;
+        byte afterKill = UNSAFE.getByte(FINAL_BOOLEAN_ARRAY, booleanArrayBaseOffset);
+
+        FINAL_BOOLEAN_ARRAY[0] = false; // reset
+        return beforeKill == afterKill;
+    }
+
+    @Test
+    public void testKillByteAccessToBooleanArrayViaBASTORE() {
+        test("killByteAccessToBooleanArrayViaBASTORE");
+    }
+
+    public static boolean unsafeWriteToBooleanArray() {
+        UNSAFE.putByte(FINAL_BOOLEAN_ARRAY, booleanArrayBaseOffset, (byte) 2);
+        boolean result = UNSAFE.getBoolean(FINAL_BOOLEAN_ARRAY, booleanArrayBaseOffset);
+
+        FINAL_BOOLEAN_ARRAY[0] = false; // reset
+        return result;
+    }
+
+    @Test
+    public void testUnsafeWriteToBooleanArray() {
+        test("unsafeWriteToBooleanArray");
     }
 
 }

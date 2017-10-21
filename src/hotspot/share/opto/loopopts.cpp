@@ -826,45 +826,26 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
             }
           }
           if (mem_ok) {
-            // Move the Store out of the loop creating clones along
-            // all paths out of the loop that observe the stored value
+            // Move the store out of the loop if the LCA of all
+            // users (except for the phi) is outside the loop.
+            Node* hook = new Node(1);
             _igvn.rehash_node_delayed(phi);
-            int count = phi->replace_edge(n, n->in(MemNode::Memory));
+            int count = phi->replace_edge(n, hook);
             assert(count > 0, "inconsistent phi");
-            for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-              Node* u = n->fast_out(i);
-              Node* c = get_ctrl(u);
 
-              if (u->is_Phi()) {
-                c = u->in(0)->in(u->find_edge(n));
-              }
-              IdealLoopTree *u_loop = get_loop(c);
-              assert (!n_loop->is_member(u_loop), "only the phi should have been a use in the loop");
-              while(true) {
-                Node* next_c = find_non_split_ctrl(idom(c));
-                if (n_loop->is_member(get_loop(next_c))) {
-                  break;
-                }
-                c = next_c;
-              }
-
-              Node* st = n->clone();
-              st->set_req(0, c);
-              _igvn.register_new_node_with_optimizer(st);
-
-              set_ctrl(st, c);
-              IdealLoopTree* new_loop = get_loop(c);
-              assert(new_loop != n_loop, "should be moved out of loop");
-              if (new_loop->_child == NULL) new_loop->_body.push(st);
-
-              _igvn.replace_input_of(u, u->find_edge(n), st);
-              --imax;
-              --i;
+            // Compute latest point this store can go
+            Node* lca = get_late_ctrl(n, get_ctrl(n));
+            if (n_loop->is_member(get_loop(lca))) {
+              // LCA is in the loop - bail out
+              _igvn.replace_node(hook, n);
+              return;
             }
 
+            // Move store out of the loop
+            _igvn.replace_node(hook, n->in(MemNode::Memory));
+            _igvn.replace_input_of(n, 0, lca);
+            set_ctrl_and_loop(n, lca);
 
-            assert(n->outcnt() == 0, "all uses should be gone");
-            _igvn.replace_input_of(n, MemNode::Memory, C->top());
             // Disconnect the phi now. An empty phi can confuse other
             // optimizations in this pass of loop opts..
             if (phi->in(LoopNode::LoopBackControl) == phi) {

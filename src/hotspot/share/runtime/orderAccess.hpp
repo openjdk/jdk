@@ -268,20 +268,11 @@ class OrderAccess : private Atomic {
   template <typename T>
   static T        load_acquire(const volatile T* p);
 
-  static intptr_t load_ptr_acquire(const volatile intptr_t* p);
-  static void*    load_ptr_acquire(const volatile void*     p);
-
   template <typename T, typename D>
   static void     release_store(volatile D* p, T v);
 
-  static void     release_store_ptr(volatile intptr_t* p, intptr_t v);
-  static void     release_store_ptr(volatile void*     p, void*    v);
-
   template <typename T, typename D>
   static void     release_store_fence(volatile D* p, T v);
-
-  static void     release_store_ptr_fence(volatile intptr_t* p, intptr_t v);
-  static void     release_store_ptr_fence(volatile void*     p, void*    v);
 
  private:
   // This is a helper that invokes the StubRoutines::fence_entry()

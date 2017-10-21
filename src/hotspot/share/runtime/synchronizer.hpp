@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_SYNCHRONIZER_HPP
 #define SHARE_VM_RUNTIME_SYNCHRONIZER_HPP
 
+#include "memory/padded.hpp"
 #include "oops/markOop.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
@@ -159,9 +160,7 @@ class ObjectSynchronizer : AllStatic {
  private:
   enum { _BLOCKSIZE = 128 };
   // global list of blocks of monitors
-  // gBlockList is really PaddedEnd<ObjectMonitor> *, but we don't
-  // want to expose the PaddedEnd template more than necessary.
-  static ObjectMonitor * volatile gBlockList;
+  static PaddedEnd<ObjectMonitor> * volatile gBlockList;
   // global monitor free list
   static ObjectMonitor * volatile gFreeList;
   // global monitor in-use list, for moribund threads,

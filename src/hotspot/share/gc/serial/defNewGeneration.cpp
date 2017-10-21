@@ -41,6 +41,7 @@
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -658,6 +659,8 @@ void DefNewGeneration::collect(bool   full,
   gc_tracer.report_tenuring_threshold(tenuring_threshold());
   pt.print_all_references();
 
+  WeakProcessor::weak_oops_do(&is_alive, &keep_alive, &evacuate_followers);
+
   if (!_promotion_failed) {
     // Swap the survivor spaces.
     eden()->clear(SpaceDecorator::Mangle);
@@ -734,8 +737,11 @@ void DefNewGeneration::remove_forwarding_pointers() {
   RemoveForwardedPointerClosure rspc;
   eden()->object_iterate(&rspc);
   from()->object_iterate(&rspc);
+  restore_preserved_marks();
+}
 
-  SharedRestorePreservedMarksTaskExecutor task_executor(GenCollectedHeap::heap()->workers());
+void DefNewGeneration::restore_preserved_marks() {
+  SharedRestorePreservedMarksTaskExecutor task_executor(NULL);
   _preserved_marks_set.restore(&task_executor);
 }
 

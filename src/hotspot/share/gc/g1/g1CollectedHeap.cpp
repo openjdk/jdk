@@ -57,7 +57,6 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
-#include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -68,8 +67,10 @@
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -139,13 +140,6 @@ void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_region
   // The from card cache is not the memory that is actually committed. So we cannot
   // take advantage of the zero_filled parameter.
   reset_from_card_cache(start_idx, num_regions);
-}
-
-// Returns true if the reference points to an object that
-// can move in an incremental collection.
-bool G1CollectedHeap::is_scavengable(const void* p) {
-  HeapRegion* hr = heap_region_containing(p);
-  return !hr->is_pinned();
 }
 
 // Private methods.
@@ -1849,6 +1843,14 @@ void G1CollectedHeap::stop() {
   }
 }
 
+void G1CollectedHeap::safepoint_synchronize_begin() {
+  SuspendibleThreadSet::synchronize();
+}
+
+void G1CollectedHeap::safepoint_synchronize_end() {
+  SuspendibleThreadSet::desynchronize();
+}
+
 size_t G1CollectedHeap::conservative_max_heap_alignment() {
   return HeapRegion::max_region_size();
 }
@@ -3458,10 +3460,10 @@ private:
 
   // Variables used to claim nmethods.
   CompiledMethod* _first_nmethod;
-  volatile CompiledMethod* _claimed_nmethod;
+  CompiledMethod* volatile _claimed_nmethod;
 
   // The list of nmethods that need to be processed by the second pass.
-  volatile CompiledMethod* _postponed_list;
+  CompiledMethod* volatile _postponed_list;
   volatile uint            _num_entered_barrier;
 
  public:
@@ -3480,7 +3482,7 @@ private:
     if(iter.next_alive()) {
       _first_nmethod = iter.method();
     }
-    _claimed_nmethod = (volatile CompiledMethod*)_first_nmethod;
+    _claimed_nmethod = _first_nmethod;
   }
 
   ~G1CodeCacheUnloadingTask() {
@@ -3496,9 +3498,9 @@ private:
   void add_to_postponed_list(CompiledMethod* nm) {
       CompiledMethod* old;
       do {
-        old = (CompiledMethod*)_postponed_list;
+        old = _postponed_list;
         nm->set_unloading_next(old);
-      } while ((CompiledMethod*)Atomic::cmpxchg_ptr(nm, &_postponed_list, old) != old);
+      } while (Atomic::cmpxchg(nm, &_postponed_list, old) != old);
   }
 
   void clean_nmethod(CompiledMethod* nm) {
@@ -3527,7 +3529,7 @@ private:
     do {
       *num_claimed_nmethods = 0;
 
-      first = (CompiledMethod*)_claimed_nmethod;
+      first = _claimed_nmethod;
       last = CompiledMethodIterator(first);
 
       if (first != NULL) {
@@ -3541,7 +3543,7 @@ private:
         }
       }
 
-    } while ((CompiledMethod*)Atomic::cmpxchg_ptr(last.method(), &_claimed_nmethod, first) != first);
+    } while (Atomic::cmpxchg(last.method(), &_claimed_nmethod, first) != first);
   }
 
   CompiledMethod* claim_postponed_nmethod() {
@@ -3549,14 +3551,14 @@ private:
     CompiledMethod* next;
 
     do {
-      claim = (CompiledMethod*)_postponed_list;
+      claim = _postponed_list;
       if (claim == NULL) {
         return NULL;
       }
 
       next = claim->unloading_next();
 
-    } while ((CompiledMethod*)Atomic::cmpxchg_ptr(next, &_postponed_list, claim) != claim);
+    } while (Atomic::cmpxchg(next, &_postponed_list, claim) != claim);
 
     return claim;
   }
@@ -4127,17 +4129,6 @@ public:
   }
 };
 
-void G1CollectedHeap::process_weak_jni_handles() {
-  double ref_proc_start = os::elapsedTime();
-
-  G1STWIsAliveClosure is_alive(this);
-  G1KeepAliveClosure keep_alive(this);
-  JNIHandles::weak_oops_do(&is_alive, &keep_alive);
-
-  double ref_proc_time = os::elapsedTime() - ref_proc_start;
-  g1_policy()->phase_times()->record_ref_proc_time(ref_proc_time * 1000.0);
-}
-
 void G1CollectedHeap::preserve_cm_referents(G1ParScanThreadStateSet* per_thread_states) {
   // Any reference objects, in the collection set, that were 'discovered'
   // by the CM ref processor should have already been copied (either by
@@ -4368,14 +4359,23 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
     process_discovered_references(per_thread_states);
   } else {
     ref_processor_stw()->verify_no_references_recorded();
-    process_weak_jni_handles();
+  }
+
+  G1STWIsAliveClosure is_alive(this);
+  G1KeepAliveClosure keep_alive(this);
+
+  {
+    double start = os::elapsedTime();
+
+    WeakProcessor::weak_oops_do(&is_alive, &keep_alive);
+
+    double time_ms = (os::elapsedTime() - start) * 1000.0;
+    g1_policy()->phase_times()->record_ref_proc_time(time_ms);
   }
 
   if (G1StringDedup::is_enabled()) {
     double fixup_start = os::elapsedTime();
 
-    G1STWIsAliveClosure is_alive(this);
-    G1KeepAliveClosure keep_alive(this);
     G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive, true, g1_policy()->phase_times());
 
     double fixup_time_ms = (os::elapsedTime() - fixup_start) * 1000.0;
@@ -5323,17 +5323,20 @@ public:
   void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
-void G1CollectedHeap::register_nmethod(nmethod* nm) {
-  CollectedHeap::register_nmethod(nm);
+// Returns true if the reference points to an object that
+// can move in an incremental collection.
+bool G1CollectedHeap::is_scavengable(oop obj) {
+  HeapRegion* hr = heap_region_containing(obj);
+  return !hr->is_pinned();
+}
 
+void G1CollectedHeap::register_nmethod(nmethod* nm) {
   guarantee(nm != NULL, "sanity");
   RegisterNMethodOopClosure reg_cl(this, nm);
   nm->oops_do(&reg_cl);
 }
 
 void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
-  CollectedHeap::unregister_nmethod(nm);
-
   guarantee(nm != NULL, "sanity");
   UnregisterNMethodOopClosure reg_cl(this, nm);
   nm->oops_do(&reg_cl, true);

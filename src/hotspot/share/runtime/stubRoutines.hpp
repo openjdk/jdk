@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,11 +101,10 @@ class StubRoutines: AllStatic {
   static address _throw_delayed_StackOverflowError_entry;
 
   static address _atomic_xchg_entry;
-  static address _atomic_xchg_ptr_entry;
+  static address _atomic_xchg_long_entry;
   static address _atomic_store_entry;
   static address _atomic_store_ptr_entry;
   static address _atomic_cmpxchg_entry;
-  static address _atomic_cmpxchg_ptr_entry;
   static address _atomic_cmpxchg_byte_entry;
   static address _atomic_cmpxchg_long_entry;
   static address _atomic_add_entry;
@@ -276,11 +275,10 @@ class StubRoutines: AllStatic {
   static address throw_delayed_StackOverflowError_entry()  { return _throw_delayed_StackOverflowError_entry; }
 
   static address atomic_xchg_entry()                       { return _atomic_xchg_entry; }
-  static address atomic_xchg_ptr_entry()                   { return _atomic_xchg_ptr_entry; }
+  static address atomic_xchg_long_entry()                  { return _atomic_xchg_long_entry; }
   static address atomic_store_entry()                      { return _atomic_store_entry; }
   static address atomic_store_ptr_entry()                  { return _atomic_store_ptr_entry; }
   static address atomic_cmpxchg_entry()                    { return _atomic_cmpxchg_entry; }
-  static address atomic_cmpxchg_ptr_entry()                { return _atomic_cmpxchg_ptr_entry; }
   static address atomic_cmpxchg_byte_entry()               { return _atomic_cmpxchg_byte_entry; }
   static address atomic_cmpxchg_long_entry()               { return _atomic_cmpxchg_long_entry; }
   static address atomic_add_entry()                        { return _atomic_add_entry; }
