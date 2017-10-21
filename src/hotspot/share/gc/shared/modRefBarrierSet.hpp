@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,57 +35,12 @@ class OopClosure;
 class Generation;
 
 class ModRefBarrierSet: public BarrierSet {
-public:
-
-  // Barriers only on ref writes.
-  bool has_read_ref_barrier() { return false; }
-  bool has_read_prim_barrier() { return false; }
-  bool has_write_ref_barrier() { return true; }
-  bool has_write_prim_barrier() { return false; }
-
-  bool read_ref_needs_barrier(void* field) { return false; }
-  bool read_prim_needs_barrier(HeapWord* field, size_t bytes) { return false; }
-  bool write_prim_needs_barrier(HeapWord* field, size_t bytes,
-                                juint val1, juint val2) { return false; }
-
-  void write_prim_field(oop obj, size_t offset, size_t bytes,
-                        juint val1, juint val2) {}
-
-  void read_ref_field(void* field) {}
-  void read_prim_field(HeapWord* field, size_t bytes) {}
-
 protected:
-
   ModRefBarrierSet(const BarrierSet::FakeRtti& fake_rtti)
     : BarrierSet(fake_rtti.add_tag(BarrierSet::ModRef)) { }
   ~ModRefBarrierSet() { }
 
 public:
-  void write_prim_field(HeapWord* field, size_t bytes,
-                        juint val1, juint val2) {}
-
-  bool has_read_ref_array_opt() { return false; }
-  bool has_read_prim_array_opt() { return false; }
-  bool has_write_prim_array_opt() { return false; }
-
-  bool has_read_region_opt() { return false; }
-
-
-  // These operations should assert false unless the corresponding operation
-  // above returns true.
-  void read_ref_array(MemRegion mr) {
-    assert(false, "can't call");
-  }
-  void read_prim_array(MemRegion mr) {
-    assert(false, "can't call");
-  }
-  void write_prim_array(MemRegion mr) {
-    assert(false, "can't call");
-  }
-  void read_region(MemRegion mr) {
-    assert(false, "can't call");
-  }
-
   // Causes all refs in "mr" to be assumed to be modified.
   virtual void invalidate(MemRegion mr) = 0;
 

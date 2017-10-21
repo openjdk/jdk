@@ -140,7 +140,8 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *   private double x, y;
  *   private final StampedLock sl = new StampedLock();
  *
- *   void move(double deltaX, double deltaY) { // an exclusively locked method
+ *   // an exclusively locked method
+ *   void move(double deltaX, double deltaY) {
  *     long stamp = sl.writeLock();
  *     try {
  *       x += deltaX;
@@ -150,25 +151,57 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *     }
  *   }
  *
- *   double distanceFromOrigin() { // A read-only method
- *     double currentX, currentY;
+ *   // a read-only method
+ *   // upgrade from optimistic read to read lock
+ *   double distanceFromOrigin() {
  *     long stamp = sl.tryOptimisticRead();
- *     do {
- *       if (stamp == 0L)
- *         stamp = sl.readLock();
- *       try {
+ *     try {
+ *       retryHoldingLock: for (;; stamp = sl.readLock()) {
+ *         if (stamp == 0L)
+ *           continue retryHoldingLock;
  *         // possibly racy reads
- *         currentX = x;
- *         currentY = y;
- *       } finally {
- *         stamp = sl.tryConvertToOptimisticRead(stamp);
+ *         double currentX = x;
+ *         double currentY = y;
+ *         if (!sl.validate(stamp))
+ *           continue retryHoldingLock;
+ *         return Math.hypot(currentX, currentY);
  *       }
- *     } while (stamp == 0);
- *     return Math.hypot(currentX, currentY);
+ *     } finally {
+ *       if (StampedLock.isReadLockStamp(stamp))
+ *         sl.unlockRead(stamp);
+ *     }
  *   }
  *
- *   void moveIfAtOrigin(double newX, double newY) { // upgrade
- *     // Could instead start with optimistic, not read mode
+ *   // upgrade from optimistic read to write lock
+ *   void moveIfAtOrigin(double newX, double newY) {
+ *     long stamp = sl.tryOptimisticRead();
+ *     try {
+ *       retryHoldingLock: for (;; stamp = sl.writeLock()) {
+ *         if (stamp == 0L)
+ *           continue retryHoldingLock;
+ *         // possibly racy reads
+ *         double currentX = x;
+ *         double currentY = y;
+ *         if (!sl.validate(stamp))
+ *           continue retryHoldingLock;
+ *         if (currentX != 0.0 || currentY != 0.0)
+ *           break;
+ *         stamp = sl.tryConvertToWriteLock(stamp);
+ *         if (stamp == 0L)
+ *           continue retryHoldingLock;
+ *         // exclusive access
+ *         x = newX;
+ *         y = newY;
+ *         return;
+ *       }
+ *     } finally {
+ *       if (StampedLock.isWriteLockStamp(stamp))
+ *         sl.unlockWrite(stamp);
+ *     }
+ *   }
+ *
+ *   // Upgrade read lock to write lock
+ *   void moveIfAtOrigin(double newX, double newY) {
  *     long stamp = sl.readLock();
  *     try {
  *       while (x == 0.0 && y == 0.0) {
@@ -879,6 +912,92 @@ public class StampedLock implements java.io.Serializable {
      */
     public boolean isReadLocked() {
         return (state & RBITS) != 0L;
+    }
+
+    /**
+     * Tells whether a stamp represents holding a lock exclusively.
+     * This method may be useful in conjunction with
+     * {@link #tryConvertToWriteLock}, for example: <pre> {@code
+     * long stamp = sl.tryOptimisticRead();
+     * try {
+     *   ...
+     *   stamp = sl.tryConvertToWriteLock(stamp);
+     *   ...
+     * } finally {
+     *   if (StampedLock.isWriteLockStamp(stamp))
+     *     sl.unlockWrite(stamp);
+     * }}</pre>
+     *
+     * @param stamp a stamp returned by a previous StampedLock operation
+     * @return {@code true} if the stamp was returned by a successful
+     *   write-lock operation
+     * @since 10
+     */
+    public static boolean isWriteLockStamp(long stamp) {
+        return (stamp & ABITS) == WBIT;
+    }
+
+    /**
+     * Tells whether a stamp represents holding a lock non-exclusively.
+     * This method may be useful in conjunction with
+     * {@link #tryConvertToReadLock}, for example: <pre> {@code
+     * long stamp = sl.tryOptimisticRead();
+     * try {
+     *   ...
+     *   stamp = sl.tryConvertToReadLock(stamp);
+     *   ...
+     * } finally {
+     *   if (StampedLock.isReadLockStamp(stamp))
+     *     sl.unlockRead(stamp);
+     * }}</pre>
+     *
+     * @param stamp a stamp returned by a previous StampedLock operation
+     * @return {@code true} if the stamp was returned by a successful
+     *   read-lock operation
+     * @since 10
+     */
+    public static boolean isReadLockStamp(long stamp) {
+        return (stamp & RBITS) != 0L;
+    }
+
+    /**
+     * Tells whether a stamp represents holding a lock.
+     * This method may be useful in conjunction with
+     * {@link #tryConvertToReadLock} and {@link #tryConvertToWriteLock},
+     * for example: <pre> {@code
+     * long stamp = sl.tryOptimisticRead();
+     * try {
+     *   ...
+     *   stamp = sl.tryConvertToReadLock(stamp);
+     *   ...
+     *   stamp = sl.tryConvertToWriteLock(stamp);
+     *   ...
+     * } finally {
+     *   if (StampedLock.isLockStamp(stamp))
+     *     sl.unlock(stamp);
+     * }}</pre>
+     *
+     * @param stamp a stamp returned by a previous StampedLock operation
+     * @return {@code true} if the stamp was returned by a successful
+     *   read-lock or write-lock operation
+     * @since 10
+     */
+    public static boolean isLockStamp(long stamp) {
+        return (stamp & ABITS) != 0L;
+    }
+
+    /**
+     * Tells whether a stamp represents a successful optimistic read.
+     *
+     * @param stamp a stamp returned by a previous StampedLock operation
+     * @return {@code true} if the stamp was returned by a successful
+     *   optimistic read operation, that is, a non-zero return from
+     *   {@link #tryOptimisticRead()} or
+     *   {@link #tryConvertToOptimisticRead(long)}
+     * @since 10
+     */
+    public static boolean isOptimisticReadStamp(long stamp) {
+        return (stamp & ABITS) == 0L && stamp != 0L;
     }
 
     /**

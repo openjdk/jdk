@@ -61,8 +61,8 @@ class MallocSite : public AllocationSite<MemoryCounter> {
 // Malloc site hashtable entry
 class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  private:
-  MallocSite                _malloc_site;
-  MallocSiteHashtableEntry* _next;
+  MallocSite                         _malloc_site;
+  MallocSiteHashtableEntry* volatile _next;
 
  public:
   MallocSiteHashtableEntry() : _next(NULL) { }
@@ -79,10 +79,7 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
   // Insert an entry atomically.
   // Return true if the entry is inserted successfully.
   // The operation can be failed due to contention from other thread.
-  bool atomic_insert(const MallocSiteHashtableEntry* entry) {
-    return (Atomic::cmpxchg_ptr((void*)entry, (volatile void*)&_next,
-      NULL) == NULL);
-  }
+  bool atomic_insert(MallocSiteHashtableEntry* entry);
 
   void set_callsite(const MallocSite& site) {
     _malloc_site = site;

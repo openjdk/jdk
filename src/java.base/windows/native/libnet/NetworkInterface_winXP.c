@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
             strlen("IP Helper Library GetAdaptersAddresses function failed"
                    " with error == ") + 10;
     int _ret = 0;
+    int try;
 
 
     adapterInfo = (IP_ADAPTER_ADDRESSES *) malloc(BUFF_SIZE);
@@ -94,7 +95,7 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
     flags |= GAA_FLAG_INCLUDE_PREFIX;
     ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
 
-    for (int try = 0; ret == ERROR_BUFFER_OVERFLOW && try < MAX_TRIES; ++try) {
+    for (try = 0; ret == ERROR_BUFFER_OVERFLOW && try < MAX_TRIES; ++try) {
         IP_ADAPTER_ADDRESSES * newAdapterInfo = NULL;
         if (len < (ULONG_MAX - BUFF_SIZE)) {
             len += BUFF_SIZE;
@@ -160,6 +161,7 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     size_t error_msg_buf_size =
         strlen("IP Helper Library GetAdaptersAddresses function failed with error == ") + 10;
     int _ret = 0;
+    int try;
     adapterInfo = (IP_ADAPTER_ADDRESSES *) malloc(BUFF_SIZE);
     if (adapterInfo == NULL) {
         JNU_ThrowByName(env, "java/lang/OutOfMemoryError",
@@ -171,7 +173,7 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     flags |= GAA_FLAG_SKIP_MULTICAST;
     flags |= GAA_FLAG_INCLUDE_PREFIX;
     val = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
-    for (int try = 0; val == ERROR_BUFFER_OVERFLOW && try < MAX_TRIES; ++try) {
+    for (try = 0; val == ERROR_BUFFER_OVERFLOW && try < MAX_TRIES; ++try) {
         IP_ADAPTER_ADDRESSES * newAdapterInfo = NULL;
         if (len < (ULONG_MAX - BUFF_SIZE)) {
             len += BUFF_SIZE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ class ObjectMonitor {
   volatile markOop   _header;       // displaced object header word - mark
   void*     volatile _object;       // backward object pointer - strong root
  public:
-  ObjectMonitor *    FreeNext;      // Free list linkage
+  ObjectMonitor*     FreeNext;      // Free list linkage
  private:
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE,
                         sizeof(volatile markOop) + sizeof(void * volatile) +
@@ -251,6 +251,7 @@ class ObjectMonitor {
     ((ObjectMonitor::f ## _offset_in_bytes()) - markOopDesc::monitor_value)
 
   markOop   header() const;
+  volatile markOop* header_addr();
   void      set_header(markOop hdr);
 
   intptr_t is_busy() const {

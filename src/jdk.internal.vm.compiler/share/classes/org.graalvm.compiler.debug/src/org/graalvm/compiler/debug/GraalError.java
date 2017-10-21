@@ -181,6 +181,12 @@ public class GraalError extends Error {
     public String toString() {
         StringBuilder str = new StringBuilder();
         str.append(super.toString());
+        str.append(context());
+        return str.toString();
+    }
+
+    public String context() {
+        StringBuilder str = new StringBuilder();
         for (String s : context) {
             str.append("\n\tat ").append(s);
         }

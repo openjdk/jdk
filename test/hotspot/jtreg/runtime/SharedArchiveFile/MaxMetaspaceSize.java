@@ -31,14 +31,27 @@
  *          java.management
  */
 
+import java.util.ArrayList;
+
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Platform;
 
 public class MaxMetaspaceSize {
   public static void main(String[] args) throws Exception {
+    ArrayList<String> processArgs = new ArrayList<>();
+    processArgs.add("-Xshare:dump");
+
+    if (Platform.is64bit()) {
+      processArgs.add("-XX:MaxMetaspaceSize=3m");
+      processArgs.add("-XX:CompressedClassSpaceSize=1m");
+      processArgs.add("-XX:InitialBootClassLoaderMetaspaceSize=1m");
+    } else {
+      processArgs.add("-XX:MaxMetaspaceSize=1m");
+    }
+
     String msg = "OutOfMemoryError: Metaspace";
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:MaxMetaspaceSize=1m", "-Xshare:dump");
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(processArgs.toArray(new String[0]));
     CDSTestUtils.executeAndLog(pb, "dump").shouldContain(msg).shouldHaveExitValue(1);
   }
 }

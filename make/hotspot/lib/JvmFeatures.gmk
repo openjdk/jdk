@@ -132,6 +132,7 @@ ifneq ($(call check-jvm-feature, all-gcs), true)
       cms/ g1/ parallel/
   JVM_EXCLUDE_FILES += \
       concurrentGCThread.cpp \
+      suspendibleThreadSet.cpp \
       plab.cpp
   JVM_EXCLUDE_FILES += \
       g1MemoryPool.cpp \

@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jni.h"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -51,7 +52,6 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
-#include "prims/jni.h"
 #include "prims/jniCheck.hpp"
 #include "prims/jniExport.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -396,10 +396,11 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
   }
 
   //%note jni_3
-  Handle loader;
   Handle protection_domain;
   // Find calling class
   Klass* k = thread->security_get_caller_class(0);
+  // default to the system loader when no context
+  Handle loader(THREAD, SystemDictionary::java_system_loader());
   if (k != NULL) {
     // Special handling to make sure JNI_OnLoad and JNI_OnUnload are executed
     // in the correct class context.
@@ -422,11 +423,6 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
     } else {
       loader = Handle(THREAD, k->class_loader());
     }
-  }
-
-  if (loader.is_null()) {
-    // No context and use the system class loader
-    loader = Handle(THREAD, SystemDictionary::java_system_loader());
   }
 
   TempNewSymbol sym = SymbolTable::new_symbol(name, CHECK_NULL);
@@ -3777,7 +3773,7 @@ void copy_jni_function_table(const struct JNINativeInterface_ *new_jni_NativeInt
   intptr_t *a = (intptr_t *) jni_functions();
   intptr_t *b = (intptr_t *) new_jni_NativeInterface;
   for (uint i=0; i <  sizeof(struct JNINativeInterface_)/sizeof(void *); i++) {
-    Atomic::store_ptr(*b++, a++);
+    Atomic::store(*b++, a++);
   }
 }
 
@@ -3898,11 +3894,11 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 #if defined(ZERO) && defined(ASSERT)
   {
     jint a = 0xcafebabe;
-    jint b = Atomic::xchg(0xdeadbeef, &a);
+    jint b = Atomic::xchg((jint) 0xdeadbeef, &a);
     void *c = &a;
-    void *d = Atomic::xchg_ptr(&b, &c);
+    void *d = Atomic::xchg(&b, &c);
     assert(a == (jint) 0xdeadbeef && b == (jint) 0xcafebabe, "Atomic::xchg() works");
-    assert(c == &b && d == &a, "Atomic::xchg_ptr() works");
+    assert(c == &b && d == &a, "Atomic::xchg() works");
   }
 #endif // ZERO && ASSERT
 

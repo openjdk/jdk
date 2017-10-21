@@ -232,6 +232,13 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
     int count = 0;
     while (count++ < StackPrintLimit) {
       fr.print_on_error(st, buf, buf_size);
+      if (fr.pc()) { // print source file and line, if available
+        char buf[128];
+        int line_no;
+        if (Decoder::get_source_info(fr.pc(), buf, sizeof(buf), &line_no)) {
+          st->print("  (%s:%d)", buf, line_no);
+        }
+      }
       st->cr();
       // Compiled code may use EBP register on x86 so it looks like
       // non-walkable C frame. Use frame.sender() for java frames.
@@ -1269,7 +1276,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   }
   intptr_t mytid = os::current_thread_id();
   if (first_error_tid == -1 &&
-      Atomic::cmpxchg_ptr(mytid, &first_error_tid, -1) == -1) {
+      Atomic::cmpxchg(mytid, &first_error_tid, (intptr_t)-1) == -1) {
 
     // Initialize time stamps to use the same base.
     out.time_stamp().update_to(1);

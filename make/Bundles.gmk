@@ -70,9 +70,14 @@ define SetupBundleFileBody
   $$(call SetIfEmpty, $1_UNZIP_DEBUGINFO, false)
 
   $(BUNDLES_OUTPUTDIR)/$$($1_BUNDLE_NAME): $$($1_FILES)
+        # If any of the files contain a space in the file name, CacheFind
+        # will have replaced it with ?. Tar does not accept that so need to
+        # switch it back.
 	$$(foreach d, $$($1_BASE_DIRS), \
 	  $$(eval $$(call ListPathsSafely, \
 	      $1_$$d_RELATIVE_FILES, $$($1_$$d_LIST_FILE))) \
+	  $$(CAT) $$($1_$$d_LIST_FILE) | $$(TR) '?' ' ' > $$($1_$$d_LIST_FILE).tmp \
+	      && $(MV) $$($1_$$d_LIST_FILE).tmp $$($1_$$d_LIST_FILE) $$(NEWLINE) \
 	)
 	$$(call MakeDir, $$(@D))
         ifneq ($$($1_SPECIAL_INCLUDES), )

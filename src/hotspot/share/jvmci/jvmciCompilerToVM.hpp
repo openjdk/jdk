@@ -24,7 +24,7 @@
 #ifndef SHARE_VM_JVMCI_JVMCI_COMPILER_TO_VM_HPP
 #define SHARE_VM_JVMCI_JVMCI_COMPILER_TO_VM_HPP
 
-#include "prims/jni.h"
+#include "jni.h"
 #include "runtime/javaCalls.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import static org.graalvm.compiler.hotspot.HotSpotBackend.MUL_ADD;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.NEW_ARRAY;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.NEW_INSTANCE;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.NEW_MULTI_ARRAY;
+import static org.graalvm.compiler.hotspot.HotSpotBackend.RESOLVE_DYNAMIC_INVOKE;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.RESOLVE_KLASS_BY_SYMBOL;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.RESOLVE_METHOD_BY_SYMBOL_AND_LOAD_COUNTERS;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.RESOLVE_STRING_BY_SYMBOL;
@@ -305,6 +306,7 @@ public abstract class HotSpotHostForeignCallsProvider extends HotSpotForeignCall
             registerForeignCall(WRONG_METHOD_HANDLER, c.handleWrongMethodStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE, NO_LOCATIONS);
             CompilerRuntimeHotSpotVMConfig cr = new CompilerRuntimeHotSpotVMConfig(HotSpotJVMCIRuntime.runtime().getConfigStore());
             linkForeignCall(options, providers, RESOLVE_STRING_BY_SYMBOL, cr.resolveStringBySymbol, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, TLAB_TOP_LOCATION, TLAB_END_LOCATION);
+            linkForeignCall(options, providers, RESOLVE_DYNAMIC_INVOKE, cr.resolveDynamicInvoke, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, any());
             linkForeignCall(options, providers, RESOLVE_KLASS_BY_SYMBOL, cr.resolveKlassBySymbol, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, any());
             linkForeignCall(options, providers, RESOLVE_METHOD_BY_SYMBOL_AND_LOAD_COUNTERS, cr.resolveMethodBySymbolAndLoadCounters, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, NO_LOCATIONS);
             linkForeignCall(options, providers, INITIALIZE_KLASS_BY_SYMBOL, cr.initializeKlassBySymbol, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, any());

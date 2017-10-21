@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "jvmci/compilerRuntime.hpp"
 
 #define VM_ADDRESSES_COMPILER_RUNTIME(declare_address, declare_preprocessor_address, declare_function) \
+  declare_function(CompilerRuntime::resolve_dynamic_invoke)                       \
   declare_function(CompilerRuntime::resolve_string_by_symbol)                     \
   declare_function(CompilerRuntime::resolve_klass_by_symbol)                      \
   declare_function(CompilerRuntime::resolve_method_by_symbol_and_load_counters)   \

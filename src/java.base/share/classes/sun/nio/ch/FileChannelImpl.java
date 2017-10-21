@@ -27,6 +27,7 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.lang.ref.Cleaner.Cleanable;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
@@ -47,6 +48,7 @@ import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.JavaNioAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.ref.Cleaner;
+import jdk.internal.ref.CleanerFactory;
 import sun.security.action.GetPropertyAction;
 
 public class FileChannelImpl
@@ -55,7 +57,7 @@ public class FileChannelImpl
     // Memory allocation size for mapping buffers
     private static final long allocationGranularity;
 
-    // Access to FileDispatcher internals
+    // Access to FileDescriptor internals
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
@@ -85,6 +87,21 @@ public class FileChannelImpl
     // Positional-read is not interruptible
     private volatile boolean uninterruptible;
 
+    // Cleanable with an action which closes this channel's file descriptor
+    private final Cleanable closer;
+
+    private static class Closer implements Runnable {
+        private final FileDescriptor fd;
+
+        Closer(FileDescriptor fd) {
+            this.fd = fd;
+        }
+
+        public void run() {
+            fdAccess.close(fd);
+        }
+    }
+
     private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
                             boolean writable, Object parent)
     {
@@ -94,6 +111,12 @@ public class FileChannelImpl
         this.parent = parent;
         this.path = path;
         this.nd = new FileDispatcherImpl();
+        // Register a cleaning action if and only if there is no parent
+        // as the parent will take care of closing the file descriptor.
+        // FileChannel is used by the LambdaMetaFactory so a lambda cannot
+        // be used here hence we use a nested class instead.
+        this.closer = parent != null ? null :
+            CleanerFactory.cleaner().register(this, new Closer(fd));
     }
 
     // Used by FileInputStream.getChannel(), FileOutputStream.getChannel
@@ -143,6 +166,10 @@ public class FileChannelImpl
             // that method will prevent this method from being reinvoked.
             //
             ((java.io.Closeable)parent).close();
+        } else if (closer != null) {
+            // Perform the cleaning action so it is not redone when
+            // this channel becomes phantom reachable.
+            closer.clean();
         } else {
             fdAccess.close(fd);
         }
@@ -1237,5 +1264,4 @@ public class FileChannelImpl
         IOUtil.load();
         allocationGranularity = initIDs();
     }
-
 }

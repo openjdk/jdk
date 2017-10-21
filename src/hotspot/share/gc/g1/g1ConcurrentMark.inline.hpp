@@ -29,7 +29,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.inline.hpp"
-#include "gc/g1/suspendibleThreadSet.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 

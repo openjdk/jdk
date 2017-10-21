@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,19 +43,19 @@ inline HeapWord* PLAB::allocate_aligned(size_t word_sz, unsigned short alignment
 }
 
 void PLABStats::add_allocated(size_t v) {
-  Atomic::add_ptr(v, &_allocated);
+  Atomic::add(v, &_allocated);
 }
 
 void PLABStats::add_unused(size_t v) {
-  Atomic::add_ptr(v, &_unused);
+  Atomic::add(v, &_unused);
 }
 
 void PLABStats::add_wasted(size_t v) {
-  Atomic::add_ptr(v, &_wasted);
+  Atomic::add(v, &_wasted);
 }
 
 void PLABStats::add_undo_wasted(size_t v) {
-  Atomic::add_ptr(v, &_undo_wasted);
+  Atomic::add(v, &_undo_wasted);
 }
 
 #endif // SHARE_VM_GC_SHARED_PLAB_INLINE_HPP

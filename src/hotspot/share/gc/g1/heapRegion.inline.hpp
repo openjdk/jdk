@@ -59,7 +59,7 @@ inline HeapWord* G1ContiguousSpace::par_allocate_impl(size_t min_word_size,
     size_t want_to_allocate = MIN2(available, desired_word_size);
     if (want_to_allocate >= min_word_size) {
       HeapWord* new_top = obj + want_to_allocate;
-      HeapWord* result = (HeapWord*)Atomic::cmpxchg_ptr(new_top, top_addr(), obj);
+      HeapWord* result = Atomic::cmpxchg(new_top, top_addr(), obj);
       // result can be one of two:
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.

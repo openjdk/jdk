@@ -1658,7 +1658,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     c->set_next(NULL);
     head = _named_counters;
     c->set_next(head);
-  } while (Atomic::cmpxchg_ptr(c, &_named_counters, head) != head);
+  } while (Atomic::cmpxchg(c, &_named_counters, head) != head);
   return c;
 }
 

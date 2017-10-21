@@ -190,7 +190,7 @@ template <MEMFLAGS F> void BasicHashtable<F>::bulk_free_entries(BucketUnlinkCont
   BasicHashtableEntry<F>* current = _free_list;
   while (true) {
     context->_removed_tail->set_next(current);
-    BasicHashtableEntry<F>* old = (BasicHashtableEntry<F>*)Atomic::cmpxchg_ptr(context->_removed_head, &_free_list, current);
+    BasicHashtableEntry<F>* old = Atomic::cmpxchg(context->_removed_head, &_free_list, current);
     if (old == current) {
       break;
     }

@@ -181,6 +181,10 @@ class CodeCache : AllStatic {
   static void scavenge_root_nmethods_do(CodeBlobToOopClosure* f);
 
   static nmethod* scavenge_root_nmethods()            { return _scavenge_root_nmethods; }
+  // register_scavenge_root_nmethod() conditionally adds the nmethod to the list
+  // if it is not already on the list and has a scavengeable root
+  static void register_scavenge_root_nmethod(nmethod* nm);
+  static void verify_scavenge_root_nmethod(nmethod* nm);
   static void add_scavenge_root_nmethod(nmethod* nm);
   static void drop_scavenge_root_nmethod(nmethod* nm);
 

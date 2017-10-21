@@ -30,6 +30,7 @@ import static jdk.vm.ci.code.MemoryBarriers.LOAD_LOAD;
 import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_LOAD;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
+import static org.graalvm.compiler.nodes.NamedLocationIdentity.OFF_HEAP_LOCATION;
 import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
 
 import java.lang.reflect.Array;
@@ -650,7 +651,7 @@ public class StandardGraphBuilderPlugins {
         public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver unsafe, ValueNode address) {
             // Emits a null-check for the otherwise unused receiver
             unsafe.get();
-            b.addPush(returnKind, new UnsafeMemoryLoadNode(address, returnKind, LocationIdentity.any()));
+            b.addPush(returnKind, new UnsafeMemoryLoadNode(address, returnKind, OFF_HEAP_LOCATION));
             b.getGraph().markUnsafeAccess();
             return true;
         }
@@ -662,7 +663,8 @@ public class StandardGraphBuilderPlugins {
             if (isVolatile) {
                 b.add(new MembarNode(JMM_PRE_VOLATILE_READ));
             }
-            b.addPush(returnKind, new RawLoadNode(object, offset, returnKind, LocationIdentity.any()));
+            LocationIdentity locationIdentity = object.isNullConstant() ? OFF_HEAP_LOCATION : LocationIdentity.any();
+            b.addPush(returnKind, new RawLoadNode(object, offset, returnKind, locationIdentity));
             if (isVolatile) {
                 b.add(new MembarNode(JMM_POST_VOLATILE_READ));
             }
@@ -685,7 +687,7 @@ public class StandardGraphBuilderPlugins {
         public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver unsafe, ValueNode address, ValueNode value) {
             // Emits a null-check for the otherwise unused receiver
             unsafe.get();
-            b.add(new UnsafeMemoryStoreNode(address, value, kind, LocationIdentity.any()));
+            b.add(new UnsafeMemoryStoreNode(address, value, kind, OFF_HEAP_LOCATION));
             b.getGraph().markUnsafeAccess();
             return true;
         }
@@ -697,7 +699,8 @@ public class StandardGraphBuilderPlugins {
             if (isVolatile) {
                 b.add(new MembarNode(JMM_PRE_VOLATILE_WRITE));
             }
-            b.add(new RawStoreNode(object, offset, value, kind, LocationIdentity.any()));
+            LocationIdentity locationIdentity = object.isNullConstant() ? OFF_HEAP_LOCATION : LocationIdentity.any();
+            b.add(new RawStoreNode(object, offset, value, kind, locationIdentity));
             if (isVolatile) {
                 b.add(new MembarNode(JMM_POST_VOLATILE_WRITE));
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@ package org.graalvm.compiler.hotspot.meta;
 
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 import static org.graalvm.compiler.core.common.GraalOptions.AlwaysInlineVTableStubs;
-import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.InlineVTableStubs;
 import static org.graalvm.compiler.core.common.GraalOptions.OmitHotExceptionStacktrace;
 import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.OSR_MIGRATION_END;
@@ -70,6 +69,7 @@ import org.graalvm.compiler.hotspot.nodes.SerialArrayRangeWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.SerialWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.aot.InitializeKlassNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveConstantNode;
+import org.graalvm.compiler.hotspot.nodes.aot.ResolveDynamicConstantNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveMethodAndLoadCountersNode;
 import org.graalvm.compiler.hotspot.nodes.profiling.ProfileNode;
 import org.graalvm.compiler.hotspot.nodes.type.HotSpotNarrowOopStamp;
@@ -214,10 +214,8 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
         arraycopySnippets = new ArrayCopySnippets.Templates(options, factories, runtime, providers, target);
         stringToBytesSnippets = new StringToBytesSnippets.Templates(options, factories, providers, target);
         hashCodeSnippets = new HashCodeSnippets.Templates(options, factories, providers, target);
-        if (GeneratePIC.getValue(options)) {
-            resolveConstantSnippets = new ResolveConstantSnippets.Templates(options, factories, providers, target);
-            profileSnippets = new ProfileSnippets.Templates(options, factories, providers, target);
-        }
+        resolveConstantSnippets = new ResolveConstantSnippets.Templates(options, factories, providers, target);
+        profileSnippets = new ProfileSnippets.Templates(options, factories, providers, target);
         providers.getReplacements().registerSnippetTemplateCache(new UnsafeArrayCopySnippets.Templates(options, factories, providers, target));
     }
 
@@ -364,6 +362,10 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
             }
         } else if (n instanceof IdentityHashCodeNode) {
             hashCodeSnippets.lower((IdentityHashCodeNode) n, tool);
+        } else if (n instanceof ResolveDynamicConstantNode) {
+            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                resolveConstantSnippets.lower((ResolveDynamicConstantNode) n, tool);
+            }
         } else if (n instanceof ResolveConstantNode) {
             if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
                 resolveConstantSnippets.lower((ResolveConstantNode) n, tool);

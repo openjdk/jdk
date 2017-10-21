@@ -35,7 +35,7 @@ include $(SPEC)
 include MakeBase.gmk
 include TestFilesCompilation.gmk
 
-$(eval $(call IncludeCustomExtension, hotspot/test/JtregNative.gmk))
+$(eval $(call IncludeCustomExtension, test/JtregNativeHotspot.gmk))
 
 ################################################################################
 # Targets for building the native tests themselves.
@@ -50,6 +50,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/8025979 \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/8033445 \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/checked \
+    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/FindClass \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/PrivateInterfaceMethods \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/ToStringInInterfaceTest \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/CalleeSavedRegisters \

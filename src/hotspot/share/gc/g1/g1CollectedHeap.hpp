@@ -303,8 +303,6 @@ private:
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
-  void process_weak_jni_handles();
-
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
 
@@ -968,6 +966,8 @@ public:
   jint initialize();
 
   virtual void stop();
+  virtual void safepoint_synchronize_begin();
+  virtual void safepoint_synchronize_end();
 
   // Return the (conservative) maximum heap alignment for any G1 heap
   static size_t conservative_max_heap_alignment();
@@ -1282,8 +1282,6 @@ public:
 
   inline bool is_in_young(const oop obj);
 
-  virtual bool is_scavengable(const void* addr);
-
   // We don't need barriers for initializing stores to objects
   // in the young gen: for the SATB pre-barrier, there is no
   // pre-value that needs to be remembered; for the remembered-set
@@ -1394,6 +1392,9 @@ public:
   ConcurrentG1Refine* concurrent_g1_refine() const { return _cg1r; }
 
   // Optimized nmethod scanning support routines
+
+  // Is an oop scavengeable
+  virtual bool is_scavengable(oop obj);
 
   // Register the given nmethod with the G1 heap.
   virtual void register_nmethod(nmethod* nm);

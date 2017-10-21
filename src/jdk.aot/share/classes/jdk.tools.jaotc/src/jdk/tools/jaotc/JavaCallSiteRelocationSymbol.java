@@ -124,6 +124,7 @@ final class JavaCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
     private static String getResolveSymbolName(CompiledMethodInfo mi, Call call) {
         String resolveSymbolName;
         if (CallInfo.isStaticCall(call)) {
+            assert mi.hasMark(call, MarkId.INVOKESTATIC);
             resolveSymbolName = BinaryContainer.getResolveStaticEntrySymbolName();
         } else if (CallInfo.isSpecialCall(call)) {
             resolveSymbolName = BinaryContainer.getResolveOptVirtualEntrySymbolName();
