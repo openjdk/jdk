@@ -1250,7 +1250,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
   SharedClassPathEntry* ent =
             (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
   if (!Universe::is_module_initialized()) {
-    assert(ent != NULL && ent->is_jrt(),
+    assert(ent != NULL && ent->is_modules_image(),
            "Loading non-bootstrap classes before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
     return true;
@@ -1286,7 +1286,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
     if (mod_entry != NULL) {
       // PackageEntry/ModuleEntry is found in the classloader. Check if the
       // ModuleEntry's location agrees with the archived class' origination.
-      if (ent->is_jrt() && mod_entry->location()->starts_with("jrt:")) {
+      if (ent->is_modules_image() && mod_entry->location()->starts_with("jrt:")) {
         return true; // Module class from the "module" jimage
       }
     }
@@ -1297,7 +1297,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
     // 1. the class is from the unamed package
     // 2. or, the class is not from a module defined in the NULL classloader
     // 3. or, the class is from an unamed module
-    if (!ent->is_jrt() && ik->is_shared_boot_class()) {
+    if (!ent->is_modules_image() && ik->is_shared_boot_class()) {
       // the class is from the -Xbootclasspath/a
       if (pkg_string == NULL ||
           pkg_entry == NULL ||

@@ -54,7 +54,7 @@ public:
     // may have unlocked readers, so ensure visibility.
     OrderAccess::release_store(&_next, next);
   }
-  virtual bool is_jrt() = 0;
+  virtual bool is_modules_image() const = 0;
   virtual bool is_jar_file() const = 0;
   virtual const char* name() const = 0;
   virtual JImageFile* jimage() const = 0;
@@ -71,7 +71,7 @@ class ClassPathDirEntry: public ClassPathEntry {
  private:
   const char* _dir;           // Name of directory
  public:
-  bool is_jrt()            { return false; }
+  bool is_modules_image() const { return false; }
   bool is_jar_file() const { return false;  }
   const char* name() const { return _dir; }
   JImageFile* jimage() const { return NULL; }
@@ -109,7 +109,7 @@ class ClassPathZipEntry: public ClassPathEntry {
   u1 _multi_versioned;       // indicates if the jar file has multi-versioned entries.
                              // It can have value of "_unknown", "_yes", or "_no"
  public:
-  bool is_jrt()            { return false; }
+  bool is_modules_image() const { return false; }
   bool is_jar_file() const { return true;  }
   const char* name() const { return _zip_name; }
   JImageFile* jimage() const { return NULL; }
@@ -131,7 +131,7 @@ private:
   JImageFile* _jimage;
   const char* _name;
 public:
-  bool is_jrt();
+  bool is_modules_image() const;
   bool is_jar_file() const { return false; }
   bool is_open() const { return _jimage != NULL; }
   const char* name() const { return _name == NULL ? "" : _name; }
@@ -467,7 +467,7 @@ class ClassLoader: AllStatic {
   // distinguish from a class_name with no package name, as both cases have a NULL return value
   static const char* package_from_name(const char* const class_name, bool* bad_class_name = NULL);
 
-  static bool is_jrt(const char* name) { return string_ends_with(name, MODULES_IMAGE_NAME); }
+  static bool is_modules_image(const char* name) { return string_ends_with(name, MODULES_IMAGE_NAME); }
 
   // Debugging
   static void verify()              PRODUCT_RETURN;
