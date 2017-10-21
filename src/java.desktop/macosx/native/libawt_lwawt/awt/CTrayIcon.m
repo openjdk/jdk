@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,8 +134,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     NSPoint absP = [NSEvent mouseLocation];
     NSEventType type = [event type];
 
-    NSRect screenRect = [[NSScreen mainScreen] frame];
-    absP.y = screenRect.size.height - absP.y;
+    absP = ConvertNSScreenPoint(NULL, absP);
     jint clickCount;
 
     clickCount = [event clickCount];
@@ -179,15 +178,15 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     isHighlighted = NO;
     image = nil;
     trackingArea = nil;
-	
+
     [self addTrackingArea];
-	
+
     return self;
 }
 
 - (void)addTrackingArea {
-    NSTrackingAreaOptions options = NSTrackingMouseMoved | 
-                                    NSTrackingInVisibleRect | 
+    NSTrackingAreaOptions options = NSTrackingMouseMoved |
+                                    NSTrackingInVisibleRect |
                                     NSTrackingActiveAlways;
     trackingArea = [[NSTrackingArea alloc] initWithRect: CGRectZero
                                                 options: options
