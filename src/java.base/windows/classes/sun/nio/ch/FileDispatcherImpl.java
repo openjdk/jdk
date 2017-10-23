@@ -30,6 +30,8 @@ import java.io.IOException;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import sun.security.action.GetPropertyAction;
+import java.io.File;
+import java.nio.CharBuffer;
 
 class FileDispatcherImpl extends FileDispatcher {
 
@@ -123,6 +125,21 @@ class FileDispatcherImpl extends FileDispatcher {
         return true;
     }
 
+    int setDirectIO(FileDescriptor fd, String path)
+    {
+        int result = -1;
+        String filePath = path.substring(0, path.lastIndexOf(File.separator));
+        CharBuffer buffer = CharBuffer.allocate(filePath.length());
+        buffer.put(filePath);
+        try {
+            result = setDirect0(fd, buffer);
+        } catch (IOException e) {
+            throw new UnsupportedOperationException
+                ("Error setting up DirectIO", e);
+        }
+        return result;
+    }
+
     static boolean isFastFileTransferRequested() {
         String fileTransferProp = GetPropertyAction
                 .privilegedGetProperty("jdk.nio.enableFastFileTransfer");
@@ -177,4 +194,6 @@ class FileDispatcherImpl extends FileDispatcher {
     static native void close0(FileDescriptor fd) throws IOException;
 
     static native long duplicateHandle(long fd) throws IOException;
+
+    static native int setDirect0(FileDescriptor fd, CharBuffer buffer) throws IOException;
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ endif
 define generate-preproc-src
 	$(call MakeDir, $(@D))
 	( $(NAWK) '/@@END_COPYRIGHT@@/{exit}1' $< && \
-	  $(CPP) $(CPP_FLAGS) $(SYSROOT_CFLAGS) $< \
+	  $(CPP) $(CPP_FLAGS) $(SYSROOT_CFLAGS) $(CFLAGS_JDKLIB) $< \
 	      2> >($(GREP) -v '^$(<F)$$' >&2) \
 	      | $(NAWK) '/@@START_HERE@@/,0' \
 	      |  $(SED) -e 's/@@START_HERE@@/\/\/ AUTOMATICALLY GENERATED FILE - DO NOT EDIT/' \

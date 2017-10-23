@@ -122,6 +122,17 @@ class FileDispatcherImpl extends FileDispatcher {
         return false;
     }
 
+    int setDirectIO(FileDescriptor fd, String path) {
+        int result = -1;
+        try {
+            result = setDirect0(fd);
+        } catch (IOException e) {
+            throw new UnsupportedOperationException
+                ("Error setting up DirectIO", e);
+        }
+        return result;
+    }
+
     // -- Native methods --
 
     static native int read0(FileDescriptor fd, long address, int len)
@@ -166,6 +177,8 @@ class FileDispatcherImpl extends FileDispatcher {
     static native void preClose0(FileDescriptor fd) throws IOException;
 
     static native void closeIntFD(int fd) throws IOException;
+
+    static native int setDirect0(FileDescriptor fd) throws IOException;
 
     static native void init();
 

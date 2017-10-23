@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,31 @@ public abstract class FileStore {
      *          if an I/O error occurs
      */
     public abstract long getUsableSpace() throws IOException;
+
+    /**
+     * Returns the number of bytes per block in this file store.
+     *
+     * <p> File storage is typically organized into discrete sequences of bytes
+     * called <i>blocks</i>. A block is the smallest storage unit of a file store.
+     * Every read and write operation is performed on a multiple of blocks.
+     *
+     * @implSpec The implementation in this class throws an
+     *         {@code UnsupportedOperationException}.
+     *
+     * @return  a positive value representing the block size of this file store,
+     *          in bytes
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
+     *
+     * @throws  UnsupportedOperationException
+     *          if the operation is not supported
+     *
+     * @since 10
+     */
+    public long getBlockSize() throws IOException {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Returns the number of unallocated bytes in the file store.
