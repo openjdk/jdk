@@ -2136,7 +2136,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
     // Similar to getProtoSwitchPoints method above, but used for additional prototype switchpoints of
     // properties that are known not to exist, e.g. the original property name in a __noSuchProperty__ invocation.
-    private SwitchPoint getProtoSwitchPoint(final String name) {
+    final SwitchPoint getProtoSwitchPoint(final String name) {
         if (getProto() == null) {
             return null;
         }
