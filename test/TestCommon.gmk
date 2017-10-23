@@ -176,16 +176,17 @@ endif
 # Expect JPRT to set JPRT_ARCHIVE_BUNDLE (path to zip bundle for results)
 ifdef JPRT_ARCHIVE_BUNDLE
   ARCHIVE_BUNDLE = $(JPRT_ARCHIVE_BUNDLE)
-else
-  ARCHIVE_BUNDLE = $(ABS_TEST_OUTPUT_DIR)/ARCHIVE_BUNDLE.zip
 endif
 
 # How to create the test bundle (pass or fail, we want to create this)
 #   Follow command with ";$(BUNDLE_UP_AND_EXIT)", so it always gets executed.
-ZIP_UP_RESULTS = ( $(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`     \
+ifneq ($(ARCHIVE_BUNDLE), )
+  ZIP_UP_RESULTS = ( $(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`     \
 	           && $(CD) $(ABS_TEST_OUTPUT_DIR)             \
 	           && $(CHMOD) -R a+r . \
-	           && $(ZIPEXE) -q -r $(ARCHIVE_BUNDLE) . )
+	           && $(ZIPEXE) -q -r $(ARCHIVE_BUNDLE) . ) ;
+  CLEAN_ARCHIVE_BUNDLE = @$(RM) $(ARCHIVE_BUNDLE)
+endif
 
 # important results files
 SUMMARY_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport/text/summary.txt")
@@ -252,7 +253,7 @@ BUNDLE_UP_AND_EXIT = \
   if [ -f $(STATS_TXT) ] ; then \
     $(CAT) $(STATS_TXT); \
   fi; \
-  $(ZIP_UP_RESULTS) ; \
+  $(ZIP_UP_RESULTS) \
   $(TESTEXIT) \
 )
 
@@ -272,7 +273,6 @@ BUNDLE_UP_AND_EXIT = \
 # service, you may need CYGWIN=ntsec for this to work.
 prep:
 	@$(MKDIR) -p $(ABS_TEST_OUTPUT_DIR)
-	@$(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`
 	@if [ ! -d $(TEST_ROOT)/../../.hg ] && [ ! -d $(TEST_ROOT)/../../../.hg ]; then  \
 	  $(FIND) $(TEST_ROOT) \( -name \*.dll -o -name \*.DLL -o -name \*.so \)  \
 	        -exec $(CHMOD) a+rx {} \; ;                                       \
@@ -286,7 +286,7 @@ endif
 # Cleanup
 clean:
 	@$(RM) -r $(ABS_TEST_OUTPUT_DIR)
-	@$(RM) $(ARCHIVE_BUNDLE)
+	$(CLEAN_ARCHIVE_BUNDLE)
 
 ################################################################
 
