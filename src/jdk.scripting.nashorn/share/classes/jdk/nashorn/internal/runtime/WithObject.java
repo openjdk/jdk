@@ -138,9 +138,9 @@ public final class WithObject extends Scope {
             find = expression.findProperty(fallBack, true);
             if (find != null) {
                 if (NO_SUCH_METHOD_NAME.equals(fallBack)) {
-                    link = expression.noSuchMethod(desc, request);
+                    link = expression.noSuchMethod(desc, request).addSwitchPoint(getProtoSwitchPoint(name));
                 } else if (NO_SUCH_PROPERTY_NAME.equals(fallBack)) {
-                    link = expression.noSuchProperty(desc, request);
+                    link = expression.noSuchProperty(desc, request).addSwitchPoint(getProtoSwitchPoint(name));
                 }
             }
         }

@@ -382,6 +382,12 @@ docs-javase-api-javadoc:
 docs-javase-api-modulegraph:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-javase-api-modulegraph)
 
+docs-reference-api-javadoc:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-reference-api-javadoc)
+
+docs-reference-api-modulegraph:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-reference-api-modulegraph)
+
 docs-jdk-specs:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-jdk-specs)
 
@@ -395,7 +401,8 @@ update-build-docs:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
 
 ALL_TARGETS += docs-jdk-api-javadoc docs-jdk-api-modulegraph \
-    docs-javase-api-javadoc docs-javase-api-modulegraph docs-jdk-specs \
+    docs-javase-api-javadoc docs-javase-api-modulegraph \
+    docs-reference-api-javadoc docs-reference-api-modulegraph docs-jdk-specs \
     docs-jdk-index docs-zip update-build-docs
 
 ################################################################################
@@ -810,9 +817,13 @@ else
 
   docs-javase-api-javadoc: $(GENSRC_TARGETS) rmic
 
+  docs-reference-api-javadoc: $(GENSRC_TARGETS) rmic
+
   docs-jdk-api-modulegraph: exploded-image buildtools-modules
 
   docs-javase-api-modulegraph: exploded-image buildtools-modules
+
+  docs-reference-api-modulegraph: exploded-image buildtools-modules
 
   # The gensrc steps for hotspot and jdk.jdi create html spec files.
   docs-jdk-specs: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc \
@@ -943,16 +954,19 @@ create-buildjdk: create-buildjdk-copy create-buildjdk-interim-image
 
 docs-jdk-api: docs-jdk-api-javadoc
 docs-javase-api: docs-javase-api-javadoc
+docs-reference-api: docs-reference-api-javadoc
 
 # If we're building full docs, we must also generate the module graphs to
 # get non-broken api documentation.
 ifeq ($(ENABLE_FULL_DOCS), true)
   docs-jdk-api: docs-jdk-api-modulegraph
   docs-javase-api: docs-javase-api-modulegraph
+  docs-reference-api: docs-reference-api-modulegraph
 endif
 
 docs-jdk: docs-jdk-api docs-jdk-specs docs-jdk-index
 docs-javase: docs-javase-api
+docs-reference: docs-reference-api
 
 # alias for backwards compatibility
 docs-javadoc: docs-jdk-api
@@ -1005,8 +1019,8 @@ ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-gensrc gensrc gendata \
     copy java rmic libs launchers jmods \
     jdk.jdwp.agent-gensrc $(ALL_MODULES) demos \
     exploded-image-base exploded-image \
-    create-buildjdk docs-jdk-api docs-javase-api docs-jdk docs-javase \
-    docs-javadoc mac-bundles product-images \
+    create-buildjdk docs-jdk-api docs-javase-api docs-reference-api docs-jdk \
+    docs-javase docs-reference docs-javadoc mac-bundles product-images \
     profiles profiles-images \
     docs-image test-image all-images \
     all-bundles

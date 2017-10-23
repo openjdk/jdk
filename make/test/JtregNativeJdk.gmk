@@ -47,6 +47,10 @@ BUILD_JDK_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/jdk/java/lang/String/nativeEncoding \
     #
 
+ifneq ($(OPENJDK_TARGET_OS), windows)
+    BUILD_JDK_JTREG_NATIVE_SRC += $(TOPDIR)/test/jdk/java/nio/channels/FileChannel/directio
+endif
+
 BUILD_JDK_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/jdk/jtreg/native
 
 BUILD_JDK_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/jdk/jtreg
@@ -56,8 +60,10 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := $(WIN_LIB_JAVA)
 else ifeq ($(OPENJDK_TARGET_OS), solaris)
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava -lc
+    BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava -lc
 else
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
+    BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
 endif
 
 $(eval $(call SetupTestFilesCompilation, BUILD_JDK_JTREG_LIBRARIES, \
