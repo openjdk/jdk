@@ -49,6 +49,7 @@ import sun.java2d.SurfaceData;
 import sun.java2d.loops.RenderLoops;
 import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.CompositeType;
+import sun.java2d.pipe.Region;
 import sun.java2d.x11.X11SurfaceData;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
@@ -265,11 +266,11 @@ public class X11GraphicsConfig extends GraphicsConfiguration
     }
 
     public int scaleUp(int x) {
-        return x * getScale();
+        return Region.clipRound(x * (double)getScale());
     }
 
     public int scaleDown(int x) {
-        return x / getScale();
+        return Region.clipRound(x / (double)getScale());
     }
 
     /**
