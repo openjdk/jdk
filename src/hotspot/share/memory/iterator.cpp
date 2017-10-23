@@ -29,6 +29,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+DoNothingClosure do_nothing_cl;
+
 void CLDToOopClosure::do_cld(ClassLoaderData* cld) {
   cld->oops_do(_oop_closure, _must_claim_cld);
 }

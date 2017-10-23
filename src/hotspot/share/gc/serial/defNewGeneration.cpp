@@ -659,7 +659,12 @@ void DefNewGeneration::collect(bool   full,
   gc_tracer.report_tenuring_threshold(tenuring_threshold());
   pt.print_all_references();
 
-  WeakProcessor::weak_oops_do(&is_alive, &keep_alive, &evacuate_followers);
+  assert(gch->no_allocs_since_save_marks(), "save marks have not been newly set.");
+
+  WeakProcessor::weak_oops_do(&is_alive, &keep_alive);
+
+  // Verify that the usage of keep_alive didn't copy any objects.
+  assert(gch->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
   if (!_promotion_failed) {
     // Swap the survivor spaces.

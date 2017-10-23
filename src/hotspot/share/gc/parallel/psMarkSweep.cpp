@@ -543,13 +543,13 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     pt.print_all_references();
   }
 
-  {
-    GCTraceTime(Debug, gc, phases) t("Weak Processing", _gc_timer);
-    WeakProcessor::weak_oops_do(is_alive_closure(), mark_and_push_closure(), follow_stack_closure());
-  }
-
   // This is the point where the entire marking should have completed.
   assert(_marking_stack.is_empty(), "Marking should have completed");
+
+  {
+    GCTraceTime(Debug, gc, phases) t("Weak Processing", _gc_timer);
+    WeakProcessor::weak_oops_do(is_alive_closure(), &do_nothing_cl);
+  }
 
   {
     GCTraceTime(Debug, gc, phases) t("Class Unloading", _gc_timer);
