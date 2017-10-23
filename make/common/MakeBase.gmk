@@ -737,6 +737,7 @@ define AddFileToCopy
 	$$($$(strip $4))
 
   $3 += $2
+  $3_SOURCES += $1
 endef
 
 # Returns the value of the first argument
@@ -748,6 +749,8 @@ identity = \
 #
 # Parameter 1 is the name of the rule. This name is used as variable prefix,
 # and the targets generated are listed in a variable by that name.
+#
+# The list of all source files is returned in $1_SOURCES.
 #
 # Remaining parameters are named arguments. These include:
 #   SRC     : Source root dir (defaults to dir of first file)
