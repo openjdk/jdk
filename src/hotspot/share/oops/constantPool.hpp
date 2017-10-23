@@ -865,11 +865,13 @@ class ConstantPool : public Metadata {
   static oop resolve_bootstrap_specifier_at_impl(const constantPoolHandle& this_cp, int index, TRAPS);
 
   // Exception handling
-  static void throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS);
   static Symbol* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception);
   static void save_and_throw_exception(const constantPoolHandle& this_cp, int which, constantTag tag, TRAPS);
 
  public:
+  // Exception handling
+  static void throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS);
+
   // Merging ConstantPool* support:
   bool compare_entry_to(int index1, const constantPoolHandle& cp2, int index2, TRAPS);
   void copy_cp_to(int start_i, int end_i, const constantPoolHandle& to_cp, int to_i, TRAPS) {
