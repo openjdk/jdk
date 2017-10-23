@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/resolutionErrors.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -108,6 +109,10 @@ void ConstantPoolCacheEntry::set_bytecode_2(Bytecodes::Code code) {
 void ConstantPoolCacheEntry::release_set_f1(Metadata* f1) {
   assert(f1 != NULL, "");
   OrderAccess::release_store(&_f1, f1);
+}
+
+void ConstantPoolCacheEntry::set_indy_resolution_failed() {
+  OrderAccess::release_store(&_flags, _flags | (1 << indy_resolution_failed_shift));
 }
 
 // Note that concurrent update of both bytecodes can leave one of them
@@ -318,6 +323,25 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
     return;
   }
 
+  if (indy_resolution_failed()) {
+    // Before we got here, another thread got a LinkageError exception during
+    // resolution.  Ignore our success and throw their exception.
+    ConstantPoolCache* cpCache = cpool->cache();
+    int index = -1;
+    for (int i = 0; i < cpCache->length(); i++) {
+      if (cpCache->entry_at(i) == this) {
+        index = i;
+        break;
+      }
+    }
+    guarantee(index >= 0, "Didn't find cpCache entry!");
+    int encoded_index = ResolutionErrorTable::encode_cpcache_index(
+                          ConstantPool::encode_invokedynamic_index(index));
+    Thread* THREAD = Thread::current();
+    ConstantPool::throw_resolution_error(cpool, encoded_index, THREAD);
+    return;
+  }
+
   const methodHandle adapter = call_info.resolved_method();
   const Handle appendix      = call_info.resolved_appendix();
   const Handle method_type   = call_info.resolved_method_type();
@@ -387,6 +411,40 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
     ttyLocker ttyl;
     this->print(tty, 0);
   }
+}
+
+bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
+  const constantPoolHandle& cpool, int cpool_index, int index, constantTag tag, TRAPS) {
+
+  assert(HAS_PENDING_EXCEPTION, "No exception got thrown!");
+  assert(PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass()),
+         "No LinkageError exception");
+
+  // Use the resolved_references() lock for this cpCache entry.
+  // resolved_references are created for all classes with Invokedynamic, MethodHandle
+  // or MethodType constant pool cache entries.
+  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
+  assert(resolved_references() != NULL,
+         "a resolved_references array should have been created for this class");
+  ObjectLocker ol(resolved_references, THREAD);
+
+  // if f1 is not null or the indy_resolution_failed flag is set then another
+  // thread either succeeded in resolving the method or got a LinkageError
+  // exception, before this thread was able to record its failure.  So, clear
+  // this thread's exception and return false so caller can use the earlier
+  // thread's result.
+  if (!is_f1_null() || indy_resolution_failed()) {
+    CLEAR_PENDING_EXCEPTION;
+    return false;
+  }
+
+  Symbol* error = PENDING_EXCEPTION->klass()->name();
+  Symbol* message = java_lang_Throwable::detail_message(PENDING_EXCEPTION);
+  assert("message != NULL", "Missing detail message");
+
+  SystemDictionary::add_resolution_error(cpool, index, error, message);
+  set_indy_resolution_failed();
+  return true;
 }
 
 Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpool) {
