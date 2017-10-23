@@ -689,7 +689,6 @@ inline void Assembler::z_ahhhr(Register r1, Register r2, Register r3) { emit_32(
 inline void Assembler::z_ahhlr(Register r1, Register r2, Register r3) { emit_32( AHHLR_ZOPC  | reg(r3, 16, 32) | reg(r1, 24, 32) | reg(r2, 28, 32)); }
 
 inline void Assembler::z_tam() { emit_16( TAM_ZOPC); }
-inline void Assembler::z_stck(int64_t d2, Register b2)  { emit_32( STCK_ZOPC  | uimm12(d2, 20, 32) | regz(b2, 16, 32)); }
 inline void Assembler::z_stckf(int64_t d2, Register b2) { emit_32( STCKF_ZOPC | uimm12(d2, 20, 32) | regz(b2, 16, 32)); }
 inline void Assembler::z_stmg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( STMG_ZOPC | simm20(d2) | reg(r1, 8, 48) | reg(r3,12,48)| reg(b2,16,48) ); }
 inline void Assembler::z_lmg(Register r1, Register r3, int64_t d2, Register b2)  { emit_48( LMG_ZOPC  | simm20(d2) | reg(r1, 8, 48) | reg(r3,12,48)| reg(b2,16,48) ); }

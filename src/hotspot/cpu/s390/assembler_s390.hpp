@@ -1310,7 +1310,6 @@ class Assembler : public AbstractAssembler {
 #define LAOG_ZOPC   (unsigned long)(0xebL << 40 | 0xe6L)         // z196
 
 // System Functions
-#define STCK_ZOPC   (unsigned  int)(0xb2 << 24 | 0x05 << 16)
 #define STCKF_ZOPC  (unsigned  int)(0xb2 << 24 | 0x7c << 16)
 #define STFLE_ZOPC  (unsigned  int)(0xb2 << 24 | 0xb0 << 16)
 #define ECTG_ZOPC   (unsigned long)(0xc8L <<40 | 0x01L << 32)    // z10
@@ -3035,7 +3034,6 @@ class Assembler : public AbstractAssembler {
   inline void z_ahhlr(Register r1, Register r2, Register r3);   // ADD halfword high low
 
   inline void z_tam();
-  inline void z_stck(int64_t d2, Register b2);
   inline void z_stckf(int64_t d2, Register b2);
   inline void z_stmg(Register r1, Register r3, int64_t d2, Register b2);
   inline void z_lmg(Register r1, Register r3, int64_t d2, Register b2);
