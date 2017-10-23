@@ -57,21 +57,22 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
     public Object invoke(Object proxy, Method method, Object[] args) {
         String member = method.getName();
-        Class<?>[] paramTypes = method.getParameterTypes();
+        int parameterCount = method.getParameterCount();
 
         // Handle Object and Annotation methods
-        if (member.equals("equals") && paramTypes.length == 1 &&
-            paramTypes[0] == Object.class)
+        if (parameterCount == 1 && member == "equals" &&
+                method.getParameterTypes()[0] == Object.class) {
             return equalsImpl(proxy, args[0]);
-        if (paramTypes.length != 0)
+        }
+        if (parameterCount != 0) {
             throw new AssertionError("Too many parameters for an annotation method");
+        }
 
-        switch(member) {
-        case "toString":
+        if (member == "toString") {
             return toStringImpl();
-        case "hashCode":
+        } else if (member == "hashCode") {
             return hashCodeImpl();
-        case "annotationType":
+        } else if (member == "annotationType") {
             return type;
         }
 
