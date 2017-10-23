@@ -182,7 +182,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
                         sizeof(u2), /*is_signed*/ false);
     // assert(sizeof(u2) == sizeof(Method::_size_of_parameters), "");
     Label L;
-    __ cmpptr(recv, __ argument_address(temp2, -1));
+    __ cmpoop(recv, __ argument_address(temp2, -1));
     __ jcc(Assembler::equal, L);
     __ movptr(rax, __ argument_address(temp2, -1));
     __ STOP("receiver not on stack");
