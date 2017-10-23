@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ void G1StringDedupStat::print_end(const G1StringDedupStat& last_stat, const G1St
 
   if (total_stat._new_bytes > 0) {
     // Avoid division by zero
-    total_deduped_bytes_percent = (double)total_stat._deduped_bytes / (double)total_stat._new_bytes * 100.0;
+    total_deduped_bytes_percent = percent_of(total_stat._deduped_bytes, total_stat._new_bytes);
   }
 
   log_info(gc, stringdedup)(
@@ -100,48 +100,16 @@ void G1StringDedupStat::print_end(const G1StringDedupStat& last_stat, const G1St
 }
 
 void G1StringDedupStat::print_statistics(const G1StringDedupStat& stat, bool total) {
-  double young_percent               = 0.0;
-  double old_percent                 = 0.0;
-  double skipped_percent             = 0.0;
-  double hashed_percent              = 0.0;
-  double known_percent               = 0.0;
-  double new_percent                 = 0.0;
-  double deduped_percent             = 0.0;
-  double deduped_bytes_percent       = 0.0;
-  double deduped_young_percent       = 0.0;
-  double deduped_young_bytes_percent = 0.0;
-  double deduped_old_percent         = 0.0;
-  double deduped_old_bytes_percent   = 0.0;
-
-  if (stat._inspected > 0) {
-    // Avoid division by zero
-    skipped_percent = (double)stat._skipped / (double)stat._inspected * 100.0;
-    hashed_percent  = (double)stat._hashed / (double)stat._inspected * 100.0;
-    known_percent   = (double)stat._known / (double)stat._inspected * 100.0;
-    new_percent     = (double)stat._new / (double)stat._inspected * 100.0;
-  }
-
-  if (stat._new > 0) {
-    // Avoid division by zero
-    deduped_percent = (double)stat._deduped / (double)stat._new * 100.0;
-  }
-
-  if (stat._deduped > 0) {
-    // Avoid division by zero
-    deduped_young_percent = (double)stat._deduped_young / (double)stat._deduped * 100.0;
-    deduped_old_percent   = (double)stat._deduped_old / (double)stat._deduped * 100.0;
-  }
-
-  if (stat._new_bytes > 0) {
-    // Avoid division by zero
-    deduped_bytes_percent = (double)stat._deduped_bytes / (double)stat._new_bytes * 100.0;
-  }
-
-  if (stat._deduped_bytes > 0) {
-    // Avoid division by zero
-    deduped_young_bytes_percent = (double)stat._deduped_young_bytes / (double)stat._deduped_bytes * 100.0;
-    deduped_old_bytes_percent   = (double)stat._deduped_old_bytes / (double)stat._deduped_bytes * 100.0;
-  }
+  double skipped_percent             = percent_of(stat._skipped, stat._inspected);
+  double hashed_percent              = percent_of(stat._hashed, stat._inspected);
+  double known_percent               = percent_of(stat._known, stat._inspected);
+  double new_percent                 = percent_of(stat._new, stat._inspected);
+  double deduped_percent             = percent_of(stat._deduped, stat._new);
+  double deduped_bytes_percent       = percent_of(stat._deduped_bytes, stat._new_bytes);
+  double deduped_young_percent       = percent_of(stat._deduped_young, stat._deduped);
+  double deduped_young_bytes_percent = percent_of(stat._deduped_young_bytes, stat._deduped_bytes);
+  double deduped_old_percent         = percent_of(stat._deduped_old, stat._deduped);
+  double deduped_old_bytes_percent   = percent_of(stat._deduped_old_bytes, stat._deduped_bytes);
 
   if (total) {
     log_debug(gc, stringdedup)(
