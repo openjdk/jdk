@@ -647,8 +647,8 @@ bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, const G1C
 }
 
 bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
-  const G1CMBitMap* const prev_bitmap = _g1h->concurrent_mark()->prevMarkBitMap();
-  const G1CMBitMap* const next_bitmap = _g1h->concurrent_mark()->nextMarkBitMap();
+  const G1CMBitMap* const prev_bitmap = _g1h->concurrent_mark()->prev_mark_bitmap();
+  const G1CMBitMap* const next_bitmap = _g1h->concurrent_mark()->next_mark_bitmap();
 
   HeapWord* ptams  = hr->prev_top_at_mark_start();
   HeapWord* ntams  = hr->next_top_at_mark_start();
