@@ -632,22 +632,37 @@ void AwtWin32GraphicsDevice::SetScale(float sx, float sy)
 
 int AwtWin32GraphicsDevice::ScaleUpX(int x)
 {
-    return (int)ceil(x * scaleX);
+    return CheckIntLimits(x * scaleX);
 }
 
 int AwtWin32GraphicsDevice::ScaleUpY(int y)
 {
-    return (int)ceil(y * scaleY);
+    return CheckIntLimits(y * scaleY);
 }
 
 int AwtWin32GraphicsDevice::ScaleDownX(int x)
 {
-    return (int)ceil(x / scaleX);
+    return CheckIntLimits(x / scaleX);
 }
 
 int AwtWin32GraphicsDevice::ScaleDownY(int y)
 {
-    return (int)ceil(y / scaleY);
+    return CheckIntLimits(y / scaleY);
+}
+
+int AwtWin32GraphicsDevice::CheckIntLimits(double value)
+{
+    if (value < INT_MIN)
+    {
+        return INT_MIN;
+    }
+
+    if (value > INT_MAX)
+    {
+        return INT_MAX;
+    }
+
+    return (int)ceil(value);
 }
 
 void AwtWin32GraphicsDevice::InitDesktopScales()
