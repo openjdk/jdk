@@ -2996,11 +2996,11 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
                          G1PPRL_SUM_MB_FORMAT("code-roots"),
                          bytes_to_mb(_total_capacity_bytes),
                          bytes_to_mb(_total_used_bytes),
-                         perc(_total_used_bytes, _total_capacity_bytes),
+                         percent_of(_total_used_bytes, _total_capacity_bytes),
                          bytes_to_mb(_total_prev_live_bytes),
-                         perc(_total_prev_live_bytes, _total_capacity_bytes),
+                         percent_of(_total_prev_live_bytes, _total_capacity_bytes),
                          bytes_to_mb(_total_next_live_bytes),
-                         perc(_total_next_live_bytes, _total_capacity_bytes),
+                         percent_of(_total_next_live_bytes, _total_capacity_bytes),
                          bytes_to_mb(_total_remset_bytes),
                          bytes_to_mb(_total_strong_code_roots_bytes));
 }

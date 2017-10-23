@@ -850,14 +850,6 @@ private:
   // Accumulator for strong code roots memory size
   size_t _total_strong_code_roots_bytes;
 
-  static double perc(size_t val, size_t total) {
-    if (total == 0) {
-      return 0.0;
-    } else {
-      return 100.0 * ((double) val / (double) total);
-    }
-  }
-
   static double bytes_to_mb(size_t val) {
     return (double) val / (double) M;
   }

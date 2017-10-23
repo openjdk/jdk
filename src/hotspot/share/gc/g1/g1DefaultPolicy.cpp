@@ -1005,11 +1005,7 @@ void G1DefaultPolicy::record_concurrent_mark_cleanup_end() {
 }
 
 double G1DefaultPolicy::reclaimable_bytes_perc(size_t reclaimable_bytes) const {
-  // Returns the given amount of reclaimable bytes (that represents
-  // the amount of reclaimable space still to be collected) as a
-  // percentage of the current heap capacity.
-  size_t capacity_bytes = _g1->capacity();
-  return (double) reclaimable_bytes * 100.0 / (double) capacity_bytes;
+  return percent_of(reclaimable_bytes, _g1->capacity());
 }
 
 void G1DefaultPolicy::maybe_start_marking() {
