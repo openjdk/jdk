@@ -157,16 +157,9 @@ public:
     return !is_packed() && _base != NULL;
   }
 
-  double perc(size_t used, size_t total) const {
-    if (total == 0) {
-      total = 1;
-    }
-    return used / double(total) * 100.0;
-  }
-
   void print(size_t total_bytes) const {
     tty->print_cr("%-3s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
-                  _name, used(), perc(used(), total_bytes), reserved(), perc(used(), reserved()), p2i(_base));
+                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()), p2i(_base));
   }
   void print_out_of_space_msg(const char* failing_region, size_t needed_bytes) {
     tty->print("[%-8s] " PTR_FORMAT " - " PTR_FORMAT " capacity =%9d, allocated =%9d",
@@ -906,9 +899,9 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all, int md_all)
     int count = ro_count + rw_count;
     int bytes = ro_bytes + rw_bytes;
 
-    double ro_perc = 100.0 * double(ro_bytes) / double(ro_all);
-    double rw_perc = 100.0 * double(rw_bytes) / double(rw_all);
-    double perc    = 100.0 * double(bytes)    / double(ro_all + rw_all);
+    double ro_perc = percent_of(ro_bytes, ro_all);
+    double rw_perc = percent_of(rw_bytes, rw_all);
+    double perc    = percent_of(bytes, ro_all + rw_all);
 
     info_stream.print_cr(fmt_stats, name,
                          ro_count, ro_bytes, ro_perc,
@@ -924,9 +917,9 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all, int md_all)
   int all_count = all_ro_count + all_rw_count;
   int all_bytes = all_ro_bytes + all_rw_bytes;
 
-  double all_ro_perc = 100.0 * double(all_ro_bytes) / double(ro_all);
-  double all_rw_perc = 100.0 * double(all_rw_bytes) / double(rw_all);
-  double all_perc    = 100.0 * double(all_bytes)    / double(ro_all + rw_all);
+  double all_ro_perc = percent_of(all_ro_bytes, ro_all);
+  double all_rw_perc = percent_of(all_rw_bytes, rw_all);
+  double all_perc    = percent_of(all_bytes, ro_all + rw_all);
 
   info_stream.print_cr("%s", sep);
   info_stream.print_cr(fmt_stats, "Total",
@@ -1427,7 +1420,7 @@ void VM_PopulateDumpSharedSpace::print_region_stats() {
                              _od_region.used()  +
                              _total_string_region_size +
                              _total_open_archive_region_size;
-  const double total_u_perc = total_bytes / double(total_reserved) * 100.0;
+  const double total_u_perc = percent_of(total_bytes, total_reserved);
 
   _mc_region.print(total_reserved);
   _rw_region.print(total_reserved);

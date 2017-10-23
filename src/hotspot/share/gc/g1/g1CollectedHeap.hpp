@@ -1361,7 +1361,7 @@ public:
   // is not marked, and c) it is not in an archive region.
   bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
     return
-      hr->is_obj_dead(obj, _cm->prevMarkBitMap()) &&
+      hr->is_obj_dead(obj, _cm->prev_mark_bitmap()) &&
       !hr->is_archive();
   }
 

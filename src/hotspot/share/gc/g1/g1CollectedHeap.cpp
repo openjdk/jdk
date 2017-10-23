@@ -1768,7 +1768,7 @@ jint G1CollectedHeap::initialize() {
     vm_shutdown_during_initialization("Could not create/initialize G1ConcurrentMark");
     return JNI_ENOMEM;
   }
-  _cmThread = _cm->cmThread();
+  _cmThread = _cm->cm_thread();
 
   // Now expand into the initial heap size.
   if (!expand(init_byte_size, _workers)) {
@@ -3031,7 +3031,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->record_collection_pause_start(sample_start_time_sec);
 
         if (collector_state()->during_initial_mark_pause()) {
-          concurrent_mark()->checkpointRootsInitialPre();
+          concurrent_mark()->checkpoint_roots_initial_pre();
         }
 
         g1_policy()->finalize_collection_set(target_pause_time_ms, &_survivor);
@@ -3102,7 +3102,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           // We have to do this before we notify the CM threads that
           // they can start working to make sure that all the
           // appropriate initialization is done on the CM object.
-          concurrent_mark()->checkpointRootsInitialPost();
+          concurrent_mark()->checkpoint_roots_initial_post();
           collector_state()->set_mark_in_progress(true);
           // Note that we don't actually trigger the CM thread at
           // this point. We do that later when we're sure that
@@ -4155,7 +4155,7 @@ void G1CollectedHeap::preserve_cm_referents(G1ParScanThreadStateSet* per_thread_
   // To avoid spawning task when there is no work to do, check that
   // a concurrent cycle is active and that some references have been
   // discovered.
-  if (concurrent_mark()->cmThread()->during_cycle() &&
+  if (concurrent_mark()->cm_thread()->during_cycle() &&
       ref_processor_cm()->has_discovered_references()) {
     double preserve_cm_referents_start = os::elapsedTime();
     uint no_of_gc_workers = workers()->active_workers();
@@ -4448,7 +4448,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
 
   if (G1VerifyBitmaps) {
     MemRegion mr(hr->bottom(), hr->end());
-    concurrent_mark()->clearRangePrevBitmap(mr);
+    concurrent_mark()->clear_range_in_prev_bitmap(mr);
   }
 
   // Clear the card counts for this region.
@@ -4814,7 +4814,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
     oop obj = (oop)r->bottom();
-    G1CMBitMap* next_bitmap = g1h->concurrent_mark()->nextMarkBitMap();
+    G1CMBitMap* next_bitmap = g1h->concurrent_mark()->next_mark_bitmap();
 
     // The following checks whether the humongous object is live are sufficient.
     // The main additional check (in addition to having a reference from the roots
