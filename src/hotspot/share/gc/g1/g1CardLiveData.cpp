@@ -313,7 +313,7 @@ public:
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1ConcurrentMark* cm = g1h->concurrent_mark();
-    G1CreateLiveDataClosure cl(g1h, cm, cm->nextMarkBitMap(), _live_data);
+    G1CreateLiveDataClosure cl(g1h, cm, cm->next_mark_bitmap(), _live_data);
     g1h->heap_region_par_iterate(&cl, worker_id, &_hr_claimer);
   }
 };

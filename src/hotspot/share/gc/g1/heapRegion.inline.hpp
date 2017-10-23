@@ -177,7 +177,7 @@ inline size_t HeapRegion::block_size(const HeapWord *addr) const {
     return oop(addr)->size();
   }
 
-  return block_size_using_bitmap(addr, G1CollectedHeap::heap()->concurrent_mark()->prevMarkBitMap());
+  return block_size_using_bitmap(addr, G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap());
 }
 
 inline HeapWord* HeapRegion::par_allocate_no_bot_updates(size_t min_word_size,
@@ -334,7 +334,7 @@ bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
   }
 #endif
 
-  const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prevMarkBitMap();
+  const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prev_mark_bitmap();
   do {
     oop obj = oop(cur);
     assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));

@@ -448,7 +448,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    return g1h->concurrent_mark()->cmThread()->during_cycle();
+    return g1h->concurrent_mark()->cm_thread()->during_cycle();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
@@ -456,7 +456,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (!g1h->concurrent_mark()->cmThread()->during_cycle()) {
+    if (!g1h->concurrent_mark()->cm_thread()->during_cycle()) {
       g1h->collect(GCCause::_wb_conc_mark);
       return true;
     }
