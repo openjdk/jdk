@@ -182,15 +182,13 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     pt.print_all_references();
   }
 
-  {
-    GCTraceTime(Debug, gc, phases) trace("Weak Processing", gc_timer());
-    WeakProcessor::weak_oops_do(&GenMarkSweep::is_alive,
-                                &GenMarkSweep::keep_alive,
-                                &GenMarkSweep::follow_stack_closure);
-  }
-
   // This is the point where the entire marking should have completed.
   assert(GenMarkSweep::_marking_stack.is_empty(), "Marking should have completed");
+
+  {
+    GCTraceTime(Debug, gc, phases) trace("Weak Processing", gc_timer());
+    WeakProcessor::weak_oops_do(&GenMarkSweep::is_alive, &do_nothing_cl);
+  }
 
   if (ClassUnloading) {
     GCTraceTime(Debug, gc, phases) trace("Class Unloading", gc_timer());

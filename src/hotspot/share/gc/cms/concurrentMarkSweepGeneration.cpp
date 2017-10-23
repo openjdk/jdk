@@ -5181,14 +5181,16 @@ void CMSCollector::refProcessingWork() {
   rp->setup_policy(false);
   verify_work_stacks_empty();
 
-  CMSKeepAliveClosure cmsKeepAliveClosure(this, _span, &_markBitMap,
-                                          &_markStack, false /* !preclean */);
-  CMSDrainMarkingStackClosure cmsDrainMarkingStackClosure(this,
-                                _span, &_markBitMap, &_markStack,
-                                &cmsKeepAliveClosure, false /* !preclean */);
   ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_q());
   {
     GCTraceTime(Debug, gc, phases) t("Reference Processing", _gc_timer_cm);
+
+    // Setup keep_alive and complete closures.
+    CMSKeepAliveClosure cmsKeepAliveClosure(this, _span, &_markBitMap,
+                                            &_markStack, false /* !preclean */);
+    CMSDrainMarkingStackClosure cmsDrainMarkingStackClosure(this,
+                                  _span, &_markBitMap, &_markStack,
+                                  &cmsKeepAliveClosure, false /* !preclean */);
 
     ReferenceProcessorStats stats;
     if (rp->processing_is_mt()) {
@@ -5225,13 +5227,13 @@ void CMSCollector::refProcessingWork() {
     pt.print_all_references();
   }
 
-  {
-    GCTraceTime(Debug, gc, phases) t("Weak Processing", _gc_timer_cm);
-    WeakProcessor::weak_oops_do(&_is_alive_closure, &cmsKeepAliveClosure, &cmsDrainMarkingStackClosure);
-  }
-
   // This is the point where the entire marking should have completed.
   verify_work_stacks_empty();
+
+  {
+    GCTraceTime(Debug, gc, phases) t("Weak Processing", _gc_timer_cm);
+    WeakProcessor::weak_oops_do(&_is_alive_closure, &do_nothing_cl);
+  }
 
   if (should_unload_classes()) {
     {
