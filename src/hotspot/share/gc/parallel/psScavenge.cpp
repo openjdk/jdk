@@ -407,15 +407,14 @@ bool PSScavenge::invoke_no_policy() {
 
     scavenge_midpoint.update();
 
-    PSKeepAliveClosure keep_alive(promotion_manager);
-    PSEvacuateFollowersClosure evac_followers(promotion_manager);
-
     // Process reference objects discovered during scavenge
     {
       GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
       reference_processor()->setup_policy(false); // not always_clear
       reference_processor()->set_active_mt_degree(active_workers);
+      PSKeepAliveClosure keep_alive(promotion_manager);
+      PSEvacuateFollowersClosure evac_followers(promotion_manager);
       ReferenceProcessorStats stats;
       ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->num_q());
       if (reference_processor()->processing_is_mt()) {
@@ -442,17 +441,23 @@ bool PSScavenge::invoke_no_policy() {
       pt.print_enqueue_phase();
     }
 
+    assert(promotion_manager->stacks_empty(),"stacks should be empty at this point");
+
+    PSScavengeRootsClosure root_closure(promotion_manager);
+
     {
       GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
-      WeakProcessor::weak_oops_do(&_is_alive_closure, &keep_alive, &evac_followers);
+      WeakProcessor::weak_oops_do(&_is_alive_closure, &root_closure);
     }
 
     {
       GCTraceTime(Debug, gc, phases) tm("Scrub String Table", &_gc_timer);
       // Unlink any dead interned Strings and process the remaining live ones.
-      PSScavengeRootsClosure root_closure(promotion_manager);
       StringTable::unlink_or_oops_do(&_is_alive_closure, &root_closure);
     }
+
+    // Verify that usage of root_closure didn't copy any objects.
+    assert(promotion_manager->stacks_empty(),"stacks should be empty at this point");
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
     promotion_failure_occurred = PSPromotionManager::post_scavenge(_gc_tracer);

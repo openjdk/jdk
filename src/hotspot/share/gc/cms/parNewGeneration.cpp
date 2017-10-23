@@ -1000,7 +1000,13 @@ void ParNewGeneration::collect(bool   full,
   _gc_tracer.report_tenuring_threshold(tenuring_threshold());
   pt.print_all_references();
 
-  WeakProcessor::weak_oops_do(&is_alive, &keep_alive, &evacuate_followers);
+  assert(gch->no_allocs_since_save_marks(), "evacuation should be done at this point");
+
+  WeakProcessor::weak_oops_do(&is_alive, &keep_alive);
+
+  // Verify that the usage of keep_alive only forwarded
+  // the oops and did not find anything new to copy.
+  assert(gch->no_allocs_since_save_marks(), "unexpectedly copied objects");
 
   if (!promotion_failed()) {
     // Swap the survivor spaces.

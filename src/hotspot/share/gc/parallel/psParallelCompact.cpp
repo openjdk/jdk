@@ -2119,13 +2119,13 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     pt.print_all_references();
   }
 
-  {
-    GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
-    WeakProcessor::weak_oops_do(is_alive_closure(), &mark_and_push_closure, &follow_stack_closure);
-  }
-
   // This is the point where the entire marking should have completed.
   assert(cm->marking_stacks_empty(), "Marking should have completed");
+
+  {
+    GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
+    WeakProcessor::weak_oops_do(is_alive_closure(), &do_nothing_cl);
+  }
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", &_gc_timer);

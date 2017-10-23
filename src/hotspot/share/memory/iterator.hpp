@@ -48,6 +48,13 @@ class OopClosure : public Closure {
   virtual void do_oop(narrowOop* o) = 0;
 };
 
+class DoNothingClosure : public OopClosure {
+ public:
+  virtual void do_oop(oop* p)       {}
+  virtual void do_oop(narrowOop* p) {}
+};
+extern DoNothingClosure do_nothing_cl;
+
 // ExtendedOopClosure adds extra code to be run during oop iterations.
 // This is needed by the GC and is extracted to a separate type to not
 // pollute the OopClosure interface.
