@@ -135,7 +135,7 @@ inline RefToScanQueue* G1CollectedHeap::task_queue(uint i) const {
 }
 
 inline bool G1CollectedHeap::isMarkedNext(oop obj) const {
-  return _cm->nextMarkBitMap()->is_marked((HeapWord*)obj);
+  return _cm->next_mark_bitmap()->is_marked((HeapWord*)obj);
 }
 
 inline bool G1CollectedHeap::is_in_cset(oop obj) {

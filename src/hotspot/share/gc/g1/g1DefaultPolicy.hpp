@@ -238,7 +238,10 @@ public:
   uint calc_min_old_cset_length() const;
   uint calc_max_old_cset_length() const;
 
-  double reclaimable_bytes_perc(size_t reclaimable_bytes) const;
+  // Returns the given amount of reclaimable bytes (that represents
+  // the amount of reclaimable space still to be collected) as a
+  // percentage of the current heap capacity.
+  double reclaimable_bytes_percent(size_t reclaimable_bytes) const;
 
   jlong collection_pause_end_millis() { return _collection_pause_end_millis; }
 
