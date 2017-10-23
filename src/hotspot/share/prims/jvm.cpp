@@ -3355,24 +3355,6 @@ JVM_END
 
 // ObjectInputStream ///////////////////////////////////////////////////////////////
 
-bool force_verify_field_access(Klass* current_class, Klass* field_class, AccessFlags access, bool classloader_only) {
-  if (current_class == NULL) {
-    return true;
-  }
-  if ((current_class == field_class) || access.is_public()) {
-    return true;
-  }
-
-  if (access.is_protected()) {
-    // See if current_class is a subclass of field_class
-    if (current_class->is_subclass_of(field_class)) {
-      return true;
-    }
-  }
-
-  return (!access.is_private() && InstanceKlass::cast(current_class)->is_same_class_package(field_class));
-}
-
 // Return the first user-defined class loader up the execution stack, or null
 // if only code from the bootstrap or platform class loader is on the stack.
 
