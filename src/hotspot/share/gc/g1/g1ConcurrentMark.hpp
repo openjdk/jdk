@@ -431,8 +431,8 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
   bool out_of_regions() { return _finger >= _heap_end; }
 
   // Returns the task with the given id
-  G1CMTask* task(int id) {
-    assert(0 <= id && id < (int) _active_tasks, "Task id %d not within active bounds up to %u", id, _active_tasks);
+  G1CMTask* task(uint id) {
+    assert(id < _active_tasks, "Task id %u not within active bounds up to %u", id, _active_tasks);
     return _tasks[id];
   }
 
