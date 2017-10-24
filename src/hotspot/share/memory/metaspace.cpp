@@ -492,6 +492,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
 #endif
 
   void print_on(outputStream* st) const;
+  void print_map(outputStream* st, bool is_class) const;
 };
 
 #define assert_is_aligned(value, alignment)                  \
@@ -542,6 +543,94 @@ void VirtualSpaceNode::purge(ChunkManager* chunk_manager) {
     chunk = (Metachunk*) next;
   }
 }
+
+void VirtualSpaceNode::print_map(outputStream* st, bool is_class) const {
+
+  // Format:
+  // <ptr>
+  // <ptr>  . .. .               .  ..
+  //        SSxSSMMMMMMMMMMMMMMMMsssXX
+  //        112114444444444444444
+  // <ptr>  . .. .               .  ..
+  //        SSxSSMMMMMMMMMMMMMMMMsssXX
+  //        112114444444444444444
+
+  if (bottom() == top()) {
+    return;
+  }
+
+  // First line: dividers for every med-chunk-sized interval
+  // Second line: a dot for the start of a chunk
+  // Third line: a letter per chunk type (x,s,m,h), uppercase if in use.
+
+  const size_t spec_chunk_size = is_class ? ClassSpecializedChunk : SpecializedChunk;
+  const size_t small_chunk_size = is_class ? ClassSmallChunk : SmallChunk;
+  const size_t med_chunk_size = is_class ? ClassMediumChunk : MediumChunk;
+
+  int line_len = 100;
+  const size_t section_len = align_up(spec_chunk_size * line_len, med_chunk_size);
+  line_len = (int)(section_len / spec_chunk_size);
+
+  char* line1 = (char*)os::malloc(line_len, mtInternal);
+  char* line2 = (char*)os::malloc(line_len, mtInternal);
+  char* line3 = (char*)os::malloc(line_len, mtInternal);
+  int pos = 0;
+  const MetaWord* p = bottom();
+  const Metachunk* chunk = (const Metachunk*)p;
+  const MetaWord* chunk_end = p + chunk->word_size();
+  while (p < top()) {
+    if (pos == line_len) {
+      pos = 0;
+      st->fill_to(22);
+      st->print_raw(line1, line_len);
+      st->cr();
+      st->fill_to(22);
+      st->print_raw(line2, line_len);
+      st->cr();
+    }
+    if (pos == 0) {
+      st->print(PTR_FORMAT ":", p2i(p));
+    }
+    if (p == chunk_end) {
+      chunk = (Metachunk*)p;
+      chunk_end = p + chunk->word_size();
+    }
+    if (p == (const MetaWord*)chunk) {
+      // chunk starts.
+      line1[pos] = '.';
+    } else {
+      line1[pos] = ' ';
+    }
+    // Line 2: chunk type (x=spec, s=small, m=medium, h=humongous), uppercase if
+    // chunk is in use.
+    const bool chunk_is_free = ((Metachunk*)chunk)->is_tagged_free();
+    if (chunk->word_size() == spec_chunk_size) {
+      line2[pos] = chunk_is_free ? 'x' : 'X';
+    } else if (chunk->word_size() == small_chunk_size) {
+      line2[pos] = chunk_is_free ? 's' : 'S';
+    } else if (chunk->word_size() == med_chunk_size) {
+      line2[pos] = chunk_is_free ? 'm' : 'M';
+   } else if (chunk->word_size() > med_chunk_size) {
+      line2[pos] = chunk_is_free ? 'h' : 'H';
+    } else {
+      ShouldNotReachHere();
+    }
+    p += spec_chunk_size;
+    pos ++;
+  }
+  if (pos > 0) {
+    st->fill_to(22);
+    st->print_raw(line1, pos);
+    st->cr();
+    st->fill_to(22);
+    st->print_raw(line2, pos);
+    st->cr();
+  }
+  os::free(line1);
+  os::free(line2);
+  os::free(line3);
+}
+
 
 #ifdef ASSERT
 uintx VirtualSpaceNode::container_count_slow() {
@@ -649,6 +738,7 @@ class VirtualSpaceList : public CHeapObj<mtClass> {
   void purge(ChunkManager* chunk_manager);
 
   void print_on(outputStream* st) const;
+  void print_map(outputStream* st) const;
 
   class VirtualSpaceListIterator : public StackObj {
     VirtualSpaceNode* _virtual_spaces;
@@ -1461,6 +1551,18 @@ void VirtualSpaceList::print_on(outputStream* st) const {
   }
 }
 
+void VirtualSpaceList::print_map(outputStream* st) const {
+  VirtualSpaceNode* list = virtual_space_list();
+  VirtualSpaceListIterator iter(list);
+  unsigned i = 0;
+  while (iter.repeat()) {
+    st->print_cr("Node %u:", i);
+    VirtualSpaceNode* node = iter.get_next();
+    node->print_map(st, this->is_class());
+    i ++;
+  }
+}
+
 // MetaspaceGC methods
 
 // VM_CollectForMetadataAllocation is the vm operation used to GC.
@@ -1934,11 +2036,10 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
   // Remove it from the links to this freelist
   chunk->set_next(NULL);
   chunk->set_prev(NULL);
-#ifdef ASSERT
+
   // Chunk is no longer on any freelist. Setting to false make container_count_slow()
   // work.
   chunk->set_is_tagged_free(false);
-#endif
   chunk->container()->inc_container_count();
 
   slow_locked_verify();
@@ -2006,7 +2107,7 @@ void ChunkManager::return_single_chunk(ChunkIndex index, Metachunk* chunk) {
         chunk_size_name(index), p2i(chunk), chunk->word_size());
   }
   chunk->container()->dec_container_count();
-  DEBUG_ONLY(chunk->set_is_tagged_free(true);)
+  chunk->set_is_tagged_free(true);
 
   // Chunk has been added; update counters.
   account_for_added_chunk(chunk);
@@ -2945,9 +3046,9 @@ void MetaspaceAux::print_on(outputStream* out, Metaspace::MetadataType mdtype) {
   size_t free_bytes = free_bytes_slow(mdtype);
   size_t used_and_free = used_bytes + free_bytes +
                            free_chunks_capacity_bytes;
-  out->print_cr("  Chunk accounting: used in chunks " SIZE_FORMAT
+  out->print_cr("  Chunk accounting: (used in chunks " SIZE_FORMAT
              "K + unused in chunks " SIZE_FORMAT "K  + "
-             " capacity in free chunks " SIZE_FORMAT "K = " SIZE_FORMAT
+             " capacity in free chunks " SIZE_FORMAT "K) = " SIZE_FORMAT
              "K  capacity in allocated chunks " SIZE_FORMAT "K",
              used_bytes / K,
              free_bytes / K,
@@ -3209,6 +3310,31 @@ void MetaspaceAux::dump(outputStream* out) {
   out->print("data space: "); print_on(out, Metaspace::NonClassType);
   out->print("class space: "); print_on(out, Metaspace::ClassType);
   print_waste(out);
+}
+
+// Prints an ASCII representation of the given space.
+void MetaspaceAux::print_metaspace_map(outputStream* out, Metaspace::MetadataType mdtype) {
+  MutexLockerEx cl(SpaceManager::expand_lock(), Mutex::_no_safepoint_check_flag);
+  const bool for_class = mdtype == Metaspace::ClassType ? true : false;
+  VirtualSpaceList* const vsl = for_class ? Metaspace::class_space_list() : Metaspace::space_list();
+  if (vsl != NULL) {
+    if (for_class) {
+      if (!Metaspace::using_class_space()) {
+        out->print_cr("No Class Space.");
+        return;
+      }
+      out->print_raw("---- Metaspace Map (Class Space) ----");
+    } else {
+      out->print_raw("---- Metaspace Map (Non-Class Space) ----");
+    }
+    // Print legend:
+    out->cr();
+    out->print_cr("Chunk Types (uppercase chunks are in use): x-specialized, s-small, m-medium, h-humongous.");
+    out->cr();
+    VirtualSpaceList* const vsl = for_class ? Metaspace::class_space_list() : Metaspace::space_list();
+    vsl->print_map(out);
+    out->cr();
+  }
 }
 
 void MetaspaceAux::verify_free_chunks() {
@@ -3849,6 +3975,7 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
     }
     LogStream ls(log.info());
     MetaspaceAux::dump(&ls);
+    MetaspaceAux::print_metaspace_map(&ls, mdtype);
     ChunkManager::print_all_chunkmanagers(&ls);
   }
 

@@ -102,7 +102,7 @@ class Metachunk : public Metabase<Metachunk> {
   // Current allocation top.
   MetaWord* _top;
 
-  DEBUG_ONLY(bool _is_tagged_free;)
+  bool _is_tagged_free;
 
   MetaWord* initial_top() const { return (MetaWord*)this + overhead(); }
   MetaWord* top() const         { return _top; }
@@ -138,10 +138,8 @@ class Metachunk : public Metabase<Metachunk> {
   size_t used_word_size() const;
   size_t free_word_size() const;
 
-#ifdef ASSERT
   bool is_tagged_free() { return _is_tagged_free; }
   void set_is_tagged_free(bool v) { _is_tagged_free = v; }
-#endif
 
   bool contains(const void* ptr) { return bottom() <= ptr && ptr < _top; }
 
