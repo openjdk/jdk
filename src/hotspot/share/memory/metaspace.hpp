@@ -361,6 +361,10 @@ class MetaspaceAux : AllStatic {
 
   static void print_class_waste(outputStream* out);
   static void print_waste(outputStream* out);
+
+  // Prints an ASCII representation of the given space.
+  static void print_metaspace_map(outputStream* out, Metaspace::MetadataType mdtype);
+
   static void dump(outputStream* out);
   static void verify_free_chunks();
   // Checks that the values returned by allocated_capacity_bytes() and
