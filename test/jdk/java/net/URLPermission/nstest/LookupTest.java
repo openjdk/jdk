@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class LookupTest {
 
+    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     static int port;
     static volatile ServerSocket serverSocket;
 
@@ -210,7 +211,7 @@ public class LookupTest {
         }
 
         public boolean implies(ProtectionDomain domain, Permission perm) {
-            return perms.implies(perm);
+            return perms.implies(perm) || DEFAULT_POLICY.implies(domain, perm);
         }
     }
 }

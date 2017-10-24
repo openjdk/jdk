@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import jdk.internal.logger.SimpleConsoleLogger;
 
 /**
  * @test
- * @bug     8140364
+ * @bug     8140364 8189291
  * @summary JDK implementation specific unit test for LoggerFinderLoader.
  *          Tests the behavior of LoggerFinderLoader with respect to the
  *          value of the internal diagnosability switches. Also test the
@@ -96,6 +96,7 @@ import jdk.internal.logger.SimpleConsoleLogger;
  */
 public class LoggerFinderLoaderTest {
 
+    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     static final RuntimePermission LOGGERFINDER_PERMISSION =
                 new RuntimePermission("loggerFinder");
     final static boolean VERBOSE = false;
@@ -866,7 +867,8 @@ public class LoggerFinderLoaderTest {
 
         @Override
         public boolean implies(ProtectionDomain domain, Permission permission) {
-            return getPermissions().implies(permission);
+            return getPermissions().implies(permission) ||
+                   DEFAULT_POLICY.implies(domain, permission);
         }
 
         @Override

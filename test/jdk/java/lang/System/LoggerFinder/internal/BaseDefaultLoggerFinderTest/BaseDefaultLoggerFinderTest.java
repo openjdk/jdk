@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ import sun.util.logging.PlatformLogger;
 
 /**
  * @test
- * @bug     8140364 8145686
+ * @bug     8140364 8145686 8189291
  * @summary JDK implementation specific unit test for the base DefaultLoggerFinder.
  *          Tests the behavior of DefaultLoggerFinder and SimpleConsoleLogger
  *          implementation.
@@ -75,6 +75,7 @@ import sun.util.logging.PlatformLogger;
  */
 public class BaseDefaultLoggerFinderTest {
 
+    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     static final RuntimePermission LOGGERFINDER_PERMISSION =
                 new RuntimePermission("loggerFinder");
     final static boolean VERBOSE = false;
@@ -959,7 +960,8 @@ public class BaseDefaultLoggerFinderTest {
 
         @Override
         public boolean implies(ProtectionDomain domain, Permission permission) {
-            return getPermissions().implies(permission);
+            return getPermissions().implies(permission) ||
+                    DEFAULT_POLICY.implies(domain, permission);
         }
 
         @Override
