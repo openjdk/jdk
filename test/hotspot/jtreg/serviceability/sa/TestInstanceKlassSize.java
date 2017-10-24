@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,6 @@ public class TestInstanceKlassSize {
             String[] instanceKlassNames = new String[] {
                                               " java.lang.Object",
                                               " java.util.Vector",
-                                              " sun.util.PreHashedMap",
                                               " java.lang.String",
                                               " java.lang.Thread",
                                               " java.lang.Byte",
@@ -166,7 +165,7 @@ public class TestInstanceKlassSize {
             InstanceKlass ik = SystemDictionaryHelper.findInstanceKlass(
                                SAInstanceKlassName);
             Asserts.assertNotNull(ik,
-                String.format("Unable to find instance klass for %s", ik));
+                String.format("Unable to find instance klass for %s", SAInstanceKlassName));
             System.out.println("SA: The size of " + SAInstanceKlassName +
                                " is " + ik.getSize());
         }
@@ -187,7 +186,6 @@ public class TestInstanceKlassSize {
             String[] SAInstanceKlassNames = new String[] {
                                                 "java.lang.Object",
                                                 "java.util.Vector",
-                                                "sun.util.PreHashedMap",
                                                 "java.lang.String",
                                                 "java.lang.Thread",
                                                 "java.lang.Byte"
