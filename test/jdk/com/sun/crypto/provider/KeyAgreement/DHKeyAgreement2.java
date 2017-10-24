@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 7146728
  * @summary DHKeyAgreement2
  * @author Jan Luehe
+ * @run main/othervm -Djdk.crypto.KeyAgreement.legacyKDF=true DHKeyAgreement2
  */
 
 import java.io.*;

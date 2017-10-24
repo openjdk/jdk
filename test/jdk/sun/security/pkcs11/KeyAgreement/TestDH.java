@@ -28,8 +28,8 @@
  * @author Andreas Sterbenz
  * @library ..
  * @modules jdk.crypto.cryptoki
- * @run main/othervm TestDH
- * @run main/othervm TestDH sm
+ * @run main/othervm -Djdk.crypto.KeyAgreement.legacyKDF=true TestDH
+ * @run main/othervm -Djdk.crypto.KeyAgreement.legacyKDF=true TestDH sm
  */
 
 import java.security.KeyPair;
