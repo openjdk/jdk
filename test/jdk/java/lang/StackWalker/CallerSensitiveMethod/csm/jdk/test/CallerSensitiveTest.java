@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.util.function.Supplier;
  * StackWalker::getCallerClass can't be called from @CallerSensitive method.
  */
 public class CallerSensitiveTest {
+    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     private static final String NON_CSM_CALLER_METHOD = "getCallerClass";
     private static final String CSM_CALLER_METHOD = "caller";
 
@@ -54,7 +55,8 @@ public class CallerSensitiveTest {
             Policy.setPolicy(new Policy() {
                 @Override
                 public boolean implies(ProtectionDomain domain, Permission p) {
-                    return perms.implies(p);
+                    return perms.implies(p) ||
+                        DEFAULT_POLICY.implies(domain, p);
                 }
             });
             System.setSecurityManager(new SecurityManager());

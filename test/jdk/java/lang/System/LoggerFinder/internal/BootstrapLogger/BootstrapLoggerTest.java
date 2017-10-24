@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.internal.logger.LazyLoggers;
 
 /*
  * @test
- * @bug     8140364
+ * @bug     8140364 8189291
  * @author  danielfuchs
  * @summary JDK implementation specific unit test for JDK internal artifacts.
             Tests the behavior of bootstrap loggers (and SimpleConsoleLoggers
@@ -60,6 +60,7 @@ import jdk.internal.logger.LazyLoggers;
  */
 public class BootstrapLoggerTest {
 
+    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     static final Method isAlive;
     static final Field logManagerInitialized;
     static {
@@ -365,7 +366,8 @@ public class BootstrapLoggerTest {
 
         @Override
         public boolean implies(ProtectionDomain domain, Permission permission) {
-            return getPermissions(domain).implies(permission);
+            return getPermissions(domain).implies(permission) ||
+                   DEFAULT_POLICY.implies(domain, permission);
         }
 
         @Override

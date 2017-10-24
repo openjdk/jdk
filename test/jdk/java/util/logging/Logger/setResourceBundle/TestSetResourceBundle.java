@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import resources.ListBundle;
 
 /**
  * @test
- * @bug 8013839
+ * @bug 8013839 8189291
  * @summary tests Logger.setResourceBundle;
  * @build TestSetResourceBundle resources.ListBundle resources.ListBundle_fr
  * @run main/othervm TestSetResourceBundle UNSECURE
@@ -49,6 +49,7 @@ import resources.ListBundle;
  */
 public class TestSetResourceBundle {
 
+    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     static final String LIST_BUNDLE_NAME = "resources.ListBundle";
     static final String PROPERTY_BUNDLE_NAME = "resources.PropertyBundle";
 
@@ -479,7 +480,8 @@ public class TestSetResourceBundle {
 
         @Override
         public boolean implies(ProtectionDomain domain, Permission permission) {
-            return permissions.implies(permission);
+            return permissions.implies(permission) ||
+                   DEFAULT_POLICY.implies(domain, permission);
         }
     }
 

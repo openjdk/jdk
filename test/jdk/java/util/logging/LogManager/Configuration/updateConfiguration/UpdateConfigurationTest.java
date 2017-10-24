@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import java.util.stream.Stream;
 
 /**
  * @test
- * @bug 8033661
+ * @bug 8033661 8189291
  * @summary tests LogManager.updateConfiguration(bin)
  * @modules java.logging/java.util.logging:open
  * @run main/othervm UpdateConfigurationTest UNSECURE
@@ -67,6 +67,8 @@ import java.util.stream.Stream;
  * @author danielfuchs
  */
 public class UpdateConfigurationTest {
+
+    static final Policy DEFAULT_POLICY = Policy.getPolicy();
 
     /**
      * We will test the handling of abstract logger nodes with file handlers in
@@ -594,7 +596,8 @@ public class UpdateConfigurationTest {
         @Override
         public boolean implies(ProtectionDomain domain, Permission permission) {
             if (allowAll.get().get()) return allPermissions.implies(permission);
-            return permissions.implies(permission);
+            return permissions.implies(permission) ||
+                   DEFAULT_POLICY.implies(domain, permission);
         }
 
         @Override
