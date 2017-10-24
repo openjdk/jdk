@@ -183,21 +183,14 @@ endif
 
 ifeq ($(GCOV_ENABLED), true)
 
-  GCOV_FIND_EXPR := -type f -name "*.gcno"
-
-  $(eval $(call SetupCopyFiles,COPY_HOTSPOT_GCOV_GCNO, \
+  $(eval $(call SetupCopyFiles,COPY_GCOV_GCNO, \
       SRC := $(OUTPUTDIR), \
       DEST := $(SYMBOLS_IMAGE_DIR)/gcov, \
-      FILES := $(shell $(FIND) $(HOTSPOT_OUTPUTDIR) $(GCOV_FIND_EXPR))))
+      FILES := $(call FindFiles, $(HOTSPOT_OUTPUTDIR) \
+          $(SUPPORT_OUTPUTDIR)/native, *.gcno) \
+  ))
 
-  SYMBOLS_TARGETS += $(COPY_HOTSPOT_GCOV_GCNO)
-
-  $(eval $(call SetupCopyFiles,COPY_JDK_GCOV_GCNO, \
-      SRC := $(OUTPUTDIR), \
-      DEST := $(SYMBOLS_IMAGE_DIR)/gcov, \
-      FILES := $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/native $(GCOV_FIND_EXPR))))
-
-  SYMBOLS_TARGETS += $(COPY_JDK_GCOV_GCNO)
+  SYMBOLS_TARGETS += $(COPY_GCOV_GCNO)
 
 endif
 
@@ -230,10 +223,10 @@ else
   # On Macosx, if debug symbols have not been zipped, find all files inside *.dSYM
   # dirs.
   ifeq ($(call isTargetOs, macosx), true)
-    $(eval $(call FillCacheFind, \
-        $(SUPPORT_OUTPUTDIR)/modules_cmds $(SUPPORT_OUTPUTDIR)/modules_libs))
+    $(call FillFindCache, \
+        $(SUPPORT_OUTPUTDIR)/modules_cmds $(SUPPORT_OUTPUTDIR)/modules_libs)
     FindDebuginfoFiles = \
-        $(if $(wildcard $1), $(call containing, .dSYM/, $(call CacheFind, $1)))
+        $(if $(wildcard $1), $(call containing, .dSYM/, $(call FindFiles, $1)))
   endif
 endif
 

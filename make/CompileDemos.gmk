@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ $(eval $(call IncludeCustomExtension, CompileDemos-pre.gmk))
 # Prepare the find cache.
 DEMO_SRC_DIRS += $(TOPDIR)/src/demo
 
-$(eval $(call FillCacheFind, $(wildcard $(DEMO_SRC_DIRS))))
+$(call FillFindCache, $(DEMO_SRC_DIRS))
 
 # Append demo goals to this variable.
 TARGETS =
@@ -237,11 +237,11 @@ $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%: $(DEMO_SHARE_SRC)/nbproject/%
 ifeq ($(call isTargetOs, solaris), true)
   TARGETS += $(patsubst $(DEMO_SHARE_SRC)/nbproject/%, \
     $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%, \
-    $(call CacheFind, $(DEMO_SHARE_SRC)/nbproject))
+    $(call FindFiles, $(DEMO_SHARE_SRC)/nbproject))
 else
   TARGETS += $(patsubst $(DEMO_SHARE_SRC)/nbproject/%, \
     $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%, \
-    $(call CacheFind, $(DEMO_SHARE_SRC)/nbproject))
+    $(call FindFiles, $(DEMO_SHARE_SRC)/nbproject))
 endif
 
 ################################################################################
@@ -250,7 +250,7 @@ ifneq ($(filter images, $(MAKECMDGOALS)), )
   $(eval $(call SetupCopyFiles, COPY_TO_TEST_IMAGE, \
       SRC := $(SUPPORT_OUTPUTDIR)/demos/image, \
       DEST := $(TEST_IMAGE_DIR)/jdk/demos, \
-      FILES := $(call CacheFind, $(SUPPORT_OUTPUTDIR)/demos/image), \
+      FILES := $(call FindFiles, $(SUPPORT_OUTPUTDIR)/demos/image), \
   ))
 
   IMAGES_TARGETS := $(COPY_TO_TEST_IMAGE)

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ MODULES_TO_COPY := $(sort \
 
 COPY_CLASSES_TARGET := $(BUILDJDK_OUTPUTDIR)/jdk/modules/java.base/_the.buildjdk-copy-marker
 
-$(COPY_CLASSES_TARGET): $(call CacheFind, $(wildcard \
+$(COPY_CLASSES_TARGET): $(call FindFiles, $(wildcard \
     $(addprefix $(JDK_OUTPUTDIR)/modules/, $(MODULES_TO_COPY))))
 	$(call LogInfo, Copying java modules to buildjdk: $(MODULES_TO_COPY))
 	$(RM) -r $(BUILDJDK_OUTPUTDIR)/jdk/modules
@@ -56,7 +56,7 @@ TARGETS += $(COPY_CLASSES_TARGET)
 $(eval $(call SetupCopyFiles, COPY_SUPPORT_HEADERS, \
     SRC := $(OUTPUTDIR), \
     DEST := $(BUILDJDK_OUTPUTDIR), \
-    FILES := $(call CacheFind, $(wildcard \
+    FILES := $(call FindFiles, $(wildcard \
         $(addprefix $(SUPPORT_OUTPUTDIR)/headers/, $(MODULES_TO_COPY)))), \
 ))
 

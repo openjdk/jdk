@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ include LibCommon.gmk
 $(eval $(call IncludeCustomExtension, lib/Lib-java.desktop.gmk))
 
 # Prepare the find cache.
-$(eval $(call FillCacheFind, $(wildcard $(TOPDIR)/src/java.desktop/*/native)))
+$(call FillFindCache, $(wildcard $(TOPDIR)/src/java.desktop/*/native))
 
 ################################################################################
 # Create the AWT/2D libraries

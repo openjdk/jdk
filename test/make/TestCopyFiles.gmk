@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ $(OUTPUT_DIR)/_src_created: $(DEPS)
 $(eval $(call SetupCopyFiles, COPY_1, \
     SRC := $(SRC_DIR), \
     DEST := $(DEST_DIR), \
-    FILES := $(call CacheFind, $(SRC_DIR)), \
+    FILES := $(call ShellFindFiles, $(SRC_DIR)), \
 ))
 
 # Optionally define a rule that deletes all the target files after the makefile

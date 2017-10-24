@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -124,9 +124,9 @@ define SetupJarArchiveBody
   ifeq ($$($1_DEPENDENCIES), )
     # Add all source roots to the find cache since we are likely going to run find
     # on these more than once. The cache will only be updated if necessary.
-    $$(eval $$(call FillCacheFind, $$($1_FIND_LIST)))
+    $$(call FillFindCache, $$($1_FIND_LIST))
     $1_DEPENDENCIES:=$$(filter $$(addprefix %,$$($1_SUFFIXES)), \
-        $$(call CacheFind,$$($1_SRCS)))
+        $$(call FindFiles,$$($1_SRCS)))
     ifneq (,$$($1_GREP_INCLUDE_PATTERNS))
       $1_DEPENDENCIES:=$$(filter $$(addsuffix %,$$($1_GREP_INCLUDE_PATTERNS)),$$($1_DEPENDENCIES))
     endif
@@ -137,7 +137,7 @@ define SetupJarArchiveBody
     $1_DEPENDENCIES+=$$(wildcard $$(foreach src, $$($1_SRCS), \
         $$(addprefix $$(src)/, $$($1_EXTRA_FILES))) $$($1_EXTRA_FILES))
     ifeq (,$$($1_SKIP_METAINF))
-      $1_DEPENDENCIES+=$$(call CacheFind,$$(wildcard $$(addsuffix /META-INF,$$($1_SRCS))))
+      $1_DEPENDENCIES+=$$(call FindFiles,$$(wildcard $$(addsuffix /META-INF,$$($1_SRCS))))
     endif
   endif
   # The dependency list should never be empty

@@ -70,8 +70,8 @@ _sequence-do = \
 
 ################################################################################
 # Replace question marks with space in string. This macro needs to be called on
-# files from CacheFind in case any of them contains space in their file name,
-# since CacheFind replaces space with ?.
+# files from FindFiles in case any of them contains space in their file name,
+# since FindFiles replaces space with ?.
 # Param 1 - String to replace in
 DecodeSpace = \
     $(subst ?,$(SPACE),$(strip $1))

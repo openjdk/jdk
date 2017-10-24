@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ LIBS_DIR := $(wildcard $(addsuffix /$(MODULE), $(IMPORT_MODULES_LIBS)))
 CMDS_DIR := $(wildcard $(addsuffix /$(MODULE), $(IMPORT_MODULES_CMDS)))
 CONF_DIR := $(wildcard $(addsuffix /$(MODULE), $(IMPORT_MODULES_CONF)))
 
-$(eval $(call FillCacheFind, $(LIBS_DIR) $(CMDS_DIR) $(CONF_DIR)))
+$(call FillFindCache, $(LIBS_DIR) $(CMDS_DIR) $(CONF_DIR))
 
 ifneq ($(LIBS_DIR), )
   ifeq ($(call isTargetOs, windows), true)
@@ -45,21 +45,21 @@ ifneq ($(LIBS_DIR), )
         SRC := $(LIBS_DIR), \
         DEST := $(JDK_OUTPUTDIR)/bin, \
         FILES := $(filter $(TO_BIN_FILTER), \
-            $(call CacheFind, $(LIBS_DIR))) \
+            $(call FindFiles, $(LIBS_DIR))) \
     ))
 
     $(eval $(call SetupCopyFiles, COPY_LIBS_TO_LIB, \
         SRC := $(LIBS_DIR), \
         DEST := $(JDK_OUTPUTDIR)/lib, \
         FILES := $(filter-out $(TO_BIN_FILTER), \
-            $(call CacheFind, $(LIBS_DIR))) \
+            $(call FindFiles, $(LIBS_DIR))) \
     ))
     TARGETS += $(COPY_LIBS_TO_BIN) $(COPY_LIBS_TO_LIB)
   else
     $(eval $(call SetupCopyFiles, COPY_LIBS, \
         SRC := $(LIBS_DIR), \
         DEST := $(JDK_OUTPUTDIR)/lib, \
-        FILES := $(filter %$(SHARED_LIBRARY_SUFFIX), $(call CacheFind, $(LIBS_DIR))), \
+        FILES := $(filter %$(SHARED_LIBRARY_SUFFIX), $(call FindFiles, $(LIBS_DIR))), \
     ))
 
     # Use relative links if the import dir is inside the OUTPUTDIR, otherwise
@@ -75,7 +75,7 @@ ifneq ($(LIBS_DIR), )
     $(eval $(call SetupCopyFiles, LINK_LIBS, \
         SRC := $(LIBS_DIR), \
         DEST := $(JDK_OUTPUTDIR)/lib, \
-        FILES := $(filter-out %$(SHARED_LIBRARY_SUFFIX), $(call CacheFind, $(LIBS_DIR))), \
+        FILES := $(filter-out %$(SHARED_LIBRARY_SUFFIX), $(call FindFiles, $(LIBS_DIR))), \
         MACRO := $(LINK_MACRO), \
         LOG_ACTION := $(LOG_ACTION), \
     ))
@@ -87,7 +87,7 @@ ifneq ($(CMDS_DIR), )
   $(eval $(call SetupCopyFiles, COPY_CMDS, \
       SRC := $(CMDS_DIR), \
       DEST := $(JDK_OUTPUTDIR)/bin, \
-      FILES := $(call CacheFind, $(CMDS_DIR)), \
+      FILES := $(call FindFiles, $(CMDS_DIR)), \
   ))
   TARGETS += $(COPY_CMDS)
 endif
@@ -96,7 +96,7 @@ ifneq ($(CONF_DIR), )
   $(eval $(call SetupCopyFiles, COPY_CONF, \
       SRC := $(CONF_DIR), \
       DEST := $(JDK_OUTPUTDIR)/lib, \
-      FILES := $(call CacheFind, $(CONF_DIR)), \
+      FILES := $(call FindFiles, $(CONF_DIR)), \
   ))
   TARGETS += $(COPY_CONF)
 endif
