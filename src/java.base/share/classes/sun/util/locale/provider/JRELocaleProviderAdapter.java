@@ -28,6 +28,7 @@ package sun.util.locale.provider;
 import java.security.AccessController;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
@@ -478,11 +479,8 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
             if (nonBaseTags != null) {
                 supportedLocaleString += " " + nonBaseTags;
             }
-        } catch (Exception e) {
-            // catch any exception, and ignore them as if non-EN locales do not exist.
-        } catch (ServiceConfigurationError sce) {
-            Throwable cause = sce.getCause();
-            if (!(cause instanceof AccessControlException)) throw sce;
+        } catch (PrivilegedActionException pae) {
+            throw new InternalError(pae.getCause());
         }
 
         return supportedLocaleString;
