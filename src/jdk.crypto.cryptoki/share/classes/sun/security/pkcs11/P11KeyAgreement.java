@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,17 @@ final class P11KeyAgreement extends KeyAgreementSpi {
 
     // KeyAgreement from SunJCE as fallback for > 2 party agreement
     private KeyAgreement multiPartyAgreement;
+
+    private static class AllowKDF {
+
+        private static final boolean VALUE = getValue();
+
+        private static boolean getValue() {
+            return AccessController.doPrivileged(
+                (PrivilegedAction<Boolean>)
+                () -> Boolean.getBoolean("jdk.crypto.KeyAgreement.legacyKDF"));
+        }
+    }
 
     P11KeyAgreement(Token token, String algorithm, long mechanism) {
         super();
@@ -260,6 +271,7 @@ final class P11KeyAgreement extends KeyAgreementSpi {
         if (algorithm == null) {
             throw new NoSuchAlgorithmException("Algorithm must not be null");
         }
+
         if (algorithm.equals("TlsPremasterSecret")) {
             // For now, only perform native derivation for TlsPremasterSecret
             // as that is required for FIPS compliance.
@@ -268,6 +280,14 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             // (bug not yet filed).
             return nativeGenerateSecret(algorithm);
         }
+
+        if (!algorithm.equalsIgnoreCase("TlsPremasterSecret") &&
+            !AllowKDF.VALUE) {
+
+            throw new NoSuchAlgorithmException("Unsupported secret key "
+                                               + "algorithm: " + algorithm);
+        }
+
         byte[] secret = engineGenerateSecret();
         // Maintain compatibility for SunJCE:
         // verify secret length is sensible for algorithm / truncate
