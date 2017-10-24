@@ -23,13 +23,12 @@
 
 /*
  * @test
- * @bug 8038436 8158504 8065555 8167143 8167273
+ * @bug 8038436 8158504 8065555 8167143 8167273 8189272
  * @summary Test for changes in 8038436
  * @modules java.base/sun.util.locale.provider
  *          java.base/sun.util.spi
  *          jdk.localedata
  * @compile -XDignore.symbol.file Bug8038436.java
- * @run main/othervm  --limit-modules java.base      Bug8038436  security
  * @run main/othervm  -Djava.locale.providers=COMPAT Bug8038436  availlocs
  */
 
@@ -52,9 +51,6 @@ public class Bug8038436 {
 
         switch (args[0]) {
 
-        case "security":
-            securityTests();
-            break;
         case "availlocs":
             availableLocalesTests();
             break;
@@ -64,52 +60,6 @@ public class Bug8038436 {
 
     }
 
-    private static void securityTests() {
-        Policy.setPolicy(new MyPolicy());
-        System.setSecurityManager(new SecurityManager());
-
-        /*
-         * Test for AccessClassInPackage security exception. Confirms that
-         * exeption won't be thrown if an application sets a Permission that
-         * does not allow any RuntimePermission, on loading LocaleDataMetaInfo
-         * from jdk.localedata module.
-         */
-        System.out.println(new Formatter(Locale.JAPAN).format("%1$tB %1$te, %1$tY",
-                           new GregorianCalendar()));
-
-        /*
-         * Check only English/ROOT locales are returned if the jdk.localedata
-         * module is not loaded (implied by "--limit-modules java.base").
-         */
-        List<Locale> nonEnglishLocales= (Arrays.stream(Locale.getAvailableLocales())
-                .filter(l -> (l != Locale.ROOT && !(l.getLanguage() == "en" && (l.getCountry() == "US" || l.getCountry() == "" ))))
-                .collect(Collectors.toList()));
-
-        if (!nonEnglishLocales.isEmpty()) {
-            throw new RuntimeException("non English locale(s)" + nonEnglishLocales + " included in available locales");
-        }
-    }
-
-
-    static class MyPolicy extends Policy {
-        final PermissionCollection perms = new Permissions();
-
-        MyPolicy() {
-            // allows no RuntimePermission
-        }
-
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return perms;
-        }
-
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return perms;
-        }
-
-        public boolean implies(ProtectionDomain domain, Permission perm) {
-            return perms.implies(perm);
-        }
-    }
 
     static final String[] bipLocs = ("ar, ar-JO, ar-LB, ar-SY, be, be-BY, bg, " +
         "bg-BG, ca, ca-ES, cs, cs-CZ, da, da-DK, de, de-AT, de-CH, de-DE, " +
