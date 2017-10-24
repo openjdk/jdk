@@ -1380,7 +1380,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
   RegisterMap reg_map(thread, UseBiasedLocking);
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
-  assert(caller_frame.cb()->as_nmethod_or_null() == cm, "expect top frame nmethod");
+  assert(caller_frame.cb()->as_compiled_method_or_null() == cm, "expect top frame compiled method");
   Deoptimization::deoptimize(thread, caller_frame, &reg_map, Deoptimization::Reason_not_compiled_exception_handler);
 
   MethodData* trap_mdo = get_method_data(thread, cm->method(), true);
