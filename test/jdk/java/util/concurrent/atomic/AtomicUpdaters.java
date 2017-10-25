@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7103570
+ * @bug 7103570 8189291
  * @author David Holmes
  * @run main/othervm AtomicUpdaters
  * @run main/othervm AtomicUpdaters UseSM
@@ -47,6 +47,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public class  AtomicUpdaters {
+    static final Policy DEFAULT_POLICY = Policy.getPolicy();
+
     enum TYPE { INT, LONG, REF }
 
     static class Config {
@@ -216,7 +218,8 @@ public class  AtomicUpdaters {
 
         @Override
         public boolean implies(ProtectionDomain pd, Permission p) {
-            return Policy.UNSUPPORTED_EMPTY_COLLECTION.implies(p);
+            return Policy.UNSUPPORTED_EMPTY_COLLECTION.implies(p) ||
+                    DEFAULT_POLICY.implies(pd, p);
         }
     }
 }

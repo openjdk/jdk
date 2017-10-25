@@ -300,6 +300,14 @@ var getJibProfilesCommon = function (input, data) {
                     ],
                     exploded: "images/test"
                 },
+                test_demos: {
+                    local: "bundles/\\(jdk.*bin-tests-demos.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-tests-demos.tar.gz",
+                        "bundles/" + pf + "/\\1"
+                    ],
+                    exploded: "images/test"
+                },
                 jdk_symbols: {
                     local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
                     remote: [

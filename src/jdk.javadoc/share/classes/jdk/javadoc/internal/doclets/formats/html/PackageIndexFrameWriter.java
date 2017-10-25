@@ -78,8 +78,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * {@inheritDoc}
      */
     @Override
-    protected void addPackagesList(Collection<PackageElement> packages, String text,
-            String tableSummary, Content body) {
+    protected void addPackagesList(Content body) {
         Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
                 contents.packagesLabel);
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))

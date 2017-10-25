@@ -36,6 +36,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes;
+import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes.TableTabs;
 
 
 /**
@@ -286,6 +287,52 @@ public class HtmlWriter {
                     .append(sep)
                     .append("\"")
                     .append(configuration.getText(entry.tableTabs().resourceKey()))
+                    .append("\"]");
+        }
+        vars.append("};")
+                .append(DocletConstants.NL);
+        addStyles(HtmlStyle.altColor, vars);
+        addStyles(HtmlStyle.rowColor, vars);
+        addStyles(HtmlStyle.tableTab, vars);
+        addStyles(HtmlStyle.activeTableTab, vars);
+        script.addContent(new RawHtml(vars));
+    }
+
+    /**
+     * Generated javascript variables for the document.
+     *
+     * @param groupTypeMap map comprising of group relationship
+     * @param groupTypes map comprising of all table tab types
+     */
+    public void generateGroupTypesScript(Map<String,Integer> groupTypeMap,
+            Map<String,TableTabs> groupTypes) {
+        String sep = "";
+        StringBuilder vars = new StringBuilder("var groups");
+        vars.append(" = {");
+        for (Map.Entry<String,Integer> entry : groupTypeMap.entrySet()) {
+            vars.append(sep);
+            sep = ",";
+            vars.append("\"")
+                    .append(entry.getKey())
+                    .append("\":")
+                    .append(entry.getValue());
+        }
+        vars.append("};").append(DocletConstants.NL);
+        sep = "";
+        vars.append("var tabs = {");
+        for (String group : groupTypes.keySet()) {
+            TableTabs tab = groupTypes.get(group);
+            vars.append(sep);
+            sep = ",";
+            vars.append(tab.value())
+                    .append(":")
+                    .append("[")
+                    .append("\"")
+                    .append(tab.tabId())
+                    .append("\"")
+                    .append(sep)
+                    .append("\"")
+                    .append(new StringContent(tab.resourceKey()))
                     .append("\"]");
         }
         vars.append("};")

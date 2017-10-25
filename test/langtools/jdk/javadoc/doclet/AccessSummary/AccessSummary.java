@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4637604 4775148
+ * @bug      4637604 4775148 8183037
  * @summary  Test the tables for summary attribute
  * @author   dkramer
  * @library ../lib
@@ -48,7 +48,7 @@ public class AccessSummary extends JavadocTester {
         javadoc("-d", "out", "-sourcepath", testSrc, "p1", "p2");
         checkExit(Exit.OK);
         checkOutput("overview-summary.html", true,
-                 "summary=\"Packages table, listing packages, and an explanation\"");
+                 "summary=\"Package Summary table, listing packages, and an explanation\"");
 
         // Test that the summary attribute appears
         checkOutput("p1/C1.html", true,

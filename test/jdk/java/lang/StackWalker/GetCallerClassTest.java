@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8140450 8152893
+ * @bug 8140450 8152893 8189291
  * @summary Basic test for StackWalker.getCallerClass()
  * @run main/othervm GetCallerClassTest
  * @run main/othervm GetCallerClassTest sm
@@ -45,6 +45,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 public class GetCallerClassTest {
+    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     private final StackWalker walker;
     private final boolean expectUOE;
 
@@ -59,7 +60,8 @@ public class GetCallerClassTest {
             Policy.setPolicy(new Policy() {
                 @Override
                 public boolean implies(ProtectionDomain domain, Permission p) {
-                    return perms.implies(p);
+                    return perms.implies(p) ||
+                        DEFAULT_POLICY.implies(domain, p);
                 }
             });
             System.setSecurityManager(new SecurityManager());
