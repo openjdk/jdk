@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,14 @@
  *
  */
 
-package sun.jvm.hotspot.gc.shared;
+#include "precompiled.hpp"
+#include "gc/serial/serialHeap.hpp"
 
-/** Mimics the enums in the VM under CollectedHeap::Name */
+SerialHeap::SerialHeap(GenCollectorPolicy* policy) : GenCollectedHeap(policy) {}
 
-public class CollectedHeapName {
-  private String name;
-
-  private CollectedHeapName(String name) { this.name = name; }
-
-  public static final CollectedHeapName GEN_COLLECTED_HEAP = new CollectedHeapName("GenCollectedHeap");
-  public static final CollectedHeapName CMS_HEAP = new CollectedHeapName("CMSHeap");
-  public static final CollectedHeapName SERIAL_HEAP = new CollectedHeapName("SerialHeap");
-  public static final CollectedHeapName G1_COLLECTED_HEAP = new CollectedHeapName("G1CollectedHeap");
-  public static final CollectedHeapName PARALLEL_SCAVENGE_HEAP = new CollectedHeapName("ParallelScavengeHeap");
-
-  public String toString() {
-    return name;
-  }
+void SerialHeap::check_gen_kinds() {
+  assert(young_gen()->kind() == Generation::DefNew,
+         "Wrong youngest generation type");
+  assert(old_gen()->kind() == Generation::MarkSweepCompact,
+         "Wrong generation kind");
 }

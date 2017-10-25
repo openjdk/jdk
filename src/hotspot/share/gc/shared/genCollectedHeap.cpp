@@ -153,13 +153,6 @@ void GenCollectedHeap::post_initialize() {
   _gen_policy->initialize_gc_policy_counters();
 }
 
-void GenCollectedHeap::check_gen_kinds() {
-  assert(young_gen()->kind() == Generation::DefNew,
-         "Wrong youngest generation type");
-  assert(old_gen()->kind() == Generation::MarkSweepCompact,
-         "Wrong generation kind");
-}
-
 void GenCollectedHeap::ref_processing_init() {
   _young_gen->ref_processor_init();
   _old_gen->ref_processor_init();
@@ -984,7 +977,7 @@ void GenCollectedHeap::save_marks() {
 GenCollectedHeap* GenCollectedHeap::heap() {
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "Uninitialized access to GenCollectedHeap::heap()");
-  assert(heap->kind() == CollectedHeap::GenCollectedHeap ||
+  assert(heap->kind() == CollectedHeap::SerialHeap ||
          heap->kind() == CollectedHeap::CMSHeap, "Not a GenCollectedHeap");
   return (GenCollectedHeap*) heap;
 }
