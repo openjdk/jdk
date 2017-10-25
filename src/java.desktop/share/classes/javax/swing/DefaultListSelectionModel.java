@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * @throws IllegalArgumentException {@inheritDoc}
      */
     public void setSelectionMode(int selectionMode) {
+        int oldMode = this.selectionMode;
         switch (selectionMode) {
         case SINGLE_SELECTION:
         case SINGLE_INTERVAL_SELECTION:
@@ -103,6 +104,24 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
             break;
         default:
             throw new IllegalArgumentException("invalid selectionMode");
+        }
+
+        /*
+        This code will only be executed when selection needs to be updated on
+        changing selection mode. It will happen only if selection mode is changed
+        from MULTIPLE_INTERVAL to SINGLE_INTERVAL or SINGLE or from
+        SINGLE_INTERVAL to SINGLE
+         */
+        if (oldMode > this.selectionMode) {
+            if (this.selectionMode == SINGLE_SELECTION) {
+                setSelectionInterval(minIndex, minIndex);
+            } else if (this.selectionMode == SINGLE_INTERVAL_SELECTION) {
+                int selectionEndindex = minIndex;
+                while (value.get(selectionEndindex+1)) {
+                    selectionEndindex++;
+                }
+                setSelectionInterval(minIndex, selectionEndindex);
+            }
         }
     }
 
