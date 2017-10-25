@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ package javax.xml.parsers;
  */
 
 public class ParserConfigurationException extends Exception {
-
+    private static final long serialVersionUID = -3688849216575373917L;
     /**
      * Create a new <code>ParserConfigurationException</code> with no
      * detail message.
