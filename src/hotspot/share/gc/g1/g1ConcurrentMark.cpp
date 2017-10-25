@@ -326,16 +326,19 @@ bool G1CMRootRegions::wait_until_scan_finished() {
   return true;
 }
 
-uint G1ConcurrentMark::scale_parallel_threads(uint n_par_threads) {
-  return MAX2((n_par_threads + 2) / 4, 1U);
+// Returns the maximum number of workers to be used in a concurrent
+// phase based on the number of GC workers being used in a STW
+// phase.
+static uint scale_concurrent_worker_threads(uint num_gc_workers) {
+  return MAX2((num_gc_workers + 2) / 4, 1U);
 }
 
 G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev_bitmap_storage, G1RegionToSpaceMapper* next_bitmap_storage) :
   _g1h(g1h),
   _mark_bitmap_1(),
   _mark_bitmap_2(),
-  _parallel_marking_threads(0),
-  _max_parallel_marking_threads(0),
+  _num_concurrent_workers(0),
+  _max_concurrent_workers(0),
   _cleanup_list("Concurrent Mark Cleanup List"),
 
   _prev_mark_bitmap(&_mark_bitmap_1),
@@ -344,11 +347,11 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   _global_mark_stack(),
   // _finger set in set_non_marking_state
 
-  _max_worker_id(ParallelGCThreads),
+  _max_num_tasks(ParallelGCThreads),
   // _active_tasks set in set_non_marking_state
   // _tasks set inside the constructor
-  _task_queues(new G1CMTaskQueueSet((int) _max_worker_id)),
-  _terminator(ParallelTaskTerminator((int) _max_worker_id, _task_queues)),
+  _task_queues(new G1CMTaskQueueSet((int) _max_num_tasks)),
+  _terminator(ParallelTaskTerminator((int) _max_num_tasks, _task_queues)),
 
   _has_overflown(false),
   _concurrent(false),
@@ -368,7 +371,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   _total_counting_time(0.0),
   _total_rs_scrub_time(0.0),
 
-  _parallel_workers(NULL),
+  _concurrent_workers(NULL),
 
   _completed_initialization(false) {
 
@@ -390,37 +393,33 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
 
   _root_regions.init(_g1h->survivor(), this);
 
+  if (FLAG_IS_DEFAULT(ConcGCThreads) || ConcGCThreads == 0) {
+    // Calculate the number of concurrent worker threads by scaling
+    // the number of parallel GC threads.
+    uint marking_thread_num = scale_concurrent_worker_threads(ParallelGCThreads);
+    FLAG_SET_ERGO(uint, ConcGCThreads, marking_thread_num);
+  }
+
+  assert(ConcGCThreads > 0, "ConcGCThreads have been set.");
   if (ConcGCThreads > ParallelGCThreads) {
     log_warning(gc)("More ConcGCThreads (%u) than ParallelGCThreads (%u).",
                     ConcGCThreads, ParallelGCThreads);
     return;
   }
 
-  if (FLAG_IS_DEFAULT(ConcGCThreads) || ConcGCThreads == 0) {
-    // Calculate the number of parallel marking threads by scaling
-    // the number of parallel GC threads.
-    uint marking_thread_num = scale_parallel_threads(ParallelGCThreads);
-    FLAG_SET_ERGO(uint, ConcGCThreads, marking_thread_num);
-  }
-
-  assert(ConcGCThreads > 0, "Should have been set");
   log_debug(gc)("ConcGCThreads: %u", ConcGCThreads);
   log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
 
-  _parallel_marking_threads = ConcGCThreads;
-  _max_parallel_marking_threads = _parallel_marking_threads;
+  _num_concurrent_workers = ConcGCThreads;
+  _max_concurrent_workers = _num_concurrent_workers;
 
-  _parallel_workers = new WorkGang("G1 Marker", _max_parallel_marking_threads, false, true);
-  if (_parallel_workers == NULL) {
-    vm_exit_during_initialization("Failed necessary allocation.");
-  } else {
-    _parallel_workers->initialize_workers();
-  }
+  _concurrent_workers = new WorkGang("G1 Conc", _max_concurrent_workers, false, true);
+  _concurrent_workers->initialize_workers();
 
   if (FLAG_IS_DEFAULT(MarkStackSize)) {
     size_t mark_stack_size =
       MIN2(MarkStackSizeMax,
-          MAX2(MarkStackSize, (size_t) (_parallel_marking_threads * TASKQUEUE_SIZE)));
+          MAX2(MarkStackSize, (size_t) (_max_concurrent_workers * TASKQUEUE_SIZE)));
     // Verify that the calculated value for MarkStackSize is in range.
     // It would be nice to use the private utility routine from Arguments.
     if (!(mark_stack_size >= 1 && mark_stack_size <= MarkStackSizeMax)) {
@@ -455,13 +454,13 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
     vm_exit_during_initialization("Failed to allocate initial concurrent mark overflow mark stack.");
   }
 
-  _tasks = NEW_C_HEAP_ARRAY(G1CMTask*, _max_worker_id, mtGC);
-  _accum_task_vtime = NEW_C_HEAP_ARRAY(double, _max_worker_id, mtGC);
+  _tasks = NEW_C_HEAP_ARRAY(G1CMTask*, _max_num_tasks, mtGC);
+  _accum_task_vtime = NEW_C_HEAP_ARRAY(double, _max_num_tasks, mtGC);
 
   // so that the assertion in MarkingTaskQueue::task_queue doesn't fail
-  _active_tasks = _max_worker_id;
+  _num_active_tasks = _max_num_tasks;
 
-  for (uint i = 0; i < _max_worker_id; ++i) {
+  for (uint i = 0; i < _max_num_tasks; ++i) {
     G1CMTaskQueue* task_queue = new G1CMTaskQueue();
     task_queue->initialize();
     _task_queues->register_queue(i, task_queue);
@@ -495,7 +494,7 @@ void G1ConcurrentMark::reset() {
   // We reset all of them, since different phases will use
   // different number of active threads. So, it's easiest to have all
   // of them ready.
-  for (uint i = 0; i < _max_worker_id; ++i) {
+  for (uint i = 0; i < _max_num_tasks; ++i) {
     _tasks[i]->reset(_next_mark_bitmap);
   }
 
@@ -516,16 +515,16 @@ void G1ConcurrentMark::reset_marking_state() {
   clear_has_overflown();
   _finger = _heap_start;
 
-  for (uint i = 0; i < _max_worker_id; ++i) {
+  for (uint i = 0; i < _max_num_tasks; ++i) {
     G1CMTaskQueue* queue = _task_queues->queue(i);
     queue->set_empty();
   }
 }
 
 void G1ConcurrentMark::set_concurrency(uint active_tasks) {
-  assert(active_tasks <= _max_worker_id, "we should not have more");
+  assert(active_tasks <= _max_num_tasks, "we should not have more");
 
-  _active_tasks = active_tasks;
+  _num_active_tasks = active_tasks;
   // Need to update the three data structures below according to the
   // number of active threads for this phase.
   _terminator   = ParallelTaskTerminator((int) active_tasks, _task_queues);
@@ -538,7 +537,7 @@ void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurr
 
   _concurrent = concurrent;
   // We propagate this to all tasks, not just the active ones.
-  for (uint i = 0; i < _max_worker_id; ++i) {
+  for (uint i = 0; i < _max_num_tasks; ++i) {
     _tasks[i]->set_concurrent(concurrent);
   }
 
@@ -559,7 +558,7 @@ void G1ConcurrentMark::set_non_marking_state() {
   // We set the global marking state to some default values when we're
   // not doing marking.
   reset_marking_state();
-  _active_tasks = 0;
+  _num_active_tasks = 0;
   clear_concurrent_marking_in_progress();
 }
 
@@ -659,12 +658,12 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
   // is the case.
   guarantee(!_g1h->collector_state()->mark_in_progress(), "invariant");
 
-  clear_bitmap(_next_mark_bitmap, _parallel_workers, true);
+  clear_bitmap(_next_mark_bitmap, _concurrent_workers, true);
 
   // Clear the live count data. If the marking has been aborted, the abort()
   // call already did that.
   if (!has_aborted()) {
-    clear_live_data(_parallel_workers);
+    clear_live_data(_concurrent_workers);
     DEBUG_ONLY(verify_live_data_clear());
   }
 
@@ -857,27 +856,25 @@ public:
   ~G1CMConcurrentMarkingTask() { }
 };
 
-// Calculates the number of active workers for a concurrent
-// phase.
-uint G1ConcurrentMark::calc_parallel_marking_threads() {
-  uint n_conc_workers = 0;
+uint G1ConcurrentMark::calc_active_marking_workers() {
+  uint result = 0;
   if (!UseDynamicNumberOfGCThreads ||
       (!FLAG_IS_DEFAULT(ConcGCThreads) &&
        !ForceDynamicNumberOfGCThreads)) {
-    n_conc_workers = _max_parallel_marking_threads;
+    result = _max_concurrent_workers;
   } else {
-    n_conc_workers =
-      AdaptiveSizePolicy::calc_default_active_workers(_max_parallel_marking_threads,
+    result =
+      AdaptiveSizePolicy::calc_default_active_workers(_max_concurrent_workers,
                                                       1, /* Minimum workers */
-                                                      _parallel_marking_threads,
+                                                      _num_concurrent_workers,
                                                       Threads::number_of_non_daemon_threads());
-    // Don't scale down "n_conc_workers" by scale_parallel_threads() because
-    // that scaling has already gone into "_max_parallel_marking_threads".
+    // Don't scale the result down by scale_concurrent_workers() because
+    // that scaling has already gone into "_max_concurrent_workers".
   }
-  assert(n_conc_workers > 0 && n_conc_workers <= _max_parallel_marking_threads,
-         "Calculated number of workers must be larger than zero and at most the maximum %u, but is %u",
-         _max_parallel_marking_threads, n_conc_workers);
-  return n_conc_workers;
+  assert(result > 0 && result <= _max_concurrent_workers,
+         "Calculated number of marking workers must be larger than zero and at most the maximum %u, but is %u",
+         _max_concurrent_workers, result);
+  return result;
 }
 
 void G1ConcurrentMark::scan_root_region(HeapRegion* hr) {
@@ -925,17 +922,17 @@ void G1ConcurrentMark::scan_root_regions() {
   if (root_regions()->scan_in_progress()) {
     assert(!has_aborted(), "Aborting before root region scanning is finished not supported.");
 
-    _parallel_marking_threads = MIN2(calc_parallel_marking_threads(),
-                                     // We distribute work on a per-region basis, so starting
-                                     // more threads than that is useless.
-                                     root_regions()->num_root_regions());
-    assert(_parallel_marking_threads <= _max_parallel_marking_threads,
+    _num_concurrent_workers = MIN2(calc_active_marking_workers(),
+                                   // We distribute work on a per-region basis, so starting
+                                   // more threads than that is useless.
+                                   root_regions()->num_root_regions());
+    assert(_num_concurrent_workers <= _max_concurrent_workers,
            "Maximum number of marking threads exceeded");
 
     G1CMRootRegionScanTask task(this);
     log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
-                        task.name(), _parallel_marking_threads, root_regions()->num_root_regions());
-    _parallel_workers->run_task(&task, _parallel_marking_threads);
+                        task.name(), _num_concurrent_workers, root_regions()->num_root_regions());
+    _concurrent_workers->run_task(&task, _num_concurrent_workers);
 
     // It's possible that has_aborted() is true here without actually
     // aborting the survivor scan earlier. This is OK as it's
@@ -974,25 +971,21 @@ void G1ConcurrentMark::mark_from_roots() {
 
   _restart_for_overflow = false;
 
-  // _g1h has _n_par_threads
-  _parallel_marking_threads = calc_parallel_marking_threads();
-  assert(_parallel_marking_threads <= _max_parallel_marking_threads,
-    "Maximum number of marking threads exceeded");
+  _num_concurrent_workers = calc_active_marking_workers();
 
-  uint active_workers = MAX2(1U, _parallel_marking_threads);
-  assert(active_workers > 0, "Should have been set");
+  uint active_workers = MAX2(1U, _num_concurrent_workers);
 
   // Setting active workers is not guaranteed since fewer
   // worker threads may currently exist and more may not be
   // available.
-  active_workers = _parallel_workers->update_active_workers(active_workers);
-  log_info(gc, task)("Using %u workers of %u for marking", active_workers, _parallel_workers->total_workers());
+  active_workers = _concurrent_workers->update_active_workers(active_workers);
+  log_info(gc, task)("Using %u workers of %u for marking", active_workers, _concurrent_workers->total_workers());
 
   // Parallel task terminator is set in "set_concurrency_and_phase()"
   set_concurrency_and_phase(active_workers, true /* concurrent */);
 
   G1CMConcurrentMarkingTask marking_task(this, cm_thread());
-  _parallel_workers->run_task(&marking_task);
+  _concurrent_workers->run_task(&marking_task);
   print_stats();
 }
 
@@ -1604,7 +1597,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // we utilize all the worker threads we can.
     bool processing_is_mt = rp->processing_is_mt();
     uint active_workers = (processing_is_mt ? g1h->workers()->active_workers() : 1U);
-    active_workers = MAX2(MIN2(active_workers, _max_worker_id), 1U);
+    active_workers = MAX2(MIN2(active_workers, _max_num_tasks), 1U);
 
     // Parallel processing task executor.
     G1CMRefProcTaskExecutor par_task_executor(g1h, this,
@@ -1909,7 +1902,7 @@ void G1ConcurrentMark::verify_no_cset_oops() {
   _global_mark_stack.iterate(VerifyNoCSetOops("Stack"));
 
   // Verify entries on the task queues
-  for (uint i = 0; i < _max_worker_id; ++i) {
+  for (uint i = 0; i < _max_num_tasks; ++i) {
     G1CMTaskQueue* queue = _task_queues->queue(i);
     queue->iterate(VerifyNoCSetOops("Queue", i));
   }
@@ -1926,8 +1919,8 @@ void G1ConcurrentMark::verify_no_cset_oops() {
   }
 
   // Verify the task fingers
-  assert(_parallel_marking_threads <= _max_worker_id, "sanity");
-  for (uint i = 0; i < _parallel_marking_threads; ++i) {
+  assert(_num_concurrent_workers <= _max_num_tasks, "sanity");
+  for (uint i = 0; i < _num_concurrent_workers; ++i) {
     G1CMTask* task = _tasks[i];
     HeapWord* task_finger = task->finger();
     if (task_finger != NULL && task_finger < _heap_end) {
@@ -1942,7 +1935,7 @@ void G1ConcurrentMark::verify_no_cset_oops() {
 }
 #endif // PRODUCT
 void G1ConcurrentMark::create_live_data() {
-  _g1h->g1_rem_set()->create_card_live_data(_parallel_workers, _next_mark_bitmap);
+  _g1h->g1_rem_set()->create_card_live_data(_concurrent_workers, _next_mark_bitmap);
 }
 
 void G1ConcurrentMark::finalize_live_data() {
@@ -1968,7 +1961,7 @@ void G1ConcurrentMark::print_stats() {
     return;
   }
   log_debug(gc, stats)("---------------------------------------------------------------------");
-  for (size_t i = 0; i < _active_tasks; ++i) {
+  for (size_t i = 0; i < _num_active_tasks; ++i) {
     _tasks[i]->print_stats();
     log_debug(gc, stats)("---------------------------------------------------------------------");
   }
@@ -2000,7 +1993,7 @@ void G1ConcurrentMark::abort() {
   })
   // Empty mark stack
   reset_marking_state();
-  for (uint i = 0; i < _max_worker_id; ++i) {
+  for (uint i = 0; i < _max_num_tasks; ++i) {
     _tasks[i]->clear_region_fields();
   }
   _first_overflow_barrier_sync.abort();
@@ -2054,11 +2047,11 @@ void G1ConcurrentMark::print_summary_info() {
 }
 
 void G1ConcurrentMark::print_worker_threads_on(outputStream* st) const {
-  _parallel_workers->print_worker_threads_on(st);
+  _concurrent_workers->print_worker_threads_on(st);
 }
 
 void G1ConcurrentMark::threads_do(ThreadClosure* tc) const {
-  _parallel_workers->threads_do(tc);
+  _concurrent_workers->threads_do(tc);
 }
 
 void G1ConcurrentMark::print_on_error(outputStream* st) const {
