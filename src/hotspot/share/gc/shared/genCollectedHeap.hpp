@@ -83,6 +83,12 @@ private:
                           bool run_verification, bool clear_soft_refs,
                           bool restore_marks_for_biased_locking);
 
+  // Reserve aligned space for the heap as needed by the contained generations.
+  char* allocate(size_t alignment, ReservedSpace* heap_rs);
+
+  // Initialize ("weak") refs processing support
+  void ref_processing_init();
+
 protected:
 
   // The set of potentially parallel tasks in root scanning.
@@ -134,30 +140,17 @@ protected:
   // we absolutely __must__ clear soft refs?
   bool must_clear_all_soft_refs();
 
-public:
   GenCollectedHeap(GenCollectorPolicy *policy);
+
+  virtual void check_gen_kinds() = 0;
+
+public:
 
   // Returns JNI_OK on success
   virtual jint initialize();
 
-  // Reserve aligned space for the heap as needed by the contained generations.
-  char* allocate(size_t alignment, ReservedSpace* heap_rs);
-
   // Does operations required after initialization has been done.
   void post_initialize();
-
-  virtual void check_gen_kinds();
-
-  // Initialize ("weak") refs processing support
-  virtual void ref_processing_init();
-
-  virtual Name kind() const {
-    return CollectedHeap::GenCollectedHeap;
-  }
-
-  virtual const char* name() const {
-    return "Serial";
-  }
 
   Generation* young_gen() const { return _young_gen; }
   Generation* old_gen()   const { return _old_gen; }
@@ -214,11 +207,6 @@ public:
   // their inadvertent use in product jvm's, we restrict their use to
   // assertion checking or verification only.
   bool is_in(const void* p) const;
-
-  // override
-  virtual bool is_in_closed_subset(const void* p) const {
-    return is_in(p);
-  }
 
   // Returns true if the reference is to an object in the reserved space
   // for the young generation.
@@ -284,10 +272,6 @@ public:
   // via a TLAB up to the first subsequent safepoint.
   virtual bool can_elide_tlab_store_barriers() const {
     return true;
-  }
-
-  virtual bool card_mark_must_follow_store() const {
-    return false;
   }
 
   // We don't need barriers for stores to objects in the

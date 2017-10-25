@@ -47,6 +47,7 @@
 #include "gc/parallel/immutableSpace.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/cms/cmsHeap.hpp"
 #include "gc/shared/cardTableRS.hpp"
@@ -1465,6 +1466,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(CollectedHeap)                                    \
            declare_type(GenCollectedHeap,             CollectedHeap)      \
            declare_type(CMSHeap,                      GenCollectedHeap)   \
+           declare_type(SerialHeap,                   GenCollectedHeap)   \
   declare_toplevel_type(Generation)                                       \
            declare_type(DefNewGeneration,             Generation)         \
            declare_type(CardGeneration,               Generation)         \
@@ -2258,7 +2260,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                           \
   declare_constant(G1SATBCardTableModRefBS::g1_young_gen)                 \
                                                                           \
-  declare_constant(CollectedHeap::GenCollectedHeap)                       \
+  declare_constant(CollectedHeap::SerialHeap)                             \
+  declare_constant(CollectedHeap::CMSHeap)                                \
   declare_constant(CollectedHeap::ParallelScavengeHeap)                   \
   declare_constant(CollectedHeap::G1CollectedHeap)                        \
                                                                           \

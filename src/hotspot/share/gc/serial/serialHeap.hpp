@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,37 @@
  *
  */
 
-package sun.jvm.hotspot.gc.shared;
+#ifndef SHARE_VM_GC_SERIAL_SERIALHEAP_HPP
+#define SHARE_VM_GC_SERIAL_SERIALHEAP_HPP
 
-/** Mimics the enums in the VM under CollectedHeap::Name */
+#include "gc/shared/genCollectedHeap.hpp"
 
-public class CollectedHeapName {
-  private String name;
+class GenCollectorPolicy;
 
-  private CollectedHeapName(String name) { this.name = name; }
+class SerialHeap : public GenCollectedHeap {
+protected:
+  virtual void check_gen_kinds();
 
-  public static final CollectedHeapName GEN_COLLECTED_HEAP = new CollectedHeapName("GenCollectedHeap");
-  public static final CollectedHeapName CMS_HEAP = new CollectedHeapName("CMSHeap");
-  public static final CollectedHeapName SERIAL_HEAP = new CollectedHeapName("SerialHeap");
-  public static final CollectedHeapName G1_COLLECTED_HEAP = new CollectedHeapName("G1CollectedHeap");
-  public static final CollectedHeapName PARALLEL_SCAVENGE_HEAP = new CollectedHeapName("ParallelScavengeHeap");
+public:
+  SerialHeap(GenCollectorPolicy* policy);
 
-  public String toString() {
-    return name;
+  virtual Name kind() const {
+    return CollectedHeap::SerialHeap;
   }
-}
+
+  virtual const char* name() const {
+    return "Serial";
+  }
+
+  // override
+  virtual bool is_in_closed_subset(const void* p) const {
+    return is_in(p);
+  }
+
+  virtual bool card_mark_must_follow_store() const {
+    return false;
+  }
+
+};
+
+#endif // SHARE_VM_GC_CMS_CMSHEAP_HPP
