@@ -568,7 +568,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         /**
          * {@code Name} object for {@code Sealed} manifest attribute
          * used for sealing.
-         * @see <a href="{@docRoot}/../specs/jar/jar.html#sealing">
+         * @see <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">
          *      Package Sealing</a>
          */
         public static final Name SEALED = new Name("Sealed");
