@@ -2713,13 +2713,9 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   metadata2reg(md->constant_encoding(), mdo);
 
   Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-  Bytecodes::Code bc = method->java_code_at_bci(bci);
-  const bool callee_is_static = callee->is_loaded() && callee->is_static();
   // Perform additional virtual call profiling for invokevirtual and
-  // invokeinterface bytecodes.
-  if ((bc == Bytecodes::_invokevirtual || bc == Bytecodes::_invokeinterface) &&
-      !callee_is_static &&  // Required for optimized MH invokes.
-      C1ProfileVirtualCalls) {
+  // invokeinterface bytecodes
+  if (op->should_profile_receiver_type()) {
     assert(op->recv()->is_single_cpu(), "recv must be allocated");
     Register recv = op->recv()->as_register();
     assert_different_registers(mdo, tmp1, recv);
