@@ -98,10 +98,9 @@ import static javax.tools.StandardLocation.*;
  */
 public class JavacFileManager extends BaseFileManager implements StandardJavaFileManager {
 
-    @SuppressWarnings("cast")
     public static char[] toArray(CharBuffer buffer) {
         if (buffer.hasArray())
-            return ((CharBuffer)buffer.compact().flip()).array();
+            return buffer.compact().flip().array();
         else
             return buffer.toString().toCharArray();
     }
