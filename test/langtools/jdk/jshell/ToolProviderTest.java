@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import javax.tools.Tool;
@@ -34,7 +35,7 @@ import static org.testng.Assert.fail;
 
 /*
  * @test
- * @bug 8170044 8171343
+ * @bug 8170044 8171343 8179856
  * @summary Test ServiceLoader launching of jshell tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -97,4 +98,21 @@ public class ToolProviderTest extends StartOptionTest {
                 null, null,
                 "--show-version");
     }
+    /**
+     * Test that input is read with "-" and there is no extra output.
+     * @throws Exception
+     */
+    @Override
+    public void testHypenFile() throws Exception {
+        cmdInStream = new ByteArrayInputStream("System.out.print(\"Hello\");\n".getBytes());
+        start("Hello", "", "-");
+        cmdInStream = new ByteArrayInputStream("System.out.print(\"Hello\");\n".getBytes());
+        start("Hello", "", "-", "-");
+        Compiler compiler = new Compiler();
+        Path path = compiler.getPath("markload.jsh");
+        compiler.writeToFile(path, "System.out.print(\"===\");");
+        cmdInStream = new ByteArrayInputStream("System.out.print(\"Hello\");\n".getBytes());
+        start("===Hello===", "", path.toString(), "-", path.toString());
+    }
+
 }
