@@ -272,6 +272,8 @@ public:
   bool wait_until_scan_finished();
 };
 
+// This class manages data structures and methods for doing liveness analysis in
+// G1's concurrent cycle.
 class G1ConcurrentMark: public CHeapObj<mtGC> {
   friend class ConcurrentMarkThread;
   friend class G1CMRefProcTaskProxy;
@@ -285,10 +287,6 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
 
   ConcurrentMarkThread*  _cm_thread;     // The thread doing the work
   G1CollectedHeap*       _g1h;           // The heap
-  uint                   _parallel_marking_threads; // The number of marking
-                                                    // threads we're using
-  uint                   _max_parallel_marking_threads; // Max number of marking
-                                                        // threads we'll ever use
   bool                   _completed_initialization; // Set to true when initialization is complete
 
   FreeRegionList         _cleanup_list;
@@ -312,11 +310,12 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
                                              // always pointing to the end of the
                                              // last claimed region
 
-  uint                   _max_worker_id;// Maximum worker id
-  uint                   _active_tasks; // Number of tasks currently active
-  G1CMTask**             _tasks;        // Task queue array (max_worker_id length)
-  G1CMTaskQueueSet*      _task_queues;  // Task queue set
-  ParallelTaskTerminator _terminator;   // For termination
+  uint                   _max_num_tasks;    // Maximum number of marking tasks
+  uint                   _num_active_tasks; // Number of tasks currently active
+  G1CMTask**             _tasks;            // Task queue array (max_worker_id length)
+
+  G1CMTaskQueueSet*      _task_queues;      // Task queue set
+  ParallelTaskTerminator _terminator;       // For termination
 
   // Two sync barriers that are used to synchronize tasks when an
   // overflow occurs. The algorithm is the following. All tasks enter
@@ -363,7 +362,9 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
 
   double*   _accum_task_vtime;   // Accumulated task vtime
 
-  WorkGang* _parallel_workers;
+  WorkGang* _concurrent_workers;
+  uint      _num_concurrent_workers; // The number of marking worker threads we're using
+  uint      _max_concurrent_workers; // Maximum number of marking worker threads
 
   void weak_refs_work_parallel_part(BoolObjectClosure* is_alive, bool purged_classes);
   void weak_refs_work(bool clear_all_soft_refs);
@@ -398,7 +399,7 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
 
   HeapWord*               finger()          { return _finger;   }
   bool                    concurrent()      { return _concurrent; }
-  uint                    active_tasks()    { return _active_tasks; }
+  uint                    active_tasks()    { return _num_active_tasks; }
   ParallelTaskTerminator* terminator()      { return &_terminator; }
 
   // Claims the next available region to be scanned by a marking
@@ -426,7 +427,7 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
 
   // Returns the task with the given id
   G1CMTask* task(uint id) {
-    assert(id < _active_tasks, "Task id %u not within active bounds up to %u", id, _active_tasks);
+    assert(id < _num_active_tasks, "Task id %u not within active bounds up to %u", id, _num_active_tasks);
     return _tasks[id];
   }
 
@@ -483,7 +484,7 @@ public:
 
   double all_task_accum_vtime() {
     double ret = 0.0;
-    for (uint i = 0; i < _max_worker_id; ++i)
+    for (uint i = 0; i < _max_num_tasks; ++i)
       ret += _accum_task_vtime[i];
     return ret;
   }
@@ -501,13 +502,8 @@ public:
   const G1CMBitMap* const prev_mark_bitmap() const { return _prev_mark_bitmap; }
   G1CMBitMap* next_mark_bitmap() const { return _next_mark_bitmap; }
 
-  // Returns the number of GC threads to be used in a concurrent
-  // phase based on the number of GC threads being used in a STW
-  // phase.
-  uint scale_parallel_threads(uint n_par_threads);
-
-  // Calculates the number of GC threads to be used in a concurrent phase.
-  uint calc_parallel_marking_threads();
+  // Calculates the number of concurrent GC threads to be used in the marking phase.
+  uint calc_active_marking_workers();
 
   // Prepare internal data structures for the next mark cycle. This includes clearing
   // the next mark bitmap and some internal data structures. This method is intended
