@@ -61,10 +61,6 @@
           "Confidence level for MMU/pause predictions")                     \
           range(0, 100)                                                     \
                                                                             \
-  develop(intx, G1MarkingOverheadPercent, 0,                                \
-          "Overhead of concurrent marking")                                 \
-          range(0, 100)                                                     \
-                                                                            \
   diagnostic(intx, G1SummarizeRSetStatsPeriod, 0,                           \
           "The period (in number of GCs) at which we will generate "        \
           "update buffer processing info "                                  \

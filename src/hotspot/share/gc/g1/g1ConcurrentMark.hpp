@@ -289,9 +289,6 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
                                                     // threads we're using
   uint                   _max_parallel_marking_threads; // Max number of marking
                                                         // threads we'll ever use
-  double                 _sleep_factor; // How much we have to sleep, with
-                                        // respect to the work we just did, to
-                                        // meet the marking overhead goal
   bool                   _completed_initialization; // Set to true when initialization is complete
 
   FreeRegionList         _cleanup_list;
@@ -398,9 +395,6 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
   bool cleanup_list_is_empty() {
     return _cleanup_list.is_empty();
   }
-
-  // Accessor methods
-  double sleep_factor()                     { return _sleep_factor; }
 
   HeapWord*               finger()          { return _finger;   }
   bool                    concurrent()      { return _concurrent; }
