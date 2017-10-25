@@ -92,7 +92,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
+import jdk.javadoc.internal.doclets.toolkit.util.GroupTypes;
 import jdk.javadoc.internal.doclets.toolkit.util.ImplementedMethods;
+import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes.TableTabs;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
@@ -909,6 +911,73 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content caption = HtmlTree.CAPTION(captionSpan);
         caption.addContent(tabSpan);
         return caption;
+    }
+
+    /**
+     * Get table header.
+     *
+     * @param caption the table caption
+     * @param tableSummary the summary for the table
+     * @param tableStyle the table style
+     * @return a content object
+     */
+    public Content getTableHeader(Content caption, String tableSummary, HtmlStyle tableStyle) {
+        Content table = (configuration.isOutputHtml5())
+                ? HtmlTree.TABLE(tableStyle, caption)
+                : HtmlTree.TABLE(tableStyle, tableSummary, caption);
+        return table;
+    }
+
+    /**
+     * Get the summary table caption.
+     *
+     * @param groupTypes the group types for table tabs
+     * @return the caption for the summary table
+     */
+    public Content getTableCaption(GroupTypes groupTypes) {
+        Content tabbedCaption = new HtmlTree(HtmlTag.CAPTION);
+        Map<String, TableTabs> groups = groupTypes.getGroupTypes();
+        for (String group : groups.keySet()) {
+            Content captionSpan;
+            Content span;
+            TableTabs tab = groups.get(group);
+            if (tab.isDefaultTab()) {
+                captionSpan = HtmlTree.SPAN(new StringContent(tab.resourceKey()));
+                span = HtmlTree.SPAN(tab.tabId(),
+                        HtmlStyle.activeTableTab, captionSpan);
+            } else {
+                captionSpan = HtmlTree.SPAN(getGroupTypeLinks(groupTypes, group));
+                span = HtmlTree.SPAN(tab.tabId(),
+                        HtmlStyle.tableTab, captionSpan);
+            }
+            Content tabSpan = HtmlTree.SPAN(HtmlStyle.tabEnd, Contents.SPACE);
+            span.addContent(tabSpan);
+            tabbedCaption.addContent(span);
+        }
+        return tabbedCaption;
+    }
+
+    /**
+     * Get the group type links for the table caption.
+     *
+     * @param groupTypes the group types for table tabs
+     * @param groupName the group name to be displayed as link
+     * @return the content tree for the group type link
+     */
+    public Content getGroupTypeLinks(GroupTypes groupTypes, String groupName) {
+        String jsShow = "javascript:showGroups(" + groupTypes.getTableTab(groupName).value() + ");";
+        HtmlTree link = HtmlTree.A(jsShow, new StringContent(groupTypes.getTableTab(groupName).resourceKey()));
+        return link;
+    }
+
+    /**
+     * Returns true if the table tabs needs to be displayed.
+     *
+     * @param groupTypes the group types for table tabs
+     * @return true if the tabs should be displayed
+     */
+    public boolean showTabs(GroupTypes groupTypes) {
+        return groupTypes.getGroupTypes().size() > 1;
     }
 
     /**
