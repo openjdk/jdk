@@ -336,7 +336,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   _mark_bitmap_2(),
   _parallel_marking_threads(0),
   _max_parallel_marking_threads(0),
-  _sleep_factor(0.0),
   _cleanup_list("Concurrent Mark Cleanup List"),
 
   _prev_mark_bitmap(&_mark_bitmap_1),
@@ -392,41 +391,22 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   _root_regions.init(_g1h->survivor(), this);
 
   if (ConcGCThreads > ParallelGCThreads) {
-    log_warning(gc)("Can't have more ConcGCThreads (%u) than ParallelGCThreads (%u).",
+    log_warning(gc)("More ConcGCThreads (%u) than ParallelGCThreads (%u).",
                     ConcGCThreads, ParallelGCThreads);
     return;
   }
-  if (!FLAG_IS_DEFAULT(ConcGCThreads) && ConcGCThreads > 0) {
-    // Note: ConcGCThreads has precedence over G1MarkingOverheadPercent
-    // if both are set
-    _sleep_factor             = 0.0;
-  } else if (G1MarkingOverheadPercent > 0) {
-    // We will calculate the number of parallel marking threads based
-    // on a target overhead with respect to the soft real-time goal
-    double marking_overhead = (double) G1MarkingOverheadPercent / 100.0;
-    double overall_cm_overhead =
-      (double) MaxGCPauseMillis * marking_overhead /
-      (double) GCPauseIntervalMillis;
-    double cpu_ratio = 1.0 / os::initial_active_processor_count();
-    double marking_thread_num = ceil(overall_cm_overhead / cpu_ratio);
-    double marking_task_overhead =
-      overall_cm_overhead / marking_thread_num * os::initial_active_processor_count();
-    double sleep_factor =
-                       (1.0 - marking_task_overhead) / marking_task_overhead;
 
-    FLAG_SET_ERGO(uint, ConcGCThreads, (uint) marking_thread_num);
-    _sleep_factor             = sleep_factor;
-  } else {
+  if (FLAG_IS_DEFAULT(ConcGCThreads) || ConcGCThreads == 0) {
     // Calculate the number of parallel marking threads by scaling
     // the number of parallel GC threads.
     uint marking_thread_num = scale_parallel_threads(ParallelGCThreads);
     FLAG_SET_ERGO(uint, ConcGCThreads, marking_thread_num);
-    _sleep_factor             = 0.0;
   }
 
   assert(ConcGCThreads > 0, "Should have been set");
   log_debug(gc)("ConcGCThreads: %u", ConcGCThreads);
   log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
+
   _parallel_marking_threads = ConcGCThreads;
   _max_parallel_marking_threads = _parallel_marking_threads;
 
@@ -841,8 +821,7 @@ private:
 
 public:
   void work(uint worker_id) {
-    assert(Thread::current()->is_ConcurrentGC_thread(),
-           "this should only be done by a conc GC thread");
+    assert(Thread::current()->is_ConcurrentGC_thread(), "Not a concurrent GC thread");
     ResourceMark rm;
 
     double start_vtime = os::elapsedVTime();
@@ -851,30 +830,16 @@ public:
       SuspendibleThreadSetJoiner sts_join;
 
       assert(worker_id < _cm->active_tasks(), "invariant");
+
       G1CMTask* task = _cm->task(worker_id);
       task->record_start_time();
       if (!_cm->has_aborted()) {
         do {
-          double start_vtime_sec = os::elapsedVTime();
-          double mark_step_duration_ms = G1ConcMarkStepDurationMillis;
-
-          task->do_marking_step(mark_step_duration_ms,
+          task->do_marking_step(G1ConcMarkStepDurationMillis,
                                 true  /* do_termination */,
                                 false /* is_serial*/);
 
-          double end_vtime_sec = os::elapsedVTime();
-          double elapsed_vtime_sec = end_vtime_sec - start_vtime_sec;
           _cm->do_yield_check();
-
-          jlong sleep_time_ms;
-          if (!_cm->has_aborted() && task->has_aborted()) {
-            sleep_time_ms =
-              (jlong) (elapsed_vtime_sec * _cm->sleep_factor() * 1000.0);
-            {
-              SuspendibleThreadSetLeaver sts_leave;
-              os::sleep(Thread::current(), sleep_time_ms, false);
-            }
-          }
         } while (!_cm->has_aborted() && task->has_aborted());
       }
       task->record_end_time();
