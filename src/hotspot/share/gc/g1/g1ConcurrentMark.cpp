@@ -333,25 +333,37 @@ static uint scale_concurrent_worker_threads(uint num_gc_workers) {
   return MAX2((num_gc_workers + 2) / 4, 1U);
 }
 
-G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev_bitmap_storage, G1RegionToSpaceMapper* next_bitmap_storage) :
+G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
+                                   G1RegionToSpaceMapper* prev_bitmap_storage,
+                                   G1RegionToSpaceMapper* next_bitmap_storage) :
+  // _cm_thread set inside the constructor
   _g1h(g1h),
+  _completed_initialization(false),
+
+  _cleanup_list("Concurrent Mark Cleanup List"),
   _mark_bitmap_1(),
   _mark_bitmap_2(),
-  _num_concurrent_workers(0),
-  _max_concurrent_workers(0),
-  _cleanup_list("Concurrent Mark Cleanup List"),
-
   _prev_mark_bitmap(&_mark_bitmap_1),
   _next_mark_bitmap(&_mark_bitmap_2),
 
+  _heap_start(_g1h->reserved_region().start()),
+  _heap_end(_g1h->reserved_region().end()),
+
+  _root_regions(),
+
   _global_mark_stack(),
+
   // _finger set in set_non_marking_state
 
   _max_num_tasks(ParallelGCThreads),
-  // _active_tasks set in set_non_marking_state
+  // _num_active_tasks set in set_non_marking_state()
   // _tasks set inside the constructor
+
   _task_queues(new G1CMTaskQueueSet((int) _max_num_tasks)),
   _terminator(ParallelTaskTerminator((int) _max_num_tasks, _task_queues)),
+
+  _first_overflow_barrier_sync(),
+  _second_overflow_barrier_sync(),
 
   _has_overflown(false),
   _concurrent(false),
@@ -371,17 +383,17 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   _total_counting_time(0.0),
   _total_rs_scrub_time(0.0),
 
+  _accum_task_vtime(NULL),
+
   _concurrent_workers(NULL),
-
-  _completed_initialization(false) {
-
+  _num_concurrent_workers(0),
+  _max_concurrent_workers(0)
+{
   _mark_bitmap_1.initialize(g1h->reserved_region(), prev_bitmap_storage);
   _mark_bitmap_2.initialize(g1h->reserved_region(), next_bitmap_storage);
 
-  // Create & start a ConcurrentMark thread.
+  // Create & start ConcurrentMark thread.
   _cm_thread = new ConcurrentMarkThread(this);
-  assert(cm_thread() != NULL, "CM Thread should have been created");
-  assert(cm_thread()->cm() != NULL, "CM Thread should refer to this G1ConcurrentMark");
   if (_cm_thread->osthread() == NULL) {
     vm_shutdown_during_initialization("Could not create ConcurrentMarkThread");
   }
@@ -470,8 +482,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
     _accum_task_vtime[i] = 0.0;
   }
 
-  // so that the call below can read a sensible value
-  _heap_start = g1h->reserved_region().start();
   set_non_marking_state();
   _completed_initialization = true;
 }
@@ -2815,17 +2825,37 @@ void G1CMTask::do_marking_step(double time_target_ms,
   }
 }
 
-G1CMTask::G1CMTask(uint worker_id,
-                   G1ConcurrentMark* cm,
-                   G1CMTaskQueue* task_queue)
-  : _g1h(G1CollectedHeap::heap()),
-    _worker_id(worker_id),
-    _cm(cm),
-    _objArray_processor(this),
-    _next_mark_bitmap(NULL),
-    _hash_seed(17),
-    _task_queue(task_queue),
-    _cm_oop_closure(NULL) {
+G1CMTask::G1CMTask(uint worker_id, G1ConcurrentMark* cm, G1CMTaskQueue* task_queue) :
+  _objArray_processor(this),
+  _worker_id(worker_id),
+  _g1h(G1CollectedHeap::heap()),
+  _cm(cm),
+  _next_mark_bitmap(NULL),
+  _task_queue(task_queue),
+  _calls(0),
+  _time_target_ms(0.0),
+  _start_time_ms(0.0),
+  _cm_oop_closure(NULL),
+  _curr_region(NULL),
+  _finger(NULL),
+  _region_limit(NULL),
+  _words_scanned(0),
+  _words_scanned_limit(0),
+  _real_words_scanned_limit(0),
+  _refs_reached(0),
+  _refs_reached_limit(0),
+  _real_refs_reached_limit(0),
+  _hash_seed(17),
+  _has_aborted(false),
+  _has_timed_out(false),
+  _draining_satb_buffers(false),
+  _step_times_ms(),
+  _elapsed_time_ms(0.0),
+  _termination_time_ms(0.0),
+  _termination_start_time_ms(0.0),
+  _concurrent(false),
+  _marking_step_diffs_ms()
+{
   guarantee(task_queue != NULL, "invariant");
 
   _marking_step_diffs_ms.add(0.5);
@@ -2863,11 +2893,11 @@ G1CMTask::G1CMTask(uint worker_id,
 #define G1PPRL_SUM_MB_FORMAT(tag)      "  " tag ": %1.2f MB"
 #define G1PPRL_SUM_MB_PERC_FORMAT(tag) G1PPRL_SUM_MB_FORMAT(tag) " / %1.2f %%"
 
-G1PrintRegionLivenessInfoClosure::
-G1PrintRegionLivenessInfoClosure(const char* phase_name)
-  : _total_used_bytes(0), _total_capacity_bytes(0),
-    _total_prev_live_bytes(0), _total_next_live_bytes(0),
-    _total_remset_bytes(0), _total_strong_code_roots_bytes(0) {
+G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* phase_name) :
+  _total_used_bytes(0), _total_capacity_bytes(0),
+  _total_prev_live_bytes(0), _total_next_live_bytes(0),
+  _total_remset_bytes(0), _total_strong_code_roots_bytes(0)
+{
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   MemRegion g1_reserved = g1h->g1_reserved();
   double now = os::elapsedTime();
