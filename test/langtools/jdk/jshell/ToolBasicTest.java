@@ -45,7 +45,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Scanner;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -408,10 +407,6 @@ public class ToolBasicTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "x", "x ==> 20.0"),
                 (a) -> assertCommand(a, "a", "a ==> 10.0")
         );
-        Path unknown = compiler.getPath("UNKNOWN.jar");
-        test(Locale.ROOT, true, new String[]{unknown.toString()},
-                "|  File '" + unknown
-                + "' for 'jshell' is not found.");
     }
 
     public void testReset() {
