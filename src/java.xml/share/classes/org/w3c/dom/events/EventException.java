@@ -48,6 +48,8 @@ package org.w3c.dom.events;
  * @since 1.5, DOM Level 2
  */
 public class EventException extends RuntimeException {
+    private static final long serialVersionUID = 242753408332692061L;
+
     public EventException(short code, String message) {
        super(message);
        this.code = code;
