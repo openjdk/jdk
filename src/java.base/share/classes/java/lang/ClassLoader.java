@@ -2166,7 +2166,7 @@ public abstract class ClassLoader {
      * @spec JPMS
      *
      * @jvms 5.3 Run-time package
-     * @see <a href="{@docRoot}/../specs/jar/jar.html#sealing">
+     * @see <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">
      *      The JAR File Specification: Package Sealing</a>
      */
     protected Package definePackage(String name, String specTitle,
