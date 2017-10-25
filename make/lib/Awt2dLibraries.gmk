@@ -317,6 +317,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
 
     LIBAWT_XAWT_CFLAGS += -DXAWT -DXAWT_HACK \
         -DPACKAGE_PATH=\"$(PACKAGE_PATH)\" \
+        $(FONTCONFIG_CFLAGS) \
         $(CUPS_CFLAGS)
 
     ifeq ($(OPENJDK_TARGET_OS), solaris)
@@ -555,6 +556,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
           -DHEADLESS=true \
           -DPACKAGE_PATH=\"$(PACKAGE_PATH)\" \
           $(CUPS_CFLAGS) \
+          $(FONTCONFIG_CFLAGS) \
           $(X_CFLAGS) \
           $(LIBAWT_HEADLESS_CFLAGS), \
       DISABLED_WARNINGS_xlc := 1506-356, \

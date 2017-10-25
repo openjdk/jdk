@@ -578,7 +578,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_FcFontManager_getFontPathNative
 
 #include <dlfcn.h>
 
-#include "fontconfig.h"
+#include <fontconfig/fontconfig.h>
 
 
 static void* openFontConfig() {
