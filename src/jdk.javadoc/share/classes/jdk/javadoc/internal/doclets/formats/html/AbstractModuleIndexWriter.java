@@ -97,13 +97,9 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
     /**
      * Adds the modules list to the documentation tree.
      *
-     * @param modules the set of modules
-     * @param text caption for the table
-     * @param tableSummary summary for the table
      * @param body the document tree to which the modules list will be added
      */
-    protected abstract void addModulesList(Collection<ModuleElement> modules, String text,
-            String tableSummary, Content body);
+    protected abstract void addModulesList(Content body);
 
     /**
      * Adds the module packages list to the documentation tree.
@@ -213,7 +209,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
         addAllPackagesLink(ul);
         htmlTree.addContent(ul);
         body.addContent(htmlTree);
-        addModulesList(modules, text, tableSummary, body);
+        addModulesList(body);
     }
 
     /**
