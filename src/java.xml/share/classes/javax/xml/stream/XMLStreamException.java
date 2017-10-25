@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ package javax.xml.stream;
  */
 
 public class XMLStreamException extends Exception {
+  private static final long serialVersionUID = 2018819321811497362L;
 
   protected Throwable nested;
   protected Location location;

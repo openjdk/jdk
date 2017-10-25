@@ -304,7 +304,6 @@ public abstract class BaseFileManager implements JavaFileManager {
         return (encodingName != null) ? encodingName : getDefaultEncodingName();
     }
 
-    @SuppressWarnings("cast")
     public CharBuffer decode(ByteBuffer inbuf, boolean ignoreEncodingErrors) {
         String encName = getEncodingName();
         CharsetDecoder decoder;
@@ -312,7 +311,7 @@ public abstract class BaseFileManager implements JavaFileManager {
             decoder = getDecoder(encName, ignoreEncodingErrors);
         } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
             log.error(Errors.UnsupportedEncoding(encName));
-            return (CharBuffer)CharBuffer.allocate(1).flip();
+            return CharBuffer.allocate(1).flip();
         }
 
         // slightly overestimate the buffer size to avoid reallocation.
@@ -389,7 +388,6 @@ public abstract class BaseFileManager implements JavaFileManager {
      * @return a byte buffer containing the contents of the stream
      * @throws IOException if an error occurred while reading the stream
      */
-    @SuppressWarnings("cast")
     public ByteBuffer makeByteBuffer(InputStream in)
         throws IOException {
         int limit = in.available();
@@ -401,14 +399,14 @@ public abstract class BaseFileManager implements JavaFileManager {
                 // expand buffer
                 result = ByteBuffer.
                     allocate(limit <<= 1).
-                    put((ByteBuffer)result.flip());
+                    put(result.flip());
             int count = in.read(result.array(),
                 position,
                 limit - position);
             if (count < 0) break;
             result.position(position += count);
         }
-        return (ByteBuffer)result.flip();
+        return result.flip();
     }
 
     public void recycleByteBuffer(ByteBuffer bb) {
@@ -418,14 +416,13 @@ public abstract class BaseFileManager implements JavaFileManager {
     /**
      * A single-element cache of direct byte buffers.
      */
-    @SuppressWarnings("cast")
     private static class ByteBufferCache {
         private ByteBuffer cached;
         ByteBuffer get(int capacity) {
             if (capacity < 20480) capacity = 20480;
             ByteBuffer result =
                 (cached != null && cached.capacity() >= capacity)
-                ? (ByteBuffer)cached.clear()
+                ? cached.clear()
                 : ByteBuffer.allocate(capacity + capacity>>1);
             cached = null;
             return result;

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,6 +40,8 @@ import org.xml.sax.SAXException;
  *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  */
 public class WrappedSAXException extends RuntimeException {
+    private static final long serialVersionUID = -3201986204982729962L;
+
     public final SAXException exception;
 
     WrappedSAXException( SAXException e ) {

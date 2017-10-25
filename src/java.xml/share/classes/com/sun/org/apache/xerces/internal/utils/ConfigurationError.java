@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,8 +24,8 @@ package com.sun.org.apache.xerces.internal.utils;
 /**
  * A configuration error. This was an internal class in ObjectFactory previously
  */
-public final class ConfigurationError
-    extends Error {
+public final class ConfigurationError extends Error {
+    private static final long serialVersionUID = 8095902236393167968L;
 
     //
     // Data

@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -82,8 +81,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
     /**
      * {@inheritDoc}
      */
-    protected void addModulesList(Collection<ModuleElement> modules, String text,
-            String tableSummary, Content body) {
+    protected void addModulesList(Content body) {
         Content heading = HtmlTree.HEADING(HtmlConstants.MODULE_HEADING, true,
                 contents.modulesLabel);
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
@@ -91,7 +89,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
                 : HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(contents.modulesLabel);
-        for (ModuleElement mdle: modules) {
+        for (ModuleElement mdle: configuration.modules) {
             ul.addContent(getModuleLink(mdle));
         }
         htmlTree.addContent(ul);

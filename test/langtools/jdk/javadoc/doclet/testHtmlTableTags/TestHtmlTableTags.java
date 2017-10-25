@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6786688 8008164 8162363 8169819
+ * @bug      6786688 8008164 8162363 8169819 8183037
  * @summary  HTML tables should have table summary, caption and table headers.
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -142,7 +142,7 @@ public class TestHtmlTableTags extends JavadocTester {
         // Overview Summary
         checkOutput("overview-summary.html", true,
                 "<table class=\"overviewSummary\" "
-                + "summary=\"Packages table, listing packages, and an explanation\">");
+                + "summary=\"Package Summary table, listing packages, and an explanation\">");
     }
 
     /*

@@ -48,6 +48,8 @@ package org.w3c.dom.ranges;
  * @since 9, DOM Level 2
  */
 public class RangeException extends RuntimeException {
+    private static final long serialVersionUID = 2427563372446661889L;
+
     public RangeException(short code, String message) {
        super(message);
        this.code = code;

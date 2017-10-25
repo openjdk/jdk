@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,6 +26,8 @@ package com.sun.org.apache.xalan.internal.xsltc.compiler.util;
  * state from which it cannot recover.
  */
 public class InternalError extends Error {
+    private static final long serialVersionUID = -6690855975016554786L;
+
     /**
      * Construct an <code>InternalError</code> with the specified error message.
      * @param msg the error message

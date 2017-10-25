@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2009, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,10 +21,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * Copyright (c) 2009 by Oracle Corporation. All Rights Reserved.
  */
 
 package com.sun.org.apache.xerces.internal.jaxp.datatype;
@@ -52,6 +49,7 @@ import javax.xml.datatype.DatatypeConstants;
 
 class DurationDayTimeImpl
         extends DurationImpl {
+    private static final long serialVersionUID = 844792794952655204L;
 
     public DurationDayTimeImpl(
         boolean isPositive,
