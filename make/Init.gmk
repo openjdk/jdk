@@ -223,9 +223,6 @@ else # HAS_SPEC=true
   # Our helper functions.
   include $(TOPDIR)/make/InitSupport.gmk
 
-  # Verify that the spec file we included seems okay.
-  $(eval $(call CheckSpecSanity))
-
   # Parse COMPARE_BUILD (for makefile development)
   $(eval $(call ParseCompareBuild))
 

@@ -127,9 +127,6 @@ SYSROOT_LDFLAGS := @SYSROOT_LDFLAGS@
 
 # The top-level directory of the source repository
 TOPDIR:=@TOPDIR@
-# These two versions of TOPDIR are used in string comparisons
-ORIGINAL_TOPDIR:=@ORIGINAL_TOPDIR@
-CANONICAL_TOPDIR:=@CANONICAL_TOPDIR@
 
 
 IMPORT_MODULES_CLASSES:=@IMPORT_MODULES_CLASSES@
