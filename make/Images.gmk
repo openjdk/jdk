@@ -432,8 +432,8 @@ $(eval $(call IncludeCustomExtension, Images-post.gmk))
 $(JRE_TARGETS): $(TOOL_JRE_TARGETS)
 $(JDK_TARGETS): $(TOOL_JDK_TARGETS)
 
-jdk: $(JDK_TARGETS)
-jre: $(JRE_TARGETS)
+jdk: $(TOOL_JDK_TARGETS) $(JDK_TARGETS)
+jre: $(TOOL_JRE_TARGETS) $(JRE_TARGETS)
 symbols: $(SYMBOLS_TARGETS)
 
 all: jdk jre symbols
