@@ -292,8 +292,8 @@ public class Types {
         @Override
         public Type visitTypeVar(TypeVar t, ProjectionKind pkind) {
             if (vars.contains(t)) {
-                try {
-                    if (seen.add(t)) {
+                if (seen.add(t)) {
+                    try {
                         final Type bound;
                         switch (pkind) {
                             case UPWARDS:
@@ -309,12 +309,13 @@ public class Types {
                                 return null;
                         }
                         return bound.map(this, pkind);
-                    } else {
-                        //cycle
-                        return syms.objectType;
+                    } finally {
+                        seen.remove(t);
                     }
-                } finally {
-                    seen.remove(t);
+                } else {
+                    //cycle
+                    return pkind == ProjectionKind.UPWARDS ?
+                            syms.objectType : syms.botType;
                 }
             } else {
                 return t;
