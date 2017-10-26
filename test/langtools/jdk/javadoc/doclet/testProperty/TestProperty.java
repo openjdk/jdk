@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8176231
+ * @bug      8176231 8189843
  * @summary  Test JavaFX property.
  * @library  ../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -71,7 +71,23 @@ public class TestProperty extends JavadocTester {
                 + "<dd><a href=\"../pkg/MyClass.html#getBad--\"><code>getBad()</code></a>, \n"
                 + "<a href=\"../pkg/MyClass.html#setBad-pkg.MyObj:A-\">"
                 + "<code>setBad(MyObj[])</code></a></dd>\n"
-                + "</dl>"
+                + "</dl>",
+
+                // id should not be used in the property table
+                "<tr class=\"altColor\">\n"
+                + "<td class=\"colFirst\"><code><a href=\"../pkg/ObjectProperty.html\" "
+                + "title=\"class in pkg\">ObjectProperty</a>&lt;<a href=\"../pkg/MyObj.html\" "
+                + "title=\"class in pkg\">MyObj</a>[]&gt;</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"../pkg/MyClass.html#badProperty\">bad</a></span></code></th>",
+
+                // id should be used in the method table
+                "<tr id=\"i0\" class=\"altColor\">\n"
+                + "<td class=\"colFirst\"><code><a href=\"../pkg/ObjectProperty.html\" "
+                + "title=\"class in pkg\">ObjectProperty</a>&lt;<a href=\"../pkg/MyObj.html\" "
+                + "title=\"class in pkg\">MyObj</a>[]&gt;</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"../pkg/MyClass.html#badProperty--\">badProperty</a></span>()</code></th>"
         );
 
         checkOutput("pkg/MyClassT.html", true,
