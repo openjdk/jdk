@@ -110,7 +110,7 @@ class UnixChannelFactory {
     static FileChannel newFileChannel(int fd, String path, boolean reading, boolean writing) {
         FileDescriptor fdObj = new FileDescriptor();
         fdAccess.set(fdObj, fd);
-        return FileChannelImpl.open(fdObj, path, reading, writing, null);
+        return FileChannelImpl.open(fdObj, path, reading, writing, false, null);
     }
 
     /**
