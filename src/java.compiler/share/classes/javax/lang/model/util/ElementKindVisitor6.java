@@ -91,7 +91,7 @@ public class ElementKindVisitor6<R, P>
      * @deprecated Release 6 is obsolete; update to a visitor for a newer
      * release level.
      */
-    @Deprecated
+    @Deprecated(since="9")
     protected ElementKindVisitor6() {
         super(null);
     }
@@ -104,7 +104,7 @@ public class ElementKindVisitor6<R, P>
      * @deprecated Release 6 is obsolete; update to a visitor for a newer
      * release level.
      */
-    @Deprecated
+    @Deprecated(since="9")
     protected ElementKindVisitor6(R defaultValue) {
         super(defaultValue);
     }

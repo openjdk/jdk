@@ -94,7 +94,7 @@ public class SimpleTypeVisitor6<R, P> extends AbstractTypeVisitor6<R, P> {
      * @deprecated Release 6 is obsolete; update to a visitor for a newer
      * release level.
      */
-    @Deprecated
+    @Deprecated(since="9")
     protected SimpleTypeVisitor6(){
         DEFAULT_VALUE = null;
     }
@@ -107,7 +107,7 @@ public class SimpleTypeVisitor6<R, P> extends AbstractTypeVisitor6<R, P> {
      * @deprecated Release 6 is obsolete; update to a visitor for a newer
      * release level.
      */
-    @Deprecated
+    @Deprecated(since="9")
     protected SimpleTypeVisitor6(R defaultValue){
         DEFAULT_VALUE = defaultValue;
     }
