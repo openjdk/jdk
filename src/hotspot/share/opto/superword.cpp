@@ -2168,10 +2168,12 @@ void SuperWord::output() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   Compile* C = _phase->C;
   if (_packset.length() == 0) {
-    // Instigate more unrolling for optimization when vectorization fails.
-    C->set_major_progress();
-    cl->set_notpassed_slp();
-    cl->mark_do_unroll_only();
+    if (cl->is_main_loop()) {
+      // Instigate more unrolling for optimization when vectorization fails.
+      C->set_major_progress();
+      cl->set_notpassed_slp();
+      cl->mark_do_unroll_only();
+    }
     return;
   }
 
@@ -2417,6 +2419,9 @@ void SuperWord::output() {
   }//for (int i = 0; i < _block.length(); i++)
 
   C->set_max_vector_size(max_vlen_in_bytes);
+  if (max_vlen_in_bytes > 0) {
+    cl->mark_loop_vectorized();
+  }
 
   if (SuperWordLoopUnrollAnalysis) {
     if (cl->has_passed_slp()) {
@@ -2439,7 +2444,6 @@ void SuperWord::output() {
         }
 
         if (do_reserve_copy()) {
-          cl->mark_loop_vectorized();
           if (can_process_post_loop) {
             // Now create the difference of trip and limit and use it as our mask index.
             // Note: We limited the unroll of the vectorized loop so that
