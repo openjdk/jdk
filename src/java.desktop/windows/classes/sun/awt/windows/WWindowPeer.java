@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,48 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.awt.windows;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-import java.awt.peer.*;
-
-import java.beans.*;
-
-import java.util.*;
-import java.util.List;
-import sun.util.logging.PlatformLogger;
+import java.awt.AWTEvent;
+import java.awt.AWTEventMulticaster;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.SystemColor;
+import java.awt.Window;
+import java.awt.event.FocusEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.geom.AffineTransform;
-import sun.awt.*;
+import java.awt.image.DataBufferInt;
+import java.awt.peer.WindowPeer;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.LinkedList;
+import java.util.List;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AppContext;
+import sun.awt.DisplayChangedListener;
+import sun.awt.SunToolkit;
+import sun.awt.Win32GraphicsConfig;
+import sun.awt.Win32GraphicsDevice;
+import sun.awt.Win32GraphicsEnvironment;
 import sun.java2d.pipe.Region;
 import sun.swing.SwingUtilities2;
+import sun.util.logging.PlatformLogger;
 
 public class WWindowPeer extends WPanelPeer implements WindowPeer,
        DisplayChangedListener
@@ -671,7 +696,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     public void print(Graphics g) {
         // We assume we print the whole frame,
         // so we expect no clip was set previously
-        Shape shape = AWTAccessor.getWindowAccessor().getShape((Window)target);
+        Shape shape = ((Window)target).getShape();
         if (shape != null) {
             g.setClip(shape);
         }

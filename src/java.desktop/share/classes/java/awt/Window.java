@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
-import java.awt.event.*;
+import java.awt.event.ComponentEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
+import java.awt.event.WindowListener;
+import java.awt.event.WindowStateListener;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.im.InputContext;
@@ -48,7 +56,13 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.accessibility.*;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+
 import sun.awt.AWTAccessor;
 import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
@@ -4050,26 +4064,6 @@ public class Window extends Container implements Accessible {
 
     static {
         AWTAccessor.setWindowAccessor(new AWTAccessor.WindowAccessor() {
-            public float getOpacity(Window window) {
-                return window.opacity;
-            }
-            public void setOpacity(Window window, float opacity) {
-                window.setOpacity(opacity);
-            }
-            public Shape getShape(Window window) {
-                return window.getShape();
-            }
-            public void setShape(Window window, Shape shape) {
-                window.setShape(shape);
-            }
-            public void setOpaque(Window window, boolean opaque) {
-                Color bg = window.getBackground();
-                if (bg == null) {
-                    bg = new Color(0, 0, 0, 0);
-                }
-                window.setBackground(new Color(bg.getRed(), bg.getGreen(), bg.getBlue(),
-                                               opaque ? 255 : 0));
-            }
             public void updateWindow(Window window) {
                 window.updateWindow();
             }

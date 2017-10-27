@@ -843,10 +843,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
             public Rectangle getBounds(Component comp) {
                 return new Rectangle(comp.x, comp.y, comp.width, comp.height);
             }
-            public void setMixingCutoutShape(Component comp, Shape shape) {
-                comp.setMixingCutoutShape(shape);
-            }
-
             public void setGraphicsConfiguration(Component comp,
                     GraphicsConfiguration gc)
             {

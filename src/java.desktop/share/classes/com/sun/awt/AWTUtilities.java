@@ -25,7 +25,16 @@
 
 package com.sun.awt;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Shape;
+import java.awt.Toolkit;
+import java.awt.Window;
 
 import javax.swing.JRootPane;
 
@@ -64,6 +73,7 @@ import sun.awt.SunToolkit;
  * drastically between update release, and it may even be
  * removed or be moved in some other package(s)/class(es).
  */
+@Deprecated(forRemoval = true, since = "10")
 public final class AWTUtilities {
 
     /**
@@ -114,7 +124,10 @@ public final class AWTUtilities {
      *                         (either PERPIXEL_TRANSPARENT,
      *                         TRANSLUCENT, or PERPIXEL_TRANSLUCENT)
      * @return whether the given translucency kind is supported
+     * @deprecated use {@link GraphicsDevice#isWindowTranslucencySupported}
+     *             instead
      */
+    @Deprecated(forRemoval = true, since = "10")
     public static boolean isTranslucencySupported(Translucency translucencyKind) {
         switch (translucencyKind) {
             case PERPIXEL_TRANSPARENT:
@@ -166,14 +179,15 @@ public final class AWTUtilities {
      *                                  and the opacity is less than 1.0f
      * @throws UnsupportedOperationException if the TRANSLUCENT translucency
      *                                       kind is not supported
+     * @deprecated use {@link Window#setOpacity} instead
      */
+    @Deprecated(forRemoval = true, since = "10")
     public static void setWindowOpacity(Window window, float opacity) {
         if (window == null) {
             throw new NullPointerException(
                     "The window argument should not be null.");
         }
-
-        AWTAccessor.getWindowAccessor().setOpacity(window, opacity);
+        window.setOpacity(opacity);
     }
 
     /**
@@ -182,14 +196,16 @@ public final class AWTUtilities {
      *
      * @param window the window to get the opacity level from
      * @throws NullPointerException if the window argument is null
+     * @deprecated use {@link Window#getOpacity} instead
      */
+    @Deprecated(forRemoval = true, since = "10")
     public static float getWindowOpacity(Window window) {
         if (window == null) {
             throw new NullPointerException(
                     "The window argument should not be null.");
         }
 
-        return AWTAccessor.getWindowAccessor().getOpacity(window);
+        return window.getOpacity();
     }
 
     /**
@@ -198,7 +214,10 @@ public final class AWTUtilities {
      * Note that this method may sometimes return true, but the native
      * windowing system may still not support the concept of
      * shaping (due to the bugs in the windowing system).
+     * @deprecated use {@link GraphicsDevice#isWindowTranslucencySupported}
+     *             instead
      */
+    @Deprecated(forRemoval = true, since = "10")
     public static boolean isWindowShapingSupported() {
         Toolkit curToolkit = Toolkit.getDefaultToolkit();
         if (!(curToolkit instanceof SunToolkit)) {
@@ -216,13 +235,15 @@ public final class AWTUtilities {
      * @param window the window to get the shape from
      * @return the current shape of the window
      * @throws NullPointerException if the window argument is null
+     * @deprecated use {@link Window#getShape} instead
      */
+    @Deprecated(forRemoval = true, since = "10")
     public static Shape getWindowShape(Window window) {
         if (window == null) {
             throw new NullPointerException(
                     "The window argument should not be null.");
         }
-        return AWTAccessor.getWindowAccessor().getShape(window);
+        return window.getShape();
     }
 
     /**
@@ -247,13 +268,15 @@ public final class AWTUtilities {
      *                                  and the shape is not null
      * @throws UnsupportedOperationException if the PERPIXEL_TRANSPARENT
      *                                       translucency kind is not supported
+     * @deprecated use {@link Window#setShape} instead
      */
+    @Deprecated(forRemoval = true, since = "10")
     public static void setWindowShape(Window window, Shape shape) {
         if (window == null) {
             throw new NullPointerException(
                     "The window argument should not be null.");
         }
-        AWTAccessor.getWindowAccessor().setShape(window, shape);
+        window.setShape(shape);
     }
 
     private static boolean isWindowTranslucencySupported() {
@@ -349,7 +372,9 @@ public final class AWTUtilities {
      * isOpaque argument is {@code false}.
      * @throws UnsupportedOperationException if the PERPIXEL_TRANSLUCENT
      *                                       translucency kind is not supported
+     * @deprecated use {@link Window#setBackground} instead
      */
+    @Deprecated(forRemoval = true, since = "10")
     public static void setWindowOpaque(Window window, boolean isOpaque) {
         if (window == null) {
             throw new NullPointerException(
@@ -359,7 +384,12 @@ public final class AWTUtilities {
             throw new UnsupportedOperationException(
                     "The PERPIXEL_TRANSLUCENT translucency kind is not supported");
         }
-        AWTAccessor.getWindowAccessor().setOpaque(window, isOpaque);
+        Color bg = window.getBackground();
+        if (bg == null) {
+            bg = new Color(0, 0, 0, 0);
+        }
+        window.setBackground(new Color(bg.getRed(), bg.getGreen(), bg.getBlue(),
+                                       isOpaque ? 255 : 0));
     }
 
     /**
@@ -369,7 +399,9 @@ public final class AWTUtilities {
      * @return whether the window is currently opaque (true)
      *         or translucent (false)
      * @throws NullPointerException if the window argument is null
+     * @deprecated use {@link Window#isOpaque} instead
      */
+    @Deprecated(forRemoval = true, since = "10")
     public static boolean isWindowOpaque(Window window) {
         if (window == null) {
             throw new NullPointerException(
@@ -395,7 +427,10 @@ public final class AWTUtilities {
      * @throws NullPointerException if the gc argument is null
      * @return whether the given GraphicsConfiguration supports
      *         the translucency effects.
+     * @deprecated use {@link GraphicsConfiguration#isTranslucencyCapable}
+     *             instead
      */
+    @Deprecated(forRemoval = true, since = "10")
     public static boolean isTranslucencyCapable(GraphicsConfiguration gc) {
         if (gc == null) {
             throw new NullPointerException("The gc argument should not be null");
@@ -448,8 +483,9 @@ public final class AWTUtilities {
      * 'mixing-cutout' shape
      * @param shape the new 'mixing-cutout' shape
      * @throws NullPointerException if the component argument is {@code null}
+     * @deprecated use {@link Component#setMixingCutoutShape} instead
      */
-    @Deprecated(since = "9")
+    @Deprecated(forRemoval = true, since = "9")
     public static void setComponentMixingCutoutShape(Component component,
             Shape shape)
     {
