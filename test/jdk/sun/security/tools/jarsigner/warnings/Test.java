@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public abstract class Test {
 
     static final String CHAIN_NOT_VALIDATED_VERIFYING_WARNING
             = "This jar contains entries "
-            + "whose certificate chain is not validated.";
+            + "whose certificate chain is invalid.";
 
     static final String ALIAS_NOT_IN_STORE_VERIFYING_WARNING
             = "This jar contains signed entries "
@@ -95,7 +95,7 @@ public abstract class Test {
             + "doesn't allow code signing.";
 
     static final String CHAIN_NOT_VALIDATED_SIGNING_WARNING
-            = "The signer's certificate chain is not validated.";
+            = "The signer's certificate chain is invalid.";
 
     static final String HAS_EXPIRING_CERT_SIGNING_WARNING
             = "The signer certificate will expire within six months.";
