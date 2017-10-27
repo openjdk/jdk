@@ -409,3 +409,28 @@ JNF_COCOA_EXIT(env);
 
     return jpt;
 }
+
+JNIEXPORT void JNICALL
+Java_sun_lwawt_macosx_CTrayIcon_nativeShowNotification
+(JNIEnv *env, jobject self, jlong model, jobject jcaption, jobject jtext,
+              long nsimage) {
+JNF_COCOA_ENTER(env);
+
+    AWTTrayIcon *icon = jlong_to_ptr(model);
+    NSString *caption = JNFJavaToNSString(env, jcaption);
+    NSString *text = JNFJavaToNSString(env, jtext);
+    NSImage * contentImage = jlong_to_ptr(nsimage);
+
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        NSUserNotification *notification = [[NSUserNotification alloc] init];
+        notification.title = caption;
+        notification.informativeText = text;
+        notification.contentImage = contentImage;
+        notification.soundName = NSUserNotificationDefaultSoundName;
+
+        [[NSUserNotificationCenter defaultUserNotificationCenter]
+            deliverNotification:notification];
+    }];
+
+JNF_COCOA_EXIT(env);
+}
