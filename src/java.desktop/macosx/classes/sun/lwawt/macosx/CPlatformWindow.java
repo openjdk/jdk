@@ -25,13 +25,25 @@
 
 package sun.lwawt.macosx;
 
-import com.apple.eawt.FullScreenAdapter;
-import com.apple.eawt.FullScreenUtilities;
-import com.apple.eawt.event.FullScreenEvent;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.DefaultKeyboardFocusManager;
+import java.awt.Dialog;
 import java.awt.Dialog.ModalityType;
-import java.awt.event.*;
-import java.beans.*;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.GraphicsDevice;
+import java.awt.Insets;
+import java.awt.MenuBar;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.event.FocusEvent;
+import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,20 +51,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.swing.*;
+import javax.swing.JRootPane;
+import javax.swing.RootPaneContainer;
+import javax.swing.SwingUtilities;
 
-import sun.awt.*;
+import com.apple.laf.ClientPropertyApplicator;
+import com.apple.laf.ClientPropertyApplicator.Property;
+import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.AWTAccessor.WindowAccessor;
 import sun.java2d.SurfaceData;
 import sun.java2d.opengl.CGLSurfaceData;
-import sun.lwawt.*;
-import sun.util.logging.PlatformLogger;
-
-import com.apple.laf.*;
-import com.apple.laf.ClientPropertyApplicator.Property;
-import com.sun.awt.AWTUtilities;
+import sun.lwawt.LWToolkit;
+import sun.lwawt.LWWindowPeer;
 import sun.lwawt.LWWindowPeer.PeerType;
+import sun.lwawt.PlatformWindow;
+import sun.util.logging.PlatformLogger;
 
 public class CPlatformWindow extends CFRetainedResource implements PlatformWindow {
     private native long nativeCreateNSWindow(long nsViewPtr,long ownerPtr, long styleBits, double x, double y, double w, double h);
@@ -172,7 +186,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             c.setStyleBits(TEXTURED, Boolean.parseBoolean(value.toString()));
         }},
         new Property<CPlatformWindow>(WINDOW_ALPHA) { public void applyProperty(final CPlatformWindow c, final Object value) {
-            AWTUtilities.setWindowOpacity(c.target, value == null ? 1.0f : Float.parseFloat(value.toString()));
+            c.target.setOpacity(value == null ? 1.0f : Float.parseFloat(value.toString()));
         }},
         new Property<CPlatformWindow>(WINDOW_SHADOW) { public void applyProperty(final CPlatformWindow c, final Object value) {
             c.setStyleBits(HAS_SHADOW, value == null ? true : Boolean.parseBoolean(value.toString()));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,23 @@
 /*
  * @test
  * @key headful
- * @bug 6683775 6794764
- * @summary Painting artifacts is seen when panel is made setOpaque(false) for a translucent window
- * @author Alexander Potochkin
- * @modules java.desktop/com.sun.awt
- *          java.desktop/sun.awt
- * @run main bug6683775
+ * @bug 6683775 6794764 8186617
+ * @summary Painting artifacts is seen when panel is made setOpaque(false) for a
+ *          translucent window
  */
 
-import com.sun.awt.AWTUtilities;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Window;
 import java.awt.image.BufferedImage;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 public class bug6683775 {
     static final int LOC = 100,
@@ -44,9 +48,8 @@ public class bug6683775 {
 
     public static void main(String[] args) throws Exception {
         GraphicsConfiguration gc = getGC();
-       if (!AWTUtilities.isTranslucencySupported(
-               AWTUtilities.Translucency.PERPIXEL_TRANSLUCENT)
-                || gc == null) {
+        if (gc == null || !gc.getDevice().isWindowTranslucencySupported(
+                GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
             return;
         }
         Robot robot = new Robot();
@@ -65,7 +68,7 @@ public class bug6683775 {
             JPanel p = new JPanel();
             p.setOpaque(false);
             testFrame.add(p);
-            AWTUtilities.setWindowOpaque(testFrame, false);
+            setOpaque(testFrame, false);
             testFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             testFrame.setBounds(LOC, LOC, SIZE, SIZE);
             testFrame.setVisible(true);
@@ -78,17 +81,28 @@ public class bug6683775 {
         BufferedImage capture =
                 robot.createScreenCapture(new Rectangle(LOC, LOC, SIZE, SIZE));
 
+        SwingUtilities.invokeAndWait(testFrame::dispose);
+
         int redRGB = Color.RED.getRGB();
         if (redRGB != capture.getRGB(SIZE/2, SIZE/2)) {
             throw new RuntimeException("Transparent frame is not transparent!");
         }
     }
 
+    public static void setOpaque(Window window, boolean opaque) {
+        Color bg = window.getBackground();
+        if (bg == null) {
+            bg = new Color(0, 0, 0, 0);
+        }
+        window.setBackground(new Color(bg.getRed(), bg.getGreen(), bg.getBlue(),
+                                       opaque ? 255 : 0));
+    }
+
     private static GraphicsConfiguration getGC() {
         GraphicsConfiguration transparencyCapableGC =
                 GraphicsEnvironment.getLocalGraphicsEnvironment()
                         .getDefaultScreenDevice().getDefaultConfiguration();
-        if (!AWTUtilities.isTranslucencyCapable(transparencyCapableGC)) {
+        if (!transparencyCapableGC.isTranslucencyCapable()) {
             transparencyCapableGC = null;
 
             GraphicsEnvironment env =
@@ -98,7 +112,7 @@ public class bug6683775 {
             for (int i = 0; i < devices.length && transparencyCapableGC == null; i++) {
                 GraphicsConfiguration[] configs = devices[i].getConfigurations();
                 for (int j = 0; j < configs.length && transparencyCapableGC == null; j++) {
-                    if (AWTUtilities.isTranslucencyCapable(configs[j])) {
+                    if (configs[j].isTranslucencyCapable()) {
                         transparencyCapableGC = configs[j];
                     }
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,15 @@
 
 package com.apple.eawt.event;
 
-import javax.swing.*;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JRootPane;
 
 /**
  * Registration utility class to add {@link GestureListener}s to Swing components.
  *
  * This class manages the relationship between {@link JComponent}s and the {@link GestureListener}s
- * attached to them. It's design is similar to the Java SE 6u10 {@link com.sun.awt.AWTUtilities}
+ * attached to them. It's design is similar to the Java SE 6u10 {@code com.sun.awt.AWTUtilities}
  * class which adds additional functionality to AWT Windows, without adding new API to the
  * {@link java.awt.Window} class.
  *
@@ -40,7 +42,6 @@ import javax.swing.*;
  *
  * @see GestureAdapter
  * @see JFrame#getRootPane()
- * @see com.sun.awt.AWTUtilities
  *
  * @since Java for Mac OS X 10.5 Update 7, Java for Mac OS X 10.6 Update 2
  */
