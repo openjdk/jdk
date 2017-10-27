@@ -2390,9 +2390,8 @@ void G1CollectedHeap::print_on(outputStream* st) const {
   st->print(" %-20s", "garbage-first heap");
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
             capacity()/K, used_unlocked()/K);
-  st->print(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+  st->print(" [" PTR_FORMAT ", " PTR_FORMAT ")",
             p2i(_hrm.reserved().start()),
-            p2i(_hrm.reserved().start() + _hrm.length() + HeapRegion::GrainWords),
             p2i(_hrm.reserved().end()));
   st->cr();
   st->print("  region size " SIZE_FORMAT "K, ", HeapRegion::GrainBytes / K);
