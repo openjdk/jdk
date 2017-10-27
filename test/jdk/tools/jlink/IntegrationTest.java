@@ -39,6 +39,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import jdk.tools.jlink.internal.Jlink;
+import jdk.tools.jlink.internal.JlinkTask;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -159,7 +160,8 @@ public class IntegrationTest {
         Set<String> limits = new HashSet<>();
         limits.add("java.management");
         JlinkConfiguration config = new Jlink.JlinkConfiguration(output,
-                modulePaths, mods, limits, ByteOrder.nativeOrder());
+                mods, ByteOrder.nativeOrder(),
+                JlinkTask.newModuleFinder(modulePaths, limits, mods));
 
         List<Plugin> lst = new ArrayList<>();
 

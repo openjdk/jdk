@@ -251,9 +251,18 @@ public class JlinkTask {
                 return EXIT_OK;
             }
 
+
             if (options.modulePath.isEmpty()) {
-                throw taskHelper.newBadArgs("err.modulepath.must.be.specified")
-                                .showUsage(true);
+                // no --module-path specified - try to set $JAVA_HOME/jmods if that exists
+                Path jmods = getDefaultModulePath();
+                if (jmods != null) {
+                    options.modulePath.add(jmods);
+                }
+
+                if (options.modulePath.isEmpty()) {
+                     throw taskHelper.newBadArgs("err.modulepath.must.be.specified")
+                                 .showUsage(true);
+                }
             }
 
             JlinkConfiguration config = initJlinkConfig();
@@ -347,14 +356,7 @@ public class JlinkTask {
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
             if (mod.equals(ALL_MODULE_PATH)) {
-                Path[] entries = options.modulePath.toArray(new Path[0]);
-                ModuleFinder finder = ModulePath.of(Runtime.version(), true, entries);
-                if (!options.limitMods.isEmpty()) {
-                    // finder for the observable modules specified in
-                    // the --module-path and --limit-modules options
-                    finder = limitFinder(finder, options.limitMods, Collections.emptySet());
-                }
-
+                ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, Set.of());
                 // all observable modules are roots
                 finder.findAll()
                       .stream()
@@ -366,11 +368,19 @@ public class JlinkTask {
             }
         }
 
+        ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, roots);
+        if (!finder.find("java.base").isPresent()) {
+            Path defModPath = getDefaultModulePath();
+            if (defModPath != null) {
+                options.modulePath.add(defModPath);
+            }
+            finder = newModuleFinder(options.modulePath, options.limitMods, roots);
+        }
+
         return new JlinkConfiguration(options.output,
-                                      options.modulePath,
                                       roots,
-                                      options.limitMods,
-                                      options.endian);
+                                      options.endian,
+                                      finder);
     }
 
     private void createImage(JlinkConfiguration config) throws Exception {
@@ -398,6 +408,14 @@ public class JlinkTask {
         stack.operate(imageProvider);
     }
 
+    /**
+     * @return the system module path or null
+     */
+    public static Path getDefaultModulePath() {
+        Path jmods = Paths.get(System.getProperty("java.home"), "jmods");
+        return Files.isDirectory(jmods)? jmods : null;
+    }
+
     /*
      * Returns a module finder of the given module path that limits
      * the observable modules to those in the transitive closure of
@@ -408,12 +426,15 @@ public class JlinkTask {
                                                Set<String> limitMods,
                                                Set<String> roots)
     {
+        if (Objects.requireNonNull(paths).isEmpty()) {
+             throw new IllegalArgumentException("Empty module path");
+        }
         Path[] entries = paths.toArray(new Path[0]);
         ModuleFinder finder = ModulePath.of(Runtime.version(), true, entries);
 
         // if limitmods is specified then limit the universe
-        if (!limitMods.isEmpty()) {
-            finder = limitFinder(finder, limitMods, roots);
+        if (limitMods != null && !limitMods.isEmpty()) {
+            finder = limitFinder(finder, limitMods, Objects.requireNonNull(roots));
         }
         return finder;
     }
