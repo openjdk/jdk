@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,6 @@ void G1MMUTrackerQueue::add_pause(double start, double end) {
 // of other places (debugging)
 
 double G1MMUTrackerQueue::when_sec(double current_time, double pause_time) {
-  MutexLockerEx x(MMUTracker_lock, Mutex::_no_safepoint_check_flag);
   remove_expired_entries(current_time);
 
   return when_internal(current_time, pause_time);
