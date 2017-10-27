@@ -116,7 +116,6 @@ Mutex*   FreeList_lock                = NULL;
 Monitor* SecondaryFreeList_lock       = NULL;
 Mutex*   OldSets_lock                 = NULL;
 Monitor* RootRegionScan_lock          = NULL;
-Mutex*   MMUTracker_lock              = NULL;
 
 Monitor* GCTaskManager_lock           = NULL;
 
@@ -193,7 +192,6 @@ void mutex_init() {
     def(SecondaryFreeList_lock     , PaddedMonitor, leaf     ,   true,  Monitor::_safepoint_check_never);
     def(OldSets_lock               , PaddedMutex  , leaf     ,   true,  Monitor::_safepoint_check_never);
     def(RootRegionScan_lock        , PaddedMonitor, leaf     ,   true,  Monitor::_safepoint_check_never);
-    def(MMUTracker_lock            , PaddedMutex  , leaf     ,   true,  Monitor::_safepoint_check_never);
 
     def(StringDedupQueue_lock      , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_never);
     def(StringDedupTable_lock      , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);

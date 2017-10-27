@@ -111,16 +111,31 @@ public:
   }
 };
 
-// Marking pauses can be scheduled flexibly, so we might delay marking to meet MMU.
-void ConcurrentMarkThread::delay_to_keep_mmu(G1Policy* g1_policy, bool remark) {
+double ConcurrentMarkThread::mmu_sleep_time(G1Policy* g1_policy, bool remark) {
+  // There are 3 reasons to use SuspendibleThreadSetJoiner.
+  // 1. To avoid concurrency problem.
+  //    - G1MMUTracker::add_pause(), when_sec() and its variation(when_ms() etc..) can be called
+  //      concurrently from ConcurrentMarkThread and VMThread.
+  // 2. If currently a gc is running, but it has not yet updated the MMU,
+  //    we will not forget to consider that pause in the MMU calculation.
+  // 3. If currently a gc is running, ConcurrentMarkThread will wait it to be finished.
+  //    And then sleep for predicted amount of time by delay_to_keep_mmu().
+  SuspendibleThreadSetJoiner sts_join;
+
   const G1Analytics* analytics = g1_policy->analytics();
+  double now = os::elapsedTime();
+  double prediction_ms = remark ? analytics->predict_remark_time_ms()
+                                : analytics->predict_cleanup_time_ms();
+  G1MMUTracker *mmu_tracker = g1_policy->mmu_tracker();
+  return mmu_tracker->when_ms(now, prediction_ms);
+}
+
+void ConcurrentMarkThread::delay_to_keep_mmu(G1Policy* g1_policy, bool remark) {
   if (g1_policy->adaptive_young_list_length()) {
-    double now = os::elapsedTime();
-    double prediction_ms = remark ? analytics->predict_remark_time_ms()
-                                  : analytics->predict_cleanup_time_ms();
-    G1MMUTracker *mmu_tracker = g1_policy->mmu_tracker();
-    jlong sleep_time_ms = mmu_tracker->when_ms(now, prediction_ms);
-    os::sleep(this, sleep_time_ms, false);
+    jlong sleep_time_ms = mmu_sleep_time(g1_policy, remark);
+    if (!cm()->has_aborted() && sleep_time_ms > 0) {
+      os::sleep(this, sleep_time_ms, false);
+    }
   }
 }
 
@@ -349,9 +364,11 @@ void ConcurrentMarkThread::run_service() {
       if (!cm()->has_aborted()) {
         delay_to_keep_mmu(g1_policy, false /* cleanup */);
 
-        CMCleanUp cl_cl(_cm);
-        VM_CGC_Operation op(&cl_cl, "Pause Cleanup");
-        VMThread::execute(&op);
+        if (!cm()->has_aborted()) {
+          CMCleanUp cl_cl(_cm);
+          VM_CGC_Operation op(&cl_cl, "Pause Cleanup");
+          VMThread::execute(&op);
+        }
       } else {
         // We don't want to update the marking status if a GC pause
         // is already underway.
