@@ -145,7 +145,7 @@ final class CertStatusReqItemV2 {
      * @return the encoded length of this {@code CertStatusReqItemV2}
      */
     int length() {
-        // The length is the the status type (1 byte) + the request length
+        // The length is the status type (1 byte) + the request length
         // field (2 bytes) + the StatusRequest data length.
         return request.length() + 3;
     }

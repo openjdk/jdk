@@ -66,7 +66,7 @@ import jdk.internal.perf.PerfCounter;
  * -m and --add-modules options. The modules are located on a module path that
  * is constructed from the upgrade module path, system modules, and application
  * module path. The Configuration is instantiated as the boot layer with each
- * module in the the configuration defined to a class loader.
+ * module in the configuration defined to a class loader.
  */
 
 public final class ModuleBootstrap {
