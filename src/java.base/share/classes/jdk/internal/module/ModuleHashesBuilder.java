@@ -74,7 +74,7 @@ public class ModuleHashesBuilder {
      * the outgoing edges from M to non-candidate modules.
      */
     public Map<String, ModuleHashes> computeHashes(Set<String> roots) {
-        // build a graph containing the the packaged modules and
+        // build a graph containing the packaged modules and
         // its transitive dependences matching --hash-modules
         Graph.Builder<String> builder = new Graph.Builder<>();
         Deque<ResolvedModule> deque = new ArrayDeque<>(configuration.modules());

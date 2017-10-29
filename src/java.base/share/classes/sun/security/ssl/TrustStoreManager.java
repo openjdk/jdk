@@ -333,7 +333,7 @@ final class TrustStoreManager {
         }
 
         /**
-         * Load the the KeyStore as described in the specified descriptor.
+         * Load the KeyStore as described in the specified descriptor.
          */
         private static KeyStore loadKeyStore(
                 TrustStoreDescriptor descriptor) throws Exception {

@@ -88,7 +88,7 @@ final class WeakPairMap<K1, K2, V> {
      * Maps the specified key pair to the specified value in this WeakPairMap.
      * Neither the keys nor the value can be null.
      * <p>The value can be retrieved by calling the {@link #get} method
-     * with the the same keys (compared by identity).
+     * with the same keys (compared by identity).
      *
      * @param k1 the 1st of the pair of keys with which the specified value is to
      *           be associated

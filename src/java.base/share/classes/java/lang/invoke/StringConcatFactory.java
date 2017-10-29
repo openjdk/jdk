@@ -195,7 +195,7 @@ public final class StringConcatFactory {
         // In case we need to double-back onto the StringConcatFactory during this
         // static initialization, make sure we have the reasonable defaults to complete
         // the static initialization properly. After that, actual users would use the
-        // the proper values we have read from the the properties.
+        // the proper values we have read from the properties.
         STRATEGY = DEFAULT_STRATEGY;
         // CACHE_ENABLE = false; // implied
         // CACHE = null;         // implied

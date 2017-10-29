@@ -1909,7 +1909,7 @@ public final class Locale implements Cloneable, Serializable {
      * Returns a name for the locale that is appropriate for display to the
      * user. This will be the values returned by getDisplayLanguage(),
      * getDisplayScript(), getDisplayCountry(), and getDisplayVariant() assembled
-     * into a single string. The the non-empty values are used in order,
+     * into a single string. The non-empty values are used in order,
      * with the second and subsequent names in parentheses.  For example:
      * <blockquote>
      * language (script, country, variant)<br>
