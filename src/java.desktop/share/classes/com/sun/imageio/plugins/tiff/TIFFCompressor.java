@@ -68,12 +68,7 @@ public abstract class TIFFCompressor {
     protected ImageOutputStream stream;
 
     /**
-     * Creates a compressor object for use in compressing TIFF data. This
-     * object may be passed to the
-     * {@link TIFFImageWriteParam#setTIFFCompressor(TIFFCompressor)}
-     * method to override the compressor of a supported compression type or
-     * to provide the implementation of the compression algorithm of an
-     * unsupported compression type.
+     * Creates a compressor object for use in compressing TIFF data.
      *
      * <p>The parameters {@code compressionTagValue} and
      * {@code isCompressionLossless} are provided to accomodate
