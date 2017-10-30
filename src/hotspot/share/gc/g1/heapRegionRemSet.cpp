@@ -113,9 +113,7 @@ protected:
 
 public:
 
-  HeapRegion* hr() const {
-    return (HeapRegion*) OrderAccess::load_ptr_acquire(&_hr);
-  }
+  HeapRegion* hr() const { return OrderAccess::load_acquire(&_hr); }
 
   jint occupied() const {
     // Overkill, but if we ever need it...
@@ -133,7 +131,7 @@ public:
     _bm.clear();
     // Make sure that the bitmap clearing above has been finished before publishing
     // this PRT to concurrent threads.
-    OrderAccess::release_store_ptr(&_hr, hr);
+    OrderAccess::release_store(&_hr, hr);
   }
 
   void add_reference(OopOrNarrowOopStar from) {
@@ -182,7 +180,7 @@ public:
     while (true) {
       PerRegionTable* fl = _free_list;
       last->set_next(fl);
-      PerRegionTable* res = (PerRegionTable*) Atomic::cmpxchg_ptr(prt, &_free_list, fl);
+      PerRegionTable* res = Atomic::cmpxchg(prt, &_free_list, fl);
       if (res == fl) {
         return;
       }
@@ -199,9 +197,7 @@ public:
     PerRegionTable* fl = _free_list;
     while (fl != NULL) {
       PerRegionTable* nxt = fl->next();
-      PerRegionTable* res =
-        (PerRegionTable*)
-        Atomic::cmpxchg_ptr(nxt, &_free_list, fl);
+      PerRegionTable* res = Atomic::cmpxchg(nxt, &_free_list, fl);
       if (res == fl) {
         fl->init(hr, true);
         return fl;
@@ -416,7 +412,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
       // some mark bits may not yet seem cleared or a 'later' update
       // performed by a concurrent thread could be undone when the
       // zeroing becomes visible). This requires store ordering.
-      OrderAccess::release_store_ptr((volatile PerRegionTable*)&_fine_grain_regions[ind], prt);
+      OrderAccess::release_store(&_fine_grain_regions[ind], prt);
       _n_fine_entries++;
 
       if (G1HRRSUseSparseTable) {

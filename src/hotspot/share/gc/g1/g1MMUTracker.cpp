@@ -29,8 +29,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/ostream.hpp"
 
-#define _DISABLE_MMU                             0
-
 // can't rely on comparing doubles with tolerating a small margin for error
 #define SMALL_MARGIN 0.0000001
 #define is_double_leq_0(_value) ( (_value) < SMALL_MARGIN )
@@ -119,9 +117,6 @@ void G1MMUTrackerQueue::add_pause(double start, double end) {
 // of other places (debugging)
 
 double G1MMUTrackerQueue::when_sec(double current_time, double pause_time) {
-  if (_DISABLE_MMU)
-    return 0.0;
-
   MutexLockerEx x(MMUTracker_lock, Mutex::_no_safepoint_check_flag);
   remove_expired_entries(current_time);
 

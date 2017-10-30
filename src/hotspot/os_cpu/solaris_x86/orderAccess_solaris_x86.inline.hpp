@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,5 @@ inline void OrderAccess::fence() {
   }
   compiler_barrier();
 }
-
-#define VM_HAS_GENERALIZED_ORDER_ACCESS 1
 
 #endif // OS_CPU_SOLARIS_X86_VM_ORDERACCESS_SOLARIS_X86_INLINE_HPP

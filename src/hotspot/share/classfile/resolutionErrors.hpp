@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,12 @@ class ResolutionErrorEntry;
 
 // ResolutionError objects are used to record errors encountered during
 // constant pool resolution (JVMS 5.4.3).
+
+// This value is added to the cpCache index of an invokedynamic instruction when
+// storing the resolution error resulting from that invokedynamic instruction.
+// This prevents issues where the cpCache index is the same as the constant pool
+// index of another entry in the table.
+const int CPCACHE_INDEX_MANGLE_VALUE = 1000000;
 
 class ResolutionErrorTable : public Hashtable<ConstantPool*, mtClass> {
 
@@ -73,6 +79,14 @@ public:
 
   // RedefineClasses support - remove obsolete constant pool entry
   void delete_entry(ConstantPool* c);
+
+  // This function is used to encode an index to differentiate it from a
+  // constant pool index.  It assumes it is being called with a cpCache index
+  // (that is less than 0).
+  static int encode_cpcache_index(int index) {
+    assert(index < 0, "Unexpected non-negative cpCache index");
+    return index + CPCACHE_INDEX_MANGLE_VALUE;
+  }
 };
 
 

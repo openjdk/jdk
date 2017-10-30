@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -448,10 +448,16 @@ JVM_handle_linux_signal(int sig,
     }
 
     else { // thread->thread_state() != _thread_in_Java
-      if (sig == SIGILL && VM_Version::is_determine_features_test_running()) {
-        // SIGILL must be caused by VM_Version::determine_features().
+      if ((sig == SIGILL) && VM_Version::is_determine_features_test_running()) {
+        // SIGILL must be caused by VM_Version::determine_features()
+        // when attempting to execute a non-existing instruction.
         //*(int *) (pc-6)=0; // Patch instruction to 0 to indicate that it causes a SIGILL.
                              // Flushing of icache is not necessary.
+        stub = pc; // Continue with next instruction.
+      } else if ((sig == SIGFPE) && VM_Version::is_determine_features_test_running()) {
+        // SIGFPE is known to be caused by trying to execute a vector instruction
+        // when the vector facility is installed, but operating system support is missing.
+        VM_Version::reset_has_VectorFacility();
         stub = pc; // Continue with next instruction.
       } else if (thread->thread_state() == _thread_in_vm &&
                  sig == SIGBUS && thread->doing_unsafe_access()) {
@@ -471,7 +477,7 @@ JVM_handle_linux_signal(int sig,
     // Info->si_addr need not be the exact address, it is only
     // guaranteed to be on the same page as the address that caused
     // the SIGSEGV.
-    if ((sig == SIGSEGV) &&
+    if ((sig == SIGSEGV) && !UseMembar &&
         (os::get_memory_serialize_page() ==
          (address)((uintptr_t)info->si_addr & ~(os::vm_page_size()-1)))) {
       return true;
@@ -510,7 +516,7 @@ JVM_handle_linux_signal(int sig,
   // Note: this should be combined with the trap_pc handling above,
   // because it handles the same issue.
   if (sig == SIGILL || sig == SIGFPE) {
-    pc = (address) info->si_addr;
+    pc = (address)info->si_addr;
   }
 
   VMError::report_and_die(t, sig, pc, info, ucVoid);

@@ -31,11 +31,10 @@ const char* compilertype2name_tab[compiler_number_of_types] = {
   "",
   "c1",
   "c2",
-  "jvmci",
-  "shark"
+  "jvmci"
 };
 
-#if defined(COMPILER2) || defined(SHARK)
+#if defined(COMPILER2)
 CompLevel  CompLevel_highest_tier      = CompLevel_full_optimization;  // pure C2 and tiered or JVMCI and tiered
 #elif defined(COMPILER1)
 CompLevel  CompLevel_highest_tier      = CompLevel_simple;             // pure C1 or JVMCI
@@ -47,7 +46,7 @@ CompLevel  CompLevel_highest_tier      = CompLevel_none;
 CompLevel  CompLevel_initial_compile   = CompLevel_full_profile;        // tiered
 #elif defined(COMPILER1) || INCLUDE_JVMCI
 CompLevel  CompLevel_initial_compile   = CompLevel_simple;              // pure C1 or JVMCI
-#elif defined(COMPILER2) || defined(SHARK)
+#elif defined(COMPILER2)
 CompLevel  CompLevel_initial_compile   = CompLevel_full_optimization;   // pure C2
 #else
 CompLevel  CompLevel_initial_compile   = CompLevel_none;

@@ -444,6 +444,11 @@ MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
   return mh->method_counters();
 }
 
+bool Method::init_method_counters(MethodCounters* counters) {
+  // Try to install a pointer to MethodCounters, return true on success.
+  return Atomic::cmpxchg(counters, &_method_counters, (MethodCounters*)NULL) == NULL;
+}
+
 void Method::cleanup_inline_caches() {
   // The current system doesn't use inline caches in the interpreter
   // => nothing to do (keep this method around for future use)
@@ -1108,8 +1113,8 @@ void Method::restore_unshareable_info(TRAPS) {
   }
 }
 
-volatile address Method::from_compiled_entry_no_trampoline() const {
-  nmethod *code = (nmethod *)OrderAccess::load_ptr_acquire(&_code);
+address Method::from_compiled_entry_no_trampoline() const {
+  CompiledMethod *code = OrderAccess::load_acquire(&_code);
   if (code) {
     return code->verified_entry_point();
   } else {
@@ -1135,7 +1140,7 @@ address Method::verified_code_entry() {
 // Not inline to avoid circular ref.
 bool Method::check_code() const {
   // cached in a register or local.  There's a race on the value of the field.
-  CompiledMethod *code = (CompiledMethod *)OrderAccess::load_ptr_acquire(&_code);
+  CompiledMethod *code = OrderAccess::load_acquire(&_code);
   return code == NULL || (code->method() == NULL) || (code->method() == (Method*)this && !code->is_osr_method());
 }
 
@@ -1160,15 +1165,11 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
   }
 
   OrderAccess::storestore();
-#ifdef SHARK
-  mh->_from_interpreted_entry = code->insts_begin();
-#else //!SHARK
   mh->_from_compiled_entry = code->verified_entry_point();
   OrderAccess::storestore();
   // Instantly compiled code can execute.
   if (!mh->is_method_handle_intrinsic())
     mh->_from_interpreted_entry = mh->get_i2c_entry();
-#endif //!SHARK
 }
 
 

@@ -689,8 +689,15 @@ static bool ptrace_waitpid(pid_t pid) {
 // attach to a process/thread specified by "pid"
 static bool ptrace_attach(pid_t pid) {
   int res;
-  if ((res = ptrace(PT_ATTACHEXC, pid, 0, 0)) < 0) {
-    print_error("ptrace(PT_ATTACHEXC, %d) failed with %d\n", pid, res);
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+  if ((res = ptrace(PT_ATTACH, pid, 0, 0)) < 0) {
+    print_error("ptrace(PT_ATTACH, %d) failed with %d\n", pid, res);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
     return false;
   } else {
     return ptrace_waitpid(pid);

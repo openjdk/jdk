@@ -6,7 +6,7 @@ suite = {
 
   # This puts mx/ as a sibling of the JDK build configuration directories
   # (e.g., macosx-x86_64-normal-server-release).
-  "outputRoot" : "../../../build/mx/hotspot",
+  "outputRoot" : "../../build/mx/hotspot",
 
   "jdklibraries" : {
     "JVMCI_SERVICES" : {
@@ -1093,7 +1093,7 @@ suite = {
     },
 
     "jdk.tools.jaotc.test" : {
-      "subDir" : "../../test/compiler/aot",
+      "subDir" : "../../test/hotspot/jtreg/compiler/aot",
       "sourceDirs" : ["src"],
       "dependencies" : [
         "mx:JUNIT",

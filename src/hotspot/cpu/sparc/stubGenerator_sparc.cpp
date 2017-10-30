@@ -58,7 +58,6 @@
 // Note:  The register L7 is used as L7_thread_cache, and may not be used
 //        any other way within this module.
 
-
 static const Register& Lstub_temp = L2;
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -4943,7 +4942,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-/**
+  /**
    *  Arguments:
    *
    * Inputs:
@@ -4974,6 +4973,773 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
+
+  /**
+   * Arguments:
+   *
+   * Inputs:
+   *   I0   - int* x-addr
+   *   I1   - int  x-len
+   *   I2   - int* y-addr
+   *   I3   - int  y-len
+   *   I4   - int* z-addr   (output vector)
+   *   I5   - int  z-len
+   */
+  address generate_multiplyToLen() {
+    assert(UseMultiplyToLenIntrinsic, "need VIS3 instructions");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "multiplyToLen");
+    address start = __ pc();
+
+    __ save_frame(0);
+
+    const Register xptr = I0; // input address
+    const Register xlen = I1; // ...and length in 32b-words
+    const Register yptr = I2; //
+    const Register ylen = I3; //
+    const Register zptr = I4; // output address
+    const Register zlen = I5; // ...and length in 32b-words
+
+    /* The minimal "limb" representation suggest that odd length vectors are as
+     * likely as even length dittos. This in turn suggests that we need to cope
+     * with odd/even length arrays and data not aligned properly for 64-bit read
+     * and write operations. We thus use a number of different kernels:
+     *
+     *   if (is_even(x.len) && is_even(y.len))
+     *      if (is_align64(x) && is_align64(y) && is_align64(z))
+     *         if (x.len == y.len && 16 <= x.len && x.len <= 64)
+     *            memv_mult_mpmul(...)
+     *         else
+     *            memv_mult_64x64(...)
+     *      else
+     *         memv_mult_64x64u(...)
+     *   else
+     *      memv_mult_32x32(...)
+     *
+     * Here we assume VIS3 support (for 'umulxhi', 'addxc' and 'addxccc').
+     * In case CBCOND instructions are supported, we will use 'cxbX'. If the
+     * MPMUL instruction is supported, we will generate a kernel using 'mpmul'
+     * (for vectors with proper characteristics).
+     */
+    const Register tmp0 = L0;
+    const Register tmp1 = L1;
+
+    Label L_mult_32x32;
+    Label L_mult_64x64u;
+    Label L_mult_64x64;
+    Label L_exit;
+
+    if_both_even(xlen, ylen, tmp0, false, L_mult_32x32);
+    if_all3_aligned(xptr, yptr, zptr, tmp1, 64, false, L_mult_64x64u);
+
+    if (UseMPMUL) {
+      if_eq(xlen, ylen, false, L_mult_64x64);
+      if_in_rng(xlen, 16, 64, tmp0, tmp1, false, L_mult_64x64);
+
+      // 1. Multiply naturally aligned 64b-datums using a generic 'mpmul' kernel,
+      //    operating on equal length vectors of size [16..64].
+      gen_mult_mpmul(xlen, xptr, yptr, zptr, L_exit);
+    }
+
+    // 2. Multiply naturally aligned 64-bit datums (64x64).
+    __ bind(L_mult_64x64);
+    gen_mult_64x64(xptr, xlen, yptr, ylen, zptr, zlen, L_exit);
+
+    // 3. Multiply unaligned 64-bit datums (64x64).
+    __ bind(L_mult_64x64u);
+    gen_mult_64x64_unaligned(xptr, xlen, yptr, ylen, zptr, zlen, L_exit);
+
+    // 4. Multiply naturally aligned 32-bit datums (32x32).
+    __ bind(L_mult_32x32);
+    gen_mult_32x32(xptr, xlen, yptr, ylen, zptr, zlen, L_exit);
+
+    __ bind(L_exit);
+    __ ret();
+    __ delayed()->restore();
+
+    return start;
+  }
+
+  // Additional help functions used by multiplyToLen generation.
+
+  void if_both_even(Register r1, Register r2, Register tmp, bool iseven, Label &L)
+  {
+    __ or3(r1, r2, tmp);
+    __ andcc(tmp, 0x1, tmp);
+    __ br_icc_zero(iseven, Assembler::pn, L);
+  }
+
+  void if_all3_aligned(Register r1, Register r2, Register r3,
+                       Register tmp, uint align, bool isalign, Label &L)
+  {
+    __ or3(r1, r2, tmp);
+    __ or3(r3, tmp, tmp);
+    __ andcc(tmp, (align - 1), tmp);
+    __ br_icc_zero(isalign, Assembler::pn, L);
+  }
+
+  void if_eq(Register x, Register y, bool iseq, Label &L)
+  {
+    Assembler::Condition cf = (iseq ? Assembler::equal : Assembler::notEqual);
+    __ cmp_and_br_short(x, y, cf, Assembler::pt, L);
+  }
+
+  void if_in_rng(Register x, int lb, int ub, Register t1, Register t2, bool inrng, Label &L)
+  {
+    assert(Assembler::is_simm13(lb), "Small ints only!");
+    assert(Assembler::is_simm13(ub), "Small ints only!");
+    // Compute (x - lb) * (ub - x) >= 0
+    // NOTE: With the local use of this routine, we rely on small integers to
+    //       guarantee that we do not overflow in the multiplication.
+    __ add(G0, ub, t2);
+    __ sub(x, lb, t1);
+    __ sub(t2, x, t2);
+    __ mulx(t1, t2, t1);
+    Assembler::Condition cf = (inrng ? Assembler::greaterEqual : Assembler::less);
+    __ cmp_and_br_short(t1, G0, cf, Assembler::pt, L);
+  }
+
+  void ldd_entry(Register base, Register offs, FloatRegister dest)
+  {
+    __ ldd(base, offs, dest);
+    __ inc(offs, 8);
+  }
+
+  void ldx_entry(Register base, Register offs, Register dest)
+  {
+    __ ldx(base, offs, dest);
+    __ inc(offs, 8);
+  }
+
+  void mpmul_entry(int m, Label &next)
+  {
+    __ mpmul(m);
+    __ cbcond(Assembler::equal, Assembler::icc, G0, G0, next);
+  }
+
+  void stx_entry(Label &L, Register r1, Register r2, Register base, Register offs)
+  {
+    __ bind(L);
+    __ stx(r1, base, offs);
+    __ inc(offs, 8);
+    __ stx(r2, base, offs);
+    __ inc(offs, 8);
+  }
+
+  void offs_entry(Label &Lbl0, Label &Lbl1)
+  {
+    assert(Lbl0.is_bound(), "must be");
+    assert(Lbl1.is_bound(), "must be");
+
+    int offset = Lbl0.loc_pos() - Lbl1.loc_pos();
+
+    __ emit_data(offset);
+  }
+
+  /* Generate the actual multiplication kernels for BigInteger vectors:
+   *
+   *   1. gen_mult_mpmul(...)
+   *
+   *   2. gen_mult_64x64(...)
+   *
+   *   3. gen_mult_64x64_unaligned(...)
+   *
+   *   4. gen_mult_32x32(...)
+   */
+  void gen_mult_mpmul(Register len, Register xptr, Register yptr, Register zptr,
+                      Label &L_exit)
+  {
+    const Register zero = G0;
+    const Register gxp  = G1;   // Need to use global registers across RWs.
+    const Register gyp  = G2;
+    const Register gzp  = G3;
+    const Register offs = G4;
+    const Register disp = G5;
+
+    __ mov(xptr, gxp);
+    __ mov(yptr, gyp);
+    __ mov(zptr, gzp);
+
+    /* Compute jump vector entry:
+     *
+     *   1. mpmul input size (0..31) x 64b
+     *   2. vector input size in 32b limbs (even number)
+     *   3. branch entries in reverse order (31..0), using two
+     *      instructions per entry (2 * 4 bytes).
+     *
+     *   displacement = byte_offset(bra_offset(len))
+     *                = byte_offset((64 - len)/2)
+     *                = 8 * (64 - len)/2
+     *                = 4 * (64 - len)
+     */
+    Register temp = I5;         // Alright to use input regs. in first batch.
+
+    __ sub(zero, len, temp);
+    __ add(temp, 64, temp);
+    __ sllx(temp, 2, disp);     // disp := (64 - len) << 2
+
+    // Dispatch relative current PC, into instruction table below.
+    __ rdpc(temp);
+    __ add(temp, 16, temp);
+    __ jmp(temp, disp);
+    __ delayed()->clr(offs);
+
+    ldd_entry(gxp, offs, F22);
+    ldd_entry(gxp, offs, F20);
+    ldd_entry(gxp, offs, F18);
+    ldd_entry(gxp, offs, F16);
+    ldd_entry(gxp, offs, F14);
+    ldd_entry(gxp, offs, F12);
+    ldd_entry(gxp, offs, F10);
+    ldd_entry(gxp, offs, F8);
+    ldd_entry(gxp, offs, F6);
+    ldd_entry(gxp, offs, F4);
+    ldx_entry(gxp, offs, I5);
+    ldx_entry(gxp, offs, I4);
+    ldx_entry(gxp, offs, I3);
+    ldx_entry(gxp, offs, I2);
+    ldx_entry(gxp, offs, I1);
+    ldx_entry(gxp, offs, I0);
+    ldx_entry(gxp, offs, L7);
+    ldx_entry(gxp, offs, L6);
+    ldx_entry(gxp, offs, L5);
+    ldx_entry(gxp, offs, L4);
+    ldx_entry(gxp, offs, L3);
+    ldx_entry(gxp, offs, L2);
+    ldx_entry(gxp, offs, L1);
+    ldx_entry(gxp, offs, L0);
+    ldd_entry(gxp, offs, F2);
+    ldd_entry(gxp, offs, F0);
+    ldx_entry(gxp, offs, O5);
+    ldx_entry(gxp, offs, O4);
+    ldx_entry(gxp, offs, O3);
+    ldx_entry(gxp, offs, O2);
+    ldx_entry(gxp, offs, O1);
+    ldx_entry(gxp, offs, O0);
+
+    __ save(SP, -176, SP);
+
+    const Register addr = gxp;  // Alright to reuse 'gxp'.
+
+    // Dispatch relative current PC, into instruction table below.
+    __ rdpc(addr);
+    __ add(addr, 16, addr);
+    __ jmp(addr, disp);
+    __ delayed()->clr(offs);
+
+    ldd_entry(gyp, offs, F58);
+    ldd_entry(gyp, offs, F56);
+    ldd_entry(gyp, offs, F54);
+    ldd_entry(gyp, offs, F52);
+    ldd_entry(gyp, offs, F50);
+    ldd_entry(gyp, offs, F48);
+    ldd_entry(gyp, offs, F46);
+    ldd_entry(gyp, offs, F44);
+    ldd_entry(gyp, offs, F42);
+    ldd_entry(gyp, offs, F40);
+    ldd_entry(gyp, offs, F38);
+    ldd_entry(gyp, offs, F36);
+    ldd_entry(gyp, offs, F34);
+    ldd_entry(gyp, offs, F32);
+    ldd_entry(gyp, offs, F30);
+    ldd_entry(gyp, offs, F28);
+    ldd_entry(gyp, offs, F26);
+    ldd_entry(gyp, offs, F24);
+    ldx_entry(gyp, offs, O5);
+    ldx_entry(gyp, offs, O4);
+    ldx_entry(gyp, offs, O3);
+    ldx_entry(gyp, offs, O2);
+    ldx_entry(gyp, offs, O1);
+    ldx_entry(gyp, offs, O0);
+    ldx_entry(gyp, offs, L7);
+    ldx_entry(gyp, offs, L6);
+    ldx_entry(gyp, offs, L5);
+    ldx_entry(gyp, offs, L4);
+    ldx_entry(gyp, offs, L3);
+    ldx_entry(gyp, offs, L2);
+    ldx_entry(gyp, offs, L1);
+    ldx_entry(gyp, offs, L0);
+
+    __ save(SP, -176, SP);
+    __ save(SP, -176, SP);
+    __ save(SP, -176, SP);
+    __ save(SP, -176, SP);
+    __ save(SP, -176, SP);
+
+    Label L_mpmul_restore_4, L_mpmul_restore_3, L_mpmul_restore_2;
+    Label L_mpmul_restore_1, L_mpmul_restore_0;
+
+    // Dispatch relative current PC, into instruction table below.
+    __ rdpc(addr);
+    __ add(addr, 16, addr);
+    __ jmp(addr, disp);
+    __ delayed()->clr(offs);
+
+    mpmul_entry(31, L_mpmul_restore_0);
+    mpmul_entry(30, L_mpmul_restore_0);
+    mpmul_entry(29, L_mpmul_restore_0);
+    mpmul_entry(28, L_mpmul_restore_0);
+    mpmul_entry(27, L_mpmul_restore_1);
+    mpmul_entry(26, L_mpmul_restore_1);
+    mpmul_entry(25, L_mpmul_restore_1);
+    mpmul_entry(24, L_mpmul_restore_1);
+    mpmul_entry(23, L_mpmul_restore_1);
+    mpmul_entry(22, L_mpmul_restore_1);
+    mpmul_entry(21, L_mpmul_restore_1);
+    mpmul_entry(20, L_mpmul_restore_2);
+    mpmul_entry(19, L_mpmul_restore_2);
+    mpmul_entry(18, L_mpmul_restore_2);
+    mpmul_entry(17, L_mpmul_restore_2);
+    mpmul_entry(16, L_mpmul_restore_2);
+    mpmul_entry(15, L_mpmul_restore_2);
+    mpmul_entry(14, L_mpmul_restore_2);
+    mpmul_entry(13, L_mpmul_restore_3);
+    mpmul_entry(12, L_mpmul_restore_3);
+    mpmul_entry(11, L_mpmul_restore_3);
+    mpmul_entry(10, L_mpmul_restore_3);
+    mpmul_entry( 9, L_mpmul_restore_3);
+    mpmul_entry( 8, L_mpmul_restore_3);
+    mpmul_entry( 7, L_mpmul_restore_3);
+    mpmul_entry( 6, L_mpmul_restore_4);
+    mpmul_entry( 5, L_mpmul_restore_4);
+    mpmul_entry( 4, L_mpmul_restore_4);
+    mpmul_entry( 3, L_mpmul_restore_4);
+    mpmul_entry( 2, L_mpmul_restore_4);
+    mpmul_entry( 1, L_mpmul_restore_4);
+    mpmul_entry( 0, L_mpmul_restore_4);
+
+    Label L_z31, L_z30, L_z29, L_z28, L_z27, L_z26, L_z25, L_z24;
+    Label L_z23, L_z22, L_z21, L_z20, L_z19, L_z18, L_z17, L_z16;
+    Label L_z15, L_z14, L_z13, L_z12, L_z11, L_z10, L_z09, L_z08;
+    Label L_z07, L_z06, L_z05, L_z04, L_z03, L_z02, L_z01, L_z00;
+
+    Label L_zst_base;    // Store sequence base address.
+    __ bind(L_zst_base);
+
+    stx_entry(L_z31, L7, L6, gzp, offs);
+    stx_entry(L_z30, L5, L4, gzp, offs);
+    stx_entry(L_z29, L3, L2, gzp, offs);
+    stx_entry(L_z28, L1, L0, gzp, offs);
+    __ restore();
+    stx_entry(L_z27, O5, O4, gzp, offs);
+    stx_entry(L_z26, O3, O2, gzp, offs);
+    stx_entry(L_z25, O1, O0, gzp, offs);
+    stx_entry(L_z24, L7, L6, gzp, offs);
+    stx_entry(L_z23, L5, L4, gzp, offs);
+    stx_entry(L_z22, L3, L2, gzp, offs);
+    stx_entry(L_z21, L1, L0, gzp, offs);
+    __ restore();
+    stx_entry(L_z20, O5, O4, gzp, offs);
+    stx_entry(L_z19, O3, O2, gzp, offs);
+    stx_entry(L_z18, O1, O0, gzp, offs);
+    stx_entry(L_z17, L7, L6, gzp, offs);
+    stx_entry(L_z16, L5, L4, gzp, offs);
+    stx_entry(L_z15, L3, L2, gzp, offs);
+    stx_entry(L_z14, L1, L0, gzp, offs);
+    __ restore();
+    stx_entry(L_z13, O5, O4, gzp, offs);
+    stx_entry(L_z12, O3, O2, gzp, offs);
+    stx_entry(L_z11, O1, O0, gzp, offs);
+    stx_entry(L_z10, L7, L6, gzp, offs);
+    stx_entry(L_z09, L5, L4, gzp, offs);
+    stx_entry(L_z08, L3, L2, gzp, offs);
+    stx_entry(L_z07, L1, L0, gzp, offs);
+    __ restore();
+    stx_entry(L_z06, O5, O4, gzp, offs);
+    stx_entry(L_z05, O3, O2, gzp, offs);
+    stx_entry(L_z04, O1, O0, gzp, offs);
+    stx_entry(L_z03, L7, L6, gzp, offs);
+    stx_entry(L_z02, L5, L4, gzp, offs);
+    stx_entry(L_z01, L3, L2, gzp, offs);
+    stx_entry(L_z00, L1, L0, gzp, offs);
+
+    __ restore();
+    __ restore();
+    // Exit out of 'mpmul' routine, back to multiplyToLen.
+    __ ba_short(L_exit);
+
+    Label L_zst_offs;
+    __ bind(L_zst_offs);
+
+    offs_entry(L_z31, L_zst_base);  // index 31: 2048x2048
+    offs_entry(L_z30, L_zst_base);
+    offs_entry(L_z29, L_zst_base);
+    offs_entry(L_z28, L_zst_base);
+    offs_entry(L_z27, L_zst_base);
+    offs_entry(L_z26, L_zst_base);
+    offs_entry(L_z25, L_zst_base);
+    offs_entry(L_z24, L_zst_base);
+    offs_entry(L_z23, L_zst_base);
+    offs_entry(L_z22, L_zst_base);
+    offs_entry(L_z21, L_zst_base);
+    offs_entry(L_z20, L_zst_base);
+    offs_entry(L_z19, L_zst_base);
+    offs_entry(L_z18, L_zst_base);
+    offs_entry(L_z17, L_zst_base);
+    offs_entry(L_z16, L_zst_base);
+    offs_entry(L_z15, L_zst_base);
+    offs_entry(L_z14, L_zst_base);
+    offs_entry(L_z13, L_zst_base);
+    offs_entry(L_z12, L_zst_base);
+    offs_entry(L_z11, L_zst_base);
+    offs_entry(L_z10, L_zst_base);
+    offs_entry(L_z09, L_zst_base);
+    offs_entry(L_z08, L_zst_base);
+    offs_entry(L_z07, L_zst_base);
+    offs_entry(L_z06, L_zst_base);
+    offs_entry(L_z05, L_zst_base);
+    offs_entry(L_z04, L_zst_base);
+    offs_entry(L_z03, L_zst_base);
+    offs_entry(L_z02, L_zst_base);
+    offs_entry(L_z01, L_zst_base);
+    offs_entry(L_z00, L_zst_base);  // index  0:   64x64
+
+    __ bind(L_mpmul_restore_4);
+    __ restore();
+    __ bind(L_mpmul_restore_3);
+    __ restore();
+    __ bind(L_mpmul_restore_2);
+    __ restore();
+    __ bind(L_mpmul_restore_1);
+    __ restore();
+    __ bind(L_mpmul_restore_0);
+
+    // Dispatch via offset vector entry, into z-store sequence.
+    Label L_zst_rdpc;
+    __ bind(L_zst_rdpc);
+
+    assert(L_zst_base.is_bound(), "must be");
+    assert(L_zst_offs.is_bound(), "must be");
+    assert(L_zst_rdpc.is_bound(), "must be");
+
+    int dbase = L_zst_rdpc.loc_pos() - L_zst_base.loc_pos();
+    int doffs = L_zst_rdpc.loc_pos() - L_zst_offs.loc_pos();
+
+    temp = gyp;   // Alright to reuse 'gyp'.
+
+    __ rdpc(addr);
+    __ sub(addr, doffs, temp);
+    __ srlx(disp, 1, disp);
+    __ lduw(temp, disp, offs);
+    __ sub(addr, dbase, temp);
+    __ jmp(temp, offs);
+    __ delayed()->clr(offs);
+  }
+
+  void gen_mult_64x64(Register xp, Register xn,
+                      Register yp, Register yn,
+                      Register zp, Register zn, Label &L_exit)
+  {
+    // Assuming that a stack frame has already been created, i.e. local and
+    // output registers are available for immediate use.
+
+    const Register ri = L0;     // Outer loop index, xv[i]
+    const Register rj = L1;     // Inner loop index, yv[j]
+    const Register rk = L2;     // Output loop index, zv[k]
+    const Register rx = L4;     // x-vector datum [i]
+    const Register ry = L5;     // y-vector datum [j]
+    const Register rz = L6;     // z-vector datum [k]
+    const Register rc = L7;     // carry over (to z-vector datum [k-1])
+
+    const Register lop = O0;    // lo-64b product
+    const Register hip = O1;    // hi-64b product
+
+    const Register zero = G0;
+
+    Label L_loop_i,  L_exit_loop_i;
+    Label L_loop_j;
+    Label L_loop_i2, L_exit_loop_i2;
+
+    __ srlx(xn, 1, xn);         // index for u32 to u64 ditto
+    __ srlx(yn, 1, yn);         // index for u32 to u64 ditto
+    __ srlx(zn, 1, zn);         // index for u32 to u64 ditto
+    __ dec(xn);                 // Adjust [0..(N/2)-1]
+    __ dec(yn);
+    __ dec(zn);
+    __ clr(rc);                 // u64 c = 0
+    __ sllx(xn, 3, ri);         // int i = xn (byte offset i = 8*xn)
+    __ sllx(yn, 3, rj);         // int j = yn (byte offset i = 8*xn)
+    __ sllx(zn, 3, rk);         // int k = zn (byte offset k = 8*zn)
+    __ ldx(yp, rj, ry);         // u64 y = yp[yn]
+
+    // for (int i = xn; i >= 0; i--)
+    __ bind(L_loop_i);
+
+    __ cmp_and_br_short(ri, 0,  // i >= 0
+                        Assembler::less, Assembler::pn, L_exit_loop_i);
+    __ ldx(xp, ri, rx);         // x = xp[i]
+    __ mulx(rx, ry, lop);       // lo-64b-part of result 64x64
+    __ umulxhi(rx, ry, hip);    // hi-64b-part of result 64x64
+    __ addcc(rc, lop, lop);     // Accumulate lower order bits (producing carry)
+    __ addxc(hip, zero, rc);    // carry over to next datum [k-1]
+    __ stx(lop, zp, rk);        // z[k] = lop
+    __ dec(rk, 8);              // k--
+    __ dec(ri, 8);              // i--
+    __ ba_short(L_loop_i);
+
+    __ bind(L_exit_loop_i);
+    __ stx(rc, zp, rk);         // z[k] = c
+
+    // for (int j = yn - 1; j >= 0; j--)
+    __ sllx(yn, 3, rj);         // int j = yn - 1 (byte offset j = 8*yn)
+    __ dec(rj, 8);
+
+    __ bind(L_loop_j);
+
+    __ cmp_and_br_short(rj, 0,  // j >= 0
+                        Assembler::less, Assembler::pn, L_exit);
+    __ clr(rc);                 // u64 c = 0
+    __ ldx(yp, rj, ry);         // u64 y = yp[j]
+
+    // for (int i = xn, k = --zn; i >= 0; i--)
+    __ dec(zn);                 // --zn
+    __ sllx(xn, 3, ri);         // int i = xn (byte offset i = 8*xn)
+    __ sllx(zn, 3, rk);         // int k = zn (byte offset k = 8*zn)
+
+    __ bind(L_loop_i2);
+
+    __ cmp_and_br_short(ri, 0,  // i >= 0
+                        Assembler::less, Assembler::pn, L_exit_loop_i2);
+    __ ldx(xp, ri, rx);         // x = xp[i]
+    __ ldx(zp, rk, rz);         // z = zp[k], accumulator
+    __ mulx(rx, ry, lop);       // lo-64b-part of result 64x64
+    __ umulxhi(rx, ry, hip);    // hi-64b-part of result 64x64
+    __ addcc(rz, rc, rz);       // Accumulate lower order bits,
+    __ addxc(hip, zero, rc);    // Accumulate higher order bits to carry
+    __ addcc(rz, lop, rz);      //    z += lo(p) + c
+    __ addxc(rc, zero, rc);
+    __ stx(rz, zp, rk);         // zp[k] = z
+    __ dec(rk, 8);              // k--
+    __ dec(ri, 8);              // i--
+    __ ba_short(L_loop_i2);
+
+    __ bind(L_exit_loop_i2);
+    __ stx(rc, zp, rk);         // z[k] = c
+    __ dec(rj, 8);              // j--
+    __ ba_short(L_loop_j);
+  }
+
+  void gen_mult_64x64_unaligned(Register xp, Register xn,
+                                Register yp, Register yn,
+                                Register zp, Register zn, Label &L_exit)
+  {
+    // Assuming that a stack frame has already been created, i.e. local and
+    // output registers are available for use.
+
+    const Register xpc = L0;    // Outer loop cursor, xp[i]
+    const Register ypc = L1;    // Inner loop cursor, yp[j]
+    const Register zpc = L2;    // Output loop cursor, zp[k]
+    const Register rx  = L4;    // x-vector datum [i]
+    const Register ry  = L5;    // y-vector datum [j]
+    const Register rz  = L6;    // z-vector datum [k]
+    const Register rc  = L7;    // carry over (to z-vector datum [k-1])
+    const Register rt  = O2;
+
+    const Register lop = O0;    // lo-64b product
+    const Register hip = O1;    // hi-64b product
+
+    const Register zero = G0;
+
+    Label L_loop_i,  L_exit_loop_i;
+    Label L_loop_j;
+    Label L_loop_i2, L_exit_loop_i2;
+
+    __ srlx(xn, 1, xn);         // index for u32 to u64 ditto
+    __ srlx(yn, 1, yn);         // index for u32 to u64 ditto
+    __ srlx(zn, 1, zn);         // index for u32 to u64 ditto
+    __ dec(xn);                 // Adjust [0..(N/2)-1]
+    __ dec(yn);
+    __ dec(zn);
+    __ clr(rc);                 // u64 c = 0
+    __ sllx(xn, 3, xpc);        // u32* xpc = &xp[xn] (byte offset 8*xn)
+    __ add(xp, xpc, xpc);
+    __ sllx(yn, 3, ypc);        // u32* ypc = &yp[yn] (byte offset 8*yn)
+    __ add(yp, ypc, ypc);
+    __ sllx(zn, 3, zpc);        // u32* zpc = &zp[zn] (byte offset 8*zn)
+    __ add(zp, zpc, zpc);
+    __ lduw(ypc, 0, rt);        // u64 y = yp[yn]
+    __ lduw(ypc, 4, ry);        //   ...
+    __ sllx(rt, 32, rt);
+    __ or3(rt, ry, ry);
+
+    // for (int i = xn; i >= 0; i--)
+    __ bind(L_loop_i);
+
+    __ cmp_and_br_short(xpc, xp,// i >= 0
+                        Assembler::less, Assembler::pn, L_exit_loop_i);
+    __ lduw(xpc, 0, rt);        // u64 x = xp[i]
+    __ lduw(xpc, 4, rx);        //   ...
+    __ sllx(rt, 32, rt);
+    __ or3(rt, rx, rx);
+    __ mulx(rx, ry, lop);       // lo-64b-part of result 64x64
+    __ umulxhi(rx, ry, hip);    // hi-64b-part of result 64x64
+    __ addcc(rc, lop, lop);     // Accumulate lower order bits (producing carry)
+    __ addxc(hip, zero, rc);    // carry over to next datum [k-1]
+    __ srlx(lop, 32, rt);
+    __ stw(rt, zpc, 0);         // z[k] = lop
+    __ stw(lop, zpc, 4);        //   ...
+    __ dec(zpc, 8);             // k-- (zpc--)
+    __ dec(xpc, 8);             // i-- (xpc--)
+    __ ba_short(L_loop_i);
+
+    __ bind(L_exit_loop_i);
+    __ srlx(rc, 32, rt);
+    __ stw(rt, zpc, 0);         // z[k] = c
+    __ stw(rc, zpc, 4);
+
+    // for (int j = yn - 1; j >= 0; j--)
+    __ sllx(yn, 3, ypc);        // u32* ypc = &yp[yn] (byte offset 8*yn)
+    __ add(yp, ypc, ypc);
+    __ dec(ypc, 8);             // yn - 1 (ypc--)
+
+    __ bind(L_loop_j);
+
+    __ cmp_and_br_short(ypc, yp,// j >= 0
+                        Assembler::less, Assembler::pn, L_exit);
+    __ clr(rc);                 // u64 c = 0
+    __ lduw(ypc, 0, rt);        // u64 y = yp[j] (= *ypc)
+    __ lduw(ypc, 4, ry);        //   ...
+    __ sllx(rt, 32, rt);
+    __ or3(rt, ry, ry);
+
+    // for (int i = xn, k = --zn; i >= 0; i--)
+    __ sllx(xn, 3, xpc);        // u32* xpc = &xp[xn] (byte offset 8*xn)
+    __ add(xp, xpc, xpc);
+    __ dec(zn);                 // --zn
+    __ sllx(zn, 3, zpc);        // u32* zpc = &zp[zn] (byte offset 8*zn)
+    __ add(zp, zpc, zpc);
+
+    __ bind(L_loop_i2);
+
+    __ cmp_and_br_short(xpc, xp,// i >= 0
+                        Assembler::less, Assembler::pn, L_exit_loop_i2);
+    __ lduw(xpc, 0, rt);        // u64 x = xp[i] (= *xpc)
+    __ lduw(xpc, 4, rx);        //   ...
+    __ sllx(rt, 32, rt);
+    __ or3(rt, rx, rx);
+
+    __ lduw(zpc, 0, rt);        // u64 z = zp[k] (= *zpc)
+    __ lduw(zpc, 4, rz);        //   ...
+    __ sllx(rt, 32, rt);
+    __ or3(rt, rz, rz);
+
+    __ mulx(rx, ry, lop);       // lo-64b-part of result 64x64
+    __ umulxhi(rx, ry, hip);    // hi-64b-part of result 64x64
+    __ addcc(rz, rc, rz);       // Accumulate lower order bits...
+    __ addxc(hip, zero, rc);    // Accumulate higher order bits to carry
+    __ addcc(rz, lop, rz);      // ... z += lo(p) + c
+    __ addxccc(rc, zero, rc);
+    __ srlx(rz, 32, rt);
+    __ stw(rt, zpc, 0);         // zp[k] = z    (*zpc = z)
+    __ stw(rz, zpc, 4);
+    __ dec(zpc, 8);             // k-- (zpc--)
+    __ dec(xpc, 8);             // i-- (xpc--)
+    __ ba_short(L_loop_i2);
+
+    __ bind(L_exit_loop_i2);
+    __ srlx(rc, 32, rt);
+    __ stw(rt, zpc, 0);         // z[k] = c
+    __ stw(rc, zpc, 4);
+    __ dec(ypc, 8);             // j-- (ypc--)
+    __ ba_short(L_loop_j);
+  }
+
+  void gen_mult_32x32(Register xp, Register xn,
+                      Register yp, Register yn,
+                      Register zp, Register zn, Label &L_exit)
+  {
+    // Assuming that a stack frame has already been created, i.e. local and
+    // output registers are available for use.
+
+    const Register ri = L0;     // Outer loop index, xv[i]
+    const Register rj = L1;     // Inner loop index, yv[j]
+    const Register rk = L2;     // Output loop index, zv[k]
+    const Register rx = L4;     // x-vector datum [i]
+    const Register ry = L5;     // y-vector datum [j]
+    const Register rz = L6;     // z-vector datum [k]
+    const Register rc = L7;     // carry over (to z-vector datum [k-1])
+
+    const Register p64 = O0;    // 64b product
+    const Register z65 = O1;    // carry+64b accumulator
+    const Register c65 = O2;    // carry at bit 65
+    const Register c33 = O2;    // carry at bit 33 (after shift)
+
+    const Register zero = G0;
+
+    Label L_loop_i,  L_exit_loop_i;
+    Label L_loop_j;
+    Label L_loop_i2, L_exit_loop_i2;
+
+    __ dec(xn);                 // Adjust [0..N-1]
+    __ dec(yn);
+    __ dec(zn);
+    __ clr(rc);                 // u32 c = 0
+    __ sllx(xn, 2, ri);         // int i = xn (byte offset i = 4*xn)
+    __ sllx(yn, 2, rj);         // int j = yn (byte offset i = 4*xn)
+    __ sllx(zn, 2, rk);         // int k = zn (byte offset k = 4*zn)
+    __ lduw(yp, rj, ry);        // u32 y = yp[yn]
+
+    // for (int i = xn; i >= 0; i--)
+    __ bind(L_loop_i);
+
+    __ cmp_and_br_short(ri, 0,  // i >= 0
+                        Assembler::less, Assembler::pn, L_exit_loop_i);
+    __ lduw(xp, ri, rx);        // x = xp[i]
+    __ mulx(rx, ry, p64);       // 64b result of 32x32
+    __ addcc(rc, p64, z65);     // Accumulate to 65 bits (producing carry)
+    __ addxc(zero, zero, c65);  // Materialise carry (in bit 65) into lsb,
+    __ sllx(c65, 32, c33);      // and shift into bit 33
+    __ srlx(z65, 32, rc);       // carry = c33 | hi(z65) >> 32
+    __ add(c33, rc, rc);        // carry over to next datum [k-1]
+    __ stw(z65, zp, rk);        // z[k] = lo(z65)
+    __ dec(rk, 4);              // k--
+    __ dec(ri, 4);              // i--
+    __ ba_short(L_loop_i);
+
+    __ bind(L_exit_loop_i);
+    __ stw(rc, zp, rk);         // z[k] = c
+
+    // for (int j = yn - 1; j >= 0; j--)
+    __ sllx(yn, 2, rj);         // int j = yn - 1 (byte offset j = 4*yn)
+    __ dec(rj, 4);
+
+    __ bind(L_loop_j);
+
+    __ cmp_and_br_short(rj, 0,  // j >= 0
+                        Assembler::less, Assembler::pn, L_exit);
+    __ clr(rc);                 // u32 c = 0
+    __ lduw(yp, rj, ry);        // u32 y = yp[j]
+
+    // for (int i = xn, k = --zn; i >= 0; i--)
+    __ dec(zn);                 // --zn
+    __ sllx(xn, 2, ri);         // int i = xn (byte offset i = 4*xn)
+    __ sllx(zn, 2, rk);         // int k = zn (byte offset k = 4*zn)
+
+    __ bind(L_loop_i2);
+
+    __ cmp_and_br_short(ri, 0,  // i >= 0
+                        Assembler::less, Assembler::pn, L_exit_loop_i2);
+    __ lduw(xp, ri, rx);        // x = xp[i]
+    __ lduw(zp, rk, rz);        // z = zp[k], accumulator
+    __ mulx(rx, ry, p64);       // 64b result of 32x32
+    __ add(rz, rc, rz);         // Accumulate lower order bits,
+    __ addcc(rz, p64, z65);     //   z += lo(p64) + c
+    __ addxc(zero, zero, c65);  // Materialise carry (in bit 65) into lsb,
+    __ sllx(c65, 32, c33);      // and shift into bit 33
+    __ srlx(z65, 32, rc);       // carry = c33 | hi(z65) >> 32
+    __ add(c33, rc, rc);        // carry over to next datum [k-1]
+    __ stw(z65, zp, rk);        // zp[k] = lo(z65)
+    __ dec(rk, 4);              // k--
+    __ dec(ri, 4);              // i--
+    __ ba_short(L_loop_i2);
+
+    __ bind(L_exit_loop_i2);
+    __ stw(rc, zp, rk);         // z[k] = c
+    __ dec(rj, 4);              // j--
+    __ ba_short(L_loop_j);
+  }
+
 
   void generate_initial() {
     // Generates all stubs and initializes the entry points
@@ -5073,8 +5839,14 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
-  }
 
+#ifdef COMPILER2
+    // Intrinsics supported by C2 only:
+    if (UseMultiplyToLenIntrinsic) {
+      StubRoutines::_multiplyToLen = generate_multiplyToLen();
+    }
+#endif // COMPILER2
+  }
 
  public:
   StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {

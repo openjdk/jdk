@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,23 @@ package sun.jvm.hotspot.runtime;
     VM. */
 
 public class BasicType {
-  public static final int tBoolean  = 4;
-  public static final int tChar     = 5;
-  public static final int tFloat    = 6;
-  public static final int tDouble   = 7;
-  public static final int tByte     = 8;
-  public static final int tShort    = 9;
-  public static final int tInt      = 10;
-  public static final int tLong     = 11;
-  public static final int tObject   = 12;
-  public static final int tArray    = 13;
-  public static final int tVoid     = 14;
-  public static final int tAddress  = 15;
-  public static final int tConflict = 16;
-  public static final int tIllegal  = 99;
+  public static final int tBoolean     = 4;
+  public static final int tChar        = 5;
+  public static final int tFloat       = 6;
+  public static final int tDouble      = 7;
+  public static final int tByte        = 8;
+  public static final int tShort       = 9;
+  public static final int tInt         = 10;
+  public static final int tLong        = 11;
+  public static final int tObject      = 12;
+  public static final int tArray       = 13;
+  public static final int tVoid        = 14;
+  public static final int tAddress     = 15;
+  public static final int tNarrowOop   = 16;
+  public static final int tMetadata    = 17;
+  public static final int tNarrowKlass = 18;
+  public static final int tConflict    = 19;
+  public static final int tIllegal     = 99;
 
   public static final BasicType T_BOOLEAN = new BasicType(tBoolean);
   public static final BasicType T_CHAR = new BasicType(tChar);
@@ -55,6 +58,9 @@ public class BasicType {
   public static final BasicType T_ARRAY = new BasicType(tArray);
   public static final BasicType T_VOID = new BasicType(tVoid);
   public static final BasicType T_ADDRESS = new BasicType(tAddress);
+  public static final BasicType T_NARROWOOP = new BasicType(tNarrowOop);
+  public static final BasicType T_METADATA = new BasicType(tMetadata);
+  public static final BasicType T_NARROWKLASS = new BasicType(tNarrowKlass);
   public static final BasicType T_CONFLICT = new BasicType(tConflict);
   public static final BasicType T_ILLEGAL = new BasicType(tIllegal);
 
@@ -104,6 +110,18 @@ public class BasicType {
 
   public static int getTAddress() {
     return tAddress;
+  }
+
+  public static int getTNarrowOop() {
+    return tNarrowOop;
+  }
+
+  public static int getTMetadata() {
+    return tMetadata;
+  }
+
+  public static int getTNarrowKlass() {
+    return tNarrowKlass;
   }
 
   /** For stack value type with conflicting contents */

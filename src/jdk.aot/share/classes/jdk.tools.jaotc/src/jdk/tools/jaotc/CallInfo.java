@@ -32,9 +32,19 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 final class CallInfo {
 
+    static boolean isStaticTarget(Call call) {
+        return !((HotSpotResolvedJavaMethod)call.target).hasReceiver();
+    }
+
+    private static boolean isStaticOpcode(Call call) {
+        int opcode = getByteCode(call) & 0xFF;
+        return opcode == Bytecodes.INVOKESTATIC || opcode == Bytecodes.INVOKEDYNAMIC || opcode == Bytecodes.INVOKEVIRTUAL /* invokehandle */;
+    }
+
     static boolean isStaticCall(Call call) {
-        if (isJavaCall(call)) {
-            return ((getByteCode(call) & 0xFF) == Bytecodes.INVOKESTATIC);
+        if (isJavaCall(call) && isStaticTarget(call)) {
+            assert isStaticOpcode(call);
+            return true;
         }
         return false;
     }
@@ -54,7 +64,7 @@ final class CallInfo {
     }
 
     static boolean isVirtualCall(CompiledMethodInfo methodInfo, Call call) {
-        return isInvokeVirtual(call) && !methodInfo.hasMark(call, MarkId.INVOKESPECIAL);
+        return isInvokeVirtual(call) && !methodInfo.hasMark(call, MarkId.INVOKESPECIAL) && !isStaticTarget(call);
     }
 
     static boolean isOptVirtualCall(CompiledMethodInfo methodInfo, Call call) {

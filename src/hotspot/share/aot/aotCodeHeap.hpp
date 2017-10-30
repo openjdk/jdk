@@ -241,12 +241,13 @@ public:
   AOTKlassData* find_klass(InstanceKlass* ik);
   bool load_klass_data(InstanceKlass* ik, Thread* thread);
   Klass* get_klass_from_got(const char* klass_name, int klass_len, const Method* method);
-  void sweep_dependent_methods(AOTKlassData* klass_data);
+
   bool is_dependent_method(Klass* dependee, AOTCompiledMethod* aot);
 
   const char* get_name_at(int offset) {
     return _metaspace_names + offset;
   }
+
 
   void oops_do(OopClosure* f);
   void metadata_do(void f(Metadata*));
@@ -294,6 +295,21 @@ public:
 
   static void print_statistics();
 #endif
+
+  bool reconcile_dynamic_invoke(AOTCompiledMethod* caller, InstanceKlass* holder, int index, Method* adapter_method, Klass *appendix_klass);
+
+private:
+  AOTKlassData* find_klass(const char* name);
+
+  void sweep_dependent_methods(int* indexes, int methods_cnt);
+  void sweep_dependent_methods(AOTKlassData* klass_data);
+  void sweep_dependent_methods(InstanceKlass* ik);
+  void sweep_method(AOTCompiledMethod* aot);
+
+  bool reconcile_dynamic_klass(AOTCompiledMethod *caller, InstanceKlass* holder, int index, Klass *dyno, const char *descriptor1, const char *descriptor2 = NULL);
+
+  bool reconcile_dynamic_method(AOTCompiledMethod *caller, InstanceKlass* holder, int index, Method *adapter_method);
+
 };
 
 #endif // SHARE_VM_AOT_AOTCODEHEAP_HPP

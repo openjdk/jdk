@@ -412,6 +412,7 @@ C2V_VMENTRY(jobjectArray, readConfiguration, (JNIEnv *env))
       } else if (strcmp(vmField.typeString, "address") == 0 ||
                  strcmp(vmField.typeString, "intptr_t") == 0 ||
                  strcmp(vmField.typeString, "uintptr_t") == 0 ||
+                 strcmp(vmField.typeString, "OopHandle") == 0 ||
                  strcmp(vmField.typeString, "size_t") == 0 ||
                  // All foo* types are addresses.
                  vmField.typeString[strlen(vmField.typeString) - 1] == '*') {
@@ -1117,13 +1118,15 @@ C2V_VMENTRY(jint, getMetadata, (JNIEnv *jniEnv, jobject, jobject target, jobject
 
   AOTOopRecorder* recorder = code_metadata.get_oop_recorder();
 
-  int nr_meta_strings = recorder->nr_meta_strings();
-  objArrayOop metadataArray = oopFactory::new_objectArray(nr_meta_strings, CHECK_(JVMCIEnv::cache_full));
+  int nr_meta_refs = recorder->nr_meta_refs();
+  objArrayOop metadataArray = oopFactory::new_objectArray(nr_meta_refs, CHECK_(JVMCIEnv::cache_full));
   objArrayHandle metadataArrayHandle(THREAD, metadataArray);
-  for (int i = 0; i < nr_meta_strings; ++i) {
-    const char* element = recorder->meta_element(i);
-    Handle java_string = java_lang_String::create_from_str(element, CHECK_(JVMCIEnv::cache_full));
-    metadataArrayHandle->obj_at_put(i, java_string());
+  for (int i = 0; i < nr_meta_refs; ++i) {
+    jobject element = recorder->meta_element(i);
+    if (element == NULL) {
+      return JVMCIEnv::cache_full;
+    }
+    metadataArrayHandle->obj_at_put(i, JNIHandles::resolve(element));
   }
   HotSpotMetaData::set_metadata(metadata_handle, metadataArrayHandle());
 
@@ -1518,6 +1521,48 @@ C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv*, jobject, jobject jvmci_co
   }
 C2V_END
 
+C2V_VMENTRY(jint, isResolvedInvokeHandleInPool, (JNIEnv*, jobject, jobject jvmci_constant_pool, jint index))
+  constantPoolHandle cp = CompilerToVM::asConstantPool(jvmci_constant_pool);
+  ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
+  if (cp_cache_entry->is_resolved(Bytecodes::_invokehandle)) {
+    // MethodHandle.invoke* --> LambdaForm?
+    ResourceMark rm;
+
+    LinkInfo link_info(cp, index, CATCH);
+
+    Klass* resolved_klass = link_info.resolved_klass();
+
+    Symbol* name_sym = cp->name_ref_at(index);
+
+    vmassert(MethodHandles::is_method_handle_invoke_name(resolved_klass, name_sym), "!");
+    vmassert(MethodHandles::is_signature_polymorphic_name(resolved_klass, name_sym), "!");
+
+    methodHandle adapter_method(cp_cache_entry->f1_as_method());
+
+    methodHandle resolved_method(adapter_method);
+
+    // Can we treat it as a regular invokevirtual?
+    if (resolved_method->method_holder() == resolved_klass && resolved_method->name() == name_sym) {
+      vmassert(!resolved_method->is_static(),"!");
+      vmassert(MethodHandles::is_signature_polymorphic_method(resolved_method()),"!");
+      vmassert(!MethodHandles::is_signature_polymorphic_static(resolved_method->intrinsic_id()), "!");
+      vmassert(cp_cache_entry->appendix_if_resolved(cp) == NULL, "!");
+      vmassert(cp_cache_entry->method_type_if_resolved(cp) == NULL, "!");
+
+      methodHandle m(LinkResolver::linktime_resolve_virtual_method_or_null(link_info));
+      vmassert(m == resolved_method, "!!");
+      return -1;
+    }
+
+    return Bytecodes::_invokevirtual;
+  }
+  if (cp_cache_entry->is_resolved(Bytecodes::_invokedynamic)) {
+    return Bytecodes::_invokedynamic;
+  }
+  return -1;
+C2V_END
+
+
 C2V_VMENTRY(jobject, getSignaturePolymorphicHolders, (JNIEnv*, jobject))
   objArrayHandle holders = oopFactory::new_objArray_handle(SystemDictionary::String_klass(), 2, CHECK_NULL);
   Handle mh = java_lang_String::create_from_str("Ljava/lang/invoke/MethodHandle;", CHECK_NULL);
@@ -1794,6 +1839,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL "I" HS_RESOLVED_METHOD "B[I)" HS_RESOLVED_KLASS,              FN_PTR(resolveFieldInPool)},
   {CC "resolveInvokeDynamicInPool",                   CC "(" HS_CONSTANT_POOL "I)V",                                                        FN_PTR(resolveInvokeDynamicInPool)},
   {CC "resolveInvokeHandleInPool",                    CC "(" HS_CONSTANT_POOL "I)V",                                                        FN_PTR(resolveInvokeHandleInPool)},
+  {CC "isResolvedInvokeHandleInPool",                 CC "(" HS_CONSTANT_POOL "I)I",                                                        FN_PTR(isResolvedInvokeHandleInPool)},
   {CC "resolveMethod",                                CC "(" HS_RESOLVED_KLASS HS_RESOLVED_METHOD HS_RESOLVED_KLASS ")" HS_RESOLVED_METHOD, FN_PTR(resolveMethod)},
   {CC "getSignaturePolymorphicHolders",               CC "()[" STRING,                                                                      FN_PTR(getSignaturePolymorphicHolders)},
   {CC "getVtableIndexForInterfaceMethod",             CC "(" HS_RESOLVED_KLASS HS_RESOLVED_METHOD ")I",                                     FN_PTR(getVtableIndexForInterfaceMethod)},

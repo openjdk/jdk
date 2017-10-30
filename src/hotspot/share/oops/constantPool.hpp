@@ -145,7 +145,7 @@ class ConstantPool : public Metadata {
     assert(is_within_bounds(which), "index out of bounds");
     assert(!tag_at(which).is_unresolved_klass() && !tag_at(which).is_unresolved_klass_in_error(), "Corrupted constant pool");
     // Uses volatile because the klass slot changes without a lock.
-    volatile intptr_t adr = (intptr_t)OrderAccess::load_ptr_acquire(obj_at_addr_raw(which));
+    intptr_t adr = OrderAccess::load_acquire(obj_at_addr_raw(which));
     assert(adr != 0 || which == 0, "cp entry for klass should not be zero");
     return CPSlot(adr);
   }
@@ -226,6 +226,7 @@ class ConstantPool : public Metadata {
 
   // resolved strings, methodHandles and callsite objects from the constant pool
   objArrayOop resolved_references()  const;
+  objArrayOop resolved_references_or_null()  const;
   // mapping resolved object array indexes to cp indexes and back.
   int object_to_cp_index(int index)         { return reference_map()->at(index); }
   int cp_to_object_index(int index);
@@ -406,7 +407,7 @@ class ConstantPool : public Metadata {
     assert(tag_at(kslot.name_index()).is_symbol(), "sanity");
 
     Klass** adr = resolved_klasses()->adr_at(kslot.resolved_klass_index());
-    return (Klass*)OrderAccess::load_ptr_acquire(adr);
+    return OrderAccess::load_acquire(adr);
   }
 
   // RedefineClasses() API support:
@@ -716,9 +717,9 @@ class ConstantPool : public Metadata {
 
   // CDS support
   void archive_resolved_references(Thread *THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+  void resolve_class_constants(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
-  bool resolve_class_constants(TRAPS);
   // The ConstantPool vtable is restored by this call when the ConstantPool is
   // in the shared archive.  See patch_klass_vtables() in metaspaceShared.cpp for
   // all the gory details.  SA, dtrace and pstack helpers distinguish metadata
@@ -864,11 +865,13 @@ class ConstantPool : public Metadata {
   static oop resolve_bootstrap_specifier_at_impl(const constantPoolHandle& this_cp, int index, TRAPS);
 
   // Exception handling
-  static void throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS);
   static Symbol* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception);
   static void save_and_throw_exception(const constantPoolHandle& this_cp, int which, constantTag tag, TRAPS);
 
  public:
+  // Exception handling
+  static void throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS);
+
   // Merging ConstantPool* support:
   bool compare_entry_to(int index1, const constantPoolHandle& cp2, int index2, TRAPS);
   void copy_cp_to(int start_i, int end_i, const constantPoolHandle& to_cp, int to_i, TRAPS) {

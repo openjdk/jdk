@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
   //
 #ifdef AMD64
   static jint      (*atomic_xchg_func)          (jint,      volatile jint*);
-  static intptr_t  (*atomic_xchg_ptr_func)      (intptr_t,  volatile intptr_t*);
+  static intptr_t  (*atomic_xchg_long_func)     (jlong,     volatile jlong*);
 
   static jint      (*atomic_cmpxchg_func)       (jint,      volatile jint*,  jint);
   static jbyte     (*atomic_cmpxchg_byte_func)  (jbyte,     volatile jbyte*, jbyte);
@@ -40,7 +40,7 @@
   static intptr_t  (*atomic_add_ptr_func)       (intptr_t,  volatile intptr_t*);
 
   static jint      atomic_xchg_bootstrap        (jint,      volatile jint*);
-  static intptr_t  atomic_xchg_ptr_bootstrap    (intptr_t,  volatile intptr_t*);
+  static intptr_t  atomic_xchg_long_bootstrap   (jlong,     volatile jlong*);
 
   static jint      atomic_cmpxchg_bootstrap     (jint,      volatile jint*,  jint);
   static jbyte     atomic_cmpxchg_byte_bootstrap(jbyte,     volatile jbyte*, jbyte);

@@ -152,7 +152,6 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   const bool is_c1()                             { return _type == compiler_c1; }
   const bool is_c2()                             { return _type == compiler_c2; }
   const bool is_jvmci()                          { return _type == compiler_jvmci; }
-  const bool is_shark()                          { return _type == compiler_shark; }
   const CompilerType type()                      { return _type; }
 
   // Extra tests to identify trivial methods for the tiered compilation policy.

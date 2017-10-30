@@ -193,6 +193,24 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
         protected final PEMethodScope methodScope;
         protected final Invoke invoke;
 
+        @Override
+        public ExternalInliningContext getExternalInliningContext() {
+            return new ExternalInliningContext() {
+                @Override
+                public int getInlinedDepth() {
+                    int count = 0;
+                    PEGraphDecoder.PEMethodScope scope = methodScope;
+                    while (scope != null) {
+                        if (scope.method.equals(callInlinedMethod)) {
+                            count++;
+                        }
+                        scope = scope.caller;
+                    }
+                    return count;
+                }
+            };
+        }
+
         public PENonAppendGraphBuilderContext(PEMethodScope methodScope, Invoke invoke) {
             this.methodScope = methodScope;
             this.invoke = invoke;
@@ -420,11 +438,12 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
     private final NodePlugin[] nodePlugins;
     private final EconomicMap<SpecialCallTargetCacheKey, Object> specialCallTargetCache;
     private final EconomicMap<ResolvedJavaMethod, Object> invocationPluginCache;
+    private final ResolvedJavaMethod callInlinedMethod;
 
     public PEGraphDecoder(Architecture architecture, StructuredGraph graph, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
                     StampProvider stampProvider, LoopExplosionPlugin loopExplosionPlugin, InvocationPlugins invocationPlugins, InlineInvokePlugin[] inlineInvokePlugins,
                     ParameterPlugin parameterPlugin,
-                    NodePlugin[] nodePlugins) {
+                    NodePlugin[] nodePlugins, ResolvedJavaMethod callInlinedMethod) {
         super(architecture, graph, metaAccess, constantReflection, constantFieldProvider, stampProvider, true);
         this.loopExplosionPlugin = loopExplosionPlugin;
         this.invocationPlugins = invocationPlugins;
@@ -433,6 +452,7 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
         this.nodePlugins = nodePlugins;
         this.specialCallTargetCache = EconomicMap.create(Equivalence.DEFAULT);
         this.invocationPluginCache = EconomicMap.create(Equivalence.DEFAULT);
+        this.callInlinedMethod = callInlinedMethod;
     }
 
     protected static LoopExplosionKind loopExplosionKind(ResolvedJavaMethod method, LoopExplosionPlugin loopExplosionPlugin) {

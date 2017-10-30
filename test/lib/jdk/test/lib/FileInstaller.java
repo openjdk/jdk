@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,18 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 
+// !!!
+// NOTE: this class is widely used. DO NOT depend on any other classes in any test library, or else
+// you may see intermittent ClassNotFoundException as in JDK-8188828
+// !!!
+
 /**
  * Copy a resource: file or directory recursively, using relative path(src and dst)
  * which are applied to test source directory(src) and current directory(dst)
  */
 public class FileInstaller {
+    public static final String TEST_SRC = System.getProperty("test.src", "").trim();
+
     /**
      * @param args source and destination
      * @throws IOException if an I/O error occurs
@@ -45,10 +52,12 @@ public class FileInstaller {
         if (args.length != 2) {
             throw new IllegalArgumentException("Unexpected number of arguments for file copy");
         }
-        Path src = Paths.get(Utils.TEST_SRC, args[0]).toAbsolutePath();
-        Path dst = Paths.get(args[1]).toAbsolutePath();
+        Path src = Paths.get(TEST_SRC, args[0]).toAbsolutePath().normalize();
+        Path dst = Paths.get(args[1]).toAbsolutePath().normalize();
         if (src.toFile().exists()) {
+            System.out.printf("copying %s to %s%n", src, dst);
             if (src.toFile().isDirectory()) {
+                // can't use Files::copy for dirs, as 'dst' might exist already
                 Files.walkFileTree(src, new CopyFileVisitor(src, dst));
             } else {
                 Path dstDir = dst.getParent();
@@ -74,7 +83,7 @@ public class FileInstaller {
         @Override
         public FileVisitResult preVisitDirectory(Path file,
                 BasicFileAttributes attrs) throws IOException {
-            Path relativePath = file.relativize(copyFrom);
+            Path relativePath = copyFrom.relativize(file);
             Path destination = copyTo.resolve(relativePath);
             if (!destination.toFile().exists()) {
                 Files.createDirectories(destination);

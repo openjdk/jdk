@@ -37,7 +37,6 @@
 # include "entryFrame_zero.hpp"
 # include "fakeStubFrame_zero.hpp"
 # include "interpreterFrame_zero.hpp"
-# include "sharkFrame_zero.hpp"
 #endif
 
 #include CPU_HEADER_INLINE(frame)

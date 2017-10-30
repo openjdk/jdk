@@ -668,7 +668,7 @@ features, use `bash configure --help=short` instead.)
     from the default, or the value provided by `--with-version-string`.
   * `--with-jvm-variants=<variant>[,<variant>...]` - Build the specified variant
     (or variants) of Hotspot. Valid variants are: `server`, `client`,
-    `minimal`, `core`, `zero`, `zeroshark`, `custom`. Note that not all
+    `minimal`, `core`, `zero`, `custom`. Note that not all
     variants are possible to combine in a single build.
   * `--with-jvm-features=<feature>[,<feature>...]` - Use the specified JVM
     features when building Hotspot. The list of features will be enabled on top

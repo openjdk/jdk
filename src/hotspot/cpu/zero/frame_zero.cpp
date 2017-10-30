@@ -71,7 +71,6 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
 
 frame frame::sender_for_nonentry_frame(RegisterMap *map) const {
   assert(zeroframe()->is_interpreter_frame() ||
-         zeroframe()->is_shark_frame() ||
          zeroframe()->is_fake_stub_frame(), "wrong type of frame");
   return frame(zeroframe()->next(), sender_sp());
 }
@@ -101,8 +100,6 @@ void frame::patch_pc(Thread* thread, address pc) {
 
   if (pc != NULL) {
     _cb = CodeCache::find_blob(pc);
-    SharkFrame* sharkframe = zeroframe()->as_shark_frame();
-    sharkframe->set_pc(pc);
     _pc = pc;
     _deopt_state = is_deoptimized;
 
@@ -233,8 +230,6 @@ void ZeroFrame::identify_word(int   frame_index,
       strncpy(valuebuf, "ENTRY_FRAME", buflen);
     else if (is_interpreter_frame())
       strncpy(valuebuf, "INTERPRETER_FRAME", buflen);
-    else if (is_shark_frame())
-      strncpy(valuebuf, "SHARK_FRAME", buflen);
     else if (is_fake_stub_frame())
       strncpy(valuebuf, "FAKE_STUB_FRAME", buflen);
     break;
@@ -246,10 +241,6 @@ void ZeroFrame::identify_word(int   frame_index,
     }
     else if (is_interpreter_frame()) {
       as_interpreter_frame()->identify_word(
-        frame_index, offset, fieldbuf, valuebuf, buflen);
-    }
-    else if (is_shark_frame()) {
-      as_shark_frame()->identify_word(
         frame_index, offset, fieldbuf, valuebuf, buflen);
     }
     else if (is_fake_stub_frame()) {
@@ -348,50 +339,6 @@ void InterpreterFrame::identify_word(int   frame_index,
                    (intptr_t *) istate->monitor_base(),
                    istate->stack_base(),
                    fieldbuf, buflen);
-}
-
-void SharkFrame::identify_word(int   frame_index,
-                               int   offset,
-                               char* fieldbuf,
-                               char* valuebuf,
-                               int   buflen) const {
-  // Fixed part
-  switch (offset) {
-  case pc_off:
-    strncpy(fieldbuf, "pc", buflen);
-    if (method()->is_method()) {
-      CompiledMethod *code = method()->code();
-      if (code && code->pc_desc_at(pc())) {
-        SimpleScopeDesc ssd(code, pc());
-        snprintf(valuebuf, buflen, PTR_FORMAT " (bci %d)",
-                 (intptr_t) pc(), ssd.bci());
-      }
-    }
-    return;
-
-  case unextended_sp_off:
-    strncpy(fieldbuf, "unextended_sp", buflen);
-    return;
-
-  case method_off:
-    strncpy(fieldbuf, "method", buflen);
-    if (method()->is_method()) {
-      method()->name_and_sig_as_C_string(valuebuf, buflen);
-    }
-    return;
-
-  case oop_tmp_off:
-    strncpy(fieldbuf, "oop_tmp", buflen);
-    return;
-  }
-
-  // Variable part
-  if (method()->is_method()) {
-    identify_vp_word(frame_index, addr_of_word(offset),
-                     addr_of_word(header_words + 1),
-                     unextended_sp() + method()->max_stack(),
-                     fieldbuf, buflen);
-  }
 }
 
 void ZeroFrame::identify_vp_word(int       frame_index,

@@ -53,9 +53,6 @@
 #include "utilities/events.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/xmlstream.hpp"
-#ifdef SHARK
-#include "shark/sharkCompiler.hpp"
-#endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
@@ -200,9 +197,6 @@ static java_nmethod_stats_struct c2_java_nmethod_stats;
 #if INCLUDE_JVMCI
 static java_nmethod_stats_struct jvmci_java_nmethod_stats;
 #endif
-#ifdef SHARK
-static java_nmethod_stats_struct shark_java_nmethod_stats;
-#endif
 static java_nmethod_stats_struct unknown_java_nmethod_stats;
 
 static native_nmethod_stats_struct native_nmethod_stats;
@@ -222,11 +216,6 @@ static void note_java_nmethod(nmethod* nm) {
 #if INCLUDE_JVMCI
   if (nm->is_compiled_by_jvmci()) {
     jvmci_java_nmethod_stats.note_nmethod(nm);
-  } else
-#endif
-#ifdef SHARK
-  if (nm->is_compiled_by_shark()) {
-    shark_java_nmethod_stats.note_nmethod(nm);
   } else
 #endif
   {
@@ -411,11 +400,8 @@ void nmethod::init_defaults() {
   _oops_do_mark_link       = NULL;
   _jmethod_id              = NULL;
   _osr_link                = NULL;
-  if (UseG1GC) {
-    _unloading_next        = NULL;
-  } else {
-    _scavenge_root_link    = NULL;
-  }
+  _unloading_next          = NULL;
+  _scavenge_root_link      = NULL;
   _scavenge_root_state     = 0;
 #if INCLUDE_RTM_OPT
   _rtm_state               = NoRTM;
@@ -599,12 +585,9 @@ nmethod::nmethod(
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
     if (ScavengeRootsInCode) {
-      if (detect_scavenge_root_oops()) {
-        CodeCache::add_scavenge_root_nmethod(this);
-      }
       Universe::heap()->register_nmethod(this);
     }
-    debug_only(verify_scavenge_root_oops());
+    debug_only(Universe::heap()->verify_nmethod(this));
     CodeCache::commit(this);
   }
 
@@ -754,12 +737,9 @@ nmethod::nmethod(
     debug_info->copy_to(this);
     dependencies->copy_to(this);
     if (ScavengeRootsInCode) {
-      if (detect_scavenge_root_oops()) {
-        CodeCache::add_scavenge_root_nmethod(this);
-      }
       Universe::heap()->register_nmethod(this);
     }
-    debug_only(verify_scavenge_root_oops());
+    debug_only(Universe::heap()->verify_nmethod(this));
 
     CodeCache::commit(this);
 
@@ -1334,10 +1314,6 @@ void nmethod::flush() {
     CodeCache::drop_scavenge_root_nmethod(this);
   }
 
-#ifdef SHARK
-  ((SharkCompiler *) compiler())->free_compiled_method(insts_begin());
-#endif // SHARK
-
   CodeBlob::flush();
   CodeCache::free(this);
 }
@@ -1661,20 +1637,16 @@ nmethod* volatile nmethod::_oops_do_mark_nmethods;
 // This code must be MP safe, because it is used from parallel GC passes.
 bool nmethod::test_set_oops_do_mark() {
   assert(nmethod::oops_do_marking_is_active(), "oops_do_marking_prologue must be called");
-  nmethod* observed_mark_link = _oops_do_mark_link;
-  if (observed_mark_link == NULL) {
+  if (_oops_do_mark_link == NULL) {
     // Claim this nmethod for this thread to mark.
-    observed_mark_link = (nmethod*)
-      Atomic::cmpxchg_ptr(NMETHOD_SENTINEL, &_oops_do_mark_link, NULL);
-    if (observed_mark_link == NULL) {
-
+    if (Atomic::cmpxchg(NMETHOD_SENTINEL, &_oops_do_mark_link, (nmethod*)NULL) == NULL) {
       // Atomically append this nmethod (now claimed) to the head of the list:
       nmethod* observed_mark_nmethods = _oops_do_mark_nmethods;
       for (;;) {
         nmethod* required_mark_nmethods = observed_mark_nmethods;
         _oops_do_mark_link = required_mark_nmethods;
-        observed_mark_nmethods = (nmethod*)
-          Atomic::cmpxchg_ptr(this, &_oops_do_mark_nmethods, required_mark_nmethods);
+        observed_mark_nmethods =
+          Atomic::cmpxchg(this, &_oops_do_mark_nmethods, required_mark_nmethods);
         if (observed_mark_nmethods == required_mark_nmethods)
           break;
       }
@@ -1690,9 +1662,9 @@ bool nmethod::test_set_oops_do_mark() {
 void nmethod::oops_do_marking_prologue() {
   if (TraceScavenge) { tty->print_cr("[oops_do_marking_prologue"); }
   assert(_oops_do_mark_nmethods == NULL, "must not call oops_do_marking_prologue twice in a row");
-  // We use cmpxchg_ptr instead of regular assignment here because the user
+  // We use cmpxchg instead of regular assignment here because the user
   // may fork a bunch of threads, and we need them all to see the same state.
-  void* observed = Atomic::cmpxchg_ptr(NMETHOD_SENTINEL, &_oops_do_mark_nmethods, NULL);
+  nmethod* observed = Atomic::cmpxchg(NMETHOD_SENTINEL, &_oops_do_mark_nmethods, (nmethod*)NULL);
   guarantee(observed == NULL, "no races in this sequential code");
 }
 
@@ -1707,8 +1679,8 @@ void nmethod::oops_do_marking_epilogue() {
     NOT_PRODUCT(if (TraceScavenge)  cur->print_on(tty, "oops_do, unmark"));
     cur = next;
   }
-  void* required = _oops_do_mark_nmethods;
-  void* observed = Atomic::cmpxchg_ptr(NULL, &_oops_do_mark_nmethods, required);
+  nmethod* required = _oops_do_mark_nmethods;
+  nmethod* observed = Atomic::cmpxchg((nmethod*)NULL, &_oops_do_mark_nmethods, required);
   guarantee(observed == required, "no races in this sequential code");
   if (TraceScavenge) { tty->print_cr("oops_do_marking_epilogue]"); }
 }
@@ -2137,7 +2109,7 @@ void nmethod::verify() {
   VerifyOopsClosure voc(this);
   oops_do(&voc);
   assert(voc.ok(), "embedded oops must be OK");
-  verify_scavenge_root_oops();
+  Universe::heap()->verify_nmethod(this);
 
   verify_scopes();
 }
@@ -2230,10 +2202,6 @@ public:
 };
 
 void nmethod::verify_scavenge_root_oops() {
-  if (UseG1GC) {
-    return;
-  }
-
   if (!on_scavenge_root_list()) {
     // Actually look inside, to verify the claim that it's clean.
     DebugScavengeRoot debug_scavenge_root(this);
@@ -2258,8 +2226,6 @@ void nmethod::print() const {
     tty->print("(c1) ");
   } else if (is_compiled_by_c2()) {
     tty->print("(c2) ");
-  } else if (is_compiled_by_shark()) {
-    tty->print("(shark) ");
   } else if (is_compiled_by_jvmci()) {
     tty->print("(JVMCI) ");
   } else {
@@ -2880,9 +2846,6 @@ void nmethod::print_statistics() {
 #endif
 #if INCLUDE_JVMCI
   jvmci_java_nmethod_stats.print_nmethod_stats("JVMCI");
-#endif
-#ifdef SHARK
-  shark_java_nmethod_stats.print_nmethod_stats("Shark");
 #endif
   unknown_java_nmethod_stats.print_nmethod_stats("Unknown");
   DebugInformationRecorder::print_statistics();

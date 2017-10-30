@@ -479,8 +479,8 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm, int frame_siz
 
 // Is vector's size (in bytes) bigger than a size saved by default?
 bool SharedRuntime::is_wide_vector(int size) {
-  // Note, MaxVectorSize == 8 on PPC64.
-  assert(size <= 8, "%d bytes vectors are not supported", size);
+  // Note, MaxVectorSize == 8/16 on PPC64.
+  assert(size <= (SuperwordUseVSX ? 16 : 8), "%d bytes vectors are not supported", size);
   return size > 8;
 }
 
@@ -2234,9 +2234,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ release();
   // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
   __ stw(R0, thread_(thread_state));
-  if (UseMembar) {
-    __ fence();
-  }
 
 
   // The JNI call
@@ -2393,9 +2390,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ release();
   // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
   __ stw(R0, thread_(thread_state));
-  if (UseMembar) {
-    __ fence();
-  }
   __ bind(after_transition);
 
   // Reguard any pages if necessary.

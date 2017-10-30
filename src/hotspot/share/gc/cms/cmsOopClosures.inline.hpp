@@ -40,10 +40,8 @@ inline void MetadataAwareOopsInGenClosure::do_klass_nv(Klass* k) {
 inline void MetadataAwareOopsInGenClosure::do_klass(Klass* k) { do_klass_nv(k); }
 
 inline void MetadataAwareOopsInGenClosure::do_cld_nv(ClassLoaderData* cld) {
-  assert(_klass_closure._oop_closure == this, "Must be");
-
   bool claim = true;  // Must claim the class loader data before processing.
-  cld->oops_do(_klass_closure._oop_closure, &_klass_closure, claim);
+  cld->oops_do(this, claim);
 }
 
 // Decode the oop and call do_oop on it.

@@ -64,7 +64,7 @@ public class SpaceUtilizationCheck {
     static void test(String... extra_options) throws Exception {
         OutputAnalyzer output = CDSTestUtils.createArchive(extra_options);
         CDSTestUtils.checkDump(output);
-        Pattern pattern = Pattern.compile("^(..) space: *([0-9]+).* out of *([0-9]+) bytes .* at 0x([0-9a0-f]+)");
+        Pattern pattern = Pattern.compile("^(..) *space: *([0-9]+).* out of *([0-9]+) bytes .* at 0x([0-9a0-f]+)");
         WhiteBox wb = WhiteBox.getWhiteBox();
         long reserve_alignment = wb.metaspaceReserveAlignment();
         System.out.println("Metaspace::reserve_alignment() = " + reserve_alignment);

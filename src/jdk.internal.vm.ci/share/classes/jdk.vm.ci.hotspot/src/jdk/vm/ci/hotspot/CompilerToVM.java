@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,6 +254,15 @@ final class CompilerToVM {
      * does nothing.
      */
     native void resolveInvokeHandleInPool(HotSpotConstantPool constantPool, int cpi);
+
+    /**
+     * If {@code cpi} denotes an entry representing a resolved dynamic adapter
+     * (see {@code resolveInvokeDynamicInPool} and {@code resolveInvokeHandleInPool}),
+     * return the opcode of the instruction for which the resolution was performed
+     * ({@code invokedynamic} or {@code invokevirtual}}, or {@code -1} otherwise.
+     */
+    native int isResolvedInvokeHandleInPool(HotSpotConstantPool constantPool, int cpi);
+
 
     /**
      * Gets the list of type names (in the format of {@link JavaType#getName()}) denoting the

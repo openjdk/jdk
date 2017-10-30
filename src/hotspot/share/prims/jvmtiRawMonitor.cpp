@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ JvmtiRawMonitor::is_valid() {
 
 int JvmtiRawMonitor::SimpleEnter (Thread * Self) {
   for (;;) {
-    if (Atomic::cmpxchg_ptr (Self, &_owner, NULL) == NULL) {
+    if (Atomic::cmpxchg(Self, &_owner, (void*)NULL) == NULL) {
        return OS_OK ;
     }
 
@@ -139,7 +139,7 @@ int JvmtiRawMonitor::SimpleEnter (Thread * Self) {
     Node._next  = _EntryList ;
     _EntryList  = &Node ;
     OrderAccess::fence() ;
-    if (_owner == NULL && Atomic::cmpxchg_ptr (Self, &_owner, NULL) == NULL) {
+    if (_owner == NULL && Atomic::cmpxchg(Self, &_owner, (void*)NULL) == NULL) {
         _EntryList = Node._next ;
         RawMonitor_lock->unlock() ;
         return OS_OK ;
@@ -153,7 +153,7 @@ int JvmtiRawMonitor::SimpleEnter (Thread * Self) {
 
 int JvmtiRawMonitor::SimpleExit (Thread * Self) {
   guarantee (_owner == Self, "invariant") ;
-  OrderAccess::release_store_ptr (&_owner, NULL) ;
+  OrderAccess::release_store(&_owner, (void*)NULL) ;
   OrderAccess::fence() ;
   if (_EntryList == NULL) return OS_OK ;
   ObjectWaiter * w ;
@@ -277,10 +277,10 @@ int JvmtiRawMonitor::raw_enter(TRAPS) {
       jt->SR_lock()->lock_without_safepoint_check();
     }
     // guarded by SR_lock to avoid racing with new external suspend requests.
-    Contended = Atomic::cmpxchg_ptr (THREAD, &_owner, NULL) ;
+    Contended = Atomic::cmpxchg(THREAD, &_owner, (void*)NULL);
     jt->SR_lock()->unlock();
   } else {
-    Contended = Atomic::cmpxchg_ptr (THREAD, &_owner, NULL) ;
+    Contended = Atomic::cmpxchg(THREAD, &_owner, (void*)NULL);
   }
 
   if (Contended == THREAD) {

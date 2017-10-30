@@ -251,12 +251,6 @@
 //
 // o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
 
-
-// CASPTR() uses the canonical argument order that dominates in the literature.
-// Our internal cmpxchg_ptr() uses a bastardized ordering to accommodate Sun .il templates.
-
-#define CASPTR(a, c, s)  \
-  intptr_t(Atomic::cmpxchg_ptr((void *)(s), (void *)(a), (void *)(c)))
 #define UNS(x) (uintptr_t(x))
 #define TRACE(m)                   \
   {                                \
@@ -267,6 +261,15 @@
       ::fflush(stdout);            \
     }                              \
   }
+
+const intptr_t _LBIT = 1;
+
+// Endian-ness ... index of least-significant byte in SplitWord.Bytes[]
+#ifdef VM_LITTLE_ENDIAN
+ #define _LSBINDEX 0
+#else
+ #define _LSBINDEX (sizeof(intptr_t)-1)
+#endif
 
 // Simplistic low-quality Marsaglia SHIFT-XOR RNG.
 // Bijective except for the trailing mask operation.
@@ -297,7 +300,7 @@ int Monitor::TryLock() {
   intptr_t v = _LockWord.FullWord;
   for (;;) {
     if ((v & _LBIT) != 0) return 0;
-    const intptr_t u = CASPTR(&_LockWord, v, v|_LBIT);
+    const intptr_t u = Atomic::cmpxchg(v|_LBIT, &_LockWord.FullWord, v);
     if (v == u) return 1;
     v = u;
   }
@@ -307,12 +310,12 @@ int Monitor::TryFast() {
   // Optimistic fast-path form ...
   // Fast-path attempt for the common uncontended case.
   // Avoid RTS->RTO $ coherence upgrade on typical SMP systems.
-  intptr_t v = CASPTR(&_LockWord, 0, _LBIT);  // agro ...
+  intptr_t v = Atomic::cmpxchg(_LBIT, &_LockWord.FullWord, (intptr_t)0);  // agro ...
   if (v == 0) return 1;
 
   for (;;) {
     if ((v & _LBIT) != 0) return 0;
-    const intptr_t u = CASPTR(&_LockWord, v, v|_LBIT);
+    const intptr_t u = Atomic::cmpxchg(v|_LBIT, &_LockWord.FullWord, v);
     if (v == u) return 1;
     v = u;
   }
@@ -350,7 +353,7 @@ int Monitor::TrySpin(Thread * const Self) {
   for (;;) {
     intptr_t v = _LockWord.FullWord;
     if ((v & _LBIT) == 0) {
-      if (CASPTR (&_LockWord, v, v|_LBIT) == v) {
+      if (Atomic::cmpxchg (v|_LBIT, &_LockWord.FullWord, v) == v) {
         return 1;
       }
       continue;
@@ -419,13 +422,13 @@ inline int Monitor::AcquireOrPush(ParkEvent * ESelf) {
   intptr_t v = _LockWord.FullWord;
   for (;;) {
     if ((v & _LBIT) == 0) {
-      const intptr_t u = CASPTR(&_LockWord, v, v|_LBIT);
+      const intptr_t u = Atomic::cmpxchg(v|_LBIT, &_LockWord.FullWord, v);
       if (u == v) return 1;        // indicate acquired
       v = u;
     } else {
       // Anticipate success ...
       ESelf->ListNext = (ParkEvent *)(v & ~_LBIT);
-      const intptr_t u = CASPTR(&_LockWord, v, intptr_t(ESelf)|_LBIT);
+      const intptr_t u = Atomic::cmpxchg(intptr_t(ESelf)|_LBIT, &_LockWord.FullWord, v);
       if (u == v) return 0;        // indicate pushed onto cxq
       v = u;
     }
@@ -463,7 +466,7 @@ void Monitor::ILock(Thread * Self) {
   OrderAccess::fence();
 
   // Optional optimization ... try barging on the inner lock
-  if ((NativeMonitorFlags & 32) && CASPTR (&_OnDeck, NULL, UNS(ESelf)) == 0) {
+  if ((NativeMonitorFlags & 32) && Atomic::cmpxchg(ESelf, &_OnDeck, (ParkEvent*)NULL) == NULL) {
     goto OnDeck_LOOP;
   }
 
@@ -474,7 +477,7 @@ void Monitor::ILock(Thread * Self) {
   // Only the OnDeck thread can try to acquire -- contend for -- the lock.
   // CONSIDER: use Self->OnDeck instead of m->OnDeck.
   // Deschedule Self so that others may run.
-  while (OrderAccess::load_ptr_acquire(&_OnDeck) != ESelf) {
+  while (OrderAccess::load_acquire(&_OnDeck) != ESelf) {
     ParkCommon(ESelf, 0);
   }
 
@@ -526,7 +529,7 @@ void Monitor::IUnlock(bool RelaxAssert) {
   // Note that the OrderAccess::storeload() fence that appears after unlock store
   // provides for progress conditions and succession and is _not related to exclusion
   // safety or lock release consistency.
-  OrderAccess::release_store(&_LockWord.Bytes[_LSBINDEX], 0); // drop outer lock
+  OrderAccess::release_store(&_LockWord.Bytes[_LSBINDEX], jbyte(0)); // drop outer lock
 
   OrderAccess::storeload();
   ParkEvent * const w = _OnDeck; // raw load as we will just return if non-NULL
@@ -570,7 +573,7 @@ void Monitor::IUnlock(bool RelaxAssert) {
   // Unlike a normal lock, however, the exiting thread "locks" OnDeck,
   // picks a successor and marks that thread as OnDeck.  That successor
   // thread will then clear OnDeck once it eventually acquires the outer lock.
-  if (CASPTR (&_OnDeck, NULL, _LBIT) != UNS(NULL)) {
+  if (Atomic::cmpxchg((ParkEvent*)_LBIT, &_OnDeck, (ParkEvent*)NULL) != NULL) {
     return;
   }
 
@@ -585,14 +588,14 @@ void Monitor::IUnlock(bool RelaxAssert) {
     assert(RelaxAssert || w != Thread::current()->_MutexEvent, "invariant");
     _EntryList = w->ListNext;
     // as a diagnostic measure consider setting w->_ListNext = BAD
-    assert(UNS(_OnDeck) == _LBIT, "invariant");
+    assert(intptr_t(_OnDeck) == _LBIT, "invariant");
 
     // Pass OnDeck role to w, ensuring that _EntryList has been set first.
     // w will clear _OnDeck once it acquires the outer lock.
     // Note that once we set _OnDeck that thread can acquire the mutex, proceed
     // with its critical section and then enter this code to unlock the mutex. So
     // you can have multiple threads active in IUnlock at the same time.
-    OrderAccess::release_store_ptr(&_OnDeck, w);
+    OrderAccess::release_store(&_OnDeck, w);
 
     // Another optional optimization ...
     // For heavily contended locks it's not uncommon that some other
@@ -616,7 +619,7 @@ void Monitor::IUnlock(bool RelaxAssert) {
     for (;;) {
       // optional optimization - if locked, the owner is responsible for succession
       if (cxq & _LBIT) goto Punt;
-      const intptr_t vfy = CASPTR(&_LockWord, cxq, cxq & _LBIT);
+      const intptr_t vfy = Atomic::cmpxchg(cxq & _LBIT, &_LockWord.FullWord, cxq);
       if (vfy == cxq) break;
       cxq = vfy;
       // Interference - LockWord changed - Just retry
@@ -652,7 +655,7 @@ void Monitor::IUnlock(bool RelaxAssert) {
   // A thread could have added itself to cxq since this thread previously checked.
   // Detect and recover by refetching cxq.
  Punt:
-  assert(UNS(_OnDeck) == _LBIT, "invariant");
+  assert(intptr_t(_OnDeck) == _LBIT, "invariant");
   _OnDeck = NULL;            // Release inner lock.
   OrderAccess::storeload();   // Dekker duality - pivot point
 
@@ -693,7 +696,7 @@ bool Monitor::notify() {
       const intptr_t v = _LockWord.FullWord;
       assert((v & 0xFF) == _LBIT, "invariant");
       nfy->ListNext = (ParkEvent *)(v & ~_LBIT);
-      if (CASPTR (&_LockWord, v, UNS(nfy)|_LBIT) == v) break;
+      if (Atomic::cmpxchg(intptr_t(nfy)|_LBIT, &_LockWord.FullWord, v) == v) break;
       // interference - _LockWord changed -- just retry
     }
     // Note that setting Notified before pushing nfy onto the cxq is
@@ -840,7 +843,7 @@ int Monitor::IWait(Thread * Self, jlong timo) {
     // ESelf is now on the cxq, EntryList or at the OnDeck position.
     // The following fragment is extracted from Monitor::ILock()
     for (;;) {
-      if (OrderAccess::load_ptr_acquire(&_OnDeck) == ESelf && TrySpin(Self)) break;
+      if (OrderAccess::load_acquire(&_OnDeck) == ESelf && TrySpin(Self)) break;
       ParkCommon(ESelf, 0);
     }
     assert(_OnDeck == ESelf, "invariant");
@@ -1058,7 +1061,7 @@ void Monitor::jvm_raw_lock() {
   // Only the OnDeck thread can try to acquire -- contend for -- the lock.
   // CONSIDER: use Self->OnDeck instead of m->OnDeck.
   for (;;) {
-    if (OrderAccess::load_ptr_acquire(&_OnDeck) == ESelf && TrySpin(NULL)) break;
+    if (OrderAccess::load_acquire(&_OnDeck) == ESelf && TrySpin(NULL)) break;
     ParkCommon(ESelf, 0);
   }
 

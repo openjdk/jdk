@@ -45,6 +45,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
@@ -306,7 +307,9 @@ bool PSScavenge::invoke_no_policy() {
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(false /* not full GC */,gc_cause);
 
-    if (TraceYoungGenTime) accumulated_time()->start();
+    if (log_is_enabled(Debug, gc, heap, exit)) {
+      accumulated_time()->start();
+    }
 
     // Let the size policy know we're starting
     size_policy->minor_collection_begin();
@@ -438,12 +441,23 @@ bool PSScavenge::invoke_no_policy() {
       pt.print_enqueue_phase();
     }
 
+    assert(promotion_manager->stacks_empty(),"stacks should be empty at this point");
+
+    PSScavengeRootsClosure root_closure(promotion_manager);
+
+    {
+      GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
+      WeakProcessor::weak_oops_do(&_is_alive_closure, &root_closure);
+    }
+
     {
       GCTraceTime(Debug, gc, phases) tm("Scrub String Table", &_gc_timer);
       // Unlink any dead interned Strings and process the remaining live ones.
-      PSScavengeRootsClosure root_closure(promotion_manager);
       StringTable::unlink_or_oops_do(&_is_alive_closure, &root_closure);
     }
+
+    // Verify that usage of root_closure didn't copy any objects.
+    assert(promotion_manager->stacks_empty(),"stacks should be empty at this point");
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
     promotion_failure_occurred = PSPromotionManager::post_scavenge(_gc_tracer);
@@ -607,7 +621,9 @@ bool PSScavenge::invoke_no_policy() {
       CardTableExtension::verify_all_young_refs_imprecise();
     }
 
-    if (TraceYoungGenTime) accumulated_time()->stop();
+    if (log_is_enabled(Debug, gc, heap, exit)) {
+      accumulated_time()->stop();
+    }
 
     young_gen->print_used_change(pre_gc_values.young_gen_used());
     old_gen->print_used_change(pre_gc_values.old_gen_used());

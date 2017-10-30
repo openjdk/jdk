@@ -89,7 +89,7 @@ public:
 
   // Returns the given amount of uncollected reclaimable space
   // as a percentage of the current heap capacity.
-  virtual double reclaimable_bytes_perc(size_t reclaimable_bytes) const = 0;
+  virtual double reclaimable_bytes_percent(size_t reclaimable_bytes) const = 0;
 
   virtual ~G1Policy() {}
 

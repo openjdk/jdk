@@ -26,7 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1CardLiveData.inline.hpp"
-#include "gc/g1/suspendibleThreadSet.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
@@ -313,7 +313,7 @@ public:
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1ConcurrentMark* cm = g1h->concurrent_mark();
-    G1CreateLiveDataClosure cl(g1h, cm, cm->nextMarkBitMap(), _live_data);
+    G1CreateLiveDataClosure cl(g1h, cm, cm->next_mark_bitmap(), _live_data);
     g1h->heap_region_par_iterate(&cl, worker_id, &_hr_claimer);
   }
 };

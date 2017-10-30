@@ -26,6 +26,7 @@
  * @bug 8004741
  * @summary Missing compiled exception handle table entry for multidimensional array allocation
  *
+ * @requires !vm.graal.enabled
  * @run main/othervm -Xmx64m -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *    -XX:-TieredCompilation -XX:+StressCompiledExceptionHandlers
  *    -XX:+SafepointALot -XX:GuaranteedSafepointInterval=100

@@ -151,7 +151,7 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
                                        nonstatic_oop_map_size(parser.total_oop_map_count()),
                                        parser.is_interface(),
                                        parser.is_anonymous(),
-                                       should_store_fingerprint());
+                                       should_store_fingerprint(parser.is_anonymous()));
 
   const Symbol* const class_name = parser.class_name();
   assert(class_name != NULL, "invariant");
@@ -284,6 +284,9 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   if (java_mirror() != NULL) {
     java_lang_Class::set_klass(java_mirror(), NULL);
   }
+
+  // Also remove mirror from handles
+  loader_data->remove_handle(_java_mirror);
 
   // Need to take this class off the class loader data list.
   loader_data->remove_class(this);
@@ -1106,16 +1109,15 @@ void InstanceKlass::call_class_initializer(TRAPS) {
 void InstanceKlass::mask_for(const methodHandle& method, int bci,
   InterpreterOopMap* entry_for) {
   // Lazily create the _oop_map_cache at first request
-  // Lock-free access requires load_ptr_acquire.
-  OopMapCache* oop_map_cache =
-      static_cast<OopMapCache*>(OrderAccess::load_ptr_acquire(&_oop_map_cache));
+  // Lock-free access requires load_acquire.
+  OopMapCache* oop_map_cache = OrderAccess::load_acquire(&_oop_map_cache);
   if (oop_map_cache == NULL) {
     MutexLocker x(OopMapCacheAlloc_lock);
     // Check if _oop_map_cache was allocated while we were waiting for this lock
     if ((oop_map_cache = _oop_map_cache) == NULL) {
       oop_map_cache = new OopMapCache();
       // Ensure _oop_map_cache is stable, since it is examined without a lock
-      OrderAccess::release_store_ptr(&_oop_map_cache, oop_map_cache);
+      OrderAccess::release_store(&_oop_map_cache, oop_map_cache);
     }
   }
   // _oop_map_cache is constant after init; lookup below does its own locking.
@@ -1669,7 +1671,7 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
   // transitions from NULL to non-NULL which is safe because we use
   // release_set_methods_jmethod_ids() to advertise the new cache.
   // A partially constructed cache should never be seen by a racing
-  // thread. We also use release_store_ptr() to save a new jmethodID
+  // thread. We also use release_store() to save a new jmethodID
   // in the cache so a partially constructed jmethodID should never be
   // seen either. Cache reads of existing jmethodIDs proceed without a
   // lock, but cache writes of a new jmethodID requires uniqueness and
@@ -1828,7 +1830,7 @@ jmethodID InstanceKlass::get_jmethod_id_fetch_or_update(
     // The jmethodID cache can be read while unlocked so we have to
     // make sure the new jmethodID is complete before installing it
     // in the cache.
-    OrderAccess::release_store_ptr(&jmeths[idnum+1], id);
+    OrderAccess::release_store(&jmeths[idnum+1], id);
   } else {
     *to_dealloc_id_p = new_id; // save new id for later delete
   }
@@ -1955,7 +1957,7 @@ bool InstanceKlass::supers_have_passed_fingerprint_checks() {
   return true;
 }
 
-bool InstanceKlass::should_store_fingerprint() {
+bool InstanceKlass::should_store_fingerprint(bool is_anonymous) {
 #if INCLUDE_AOT
   // We store the fingerprint into the InstanceKlass only in the following 2 cases:
   if (CalculateClassFingerprint) {
@@ -1964,6 +1966,10 @@ bool InstanceKlass::should_store_fingerprint() {
   }
   if (DumpSharedSpaces) {
     // (2) We are running -Xshare:dump to create a shared archive
+    return true;
+  }
+  if (UseAOT && is_anonymous) {
+    // (3) We are using AOT code from a shared library and see an anonymous class
     return true;
   }
 #endif
@@ -3107,7 +3113,7 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
   if (cfs != NULL) {
     if (cfs->source() != NULL) {
       if (module_name != NULL) {
-        if (ClassLoader::is_jrt(cfs->source())) {
+        if (ClassLoader::is_modules_image(cfs->source())) {
           info_stream.print(" source: jrt:/%s", module_name);
         } else {
           info_stream.print(" source: %s", cfs->source());

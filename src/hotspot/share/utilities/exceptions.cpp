@@ -218,10 +218,10 @@ void Exceptions::_throw_cause(Thread* thread, const char* file, int line, Symbol
 void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file, int line, const methodHandle& method) {
   Handle exception;
   if (!THREAD->has_pending_exception()) {
-    Klass* k = SystemDictionary::StackOverflowError_klass();
-    oop e = InstanceKlass::cast(k)->allocate_instance(CHECK);
+    InstanceKlass* k = SystemDictionary::StackOverflowError_klass();
+    oop e = k->allocate_instance(CHECK);
     exception = Handle(THREAD, e);  // fill_in_stack trace does gc
-    assert(InstanceKlass::cast(k)->is_initialized(), "need to increase java_thread_min_stack_allowed calculation");
+    assert(k->is_initialized(), "need to increase java_thread_min_stack_allowed calculation");
     if (StackTraceInThrowable) {
       java_lang_Throwable::fill_in_stack_trace(exception, method());
     }
@@ -258,25 +258,26 @@ Handle Exceptions::new_exception(Thread *thread, Symbol* name,
 
   Handle h_exception;
 
-  // Resolve exception klass
-  InstanceKlass* klass = InstanceKlass::cast(SystemDictionary::resolve_or_fail(name, h_loader, h_protection_domain, true, thread));
+  // Resolve exception klass, and check for pending exception below.
+  Klass* klass = SystemDictionary::resolve_or_fail(name, h_loader, h_protection_domain, true, thread);
 
   if (!thread->has_pending_exception()) {
     assert(klass != NULL, "klass must exist");
     // We are about to create an instance - so make sure that klass is initialized
-    klass->initialize(thread);
+    InstanceKlass* ik = InstanceKlass::cast(klass);
+    ik->initialize(thread);
     if (!thread->has_pending_exception()) {
       // Allocate new exception
-      h_exception = klass->allocate_instance_handle(thread);
+      h_exception = ik->allocate_instance_handle(thread);
       if (!thread->has_pending_exception()) {
         JavaValue result(T_VOID);
         args->set_receiver(h_exception);
         // Call constructor
-        JavaCalls::call_special(&result, klass,
-                                         vmSymbols::object_initializer_name(),
-                                         signature,
-                                         args,
-                                         thread);
+        JavaCalls::call_special(&result, ik,
+                                vmSymbols::object_initializer_name(),
+                                signature,
+                                args,
+                                thread);
       }
     }
   }

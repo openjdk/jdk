@@ -44,7 +44,7 @@
 // T is an integral type, and is the value_type.
 // v is an integral constant, and is the value.
 template<typename T, T v>
-struct IntegralConstant : AllStatic {
+struct IntegralConstant VALUE_OBJ_CLASS_SPEC {
   typedef T value_type;
   static const value_type value = v;
   typedef IntegralConstant<T, v> type;

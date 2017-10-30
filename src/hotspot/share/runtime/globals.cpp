@@ -50,9 +50,6 @@
 #ifdef COMPILER2
 #include "opto/c2_globals.hpp"
 #endif
-#ifdef SHARK
-#include "shark/shark_globals.hpp"
-#endif
 
 RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
               MATERIALIZE_PD_DEVELOPER_FLAG, \
@@ -578,7 +575,6 @@ void Flag::print_kind_and_origin(outputStream* st) {
       { KIND_C1, "C1" },
       { KIND_C2, "C2" },
       { KIND_ARCH, "ARCH" },
-      { KIND_SHARK, "SHARK" },
       { KIND_PLATFORM_DEPENDENT, "pd" },
       { KIND_PRODUCT, "product" },
       { KIND_MANAGEABLE, "manageable" },
@@ -754,14 +750,6 @@ const char* Flag::flag_error_str(Flag::Error error) {
 #define ARCH_DEVELOP_FLAG_STRUCT(        type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_ARCH | Flag::KIND_DEVELOP) },
 #define ARCH_NOTPRODUCT_FLAG_STRUCT(     type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_ARCH | Flag::KIND_NOT_PRODUCT) },
 
-#define SHARK_PRODUCT_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_PRODUCT) },
-#define SHARK_PD_PRODUCT_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_PRODUCT | Flag::KIND_PLATFORM_DEPENDENT) },
-#define SHARK_DIAGNOSTIC_FLAG_STRUCT(    type, name, value, doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_DIAGNOSTIC) },
-#define SHARK_PD_DIAGNOSTIC_FLAG_STRUCT( type, name,        doc) { #type, XSTR(name), &name,         NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_DIAGNOSTIC | Flag::KIND_PLATFORM_DEPENDENT) },
-#define SHARK_DEVELOP_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_DEVELOP) },
-#define SHARK_PD_DEVELOP_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_DEVELOP | Flag::KIND_PLATFORM_DEPENDENT) },
-#define SHARK_NOTPRODUCT_FLAG_STRUCT(    type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_SHARK | Flag::KIND_NOT_PRODUCT) },
-
 static Flag flagTable[] = {
  RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, \
                RUNTIME_PD_DEVELOP_FLAG_STRUCT, \
@@ -840,18 +828,6 @@ static Flag flagTable[] = {
           IGNORE_CONSTRAINT, \
           IGNORE_WRITEABLE)
 #endif // COMPILER2
-#ifdef SHARK
- SHARK_FLAGS(SHARK_DEVELOP_FLAG_STRUCT, \
-             SHARK_PD_DEVELOP_FLAG_STRUCT, \
-             SHARK_PRODUCT_FLAG_STRUCT, \
-             SHARK_PD_PRODUCT_FLAG_STRUCT, \
-             SHARK_DIAGNOSTIC_FLAG_STRUCT, \
-             SHARK_PD_DIAGNOSTIC_FLAG_STRUCT, \
-             SHARK_NOTPRODUCT_FLAG_STRUCT, \
-             IGNORE_RANGE, \
-             IGNORE_CONSTRAINT, \
-             IGNORE_WRITEABLE)
-#endif // SHARK
  ARCH_FLAGS(ARCH_DEVELOP_FLAG_STRUCT, \
             ARCH_PRODUCT_FLAG_STRUCT, \
             ARCH_DIAGNOSTIC_FLAG_STRUCT, \

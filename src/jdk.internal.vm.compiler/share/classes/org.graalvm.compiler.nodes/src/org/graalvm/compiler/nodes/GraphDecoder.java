@@ -466,28 +466,6 @@ public class GraphDecoder {
             AbstractMergeNode merge = (AbstractMergeNode) node;
             EndNode singleEnd = merge.forwardEndAt(0);
 
-            /*
-             * In some corner cases, the MergeNode already has PhiNodes. Since there is a single
-             * EndNode, each PhiNode can only have one input, and we can replace the PhiNode with
-             * this single input.
-             */
-            for (PhiNode phi : merge.phis()) {
-                assert phi.inputs().count() == 1 : "input count must match end count";
-                Node singlePhiInput = phi.inputs().first();
-
-                /*
-                 * We do not have the orderID of the PhiNode anymore, so we need to search through
-                 * the complete list of nodes to find a match.
-                 */
-                for (int i = 0; i < loopScope.createdNodes.length; i++) {
-                    if (loopScope.createdNodes[i] == phi) {
-                        loopScope.createdNodes[i] = singlePhiInput;
-                    }
-                }
-
-                phi.replaceAndDelete(singlePhiInput);
-            }
-
             /* Nodes that would use this merge as the guard need to use the previous block. */
             registerNode(loopScope, nodeOrderId, AbstractBeginNode.prevBegin(singleEnd), true, false);
 
@@ -973,8 +951,22 @@ public class GraphDecoder {
             int phiNodeOrderId = readOrderId(methodScope);
 
             ValueNode phiInput = (ValueNode) ensureNodeCreated(methodScope, phiInputScope, phiInputOrderId);
-
             ValueNode existing = (ValueNode) lookupNode(phiNodeScope, phiNodeOrderId);
+
+            if (existing != null && merge.phiPredecessorCount() == 1) {
+                /*
+                 * When exploding loops and the code after the loop (FULL_EXPLODE_UNTIL_RETURN),
+                 * then an existing value can already be registered: Parsing of the code before the
+                 * loop registers it when preparing for the later merge. The code after the loop,
+                 * which starts with a clone of the values that were created before the loop, sees
+                 * the stale value when processing the merge the first time. We can safely ignore
+                 * the stale value because it will never be needed to be merged (we are exploding
+                 * until we hit a return).
+                 */
+                assert methodScope.loopExplosion == LoopExplosionKind.FULL_EXPLODE_UNTIL_RETURN && phiNodeScope.loopIteration > 0;
+                existing = null;
+            }
+
             if (lazyPhi && (existing == null || existing == phiInput)) {
                 /* Phi function not yet necessary. */
                 registerNode(phiNodeScope, phiNodeOrderId, phiInput, true, false);

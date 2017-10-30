@@ -66,6 +66,9 @@ namespace WindowsDbgHelp {
   // missing - if any, and the dbhelp API version)
   void print_state_on(outputStream* st);
 
+  // Call at DLL_PROCESS_ATTACH.
+  void pre_initialize();
+
 };
 
 

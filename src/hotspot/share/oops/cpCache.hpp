@@ -31,6 +31,7 @@
 #include "oops/oopHandle.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
+#include "utilities/constantTag.hpp"
 
 class PSPromotionManager;
 
@@ -50,8 +51,8 @@ class PSPromotionManager;
 // _f1        [  entry specific   ]  metadata ptr (method or klass)
 // _f2        [  entry specific   ]  vtable or res_ref index, or vfinal method ptr
 // _flags     [tos|0|F=1|0|0|0|f|v|0 |0000|field_index] (for field entries)
-// bit length [ 4 |1| 1 |1|1|1|1|1|1 |-4--|----16-----]
-// _flags     [tos|0|F=0|M|A|I|f|0|vf|0000|00000|psize] (for method entries)
+// bit length [ 4 |1| 1 |1|1|1|1|1|1 |1     |-3-|----16-----]
+// _flags     [tos|0|F=0|M|A|I|f|0|vf|indy_rf|000|00000|psize] (for method entries)
 // bit length [ 4 |1| 1 |1|1|1|1|1|1 |-4--|--8--|--8--]
 
 // --------------------------------
@@ -71,6 +72,7 @@ class PSPromotionManager;
 // f      = field or method is final
 // v      = field is volatile
 // vf     = virtual but final (method entries only: is_vfinal())
+// indy_rf = call site specifier method resolution failed
 //
 // The flags after TosState have the following interpretation:
 // bit 27: 0 for fields, 1 for methods
@@ -136,7 +138,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 
  private:
   volatile intx     _indices;  // constant pool index & rewrite bytecodes
-  volatile Metadata*   _f1;       // entry specific metadata field
+  Metadata* volatile   _f1;       // entry specific metadata field
   volatile intx        _f2;       // entry specific int/metadata field
   volatile intx     _flags;    // flags
 
@@ -144,7 +146,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   void set_bytecode_1(Bytecodes::Code code);
   void set_bytecode_2(Bytecodes::Code code);
   void set_f1(Metadata* f1) {
-    Metadata* existing_f1 = (Metadata*)_f1; // read once
+    Metadata* existing_f1 = _f1; // read once
     assert(existing_f1 == NULL || existing_f1 == f1, "illegal field change");
     _f1 = f1;
   }
@@ -160,7 +162,6 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   }
   int make_flags(TosState state, int option_bits, int field_index_or_method_params);
   void set_flags(intx flags)                     { _flags = flags; }
-  bool init_flags_atomic(intx flags);
   void set_field_flags(TosState field_type, int option_bits, int field_index) {
     assert((field_index & field_index_mask) == field_index, "field_index in range");
     set_flags(make_flags(field_type, option_bits | (1 << is_field_entry_shift), field_index));
@@ -168,10 +169,6 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   void set_method_flags(TosState return_type, int option_bits, int method_params) {
     assert((method_params & parameter_size_mask) == method_params, "method_params in range");
     set_flags(make_flags(return_type, option_bits, method_params));
-  }
-  bool init_method_flags_atomic(TosState return_type, int option_bits, int method_params) {
-    assert((method_params & parameter_size_mask) == method_params, "method_params in range");
-    return init_flags_atomic(make_flags(return_type, option_bits, method_params));
   }
 
  public:
@@ -190,6 +187,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     is_final_shift             = 22,  // (f) is the field or method final?
     is_volatile_shift          = 21,  // (v) is the field volatile?
     is_vfinal_shift            = 20,  // (vf) did the call resolve to a final method?
+    indy_resolution_failed_shift= 19, // (indy_rf) did call site specifier resolution fail ?
     // low order bits give field index (for FieldInfo) or method parameter size:
     field_index_bits           = 16,
     field_index_mask           = right_n_bits(field_index_bits),
@@ -286,6 +284,13 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     const CallInfo &call_info                    // Call link information
   );
 
+  // Return TRUE if resolution failed and this thread got to record the failure
+  // status.  Return FALSE if another thread succeeded or failed in resolving
+  // the method and recorded the success or failure before this thread had a
+  // chance to record its failure.
+  bool save_and_throw_indy_exc(const constantPoolHandle& cpool, int cpool_index,
+                               int index, constantTag tag, TRAPS);
+
   // invokedynamic and invokehandle call sites have two entries in the
   // resolved references array:
   //   appendix   (at index+0)
@@ -332,11 +337,11 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 
   // Accessors
   int indices() const                            { return _indices; }
-  int indices_ord() const                        { return (intx)OrderAccess::load_ptr_acquire(&_indices); }
+  int indices_ord() const                        { return OrderAccess::load_acquire(&_indices); }
   int constant_pool_index() const                { return (indices() & cp_index_mask); }
   Bytecodes::Code bytecode_1() const             { return Bytecodes::cast((indices_ord() >> bytecode_1_shift) & bytecode_1_mask); }
   Bytecodes::Code bytecode_2() const             { return Bytecodes::cast((indices_ord() >> bytecode_2_shift) & bytecode_2_mask); }
-  Metadata* f1_ord() const                       { return (Metadata *)OrderAccess::load_ptr_acquire(&_f1); }
+  Metadata* f1_ord() const                       { return (Metadata *)OrderAccess::load_acquire(&_f1); }
   Method*   f1_as_method() const                 { Metadata* f1 = f1_ord(); assert(f1 == NULL || f1->is_method(), ""); return (Method*)f1; }
   Klass*    f1_as_klass() const                  { Metadata* f1 = f1_ord(); assert(f1 == NULL || f1->is_klass(), ""); return (Klass*)f1; }
   // Use the accessor f1() to acquire _f1's value. This is needed for
@@ -347,12 +352,14 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   bool      is_f1_null() const                   { Metadata* f1 = f1_ord(); return f1 == NULL; }  // classifies a CPC entry as unbound
   int       f2_as_index() const                  { assert(!is_vfinal(), ""); return (int) _f2; }
   Method*   f2_as_vfinal_method() const          { assert(is_vfinal(), ""); return (Method*)_f2; }
+  intx flags_ord() const                         { return (intx)OrderAccess::load_acquire(&_flags); }
   int  field_index() const                       { assert(is_field_entry(),  ""); return (_flags & field_index_mask); }
   int  parameter_size() const                    { assert(is_method_entry(), ""); return (_flags & parameter_size_mask); }
   bool is_volatile() const                       { return (_flags & (1 << is_volatile_shift))       != 0; }
   bool is_final() const                          { return (_flags & (1 << is_final_shift))          != 0; }
   bool is_forced_virtual() const                 { return (_flags & (1 << is_forced_virtual_shift)) != 0; }
   bool is_vfinal() const                         { return (_flags & (1 << is_vfinal_shift))         != 0; }
+  bool indy_resolution_failed() const            { intx flags = flags_ord(); return (flags & (1 << indy_resolution_failed_shift)) != 0; }
   bool has_appendix() const                      { return (!is_f1_null()) && (_flags & (1 << has_appendix_shift))      != 0; }
   bool has_method_type() const                   { return (!is_f1_null()) && (_flags & (1 << has_method_type_shift))   != 0; }
   bool is_method_entry() const                   { return (_flags & (1 << is_field_entry_shift))    == 0; }
@@ -361,6 +368,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   bool is_double() const                         { return flag_state() == dtos; }
   TosState flag_state() const                    { assert((uint)number_of_states <= (uint)tos_state_mask+1, "");
                                                    return (TosState)((_flags >> tos_state_shift) & tos_state_mask); }
+  void set_indy_resolution_failed();
 
   // Code generation support
   static WordSize size()                         {

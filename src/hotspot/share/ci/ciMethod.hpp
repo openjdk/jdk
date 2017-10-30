@@ -96,7 +96,7 @@ class ciMethod : public ciMetadata {
 
   // Optional liveness analyzer.
   MethodLiveness* _liveness;
-#if defined(COMPILER2) || defined(SHARK)
+#if defined(COMPILER2)
   ciTypeFlow*         _flow;
   BCEscapeAnalyzer*   _bcea;
 #endif
@@ -216,9 +216,6 @@ class ciMethod : public ciMetadata {
 
   // Runtime information.
   int           vtable_index();
-#ifdef SHARK
-  int           itable_index();
-#endif // SHARK
   address       native_entry();
   address       interpreter_entry();
 

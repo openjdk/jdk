@@ -26,7 +26,7 @@
 #ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
 #define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP
 
-#include "prims/jni.h"
+#include "jni.h"
 
 // This file holds compiler-dependent includes,
 // globally used constants & types, class (forward)

@@ -578,8 +578,8 @@ void ClassPathImageEntry::compile_the_world(Handle loader, TRAPS) {
 }
 #endif
 
-bool ClassPathImageEntry::is_jrt() {
-  return ClassLoader::is_jrt(name());
+bool ClassPathImageEntry::is_modules_image() const {
+  return ClassLoader::is_modules_image(name());
 }
 
 #if INCLUDE_CDS
@@ -795,14 +795,13 @@ void ClassLoader::setup_search_path(const char *class_path, bool bootstrap_searc
         // Check for a jimage
         if (Arguments::has_jimage()) {
           assert(_jrt_entry == NULL, "should not setup bootstrap class search path twice");
-          assert(new_entry != NULL && new_entry->is_jrt(), "No java runtime image present");
+          assert(new_entry != NULL && new_entry->is_modules_image(), "No java runtime image present");
           _jrt_entry = new_entry;
           ++_num_entries;
 #if INCLUDE_CDS
           if (DumpSharedSpaces) {
             JImageFile *jimage = _jrt_entry->jimage();
             assert(jimage != NULL, "No java runtime image file present");
-            ClassLoader::initialize_module_loader_map(jimage);
           }
 #endif
         }
@@ -1144,61 +1143,6 @@ int ClassLoader::crc32(int crc, const char* buf, int len) {
   return (*Crc32)(crc, (const jbyte*)buf, len);
 }
 
-#if INCLUDE_CDS
-void ClassLoader::initialize_module_loader_map(JImageFile* jimage) {
-  if (!DumpSharedSpaces) {
-    return; // only needed for CDS dump time
-  }
-
-  ResourceMark rm;
-  jlong size;
-  JImageLocationRef location = (*JImageFindResource)(jimage, JAVA_BASE_NAME, get_jimage_version_string(), MODULE_LOADER_MAP, &size);
-  if (location == 0) {
-    vm_exit_during_initialization(
-      "Cannot find ModuleLoaderMap location from modules jimage.", NULL);
-  }
-  char* buffer = NEW_RESOURCE_ARRAY(char, size + 1);
-  buffer[size] = '\0';
-  jlong read = (*JImageGetResource)(jimage, location, buffer, size);
-  if (read != size) {
-    vm_exit_during_initialization(
-      "Cannot find ModuleLoaderMap resource from modules jimage.", NULL);
-  }
-  char* char_buf = (char*)buffer;
-  int buflen = (int)strlen(char_buf);
-  char* begin_ptr = char_buf;
-  char* end_ptr = strchr(begin_ptr, '\n');
-  bool process_boot_modules = false;
-  _boot_modules_array = new (ResourceObj::C_HEAP, mtModule)
-    GrowableArray<char*>(INITIAL_BOOT_MODULES_ARRAY_SIZE, true);
-  _platform_modules_array = new (ResourceObj::C_HEAP, mtModule)
-    GrowableArray<char*>(INITIAL_PLATFORM_MODULES_ARRAY_SIZE, true);
-  while (end_ptr != NULL && (end_ptr - char_buf) < buflen) {
-    // Allocate a buffer from the C heap to be appended to the _boot_modules_array
-    // or the _platform_modules_array.
-    char* temp_name = NEW_C_HEAP_ARRAY(char, (size_t)(end_ptr - begin_ptr + 1), mtInternal);
-    strncpy(temp_name, begin_ptr, end_ptr - begin_ptr);
-    temp_name[end_ptr - begin_ptr] = '\0';
-    if (strncmp(temp_name, "BOOT", 4) == 0) {
-      process_boot_modules = true;
-      FREE_C_HEAP_ARRAY(char, temp_name);
-    } else if (strncmp(temp_name, "PLATFORM", 8) == 0) {
-      process_boot_modules = false;
-      FREE_C_HEAP_ARRAY(char, temp_name);
-    } else {
-      // module name
-      if (process_boot_modules) {
-        _boot_modules_array->append(temp_name);
-      } else {
-        _platform_modules_array->append(temp_name);
-      }
-    }
-    begin_ptr = ++end_ptr;
-    end_ptr = strchr(begin_ptr, '\n');
-  }
-}
-#endif
-
 // Function add_package extracts the package from the fully qualified class name
 // and checks if the package is in the boot loader's package entry table.  If so,
 // then it sets the classpath_index in the package entry record.
@@ -1289,58 +1233,6 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
   }
   return result();
 }
-
-#if INCLUDE_CDS
-s2 ClassLoader::module_to_classloader(const char* module_name) {
-
-  assert(DumpSharedSpaces, "dump time only");
-  assert(_boot_modules_array != NULL, "_boot_modules_array is NULL");
-  assert(_platform_modules_array != NULL, "_platform_modules_array is NULL");
-
-  int array_size = _boot_modules_array->length();
-  for (int i = 0; i < array_size; i++) {
-    if (strcmp(module_name, _boot_modules_array->at(i)) == 0) {
-      return BOOT_LOADER;
-    }
-  }
-
-  array_size = _platform_modules_array->length();
-  for (int i = 0; i < array_size; i++) {
-    if (strcmp(module_name, _platform_modules_array->at(i)) == 0) {
-      return PLATFORM_LOADER;
-    }
-  }
-
-  return APP_LOADER;
-}
-
-s2 ClassLoader::classloader_type(Symbol* class_name, ClassPathEntry* e, int classpath_index, TRAPS) {
-  assert(DumpSharedSpaces, "Only used for CDS dump time");
-
-  // obtain the classloader type based on the class name.
-  // First obtain the package name based on the class name. Then obtain
-  // the classloader type based on the package name from the jimage using
-  // a jimage API. If the classloader type cannot be found from the
-  // jimage, it is determined by the class path entry.
-  jshort loader_type = ClassLoader::APP_LOADER;
-  if (e->is_jrt()) {
-    ResourceMark rm;
-    TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK_0);
-    if (pkg_name != NULL) {
-      const char* pkg_name_C_string = (const char*)(pkg_name->as_C_string());
-      ClassPathImageEntry* cpie = (ClassPathImageEntry*)e;
-      JImageFile* jimage = cpie->jimage();
-      char* module_name = (char*)(*JImagePackageToModule)(jimage, pkg_name_C_string);
-      if (module_name != NULL) {
-        loader_type = ClassLoader::module_to_classloader(module_name);
-      }
-    }
-  } else if (ClassLoaderExt::is_boot_classpath(classpath_index)) {
-    loader_type = ClassLoader::BOOT_LOADER;
-  }
-  return loader_type;
-}
-#endif
 
 // caller needs ResourceMark
 const char* ClassLoader::file_name_for_class_name(const char* class_name,
@@ -1954,7 +1846,7 @@ void ClassLoader::compile_the_world() {
   // Iterate over all bootstrap class path appended entries
   ClassPathEntry* e = _first_append_entry;
   while (e != NULL) {
-    assert(!e->is_jrt(), "A modular java runtime image is present on the list of appended entries");
+    assert(!e->is_modules_image(), "A modular java runtime image is present on the list of appended entries");
     e->compile_the_world(system_class_loader, CATCH);
     e = e->next();
   }

@@ -87,7 +87,7 @@ endif
 #
 # How to install jvm.cfg.
 #
-ifeq ($(call check-jvm-variant, zero zeroshark), true)
+ifeq ($(call check-jvm-variant, zero), true)
   JVMCFG_ARCH := zero
 else
   JVMCFG_ARCH := $(OPENJDK_TARGET_CPU_LEGACY)
@@ -101,8 +101,6 @@ else
   JVMCFG_SRC := $(if $(wildcard $(ALT_JVMCFG_SRC)),$(ALT_JVMCFG_SRC),$(JVMCFG_SRC))
 endif
 JVMCFG := $(LIB_DST_DIR)/jvm.cfg
-
-# To do: should this also support -zeroshark?
 
 ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
   COPY_JVM_CFG_FILE := true
@@ -120,7 +118,7 @@ else
     COPY_JVM_CFG_FILE := true
   else
     # For zero, the default jvm.cfg file is sufficient
-    ifeq ($(call check-jvm-variant, zero zeroshark), true)
+    ifeq ($(call check-jvm-variant, zero), true)
       COPY_JVM_CFG_FILE := true
     endif
   endif

@@ -27,6 +27,7 @@ package sun.jvm.hotspot.runtime;
 import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.types.*;
 
 public class StackValueCollection {
   private List list;
@@ -48,7 +49,15 @@ public class StackValueCollection {
   public int       intAt(int slot)       { return (int) get(slot).getInteger(); }
   public long      longAt(int slot)      { return VM.getVM().buildLongFromIntsPD((int) get(slot).getInteger(),
                                                                                  (int) get(slot+1).getInteger()); }
-  public OopHandle oopHandleAt(int slot) { return get(slot).getObject(); }
+
+  public OopHandle oopHandleAt(int slot) {
+    StackValue sv = get(slot);
+    if (sv.getType() == BasicType.getTConflict()) {
+      throw new WrongTypeException("Conflict type");
+    }
+    return sv.getObject();
+  }
+
   public float     floatAt(int slot)     { return Float.intBitsToFloat(intAt(slot)); }
   public double    doubleAt(int slot)    { return Double.longBitsToDouble(longAt(slot)); }
 }
