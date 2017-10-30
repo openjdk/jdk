@@ -272,9 +272,20 @@ public class VisibleMemberMap {
         return result;
     }
 
+    // Cache to improve performance
+    private HashMap<ExecutableElement, Boolean> overridenMethodCache = new HashMap<>();
+
     private boolean hasOverridden(ExecutableElement method) {
+        return overridenMethodCache.computeIfAbsent(method, m -> hasOverriddenCompute(m));
+    }
+
+    private boolean hasOverriddenCompute(ExecutableElement method) {
+        if (kind != Kind.METHODS) {
+            throw new AssertionError("Unexpected kind: " + kind);
+        }
         for (TypeElement t : visibleClasses) {
-            for (ExecutableElement inheritedMethod : ElementFilter.methodsIn(classMap.get(t).members)) {
+            for (Element member : classMap.get(t).members) {
+                ExecutableElement inheritedMethod = (ExecutableElement)member;
                 if (utils.elementUtils.overrides(method, inheritedMethod, t)) {
                     return true;
                 }

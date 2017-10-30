@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -485,20 +485,49 @@ class WindowsNativeDispatcher {
             buffer.release();
         }
     }
+
+    /**
+     * GetDiskFreeSpace(
+     *   LPCTSTR lpRootPathName,
+     *   LPDWORD lpSectorsPerCluster,
+     *   LPDWORD lpBytesPerSector,
+     *   LPDWORD lpNumberOfFreeClusters,
+     *   LPDWORD lpTotalNumberOfClusters
+     * )
+     */
+    static DiskFreeSpace GetDiskFreeSpace(String path)
+        throws WindowsException
+    {
+        NativeBuffer buffer = asNativeBuffer(path);
+        try {
+            DiskFreeSpace space = new DiskFreeSpace();
+            GetDiskFreeSpace0(buffer.address(), space);
+            return space;
+        } finally {
+            buffer.release();
+        }
+    }
+
     static class DiskFreeSpace {
         private long freeBytesAvailable;
         private long totalNumberOfBytes;
         private long totalNumberOfFreeBytes;
+        private long bytesPerSector;
         private DiskFreeSpace() { }
 
         public long freeBytesAvailable()      { return freeBytesAvailable; }
         public long totalNumberOfBytes()      { return totalNumberOfBytes; }
         public long totalNumberOfFreeBytes()  { return totalNumberOfFreeBytes; }
+        public long bytesPerSector()          { return bytesPerSector; }
     }
     private static native void GetDiskFreeSpaceEx0(long lpDirectoryName,
                                                    DiskFreeSpace obj)
         throws WindowsException;
 
+
+    private static native void GetDiskFreeSpace0(long lpRootPathName,
+                                                 DiskFreeSpace obj)
+        throws WindowsException;
 
     /**
      * GetVolumePathName(

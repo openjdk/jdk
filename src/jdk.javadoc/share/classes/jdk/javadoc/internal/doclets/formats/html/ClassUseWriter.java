@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -101,6 +102,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final String fieldUseTableSummary;
     final String methodUseTableSummary;
     final String constructorUseTableSummary;
+    final String packageUseTableSummary;
 
     /**
      * The HTML tree for main tag.
@@ -152,22 +154,27 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                     "Internal error: package sets don't match: "
                     + pkgSet + " with: " + mapper.classToPackage.get(this.typeElement));
         }
+
         methodSubWriter = new MethodWriterImpl(this);
         constrSubWriter = new ConstructorWriterImpl(this);
         fieldSubWriter = new FieldWriterImpl(this);
         classSubWriter = new NestedClassWriterImpl(this);
-        classUseTableSummary = configuration.getText("doclet.Use_Table_Summary",
-                configuration.getText("doclet.classes"));
-        subclassUseTableSummary = configuration.getText("doclet.Use_Table_Summary",
-                configuration.getText("doclet.subclasses"));
-        subinterfaceUseTableSummary = configuration.getText("doclet.Use_Table_Summary",
-                configuration.getText("doclet.subinterfaces"));
-        fieldUseTableSummary = configuration.getText("doclet.Use_Table_Summary",
-                configuration.getText("doclet.fields"));
-        methodUseTableSummary = configuration.getText("doclet.Use_Table_Summary",
-                configuration.getText("doclet.methods"));
-        constructorUseTableSummary = configuration.getText("doclet.Use_Table_Summary",
-                configuration.getText("doclet.constructors"));
+
+        String useTableSummary = resources.getText("doclet.Use_Table_Summary");
+        classUseTableSummary = MessageFormat.format(useTableSummary,
+                resources.getText("doclet.classes"));
+        subclassUseTableSummary = MessageFormat.format(useTableSummary,
+                resources.getText("doclet.subclasses"));
+        subinterfaceUseTableSummary = MessageFormat.format(useTableSummary,
+                resources.getText("doclet.subinterfaces"));
+        fieldUseTableSummary = MessageFormat.format(useTableSummary,
+                resources.getText("doclet.fields"));
+        methodUseTableSummary = MessageFormat.format(useTableSummary,
+                resources.getText("doclet.methods"));
+        constructorUseTableSummary = MessageFormat.format(useTableSummary,
+                resources.getText("doclet.constructors"));
+        packageUseTableSummary = MessageFormat.format(useTableSummary,
+                resources.getText("doclet.packages"));
     }
 
     /**
@@ -290,8 +297,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                         LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement))));
         Content table = (configuration.isOutputHtml5())
                 ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
-                : HtmlTree.TABLE(HtmlStyle.useSummary, useTableSummary, caption);
-        table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
+                : HtmlTree.TABLE(HtmlStyle.useSummary, packageUseTableSummary, caption);
+        table.addContent(getPackageTableHeader().toContent());
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         boolean altColor = true;
         for (PackageElement pkg : pkgSet) {
@@ -323,8 +330,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                         LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement))));
         Content table = (configuration.isOutputHtml5())
                 ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
-                : HtmlTree.TABLE(HtmlStyle.useSummary, useTableSummary, caption);
-        table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
+                : HtmlTree.TABLE(HtmlStyle.useSummary, packageUseTableSummary, caption);
+        table.addContent(getPackageTableHeader().toContent());
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         boolean altColor = true;
         for (PackageElement pkg : pkgToPackageAnnotations) {

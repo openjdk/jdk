@@ -456,3 +456,33 @@ Java_sun_nio_ch_FileDispatcherImpl_duplicateHandle(JNIEnv *env, jclass this, jlo
        JNU_ThrowIOExceptionWithLastError(env, "DuplicateHandle failed");
     return ptr_to_jlong(hResult);
 }
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_FileDispatcherImpl_setDirect0(JNIEnv *env, jclass this,
+                                              jobject fdObj, jobject buffer)
+{
+    jint result = -1;
+
+    HANDLE orig = (HANDLE)(handleval(env, fdObj));
+
+    HANDLE modify = ReOpenFile(orig, 0, 0,
+            FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH);
+
+    if (modify != INVALID_HANDLE_VALUE) {
+        DWORD sectorsPerCluster;
+        DWORD bytesPerSector;
+        DWORD numberOfFreeClusters;
+        DWORD totalNumberOfClusters;
+        LPCWSTR lpRootPathName = (*env)->GetDirectBufferAddress(env, buffer);
+        BOOL res = GetDiskFreeSpaceW(lpRootPathName,
+                                     &sectorsPerCluster,
+                                     &bytesPerSector,
+                                     &numberOfFreeClusters,
+                                     &totalNumberOfClusters);
+        if (res == 0) {
+            JNU_ThrowIOExceptionWithLastError(env, "DirectIO setup failed");
+        }
+        result = bytesPerSector;
+    }
+    return result;
+}

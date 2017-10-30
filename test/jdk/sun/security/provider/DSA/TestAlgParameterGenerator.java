@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 7044060 8055351
+ * @bug 7044060 8055351 8181048
  * @summary verify that DSA parameter generation works
  * @run main/timeout=600 TestAlgParameterGenerator
  */
@@ -81,7 +81,6 @@ public class TestAlgParameterGenerator {
         AlgorithmParameters param = apg.generateParameters();
         stop = System.currentTimeMillis();
         System.out.println("Time: " + (stop - start) + " ms.");
-        checkParamStrength(param, 1024);
 
         // make sure the old model works
         int[] strengths = {512, 768, 1024};

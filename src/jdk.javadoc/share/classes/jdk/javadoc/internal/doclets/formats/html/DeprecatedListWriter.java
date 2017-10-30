@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.SortedSet;
@@ -286,13 +285,11 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         for (DeprElementKind kind : DeprElementKind.values()) {
             if (deprapi.hasDocumentation(kind)) {
                 addAnchor(deprapi, kind, div);
-                memberTableSummary
-                        = resources.getText("doclet.Member_Table_Summary",
-                                resources.getText(getHeadingKey(kind)),
-                                resources.getText(getSummaryKey(kind)));
-                List<String> memberTableHeader = new ArrayList<>();
-                memberTableHeader.add(resources.getText(getHeaderKey(kind)));
-                memberTableHeader.add(resources.getText("doclet.Description"));
+                memberTableSummary = resources.getText("doclet.Member_Table_Summary",
+                        resources.getText(getHeadingKey(kind)),
+                        resources.getText(getSummaryKey(kind)));
+                TableHeader memberTableHeader = new TableHeader(
+                        contents.getContent(getHeaderKey(kind)), contents.descriptionLabel);
                 addDeprecatedAPI(deprapi.getSet(kind),
                             getHeadingKey(kind), memberTableSummary, memberTableHeader, div);
             }
@@ -405,13 +402,13 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the deprecated table will be added
      */
     protected void addDeprecatedAPI(SortedSet<Element> deprList, String headingKey,
-            String tableSummary, List<String> tableHeader, Content contentTree) {
+            String tableSummary, TableHeader tableHeader, Content contentTree) {
         if (deprList.size() > 0) {
             Content caption = getTableCaption(configuration.getContent(headingKey));
             Content table = (configuration.isOutputHtml5())
                     ? HtmlTree.TABLE(HtmlStyle.deprecatedSummary, caption)
                     : HtmlTree.TABLE(HtmlStyle.deprecatedSummary, tableSummary, caption);
-            table.addContent(getSummaryTableHeader(tableHeader, "col"));
+            table.addContent(tableHeader.toContent());
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             boolean altColor = true;
             for (Element e : deprList) {

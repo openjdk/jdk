@@ -300,6 +300,14 @@ var getJibProfilesCommon = function (input, data) {
                     ],
                     exploded: "images/test"
                 },
+                test_demos: {
+                    local: "bundles/\\(jdk.*bin-tests-demos.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-tests-demos.tar.gz",
+                        "bundles/" + pf + "/\\1"
+                    ],
+                    exploded: "images/test"
+                },
                 jdk_symbols: {
                     local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
                     remote: [
@@ -998,7 +1006,7 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc4.9.2-OEL6.4+1.1",
+        linux_x64: "gcc4.9.2-OEL6.4+1.2",
         macosx_x64: "Xcode6.3-MacOSX10.9+1.0",
         solaris_x64: "SS12u4-Solaris11u1+1.0",
         solaris_sparcv9: "SS12u4-Solaris11u1+1.0",

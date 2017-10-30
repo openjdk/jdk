@@ -356,7 +356,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                     }
                 }
                 writer.addMemberSummary(typeElement, member, firstSentenceTags,
-                        tableContents, counter);
+                        tableContents, counter, visibleMemberMap.kind);
                 counter++;
             }
             summaryTreeList.add(writer.getSummaryTableTree(typeElement, tableContents));

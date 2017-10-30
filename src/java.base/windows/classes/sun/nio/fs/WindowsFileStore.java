@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ class WindowsFileStore
     }
 
     // read the free space info
-    private DiskFreeSpace readDiskFreeSpace() throws IOException {
+    private DiskFreeSpace readDiskFreeSpaceEx() throws IOException {
         try {
             return GetDiskFreeSpaceEx(root);
         } catch (WindowsException x) {
@@ -134,19 +134,32 @@ class WindowsFileStore
         }
     }
 
+    private DiskFreeSpace readDiskFreeSpace() throws IOException {
+        try {
+            return GetDiskFreeSpace(root);
+        } catch (WindowsException x) {
+            x.rethrowAsIOException(root);
+            return null;
+        }
+    }
+
     @Override
     public long getTotalSpace() throws IOException {
-        return readDiskFreeSpace().totalNumberOfBytes();
+        return readDiskFreeSpaceEx().totalNumberOfBytes();
     }
 
     @Override
     public long getUsableSpace() throws IOException {
-        return readDiskFreeSpace().freeBytesAvailable();
+        return readDiskFreeSpaceEx().freeBytesAvailable();
+    }
+
+    public long getBlockSize() throws IOException {
+        return readDiskFreeSpace().bytesPerSector();
     }
 
     @Override
     public long getUnallocatedSpace() throws IOException {
-        return readDiskFreeSpace().freeBytesAvailable();
+        return readDiskFreeSpaceEx().freeBytesAvailable();
     }
 
     @Override
@@ -165,6 +178,8 @@ class WindowsFileStore
             return getUsableSpace();
         if (attribute.equals("unallocatedSpace"))
             return getUnallocatedSpace();
+        if (attribute.equals("bytesPerSector"))
+            return getBlockSize();
         // windows specific for testing purposes
         if (attribute.equals("volume:vsn"))
             return volInfo.volumeSerialNumber();

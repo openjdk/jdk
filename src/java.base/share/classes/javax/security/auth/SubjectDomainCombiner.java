@@ -29,7 +29,6 @@ import java.security.AccessController;
 import java.security.Permission;
 import java.security.Permissions;
 import java.security.PermissionCollection;
-import java.security.Policy;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
@@ -57,7 +56,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
         sun.security.util.Debug.getInstance("combiner",
                                         "\t[SubjectDomainCombiner]");
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     // Note: check only at classloading time, not dynamically during combine()
     private static final boolean useJavaxPolicy =
         javax.security.auth.Policy.isCustomPolicySet(debug);
@@ -303,7 +302,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
         if (!allowCaching) {
             java.security.AccessController.doPrivileged
                 (new PrivilegedAction<Void>() {
-                    @SuppressWarnings("deprecation")
+                    @SuppressWarnings({"deprecation", "removal"})
                     public Void run() {
                         // Call refresh only caching is disallowed
                         javax.security.auth.Policy.getPolicy().refresh();
@@ -374,7 +373,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
                         PermissionCollection newPerms =
                             java.security.AccessController.doPrivileged
                             (new PrivilegedAction<PermissionCollection>() {
-                            @SuppressWarnings("deprecation")
+                            @SuppressWarnings({"deprecation", "removal"})
                             public PermissionCollection run() {
                                 return
                                     javax.security.auth.Policy.getPolicy().getPermissions

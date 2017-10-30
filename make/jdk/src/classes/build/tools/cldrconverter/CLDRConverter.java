@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.ResourceBundle.Control;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.SAXNotRecognizedException;
@@ -217,6 +218,7 @@ public class CLDRConverter {
 
         List<Bundle> bundles = readBundleList();
         convertBundles(bundles);
+        convertBundles(addedBundles);
     }
 
     private static void usage() {
@@ -293,14 +295,7 @@ public class CLDRConverter {
                 if (fileName.endsWith(".xml")) {
                     String id = fileName.substring(0, fileName.indexOf('.'));
                     Locale cldrLoc = Locale.forLanguageTag(toLanguageTag(id));
-                    List<Locale> candList = applyParentLocales("", defCon.getCandidateLocales("", cldrLoc));
-                    StringBuilder sb = new StringBuilder();
-                    for (Locale loc : candList) {
-                        if (!loc.equals(Locale.ROOT)) {
-                            sb.append(toLocaleName(loc.toLanguageTag()));
-                            sb.append(",");
-                        }
-                    }
+                    StringBuilder sb = getCandLocales(cldrLoc);
                     if (sb.indexOf("root") == -1) {
                         sb.append("root");
                     }
@@ -319,6 +314,23 @@ public class CLDRConverter {
     }
 
     private static final Map<String, Map<String, Object>> cldrBundles = new HashMap<>();
+    // this list will contain additional bundles to be generated for Region dependent Data.
+    private static List<Bundle> addedBundles = new ArrayList<>();
+
+    private static Map<String, SortedSet<String>> metaInfo = new HashMap<>();
+
+    static {
+        // For generating information on supported locales.
+        metaInfo.put("LocaleNames", new TreeSet<>());
+        metaInfo.put("CurrencyNames", new TreeSet<>());
+        metaInfo.put("TimeZoneNames", new TreeSet<>());
+        metaInfo.put("CalendarData", new TreeSet<>());
+        metaInfo.put("FormatData", new TreeSet<>());
+        metaInfo.put("AvailableLocales", new TreeSet<>());
+    }
+
+
+    private static Set<String> calendarDataFields = Set.of("firstDayOfWeek", "minimalDaysInFirstWeek");
 
     static Map<String, Object> getCLDRBundle(String id) throws Exception {
         Map<String, Object> bundle = cldrBundles.get(id);
@@ -411,16 +423,85 @@ public class CLDRConverter {
         parserLikelySubtags.parse(fileLikelySubtags, handlerLikelySubtags);
     }
 
-    private static void convertBundles(List<Bundle> bundles) throws Exception {
-        // For generating information on supported locales.
-        Map<String, SortedSet<String>> metaInfo = new HashMap<>();
-        metaInfo.put("LocaleNames", new TreeSet<>());
-        metaInfo.put("CurrencyNames", new TreeSet<>());
-        metaInfo.put("TimeZoneNames", new TreeSet<>());
-        metaInfo.put("CalendarData", new TreeSet<>());
-        metaInfo.put("FormatData", new TreeSet<>());
-        metaInfo.put("AvailableLocales", new TreeSet<>());
+    /**
+     * This method will check if a new region dependent Bundle needs to be
+     * generated for this Locale id and targetMap. New Bundle will be generated
+     * when Locale id has non empty script and country code and targetMap
+     * contains region dependent data. This method will also remove region
+     * dependent data from this targetMap after candidate locales check. E.g. It
+     * will call genRegionDependentBundle() in case of az_Latn_AZ locale and
+     * remove region dependent data from this targetMap so that az_Latn_AZ
+     * bundle will not be created. For az_Cyrl_AZ, new Bundle will be generated
+     * but region dependent data will not be removed from targetMap as its candidate
+     * locales are [az_Cyrl_AZ, az_Cyrl, root], which does not include az_AZ for
+     * fallback.
+     *
+     */
 
+    private static void checkRegionDependentBundle(Map<String, Object> targetMap, String id) {
+        if ((CLDRConverter.getScript(id) != "")
+                && (CLDRConverter.getCountryCode(id) != "")) {
+            Map<String, Object> regionDepDataMap = targetMap
+                    .keySet()
+                    .stream()
+                    .filter(calendarDataFields::contains)
+                    .collect(Collectors.toMap(k -> k, targetMap::get));
+            if (!regionDepDataMap.isEmpty()) {
+                Locale cldrLoc = new Locale(CLDRConverter.getLanguageCode(id),
+                                            CLDRConverter.getCountryCode(id));
+                genRegionDependentBundle(regionDepDataMap, cldrLoc);
+                if (checkCandidateLocales(id, cldrLoc)) {
+                    // Remove matchedKeys from this targetMap only if checkCandidateLocales() returns true.
+                    regionDepDataMap.keySet().forEach(targetMap::remove);
+                }
+            }
+        }
+    }
+    /**
+     * This method will generate a new Bundle for region dependent data,
+     * minimalDaysInFirstWeek and firstDayOfWeek. Newly generated Bundle will be added
+     * to addedBundles list.
+     */
+    private static void genRegionDependentBundle(Map<String, Object> targetMap, Locale cldrLoc) {
+        String localeId = cldrLoc.toString();
+        StringBuilder sb = getCandLocales(cldrLoc);
+        if (sb.indexOf(localeId) == -1) {
+            sb.append(localeId);
+        }
+        Bundle bundle = new Bundle(localeId, sb.toString(), null, null);
+        cldrBundles.put(localeId, targetMap);
+        addedBundles.add(bundle);
+    }
+
+    private static StringBuilder getCandLocales(Locale cldrLoc) {
+        List<Locale> candList = getCandidateLocales(cldrLoc);
+        StringBuilder sb = new StringBuilder();
+        for (Locale loc : candList) {
+            if (!loc.equals(Locale.ROOT)) {
+                sb.append(toLocaleName(loc.toLanguageTag()));
+                sb.append(",");
+            }
+        }
+        return sb;
+    }
+
+    private static List<Locale> getCandidateLocales(Locale cldrLoc) {
+        List<Locale> candList = new ArrayList<>();
+        candList = applyParentLocales("", defCon.getCandidateLocales("",  cldrLoc));
+        return candList;
+    }
+
+    /**
+     * This method will return true, if for a given locale, its language and
+     * country specific locale will exist in runtime lookup path. E.g. it will
+     * return true for bs_Latn_BA.
+     */
+    private static boolean checkCandidateLocales(String id, Locale cldrLoc) {
+        return(getCandidateLocales(Locale.forLanguageTag(id.replaceAll("_", "-")))
+                .contains(cldrLoc));
+    }
+
+    private static void convertBundles(List<Bundle> bundles) throws Exception {
         // parent locales map. The mappings are put in base metaInfo file
         // for now.
         if (isBaseModule) {
@@ -433,6 +514,8 @@ public class CLDRConverter {
 
             Map<String, Object> targetMap = bundle.getTargetMap();
 
+            // check if new region DependentBundle needs to be generated for this Locale.
+            checkRegionDependentBundle(targetMap, bundle.getID());
             EnumSet<Bundle.Type> bundleTypes = bundle.getBundleTypes();
 
             if (bundle.isRoot()) {
@@ -571,6 +654,14 @@ public class CLDRConverter {
      */
     static String getRegionCode(String id) {
         return Locale.forLanguageTag(id.replaceAll("_", "-")).getCountry();
+    }
+
+    /*
+     * Returns the script portion of the given id.
+     * If id is "root", "" is returned.
+     */
+    static String getScript(String id) {
+        return "root".equals(id) ? "" : Locale.forLanguageTag(id.replaceAll("_", "-")).getScript();
     }
 
     private static class KeyComparator implements Comparator<String> {

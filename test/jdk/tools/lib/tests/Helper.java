@@ -136,7 +136,11 @@ public class Helper {
     }
 
     public String defaultModulePath() {
-        return stdjmods.toAbsolutePath().toString() + File.pathSeparator
+        return defaultModulePath(true);
+    }
+
+    public String defaultModulePath(boolean includeStdMods) {
+        return (includeStdMods? stdjmods.toAbsolutePath().toString() : "") + File.pathSeparator
                 + jmods.toAbsolutePath().toString() + File.pathSeparator
                 + jars.toAbsolutePath().toString() + File.pathSeparator
                 + explodedmodsclasses.toAbsolutePath().toString();

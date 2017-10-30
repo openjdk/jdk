@@ -96,10 +96,10 @@ public final class AppRuntimeImageBuilder {
         // jlink main arguments
         Jlink.JlinkConfiguration jlinkConfig =
             new Jlink.JlinkConfiguration(new File("").toPath(), // Unused
-                                         modulePath,
                                          addModules,
-                                         limitModules,
-                                         ByteOrder.nativeOrder());
+                                         ByteOrder.nativeOrder(),
+                                         moduleFinder(modulePath,
+                                             limitModules, addModules));
 
         // plugin configuration
         List<Plugin> plugins = new ArrayList<Plugin>();

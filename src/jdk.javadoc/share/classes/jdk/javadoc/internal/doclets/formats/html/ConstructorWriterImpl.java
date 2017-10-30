@@ -31,6 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.formats.html.TableHeader;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -260,14 +261,13 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public List<String> getSummaryTableHeader(Element member) {
-        List<String> header = new ArrayList<>();
+    public TableHeader getSummaryTableHeader(Element member) {
         if (foundNonPubConstructor) {
-            header.add(resources.getText("doclet.Modifier"));
+            return new TableHeader(contents.modifierLabel, contents.constructorLabel,
+                    contents.descriptionLabel);
+        } else {
+            return new TableHeader(contents.constructorLabel, contents.descriptionLabel);
         }
-        header.add(resources.getText("doclet.Constructor"));
-        header.add(resources.getText("doclet.Description"));
-        return header;
     }
 
     /**

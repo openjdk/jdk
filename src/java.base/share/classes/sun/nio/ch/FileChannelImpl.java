@@ -41,6 +41,11 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystemException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -87,6 +92,12 @@ public class FileChannelImpl
     // Positional-read is not interruptible
     private volatile boolean uninterruptible;
 
+    // DirectIO flag
+    private final boolean direct;
+
+    // IO alignment value for DirectIO
+    private final int alignment;
+
     // Cleanable with an action which closes this channel's file descriptor
     private final Cleanable closer;
 
@@ -103,14 +114,22 @@ public class FileChannelImpl
     }
 
     private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
-                            boolean writable, Object parent)
+                            boolean writable, boolean direct, Object parent)
     {
         this.fd = fd;
         this.readable = readable;
         this.writable = writable;
         this.parent = parent;
         this.path = path;
+        this.direct = direct;
         this.nd = new FileDispatcherImpl();
+        if (direct) {
+            assert path != null;
+            this.alignment = nd.setDirectIO(fd, path);
+        } else {
+            this.alignment = -1;
+        }
+
         // Register a cleaning action if and only if there is no parent
         // as the parent will take care of closing the file descriptor.
         // FileChannel is used by the LambdaMetaFactory so a lambda cannot
@@ -123,9 +142,9 @@ public class FileChannelImpl
     // and RandomAccessFile.getChannel()
     public static FileChannel open(FileDescriptor fd, String path,
                                    boolean readable, boolean writable,
-                                   Object parent)
+                                   boolean direct, Object parent)
     {
-        return new FileChannelImpl(fd, path, readable, writable, parent);
+        return new FileChannelImpl(fd, path, readable, writable, direct, parent);
     }
 
     private void ensureOpen() throws IOException {
@@ -181,6 +200,8 @@ public class FileChannelImpl
         if (!readable)
             throw new NonReadableChannelException();
         synchronized (positionLock) {
+            if (direct)
+                Util.checkChannelPositionAligned(position(), alignment);
             int n = 0;
             int ti = -1;
             try {
@@ -189,7 +210,7 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.read(fd, dst, -1, nd);
+                    n = IOUtil.read(fd, dst, -1, direct, alignment, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -209,6 +230,8 @@ public class FileChannelImpl
         if (!readable)
             throw new NonReadableChannelException();
         synchronized (positionLock) {
+            if (direct)
+                Util.checkChannelPositionAligned(position(), alignment);
             long n = 0;
             int ti = -1;
             try {
@@ -217,7 +240,8 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.read(fd, dsts, offset, length, nd);
+                    n = IOUtil.read(fd, dsts, offset, length,
+                            direct, alignment, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -233,6 +257,8 @@ public class FileChannelImpl
         if (!writable)
             throw new NonWritableChannelException();
         synchronized (positionLock) {
+            if (direct)
+                Util.checkChannelPositionAligned(position(), alignment);
             int n = 0;
             int ti = -1;
             try {
@@ -241,7 +267,7 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.write(fd, src, -1, nd);
+                    n = IOUtil.write(fd, src, -1, direct, alignment, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -261,6 +287,8 @@ public class FileChannelImpl
         if (!writable)
             throw new NonWritableChannelException();
         synchronized (positionLock) {
+            if (direct)
+                Util.checkChannelPositionAligned(position(), alignment);
             long n = 0;
             int ti = -1;
             try {
@@ -269,7 +297,8 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    n = IOUtil.write(fd, srcs, offset, length, nd);
+                    n = IOUtil.write(fd, srcs, offset, length,
+                            direct, alignment, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {
@@ -752,6 +781,8 @@ public class FileChannelImpl
             throw new IllegalArgumentException("Negative position");
         if (!readable)
             throw new NonReadableChannelException();
+        if (direct)
+            Util.checkChannelPositionAligned(position, alignment);
         ensureOpen();
         if (nd.needsPositionLock()) {
             synchronized (positionLock) {
@@ -774,7 +805,7 @@ public class FileChannelImpl
             if (!isOpen())
                 return -1;
             do {
-                n = IOUtil.read(fd, dst, position, nd);
+                n = IOUtil.read(fd, dst, position, direct, alignment, nd);
             } while ((n == IOStatus.INTERRUPTED) && isOpen());
             return IOStatus.normalize(n);
         } finally {
@@ -791,6 +822,8 @@ public class FileChannelImpl
             throw new IllegalArgumentException("Negative position");
         if (!writable)
             throw new NonWritableChannelException();
+        if (direct)
+            Util.checkChannelPositionAligned(position, alignment);
         ensureOpen();
         if (nd.needsPositionLock()) {
             synchronized (positionLock) {
@@ -811,7 +844,7 @@ public class FileChannelImpl
             if (!isOpen())
                 return -1;
             do {
-                n = IOUtil.write(fd, src, position, nd);
+                n = IOUtil.write(fd, src, position, direct, alignment, nd);
             } while ((n == IOStatus.INTERRUPTED) && isOpen());
             return IOStatus.normalize(n);
         } finally {

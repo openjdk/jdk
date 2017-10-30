@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ abstract class AESWrapCipher extends CipherSpi {
         if (decrypting) {
             result = inputLen - 8;
         } else {
-            result = inputLen + 8;
+            result = Math.addExact(inputLen, 8);
         }
         return (result < 0? 0:result);
     }
@@ -378,7 +378,7 @@ abstract class AESWrapCipher extends CipherSpi {
             throw new InvalidKeyException("Invalid key length: " +
                                           encoded.length + " bytes");
         }
-        return encoded.length * 8;
+        return Math.multiplyExact(encoded.length, 8);
     }
 
     /**
@@ -404,7 +404,7 @@ abstract class AESWrapCipher extends CipherSpi {
             throw new InvalidKeyException("Cannot get an encoding of " +
                                           "the key to be wrapped");
         }
-        byte[] out = new byte[keyVal.length + 8];
+        byte[] out = new byte[Math.addExact(keyVal.length, 8)];
 
         if (keyVal.length == 8) {
             System.arraycopy(IV, 0, out, 0, IV.length);

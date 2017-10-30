@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -176,8 +175,10 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
     protected void addOverviewHeader(Content body) {
     }
 
-    protected void addModulesList(Collection<ModuleElement> modules, String text,
-            String tableSummary, Content body) {
+    /**
+     * Do nothing as there is no modules list on this page.
+     */
+    protected void addModulesList(Content body) {
     }
 
     /**

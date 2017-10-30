@@ -29,17 +29,17 @@ import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
+import jdk.javadoc.internal.doclets.toolkit.util.GroupTypes;
 
 /**
  * Generate the package index page "overview-summary.html" for the right-hand
@@ -65,9 +65,19 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     private final Map<String, SortedSet<PackageElement>> groupPackageMap;
 
     /**
-     * List to store the order groups as specified on the command line.
+     * List to store the order groups, which has elements to be displayed, as specified on the command line.
      */
-    private final List<String> groupList;
+    private final List<String> groupList = new ArrayList<>();
+
+    private final GroupTypes groupTypes;
+
+    private int groupTypesOr = 0;
+
+    protected Map<String, Integer> groupTypeMap = new LinkedHashMap<>();
+
+    boolean altColor = true;
+
+    int counter = 0;
 
     /**
      * HTML tree for main tag.
@@ -86,7 +96,10 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     public PackageIndexWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
         groupPackageMap = configuration.group.groupPackages(packages);
-        groupList = configuration.group.getGroupList();
+        configuration.group.getGroupList().stream()
+                .filter(groupPackageMap::containsKey)
+                .forEachOrdered(groupList::add);
+        groupTypes = new GroupTypes(groupList, resources.getText("doclet.All_Packages"));
     }
 
     /**
@@ -109,50 +122,58 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     @Override
     protected void addIndex(Content body) {
-        for (String groupname : groupList) {
-            SortedSet<PackageElement> list = groupPackageMap.get(groupname);
-            if (list != null && !list.isEmpty()) {
-                addIndexContents(list,
-                        groupname, configuration.getText("doclet.Member_Table_Summary",
-                                groupname, configuration.getText("doclet.packages")), body);
-            }
-        }
+        addIndexContents(body);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected void addPackagesList(Collection<PackageElement> packages, String text,
-            String tableSummary, Content body) {
-        Content table = (configuration.isOutputHtml5())
-                ? HtmlTree.TABLE(HtmlStyle.overviewSummary, getTableCaption(new RawHtml(text)))
-                : HtmlTree.TABLE(HtmlStyle.overviewSummary, tableSummary, getTableCaption(new RawHtml(text)));
-        table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
-        Content tbody = new HtmlTree(HtmlTag.TBODY);
-        addPackagesList(packages, tbody);
-        table.addContent(tbody);
-        Content anchor = getMarkerAnchor(text);
-        Content div = HtmlTree.DIV(HtmlStyle.contentContainer, anchor);
-        div.addContent(table);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            htmlTree.addContent(div);
-        } else {
-            body.addContent(div);
+    protected void addPackagesList(Content body) {
+        if (!groupList.isEmpty()) {
+            Content caption;
+            TreeMap<PackageElement, String> groupMap = new TreeMap<>(utils.makePackageComparator());
+            Content tbody = new HtmlTree(HtmlTag.TBODY);
+            String tableSummary = configuration.getText("doclet.Member_Table_Summary",
+                    configuration.getText("doclet.Package_Summary"), configuration.getText("doclet.packages"));
+            for (String groupname : groupList) {
+                for (PackageElement pkg : groupPackageMap.get(groupname)) {
+                    groupMap.put(pkg, groupname);
+                }
+            }
+            if (!groupMap.isEmpty()) {
+                addPackagesList(groupMap, tbody);
+            }
+            if (showTabs(groupTypes)) {
+                caption = getTableCaption(groupTypes);
+                generateGroupTypesScript(groupTypeMap, groupTypes.getGroupTypes());
+            } else {
+                caption = getTableCaption((groupList.size() == 1) ? new StringContent(groupList.get(0)) : contents.packagesLabel);
+            }
+            Content table = getTableHeader(caption, tableSummary, HtmlStyle.overviewSummary);
+            table.addContent(getPackageTableHeader().toContent());
+            table.addContent(tbody);
+            Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
+            if (configuration.allowTag(HtmlTag.MAIN)) {
+                htmlTree.addContent(div);
+            } else {
+                body.addContent(div);
+            }
         }
     }
 
     /**
      * Adds list of packages in the index table. Generate link to each package.
      *
-     * @param packages Packages to which link is to be generated
+     * @param map map of package elements and group names
      * @param tbody the documentation tree to which the list will be added
      */
-    protected void addPackagesList(Collection<PackageElement> packages, Content tbody) {
-        boolean altColor = true;
-        for (PackageElement pkg : packages) {
+    protected void addPackagesList(TreeMap<PackageElement, String> map, Content tbody) {
+        String groupname;
+        for (PackageElement pkg : map.keySet()) {
             if (!pkg.isUnnamed()) {
                 if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
+                    groupname = map.get(pkg);
                     Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
                     Content thPackage = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, packageLinkContent);
                     HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
@@ -161,6 +182,12 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
                     HtmlTree tr = HtmlTree.TR(thPackage);
                     tr.addContent(tdSummary);
                     tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
+                    int groupType = groupTypes.getTableTab(groupname).value();
+                    groupTypesOr = groupTypesOr | groupType;
+                    String tableId = "i" + counter;
+                    counter++;
+                    groupTypeMap.put(tableId, groupType);
+                    tr.addAttr(HtmlAttr.ID, tableId);
                     tbody.addContent(tr);
                 }
             }

@@ -134,6 +134,21 @@ function showPkgs(type)
     updatePkgsTabs(type);
 }
 
+function showGroups(type)
+{
+    count = 0;
+    for (var key in groups) {
+        var row = document.getElementById(key);
+        if ((groups[key] &  type) !== 0) {
+            row.style.display = '';
+            row.className = (count++ % 2) ? rowColor : altColor;
+        }
+        else
+            row.style.display = 'none';
+    }
+    updateGroupsTabs(type);
+}
+
 function updateTabs(type)
 {
     for (var value in tabs) {
@@ -168,6 +183,22 @@ function updatePkgsTabs(type)
         else {
             sNode.className = tableTab;
             spanNode.innerHTML = "<a href=\"javascript:showPkgs(" + value + ");\">" + tabs[value][1] + "</a>";
+        }
+    }
+}
+
+function updateGroupsTabs(type)
+{
+    for (var value in tabs) {
+        var sNode = document.getElementById(tabs[value][0]);
+        var spanNode = sNode.firstChild;
+        if (value == type) {
+            sNode.className = activeTableTab;
+            spanNode.innerHTML = tabs[value][1];
+        }
+        else {
+            sNode.className = tableTab;
+            spanNode.innerHTML = "<a href=\"javascript:showGroups(" + value + ");\">" + tabs[value][1] + "</a>";
         }
     }
 }

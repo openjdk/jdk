@@ -58,11 +58,15 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     final PackageElement packageElement;
     final SortedMap<String, Set<TypeElement>> usingPackageToUsedClasses = new TreeMap<>();
     protected HtmlTree mainTree = HtmlTree.MAIN();
+    final String packageUseTableSummary;
 
     /**
      * Constructor.
      *
-     * @param filename the file to be generated.
+     * @param configuration the configuration
+     * @param mapper a mapper to provide details of where elements are used
+     * @param filename the file to be generated
+     * @param pkgElement the package element to be documented
      */
     public PackageUseWriter(HtmlConfiguration configuration,
                             ClassUseMapper mapper, DocPath filename,
@@ -89,6 +93,9 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 }
             }
         }
+
+        packageUseTableSummary = resources.getText("doclet.Use_Table_Summary",
+                resources.getText("doclet.packages"));
     }
 
     /**
@@ -163,8 +170,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 getPackageLink(packageElement, utils.getPackageName(packageElement))));
         Content table = (configuration.isOutputHtml5())
                 ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
-                : HtmlTree.TABLE(HtmlStyle.useSummary, useTableSummary, caption);
-        table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
+                : HtmlTree.TABLE(HtmlStyle.useSummary, packageUseTableSummary, caption);
+        table.addContent(getPackageTableHeader().toContent());
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         boolean altColor = true;
         for (String pkgname: usingPackageToUsedClasses.keySet()) {
@@ -186,8 +193,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the class list will be added
      */
     protected void addClassList(Content contentTree) {
-        List<String> classTableHeader = Arrays.asList(
-                resources.getText("doclet.Class"), resources.getText("doclet.Description"));
+        TableHeader classTableHeader = new TableHeader(
+                contents.classLabel, contents.descriptionLabel);
         for (String packageName : usingPackageToUsedClasses.keySet()) {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
             HtmlTree li = new HtmlTree(HtmlTag.LI);
@@ -204,7 +211,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             Content table = (configuration.isOutputHtml5())
                     ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
                     : HtmlTree.TABLE(HtmlStyle.useSummary, tableSummary, caption);
-            table.addContent(getSummaryTableHeader(classTableHeader, "col"));
+            table.addContent(classTableHeader.toContent());
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             boolean altColor = true;
             for (TypeElement te : usingPackageToUsedClasses.get(packageName)) {

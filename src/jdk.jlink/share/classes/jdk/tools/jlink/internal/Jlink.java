@@ -27,7 +27,9 @@ package jdk.tools.jlink.internal;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.nio.ByteOrder;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -146,10 +148,8 @@ public final class Jlink {
      */
     public static final class JlinkConfiguration {
 
-        private final List<Path> modulepaths;
         private final Path output;
         private final Set<String> modules;
-        private final Set<String> limitmods;
         private final ByteOrder endian;
         private final ModuleFinder finder;
 
@@ -157,33 +157,18 @@ public final class Jlink {
          * jlink configuration,
          *
          * @param output Output directory, must not exist.
-         * @param modulepaths Modules paths
          * @param modules The possibly-empty set of root modules to resolve
-         * @param limitmods Limit the universe of observable modules
          * @param endian Jimage byte order. Native order by default
+         * @param finder the ModuleFinder for this configuration
          */
         public JlinkConfiguration(Path output,
-                                  List<Path> modulepaths,
                                   Set<String> modules,
-                                  Set<String> limitmods,
-                                  ByteOrder endian) {
-            if (Objects.requireNonNull(modulepaths).isEmpty()) {
-                throw new IllegalArgumentException("Empty module path");
-            }
-
+                                  ByteOrder endian,
+                                  ModuleFinder finder) {
             this.output = output;
-            this.modulepaths = modulepaths;
             this.modules = Objects.requireNonNull(modules);
-            this.limitmods = Objects.requireNonNull(limitmods);
             this.endian = Objects.requireNonNull(endian);
-            this.finder = moduleFinder();
-        }
-
-        /**
-         * @return the modulepaths
-         */
-        public List<Path> getModulepaths() {
-            return modulepaths;
+            this.finder = finder;
         }
 
         /**
@@ -205,13 +190,6 @@ public final class Jlink {
          */
         public Set<String> getModules() {
             return modules;
-        }
-
-        /**
-         * @return the limitmods
-         */
-        public Set<String> getLimitmods() {
-            return limitmods;
         }
 
         /**
@@ -244,37 +222,16 @@ public final class Jlink {
                                                  modules);
         }
 
-        private ModuleFinder moduleFinder() {
-            Path[] entries = modulepaths.toArray(new Path[0]);
-            ModuleFinder finder = ModulePath.of(Runtime.version(), true, entries);
-            if (!limitmods.isEmpty()) {
-                finder = JlinkTask.limitFinder(finder, limitmods, modules);
-            }
-            return finder;
-        }
-
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
 
             builder.append("output=").append(output).append("\n");
-            StringBuilder pathsBuilder = new StringBuilder();
-            for (Path p : modulepaths) {
-                pathsBuilder.append(p).append(",");
-            }
-            builder.append("modulepaths=").append(pathsBuilder).append("\n");
-
             StringBuilder modsBuilder = new StringBuilder();
             for (String p : modules) {
                 modsBuilder.append(p).append(",");
             }
             builder.append("modules=").append(modsBuilder).append("\n");
-
-            StringBuilder limitsBuilder = new StringBuilder();
-            for (String p : limitmods) {
-                limitsBuilder.append(p).append(",");
-            }
-            builder.append("limitmodules=").append(limitsBuilder).append("\n");
             builder.append("endian=").append(endian).append("\n");
             return builder.toString();
         }

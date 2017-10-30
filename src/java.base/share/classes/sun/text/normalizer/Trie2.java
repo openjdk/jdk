@@ -592,7 +592,7 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
         //   may be lower when iterating over the code points for a single lead surrogate.
         private int            limitCP;
 
-        // True while iterating over the the Trie2 values for code points.
+        // True while iterating over the Trie2 values for code points.
         // False while iterating over the alternate values for lead surrogates.
         private boolean        doingCodePoints = true;
 

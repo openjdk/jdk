@@ -58,6 +58,8 @@ and Save Specification</a>.
  * @since 1.5
  */
 public class LSException extends RuntimeException {
+    private static final long serialVersionUID = 5371691160978884690L;
+
     public LSException(short code, String message) {
        super(message);
        this.code = code;

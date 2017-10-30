@@ -43,6 +43,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DeprecatedTaglet;
 import jdk.javadoc.internal.doclets.toolkit.util.MethodTypes;
@@ -64,7 +65,7 @@ import static javax.lang.model.element.Modifier.*;
  * @author Jamie Ho (Re-write)
  * @author Bhavesh Patel (Modified)
  */
-public abstract class AbstractMemberWriter {
+public abstract class AbstractMemberWriter implements MemberSummaryWriter {
 
     protected final HtmlConfiguration configuration;
     protected final Utils utils;
@@ -123,7 +124,7 @@ public abstract class AbstractMemberWriter {
      * @param member the member to be documented
      * @return the summary table header
      */
-    public abstract List<String> getSummaryTableHeader(Element member);
+    public abstract TableHeader getSummaryTableHeader(Element member);
 
     /**
      * Add inherited summary label for the member.
@@ -428,8 +429,7 @@ public abstract class AbstractMemberWriter {
             for (Element element : members) {
                 TypeElement te = utils.getEnclosingTypeElement(element);
                 if (!printedUseTableHeader) {
-                    table.addContent(writer.getSummaryTableHeader(
-                            this.getSummaryTableHeader(element), "col"));
+                    table.addContent(getSummaryTableHeader(element).toContent());
                     printedUseTableHeader = true;
                 }
                 HtmlTree tr = new HtmlTree(HtmlTag.TR);
@@ -519,7 +519,8 @@ public abstract class AbstractMemberWriter {
      * @param counter the counter for determining id and style for the table row
      */
     public void addMemberSummary(TypeElement tElement, Element member,
-            List<? extends DocTree> firstSentenceTags, List<Content> tableContents, int counter) {
+            List<? extends DocTree> firstSentenceTags, List<Content> tableContents, int counter,
+            VisibleMemberMap.Kind vmmKind) {
         HtmlTree tdSummaryType = new HtmlTree(HtmlTag.TD);
         tdSummaryType.addStyle(HtmlStyle.colFirst);
         writer.addSummaryType(this, member, tdSummaryType);
@@ -532,7 +533,8 @@ public abstract class AbstractMemberWriter {
         tdDesc.addStyle(HtmlStyle.colLast);
         writer.addSummaryLinkComment(this, member, firstSentenceTags, tdDesc);
         tr.addContent(tdDesc);
-        if (utils.isMethod(member) && !utils.isAnnotationType(member) && !utils.isProperty(name(member))) {
+        if (utils.isMethod(member) && !utils.isAnnotationType(member)
+                && vmmKind != VisibleMemberMap.Kind.PROPERTIES) {
             int methodType = utils.isStatic(member) ? MethodTypes.STATIC.tableTabs().value() :
                     MethodTypes.INSTANCE.tableTabs().value();
             if (utils.isInterface(member.getEnclosingElement())) {

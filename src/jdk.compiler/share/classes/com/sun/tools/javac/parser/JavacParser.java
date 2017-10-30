@@ -2396,9 +2396,8 @@ public class JavacParser implements Parser {
         int pos = token.pos;
         List<JCStatement> stats = blockStatement();
         if (stats.isEmpty()) {
-            JCErroneous e = F.at(pos).Erroneous();
-            error(e, "illegal.start.of.stmt");
-            return F.at(pos).Exec(e);
+            JCErroneous e = syntaxError(pos, "illegal.start.of.stmt");
+            return toP(F.at(pos).Exec(e));
         } else {
             JCStatement first = stats.head;
             String error = null;

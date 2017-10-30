@@ -188,7 +188,7 @@ final class MAC extends Authenticator {
      * @param type record type
      * @param bb a ByteBuffer in which the position and limit
      *        demarcate the data to be MAC'd.
-     * @param isSimulated if true, simulate the the MAC computation
+     * @param isSimulated if true, simulate the MAC computation
      *
      * @return the MAC result
      */

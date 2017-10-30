@@ -28,8 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 import java.io.*;
 import java.util.*;
 
-import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
-import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -37,6 +36,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes;
+import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes.TableTabs;
 
 
 /**
@@ -55,59 +55,14 @@ import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes;
 public class HtmlWriter {
 
     /**
-     * The window title of this file
+     * The window title of this file.
      */
     protected String winTitle;
 
     /**
-     * The configuration
+     * The configuration.
      */
-    protected BaseConfiguration configuration;
-
-    /**
-     * Header for table displaying modules and description.
-     */
-    protected final List<String> moduleTableHeader;
-
-    /**
-     * Header for tables displaying packages and description.
-     */
-    protected final List<String> packageTableHeader;
-
-    /**
-     * Header for tables displaying modules and description.
-     */
-    protected final List<String> requiresTableHeader;
-
-    /**
-     * Header for tables displaying packages and description.
-     */
-    protected final List<String> exportedPackagesTableHeader;
-
-    /**
-     * Header for tables displaying modules and exported packages.
-     */
-    protected final List<String> indirectPackagesTableHeader;
-
-    /**
-     * Header for tables displaying types and description.
-     */
-    protected final List<String> usesTableHeader;
-
-    /**
-     * Header for tables displaying types and description.
-     */
-    protected final List<String> providesTableHeader;
-
-    /**
-     * Summary for use tables displaying class and package use.
-     */
-    protected final String useTableSummary;
-
-    /**
-     * Column header for class docs displaying Modifier and Type header.
-     */
-    protected final String modifierTypeHeader;
+    protected HtmlConfiguration configuration;
 
     private final DocFile docFile;
 
@@ -117,47 +72,18 @@ public class HtmlWriter {
     /**
      * Constructor.
      *
-     * @param path The directory path to be created for this file
-     *             or null if none to be created.
+     * @param configuration the configuration
+     * @param path the directory path to be created for this file,
+     *             or null if none to be created
      */
-    public HtmlWriter(BaseConfiguration configuration, DocPath path) {
-        docFile = DocFile.createFileForOutput(configuration, path);
+    public HtmlWriter(HtmlConfiguration configuration, DocPath path) {
         this.configuration = configuration;
+        docFile = DocFile.createFileForOutput(configuration, path);
 
         // The following should be converted to shared Content objects
         // and moved to Contents, but that will require additional
         // changes at the use sites.
         Resources resources = configuration.getResources();
-        moduleTableHeader = Arrays.asList(
-            resources.getText("doclet.Module"),
-            resources.getText("doclet.Description"));
-        packageTableHeader = new ArrayList<>();
-        packageTableHeader.add(resources.getText("doclet.Package"));
-        packageTableHeader.add(resources.getText("doclet.Description"));
-        requiresTableHeader = new ArrayList<>();
-            requiresTableHeader.add(resources.getText("doclet.Modifier"));
-        requiresTableHeader.add(resources.getText("doclet.Module"));
-        requiresTableHeader.add(resources.getText("doclet.Description"));
-        exportedPackagesTableHeader = new ArrayList<>();
-        exportedPackagesTableHeader.add(resources.getText("doclet.Package"));
-        if (configuration.docEnv.getModuleMode() == ModuleMode.ALL) {
-            exportedPackagesTableHeader.add(resources.getText("doclet.Module"));
-        }
-        exportedPackagesTableHeader.add(resources.getText("doclet.Description"));
-        indirectPackagesTableHeader = new ArrayList<>();
-        indirectPackagesTableHeader.add(resources.getText("doclet.From"));
-        indirectPackagesTableHeader.add(resources.getText("doclet.Packages"));
-        usesTableHeader = new ArrayList<>();
-        usesTableHeader.add(resources.getText("doclet.Type"));
-        usesTableHeader.add(resources.getText("doclet.Description"));
-        providesTableHeader = new ArrayList<>();
-        providesTableHeader.add(resources.getText("doclet.Type"));
-        providesTableHeader.add(resources.getText("doclet.Description"));
-        useTableSummary = resources.getText("doclet.Use_Table_Summary",
-                resources.getText("doclet.packages"));
-        modifierTypeHeader = resources.getText("doclet.0_and_1",
-                resources.getText("doclet.Modifier"),
-                resources.getText("doclet.Type"));
     }
 
     public void write(Content c) throws DocFileIOException {
@@ -373,6 +299,52 @@ public class HtmlWriter {
     }
 
     /**
+     * Generated javascript variables for the document.
+     *
+     * @param groupTypeMap map comprising of group relationship
+     * @param groupTypes map comprising of all table tab types
+     */
+    public void generateGroupTypesScript(Map<String,Integer> groupTypeMap,
+            Map<String,TableTabs> groupTypes) {
+        String sep = "";
+        StringBuilder vars = new StringBuilder("var groups");
+        vars.append(" = {");
+        for (Map.Entry<String,Integer> entry : groupTypeMap.entrySet()) {
+            vars.append(sep);
+            sep = ",";
+            vars.append("\"")
+                    .append(entry.getKey())
+                    .append("\":")
+                    .append(entry.getValue());
+        }
+        vars.append("};").append(DocletConstants.NL);
+        sep = "";
+        vars.append("var tabs = {");
+        for (String group : groupTypes.keySet()) {
+            TableTabs tab = groupTypes.get(group);
+            vars.append(sep);
+            sep = ",";
+            vars.append(tab.value())
+                    .append(":")
+                    .append("[")
+                    .append("\"")
+                    .append(tab.tabId())
+                    .append("\"")
+                    .append(sep)
+                    .append("\"")
+                    .append(new StringContent(tab.resourceKey()))
+                    .append("\"]");
+        }
+        vars.append("};")
+                .append(DocletConstants.NL);
+        addStyles(HtmlStyle.altColor, vars);
+        addStyles(HtmlStyle.rowColor, vars);
+        addStyles(HtmlStyle.tableTab, vars);
+        addStyles(HtmlStyle.activeTableTab, vars);
+        script.addContent(new RawHtml(vars));
+    }
+
+    /**
      * Adds javascript style variables to the document.
      *
      * @param style style to be added as a javascript variable
@@ -391,12 +363,5 @@ public class HtmlWriter {
     public HtmlTree getTitle() {
         HtmlTree title = HtmlTree.TITLE(new StringContent(winTitle));
         return title;
-    }
-
-    /*
-     * Returns a header for Modifier and Type column of a table.
-     */
-    public String getModifierTypeHeader() {
-        return modifierTypeHeader;
     }
 }

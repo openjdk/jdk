@@ -385,7 +385,8 @@ class FileInputStream extends InputStream
             synchronized (this) {
                 fc = this.channel;
                 if (fc == null) {
-                    this.channel = fc = FileChannelImpl.open(fd, path, true, false, this);
+                    this.channel = fc = FileChannelImpl.open(fd, path, true,
+                        false, false, this);
                     if (closed) {
                         try {
                             // possible race with close(), benign since

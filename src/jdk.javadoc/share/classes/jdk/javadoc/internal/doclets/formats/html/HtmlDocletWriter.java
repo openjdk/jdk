@@ -75,12 +75,10 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlVersion;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
-import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
@@ -94,7 +92,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
+import jdk.javadoc.internal.doclets.toolkit.util.GroupTypes;
 import jdk.javadoc.internal.doclets.toolkit.util.ImplementedMethods;
+import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes.TableTabs;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
@@ -388,46 +388,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getTargetModuleLink(String target, Content label, ModuleElement mdle) {
         return getHyperLink(pathToRoot.resolve(
                 DocPaths.moduleSummary(mdle)), label, "", target);
-    }
-
-    public void addClassesSummary(SortedSet<TypeElement> classes, String label,
-            String tableSummary, List<String> tableHeader, Content summaryContentTree) {
-        if (!classes.isEmpty()) {
-            Content caption = getTableCaption(new RawHtml(label));
-            Content table = (configuration.isOutputHtml5())
-                    ? HtmlTree.TABLE(HtmlStyle.typeSummary, caption)
-                    : HtmlTree.TABLE(HtmlStyle.typeSummary, tableSummary, caption);
-            table.addContent(getSummaryTableHeader(tableHeader, "col"));
-            Content tbody = new HtmlTree(HtmlTag.TBODY);
-            boolean altColor = true;
-            for (TypeElement te : classes) {
-                if (!utils.isCoreClass(te) ||
-                    !configuration.isGeneratedDoc(te)) {
-                    continue;
-                }
-                Content classContent = getLink(new LinkInfoImpl(
-                        configuration, LinkInfoImpl.Kind.PACKAGE, te));
-                Content tdClass = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, classContent);
-                HtmlTree tr = HtmlTree.TR(tdClass);
-                tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-                altColor = !altColor;
-                HtmlTree tdClassDescription = new HtmlTree(HtmlTag.TD);
-                tdClassDescription.addStyle(HtmlStyle.colLast);
-                if (utils.isDeprecated(te)) {
-                    tdClassDescription.addContent(getDeprecatedPhrase(te));
-                    List<? extends DocTree> tags = utils.getDeprecatedTrees(te);
-                    if (!tags.isEmpty()) {
-                        addSummaryDeprecatedComment(te, tags.get(0), tdClassDescription);
-                    }
-                } else {
-                    addSummaryComment(te, tdClassDescription);
-                }
-                tr.addContent(tdClassDescription);
-                tbody.addContent(tr);
-            }
-            table.addContent(tbody);
-            summaryContentTree.addContent(table);
-        }
     }
 
     /**
@@ -939,41 +899,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Get summary table header.
-     *
-     * @param header the header for the table
-     * @param scope the scope of the headers
-     * @return a content tree for the header
-     */
-    public Content getSummaryTableHeader(List<String> header, String scope) {
-        Content tr = new HtmlTree(HtmlTag.TR);
-        final int size = header.size();
-        Content tableHeader;
-        if (size == 2) {
-            tableHeader = new StringContent(header.get(0));
-            tr.addContent(HtmlTree.TH(HtmlStyle.colFirst, scope, tableHeader));
-            tableHeader = new StringContent(header.get(1));
-            tr.addContent(HtmlTree.TH(HtmlStyle.colLast, scope, tableHeader));
-            return tr;
-        }
-        for (int i = 0; i < size; i++) {
-            tableHeader = new StringContent(header.get(i));
-            if (i == 0)
-                tr.addContent(HtmlTree.TH(HtmlStyle.colFirst, scope, tableHeader));
-            else if (i == 1)
-                tr.addContent(HtmlTree.TH(HtmlStyle.colSecond, scope, tableHeader));
-            else if (i == (size - 1))
-                tr.addContent(HtmlTree.TH(HtmlStyle.colLast, scope, tableHeader));
-            else
-                tr.addContent(HtmlTree.TH(scope, tableHeader));
-        }
-        return tr;
-    }
-
-    /**
      * Get table caption.
      *
-     * @param rawText the caption for the table which could be raw Html
+     * @param title the content for the caption
      * @return a content tree for the caption
      */
     public Content getTableCaption(Content title) {
@@ -983,6 +911,73 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content caption = HtmlTree.CAPTION(captionSpan);
         caption.addContent(tabSpan);
         return caption;
+    }
+
+    /**
+     * Get table header.
+     *
+     * @param caption the table caption
+     * @param tableSummary the summary for the table
+     * @param tableStyle the table style
+     * @return a content object
+     */
+    public Content getTableHeader(Content caption, String tableSummary, HtmlStyle tableStyle) {
+        Content table = (configuration.isOutputHtml5())
+                ? HtmlTree.TABLE(tableStyle, caption)
+                : HtmlTree.TABLE(tableStyle, tableSummary, caption);
+        return table;
+    }
+
+    /**
+     * Get the summary table caption.
+     *
+     * @param groupTypes the group types for table tabs
+     * @return the caption for the summary table
+     */
+    public Content getTableCaption(GroupTypes groupTypes) {
+        Content tabbedCaption = new HtmlTree(HtmlTag.CAPTION);
+        Map<String, TableTabs> groups = groupTypes.getGroupTypes();
+        for (String group : groups.keySet()) {
+            Content captionSpan;
+            Content span;
+            TableTabs tab = groups.get(group);
+            if (tab.isDefaultTab()) {
+                captionSpan = HtmlTree.SPAN(new StringContent(tab.resourceKey()));
+                span = HtmlTree.SPAN(tab.tabId(),
+                        HtmlStyle.activeTableTab, captionSpan);
+            } else {
+                captionSpan = HtmlTree.SPAN(getGroupTypeLinks(groupTypes, group));
+                span = HtmlTree.SPAN(tab.tabId(),
+                        HtmlStyle.tableTab, captionSpan);
+            }
+            Content tabSpan = HtmlTree.SPAN(HtmlStyle.tabEnd, Contents.SPACE);
+            span.addContent(tabSpan);
+            tabbedCaption.addContent(span);
+        }
+        return tabbedCaption;
+    }
+
+    /**
+     * Get the group type links for the table caption.
+     *
+     * @param groupTypes the group types for table tabs
+     * @param groupName the group name to be displayed as link
+     * @return the content tree for the group type link
+     */
+    public Content getGroupTypeLinks(GroupTypes groupTypes, String groupName) {
+        String jsShow = "javascript:showGroups(" + groupTypes.getTableTab(groupName).value() + ");";
+        HtmlTree link = HtmlTree.A(jsShow, new StringContent(groupTypes.getTableTab(groupName).resourceKey()));
+        return link;
+    }
+
+    /**
+     * Returns true if the table tabs needs to be displayed.
+     *
+     * @param groupTypes the group types for table tabs
+     * @return true if the tabs should be displayed
+     */
+    public boolean showTabs(GroupTypes groupTypes) {
+        return groupTypes.getGroupTypes().size() > 1;
     }
 
     /**
@@ -2615,13 +2610,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }.visit(annotationValue);
     }
 
-    /**
-     * Return the configuration for this doclet.
-     *
-     * @return the configuration for this doclet.
-     */
-    @Override
-    public BaseConfiguration configuration() {
-        return configuration;
+    protected TableHeader getPackageTableHeader() {
+        return new TableHeader(contents.packageLabel, contents.descriptionLabel);
     }
 }

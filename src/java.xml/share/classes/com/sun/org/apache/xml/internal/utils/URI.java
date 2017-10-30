@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -61,7 +61,7 @@ import java.util.Objects;
  */
 public class URI implements Serializable
 {
-    static final long serialVersionUID = 7096266377907081897L;
+  private static final long serialVersionUID = 7096266377907081897L;
 
   /**
    * MalformedURIExceptions are thrown in the process of building a URI
@@ -71,6 +71,7 @@ public class URI implements Serializable
    */
   public static class MalformedURIException extends IOException
   {
+    private static final long serialVersionUID = -8498313684991136829L;
 
     /**
      * Constructs a <code>MalformedURIException</code> with no specified
