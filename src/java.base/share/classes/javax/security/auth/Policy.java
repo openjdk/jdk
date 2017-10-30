@@ -134,7 +134,7 @@ import sun.security.util.Debug;
  * setting the value of the {@code auth.policy.provider} security property to
  * the fully qualified name of the desired {@code Policy} implementation class.
  *
- * @deprecated  as of JDK version 1.4 -- Replaced by java.security.Policy.
+ * @deprecated  Replaced by java.security.Policy.
  *              java.security.Policy has a method:
  * <pre>
  *      public PermissionCollection getPermissions
@@ -152,11 +152,12 @@ import sun.security.util.Debug;
  *
  * These two APIs provide callers the means to query the
  * Policy for Principal-based Permission entries.
+ * This class is subject to removal in a future version of Java SE.
  *
  * @since 1.4
  * @see java.security.Security security properties
  */
-@Deprecated(since="1.4")
+@Deprecated(since="1.4", forRemoval=true)
 public abstract class Policy {
 
     private static Policy policy;

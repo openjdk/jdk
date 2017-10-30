@@ -94,13 +94,9 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     /**
      * Adds the packages list to the documentation tree.
      *
-     * @param packages a collection of packagedoc objects
-     * @param text caption for the table
-     * @param tableSummary summary for the table
      * @param body the document tree to which the packages list will be added
      */
-    protected abstract void addPackagesList(Collection<PackageElement> packages, String text,
-            String tableSummary, Content body);
+    protected abstract void addPackagesList(Content body);
 
     /**
      * Generate and prints the contents in the package index file. Call appropriate
@@ -136,23 +132,16 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * @param body the document tree to which the index will be added
      */
     protected void addIndex(Content body) {
-        addIndexContents(packages, "doclet.Package_Summary",
-                configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Package_Summary"),
-                configuration.getText("doclet.packages")), body);
+        addIndexContents(body);
     }
 
     /**
      * Adds package index contents. Call appropriate methods from
      * the sub-classes. Adds it to the body HtmlTree
      *
-     * @param packages a collection of packages to be documented
-     * @param text string which will be used as the heading
-     * @param tableSummary summary for the table
      * @param body the document tree to which the index contents will be added
      */
-    protected void addIndexContents(Collection<PackageElement> packages, String text,
-            String tableSummary, Content body) {
+    protected void addIndexContents(Content body) {
         if (!packages.isEmpty()) {
             HtmlTree htmlTree = (configuration.allowTag(HtmlTag.NAV))
                     ? HtmlTree.NAV()
@@ -165,7 +154,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
             }
             htmlTree.addContent(ul);
             body.addContent(htmlTree);
-            addPackagesList(packages, text, tableSummary, body);
+            addPackagesList(body);
         }
     }
 

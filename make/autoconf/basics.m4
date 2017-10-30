@@ -561,18 +561,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   AC_MSG_RESULT([$TOPDIR])
   AC_SUBST(TOPDIR)
 
-  # Save the original version of TOPDIR for string comparisons
-  ORIGINAL_TOPDIR="$TOPDIR"
-  AC_SUBST(ORIGINAL_TOPDIR)
-
   # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
   BASIC_FIXUP_PATH(CURDIR)
   BASIC_FIXUP_PATH(TOPDIR)
-
-  # Calculate a canonical version of TOPDIR for string comparisons
-  CANONICAL_TOPDIR=$TOPDIR
-  BASIC_REMOVE_SYMBOLIC_LINKS([CANONICAL_TOPDIR])
-  AC_SUBST(CANONICAL_TOPDIR)
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/make/autoconf

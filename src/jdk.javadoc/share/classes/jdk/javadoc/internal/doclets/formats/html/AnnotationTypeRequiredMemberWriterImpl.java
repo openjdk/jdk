@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
+import jdk.javadoc.internal.doclets.formats.html.TableHeader;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -220,10 +221,9 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public List<String> getSummaryTableHeader(Element member) {
-        List<String> header = Arrays.asList(writer.getModifierTypeHeader(),
-                resources.getText("doclet.Annotation_Type_Required_Member"), resources.getText("doclet.Description"));
-        return header;
+    public TableHeader getSummaryTableHeader(Element member) {
+        return new TableHeader(contents.modifierAndTypeLabel,
+                contents.annotationTypeRequiredMemberLabel, contents.descriptionLabel);
     }
 
     /**

@@ -65,6 +65,7 @@ import sun.security.util.PropertyExpander;
  *             This class is entirely deprecated.
  */
 @Deprecated
+@SuppressWarnings("removal")
 public class AuthPolicyFile extends javax.security.auth.Policy {
 
     static final ResourceBundle rb =

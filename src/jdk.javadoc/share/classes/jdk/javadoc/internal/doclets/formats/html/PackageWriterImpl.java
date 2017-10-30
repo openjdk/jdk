@@ -198,22 +198,105 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * {@inheritDoc}
      */
     @Override
+    public void addInterfaceSummary(SortedSet<TypeElement> interfaces, Content summaryContentTree) {
+        String label = resources.getText("doclet.Interface_Summary");
+        String tableSummary = resources.getText("doclet.Member_Table_Summary",
+                        resources.getText("doclet.Interface_Summary"),
+                        resources.getText("doclet.interfaces"));
+        TableHeader tableHeader= new TableHeader(contents.interfaceLabel, contents.descriptionLabel);
+
+        addClassesSummary(interfaces, label, tableSummary, tableHeader, summaryContentTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addClassSummary(SortedSet<TypeElement> classes, Content summaryContentTree) {
+        String label = resources.getText("doclet.Class_Summary");
+        String tableSummary = resources.getText("doclet.Member_Table_Summary",
+                        resources.getText("doclet.Class_Summary"),
+                        resources.getText("doclet.classes"));
+        TableHeader tableHeader= new TableHeader(contents.classLabel, contents.descriptionLabel);
+
+        addClassesSummary(classes, label, tableSummary, tableHeader, summaryContentTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addEnumSummary(SortedSet<TypeElement> enums, Content summaryContentTree) {
+        String label = resources.getText("doclet.Enum_Summary");
+        String tableSummary = resources.getText("doclet.Member_Table_Summary",
+                        resources.getText("doclet.Enum_Summary"),
+                        resources.getText("doclet.enums"));
+        TableHeader tableHeader= new TableHeader(contents.enum_, contents.descriptionLabel);
+
+        addClassesSummary(enums, label, tableSummary, tableHeader, summaryContentTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addExceptionSummary(SortedSet<TypeElement> exceptions, Content summaryContentTree) {
+        String label = resources.getText("doclet.Exception_Summary");
+        String tableSummary = resources.getText("doclet.Member_Table_Summary",
+                        resources.getText("doclet.Exception_Summary"),
+                        resources.getText("doclet.exceptions"));
+        TableHeader tableHeader= new TableHeader(contents.exception, contents.descriptionLabel);
+
+        addClassesSummary(exceptions, label, tableSummary, tableHeader, summaryContentTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addErrorSummary(SortedSet<TypeElement> errors, Content summaryContentTree) {
+        String label = resources.getText("doclet.Error_Summary");
+        String tableSummary = resources.getText("doclet.Member_Table_Summary",
+                        resources.getText("doclet.Error_Summary"),
+                        resources.getText("doclet.errors"));
+        TableHeader tableHeader= new TableHeader(contents.error, contents.descriptionLabel);
+
+        addClassesSummary(errors, label, tableSummary, tableHeader, summaryContentTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addAnnotationTypeSummary(SortedSet<TypeElement> annoTypes, Content summaryContentTree) {
+        String label = resources.getText("doclet.Annotation_Types_Summary");
+        String tableSummary = resources.getText("doclet.Member_Table_Summary",
+                        resources.getText("doclet.Annotation_Types_Summary"),
+                        resources.getText("doclet.annotationtypes"));
+        TableHeader tableHeader= new TableHeader(contents.annotationType, contents.descriptionLabel);
+
+        addClassesSummary(annoTypes, label, tableSummary, tableHeader, summaryContentTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void addClassesSummary(SortedSet<TypeElement> classes, String label,
-            String tableSummary, List<String> tableHeader, Content summaryContentTree) {
+            String tableSummary, TableHeader tableHeader, Content summaryContentTree) {
         if(!classes.isEmpty()) {
             Content caption = getTableCaption(new RawHtml(label));
             Content table = (configuration.isOutputHtml5())
                     ? HtmlTree.TABLE(HtmlStyle.typeSummary, caption)
                     : HtmlTree.TABLE(HtmlStyle.typeSummary, tableSummary, caption);
-            table.addContent(getSummaryTableHeader(tableHeader, "col"));
+            table.addContent(tableHeader.toContent());
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             boolean altColor = false;
             for (TypeElement klass : classes) {
-                altColor = !altColor;
                 if (!utils.isCoreClass(klass) ||
                     !configuration.isGeneratedDoc(klass)) {
                     continue;
                 }
+                altColor = !altColor;
                 Content classContent = getLink(new LinkInfoImpl(
                         configuration, LinkInfoImpl.Kind.PACKAGE, klass));
                 Content thClass = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, classContent);

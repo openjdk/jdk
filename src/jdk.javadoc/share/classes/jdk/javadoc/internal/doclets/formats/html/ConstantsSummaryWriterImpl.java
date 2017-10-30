@@ -70,7 +70,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
 
     private final String constantsTableSummary;
 
-    private final List<String> constantsTableHeader;
+    private final TableHeader constantsTableHeader;
 
     /**
      * The HTML tree for main tag.
@@ -92,10 +92,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         this.configuration = configuration;
         constantsTableSummary = configuration.getText("doclet.Constants_Table_Summary",
                 configuration.getText("doclet.Constants_Summary"));
-        constantsTableHeader = new ArrayList<>();
-        constantsTableHeader.add(getModifierTypeHeader());
-        constantsTableHeader.add(configuration.getText("doclet.ConstantField"));
-        constantsTableHeader.add(configuration.getText("doclet.Value"));
+        constantsTableHeader = new TableHeader(
+                contents.modifierAndTypeLabel, contents.constantFieldLabel, contents.valueLabel);
     }
 
     /**
@@ -261,7 +259,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         Content table = (configuration.isOutputHtml5())
                 ? HtmlTree.TABLE(HtmlStyle.constantsSummary, caption)
                 : HtmlTree.TABLE(HtmlStyle.constantsSummary, constantsTableSummary, caption);
-        table.addContent(getSummaryTableHeader(constantsTableHeader, "col"));
+        table.addContent(constantsTableHeader.toContent());
         return table;
     }
 

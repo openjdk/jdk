@@ -119,7 +119,7 @@ public final class ResponderId {
      * When encoded in DER this object will use the byKey option, a
      * SHA-1 hash of the responder's public key.
      *
-     * @param pubKey the the OCSP responder's public key
+     * @param pubKey the OCSP responder's public key
      *
      * @throws IOException if the internal DER-encoding of the
      *      {@code KeyIdentifier} fails.

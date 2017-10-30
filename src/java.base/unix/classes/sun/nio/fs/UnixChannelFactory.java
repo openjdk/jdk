@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ class UnixChannelFactory {
         boolean deleteOnClose;
         boolean sync;
         boolean dsync;
+        boolean direct;
 
         static Flags toFlags(Set<? extends OpenOption> options) {
             Flags flags = new Flags();
@@ -88,6 +89,12 @@ class UnixChannelFactory {
                     flags.noFollowLinks = true;
                     continue;
                 }
+
+                if (ExtendedOptions.DIRECT.matches(option)) {
+                    flags.direct = true;
+                    continue;
+                }
+
                 if (option == null)
                     throw new NullPointerException();
                throw new UnsupportedOperationException(option + " not supported");
@@ -103,7 +110,7 @@ class UnixChannelFactory {
     static FileChannel newFileChannel(int fd, String path, boolean reading, boolean writing) {
         FileDescriptor fdObj = new FileDescriptor();
         fdAccess.set(fdObj, fd);
-        return FileChannelImpl.open(fdObj, path, reading, writing, null);
+        return FileChannelImpl.open(fdObj, path, reading, writing, false, null);
     }
 
     /**
@@ -134,7 +141,8 @@ class UnixChannelFactory {
             throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
 
         FileDescriptor fdObj = open(dfd, path, pathForPermissionCheck, flags, mode);
-        return FileChannelImpl.open(fdObj, path.toString(), flags.read, flags.write, null);
+        return FileChannelImpl.open(fdObj, path.toString(), flags.read,
+                flags.write, flags.direct, null);
     }
 
     /**
@@ -235,6 +243,8 @@ class UnixChannelFactory {
             oflags |= O_DSYNC;
         if (flags.sync)
             oflags |= O_SYNC;
+        if (flags.direct)
+            oflags |= O_DIRECT;
 
         // permission check before we open the file
         SecurityManager sm = System.getSecurityManager();

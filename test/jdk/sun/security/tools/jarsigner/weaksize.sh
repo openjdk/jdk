@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,9 @@ $KT -certreq -alias signer | \
 $JAR cvf a.jar ks
 
 # We always trust a TrustedCertificateEntry
-$JS a.jar ca | grep "chain is not validated" && exit 1
+$JS a.jar ca | grep "chain is invalid" && exit 1
 
 # An end-entity cert must follow algorithm constraints
-$JS a.jar signer | grep "chain is not validated" || exit 2
+$JS a.jar signer | grep "chain is invalid" || exit 2
 
 exit 0

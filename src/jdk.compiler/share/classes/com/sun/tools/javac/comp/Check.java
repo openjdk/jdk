@@ -3584,7 +3584,7 @@ public class Check {
         private boolean isCanonical(JCTree tree) {
             while (tree.hasTag(SELECT)) {
                 JCFieldAccess s = (JCFieldAccess) tree;
-                if (s.sym.owner.name != TreeInfo.symbol(s.selected).name)
+                if (s.sym.owner.getQualifiedName() != TreeInfo.symbol(s.selected).getQualifiedName())
                     return false;
                 tree = s.selected;
             }

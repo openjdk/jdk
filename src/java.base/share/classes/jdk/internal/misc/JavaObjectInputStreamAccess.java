@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,14 @@
 
 package jdk.internal.misc;
 
+import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 
 /**
- * The interface to specify methods for accessing {@code ObjectInputStream}
- * @author sjiang
+ * Interface to specify methods for accessing {@code ObjectInputStream}.
  */
+@FunctionalInterface
 public interface JavaObjectInputStreamAccess {
-    /**
-     * Sets a descriptor validating.
-     * @param ois stream to have the descriptors validated
-     * @param validator validator used to validate a descriptor.
-     */
-    public void setValidator(ObjectInputStream ois, ObjectStreamClassValidator validator);
+    void checkArray(ObjectInputStream ois, Class<?> arrayType, int arrayLength)
+        throws InvalidClassException;
 }

@@ -84,7 +84,8 @@ RPM_LIST := \
     libXau libXau-devel \
     libgcc \
     zlib zlib-devel \
-    libffi libffi-devel
+    libffi libffi-devel \
+    fontconfig fontconfig-devel
 
 ifeq ($(ARCH),x86_64)
   RPM_DIR ?= $(RPM_DIR_x86_64)

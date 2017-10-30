@@ -94,7 +94,7 @@ public class SunCertPathBuilderException extends CertPathBuilderException {
     }
 
     /**
-     * Creates a <code>SunCertPathBuilderException</code> withe the specified
+     * Creates a <code>SunCertPathBuilderException</code> with the specified
      * detail message and adjacency list.
      *
      * @param msg the detail message

@@ -37,7 +37,7 @@ import java.util.Arrays;
 public class IOUtils {
 
     /**
-     * Read up to <code>length</code> of bytes from <code>in</code>
+     * Read up to {@code length} of bytes from {@code in}
      * until EOF is detected.
      * @param is input stream, must not be null
      * @param length number of bytes to read
@@ -77,5 +77,23 @@ public class IOUtils {
             pos += cc;
         }
         return output;
+    }
+
+    /**
+     * Read {@code length} of bytes from {@code in}. An exception is
+     * thrown if there are not enough bytes in the stream.
+     *
+     * @param is input stream, must not be null
+     * @param length number of bytes to read, must not be negative
+     * @return bytes read
+     * @throws IOException if any IO error or a premature EOF is detected, or
+     *      if {@code length} is negative since this length is usually also
+     *      read from {@code is}.
+     */
+    public static byte[] readNBytes(InputStream is, int length) throws IOException {
+        if (length < 0) {
+            throw new IOException("length cannot be negative: " + length);
+        }
+        return readFully(is, length, true);
     }
 }

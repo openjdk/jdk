@@ -38,6 +38,7 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ErroneousTree;
 import com.sun.source.tree.ExpressionStatementTree;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.IfTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -282,6 +283,48 @@ public class JavacParserTest extends TestCase {
 
         assertEquals("testPositionAnnotationNoPackage187551",
                 1, t.getSourcePositions().getStartPosition(cut, clazz));
+    }
+
+    @Test
+    void testPositionMissingStatement() throws IOException {
+        String code = "class C { void t() { if (true) } }";
+        DiagnosticCollector<JavaFileObject> dc = new DiagnosticCollector<>();
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, dc, null,
+                null, Arrays.asList(new MyFileObject(code)));
+
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        Trees trees = Trees.instance(ct);
+        SourcePositions positions = trees.getSourcePositions();
+
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitIf(IfTree it, Void v) {
+                StatementTree st = it.getThenStatement();
+                int startpos = (int) positions.getStartPosition(cut, st);
+                int endpos = (int) positions.getEndPosition(cut, st);
+                assertEquals("testPositionMissingStatement.execpos", startpos, endpos);
+                assertEquals("testPositionMissingStatement.execkind",
+                             Kind.EXPRESSION_STATEMENT,
+                             st.getKind());
+                Tree err = ((ExpressionStatementTree) st).getExpression();
+                startpos = (int) positions.getStartPosition(cut, err);
+                endpos = (int) positions.getEndPosition(cut, err);
+                assertEquals("testPositionMissingStatement.errpos", startpos, endpos);
+                assertEquals("testPositionMissingStatement.errkind",
+                             Kind.ERRONEOUS,
+                             err.getKind());
+                return super.visitIf(it, v);
+            }
+        }.scan(cut, null);
+
+        assertEquals("testPositionMissingStatement.diags", 1, dc.getDiagnostics().size());
+        Diagnostic<? extends JavaFileObject> d = dc.getDiagnostics().get(0);
+        int startpos = (int) d.getStartPosition();
+        int pos = (int) d.getPosition();
+        int endpos = (int) d.getEndPosition();
+        assertEquals("testPositionMissingStatement.diagspan", startpos, endpos);
+        assertEquals("testPositionMissingStatement.diagpref", startpos, pos);
     }
 
     @Test

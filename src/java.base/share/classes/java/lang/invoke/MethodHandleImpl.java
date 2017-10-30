@@ -1196,7 +1196,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         static
         MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
-            // Code in the the boot layer should now be careful while creating method handles or
+            // Code in the boot layer should now be careful while creating method handles or
             // functional interface instances created from method references to @CallerSensitive  methods,
             // it needs to be ensured the handles or interface instances are kept safe and are not passed
             // from the boot layer to untrusted code.

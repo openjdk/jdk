@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 
@@ -171,21 +169,12 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      *                           will be added
      */
     protected void buildInterfaceSummary(Content summaryContentTree) {
-        String interfaceTableSummary =
-                configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Interface_Summary"),
-                configuration.getText("doclet.interfaces"));
-        List<String> interfaceTableHeader = Arrays.asList(configuration.getText("doclet.Interface"),
-        configuration.getText("doclet.Description"));
-
         SortedSet<TypeElement> ilist = utils.isSpecified(packageElement)
                         ? utils.getTypeElementsAsSortedSet(utils.getInterfaces(packageElement))
                         : configuration.typeElementCatalog.interfaces(packageElement);
         SortedSet<TypeElement> interfaces = utils.filterOutPrivateClasses(ilist, configuration.javafx);
         if (!interfaces.isEmpty()) {
-            packageWriter.addClassesSummary(interfaces,
-                    configuration.getText("doclet.Interface_Summary"),
-                    interfaceTableSummary, interfaceTableHeader, summaryContentTree);
+            packageWriter.addInterfaceSummary(interfaces, summaryContentTree);
         }
     }
 
@@ -196,20 +185,12 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      *                           be added
      */
     protected void buildClassSummary(Content summaryContentTree) {
-        String classTableSummary =
-                configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Class_Summary"),
-                configuration.getText("doclet.classes"));
-        List<String> classTableHeader = Arrays.asList(configuration.getText("doclet.Class"),
-                configuration.getText("doclet.Description"));
         SortedSet<TypeElement> clist = utils.isSpecified(packageElement)
             ? utils.getTypeElementsAsSortedSet(utils.getOrdinaryClasses(packageElement))
             : configuration.typeElementCatalog.ordinaryClasses(packageElement);
         SortedSet<TypeElement> classes = utils.filterOutPrivateClasses(clist, configuration.javafx);
         if (!classes.isEmpty()) {
-            packageWriter.addClassesSummary(classes,
-                    configuration.getText("doclet.Class_Summary"),
-                    classTableSummary, classTableHeader, summaryContentTree);
+            packageWriter.addClassSummary(classes, summaryContentTree);
         }
     }
 
@@ -220,20 +201,12 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      *                           be added
      */
     protected void buildEnumSummary(Content summaryContentTree) {
-        String enumTableSummary =
-                configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Enum_Summary"),
-                configuration.getText("doclet.enums"));
-        List<String> enumTableHeader = Arrays.asList(configuration.getText("doclet.Enum"),
-                configuration.getText("doclet.Description"));
         SortedSet<TypeElement> elist = utils.isSpecified(packageElement)
             ? utils.getTypeElementsAsSortedSet(utils.getEnums(packageElement))
             : configuration.typeElementCatalog.enums(packageElement);
         SortedSet<TypeElement> enums = utils.filterOutPrivateClasses(elist, configuration.javafx);
         if (!enums.isEmpty()) {
-            packageWriter.addClassesSummary(enums,
-                    configuration.getText("doclet.Enum_Summary"),
-                    enumTableSummary, enumTableHeader, summaryContentTree);
+            packageWriter.addEnumSummary(enums, summaryContentTree);
         }
     }
 
@@ -244,12 +217,6 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      *                           be added
      */
     protected void buildExceptionSummary(Content summaryContentTree) {
-        String exceptionTableSummary =
-                configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Exception_Summary"),
-                configuration.getText("doclet.exceptions"));
-        List<String> exceptionTableHeader = Arrays.asList(configuration.getText("doclet.Exception"),
-                configuration.getText("doclet.Description"));
         Set<TypeElement> iexceptions =
             utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getExceptions(packageElement))
@@ -257,9 +224,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         SortedSet<TypeElement> exceptions = utils.filterOutPrivateClasses(iexceptions,
                 configuration.javafx);
         if (!exceptions.isEmpty()) {
-            packageWriter.addClassesSummary(exceptions,
-                    configuration.getText("doclet.Exception_Summary"),
-                    exceptionTableSummary, exceptionTableHeader, summaryContentTree);
+            packageWriter.addExceptionSummary(exceptions, summaryContentTree);
         }
     }
 
@@ -270,21 +235,13 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      *                           be added
      */
     protected void buildErrorSummary(Content summaryContentTree) {
-        String errorTableSummary =
-                configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Error_Summary"),
-                configuration.getText("doclet.errors"));
-        List<String> errorTableHeader = Arrays.asList(configuration.getText("doclet.Error"),
-                configuration.getText("doclet.Description"));
         Set<TypeElement> ierrors =
             utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getErrors(packageElement))
                 : configuration.typeElementCatalog.errors(packageElement);
         SortedSet<TypeElement> errors = utils.filterOutPrivateClasses(ierrors, configuration.javafx);
         if (!errors.isEmpty()) {
-            packageWriter.addClassesSummary(errors,
-                    configuration.getText("doclet.Error_Summary"),
-                    errorTableSummary, errorTableHeader, summaryContentTree);
+            packageWriter.addErrorSummary(errors, summaryContentTree);
         }
     }
 
@@ -295,13 +252,6 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      *                           summary will be added
      */
     protected void buildAnnotationTypeSummary(Content summaryContentTree) {
-        String annotationtypeTableSummary =
-                configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Annotation_Types_Summary"),
-                configuration.getText("doclet.annotationtypes"));
-        List<String> annotationtypeTableHeader = Arrays.asList(
-                configuration.getText("doclet.AnnotationType"),
-                configuration.getText("doclet.Description"));
         SortedSet<TypeElement> iannotationTypes =
             utils.isSpecified(packageElement)
                 ? utils.getTypeElementsAsSortedSet(utils.getAnnotationTypes(packageElement))
@@ -309,10 +259,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
         SortedSet<TypeElement> annotationTypes = utils.filterOutPrivateClasses(iannotationTypes,
                 configuration.javafx);
         if (!annotationTypes.isEmpty()) {
-            packageWriter.addClassesSummary(annotationTypes,
-                    configuration.getText("doclet.Annotation_Types_Summary"),
-                    annotationtypeTableSummary, annotationtypeTableHeader,
-                    summaryContentTree);
+            packageWriter.addAnnotationTypeSummary(annotationTypes, summaryContentTree);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,14 @@ import java.util.logging.LoggingPermission;
 
 /**
  * @test
- * @bug 8033661
+ * @bug 8033661 8189291
  * @summary tests LogManager.updateConfiguration(InputStream, Function) method
  * @run main/othervm SimpleUpdateConfigWithInputStreamTest UNSECURE
  * @run main/othervm SimpleUpdateConfigWithInputStreamTest SECURE
  * @author danielfuchs
  */
 public class SimpleUpdateConfigWithInputStreamTest {
+    static final Policy DEFAULT_POLICY = Policy.getPolicy();
 
     /**
      * We will test updateConfiguration in
@@ -655,7 +656,8 @@ public class SimpleUpdateConfigWithInputStreamTest {
 
         @Override
         public boolean implies(ProtectionDomain domain, Permission permission) {
-            return getPermissions(domain).implies(permission);
+            return getPermissions(domain).implies(permission) ||
+                   DEFAULT_POLICY.implies(domain, permission);
         }
 
         public PermissionCollection permissions() {

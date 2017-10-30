@@ -249,18 +249,22 @@ public class TestSocketFactory extends RMISocketFactory
         /**
          * Set the trigger, match, and replacement bytes.
          * The trigger, match, and replacements are propagated to the
-         * MatchReplaceOutputStream.
+         * MatchReplaceOutputStream, if it has been created.
          *
          * @param triggerBytes array of bytes to use as a trigger, may be zero length
          * @param matchBytes bytes to match after the trigger has been seen
          * @param replaceBytes bytes to replace the matched bytes
          */
-        public void setMatchReplaceBytes(byte[] triggerBytes, byte[] matchBytes,
+        public synchronized void setMatchReplaceBytes(byte[] triggerBytes, byte[] matchBytes,
                                          byte[] replaceBytes) {
             this.triggerBytes = triggerBytes;
             this.matchBytes = matchBytes;
             this.replaceBytes = replaceBytes;
-            out.setMatchReplaceBytes(triggerBytes, matchBytes, replaceBytes);
+            if (out != null) {
+                out.setMatchReplaceBytes(triggerBytes, matchBytes, replaceBytes);
+            } else {
+                DEBUG("InterposeSocket.setMatchReplaceBytes with out == null%n");
+            }
         }
 
         @Override
@@ -360,7 +364,7 @@ public class TestSocketFactory extends RMISocketFactory
                 String name = Thread.currentThread().getName() + ": "
                         + socket.getLocalPort() + " <  " + socket.getPort();
                 in = new LoggingInputStream(in, name, inLogStream);
-                DEBUG("Created new InterposeInputStream: %s%n", name);
+                DEBUG("Created new LoggingInputStream: %s%n", name);
             }
             return in;
         }

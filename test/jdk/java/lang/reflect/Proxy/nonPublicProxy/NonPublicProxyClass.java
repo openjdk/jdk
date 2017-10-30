@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.*;
 
 /*
  * @test
- * @bug 8004260
+ * @bug 8004260 8189291
  * @summary Test proxy classes that implement non-public interface
  *
  * @build p.Foo
@@ -48,6 +48,8 @@ import java.util.*;
  * @run main/othervm NonPublicProxyClass
  */
 public class NonPublicProxyClass {
+    static final Policy DEFAULT_POLICY = Policy.getPolicy();
+
     public interface PublicInterface {
         void foo();
     }
@@ -200,7 +202,8 @@ public class NonPublicProxyClass {
         }
 
         public boolean implies(ProtectionDomain domain, Permission perm) {
-            return permissions.implies(perm);
+            return permissions.implies(perm) ||
+                    DEFAULT_POLICY.implies(domain, perm);
         }
 
         public String toString() {

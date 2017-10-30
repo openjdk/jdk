@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.net.*;
 import java.util.Map;
 import java.security.*;
+import sun.security.action.GetPropertyAction;
 
 /**
  * Defines the entries of the SUN provider.
@@ -73,6 +74,10 @@ import java.security.*;
  */
 
 final class SunEntries {
+
+    private static final boolean useLegacyDSA =
+        Boolean.parseBoolean(GetPropertyAction.privilegedGetProperty
+            ("jdk.security.legacyDSAKeyPairGenerator"));
 
     private SunEntries() {
         // empty
@@ -174,8 +179,9 @@ final class SunEntries {
         /*
          *  Key Pair Generator engines
          */
-        map.put("KeyPairGenerator.DSA",
-            "sun.security.provider.DSAKeyPairGenerator");
+        String dsaKPGImplClass = "sun.security.provider.DSAKeyPairGenerator$";
+        dsaKPGImplClass += (useLegacyDSA? "Legacy" : "Current");
+        map.put("KeyPairGenerator.DSA", dsaKPGImplClass);
         map.put("Alg.Alias.KeyPairGenerator.OID.1.2.840.10040.4.1", "DSA");
         map.put("Alg.Alias.KeyPairGenerator.1.2.840.10040.4.1", "DSA");
         map.put("Alg.Alias.KeyPairGenerator.1.3.14.3.2.12", "DSA");

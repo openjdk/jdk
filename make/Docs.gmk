@@ -64,7 +64,7 @@ MODULES_SOURCE_PATH := $(call PathList, $(call GetModuleSrcPath) \
 JAVADOC_BASE_URL := http://www.oracle.com/pls/topic/lookup?ctx=javase9&amp;id=homepage
 BUG_SUBMIT_URL := http://bugreport.java.com/bugreport/
 COPYRIGHT_URL := {@docroot}/../legal/copyright.html
-LICENSE_URL := http://www.oracle.com/technetwork/java/javase/terms/license/java9speclicense.html
+LICENSE_URL := http://www.oracle.com/technetwork/java/javase/terms/license/java10speclicense.html
 REDISTRIBUTION_URL := http://www.oracle.com/technetwork/java/redist-137594.html
 
 # In order to get a specific ordering it's necessary to specify the total
@@ -97,13 +97,25 @@ JAVADOC_TAGS := \
     $(CUSTOM_JAVADOC_TAGS) \
     #
 
+# The reference tags must stay stable to allow for comparisons across the
+# development cycle. If JAVADOC_TAGS needs to change, make sure that
+# REFERENCE_TAGS remains unchanged, by copying and hardcoding, if necessary.
+REFERENCE_TAGS := $(JAVADOC_TAGS)
+
 # Which doclint checks to ignore
 JAVADOC_DISABLED_DOCLINT := accessibility html missing syntax reference
 
 # The initial set of options for javadoc
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
     -serialwarn -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
-    -splitIndex --system none -html5 -javafx --expand-requires transitive
+    -splitIndex --system none -html5 -javafx --expand-requires transitive \
+    --override-methods=summary
+
+# The reference options must stay stable to allow for comparisons across the
+# development cycle.
+REFERENCE_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
+    -serialwarn -encoding ISO-8859-1 -breakiterator -splitIndex --system none \
+    -html5 -javafx --expand-requires transitive
 
 # Should we add DRAFT stamps to the generated javadoc?
 ifeq ($(VERSION_IS_GA), true)
@@ -129,6 +141,11 @@ ifeq ($(IS_DRAFT), true)
   endif
   DRAFT_TEXT := This specification is not final and is subject to change. \
       Use is subject to <a href="$(LICENSE_URL)">license terms</a>.
+
+  # Workaround stylesheet bug
+  HEADER_STYLE := style="margin-top: 9px;"
+else
+  HEADER_STYLE := style="margin-top: 14px;"
 endif
 
 JAVADOC_BOTTOM := \
@@ -147,11 +164,18 @@ JAVADOC_BOTTOM := \
     <a href="$(REDISTRIBUTION_URL)">documentation redistribution policy</a>. \
     $(DRAFT_MARKER_STR) <!-- Version $(VERSION_STRING) -->
 
-
 JAVADOC_TOP := \
     <div style="padding: 6px; text-align: center; font-size: 80%; \
     font-family: DejaVu Sans, Arial, Helvetica, sans-serif; \
     font-weight: normal;">$(DRAFT_TEXT)</div>
+
+JDK_INDEX_CONTENT := \
+    <!DOCTYPE html> \
+    <html lang="en"> \
+    <head> \
+    <meta http-equiv="refresh" content="0;url=api/index.html"> \
+    </head> \
+    </html>
 
 ################################################################################
 # JDK javadoc titles/text snippets
@@ -257,8 +281,14 @@ define SetupApiDocsGenerationBody
     $1_JAVA_ARGS += -DenableModuleGraph=true
   endif
 
-  # Always include tags and basic options
-  $1_OPTIONS := $$(JAVADOC_TAGS) $$(JAVADOC_OPTIONS)
+  # Start with basic options and tags
+  ifeq ($$($1_OPTIONS), )
+    $1_OPTIONS := $$(JAVADOC_OPTIONS)
+  endif
+  ifeq ($$($1_TAGS), )
+    $1_TAGS := $$(JAVADOC_TAGS)
+  endif
+  $1_OPTIONS += $$($1_TAGS)
 
   $1_OPTIONS += --module-source-path $$(MODULES_SOURCE_PATH)
   $1_OPTIONS += --module $$(call CommaList, $$($1_MODULES))
@@ -267,15 +297,10 @@ define SetupApiDocsGenerationBody
   $1_OPTIONS += -Xdoclint:all,$$(call CommaList, $$(addprefix -, \
       $$(JAVADOC_DISABLED_DOCLINT)))
 
-  $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API Specification
-  $1_WINDOW_TITLE := $$(subst &amp;,&,$$($1_SHORT_NAME)) \
-    $$(DRAFT_MARKER_TITLE)
-  ifeq ($(VERSION_IS_GA), true) # Workaround stylesheet bug
-    $1_HEADER_PAD := 14
-  else
-    $1_HEADER_PAD := 9
-  endif
-  $1_HEADER_TITLE := <div style="margin-top: $$($1_HEADER_PAD)px;"><strong>$$($1_SHORT_NAME)</strong> \
+  $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API \
+      Specification
+  $1_WINDOW_TITLE := $$(subst &amp;,&,$$($1_SHORT_NAME)) $$(DRAFT_MARKER_TITLE)
+  $1_HEADER_TITLE := <div $$(HEADER_STYLE)><strong>$$($1_SHORT_NAME)</strong> \
       $$(DRAFT_MARKER_STR)</div>
 
   $1_OPTIONS += -doctitle '$$($1_DOC_TITLE)'
@@ -302,8 +327,13 @@ define SetupApiDocsGenerationBody
     $$(eval $1_OPTIONS += -group "$$($$g_GROUP_NAME)" "$$($$g_GROUP_MODULES)") \
   )
 
+  ifeq ($$($1_JAVADOC_CMD), )
+    $1_JAVADOC_CMD := $$(JAVA) -Djava.awt.headless=true $$($1_JAVA_ARGS) \
+        $$(NEW_JAVADOC)
+  endif
+
   $1_VARDEPS := $$($1_JAVA_ARGS) $$($1_OPTIONS) $$(MODULES_SOURCE_PATH) \
-      $$($1_ALL_MODULES)
+      $$($1_ALL_MODULES) $$($1_JAVADOC_CMD)
   $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
       $$(SUPPORT_OUTPUTDIR)/docs/$1.vardeps)
 
@@ -319,9 +349,8 @@ define SetupApiDocsGenerationBody
 	$$(call LogInfo, Javadoc modules: $$($1_ALL_MODULES))
 	$$(call MakeDir, $$($1_TARGET_DIR))
 	$$(call ExecuteWithLog, $$(SUPPORT_OUTPUTDIR)/docs/$1, \
-	    $$(JAVA) -Djava.awt.headless=true $$($1_JAVA_ARGS) \
-	        $$(NEW_JAVADOC) -d $$($1_TARGET_DIR) \
-	        $$(JAVADOC_TAGS) $$($1_OPTIONS) $$($1_LOG_OPTION))
+	    $$($1_JAVADOC_CMD) -d $$($1_TARGET_DIR) \
+	        $$($1_OPTIONS) $$($1_LOG_OPTION))
 
   $1_JAVADOC_TARGETS := $$($1_TARGET_DIR)/index.html
 
@@ -431,18 +460,29 @@ $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
 # JAVASE_API_MODULEGRAPH_TARGETS.
 
 ################################################################################
+# Setup generation of the reference Java SE API documentation (javadoc + modulegraph)
+
+# The reference javadoc is just the same as javase, but using the BootJDK javadoc
+# and a stable set of javadoc options.
+
+$(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
+    MODULES := $(JAVASE_MODULES), \
+    SHORT_NAME := $(JAVASE_SHORT_NAME), \
+    LONG_NAME := $(JAVASE_LONG_NAME), \
+    TARGET_DIR := $(IMAGES_OUTPUTDIR)/reference-docs/api, \
+    JAVADOC_CMD := $(JAVADOC), \
+    OPTIONS := $(REFERENCE_OPTIONS), \
+    TAGS := $(REFERENCE_TAGS), \
+))
+
+# Targets generated are returned in REFERENCE_API_JAVADOC_TARGETS and
+# REFERENCE_API_MODULEGRAPH_TARGETS.
+
+################################################################################
 
 JDK_INDEX_HTML := $(DOCS_OUTPUTDIR)/index.html
 
-JDK_INDEX_CONTENT := \
-    <!DOCTYPE html> \
-    <html lang="en"> \
-    <head> \
-    <meta http-equiv="refresh" content="0;url=api/index.html"> \
-    </head> \
-    </html>
-
-$(JDK_INDEX_HTML): 
+$(JDK_INDEX_HTML):
 	$(ECHO) '$(JDK_INDEX_CONTENT)' > $@
 
 JDK_INDEX_TARGETS += $(JDK_INDEX_HTML)
@@ -553,6 +593,10 @@ docs-javase-api-javadoc: $(JAVASE_API_JAVADOC_TARGETS) $(JAVASE_API_CUSTOM_TARGE
 
 docs-javase-api-modulegraph: $(JAVASE_API_MODULEGRAPH_TARGETS)
 
+docs-reference-api-javadoc: $(REFERENCE_API_JAVADOC_TARGETS) $(REFERENCE_API_CUSTOM_TARGETS)
+
+docs-reference-api-modulegraph: $(REFERENCE_API_MODULEGRAPH_TARGETS)
+
 docs-jdk-specs: $(JDK_SPECS_TARGETS)
 
 docs-jdk-index: $(JDK_INDEX_TARGETS)
@@ -560,8 +604,10 @@ docs-jdk-index: $(JDK_INDEX_TARGETS)
 docs-zip: $(ZIP_TARGETS)
 
 all: docs-jdk-api-javadoc docs-jdk-api-modulegraph docs-javase-api-javadoc \
-    docs-javase-api-modulegraph docs-jdk-specs docs-jdk-index docs-zip
+    docs-javase-api-modulegraph docs-reference-api-javadoc \
+    docs-reference-api-modulegraph docs-jdk-specs docs-jdk-index docs-zip
 
 .PHONY: default all docs-jdk-api-javadoc docs-jdk-api-modulegraph \
-    docs-javase-api-javadoc docs-javase-api-modulegraph docs-jdk-specs \
+    docs-javase-api-javadoc docs-javase-api-modulegraph \
+    docs-reference-api-javadoc docs-reference-api-modulegraph docs-jdk-specs \
     docs-jdk-index docs-zip

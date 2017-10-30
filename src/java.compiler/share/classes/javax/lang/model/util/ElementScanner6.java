@@ -106,7 +106,7 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
      * @deprecated Release 6 is obsolete; update to a visitor for a newer
      * release level.
      */
-    @Deprecated
+    @Deprecated(since="9")
     protected ElementScanner6(){
         DEFAULT_VALUE = null;
     }
@@ -119,7 +119,7 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
      * @deprecated Release 6 is obsolete; update to a visitor for a newer
      * release level.
      */
-    @Deprecated
+    @Deprecated(since="9")
     protected ElementScanner6(R defaultValue){
         DEFAULT_VALUE = defaultValue;
     }

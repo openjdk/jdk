@@ -27,8 +27,9 @@ package sun.corba ;
 
 import java.io.OptionalDataException;
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Field ;
-import java.lang.reflect.Constructor ;
+import java.lang.reflect.Field;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.StackWalker;
 import java.lang.StackWalker.StackFrame;
 import java.util.Optional;
@@ -37,6 +38,7 @@ import java.util.stream.Stream;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 
 import sun.misc.Unsafe;
 import sun.reflect.ReflectionFactory;
@@ -338,6 +340,36 @@ public final class Bridge
 
     public final Constructor<?> newConstructorForExternalization(Class<?> cl) {
         return reflectionFactory.newConstructorForExternalization( cl ) ;
+    }
+
+    /**
+     * Invokes the supplied constructor, adding the provided protection domains
+     * to the invocation stack before invoking {@code Constructor::newInstance}.
+     *
+     * This is equivalent to calling
+     * {@code ReflectionFactory.newInstanceForSerialization(cons,domains)}.
+     *
+     * @param cons A constructor obtained from {@code
+     *        newConstructorForSerialization} or {@code
+     *        newConstructorForExternalization}.
+     *
+     * @param domains An array of protection domains that limit the privileges
+     *        with which the constructor is invoked. Can be {@code null}
+     *        or empty, in which case privileges are only limited by the
+     *        {@linkplain AccessController#getContext() current context}.
+     *
+     * @return A new object built from the provided constructor.
+     *
+     * @throws NullPointerException if {@code cons} is {@code null}.
+     * @throws InstantiationException if thrown by {@code cons.newInstance()}.
+     * @throws InvocationTargetException if thrown by {@code cons.newInstance()}.
+     * @throws IllegalAccessException if thrown by {@code cons.newInstance()}.
+     */
+    public final Object newInstanceForSerialization(Constructor<?> cons,
+                                                    ProtectionDomain[] domains)
+        throws InstantiationException, InvocationTargetException, IllegalAccessException
+    {
+        return reflectionFactory.newInstanceForSerialization(cons, domains);
     }
 
     /**

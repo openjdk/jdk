@@ -564,7 +564,7 @@ public abstract class BaseConfiguration {
                 new Option(resources, "-linkoffline", 2) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        linkOfflineList.add(new Pair<String, String>(args.get(0), args.get(1)));
+                        linkOfflineList.add(new Pair<>(args.get(0), args.get(1)));
                         return true;
                     }
                 },
