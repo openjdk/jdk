@@ -843,6 +843,38 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
   verify_oop(Z_tos, state);
 }
 
+void InterpreterMacroAssembler::narrow(Register result, Register ret_type) {
+  get_method(ret_type);
+  z_lg(ret_type, Address(ret_type, in_bytes(Method::const_offset())));
+  z_lb(ret_type, Address(ret_type, in_bytes(ConstMethod::result_type_offset())));
+
+  Label notBool, notByte, notChar, done;
+
+  // common case first
+  compareU32_and_branch(ret_type, T_INT, bcondEqual, done);
+
+  compareU32_and_branch(ret_type, T_BOOLEAN, bcondNotEqual, notBool);
+  z_nilf(result, 0x1);
+  z_bru(done);
+
+  bind(notBool);
+  compareU32_and_branch(ret_type, T_BYTE, bcondNotEqual, notByte);
+  z_lbr(result, result);
+  z_bru(done);
+
+  bind(notByte);
+  compareU32_and_branch(ret_type, T_CHAR, bcondNotEqual, notChar);
+  z_nilf(result, 0xffff);
+  z_bru(done);
+
+  bind(notChar);
+  // compareU32_and_branch(ret_type, T_SHORT, bcondNotEqual, notShort);
+  z_lhr(result, result);
+
+  // Nothing to do for T_INT
+  bind(done);
+}
+
 // remove activation
 //
 // Unlock the receiver if this is a synchronized method.
