@@ -145,7 +145,9 @@ static GrowableArray<MonitorInfo*>* get_or_compute_monitor_info(JavaThread* thre
   return info;
 }
 
-static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_bulk, JavaThread* requesting_thread) {
+// After the call, *biased_locker will be set to obj->mark()->biased_locker() if biased_locker != NULL,
+// AND it is a living thread. Otherwise it will not be updated, (i.e. the caller is responsible for initialization).
+static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_bulk, JavaThread* requesting_thread, JavaThread** biased_locker) {
   markOop mark = obj->mark();
   if (!mark->has_bias_pattern()) {
     if (log_is_enabled(Info, biasedlocking)) {
@@ -298,6 +300,11 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
     }
   }
 
+  // If requested, return information on which thread held the bias
+  if (biased_locker != NULL) {
+    *biased_locker = biased_thread;
+  }
+
   return BiasedLocking::BIAS_REVOKED;
 }
 
@@ -418,7 +425,7 @@ static BiasedLocking::Condition bulk_revoke_or_rebias_at_safepoint(oop o,
 
     // At this point we're done. All we have to do is potentially
     // adjust the header of the given object to revoke its bias.
-    revoke_bias(o, attempt_rebias_of_object && klass->prototype_header()->has_bias_pattern(), true, requesting_thread);
+    revoke_bias(o, attempt_rebias_of_object && klass->prototype_header()->has_bias_pattern(), true, requesting_thread, NULL);
   } else {
     if (log_is_enabled(Info, biasedlocking)) {
       ResourceMark rm;
@@ -440,14 +447,14 @@ static BiasedLocking::Condition bulk_revoke_or_rebias_at_safepoint(oop o,
         oop owner = mon_info->owner();
         markOop mark = owner->mark();
         if ((owner->klass() == k_o) && mark->has_bias_pattern()) {
-          revoke_bias(owner, false, true, requesting_thread);
+          revoke_bias(owner, false, true, requesting_thread, NULL);
         }
       }
     }
 
     // Must force the bias of the passed object to be forcibly revoked
     // as well to ensure guarantees to callers
-    revoke_bias(o, false, true, requesting_thread);
+    revoke_bias(o, false, true, requesting_thread, NULL);
   }
 
   log_info(biasedlocking)("* Ending bulk revocation");
@@ -486,19 +493,22 @@ protected:
   GrowableArray<Handle>* _objs;
   JavaThread* _requesting_thread;
   BiasedLocking::Condition _status_code;
+  traceid _biased_locker_id;
 
 public:
   VM_RevokeBias(Handle* obj, JavaThread* requesting_thread)
     : _obj(obj)
     , _objs(NULL)
     , _requesting_thread(requesting_thread)
-    , _status_code(BiasedLocking::NOT_BIASED) {}
+    , _status_code(BiasedLocking::NOT_BIASED)
+    , _biased_locker_id(0) {}
 
   VM_RevokeBias(GrowableArray<Handle>* objs, JavaThread* requesting_thread)
     : _obj(NULL)
     , _objs(objs)
     , _requesting_thread(requesting_thread)
-    , _status_code(BiasedLocking::NOT_BIASED) {}
+    , _status_code(BiasedLocking::NOT_BIASED)
+    , _biased_locker_id(0) {}
 
   virtual VMOp_Type type() const { return VMOp_RevokeBias; }
 
@@ -525,7 +535,11 @@ public:
   virtual void doit() {
     if (_obj != NULL) {
       log_info(biasedlocking)("Revoking bias with potentially per-thread safepoint:");
-      _status_code = revoke_bias((*_obj)(), false, false, _requesting_thread);
+      JavaThread* biased_locker = NULL;
+      _status_code = revoke_bias((*_obj)(), false, false, _requesting_thread, &biased_locker);
+      if (biased_locker != NULL) {
+        _biased_locker_id = THREAD_TRACE_ID(biased_locker);
+      }
       clean_up_cached_monitor_info();
       return;
     } else {
@@ -536,6 +550,10 @@ public:
 
   BiasedLocking::Condition status_code() const {
     return _status_code;
+  }
+
+  traceid biased_locker() const {
+    return _biased_locker_id;
   }
 };
 
@@ -645,7 +663,7 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
       ResourceMark rm;
       log_info(biasedlocking)("Revoking bias by walking my own stack:");
       EventBiasedLockSelfRevocation event;
-      BiasedLocking::Condition cond = revoke_bias(obj(), false, false, (JavaThread*) THREAD);
+      BiasedLocking::Condition cond = revoke_bias(obj(), false, false, (JavaThread*) THREAD, NULL);
       ((JavaThread*) THREAD)->set_cached_monitor_info(NULL);
       assert(cond == BIAS_REVOKED, "why not?");
       if (event.should_commit()) {
@@ -661,6 +679,7 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
         event.set_lockClass(k);
         // Subtract 1 to match the id of events committed inside the safepoint
         event.set_safepointId(SafepointSynchronize::safepoint_counter() - 1);
+        event.set_previousOwner(revoke.biased_locker());
         event.commit();
       }
       return revoke.status_code();
@@ -700,7 +719,7 @@ void BiasedLocking::revoke_at_safepoint(Handle h_obj) {
   oop obj = h_obj();
   HeuristicsResult heuristics = update_heuristics(obj, false);
   if (heuristics == HR_SINGLE_REVOKE) {
-    revoke_bias(obj, false, false, NULL);
+    revoke_bias(obj, false, false, NULL, NULL);
   } else if ((heuristics == HR_BULK_REBIAS) ||
              (heuristics == HR_BULK_REVOKE)) {
     bulk_revoke_or_rebias_at_safepoint(obj, (heuristics == HR_BULK_REBIAS), false, NULL);
@@ -716,7 +735,7 @@ void BiasedLocking::revoke_at_safepoint(GrowableArray<Handle>* objs) {
     oop obj = (objs->at(i))();
     HeuristicsResult heuristics = update_heuristics(obj, false);
     if (heuristics == HR_SINGLE_REVOKE) {
-      revoke_bias(obj, false, false, NULL);
+      revoke_bias(obj, false, false, NULL, NULL);
     } else if ((heuristics == HR_BULK_REBIAS) ||
                (heuristics == HR_BULK_REVOKE)) {
       bulk_revoke_or_rebias_at_safepoint(obj, (heuristics == HR_BULK_REBIAS), false, NULL);
