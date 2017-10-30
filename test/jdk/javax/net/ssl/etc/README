@@ -62,25 +62,22 @@ it can be used for version 1 X.509 certificate) keytool command:
 
 Alias name: dummydsa
 --------------------
-Creation date: Sep 20, 2017
+Creation date: Mar 11, 2007
 Entry type: PrivateKeyEntry
 Certificate chain length: 1
 Certificate[1]:
 Owner: CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US
 Issuer: CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US
-Serial number: 4e8ca03d
-Valid from: Wed Sep 20 11:10:34 PDT 2017 until: Mon Sep 20 11:10:34 PDT 2027
+Serial number: 45f3a314
+Valid from: Sun Mar 11 06:35:00 UTC 2007 until: Wed Mar 08 06:35:00 UTC 2017
 Certificate fingerprints:
-	 MD5:  5F:6F:01:75:BF:6C:40:B9:65:C0:8D:00:AE:6F:BD:38
-	 SHA1: 31:06:4E:07:B2:01:78:8F:F4:6B:B6:6E:AC:C5:16:76:8B:1A:58:81
-	 SHA256: 86:A1:E6:69:EE:00:50:35:2A:56:F7:F9:8B:61:2B:83:51:44:EA:E9:B0:EF:34:77:94:05:97:8B:73:5A:B0:68
-	 Signature algorithm name: SHA256withDSA
-	 Version: 3
+Signature algorithm name: SHA1withDSA
+Version: 1
 
 This can be generated using hacked (update the keytool source code so that
 it can be used for version 1 X.509 certificate) keytool command:
-% keytool -genkeypair -alias dummydsa -keyalg DSA -keysize 2048 \
-  -sigalg SHA256withDSA \
+% keytool -genkeypair -alias dummy -keyalg DSA -keysize 1024 \
+  -sigalg SHA1withDSA \
   -dname "CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US" \
   -validity 3652 -keypass passphrase -keystore keystore -storepass passphrase
 
