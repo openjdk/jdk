@@ -357,6 +357,16 @@ bool Dictionary::is_valid_protection_domain(int index, unsigned int hash,
   return entry->is_valid_protection_domain(protection_domain);
 }
 
+#if INCLUDE_CDS
+static bool is_jfr_event_class(Klass *k) {
+  while (k) {
+    if (k->name()->equals("jdk/jfr/Event")) {
+      return true;
+    }
+    k = k->super();
+  }
+  return false;
+}
 
 void Dictionary::reorder_dictionary_for_sharing() {
 
@@ -368,13 +378,21 @@ void Dictionary::reorder_dictionary_for_sharing() {
     while (p != NULL) {
       DictionaryEntry* next = p->next();
       InstanceKlass*ik = p->instance_klass();
-      // we cannot include signed classes in the archive because the certificates
-      // used during dump time may be different than those used during
-      // runtime (due to expiration, etc).
       if (ik->signers() != NULL) {
+        // We cannot include signed classes in the archive because the certificates
+        // used during dump time may be different than those used during
+        // runtime (due to expiration, etc).
         ResourceMark rm;
         tty->print_cr("Preload Warning: Skipping %s from signed JAR",
                        ik->name()->as_C_string());
+        free_entry(p);
+      } else if (is_jfr_event_class(ik)) {
+        // We cannot include JFR event classes because they need runtime-specific
+        // instrumentation in order to work with -XX:FlightRecorderOptions=retransform=false.
+        // There are only a small number of these classes, so it's not worthwhile to
+        // support them and make CDS more complicated.
+        ResourceMark rm;
+        tty->print_cr("Skipping JFR event class %s", ik->name()->as_C_string());
         free_entry(p);
       } else {
         p->set_next(master_list);
@@ -400,7 +418,7 @@ void Dictionary::reorder_dictionary_for_sharing() {
     set_entry(index, p);
   }
 }
-
+#endif
 
 SymbolPropertyTable::SymbolPropertyTable(int table_size)
   : Hashtable<Symbol*, mtSymbol>(table_size, sizeof(SymbolPropertyEntry))

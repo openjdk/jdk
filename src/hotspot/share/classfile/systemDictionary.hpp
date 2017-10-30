@@ -384,7 +384,7 @@ public:
 
 public:
   // Sharing support.
-  static void reorder_dictionary_for_sharing();
+  static void reorder_dictionary_for_sharing() NOT_CDS_RETURN;
   static void combine_shared_dictionaries();
   static size_t count_bytes_for_buckets();
   static size_t count_bytes_for_table();
