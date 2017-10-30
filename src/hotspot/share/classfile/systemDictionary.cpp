@@ -2855,9 +2855,11 @@ ProtectionDomainCacheEntry* SystemDictionary::cache_get(Handle protection_domain
   return _pd_cache_table->get(protection_domain);
 }
 
+#if INCLUDE_CDS
 void SystemDictionary::reorder_dictionary_for_sharing() {
   ClassLoaderData::the_null_class_loader_data()->dictionary()->reorder_dictionary_for_sharing();
 }
+#endif
 
 size_t SystemDictionary::count_bytes_for_buckets() {
   return ClassLoaderData::the_null_class_loader_data()->dictionary()->count_bytes_for_buckets();
