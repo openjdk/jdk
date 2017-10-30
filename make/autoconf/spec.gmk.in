@@ -219,7 +219,6 @@ JVM_FEATURES_client := @JVM_FEATURES_client@
 JVM_FEATURES_core := @JVM_FEATURES_core@
 JVM_FEATURES_minimal := @JVM_FEATURES_minimal@
 JVM_FEATURES_zero := @JVM_FEATURES_zero@
-JVM_FEATURES_zeroshark := @JVM_FEATURES_zeroshark@
 JVM_FEATURES_custom := @JVM_FEATURES_custom@
 
 # Used for make-time verifications
@@ -402,11 +401,6 @@ JVM_LDFLAGS := @JVM_LDFLAGS@
 JVM_ASFLAGS := @JVM_ASFLAGS@
 JVM_LIBS := @JVM_LIBS@
 JVM_RCFLAGS := @JVM_RCFLAGS@
-
-# Flags for zeroshark
-LLVM_CFLAGS := @LLVM_CFLAGS@
-LLVM_LIBS := @LLVM_LIBS@
-LLVM_LDFLAGS := @LLVM_LDFLAGS@
 
 # These flags might contain variables set by a custom extension that is included later.
 EXTRA_CFLAGS = @EXTRA_CFLAGS@

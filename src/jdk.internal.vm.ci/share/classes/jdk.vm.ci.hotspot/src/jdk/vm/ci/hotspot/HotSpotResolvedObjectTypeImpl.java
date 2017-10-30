@@ -934,4 +934,13 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     public boolean isCloneableWithAllocation() {
         return (getAccessFlags() & config().jvmAccIsCloneableFast) != 0;
     }
+
+    private int getMiscFlags() {
+        return UNSAFE.getInt(getMetaspaceKlass() + config().instanceKlassMiscFlagsOffset);
+    }
+
+    public boolean isAnonymous() {
+        return (getMiscFlags() & config().instanceKlassMiscIsAnonymous) != 0;
+    }
+
 }

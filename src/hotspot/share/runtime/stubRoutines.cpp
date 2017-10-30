@@ -59,11 +59,10 @@ address StubRoutines::_throw_delayed_StackOverflowError_entry   = NULL;
 jint    StubRoutines::_verify_oop_count                         = 0;
 address StubRoutines::_verify_oop_subroutine_entry              = NULL;
 address StubRoutines::_atomic_xchg_entry                        = NULL;
-address StubRoutines::_atomic_xchg_ptr_entry                    = NULL;
+address StubRoutines::_atomic_xchg_long_entry                   = NULL;
 address StubRoutines::_atomic_store_entry                       = NULL;
 address StubRoutines::_atomic_store_ptr_entry                   = NULL;
 address StubRoutines::_atomic_cmpxchg_entry                     = NULL;
-address StubRoutines::_atomic_cmpxchg_ptr_entry                 = NULL;
 address StubRoutines::_atomic_cmpxchg_byte_entry                = NULL;
 address StubRoutines::_atomic_cmpxchg_long_entry                = NULL;
 address StubRoutines::_atomic_add_entry                         = NULL;
@@ -382,14 +381,12 @@ static void gen_arraycopy_barrier_pre(oop* dest, size_t count, bool dest_uniniti
     assert(count != 0, "count should be non-zero");
     assert(count <= (size_t)max_intx, "count too large");
     BarrierSet* bs = Universe::heap()->barrier_set();
-    assert(bs->has_write_ref_array_pre_opt(), "Must have pre-barrier opt");
     bs->write_ref_array_pre(dest, (int)count, dest_uninitialized);
 }
 
 static void gen_arraycopy_barrier(oop* dest, size_t count) {
     assert(count != 0, "count should be non-zero");
     BarrierSet* bs = Universe::heap()->barrier_set();
-    assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
     bs->write_ref_array((HeapWord*)dest, count);
 }
 

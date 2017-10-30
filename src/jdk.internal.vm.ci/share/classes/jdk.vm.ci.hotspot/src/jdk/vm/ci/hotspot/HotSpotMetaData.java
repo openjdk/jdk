@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ public class HotSpotMetaData {
     private byte[] relocBytes;
     private byte[] exceptionBytes;
     private byte[] oopMaps;
-    private String[] metadata;
+    private Object[] metadata;
 
     public HotSpotMetaData(TargetDescription target, HotSpotCompiledCode compiledMethod) {
         // Assign the fields default values...
@@ -66,7 +66,7 @@ public class HotSpotMetaData {
         return oopMaps;
     }
 
-    public String[] metadataEntries() {
+    public Object[] metadataEntries() {
         return metadata;
     }
 }

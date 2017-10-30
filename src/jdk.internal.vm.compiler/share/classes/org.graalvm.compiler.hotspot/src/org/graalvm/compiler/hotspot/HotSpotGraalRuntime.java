@@ -316,4 +316,8 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     public Map<ExceptionAction, Integer> getCompilationProblemsPerAction() {
         return compilationProblemsPerAction;
     }
+
+    final Object mbean() {
+        return mBean;
+    }
 }

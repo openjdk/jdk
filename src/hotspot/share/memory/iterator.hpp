@@ -48,6 +48,13 @@ class OopClosure : public Closure {
   virtual void do_oop(narrowOop* o) = 0;
 };
 
+class DoNothingClosure : public OopClosure {
+ public:
+  virtual void do_oop(oop* p)       {}
+  virtual void do_oop(narrowOop* p) {}
+};
+extern DoNothingClosure do_nothing_cl;
+
 // ExtendedOopClosure adds extra code to be run during oop iterations.
 // This is needed by the GC and is extracted to a separate type to not
 // pollute the OopClosure interface.
@@ -138,51 +145,16 @@ class CLDClosure : public Closure {
   virtual void do_cld(ClassLoaderData* cld) = 0;
 };
 
-class KlassToOopClosure : public KlassClosure {
-  friend class MetadataAwareOopClosure;
-  friend class MetadataAwareOopsInGenClosure;
-
-  OopClosure* _oop_closure;
-
-  // Used when _oop_closure couldn't be set in an initialization list.
-  void initialize(OopClosure* oop_closure) {
-    assert(_oop_closure == NULL, "Should only be called once");
-    _oop_closure = oop_closure;
-  }
-
- public:
-  KlassToOopClosure(OopClosure* oop_closure = NULL) : _oop_closure(oop_closure) {}
-
-  virtual void do_klass(Klass* k);
-};
 
 class CLDToOopClosure : public CLDClosure {
   OopClosure*       _oop_closure;
-  KlassToOopClosure _klass_closure;
   bool              _must_claim_cld;
 
  public:
   CLDToOopClosure(OopClosure* oop_closure, bool must_claim_cld = true) :
       _oop_closure(oop_closure),
-      _klass_closure(oop_closure),
       _must_claim_cld(must_claim_cld) {}
 
-  void do_cld(ClassLoaderData* cld);
-};
-
-class CLDToKlassAndOopClosure : public CLDClosure {
-  friend class G1CollectedHeap;
- protected:
-  OopClosure*   _oop_closure;
-  KlassClosure* _klass_closure;
-  bool          _must_claim_cld;
- public:
-  CLDToKlassAndOopClosure(KlassClosure* klass_closure,
-                          OopClosure* oop_closure,
-                          bool must_claim_cld) :
-                              _oop_closure(oop_closure),
-                              _klass_closure(klass_closure),
-                              _must_claim_cld(must_claim_cld) {}
   void do_cld(ClassLoaderData* cld);
 };
 
@@ -190,15 +162,10 @@ class CLDToKlassAndOopClosure : public CLDClosure {
 // that participates in class unloading.
 // It's used to proxy through the metadata to the oops defined in them.
 class MetadataAwareOopClosure: public ExtendedOopClosure {
-  KlassToOopClosure _klass_closure;
 
  public:
-  MetadataAwareOopClosure() : ExtendedOopClosure() {
-    _klass_closure.initialize(this);
-  }
-  MetadataAwareOopClosure(ReferenceProcessor* rp) : ExtendedOopClosure(rp) {
-    _klass_closure.initialize(this);
-  }
+  MetadataAwareOopClosure() : ExtendedOopClosure() { }
+  MetadataAwareOopClosure(ReferenceProcessor* rp) : ExtendedOopClosure(rp) { }
 
   bool do_metadata_nv()      { return true; }
   virtual bool do_metadata() { return do_metadata_nv(); }

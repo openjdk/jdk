@@ -42,7 +42,8 @@ public class GenericTestCaseForOtherCPU extends
                               new OrPredicate(Platform::isAArch64,
                               new OrPredicate(Platform::isS390x,
                               new OrPredicate(Platform::isSparc,
-                              new OrPredicate(Platform::isX64, Platform::isX86))))));
+                              new OrPredicate(Platform::isPPC,
+                              new OrPredicate(Platform::isX64, Platform::isX86)))))));
     }
 
     @Override

@@ -236,7 +236,7 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
   inline VMReg as_VMReg( );
 
   // accessors
-  int encoding() const                                { assert(is_valid(), "invalid register"); return value(); }
+  int encoding() const { assert(is_valid(), "invalid register"); return value(); }
 
  public:
   int encoding(Width w) const {
@@ -258,10 +258,12 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
     return -1;
   }
 
-  bool  is_valid() const                              { return 0 <= value() && value() < number_of_registers; }
+  bool is_valid() const { return 0 <= value() && value() < number_of_registers; }
+  bool is_even()  const { return (encoding() & 1) == 0; }
+
   const char* name() const;
 
-  FloatRegister successor() const                     { return as_FloatRegister(encoding() + 1); }
+  FloatRegister successor() const { return as_FloatRegister(encoding() + 1); }
 };
 
 

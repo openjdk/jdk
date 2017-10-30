@@ -135,14 +135,6 @@ void CollectedHeap::print_on_error(outputStream* st) const {
   _barrier_set->print_on(st);
 }
 
-void CollectedHeap::register_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-}
-
-void CollectedHeap::unregister_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-}
-
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const GCHeapSummary& heap_summary = create_heap_summary();
   gc_tracer->report_gc_heap_summary(when, heap_summary);
@@ -355,7 +347,6 @@ void CollectedHeap::flush_deferred_store_barrier(JavaThread* thread) {
              "Mismatch: multiple objects?");
     }
     BarrierSet* bs = barrier_set();
-    assert(bs->has_write_region_opt(), "No write_region() on BarrierSet");
     bs->write_region(deferred);
     // "Clear" the deferred_card_mark field
     thread->set_deferred_card_mark(MemRegion());
@@ -438,7 +429,6 @@ oop CollectedHeap::new_store_pre_barrier(JavaThread* thread, oop new_obj) {
     } else {
       // Do the card mark
       BarrierSet* bs = barrier_set();
-      assert(bs->has_write_region_opt(), "No write_region() on BarrierSet");
       bs->write_region(mr);
     }
   }

@@ -43,6 +43,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -219,6 +220,11 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   // This is the point where the entire marking should have completed.
   assert(_marking_stack.is_empty(), "Marking should have completed");
+
+  {
+    GCTraceTime(Debug, gc, phases) tm_m("Weak Processing", gc_timer());
+    WeakProcessor::weak_oops_do(&is_alive, &do_nothing_cl);
+  }
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", gc_timer());

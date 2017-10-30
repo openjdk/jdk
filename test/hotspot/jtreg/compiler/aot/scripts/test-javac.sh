@@ -108,7 +108,7 @@ for i in `seq 1 $N`; do
 done
 
 NAME="jvmci"
-DIR="$DIR/../../../../src/jdk.internal.vm.ci"
+DIR="$DIR/../../../../../../src/jdk.internal.vm.ci"
 FILES=`find $DIR -type f -name '*.java'`
 COUNT=`find $DIR -type f -name '*.java' | wc -l`
 

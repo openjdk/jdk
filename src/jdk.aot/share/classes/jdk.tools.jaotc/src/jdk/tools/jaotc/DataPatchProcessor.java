@@ -32,6 +32,7 @@ import jdk.tools.jaotc.binformat.Relocation.RelocType;
 import jdk.tools.jaotc.binformat.Symbol;
 import jdk.tools.jaotc.binformat.Symbol.Binding;
 import jdk.tools.jaotc.binformat.Symbol.Kind;
+import jdk.tools.jaotc.AOTCompiledClass;
 import org.graalvm.compiler.code.DataSection;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 
@@ -40,6 +41,7 @@ import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.code.site.Reference;
+import jdk.vm.ci.hotspot.HotSpotConstantPoolObject;
 import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
@@ -84,18 +86,24 @@ final class DataPatchProcessor {
             HotSpotMetaspaceConstant metaspaceConstant = (HotSpotMetaspaceConstant) constant;
             if (metaspaceConstant.asResolvedJavaType() != null) {
                 HotSpotResolvedObjectType type = metaspaceConstant.asResolvedJavaType();
-                targetSymbol = type.getName();
-                gotName = ((action == HotSpotConstantLoadAction.INITIALIZE) ? "got.init." : "got.") + targetSymbol;
                 methodInfo.addDependentKlassData(binaryContainer, type);
+                targetSymbol = AOTCompiledClass.metadataName(type);
+                gotName = ((action == HotSpotConstantLoadAction.INITIALIZE) ? "got.init." : "got.") + targetSymbol;
             } else if (metaspaceConstant.asResolvedJavaMethod() != null && action == HotSpotConstantLoadAction.LOAD_COUNTERS) {
                 targetSymbol = "counters." + JavaMethodInfo.uniqueMethodName(metaspaceConstant.asResolvedJavaMethod());
                 gotName = "got." + targetSymbol;
                 binaryContainer.addCountersSymbol(targetSymbol);
             }
         } else if (constant instanceof HotSpotObjectConstant) {
-            // String constant.
             HotSpotObjectConstant oopConstant = (HotSpotObjectConstant) constant;
-            targetSymbol = "ldc." + oopConstant.toValueString();
+            if (oopConstant instanceof HotSpotConstantPoolObject) {
+                HotSpotConstantPoolObject cpo = (HotSpotConstantPoolObject)oopConstant;
+                // Even if two locations use the same object, resolve separately
+                targetSymbol = "ldc." + cpo.getCpType().getName() + cpo.getCpi();
+            } else {
+                // String constant.
+                targetSymbol = "ldc." + oopConstant.toValueString();
+            }
             Integer offset = binaryContainer.addOopSymbol(targetSymbol);
             gotName = "got.ldc." + offset;
         } else if (constant instanceof HotSpotSentinelConstant) {

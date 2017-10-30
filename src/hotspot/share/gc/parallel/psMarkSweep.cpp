@@ -47,6 +47,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -173,7 +174,9 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 
-    if (TraceOldGenTime) accumulated_time()->start();
+    if (log_is_enabled(Debug, gc, heap, exit)) {
+      accumulated_time()->start();
+    }
 
     // Let the size policy know we're starting
     size_policy->major_collection_begin();
@@ -342,7 +345,9 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     // We collected the heap, recalculate the metaspace capacity
     MetaspaceGC::compute_new_size();
 
-    if (TraceOldGenTime) accumulated_time()->stop();
+    if (log_is_enabled(Debug, gc, heap, exit)) {
+      accumulated_time()->stop();
+    }
 
     young_gen->print_used_change(young_gen_prev_used);
     old_gen->print_used_change(old_gen_prev_used);
@@ -542,6 +547,11 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   assert(_marking_stack.is_empty(), "Marking should have completed");
 
   {
+    GCTraceTime(Debug, gc, phases) t("Weak Processing", _gc_timer);
+    WeakProcessor::weak_oops_do(is_alive_closure(), &do_nothing_cl);
+  }
+
+  {
     GCTraceTime(Debug, gc, phases) t("Class Unloading", _gc_timer);
 
     // Unload classes and purge the SystemDictionary.
@@ -613,7 +623,7 @@ void PSMarkSweep::mark_sweep_phase3() {
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   // Global (weak) JNI handles
-  JNIHandles::weak_oops_do(adjust_pointer_closure());
+  WeakProcessor::oops_do(adjust_pointer_closure());
 
   CodeBlobToOopClosure adjust_from_blobs(adjust_pointer_closure(), CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);

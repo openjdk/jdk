@@ -2783,6 +2783,21 @@ void MacroAssembler::cmpptr(Address src1, AddressLiteral src2) {
 #endif // _LP64
 }
 
+void MacroAssembler::cmpoop(Register src1, Register src2) {
+  cmpptr(src1, src2);
+}
+
+void MacroAssembler::cmpoop(Register src1, Address src2) {
+  cmpptr(src1, src2);
+}
+
+#ifdef _LP64
+void MacroAssembler::cmpoop(Register src1, jobject src2) {
+  movoop(rscratch1, src2);
+  cmpptr(src1, rscratch1);
+}
+#endif
+
 void MacroAssembler::locked_cmpxchgptr(Register reg, AddressLiteral adr) {
   if (reachable(adr)) {
     if (os::is_MP())
@@ -6617,6 +6632,7 @@ void MacroAssembler::load_mirror(Register mirror, Register method) {
   movptr(mirror, Address(mirror, ConstMethod::constants_offset()));
   movptr(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
   movptr(mirror, Address(mirror, mirror_offset));
+  resolve_oop_handle(mirror);
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
@@ -8398,7 +8414,7 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ar
 
   if (is_array_equ) {
     // Check the input args
-    cmpptr(ary1, ary2);
+    cmpoop(ary1, ary2);
     jcc(Assembler::equal, TRUE_LABEL);
 
     // Need additional checks for arrays_equals.

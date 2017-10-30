@@ -669,7 +669,6 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
 
   // Store check (mark entire object and let gc sort it out)
   BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->has_write_region_opt(), "Barrier set does not have write_region");
   bs->write_region(MemRegion((HeapWord*)new_obj_oop, size));
 
   Handle new_obj(THREAD, new_obj_oop);
@@ -3355,24 +3354,6 @@ JVM_END
 
 
 // ObjectInputStream ///////////////////////////////////////////////////////////////
-
-bool force_verify_field_access(Klass* current_class, Klass* field_class, AccessFlags access, bool classloader_only) {
-  if (current_class == NULL) {
-    return true;
-  }
-  if ((current_class == field_class) || access.is_public()) {
-    return true;
-  }
-
-  if (access.is_protected()) {
-    // See if current_class is a subclass of field_class
-    if (current_class->is_subclass_of(field_class)) {
-      return true;
-    }
-  }
-
-  return (!access.is_private() && InstanceKlass::cast(current_class)->is_same_class_package(field_class));
-}
 
 // Return the first user-defined class loader up the execution stack, or null
 // if only code from the bootstrap or platform class loader is on the stack.

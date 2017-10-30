@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,9 @@ Java_sun_management_ThreadImpl_resetContentionTimes0
 
 JNIEXPORT jobjectArray JNICALL
 Java_sun_management_ThreadImpl_dumpThreads0
-  (JNIEnv *env, jclass cls, jlongArray ids, jboolean lockedMonitors, jboolean lockedSynchronizers)
+  (JNIEnv *env, jclass cls, jlongArray ids, jboolean lockedMonitors,
+  jboolean lockedSynchronizers, jint maxDepth)
 {
-    return jmm_interface->DumpThreads(env, ids, lockedMonitors, lockedSynchronizers);
+    return jmm_interface->DumpThreads(env, ids, lockedMonitors,
+                                      lockedSynchronizers, maxDepth);
 }

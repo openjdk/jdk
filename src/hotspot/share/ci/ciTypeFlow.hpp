@@ -30,12 +30,6 @@
 #include "ci/ciKlass.hpp"
 #include "ci/ciMethodBlocks.hpp"
 #endif
-#ifdef SHARK
-#include "ci/ciEnv.hpp"
-#include "ci/ciKlass.hpp"
-#include "ci/ciMethodBlocks.hpp"
-#include "shark/shark_globals.hpp"
-#endif
 
 
 class ciTypeFlow : public ResourceObj {

@@ -231,6 +231,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_addExactL(bool is_increment);
   bool inline_math_multiplyExactI();
   bool inline_math_multiplyExactL();
+  bool inline_math_multiplyHigh();
   bool inline_math_negateExactI();
   bool inline_math_negateExactL();
   bool inline_math_subtractExactI(bool is_decrement);
@@ -549,6 +550,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_incrementExactL:          return inline_math_addExactL(true /* increment */);
   case vmIntrinsics::_multiplyExactI:           return inline_math_multiplyExactI();
   case vmIntrinsics::_multiplyExactL:           return inline_math_multiplyExactL();
+  case vmIntrinsics::_multiplyHigh:             return inline_math_multiplyHigh();
   case vmIntrinsics::_negateExactI:             return inline_math_negateExactI();
   case vmIntrinsics::_negateExactL:             return inline_math_negateExactL();
   case vmIntrinsics::_subtractExactI:           return inline_math_subtractExactI(false /* subtract */);
@@ -1895,6 +1897,11 @@ bool LibraryCallKit::inline_math_multiplyExactI() {
 
 bool LibraryCallKit::inline_math_multiplyExactL() {
   return inline_math_overflow<OverflowMulLNode>(argument(0), argument(2));
+}
+
+bool LibraryCallKit::inline_math_multiplyHigh() {
+  set_result(_gvn.transform(new MulHiLNode(argument(0), argument(2))));
+  return true;
 }
 
 Node*
@@ -3453,7 +3460,8 @@ bool LibraryCallKit::inline_native_isInterrupted() {
 // Given a klass oop, load its java mirror (a java.lang.Class oop).
 Node* LibraryCallKit::load_mirror_from_klass(Node* klass) {
   Node* p = basic_plus_adr(klass, in_bytes(Klass::java_mirror_offset()));
-  return make_load(NULL, p, TypeInstPtr::MIRROR, T_OBJECT, MemNode::unordered);
+  Node* load = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered);
+  return make_load(NULL, load, TypeInstPtr::MIRROR, T_OBJECT, MemNode::unordered);
 }
 
 //-----------------------load_klass_from_mirror_common-------------------------

@@ -147,6 +147,12 @@ class CodeHeap : public CHeapObj<mtCode> {
   // Memory allocation
   void* allocate (size_t size); // Allocate 'size' bytes in the code cache or return NULL
   void  deallocate(void* p);    // Deallocate memory
+  // Free the tail of segments allocated by the last call to 'allocate()' which exceed 'used_size'.
+  // ATTENTION: this is only safe to use if there was no other call to 'allocate()' after
+  //            'p' was allocated. Only intended for freeing memory which would be otherwise
+  //            wasted after the interpreter generation because we don't know the interpreter size
+  //            beforehand and we also can't easily relocate the interpreter to a new location.
+  void  deallocate_tail(void* p, size_t used_size);
 
   // Attributes
   char* low_boundary() const                     { return _memory.low_boundary(); }

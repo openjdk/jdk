@@ -272,7 +272,7 @@ ReferenceProcessorPhaseTimes::~ReferenceProcessorPhaseTimes() {
 
 double ReferenceProcessorPhaseTimes::ref_proc_time_ms(ReferenceType ref_type) const {
   ASSERT_REF_TYPE(ref_type);
-  return _par_phase_time_ms[ref_type_2_index(ref_type)];
+  return _ref_proc_time_ms[ref_type_2_index(ref_type)];
 }
 
 void ReferenceProcessorPhaseTimes::set_ref_proc_time_ms(ReferenceType ref_type,

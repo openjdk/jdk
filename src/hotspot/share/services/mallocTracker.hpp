@@ -68,7 +68,7 @@ class MemoryCounter VALUE_OBJ_CLASS_SPEC {
     if (sz > 0) {
       // unary minus operator applied to unsigned type, result still unsigned
       #pragma warning(suppress: 4146)
-      Atomic::add(-sz, &_size);
+      Atomic::sub(sz, &_size);
     }
   }
 

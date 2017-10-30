@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,15 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
+#include "services/memTracker.hpp"
+
+void ResourceArea::bias_to(MEMFLAGS new_flags) {
+  if (new_flags != _flags) {
+    MemTracker::record_arena_free(_flags);
+    MemTracker::record_new_arena(new_flags);
+    _flags = new_flags;
+  }
+}
 
 //------------------------------ResourceMark-----------------------------------
 debug_only(int ResourceArea::_warned;)      // to suppress multiple warnings

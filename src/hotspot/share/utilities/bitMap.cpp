@@ -81,8 +81,10 @@ BitMap::bm_word_t* BitMap::reallocate(const Allocator& allocator, bm_word_t* old
   if (new_size_in_words > 0) {
     map = allocator.allocate(new_size_in_words);
 
-    Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) map,
-                         MIN2(old_size_in_words, new_size_in_words));
+    if (old_map != NULL) {
+      Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) map,
+                           MIN2(old_size_in_words, new_size_in_words));
+    }
 
     if (new_size_in_words > old_size_in_words) {
       clear_range_of_words(map, old_size_in_words, new_size_in_words);
@@ -626,7 +628,7 @@ void BitMap::init_pop_count_table() {
       table[i] = num_set_bits(i);
     }
 
-    if (!Atomic::replace_if_null(table, &_pop_count_table)) {
+    if (Atomic::cmpxchg(table, &_pop_count_table, (BitMap::idx_t*)NULL) != NULL) {
       guarantee(_pop_count_table != NULL, "invariant");
       FREE_C_HEAP_ARRAY(idx_t, table);
     }

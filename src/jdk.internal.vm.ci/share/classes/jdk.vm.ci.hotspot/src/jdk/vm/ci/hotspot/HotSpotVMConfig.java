@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     /**
      * The offset of the _java_mirror field (of type {@link Class}) in a Klass.
      */
-    final int classMirrorOffset = getFieldOffset("Klass::_java_mirror", Integer.class, "oop");
+    final int classMirrorHandleOffset = getFieldOffset("Klass::_java_mirror", Integer.class, "OopHandle");
 
     final int klassAccessFlagsOffset = getFieldOffset("Klass::_access_flags", Integer.class, "AccessFlags");
     final int klassLayoutHelperOffset = getFieldOffset("Klass::_layout_helper", Integer.class, "jint");
@@ -92,11 +92,13 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "u1");
     final int instanceKlassConstantsOffset = getFieldOffset("InstanceKlass::_constants", Integer.class, "ConstantPool*");
     final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
+    final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_flags", Integer.class, "u2");
     final int klassVtableStartOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_start_offset", Integer.class, "int");
     final int klassVtableLengthOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_length_offset", Integer.class, "int");
 
     final int instanceKlassStateLinked = getConstant("InstanceKlass::linked", Integer.class);
     final int instanceKlassStateFullyInitialized = getConstant("InstanceKlass::fully_initialized", Integer.class);
+    final int instanceKlassMiscIsAnonymous = getConstant("InstanceKlass::_misc_is_anonymous", Integer.class);
 
     final int arrayU1LengthOffset = getFieldOffset("Array<int>::_length", Integer.class, "int");
     final int arrayU1DataOffset = getFieldOffset("Array<u1>::_data", Integer.class);
@@ -185,6 +187,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int constMethodCodeSizeOffset = getFieldOffset("ConstMethod::_code_size", Integer.class, "u2");
     final int constMethodNameIndexOffset = getFieldOffset("ConstMethod::_name_index", Integer.class, "u2");
     final int constMethodSignatureIndexOffset = getFieldOffset("ConstMethod::_signature_index", Integer.class, "u2");
+    final int constMethodMethodIdnumOffset = getFieldOffset("ConstMethod::_method_idnum", Integer.class, "u2");
     final int constMethodMaxStackOffset = getFieldOffset("ConstMethod::_max_stack", Integer.class, "u2");
     final int methodMaxLocalsOffset = getFieldOffset("ConstMethod::_max_locals", Integer.class, "u2");
 

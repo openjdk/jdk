@@ -25,7 +25,7 @@ package jdk.tools.jaotc;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
 
 import jdk.tools.jaotc.binformat.BinaryContainer;
 import jdk.tools.jaotc.binformat.ReadOnlyDataContainer;
@@ -182,12 +182,12 @@ final class CompiledMethodInfo {
     /**
      * List of stubs (PLT trampoline).
      */
-    private Map<String, StubInformation> stubs = new HashMap<>();
+    private HashMap<String, StubInformation> stubs = new HashMap<>();
 
     /**
      * List of referenced classes.
      */
-    private Map<String, AOTKlassData> dependentKlasses = new HashMap<>();
+    private HashSet<AOTKlassData> dependentKlasses = new HashSet<>();
 
     /**
      * Methods count used to generate unique global method id.
@@ -209,7 +209,7 @@ final class CompiledMethodInfo {
     void addMethodOffsets(BinaryContainer binaryContainer, ReadOnlyDataContainer container) {
         this.methodOffsets.setNameOffset(binaryContainer.addMetaspaceName(name));
         this.methodOffsets.addMethodOffsets(container, name);
-        for (AOTKlassData data : dependentKlasses.values()) {
+        for (AOTKlassData data : dependentKlasses) {
             data.addDependentMethod(this);
         }
     }
@@ -291,17 +291,15 @@ final class CompiledMethodInfo {
 
     void addDependentKlassData(BinaryContainer binaryContainer, HotSpotResolvedObjectType type) {
         AOTKlassData klassData = AOTCompiledClass.addFingerprintKlassData(binaryContainer, type);
-        String klassName = type.getName();
-
-        if (dependentKlasses.containsKey(klassName)) {
-            assert dependentKlasses.get(klassName) == klassData : "duplicated data for klass: " + klassName;
-        } else {
-            dependentKlasses.put(klassName, klassData);
-        }
+        dependentKlasses.add(klassData);
     }
 
-    AOTKlassData getDependentKlassData(String klassName) {
-        return dependentKlasses.get(klassName);
+    AOTKlassData getDependentKlassData(HotSpotResolvedObjectType type) {
+        AOTKlassData klassData = AOTCompiledClass.getAOTKlassData(type);
+        if (dependentKlasses.contains(klassData)) {
+            return klassData;
+        }
+        return null;
     }
 
     boolean hasMark(Site call, MarkId id) {

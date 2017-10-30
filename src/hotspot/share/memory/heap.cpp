@@ -222,6 +222,20 @@ void* CodeHeap::allocate(size_t instance_size) {
   }
 }
 
+void CodeHeap::deallocate_tail(void* p, size_t used_size) {
+  assert(p == find_start(p), "illegal deallocation");
+  // Find start of HeapBlock
+  HeapBlock* b = (((HeapBlock *)p) - 1);
+  assert(b->allocated_space() == p, "sanity check");
+  size_t used_number_of_segments = size_to_segments(used_size + header_size());
+  size_t actual_number_of_segments = b->length();
+  guarantee(used_number_of_segments <= actual_number_of_segments, "Must be!");
+  guarantee(b == block_at(_next_segment - actual_number_of_segments), "Intermediate allocation!");
+  size_t number_of_segments_to_deallocate = actual_number_of_segments - used_number_of_segments;
+  _next_segment -= number_of_segments_to_deallocate;
+  mark_segmap_as_free(_next_segment, _next_segment + number_of_segments_to_deallocate);
+  b->initialize(used_number_of_segments);
+}
 
 void CodeHeap::deallocate(void* p) {
   assert(p == find_start(p), "illegal deallocation");

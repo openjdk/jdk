@@ -569,6 +569,21 @@ void CodeCache::free(CodeBlob* cb) {
   assert(heap->blob_count() >= 0, "sanity check");
 }
 
+void CodeCache::free_unused_tail(CodeBlob* cb, size_t used) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  guarantee(cb->is_buffer_blob() && strncmp("Interpreter", cb->name(), 11) == 0, "Only possible for interpreter!");
+  print_trace("free_unused_tail", cb);
+
+  // We also have to account for the extra space (i.e. header) used by the CodeBlob
+  // which provides the memory (see BufferBlob::create() in codeBlob.cpp).
+  used += CodeBlob::align_code_offset(cb->header_size());
+
+  // Get heap for given CodeBlob and deallocate its unused tail
+  get_code_heap(cb)->deallocate_tail(cb, used);
+  // Adjust the sizes of the CodeBlob
+  cb->adjust_size(used);
+}
+
 void CodeCache::commit(CodeBlob* cb) {
   // this is called by nmethod::nmethod, which must already own CodeCache_lock
   assert_locked_or_safepoint(CodeCache_lock);
@@ -683,21 +698,18 @@ void CodeCache::blobs_do(CodeBlobClosure* f) {
       if (cb->is_alive()) {
         f->do_code_blob(cb);
 #ifdef ASSERT
-        if (cb->is_nmethod())
-        ((nmethod*)cb)->verify_scavenge_root_oops();
+        if (cb->is_nmethod()) {
+          Universe::heap()->verify_nmethod((nmethod*)cb);
+        }
 #endif //ASSERT
       }
     }
   }
 }
 
-// Walk the list of methods which might contain non-perm oops.
+// Walk the list of methods which might contain oops to the java heap.
 void CodeCache::scavenge_root_nmethods_do(CodeBlobToOopClosure* f) {
   assert_locked_or_safepoint(CodeCache_lock);
-
-  if (UseG1GC) {
-    return;
-  }
 
   const bool fix_relocations = f->fix_relocations();
   debug_only(mark_scavenge_root_nmethods());
@@ -735,12 +747,19 @@ void CodeCache::scavenge_root_nmethods_do(CodeBlobToOopClosure* f) {
   debug_only(verify_perm_nmethods(NULL));
 }
 
+void CodeCache::register_scavenge_root_nmethod(nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  if (!nm->on_scavenge_root_list() && nm->detect_scavenge_root_oops()) {
+    add_scavenge_root_nmethod(nm);
+  }
+}
+
+void CodeCache::verify_scavenge_root_nmethod(nmethod* nm) {
+  nm->verify_scavenge_root_oops();
+}
+
 void CodeCache::add_scavenge_root_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
-
-  if (UseG1GC) {
-    return;
-  }
 
   nm->set_on_scavenge_root_list();
   nm->set_scavenge_root_link(_scavenge_root_nmethods);
@@ -754,8 +773,6 @@ void CodeCache::unlink_scavenge_root_nmethod(nmethod* nm, nmethod* prev) {
   assert((prev == NULL && scavenge_root_nmethods() == nm) ||
          (prev != NULL && prev->scavenge_root_link() == nm), "precondition");
 
-  assert(!UseG1GC, "G1 does not use the scavenge_root_nmethods list");
-
   print_trace("unlink_scavenge_root", nm);
   if (prev == NULL) {
     set_scavenge_root_nmethods(nm->scavenge_root_link());
@@ -768,10 +785,6 @@ void CodeCache::unlink_scavenge_root_nmethod(nmethod* nm, nmethod* prev) {
 
 void CodeCache::drop_scavenge_root_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
-
-  if (UseG1GC) {
-    return;
-  }
 
   print_trace("drop_scavenge_root", nm);
   nmethod* prev = NULL;
@@ -787,10 +800,6 @@ void CodeCache::drop_scavenge_root_nmethod(nmethod* nm) {
 
 void CodeCache::prune_scavenge_root_nmethods() {
   assert_locked_or_safepoint(CodeCache_lock);
-
-  if (UseG1GC) {
-    return;
-  }
 
   debug_only(mark_scavenge_root_nmethods());
 
@@ -820,10 +829,6 @@ void CodeCache::prune_scavenge_root_nmethods() {
 
 #ifndef PRODUCT
 void CodeCache::asserted_non_scavengable_nmethods_do(CodeBlobClosure* f) {
-  if (UseG1GC) {
-    return;
-  }
-
   // While we are here, verify the integrity of the list.
   mark_scavenge_root_nmethods();
   for (nmethod* cur = scavenge_root_nmethods(); cur != NULL; cur = cur->scavenge_root_link()) {
@@ -833,7 +838,7 @@ void CodeCache::asserted_non_scavengable_nmethods_do(CodeBlobClosure* f) {
   verify_perm_nmethods(f);
 }
 
-// Temporarily mark nmethods that are claimed to be on the non-perm list.
+// Temporarily mark nmethods that are claimed to be on the scavenge list.
 void CodeCache::mark_scavenge_root_nmethods() {
   NMethodIterator iter;
   while(iter.next_alive()) {
@@ -854,7 +859,7 @@ void CodeCache::verify_perm_nmethods(CodeBlobClosure* f_or_null) {
     assert(nm->scavenge_root_not_marked(), "must be already processed");
     if (nm->on_scavenge_root_list())
       call_f = false;  // don't show this one to the client
-    nm->verify_scavenge_root_oops();
+    Universe::heap()->verify_nmethod(nm);
     if (call_f)  f_or_null->do_code_blob(nm);
   }
 }
@@ -1640,4 +1645,3 @@ void CodeCache::log_state(outputStream* st) {
             blob_count(), nmethod_count(), adapter_count(),
             unallocated_capacity());
 }
-

@@ -110,8 +110,8 @@ public:
       // We consider all objects that we find self-forwarded to be
       // live. What we'll do is that we'll update the prev marking
       // info so that they are all under PTAMS and explicitly marked.
-      if (!_cm->isPrevMarked(obj)) {
-        _cm->markPrev(obj);
+      if (!_cm->is_marked_in_prev_bitmap(obj)) {
+        _cm->mark_in_prev_bitmap(obj);
       }
       if (_during_initial_mark) {
         // For the next marking info we'll only mark the
@@ -181,7 +181,7 @@ public:
 #endif
       }
     }
-    _cm->clearRangePrevBitmap(mr);
+    _cm->clear_range_in_prev_bitmap(mr);
   }
 
   void zap_remainder() {

@@ -29,7 +29,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.inline.hpp"
-#include "gc/g1/suspendibleThreadSet.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -51,12 +51,8 @@ inline bool G1ConcurrentMark::mark_in_next_bitmap(HeapRegion* const hr, oop cons
   assert(!hr->is_continues_humongous(), "Should not try to mark object " PTR_FORMAT " in Humongous continues region %u above nTAMS " PTR_FORMAT, p2i(obj), hr->hrm_index(), p2i(hr->next_top_at_mark_start()));
 
   HeapWord* const obj_addr = (HeapWord*)obj;
-  // Dirty read to avoid CAS.
-  if (_nextMarkBitMap->is_marked(obj_addr)) {
-    return false;
-  }
 
-  return _nextMarkBitMap->par_mark(obj_addr);
+  return _next_mark_bitmap->par_mark(obj_addr);
 }
 
 #ifndef PRODUCT
@@ -90,7 +86,7 @@ inline void G1CMTask::push(G1TaskQueueEntry task_entry) {
   assert(task_entry.is_array_slice() || !_g1h->is_on_master_free_list(
               _g1h->heap_region_containing(task_entry.obj())), "invariant");
   assert(task_entry.is_array_slice() || !_g1h->is_obj_ill(task_entry.obj()), "invariant");  // FIXME!!!
-  assert(task_entry.is_array_slice() || _nextMarkBitMap->is_marked((HeapWord*)task_entry.obj()), "invariant");
+  assert(task_entry.is_array_slice() || _next_mark_bitmap->is_marked((HeapWord*)task_entry.obj()), "invariant");
 
   if (!_task_queue->push(task_entry)) {
     // The local task queue looks full. We need to push some entries
@@ -138,7 +134,7 @@ inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
 template<bool scan>
 inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry) {
   assert(scan || (task_entry.is_oop() && task_entry.obj()->is_typeArray()), "Skipping scan of grey non-typeArray");
-  assert(task_entry.is_array_slice() || _nextMarkBitMap->is_marked((HeapWord*)task_entry.obj()),
+  assert(task_entry.is_array_slice() || _next_mark_bitmap->is_marked((HeapWord*)task_entry.obj()),
          "Any stolen object should be a slice or marked");
 
   if (scan) {
@@ -211,14 +207,14 @@ inline void G1CMTask::deal_with_reference(oop obj) {
   make_reference_grey(obj);
 }
 
-inline void G1ConcurrentMark::markPrev(oop p) {
-  assert(!_prevMarkBitMap->is_marked((HeapWord*) p), "sanity");
- _prevMarkBitMap->mark((HeapWord*) p);
+inline void G1ConcurrentMark::mark_in_prev_bitmap(oop p) {
+  assert(!_prev_mark_bitmap->is_marked((HeapWord*) p), "sanity");
+ _prev_mark_bitmap->mark((HeapWord*) p);
 }
 
-bool G1ConcurrentMark::isPrevMarked(oop p) const {
+bool G1ConcurrentMark::is_marked_in_prev_bitmap(oop p) const {
   assert(p != NULL && oopDesc::is_oop(p), "expected an oop");
-  return _prevMarkBitMap->is_marked((HeapWord*)p);
+  return _prev_mark_bitmap->is_marked((HeapWord*)p);
 }
 
 inline bool G1ConcurrentMark::do_yield_check() {

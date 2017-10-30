@@ -203,12 +203,12 @@ G1StringDedupUnlinkOrOopsDoClosure::~G1StringDedupUnlinkOrOopsDoClosure() {
 // Atomically claims the next available queue for exclusive access by
 // the current thread. Returns the queue number of the claimed queue.
 size_t G1StringDedupUnlinkOrOopsDoClosure::claim_queue() {
-  return (size_t)Atomic::add_ptr(1, &_next_queue) - 1;
+  return Atomic::add((size_t)1, &_next_queue) - 1;
 }
 
 // Atomically claims the next available table partition for exclusive
 // access by the current thread. Returns the table bucket number where
 // the claimed partition starts.
 size_t G1StringDedupUnlinkOrOopsDoClosure::claim_table_partition(size_t partition_size) {
-  return (size_t)Atomic::add_ptr(partition_size, &_next_bucket) - partition_size;
+  return Atomic::add(partition_size, &_next_bucket) - partition_size;
 }

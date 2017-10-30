@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,7 +299,7 @@ class JVMCIJavaClasses : AllStatic {
     typeArrayOop_field(HotSpotMetaData, relocBytes, "[B")                                                                                                      \
     typeArrayOop_field(HotSpotMetaData, exceptionBytes, "[B")                                                                                                  \
     typeArrayOop_field(HotSpotMetaData, oopMaps, "[B")                                                                                                         \
-    objArrayOop_field(HotSpotMetaData, metadata, "[Ljava/lang/String;")                                                                                        \
+    objArrayOop_field(HotSpotMetaData, metadata, "[Ljava/lang/Object;")                                                                                        \
   end_class                                                                                                                                                    \
   start_class(HotSpotConstantPool)                                                                                                                             \
     long_field(HotSpotConstantPool, metaspaceConstantPool)                                                                                                     \

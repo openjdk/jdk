@@ -1625,6 +1625,17 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
       Node* imem = use->as_Initialize()->proj_out(TypeFunc::Memory);
       if (imem != NULL)  add_users_to_worklist0(imem);
     }
+    // Loading the java mirror from a klass oop requires two loads and the type
+    // of the mirror load depends on the type of 'n'. See LoadNode::Value().
+    if (use_op == Op_LoadP && use->bottom_type()->isa_rawptr()) {
+      for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+        Node* u = use->fast_out(i2);
+        const Type* ut = u->bottom_type();
+        if (u->Opcode() == Op_LoadP && ut->isa_instptr()) {
+          _worklist.push(u);
+        }
+      }
+    }
   }
 }
 
@@ -1758,6 +1769,17 @@ void PhaseCCP::analyze() {
           PhiNode* phi = countedloop_phi_from_cmp((CmpINode*)m, n);
           if (phi != NULL) {
             worklist.push(phi);
+          }
+        }
+        // Loading the java mirror from a klass oop requires two loads and the type
+        // of the mirror load depends on the type of 'n'. See LoadNode::Value().
+        if (m_op == Op_LoadP && m->bottom_type()->isa_rawptr()) {
+          for (DUIterator_Fast i2max, i2 = m->fast_outs(i2max); i2 < i2max; i2++) {
+            Node* u = m->fast_out(i2);
+            const Type* ut = u->bottom_type();
+            if (u->Opcode() == Op_LoadP && ut->isa_instptr() && ut != type(u)) {
+              worklist.push(u);
+            }
           }
         }
       }

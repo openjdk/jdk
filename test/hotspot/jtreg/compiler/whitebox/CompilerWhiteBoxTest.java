@@ -51,7 +51,7 @@ public abstract class CompilerWhiteBoxTest {
     public static final int COMP_LEVEL_LIMITED_PROFILE = 2;
     /** {@code CompLevel::CompLevel_full_profile} -- C1, invocation &amp; backedge counters + mdo */
     public static final int COMP_LEVEL_FULL_PROFILE = 3;
-    /** {@code CompLevel::CompLevel_full_optimization} -- C2 or Shark */
+    /** {@code CompLevel::CompLevel_full_optimization} -- C2 */
     public static final int COMP_LEVEL_FULL_OPTIMIZATION = 4;
     /** Maximal value for CompLevel */
     public static final int COMP_LEVEL_MAX = COMP_LEVEL_FULL_OPTIMIZATION;

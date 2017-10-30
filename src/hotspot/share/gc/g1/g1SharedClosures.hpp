@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,18 +34,17 @@ class G1ParScanThreadState;
 template <G1Mark Mark, bool use_ext = false>
 class G1SharedClosures VALUE_OBJ_CLASS_SPEC {
 public:
-  G1ParCopyClosure<G1BarrierNone,  Mark, use_ext> _oops;
-  G1ParCopyClosure<G1BarrierKlass, Mark, use_ext> _oop_in_klass;
-  G1KlassScanClosure                              _klass_in_cld_closure;
-  CLDToKlassAndOopClosure                         _clds;
-  G1CodeBlobClosure                               _codeblobs;
-  BufferingOopClosure                             _buffered_oops;
+  G1ParCopyClosure<G1BarrierNone, Mark, use_ext> _oops;
+  G1ParCopyClosure<G1BarrierCLD,  Mark, use_ext> _oops_in_cld;
 
-  G1SharedClosures(G1CollectedHeap* g1h, G1ParScanThreadState* pss, bool process_only_dirty_klasses, bool must_claim_cld) :
+  G1CLDScanClosure                _clds;
+  G1CodeBlobClosure               _codeblobs;
+  BufferingOopClosure             _buffered_oops;
+
+  G1SharedClosures(G1CollectedHeap* g1h, G1ParScanThreadState* pss, bool process_only_dirty, bool must_claim_cld) :
     _oops(g1h, pss),
-    _oop_in_klass(g1h, pss),
-    _klass_in_cld_closure(&_oop_in_klass, process_only_dirty_klasses),
-    _clds(&_klass_in_cld_closure, &_oops, must_claim_cld),
+    _oops_in_cld(g1h, pss),
+    _clds(&_oops_in_cld, process_only_dirty, must_claim_cld),
     _codeblobs(&_oops),
     _buffered_oops(&_oops) {}
 };

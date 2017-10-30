@@ -224,7 +224,7 @@ void VM_Version::initialize() {
   }
 
   // z/Architecture supports 8-byte compare-exchange operations
-  // (see Atomic::cmpxchg and StubGenerator::generate_atomic_cmpxchg_ptr)
+  // (see Atomic::cmpxchg)
   // and 'atomic long memory ops' (see Unsafe_GetLongVolatile).
   _supports_cx8 = true;
 
@@ -706,13 +706,13 @@ void VM_Version::determine_features() {
   Label    getCPUFEATURES;                   // fcode = -1 (cache)
   Label    getCIPHERFEATURES;                // fcode = -2 (cipher)
   Label    getMSGDIGESTFEATURES;             // fcode = -3 (SHA)
-  Label    checkLongDispFast;
-  Label    noLongDisp;
-  Label    posDisp, negDisp;
+  Label    getVECTORFEATURES;                // fcode = -4 (OS support for vector instructions)
   Label    errRTN;
   a->z_ltgfr(Z_R0, Z_ARG2);                  // Buf len to r0 and test.
-  a->z_brl(getFEATURES);                     // negative -> Get machine features.
-  a->z_brz(checkLongDispFast);               // zero -> Check for high-speed Long Displacement Facility.
+  a->z_brl(getFEATURES);                     // negative -> Get machine features not covered by facility list.
+  a->z_lghi(Z_R1,0);
+  a->z_brz(errRTN);                          // zero -> Function code currently not used, indicate "aborted".
+
   a->z_aghi(Z_R0, -1);
   a->z_stfle(0, Z_ARG1);
   a->z_lg(Z_R1, 0, Z_ARG1);                  // Get first DW of facility list.
@@ -736,6 +736,8 @@ void VM_Version::determine_features() {
   a->z_bre(getCIPHERFEATURES);
   a->z_cghi(Z_R0, -3);                       // -3: Extract detailed crypto capabilities (msg digest instructions).
   a->z_bre(getMSGDIGESTFEATURES);
+  a->z_cghi(Z_R0, -4);                       // -4: Verify vector instruction availability (OS support).
+  a->z_bre(getVECTORFEATURES);
 
   a->z_xgr(Z_RET, Z_RET);                    // Not a valid function code.
   a->z_br(Z_R14);                            // Return "operation aborted".
@@ -766,46 +768,9 @@ void VM_Version::determine_features() {
   a->z_ecag(Z_RET,Z_R0,0,Z_ARG3);            // Extract information as requested by Z_ARG1 contents.
   a->z_br(Z_R14);
 
-  // Check the performance of the Long Displacement Facility, i.e. find out if we are running on z900 or newer.
-  a->bind(checkLongDispFast);
-  a->z_llill(Z_R0, 0xffff);                  // preset #iterations
-  a->z_larl(Z_R1, posDisp);
-  a->z_stck(0, Z_ARG1);                      // Get begin timestamp.
-
-  a->bind(posDisp);                          // Positive disp loop.
-  a->z_lg(Z_ARG2, 0, Z_ARG1);
-  a->z_bctgr(Z_R0, Z_R1);
-
-  a->z_stck(0, Z_ARG1);                      // Get end timestamp.
-  a->z_sg(Z_ARG2, 0, Z_R0, Z_ARG1);          // Calculate elapsed time.
-  a->z_lcgr(Z_ARG2, Z_ARG2);
-  a->z_srlg(Z_ARG2, Z_ARG2, 12);             // LSB: now microseconds
-  a->z_stg(Z_ARG2, 8, Z_ARG1);               // Store difference in buffer[1].
-
-  a->z_llill(Z_R0, 0xffff);                  // preset #iterations
-  a->z_larl(Z_R1, negDisp);
-  a->z_xgr(Z_ARG2, Z_ARG2);                  // Clear to detect absence of LongDisp facility.
-  a->z_stck(0, Z_ARG1);                      // Get begin timestamp.
-  a->z_la(Z_ARG1, 8, Z_ARG1);
-
-  a->bind(negDisp);                          // Negative disp loop.
-  a->z_lg(Z_ARG2, -8, Z_ARG1);
-  a->z_bctgr(Z_R0, Z_R1);
-
-  a->z_aghi(Z_ARG1, -8);
-  a->z_stck(0, Z_ARG1);                      // Get end timestamp.
-  a->z_ltgr(Z_ARG2, Z_ARG2);                 // Check for absence of LongDisp facility.
-  a->z_brz(noLongDisp);
-  a->z_sg(Z_ARG2, 0, Z_R0, Z_ARG1);          // Calc elapsed time.
-  a->z_lcgr(Z_ARG2, Z_ARG2);
-  a->z_srlg(Z_ARG2, Z_ARG2, 12);             // LSB: now microseconds
-  a->z_stg(Z_ARG2, 0, Z_ARG1);               // store difference in buffer[0]
-
-  a->z_llill(Z_RET,0xffff);
-  a->z_br(Z_R14);
-
-  a->bind(noLongDisp);
-  a->z_lghi(Z_RET,-1);
+  // Use a vector instruction to verify OS support. Will fail with SIGFPE if OS support is missing.
+  a->bind(getVECTORFEATURES);
+  a->z_vtm(Z_V0,Z_V0);                       // non-destructive vector instruction. Will cause SIGFPE if not supported.
   a->z_br(Z_R14);
 
   address code_end = a->pc();
@@ -960,6 +925,19 @@ void VM_Version::determine_features() {
       buffer[i]              = 0L;
     }
     _nfeatures = 0;
+  }
+
+  if (has_VectorFacility()) {
+    // Verify that feature can actually be used. OS support required.
+    call_getFeatures(buffer, -4, 0);
+    if (printVerbose) {
+      ttyLocker ttyl;
+      if (has_VectorFacility()) {
+        tty->print_cr("  Vector Facility has been verified to be supported by OS");
+      } else {
+        tty->print_cr("  Vector Facility has been disabled - not supported by OS");
+      }
+    }
   }
 
   // Extract Crypto Facility details.

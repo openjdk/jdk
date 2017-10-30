@@ -268,6 +268,9 @@ public class WordOperationPlugin extends WordFactory implements NodePlugin, Type
         }
 
         Word.Operation operation = BridgeMethodUtils.getAnnotation(Word.Operation.class, wordMethod);
+        if (operation == null) {
+            throw bailout(b, "Cannot call method on a word value: " + wordMethod.format("%H.%n(%p)"));
+        }
         switch (operation.opcode()) {
             case NODE_CLASS:
                 assert args.length == 2;

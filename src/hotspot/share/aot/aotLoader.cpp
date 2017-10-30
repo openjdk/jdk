@@ -40,6 +40,10 @@ GrowableArray<AOTLib*>* AOTLoader::_libraries = new(ResourceObj::C_HEAP, mtCode)
 #define FOR_ALL_AOT_LIBRARIES(lib) for (GrowableArrayIterator<AOTLib*> lib = libraries()->begin(); lib != libraries()->end(); ++lib)
 
 void AOTLoader::load_for_klass(InstanceKlass* ik, Thread* thread) {
+  if (ik->is_anonymous()) {
+    // don't even bother
+    return;
+  }
   if (UseAOT) {
     FOR_ALL_AOT_HEAPS(heap) {
       (*heap)->load_klass_data(ik, thread);
@@ -48,6 +52,10 @@ void AOTLoader::load_for_klass(InstanceKlass* ik, Thread* thread) {
 }
 
 uint64_t AOTLoader::get_saved_fingerprint(InstanceKlass* ik) {
+  if (ik->is_anonymous()) {
+    // don't even bother
+    return 0;
+  }
   FOR_ALL_AOT_HEAPS(heap) {
     AOTKlassData* klass_data = (*heap)->find_klass(ik);
     if (klass_data != NULL) {
@@ -259,3 +267,34 @@ void AOTLoader::print_statistics() {
   }
 }
 #endif
+
+
+bool AOTLoader::reconcile_dynamic_invoke(InstanceKlass* holder, int index, Method* adapter_method, Klass* appendix_klass) {
+  if (!UseAOT) {
+    return true;
+  }
+  JavaThread* thread = JavaThread::current();
+  ResourceMark rm(thread);
+  RegisterMap map(thread, false);
+  frame caller_frame = thread->last_frame().sender(&map); // Skip stub
+  CodeBlob* caller_cb = caller_frame.cb();
+  guarantee(caller_cb != NULL && caller_cb->is_compiled(), "must be called from compiled method");
+  CompiledMethod* cm = caller_cb->as_compiled_method();
+
+  if (!cm->is_aot()) {
+    return true;
+  }
+  AOTCompiledMethod* aot = (AOTCompiledMethod*)cm;
+
+  AOTCodeHeap* caller_heap = NULL;
+  FOR_ALL_AOT_HEAPS(heap) {
+    if ((*heap)->contains_blob(aot)) {
+      caller_heap = *heap;
+      break;
+    }
+  }
+  guarantee(caller_heap != NULL, "CodeHeap not found");
+  bool success = caller_heap->reconcile_dynamic_invoke(aot, holder, index, adapter_method, appendix_klass);
+  vmassert(success || thread->last_frame().sender(&map).is_deoptimized_frame(), "caller not deoptimized on failure");
+  return success;
+}
