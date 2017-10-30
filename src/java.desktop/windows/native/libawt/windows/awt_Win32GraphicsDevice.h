@@ -119,7 +119,7 @@ private:
     float                   scaleY;
 
     static HDC              MakeDCFromMonitor(HMONITOR);
-    static int              CheckIntLimits(double value);
+    static int              ClipRound(double value);
 };
 
 #endif AWT_WIN32GRAPHICSDEVICE_H
