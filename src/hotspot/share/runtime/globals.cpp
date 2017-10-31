@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"

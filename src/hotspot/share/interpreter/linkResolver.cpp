@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/resolutionErrors.hpp"
@@ -42,7 +43,6 @@
 #include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/compilationPolicy.hpp"

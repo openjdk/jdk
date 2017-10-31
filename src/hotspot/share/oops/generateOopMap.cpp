@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
-#include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/relocator.hpp"

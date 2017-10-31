@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
@@ -40,7 +41,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/verifyOopClosure.hpp"
-#include "prims/jvm.h"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/compilationPolicy.hpp"

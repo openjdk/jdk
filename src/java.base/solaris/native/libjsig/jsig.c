@@ -37,7 +37,7 @@
 #include <dlfcn.h>
 #include <thread.h>
 #include <synch.h>
-#include "jvm_solaris.h"
+#include "jvm_md.h"
 
 #define bool int
 #define true 1

@@ -47,7 +47,7 @@ long InterfaceSupport::_fullgc_alot_invocation = 0;
 Histogram* RuntimeHistogram;
 
 RuntimeHistogramElement::RuntimeHistogramElement(const char* elementName) {
-  static volatile jint RuntimeHistogram_lock = 0;
+  static volatile int RuntimeHistogram_lock = 0;
   _name = elementName;
   uintx count = 0;
 

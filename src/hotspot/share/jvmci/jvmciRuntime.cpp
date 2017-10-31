@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "asm/codeBuffer.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/codeCache.hpp"
@@ -37,7 +38,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/reflection.hpp"
@@ -611,7 +611,7 @@ JRT_ENTRY(jboolean, JVMCIRuntime::thread_is_interrupted(JavaThread* thread, oopD
   }
 JRT_END
 
-JRT_ENTRY(jint, JVMCIRuntime::test_deoptimize_call_int(JavaThread* thread, int value))
+JRT_ENTRY(int, JVMCIRuntime::test_deoptimize_call_int(JavaThread* thread, int value))
   deopt_caller();
   return value;
 JRT_END

@@ -1697,7 +1697,7 @@ C2V_VMENTRY(void, writeDebugOutput, (JNIEnv*, jobject, jbyteArray bytes, jint of
   }
   while (length > 0) {
     jbyte* start = array->byte_at_addr(offset);
-    tty->write((char*) start, MIN2(length, O_BUFLEN));
+    tty->write((char*) start, MIN2(length, (jint)O_BUFLEN));
     length -= O_BUFLEN;
     offset += O_BUFLEN;
   }

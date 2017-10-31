@@ -22,8 +22,8 @@
  *
  */
 #include "precompiled.hpp"
+#include "jvm.h"
 
-#include "prims/jvm.h"
 #include "runtime/mutex.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memReporter.hpp"

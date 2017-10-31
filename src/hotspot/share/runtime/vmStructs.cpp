@@ -356,7 +356,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(Symbol,                      _length,                                       unsigned short)                        \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(jbyte)) /* NOTE: no type */     \
   nonstatic_field(Symbol,                      _body[0],                                      jbyte)                                 \
-  nonstatic_field(TypeArrayKlass,              _max_length,                                   int)                                   \
+  nonstatic_field(TypeArrayKlass,              _max_length,                                   jint)                                  \
                                                                                                                                      \
   /***********************/                                                                                                          \
   /* Constant Pool Cache */                                                                                                          \
@@ -579,7 +579,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
      static_field(PerfMemory,                  _top,                                          char*)                                 \
      static_field(PerfMemory,                  _capacity,                                     size_t)                                \
      static_field(PerfMemory,                  _prologue,                                     PerfDataPrologue*)                     \
-     static_field(PerfMemory,                  _initialized,                                  jint)                                  \
+     static_field(PerfMemory,                  _initialized,                                  int)                                   \
                                                                                                                                      \
   /***************/                                                                                                                  \
   /* SymbolTable */                                                                                                                  \

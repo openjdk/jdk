@@ -3621,7 +3621,7 @@ Monitor* G1CodeCacheUnloadingTask::_lock = new Monitor(Mutex::leaf, "Code Cache 
 
 class G1KlassCleaningTask : public StackObj {
   BoolObjectClosure*                      _is_alive;
-  volatile jint                           _clean_klass_tree_claimed;
+  volatile int                            _clean_klass_tree_claimed;
   ClassLoaderDataGraphKlassIteratorAtomic _klass_iterator;
 
  public:
@@ -3637,7 +3637,7 @@ class G1KlassCleaningTask : public StackObj {
       return false;
     }
 
-    return Atomic::cmpxchg(1, (jint*)&_clean_klass_tree_claimed, 0) == 0;
+    return Atomic::cmpxchg(1, &_clean_klass_tree_claimed, 0) == 0;
   }
 
   InstanceKlass* claim_next_klass() {
@@ -3674,7 +3674,7 @@ public:
 
 class G1ResolvedMethodCleaningTask : public StackObj {
   BoolObjectClosure* _is_alive;
-  volatile jint      _resolved_method_task_claimed;
+  volatile int       _resolved_method_task_claimed;
 public:
   G1ResolvedMethodCleaningTask(BoolObjectClosure* is_alive) :
       _is_alive(is_alive), _resolved_method_task_claimed(0) {}
@@ -3683,7 +3683,7 @@ public:
     if (_resolved_method_task_claimed) {
       return false;
     }
-    return Atomic::cmpxchg(1, (jint*)&_resolved_method_task_claimed, 0) == 0;
+    return Atomic::cmpxchg(1, &_resolved_method_task_claimed, 0) == 0;
   }
 
   // These aren't big, one thread can do it all.

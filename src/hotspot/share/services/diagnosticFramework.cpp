@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/diagnosticArgument.hpp"

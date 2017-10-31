@@ -36,7 +36,7 @@
 //
 
 static bool initialized = false;
-static volatile jint lock_count = -1;
+static volatile int lock_count = -1;
 static HANDLE lock_event;
 static DWORD lock_owner = -1;
 
