@@ -2266,6 +2266,8 @@ public class XSDHandler {
                             fSecurityManager.isSecureProcessing());
 
                     try {
+                        parser.setFeature(NAMESPACE_PREFIXES, true);
+                        namespacePrefixes = true;
                         // If this is a Xerces SAX parser set the security manager if there is one
                         if (parser instanceof SAXParser) {
                             if (fSecurityManager != null) {
