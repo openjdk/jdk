@@ -23,16 +23,16 @@
 
 /*
  * @test
- * @summary run CTW for all classes from boot "modules" jimage -- lib/modules.
+ * @summary run CTW for all classes from jdk.jcmd module
  *
  * @library /test/lib / /testlibrary/ctw/src
  * @modules java.base/jdk.internal.jimage
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect
+ * @modules jdk.jcmd
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/timeout=0 sun.hotspot.tools.ctw.CtwRunner modules
+ * @run main/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.jcmd
  */
-

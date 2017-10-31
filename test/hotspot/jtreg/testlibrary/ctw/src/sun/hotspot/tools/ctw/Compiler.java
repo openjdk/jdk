@@ -100,8 +100,8 @@ public class Compiler {
                 }
             }
         } catch (Throwable t) {
-            CompileTheWorld.OUT.printf("[%d]\t%s\tWARNING preloading failed : %s%n",
-                    id, className, t);
+            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING preloading failed : %s",
+                    id, className, t));
             t.printStackTrace(CompileTheWorld.ERR);
         }
     }
@@ -113,8 +113,8 @@ public class Compiler {
             try {
                 WHITE_BOX.enqueueInitializerForCompilation(aClass, i);
             } catch (Throwable t) {
-                CompileTheWorld.OUT.printf("[%d]\t%s::<clinit>\tERROR at level %d : %s%n",
-                        id, aClass.getName(), i, t);
+                CompileTheWorld.OUT.println(String.format("[%d]\t%s::<clinit>\tERROR at level %d : %s",
+                        id, aClass.getName(), i, t));
                 t.printStackTrace(CompileTheWorld.ERR);
             }
         }

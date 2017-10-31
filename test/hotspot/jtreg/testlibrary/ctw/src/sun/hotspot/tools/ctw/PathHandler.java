@@ -24,9 +24,12 @@
 package sun.hotspot.tools.ctw;
 
 import java.io.Closeable;
+import java.net.URI;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -35,6 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -121,6 +125,15 @@ public class PathHandler implements Closeable {
             path = matcher.group(1);
             path = path.isEmpty() ? "." : path;
             return ClassPathJarInDirEntry.create(Paths.get(path));
+        } else if (path.startsWith("modules:")) {
+            Path modules = FileSystems.getFileSystem(URI.create("jrt:/"))
+                                      .getPath("modules");
+            return Arrays.stream(path.substring("modules:".length())
+                                     .split(","))
+                         .map(modules::resolve)
+                         .map(ClassPathDirEntry::new)
+                         .map(PathHandler::new)
+                         .collect(Collectors.toList());
         } else {
             path = path.isEmpty() ? "." : path;
             Path p = Paths.get(path);
@@ -180,7 +193,9 @@ public class PathHandler implements Closeable {
      */
     public final void process(Executor executor) {
         CompileTheWorld.OUT.println(entry.description());
-        entry.classes().forEach(s -> processClass(s, executor));
+        entry.classes()
+             .distinct()
+             .forEach(s -> processClass(s, executor));
     }
 
     /**
@@ -209,12 +224,12 @@ public class PathHandler implements Closeable {
             Class<?> aClass;
             Thread.currentThread().setContextClassLoader(entry.loader());
             try {
-                CompileTheWorld.OUT.printf("[%d]\t%s%n", id, name);
+                CompileTheWorld.OUT.println(String.format("[%d]\t%s", id, name));
                 aClass = entry.loader().loadClass(name);
                 Compiler.compileClass(aClass, id, executor);
             } catch (Throwable e) {
-                CompileTheWorld.OUT.printf("[%d]\t%s\tWARNING skipped: %s%n",
-                        id, name, e);
+                CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING skipped: %s",
+                        id, name, e));
                 e.printStackTrace(CompileTheWorld.ERR);
             }
         }
