@@ -191,6 +191,7 @@ final class Whitespace extends TopLevelElement {
      * Scans through the rules vector and looks for a rule of higher
      * priority that contradicts the current rule.
      */
+    @SuppressWarnings("fallthrough") // case RULE_NAMESPACE
     private static WhitespaceRule findContradictingRule(List<WhitespaceRule> rules,
                                                         WhitespaceRule rule) {
         for (WhitespaceRule currentRule : rules) {

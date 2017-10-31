@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -554,6 +554,7 @@ public class WalkerFactory
    *
    * @throws javax.xml.transform.TransformerException
    */
+  @SuppressWarnings("fallthrough") // by design at case OpCodes.FROM_DESCENDANTS
   private static boolean isOptimizableForDescendantIterator(
           Compiler compiler, int stepOpCodePos, int stepIndex)
             throws javax.xml.transform.TransformerException
@@ -1102,7 +1103,7 @@ public class WalkerFactory
       System.out.print(", predAxis: " + Axis.getNames(ai.getAxis()));
       System.out.print(", what: ");
       System.out.print("    ");
-      ai.debugWhatToShow(ai.getWhatToShow());
+      NodeTest.debugWhatToShow(ai.getWhatToShow());
     }
 
     int argLen = compiler.getFirstPredicateOpPos(opPos);
@@ -1621,6 +1622,7 @@ public class WalkerFactory
    *
    * @throws javax.xml.transform.TransformerException
    */
+  @SuppressWarnings("fallthrough") // by design at case OpCodes.FROM_ROOT
   private static boolean isNaturalDocOrder(
           Compiler compiler, int stepOpCodePos, int stepIndex, int analysis)
             throws javax.xml.transform.TransformerException
