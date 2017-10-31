@@ -244,7 +244,7 @@ class Thread: public ThreadShadow {
 
   // The parity of the last strong_roots iteration in which this thread was
   // claimed as a task.
-  jint _oops_do_parity;
+  int _oops_do_parity;
 
  public:
   void set_last_handle_mark(HandleMark* mark)   { _last_handle_mark = mark; }

@@ -741,7 +741,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
 // Save JNI local handles for any objects that this frame owns.
 jvmtiError
 JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread* java_thread,
-                                 javaVFrame *jvf, GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list, int stack_depth) {
+                                 javaVFrame *jvf, GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list, jint stack_depth) {
   jvmtiError err = JVMTI_ERROR_NONE;
   ResourceMark rm;
 

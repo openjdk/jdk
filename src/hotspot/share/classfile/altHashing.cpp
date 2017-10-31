@@ -42,15 +42,15 @@ static intptr_t object_hash(Klass* k) {
 juint AltHashing::compute_seed() {
   jlong nanos = os::javaTimeNanos();
   jlong now = os::javaTimeMillis();
-  int SEED_MATERIAL[8] = {
-            (int) object_hash(SystemDictionary::String_klass()),
-            (int) object_hash(SystemDictionary::System_klass()),
-            os::random(),  // current thread isn't a java thread
-            (int) (((julong)nanos) >> 32),
-            (int) nanos,
-            (int) (((julong)now) >> 32),
-            (int) now,
-            (int) (os::javaTimeNanos() >> 2)
+  jint SEED_MATERIAL[8] = {
+            (jint) object_hash(SystemDictionary::String_klass()),
+            (jint) object_hash(SystemDictionary::System_klass()),
+            (jint) os::random(),  // current thread isn't a java thread
+            (jint) (((julong)nanos) >> 32),
+            (jint) nanos,
+            (jint) (((julong)now) >> 32),
+            (jint) now,
+            (jint) (os::javaTimeNanos() >> 2)
   };
 
   return murmur3_32(SEED_MATERIAL, 8);
@@ -167,7 +167,7 @@ juint AltHashing::murmur3_32(juint seed, const jchar* data, int len) {
 }
 
 // Hash used for the seed.
-juint AltHashing::murmur3_32(juint seed, const int* data, int len) {
+juint AltHashing::murmur3_32(juint seed, const jint* data, int len) {
   juint h1 = seed;
 
   int off = 0;
@@ -202,6 +202,6 @@ juint AltHashing::murmur3_32(juint seed, const int* data, int len) {
   return h1;
 }
 
-juint AltHashing::murmur3_32(const int* data, int len) {
+juint AltHashing::murmur3_32(const jint* data, int len) {
   return murmur3_32(0, data, len);
 }

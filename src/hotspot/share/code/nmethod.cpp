@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
@@ -41,7 +42,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"

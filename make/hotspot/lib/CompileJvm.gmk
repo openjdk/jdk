@@ -57,8 +57,8 @@ JVM_CFLAGS_INCLUDES += \
     $(patsubst %,-I%,$(filter-out $(JVM_VARIANT_OUTPUTDIR)/gensrc/%, $(JVM_SRC_DIRS))) \
     -I$(JVM_VARIANT_OUTPUTDIR)/gensrc \
     -I$(TOPDIR)/src/hotspot/share/precompiled \
-    -I$(TOPDIR)/src/hotspot/share/prims \
     -I$(TOPDIR)/src/java.base/share/native/include \
+    -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include \
     #
 
 # INCLUDE_SUFFIX_* is only meant for including the proper

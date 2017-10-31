@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "prims/jvm.h"
+#include "jvm.h"
 #include "runtime/os.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/vmError.hpp"

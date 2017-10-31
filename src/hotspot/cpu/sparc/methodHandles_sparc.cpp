@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/jvm.h"
 #include "prims/methodHandles.hpp"
 
 #define __ _masm->

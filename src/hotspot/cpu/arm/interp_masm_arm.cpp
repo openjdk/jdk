@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "gc/shared/barrierSet.inline.hpp"
 #include "gc/shared/cardTableModRefBS.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/classLoader.hpp"
 #include "classfile/compactHashtable.inline.hpp"
 #include "classfile/sharedClassUtil.hpp"
@@ -42,7 +43,6 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/objArrayOop.hpp"
-#include "prims/jvm.h"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/java.hpp"

@@ -26,6 +26,7 @@
 #include <sys/types.h>
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -38,7 +39,6 @@
 #include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/node.hpp"
-#include "prims/jvm.h"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.hpp"

@@ -22,11 +22,11 @@
  *
  */
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logOutput.hpp"
 #include "logging/logTagSet.hpp"
 #include "memory/allocation.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 

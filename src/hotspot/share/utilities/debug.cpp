@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -36,7 +37,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -276,7 +276,7 @@ void report_untested(const char* file, int line, const char* message) {
 }
 
 void report_java_out_of_memory(const char* message) {
-  static jint out_of_memory_reported = 0;
+  static int out_of_memory_reported = 0;
 
   // A number of threads may attempt to report OutOfMemoryError at around the
   // same time. To avoid dumping the heap or executing the data collection

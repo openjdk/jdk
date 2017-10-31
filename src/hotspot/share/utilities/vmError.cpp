@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logConfiguration.hpp"
-#include "prims/jvm.h"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"

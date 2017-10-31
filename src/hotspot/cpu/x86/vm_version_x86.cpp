@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/jvm.h"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"

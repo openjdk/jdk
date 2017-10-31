@@ -24,11 +24,11 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
+#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/perfMemory.hpp"

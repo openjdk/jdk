@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "gc/shared/ageTable.inline.hpp"
 #include "gc/shared/ageTableTracer.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -30,7 +31,6 @@
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "utilities/copy.hpp"
 
 /* Copyright (c) 1992, 2016, Oracle and/or its affiliates, and Stanford University.

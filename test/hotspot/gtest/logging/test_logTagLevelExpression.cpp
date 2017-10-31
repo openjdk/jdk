@@ -22,10 +22,10 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "logging/logLevel.hpp"
 #include "logging/logTagLevelExpression.hpp"
 #include "logging/logTagSet.hpp"
-#include "prims/jvm.h"
 #include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
 

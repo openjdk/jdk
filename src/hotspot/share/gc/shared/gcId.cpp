@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "gc/shared/gcId.hpp"
-#include "prims/jvm.h"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 
