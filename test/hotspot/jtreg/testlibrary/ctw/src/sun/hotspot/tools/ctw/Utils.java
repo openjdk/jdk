@@ -193,10 +193,11 @@ public class Utils {
      * @param filename tested filename
      */
     public static boolean isClassFile(String filename) {
-        // If the filename has a period after removing '.class', it's not valid class file
         return endsWithIgnoreCase(filename, CLASSFILE_EXT)
-                && (filename.indexOf('.')
-                == (filename.length() - CLASSFILE_EXT.length()));
+                // skip all module-info.class files
+                && !(filename.substring(filename.lastIndexOf('/') + 1,
+                                        filename.lastIndexOf('.'))
+                             .equals("module-info"));
     }
 
     /**
