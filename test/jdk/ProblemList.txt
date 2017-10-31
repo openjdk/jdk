@@ -316,8 +316,12 @@ sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java              8184042 macosx-a
 
 com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i586,macosx-all,windows-x64
 
-javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 linux-all
-
+javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 generic-all
+ 
 org/omg/CORBA/OrbPropertiesTest.java			        8175177 generic-all
+
+javax/rmi/PortableRemoteObject/ConcurrentHashmapTest.java       8080643 generic-all
+
+javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
 ############################################################################
