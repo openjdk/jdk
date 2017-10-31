@@ -2888,7 +2888,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             /*
              * If we have an input stream this means we received a response
              * from the server. That stream may have been read to EOF and
-             * dependening on the stream type may already be closed or the
+             * depending on the stream type may already be closed or
              * the http client may be returned to the keep-alive cache.
              * If the http client has been returned to the keep-alive cache
              * it may be closed (idle timeout) or may be allocated to

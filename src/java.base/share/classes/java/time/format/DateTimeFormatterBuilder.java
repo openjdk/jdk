@@ -4775,7 +4775,7 @@ public final class DateTimeFormatterBuilder {
     //-----------------------------------------------------------------------
     /**
      * Prints or parses a localized pattern from a localized field.
-     * The specific formatter and parameters is not selected until the
+     * The specific formatter and parameters is not selected until
      * the field is to be printed or parsed.
      * The locale is needed to select the proper WeekFields from which
      * the field for day-of-week, week-of-month, or week-of-year is selected.

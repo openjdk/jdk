@@ -165,7 +165,7 @@ public abstract class AsynchronousFileChannel
      * <tr>
      *   <th scope="row" > {@link StandardOpenOption#DELETE_ON_CLOSE DELETE_ON_CLOSE} </th>
      *   <td> When this option is present then the implementation makes a
-     *   <em>best effort</em> attempt to delete the file when closed by the
+     *   <em>best effort</em> attempt to delete the file when closed by
      *   the {@link #close close} method. If the {@code close} method is not
      *   invoked then a <em>best effort</em> attempt is made to delete the file
      *   when the Java virtual machine terminates. </td>
