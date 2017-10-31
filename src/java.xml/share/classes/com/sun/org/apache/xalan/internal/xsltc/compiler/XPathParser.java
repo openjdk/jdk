@@ -1591,13 +1591,13 @@ class parser_actions {
             RESULT = new CurrentCall(fname);
           }
           else if (fname == parser.getQNameIgnoreDefaultNs("number")) {
-            RESULT = new NumberCall(fname, parser.EmptyArgs);
+            RESULT = new NumberCall(fname, XPathParser.EmptyArgs);
           }
           else if (fname == parser.getQNameIgnoreDefaultNs("string")) {
-            RESULT = new StringCall(fname, parser.EmptyArgs);
+            RESULT = new StringCall(fname, XPathParser.EmptyArgs);
           }
           else if (fname == parser.getQNameIgnoreDefaultNs("concat")) {
-            RESULT = new ConcatCall(fname, parser.EmptyArgs);
+            RESULT = new ConcatCall(fname, XPathParser.EmptyArgs);
           }
           else if (fname == parser.getQNameIgnoreDefaultNs("true")) {
             RESULT = new BooleanExpr(true);
@@ -1609,10 +1609,10 @@ class parser_actions {
             RESULT = new NameCall(fname);
           }
           else if (fname == parser.getQNameIgnoreDefaultNs("generate-id")) {
-            RESULT = new GenerateIdCall(fname, parser.EmptyArgs);
+            RESULT = new GenerateIdCall(fname, XPathParser.EmptyArgs);
           }
           else if (fname == parser.getQNameIgnoreDefaultNs("string-length")) {
-            RESULT = new StringLengthCall(fname, parser.EmptyArgs);
+            RESULT = new StringLengthCall(fname, XPathParser.EmptyArgs);
           }
           else if (fname == parser.getQNameIgnoreDefaultNs("position")) {
             RESULT = new PositionCall(fname);
@@ -1627,7 +1627,7 @@ class parser_actions {
             RESULT = new NamespaceUriCall(fname);
           }
           else {
-            RESULT = new FunctionCall(fname, parser.EmptyArgs);
+            RESULT = new FunctionCall(fname, XPathParser.EmptyArgs);
           }
 
               parser_result = new Symbol(16/*FunctionCall*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);

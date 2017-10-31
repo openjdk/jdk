@@ -586,7 +586,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
                             // note funky case:  localname can be null
                             // when declaring the default prefix, and
                             // yet the uri isn't null.
-                            atts.addAttribute (nsSupport.XMLNS, prefix,
+                            atts.addAttribute (NamespaceSupport.XMLNS, prefix,
                                     attQName.intern(), type, value);
                         else
                             atts.addAttribute ("", "",

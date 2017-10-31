@@ -600,6 +600,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
      *
      * @throws XNIException Thrown by application to signal an error.
      */
+    @SuppressWarnings("fallthrough") // by design at case LSParserFilter.FILTER_SKIP
     public void comment (XMLString text, Augmentations augs) throws XNIException {
         if (fInDTD) {
             if (fInternalSubset != null && !fInDTDExternalSubset) {
@@ -673,6 +674,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
      *
      * @throws XNIException Thrown by handler to signal an error.
      */
+    @SuppressWarnings("fallthrough") // by design at case LSParserFilter.FILTER_REJECT
     public void processingInstruction (String target, XMLString data, Augmentations augs)
     throws XNIException {
 
@@ -1416,6 +1418,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
      *
      * @throws XNIException Thrown by handler to signal an error.
      */
+    @SuppressWarnings("fallthrough") // by design at case LSParserFilter.FILTER_REJECT
     public void endCDATA (Augmentations augs) throws XNIException {
 
         fInCDATASection = false;
@@ -2596,6 +2599,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
      * or removed fFistChunk must be set to true, otherwise some data can be lost.
      *
      */
+    @SuppressWarnings("fallthrough") // by design at case LSParserFilter.FILTER_REJECT
     protected void  setCharacterData (boolean sawChars){
 
         // handle character data
