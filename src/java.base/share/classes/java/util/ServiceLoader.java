@@ -1409,7 +1409,7 @@ public final class ServiceLoader<S>
      *
      * <p> To achieve laziness the actual work of locating providers is done
      * when processing the stream. If a service provider cannot be loaded for any
-     * of the the reasons specified in the <a href="#errors">Errors</a> section
+     * of the reasons specified in the <a href="#errors">Errors</a> section
      * above then {@link ServiceConfigurationError} is thrown by whatever method
      * caused the service provider to be loaded. </p>
      *

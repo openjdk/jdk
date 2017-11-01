@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import tests.Result;
 
 /*
  * @test
- * @bug 8152143 8152704 8155649 8165804
+ * @bug 8152143 8152704 8155649 8165804 8185841
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
  * @library ../../lib
@@ -231,7 +231,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_001.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_en_IN.class",
                 "/jdk.localedata/sun/util/resources/cldr/ext/CalendarData_kok_IN.class",
-                "/jdk.localedata/sun/util/resources/cldr/ext/CalendarData_pa_Guru_IN.class"),
+                "/jdk.localedata/sun/util/resources/cldr/ext/CalendarData_pa_IN.class"),
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/LineBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
@@ -327,7 +327,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
                 "(root)", "en", "en_US", "en_US_POSIX", "zh", "zh__#Hans", "zh_CN",
-                "zh_CN_#Hans", "zh_HK_#Hans", "zh_MO_#Hans", "zh_SG", "zh_SG_#Hans"),
+                "zh_HK", "zh_MO", "zh_CN_#Hans", "zh_HK_#Hans", "zh_MO_#Hans", "zh_SG", "zh_SG_#Hans"),
             "",
         },
 

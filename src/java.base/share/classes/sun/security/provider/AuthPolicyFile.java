@@ -65,6 +65,7 @@ import sun.security.util.PropertyExpander;
  *             This class is entirely deprecated.
  */
 @Deprecated
+@SuppressWarnings("removal")
 public class AuthPolicyFile extends javax.security.auth.Policy {
 
     static final ResourceBundle rb =
@@ -410,7 +411,7 @@ public class AuthPolicyFile extends javax.security.auth.Policy {
                         certs = null;
                     }
 
-                    // only add if we had no signer or we had a
+                    // only add if we had no signer or we had
                     // a signer and found the keys for it.
                     if (certs != null || pe.signedBy == null) {
                             Permission perm = new UnresolvedPermission(

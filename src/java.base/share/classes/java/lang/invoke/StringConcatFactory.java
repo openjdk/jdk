@@ -194,8 +194,8 @@ public final class StringConcatFactory {
     static {
         // In case we need to double-back onto the StringConcatFactory during this
         // static initialization, make sure we have the reasonable defaults to complete
-        // the static initialization properly. After that, actual users would use the
-        // the proper values we have read from the the properties.
+        // the static initialization properly. After that, actual users would use
+        // the proper values we have read from the properties.
         STRATEGY = DEFAULT_STRATEGY;
         // CACHE_ENABLE = false; // implied
         // CACHE = null;         // implied
@@ -398,8 +398,8 @@ public final class StringConcatFactory {
      * <p>Then the following linkage invariants must hold:
      *
      * <ul>
-     *     <li>The parameter count in {@code concatType} is less than or equal to 200</li>
-     *
+     *     <li>The number of parameter slots in {@code concatType} is
+     *         less than or equal to 200</li>
      *     <li>The return type in {@code concatType} is assignable from {@link java.lang.String}</li>
      * </ul>
      *
@@ -487,8 +487,8 @@ public final class StringConcatFactory {
      * <p>Then the following linkage invariants must hold:
      *
      * <ul>
-     *   <li>The parameter count in {@code concatType} is less than or equal to
-     *   200</li>
+     *   <li>The number of parameter slots in {@code concatType} is less than
+     *       or equal to 200</li>
      *
      *   <li>The parameter count in {@code concatType} equals to number of \1 tags
      *   in {@code recipe}</li>
@@ -613,9 +613,9 @@ public final class StringConcatFactory {
                             concatType.returnType());
         }
 
-        if (concatType.parameterCount() > MAX_INDY_CONCAT_ARG_SLOTS) {
+        if (concatType.parameterSlotCount() > MAX_INDY_CONCAT_ARG_SLOTS) {
             throw new StringConcatException("Too many concat argument slots: " +
-                    concatType.parameterCount() +
+                    concatType.parameterSlotCount() +
                     ", can only accept " +
                     MAX_INDY_CONCAT_ARG_SLOTS);
         }

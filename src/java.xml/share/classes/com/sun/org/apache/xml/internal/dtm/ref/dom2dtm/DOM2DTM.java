@@ -1651,6 +1651,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
    * @param node Node whose subtree is to be walked, gathering the
    * contents of all Text or CDATASection nodes.
    */
+  @SuppressWarnings("fallthrough")
   protected static void dispatchNodeData(Node node,
                                          org.xml.sax.ContentHandler ch,
                                          int depth)

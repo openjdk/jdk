@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1278,11 +1279,13 @@ public final class SAXImpl extends SAX2DTM2
                     // For "attribute::p:*", the principal node kind is
                     // attribute
                     m_baseIterator = getAxisIterator(axis);
+                    break;
                 }
                 case Axis.NAMESPACE: {
                     // This covers "namespace::p:*".  It is syntactically
                     // correct, though it doesn't make much sense.
                     m_baseIterator = getAxisIterator(axis);
+                    break;
                 }
                 default: {
                     // In all other cases, the principal node kind is

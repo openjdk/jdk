@@ -56,7 +56,7 @@ public final class Resources {
     /**
      * Derive a <em>package name</em> for a resource. The package name
      * returned by this method may not be a legal package name. This method
-     * returns null if the the resource name ends with a "/" (a directory)
+     * returns null if the resource name ends with a "/" (a directory)
      * or the resource name does not contain a "/".
      */
     public static String toPackageName(String name) {

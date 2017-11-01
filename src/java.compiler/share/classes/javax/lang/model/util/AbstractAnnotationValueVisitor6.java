@@ -75,7 +75,7 @@ public abstract class AbstractAnnotationValueVisitor6<R, P>
      * @deprecated Release 6 is obsolete; update to a visitor for a newer
      * release level.
      */
-    @Deprecated
+    @Deprecated(since="9")
     protected AbstractAnnotationValueVisitor6() {}
 
     /**

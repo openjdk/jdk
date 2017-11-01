@@ -249,10 +249,10 @@ SPEC_SUBDIRS += share/specs
 # configuration.
 # Param 1 - Module to find for, set to * for finding all
 FindAllModuleInfos = \
-    $(wildcard \
+    $(sort $(wildcard \
         $(foreach sub, $(SRC_SUBDIRS), \
           $(patsubst %,%/$(strip $1)/$(sub)/module-info.java, $(TOP_SRC_DIRS))) \
-        $(patsubst %,%/$(strip $1)/module-info.java, $(IMPORT_MODULES_SRC)))
+        $(patsubst %,%/$(strip $1)/module-info.java, $(IMPORT_MODULES_SRC))))
 
 # Find module-info.java files in the specific source dir
 # Param 1 - Src dir to find module-info.java files in

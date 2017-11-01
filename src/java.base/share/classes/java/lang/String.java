@@ -2664,6 +2664,7 @@ public final class String
      * point</a> is passed through uninterpreted.
      *
      * @return an IntStream of char values from this sequence
+     * @since 9
      */
     @Override
     public IntStream chars() {
@@ -2683,6 +2684,7 @@ public final class String
      * {@code int} values which are then passed to the stream.
      *
      * @return an IntStream of Unicode code points from this sequence
+     * @since 9
      */
     @Override
     public IntStream codePoints() {

@@ -177,7 +177,12 @@ public class ReadDirect {
                 }
             }
 
-            randomNumber = generator.nextInt(100);
+            // The size of the test FileChannel is 100*charsPerGroup.
+            // As the channel bytes will be scattered into two buffers
+            // each of size charsPerGroup, the offset cannot be greater
+            // than 98*charsPerGroup, so the value of randomNumber must
+            // be in the range [0,98], i.e., 0 <= randomNumber < 99.
+            randomNumber = generator.nextInt(99);
             long offset =  randomNumber * charsPerGroup;
             fc.position(offset);
             fc.read(dests, 1, 2);

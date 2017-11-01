@@ -154,7 +154,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      *
      * @param codesource the <code>CodeSource</code> to compare against.
      *
-     * @return true if this <code>SubjectCodeSource</code> implies the
+     * @return true if this <code>SubjectCodeSource</code> implies
      *          the specified <code>CodeSource</code>.
      */
     public boolean implies(CodeSource codesource) {
