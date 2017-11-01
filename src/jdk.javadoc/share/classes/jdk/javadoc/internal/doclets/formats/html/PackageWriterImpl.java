@@ -292,11 +292,11 @@ public class PackageWriterImpl extends HtmlDocletWriter
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             boolean altColor = false;
             for (TypeElement klass : classes) {
-                altColor = !altColor;
                 if (!utils.isCoreClass(klass) ||
                     !configuration.isGeneratedDoc(klass)) {
                     continue;
                 }
+                altColor = !altColor;
                 Content classContent = getLink(new LinkInfoImpl(
                         configuration, LinkInfoImpl.Kind.PACKAGE, klass));
                 Content thClass = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, classContent);

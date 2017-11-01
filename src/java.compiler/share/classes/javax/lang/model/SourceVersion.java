@@ -183,7 +183,6 @@ public enum SourceVersion {
                 case "10":
                     return RELEASE_10;
                 case "9":
-                case "1.9":
                     return RELEASE_9;
                 case "1.8":
                     return RELEASE_8;

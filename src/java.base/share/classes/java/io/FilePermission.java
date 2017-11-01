@@ -698,7 +698,7 @@ public final class FilePermission extends Permission implements Serializable {
             if (p2.equals(EMPTY_PATH)) {
                 return 0;
             } else if (p2.getName(0).equals(DOTDOT_PATH)) {
-                // "." contains p2 iif p2 has no "..". Since a
+                // "." contains p2 iff p2 has no "..". Since
                 // a normalized path can only have 0 or more
                 // ".." at the beginning. We only need to look
                 // at the head.
@@ -711,7 +711,7 @@ public final class FilePermission extends Permission implements Serializable {
         } else if (p2.equals(EMPTY_PATH)) {
             int c1 = p1.getNameCount();
             if (!p1.getName(c1 - 1).equals(DOTDOT_PATH)) {
-                // "." is inside p1 iif p1 is 1 or more "..".
+                // "." is inside p1 iff p1 is 1 or more "..".
                 // For the same reason above, we only need to
                 // look at the tail.
                 return -1;

@@ -895,8 +895,8 @@ public class Utils {
             }
             VisibleMemberMap vmm = configuration.getVisibleMemberMap(te,
                     VisibleMemberMap.Kind.METHODS);
-            List<? extends Element> methods = vmm.getMembers(te);
-            for (ExecutableElement ee : ElementFilter.methodsIn(methods)) {
+            for (Element e : vmm.getMembers(te)) {
+                ExecutableElement ee = (ExecutableElement)e;
                 if (configuration.workArounds.overrides(method, ee, origin) &&
                         !isSimpleOverride(ee)) {
                     return ee;

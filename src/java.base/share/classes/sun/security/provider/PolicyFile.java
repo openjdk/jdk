@@ -789,7 +789,7 @@ public class PolicyFile extends java.security.Policy {
                         certs = null;
                     }
 
-                    // only add if we had no signer or we had a
+                    // only add if we had no signer or we had
                     // a signer and found the keys for it.
                     if (certs != null || pe.signedBy == null) {
                         Permission perm = new UnresolvedPermission(

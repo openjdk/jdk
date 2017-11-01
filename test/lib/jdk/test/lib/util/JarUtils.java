@@ -27,9 +27,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Enumeration;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
@@ -79,70 +83,93 @@ public final class JarUtils {
      */
     public static void updateJar(String src, String dest, String... files)
             throws IOException {
+        Map<String,Object> changes = new HashMap<>();
+        boolean update = true;
+        for (String file : files) {
+            if (file.equals("-")) {
+                update = false;
+            } else if (update) {
+                try {
+                    Path p = Paths.get(file);
+                    if (Files.exists(p)) {
+                        changes.put(file, p);
+                    } else {
+                        changes.put(file, file);
+                    }
+                } catch (InvalidPathException e) {
+                    // Fallback if file not a valid Path.
+                    changes.put(file, file);
+                }
+            } else {
+                changes.put(file, Boolean.FALSE);
+            }
+        }
+        updateJar(src, dest, changes);
+    }
+
+    /**
+     * Update content of a jar file.
+     *
+     * @param src the original jar file name
+     * @param dest the new jar file name
+     * @param changes a map of changes, key is jar entry name, value is content.
+     *                Value can be Path, byte[] or String. If key exists in
+     *                src but value is Boolean FALSE. The entry is removed.
+     *                Existing entries in src not a key is unmodified.
+     * @throws IOException
+     */
+    public static void updateJar(String src, String dest,
+                                 Map<String,Object> changes)
+            throws IOException {
+
+        // What if input changes is immutable?
+        changes = new HashMap<>(changes);
+
+        System.out.printf("Creating %s from %s...\n", dest, src);
         try (JarOutputStream jos = new JarOutputStream(
                 new FileOutputStream(dest))) {
 
-            // copy each old entry into destination unless the entry name
-            // is in the updated list
-            List<String> updatedFiles = new ArrayList<>();
             try (JarFile srcJarFile = new JarFile(src)) {
                 Enumeration<JarEntry> entries = srcJarFile.entries();
                 while (entries.hasMoreElements()) {
                     JarEntry entry = entries.nextElement();
                     String name = entry.getName();
-                    boolean found = false;
-                    boolean update = true;
-                    for (String file : files) {
-                        if (file.equals("-")) {
-                            update = false;
-                        } else if (name.equals(file)) {
-                            updatedFiles.add(file);
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (found) {
-                        if (update) {
-                            System.out.println(String.format("Updating %s with %s",
-                                    dest, name));
-                            jos.putNextEntry(new JarEntry(name));
-                            try (FileInputStream fis = new FileInputStream(name)) {
-                                fis.transferTo(jos);
-                            } catch (FileNotFoundException e) {
-                                jos.write(name.getBytes());
-                            }
-                        } else {
-                            System.out.println(String.format("Removing %s from %s",
-                                    name, dest));
-                        }
+                    if (changes.containsKey(name)) {
+                        System.out.println(String.format("- Update %s", name));
+                        updateEntry(jos, name, changes.get(name));
+                        changes.remove(name);
                     } else {
-                        System.out.println(String.format("Copying %s to %s",
-                                name, dest));
+                        System.out.println(String.format("- Copy %s", name));
                         jos.putNextEntry(entry);
                         srcJarFile.getInputStream(entry).transferTo(jos);
                     }
                 }
             }
-
-            // append new files
-            for (String file : files) {
-                if (file.equals("-")) {
-                    break;
-                }
-                if (!updatedFiles.contains(file)) {
-                    System.out.println(String.format("Adding %s with %s",
-                            dest, file));
-                    jos.putNextEntry(new JarEntry(file));
-                    try (FileInputStream fis = new FileInputStream(file)) {
-                        fis.transferTo(jos);
-                    } catch (FileNotFoundException e) {
-                        jos.write(file.getBytes());
-                    }
-                }
+            for (Map.Entry<String, Object> e : changes.entrySet()) {
+                System.out.println(String.format("- Add %s", e.getKey()));
+                updateEntry(jos, e.getKey(), e.getValue());
             }
         }
         System.out.println();
     }
 
+    private static void updateEntry(JarOutputStream jos, String name, Object content)
+           throws IOException {
+        if (content instanceof Boolean) {
+            if (((Boolean) content).booleanValue()) {
+                throw new RuntimeException("Boolean value must be FALSE");
+            }
+        } else {
+            jos.putNextEntry(new JarEntry(name));
+            if (content instanceof Path) {
+                Files.newInputStream((Path) content).transferTo(jos);
+            } else if (content instanceof byte[]) {
+                jos.write((byte[]) content);
+            } else if (content instanceof String) {
+                jos.write(((String) content).getBytes());
+            } else {
+                throw new RuntimeException("Unknown type " + content.getClass());
+            }
+        }
+    }
 }

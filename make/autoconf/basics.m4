@@ -561,18 +561,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   AC_MSG_RESULT([$TOPDIR])
   AC_SUBST(TOPDIR)
 
-  # Save the original version of TOPDIR for string comparisons
-  ORIGINAL_TOPDIR="$TOPDIR"
-  AC_SUBST(ORIGINAL_TOPDIR)
-
   # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
   BASIC_FIXUP_PATH(CURDIR)
   BASIC_FIXUP_PATH(TOPDIR)
-
-  # Calculate a canonical version of TOPDIR for string comparisons
-  CANONICAL_TOPDIR=$TOPDIR
-  BASIC_REMOVE_SYMBOLIC_LINKS([CANONICAL_TOPDIR])
-  AC_SUBST(CANONICAL_TOPDIR)
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/make/autoconf
@@ -647,6 +638,14 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
           SYSROOT="$DEVKIT_ROOT/$host_alias/libc"
         elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
           SYSROOT="$DEVKIT_ROOT/$host/sys-root"
+        fi
+
+        if test "x$DEVKIT_ROOT" != x; then
+          DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib"
+          if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+            DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib64"
+          fi
+          AC_SUBST(DEVKIT_LIB_DIR)
         fi
       ]
   )

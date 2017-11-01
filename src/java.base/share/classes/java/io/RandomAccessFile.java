@@ -298,7 +298,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
             synchronized (this) {
                 fc = this.channel;
                 if (fc == null) {
-                    this.channel = fc = FileChannelImpl.open(fd, path, true, rw, this);
+                    this.channel = fc = FileChannelImpl.open(fd, path, true,
+                        rw, false, this);
                     if (closed.get()) {
                         try {
                             fc.close();

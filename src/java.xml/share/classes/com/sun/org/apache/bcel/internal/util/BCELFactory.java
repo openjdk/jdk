@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -175,6 +175,7 @@ class BCELFactory extends EmptyVisitor {
 
 
     @Override
+    @SuppressWarnings("fallthrough") // by design for case Const.ANEWARRAY
     public void visitAllocationInstruction( final AllocationInstruction i ) {
         Type type;
         if (i instanceof CPInstruction) {

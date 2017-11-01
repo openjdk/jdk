@@ -58,12 +58,10 @@ import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
 import java.util.EnumSet;
@@ -104,7 +102,7 @@ public class Analyzer {
     final DeferredAttr deferredAttr;
     final ArgumentAttr argumentAttr;
     final TreeMaker make;
-    final Names names;
+    final AnalyzerCopier copier;
     private final boolean allowDiamondWithAnonymousClassCreation;
 
     final EnumSet<AnalyzerMode> analyzerModes;
@@ -124,7 +122,7 @@ public class Analyzer {
         deferredAttr = DeferredAttr.instance(context);
         argumentAttr = ArgumentAttr.instance(context);
         make = TreeMaker.instance(context);
-        names = Names.instance(context);
+        copier = new AnalyzerCopier();
         Options options = Options.instance(context);
         String findOpt = options.get("find");
         //parse modes
@@ -205,15 +203,14 @@ public class Analyzer {
         abstract boolean match(S tree);
 
         /**
-         * Rewrite a given AST node into a new one
+         * Rewrite a given AST node into a new one(s)
          */
-        abstract T map(S oldTree, S newTree);
+        abstract List<T> rewrite(S oldTree);
 
         /**
          * Entry-point for comparing results and generating diagnostics.
          */
         abstract void process(S oldTree, T newTree, boolean hasErrors);
-
     }
 
     /**
@@ -233,11 +230,14 @@ public class Analyzer {
         }
 
         @Override
-        JCNewClass map(JCNewClass oldTree, JCNewClass newTree) {
-            if (newTree.clazz.hasTag(TYPEAPPLY)) {
-                ((JCTypeApply)newTree.clazz).arguments = List.nil();
+        List<JCNewClass> rewrite(JCNewClass oldTree) {
+            if (oldTree.clazz.hasTag(TYPEAPPLY)) {
+                JCNewClass nc = copier.copy(oldTree);
+                ((JCTypeApply)nc.clazz).arguments = List.nil();
+                return List.of(nc);
+            } else {
+                return List.of(oldTree);
             }
-            return newTree;
         }
 
         @Override
@@ -301,12 +301,14 @@ public class Analyzer {
             }
 
         @Override
-        JCLambda map (JCNewClass oldTree, JCNewClass newTree){
-            JCMethodDecl md = (JCMethodDecl)decls(newTree.def).head;
+        List<JCLambda> rewrite(JCNewClass oldTree){
+            JCMethodDecl md = (JCMethodDecl)decls(oldTree.def).head;
             List<JCVariableDecl> params = md.params;
             JCBlock body = md.body;
-            return make.Lambda(params, body);
+            JCLambda newTree = make.Lambda(params, body);
+            return List.of(newTree);
         }
+
         @Override
         void process (JCNewClass oldTree, JCLambda newTree, boolean hasErrors){
             if (!hasErrors) {
@@ -330,10 +332,12 @@ public class Analyzer {
                     tree.typeargs.nonEmpty();
         }
         @Override
-        JCMethodInvocation map (JCMethodInvocation oldTree, JCMethodInvocation newTree){
-            newTree.typeargs = List.nil();
-            return newTree;
+        List<JCMethodInvocation> rewrite(JCMethodInvocation oldTree){
+            JCMethodInvocation app = copier.copy(oldTree);
+            app.typeargs = List.nil();
+            return List.of(app);
         }
+
         @Override
         void process (JCMethodInvocation oldTree, JCMethodInvocation newTree, boolean hasErrors){
             if (!hasErrors) {
@@ -355,7 +359,8 @@ public class Analyzer {
         /**
          * Map a variable tree into a new declaration using implicit type.
          */
-        JCVariableDecl mapVar(JCVariableDecl oldTree, JCVariableDecl newTree){
+        JCVariableDecl rewriteVarType(JCVariableDecl oldTree) {
+            JCVariableDecl newTree = copier.copy(oldTree);
             newTree.vartype = null;
             return newTree;
         }
@@ -363,7 +368,7 @@ public class Analyzer {
         /**
          * Analyze results of local variable inference.
          */
-        void processVar(JCVariableDecl oldTree, JCVariableDecl newTree, boolean hasErrors){
+        void processVar(JCVariableDecl oldTree, JCVariableDecl newTree, boolean hasErrors) {
             if (!hasErrors) {
                 if (types.isSameType(oldTree.type, newTree.type)) {
                     log.warning(oldTree, Warnings.LocalRedundantType);
@@ -387,8 +392,8 @@ public class Analyzer {
                     attr.canInferLocalVarType(tree) == null;
         }
         @Override
-        JCVariableDecl map(JCVariableDecl oldTree, JCVariableDecl newTree){
-            return mapVar(oldTree, newTree);
+        List<JCVariableDecl> rewrite(JCVariableDecl oldTree) {
+            return List.of(rewriteVarType(oldTree));
         }
         @Override
         void process(JCVariableDecl oldTree, JCVariableDecl newTree, boolean hasErrors){
@@ -410,10 +415,11 @@ public class Analyzer {
             return !tree.var.isImplicitlyTyped();
         }
         @Override
-        JCEnhancedForLoop map(JCEnhancedForLoop oldTree, JCEnhancedForLoop newTree){
-            newTree.var = mapVar(oldTree.var, newTree.var);
-            newTree.body = make.Block(0, List.nil()); //ignore body for analysis purpose
-            return newTree;
+        List<JCEnhancedForLoop> rewrite(JCEnhancedForLoop oldTree) {
+            JCEnhancedForLoop newTree = copier.copy(oldTree);
+            newTree.var = rewriteVarType(oldTree.var);
+            newTree.body = make.Block(0, List.nil());
+            return List.of(newTree);
         }
         @Override
         void process(JCEnhancedForLoop oldTree, JCEnhancedForLoop newTree, boolean hasErrors){
@@ -464,12 +470,13 @@ public class Analyzer {
      * and speculatively type-check the rewritten code to compare results against previously attributed code.
      */
     void analyze(JCStatement statement, Env<AttrContext> env) {
-        AnalysisContext context = new AnalysisContext(statement, env);
-        StatementScanner statementScanner = new StatementScanner(context);
-        statementScanner.scan(statement);
+        StatementScanner statementScanner = new StatementScanner(statement, env);
+        statementScanner.scan();
 
-        if (!context.treesToAnalyzer.isEmpty()) {
-            deferredAnalysisHelper.queue(context);
+        if (!statementScanner.rewritings.isEmpty()) {
+            for (RewritingContext rewriting : statementScanner.rewritings) {
+                deferredAnalysisHelper.queue(rewriting);
+            }
         }
     }
 
@@ -480,7 +487,7 @@ public class Analyzer {
         /**
          * Add a new analysis task to the queue.
          */
-        void queue(AnalysisContext context);
+        void queue(RewritingContext rewriting);
         /**
          * Flush queue with given attribution env.
          */
@@ -492,7 +499,7 @@ public class Analyzer {
      */
     DeferredAnalysisHelper flushDeferredHelper = new DeferredAnalysisHelper() {
         @Override
-        public void queue(AnalysisContext context) {
+        public void queue(RewritingContext rewriting) {
             //do nothing
         }
 
@@ -508,12 +515,12 @@ public class Analyzer {
      */
     DeferredAnalysisHelper queueDeferredHelper = new DeferredAnalysisHelper() {
 
-        Map<ClassSymbol, ArrayList<AnalysisContext>> Q = new HashMap<>();
+        Map<ClassSymbol, ArrayList<RewritingContext>> Q = new HashMap<>();
 
         @Override
-        public void queue(AnalysisContext context) {
-            ArrayList<AnalysisContext> s = Q.computeIfAbsent(context.env.enclClass.sym.outermostClass(), k -> new ArrayList<>());
-            s.add(context);
+        public void queue(RewritingContext rewriting) {
+            ArrayList<RewritingContext> s = Q.computeIfAbsent(rewriting.env.enclClass.sym.outermostClass(), k -> new ArrayList<>());
+            s.add(rewriting);
         }
 
         @Override
@@ -522,9 +529,9 @@ public class Analyzer {
                 DeferredAnalysisHelper prevHelper = deferredAnalysisHelper;
                 try {
                     deferredAnalysisHelper = flushDeferredHelper;
-                    ArrayList<AnalysisContext> s = Q.get(flushEnv.enclClass.sym.outermostClass());
-                    while (s != null && !s.isEmpty()) {
-                        doAnalysis(s.remove(0));
+                    ArrayList<RewritingContext> rewritings = Q.get(flushEnv.enclClass.sym.outermostClass());
+                    while (rewritings != null && !rewritings.isEmpty()) {
+                        doAnalysis(rewritings.remove(0));
                     }
                 } finally {
                     deferredAnalysisHelper = prevHelper;
@@ -535,28 +542,24 @@ public class Analyzer {
 
     DeferredAnalysisHelper deferredAnalysisHelper = queueDeferredHelper;
 
-    void doAnalysis(AnalysisContext context) {
+    void doAnalysis(RewritingContext rewriting) {
         DiagnosticSource prevSource = log.currentSource();
         LocalCacheContext localCacheContext = argumentAttr.withLocalCacheContext();
         try {
-            log.useSource(context.env.toplevel.getSourceFile());
+            log.useSource(rewriting.env.toplevel.getSourceFile());
 
-            JCStatement treeToAnalyze = (JCStatement)context.tree;
-            if (context.env.info.scope.owner.kind == Kind.TYP) {
+            JCStatement treeToAnalyze = (JCStatement)rewriting.originalTree;
+            if (rewriting.env.info.scope.owner.kind == Kind.TYP) {
                 //add a block to hoist potential dangling variable declarations
-                treeToAnalyze = make.Block(Flags.SYNTHETIC, List.of((JCStatement)context.tree));
+                treeToAnalyze = make.Block(Flags.SYNTHETIC, List.of((JCStatement)rewriting.originalTree));
             }
 
-            TreeMapper treeMapper = new TreeMapper(context);
             //TODO: to further refine the analysis, try all rewriting combinations
-            deferredAttr.attribSpeculative(treeToAnalyze, context.env, attr.statInfo, treeMapper,
-                    t -> new AnalyzeDeferredDiagHandler(context), argumentAttr.withLocalCacheContext());
-            context.treeMap.entrySet().forEach(e -> {
-                context.treesToAnalyzer.get(e.getKey())
-                        .process(e.getKey(), e.getValue(), context.errors.nonEmpty());
-            });
+            deferredAttr.attribSpeculative(treeToAnalyze, rewriting.env, attr.statInfo, new TreeRewriter(rewriting),
+                    t -> rewriting.diagHandler(), argumentAttr.withLocalCacheContext());
+            rewriting.analyzer.process(rewriting.oldTree, rewriting.replacement, rewriting.erroneous);
         } catch (Throwable ex) {
-            Assert.error("Analyzer error when processing: " + context.tree);
+            Assert.error("Analyzer error when processing: " + rewriting.originalTree);
         } finally {
             log.useSource(prevSource.getFile());
             localCacheContext.leave();
@@ -568,65 +571,22 @@ public class Analyzer {
     }
 
     /**
-     * Simple deferred diagnostic handler which filters out all messages and keep track of errors.
-     */
-    class AnalyzeDeferredDiagHandler extends Log.DeferredDiagnosticHandler {
-        AnalysisContext context;
-
-        public AnalyzeDeferredDiagHandler(AnalysisContext context) {
-            super(log, d -> {
-                if (d.getType() == DiagnosticType.ERROR) {
-                    context.errors.add(d);
-                }
-                return true;
-            });
-            this.context = context;
-        }
-    }
-
-    /**
-     * This class is used to pass around contextual information bewteen analyzer classes, such as
-     * trees to be rewritten, errors occurred during the speculative attribution step, etc.
-     */
-    class AnalysisContext {
-
-        JCTree tree;
-
-        Env<AttrContext> env;
-
-        AnalysisContext(JCTree tree, Env<AttrContext> env) {
-            this.tree = tree;
-            this.env = attr.copyEnv(env);
-            /*  this is a temporary workaround that should be removed once we have a truly independent
-             *  clone operation
-             */
-            if (tree.hasTag(VARDEF)) {
-                // avoid redefinition clashes
-                this.env.info.scope.remove(((JCVariableDecl)tree).sym);
-            }
-        }
-
-        /** Map from trees to analyzers. */
-        Map<JCTree, StatementAnalyzer<JCTree, JCTree>> treesToAnalyzer = new HashMap<>();
-
-        /** Map from original AST nodes to rewritten AST nodes */
-        Map<JCTree, JCTree> treeMap = new HashMap<>();
-
-        /** Errors in rewritten tree */
-        ListBuffer<JCDiagnostic> errors = new ListBuffer<>();
-    }
-
-    /**
      * Subclass of {@link com.sun.tools.javac.tree.TreeScanner} which visit AST-nodes w/o crossing
      * statement boundaries.
      */
     class StatementScanner extends TreeScanner {
+        /** Tree rewritings (generated by analyzers). */
+        ListBuffer<RewritingContext> rewritings = new ListBuffer<>();
+        JCTree originalTree;
+        Env<AttrContext> env;
 
-        /** context */
-        AnalysisContext context;
+        StatementScanner(JCTree originalTree, Env<AttrContext> env) {
+            this.originalTree = originalTree;
+            this.env = attr.copyEnv(env);
+        }
 
-        StatementScanner(AnalysisContext context) {
-            this.context = context;
+        public void scan() {
+            scan(originalTree);
         }
 
         @Override
@@ -637,7 +597,9 @@ public class Analyzer {
                     if (analyzer.isEnabled() &&
                             tree.hasTag(analyzer.tag) &&
                             analyzer.match(tree)) {
-                        context.treesToAnalyzer.put(tree, analyzer);
+                        for (JCTree t : analyzer.rewrite(tree)) {
+                            rewritings.add(new RewritingContext(originalTree, tree, t, analyzer, env));
+                        }
                         break; //TODO: cover cases where multiple matching analyzers are found
                     }
                 }
@@ -705,28 +667,60 @@ public class Analyzer {
         }
     }
 
+    class RewritingContext {
+        // the whole tree being analyzed
+        JCTree originalTree;
+        // a subtree, old tree, that will be rewritten
+        JCTree oldTree;
+        // the replacement for the old tree
+        JCTree replacement;
+        // did the compiler find any error
+        boolean erroneous;
+        // the env
+        Env<AttrContext> env;
+        // the corresponding analyzer
+        StatementAnalyzer<JCTree, JCTree> analyzer;
+
+        RewritingContext(
+                JCTree originalTree,
+                JCTree oldTree,
+                JCTree replacement,
+                StatementAnalyzer<JCTree, JCTree> analyzer,
+                Env<AttrContext> env) {
+            this.originalTree = originalTree;
+            this.oldTree = oldTree;
+            this.replacement = replacement;
+            this.analyzer = analyzer;
+            this.env = attr.copyEnv(env);
+            /*  this is a temporary workaround that should be removed once we have a truly independent
+             *  clone operation
+             */
+            if (originalTree.hasTag(VARDEF)) {
+                // avoid redefinition clashes
+                this.env.info.scope.remove(((JCVariableDecl)originalTree).sym);
+            }
+        }
+
+        /**
+         * Simple deferred diagnostic handler which filters out all messages and keep track of errors.
+         */
+        Log.DeferredDiagnosticHandler diagHandler() {
+            return new Log.DeferredDiagnosticHandler(log, d -> {
+                if (d.getType() == DiagnosticType.ERROR) {
+                    erroneous = true;
+                }
+                return true;
+            });
+        }
+    }
+
     /**
      * Subclass of TreeCopier that maps nodes matched by analyzers onto new AST nodes.
      */
-    class TreeMapper extends TreeCopier<Void> {
+    class AnalyzerCopier extends TreeCopier<Void> {
 
-        AnalysisContext context;
-
-        TreeMapper(AnalysisContext context) {
+        public AnalyzerCopier() {
             super(make);
-            this.context = context;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <Z extends JCTree> Z copy(Z tree, Void _unused) {
-            Z newTree = super.copy(tree, _unused);
-            StatementAnalyzer<JCTree, JCTree> analyzer = context.treesToAnalyzer.get(tree);
-            if (analyzer != null) {
-                newTree = (Z)analyzer.map(tree, newTree);
-                context.treeMap.put(tree, newTree);
-            }
-            return newTree;
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -751,6 +745,26 @@ public class Analyzer {
                 newNewClazz.args = newNewClazz.args.tail;
             }
             return newNewClazz;
+        }
+    }
+
+   class TreeRewriter extends AnalyzerCopier {
+
+        RewritingContext rewriting;
+
+        TreeRewriter(RewritingContext rewriting) {
+            this.rewriting = rewriting;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <Z extends JCTree> Z copy(Z tree, Void _unused) {
+            Z newTree = super.copy(tree, null);
+            if (tree != null && tree == rewriting.oldTree) {
+                Assert.checkNonNull(rewriting.replacement);
+                newTree = (Z)rewriting.replacement;
+            }
+            return newTree;
         }
     }
 }

@@ -705,6 +705,7 @@ FIXPATH
 BUILD_GTEST
 ENABLE_CDS
 ENABLE_AOT
+ASAN_ENABLED
 GCOV_ENABLED
 ZIP_EXTERNAL_DEBUG_SYMBOLS
 COPY_DEBUG_SYMBOLS
@@ -959,6 +960,7 @@ CONF_NAME
 SPEC
 SDKROOT
 XCODEBUILD
+DEVKIT_LIB_DIR
 JVM_VARIANT_MAIN
 VALID_JVM_VARIANTS
 JVM_VARIANTS
@@ -966,8 +968,6 @@ DEBUG_LEVEL
 HOTSPOT_DEBUG_LEVEL
 JDK_VARIANT
 USERNAME
-CANONICAL_TOPDIR
-ORIGINAL_TOPDIR
 TOPDIR
 PATH_SEP
 HOTSPOT_BUILD_CPU_DEFINE
@@ -1174,6 +1174,7 @@ with_native_debug_symbols
 enable_debug_symbols
 enable_zip_debug_info
 enable_native_coverage
+enable_asan
 enable_dtrace
 enable_aot
 enable_cds
@@ -1981,6 +1982,7 @@ Optional Features:
   --enable-native-coverage
                           enable native compilation with code coverage
                           data[disabled]
+  --enable-asan           enable AddressSanitizer if possible [disabled]
   --enable-dtrace[=yes/no/auto]
                           enable dtrace. Default is auto, where dtrace is
                           enabled if all dependencies are present.
@@ -4416,6 +4418,12 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 #
 
 
+###############################################################################
+#
+# AddressSanitizer
+#
+
+
 ################################################################################
 #
 # Static build support.  When enabled will generate static
@@ -5158,7 +5166,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1508961024
+DATE_WHEN_GENERATED=1509128484
 
 ###############################################################################
 #
@@ -16577,10 +16585,6 @@ $as_echo_n "checking for top-level directory... " >&6; }
 $as_echo "$TOPDIR" >&6; }
 
 
-  # Save the original version of TOPDIR for string comparisons
-  ORIGINAL_TOPDIR="$TOPDIR"
-
-
   # We can only call BASIC_FIXUP_PATH after BASIC_CHECK_PATHS_WINDOWS.
 
   # Only process if variable expands to non-empty
@@ -16845,58 +16849,6 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
       fi
     fi
   fi
-
-
-  # Calculate a canonical version of TOPDIR for string comparisons
-  CANONICAL_TOPDIR=$TOPDIR
-
-  if test "x$OPENJDK_BUILD_OS" != xwindows; then
-    # Follow a chain of symbolic links. Use readlink
-    # where it exists, else fall back to horribly
-    # complicated shell code.
-    if test "x$READLINK_TESTED" != yes; then
-      # On MacOSX there is a readlink tool with a different
-      # purpose than the GNU readlink tool. Check the found readlink.
-      ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
-      if test "x$ISGNU" = x; then
-        # A readlink that we do not know how to use.
-        # Are there other non-GNU readlinks out there?
-        READLINK_TESTED=yes
-        READLINK=
-      fi
-    fi
-
-    if test "x$READLINK" != x; then
-      CANONICAL_TOPDIR=`$READLINK -f $CANONICAL_TOPDIR`
-    else
-      # Save the current directory for restoring afterwards
-      STARTDIR=$PWD
-      COUNTER=0
-      sym_link_dir=`$DIRNAME $CANONICAL_TOPDIR`
-      sym_link_file=`$BASENAME $CANONICAL_TOPDIR`
-      cd $sym_link_dir
-      # Use -P flag to resolve symlinks in directories.
-      cd `$THEPWDCMD -P`
-      sym_link_dir=`$THEPWDCMD -P`
-      # Resolve file symlinks
-      while test $COUNTER -lt 20; do
-        ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
-        if test "x$ISLINK" == x; then
-          # This is not a symbolic link! We are done!
-          break
-        fi
-        # Again resolve directory symlinks since the target of the just found
-        # link could be in a different directory
-        cd `$DIRNAME $ISLINK`
-        sym_link_dir=`$THEPWDCMD -P`
-        sym_link_file=`$BASENAME $ISLINK`
-        let COUNTER=COUNTER+1
-      done
-      cd $STARTDIR
-      CANONICAL_TOPDIR=$sym_link_dir/$sym_link_file
-    fi
-  fi
-
 
 
   # Locate the directory of this script.
@@ -17370,6 +17322,14 @@ $as_echo "$DEVKIT_ROOT" >&6; }
           SYSROOT="$DEVKIT_ROOT/$host_alias/libc"
         elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
           SYSROOT="$DEVKIT_ROOT/$host/sys-root"
+        fi
+
+        if test "x$DEVKIT_ROOT" != x; then
+          DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib"
+          if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+            DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib64"
+          fi
+
         fi
 
 
@@ -54263,6 +54223,49 @@ $as_echo_n "checking if native coverage is enabled... " >&6; }
 $as_echo "no" >&6; }
   elif test "x$enable_native_coverage" != "x"; then
     as_fn_error $? "--enable-native-coverage can only be assigned \"yes\" or \"no\"" "$LINENO" 5
+  fi
+
+
+
+
+# AddressSanitizer
+
+  # Check whether --enable-asan was given.
+if test "${enable_asan+set}" = set; then :
+  enableval=$enable_asan;
+fi
+
+  ASAN_ENABLED="no"
+  if test "x$enable_asan" = "xyes"; then
+    case $TOOLCHAIN_TYPE in
+      gcc | clang)
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if asan is enabled" >&5
+$as_echo_n "checking if asan is enabled... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        ASAN_CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
+        ASAN_LDFLAGS="-fsanitize=address"
+        JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
+        JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $ASAN_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $ASAN_CFLAGS"
+        CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $ASAN_CFLAGS"
+        CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $ASAN_CFLAGS"
+        LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $ASAN_LDFLAGS"
+        LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $ASAN_LDFLAGS"
+        ASAN_ENABLED="yes"
+        ;;
+      *)
+        as_fn_error $? "--enable-asan only works with toolchain type gcc or clang" "$LINENO" 5
+        ;;
+    esac
+  elif test "x$enable_asan" = "xno"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if asan is enabled" >&5
+$as_echo_n "checking if asan is enabled... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  elif test "x$enable_asan" != "x"; then
+    as_fn_error $? "--enable-asan can only be assigned \"yes\" or \"no\"" "$LINENO" 5
   fi
 
 

@@ -143,7 +143,7 @@ class Inet4Address extends InetAddress {
         /**
          * Prior to 1.4 an InetAddress was created with a family
          * based on the platform AF_INET value (usually 2).
-         * For compatibility reasons we must therefore write the
+         * For compatibility reasons we must therefore write
          * the InetAddress with this family.
          */
         inet.holder().family = 2;

@@ -116,7 +116,7 @@ public class StepPattern extends NodeTest implements SubContextList, ExpressionO
       m_targetString = PsuedoNames.PSEUDONAME_ROOT;
       break;
     case DTMFilter.SHOW_ELEMENT :
-      if (this.WILD == m_name)
+      if (WILD.equals(m_name))
         m_targetString = PsuedoNames.PSEUDONAME_ANY;
       else
         m_targetString = m_name;

@@ -43,13 +43,13 @@ public class EventObject implements java.io.Serializable {
     /**
      * The object on which the Event initially occurred.
      */
-    protected transient Object  source;
+    protected transient Object source;
 
     /**
      * Constructs a prototypical Event.
      *
-     * @param    source    The object on which the Event initially occurred.
-     * @exception  IllegalArgumentException  if source is null.
+     * @param source the object on which the Event initially occurred
+     * @throws IllegalArgumentException if source is null
      */
     public EventObject(Object source) {
         if (source == null)
@@ -61,7 +61,7 @@ public class EventObject implements java.io.Serializable {
     /**
      * The object on which the Event initially occurred.
      *
-     * @return   The object on which the Event initially occurred.
+     * @return the object on which the Event initially occurred
      */
     public Object getSource() {
         return source;
@@ -70,7 +70,7 @@ public class EventObject implements java.io.Serializable {
     /**
      * Returns a String representation of this EventObject.
      *
-     * @return  A a String representation of this EventObject.
+     * @return a String representation of this EventObject
      */
     public String toString() {
         return getClass().getName() + "[source=" + source + "]";

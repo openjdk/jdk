@@ -42,6 +42,7 @@ import tests.JImageGenerator;
 /*
  * @test
  * @summary Test image creation
+ * @bug 8189777
  * @author Jean-Francois Denise
  * @library ../lib
  * @modules java.base/jdk.internal.jimage
@@ -106,6 +107,37 @@ public class JLinkTest {
         }
 
         {
+            // No --module-path specified. $JAVA_HOME/jmods should be assumed.
+            // The following should succeed as it uses only system modules.
+            String imageDir = "bug818977-no-modulepath";
+            JImageGenerator.getJLinkTask()
+                    .output(helper.createNewImageDir(imageDir))
+                    .addMods("jdk.scripting.nashorn")
+                    .call().assertSuccess();
+        }
+
+        {
+            // invalid --module-path specified. java.base not found it it.
+            // $JAVA_HOME/jmods should be added automatically.
+            // The following should succeed as it uses only system modules.
+            String imageDir = "bug8189777-invalid-modulepath";
+            JImageGenerator.getJLinkTask()
+                    .modulePath("does_not_exist_path")
+                    .output(helper.createNewImageDir(imageDir))
+                    .addMods("jdk.scripting.nashorn")
+                    .call().assertSuccess();
+        }
+
+        {
+            // No --module-path specified. --add-modules ALL-MODULE-PATH specified.
+            String imageDir = "bug8189777-all-module-path";
+            JImageGenerator.getJLinkTask()
+                    .output(helper.createNewImageDir(imageDir))
+                    .addMods("ALL-MODULE-PATH")
+                    .call().assertSuccess();
+        }
+
+        {
             String moduleName = "bug8134651";
             JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
@@ -122,6 +154,17 @@ public class JLinkTest {
                     .output(helper.createNewImageDir(moduleName))
                     .addMods("leaf1")
                     .call().assertFailure("Error: no value given for --module-path");
+            // do not include standard module path - should be added automatically
+            JImageGenerator.getJLinkTask()
+                    .modulePath(helper.defaultModulePath(false))
+                    .output(helper.createNewImageDir(moduleName))
+                    .addMods("leaf1")
+                    .call().assertSuccess();
+            // no --module-path. default sys mod path is assumed - but that won't contain 'leaf1' module
+            JImageGenerator.getJLinkTask()
+                    .output(helper.createNewImageDir(moduleName))
+                    .addMods("leaf1")
+                    .call().assertFailure("Error: Module leaf1 not found");
         }
 
         {

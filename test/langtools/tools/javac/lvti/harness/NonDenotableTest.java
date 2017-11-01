@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 8177466
+ * @bug 8177466 8189838
  * @summary Add compiler support for local variable type-inference
  * @modules jdk.compiler/com.sun.source.tree
  *          jdk.compiler/com.sun.source.util
@@ -50,6 +50,7 @@ class NonDenotableTest {
     static final String LIST_EXT_COMP_UNB = "java.util.List<? extends java.lang.Comparable<?>>";
     static final String LIST_SUP_COMP_UNB = "java.util.List<? super java.lang.Comparable<?>>";
     static final String INT_INTEGER_DOUBLE = "#INT(java.lang.Number,java.lang.Comparable<? extends java.lang.Number&java.lang.Comparable<?>>)";
+    static final String SEL_INT_ENUM_SEL = "NonDenotableTest.Selector<? extends #INT(java.lang.Enum<?>,NonDenotableTest.Selector<?>)>";
 
     void testExtends() {
         @InferredType(LIST_EXT)
@@ -120,6 +121,14 @@ class NonDenotableTest {
         for (@InferredType(INT_INTEGER_DOUBLE) var s2 : listOf(choose(1, 1L))) { break; }
     }
 
+    void testIntersection(Selector<?> s) {
+        @InferredType(SEL_INT_ENUM_SEL)
+        var c = s;
+        for (@InferredType(SEL_INT_ENUM_SEL) var s2 = s ; ;) { break; }
+        for (@InferredType(SEL_INT_ENUM_SEL) var s2 : arrayOf(s)) { break; }
+        for (@InferredType(SEL_INT_ENUM_SEL) var s2 : listOf(s)) { break; }
+    }
+
     List<? extends String> extString() { return null; }
     List<? super String> supString() { return null; }
     List<?> unbString() { return null; }
@@ -145,4 +154,6 @@ class NonDenotableTest {
     <Z> Z[] arrayOf(Z z) { return null; }
 
     <Z> Z choose(Z z1, Z z2) { return z1; }
+
+    interface Selector<E extends Enum<E> & Selector<E>> {}
 }

@@ -142,13 +142,6 @@ public class FileChannelImpl
     // and RandomAccessFile.getChannel()
     public static FileChannel open(FileDescriptor fd, String path,
                                    boolean readable, boolean writable,
-                                   Object parent)
-    {
-        return new FileChannelImpl(fd, path, readable, writable, false, parent);
-    }
-
-    public static FileChannel open(FileDescriptor fd, String path,
-                                   boolean readable, boolean writable,
                                    boolean direct, Object parent)
     {
         return new FileChannelImpl(fd, path, readable, writable, direct, parent);

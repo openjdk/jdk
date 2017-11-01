@@ -3301,7 +3301,7 @@ public final class Files {
     }
 
     /**
-     * Writes bytes to a file. The {@code options} parameter specifies how the
+     * Writes bytes to a file. The {@code options} parameter specifies how
      * the file is created or opened. If no options are present then this method
      * works as if the {@link StandardOpenOption#CREATE CREATE}, {@link
      * StandardOpenOption#TRUNCATE_EXISTING TRUNCATE_EXISTING}, and {@link

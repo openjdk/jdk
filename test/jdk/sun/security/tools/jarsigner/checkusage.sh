@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ echo $RESULT
 #[ $RESULT = 0 ] || exit 2
 
 # Test 3: When no keystore is specified, the error is only
-# "chain not validated"
+# "chain invalid"
 
 $JARSIGNER -strict -verify a.jar
 RESULT=$?
@@ -99,7 +99,7 @@ echo $RESULT
 #[ $RESULT = 4 ] || exit 3
 
 # Test 4: When unrelated keystore is specified, the error is
-# "chain not validated" and "not alias in keystore"
+# "chain invalid" and "not alias in keystore"
 
 $JARSIGNER -keystore unrelated.jks -strict -verify a.jar
 RESULT=$?
