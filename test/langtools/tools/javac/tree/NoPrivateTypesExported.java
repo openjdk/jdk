@@ -206,6 +206,33 @@ public class NoPrivateTypesExported extends JavacTestingAbstractProcessor {
                 }
                 return null;
             }
+            @Override public Void visitBoolean(boolean b, Void p) {
+                return null;
+            }
+            @Override public Void visitByte(byte b, Void p) {
+                return null;
+            }
+            @Override public Void visitChar(char c, Void p) {
+                return null;
+            }
+            @Override public Void visitDouble(double d, Void p) {
+                return null;
+            }
+            @Override public Void visitFloat(float f, Void p) {
+                return null;
+            }
+            @Override public Void visitInt(int i, Void p) {
+                return null;
+            }
+            @Override public Void visitLong(long i, Void p) {
+                return null;
+            }
+            @Override public Void visitShort(short s, Void p) {
+                return null;
+            }
+            @Override public Void visitString(String s, Void p) {
+                return null;
+            }
             @Override protected Void defaultAction(Object o, Void p) {
                 error("Unexpected AnnotationValue: " + o.toString());
                 return super.defaultAction(o, p);
