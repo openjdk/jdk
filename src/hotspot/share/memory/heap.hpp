@@ -160,7 +160,18 @@ class CodeHeap : public CHeapObj<mtCode> {
   char* high_boundary() const                    { return _memory.high_boundary(); }
 
   bool contains(const void* p) const             { return low_boundary() <= p && p < high(); }
-  bool contains_blob(const CodeBlob* blob) const { return contains(blob->code_begin()); }
+  bool contains_blob(const CodeBlob* blob) const {
+    // AOT CodeBlobs (i.e. AOTCompiledMethod) objects aren't allocated in the AOTCodeHeap but on the C-Heap.
+    // Only the code they are pointing to is located in the AOTCodeHeap. All other CodeBlobs are allocated
+    // directly in their corresponding CodeHeap with their code appended to the actual C++ object.
+    // So all CodeBlobs except AOTCompiledMethod are continuous in memory with their data and code while
+    // AOTCompiledMethod and their code/data is distributed in the C-Heap. This means we can use the
+    // address of a CodeBlob object in order to locate it in its heap while we have to use the address
+    // of the actual code an AOTCompiledMethod object is pointing to in order to locate it.
+    // Notice that for an ordinary CodeBlob with code size zero, code_begin() may point beyond the object!
+    const void* start = AOT_ONLY( (code_blob_type() == CodeBlobType::AOT) ? blob->code_begin() : ) (void*)blob;
+    return contains(start);
+  }
 
   virtual void* find_start(void* p)     const;   // returns the block containing p or NULL
   virtual CodeBlob* find_blob_unsafe(void* start) const;
