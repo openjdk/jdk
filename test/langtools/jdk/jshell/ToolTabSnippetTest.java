@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8177076 8185426
+ * @bug 8177076 8185426 8189595
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
@@ -224,6 +224,31 @@ public class ToolTabSnippetTest extends UITesting {
             inputSink.write("\011");
             waitOutput(out, "\u0005");
             ConsoleIOContextTestSupport.IMPL = null;
+        });
+    }
+
+    public void testNoRepeat() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("String xyzAA;\n");
+            waitOutput(out, "\u0005");
+
+            //xyz<tab>
+            inputSink.write("String s = xyz\011");
+            waitOutput(out, "^String s = xyzAA");
+            inputSink.write(".");
+            waitOutput(out, "^\\.");
+
+            inputSink.write("\u0003");
+            waitOutput(out, "\u0005");
+
+            inputSink.write("double xyzAB;\n");
+            waitOutput(out, "\u0005");
+
+            //xyz<tab>
+            inputSink.write("String s = xyz\011");
+            String allCompletions =
+                    Pattern.quote(getResource("jshell.console.completion.all.completions"));
+            waitOutput(out, ".*xyzAA.*" + allCompletions + ".*\u0005String s = xyzA");
         });
     }
 
