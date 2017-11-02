@@ -56,61 +56,48 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-package jdk.internal.org.objectweb.asm.util;
+package jdk.internal.org.objectweb.asm.tree;
 
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.TypePath;
+import java.util.List;
+
+import jdk.internal.org.objectweb.asm.ModuleVisitor;
 
 /**
- * A {@link FieldVisitor} that prints the fields it visits with a
- * {@link Printer}.
+ * A node that represents a service and its implementation provided by the current module.
  *
- * @author Eric Bruneton
+ * @author Remi Forax
  */
-public final class TraceFieldVisitor extends FieldVisitor {
+public class ModuleProvideNode {
+    /**
+     * The service name (in its internal form).
+     */
+    public String service;
 
-    public final Printer p;
+    /**
+     * The service provider names (in their internal form).
+     */
+    public List<String> providers;
 
-    public TraceFieldVisitor(final Printer p) {
-        this(null, p);
+    /**
+     * Constructs a new {@link ModuleProvideNode}.
+     *
+     * @param service
+     *            the service name (in its internal form).
+     * @param providers
+     *            the service provider names (in their internal form).
+     */
+    public ModuleProvideNode(final String service, final List<String> providers) {
+        this.service = service;
+        this.providers = providers;
     }
 
-    public TraceFieldVisitor(final FieldVisitor fv, final Printer p) {
-        super(Opcodes.ASM6, fv);
-        this.p = p;
-    }
-
-    @Override
-    public AnnotationVisitor visitAnnotation(final String desc,
-            final boolean visible) {
-        Printer p = this.p.visitFieldAnnotation(desc, visible);
-        AnnotationVisitor av = fv == null ? null : fv.visitAnnotation(desc,
-                visible);
-        return new TraceAnnotationVisitor(av, p);
-    }
-
-    @Override
-    public AnnotationVisitor visitTypeAnnotation(int typeRef,
-            TypePath typePath, String desc, boolean visible) {
-        Printer p = this.p.visitFieldTypeAnnotation(typeRef, typePath, desc,
-                visible);
-        AnnotationVisitor av = fv == null ? null : fv.visitTypeAnnotation(
-                typeRef, typePath, desc, visible);
-        return new TraceAnnotationVisitor(av, p);
-    }
-
-    @Override
-    public void visitAttribute(final Attribute attr) {
-        p.visitFieldAttribute(attr);
-        super.visitAttribute(attr);
-    }
-
-    @Override
-    public void visitEnd() {
-        p.visitFieldEnd();
-        super.visitEnd();
+    /**
+     * Makes the given module visitor visit this require declaration.
+     *
+     * @param mv
+     *            a module visitor.
+     */
+    public void accept(final ModuleVisitor mv) {
+        mv.visitProvide(service, providers.toArray(new String[0]));
     }
 }

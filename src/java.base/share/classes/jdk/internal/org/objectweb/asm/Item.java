@@ -80,6 +80,7 @@ final class Item {
      * {@link ClassWriter#STR}, {@link ClassWriter#CLASS},
      * {@link ClassWriter#NAME_TYPE}, {@link ClassWriter#FIELD},
      * {@link ClassWriter#METH}, {@link ClassWriter#IMETH},
+     * {@link ClassWriter#MODULE}, {@link ClassWriter#PACKAGE},
      * {@link ClassWriter#MTYPE}, {@link ClassWriter#INDY}.
      *
      * MethodHandle constant 9 variations are stored using a range of 9 values
@@ -239,12 +240,12 @@ final class Item {
         this.strVal3 = strVal3;
         switch (type) {
         case ClassWriter.CLASS:
-        case ClassWriter.MODULE:
-        case ClassWriter.PACKAGE:
             this.intVal = 0;     // intVal of a class must be zero, see visitInnerClass
         case ClassWriter.UTF8:
         case ClassWriter.STR:
         case ClassWriter.MTYPE:
+        case ClassWriter.MODULE:
+        case ClassWriter.PACKAGE:
         case ClassWriter.TYPE_NORMAL:
             hashCode = 0x7FFFFFFF & (type + strVal1.hashCode());
             return;

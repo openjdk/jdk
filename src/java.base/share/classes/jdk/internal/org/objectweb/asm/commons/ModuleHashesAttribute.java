@@ -59,130 +59,97 @@
 
 package jdk.internal.org.objectweb.asm.commons;
 
-import java.util.Stack;
+import java.util.ArrayList;
+import java.util.List;
 
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.signature.SignatureVisitor;
+import jdk.internal.org.objectweb.asm.Attribute;
+import jdk.internal.org.objectweb.asm.ByteVector;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Label;
 
 /**
- * A {@link SignatureVisitor} adapter for type mapping.
+ * ModuleHashes attribute.
+ * This attribute is specific to the OpenJDK and may change in the future.
  *
- * @author Eugene Kuleshov
+ * @author Remi Forax
  */
-public class SignatureRemapper extends SignatureVisitor {
+public final class ModuleHashesAttribute extends Attribute {
+    public String algorithm;
+    public List<String> modules;
+    public List<byte[]> hashes;
 
-    private final SignatureVisitor v;
-
-    private final Remapper remapper;
-
-    private Stack<String> classNames = new Stack<String>();
-
-    public SignatureRemapper(final SignatureVisitor v, final Remapper remapper) {
-        this(Opcodes.ASM6, v, remapper);
+    /**
+     * Creates an attribute with a hashing algorithm, a list of module names,
+     * and a list of the same length of hashes.
+     * @param algorithm the hashing algorithm name.
+     * @param modules a list of module name
+     * @param hashes a list of hash, one for each module name.
+     */
+    public ModuleHashesAttribute(final String algorithm,
+            final List<String> modules, final List<byte[]> hashes) {
+        super("ModuleHashes");
+        this.algorithm = algorithm;
+        this.modules = modules;
+        this.hashes = hashes;
     }
 
-    protected SignatureRemapper(final int api, final SignatureVisitor v,
-            final Remapper remapper) {
-        super(api);
-        this.v = v;
-        this.remapper = remapper;
-    }
-
-    @Override
-    public void visitClassType(String name) {
-        classNames.push(name);
-        v.visitClassType(remapper.mapType(name));
-    }
-
-    @Override
-    public void visitInnerClassType(String name) {
-        String outerClassName = classNames.pop();
-        String className = outerClassName + '$' + name;
-        classNames.push(className);
-        String remappedOuter = remapper.mapType(outerClassName) + '$';
-        String remappedName = remapper.mapType(className);
-        int index = remappedName.startsWith(remappedOuter) ? remappedOuter
-                .length() : remappedName.lastIndexOf('$') + 1;
-        v.visitInnerClassType(remappedName.substring(index));
+    /**
+     * Creates an empty attribute that can be used as prototype
+     * to be passed as argument of the method
+     * {@link ClassReader#accept(org.objectweb.asm.ClassVisitor, Attribute[], int)}.
+     */
+    public ModuleHashesAttribute() {
+        this(null, null, null);
     }
 
     @Override
-    public void visitFormalTypeParameter(String name) {
-        v.visitFormalTypeParameter(name);
+    protected Attribute read(ClassReader cr, int off, int len, char[] buf,
+            int codeOff, Label[] labels) {
+        String hashAlgorithm = cr.readUTF8(off, buf);
+
+        int count = cr.readUnsignedShort(off + 2);
+        ArrayList<String> modules = new ArrayList<String>(count);
+        ArrayList<byte[]> hashes = new ArrayList<byte[]>(count);
+        off += 4;
+
+        for (int i = 0; i < count; i++) {
+            String module = cr.readModule(off, buf);
+            int hashLength = cr.readUnsignedShort(off + 2);
+            off += 4;
+
+            byte[] hash = new byte[hashLength];
+            for (int j = 0; j < hashLength; j++) {
+                hash[j] = (byte) (cr.readByte(off + j) & 0xff);
+            }
+            off += hashLength;
+
+            modules.add(module);
+            hashes.add(hash);
+        }
+        return new ModuleHashesAttribute(hashAlgorithm, modules, hashes);
     }
 
     @Override
-    public void visitTypeVariable(String name) {
-        v.visitTypeVariable(name);
-    }
+    protected ByteVector write(ClassWriter cw, byte[] code, int len,
+            int maxStack, int maxLocals) {
+        ByteVector v = new ByteVector();
+        int index = cw.newUTF8(algorithm);
+        v.putShort(index);
 
-    @Override
-    public SignatureVisitor visitArrayType() {
-        v.visitArrayType();
-        return this;
-    }
+        int count = (modules == null)? 0: modules.size();
+        v.putShort(count);
 
-    @Override
-    public void visitBaseType(char descriptor) {
-        v.visitBaseType(descriptor);
-    }
+        for(int i = 0; i < count; i++) {
+            String module = modules.get(i);
+            v.putShort(cw.newModule(module));
 
-    @Override
-    public SignatureVisitor visitClassBound() {
-        v.visitClassBound();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitExceptionType() {
-        v.visitExceptionType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitInterface() {
-        v.visitInterface();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitInterfaceBound() {
-        v.visitInterfaceBound();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitParameterType() {
-        v.visitParameterType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitReturnType() {
-        v.visitReturnType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitSuperclass() {
-        v.visitSuperclass();
-        return this;
-    }
-
-    @Override
-    public void visitTypeArgument() {
-        v.visitTypeArgument();
-    }
-
-    @Override
-    public SignatureVisitor visitTypeArgument(char wildcard) {
-        v.visitTypeArgument(wildcard);
-        return this;
-    }
-
-    @Override
-    public void visitEnd() {
-        v.visitEnd();
-        classNames.pop();
+            byte[] hash = hashes.get(i);
+            v.putShort(hash.length);
+            for(byte b: hash) {
+                v.putByte(b);
+            }
+        }
+        return v;
     }
 }

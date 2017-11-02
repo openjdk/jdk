@@ -59,130 +59,77 @@
 
 package jdk.internal.org.objectweb.asm.commons;
 
-import java.util.Stack;
-
+import jdk.internal.org.objectweb.asm.ModuleVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.signature.SignatureVisitor;
 
 /**
- * A {@link SignatureVisitor} adapter for type mapping.
+ * A {@link ModuleVisitor} adapter for type remapping.
  *
- * @author Eugene Kuleshov
+ * @author Remi Forax
  */
-public class SignatureRemapper extends SignatureVisitor {
-
-    private final SignatureVisitor v;
-
+public class ModuleRemapper extends ModuleVisitor {
     private final Remapper remapper;
 
-    private Stack<String> classNames = new Stack<String>();
-
-    public SignatureRemapper(final SignatureVisitor v, final Remapper remapper) {
-        this(Opcodes.ASM6, v, remapper);
+    public ModuleRemapper(final ModuleVisitor mv, final Remapper remapper) {
+        this(Opcodes.ASM6, mv, remapper);
     }
 
-    protected SignatureRemapper(final int api, final SignatureVisitor v,
+    protected ModuleRemapper(final int api, final ModuleVisitor mv,
             final Remapper remapper) {
-        super(api);
-        this.v = v;
+        super(api, mv);
         this.remapper = remapper;
     }
 
     @Override
-    public void visitClassType(String name) {
-        classNames.push(name);
-        v.visitClassType(remapper.mapType(name));
+    public void visitMainClass(String mainClass) {
+        super.visitMainClass(remapper.mapType(mainClass));
     }
 
     @Override
-    public void visitInnerClassType(String name) {
-        String outerClassName = classNames.pop();
-        String className = outerClassName + '$' + name;
-        classNames.push(className);
-        String remappedOuter = remapper.mapType(outerClassName) + '$';
-        String remappedName = remapper.mapType(className);
-        int index = remappedName.startsWith(remappedOuter) ? remappedOuter
-                .length() : remappedName.lastIndexOf('$') + 1;
-        v.visitInnerClassType(remappedName.substring(index));
+    public void visitPackage(String packaze) {
+        super.visitPackage(remapper.mapPackageName(packaze));
     }
 
     @Override
-    public void visitFormalTypeParameter(String name) {
-        v.visitFormalTypeParameter(name);
+    public void visitRequire(String module, int access, String version) {
+        super.visitRequire(remapper.mapModuleName(module), access, version);
     }
 
     @Override
-    public void visitTypeVariable(String name) {
-        v.visitTypeVariable(name);
+    public void visitExport(String packaze, int access, String... modules) {
+        String[] newModules = null;
+        if (modules != null) {
+            newModules = new String[modules.length];
+            for (int i = 0 ; i < modules.length; i++) {
+                newModules[i] = remapper.mapModuleName(modules[i]);
+            }
+        }
+        super.visitExport(remapper.mapPackageName(packaze), access, newModules);
     }
 
     @Override
-    public SignatureVisitor visitArrayType() {
-        v.visitArrayType();
-        return this;
+    public void visitOpen(String packaze, int access, String... modules) {
+        String[] newModules = null;
+        if (modules != null) {
+            newModules = new String[modules.length];
+            for (int i = 0 ; i < modules.length; i++) {
+                newModules[i] = remapper.mapModuleName(modules[i]);
+            }
+        }
+        super.visitOpen(remapper.mapPackageName(packaze), access, newModules);
     }
 
     @Override
-    public void visitBaseType(char descriptor) {
-        v.visitBaseType(descriptor);
+    public void visitUse(String service) {
+        super.visitUse(remapper.mapType(service));
     }
 
     @Override
-    public SignatureVisitor visitClassBound() {
-        v.visitClassBound();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitExceptionType() {
-        v.visitExceptionType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitInterface() {
-        v.visitInterface();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitInterfaceBound() {
-        v.visitInterfaceBound();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitParameterType() {
-        v.visitParameterType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitReturnType() {
-        v.visitReturnType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitSuperclass() {
-        v.visitSuperclass();
-        return this;
-    }
-
-    @Override
-    public void visitTypeArgument() {
-        v.visitTypeArgument();
-    }
-
-    @Override
-    public SignatureVisitor visitTypeArgument(char wildcard) {
-        v.visitTypeArgument(wildcard);
-        return this;
-    }
-
-    @Override
-    public void visitEnd() {
-        v.visitEnd();
-        classNames.pop();
+    public void visitProvide(String service, String... providers) {
+        String[] newProviders = new String[providers.length];
+        for (int i = 0 ; i < providers.length; i++) {
+            newProviders[i] = remapper.mapType(providers[i]);
+        }
+        super.visitProvide(remapper.mapType(service), newProviders);
     }
 }

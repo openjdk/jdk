@@ -59,130 +59,77 @@
 
 package jdk.internal.org.objectweb.asm.commons;
 
-import java.util.Stack;
-
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.signature.SignatureVisitor;
+import jdk.internal.org.objectweb.asm.Attribute;
+import jdk.internal.org.objectweb.asm.ByteVector;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Label;
 
 /**
- * A {@link SignatureVisitor} adapter for type mapping.
+ * ModuleResolution_attribute.
+ * This attribute is specific to the OpenJDK and may change in the future.
  *
- * @author Eugene Kuleshov
+ * @author Remi Forax
  */
-public class SignatureRemapper extends SignatureVisitor {
+public final class ModuleResolutionAttribute extends Attribute {
+    /**
+     * Resolution state of a module meaning that the module is not available
+     * from the class-path by default.
+     */
+    public static final int RESOLUTION_DO_NOT_RESOLVE_BY_DEFAULT = 1;
 
-    private final SignatureVisitor v;
+    /**
+     * Resolution state of a module meaning the module is marked as deprecated.
+     */
+    public static final int RESOLUTION_WARN_DEPRECATED = 2;
 
-    private final Remapper remapper;
+    /**
+     * Resolution state of a module meaning the module is marked as deprecated
+     * and will be removed in a future release.
+     */
+    public static final int RESOLUTION_WARN_DEPRECATED_FOR_REMOVAL = 4;
 
-    private Stack<String> classNames = new Stack<String>();
+    /**
+     * Resolution state of a module meaning the module is not yet standardized,
+     * so in incubating mode.
+     */
+    public static final int RESOLUTION_WARN_INCUBATING = 8;
 
-    public SignatureRemapper(final SignatureVisitor v, final Remapper remapper) {
-        this(Opcodes.ASM6, v, remapper);
+    public int resolution;
+
+    /**
+     * Creates an attribute with a resolution state value.
+     * @param resolution the resolution state among
+     *        {@link #RESOLUTION_WARN_DEPRECATED},
+     *        {@link #RESOLUTION_WARN_DEPRECATED_FOR_REMOVAL}, and
+     *        {@link #RESOLUTION_WARN_INCUBATING}.
+     */
+    public ModuleResolutionAttribute(final int resolution) {
+        super("ModuleResolution");
+        this.resolution = resolution;
     }
 
-    protected SignatureRemapper(final int api, final SignatureVisitor v,
-            final Remapper remapper) {
-        super(api);
-        this.v = v;
-        this.remapper = remapper;
-    }
-
-    @Override
-    public void visitClassType(String name) {
-        classNames.push(name);
-        v.visitClassType(remapper.mapType(name));
-    }
-
-    @Override
-    public void visitInnerClassType(String name) {
-        String outerClassName = classNames.pop();
-        String className = outerClassName + '$' + name;
-        classNames.push(className);
-        String remappedOuter = remapper.mapType(outerClassName) + '$';
-        String remappedName = remapper.mapType(className);
-        int index = remappedName.startsWith(remappedOuter) ? remappedOuter
-                .length() : remappedName.lastIndexOf('$') + 1;
-        v.visitInnerClassType(remappedName.substring(index));
-    }
-
-    @Override
-    public void visitFormalTypeParameter(String name) {
-        v.visitFormalTypeParameter(name);
-    }
-
-    @Override
-    public void visitTypeVariable(String name) {
-        v.visitTypeVariable(name);
-    }
-
-    @Override
-    public SignatureVisitor visitArrayType() {
-        v.visitArrayType();
-        return this;
+    /**
+     * Creates an empty attribute that can be used as prototype
+     * to be passed as argument of the method
+     * {@link ClassReader#accept(org.objectweb.asm.ClassVisitor, Attribute[], int)}.
+     */
+    public ModuleResolutionAttribute() {
+        this(0);
     }
 
     @Override
-    public void visitBaseType(char descriptor) {
-        v.visitBaseType(descriptor);
+    protected Attribute read(ClassReader cr, int off, int len, char[] buf,
+            int codeOff, Label[] labels) {
+        int resolution = cr.readUnsignedShort(off);
+        return new ModuleResolutionAttribute(resolution);
     }
 
     @Override
-    public SignatureVisitor visitClassBound() {
-        v.visitClassBound();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitExceptionType() {
-        v.visitExceptionType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitInterface() {
-        v.visitInterface();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitInterfaceBound() {
-        v.visitInterfaceBound();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitParameterType() {
-        v.visitParameterType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitReturnType() {
-        v.visitReturnType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitSuperclass() {
-        v.visitSuperclass();
-        return this;
-    }
-
-    @Override
-    public void visitTypeArgument() {
-        v.visitTypeArgument();
-    }
-
-    @Override
-    public SignatureVisitor visitTypeArgument(char wildcard) {
-        v.visitTypeArgument(wildcard);
-        return this;
-    }
-
-    @Override
-    public void visitEnd() {
-        v.visitEnd();
-        classNames.pop();
+    protected ByteVector write(ClassWriter cw, byte[] code, int len,
+            int maxStack, int maxLocals) {
+        ByteVector v = new ByteVector();
+        v.putShort(resolution);
+        return v;
     }
 }
