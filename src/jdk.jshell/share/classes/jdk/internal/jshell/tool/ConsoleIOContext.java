@@ -237,7 +237,11 @@ class ConsoleIOContext extends IOContext {
                                              .distinct()
                                              .count() == 2;
                 boolean tooManyItems = suggestions.size() > in.getAutoprintThreshold();
-                CompletionTask ordinaryCompletion = new OrdinaryCompletionTask(suggestions, anchor[0], !command && !doc.isEmpty(), hasSmart);
+                CompletionTask ordinaryCompletion =
+                        new OrdinaryCompletionTask(suggestions,
+                                                   anchor[0],
+                                                   !command && !doc.isEmpty(),
+                                                   hasBoth);
                 CompletionTask allCompletion = new AllSuggestionsCompletionTask(suggestions, anchor[0]);
 
                 todo = new ArrayList<>();
@@ -439,16 +443,16 @@ class ConsoleIOContext extends IOContext {
         private final List<Suggestion> suggestions;
         private final int anchor;
         private final boolean cont;
-        private final boolean smart;
+        private final boolean showSmart;
 
         public OrdinaryCompletionTask(List<Suggestion> suggestions,
                                       int anchor,
                                       boolean cont,
-                                      boolean smart) {
+                                      boolean showSmart) {
             this.suggestions = suggestions;
             this.anchor = anchor;
             this.cont = cont;
-            this.smart = smart;
+            this.showSmart = showSmart;
         }
 
         @Override
@@ -460,7 +464,7 @@ class ConsoleIOContext extends IOContext {
         public Result perform(String text, int cursor) throws IOException {
             List<CharSequence> toShow;
 
-            if (smart) {
+            if (showSmart) {
                 toShow =
                     suggestions.stream()
                                .filter(Suggestion::matchesType)
@@ -487,7 +491,7 @@ class ConsoleIOContext extends IOContext {
             String prefixStr = prefix.orElse("").substring(cursor - anchor);
             in.putString(prefixStr);
 
-            boolean showItems = toShow.size() > 1 || smart;
+            boolean showItems = toShow.size() > 1 || showSmart;
 
             if (showItems) {
                 in.println();
@@ -495,7 +499,7 @@ class ConsoleIOContext extends IOContext {
             }
 
             if (!prefixStr.isEmpty())
-                return showItems ? Result.SKIP : Result.SKIP_NOREPAINT;
+                return showItems ? Result.FINISH : Result.SKIP_NOREPAINT;
 
             return cont ? Result.CONTINUE : Result.FINISH;
         }
