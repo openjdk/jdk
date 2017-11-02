@@ -1144,8 +1144,8 @@ public:
   notproduct(bool, PrintSystemDictionaryAtExit, false,                      \
           "Print the system dictionary at exit")                            \
                                                                             \
-  experimental(intx, PredictedLoadedClassCount, 0,                          \
-          "Experimental: Tune loaded class cache starting size")            \
+  diagnostic(bool, DynamicallyResizeSystemDictionaries, true,               \
+          "Dynamically resize system dictionaries as needed")               \
                                                                             \
   diagnostic(bool, UnsyncloadClass, false,                                  \
           "Unstable: VM calls loadClass unsynchronized. Custom "            \
