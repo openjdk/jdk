@@ -604,40 +604,27 @@ ModuleEntryTable* ClassLoaderData::modules() {
 
 const int _boot_loader_dictionary_size    = 1009;
 const int _default_loader_dictionary_size = 107;
-const int _prime_array_size         = 8;                       // array of primes for system dictionary size
-const int _average_depth_goal       = 3;                       // goal for lookup length
-const int _primelist[_prime_array_size] = {107, 1009, 2017, 4049, 5051, 10103, 20201, 40423};
-
-// Calculate a "good" dictionary size based
-// on predicted or current loaded classes count.
-static int calculate_dictionary_size(int classcount) {
-  int newsize = _primelist[0];
-  if (classcount > 0 && !DumpSharedSpaces) {
-    int index = 0;
-    int desiredsize = classcount/_average_depth_goal;
-    for (newsize = _primelist[index]; index < _prime_array_size -1;
-         newsize = _primelist[++index]) {
-      if (desiredsize <=  newsize) {
-        break;
-      }
-    }
-  }
-  return newsize;
-}
 
 Dictionary* ClassLoaderData::create_dictionary() {
   assert(!is_anonymous(), "anonymous class loader data do not have a dictionary");
   int size;
+  bool resizable = false;
   if (_the_null_class_loader_data == NULL) {
     size = _boot_loader_dictionary_size;
+    resizable = true;
   } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
     size = 1;  // there's only one class in relection class loader and no initiated classes
   } else if (is_system_class_loader_data()) {
-    size = calculate_dictionary_size(PredictedLoadedClassCount);
+    size = _boot_loader_dictionary_size;
+    resizable = true;
   } else {
     size = _default_loader_dictionary_size;
+    resizable = true;
   }
-  return new Dictionary(this, size);
+  if (!DynamicallyResizeSystemDictionaries || DumpSharedSpaces || UseSharedSpaces) {
+    resizable = false;
+  }
+  return new Dictionary(this, size, resizable);
 }
 
 // Unloading support
@@ -1323,6 +1310,19 @@ void ClassLoaderDataGraph::purge() {
     Metaspace::purge();
     set_metaspace_oom(false);
   }
+}
+
+int ClassLoaderDataGraph::resize_if_needed() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  int resized = 0;
+  if (Dictionary::does_any_dictionary_needs_resizing()) {
+    FOR_ALL_DICTIONARY(cld) {
+      if (cld->dictionary()->resize_if_needed()) {
+        resized++;
+      }
+    }
+  }
+  return resized;
 }
 
 void ClassLoaderDataGraph::post_class_unload_events() {

@@ -143,6 +143,8 @@ class ClassLoaderDataGraph : public AllStatic {
     }
   }
 
+  static int resize_if_needed();
+
   static bool has_metaspace_oom()           { return _metaspace_oom; }
   static void set_metaspace_oom(bool value) { _metaspace_oom = value; }
 
