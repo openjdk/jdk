@@ -75,7 +75,7 @@ public class CodeSizeEvaluator extends MethodVisitor implements Opcodes {
     private int maxSize;
 
     public CodeSizeEvaluator(final MethodVisitor mv) {
-        this(Opcodes.ASM5, mv);
+        this(Opcodes.ASM6, mv);
     }
 
     protected CodeSizeEvaluator(final int api, final MethodVisitor mv) {

@@ -86,7 +86,7 @@ public class TryCatchBlockSorter extends MethodNode {
     public TryCatchBlockSorter(final MethodVisitor mv, final int access,
             final String name, final String desc, final String signature,
             final String[] exceptions) {
-        this(Opcodes.ASM5, mv, access, name, desc, signature, exceptions);
+        this(Opcodes.ASM6, mv, access, name, desc, signature, exceptions);
     }
 
     protected TryCatchBlockSorter(final int api, final MethodVisitor mv,

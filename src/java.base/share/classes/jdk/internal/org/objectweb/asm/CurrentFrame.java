@@ -56,61 +56,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-package jdk.internal.org.objectweb.asm.util;
 
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.TypePath;
+package jdk.internal.org.objectweb.asm;
 
 /**
- * A {@link FieldVisitor} that prints the fields it visits with a
- * {@link Printer}.
+ * Information about the input stack map frame at the "current" instruction of a
+ * method. This is implemented as a Frame subclass for a "basic block"
+ * containing only one instruction.
  *
  * @author Eric Bruneton
  */
-public final class TraceFieldVisitor extends FieldVisitor {
+class CurrentFrame extends Frame {
 
-    public final Printer p;
-
-    public TraceFieldVisitor(final Printer p) {
-        this(null, p);
-    }
-
-    public TraceFieldVisitor(final FieldVisitor fv, final Printer p) {
-        super(Opcodes.ASM6, fv);
-        this.p = p;
-    }
-
+    /**
+     * Sets this CurrentFrame to the input stack map frame of the next "current"
+     * instruction, i.e. the instruction just after the given one. It is assumed
+     * that the value of this object when this method is called is the stack map
+     * frame status just before the given instruction is executed.
+     */
     @Override
-    public AnnotationVisitor visitAnnotation(final String desc,
-            final boolean visible) {
-        Printer p = this.p.visitFieldAnnotation(desc, visible);
-        AnnotationVisitor av = fv == null ? null : fv.visitAnnotation(desc,
-                visible);
-        return new TraceAnnotationVisitor(av, p);
-    }
-
-    @Override
-    public AnnotationVisitor visitTypeAnnotation(int typeRef,
-            TypePath typePath, String desc, boolean visible) {
-        Printer p = this.p.visitFieldTypeAnnotation(typeRef, typePath, desc,
-                visible);
-        AnnotationVisitor av = fv == null ? null : fv.visitTypeAnnotation(
-                typeRef, typePath, desc, visible);
-        return new TraceAnnotationVisitor(av, p);
-    }
-
-    @Override
-    public void visitAttribute(final Attribute attr) {
-        p.visitFieldAttribute(attr);
-        super.visitAttribute(attr);
-    }
-
-    @Override
-    public void visitEnd() {
-        p.visitFieldEnd();
-        super.visitEnd();
+    void execute(int opcode, int arg, ClassWriter cw, Item item) {
+        super.execute(opcode, arg, cw, item);
+        Frame successor = new Frame();
+        merge(cw, successor, 0);
+        set(successor);
+        owner.inputStackTop = 0;
     }
 }

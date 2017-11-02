@@ -59,130 +59,52 @@
 
 package jdk.internal.org.objectweb.asm.commons;
 
-import java.util.Stack;
-
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.signature.SignatureVisitor;
+import jdk.internal.org.objectweb.asm.Attribute;
+import jdk.internal.org.objectweb.asm.ByteVector;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Label;
 
 /**
- * A {@link SignatureVisitor} adapter for type mapping.
+ * ModuleTarget attribute.
+ * This attribute is specific to the OpenJDK and may change in the future.
  *
- * @author Eugene Kuleshov
+ * @author Remi Forax
  */
-public class SignatureRemapper extends SignatureVisitor {
+public final class ModuleTargetAttribute extends Attribute {
+    public String platform;
 
-    private final SignatureVisitor v;
-
-    private final Remapper remapper;
-
-    private Stack<String> classNames = new Stack<String>();
-
-    public SignatureRemapper(final SignatureVisitor v, final Remapper remapper) {
-        this(Opcodes.ASM6, v, remapper);
+    /**
+     * Creates an attribute with a platform name.
+     * @param platform the platform name on which the module can run.
+     */
+    public ModuleTargetAttribute(final String platform) {
+        super("ModuleTarget");
+        this.platform = platform;
     }
 
-    protected SignatureRemapper(final int api, final SignatureVisitor v,
-            final Remapper remapper) {
-        super(api);
-        this.v = v;
-        this.remapper = remapper;
-    }
-
-    @Override
-    public void visitClassType(String name) {
-        classNames.push(name);
-        v.visitClassType(remapper.mapType(name));
+    /**
+     * Creates an empty attribute that can be used as prototype
+     * to be passed as argument of the method
+     * {@link ClassReader#accept(org.objectweb.asm.ClassVisitor, Attribute[], int)}.
+     */
+    public ModuleTargetAttribute() {
+        this(null);
     }
 
     @Override
-    public void visitInnerClassType(String name) {
-        String outerClassName = classNames.pop();
-        String className = outerClassName + '$' + name;
-        classNames.push(className);
-        String remappedOuter = remapper.mapType(outerClassName) + '$';
-        String remappedName = remapper.mapType(className);
-        int index = remappedName.startsWith(remappedOuter) ? remappedOuter
-                .length() : remappedName.lastIndexOf('$') + 1;
-        v.visitInnerClassType(remappedName.substring(index));
+    protected Attribute read(ClassReader cr, int off, int len, char[] buf,
+            int codeOff, Label[] labels) {
+        String platform = cr.readUTF8(off, buf);
+        return new ModuleTargetAttribute(platform);
     }
 
     @Override
-    public void visitFormalTypeParameter(String name) {
-        v.visitFormalTypeParameter(name);
-    }
-
-    @Override
-    public void visitTypeVariable(String name) {
-        v.visitTypeVariable(name);
-    }
-
-    @Override
-    public SignatureVisitor visitArrayType() {
-        v.visitArrayType();
-        return this;
-    }
-
-    @Override
-    public void visitBaseType(char descriptor) {
-        v.visitBaseType(descriptor);
-    }
-
-    @Override
-    public SignatureVisitor visitClassBound() {
-        v.visitClassBound();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitExceptionType() {
-        v.visitExceptionType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitInterface() {
-        v.visitInterface();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitInterfaceBound() {
-        v.visitInterfaceBound();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitParameterType() {
-        v.visitParameterType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitReturnType() {
-        v.visitReturnType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitSuperclass() {
-        v.visitSuperclass();
-        return this;
-    }
-
-    @Override
-    public void visitTypeArgument() {
-        v.visitTypeArgument();
-    }
-
-    @Override
-    public SignatureVisitor visitTypeArgument(char wildcard) {
-        v.visitTypeArgument(wildcard);
-        return this;
-    }
-
-    @Override
-    public void visitEnd() {
-        v.visitEnd();
-        classNames.pop();
+    protected ByteVector write(ClassWriter cw, byte[] code, int len,
+            int maxStack, int maxLocals) {
+        ByteVector v = new ByteVector();
+        int index = (platform == null)? 0: cw.newUTF8(platform);
+        v.putShort(index);
+        return v;
     }
 }
