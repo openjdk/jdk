@@ -807,7 +807,7 @@ public class JShell implements AutoCloseable {
         InternalDebugControl.debug(this, err, flags, format, args);
     }
 
-    void debug(Exception ex, String where) {
+    void debug(Throwable ex, String where) {
         InternalDebugControl.debug(this, err, ex, where);
     }
 
