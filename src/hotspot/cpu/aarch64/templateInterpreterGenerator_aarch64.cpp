@@ -984,9 +984,9 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     __ adrp(tbl, ExternalAddress(StubRoutines::crc_table_addr()), offset);
     __ add(tbl, tbl, offset);
 
-    __ ornw(crc, zr, crc); // ~crc
+    __ mvnw(crc, crc); // ~crc
     __ update_byte_crc32(crc, val, tbl);
-    __ ornw(crc, zr, crc); // ~crc
+    __ mvnw(crc, crc); // ~crc
 
     // result in c_rarg0
 
