@@ -320,7 +320,7 @@ javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 gener
  
 org/omg/CORBA/OrbPropertiesTest.java			        8175177 generic-all
 
-javax/rmi/PortableRemoteObject/ConcurrentHashmapTest.java       8080643 generic-all
+javax/rmi/PortableRemoteObject/ConcurrentHashMapTest.java       8080643 generic-all
 
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
