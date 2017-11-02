@@ -47,6 +47,7 @@ import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -238,6 +239,20 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             return (CPlatformWindow)((LWWindowPeer)acc.getPeer(root)).getPlatformWindow();
         }
     };
+    private final Comparator<Window> siblingsComparator = (w1, w2) -> {
+        if (w1 == w2) {
+            return 0;
+        }
+        ComponentAccessor componentAccessor = AWTAccessor.getComponentAccessor();
+        Object p1 = componentAccessor.getPeer(w1);
+        Object p2 = componentAccessor.getPeer(w2);
+        if (p1 instanceof LWWindowPeer && p2 instanceof LWWindowPeer) {
+            return Long.compare(
+                    ((CPlatformWindow) (((LWWindowPeer) p1).getPlatformWindow())).lastBecomeMainTime,
+                    ((CPlatformWindow) (((LWWindowPeer) p2).getPlatformWindow())).lastBecomeMainTime);
+        }
+        return 0;
+    };
 
     // Bounds of the native widget but in the Java coordinate system.
     // In order to keep it up-to-date we will update them on
@@ -259,6 +274,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private boolean undecorated; // initialized in getInitialStyleBits()
     private Rectangle normalBounds = null; // not-null only for undecorated maximized windows
     private CPlatformResponder responder;
+    private long lastBecomeMainTime; // this is necessary to preserve right siblings order
 
     public CPlatformWindow() {
         super(0, true);
@@ -1186,8 +1202,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         final ComponentAccessor componentAccessor = AWTAccessor.getComponentAccessor();
         final WindowAccessor windowAccessor = AWTAccessor.getWindowAccessor();
-
+        Arrays.sort(windows, siblingsComparator);
         // Go through the list of windows and perform ordering.
+        CPlatformWindow pwUnder = null;
         for (Window w : windows) {
             boolean iconified = false;
             final Object p = componentAccessor.getPeer(w);
@@ -1201,11 +1218,15 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     if (pw.isOneOfOwnersOrSelf(this)) {
                         pw.execute(CWrapper.NSWindow::orderFront);
                     } else {
-                        pw.owner.execute(ownerPtr -> {
+                        if (pwUnder == null) {
+                            pwUnder = pw.owner;
+                        }
+                        pwUnder.execute(underPtr -> {
                             pw.execute(ptr -> {
-                                CWrapper.NSWindow.orderWindow(ptr, CWrapper.NSWindow.NSWindowAbove, ownerPtr);
+                                CWrapper.NSWindow.orderWindow(ptr, CWrapper.NSWindow.NSWindowAbove, underPtr);
                             });
                         });
+                        pwUnder = pw;
                     }
                     pw.applyWindowLevel(w);
                 }
@@ -1242,6 +1263,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private void windowDidBecomeMain() {
+        lastBecomeMainTime = System.currentTimeMillis();
         if (checkBlockingAndOrder()) return;
         // If it's not blocked, make sure it's above its siblings
         orderAboveSiblings();
