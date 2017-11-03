@@ -117,7 +117,7 @@ final class EditObject extends AbstractJSObject {
         final SaveHandler saveHandler = new SaveHandler(initText);
         if (editor != null && !editor.isEmpty()) {
             ExternalEditor.edit(editor, errorHandler, initText, saveHandler, console);
-        } else if (! Main.HEADLESS) {
+        } else {
             try {
                 ServiceLoader<BuildInEditorProvider> sl
                         = ServiceLoader.load(BuildInEditorProvider.class);
@@ -136,8 +136,6 @@ final class EditObject extends AbstractJSObject {
             } catch (RuntimeException ex) {
                 errorHandler.accept(Main.getMessage("jjs.err.cant.launch.editor"));
             }
-        } else {
-            errorHandler.accept(Main.getMessage("no.editor"));
         }
         return UNDEFINED;
     }

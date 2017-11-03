@@ -29,12 +29,8 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+import java.util.Objects;
 import java.util.regex.Pattern;
-import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.SwingUtilities;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.nashorn.api.tree.AssignmentTree;
@@ -60,6 +56,7 @@ import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
+import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
@@ -72,16 +69,19 @@ final class NashornCompleter implements Completer {
     private final ScriptEnvironment env;
     private final PartialParser partialParser;
     private final PropertiesHelper propsHelper;
+    private final ScriptFunction fileChooserFunc;
     private final Parser parser;
     private static final boolean BACKSLASH_FILE_SEPARATOR = File.separatorChar == '\\';
 
     NashornCompleter(final Context context, final Global global,
-            final PartialParser partialParser, final PropertiesHelper propsHelper) {
+            final PartialParser partialParser, final PropertiesHelper propsHelper,
+            final ScriptFunction fileChooserFunc) {
         this.context = context;
         this.global = global;
         this.env = context.getEnv();
         this.partialParser = partialParser;
         this.propsHelper = propsHelper;
+        this.fileChooserFunc = fileChooserFunc;
         this.parser = createParser(env);
     }
 
@@ -236,8 +236,9 @@ final class NashornCompleter implements Completer {
 
         final ExpressionTree topExpr = getTopLevelExpression(parser, completeExpr);
         if (topExpr == null) {
-            // special case for load call that looks like "load(" with optional whitespaces
-            if (LOAD_CALL.matcher(test).matches()) {
+            // Special case for load call that looks like "load(" with optional whitespaces.
+            // If we have a fileChooserFunc then call it, so that the user can select a file.
+            if (fileChooserFunc != null && LOAD_CALL.matcher(test).matches()) {
                 String name = readFileName(context.getErr());
                 if (name != null) {
                     // handle '\' file separator
@@ -269,26 +270,11 @@ final class NashornCompleter implements Completer {
     // Internals only below this point
 
     // read file name from the user using by showing a swing file chooser diablog
-    private static String readFileName(final PrintWriter err) {
-        // if running on AWT Headless mode, don't attempt swing dialog box!
-        if (Main.HEADLESS) {
-            return null;
-        }
-
-        final FutureTask<String> fileChooserTask = new FutureTask<String>(() -> {
-            // show a file chooser dialog box
-            final JFileChooser chooser = new JFileChooser();
-            chooser.setFileFilter(new FileNameExtensionFilter("JavaScript Files", "js"));
-            final int retVal = chooser.showOpenDialog(null);
-            return retVal == JFileChooser.APPROVE_OPTION ?
-                chooser.getSelectedFile().getAbsolutePath() : null;
-        });
-
-        SwingUtilities.invokeLater(fileChooserTask);
-
+    private String readFileName(final PrintWriter err) {
         try {
-            return fileChooserTask.get();
-        } catch (final ExecutionException | InterruptedException e) {
+            final Object res = ScriptRuntime.apply(fileChooserFunc, null);
+            return res instanceof String? (String)res : null;
+        } catch (final Exception e) {
             err.println(e);
             if (Main.DEBUG) {
                 e.printStackTrace();

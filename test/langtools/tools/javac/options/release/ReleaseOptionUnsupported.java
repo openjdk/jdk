@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8178152
+ * @bug 8178152 8187681
  * @summary Verify unsupported modules and module options handling.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -263,35 +263,19 @@ public class ReleaseOptionUnsupported extends TestRunner {
         tb.createDirectories(patch);
 
         new JavacTask(tb)
-                .options("-XDrawDiagnostics",
-                         "--patch-module", "java.base=" + patch)
+                .options("--patch-module", "java.base=" + patch)
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
                 .run(Expect.SUCCESS)
-                .writeAll()
-                .getOutputLines(Task.OutputKind.DIRECT);
+                .writeAll();
 
-        List<String> log;
-        List<String> expected;
-
-        log = new JavacTask(tb)
-                .options("-XDrawDiagnostics",
-                         "--patch-module", "java.base=" + patch,
+        new JavacTask(tb)
+                .options("--patch-module", "java.base=" + patch,
                          "--release", Target.DEFAULT.multiReleaseValue())
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
-                .run(Expect.FAIL)
-                .writeAll()
-                .getOutputLines(Task.OutputKind.DIRECT);
-
-        expected = Arrays.asList(
-                "- compiler.err.patch.module.with.release: java.base",
-                "1 error"
-        );
-
-        if (!expected.equals(log)) {
-            throw new AssertionError("Unexpected output: " + log);
-        }
+                .run(Expect.SUCCESS)
+                .writeAll();
 
         //OK to patch a non-system module:
         tb.createDirectories(classes);

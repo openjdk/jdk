@@ -31,18 +31,18 @@ import java.io.OutputStream;
 import java.lang.module.ModuleDescriptor.Version;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.ModuleVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-
-import static jdk.internal.module.ClassFileAttributes.*;
+import jdk.internal.org.objectweb.asm.commons.ModuleHashesAttribute;
+import jdk.internal.org.objectweb.asm.commons.ModuleResolutionAttribute;
+import jdk.internal.org.objectweb.asm.commons.ModuleTargetAttribute;
 
 /**
  * Utility class to extend a module-info.class with additional attributes.
@@ -133,43 +133,6 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * A ClassVisitor that supports adding class file attributes. If an
-     * attribute already exists then the first occurrence of the attribute
-     * is replaced.
-     */
-    private static class AttributeAddingClassVisitor extends ClassVisitor {
-        private Map<String, Attribute> attrs = new HashMap<>();
-
-        AttributeAddingClassVisitor(int api, ClassVisitor cv) {
-            super(api, cv);
-        }
-
-        void addAttribute(Attribute attr) {
-            attrs.put(attr.type, attr);
-        }
-
-        @Override
-        public void visitAttribute(Attribute attr) {
-            String name = attr.type;
-            Attribute replacement = attrs.get(name);
-            if (replacement != null) {
-                attr = replacement;
-                attrs.remove(name);
-            }
-            super.visitAttribute(attr);
-        }
-
-        /**
-         * Adds any remaining attributes that weren't replaced to the
-         * class file.
-         */
-        void finish() {
-            attrs.values().forEach(a -> super.visitAttribute(a));
-            attrs.clear();
-        }
-    }
-
-    /**
      * Outputs the modified module-info.class to the given output stream.
      * Once this method has been called then the Extender object should
      * be discarded.
@@ -185,38 +148,86 @@ public final class ModuleInfoExtender {
      * be discarded.
      */
     public byte[] toByteArray() throws IOException {
-        ClassWriter cw
-            = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-
-        AttributeAddingClassVisitor cv
-            = new AttributeAddingClassVisitor(Opcodes.ASM5, cw);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
+                                         + ClassWriter.COMPUTE_FRAMES);
 
         ClassReader cr = new ClassReader(in);
 
-        if (packages != null)
-            cv.addAttribute(new ModulePackagesAttribute(packages));
-        if (mainClass != null)
-            cv.addAttribute(new ModuleMainClassAttribute(mainClass));
-        if (targetPlatform != null)
-            cv.addAttribute(new ModuleTargetAttribute(targetPlatform));
-        if (hashes != null)
-            cv.addAttribute(new ModuleHashesAttribute(hashes));
-        if (moduleResolution != null)
-            cv.addAttribute(new ModuleResolutionAttribute(moduleResolution.value()));
+        ClassVisitor cv = new ClassVisitor(Opcodes.ASM6, cw) {
+            @Override
+            public ModuleVisitor visitModule(String name, int flags, String version) {
+                Version v = ModuleInfoExtender.this.version;
+                String vs = (v != null) ? v.toString() : version;
+                ModuleVisitor mv = super.visitModule(name, flags, vs);
+
+                // ModuleMainClass attribute
+                if (mainClass != null) {
+                    mv.visitMainClass(mainClass.replace('.', '/'));
+                }
+
+                // ModulePackages attribute
+                if (packages != null) {
+                    packages.forEach(pn -> mv.visitPackage(pn.replace('.', '/')));
+                }
+
+                return new ModuleVisitor(Opcodes.ASM6, mv) {
+                    public void visitMainClass(String existingMainClass) {
+                        // skip main class if there is a new value
+                        if (mainClass == null) {
+                            super.visitMainClass(existingMainClass);
+                        }
+                    }
+                    public void visitPackage(String existingPackage) {
+                        // skip packages if there is a new set of packages
+                        if (packages == null) {
+                            super.visitPackage(existingPackage);
+                        }
+                    }
+                };
+            }
+            @Override
+            public void visitAttribute(Attribute attr) {
+                String name = attr.type;
+                // drop existing attributes if there are replacements
+                if (name.equals(ClassFileConstants.MODULE_TARGET)
+                    && targetPlatform != null)
+                    return;
+                if (name.equals(ClassFileConstants.MODULE_RESOLUTION)
+                    && moduleResolution != null)
+                    return;
+                if (name.equals(ClassFileConstants.MODULE_HASHES)
+                    && hashes != null)
+                    return;
+
+                super.visitAttribute(attr);
+
+            }
+        };
 
         List<Attribute> attrs = new ArrayList<>();
-
-        // prototypes of attributes that should be parsed
-        attrs.add(new ModuleAttribute(version));
-        attrs.add(new ModulePackagesAttribute());
-        attrs.add(new ModuleMainClassAttribute());
         attrs.add(new ModuleTargetAttribute());
+        attrs.add(new ModuleResolutionAttribute());
         attrs.add(new ModuleHashesAttribute());
-
         cr.accept(cv, attrs.toArray(new Attribute[0]), 0);
 
-        // add any attributes that didn't replace previous attributes
-        cv.finish();
+        // add ModuleTarget, ModuleResolution and ModuleHashes attributes
+        if (targetPlatform != null) {
+            cw.visitAttribute(new ModuleTargetAttribute(targetPlatform));
+        }
+        if (moduleResolution != null) {
+            int flags = moduleResolution.value();
+            cw.visitAttribute(new ModuleResolutionAttribute(flags));
+        }
+        if (hashes != null) {
+            String algorithm = hashes.algorithm();
+            List<String> names = new ArrayList<>();
+            List<byte[]> values = new ArrayList<>();
+            for (String name : hashes.names()) {
+                names.add(name);
+                values.add(hashes.hashFor(name));
+            }
+            cw.visitAttribute(new ModuleHashesAttribute(algorithm, names, values));
+        }
 
         return cw.toByteArray();
     }
