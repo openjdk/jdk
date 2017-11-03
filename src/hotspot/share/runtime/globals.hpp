@@ -3922,7 +3922,7 @@ public:
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
                                                                             \
-  diagnostic(bool, IgnoreUnverifiableClassesDuringDump, false,              \
+  diagnostic(bool, IgnoreUnverifiableClassesDuringDump, true,              \
           "Do not quit -Xshare:dump even if we encounter unverifiable "     \
           "classes. Just exclude them from the shared dictionary.")         \
                                                                             \
