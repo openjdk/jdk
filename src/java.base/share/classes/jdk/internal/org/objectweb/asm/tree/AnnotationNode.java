@@ -65,7 +65,7 @@ import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
 /**
- * A node that represents an annotationn.
+ * A node that represents an annotation.
  *
  * @author Eric Bruneton
  */
@@ -81,8 +81,8 @@ public class AnnotationNode extends AnnotationVisitor {
      * as two consecutive elements in the list. The name is a {@link String},
      * and the value may be a {@link Byte}, {@link Boolean}, {@link Character},
      * {@link Short}, {@link Integer}, {@link Long}, {@link Float},
-     * {@link Double}, {@link String} or {@link jdk.internal.org.objectweb.asm.Type}, or an
-     * two elements String array (for enumeration values), a
+     * {@link Double}, {@link String} or {@link jdk.internal.org.objectweb.asm.Type}, or a
+     * two elements String array (for enumeration values), an
      * {@link AnnotationNode}, or a {@link List} of values of one of the
      * preceding types. The list may be <tt>null</tt> if there is no name value
      * pair.
@@ -100,7 +100,7 @@ public class AnnotationNode extends AnnotationVisitor {
      *             If a subclass calls this constructor.
      */
     public AnnotationNode(final String desc) {
-        this(Opcodes.ASM5, desc);
+        this(Opcodes.ASM6, desc);
         if (getClass() != AnnotationNode.class) {
             throw new IllegalStateException();
         }
@@ -111,7 +111,7 @@ public class AnnotationNode extends AnnotationVisitor {
      *
      * @param api
      *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4} or {@link Opcodes#ASM5}.
+     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
      * @param desc
      *            the class descriptor of the annotation class.
      */
@@ -127,7 +127,7 @@ public class AnnotationNode extends AnnotationVisitor {
      *            where the visited values must be stored.
      */
     AnnotationNode(final List<Object> values) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM6);
         this.values = values;
     }
 
@@ -143,7 +143,65 @@ public class AnnotationNode extends AnnotationVisitor {
         if (this.desc != null) {
             values.add(name);
         }
-        values.add(value);
+        if (value instanceof byte[]) {
+            byte[] v = (byte[]) value;
+            ArrayList<Byte> l = new ArrayList<Byte>(v.length);
+            for (byte b : v) {
+                l.add(b);
+            }
+            values.add(l);
+        } else if (value instanceof boolean[]) {
+            boolean[] v = (boolean[]) value;
+            ArrayList<Boolean> l = new ArrayList<Boolean>(v.length);
+            for (boolean b : v) {
+                l.add(b);
+            }
+            values.add(l);
+        } else if (value instanceof short[]) {
+            short[] v = (short[]) value;
+            ArrayList<Short> l = new ArrayList<Short>(v.length);
+            for (short s : v) {
+                l.add(s);
+            }
+            values.add(l);
+        } else if (value instanceof char[]) {
+            char[] v = (char[]) value;
+            ArrayList<Character> l = new ArrayList<Character>(v.length);
+            for (char c : v) {
+                l.add(c);
+            }
+            values.add(l);
+        } else if (value instanceof int[]) {
+            int[] v = (int[]) value;
+            ArrayList<Integer> l = new ArrayList<Integer>(v.length);
+            for (int i : v) {
+                l.add(i);
+            }
+            values.add(l);
+        } else if (value instanceof long[]) {
+            long[] v = (long[]) value;
+            ArrayList<Long> l = new ArrayList<Long>(v.length);
+            for (long lng : v) {
+                l.add(lng);
+            }
+            values.add(l);
+        } else if (value instanceof float[]) {
+            float[] v = (float[]) value;
+            ArrayList<Float> l = new ArrayList<Float>(v.length);
+            for (float f : v) {
+                l.add(f);
+            }
+            values.add(l);
+        } else if (value instanceof double[]) {
+            double[] v = (double[]) value;
+            ArrayList<Double> l = new ArrayList<Double>(v.length);
+            for (double d : v) {
+                l.add(d);
+            }
+            values.add(l);
+        } else {
+            values.add(value);
+        }
     }
 
     @Override
@@ -200,8 +258,8 @@ public class AnnotationNode extends AnnotationVisitor {
      * versions of the ASM API than the given version.
      *
      * @param api
-     *            an ASM API version. Must be one of {@link Opcodes#ASM4} or
-     *            {@link Opcodes#ASM5}.
+     *            an ASM API version. Must be one of {@link Opcodes#ASM4},
+     *            {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
      */
     public void check(final int api) {
         // nothing to do

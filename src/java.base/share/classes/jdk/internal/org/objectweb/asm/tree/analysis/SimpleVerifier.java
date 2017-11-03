@@ -136,7 +136,7 @@ public class SimpleVerifier extends BasicVerifier {
     public SimpleVerifier(final Type currentClass,
             final Type currentSuperClass,
             final List<Type> currentClassInterfaces, final boolean isInterface) {
-        this(ASM5, currentClass, currentSuperClass, currentClassInterfaces,
+        this(ASM6, currentClass, currentSuperClass, currentClassInterfaces,
                 isInterface);
     }
 

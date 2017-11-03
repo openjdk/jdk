@@ -84,10 +84,6 @@ public class ToolTabCommandTest extends UITesting {
             inputSink.write("\u0003/env \011");
             waitOutput(out, "\u0005/env -\n" +
                             "-add-exports    -add-modules    -class-path     -module-path    \n" +
-                            "\r\u0005/env -");
-
-            inputSink.write("\011");
-            waitOutput(out, "-add-exports    -add-modules    -class-path     -module-path    \n" +
                             "\n" +
                             Pattern.quote(getResource("jshell.console.see.synopsis")) + "\n" +
                             "\r\u0005/env -");

@@ -80,7 +80,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
  *   ClassWriter cw = new ClassWriter(...);
  *   ClassVisitor sv = new SerialVersionUIDAdder(cw);
  *   ClassVisitor ca = new MyClassAdapter(sv);
- *   new ClassReader(originalClass).accept(ca, false);
+ *   new ClassReader(orginalClass).accept(ca, false);
  * </pre>
  *
  * The SVUID algorithm can be found <a href=
@@ -199,7 +199,7 @@ public class SerialVersionUIDAdder extends ClassVisitor {
      *             If a subclass calls this constructor.
      */
     public SerialVersionUIDAdder(final ClassVisitor cv) {
-        this(Opcodes.ASM5, cv);
+        this(Opcodes.ASM6, cv);
         if (getClass() != SerialVersionUIDAdder.class) {
             throw new IllegalStateException();
         }
@@ -210,7 +210,7 @@ public class SerialVersionUIDAdder extends ClassVisitor {
      *
      * @param api
      *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4} or {@link Opcodes#ASM5}.
+     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
      * @param cv
      *            a {@link ClassVisitor} to which this visitor will delegate
      *            calls.

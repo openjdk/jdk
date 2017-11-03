@@ -76,7 +76,7 @@ import jdk.internal.org.objectweb.asm.tree.MethodInsnNode;
 public class BasicVerifier extends BasicInterpreter {
 
     public BasicVerifier() {
-        super(ASM5);
+        super(ASM6);
     }
 
     protected BasicVerifier(final int api) {

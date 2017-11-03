@@ -29,13 +29,9 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import jdk.internal.module.ClassFileConstants;
-import jdk.internal.module.ClassFileAttributes;
-import jdk.internal.module.ClassFileAttributes.ModuleTargetAttribute;
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
+
+import jdk.internal.module.ModuleInfo;
+import jdk.internal.module.ModuleInfo.Attributes;
 
 public class ModuleTargetHelper {
     private ModuleTargetHelper() {}
@@ -60,29 +56,12 @@ public class ModuleTargetHelper {
     }
 
     public static ModuleTarget read(InputStream in) throws IOException {
-        ModuleTargetAttribute[] modTargets = new ModuleTargetAttribute[1];
-        ClassVisitor cv = new ClassVisitor(Opcodes.ASM5) {
-            @Override
-            public void visitAttribute(Attribute attr) {
-                if (attr instanceof ModuleTargetAttribute) {
-                    modTargets[0] = (ModuleTargetAttribute)attr;
-                }
-            }
-        };
-
-        // prototype of attributes that should be parsed
-        Attribute[] attrs = new Attribute[] {
-            new ModuleTargetAttribute()
-        };
-
-        // parse module-info.class
-        ClassReader cr = new ClassReader(in);
-        cr.accept(cv, attrs, 0);
-        if (modTargets[0] != null) {
-            return new ModuleTarget(modTargets[0].targetPlatform());
+        ModuleInfo.Attributes attrs = ModuleInfo.read(in, null);
+        if (attrs.target() != null) {
+            return new ModuleTarget(attrs.target().targetPlatform());
+        } else {
+            return null;
         }
-
-        return null;
     }
 
     public static ModuleTarget read(ModuleReference modRef) throws IOException {

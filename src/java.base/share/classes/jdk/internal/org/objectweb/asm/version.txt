@@ -1,12 +1,4 @@
-Path: .
-Working Copy Root Path: /hudson/jobs/objectweb-init/workspace/asm-svn-2016-01-25
-URL: file:///svnroot/asm/trunk/asm
-Repository Root: file:///svnroot/asm
-Repository UUID: 271bd773-ee82-43a6-9b2b-1890ed8ce7f9
-Revision: 1795
-Node Kind: directory
-Schedule: normal
-Last Changed Author: ebruneton
-Last Changed Rev: 1795
-Last Changed Date: 2016-01-24 14:17:10 +0100 (Sun, 24 Jan 2016)
+ASM_6_0-11-gac81f5f
+origin	https://gitlab.ow2.org/asm/asm.git (fetch)
+ac81f5f Merge branch 'add-class-dump-tool-for-unit-tests' into 'master'
 
