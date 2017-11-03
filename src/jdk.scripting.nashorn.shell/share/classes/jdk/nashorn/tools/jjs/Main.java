@@ -27,8 +27,6 @@ package jdk.nashorn.tools.jjs;
 
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
-import java.awt.Desktop;
-import java.awt.GraphicsEnvironment;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -65,7 +63,6 @@ public final class Main extends Shell {
     private static final String DOC_PROPERTY_NAME = "__doc__";
 
     static final boolean DEBUG = Boolean.getBoolean("nashorn.jjs.debug");
-    static final boolean HEADLESS = GraphicsEnvironment.isHeadless();
 
     // file where history is persisted.
     private static final File HIST_FILE = new File(new File(System.getProperty("user.home")), ".jjs.history");
@@ -120,7 +117,49 @@ public final class Main extends Shell {
         final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
         final PropertiesHelper propsHelper = new PropertiesHelper(context);
-        final NashornCompleter completer = new NashornCompleter(context, global, this, propsHelper);
+
+        if (globalChanged) {
+            Context.setGlobal(global);
+        }
+
+        // Check if java.desktop module is available and we're running in non-headless mode.
+        // We access AWT via script to avoid direct dependency on java.desktop module.
+        final boolean isHeadless = (boolean) context.eval(global,
+            "(function() { \n" +
+            "    var env = java.awt.GraphicsEnvironment; \n" +
+            "    return env && typeof env.isHeadless == 'function'? \n" +
+            "        env.isHeadless() : true; \n" +
+            "})()",
+            global, "<headless-check>");
+
+        // Function that shows a JFileChooser dialog and returns the file name chosen (if chosen).
+        // We access swing from script to avoid direct dependency on java.desktop module.
+        final ScriptFunction fileChooserFunc = isHeadless? null : (ScriptFunction) context.eval(global,
+            "(function() { \n" +
+            "    var ExtensionFilter = javax.swing.filechooser.FileNameExtensionFilter; \n" +
+            "    var JFileChooser = javax.swing.JFileChooser; \n" +
+            "    function run() { \n" +
+            "        var chooser = new JFileChooser(); \n" +
+            "        chooser.fileFilter = new ExtensionFilter('JavaScript Files', 'js'); \n" +
+            "        var retVal = chooser.showOpenDialog(null);  \n" +
+            "        return retVal == JFileChooser.APPROVE_OPTION ?  \n" +
+            "            chooser.selectedFile.absolutePath : null; \n" +
+            "    }; \n" +
+            "    var fileChooserTask = new java.util.concurrent.FutureTask(run); \n" +
+            "    javax.swing.SwingUtilities.invokeLater(fileChooserTask); \n" +
+            "    return fileChooserTask.get(); \n" +
+            "})",
+            global, "<file-chooser>");
+
+        final NashornCompleter completer = new NashornCompleter(context, global, this, propsHelper, fileChooserFunc);
+
+        // Function that opens up the desktop browser application with the given URI.
+        // We access AWT from script to avoid direct dependency on java.desktop module.
+        final ScriptFunction browseFunc = isHeadless? null : (ScriptFunction) context.eval(global,
+            "(function(uri) { \n" +
+            "    java.awt.Desktop.desktop.browse(uri); \n" +
+            "})",
+            global, "<browse>");
 
         try (final Console in = new Console(System.in, System.out, HIST_FILE, completer,
                 str -> {
@@ -128,14 +167,14 @@ public final class Main extends Shell {
                         final Object res = context.eval(global, str, global, "<shell>");
                         if (res != null && res != UNDEFINED) {
                             // Special case Java types: show the javadoc for the class.
-                            if (NativeJava.isType(UNDEFINED, res)) {
+                            if (!isHeadless && NativeJava.isType(UNDEFINED, res)) {
                                 final String typeName = NativeJava.typeName(UNDEFINED, res).toString();
                                 final String url = typeName.replace('.', '/').replace('$', '.') + ".html";
-                                openBrowserForJavadoc(url);
-                            } else if (res instanceof NativeJavaPackage) {
+                                openBrowserForJavadoc(browseFunc, url);
+                            } else if (!isHeadless && res instanceof NativeJavaPackage) {
                                 final String pkgName = ((NativeJavaPackage)res).getName();
                                 final String url = pkgName.replace('.', '/') + "/package-summary.html";
-                                openBrowserForJavadoc(url);
+                                openBrowserForJavadoc(browseFunc, url);
                             } else if (res instanceof ScriptObject) {
                                 final ScriptObject sobj = (ScriptObject)res;
                                 if (sobj.has(DOC_PROPERTY_NAME)) {
@@ -152,10 +191,6 @@ public final class Main extends Shell {
                      }
                      return null;
                 })) {
-
-            if (globalChanged) {
-                Context.setGlobal(global);
-            }
 
             global.addShellBuiltins();
 
@@ -282,11 +317,10 @@ public final class Main extends Shell {
     }
 
     private static String JAVADOC_BASE = "https://docs.oracle.com/javase/9/docs/api/";
-
-    private static void openBrowserForJavadoc(String relativeUrl) {
+    private static void openBrowserForJavadoc(ScriptFunction browse, String relativeUrl) {
         try {
             final URI uri = new URI(JAVADOC_BASE + relativeUrl);
-            Desktop.getDesktop().browse(uri);
+            ScriptRuntime.apply(browse, null, uri);
         } catch (Exception ignored) {
         }
     }
