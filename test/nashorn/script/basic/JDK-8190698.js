@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,24 +22,22 @@
  */
 
 /**
- * Defines Nashorn shell module.
+ * JDK-8190698: jjs tool of jdk.scripting.nashorn.shell module should not statically depend on java.desktop
  *
- * <p>This module includes the command line tool <em>{@index jjs jjs tool}</em>
- * to invoke the Nashorn engine.
- *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink jjs_tool_reference jjs}
- * </dl>
- *
- * @moduleGraph
- * @since 9
+ * @test
+ * @run
  */
-module jdk.scripting.nashorn.shell {
-    requires java.compiler;
-    requires jdk.internal.le;
-    requires jdk.scripting.nashorn;
-    requires jdk.internal.ed;
-    uses jdk.internal.editor.spi.BuildInEditorProvider;
-}
 
+var optJjsMod = java.lang.ModuleLayer.boot().findModule("jdk.scripting.nashorn.shell");
+
+// make sure that the module exists!
+Assert.assertTrue(optJjsMod.isPresent());
+
+// jdk.scripting.nashorn.shell should not have java.desktop dependency
+var javaDesktopDependency = optJjsMod.get().
+        descriptor.requires().
+        stream().
+        filter(function(mod) { return mod.name() == "java.desktop" }).
+        findFirst();
+
+Assert.assertTrue(!javaDesktopDependency.isPresent());
