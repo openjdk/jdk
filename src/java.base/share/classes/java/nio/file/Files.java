@@ -2401,7 +2401,7 @@ public final class Files {
      *
      * <p> Note that the result of this method is immediately outdated. If this
      * method indicates the file exists then there is no guarantee that a
-     * subsequence access will succeed. Care should be taken when using this
+     * subsequent access will succeed. Care should be taken when using this
      * method in security sensitive applications.
      *
      * @param   path
@@ -2458,7 +2458,7 @@ public final class Files {
      * or not then both methods return {@code false}. As with the {@code exists}
      * method, the result of this method is immediately outdated. If this
      * method indicates the file does exist then there is no guarantee that a
-     * subsequence attempt to create the file will succeed. Care should be taken
+     * subsequent attempt to create the file will succeed. Care should be taken
      * when using this method in security sensitive applications.
      *
      * @param   path
