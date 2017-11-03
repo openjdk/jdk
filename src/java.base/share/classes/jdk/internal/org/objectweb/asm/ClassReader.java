@@ -185,7 +185,7 @@ public class ClassReader {
     public ClassReader(final byte[] b, final int off, final int len) {
         this.b = b;
         // checks the class version
-        if (readShort(off + 6) > Opcodes.V9) {
+        if (readShort(off + 6) > Opcodes.V10) {
             throw new IllegalArgumentException();
         }
         // parses the constant pool

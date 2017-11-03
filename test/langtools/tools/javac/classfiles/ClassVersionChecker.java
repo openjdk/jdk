@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7157626 8001112
+ * @bug 7157626 8001112 8188870
  * @summary Test major version for all legal combinations for -source and -target
  * @author sgoel
  *
@@ -38,7 +38,7 @@ import java.util.regex.*;
 public class ClassVersionChecker {
 
     int errors;
-    String[] jdk = {"", "1.6", "1.7", "1.8", "1.9"};
+    String[] jdk = {"", "1.6", "1.7", "1.8", "1.9", "1.10"};
     File javaFile = null;
 
     public static void main(String[] args) throws Throwable {
@@ -58,10 +58,11 @@ public class ClassVersionChecker {
          * -1 => invalid combinations
          */
         int[][] ver =
-                {{53, -1, -1, -1, -1},
-                 {53, 50, 51, 52, 53},
-                 {53, -1, 51, 52, 53},
-                 {53, -1, -1, 52, 53}};
+                {{54, -1, -1, -1, -1, -1},
+                 {54, 50, 51, 52, 53, 54},
+                 {54, -1, 51, 52, 53, 54},
+                 {54, -1, -1, 52, 53, 54},
+                 {54, -1, -1, -1, 53, 54}};
 
         // Loop to run all possible combinations of source/target values
         for (int i = 0; i< ver.length; i++) {
