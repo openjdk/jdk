@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546
+ * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -64,12 +64,12 @@ public class Versions {
         String TC = "";
         System.out.println("Version.java: Starting");
 
-        check("53.0");
-        check("53.0", "-source 1.6");
-        check("53.0", "-source 1.7");
-        check("53.0", "-source 1.8");
-        check("53.0", "-source 1.9");
-        check("53.0", "-source 1.10");
+        check("54.0");
+        check("54.0", "-source 1.6");
+        check("54.0", "-source 1.7");
+        check("54.0", "-source 1.8");
+        check("54.0", "-source 1.9");
+        check("54.0", "-source 1.10");
 
         check_source_target("50.0", "6", "6");
         check_source_target("51.0", "6", "7");
@@ -81,7 +81,11 @@ public class Versions {
         check_source_target("53.0", "7", "9");
         check_source_target("53.0", "8", "9");
         check_source_target("53.0", "9", "9");
-        check_source_target("53.0", "10", "10");
+        check_source_target("54.0", "6", "10");
+        check_source_target("54.0", "7", "10");
+        check_source_target("54.0", "8", "10");
+        check_source_target("54.0", "9", "10");
+        check_source_target("54.0", "10", "10");
 
         checksrc16("-source 1.6");
         checksrc16("-source 6");
@@ -99,7 +103,6 @@ public class Versions {
         checksrc19("-source 9");
         checksrc19("-source 1.9", "-target 1.9");
         checksrc19("-source 9", "-target 9");
-
         checksrc110();
         checksrc110("-source 1.10");
         checksrc110("-source 10");
