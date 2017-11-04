@@ -395,7 +395,7 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
         jplis_assert(success);
 
         /*
-         *  Turn on the ClassFileLoadHook.
+         * Setup ClassFileLoadHook handler.
          */
         if (success) {
             success = setLivePhaseEventHandlers(agent);
