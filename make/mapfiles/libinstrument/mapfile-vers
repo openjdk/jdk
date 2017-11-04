@@ -31,6 +31,7 @@ SUNWprivate_1.1 {
 	    Agent_OnAttach;
             Java_sun_instrument_InstrumentationImpl_isModifiableClass0;
             Java_sun_instrument_InstrumentationImpl_isRetransformClassesSupported0;
+            Java_sun_instrument_InstrumentationImpl_setHasTransformers;
             Java_sun_instrument_InstrumentationImpl_setHasRetransformableTransformers;
             Java_sun_instrument_InstrumentationImpl_retransformClasses0;
             Java_sun_instrument_InstrumentationImpl_getAllLoadedClasses0;
