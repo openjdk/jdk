@@ -41,6 +41,8 @@ extern "C" void JNICALL trace_register_natives(JNIEnv*, jclass);
 #define TRACE_REGISTER_NATIVES ((void*)((address_word)(&trace_register_natives)))
 #define TRACE_START() JNI_OK
 #define TRACE_INITIALIZE() JNI_OK
+#define TRACE_ALLOCATION(obj, size, thread)
+#define TRACE_WEAK_OOPS_DO(is_alive, f)
 #define TRACE_VM_EXIT()
 #define TRACE_VM_ERROR()
 #define TRACE_SUSPEND_THREAD(t)
