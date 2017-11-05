@@ -156,7 +156,7 @@ HeapWord* CollectedHeap::common_mem_allocate_noinit(Klass* klass, size_t size, T
            "Unexpected exception, will result in uninitialized storage");
     THREAD->incr_allocated_bytes(size * HeapWordSize);
 
-    AllocTracer::send_allocation_outside_tlab_event(klass, size * HeapWordSize);
+    AllocTracer::send_allocation_outside_tlab(klass, result, size * HeapWordSize, THREAD);
 
     return result;
   }
