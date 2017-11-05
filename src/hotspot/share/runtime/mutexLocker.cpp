@@ -129,7 +129,6 @@ Mutex*   JfrStacktrace_lock           = NULL;
 Monitor* JfrMsg_lock                  = NULL;
 Mutex*   JfrBuffer_lock               = NULL;
 Mutex*   JfrStream_lock               = NULL;
-Mutex*   JfrThreadGroups_lock         = NULL;
 #endif
 
 #ifndef SUPPORTS_NATIVE_CX8
@@ -280,7 +279,6 @@ void mutex_init() {
 #if INCLUDE_TRACE
   def(JfrMsg_lock                  , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_always);
   def(JfrBuffer_lock               , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
-  def(JfrThreadGroups_lock         , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);
   def(JfrStream_lock               , PaddedMutex  , leaf+1,      true,  Monitor::_safepoint_check_never);      // ensure to rank lower than 'safepoint'
   def(JfrStacktrace_lock           , PaddedMutex  , special,     true,  Monitor::_safepoint_check_sometimes);
 #endif
