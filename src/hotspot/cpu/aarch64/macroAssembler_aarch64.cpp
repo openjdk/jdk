@@ -2942,7 +2942,7 @@ void MacroAssembler::kernel_crc32_using_crc32(Register crc, Register buf,
   BIND(CRC_less64);
     adds(len, len, 128-32);
     br(Assembler::GE, CRC_by32_loop);
-  BIND(CRC_less32)
+  BIND(CRC_less32);
     adds(len, len, 32-4);
     br(Assembler::GE, CRC_by4_loop);
     adds(len, len, 4);
