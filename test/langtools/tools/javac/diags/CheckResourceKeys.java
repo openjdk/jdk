@@ -293,6 +293,7 @@ public class CheckResourceKeys {
             "rt.jar",
             "jfxrt.jar",
             "module-info.class",
+            "module-info.sig",
             "jrt-fs.jar",
             // -XD option names
             "process.packages",
