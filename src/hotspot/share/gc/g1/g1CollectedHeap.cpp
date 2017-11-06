@@ -29,14 +29,14 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/g1/bufferingOopClosure.hpp"
-#include "gc/g1/concurrentG1Refine.hpp"
-#include "gc/g1/concurrentG1RefineThread.hpp"
 #include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
@@ -1554,7 +1554,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _bot(NULL),
   _hot_card_cache(NULL),
   _g1_rem_set(NULL),
-  _cg1r(NULL),
+  _cr(NULL),
   _g1mm(NULL),
   _preserved_marks_set(true /* in_c_heap */),
   _secondary_free_list("Secondary Free List", new SecondaryFreeRegionListMtSafeChecker()),
@@ -1633,7 +1633,7 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
 
 jint G1CollectedHeap::initialize_concurrent_refinement() {
   jint ecode = JNI_OK;
-  _cg1r = ConcurrentG1Refine::create(&ecode);
+  _cr = G1ConcurrentRefine::create(&ecode);
   return ecode;
 }
 
@@ -1791,8 +1791,8 @@ jint G1CollectedHeap::initialize() {
 
   JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
-                                                (int)concurrent_g1_refine()->yellow_zone(),
-                                                (int)concurrent_g1_refine()->red_zone(),
+                                                (int)concurrent_refine()->yellow_zone(),
+                                                (int)concurrent_refine()->red_zone(),
                                                 Shared_DirtyCardQ_lock,
                                                 NULL,  // fl_owner
                                                 true); // init_free_ids
@@ -1836,7 +1836,7 @@ void G1CollectedHeap::stop() {
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
-  _cg1r->stop();
+  _cr->stop();
   _cmThread->stop();
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::stop();
@@ -2436,7 +2436,7 @@ void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   _cmThread->print_on(st);
   st->cr();
   _cm->print_worker_threads_on(st);
-  _cg1r->print_worker_threads_on(st); // also prints the sample thread
+  _cr->print_worker_threads_on(st); // also prints the sample thread
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::print_worker_threads_on(st);
   }
@@ -2446,7 +2446,7 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   workers()->threads_do(tc);
   tc->do_thread(_cmThread);
   _cm->threads_do(tc);
-  _cg1r->threads_do(tc); // also iterates over the sample thread
+  _cr->threads_do(tc); // also iterates over the sample thread
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::threads_do(tc);
   }

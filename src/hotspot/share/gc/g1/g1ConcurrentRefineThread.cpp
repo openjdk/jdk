@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/concurrentG1Refine.hpp"
-#include "gc/g1/concurrentG1RefineThread.hpp"
+#include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -33,17 +33,19 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
-ConcurrentG1RefineThread::
-ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *next,
-                         uint worker_id_offset, uint worker_id,
-                         size_t activate, size_t deactivate) :
+G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr,
+                                                   G1ConcurrentRefineThread *next,
+                                                   uint worker_id_offset,
+                                                   uint worker_id,
+                                                   size_t activate,
+                                                   size_t deactivate) :
   ConcurrentGCThread(),
   _worker_id_offset(worker_id_offset),
   _worker_id(worker_id),
   _active(false),
   _next(next),
   _monitor(NULL),
-  _cg1r(cg1r),
+  _cr(cr),
   _vtime_accum(0.0),
   _activation_threshold(activate),
   _deactivation_threshold(deactivate)
@@ -65,26 +67,26 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
   create_and_start();
 }
 
-void ConcurrentG1RefineThread::update_thresholds(size_t activate,
+void G1ConcurrentRefineThread::update_thresholds(size_t activate,
                                                  size_t deactivate) {
   assert(deactivate < activate, "precondition");
   _activation_threshold = activate;
   _deactivation_threshold = deactivate;
 }
 
-void ConcurrentG1RefineThread::wait_for_completed_buffers() {
+void G1ConcurrentRefineThread::wait_for_completed_buffers() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
   while (!should_terminate() && !is_active()) {
     _monitor->wait(Mutex::_no_safepoint_check_flag);
   }
 }
 
-bool ConcurrentG1RefineThread::is_active() {
+bool G1ConcurrentRefineThread::is_active() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   return is_primary() ? dcqs.process_completed_buffers() : _active;
 }
 
-void ConcurrentG1RefineThread::activate() {
+void G1ConcurrentRefineThread::activate() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
   if (!is_primary()) {
     set_active(true);
@@ -95,7 +97,7 @@ void ConcurrentG1RefineThread::activate() {
   _monitor->notify();
 }
 
-void ConcurrentG1RefineThread::deactivate() {
+void G1ConcurrentRefineThread::deactivate() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
   if (!is_primary()) {
     set_active(false);
@@ -105,7 +107,7 @@ void ConcurrentG1RefineThread::deactivate() {
   }
 }
 
-void ConcurrentG1RefineThread::run_service() {
+void G1ConcurrentRefineThread::run_service() {
   _vtime_start = os::elapsedVTime();
 
   while (!should_terminate()) {
@@ -132,7 +134,7 @@ void ConcurrentG1RefineThread::run_service() {
         size_t curr_buffer_num = dcqs.completed_buffers_num();
         // If the number of the buffers falls down into the yellow zone,
         // that means that the transition period after the evacuation pause has ended.
-        if (dcqs.completed_queue_padding() > 0 && curr_buffer_num <= cg1r()->yellow_zone()) {
+        if (dcqs.completed_queue_padding() > 0 && curr_buffer_num <= cr()->yellow_zone()) {
           dcqs.set_completed_queue_padding(0);
         }
 
@@ -168,7 +170,7 @@ void ConcurrentG1RefineThread::run_service() {
   log_debug(gc, refine)("Stopping %d", _worker_id);
 }
 
-void ConcurrentG1RefineThread::stop_service() {
+void G1ConcurrentRefineThread::stop_service() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
   _monitor->notify();
 }
