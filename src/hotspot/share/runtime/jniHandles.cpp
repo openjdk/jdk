@@ -127,6 +127,11 @@ oop JNIHandles::resolve_jweak(jweak handle) {
 template oop JNIHandles::resolve_jweak<true>(jweak);
 template oop JNIHandles::resolve_jweak<false>(jweak);
 
+bool JNIHandles::is_global_weak_cleared(jweak handle) {
+  assert(is_jweak(handle), "not a weak handle");
+  return guard_value<false>(jweak_ref(handle)) == NULL;
+}
+
 void JNIHandles::destroy_global(jobject handle) {
   if (handle != NULL) {
     assert(is_global_handle(handle), "Invalid delete of global JNI handle");
