@@ -27,12 +27,11 @@ package com.sun.tools.javac.platform;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import javax.annotation.processing.Processor;
+import javax.tools.JavaFileManager;
 
 import com.sun.source.util.Plugin;
 
@@ -45,12 +44,7 @@ import com.sun.source.util.Plugin;
  */
 public interface PlatformDescription extends Closeable {
 
-    /**Returns paths that should be used as the current platform's bootclasspath, or null if
-     * the default should be used.
-     *
-     * @return the current platforms's bootclasspath, or null for default
-     */
-    Collection<Path> getPlatformPath();
+    JavaFileManager getFileManager();
 
     /**Returns the source version that should be selected.
      * Equivalent to {@code -source N} on the command line.

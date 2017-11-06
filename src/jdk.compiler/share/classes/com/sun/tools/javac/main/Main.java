@@ -163,13 +163,12 @@ public class Main {
         Context context = new Context();
         JavacFileManager.preRegister(context); // can't create it until Log has been set up
         Result result = compile(args, context);
-        if (fileManager instanceof JavacFileManager) {
-            try {
-                // A fresh context was created above, so jfm must be a JavacFileManager
-                ((JavacFileManager)fileManager).close();
-            } catch (IOException ex) {
-                bugMessage(ex);
-            }
+        try {
+            // A fresh context was created above, so the file manager can be safely closed:
+            if (fileManager != null)
+                fileManager.close();
+        } catch (IOException ex) {
+            bugMessage(ex);
         }
         return result;
     }
@@ -247,9 +246,11 @@ public class Main {
 
         // init file manager
         fileManager = context.get(JavaFileManager.class);
-        if (fileManager instanceof BaseFileManager) {
-            ((BaseFileManager) fileManager).setContext(context); // reinit with options
-            ok &= ((BaseFileManager) fileManager).handleOptions(args.getDeferredFileManagerOptions());
+        JavaFileManager undel = fileManager instanceof DelegatingJavaFileManager ?
+                ((DelegatingJavaFileManager) fileManager).getBaseFileManager() : fileManager;
+        if (undel instanceof BaseFileManager) {
+            ((BaseFileManager) undel).setContext(context); // reinit with options
+            ok &= ((BaseFileManager) undel).handleOptions(args.getDeferredFileManagerOptions());
         }
 
         // handle this here so it works even if no other options given

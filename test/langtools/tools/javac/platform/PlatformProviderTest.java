@@ -41,9 +41,7 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,8 +55,8 @@ import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager;
 import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 // import com.sun.source.util.JavacTask;
@@ -111,7 +109,7 @@ public class PlatformProviderTest implements PlatformProvider {
                               "getPlatform(name, " + expectedParameter + ")",
                               "getSourceVersion",
                               "getTargetVersion",
-                              "getPlatformPath",
+                              "getFileManager",
                               "testPlugin: [testPluginKey=testPluginValue]",
                               "process: {testAPKey=testAPValue}",
                               "process: {testAPKey=testAPValue}",
@@ -187,13 +185,10 @@ public class PlatformProviderTest implements PlatformProvider {
         private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         private final StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
 
-
         @Override
-        public Collection<Path> getPlatformPath() {
-            System.err.println("getPlatformPath");
-            List<Path> result = new ArrayList<>();
-            fm.getLocationAsPaths(StandardLocation.PLATFORM_CLASS_PATH).forEach(p -> { result.add(p); });
-            return result;
+        public JavaFileManager getFileManager() {
+            System.err.println("getFileManager");
+            return fm;
         }
 
         @Override

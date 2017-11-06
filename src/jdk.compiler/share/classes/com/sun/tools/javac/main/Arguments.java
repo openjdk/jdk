@@ -30,7 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -304,7 +303,8 @@ public class Arguments {
                 Option.SYSTEM, Option.UPGRADE_MODULE_PATH);
 
         if (platformString != null) {
-            PlatformDescription platformDescription = PlatformUtils.lookupPlatformDescription(platformString);
+            PlatformDescription platformDescription =
+                    PlatformUtils.lookupPlatformDescription(platformString);
 
             if (platformDescription == null) {
                 error("err.unsupported.release.version", platformString);
@@ -319,31 +319,10 @@ public class Arguments {
             if (!additionalOptions.test(platformDescription.getAdditionalOptions()))
                 return false;
 
-            Collection<Path> platformCP = platformDescription.getPlatformPath();
-
-            if (platformCP != null) {
-                JavaFileManager fm = getFileManager();
-
-                if (!(fm instanceof StandardJavaFileManager)) {
-                    error("err.release.not.standard.file.manager");
-                    return false;
-                }
-
-                try {
-                    StandardJavaFileManager sfm = (StandardJavaFileManager) fm;
-
-                    if (Source.instance(context).allowModules()) {
-                        sfm.handleOption("--system", Arrays.asList("none").iterator());
-                        sfm.setLocationFromPaths(StandardLocation.UPGRADE_MODULE_PATH, platformCP);
-                    } else {
-                        sfm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, platformCP);
-                    }
-                } catch (IOException ex) {
-                    log.printLines(PrefixKind.JAVAC, "msg.io");
-                    ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
-                    return false;
-                }
-            }
+            JavaFileManager platformFM = platformDescription.getFileManager();
+            DelegatingJavaFileManager.installReleaseFileManager(context,
+                                                                platformFM,
+                                                                getFileManager());
         }
 
         return true;
