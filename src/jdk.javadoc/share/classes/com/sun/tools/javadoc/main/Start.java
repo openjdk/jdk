@@ -37,15 +37,14 @@ import java.util.Objects;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.main.CommandLine;
-import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.main.Arguments;
+import com.sun.tools.javac.main.CommandLine;
+import com.sun.tools.javac.main.DelegatingJavaFileManager;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
 import com.sun.tools.javac.platform.PlatformDescription;
@@ -398,17 +397,10 @@ public class Start extends ToolOption.Helper {
 
             context.put(PlatformDescription.class, platformDescription);
 
-            Collection<Path> platformCP = platformDescription.getPlatformPath();
-
-            if (platformCP != null) {
-                if (fileManager instanceof StandardJavaFileManager) {
-                    StandardJavaFileManager sfm = (StandardJavaFileManager) fileManager;
-
-                    sfm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, platformCP);
-                } else {
-                    usageError("main.release.not.standard.file.manager", platformString);
-                }
-            }
+            JavaFileManager platformFM = platformDescription.getFileManager();
+            DelegatingJavaFileManager.installReleaseFileManager(context,
+                                                                platformFM,
+                                                                fileManager);
         }
 
         compOpts.notifyListeners();

@@ -113,6 +113,7 @@ module jdk.compiler {
     exports com.sun.tools.javac.parser to
         jdk.jshell;
     exports com.sun.tools.javac.platform to
+        jdk.jdeps,
         jdk.javadoc;
     exports com.sun.tools.javac.tree to
         jdk.javadoc,
