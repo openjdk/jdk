@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
-#include "gc/g1/g1YoungRemSetSamplingThread.hpp"
 #include "logging/log.hpp"
 #include "runtime/java.hpp"
 #include "runtime/thread.hpp"
@@ -117,7 +116,6 @@ G1ConcurrentRefine::G1ConcurrentRefine(size_t green_zone,
                                        size_t red_zone,
                                        size_t min_yellow_zone_size) :
   _threads(NULL),
-  _sample_thread(NULL),
   _n_worker_threads(thread_num()),
   _green_zone(green_zone),
   _yellow_zone(yellow_zone),
@@ -224,13 +222,6 @@ G1ConcurrentRefine* G1ConcurrentRefine::create(jint* ecode) {
     next = t;
   }
 
-  cr->_sample_thread = new G1YoungRemSetSamplingThread();
-  if (cr->_sample_thread->osthread() == NULL) {
-    *ecode = JNI_ENOMEM;
-    vm_shutdown_during_initialization("Could not create G1YoungRemSetSamplingThread");
-    return NULL;
-  }
-
   *ecode = JNI_OK;
   return cr;
 }
@@ -239,7 +230,6 @@ void G1ConcurrentRefine::stop() {
   for (uint i = 0; i < _n_worker_threads; i++) {
     _threads[i]->stop();
   }
-  _sample_thread->stop();
 }
 
 void G1ConcurrentRefine::update_thread_thresholds() {
@@ -255,16 +245,9 @@ G1ConcurrentRefine::~G1ConcurrentRefine() {
     delete _threads[i];
   }
   FREE_C_HEAP_ARRAY(G1ConcurrentRefineThread*, _threads);
-
-  delete _sample_thread;
 }
 
 void G1ConcurrentRefine::threads_do(ThreadClosure *tc) {
-  worker_threads_do(tc);
-  tc->do_thread(_sample_thread);
-}
-
-void G1ConcurrentRefine::worker_threads_do(ThreadClosure * tc) {
   for (uint i = 0; i < _n_worker_threads; i++) {
     tc->do_thread(_threads[i]);
   }
@@ -274,13 +257,11 @@ uint G1ConcurrentRefine::thread_num() {
   return G1ConcRefinementThreads;
 }
 
-void G1ConcurrentRefine::print_worker_threads_on(outputStream* st) const {
+void G1ConcurrentRefine::print_threads_on(outputStream* st) const {
   for (uint i = 0; i < _n_worker_threads; ++i) {
     _threads[i]->print_on(st);
     st->cr();
   }
-  _sample_thread->print_on(st);
-  st->cr();
 }
 
 static size_t calc_new_green_zone(size_t green,
