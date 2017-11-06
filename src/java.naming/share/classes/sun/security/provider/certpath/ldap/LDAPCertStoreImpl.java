@@ -232,7 +232,7 @@ final class LDAPCertStoreImpl {
                 throw new CertStoreException("Name absent");
             }
             try {
-                if (new CompositeName(name).size() != 1) {
+                if (new CompositeName(name).size() > 1) {
                     throw new CertStoreException("Invalid name: " + name);
                 }
             } catch (InvalidNameException ine) {
