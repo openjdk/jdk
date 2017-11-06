@@ -4671,6 +4671,7 @@ void MacroAssembler::load_mirror(Register mirror, Register method) {
   mem2reg_opt(mirror, Address(mirror, ConstMethod::constants_offset()));
   mem2reg_opt(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
   mem2reg_opt(mirror, Address(mirror, Klass::java_mirror_offset()));
+  resolve_oop_handle(mirror);
 }
 
 //---------------------------------------------------------------

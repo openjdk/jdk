@@ -770,8 +770,15 @@ static void *thread_native_entry(Thread *thread) {
   const pthread_t pthread_id = ::pthread_self();
   const tid_t kernel_thread_id = ::thread_self();
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT ").",
-    os::current_thread_id(), (uintx) kernel_thread_id);
+  LogTarget(Info, os, thread) lt;
+  if (lt.is_enabled()) {
+    address low_address = thread->stack_end();
+    address high_address = thread->stack_base();
+    lt.print("Thread is alive (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT
+             ", stack [" PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k using %uk pages)).",
+             os::current_thread_id(), (uintx) kernel_thread_id, low_address, high_address,
+             (high_address - low_address) / K, os::Aix::query_pagesize(low_address) / K);
+  }
 
   // Normally, pthread stacks on AIX live in the data segment (are allocated with malloc()
   // by the pthread library). In rare cases, this may not be the case, e.g. when third-party
@@ -864,6 +871,14 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // Calculate stack size if it's not specified by caller.
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
 
+  // JDK-8187028: It was observed that on some configurations (4K backed thread stacks)
+  // the real thread stack size may be smaller than the requested stack size, by as much as 64K.
+  // This very much looks like a pthread lib error. As a workaround, increase the stack size
+  // by 64K for small thread stacks (arbitrarily choosen to be < 4MB)
+  if (stack_size < 4096 * K) {
+    stack_size += 64 * K;
+  }
+
   // On Aix, pthread_attr_setstacksize fails with huge values and leaves the
   // thread size in attr unchanged. If this is the minimal stack size as set
   // by pthread_attr_init this leads to crashes after thread creation. E.g. the
@@ -874,8 +889,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                             stack_size / K);
   }
 
-  // Configure libc guard page.
-  ret = pthread_attr_setguardsize(&attr, os::Aix::default_guard_size(thr_type));
+  // Save some cycles and a page by disabling OS guard pages where we have our own
+  // VM guard pages (in java threads). For other threads, keep system default guard
+  // pages in place.
+  if (thr_type == java_thread || thr_type == compiler_thread) {
+    ret = pthread_attr_setguardsize(&attr, 0);
+  }
 
   pthread_t tid = 0;
   if (ret == 0) {
@@ -3004,19 +3023,6 @@ bool os::Aix::chained_handler(int sig, siginfo_t* siginfo, void* context) {
   return chained;
 }
 
-size_t os::Aix::default_guard_size(os::ThreadType thr_type) {
-  // Creating guard page is very expensive. Java thread has HotSpot
-  // guard pages, only enable glibc guard page for non-Java threads.
-  // (Remember: compiler thread is a Java thread, too!)
-  //
-  // Aix can have different page sizes for stack (4K) and heap (64K).
-  // As Hotspot knows only one page size, we assume the stack has
-  // the same page size as the heap. Returning page_size() here can
-  // cause 16 guard pages which we want to avoid.  Thus we return 4K
-  // which will be rounded to the real page size by the OS.
-  return ((thr_type == java_thread || thr_type == compiler_thread) ? 0 : 4 * K);
-}
-
 struct sigaction* os::Aix::get_preinstalled_handler(int sig) {
   if (sigismember(&sigs, sig)) {
     return &sigact[sig];
@@ -3442,8 +3448,6 @@ void os::init(void) {
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
 
   init_random(1234567);
-
-  ThreadCritical::initialize();
 
   // Main_thread points to the aboriginal thread.
   Aix::_main_thread = pthread_self();

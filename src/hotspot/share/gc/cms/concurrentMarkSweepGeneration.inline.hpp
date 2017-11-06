@@ -25,13 +25,13 @@
 #ifndef SHARE_VM_GC_CMS_CONCURRENTMARKSWEEPGENERATION_INLINE_HPP
 #define SHARE_VM_GC_CMS_CONCURRENTMARKSWEEPGENERATION_INLINE_HPP
 
+#include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/cmsLockVerifier.hpp"
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/cms/parNewGeneration.hpp"
 #include "gc/shared/gcUtil.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -256,7 +256,7 @@ inline bool CMSCollector::should_abort_preclean() const {
   // scavenge is done or foreground GC wants to take over collection
   return _collectorState == AbortablePreclean &&
          (_abort_preclean || _foregroundGCIsActive ||
-          GenCollectedHeap::heap()->incremental_collection_will_fail(true /* consult_young */));
+          CMSHeap::heap()->incremental_collection_will_fail(true /* consult_young */));
 }
 
 inline size_t CMSCollector::get_eden_used() const {

@@ -29,7 +29,6 @@
 #include "runtime/thread.hpp"
 #include "stack_zero.hpp"
 
-// This function should match SharkStack::CreateStackOverflowCheck
 inline void ZeroStack::overflow_check(int required_words, TRAPS) {
   // Check the Zero stack
   if (available_words() < required_words) {

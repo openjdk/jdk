@@ -26,6 +26,7 @@
 // or if the user passes --disable-precompiled-headers to configure.
 
 #ifndef DONT_USE_PRECOMPILED_HEADER
+# include "jni.h"
 # include "asm/assembler.hpp"
 # include "asm/assembler.inline.hpp"
 # include "asm/codeBuffer.hpp"
@@ -71,7 +72,6 @@
 # include "code/debugInfoRec.hpp"
 # include "code/dependencies.hpp"
 # include "code/exceptionHandlerTable.hpp"
-# include "code/jvmticmlr.h"
 # include "code/location.hpp"
 # include "code/nativeInst.hpp"
 # include "code/nmethod.hpp"
@@ -160,7 +160,6 @@
 # include "oops/symbol.hpp"
 # include "oops/typeArrayKlass.hpp"
 # include "oops/typeArrayOop.hpp"
-# include "prims/jni.h"
 # include "prims/jvm.h"
 # include "prims/jvmtiExport.hpp"
 # include "prims/methodHandles.hpp"

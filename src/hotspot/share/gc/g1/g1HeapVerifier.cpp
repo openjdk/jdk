@@ -161,18 +161,18 @@ class YoungRefCounterClosure : public OopClosure {
   void reset_count() { _count = 0; };
 };
 
-class VerifyKlassClosure: public KlassClosure {
+class VerifyCLDClosure: public CLDClosure {
   YoungRefCounterClosure _young_ref_counter_closure;
   OopClosure *_oop_closure;
  public:
-  VerifyKlassClosure(G1CollectedHeap* g1h, OopClosure* cl) : _young_ref_counter_closure(g1h), _oop_closure(cl) {}
-  void do_klass(Klass* k) {
-    k->oops_do(_oop_closure);
+  VerifyCLDClosure(G1CollectedHeap* g1h, OopClosure* cl) : _young_ref_counter_closure(g1h), _oop_closure(cl) {}
+  void do_cld(ClassLoaderData* cld) {
+    cld->oops_do(_oop_closure, false);
 
     _young_ref_counter_closure.reset_count();
-    k->oops_do(&_young_ref_counter_closure);
+    cld->oops_do(&_young_ref_counter_closure, false);
     if (_young_ref_counter_closure.count() > 0) {
-      guarantee(k->has_modified_oops(), "Klass " PTR_FORMAT ", has young refs but is not dirty.", p2i(k));
+      guarantee(cld->has_modified_oops(), "CLD " PTR_FORMAT ", has young %d refs but is not dirty.", p2i(cld), _young_ref_counter_closure.count());
     }
   }
 };
@@ -390,8 +390,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
 
   log_debug(gc, verify)("Roots");
   VerifyRootsClosure rootsCl(vo);
-  VerifyKlassClosure klassCl(_g1h, &rootsCl);
-  CLDToKlassAndOopClosure cldCl(&klassCl, &rootsCl, false);
+  VerifyCLDClosure cldCl(_g1h, &rootsCl);
 
   // We apply the relevant closures to all the oops in the
   // system dictionary, class loader data graph, the string table
@@ -648,8 +647,8 @@ bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, const G1C
 }
 
 bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
-  const G1CMBitMap* const prev_bitmap = _g1h->concurrent_mark()->prevMarkBitMap();
-  const G1CMBitMap* const next_bitmap = _g1h->concurrent_mark()->nextMarkBitMap();
+  const G1CMBitMap* const prev_bitmap = _g1h->concurrent_mark()->prev_mark_bitmap();
+  const G1CMBitMap* const next_bitmap = _g1h->concurrent_mark()->next_mark_bitmap();
 
   HeapWord* ptams  = hr->prev_top_at_mark_start();
   HeapWord* ntams  = hr->next_top_at_mark_start();

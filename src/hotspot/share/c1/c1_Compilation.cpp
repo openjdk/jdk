@@ -500,18 +500,22 @@ void Compilation::generate_exception_handler_table() {
     scope_depths->trunc_to(0);
     pcos->trunc_to(0);
 
+    int prev_scope = 0;
     for (int i = 0; i < handlers->length(); i++) {
       XHandler* handler = handlers->handler_at(i);
       assert(handler->entry_pco() != -1, "must have been generated");
+      assert(handler->scope_count() >= prev_scope, "handlers should be sorted by scope");
 
-      int e = bcis->find(handler->handler_bci());
-      if (e >= 0 && scope_depths->at(e) == handler->scope_count()) {
-        // two different handlers are declared to dispatch to the same
-        // catch bci.  During parsing we created edges for each
-        // handler but we really only need one.  The exception handler
-        // table will also get unhappy if we try to declare both since
-        // it's nonsensical.  Just skip this handler.
-        continue;
+      if (handler->scope_count() == prev_scope) {
+        int e = bcis->find_from_end(handler->handler_bci());
+        if (e >= 0 && scope_depths->at(e) == handler->scope_count()) {
+          // two different handlers are declared to dispatch to the same
+          // catch bci.  During parsing we created edges for each
+          // handler but we really only need one.  The exception handler
+          // table will also get unhappy if we try to declare both since
+          // it's nonsensical.  Just skip this handler.
+          continue;
+        }
       }
 
       bcis->append(handler->handler_bci());
@@ -521,13 +525,14 @@ void Compilation::generate_exception_handler_table() {
         scope_depths->append(0);
       } else {
         scope_depths->append(handler->scope_count());
-    }
+      }
       pcos->append(handler->entry_pco());
 
       // stop processing once we hit a catch any
       if (handler->is_catch_all()) {
         assert(i == handlers->length() - 1, "catch all must be last handler");
-  }
+      }
+      prev_scope = handler->scope_count();
     }
     exception_handler_table()->add_subtable(info->pco(), bcis, scope_depths, pcos);
   }

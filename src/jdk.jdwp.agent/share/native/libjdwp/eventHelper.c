@@ -29,6 +29,9 @@
 #include "threadControl.h"
 #include "invoker.h"
 
+
+#define COMMAND_LOOP_THREAD_NAME "JDWP Event Helper Thread"
+
 /*
  * Event helper thread command commandKinds
  */
@@ -121,6 +124,9 @@ static CommandQueue commandQueue;
 static jrawMonitorID commandQueueLock;
 static jrawMonitorID commandCompleteLock;
 static jrawMonitorID blockCommandLoopLock;
+static jrawMonitorID vmDeathLock;
+static volatile jboolean commandLoopEnteredVmDeathLock = JNI_FALSE;
+
 static jint maxQueueSize = 50 * 1024; /* TO DO: Make this configurable */
 static jboolean holdEvents;
 static jint currentQueueSize = 0;
@@ -700,9 +706,15 @@ commandLoop(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg)
              * handleCommand() to prevent any races.
              */
             jboolean doBlock = needBlockCommandLoop(command);
-            log_debugee_location("commandLoop(): command being handled", NULL, NULL, 0);
-            handleCommand(jni_env, command);
+            debugMonitorEnter(vmDeathLock);
+            commandLoopEnteredVmDeathLock = JNI_TRUE;
+            if (!gdata->vmDead) {
+                log_debugee_location("commandLoop(): command being handled", NULL, NULL, 0);
+                handleCommand(jni_env, command);
+            }
             completeCommand(command);
+            debugMonitorExit(vmDeathLock);
+            commandLoopEnteredVmDeathLock = JNI_FALSE;
             /* if we just finished a suspend-all cmd, then we block here */
             if (doBlock) {
                 doBlockCommandLoop();
@@ -725,10 +737,11 @@ eventHelper_initialize(jbyte sessionID)
     commandQueueLock = debugMonitorCreate("JDWP Event Helper Queue Monitor");
     commandCompleteLock = debugMonitorCreate("JDWP Event Helper Completion Monitor");
     blockCommandLoopLock = debugMonitorCreate("JDWP Event Block CommandLoop Monitor");
+    vmDeathLock = debugMonitorCreate("JDWP VM_DEATH CommandLoop Monitor");
 
     /* Start the event handler thread */
     func = &commandLoop;
-    (void)spawnNewThread(func, NULL, "JDWP Event Helper Thread");
+    (void)spawnNewThread(func, NULL, COMMAND_LOOP_THREAD_NAME);
 }
 
 void
@@ -757,6 +770,42 @@ eventHelper_unlock(void)
 {
     debugMonitorExit(commandCompleteLock);
     debugMonitorExit(commandQueueLock);
+}
+
+void commandLoop_exitVmDeathLockOnError()
+{
+    const char* MSG_BASE = "exitVmDeathLockOnError: error in JVMTI %s: %d\n";
+    jthread cur_thread = NULL;
+    jvmtiThreadInfo thread_info;
+    jvmtiError err = JVMTI_ERROR_NONE;
+
+    err = JVMTI_FUNC_PTR(gdata->jvmti, GetCurrentThread)
+              (gdata->jvmti, &cur_thread);
+    if (err != JVMTI_ERROR_NONE) {
+        LOG_ERROR((MSG_BASE, "GetCurrentThread", err));
+        return;
+    }
+
+    err = JVMTI_FUNC_PTR(gdata->jvmti, GetThreadInfo)
+              (gdata->jvmti, cur_thread, &thread_info);
+    if (err != JVMTI_ERROR_NONE) {
+        LOG_ERROR((MSG_BASE, "GetThreadInfo", err));
+        return;
+    }
+    if (strcmp(thread_info.name, COMMAND_LOOP_THREAD_NAME) != 0) {
+        return;
+    }
+    if (commandLoopEnteredVmDeathLock == JNI_TRUE) {
+        debugMonitorExit(vmDeathLock);
+        commandLoopEnteredVmDeathLock = JNI_FALSE;
+    }
+}
+
+void
+commandLoop_sync(void)
+{
+    debugMonitorEnter(vmDeathLock);
+    debugMonitorExit(vmDeathLock);
 }
 
 /* Change all references to global in the EventInfo struct */

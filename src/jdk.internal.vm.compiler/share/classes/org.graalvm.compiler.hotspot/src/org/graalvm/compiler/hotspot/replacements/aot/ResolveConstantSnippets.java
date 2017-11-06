@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,9 @@ import org.graalvm.compiler.hotspot.nodes.aot.InitializeKlassNode;
 import org.graalvm.compiler.hotspot.nodes.aot.InitializeKlassStubCall;
 import org.graalvm.compiler.hotspot.nodes.aot.LoadConstantIndirectlyNode;
 import org.graalvm.compiler.hotspot.nodes.aot.LoadMethodCountersIndirectlyNode;
+import org.graalvm.compiler.hotspot.nodes.aot.ResolveDynamicStubCall;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveConstantNode;
+import org.graalvm.compiler.hotspot.nodes.aot.ResolveDynamicConstantNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveConstantStubCall;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveMethodAndLoadCountersNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveMethodAndLoadCountersStubCall;
@@ -68,6 +70,15 @@ public class ResolveConstantSnippets implements Snippets {
         Object result = LoadConstantIndirectlyNode.loadObject(constant);
         if (probability(VERY_SLOW_PATH_PROBABILITY, result == null)) {
             result = ResolveConstantStubCall.resolveObject(constant, EncodedSymbolNode.encode(constant));
+        }
+        return result;
+    }
+
+    @Snippet
+    public static Object resolveDynamicConstant(Object constant) {
+        Object result = LoadConstantIndirectlyNode.loadObject(constant);
+        if (probability(VERY_SLOW_PATH_PROBABILITY, result == null)) {
+            result = ResolveDynamicStubCall.resolveInvoke(constant);
         }
         return result;
     }
@@ -110,6 +121,7 @@ public class ResolveConstantSnippets implements Snippets {
 
     public static class Templates extends AbstractTemplates {
         private final SnippetInfo resolveObjectConstant = snippet(ResolveConstantSnippets.class, "resolveObjectConstant");
+        private final SnippetInfo resolveDynamicConstant = snippet(ResolveConstantSnippets.class, "resolveDynamicConstant");
         private final SnippetInfo resolveKlassConstant = snippet(ResolveConstantSnippets.class, "resolveKlassConstant");
         private final SnippetInfo resolveMethodAndLoadCounters = snippet(ResolveConstantSnippets.class, "resolveMethodAndLoadCounters");
         private final SnippetInfo initializeKlass = snippet(ResolveConstantSnippets.class, "initializeKlass");
@@ -117,6 +129,25 @@ public class ResolveConstantSnippets implements Snippets {
 
         public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, HotSpotProviders providers, TargetDescription target) {
             super(options, factories, providers, providers.getSnippetReflection(), target);
+        }
+
+        public void lower(ResolveDynamicConstantNode resolveConstantNode, LoweringTool tool) {
+            StructuredGraph graph = resolveConstantNode.graph();
+
+            ValueNode value = resolveConstantNode.value();
+            assert value.isConstant() : "Expected a constant: " + value;
+            SnippetInfo snippet = resolveDynamicConstant;
+
+            Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
+            args.add("constant", value);
+
+            SnippetTemplate template = template(graph.getDebug(), args);
+            template.instantiate(providers.getMetaAccess(), resolveConstantNode, DEFAULT_REPLACER, args);
+
+            assert resolveConstantNode.hasNoUsages();
+            if (!resolveConstantNode.isDeleted()) {
+                GraphUtil.killWithUnusedFloatingInputs(resolveConstantNode);
+            }
         }
 
         public void lower(ResolveConstantNode resolveConstantNode, LoweringTool tool) {

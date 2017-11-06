@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,8 @@ enum {
   JMM_VERSION_1_2 = 0x20010200, // JDK 7
   JMM_VERSION_1_2_1 = 0x20010201, // JDK 7 GA
   JMM_VERSION_1_2_2 = 0x20010202,
-  JMM_VERSION     = 0x20010203
+  JMM_VERSION_2  = 0x20020000,  // JDK 10
+  JMM_VERSION     = 0x20020000
 };
 
 typedef struct {
@@ -315,7 +316,8 @@ typedef struct jmmInterface_1_ {
   jobjectArray (JNICALL *DumpThreads)            (JNIEnv *env,
                                                   jlongArray ids,
                                                   jboolean lockedMonitors,
-                                                  jboolean lockedSynchronizers);
+                                                  jboolean lockedSynchronizers,
+                                                  jint maxDepth);
   void         (JNICALL *SetGCNotificationEnabled) (JNIEnv *env,
                                                     jobject mgr,
                                                     jboolean enabled);

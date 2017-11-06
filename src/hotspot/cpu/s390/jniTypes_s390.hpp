@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,9 +29,9 @@
 // This file holds platform-dependent routines used to write primitive
 // jni types to the array of arguments passed into JavaCalls::call.
 
+#include "jni.h"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
-#include "prims/jni.h"
 
 class JNITypes : AllStatic {
   // These functions write a java primitive type (in native format) to

@@ -25,6 +25,8 @@
  * @test
  * @bug 8137167
  * @summary Tests LogCompilation executed standalone without log commands or directives
+ *
+ * @requires !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  *

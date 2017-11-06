@@ -34,8 +34,6 @@ class AIXDecoder: public AbstractDecoder {
   }
   virtual ~AIXDecoder() {}
 
-  virtual bool can_decode_C_frame_in_vm() const { return true; }
-
   virtual bool demangle(const char* symbol, char* buf, int buflen) { return false; } // use AixSymbols::get_function_name to demangle
 
   virtual bool decode(address addr, char* buf, int buflen, int* offset, const char* modulepath, bool demangle) {

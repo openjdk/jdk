@@ -24,12 +24,12 @@
 #
 
 # All valid JVM features, regardless of platform
-VALID_JVM_FEATURES="compiler1 compiler2 zero shark minimal dtrace jvmti jvmci \
+VALID_JVM_FEATURES="compiler1 compiler2 zero minimal dtrace jvmti jvmci \
     graal vm-structs jni-check services management all-gcs nmt cds \
     static-build link-time-opt aot"
 
 # All valid JVM variants
-VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
+VALID_JVM_VARIANTS="server client minimal core zero custom"
 
 ###############################################################################
 # Check if the specified JVM variant should be built. To be used in shell if
@@ -62,13 +62,12 @@ AC_DEFUN([HOTSPOT_CHECK_JVM_FEATURE],
 #   minimal: reduced form of client with optional features stripped out
 #   core: normal interpreter only, no compiler
 #   zero: C++ based interpreter only, no compiler
-#   zeroshark: C++ based interpreter, and a llvm-based compiler
 #   custom: baseline JVM with no default features
 #
 AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
 [
   AC_ARG_WITH([jvm-variants], [AS_HELP_STRING([--with-jvm-variants],
-      [JVM variants (separated by commas) to build (server,client,minimal,core,zero,zeroshark,custom) @<:@server@:>@])])
+      [JVM variants (separated by commas) to build (server,client,minimal,core,zero,custom) @<:@server@:>@])])
 
   SETUP_HOTSPOT_TARGET_CPU_PORT
 
@@ -132,7 +131,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
   AC_SUBST(VALID_JVM_VARIANTS)
   AC_SUBST(JVM_VARIANT_MAIN)
 
-  if HOTSPOT_CHECK_JVM_VARIANT(zero) || HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
+  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
     # zero behaves as a platform and rewrites these values. This is really weird. :(
     # We are guaranteed that we do not build any other variants when building zero.
     HOTSPOT_TARGET_CPU=zero
@@ -325,15 +324,9 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     fi
   fi
 
-  if ! HOTSPOT_CHECK_JVM_VARIANT(zero) && ! HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
+  if ! HOTSPOT_CHECK_JVM_VARIANT(zero); then
     if HOTSPOT_CHECK_JVM_FEATURE(zero); then
-      AC_MSG_ERROR([To enable zero/zeroshark, you must use --with-jvm-variants=zero/zeroshark])
-    fi
-  fi
-
-  if ! HOTSPOT_CHECK_JVM_VARIANT(zeroshark); then
-    if HOTSPOT_CHECK_JVM_FEATURE(shark); then
-      AC_MSG_ERROR([To enable shark, you must use --with-jvm-variants=zeroshark])
+      AC_MSG_ERROR([To enable zero, you must use --with-jvm-variants=zero])
     fi
   fi
 
@@ -408,7 +401,6 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES $JVM_FEATURES_link_time_opt"
   JVM_FEATURES_zero="zero $NON_MINIMAL_FEATURES $JVM_FEATURES"
-  JVM_FEATURES_zeroshark="zero shark $NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_custom="$JVM_FEATURES"
 
   AC_SUBST(JVM_FEATURES_server)
@@ -416,7 +408,6 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   AC_SUBST(JVM_FEATURES_core)
   AC_SUBST(JVM_FEATURES_minimal)
   AC_SUBST(JVM_FEATURES_zero)
-  AC_SUBST(JVM_FEATURES_zeroshark)
   AC_SUBST(JVM_FEATURES_custom)
 
   # Used for verification of Makefiles by check-jvm-feature
@@ -437,7 +428,6 @@ AC_DEFUN_ONCE([HOTSPOT_VALIDATE_JVM_FEATURES],
   JVM_FEATURES_core="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_core | $SORT -u))"
   JVM_FEATURES_minimal="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_minimal | $SORT -u))"
   JVM_FEATURES_zero="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_zero | $SORT -u))"
-  JVM_FEATURES_zeroshark="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_zeroshark | $SORT -u))"
   JVM_FEATURES_custom="$($ECHO $($PRINTF '%s\n' $JVM_FEATURES_custom | $SORT -u))"
 
   # Validate features

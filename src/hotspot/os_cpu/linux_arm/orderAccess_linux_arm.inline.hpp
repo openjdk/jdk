@@ -33,7 +33,6 @@
 // - we define the high level barriers below and use the general
 //   implementation in orderAccess.inline.hpp, with customizations
 //   on AARCH64 via the specialized_* template functions
-#define VM_HAS_GENERALIZED_ORDER_ACCESS 1
 
 // Memory Ordering on ARM is weak.
 //
@@ -131,91 +130,126 @@ inline void OrderAccess::fence()      { dmb_sy(); }
 
 #ifdef AARCH64
 
-template<> inline jbyte    OrderAccess::specialized_load_acquire<jbyte>(const volatile jbyte*   p) {
-  volatile jbyte result;
-  __asm__ volatile(
-    "ldarb %w[res], [%[ptr]]"
-    : [res] "=&r" (result)
-    : [ptr] "r" (p)
-    : "memory");
-  return result;
-}
+template<>
+struct OrderAccess::PlatformOrderedLoad<1, X_ACQUIRE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  T operator()(const volatile T* p) const {
+    volatile T result;
+    __asm__ volatile(
+      "ldarb %w[res], [%[ptr]]"
+      : [res] "=&r" (result)
+      : [ptr] "r" (p)
+      : "memory");
+    return result;
+  }
+};
 
-template<> inline jshort   OrderAccess::specialized_load_acquire<jshort>(const volatile jshort*  p) {
-  volatile jshort result;
-  __asm__ volatile(
-    "ldarh %w[res], [%[ptr]]"
-    : [res] "=&r" (result)
-    : [ptr] "r" (p)
-    : "memory");
-  return result;
-}
+template<>
+struct OrderAccess::PlatformOrderedLoad<2, X_ACQUIRE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  T operator()(const volatile T* p) const {
+    volatile T result;
+    __asm__ volatile(
+      "ldarh %w[res], [%[ptr]]"
+      : [res] "=&r" (result)
+      : [ptr] "r" (p)
+      : "memory");
+    return result;
+  }
+};
 
-template<> inline jint     OrderAccess::specialized_load_acquire<jint>(const volatile jint*    p) {
-  volatile jint result;
-  __asm__ volatile(
-    "ldar %w[res], [%[ptr]]"
-    : [res] "=&r" (result)
-    : [ptr] "r" (p)
-    : "memory");
-  return result;
-}
+template<>
+struct OrderAccess::PlatformOrderedLoad<4, X_ACQUIRE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  T operator()(const volatile T* p) const {
+    volatile T result;
+    __asm__ volatile(
+      "ldar %w[res], [%[ptr]]"
+      : [res] "=&r" (result)
+      : [ptr] "r" (p)
+      : "memory");
+    return result;
+  }
+};
 
-template<> inline jfloat   OrderAccess::specialized_load_acquire<jfloat>(const volatile jfloat*  p) {
-  return jfloat_cast(specialized_load_acquire((const volatile jint*)p));
-}
+template<>
+struct OrderAccess::PlatformOrderedLoad<8, X_ACQUIRE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  T operator()(const volatile T* p) const {
+    volatile T result;
+    __asm__ volatile(
+      "ldar %[res], [%[ptr]]"
+      : [res] "=&r" (result)
+      : [ptr] "r" (p)
+      : "memory");
+    return result;
+  }
+};
 
-// This is implicit as jlong and intptr_t are both "long int"
-//template<> inline jlong    OrderAccess::specialized_load_acquire(const volatile jlong*   p) {
-//  return (volatile jlong)specialized_load_acquire((const volatile intptr_t*)p);
-//}
+template<>
+struct OrderAccess::PlatformOrderedStore<1, RELEASE_X_FENCE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm__ volatile(
+      "stlrb %w[val], [%[ptr]]"
+      :
+      : [ptr] "r" (p), [val] "r" (v)
+      : "memory");
+  }
+};
 
-template<> inline intptr_t OrderAccess::specialized_load_acquire<intptr_t>(const volatile intptr_t*   p) {
-  volatile intptr_t result;
-  __asm__ volatile(
-    "ldar %[res], [%[ptr]]"
-    : [res] "=&r" (result)
-    : [ptr] "r" (p)
-    : "memory");
-  return result;
-}
+template<>
+struct OrderAccess::PlatformOrderedStore<2, RELEASE_X_FENCE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm__ volatile(
+      "stlrh %w[val], [%[ptr]]"
+      :
+      : [ptr] "r" (p), [val] "r" (v)
+      : "memory");
+  }
+};
 
-template<> inline jdouble  OrderAccess::specialized_load_acquire<jdouble>(const volatile jdouble* p) {
-  return jdouble_cast(specialized_load_acquire((const volatile intptr_t*)p));
-}
+template<>
+struct OrderAccess::PlatformOrderedStore<4, RELEASE_X_FENCE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm__ volatile(
+      "stlr %w[val], [%[ptr]]"
+      :
+      : [ptr] "r" (p), [val] "r" (v)
+      : "memory");
+  }
+};
 
+template<>
+struct OrderAccess::PlatformOrderedStore<8, RELEASE_X_FENCE>
+  VALUE_OBJ_CLASS_SPEC
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm__ volatile(
+      "stlr %[val], [%[ptr]]"
+      :
+      : [ptr] "r" (p), [val] "r" (v)
+      : "memory");
+  }
+};
 
-template<> inline void     OrderAccess::specialized_release_store<jbyte>(volatile jbyte*   p, jbyte   v) {
-  __asm__ volatile(
-    "stlrb %w[val], [%[ptr]]"
-    :
-    : [ptr] "r" (p), [val] "r" (v)
-    : "memory");
-}
-
-template<> inline void     OrderAccess::specialized_release_store<jshort>(volatile jshort*  p, jshort  v) {
-  __asm__ volatile(
-    "stlrh %w[val], [%[ptr]]"
-    :
-    : [ptr] "r" (p), [val] "r" (v)
-    : "memory");
-}
-
-template<> inline void     OrderAccess::specialized_release_store<jint>(volatile jint*    p, jint    v) {
-  __asm__ volatile(
-    "stlr %w[val], [%[ptr]]"
-    :
-    : [ptr] "r" (p), [val] "r" (v)
-    : "memory");
-}
-
-template<> inline void     OrderAccess::specialized_release_store<jlong>(volatile jlong*   p, jlong   v) {
-  __asm__ volatile(
-    "stlr %[val], [%[ptr]]"
-    :
-    : [ptr] "r" (p), [val] "r" (v)
-    : "memory");
-}
 #endif // AARCH64
 
 #endif // OS_CPU_LINUX_ARM_VM_ORDERACCESS_LINUX_ARM_INLINE_HPP

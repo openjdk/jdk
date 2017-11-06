@@ -25,7 +25,7 @@
  * @test
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.loader
- *          java.desktop
+ *          java.logging
  * @library /test/lib
  * @run main/othervm GetSysPkgTest
  */
@@ -134,10 +134,11 @@ public class GetSysPkgTest {
         getPkg("GetSysPkg_package", null);
 
         // Access a class with a package in a boot loader module other than java.base
-        clss = Class.forName("java.awt.Button");
+        clss = Class.forName("java.util.logging.Level");
+
         if (clss == null)
-            throw new RuntimeException("Could not find class java.awt.Button");
-        getPkg("java/awt", "jrt:/java.desktop");
+            throw new RuntimeException("Could not find class java.util.logging.Level");
+        getPkg("java/util/logging", "jrt:/java.logging");
 
         // Test getting the package location from a class found via -Xbootclasspath/a
         clss = Class.forName("BootLdr_package.BootLdrPkg");

@@ -54,6 +54,8 @@ void TemplateInterpreter::initialize() {
     _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,
                           "Interpreter");
     TemplateInterpreterGenerator g(_code);
+    // Free the unused memory not occupied by the interpreter and the stubs
+    _code->deallocate_unused_tail();
   }
 
   if (PrintInterpreter) {

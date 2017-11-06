@@ -282,6 +282,13 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
         return suite;
     }
 
+    public Object mbean() {
+        if (graalRuntime instanceof HotSpotGraalRuntime) {
+            return ((HotSpotGraalRuntime)graalRuntime).mbean();
+        }
+        return null;
+    }
+
     /**
      * Converts {@code method} to a String with {@link JavaMethod#format(String)} and the format
      * string {@code "%H.%n(%p)"}.

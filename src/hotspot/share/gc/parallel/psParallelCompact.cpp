@@ -52,6 +52,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -520,8 +521,8 @@ void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
   const size_t beg_region = obj_ofs >> Log2RegionSize;
   const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
 
-  DEBUG_ONLY(Atomic::inc_ptr(&add_obj_count);)
-  DEBUG_ONLY(Atomic::add_ptr(len, &add_obj_size);)
+  DEBUG_ONLY(Atomic::inc(&add_obj_count);)
+  DEBUG_ONLY(Atomic::add(len, &add_obj_size);)
 
   if (beg_region == end_region) {
     // All in one region.
@@ -837,11 +838,6 @@ ParallelCompactData PSParallelCompact::_summary_data;
 PSParallelCompact::IsAliveClosure PSParallelCompact::_is_alive_closure;
 
 bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap()->is_marked(p); }
-
-void PSParallelCompact::AdjustKlassClosure::do_klass(Klass* klass) {
-  PSParallelCompact::AdjustPointerClosure closure(_cm);
-  klass->oops_do(&closure);
-}
 
 void PSParallelCompact::post_initialize() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
@@ -1778,7 +1774,9 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 
-    if (TraceOldGenTime) accumulated_time()->start();
+    if (log_is_enabled(Debug, gc, heap, exit)) {
+      accumulated_time()->start();
+    }
 
     // Let the size policy know we're starting
     size_policy->major_collection_begin();
@@ -1897,7 +1895,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // Resize the metaspace capacity after a collection
     MetaspaceGC::compute_new_size();
 
-    if (TraceOldGenTime) {
+    if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->stop();
     }
 
@@ -2125,6 +2123,11 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   assert(cm->marking_stacks_empty(), "Marking should have completed");
 
   {
+    GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
+    WeakProcessor::weak_oops_do(is_alive_closure(), &do_nothing_cl);
+  }
+
+  {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", &_gc_timer);
 
     // Follow system dictionary roots and unload classes.
@@ -2160,7 +2163,6 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   ClassLoaderDataGraph::clear_claimed_marks();
 
   PSParallelCompact::AdjustPointerClosure oop_closure(cm);
-  PSParallelCompact::AdjustKlassClosure klass_closure(cm);
 
   // General strong roots.
   Universe::oops_do(&oop_closure);
@@ -2170,12 +2172,11 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   Management::oops_do(&oop_closure);
   JvmtiExport::oops_do(&oop_closure);
   SystemDictionary::oops_do(&oop_closure);
-  ClassLoaderDataGraph::oops_do(&oop_closure, &klass_closure, true);
+  ClassLoaderDataGraph::oops_do(&oop_closure, true);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
-  // Global (weak) JNI handles
-  JNIHandles::weak_oops_do(&oop_closure);
+  WeakProcessor::oops_do(&oop_closure);
 
   CodeBlobToOopClosure adjust_from_blobs(&oop_closure, CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);

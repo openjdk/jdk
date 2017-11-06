@@ -96,7 +96,7 @@ bool MethodMatcher::canonicalize(char * line, const char *& error_msg) {
   bool have_colon = (colon != NULL);
   if (have_colon) {
     // Don't allow multiple '::'
-    if (colon + 2 != '\0') {
+    if (colon[2] != '\0') {
       if (strstr(colon+2, "::")) {
         error_msg = "Method pattern only allows one '::' allowed";
         return false;

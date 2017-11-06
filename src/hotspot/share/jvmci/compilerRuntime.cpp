@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,14 @@
 #include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "interpreter/linkResolver.hpp"
 #include "jvmci/compilerRuntime.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/vframe.hpp"
+#include "aot/aotLoader.hpp"
 
 // Resolve and allocate String
 JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_string_by_symbol(JavaThread *thread, void* string_result, const char* name))
@@ -118,6 +122,62 @@ Method* CompilerRuntime::resolve_method_helper(Klass* klass, const char* method_
   }
   return m;
 }
+
+JRT_BLOCK_ENTRY(void, CompilerRuntime::resolve_dynamic_invoke(JavaThread *thread, oop* appendix_result))
+  JRT_BLOCK
+  {
+    ResourceMark rm(THREAD);
+    vframeStream vfst(thread, true);  // Do not skip and javaCalls
+    assert(!vfst.at_end(), "Java frame must exist");
+    methodHandle caller(THREAD, vfst.method());
+    InstanceKlass* holder = caller->method_holder();
+    int bci = vfst.bci();
+    Bytecode_invoke bytecode(caller, bci);
+    int index = bytecode.index();
+
+    // Make sure it's resolved first
+    CallInfo callInfo;
+    constantPoolHandle cp(holder->constants());
+    ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index, true));
+    Bytecodes::Code invoke_code = bytecode.invoke_code();
+    if (!cp_cache_entry->is_resolved(invoke_code)) {
+        LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, invoke_code, CHECK);
+        if (bytecode.is_invokedynamic()) {
+            cp_cache_entry->set_dynamic_call(cp, callInfo);
+        } else {
+            cp_cache_entry->set_method_handle(cp, callInfo);
+        }
+        vmassert(cp_cache_entry->is_resolved(invoke_code), "sanity");
+    }
+
+    Handle appendix(THREAD, cp_cache_entry->appendix_if_resolved(cp));
+    Klass *appendix_klass = appendix.is_null() ? NULL : appendix->klass();
+
+    methodHandle adapter_method(cp_cache_entry->f1_as_method());
+    InstanceKlass *adapter_klass = adapter_method->method_holder();
+
+    if (appendix_klass != NULL && appendix_klass->is_instance_klass()) {
+        vmassert(InstanceKlass::cast(appendix_klass)->is_initialized(), "sanity");
+    }
+    if (!adapter_klass->is_initialized()) {
+        // Force initialization of adapter class
+        adapter_klass->initialize(CHECK);
+        // Double-check that it was really initialized,
+        // because we could be doing a recursive call
+        // from inside <clinit>.
+    }
+
+    int cpi = cp_cache_entry->constant_pool_index();
+    if (!AOTLoader::reconcile_dynamic_invoke(holder, cpi, adapter_method(),
+      appendix_klass)) {
+      return;
+    }
+
+    *appendix_result = appendix();
+    thread->set_vm_result(appendix());
+  }
+  JRT_BLOCK_END
+JRT_END
 
 JRT_BLOCK_ENTRY(MethodCounters*, CompilerRuntime::resolve_method_by_symbol_and_load_counters(JavaThread *thread, MethodCounters** counters_result, Klass* klass, const char* data))
   MethodCounters* c = *counters_result; // Is it resolved already?

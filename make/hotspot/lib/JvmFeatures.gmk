@@ -47,14 +47,9 @@ endif
 ifeq ($(call check-jvm-feature, zero), true)
   JVM_CFLAGS_FEATURES += -DZERO -DCC_INTERP -DZERO_LIBARCH='"$(OPENJDK_TARGET_CPU_LEGACY_LIB)"' $(LIBFFI_CFLAGS)
   JVM_LIBS_FEATURES += $(LIBFFI_LIBS)
-endif
-
-ifeq ($(call check-jvm-feature, shark), true)
-  JVM_CFLAGS_FEATURES += -DSHARK $(LLVM_CFLAGS)
-  JVM_LDFLAGS_FEATURES += $(LLVM_LDFLAGS)
-  JVM_LIBS_FEATURES += $(LLVM_LIBS)
-else
-  JVM_EXCLUDES += shark
+  ifeq ($(OPENJDK_TARGET_CPU), sparcv9)
+    BUILD_LIBJVM_EXTRA_FILES := $(TOPDIR)/src/hotspot/cpu/sparc/memset_with_concurrent_readers_sparc.cpp
+  endif
 endif
 
 ifeq ($(call check-jvm-feature, minimal), true)
@@ -129,6 +124,7 @@ ifneq ($(call check-jvm-feature, all-gcs), true)
       cms/ g1/ parallel/
   JVM_EXCLUDE_FILES += \
       concurrentGCThread.cpp \
+      suspendibleThreadSet.cpp \
       plab.cpp
   JVM_EXCLUDE_FILES += \
       g1MemoryPool.cpp \

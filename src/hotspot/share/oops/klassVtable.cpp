@@ -479,13 +479,15 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
           allocate_new = false;
         }
 
-        if (checkconstraints) {
-        // Override vtable entry if passes loader constraint check
-        // if loader constraint checking requested
-        // No need to visit his super, since he and his super
-        // have already made any needed loader constraints.
-        // Since loader constraints are transitive, it is enough
-        // to link to the first super, and we get all the others.
+        // Do not check loader constraints for overpass methods because overpass
+        // methods are created by the jvm to throw exceptions.
+        if (checkconstraints && !target_method()->is_overpass()) {
+          // Override vtable entry if passes loader constraint check
+          // if loader constraint checking requested
+          // No need to visit his super, since he and his super
+          // have already made any needed loader constraints.
+          // Since loader constraints are transitive, it is enough
+          // to link to the first super, and we get all the others.
           Handle super_loader(THREAD, super_klass->class_loader());
 
           if (target_loader() != super_loader()) {
@@ -495,21 +497,23 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
                                                         super_loader, true,
                                                         CHECK_(false));
             if (failed_type_symbol != NULL) {
-              const char* msg = "loader constraint violation: when resolving "
-                "overridden method \"%s\" the class loader (instance"
-                " of %s) of the current class, %s, and its superclass loader "
-                "(instance of %s), have different Class objects for the type "
-                "%s used in the signature";
+              const char* msg = "loader constraint violation for class %s: when selecting "
+                "overriding method \"%s\" the class loader (instance of %s) of the "
+                "selected method's type %s, and the class loader (instance of %s) for its super "
+                "type %s have different Class objects for the type %s used in the signature";
+              char* curr_class = klass->name()->as_C_string();
               char* sig = target_method()->name_and_sig_as_C_string();
               const char* loader1 = SystemDictionary::loader_name(target_loader());
-              char* current = target_klass->name()->as_C_string();
+              char* sel_class = target_klass->name()->as_C_string();
               const char* loader2 = SystemDictionary::loader_name(super_loader());
+              char* super_class = super_klass->name()->as_C_string();
               char* failed_type_name = failed_type_symbol->as_C_string();
-              size_t buflen = strlen(msg) + strlen(sig) + strlen(loader1) +
-                strlen(current) + strlen(loader2) + strlen(failed_type_name);
+              size_t buflen = strlen(msg) + strlen(curr_class) + strlen(sig) +
+                strlen(loader1) + strlen(sel_class) + strlen(loader2) +
+                strlen(super_class) + strlen(failed_type_name);
               char* buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, buflen);
-              jio_snprintf(buf, buflen, msg, sig, loader1, current, loader2,
-                           failed_type_name);
+              jio_snprintf(buf, buflen, msg, curr_class, sig, loader1, sel_class, loader2,
+                           super_class, failed_type_name);
               THROW_MSG_(vmSymbols::java_lang_LinkageError(), buf, false);
             }
           }
@@ -1193,13 +1197,15 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
       // to correctly enforce loader constraints for interface method inheritance
       target = LinkResolver::lookup_instance_method_in_klasses(_klass, m->name(), m->signature(), CHECK);
     }
-    if (target == NULL || !target->is_public() || target->is_abstract()) {
-      // Entry does not resolve. Leave it empty for AbstractMethodError.
-        if (!(target == NULL) && !target->is_public()) {
-          // Stuff an IllegalAccessError throwing method in there instead.
-          itableOffsetEntry::method_entry(_klass, method_table_offset)[m->itable_index()].
-              initialize(Universe::throw_illegal_access_error());
-        }
+    if (target == NULL || !target->is_public() || target->is_abstract() || target->is_overpass()) {
+      assert(target == NULL || !target->is_overpass() || target->is_public(),
+             "Non-public overpass method!");
+      // Entry does not resolve. Leave it empty for AbstractMethodError or other error.
+      if (!(target == NULL) && !target->is_public()) {
+        // Stuff an IllegalAccessError throwing method in there instead.
+        itableOffsetEntry::method_entry(_klass, method_table_offset)[m->itable_index()].
+            initialize(Universe::throw_illegal_access_error());
+      }
     } else {
       // Entry did resolve, check loader constraints before initializing
       // if checkconstraints requested
@@ -1213,24 +1219,24 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
                                                       interface_loader,
                                                       true, CHECK);
           if (failed_type_symbol != NULL) {
-            const char* msg = "loader constraint violation in interface "
-              "itable initialization: when resolving method \"%s\" the class"
-              " loader (instance of %s) of the current class, %s, "
-              "and the class loader (instance of %s) for interface "
-              "%s have different Class objects for the type %s "
-              "used in the signature";
-            char* sig = target()->name_and_sig_as_C_string();
-            const char* loader1 = SystemDictionary::loader_name(method_holder_loader());
+            const char* msg = "loader constraint violation in interface itable"
+              " initialization for class %s: when selecting method \"%s\" the"
+              " class loader (instance of %s) for super interface %s, and the class"
+              " loader (instance of %s) of the selected method's type, %s have"
+              " different Class objects for the type %s used in the signature";
             char* current = _klass->name()->as_C_string();
-            const char* loader2 = SystemDictionary::loader_name(interface_loader());
+            char* sig = m->name_and_sig_as_C_string();
+            const char* loader1 = SystemDictionary::loader_name(interface_loader());
             char* iface = InstanceKlass::cast(interf)->name()->as_C_string();
+            const char* loader2 = SystemDictionary::loader_name(method_holder_loader());
+            char* mclass = target()->method_holder()->name()->as_C_string();
             char* failed_type_name = failed_type_symbol->as_C_string();
-            size_t buflen = strlen(msg) + strlen(sig) + strlen(loader1) +
-              strlen(current) + strlen(loader2) + strlen(iface) +
+            size_t buflen = strlen(msg) + strlen(current) + strlen(sig) +
+              strlen(loader1) + strlen(iface) + strlen(loader2) + strlen(mclass) +
               strlen(failed_type_name);
             char* buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, buflen);
-            jio_snprintf(buf, buflen, msg, sig, loader1, current, loader2,
-                         iface, failed_type_name);
+            jio_snprintf(buf, buflen, msg, current, sig, loader1, iface,
+                         loader2, mclass, failed_type_name);
             THROW_MSG(vmSymbols::java_lang_LinkageError(), buf);
           }
         }

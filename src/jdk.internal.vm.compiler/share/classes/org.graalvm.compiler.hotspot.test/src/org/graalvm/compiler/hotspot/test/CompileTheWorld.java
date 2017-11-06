@@ -52,8 +52,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -475,6 +477,7 @@ public final class CompileTheWorld {
     private void compile(String classPath) throws IOException {
         final String[] entries = classPath.split(File.pathSeparator);
         long start = System.currentTimeMillis();
+        Map<Thread, StackTraceElement[]> initialThreads = Thread.getAllStackTraces();
 
         try {
             // compile dummy method to get compiler initialized outside of the
@@ -549,7 +552,13 @@ public final class CompileTheWorld {
 
                     classFileCounter++;
 
-                    if (className.startsWith("jdk.management.") || className.startsWith("jdk.internal.cmm.*")) {
+                    if (className.startsWith("jdk.management.") ||
+                                    className.startsWith("jdk.internal.cmm.*") ||
+                                    // GR-5881: The class initializer for
+                                    // sun.tools.jconsole.OutputViewer
+                                    // spawns non-daemon threads for redirecting sysout and syserr.
+                                    // These threads tend to cause deadlock at VM exit
+                                    className.startsWith("sun.tools.jconsole.")) {
                         continue;
                     }
 
@@ -642,6 +651,33 @@ public final class CompileTheWorld {
                             compileTime.get(), memoryUsed.get());
         } else {
             TTY.println("CompileTheWorld : Done (%d classes, %d methods, %d ms, %d bytes of memory used)", classFileCounter, compiledMethodsCounter.get(), compileTime.get(), memoryUsed.get());
+        }
+
+        // Apart from the main thread, there should be only be daemon threads
+        // alive now. If not, then a class initializer has probably started
+        // a thread that could cause a deadlock while trying to exit the VM.
+        // One known example of this is sun.tools.jconsole.OutputViewer which
+        // spawns threads to redirect sysout and syserr. To help debug such
+        // scenarios, the stacks of potentially problematic threads are dumped.
+        Map<Thread, StackTraceElement[]> suspiciousThreads = new HashMap<>();
+        for (Map.Entry<Thread, StackTraceElement[]> e : Thread.getAllStackTraces().entrySet()) {
+            Thread thread = e.getKey();
+            if (thread != Thread.currentThread() && !initialThreads.containsKey(thread) && !thread.isDaemon() && thread.isAlive()) {
+                suspiciousThreads.put(thread, e.getValue());
+            }
+        }
+        if (!suspiciousThreads.isEmpty()) {
+            TTY.println("--- Non-daemon threads started during CTW ---");
+            for (Map.Entry<Thread, StackTraceElement[]> e : suspiciousThreads.entrySet()) {
+                Thread thread = e.getKey();
+                if (thread.isAlive()) {
+                    TTY.println(thread.toString() + " " + thread.getState());
+                    for (StackTraceElement ste : e.getValue()) {
+                        TTY.println("\tat " + ste);
+                    }
+                }
+            }
+            TTY.println("---------------------------------------------");
         }
     }
 

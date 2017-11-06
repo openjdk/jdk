@@ -2571,7 +2571,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
     if (opr2->is_single_cpu()) {
       // cpu register - cpu register
       if (opr1->type() == T_OBJECT || opr1->type() == T_ARRAY) {
-        __ cmpptr(reg1, opr2->as_register());
+        __ cmpoop(reg1, opr2->as_register());
       } else {
         assert(opr2->type() != T_OBJECT && opr2->type() != T_ARRAY, "cmp int, oop?");
         __ cmpl(reg1, opr2->as_register());
@@ -2579,7 +2579,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
     } else if (opr2->is_stack()) {
       // cpu register - stack
       if (opr1->type() == T_OBJECT || opr1->type() == T_ARRAY) {
-        __ cmpptr(reg1, frame_map()->address_for_slot(opr2->single_stack_ix()));
+        __ cmpoop(reg1, frame_map()->address_for_slot(opr2->single_stack_ix()));
       } else {
         __ cmpl(reg1, frame_map()->address_for_slot(opr2->single_stack_ix()));
       }
@@ -2594,12 +2594,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
         if (o == NULL) {
           __ cmpptr(reg1, (int32_t)NULL_WORD);
         } else {
-#ifdef _LP64
-          __ movoop(rscratch1, o);
-          __ cmpptr(reg1, rscratch1);
-#else
-          __ cmpoop(reg1, c->as_jobject());
-#endif // _LP64
+          __ cmpoop(reg1, o);
         }
       } else {
         fatal("unexpected type: %s", basictype_to_str(c->type()));
@@ -2709,7 +2704,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
 #ifdef _LP64
       // %%% Make this explode if addr isn't reachable until we figure out a
       // better strategy by giving noreg as the temp for as_Address
-      __ cmpptr(rscratch1, as_Address(addr, noreg));
+      __ cmpoop(rscratch1, as_Address(addr, noreg));
 #else
       __ cmpoop(as_Address(addr), c->as_jobject());
 #endif // _LP64
@@ -3487,13 +3482,9 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   Register mdo  = op->mdo()->as_register();
   __ mov_metadata(mdo, md->constant_encoding());
   Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-  Bytecodes::Code bc = method->java_code_at_bci(bci);
-  const bool callee_is_static = callee->is_loaded() && callee->is_static();
   // Perform additional virtual call profiling for invokevirtual and
   // invokeinterface bytecodes
-  if ((bc == Bytecodes::_invokevirtual || bc == Bytecodes::_invokeinterface) &&
-      !callee_is_static &&  // required for optimized MH invokes
-      C1ProfileVirtualCalls) {
+  if (op->should_profile_receiver_type()) {
     assert(op->recv()->is_single_cpu(), "recv must be allocated");
     Register recv = op->recv()->as_register();
     assert_different_registers(mdo, recv);

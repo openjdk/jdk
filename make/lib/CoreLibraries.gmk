@@ -300,7 +300,7 @@ LIBJLI_SRC_DIRS := $(call FindSrcDirsForLib, java.base, jli)
 
 LIBJLI_CFLAGS := $(CFLAGS_JDKLIB)
 
-ifeq ($(call check-jvm-variant, zero zeroshark), true)
+ifeq ($(call check-jvm-variant, zero), true)
   ERGO_FAMILY := zero
 else
   ifeq ($(OPENJDK_TARGET_CPU_ARCH), x86)

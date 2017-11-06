@@ -63,13 +63,8 @@
 #include CPU_HEADER(c2_globals)
 #include OS_HEADER(c2_globals)
 #endif
-#ifdef SHARK
-#ifdef ZERO
-# include "shark_globals_zero.hpp"
-#endif
-#endif
 
-#if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK) && !INCLUDE_JVMCI
+#if !defined(COMPILER1) && !defined(COMPILER2) && !INCLUDE_JVMCI
 define_pd_global(bool, BackgroundCompilation,        false);
 define_pd_global(bool, UseTLAB,                      false);
 define_pd_global(bool, CICompileOSR,                 false);
@@ -147,13 +142,12 @@ struct Flag {
     KIND_C1                 = 1 << 12,
     KIND_C2                 = 1 << 13,
     KIND_ARCH               = 1 << 14,
-    KIND_SHARK              = 1 << 15,
-    KIND_LP64_PRODUCT       = 1 << 16,
-    KIND_COMMERCIAL         = 1 << 17,
-    KIND_JVMCI              = 1 << 18,
+    KIND_LP64_PRODUCT       = 1 << 15,
+    KIND_COMMERCIAL         = 1 << 16,
+    KIND_JVMCI              = 1 << 17,
 
     // set this bit if the flag was set on the command line
-    ORIG_COMMAND_LINE       = 1 << 19,
+    ORIG_COMMAND_LINE       = 1 << 18,
 
     KIND_MASK = ~(VALUE_ORIGIN_MASK | ORIG_COMMAND_LINE)
   };
@@ -592,8 +586,8 @@ public:
           range(8, 256)                                                     \
           constraint(ObjectAlignmentInBytesConstraintFunc,AtParse)          \
                                                                             \
-  product(bool, AssumeMP, false,                                            \
-          "Instruct the VM to assume multiple processors are available")    \
+  product(bool, AssumeMP, true,                                             \
+          "(Deprecated) Instruct the VM to assume multiple processors are available")\
                                                                             \
   /* UseMembar is theoretically a temp flag used for memory barrier      */ \
   /* removal testing.  It was supposed to be removed before FCS but has  */ \
@@ -2343,12 +2337,6 @@ public:
           "Initial size of the boot class loader data metaspace")           \
           range(30*K, max_uintx/BytesPerWord)                               \
           constraint(InitialBootClassLoaderMetaspaceSizeConstraintFunc, AfterErgo)\
-                                                                            \
-  product(bool, TraceYoungGenTime, false,                                   \
-          "Trace accumulated time for young collection")                    \
-                                                                            \
-  product(bool, TraceOldGenTime, false,                                     \
-          "Trace accumulated time for old collection")                      \
                                                                             \
   product(bool, PrintHeapAtSIGBREAK, true,                                  \
           "Print heap layout in response to SIGBREAK")                      \

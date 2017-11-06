@@ -339,7 +339,6 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   }
 
-#ifndef SHARK
   // Compute the caller frame based on the sender sp of stub_frame and stored frame sizes info.
   CodeBlob* cb = stub_frame.cb();
   // Verify we have the right vframeArray
@@ -359,9 +358,6 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
          strcmp("Stub<UncommonTrapStub.uncommonTrapHandler>", cb->name()) == 0,
          "unexpected code blob: %s", cb->name());
 #endif
-#else
-  intptr_t* unpack_sp = stub_frame.sender(&dummy_map).unextended_sp();
-#endif // !SHARK
 
   // This is a guarantee instead of an assert because if vframe doesn't match
   // we will unpack the wrong deoptimized frame and wind up in strange places
@@ -488,9 +484,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   frame_pcs[0] = deopt_sender.raw_pc();
 
-#ifndef SHARK
   assert(CodeCache::find_blob_unsafe(frame_pcs[0]) != NULL, "bad pc");
-#endif // SHARK
 
 #ifdef INCLUDE_JVMCI
   if (exceptionObject() != NULL) {
@@ -1386,7 +1380,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
   RegisterMap reg_map(thread, UseBiasedLocking);
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
-  assert(caller_frame.cb()->as_nmethod_or_null() == cm, "expect top frame nmethod");
+  assert(caller_frame.cb()->as_compiled_method_or_null() == cm, "expect top frame compiled method");
   Deoptimization::deoptimize(thread, caller_frame, &reg_map, Deoptimization::Reason_not_compiled_exception_handler);
 
   MethodData* trap_mdo = get_method_data(thread, cm->method(), true);
@@ -1449,7 +1443,7 @@ Deoptimization::get_method_data(JavaThread* thread, const methodHandle& m,
   return mdo;
 }
 
-#if defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
+#if defined(COMPILER2) || INCLUDE_JVMCI
 void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool, int index, TRAPS) {
   // in case of an unresolved klass entry, load the class.
   if (constant_pool->tag_at(index).is_unresolved_klass()) {
@@ -2366,7 +2360,7 @@ void Deoptimization::print_statistics() {
     if (xtty != NULL)  xtty->tail("statistics");
   }
 }
-#else // COMPILER2 || SHARK || INCLUDE_JVMCI
+#else // COMPILER2 || INCLUDE_JVMCI
 
 
 // Stubs for C1 only system.
@@ -2402,4 +2396,4 @@ const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
   return buf;
 }
 
-#endif // COMPILER2 || SHARK || INCLUDE_JVMCI
+#endif // COMPILER2 || INCLUDE_JVMCI

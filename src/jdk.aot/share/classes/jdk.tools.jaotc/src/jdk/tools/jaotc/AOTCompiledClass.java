@@ -25,23 +25,34 @@ package jdk.tools.jaotc;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Set;
 
 import jdk.tools.jaotc.binformat.BinaryContainer;
 import jdk.tools.jaotc.binformat.ReadOnlyDataContainer;
 import jdk.tools.jaotc.binformat.Symbol.Binding;
 import jdk.tools.jaotc.binformat.Symbol.Kind;
 
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+
+import jdk.tools.jaotc.AOTDynamicTypeStore.AdapterLocation;
+import jdk.tools.jaotc.AOTDynamicTypeStore.AppendixLocation;
+import jdk.tools.jaotc.AOTDynamicTypeStore.Location;
 
 /**
  * Class encapsulating Graal-compiled output of a Java class. The compilation result of all methods
  * of a class {@code className} are maintained in an array list.
  */
 final class AOTCompiledClass {
+
+    private static AOTDynamicTypeStore dynoStore;
+
+    static void setDynamicTypeStore(AOTDynamicTypeStore s) {
+        dynoStore = s;
+    }
 
     static class AOTKlassData {
         private int gotIndex; // Index (offset/8) to the got in the .metaspace.got section
@@ -50,29 +61,64 @@ final class AOTCompiledClass {
         private int compiledMethodsOffset;
         // Offset to dependent methods data.
         private int dependentMethodsOffset;
-        private long fingerprint;           // Class fingerprint
 
-        private final String name;
-        private boolean isArray;
+        private final String metadataName;
+        HotSpotResolvedObjectType type;
 
         /**
          * List of dependent compiled methods which have a reference to this class.
          */
         private ArrayList<CompiledMethodInfo> dependentMethods;
 
-        AOTKlassData(BinaryContainer binaryContainer, String name, long fingerprint, int classId) {
+        AOTKlassData(BinaryContainer binaryContainer, HotSpotResolvedObjectType type, int classId) {
             this.dependentMethods = new ArrayList<>();
             this.classId = classId;
-            this.fingerprint = fingerprint;
-            this.gotIndex = binaryContainer.addTwoSlotKlassSymbol(name);
+            this.type = type;
+            this.metadataName = type.isAnonymous() ? "anon<"+ classId + ">": type.getName();
+            this.gotIndex = binaryContainer.addTwoSlotKlassSymbol(metadataName);
             this.compiledMethodsOffset = -1; // Not compiled classes do not have compiled methods.
             this.dependentMethodsOffset = -1;
-            this.name = name;
-            this.isArray = name.length() > 0 && name.charAt(0) == '[';
         }
 
-        long getFingerprint() {
-            return fingerprint;
+        private String[] getMetaspaceNames() {
+            String name = metadataName;
+            Set<Location> locs = dynoStore.getDynamicClassLocationsForType(type);
+            if (locs == null) {
+                return new String[] {name};
+            } else {
+                ArrayList<String> names = new ArrayList<String>();
+                names.add(name);
+                for (Location l : locs) {
+                    HotSpotResolvedObjectType cpType = l.getHolder();
+                    AOTKlassData data = getAOTKlassData(cpType);
+                    // We collect dynamic types at parse time, but late inlining
+                    // may record types that don't make it into the final graph.
+                    // We can safely ignore those here.
+                    if (data == null) {
+                       // Not a compiled or inlined method
+                       continue;
+                    }
+                    int cpi = l.getCpi();
+                    String location = "<"+ data.classId + ":" + cpi + ">";
+                    if (l instanceof AdapterLocation) {
+                        names.add("adapter" + location);
+                        AdapterLocation a = (AdapterLocation)l;
+                        names.add("adapter:" + a.getMethodId() + location);
+                    } else {
+                        assert l instanceof AppendixLocation;
+                        names.add("appendix" + location);
+                    }
+                }
+                return names.toArray(new String[names.size()]);
+            }
+        }
+
+        HotSpotResolvedObjectType getType() {
+            return type;
+        }
+
+        String getMetadataName() {
+            return metadataName;
         }
 
         /**
@@ -112,6 +158,7 @@ final class AOTCompiledClass {
             for (CompiledMethodInfo methodInfo : dependentMethods) {
                 dependenciesContainer.appendInt(methodInfo.getCodeId());
             }
+
             verify();
 
             // @formatter:off
@@ -119,7 +166,9 @@ final class AOTCompiledClass {
              * The offsets layout should match AOTKlassData structure in AOT JVM runtime
              */
             int offset = container.getByteStreamSize();
-            container.createSymbol(offset, Kind.OBJECT, Binding.GLOBAL, 0, name);
+            for (String name : getMetaspaceNames()) {
+                container.createSymbol(offset, Kind.OBJECT, Binding.GLOBAL, 0, name);
+            }
                       // Add index (offset/8) to the got in the .metaspace.got section
             container.appendInt(gotIndex).
                       // Add unique ID
@@ -129,13 +178,16 @@ final class AOTCompiledClass {
                       // Add the offset to dependent methods data in the .metaspace.offsets section.
                       appendInt(dependentMethodsOffset).
                       // Add fingerprint.
-                      appendLong(fingerprint);
+                      appendLong(type.getFingerprint());
+
             // @formatter:on
         }
 
         private void verify() {
+            String name = type.getName();
             assert gotIndex > 0 : "incorrect gotIndex: " + gotIndex + " for klass: " + name;
-            assert isArray || fingerprint != 0 : "incorrect fingerprint: " + fingerprint + " for klass: " + name;
+            long fingerprint = type.getFingerprint();
+            assert type.isArray() || fingerprint != 0 : "incorrect fingerprint: " + fingerprint + " for klass: " + name;
             assert compiledMethodsOffset >= -1 : "incorrect compiledMethodsOffset: " + compiledMethodsOffset + " for klass: " + name;
             assert dependentMethodsOffset >= -1 : "incorrect dependentMethodsOffset: " + dependentMethodsOffset + " for klass: " + name;
             assert classId >= 0 : "incorrect classId: " + classId + " for klass: " + name;
@@ -148,7 +200,7 @@ final class AOTCompiledClass {
     /**
      * List of all collected class data.
      */
-    private static Map<String, AOTKlassData> klassData = new HashMap<>();
+    private static HashMap<String, AOTKlassData> klassData = new HashMap<>();
 
     /**
      * List of all methods to be compiled.
@@ -269,23 +321,25 @@ final class AOTCompiledClass {
      */
     synchronized static AOTKlassData addAOTKlassData(BinaryContainer binaryContainer, HotSpotResolvedObjectType type) {
         String name = type.getName();
-        long fingerprint = type.getFingerprint();
         AOTKlassData data = klassData.get(name);
         if (data != null) {
-            assert data.getFingerprint() == fingerprint : "incorrect fingerprint data for klass: " + name;
+            assert data.getType() == type : "duplicate classes for name " + name;
         } else {
-            data = new AOTKlassData(binaryContainer, name, fingerprint, classesCount++);
+            data = new AOTKlassData(binaryContainer, type, classesCount++);
             klassData.put(name, data);
         }
         return data;
     }
 
-    synchronized static AOTKlassData getAOTKlassData(String name) {
+    private synchronized static AOTKlassData getAOTKlassData(String name) {
         return klassData.get(name);
     }
 
     synchronized static AOTKlassData getAOTKlassData(HotSpotResolvedObjectType type) {
-        return getAOTKlassData(type.getName());
+        String name = type.getName();
+        AOTKlassData data =  getAOTKlassData(name);
+        assert data == null || data.getType() == type : "duplicate classes for name " + name;
+        return data;
     }
 
     void addAOTKlassData(BinaryContainer binaryContainer) {
@@ -354,18 +408,52 @@ final class AOTCompiledClass {
             methodInfo.addMethodOffsets(binaryContainer, container);
         }
         String name = resolvedJavaType.getName();
-        AOTKlassData data = klassData.get(name);
+        AOTKlassData data = getAOTKlassData(resolvedJavaType);
         assert data != null : "missing data for klass: " + name;
-        assert data.getFingerprint() == resolvedJavaType.getFingerprint() : "incorrect fingerprint for klass: " + name;
         int cntDepMethods = data.dependentMethods.size();
         assert cntDepMethods > 0 : "no dependent methods for compiled klass: " + name;
         data.setCompiledMethodsOffset(startMethods);
     }
 
     static void putAOTKlassData(BinaryContainer binaryContainer) {
+        // record dynamic types
+        Set<HotSpotResolvedObjectType> dynoTypes = dynoStore.getDynamicTypes();
+        if (dynoTypes != null) {
+            for (HotSpotResolvedObjectType dynoType : dynoTypes) {
+                addFingerprintKlassData(binaryContainer, dynoType);
+            }
+        }
+
         ReadOnlyDataContainer container = binaryContainer.getKlassesOffsetsContainer();
         for (AOTKlassData data : klassData.values()) {
             data.putAOTKlassData(binaryContainer, container);
+        }
+    }
+
+    static HotSpotResolvedObjectType getType(Object ref) {
+        return (ref instanceof HotSpotResolvedObjectType) ?
+            (HotSpotResolvedObjectType)ref :
+            ((HotSpotResolvedJavaMethod)ref).getDeclaringClass();
+    }
+
+    static String metadataName(HotSpotResolvedObjectType type) {
+        AOTKlassData data = getAOTKlassData(type);
+        assert data != null : "no data for " + type;
+        return getAOTKlassData(type).getMetadataName();
+    }
+
+    private static String metadataName(HotSpotResolvedJavaMethod m) {
+        return metadataName(m.getDeclaringClass()) + "." + m.getName() + m.getSignature().toMethodDescriptor();
+    }
+
+    static String metadataName(Object ref) {
+        if (ref instanceof HotSpotResolvedJavaMethod) {
+            HotSpotResolvedJavaMethod m = (HotSpotResolvedJavaMethod)ref;
+            return metadataName(m);
+        } else {
+            assert ref instanceof HotSpotResolvedObjectType : "unexpected object type " + ref.getClass().getName();
+            HotSpotResolvedObjectType type = (HotSpotResolvedObjectType)ref;
+            return metadataName(type);
         }
     }
 

@@ -25,10 +25,10 @@
 #ifndef SHARE_VM_RUNTIME_THREAD_HPP
 #define SHARE_VM_RUNTIME_THREAD_HPP
 
+#include "jni.h"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
-#include "prims/jni.h"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/javaFrameAnchor.hpp"
@@ -1272,7 +1272,7 @@ class JavaThread: public Thread {
     // we have checked is_external_suspend(), we will recheck its value
     // under SR_lock in java_suspend_self().
     return (_special_runtime_exit_condition != _no_async_condition) ||
-            is_external_suspend() || is_deopt_suspend() || is_trace_suspend();
+            is_external_suspend() || is_trace_suspend();
   }
 
   void set_pending_unsafe_access_error()          { _special_runtime_exit_condition = _async_unsafe_access_error; }
@@ -2052,7 +2052,7 @@ class Threads: AllStatic {
   static bool includes(JavaThread* p);
   static JavaThread* first()                     { return _thread_list; }
   static void threads_do(ThreadClosure* tc);
-  static void parallel_java_threads_do(ThreadClosure* tc);
+  static void possibly_parallel_threads_do(bool is_par, ThreadClosure* tc);
 
   // Initializes the vm and creates the vm thread
   static jint create_vm(JavaVMInitArgs* args, bool* canTryAgain);

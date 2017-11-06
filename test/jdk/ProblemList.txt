@@ -304,14 +304,6 @@ sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-
 
 com/sun/tools/attach/StartManagementAgent.java                  8179700 generic-all
 
-sun/tools/jhsdb/AlternateHashingTest.java                       8184042 macosx-all
-
-sun/tools/jhsdb/BasicLauncherTest.java                          8184042 macosx-all
-
-sun/tools/jhsdb/HeapDumpTest.java                               8184042 macosx-all
-
-sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java              8184042 macosx-all
-
 ############################################################################
 
 # jdk_other

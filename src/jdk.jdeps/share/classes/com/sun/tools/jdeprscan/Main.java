@@ -38,6 +38,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,18 +46,22 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Queue;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.platform.JDKPlatformProvider;
 
 import com.sun.tools.jdeprscan.scan.Scan;
 
@@ -383,32 +388,24 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                      .map(TypeElement::toString)
                      .collect(toList()));
         } else {
-            // TODO: kind of a hack...
-            // Create a throwaway compilation task with options "--release N"
-            // which has the side effect of setting the file manager's
-            // PLATFORM_CLASS_PATH to the right value.
-            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-            StandardJavaFileManager fm =
-                compiler.getStandardFileManager(this, null, StandardCharsets.UTF_8);
-            JavaCompiler.CompilationTask task =
-                compiler.getTask(null, fm, this, List.of("--release", release), null, null);
-            List<Path> paths = new ArrayList<>();
-            for (Path p : fm.getLocationAsPaths(StandardLocation.PLATFORM_CLASS_PATH)) {
-                try (Stream<Path> str = Files.walk(p)) {
-                    str.forEachOrdered(paths::add);
-                }
+            JDKPlatformProvider pp = new JDKPlatformProvider();
+            if (StreamSupport.stream(pp.getSupportedPlatformNames().spliterator(),
+                                 false)
+                             .noneMatch(n -> n.equals(release))) {
+                return false;
+            }
+            JavaFileManager fm = pp.getPlatform(release, "").getFileManager();
+            List<String> classNames = new ArrayList<>();
+            for (JavaFileObject fo : fm.list(StandardLocation.PLATFORM_CLASS_PATH,
+                                             "",
+                                             EnumSet.of(Kind.CLASS),
+                                             true)) {
+                classNames.add(fm.inferBinaryName(StandardLocation.PLATFORM_CLASS_PATH, fo));
             }
 
             options.add("-Xlint:-options");
 
-            return doClassNames(
-                paths.stream()
-                     .filter(path -> path.toString().endsWith(".sig"))
-                     .map(path -> path.subpath(1, path.getNameCount()))
-                     .map(Path::toString)
-                     .map(s -> s.replaceAll("\\.sig$", ""))
-                     .map(s -> s.replace('/', '.'))
-                     .collect(toList()));
+            return doClassNames(classNames);
         }
     }
 

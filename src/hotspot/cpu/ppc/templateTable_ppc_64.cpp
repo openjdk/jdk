@@ -2224,6 +2224,7 @@ void TemplateTable::load_field_cp_cache_entry(Register Robj,
   if (is_static) {
     __ ld(Robj, in_bytes(cp_base_offset) + in_bytes(ConstantPoolCacheEntry::f1_offset()), Rcache);
     __ ld(Robj, in_bytes(Klass::java_mirror_offset()), Robj);
+    __ resolve_oop_handle(Robj);
     // Acquire not needed here. Following access has an address dependency on this value.
   }
 }

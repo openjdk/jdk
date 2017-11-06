@@ -5924,20 +5924,31 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
 #if INCLUDE_CDS
     if (DumpLoadedClassList != NULL && stream->source() != NULL && classlist_file->is_open()) {
-      // Only dump the classes that can be stored into CDS archive.
-      // Anonymous classes such as generated LambdaForm classes are also not included.
-      if (SystemDictionaryShared::is_sharing_possible(_loader_data) &&
+      if (!ClassLoader::has_jrt_entry()) {
+        warning("DumpLoadedClassList and CDS are not supported in exploded build");
+        DumpLoadedClassList = NULL;
+      } else if (SystemDictionaryShared::is_sharing_possible(_loader_data) &&
           _host_klass == NULL) {
+        // Only dump the classes that can be stored into CDS archive.
+        // Anonymous classes such as generated LambdaForm classes are also not included.
         oop class_loader = _loader_data->class_loader();
         ResourceMark rm(THREAD);
-        // For the boot and platform class loaders, check if the class is not found in the
-        // java runtime image. Additional check for the boot class loader is if the class
-        // is not found in the boot loader's appended entries. This indicates that the class
-        // is not useable during run time, such as the ones found in the --patch-module entries,
-        // so it should not be included in the classlist file.
-        if (((class_loader == NULL && !ClassLoader::contains_append_entry(stream->source())) ||
-             SystemDictionary::is_platform_class_loader(class_loader)) &&
-            !ClassLoader::is_jrt(stream->source())) {
+        bool skip = false;
+        if (class_loader == NULL || SystemDictionary::is_platform_class_loader(class_loader)) {
+          // For the boot and platform class loaders, skip classes that are not found in the
+          // java runtime image, such as those found in the --patch-module entries.
+          // These classes can't be loaded from the archive during runtime.
+          if (!ClassLoader::is_modules_image(stream->source()) && strncmp(stream->source(), "jrt:", 4) != 0) {
+            skip = true;
+          }
+
+          if (class_loader == NULL && ClassLoader::contains_append_entry(stream->source())) {
+            // .. but don't skip the boot classes that are loaded from -Xbootclasspath/a
+            // as they can be loaded from the archive during runtime.
+            skip = false;
+          }
+        }
+        if (skip) {
           tty->print_cr("skip writing class %s from source %s to classlist file",
             _class_name->as_C_string(), stream->source());
         } else {

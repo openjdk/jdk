@@ -25,11 +25,11 @@
 #ifndef SHARE_VM_CLASSFILE_MODULEENTRY_HPP
 #define SHARE_VM_CLASSFILE_MODULEENTRY_HPP
 
+#include "jni.h"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
-#include "prims/jni.h"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "trace/traceMacros.hpp"

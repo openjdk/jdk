@@ -26,6 +26,7 @@
 package com.sun.tools.javac.platform;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
@@ -36,19 +37,35 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.ProviderNotFoundException;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.processing.Processor;
+import javax.tools.ForwardingJavaFileObject;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileManager.Location;
+import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 
 import com.sun.source.util.Plugin;
+import com.sun.tools.javac.file.CacheFSInfo;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.StringUtils;
 
 /** PlatformProvider for JDK N.
  *
@@ -66,7 +83,7 @@ public class JDKPlatformProvider implements PlatformProvider {
 
     @Override
     public PlatformDescription getPlatform(String platformName, String options) {
-        return new PlatformDescriptionImpl(platformName.equals("10") ? "9" : platformName);
+        return new PlatformDescriptionImpl(platformName);
     }
 
     private static final String[] symbolFileLocation = { "lib", "ct.sym" };
@@ -81,9 +98,11 @@ public class JDKPlatformProvider implements PlatformProvider {
                  DirectoryStream<Path> dir =
                          Files.newDirectoryStream(fs.getRootDirectories().iterator().next())) {
                 for (Path section : dir) {
+                    if (section.getFileName().toString().contains("-"))
+                        continue;
                     for (char ver : section.getFileName().toString().toCharArray()) {
                         String verString = Character.toString(ver);
-                        Target t = Target.lookup(verString);
+                        Target t = Target.lookup("" + Integer.parseInt(verString, 16));
 
                         if (t != null) {
                             SUPPORTED_JAVA_PLATFORM_VERSIONS.add(targetNumericVersion(t));
@@ -92,10 +111,6 @@ public class JDKPlatformProvider implements PlatformProvider {
                 }
             } catch (IOException | ProviderNotFoundException ex) {
             }
-        }
-
-        if (SUPPORTED_JAVA_PLATFORM_VERSIONS.contains("9")) {
-            SUPPORTED_JAVA_PLATFORM_VERSIONS.add("10");
         }
     }
 
@@ -106,64 +121,217 @@ public class JDKPlatformProvider implements PlatformProvider {
     static class PlatformDescriptionImpl implements PlatformDescription {
 
         private final Map<Path, FileSystem> ctSym2FileSystem = new HashMap<>();
-        private final String version;
+        private final String sourceVersion;
+        private final String ctSymVersion;
 
-        PlatformDescriptionImpl(String version) {
-            this.version = version;
+        PlatformDescriptionImpl(String sourceVersion) {
+            this.sourceVersion = sourceVersion;
+            this.ctSymVersion =
+                    StringUtils.toUpperCase(Integer.toHexString(Integer.parseInt(sourceVersion)));
         }
 
         @Override
-        public Collection<Path> getPlatformPath() {
-            List<Path> paths = new ArrayList<>();
+        public JavaFileManager getFileManager() {
+            Context context = new Context();
+            PrintWriter pw = new PrintWriter(System.err, true);
+            context.put(Log.errKey, pw);
+            CacheFSInfo.preRegister(context);
+            JavacFileManager fm = new JavacFileManager(context, true, null) {
+                @Override
+                public boolean hasLocation(Location location) {
+                    return super.hasExplicitLocation(location);
+                }
+
+                @Override
+                public JavaFileObject getJavaFileForInput(Location location, String className,
+                                                          Kind kind) throws IOException {
+                    if (kind == Kind.CLASS) {
+                        String fileName = className.replace('.', '/');
+                        JavaFileObject result =
+                                (JavaFileObject) getFileForInput(location,
+                                                                 "",
+                                                                 fileName + ".sig");
+
+                        if (result == null) {
+                            //in jrt://, the classfile may have the .class extension:
+                            result = (JavaFileObject) getFileForInput(location,
+                                                                      "",
+                                                                      fileName + ".class");
+                        }
+
+                        if (result != null) {
+                            return new SigJavaFileObject(result);
+                        } else {
+                            return null;
+                        }
+                    }
+
+                    return super.getJavaFileForInput(location, className, kind);
+                }
+
+                @Override
+                public Iterable<JavaFileObject> list(Location location,
+                                                     String packageName,
+                                                     Set<Kind> kinds,
+                                                     boolean recurse) throws IOException {
+                    Set<Kind> enhancedKinds = EnumSet.copyOf(kinds);
+
+                    enhancedKinds.add(Kind.OTHER);
+
+                    Iterable<JavaFileObject> listed = super.list(location, packageName,
+                                                                 enhancedKinds, recurse);
+
+                    return () -> new Iterator<JavaFileObject>() {
+                        private final Iterator<JavaFileObject> original = listed.iterator();
+                        private JavaFileObject next;
+                        @Override
+                        public boolean hasNext() {
+                            if (next == null) {
+                                while (original.hasNext()) {
+                                    JavaFileObject fo = original.next();
+
+                                    if (fo.getKind() == Kind.OTHER &&
+                                        fo.getName().endsWith(".sig")) {
+                                        next = new SigJavaFileObject(fo);
+                                        break;
+                                    }
+
+                                    if (kinds.contains(fo.getKind())) {
+                                        next = fo;
+                                        break;
+                                    }
+                                }
+                            }
+                            return next != null;
+                        }
+
+                        @Override
+                        public JavaFileObject next() {
+                            if (!hasNext())
+                                throw new NoSuchElementException();
+                            JavaFileObject result = next;
+                            next = null;
+                            return result;
+                        }
+
+                    };
+                }
+
+                @Override
+                public String inferBinaryName(Location location, JavaFileObject file) {
+                    if (file instanceof SigJavaFileObject) {
+                        file = ((SigJavaFileObject) file).getDelegate();
+                    }
+                    return super.inferBinaryName(location, file);
+                }
+
+            };
+
             Path file = findCtSym();
             // file == ${jdk.home}/lib/ct.sym
             if (Files.exists(file)) {
-                FileSystem fs = ctSym2FileSystem.get(file);
-                if (fs == null) {
-                    try {
+                try {
+                    FileSystem fs = ctSym2FileSystem.get(file);
+                    if (fs == null) {
                         ctSym2FileSystem.put(file, fs = FileSystems.newFileSystem(file, null));
-                    } catch (IOException ex) {
-                        throw new IllegalStateException(ex);
                     }
-                }
-                Path root = fs.getRootDirectories().iterator().next();
-                try (DirectoryStream<Path> dir = Files.newDirectoryStream(root)) {
-                    for (Path section : dir) {
-                        if (section.getFileName().toString().contains(version)) {
-                            Path systemModules = section.resolve("system-modules");
 
-                            if (Files.isRegularFile(systemModules)) {
-                                Path modules =
-                                        FileSystems.getFileSystem(URI.create("jrt:/"))
-                                                   .getPath("modules");
-                                try (Stream<String> lines =
-                                        Files.lines(systemModules, Charset.forName("UTF-8"))) {
-                                    lines.map(line -> modules.resolve(line))
-                                         .filter(mod -> Files.exists(mod))
-                                         .forEach(mod -> paths.add(mod));
+                    List<Path> paths = new ArrayList<>();
+                    Path modules = fs.getPath(ctSymVersion + "-modules");
+                    Path root = fs.getRootDirectories().iterator().next();
+                    boolean pathsSet = false;
+                    Charset utf8 = Charset.forName("UTF-8");
+
+                    try (DirectoryStream<Path> dir = Files.newDirectoryStream(root)) {
+                        for (Path section : dir) {
+                            if (section.getFileName().toString().contains(ctSymVersion) &&
+                                !section.getFileName().toString().contains("-")) {
+                                Path systemModules = section.resolve("system-modules");
+
+                                if (Files.isRegularFile(systemModules)) {
+                                    fm.handleOption("--system", Arrays.asList("none").iterator());
+
+                                    Path jrtModules =
+                                            FileSystems.getFileSystem(URI.create("jrt:/"))
+                                                       .getPath("modules");
+                                    try (Stream<String> lines =
+                                            Files.lines(systemModules, utf8)) {
+                                        lines.map(line -> jrtModules.resolve(line))
+                                             .filter(mod -> Files.exists(mod))
+                                             .forEach(mod -> setModule(fm, mod));
+                                    }
+                                    pathsSet = true;
+                                } else {
+                                    paths.add(section);
                                 }
-                            } else {
-                                paths.add(section);
                             }
                         }
                     }
+
+                    if (Files.isDirectory(modules)) {
+                        try (DirectoryStream<Path> dir = Files.newDirectoryStream(modules)) {
+                            fm.handleOption("--system", Arrays.asList("none").iterator());
+
+                            for (Path module : dir) {
+                                fm.setLocationForModule(StandardLocation.SYSTEM_MODULES,
+                                                        module.getFileName().toString(),
+                                                        Stream.concat(paths.stream(),
+                                                                      Stream.of(module))
+                                  .collect(Collectors.toList()));
+                            }
+                        }
+                    } else if (!pathsSet) {
+                        fm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, paths);
+                    }
+
+                    return fm;
                 } catch (IOException ex) {
                     throw new IllegalStateException(ex);
                 }
             } else {
                 throw new IllegalStateException("Cannot find ct.sym!");
             }
-            return paths;
+        }
+
+        private static void setModule(StandardJavaFileManager fm, Path mod) {
+            try {
+                fm.setLocationForModule(StandardLocation.SYSTEM_MODULES,
+                                        mod.getFileName().toString(),
+                                        Collections.singleton(mod));
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+
+        private static class SigJavaFileObject extends ForwardingJavaFileObject<JavaFileObject> {
+
+            public SigJavaFileObject(JavaFileObject fileObject) {
+                super(fileObject);
+            }
+
+            @Override
+            public Kind getKind() {
+                return Kind.CLASS;
+            }
+
+            @Override
+            public boolean isNameCompatible(String simpleName, Kind kind) {
+                return super.isNameCompatible(simpleName + ".sig", Kind.OTHER);
+            }
+
+            public JavaFileObject getDelegate() {
+                return fileObject;
+            }
         }
 
         @Override
         public String getSourceVersion() {
-            return version;
+            return sourceVersion;
         }
 
         @Override
         public String getTargetVersion() {
-            return version;
+            return sourceVersion;
         }
 
         @Override

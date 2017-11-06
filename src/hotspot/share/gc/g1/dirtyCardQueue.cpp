@@ -280,13 +280,13 @@ void DirtyCardQueueSet::par_apply_closure_to_all_completed_buffers(CardTableEntr
   BufferNode* nd = _cur_par_buffer_node;
   while (nd != NULL) {
     BufferNode* next = nd->next();
-    void* actual = Atomic::cmpxchg_ptr(next, &_cur_par_buffer_node, nd);
+    BufferNode* actual = Atomic::cmpxchg(next, &_cur_par_buffer_node, nd);
     if (actual == nd) {
       bool b = apply_closure_to_buffer(cl, nd, false);
       guarantee(b, "Should not stop early.");
       nd = next;
     } else {
-      nd = static_cast<BufferNode*>(actual);
+      nd = actual;
     }
   }
 }

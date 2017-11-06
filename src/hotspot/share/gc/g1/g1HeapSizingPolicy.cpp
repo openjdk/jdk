@@ -51,9 +51,9 @@ size_t G1HeapSizingPolicy::expansion_amount() {
   assert(GCTimeRatio > 0,
          "we should have set it to a default value set_g1_gc_flags() "
          "if a user set it to 0");
-  const double gc_overhead_perc = 100.0 * (1.0 / (1.0 + GCTimeRatio));
+  const double gc_overhead_percent = 100.0 * (1.0 / (1.0 + GCTimeRatio));
 
-  double threshold = gc_overhead_perc;
+  double threshold = gc_overhead_percent;
   size_t expand_bytes = 0;
 
   // If the heap is at less than half its maximum size, scale the threshold down,
@@ -107,9 +107,9 @@ size_t G1HeapSizingPolicy::expansion_amount() {
     } else {
       double const MinScaleDownFactor = 0.2;
       double const MaxScaleUpFactor = 2;
-      double const StartScaleDownAt = gc_overhead_perc;
-      double const StartScaleUpAt = gc_overhead_perc * 1.5;
-      double const ScaleUpRange = gc_overhead_perc * 2.0;
+      double const StartScaleDownAt = gc_overhead_percent;
+      double const StartScaleUpAt = gc_overhead_percent * 1.5;
+      double const ScaleUpRange = gc_overhead_percent * 2.0;
 
       double ratio_delta;
       if (filled_history_buffer) {

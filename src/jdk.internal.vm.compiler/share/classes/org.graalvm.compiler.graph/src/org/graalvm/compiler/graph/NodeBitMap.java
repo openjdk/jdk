@@ -195,7 +195,7 @@ public final class NodeBitMap extends NodeIdAccessor implements NodeIterable<Nod
                     Node result = graph.getNode(nodeId);
                     if (result == null) {
                         // node was deleted -> clear the bit and continue searching
-                        bits[wordIndex] = bits[wordIndex] & ~(1 << bitIndex);
+                        bits[wordIndex] = bits[wordIndex] & ~(1L << bitIndex);
                         int nextNodeId = nodeId + 1;
                         if ((nextNodeId & (Long.SIZE - 1)) == 0) {
                             // we reached the end of this word

@@ -75,7 +75,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
     -ignorePath linux \
     -ignorePath posix \
     -ignorePath ppc \
-    -ignorePath shark \
     -ignorePath solaris \
     -ignorePath sparc \
     -ignorePath x86_32 \

@@ -665,9 +665,8 @@ class StaticFinalFieldPrinter : public FieldClosure {
             _out->print_cr("null");
           } else if (value->is_instance()) {
             if (value->is_a(SystemDictionary::String_klass())) {
-              _out->print("\"");
-              _out->print_raw(java_lang_String::as_quoted_ascii(value));
-              _out->print_cr("\"");
+              const char* ascii_value = java_lang_String::as_quoted_ascii(value);
+              _out->print("\"%s\"", (ascii_value != NULL) ? ascii_value : "");
             } else {
               const char* klass_name  = value->klass()->name()->as_quoted_ascii();
               _out->print_cr("%s", klass_name);

@@ -50,9 +50,6 @@
 #include "stack_zero.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
-#ifdef SHARK
-#include "shark/shark_globals.hpp"
-#endif
 
 #ifdef CC_INTERP
 
@@ -276,7 +273,7 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     markOop disp = lockee->mark()->set_unlocked();
 
     monitor->lock()->set_displaced_header(disp);
-    if (Atomic::cmpxchg_ptr(monitor, lockee->mark_addr(), disp) != disp) {
+    if (Atomic::cmpxchg((markOop)monitor, lockee->mark_addr(), disp) != disp) {
       if (thread->is_lock_owned((address) disp->clear_lock_bits())) {
         monitor->lock()->set_displaced_header(NULL);
       }
@@ -420,7 +417,8 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     monitor->set_obj(NULL);
 
     if (header != NULL) {
-      if (Atomic::cmpxchg_ptr(header, rcvr->mark_addr(), lock) != lock) {
+      markOop old_header = markOopDesc::encode(lock);
+      if (rcvr->cas_set_mark(header, old_header) != old_header) {
         monitor->set_obj(rcvr); {
           HandleMark hm(thread);
           CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(thread, monitor));

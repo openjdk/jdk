@@ -41,6 +41,7 @@
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -121,7 +122,7 @@ void DefNewGeneration::FastEvacuateFollowersClosure::do_void() {
 }
 
 ScanClosure::ScanClosure(DefNewGeneration* g, bool gc_barrier) :
-    OopsInKlassOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
+    OopsInClassLoaderDataOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
 {
   _boundary = _g->reserved().end();
 }
@@ -130,7 +131,7 @@ void ScanClosure::do_oop(oop* p)       { ScanClosure::do_oop_work(p); }
 void ScanClosure::do_oop(narrowOop* p) { ScanClosure::do_oop_work(p); }
 
 FastScanClosure::FastScanClosure(DefNewGeneration* g, bool gc_barrier) :
-    OopsInKlassOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
+    OopsInClassLoaderDataOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
 {
   _boundary = _g->reserved().end();
 }
@@ -138,30 +139,28 @@ FastScanClosure::FastScanClosure(DefNewGeneration* g, bool gc_barrier) :
 void FastScanClosure::do_oop(oop* p)       { FastScanClosure::do_oop_work(p); }
 void FastScanClosure::do_oop(narrowOop* p) { FastScanClosure::do_oop_work(p); }
 
-void KlassScanClosure::do_klass(Klass* klass) {
+void CLDScanClosure::do_cld(ClassLoaderData* cld) {
   NOT_PRODUCT(ResourceMark rm);
-  log_develop_trace(gc, scavenge)("KlassScanClosure::do_klass " PTR_FORMAT ", %s, dirty: %s",
-                                  p2i(klass),
-                                  klass->external_name(),
-                                  klass->has_modified_oops() ? "true" : "false");
+  log_develop_trace(gc, scavenge)("CLDScanClosure::do_cld " PTR_FORMAT ", %s, dirty: %s",
+                                  p2i(cld),
+                                  cld->loader_name(),
+                                  cld->has_modified_oops() ? "true" : "false");
 
-  // If the klass has not been dirtied we know that there's
+  // If the cld has not been dirtied we know that there's
   // no references into  the young gen and we can skip it.
-  if (klass->has_modified_oops()) {
+  if (cld->has_modified_oops()) {
     if (_accumulate_modified_oops) {
-      klass->accumulate_modified_oops();
+      cld->accumulate_modified_oops();
     }
 
-    // Clear this state since we're going to scavenge all the metadata.
-    klass->clear_modified_oops();
-
-    // Tell the closure which Klass is being scanned so that it can be dirtied
+    // Tell the closure which CLD is being scanned so that it can be dirtied
     // if oops are left pointing into the young gen.
-    _scavenge_closure->set_scanned_klass(klass);
+    _scavenge_closure->set_scanned_cld(cld);
 
-    klass->oops_do(_scavenge_closure);
+    // Clean the cld since we're going to scavenge all the metadata.
+    cld->oops_do(_scavenge_closure, false, /*clear_modified_oops*/true);
 
-    _scavenge_closure->set_scanned_klass(NULL);
+    _scavenge_closure->set_scanned_cld(NULL);
   }
 }
 
@@ -176,12 +175,6 @@ void ScanWeakRefClosure::do_oop(narrowOop* p) { ScanWeakRefClosure::do_oop_work(
 
 void FilteringClosure::do_oop(oop* p)       { FilteringClosure::do_oop_work(p); }
 void FilteringClosure::do_oop(narrowOop* p) { FilteringClosure::do_oop_work(p); }
-
-KlassScanClosure::KlassScanClosure(OopsInKlassOrGenClosure* scavenge_closure,
-                                   KlassRemSet* klass_rem_set)
-    : _scavenge_closure(scavenge_closure),
-      _accumulate_modified_oops(klass_rem_set->accumulate_modified_oops()) {}
-
 
 DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t initial_size,
@@ -629,11 +622,8 @@ void DefNewGeneration::collect(bool   full,
   FastScanClosure fsc_with_no_gc_barrier(this, false);
   FastScanClosure fsc_with_gc_barrier(this, true);
 
-  KlassScanClosure klass_scan_closure(&fsc_with_no_gc_barrier,
-                                      gch->rem_set()->klass_rem_set());
-  CLDToKlassAndOopClosure cld_scan_closure(&klass_scan_closure,
-                                           &fsc_with_no_gc_barrier,
-                                           false);
+  CLDScanClosure cld_scan_closure(&fsc_with_no_gc_barrier,
+                                  gch->rem_set()->cld_rem_set()->accumulate_modified_oops());
 
   set_promo_failure_scan_stack_closure(&fsc_with_no_gc_barrier);
   FastEvacuateFollowersClosure evacuate_followers(gch,
@@ -668,6 +658,13 @@ void DefNewGeneration::collect(bool   full,
   gc_tracer.report_gc_reference_stats(stats);
   gc_tracer.report_tenuring_threshold(tenuring_threshold());
   pt.print_all_references();
+
+  assert(gch->no_allocs_since_save_marks(), "save marks have not been newly set.");
+
+  WeakProcessor::weak_oops_do(&is_alive, &keep_alive);
+
+  // Verify that the usage of keep_alive didn't copy any objects.
+  assert(gch->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
   if (!_promotion_failed) {
     // Swap the survivor spaces.
@@ -745,8 +742,11 @@ void DefNewGeneration::remove_forwarding_pointers() {
   RemoveForwardedPointerClosure rspc;
   eden()->object_iterate(&rspc);
   from()->object_iterate(&rspc);
+  restore_preserved_marks();
+}
 
-  SharedRestorePreservedMarksTaskExecutor task_executor(GenCollectedHeap::heap()->workers());
+void DefNewGeneration::restore_preserved_marks() {
+  SharedRestorePreservedMarksTaskExecutor task_executor(NULL);
   _preserved_marks_set.restore(&task_executor);
 }
 

@@ -63,6 +63,7 @@ import static javax.tools.StandardLocation.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import com.sun.tools.javac.main.DelegatingJavaFileManager;
 
 import com.sun.tools.javac.util.Dependencies.CompletionCause;
 
@@ -103,11 +104,6 @@ public class ClassFinder {
      * bootclasspath
      */
     protected boolean userPathsFirst;
-
-    /**
-     * Switch: should read OTHER classfiles (.sig files) from PLATFORM_CLASS_PATH.
-     */
-    private boolean allowSigFiles;
 
     /** The log to use for verbose output
      */
@@ -198,7 +194,6 @@ public class ClassFinder {
         cacheCompletionFailure = options.isUnset("dev");
         preferSource = "source".equals(options.get("-Xprefer"));
         userPathsFirst = options.isSet(Option.XXUSERPATHSFIRST);
-        allowSigFiles = context.get(PlatformDescription.class) != null;
 
         completionFailureName =
             options.isSet("failcomplete")
@@ -208,6 +203,9 @@ public class ClassFinder {
         // Temporary, until more info is available from the module system.
         boolean useCtProps;
         JavaFileManager fm = context.get(JavaFileManager.class);
+        if (fm instanceof DelegatingJavaFileManager) {
+            fm = ((DelegatingJavaFileManager) fm).getBaseFileManager();
+        }
         if (fm instanceof JavacFileManager) {
             JavacFileManager jfm = (JavacFileManager) fm;
             useCtProps = jfm.isDefaultBootClassPath() && jfm.isSymbolFileEnabled();
@@ -350,8 +348,7 @@ public class ClassFinder {
                 if (verbose) {
                     log.printVerbose("loading", currentClassFile.getName());
                 }
-                if (classfile.getKind() == JavaFileObject.Kind.CLASS ||
-                    classfile.getKind() == JavaFileObject.Kind.OTHER) {
+                if (classfile.getKind() == JavaFileObject.Kind.CLASS) {
                     reader.readClassFile(c);
                     c.flags_field |= getSupplementaryFlags(c);
                 } else {
@@ -454,7 +451,7 @@ public class ClassFinder {
                 q.flags_field |= EXISTS;
         JavaFileObject.Kind kind = file.getKind();
         int seen;
-        if (kind == JavaFileObject.Kind.CLASS || kind == JavaFileObject.Kind.OTHER)
+        if (kind == JavaFileObject.Kind.CLASS)
             seen = CLASS_SEEN;
         else
             seen = SOURCE_SEEN;
@@ -695,9 +692,7 @@ public class ClassFinder {
                list(PLATFORM_CLASS_PATH,
                     p,
                     p.fullname.toString(),
-                    allowSigFiles ? EnumSet.of(JavaFileObject.Kind.CLASS,
-                                               JavaFileObject.Kind.OTHER)
-                                  : EnumSet.of(JavaFileObject.Kind.CLASS)));
+                    EnumSet.of(JavaFileObject.Kind.CLASS)));
     }
     // where
         @SuppressWarnings("fallthrough")
@@ -709,11 +704,8 @@ public class ClassFinder {
             for (JavaFileObject fo : files) {
                 switch (fo.getKind()) {
                 case OTHER:
-                    if (!isSigFile(location, fo)) {
-                        extraFileActions(p, fo);
-                        break;
-                    }
-                    //intentional fall-through:
+                    extraFileActions(p, fo);
+                    break;
                 case CLASS:
                 case SOURCE: {
                     // TODO pass binaryName to includeClassFile
@@ -729,12 +721,6 @@ public class ClassFinder {
                     break;
                 }
             }
-        }
-
-        boolean isSigFile(Location location, JavaFileObject fo) {
-            return location == PLATFORM_CLASS_PATH &&
-                   allowSigFiles &&
-                   fo.getName().endsWith(".sig");
         }
 
         Iterable<JavaFileObject> list(Location location,
@@ -755,8 +741,7 @@ public class ClassFinder {
                             JavaFileObject fo = original.next();
 
                             if (fo.getKind() != Kind.CLASS &&
-                                fo.getKind() != Kind.SOURCE &&
-                                !isSigFile(currentLoc, fo)) {
+                                fo.getKind() != Kind.SOURCE) {
                                 p.flags_field |= Flags.HAS_RESOURCE;
                             }
 

@@ -37,13 +37,6 @@
 // Name of boot "modules" image
 #define  MODULES_IMAGE_NAME "modules"
 
-// Name of the resource containing mapping from module names to defining class loader type
-#define MODULE_LOADER_MAP "jdk/internal/vm/cds/resources/ModuleLoaderMap.dat"
-
-// Initial sizes of the following arrays are based on the generated ModuleLoaderMap.dat
-#define INITIAL_BOOT_MODULES_ARRAY_SIZE 30
-#define INITIAL_PLATFORM_MODULES_ARRAY_SIZE  15
-
 // Class path entry (directory or zip file)
 
 class JImageFile;
@@ -55,15 +48,13 @@ private:
   ClassPathEntry* volatile _next;
 public:
   // Next entry in class path
-  ClassPathEntry* next() const {
-    return (ClassPathEntry*) OrderAccess::load_ptr_acquire(&_next);
-  }
+  ClassPathEntry* next() const { return OrderAccess::load_acquire(&_next); }
   virtual ~ClassPathEntry() {}
   void set_next(ClassPathEntry* next) {
     // may have unlocked readers, so ensure visibility.
-    OrderAccess::release_store_ptr(&_next, next);
+    OrderAccess::release_store(&_next, next);
   }
-  virtual bool is_jrt() = 0;
+  virtual bool is_modules_image() const = 0;
   virtual bool is_jar_file() const = 0;
   virtual const char* name() const = 0;
   virtual JImageFile* jimage() const = 0;
@@ -80,7 +71,7 @@ class ClassPathDirEntry: public ClassPathEntry {
  private:
   const char* _dir;           // Name of directory
  public:
-  bool is_jrt()            { return false; }
+  bool is_modules_image() const { return false; }
   bool is_jar_file() const { return false;  }
   const char* name() const { return _dir; }
   JImageFile* jimage() const { return NULL; }
@@ -118,7 +109,7 @@ class ClassPathZipEntry: public ClassPathEntry {
   u1 _multi_versioned;       // indicates if the jar file has multi-versioned entries.
                              // It can have value of "_unknown", "_yes", or "_no"
  public:
-  bool is_jrt()            { return false; }
+  bool is_modules_image() const { return false; }
   bool is_jar_file() const { return true;  }
   const char* name() const { return _zip_name; }
   JImageFile* jimage() const { return NULL; }
@@ -140,7 +131,7 @@ private:
   JImageFile* _jimage;
   const char* _name;
 public:
-  bool is_jrt();
+  bool is_modules_image() const;
   bool is_jar_file() const { return false; }
   bool is_open() const { return _jimage != NULL; }
   const char* name() const { return _name == NULL ? "" : _name; }
@@ -403,7 +394,8 @@ class ClassLoader: AllStatic {
   static int compute_Object_vtable();
 
   static ClassPathEntry* classpath_entry(int n) {
-    assert(n >= 0 && n < _num_entries, "sanity");
+    assert(n >= 0, "sanity");
+    assert(!has_jrt_entry() || n < _num_entries, "sanity");
     if (n == 0) {
       assert(has_jrt_entry(), "No class path entry at 0 for exploded module builds");
       return ClassLoader::_jrt_entry;
@@ -438,10 +430,6 @@ class ClassLoader: AllStatic {
   static bool  check_shared_paths_misc_info(void* info, int size);
   static void  exit_with_path_failure(const char* error, const char* message);
 
-  static s2 module_to_classloader(const char* module_name);
-  static void initialize_module_loader_map(JImageFile* jimage);
-  static s2 classloader_type(Symbol* class_name, ClassPathEntry* e,
-                             int classpath_index, TRAPS);
   static void record_shared_class_loader_type(InstanceKlass* ik, const ClassFileStream* stream);
 #endif
   static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
@@ -479,7 +467,7 @@ class ClassLoader: AllStatic {
   // distinguish from a class_name with no package name, as both cases have a NULL return value
   static const char* package_from_name(const char* const class_name, bool* bad_class_name = NULL);
 
-  static bool is_jrt(const char* name) { return string_ends_with(name, MODULES_IMAGE_NAME); }
+  static bool is_modules_image(const char* name) { return string_ends_with(name, MODULES_IMAGE_NAME); }
 
   // Debugging
   static void verify()              PRODUCT_RETURN;

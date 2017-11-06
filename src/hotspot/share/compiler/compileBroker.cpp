@@ -70,9 +70,6 @@
 #ifdef COMPILER2
 #include "opto/c2compiler.hpp"
 #endif
-#ifdef SHARK
-#include "shark/sharkCompiler.hpp"
-#endif
 
 #ifdef DTRACE_ENABLED
 
@@ -531,7 +528,6 @@ void CompileBroker::compilation_init(TRAPS) {
   if (!UseCompiler) {
     return;
   }
-#ifndef SHARK
   // Set the interface to the current compiler(s).
   int c1_count = CompilationPolicy::policy()->compiler_count(CompLevel_simple);
   int c2_count = CompilationPolicy::policy()->compiler_count(CompLevel_full_optimization);
@@ -572,13 +568,6 @@ void CompileBroker::compilation_init(TRAPS) {
     }
   }
 #endif // COMPILER2
-
-#else // SHARK
-  int c1_count = 0;
-  int c2_count = 1;
-
-  _compilers[1] = new SharkCompiler();
-#endif // SHARK
 
   // Start the compiler thread(s) and the sweeper thread
   init_compiler_sweeper_threads(c1_count, c2_count);
@@ -774,9 +763,9 @@ JavaThread* CompileBroker::make_thread(const char* name, CompileQueue* queue, Co
 
 void CompileBroker::init_compiler_sweeper_threads(int c1_compiler_count, int c2_compiler_count) {
   EXCEPTION_MARK;
-#if !defined(ZERO) && !defined(SHARK)
+#if !defined(ZERO)
   assert(c2_compiler_count > 0 || c1_compiler_count > 0, "No compilers?");
-#endif // !ZERO && !SHARK
+#endif // !ZERO
   // Initialize the compilation queue
   if (c2_compiler_count > 0) {
     const char* name = JVMCI_ONLY(UseJVMCICompiler ? "JVMCI compile queue" :) "C2 compile queue";
@@ -796,7 +785,6 @@ void CompileBroker::init_compiler_sweeper_threads(int c1_compiler_count, int c2_
     // Create a name for our thread.
     sprintf(name_buffer, "%s CompilerThread%d", _compilers[1]->name(), i);
     CompilerCounters* counters = new CompilerCounters();
-    // Shark and C2
     make_thread(name_buffer, _c2_compile_queue, counters, _compilers[1], compiler_thread, CHECK);
   }
 
@@ -1100,7 +1088,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
-  if (comp->is_c2() || comp->is_shark()) {
+  if (comp->is_c2()) {
     method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
@@ -1490,10 +1478,8 @@ bool CompileBroker::init_compiler_runtime() {
     ThreadInVMfromNative tv(thread);
     ResetNoHandleMark rnhm;
 
-    if (!comp->is_shark()) {
-      // Perform per-thread and global initializations
-      comp->initialize();
-    }
+    // Perform per-thread and global initializations
+    comp->initialize();
   }
 
   if (comp->is_failed()) {

@@ -62,9 +62,6 @@
   const InterpreterFrame *zero_interpreterframe() const {
     return zeroframe()->as_interpreter_frame();
   }
-  const SharkFrame *zero_sharkframe() const {
-    return zeroframe()->as_shark_frame();
-  }
 
  public:
   bool is_fake_stub_frame() const;
