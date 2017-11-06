@@ -1000,7 +1000,7 @@ C2V_VMENTRY(jlong, getMaxCallTargetOffset, (JNIEnv*, jobject, jlong addr))
   return -1;
 C2V_END
 
-C2V_VMENTRY(void, setNotInlineableOrCompileable,(JNIEnv *, jobject,  jobject jvmci_method))
+C2V_VMENTRY(void, setNotInlinableOrCompilable,(JNIEnv *, jobject,  jobject jvmci_method))
   methodHandle method = CompilerToVM::asMethod(jvmci_method);
   method->set_not_c1_compilable();
   method->set_not_c2_compilable();
@@ -1820,7 +1820,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getImplementor",                               CC "(" HS_RESOLVED_KLASS ")" HS_RESOLVED_KLASS,                                       FN_PTR(getImplementor)},
   {CC "getStackTraceElement",                         CC "(" HS_RESOLVED_METHOD "I)" STACK_TRACE_ELEMENT,                                   FN_PTR(getStackTraceElement)},
   {CC "methodIsIgnoredBySecurityStackWalk",           CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(methodIsIgnoredBySecurityStackWalk)},
-  {CC "setNotInlineableOrCompileable",                CC "(" HS_RESOLVED_METHOD ")V",                                                       FN_PTR(setNotInlineableOrCompileable)},
+  {CC "setNotInlinableOrCompilable",                  CC "(" HS_RESOLVED_METHOD ")V",                                                       FN_PTR(setNotInlinableOrCompilable)},
   {CC "isCompilable",                                 CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(isCompilable)},
   {CC "hasNeverInlineDirective",                      CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(hasNeverInlineDirective)},
   {CC "shouldInlineMethod",                           CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(shouldInlineMethod)},
