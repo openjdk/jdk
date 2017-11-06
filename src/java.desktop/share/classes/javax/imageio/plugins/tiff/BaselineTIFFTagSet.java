@@ -56,7 +56,7 @@ import java.util.List;
  * </ul>
  *
  * @since 9
- * @see   <a href="http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf">  TIFF 6.0 Specification</a>
+ * @see   <a href="https://www.itu.int/itudoc/itu-t/com16/tiff-fx/docs/tiff6.pdf">  TIFF 6.0 Specification</a>
  */
 public final class BaselineTIFFTagSet extends TIFFTagSet {
 
@@ -201,7 +201,6 @@ public final class BaselineTIFFTagSet extends TIFFTagSet {
      * A value to be used with the "Compression" tag.
      *
      * @see #TAG_COMPRESSION
-     * @see <a href="http://partners.adobe.com/public/developer/en/tiff/TIFFphotoshop.pdf">TIFF Specification Supplement 2</a>
      */
     public static final int COMPRESSION_JPEG = 7;
 
@@ -209,7 +208,6 @@ public final class BaselineTIFFTagSet extends TIFFTagSet {
      * A value to be used with the "Compression" tag.
      *
      * @see #TAG_COMPRESSION
-     * @see <a href="http://partners.adobe.com/public/developer/en/tiff/TIFFphotoshop.pdf"> TIFF Specification Supplement 2</a>
      */
     public static final int COMPRESSION_ZLIB = 8;
 
@@ -225,7 +223,6 @@ public final class BaselineTIFFTagSet extends TIFFTagSet {
      *
      * @see #TAG_COMPRESSION
      * @see <a href="https://tools.ietf.org/html/rfc1951">DEFLATE specification</a>
-     * @see <a href="http://partners.adobe.com/public/developer/en/tiff/TIFFphotoshop.pdf"> TIFF Specification Supplement 2</a>
      */
     public static final int COMPRESSION_DEFLATE = 32946;
 
@@ -303,7 +300,6 @@ public final class BaselineTIFFTagSet extends TIFFTagSet {
      * A value to be used with the "PhotometricInterpretation" tag.
      *
      * @see #TAG_PHOTOMETRIC_INTERPRETATION
-     * @see <a href="http://partners.adobe.com/public/developer/en/tiff/TIFFPM6.pdf">TIFF Specification Supplement 1</a>
      */
     public static final int PHOTOMETRIC_INTERPRETATION_ICCLAB = 9;
 
@@ -898,7 +894,6 @@ public final class BaselineTIFFTagSet extends TIFFTagSet {
     /**
      * Constant specifying the "JPEGTables" tag.
      *
-     * @see <a href="http://partners.adobe.com/public/developer/en/tiff/TIFFphotoshop.pdf">TIFF Specification Supplement 2</a>
      * @see <a href="ftp://ftp.sgi.com/graphics/tiff/TTN2.draft.txt">JPEG-in-TIFF compression</a>
      */
     public static final int TAG_JPEG_TABLES = 347;

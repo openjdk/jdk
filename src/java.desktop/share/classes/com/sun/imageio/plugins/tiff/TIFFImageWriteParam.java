@@ -62,8 +62,6 @@ import javax.imageio.ImageWriteParam;
  * <tr>
  * <td>ZLib</td>
  * <td>"Deflate/Inflate" compression (see note following this table)</td>
- * <td><a href="http://partners.adobe.com/asn/developer/pdfs/tn/TIFFphotoshop.pdf">
- * Adobe Photoshop&#174; TIFF Technical Notes</a> (PDF)</td>
  * </tr>
  * <tr>
  * <td>PackBits</td>
