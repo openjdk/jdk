@@ -73,10 +73,11 @@ class G1CollectorPolicy;
 class G1Policy;
 class G1HotCardCache;
 class G1RemSet;
+class G1YoungRemSetSamplingThread;
 class HeapRegionRemSetIterator;
 class G1ConcurrentMark;
 class ConcurrentMarkThread;
-class ConcurrentG1Refine;
+class G1ConcurrentRefine;
 class GenerationCounters;
 class STWGCTimer;
 class G1NewTracer;
@@ -142,6 +143,8 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1CheckCSetFastTableClosure;
 
 private:
+  G1YoungRemSetSamplingThread* _young_gen_sampling_thread;
+
   WorkGang* _workers;
   G1CollectorPolicy* _collector_policy;
 
@@ -553,6 +556,8 @@ protected:
   // during GC into global variables.
   void merge_per_thread_state_info(G1ParScanThreadStateSet* per_thread_states);
 public:
+  G1YoungRemSetSamplingThread* sampling_thread() const { return _young_gen_sampling_thread; }
+
   WorkGang* workers() const { return _workers; }
 
   G1Allocator* allocator() {
@@ -806,7 +811,7 @@ protected:
   ConcurrentMarkThread* _cmThread;
 
   // The concurrent refiner.
-  ConcurrentG1Refine* _cg1r;
+  G1ConcurrentRefine* _cr;
 
   // The parallel task queues
   RefToScanQueueSet *_task_queues;
@@ -959,6 +964,7 @@ public:
 
 private:
   jint initialize_concurrent_refinement();
+  jint initialize_young_gen_sampling_thread();
 public:
   // Initialize the G1CollectedHeap to have the initial and
   // maximum sizes and remembered and barrier sets
@@ -1389,7 +1395,7 @@ public:
 
   // Refinement
 
-  ConcurrentG1Refine* concurrent_g1_refine() const { return _cg1r; }
+  G1ConcurrentRefine* concurrent_refine() const { return _cr; }
 
   // Optimized nmethod scanning support routines
 
