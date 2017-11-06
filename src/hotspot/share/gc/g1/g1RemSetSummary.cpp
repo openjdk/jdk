@@ -59,12 +59,13 @@ void G1RemSetSummary::update() {
 
   _num_coarsenings = HeapRegionRemSet::n_coarsenings();
 
-  G1ConcurrentRefine * cr = G1CollectedHeap::heap()->concurrent_refine();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1ConcurrentRefine* cg1r = g1h->concurrent_refine();
   if (_rs_threads_vtimes != NULL) {
     GetRSThreadVTimeClosure p(this);
-    cr->worker_threads_do(&p);
+    cg1r->threads_do(&p);
   }
-  set_sampling_thread_vtime(cr->sampling_thread()->vtime_accum());
+  set_sampling_thread_vtime(g1h->sampling_thread()->vtime_accum());
 }
 
 void G1RemSetSummary::set_rs_thread_vtime(uint thread, double value) {

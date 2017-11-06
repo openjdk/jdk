@@ -31,13 +31,10 @@
 // Forward decl
 class CardTableEntryClosure;
 class G1ConcurrentRefineThread;
-class G1YoungRemSetSamplingThread;
 class outputStream;
 class ThreadClosure;
 
 class G1ConcurrentRefine : public CHeapObj<mtGC> {
-  G1YoungRemSetSamplingThread* _sample_thread;
-
   G1ConcurrentRefineThread** _threads;
   uint _n_worker_threads;
  /*
@@ -86,18 +83,12 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
 
   void adjust(double update_rs_time, size_t update_rs_processed_buffers, double goal_ms);
 
-  // Iterate over all concurrent refinement threads
+  // Iterate over all concurrent refinement threads applying the given closure.
   void threads_do(ThreadClosure *tc);
-
-  // Iterate over all worker refinement threads
-  void worker_threads_do(ThreadClosure * tc);
-
-  // The RS sampling thread has nothing to do with refinement, but is here for now.
-  G1YoungRemSetSamplingThread * sampling_thread() const { return _sample_thread; }
 
   static uint thread_num();
 
-  void print_worker_threads_on(outputStream* st) const;
+  void print_threads_on(outputStream* st) const;
 
   size_t green_zone() const      { return _green_zone;  }
   size_t yellow_zone() const     { return _yellow_zone; }

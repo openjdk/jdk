@@ -54,6 +54,7 @@
 #include "gc/g1/g1SerialFullCollector.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1YCTypes.hpp"
+#include "gc/g1/g1YoungRemSetSamplingThread.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
@@ -1541,6 +1542,7 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   CollectedHeap(),
+  _young_gen_sampling_thread(NULL),
   _collector_policy(collector_policy),
   _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
   _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
@@ -1635,6 +1637,15 @@ jint G1CollectedHeap::initialize_concurrent_refinement() {
   jint ecode = JNI_OK;
   _cr = G1ConcurrentRefine::create(&ecode);
   return ecode;
+}
+
+jint G1CollectedHeap::initialize_young_gen_sampling_thread() {
+  _young_gen_sampling_thread = new G1YoungRemSetSamplingThread();
+  if (_young_gen_sampling_thread->osthread() == NULL) {
+    vm_shutdown_during_initialization("Could not create G1YoungRemSetSamplingThread");
+    return JNI_ENOMEM;
+  }
+  return JNI_OK;
 }
 
 jint G1CollectedHeap::initialize() {
@@ -1789,6 +1800,11 @@ jint G1CollectedHeap::initialize() {
     return ecode;
   }
 
+  ecode = initialize_young_gen_sampling_thread();
+  if (ecode != JNI_OK) {
+    return ecode;
+  }
+
   JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
                                                 (int)concurrent_refine()->yellow_zone(),
@@ -1837,6 +1853,7 @@ void G1CollectedHeap::stop() {
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
   _cr->stop();
+  _young_gen_sampling_thread->stop();
   _cmThread->stop();
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::stop();
@@ -2436,7 +2453,8 @@ void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   _cmThread->print_on(st);
   st->cr();
   _cm->print_worker_threads_on(st);
-  _cr->print_worker_threads_on(st); // also prints the sample thread
+  _cr->print_threads_on(st);
+  _young_gen_sampling_thread->print_on(st);
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::print_worker_threads_on(st);
   }
@@ -2446,7 +2464,8 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   workers()->threads_do(tc);
   tc->do_thread(_cmThread);
   _cm->threads_do(tc);
-  _cr->threads_do(tc); // also iterates over the sample thread
+  _cr->threads_do(tc);
+  tc->do_thread(_young_gen_sampling_thread);
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::threads_do(tc);
   }
