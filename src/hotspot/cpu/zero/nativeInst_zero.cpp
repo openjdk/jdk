@@ -42,11 +42,6 @@
 // insert a jump to SharedRuntime::get_handle_wrong_method_stub()
 // (dest) at the start of a compiled method (verified_entry) to avoid
 // a race where a method is invoked while being made non-entrant.
-//
-// In Shark, verified_entry is a pointer to a SharkEntry.  We can
-// handle this simply by changing it's entry point to point at the
-// interpreter.  This only works because the interpreter and Shark
-// calling conventions are the same.
 
 void NativeJump::patch_verified_entry(address entry,
                                       address verified_entry,

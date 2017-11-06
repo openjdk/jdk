@@ -32,47 +32,6 @@
        .end
 
 
-  // Support for jint Atomic::xchg(jint exchange_value, volatile jint* dest).
-  //
-  // Arguments:
-  //      exchange_value: O0
-  //      dest:           O1
-  //
-  // Results:
-  //     O0: the value previously stored in dest
-
-        .inline _Atomic_swap32, 2
-        .volatile
-        swap    [%o1],%o0
-        .nonvolatile
-        .end
-
-
-  // Support for intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t * dest).
-  //
-  // 64-bit
-  //
-  // Arguments:
-  //      exchange_value: O0
-  //      dest:           O1
-  //
-  // Results:
-  //     O0: the value previously stored in dest
-
-        .inline _Atomic_swap64, 2
-        .volatile
-    1:
-        mov     %o0, %o3
-        ldx     [%o1], %o2
-        casx    [%o1], %o2, %o3
-        cmp     %o2, %o3
-        bne     %xcc, 1b
-         nop
-        mov     %o2, %o0
-        .nonvolatile
-        .end
-
-
   // Support for jlong Atomic::load and Atomic::store on v9.
   //
   // void _Atomic_move_long_v9(volatile jlong* src, volatile jlong* dst)

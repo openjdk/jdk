@@ -119,8 +119,8 @@ address RegisterMap::pd_location(VMReg regname) const {
     reg = regname->as_Register();
   }
   if (reg->is_out()) {
-    assert(_younger_window != NULL, "Younger window should be available");
-    return second_word + (address)&_younger_window[reg->after_save()->sp_offset_in_saved_window()];
+    return _younger_window == NULL ? NULL :
+      second_word + (address)&_younger_window[reg->after_save()->sp_offset_in_saved_window()];
   }
   if (reg->is_local() || reg->is_in()) {
     assert(_window != NULL, "Window should be available");

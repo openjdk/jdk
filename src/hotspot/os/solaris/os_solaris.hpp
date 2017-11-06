@@ -65,6 +65,8 @@ class Solaris {
   static int_fnP_cond_tP _cond_destroy;
   static int _cond_scope;
 
+  static bool _synchronization_initialized;
+
   typedef uintptr_t       lgrp_cookie_t;
   typedef id_t            lgrp_id_t;
   typedef int             lgrp_rsrc_t;
@@ -226,6 +228,8 @@ class Solaris {
   static void set_cond_init(int_fnP_cond_tP_i_vP func)     { _cond_init = func; }
   static void set_cond_destroy(int_fnP_cond_tP func)       { _cond_destroy = func; }
   static void set_cond_scope(int scope)                    { _cond_scope = scope; }
+
+  static bool synchronization_initialized()                { return _synchronization_initialized; }
 
   static void set_lgrp_home(lgrp_home_func_t func) { _lgrp_home = func; }
   static void set_lgrp_init(lgrp_init_func_t func) { _lgrp_init = func; }

@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jni.h"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -51,7 +52,6 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
-#include "prims/jni.h"
 #include "prims/jniCheck.hpp"
 #include "prims/jniExport.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -92,7 +92,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_9;
+static jint CurrentVersion = JNI_VERSION_10;
 
 #ifdef _WIN32
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -396,35 +396,33 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
   }
 
   //%note jni_3
-  Handle loader;
   Handle protection_domain;
   // Find calling class
   Klass* k = thread->security_get_caller_class(0);
+  // default to the system loader when no context
+  Handle loader(THREAD, SystemDictionary::java_system_loader());
   if (k != NULL) {
-    loader = Handle(THREAD, k->class_loader());
     // Special handling to make sure JNI_OnLoad and JNI_OnUnload are executed
     // in the correct class context.
-    if (loader.is_null() &&
+    if (k->class_loader() == NULL &&
         k->name() == vmSymbols::java_lang_ClassLoader_NativeLibrary()) {
       JavaValue result(T_OBJECT);
       JavaCalls::call_static(&result, k,
                              vmSymbols::getFromClass_name(),
                              vmSymbols::void_class_signature(),
-                             thread);
-      if (HAS_PENDING_EXCEPTION) {
-        Handle ex(thread, thread->pending_exception());
-        CLEAR_PENDING_EXCEPTION;
-        THROW_HANDLE_0(ex);
-      }
+                             CHECK_NULL);
+      // When invoked from JNI_OnLoad, NativeLibrary::getFromClass returns
+      // a non-NULL Class object.  When invoked from JNI_OnUnload,
+      // it will return NULL to indicate no context.
       oop mirror = (oop) result.get_jobject();
-      loader = Handle(THREAD,
-        InstanceKlass::cast(java_lang_Class::as_Klass(mirror))->class_loader());
-      protection_domain = Handle(THREAD,
-        InstanceKlass::cast(java_lang_Class::as_Klass(mirror))->protection_domain());
+      if (mirror != NULL) {
+        Klass* fromClass = java_lang_Class::as_Klass(mirror);
+        loader = Handle(THREAD, fromClass->class_loader());
+        protection_domain = Handle(THREAD, fromClass->protection_domain());
+      }
+    } else {
+      loader = Handle(THREAD, k->class_loader());
     }
-  } else {
-    // We call ClassLoader.getSystemClassLoader to obtain the system class loader.
-    loader = Handle(THREAD, SystemDictionary::java_system_loader());
   }
 
   TempNewSymbol sym = SymbolTable::new_symbol(name, CHECK_NULL);
@@ -3775,7 +3773,7 @@ void copy_jni_function_table(const struct JNINativeInterface_ *new_jni_NativeInt
   intptr_t *a = (intptr_t *) jni_functions();
   intptr_t *b = (intptr_t *) new_jni_NativeInterface;
   for (uint i=0; i <  sizeof(struct JNINativeInterface_)/sizeof(void *); i++) {
-    Atomic::store_ptr(*b++, a++);
+    Atomic::store(*b++, a++);
   }
 }
 
@@ -3896,11 +3894,11 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 #if defined(ZERO) && defined(ASSERT)
   {
     jint a = 0xcafebabe;
-    jint b = Atomic::xchg(0xdeadbeef, &a);
+    jint b = Atomic::xchg((jint) 0xdeadbeef, &a);
     void *c = &a;
-    void *d = Atomic::xchg_ptr(&b, &c);
+    void *d = Atomic::xchg(&b, &c);
     assert(a == (jint) 0xdeadbeef && b == (jint) 0xcafebabe, "Atomic::xchg() works");
-    assert(c == &b && d == &a, "Atomic::xchg_ptr() works");
+    assert(c == &b && d == &a, "Atomic::xchg() works");
   }
 #endif // ZERO && ASSERT
 

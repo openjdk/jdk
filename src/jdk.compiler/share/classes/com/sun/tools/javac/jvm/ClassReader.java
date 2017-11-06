@@ -2555,6 +2555,8 @@ public class ClassReader {
     }
 
     protected ClassSymbol enterClass(Name name) {
+        if (syms.proprietaryType.tsym.flatName() == name)
+            return (ClassSymbol) syms.proprietaryType.tsym;
         return syms.enterClass(currentModule, name);
     }
 

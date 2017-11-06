@@ -53,13 +53,11 @@ public final class OptionKey<T> {
     }
 
     /**
-     * Constructs a new option key given a default value and option key. The default value and the
-     * type must not be <code>null</code>.
+     * Constructs a new option key given a default value and option key.
      *
      * @since 1.0
      */
     public OptionKey(T defaultValue, OptionType<T> type) {
-        Objects.requireNonNull(defaultValue);
         Objects.requireNonNull(type);
         this.defaultValue = defaultValue;
         this.type = type;

@@ -59,7 +59,7 @@ inline HeapWord* G1ContiguousSpace::par_allocate_impl(size_t min_word_size,
     size_t want_to_allocate = MIN2(available, desired_word_size);
     if (want_to_allocate >= min_word_size) {
       HeapWord* new_top = obj + want_to_allocate;
-      HeapWord* result = (HeapWord*)Atomic::cmpxchg_ptr(new_top, top_addr(), obj);
+      HeapWord* result = Atomic::cmpxchg(new_top, top_addr(), obj);
       // result can be one of two:
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.
@@ -177,7 +177,7 @@ inline size_t HeapRegion::block_size(const HeapWord *addr) const {
     return oop(addr)->size();
   }
 
-  return block_size_using_bitmap(addr, G1CollectedHeap::heap()->concurrent_mark()->prevMarkBitMap());
+  return block_size_using_bitmap(addr, G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap());
 }
 
 inline HeapWord* HeapRegion::par_allocate_no_bot_updates(size_t min_word_size,
@@ -334,7 +334,7 @@ bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
   }
 #endif
 
-  const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prevMarkBitMap();
+  const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prev_mark_bitmap();
   do {
     oop obj = oop(cur);
     assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));

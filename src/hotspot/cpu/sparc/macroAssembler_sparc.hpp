@@ -606,7 +606,7 @@ class MacroAssembler : public Assembler {
   // offset.  No explicit code generation is needed if the offset is within a certain
   // range (0 <= offset <= page_size).
   //
-  // %%%%%% Currently not done for SPARC
+  // FIXME: Currently not done for SPARC
 
   void null_check(Register reg, int offset = -1);
   static bool needs_explicit_null_check(intptr_t offset);
@@ -648,6 +648,9 @@ class MacroAssembler : public Assembler {
   // unconditional short branch
   void ba_short(Label& L);
 
+  // Branch on icc.z (true or not).
+  void br_icc_zero(bool iszero, Predict p, Label &L);
+
   inline void bp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void bp( Condition c, bool a, CC cc, Predict p, Label& L );
 
@@ -663,19 +666,19 @@ class MacroAssembler : public Assembler {
   inline void fbp( Condition c, bool a, CC cc, Predict p, Label& L );
 
   // Sparc shorthands(pp 85, V8 manual, pp 289 V9 manual)
-  inline void cmp(  Register s1, Register s2 );
-  inline void cmp(  Register s1, int simm13a );
+  inline void cmp( Register s1, Register s2 );
+  inline void cmp( Register s1, int simm13a );
 
   inline void jmp( Register s1, Register s2 );
   inline void jmp( Register s1, int simm13a, RelocationHolder const& rspec = RelocationHolder() );
 
   // Check if the call target is out of wdisp30 range (relative to the code cache)
   static inline bool is_far_target(address d);
-  inline void call( address d,  relocInfo::relocType rt = relocInfo::runtime_call_type );
-  inline void call( address d,  RelocationHolder const& rspec);
+  inline void call( address d, relocInfo::relocType rt = relocInfo::runtime_call_type );
+  inline void call( address d, RelocationHolder const& rspec);
 
-  inline void call( Label& L,   relocInfo::relocType rt = relocInfo::runtime_call_type );
-  inline void call( Label& L,  RelocationHolder const& rspec);
+  inline void call( Label& L, relocInfo::relocType rt = relocInfo::runtime_call_type );
+  inline void call( Label& L, RelocationHolder const& rspec);
 
   inline void callr( Register s1, Register s2 );
   inline void callr( Register s1, int simm13a, RelocationHolder const& rspec = RelocationHolder() );

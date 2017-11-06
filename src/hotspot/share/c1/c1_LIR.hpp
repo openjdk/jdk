@@ -1913,6 +1913,12 @@ class LIR_OpProfileCall : public LIR_Op {
   virtual void emit_code(LIR_Assembler* masm);
   virtual LIR_OpProfileCall* as_OpProfileCall() { return this; }
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
+  bool should_profile_receiver_type() const {
+    bool callee_is_static = _profiled_callee->is_loaded() && _profiled_callee->is_static();
+    Bytecodes::Code bc = _profiled_method->java_code_at_bci(_profiled_bci);
+    bool call_is_virtual = (bc == Bytecodes::_invokevirtual && !_profiled_callee->can_be_statically_bound()) || bc == Bytecodes::_invokeinterface;
+    return C1ProfileVirtualCalls && call_is_virtual && !callee_is_static;
+  }
 };
 
 // LIR_OpProfileType

@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.core.test.ea;
 
+import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.junit.Test;
 
 import sun.misc.Unsafe;
@@ -36,7 +37,7 @@ import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
-public class PEAReadEliminationTest extends EarlyReadEliminationTest {
+public class PEAReadEliminationTest extends GraalCompilerTest {
 
     public static int testIndexed1Snippet(int[] array) {
         array[1] = 1;
@@ -50,7 +51,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
 
     @Test
     public void testIndexed1() {
-        StructuredGraph graph = processMethod("testIndexed1Snippet", false);
+        StructuredGraph graph = processMethod("testIndexed1Snippet");
         assertDeepEquals(0, graph.getNodes().filter(LoadIndexedNode.class).count());
     }
 
@@ -70,7 +71,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
 
     @Test
     public void testIndexed2() {
-        StructuredGraph graph = processMethod("testIndexed2Snippet", false);
+        StructuredGraph graph = processMethod("testIndexed2Snippet");
         assertDeepEquals(3, graph.getNodes().filter(LoadIndexedNode.class).count());
         assertDeepEquals(7, graph.getNodes().filter(StoreIndexedNode.class).count());
     }
@@ -94,7 +95,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
 
     @Test
     public void testIndexed3() {
-        StructuredGraph graph = processMethod("testIndexed3Snippet", false);
+        StructuredGraph graph = processMethod("testIndexed3Snippet");
         assertDeepEquals(3, graph.getNodes().filter(LoadIndexedNode.class).count());
     }
 
@@ -113,7 +114,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
 
     @Test
     public void testIndexed4() {
-        StructuredGraph graph = processMethod("testIndexed4Snippet", false);
+        StructuredGraph graph = processMethod("testIndexed4Snippet");
         assertDeepEquals(3, graph.getNodes().filter(LoadIndexedNode.class).count());
     }
 
@@ -129,7 +130,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
 
     @Test
     public void testUnsafe1() {
-        StructuredGraph graph = processMethod("testUnsafe1Snippet", false);
+        StructuredGraph graph = processMethod("testUnsafe1Snippet");
         assertDeepEquals(1, graph.getNodes().filter(RawLoadNode.class).count());
     }
 
@@ -142,7 +143,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
 
     @Test
     public void testUnsafe2() {
-        StructuredGraph graph = processMethod("testUnsafe2Snippet", false);
+        StructuredGraph graph = processMethod("testUnsafe2Snippet");
         assertDeepEquals(3, graph.getNodes().filter(RawLoadNode.class).count());
     }
 
@@ -158,7 +159,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
 
     @Test
     public void testUnsafe3() {
-        StructuredGraph graph = processMethod("testUnsafe3Snippet", false);
+        StructuredGraph graph = processMethod("testUnsafe3Snippet");
         assertDeepEquals(1, graph.getNodes().filter(RawLoadNode.class).count());
     }
 
@@ -172,28 +173,11 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
 
     @Test
     public void testUnsafe4() {
-        StructuredGraph graph = processMethod("testUnsafe4Snippet", false);
+        StructuredGraph graph = processMethod("testUnsafe4Snippet");
         assertDeepEquals(3, graph.getNodes().filter(RawLoadNode.class).count());
     }
 
-    private static final long offsetLong1 = Unsafe.ARRAY_LONG_BASE_OFFSET + Unsafe.ARRAY_LONG_INDEX_SCALE * 1;
-    private static final long offsetLong2 = Unsafe.ARRAY_LONG_BASE_OFFSET + Unsafe.ARRAY_LONG_INDEX_SCALE * 2;
-
-    public static int testUnsafe5Snippet(int v, long[] array) {
-        int s = UNSAFE.getInt(array, offsetLong1);
-        UNSAFE.putInt(array, offsetLong1, v);
-        UNSAFE.putInt(array, offsetLong2, v);
-        return s + UNSAFE.getInt(array, offsetLong1) + UNSAFE.getInt(array, offsetLong2);
-    }
-
-    @Test
-    public void testUnsafe5() {
-        StructuredGraph graph = processMethod("testUnsafe5Snippet", false);
-        assertDeepEquals(1, graph.getNodes().filter(RawLoadNode.class).count());
-    }
-
-    @Override
-    protected StructuredGraph processMethod(final String snippet, boolean doLowering) {
+    protected StructuredGraph processMethod(final String snippet) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
         HighTierContext context = getDefaultHighTierContext();
         new InliningPhase(new CanonicalizerPhase()).apply(graph, context);

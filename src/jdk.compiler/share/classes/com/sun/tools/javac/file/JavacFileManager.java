@@ -751,6 +751,11 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return locations.hasLocation(location);
     }
 
+    protected boolean hasExplicitLocation(Location location) {
+        nullCheck(location);
+        return locations.hasExplicitLocation(location);
+    }
+
     @Override @DefinedBy(Api.COMPILER)
     public JavaFileObject getJavaFileForInput(Location location,
                                               String className,

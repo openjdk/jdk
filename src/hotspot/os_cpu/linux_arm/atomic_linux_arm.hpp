@@ -44,39 +44,24 @@
  * kernel source or kernel_user_helpers.txt in Linux Doc.
  */
 
-inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
+#ifndef AARCH64
+template<>
+template<typename T>
+inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  return PrimitiveConversions::cast<T>(
+    (*os::atomic_load_long_func)(reinterpret_cast<const volatile jlong*>(src)));
+}
 
-inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
-inline jlong Atomic::load (const volatile jlong* src) {
-  assert(((intx)src & (sizeof(jlong)-1)) == 0, "Atomic load jlong mis-aligned");
-#ifdef AARCH64
-  return *src;
-#else
-  return (*os::atomic_load_long_func)(src);
+template<>
+template<typename T>
+inline void Atomic::PlatformStore<8>::operator()(T store_value,
+                                                 T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  (*os::atomic_store_long_func)(
+    PrimitiveConversions::cast<jlong>(store_value), reinterpret_cast<volatile jlong*>(dest));
+}
 #endif
-}
-
-inline void Atomic::store (jlong value, volatile jlong* dest) {
-  assert(((intx)dest & (sizeof(jlong)-1)) == 0, "Atomic store jlong mis-aligned");
-#ifdef AARCH64
-  *dest = value;
-#else
-  (*os::atomic_store_long_func)(value, dest);
-#endif
-}
-
-inline void Atomic::store (jlong value, jlong* dest) {
-  store(value, (volatile jlong*)dest);
-}
 
 // As per atomic.hpp all read-modify-write operations have to provide two-way
 // barriers semantics. For AARCH64 we are using load-acquire-with-reservation and
@@ -122,14 +107,6 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) co
 #endif
 }
 
-inline void Atomic::inc(volatile jint* dest) {
-  Atomic::add(1, (volatile jint *)dest);
-}
-
-inline void Atomic::dec(volatile jint* dest) {
-  Atomic::add(-1, (volatile jint *)dest);
-}
-
 #ifdef AARCH64
 template<>
 template<typename I, typename D>
@@ -149,28 +126,15 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
     : "memory");
   return val;
 }
-#endif // AARCH64
+#endif
 
-inline void Atomic::inc_ptr(volatile intptr_t* dest) {
-  Atomic::add_ptr(1, dest);
-}
-
-inline void Atomic::dec_ptr(volatile intptr_t* dest) {
-  Atomic::add_ptr(-1, dest);
-}
-
-inline void Atomic::inc_ptr(volatile void* dest) {
-  inc_ptr((volatile intptr_t*)dest);
-}
-
-inline void Atomic::dec_ptr(volatile void* dest) {
-  dec_ptr((volatile intptr_t*)dest);
-}
-
-
-inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(T));
 #ifdef AARCH64
-  jint old_val;
+  T old_val;
   int tmp;
   __asm__ volatile(
     "1:\n\t"
@@ -182,13 +146,17 @@ inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
     : "memory");
   return old_val;
 #else
-  return (*os::atomic_xchg_func)(exchange_value, dest);
+  return xchg_using_helper<jint>(os::atomic_xchg_func, exchange_value, dest);
 #endif
 }
 
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
 #ifdef AARCH64
-  intptr_t old_val;
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  T old_val;
   int tmp;
   __asm__ volatile(
     "1:\n\t"
@@ -199,14 +167,8 @@ inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* des
     : [new_val] "r" (exchange_value), [dest] "r" (dest)
     : "memory");
   return old_val;
-#else
-  return (intptr_t)xchg((jint)exchange_value, (volatile jint*)dest);
-#endif
 }
-
-inline void* Atomic::xchg_ptr(void* exchange_value, volatile void* dest) {
-  return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
-}
+#endif // AARCH64
 
 // The memory_order parameter is ignored - we always provide the strongest/most-conservative ordering
 

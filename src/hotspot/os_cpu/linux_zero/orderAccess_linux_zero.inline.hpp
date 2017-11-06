@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,7 +56,15 @@ typedef void (__kernel_dmb_t) (void);
 
 #else // PPC
 
+#ifdef ALPHA
+
+#define LIGHT_MEM_BARRIER __sync_synchronize()
+
+#else // ALPHA
+
 #define LIGHT_MEM_BARRIER __asm __volatile ("":::"memory")
+
+#endif // ALPHA
 
 #endif // PPC
 
@@ -74,7 +82,5 @@ inline void OrderAccess::acquire()    { LIGHT_MEM_BARRIER; }
 inline void OrderAccess::release()    { LIGHT_MEM_BARRIER; }
 
 inline void OrderAccess::fence()      { FULL_MEM_BARRIER;  }
-
-#define VM_HAS_GENERALIZED_ORDER_ACCESS 1
 
 #endif // OS_CPU_LINUX_ZERO_VM_ORDERACCESS_LINUX_ZERO_INLINE_HPP

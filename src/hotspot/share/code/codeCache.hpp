@@ -143,6 +143,7 @@ class CodeCache : AllStatic {
   static int  alignment_unit();                            // guaranteed alignment of all CodeBlobs
   static int  alignment_offset();                          // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
   static void free(CodeBlob* cb);                          // frees a CodeBlob
+  static void free_unused_tail(CodeBlob* cb, size_t used); // frees the unused tail of a CodeBlob (only used by TemplateInterpreter::initialize())
   static bool contains(void *p);                           // returns whether p is included
   static bool contains(nmethod* nm);                       // returns whether nm is included
   static void blobs_do(void f(CodeBlob* cb));              // iterates over all CodeBlobs
@@ -181,6 +182,10 @@ class CodeCache : AllStatic {
   static void scavenge_root_nmethods_do(CodeBlobToOopClosure* f);
 
   static nmethod* scavenge_root_nmethods()            { return _scavenge_root_nmethods; }
+  // register_scavenge_root_nmethod() conditionally adds the nmethod to the list
+  // if it is not already on the list and has a scavengeable root
+  static void register_scavenge_root_nmethod(nmethod* nm);
+  static void verify_scavenge_root_nmethod(nmethod* nm);
   static void add_scavenge_root_nmethod(nmethod* nm);
   static void drop_scavenge_root_nmethod(nmethod* nm);
 

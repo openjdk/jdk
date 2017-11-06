@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "jvmci/vmStructs_compiler_runtime.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/oop.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -124,6 +125,7 @@
   nonstatic_field(ConstMethod,                 _code_size,                             u2)                                           \
   nonstatic_field(ConstMethod,                 _name_index,                            u2)                                           \
   nonstatic_field(ConstMethod,                 _signature_index,                       u2)                                           \
+  nonstatic_field(ConstMethod,                 _method_idnum,                          u2)                                           \
   nonstatic_field(ConstMethod,                 _max_stack,                             u2)                                           \
   nonstatic_field(ConstMethod,                 _max_locals,                            u2)                                           \
                                                                                                                                      \
@@ -156,6 +158,7 @@
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _source_file_name_index,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _init_state,                                   u1)                                    \
+  nonstatic_field(InstanceKlass,               _misc_flags,                                   u2)                                    \
                                                                                                                                      \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_pc,                                 address)                               \
@@ -192,7 +195,7 @@
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
   nonstatic_field(Klass,                       _prototype_header,                             markOop)                               \
   nonstatic_field(Klass,                       _next_sibling,                                 Klass*)                                \
-  nonstatic_field(Klass,                       _java_mirror,                                  oop)                                   \
+  nonstatic_field(Klass,                       _java_mirror,                                  OopHandle)                             \
   nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
                                                                                                                                      \
@@ -520,6 +523,7 @@
                                                                           \
   declare_constant(InstanceKlass::linked)                                 \
   declare_constant(InstanceKlass::fully_initialized)                      \
+  declare_constant(InstanceKlass::_misc_is_anonymous)                     \
                                                                           \
   declare_constant(JumpData::taken_off_set)                               \
   declare_constant(JumpData::displacement_off_set)                        \
@@ -761,6 +765,14 @@
   declare_constant(VM_Version::ISA_XMONT)               \
   declare_constant(VM_Version::ISA_PAUSE_NSEC)          \
   declare_constant(VM_Version::ISA_VAMASK)              \
+  declare_constant(VM_Version::ISA_SPARC6)              \
+  declare_constant(VM_Version::ISA_DICTUNP)             \
+  declare_constant(VM_Version::ISA_FPCMPSHL)            \
+  declare_constant(VM_Version::ISA_RLE)                 \
+  declare_constant(VM_Version::ISA_SHA3)                \
+  declare_constant(VM_Version::ISA_VIS3C)               \
+  declare_constant(VM_Version::ISA_SPARC5B)             \
+  declare_constant(VM_Version::ISA_MME)                 \
   declare_constant(VM_Version::CPU_FAST_IDIV)           \
   declare_constant(VM_Version::CPU_FAST_RDPC)           \
   declare_constant(VM_Version::CPU_FAST_BIS)            \

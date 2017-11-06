@@ -26,7 +26,9 @@ import java.io.IOException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -59,6 +61,8 @@ public class CDSTestUtils {
     // Create bootstrap CDS archive
     public static OutputAnalyzer createArchive(CDSOptions opts)
         throws Exception {
+
+        startNewArchiveName();
 
         ArrayList<String> cmd = new ArrayList<String>();
 
@@ -328,9 +332,19 @@ public class CDSTestUtils {
         return testName;
     }
 
+    private static final SimpleDateFormat timeStampFormat =
+        new SimpleDateFormat("HH'h'mm'm'ss's'SSS");
+
+    private static String defaultArchiveName;
+
+    // Call this method to start new archive with new unique name
+    public static void startNewArchiveName() {
+        defaultArchiveName = getTestName() +
+            timeStampFormat.format(new Date()) + ".jsa";
+    }
 
     public static String getDefaultArchiveName() {
-        return getTestName() + ".jsa";
+        return defaultArchiveName;
     }
 
 

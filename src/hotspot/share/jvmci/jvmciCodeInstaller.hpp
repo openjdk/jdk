@@ -49,13 +49,13 @@ public:
 
   virtual int find_index(Metadata* h);
   virtual int find_index(jobject h);
-  int nr_meta_strings() const;
-  const char* meta_element(int pos) const;
+  int nr_meta_refs() const;
+  jobject meta_element(int pos) const;
 
 private:
-  void record_meta_string(const char* name, int index);
+  void record_meta_ref(jobject ref, int index);
 
-  GrowableArray<const char*>* _meta_strings;
+  GrowableArray<jobject>* _meta_refs;
 };
 
 class CodeMetadata {

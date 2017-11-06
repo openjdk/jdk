@@ -34,22 +34,6 @@
 
 // Implementation of class atomic
 
-inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, jint*     dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, jlong*    dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, void*     dest) { *(void**)dest = store_value; }
-
-inline void Atomic::store    (jbyte    store_value, volatile jbyte*    dest) { *dest = store_value; }
-inline void Atomic::store    (jshort   store_value, volatile jshort*   dest) { *dest = store_value; }
-inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *dest = store_value; }
-inline void Atomic::store    (jlong    store_value, volatile jlong*    dest) { *dest = store_value; }
-inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
-inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
-inline jlong Atomic::load(const volatile jlong* src) { return *src; }
-
 //
 //   machine barrier instructions:
 //
@@ -148,90 +132,15 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
   return result;
 }
 
-
-inline void Atomic::inc    (volatile jint*     dest) {
-
-  unsigned int temp;
-
-  __asm__ __volatile__ (
-    strasm_nobarrier
-    "1: lwarx   %0,  0, %2    \n"
-    "   addic   %0, %0,  1    \n"
-    "   stwcx.  %0,  0, %2    \n"
-    "   bne-    1b            \n"
-    strasm_nobarrier
-    : /*%0*/"=&r" (temp), "=m" (*dest)
-    : /*%2*/"r" (dest), "m" (*dest)
-    : "cc" strasm_nobarrier_clobber_memory);
-
-}
-
-inline void Atomic::inc_ptr(volatile intptr_t* dest) {
-
-  long temp;
-
-  __asm__ __volatile__ (
-    strasm_nobarrier
-    "1: ldarx   %0,  0, %2    \n"
-    "   addic   %0, %0,  1    \n"
-    "   stdcx.  %0,  0, %2    \n"
-    "   bne-    1b            \n"
-    strasm_nobarrier
-    : /*%0*/"=&r" (temp), "=m" (*dest)
-    : /*%2*/"r" (dest), "m" (*dest)
-    : "cc" strasm_nobarrier_clobber_memory);
-
-}
-
-inline void Atomic::inc_ptr(volatile void*     dest) {
-  inc_ptr((volatile intptr_t*)dest);
-}
-
-
-inline void Atomic::dec    (volatile jint*     dest) {
-
-  unsigned int temp;
-
-  __asm__ __volatile__ (
-    strasm_nobarrier
-    "1: lwarx   %0,  0, %2    \n"
-    "   addic   %0, %0, -1    \n"
-    "   stwcx.  %0,  0, %2    \n"
-    "   bne-    1b            \n"
-    strasm_nobarrier
-    : /*%0*/"=&r" (temp), "=m" (*dest)
-    : /*%2*/"r" (dest), "m" (*dest)
-    : "cc" strasm_nobarrier_clobber_memory);
-
-}
-
-inline void Atomic::dec_ptr(volatile intptr_t* dest) {
-
-  long temp;
-
-  __asm__ __volatile__ (
-    strasm_nobarrier
-    "1: ldarx   %0,  0, %2    \n"
-    "   addic   %0, %0, -1    \n"
-    "   stdcx.  %0,  0, %2    \n"
-    "   bne-    1b            \n"
-    strasm_nobarrier
-    : /*%0*/"=&r" (temp), "=m" (*dest)
-    : /*%2*/"r" (dest), "m" (*dest)
-    : "cc" strasm_nobarrier_clobber_memory);
-
-}
-
-inline void Atomic::dec_ptr(volatile void*     dest) {
-  dec_ptr((volatile intptr_t*)dest);
-}
-
-inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
-
-  // Note that xchg_ptr doesn't necessarily do an acquire
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(T));
+  // Note that xchg doesn't necessarily do an acquire
   // (see synchronizer.cpp).
 
-  unsigned int old_value;
+  T old_value;
   const uint64_t zero = 0;
 
   __asm__ __volatile__ (
@@ -259,15 +168,18 @@ inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
       "memory"
     );
 
-  return (jint) old_value;
+  return old_value;
 }
 
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
-
-  // Note that xchg_ptr doesn't necessarily do an acquire
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
+                                             T volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  // Note that xchg doesn't necessarily do an acquire
   // (see synchronizer.cpp).
 
-  long old_value;
+  T old_value;
   const uint64_t zero = 0;
 
   __asm__ __volatile__ (
@@ -295,11 +207,7 @@ inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* des
       "memory"
     );
 
-  return (intptr_t) old_value;
-}
-
-inline void* Atomic::xchg_ptr(void* exchange_value, volatile void* dest) {
-  return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
+  return old_value;
 }
 
 inline void cmpxchg_pre_membar(cmpxchg_memory_order order) {

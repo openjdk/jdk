@@ -47,11 +47,6 @@
 // or CHeapObj, due to initialization issues.
 
 class ThreadCritical : public StackObj {
- friend class os;
- private:
-  static void initialize();
-  static void release();
-
  public:
   ThreadCritical();
   ~ThreadCritical();

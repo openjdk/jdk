@@ -41,6 +41,11 @@ public class ModuleTarget_attribute extends Attribute {
         target_platform_index = cr.readUnsignedShort();
     }
 
+    public ModuleTarget_attribute(int name_index, int target_platform_index) {
+        super(name_index, 2);
+        this.target_platform_index = target_platform_index;
+    }
+
     @Override
     public <R, D> R accept(Visitor<R, D> visitor, D data) {
         return visitor.visitModuleTarget(this, data);

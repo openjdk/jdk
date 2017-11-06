@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8080289
+ * @bug 8080289 8189067
  * @summary Move stores out of loops if possible
  *
  * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
@@ -43,6 +43,7 @@ public class TestMoveStoresOutOfLoops {
     private static long[] array = new long[10];
     private static long[] array2 = new long[10];
     private static boolean[] array3 = new boolean[1000];
+    private static int[] array4 = new int[1000];
     private static byte[] byte_array = new byte[10];
 
     // Array store should be moved out of the loop, value stored
@@ -104,6 +105,15 @@ public class TestMoveStoresOutOfLoops {
             array[idx] = i;
             if (array3[i]) {
                 return;
+            }
+        }
+    }
+
+    // Array store can be moved out of the inner loop
+    static void test_after_7(int idx) {
+        for (int i = 0; i < 1000; i++) {
+            for (int j = 0; j <= 42; j++) {
+                array4[i] = j;
             }
         }
     }
@@ -285,6 +295,17 @@ public class TestMoveStoresOutOfLoops {
         return success;
     }
 
+    static boolean array_check5(String name) {
+        boolean success = true;
+        for (int i = 0; i < 1000; i++) {
+            if (array4[i] != 42) {
+                success = false;
+                System.out.println(name + " failed: array[" + i + "] = " + array4[i]);
+            }
+        }
+        return success;
+    }
+
     static public void main(String[] args) throws Exception {
         TestMoveStoresOutOfLoops test = new TestMoveStoresOutOfLoops();
         test.doTest("test_after_1", TestMoveStoresOutOfLoops::array_init, TestMoveStoresOutOfLoops::array_check);
@@ -295,6 +316,7 @@ public class TestMoveStoresOutOfLoops {
         test.doTest("test_after_6", TestMoveStoresOutOfLoops::array_init, TestMoveStoresOutOfLoops::array_check);
         array3[999] = true;
         test.doTest("test_after_6", TestMoveStoresOutOfLoops::array_init, TestMoveStoresOutOfLoops::array_check);
+        test.doTest("test_after_7", TestMoveStoresOutOfLoops::array_init, TestMoveStoresOutOfLoops::array_check5);
 
         test.doTest("test_stores_1", TestMoveStoresOutOfLoops::array_init3, TestMoveStoresOutOfLoops::array_check3);
         test.doTest("test_stores_2", TestMoveStoresOutOfLoops::array_init3, TestMoveStoresOutOfLoops::array_check3);

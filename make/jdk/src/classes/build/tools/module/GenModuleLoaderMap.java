@@ -77,30 +77,22 @@ public class GenModuleLoaderMap {
             throw new IllegalArgumentException(source + " not exist");
         }
 
-        boolean needsQuotes = outfile.toString().contains(".java.tmp");
-
         try (BufferedWriter bw = Files.newBufferedWriter(outfile, StandardCharsets.UTF_8);
              PrintWriter writer = new PrintWriter(bw)) {
             for (String line : Files.readAllLines(source)) {
                 if (line.contains("@@BOOT_MODULE_NAMES@@")) {
-                    line = patch(line, "@@BOOT_MODULE_NAMES@@", bootModules, needsQuotes);
+                    line = patch(line, "@@BOOT_MODULE_NAMES@@", bootModules);
                 } else if (line.contains("@@PLATFORM_MODULE_NAMES@@")) {
-                    line = patch(line, "@@PLATFORM_MODULE_NAMES@@", platformModules, needsQuotes);
+                    line = patch(line, "@@PLATFORM_MODULE_NAMES@@", platformModules);
                 }
                 writer.println(line);
             }
         }
     }
 
-    private static String patch(String s, String tag, Stream<String> stream, boolean needsQuotes) {
-        String mns = null;
-        if (needsQuotes) {
-            mns = stream.sorted()
-                .collect(Collectors.joining("\",\n            \""));
-        } else {
-            mns = stream.sorted()
-                .collect(Collectors.joining("\n"));
-        }
+    private static String patch(String s, String tag, Stream<String> stream) {
+        String mns = stream.sorted()
+            .collect(Collectors.joining("\",\n            \""));
         return s.replace(tag, mns);
     }
 

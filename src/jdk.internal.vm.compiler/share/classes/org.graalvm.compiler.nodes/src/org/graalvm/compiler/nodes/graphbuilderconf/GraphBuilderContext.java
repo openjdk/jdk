@@ -295,4 +295,20 @@ public interface GraphBuilderContext extends GraphBuilderTool {
     default void notifyReplacedCall(ResolvedJavaMethod targetMethod, ConstantNode node) {
 
     }
+
+    /**
+     * Interface whose instances hold inlining information about the current context, in a wider
+     * sense. The wider sense in this case concerns graph building approaches that don't necessarily
+     * keep a chain of {@link GraphBuilderContext} instances normally available through
+     * {@linkplain #getParent()}. Examples of such approaches are partial evaluation and incremental
+     * inlining.
+     */
+    interface ExternalInliningContext {
+        int getInlinedDepth();
+    }
+
+    default ExternalInliningContext getExternalInliningContext() {
+        return null;
+    }
+
 }

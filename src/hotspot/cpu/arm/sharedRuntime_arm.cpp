@@ -42,10 +42,6 @@
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
-#ifdef SHARK
-#include "compiler/compileBroker.hpp"
-#include "shark/sharkCompiler.hpp"
-#endif
 
 #define __ masm->
 

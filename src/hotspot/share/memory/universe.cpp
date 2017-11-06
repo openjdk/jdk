@@ -84,6 +84,7 @@
 #include "utilities/preserveException.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/cms/cmsCollectorPolicy.hpp"
+#include "gc/cms/cmsHeap.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
@@ -536,7 +537,7 @@ bool Universe::has_reference_pending_list() {
 
 oop Universe::swap_reference_pending_list(oop list) {
   assert_pll_locked(is_locked);
-  return (oop)Atomic::xchg_ptr(list, &_reference_pending_list);
+  return Atomic::xchg(list, &_reference_pending_list);
 }
 
 #undef assert_pll_locked
@@ -758,7 +759,7 @@ CollectedHeap* Universe::create_heap() {
   } else if (UseG1GC) {
     return Universe::create_heap_with_policy<G1CollectedHeap, G1CollectorPolicy>();
   } else if (UseConcMarkSweepGC) {
-    return Universe::create_heap_with_policy<GenCollectedHeap, ConcurrentMarkSweepPolicy>();
+    return Universe::create_heap_with_policy<CMSHeap, ConcurrentMarkSweepPolicy>();
 #endif
   } else if (UseSerialGC) {
     return Universe::create_heap_with_policy<GenCollectedHeap, MarkSweepPolicy>();
@@ -1064,44 +1065,40 @@ bool universe_post_init() {
 
   Universe::_vm_exception = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
 
-  if (!DumpSharedSpaces) {
-    // These are the only Java fields that are currently set during shared space dumping.
-    // We prefer to not handle this generally, so we always reinitialize these detail messages.
-    Handle msg = java_lang_String::create_from_str("Java heap space", CHECK_false);
-    java_lang_Throwable::set_message(Universe::_out_of_memory_error_java_heap, msg());
+  Handle msg = java_lang_String::create_from_str("Java heap space", CHECK_false);
+  java_lang_Throwable::set_message(Universe::_out_of_memory_error_java_heap, msg());
 
-    msg = java_lang_String::create_from_str("Metaspace", CHECK_false);
-    java_lang_Throwable::set_message(Universe::_out_of_memory_error_metaspace, msg());
-    msg = java_lang_String::create_from_str("Compressed class space", CHECK_false);
-    java_lang_Throwable::set_message(Universe::_out_of_memory_error_class_metaspace, msg());
+  msg = java_lang_String::create_from_str("Metaspace", CHECK_false);
+  java_lang_Throwable::set_message(Universe::_out_of_memory_error_metaspace, msg());
+  msg = java_lang_String::create_from_str("Compressed class space", CHECK_false);
+  java_lang_Throwable::set_message(Universe::_out_of_memory_error_class_metaspace, msg());
 
-    msg = java_lang_String::create_from_str("Requested array size exceeds VM limit", CHECK_false);
-    java_lang_Throwable::set_message(Universe::_out_of_memory_error_array_size, msg());
+  msg = java_lang_String::create_from_str("Requested array size exceeds VM limit", CHECK_false);
+  java_lang_Throwable::set_message(Universe::_out_of_memory_error_array_size, msg());
 
-    msg = java_lang_String::create_from_str("GC overhead limit exceeded", CHECK_false);
-    java_lang_Throwable::set_message(Universe::_out_of_memory_error_gc_overhead_limit, msg());
+  msg = java_lang_String::create_from_str("GC overhead limit exceeded", CHECK_false);
+  java_lang_Throwable::set_message(Universe::_out_of_memory_error_gc_overhead_limit, msg());
 
-    msg = java_lang_String::create_from_str("Java heap space: failed reallocation of scalar replaced objects", CHECK_false);
-    java_lang_Throwable::set_message(Universe::_out_of_memory_error_realloc_objects, msg());
+  msg = java_lang_String::create_from_str("Java heap space: failed reallocation of scalar replaced objects", CHECK_false);
+  java_lang_Throwable::set_message(Universe::_out_of_memory_error_realloc_objects, msg());
 
-    msg = java_lang_String::create_from_str("/ by zero", CHECK_false);
-    java_lang_Throwable::set_message(Universe::_arithmetic_exception_instance, msg());
+  msg = java_lang_String::create_from_str("/ by zero", CHECK_false);
+  java_lang_Throwable::set_message(Universe::_arithmetic_exception_instance, msg());
 
-    // Setup the array of errors that have preallocated backtrace
-    k = Universe::_out_of_memory_error_java_heap->klass();
-    assert(k->name() == vmSymbols::java_lang_OutOfMemoryError(), "should be out of memory error");
-    ik = InstanceKlass::cast(k);
+  // Setup the array of errors that have preallocated backtrace
+  k = Universe::_out_of_memory_error_java_heap->klass();
+  assert(k->name() == vmSymbols::java_lang_OutOfMemoryError(), "should be out of memory error");
+  ik = InstanceKlass::cast(k);
 
-    int len = (StackTraceInThrowable) ? (int)PreallocatedOutOfMemoryErrorCount : 0;
-    Universe::_preallocated_out_of_memory_error_array = oopFactory::new_objArray(ik, len, CHECK_false);
-    for (int i=0; i<len; i++) {
-      oop err = ik->allocate_instance(CHECK_false);
-      Handle err_h = Handle(THREAD, err);
-      java_lang_Throwable::allocate_backtrace(err_h, CHECK_false);
-      Universe::preallocated_out_of_memory_errors()->obj_at_put(i, err_h());
-    }
-    Universe::_preallocated_out_of_memory_error_avail_count = (jint)len;
+  int len = (StackTraceInThrowable) ? (int)PreallocatedOutOfMemoryErrorCount : 0;
+  Universe::_preallocated_out_of_memory_error_array = oopFactory::new_objArray(ik, len, CHECK_false);
+  for (int i=0; i<len; i++) {
+    oop err = ik->allocate_instance(CHECK_false);
+    Handle err_h = Handle(THREAD, err);
+    java_lang_Throwable::allocate_backtrace(err_h, CHECK_false);
+    Universe::preallocated_out_of_memory_errors()->obj_at_put(i, err_h());
   }
+  Universe::_preallocated_out_of_memory_error_avail_count = (jint)len;
 
   Universe::initialize_known_methods(CHECK_false);
 

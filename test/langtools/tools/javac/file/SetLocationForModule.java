@@ -123,8 +123,11 @@ public class SetLocationForModule extends TestRunner {
                 checkEqual("override setting 2",
                            fm2.getLocationAsPaths(m), override1);
 
+                Location firstLocation =
+                        fm2.listLocationsForModules(locn).iterator().next().iterator().next();
+
                 checkEqual("override setting 2b",
-                           fm2.getLocationAsPaths(fm2.listLocationsForModules(locn).iterator().next().iterator().next()),
+                           fm2.getLocationAsPaths(firstLocation),
                            override1);
             }
 
@@ -213,6 +216,19 @@ public class SetLocationForModule extends TestRunner {
             checkEqual("override setting 1b",
                        fm.getLocationAsPaths(fm.listLocationsForModules(locn).iterator().next().iterator().next()),
                        override1);
+
+            try (StandardJavaFileManager fm2 = comp.getStandardFileManager(null, null, null)) {
+                fm2.setLocationForModule(locn, "m", List.of(override1));
+                checkEqual("override setting 1",
+                           fm2.getLocationAsPaths(m), override1);
+
+                Location firstLocation =
+                        fm2.listLocationsForModules(locn).iterator().next().iterator().next();
+
+                checkEqual("override setting 1b",
+                           fm2.getLocationAsPaths(firstLocation),
+                           override1);
+            }
 
             Path override2 = Files.createDirectories(base.resolve("override2"));
             fm.setLocationFromPaths(m, List.of(override2));

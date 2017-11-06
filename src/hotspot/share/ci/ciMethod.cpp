@@ -53,10 +53,6 @@
 #include "ci/ciTypeFlow.hpp"
 #include "oops/method.hpp"
 #endif
-#ifdef SHARK
-#include "ci/ciTypeFlow.hpp"
-#include "oops/method.hpp"
-#endif
 
 // ciMethod
 //
@@ -97,10 +93,10 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _exception_handlers = NULL;
   _liveness           = NULL;
   _method_blocks = NULL;
-#if defined(COMPILER2) || defined(SHARK)
+#if defined(COMPILER2)
   _flow               = NULL;
   _bcea               = NULL;
-#endif // COMPILER2 || SHARK
+#endif // COMPILER2
 
   ciEnv *env = CURRENT_ENV;
   if (env->jvmti_can_hotswap_or_post_breakpoint() && can_be_compiled()) {
@@ -173,12 +169,12 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _can_be_statically_bound(false),
   _method_blocks(          NULL),
   _method_data(            NULL)
-#if defined(COMPILER2) || defined(SHARK)
+#if defined(COMPILER2)
   ,
   _flow(                   NULL),
   _bcea(                   NULL),
   _instructions_size(-1)
-#endif // COMPILER2 || SHARK
+#endif // COMPILER2
 {
   // Usually holder and accessor are the same type but in some cases
   // the holder has the wrong class loader (e.g. invokedynamic call
@@ -287,23 +283,6 @@ int ciMethod::vtable_index() {
 }
 
 
-#ifdef SHARK
-// ------------------------------------------------------------------
-// ciMethod::itable_index
-//
-// Get the position of this method's entry in the itable, if any.
-int ciMethod::itable_index() {
-  check_is_loaded();
-  assert(holder()->is_linked(), "must be linked");
-  VM_ENTRY_MARK;
-  Method* m = get_Method();
-  if (!m->has_itable_index())
-    return Method::nonvirtual_vtable_index;
-  return m->itable_index();
-}
-#endif // SHARK
-
-
 // ------------------------------------------------------------------
 // ciMethod::native_entry
 //
@@ -369,34 +348,34 @@ bool ciMethod::has_balanced_monitors() {
 // ------------------------------------------------------------------
 // ciMethod::get_flow_analysis
 ciTypeFlow* ciMethod::get_flow_analysis() {
-#if defined(COMPILER2) || defined(SHARK)
+#if defined(COMPILER2)
   if (_flow == NULL) {
     ciEnv* env = CURRENT_ENV;
     _flow = new (env->arena()) ciTypeFlow(env, this);
     _flow->do_flow();
   }
   return _flow;
-#else // COMPILER2 || SHARK
+#else // COMPILER2
   ShouldNotReachHere();
   return NULL;
-#endif // COMPILER2 || SHARK
+#endif // COMPILER2
 }
 
 
 // ------------------------------------------------------------------
 // ciMethod::get_osr_flow_analysis
 ciTypeFlow* ciMethod::get_osr_flow_analysis(int osr_bci) {
-#if defined(COMPILER2) || defined(SHARK)
+#if defined(COMPILER2)
   // OSR entry points are always place after a call bytecode of some sort
   assert(osr_bci >= 0, "must supply valid OSR entry point");
   ciEnv* env = CURRENT_ENV;
   ciTypeFlow* flow = new (env->arena()) ciTypeFlow(env, this, osr_bci);
   flow->do_flow();
   return flow;
-#else // COMPILER2 || SHARK
+#else // COMPILER2
   ShouldNotReachHere();
   return NULL;
-#endif // COMPILER2 || SHARK
+#endif // COMPILER2
 }
 
 // ------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,7 +250,6 @@ class Address VALUE_OBJ_CLASS_SPEC {
   bool is_RSform()  { return has_base() && !has_index() && is_disp12(); }
   bool is_RSYform() { return has_base() && !has_index() && is_disp20(); }
   bool is_RXform()  { return has_base() &&  has_index() && is_disp12(); }
-  bool is_RXEform() { return has_base() &&  has_index() && is_disp12(); }
   bool is_RXYform() { return has_base() &&  has_index() && is_disp20(); }
 
   bool uses(Register r) { return _base == r || _index == r; };
@@ -1093,7 +1092,201 @@ class Assembler : public AbstractAssembler {
 #define TRTT_ZOPC   (unsigned  int)(0xb9 << 24 | 0x90 << 16)
 
 
-// Miscellaneous Operations
+//---------------------------
+//--  Vector Instructions  --
+//---------------------------
+
+//---<  Vector Support Instructions  >---
+
+//---  Load (memory)  ---
+
+#define VLM_ZOPC    (unsigned long)(0xe7L << 40 | 0x36L << 0)   // load full vreg range (n * 128 bit)
+#define VL_ZOPC     (unsigned long)(0xe7L << 40 | 0x06L << 0)   // load full vreg (128 bit)
+#define VLEB_ZOPC   (unsigned long)(0xe7L << 40 | 0x00L << 0)   // load vreg element (8 bit)
+#define VLEH_ZOPC   (unsigned long)(0xe7L << 40 | 0x01L << 0)   // load vreg element (16 bit)
+#define VLEF_ZOPC   (unsigned long)(0xe7L << 40 | 0x03L << 0)   // load vreg element (32 bit)
+#define VLEG_ZOPC   (unsigned long)(0xe7L << 40 | 0x02L << 0)   // load vreg element (64 bit)
+
+#define VLREP_ZOPC  (unsigned long)(0xe7L << 40 | 0x05L << 0)   // load and replicate into all vector elements
+#define VLLEZ_ZOPC  (unsigned long)(0xe7L << 40 | 0x04L << 0)   // load logical element and zero.
+
+// vector register gather
+#define VGEF_ZOPC   (unsigned long)(0xe7L << 40 | 0x13L << 0)   // gather element (32 bit), V1(M3) = [D2(V2(M3),B2)]
+#define VGEG_ZOPC   (unsigned long)(0xe7L << 40 | 0x12L << 0)   // gather element (64 bit), V1(M3) = [D2(V2(M3),B2)]
+// vector register scatter
+#define VSCEF_ZOPC  (unsigned long)(0xe7L << 40 | 0x1bL << 0)   // vector scatter element FW
+#define VSCEG_ZOPC  (unsigned long)(0xe7L << 40 | 0x1aL << 0)   // vector scatter element DW
+
+#define VLBB_ZOPC   (unsigned long)(0xe7L << 40 | 0x07L << 0)   // load vreg to block boundary (load to alignment).
+#define VLL_ZOPC    (unsigned long)(0xe7L << 40 | 0x37L << 0)   // load vreg with length.
+
+//---  Load (register)  ---
+
+#define VLR_ZOPC    (unsigned long)(0xe7L << 40 | 0x56L << 0)   // copy full vreg (128 bit)
+#define VLGV_ZOPC   (unsigned long)(0xe7L << 40 | 0x21L << 0)   // copy vreg element -> GR
+#define VLVG_ZOPC   (unsigned long)(0xe7L << 40 | 0x22L << 0)   // copy GR -> vreg element
+#define VLVGP_ZOPC  (unsigned long)(0xe7L << 40 | 0x62L << 0)   // copy GR2, GR3 (disjoint pair) -> vreg
+
+// vector register pack: cut in half the size the source vector elements
+#define VPK_ZOPC    (unsigned long)(0xe7L << 40 | 0x94L << 0)   // just cut
+#define VPKS_ZOPC   (unsigned long)(0xe7L << 40 | 0x97L << 0)   // saturate as signed values
+#define VPKLS_ZOPC  (unsigned long)(0xe7L << 40 | 0x95L << 0)   // saturate as unsigned values
+
+// vector register unpack: double in size the source vector elements
+#define VUPH_ZOPC   (unsigned long)(0xe7L << 40 | 0xd7L << 0)   // signed, left half of the source vector elements
+#define VUPLH_ZOPC  (unsigned long)(0xe7L << 40 | 0xd5L << 0)   // unsigned, left half of the source vector elements
+#define VUPL_ZOPC   (unsigned long)(0xe7L << 40 | 0xd6L << 0)   // signed, right half of the source vector elements
+#define VUPLL_ZOPC  (unsigned long)(0xe7L << 40 | 0xd4L << 0)   // unsigned, right half of the source vector element
+
+// vector register merge
+#define VMRH_ZOPC   (unsigned long)(0xe7L << 40 | 0x61L << 0)   // register merge high (left half of source registers)
+#define VMRL_ZOPC   (unsigned long)(0xe7L << 40 | 0x60L << 0)   // register merge low (right half of source registers)
+
+// vector register permute
+#define VPERM_ZOPC  (unsigned long)(0xe7L << 40 | 0x8cL << 0)   // vector permute
+#define VPDI_ZOPC   (unsigned long)(0xe7L << 40 | 0x84L << 0)   // vector permute DW immediate
+
+// vector register replicate
+#define VREP_ZOPC   (unsigned long)(0xe7L << 40 | 0x4dL << 0)   // vector replicate
+#define VREPI_ZOPC  (unsigned long)(0xe7L << 40 | 0x45L << 0)   // vector replicate immediate
+#define VSEL_ZOPC   (unsigned long)(0xe7L << 40 | 0x8dL << 0)   // vector select
+
+#define VSEG_ZOPC   (unsigned long)(0xe7L << 40 | 0x5fL << 0)   // vector sign-extend to DW (rightmost element in each DW).
+
+//---  Load (immediate)  ---
+
+#define VLEIB_ZOPC  (unsigned long)(0xe7L << 40 | 0x40L << 0)   // load vreg element (16 bit imm to 8 bit)
+#define VLEIH_ZOPC  (unsigned long)(0xe7L << 40 | 0x41L << 0)   // load vreg element (16 bit imm to 16 bit)
+#define VLEIF_ZOPC  (unsigned long)(0xe7L << 40 | 0x43L << 0)   // load vreg element (16 bit imm to 32 bit)
+#define VLEIG_ZOPC  (unsigned long)(0xe7L << 40 | 0x42L << 0)   // load vreg element (16 bit imm to 64 bit)
+
+//---  Store  ---
+
+#define VSTM_ZOPC   (unsigned long)(0xe7L << 40 | 0x3eL << 0)   // store full vreg range (n * 128 bit)
+#define VST_ZOPC    (unsigned long)(0xe7L << 40 | 0x0eL << 0)   // store full vreg (128 bit)
+#define VSTEB_ZOPC  (unsigned long)(0xe7L << 40 | 0x08L << 0)   // store vreg element (8 bit)
+#define VSTEH_ZOPC  (unsigned long)(0xe7L << 40 | 0x09L << 0)   // store vreg element (16 bit)
+#define VSTEF_ZOPC  (unsigned long)(0xe7L << 40 | 0x0bL << 0)   // store vreg element (32 bit)
+#define VSTEG_ZOPC  (unsigned long)(0xe7L << 40 | 0x0aL << 0)   // store vreg element (64 bit)
+#define VSTL_ZOPC   (unsigned long)(0xe7L << 40 | 0x3fL << 0)   // store vreg with length.
+
+//---  Misc  ---
+
+#define VGM_ZOPC    (unsigned long)(0xe7L << 40 | 0x46L << 0)   // generate bit  mask, [start..end] = '1', else '0'
+#define VGBM_ZOPC   (unsigned long)(0xe7L << 40 | 0x44L << 0)   // generate byte mask, bits(imm16) -> bytes
+
+//---<  Vector Arithmetic Instructions  >---
+
+// Load
+#define VLC_ZOPC    (unsigned long)(0xe7L << 40 | 0xdeL << 0)   // V1 := -V2,   element size = 2**m
+#define VLP_ZOPC    (unsigned long)(0xe7L << 40 | 0xdfL << 0)   // V1 := |V2|,  element size = 2**m
+
+// ADD
+#define VA_ZOPC     (unsigned long)(0xe7L << 40 | 0xf3L << 0)   // V1 := V2 + V3, element size = 2**m
+#define VACC_ZOPC   (unsigned long)(0xe7L << 40 | 0xf1L << 0)   // V1 := carry(V2 + V3), element size = 2**m
+
+// SUB
+#define VS_ZOPC     (unsigned long)(0xe7L << 40 | 0xf7L << 0)   // V1 := V2 - V3, element size = 2**m
+#define VSCBI_ZOPC  (unsigned long)(0xe7L << 40 | 0xf5L << 0)   // V1 := borrow(V2 - V3), element size = 2**m
+
+// MUL
+#define VML_ZOPC    (unsigned long)(0xe7L << 40 | 0xa2L << 0)   // V1 := V2 * V3, element size = 2**m
+#define VMH_ZOPC    (unsigned long)(0xe7L << 40 | 0xa3L << 0)   // V1 := V2 * V3, element size = 2**m
+#define VMLH_ZOPC   (unsigned long)(0xe7L << 40 | 0xa1L << 0)   // V1 := V2 * V3, element size = 2**m, unsigned
+#define VME_ZOPC    (unsigned long)(0xe7L << 40 | 0xa6L << 0)   // V1 := V2 * V3, element size = 2**m
+#define VMLE_ZOPC   (unsigned long)(0xe7L << 40 | 0xa4L << 0)   // V1 := V2 * V3, element size = 2**m, unsigned
+#define VMO_ZOPC    (unsigned long)(0xe7L << 40 | 0xa7L << 0)   // V1 := V2 * V3, element size = 2**m
+#define VMLO_ZOPC   (unsigned long)(0xe7L << 40 | 0xa5L << 0)   // V1 := V2 * V3, element size = 2**m, unsigned
+
+// MUL & ADD
+#define VMAL_ZOPC   (unsigned long)(0xe7L << 40 | 0xaaL << 0)   // V1 := V2 * V3 + V4, element size = 2**m
+#define VMAH_ZOPC   (unsigned long)(0xe7L << 40 | 0xabL << 0)   // V1 := V2 * V3 + V4, element size = 2**m
+#define VMALH_ZOPC  (unsigned long)(0xe7L << 40 | 0xa9L << 0)   // V1 := V2 * V3 + V4, element size = 2**m, unsigned
+#define VMAE_ZOPC   (unsigned long)(0xe7L << 40 | 0xaeL << 0)   // V1 := V2 * V3 + V4, element size = 2**m
+#define VMALE_ZOPC  (unsigned long)(0xe7L << 40 | 0xacL << 0)   // V1 := V2 * V3 + V4, element size = 2**m, unsigned
+#define VMAO_ZOPC   (unsigned long)(0xe7L << 40 | 0xafL << 0)   // V1 := V2 * V3 + V4, element size = 2**m
+#define VMALO_ZOPC  (unsigned long)(0xe7L << 40 | 0xadL << 0)   // V1 := V2 * V3 + V4, element size = 2**m, unsigned
+
+// Vector SUM
+#define VSUM_ZOPC   (unsigned long)(0xe7L << 40 | 0x64L << 0)   // V1[j] := toFW(sum(V2[i]) + V3[j]), subelements: byte or HW
+#define VSUMG_ZOPC  (unsigned long)(0xe7L << 40 | 0x65L << 0)   // V1[j] := toDW(sum(V2[i]) + V3[j]), subelements: HW or FW
+#define VSUMQ_ZOPC  (unsigned long)(0xe7L << 40 | 0x67L << 0)   // V1[j] := toQW(sum(V2[i]) + V3[j]), subelements: FW or DW
+
+// Average
+#define VAVG_ZOPC   (unsigned long)(0xe7L << 40 | 0xf2L << 0)   // V1 := (V2+V3+1)/2, signed,   element size = 2**m
+#define VAVGL_ZOPC  (unsigned long)(0xe7L << 40 | 0xf0L << 0)   // V1 := (V2+V3+1)/2, unsigned, element size = 2**m
+
+// VECTOR Galois Field Multiply Sum
+#define VGFM_ZOPC   (unsigned long)(0xe7L << 40 | 0xb4L << 0)
+#define VGFMA_ZOPC  (unsigned long)(0xe7L << 40 | 0xbcL << 0)
+
+//---<  Vector Logical Instructions  >---
+
+// AND
+#define VN_ZOPC     (unsigned long)(0xe7L << 40 | 0x68L << 0)   // V1 := V2 & V3,  element size = 2**m
+#define VNC_ZOPC    (unsigned long)(0xe7L << 40 | 0x69L << 0)   // V1 := V2 & ~V3, element size = 2**m
+
+// XOR
+#define VX_ZOPC     (unsigned long)(0xe7L << 40 | 0x6dL << 0)   // V1 := V2 ^ V3,  element size = 2**m
+
+// NOR
+#define VNO_ZOPC    (unsigned long)(0xe7L << 40 | 0x6bL << 0)   // V1 := !(V2 | V3),  element size = 2**m
+
+// OR
+#define VO_ZOPC     (unsigned long)(0xe7L << 40 | 0x6aL << 0)   // V1 := V2 | V3,  element size = 2**m
+
+// Comparison (element-wise)
+#define VCEQ_ZOPC   (unsigned long)(0xe7L << 40 | 0xf8L << 0)   // V1 := (V2 == V3) ? 0xffff : 0x0000, element size = 2**m
+#define VCH_ZOPC    (unsigned long)(0xe7L << 40 | 0xfbL << 0)   // V1 := (V2  > V3) ? 0xffff : 0x0000, element size = 2**m, signed
+#define VCHL_ZOPC   (unsigned long)(0xe7L << 40 | 0xf9L << 0)   // V1 := (V2  > V3) ? 0xffff : 0x0000, element size = 2**m, unsigned
+
+// Max/Min (element-wise)
+#define VMX_ZOPC    (unsigned long)(0xe7L << 40 | 0xffL << 0)   // V1 := (V2 > V3) ? V2 : V3, element size = 2**m, signed
+#define VMXL_ZOPC   (unsigned long)(0xe7L << 40 | 0xfdL << 0)   // V1 := (V2 > V3) ? V2 : V3, element size = 2**m, unsigned
+#define VMN_ZOPC    (unsigned long)(0xe7L << 40 | 0xfeL << 0)   // V1 := (V2 < V3) ? V2 : V3, element size = 2**m, signed
+#define VMNL_ZOPC   (unsigned long)(0xe7L << 40 | 0xfcL << 0)   // V1 := (V2 < V3) ? V2 : V3, element size = 2**m, unsigned
+
+// Leading/Trailing Zeros, population count
+#define VCLZ_ZOPC   (unsigned long)(0xe7L << 40 | 0x53L << 0)   // V1 := leadingzeros(V2),  element size = 2**m
+#define VCTZ_ZOPC   (unsigned long)(0xe7L << 40 | 0x52L << 0)   // V1 := trailingzeros(V2), element size = 2**m
+#define VPOPCT_ZOPC (unsigned long)(0xe7L << 40 | 0x50L << 0)   // V1 := popcount(V2), bytewise!!
+
+// Rotate/Shift
+#define VERLLV_ZOPC (unsigned long)(0xe7L << 40 | 0x73L << 0)   // V1 := rotateleft(V2), rotate count in V3 element
+#define VERLL_ZOPC  (unsigned long)(0xe7L << 40 | 0x33L << 0)   // V1 := rotateleft(V3), rotate count from d2(b2).
+#define VERIM_ZOPC  (unsigned long)(0xe7L << 40 | 0x72L << 0)   // Rotate then insert under mask. Read Principles of Operation!!
+
+#define VESLV_ZOPC  (unsigned long)(0xe7L << 40 | 0x70L << 0)   // V1 := SLL(V2, V3), unsigned, element-wise
+#define VESL_ZOPC   (unsigned long)(0xe7L << 40 | 0x30L << 0)   // V1 := SLL(V3), unsigned, shift count from d2(b2).
+
+#define VESRAV_ZOPC (unsigned long)(0xe7L << 40 | 0x7AL << 0)   // V1 := SRA(V2, V3), signed, element-wise
+#define VESRA_ZOPC  (unsigned long)(0xe7L << 40 | 0x3AL << 0)   // V1 := SRA(V3), signed, shift count from d2(b2).
+#define VESRLV_ZOPC (unsigned long)(0xe7L << 40 | 0x78L << 0)   // V1 := SRL(V2, V3), unsigned, element-wise
+#define VESRL_ZOPC  (unsigned long)(0xe7L << 40 | 0x38L << 0)   // V1 := SRL(V3), unsigned, shift count from d2(b2).
+
+#define VSL_ZOPC    (unsigned long)(0xe7L << 40 | 0x74L << 0)   // V1 := SLL(V2), unsigned, bit-count
+#define VSLB_ZOPC   (unsigned long)(0xe7L << 40 | 0x75L << 0)   // V1 := SLL(V2), unsigned, byte-count
+#define VSLDB_ZOPC  (unsigned long)(0xe7L << 40 | 0x77L << 0)   // V1 := SLL((V2,V3)), unsigned, byte-count
+
+#define VSRA_ZOPC   (unsigned long)(0xe7L << 40 | 0x7eL << 0)   // V1 := SRA(V2), signed, bit-count
+#define VSRAB_ZOPC  (unsigned long)(0xe7L << 40 | 0x7fL << 0)   // V1 := SRA(V2), signed, byte-count
+#define VSRL_ZOPC   (unsigned long)(0xe7L << 40 | 0x7cL << 0)   // V1 := SRL(V2), unsigned, bit-count
+#define VSRLB_ZOPC  (unsigned long)(0xe7L << 40 | 0x7dL << 0)   // V1 := SRL(V2), unsigned, byte-count
+
+// Test under Mask
+#define VTM_ZOPC    (unsigned long)(0xe7L << 40 | 0xd8L << 0)   // Like TM, set CC according to state of selected bits.
+
+//---<  Vector String Instructions  >---
+#define VFAE_ZOPC   (unsigned long)(0xe7L << 40 | 0x82L << 0)   // Find any element
+#define VFEE_ZOPC   (unsigned long)(0xe7L << 40 | 0x80L << 0)   // Find element equal
+#define VFENE_ZOPC  (unsigned long)(0xe7L << 40 | 0x81L << 0)   // Find element not equal
+#define VSTRC_ZOPC  (unsigned long)(0xe7L << 40 | 0x8aL << 0)   // String range compare
+#define VISTR_ZOPC  (unsigned long)(0xe7L << 40 | 0x5cL << 0)   // Isolate String
+
+
+//--------------------------------
+//--  Miscellaneous Operations  --
+//--------------------------------
 
 // Execute
 #define EX_ZOPC     (unsigned  int)(68L << 24)
@@ -1117,7 +1310,6 @@ class Assembler : public AbstractAssembler {
 #define LAOG_ZOPC   (unsigned long)(0xebL << 40 | 0xe6L)         // z196
 
 // System Functions
-#define STCK_ZOPC   (unsigned  int)(0xb2 << 24 | 0x05 << 16)
 #define STCKF_ZOPC  (unsigned  int)(0xb2 << 24 | 0x7c << 16)
 #define STFLE_ZOPC  (unsigned  int)(0xb2 << 24 | 0xb0 << 16)
 #define ECTG_ZOPC   (unsigned long)(0xc8L <<40 | 0x01L << 32)    // z10
@@ -1244,10 +1436,18 @@ class Assembler : public AbstractAssembler {
     // unsigned arithmetic calculation instructions
     // Mask bit#0 is not used by these instructions.
     // There is no indication of overflow for these instr.
-    bcondLogZero             =  2,
-    bcondLogNotZero          =  5,
+    bcondLogZero_NoCarry     =  8,
+    bcondLogZero_Carry       =  2,
+    // bcondLogZero_Borrow      =  8,  // This CC is never generated.
+    bcondLogZero_NoBorrow    =  2,
+    bcondLogZero             =  bcondLogZero_Carry | bcondLogZero_NoCarry,
+    bcondLogNotZero_NoCarry  =  4,
+    bcondLogNotZero_Carry    =  1,
     bcondLogNotZero_Borrow   =  4,
     bcondLogNotZero_NoBorrow =  1,
+    bcondLogNotZero          =  bcondLogNotZero_Carry | bcondLogNotZero_NoCarry,
+    bcondLogCarry            =  bcondLogZero_Carry | bcondLogNotZero_Carry,
+    bcondLogBorrow           =  /* bcondLogZero_Borrow | */ bcondLogNotZero_Borrow,
     // string search instructions
     bcondFound       =  4,
     bcondNotFound    =  2,
@@ -1278,6 +1478,29 @@ class Assembler : public AbstractAssembler {
     to_zero           = 5,
     to_plus_infinity  = 6,
     to_minus_infinity = 7
+  };
+
+  // Vector Register Element Type.
+  enum VRegElemType {
+    VRET_BYTE   = 0,
+    VRET_HW     = 1,
+    VRET_FW     = 2,
+    VRET_DW     = 3,
+    VRET_QW     = 4
+  };
+
+  // Vector Operation Result Control.
+  //   This is a set of flags used in some vector instructions to control
+  //   the result (side) effects of instruction execution.
+  enum VOpRC {
+    VOPRC_CCSET    = 0b0001, // set the CC.
+    VOPRC_CCIGN    = 0b0000, // ignore, don't set CC.
+    VOPRC_ZS       = 0b0010, // Zero Search. Additional, elementwise, comparison against zero.
+    VOPRC_NOZS     = 0b0000, // No Zero Search.
+    VOPRC_RTBYTEIX = 0b0100, // generate byte index to lowest element with true comparison.
+    VOPRC_RTBITVEC = 0b0000, // generate bit vector, all 1s for true, all 0s for false element comparisons.
+    VOPRC_INVERT   = 0b1000, // invert comparison results.
+    VOPRC_NOINVERT = 0b0000  // use comparison results as is, do not invert.
   };
 
   // Inverse condition code, i.e. determine "15 - cc" for a given condition code cc.
@@ -1376,6 +1599,65 @@ class Assembler : public AbstractAssembler {
     return r;
   }
 
+  static int64_t rsmask_48( Address a) { assert(a.is_RSform(),  "bad address format"); return rsmask_48( a.disp12(), a.base()); }
+  static int64_t rxmask_48( Address a) {      if (a.is_RXform())  { return rxmask_48( a.disp12(), a.index(), a.base()); }
+                                         else if (a.is_RSform())  { return rsmask_48( a.disp12(),            a.base()); }
+                                         else                     { guarantee(false, "bad address format");  return 0;  }
+                                       }
+  static int64_t rsymask_48(Address a) { assert(a.is_RSYform(), "bad address format"); return rsymask_48(a.disp20(), a.base()); }
+  static int64_t rxymask_48(Address a) {      if (a.is_RXYform()) { return rxymask_48( a.disp20(), a.index(), a.base()); }
+                                         else if (a.is_RSYform()) { return rsymask_48( a.disp20(),            a.base()); }
+                                         else                     { guarantee(false, "bad address format");  return 0;   }
+                                       }
+
+  static int64_t rsmask_48( int64_t d2, Register b2)              { return uimm12(d2, 20, 48)                   | regz(b2, 16, 48); }
+  static int64_t rxmask_48( int64_t d2, Register x2, Register b2) { return uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48); }
+  static int64_t rsymask_48(int64_t d2, Register b2)              { return simm20(d2)                           | regz(b2, 16, 48); }
+  static int64_t rxymask_48(int64_t d2, Register x2, Register b2) { return simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48); }
+
+  // Address calculated from d12(vx,b) - vx is vector index register.
+  static int64_t rvmask_48( int64_t d2, VectorRegister x2, Register b2) { return uimm12(d2, 20, 48) | vreg(x2, 12) | regz(b2, 16, 48); }
+
+  static int64_t vreg_mask(VectorRegister v, int pos) {
+    return vreg(v, pos) | v->RXB_mask(pos);
+  }
+
+  // Vector Element Size Control. 4-bit field which indicates the size of the vector elements.
+  static int64_t vesc_mask(int64_t size, int min_size, int max_size, int pos) {
+    // min_size - minimum element size. Not all instructions support element sizes beginning with "byte".
+    // max_size - maximum element size. Not all instructions support element sizes up to "QW".
+    assert((min_size <= size) && (size <= max_size), "element size control out of range");
+    return uimm4(size, pos, 48);
+  }
+
+  // Vector Element IndeX. 4-bit field which indexes the target vector element.
+  static int64_t veix_mask(int64_t ix, int el_size, int pos) {
+    // el_size - size of the vector element. This is a VRegElemType enum value.
+    // ix      - vector element index.
+    int max_ix = -1;
+    switch (el_size) {
+      case VRET_BYTE: max_ix = 15; break;
+      case VRET_HW:   max_ix =  7; break;
+      case VRET_FW:   max_ix =  3; break;
+      case VRET_DW:   max_ix =  1; break;
+      case VRET_QW:   max_ix =  0; break;
+      default:        guarantee(false, "bad vector element size %d", el_size); break;
+    }
+    assert((0 <= ix) && (ix <= max_ix), "element size out of range (0 <= %ld <= %d)", ix, max_ix);
+    return uimm4(ix, pos, 48);
+  }
+
+  // Vector Operation Result Control. 4-bit field.
+  static int64_t voprc_any(int64_t flags, int pos, int64_t allowed_flags = 0b1111) {
+    assert((flags & allowed_flags) == flags, "Invalid VOPRC_* flag combination: %d", (int)flags);
+    return uimm4(flags, pos, 48);
+  }
+
+  // Vector Operation Result Control. Condition code setting.
+  static int64_t voprc_ccmask(int64_t flags, int pos) {
+    return voprc_any(flags, pos, VOPRC_CCIGN | VOPRC_CCSET);
+  }
+
  public:
 
   //--------------------------------------------------
@@ -1452,6 +1734,8 @@ class Assembler : public AbstractAssembler {
   static long imm16(int64_t i16, int s, int len)   { return imm(i16, 16) << (len-s-16); }
   static long imm24(int64_t i24, int s, int len)   { return imm(i24, 24) << (len-s-24); }
   static long imm32(int64_t i32, int s, int len)   { return imm(i32, 32) << (len-s-32); }
+
+  static long vreg(VectorRegister v, int pos)      { const int len = 48; return u_field(v->encoding()&0x0f, (len-pos)-1, (len-pos)-4) | v->RXB_mask(pos); }
 
   static long fregt(FloatRegister r, int s, int len) { return freg(r,s,len); }
   static long freg( FloatRegister r, int s, int len) { return u_field(r->encoding(), (len-s)-1, (len-s)-4); }
@@ -1840,13 +2124,16 @@ class Assembler : public AbstractAssembler {
   inline void z_alsi( const Address& d, int64_t i2);              // add logical   *(d) += i2_imm8           ; uint32  -- z10
   inline void z_algsi(const Address& d, int64_t i2);              // add logical   *(d) += i2_imm8           ; uint64  -- z10
 
-  // negate
+  // sign adjustment
   inline void z_lcr(  Register r1, Register r2 = noreg);              // neg r1 = -r2   ; int32
   inline void z_lcgr( Register r1, Register r2 = noreg);              // neg r1 = -r2   ; int64
   inline void z_lcgfr(Register r1, Register r2);                      // neg r1 = -r2   ; int64 <- int32
   inline void z_lnr(  Register r1, Register r2 = noreg);              // neg r1 = -|r2| ; int32
   inline void z_lngr( Register r1, Register r2 = noreg);              // neg r1 = -|r2| ; int64
   inline void z_lngfr(Register r1, Register r2);                      // neg r1 = -|r2| ; int64 <- int32
+  inline void z_lpr(  Register r1, Register r2 = noreg);              //     r1 =  |r2| ; int32
+  inline void z_lpgr( Register r1, Register r2 = noreg);              //     r1 =  |r2| ; int64
+  inline void z_lpgfr(Register r1, Register r2);                      //     r1 =  |r2| ; int64 <- int32
 
   // subtract intstructions
   // sub registers
@@ -2125,6 +2412,422 @@ class Assembler : public AbstractAssembler {
   inline void z_trtt(Register r1, Register r2, int64_t m3);
 
 
+  //---------------------------
+  //--  Vector Instructions  --
+  //---------------------------
+
+  //---<  Vector Support Instructions  >---
+
+  // Load (transfer from memory)
+  inline void z_vlm(   VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vl(    VectorRegister v1, int64_t d2, Register x2, Register b2);
+  inline void z_vleb(  VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
+  inline void z_vleh(  VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
+  inline void z_vlef(  VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
+  inline void z_vleg(  VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
+
+  // Gather/Scatter
+  inline void z_vgef(  VectorRegister v1, int64_t d2, VectorRegister vx2, Register b2, int64_t m3);
+  inline void z_vgeg(  VectorRegister v1, int64_t d2, VectorRegister vx2, Register b2, int64_t m3);
+
+  inline void z_vscef( VectorRegister v1, int64_t d2, VectorRegister vx2, Register b2, int64_t m3);
+  inline void z_vsceg( VectorRegister v1, int64_t d2, VectorRegister vx2, Register b2, int64_t m3);
+
+  // load and replicate
+  inline void z_vlrep( VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
+  inline void z_vlrepb(VectorRegister v1, int64_t d2, Register x2, Register b2);
+  inline void z_vlreph(VectorRegister v1, int64_t d2, Register x2, Register b2);
+  inline void z_vlrepf(VectorRegister v1, int64_t d2, Register x2, Register b2);
+  inline void z_vlrepg(VectorRegister v1, int64_t d2, Register x2, Register b2);
+
+  inline void z_vllez( VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
+  inline void z_vllezb(VectorRegister v1, int64_t d2, Register x2, Register b2);
+  inline void z_vllezh(VectorRegister v1, int64_t d2, Register x2, Register b2);
+  inline void z_vllezf(VectorRegister v1, int64_t d2, Register x2, Register b2);
+  inline void z_vllezg(VectorRegister v1, int64_t d2, Register x2, Register b2);
+
+  inline void z_vlbb(  VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
+  inline void z_vll(   VectorRegister v1, Register r3, int64_t d2, Register b2);
+
+  // Load (register to register)
+  inline void z_vlr(   VectorRegister v1, VectorRegister v2);
+
+  inline void z_vlgv(  Register r1, VectorRegister v3, int64_t d2, Register b2, int64_t m4);
+  inline void z_vlgvb( Register r1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vlgvh( Register r1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vlgvf( Register r1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vlgvg( Register r1, VectorRegister v3, int64_t d2, Register b2);
+
+  inline void z_vlvg(  VectorRegister v1, Register r3, int64_t d2, Register b2, int64_t m4);
+  inline void z_vlvgb( VectorRegister v1, Register r3, int64_t d2, Register b2);
+  inline void z_vlvgh( VectorRegister v1, Register r3, int64_t d2, Register b2);
+  inline void z_vlvgf( VectorRegister v1, Register r3, int64_t d2, Register b2);
+  inline void z_vlvgg( VectorRegister v1, Register r3, int64_t d2, Register b2);
+
+  inline void z_vlvgp( VectorRegister v1, Register r2, Register r3);
+
+  // vector register pack
+  inline void z_vpk(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vpkh(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpkf(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpkg(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  inline void z_vpks(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5);
+  inline void z_vpksh( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpksf( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpksg( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpkshs(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpksfs(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpksgs(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  inline void z_vpkls(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5);
+  inline void z_vpklsh( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpklsf( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpklsg( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpklshs(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpklsfs(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vpklsgs(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // vector register unpack (sign-extended)
+  inline void z_vuph(   VectorRegister v1, VectorRegister v2, int64_t m3);
+  inline void z_vuphb(  VectorRegister v1, VectorRegister v2);
+  inline void z_vuphh(  VectorRegister v1, VectorRegister v2);
+  inline void z_vuphf(  VectorRegister v1, VectorRegister v2);
+  inline void z_vupl(   VectorRegister v1, VectorRegister v2, int64_t m3);
+  inline void z_vuplb(  VectorRegister v1, VectorRegister v2);
+  inline void z_vuplh(  VectorRegister v1, VectorRegister v2);
+  inline void z_vuplf(  VectorRegister v1, VectorRegister v2);
+
+  // vector register unpack (zero-extended)
+  inline void z_vuplh(  VectorRegister v1, VectorRegister v2, int64_t m3);
+  inline void z_vuplhb( VectorRegister v1, VectorRegister v2);
+  inline void z_vuplhh( VectorRegister v1, VectorRegister v2);
+  inline void z_vuplhf( VectorRegister v1, VectorRegister v2);
+  inline void z_vupll(  VectorRegister v1, VectorRegister v2, int64_t m3);
+  inline void z_vupllb( VectorRegister v1, VectorRegister v2);
+  inline void z_vupllh( VectorRegister v1, VectorRegister v2);
+  inline void z_vupllf( VectorRegister v1, VectorRegister v2);
+
+  // vector register merge high/low
+  inline void z_vmrh( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmrhb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmrhh(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmrhf(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmrhg(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  inline void z_vmrl( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmrlb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmrlh(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmrlf(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmrlg(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // vector register permute
+  inline void z_vperm( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vpdi(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t        m4);
+
+  // vector register replicate
+  inline void z_vrep(  VectorRegister v1, VectorRegister v3, int64_t imm2, int64_t m4);
+  inline void z_vrepb( VectorRegister v1, VectorRegister v3, int64_t imm2);
+  inline void z_vreph( VectorRegister v1, VectorRegister v3, int64_t imm2);
+  inline void z_vrepf( VectorRegister v1, VectorRegister v3, int64_t imm2);
+  inline void z_vrepg( VectorRegister v1, VectorRegister v3, int64_t imm2);
+  inline void z_vrepi( VectorRegister v1, int64_t imm2,      int64_t m3);
+  inline void z_vrepib(VectorRegister v1, int64_t imm2);
+  inline void z_vrepih(VectorRegister v1, int64_t imm2);
+  inline void z_vrepif(VectorRegister v1, int64_t imm2);
+  inline void z_vrepig(VectorRegister v1, int64_t imm2);
+
+  inline void z_vsel(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vseg(  VectorRegister v1, VectorRegister v2, int64_t imm3);
+
+  // Load (immediate)
+  inline void z_vleib( VectorRegister v1, int64_t imm2, int64_t m3);
+  inline void z_vleih( VectorRegister v1, int64_t imm2, int64_t m3);
+  inline void z_vleif( VectorRegister v1, int64_t imm2, int64_t m3);
+  inline void z_vleig( VectorRegister v1, int64_t imm2, int64_t m3);
+
+  // Store
+  inline void z_vstm(  VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vst(   VectorRegister v1, int64_t d2, Register x2, Register b2);
+  inline void z_vsteb( VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
+  inline void z_vsteh( VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
+  inline void z_vstef( VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
+  inline void z_vsteg( VectorRegister v1, int64_t d2, Register x2, Register b2, int64_t m3);
+  inline void z_vstl(  VectorRegister v1, Register r3, int64_t d2, Register b2);
+
+  // Misc
+  inline void z_vgm(   VectorRegister v1, int64_t imm2, int64_t imm3, int64_t m4);
+  inline void z_vgmb(  VectorRegister v1, int64_t imm2, int64_t imm3);
+  inline void z_vgmh(  VectorRegister v1, int64_t imm2, int64_t imm3);
+  inline void z_vgmf(  VectorRegister v1, int64_t imm2, int64_t imm3);
+  inline void z_vgmg(  VectorRegister v1, int64_t imm2, int64_t imm3);
+
+  inline void z_vgbm(  VectorRegister v1, int64_t imm2);
+  inline void z_vzero( VectorRegister v1); // preferred method to set vreg to all zeroes
+  inline void z_vone(  VectorRegister v1); // preferred method to set vreg to all ones
+
+  //---<  Vector Arithmetic Instructions  >---
+
+  // Load
+  inline void z_vlc(    VectorRegister v1, VectorRegister v2, int64_t m3);
+  inline void z_vlcb(   VectorRegister v1, VectorRegister v2);
+  inline void z_vlch(   VectorRegister v1, VectorRegister v2);
+  inline void z_vlcf(   VectorRegister v1, VectorRegister v2);
+  inline void z_vlcg(   VectorRegister v1, VectorRegister v2);
+  inline void z_vlp(    VectorRegister v1, VectorRegister v2, int64_t m3);
+  inline void z_vlpb(   VectorRegister v1, VectorRegister v2);
+  inline void z_vlph(   VectorRegister v1, VectorRegister v2);
+  inline void z_vlpf(   VectorRegister v1, VectorRegister v2);
+  inline void z_vlpg(   VectorRegister v1, VectorRegister v2);
+
+  // ADD
+  inline void z_va(     VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vab(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vah(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vaf(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vag(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vaq(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vacc(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vaccb(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vacch(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vaccf(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vaccg(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vaccq(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // SUB
+  inline void z_vs(     VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vsb(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsh(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsf(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsg(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsq(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vscbi(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vscbib( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vscbih( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vscbif( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vscbig( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vscbiq( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // MULTIPLY
+  inline void z_vml(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmh(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmlh(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vme(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmle(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmo(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmlo(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+
+  // MULTIPLY & ADD
+  inline void z_vmal(   VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
+  inline void z_vmah(   VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
+  inline void z_vmalh(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
+  inline void z_vmae(   VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
+  inline void z_vmale(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
+  inline void z_vmao(   VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
+  inline void z_vmalo(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
+
+  // VECTOR SUM
+  inline void z_vsum(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vsumb(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsumh(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsumg(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vsumgh( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsumgf( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsumq(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vsumqf( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsumqg( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // Average
+  inline void z_vavg(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vavgb(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vavgh(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vavgf(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vavgg(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vavgl(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vavglb( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vavglh( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vavglf( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vavglg( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // VECTOR Galois Field Multiply Sum
+  inline void z_vgfm(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vgfmb(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vgfmh(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vgfmf(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vgfmg(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  // VECTOR Galois Field Multiply Sum and Accumulate
+  inline void z_vgfma(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t m5);
+  inline void z_vgfmab( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vgfmah( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vgfmaf( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+  inline void z_vgfmag( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4);
+
+  //---<  Vector Logical Instructions  >---
+
+  // AND
+  inline void z_vn(     VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vnc(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // XOR
+  inline void z_vx(     VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // NOR
+  inline void z_vno(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // OR
+  inline void z_vo(     VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // Comparison (element-wise)
+  inline void z_vceq(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5);
+  inline void z_vceqb(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vceqh(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vceqf(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vceqg(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vceqbs( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vceqhs( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vceqfs( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vceqgs( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vch(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5);
+  inline void z_vchb(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchh(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchf(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchg(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchbs(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchhs(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchfs(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchgs(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchl(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4, int64_t cc5);
+  inline void z_vchlb(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchlh(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchlf(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchlg(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchlbs( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchlhs( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchlfs( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vchlgs( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // Max/Min (element-wise)
+  inline void z_vmx(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmxb(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmxh(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmxf(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmxg(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmxl(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmxlb(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmxlh(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmxlf(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmxlg(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmn(    VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmnb(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmnh(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmnf(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmng(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmnl(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
+  inline void z_vmnlb(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmnlh(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmnlf(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vmnlg(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // Leading/Trailing Zeros, population count
+  inline void z_vclz(   VectorRegister v1, VectorRegister v2, int64_t m3);
+  inline void z_vclzb(  VectorRegister v1, VectorRegister v2);
+  inline void z_vclzh(  VectorRegister v1, VectorRegister v2);
+  inline void z_vclzf(  VectorRegister v1, VectorRegister v2);
+  inline void z_vclzg(  VectorRegister v1, VectorRegister v2);
+  inline void z_vctz(   VectorRegister v1, VectorRegister v2, int64_t m3);
+  inline void z_vctzb(  VectorRegister v1, VectorRegister v2);
+  inline void z_vctzh(  VectorRegister v1, VectorRegister v2);
+  inline void z_vctzf(  VectorRegister v1, VectorRegister v2);
+  inline void z_vctzg(  VectorRegister v1, VectorRegister v2);
+  inline void z_vpopct( VectorRegister v1, VectorRegister v2, int64_t m3);
+
+  // Rotate/Shift
+  inline void z_verllv( VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t m4);
+  inline void z_verllvb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_verllvh(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_verllvf(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_verllvg(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_verll(  VectorRegister v1, VectorRegister v3, int64_t d2, Register b2,         int64_t m4);
+  inline void z_verllb( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_verllh( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_verllf( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_verllg( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_verim(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4, int64_t m5);
+  inline void z_verimb( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4);
+  inline void z_verimh( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4);
+  inline void z_verimf( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4);
+  inline void z_verimg( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4);
+
+  inline void z_veslv(  VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t m4);
+  inline void z_veslvb( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_veslvh( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_veslvf( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_veslvg( VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vesl(   VectorRegister v1, VectorRegister v3, int64_t d2, Register b2,         int64_t m4);
+  inline void z_veslb(  VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_veslh(  VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_veslf(  VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_veslg(  VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+
+  inline void z_vesrav( VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t m4);
+  inline void z_vesravb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vesravh(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vesravf(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vesravg(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vesra(  VectorRegister v1, VectorRegister v3, int64_t d2, Register b2,         int64_t m4);
+  inline void z_vesrab( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vesrah( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vesraf( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vesrag( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vesrlv( VectorRegister v1, VectorRegister v2, VectorRegister v3,               int64_t m4);
+  inline void z_vesrlvb(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vesrlvh(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vesrlvf(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vesrlvg(VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vesrl(  VectorRegister v1, VectorRegister v3, int64_t d2, Register b2,         int64_t m4);
+  inline void z_vesrlb( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vesrlh( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vesrlf( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+  inline void z_vesrlg( VectorRegister v1, VectorRegister v3, int64_t d2, Register b2);
+
+  inline void z_vsl(    VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vslb(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsldb(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4);
+
+  inline void z_vsra(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsrab(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsrl(   VectorRegister v1, VectorRegister v2, VectorRegister v3);
+  inline void z_vsrlb(  VectorRegister v1, VectorRegister v2, VectorRegister v3);
+
+  // Test under Mask
+  inline void z_vtm(    VectorRegister v1, VectorRegister v2);
+
+  //---<  Vector String Instructions  >---
+  inline void z_vfae(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4, int64_t cc5);   // Find any element
+  inline void z_vfaeb(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfaeh(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfaef(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfee(   VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4, int64_t cc5);   // Find element equal
+  inline void z_vfeeb(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfeeh(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfeef(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfene(  VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t imm4, int64_t cc5);   // Find element not equal
+  inline void z_vfeneb( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfeneh( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vfenef( VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t cc5);
+  inline void z_vstrc(  VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t imm5, int64_t cc6);   // String range compare
+  inline void z_vstrcb( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t cc6);
+  inline void z_vstrch( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t cc6);
+  inline void z_vstrcf( VectorRegister v1, VectorRegister v2, VectorRegister v3, VectorRegister v4, int64_t cc6);
+  inline void z_vistr(  VectorRegister v1, VectorRegister v2, int64_t imm3, int64_t cc5);                      // Isolate String
+  inline void z_vistrb( VectorRegister v1, VectorRegister v2, int64_t cc5);
+  inline void z_vistrh( VectorRegister v1, VectorRegister v2, int64_t cc5);
+  inline void z_vistrf( VectorRegister v1, VectorRegister v2, int64_t cc5);
+  inline void z_vistrbs(VectorRegister v1, VectorRegister v2);
+  inline void z_vistrhs(VectorRegister v1, VectorRegister v2);
+  inline void z_vistrfs(VectorRegister v1, VectorRegister v2);
+
+
   // Floatingpoint instructions
   // ==========================
 
@@ -2331,7 +3034,6 @@ class Assembler : public AbstractAssembler {
   inline void z_ahhlr(Register r1, Register r2, Register r3);   // ADD halfword high low
 
   inline void z_tam();
-  inline void z_stck(int64_t d2, Register b2);
   inline void z_stckf(int64_t d2, Register b2);
   inline void z_stmg(Register r1, Register r3, int64_t d2, Register b2);
   inline void z_lmg(Register r1, Register r3, int64_t d2, Register b2);

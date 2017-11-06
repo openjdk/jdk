@@ -50,6 +50,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/8025979 \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/8033445 \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/checked \
+    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/FindClass \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/PrivateInterfaceMethods \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/ToStringInInterfaceTest \
     $(TOPDIR)/test/hotspot/jtreg/runtime/jni/CalleeSavedRegisters \
@@ -59,6 +60,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/hotspot/jtreg/runtime/SameObject \
     $(TOPDIR)/test/hotspot/jtreg/runtime/BoolReturn \
     $(TOPDIR)/test/hotspot/jtreg/runtime/noClassDefFoundMsg \
+    $(TOPDIR)/test/hotspot/jtreg/runtime/RedefineTests \
     $(TOPDIR)/test/hotspot/jtreg/compiler/floatingpoint/ \
     $(TOPDIR)/test/hotspot/jtreg/compiler/calls \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetOwnedMonitorInfo \
@@ -103,6 +105,7 @@ ifeq ($(TOOLCHAIN_TYPE), solstudio)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAClassLoadPrepare := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAThreadStart := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAllowedFunctions := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libRedefineDoubleDelete := -lc
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)

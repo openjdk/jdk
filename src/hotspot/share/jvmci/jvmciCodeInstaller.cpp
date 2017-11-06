@@ -174,43 +174,42 @@ OopMap* CodeInstaller::create_oop_map(Handle debug_info, TRAPS) {
 }
 
 AOTOopRecorder::AOTOopRecorder(Arena* arena, bool deduplicate) : OopRecorder(arena, deduplicate) {
-  _meta_strings = new GrowableArray<const char*>();
+  _meta_refs = new GrowableArray<jobject>();
 }
 
-int AOTOopRecorder::nr_meta_strings() const {
-  return _meta_strings->length();
+int AOTOopRecorder::nr_meta_refs() const {
+  return _meta_refs->length();
 }
 
-const char* AOTOopRecorder::meta_element(int pos) const {
-  return _meta_strings->at(pos);
+jobject AOTOopRecorder::meta_element(int pos) const {
+  return _meta_refs->at(pos);
 }
 
 int AOTOopRecorder::find_index(Metadata* h) {
+  JavaThread* THREAD = JavaThread::current();
+  int oldCount = metadata_count();
   int index =  this->OopRecorder::find_index(h);
+  int newCount = metadata_count();
+
+  if (oldCount == newCount) {
+    // found a match
+    return index;
+  }
+
+  vmassert(index + 1 == newCount, "must be last");
 
   Klass* klass = NULL;
+  oop result = NULL;
   if (h->is_klass()) {
     klass = (Klass*) h;
-    record_meta_string(klass->signature_name(), index);
+    result = CompilerToVM::get_jvmci_type(klass, CATCH);
   } else if (h->is_method()) {
     Method* method = (Method*) h;
-    // Need klass->signature_name() in method name
-    klass = method->method_holder();
-    const char* klass_name = klass->signature_name();
-    int klass_name_len  = (int)strlen(klass_name);
-    Symbol* method_name = method->name();
-    Symbol* signature   = method->signature();
-    int method_name_len = method_name->utf8_length();
-    int method_sign_len = signature->utf8_length();
-    int len             = klass_name_len + 1 + method_name_len + method_sign_len;
-    char* dest          = NEW_RESOURCE_ARRAY(char, len + 1);
-    strcpy(dest, klass_name);
-    dest[klass_name_len] = '.';
-    strcpy(&dest[klass_name_len + 1], method_name->as_C_string());
-    strcpy(&dest[klass_name_len + 1 + method_name_len], signature->as_C_string());
-    dest[len] = 0;
-    record_meta_string(dest, index);
+    methodHandle mh(method);
+    result = CompilerToVM::get_jvmci_method(method, CATCH);
   }
+  jobject ref = JNIHandles::make_local(THREAD, result);
+  record_meta_ref(ref, index);
 
   return index;
 }
@@ -224,16 +223,12 @@ int AOTOopRecorder::find_index(jobject h) {
   return find_index(klass);
 }
 
-void AOTOopRecorder::record_meta_string(const char* name, int index) {
+void AOTOopRecorder::record_meta_ref(jobject o, int index) {
   assert(index > 0, "must be 1..n");
   index -= 1; // reduce by one to convert to array index
 
-  if (index < _meta_strings->length()) {
-    assert(strcmp(name, _meta_strings->at(index)) == 0, "must match");
-  } else {
-    assert(index == _meta_strings->length(), "must be last");
-    _meta_strings->append(name);
-  }
+  assert(index == _meta_refs->length(), "must be last");
+  _meta_refs->append(o);
 }
 
 void* CodeInstaller::record_metadata_reference(CodeSection* section, address dest, Handle constant, TRAPS) {

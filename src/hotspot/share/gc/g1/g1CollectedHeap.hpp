@@ -63,7 +63,6 @@ class HRRSCleanupTask;
 class GenerationSpec;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
-class G1KlassScanClosure;
 class G1ParScanThreadState;
 class ObjectClosure;
 class SpaceClosure;
@@ -303,8 +302,6 @@ private:
   static G1Policy* create_g1_policy(STWGCTimer* gc_timer);
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
-
-  void process_weak_jni_handles();
 
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
@@ -969,6 +966,8 @@ public:
   jint initialize();
 
   virtual void stop();
+  virtual void safepoint_synchronize_begin();
+  virtual void safepoint_synchronize_end();
 
   // Return the (conservative) maximum heap alignment for any G1 heap
   static size_t conservative_max_heap_alignment();
@@ -1283,8 +1282,6 @@ public:
 
   inline bool is_in_young(const oop obj);
 
-  virtual bool is_scavengable(const void* addr);
-
   // We don't need barriers for initializing stores to objects
   // in the young gen: for the SATB pre-barrier, there is no
   // pre-value that needs to be remembered; for the remembered-set
@@ -1364,7 +1361,7 @@ public:
   // is not marked, and c) it is not in an archive region.
   bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
     return
-      hr->is_obj_dead(obj, _cm->prevMarkBitMap()) &&
+      hr->is_obj_dead(obj, _cm->prev_mark_bitmap()) &&
       !hr->is_archive();
   }
 
@@ -1395,6 +1392,9 @@ public:
   ConcurrentG1Refine* concurrent_g1_refine() const { return _cg1r; }
 
   // Optimized nmethod scanning support routines
+
+  // Is an oop scavengeable
+  virtual bool is_scavengable(oop obj);
 
   // Register the given nmethod with the G1 heap.
   virtual void register_nmethod(nmethod* nm);

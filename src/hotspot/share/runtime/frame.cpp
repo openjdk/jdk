@@ -627,16 +627,9 @@ void frame::print_C_frame(outputStream* st, char* buf, int buflen, address pc) {
     st->print("  " PTR_FORMAT, p2i(pc));
   }
 
-  // function name - os::dll_address_to_function_name() may return confusing
-  // names if pc is within jvm.dll or libjvm.so, because JVM only has
-  // JVM_xxxx and a few other symbols in the dynamic symbol table. Do this
-  // only for native libraries.
-  if (!in_vm || Decoder::can_decode_C_frame_in_vm()) {
-    found = os::dll_address_to_function_name(pc, buf, buflen, &offset);
-
-    if (found) {
-      st->print("  %s+0x%x", buf, offset);
-    }
+  found = os::dll_address_to_function_name(pc, buf, buflen, &offset);
+  if (found) {
+    st->print("  %s+0x%x", buf, offset);
   }
 }
 
@@ -1122,10 +1115,6 @@ void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* ma
     oops_entry_do(f, map);
   } else if (CodeCache::contains(pc())) {
     oops_code_blob_do(f, cf, map);
-#ifdef SHARK
-  } else if (is_fake_stub_frame()) {
-    // nothing to do
-#endif // SHARK
   } else {
     ShouldNotReachHere();
   }

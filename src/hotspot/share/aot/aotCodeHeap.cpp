@@ -60,7 +60,14 @@ Klass* AOTCodeHeap::get_klass_from_got(const char* klass_name, int klass_len, co
       fatal("Shared file %s error: klass %s should be resolved already", _lib->name(), klass_name);
       vm_exit(1);
     }
+    // Patch now to avoid extra runtime lookup
     _klasses_got[klass_data->_got_index] = k;
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      if (ik->is_initialized()) {
+        _klasses_got[klass_data->_got_index - 1] = ik;
+      }
+    }
   }
   return k;
 }
@@ -433,6 +440,7 @@ void AOTCodeHeap::link_shared_runtime_symbols() {
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_exception_handler_for_return_address", address, SharedRuntime::exception_handler_for_return_address);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_register_finalizer", address, SharedRuntime::register_finalizer);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_OSR_migration_end", address, SharedRuntime::OSR_migration_end);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_resolve_dynamic_invoke", address, CompilerRuntime::resolve_dynamic_invoke);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_resolve_string_by_symbol", address, CompilerRuntime::resolve_string_by_symbol);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_resolve_klass_by_symbol", address, CompilerRuntime::resolve_klass_by_symbol);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_resolve_method_by_symbol_and_load_counters", address, CompilerRuntime::resolve_method_by_symbol_and_load_counters);
@@ -609,9 +617,13 @@ Method* AOTCodeHeap::find_method(Klass* klass, Thread* thread, const char* metho
   return m;
 }
 
+AOTKlassData* AOTCodeHeap::find_klass(const char *name) {
+  return (AOTKlassData*) os::dll_lookup(_lib->dl_handle(), name);
+}
+
 AOTKlassData* AOTCodeHeap::find_klass(InstanceKlass* ik) {
   ResourceMark rm;
-  AOTKlassData* klass_data = (AOTKlassData*) os::dll_lookup(_lib->dl_handle(), ik->signature_name());
+  AOTKlassData* klass_data = find_klass(ik->signature_name());
   return klass_data;
 }
 
@@ -640,34 +652,51 @@ bool AOTCodeHeap::is_dependent_method(Klass* dependee, AOTCompiledMethod* aot) {
   return false;
 }
 
+void AOTCodeHeap::sweep_dependent_methods(int* indexes, int methods_cnt) {
+  int marked = 0;
+  for (int i = 0; i < methods_cnt; ++i) {
+    int code_id = indexes[i];
+    // Invalidate aot code.
+    if (Atomic::cmpxchg(invalid, &_code_to_aot[code_id]._state, not_set) != not_set) {
+      if (_code_to_aot[code_id]._state == in_use) {
+        AOTCompiledMethod* aot = _code_to_aot[code_id]._aot;
+        assert(aot != NULL, "aot should be set");
+        if (!aot->is_runtime_stub()) { // Something is wrong - should not invalidate stubs.
+          aot->mark_for_deoptimization(false);
+          marked++;
+        }
+      }
+    }
+  }
+  if (marked > 0) {
+    VM_Deoptimize op;
+    VMThread::execute(&op);
+  }
+}
+
 void AOTCodeHeap::sweep_dependent_methods(AOTKlassData* klass_data) {
   // Make dependent methods non_entrant forever.
   int methods_offset = klass_data->_dependent_methods_offset;
   if (methods_offset >= 0) {
-    int marked = 0;
     address methods_cnt_adr = _dependencies + methods_offset;
     int methods_cnt = *(int*)methods_cnt_adr;
     int* indexes = (int*)(methods_cnt_adr + 4);
-    for (int i = 0; i < methods_cnt; ++i) {
-      int code_id = indexes[i];
-      // Invalidate aot code.
-      if (Atomic::cmpxchg(invalid, &_code_to_aot[code_id]._state, not_set) != not_set) {
-        if (_code_to_aot[code_id]._state == in_use) {
-          AOTCompiledMethod* aot = _code_to_aot[code_id]._aot;
-          assert(aot != NULL, "aot should be set");
-          if (!aot->is_runtime_stub()) { // Something is wrong - should not invalidate stubs.
-            aot->mark_for_deoptimization(false);
-            marked++;
-          }
-        }
-      }
-    }
-    if (marked > 0) {
-      VM_Deoptimize op;
-      VMThread::execute(&op);
-    }
+    sweep_dependent_methods(indexes, methods_cnt);
   }
 }
+
+void AOTCodeHeap::sweep_dependent_methods(InstanceKlass* ik) {
+  AOTKlassData* klass_data = find_klass(ik);
+  vmassert(klass_data != NULL, "dependency data missing");
+  sweep_dependent_methods(klass_data);
+}
+
+void AOTCodeHeap::sweep_method(AOTCompiledMethod *aot) {
+  int indexes[] = {aot->method_index()};
+  sweep_dependent_methods(indexes, 1);
+  vmassert(aot->method()->code() != aot && aot->method()->aot_code() == NULL, "method still active");
+}
+
 
 bool AOTCodeHeap::load_klass_data(InstanceKlass* ik, Thread* thread) {
   ResourceMark rm;
@@ -718,6 +747,9 @@ bool AOTCodeHeap::load_klass_data(InstanceKlass* ik, Thread* thread) {
   aot_class->_classloader = ik->class_loader_data();
   // Set klass's Resolve (second) got cell.
   _klasses_got[klass_data->_got_index] = ik;
+  if (ik->is_initialized()) {
+    _klasses_got[klass_data->_got_index - 1] = ik;
+  }
 
   // Initialize global symbols of the DSO to the corresponding VM symbol values.
   link_global_lib_symbols();
@@ -837,7 +869,7 @@ void AOTCodeHeap::got_metadata_do(void f(Metadata*)) {
       f(md);
     } else {
       intptr_t meta = (intptr_t)md;
-      fatal("Invalid value in _metaspace_got[%d] = " INTPTR_FORMAT, i, meta);
+      fatal("Invalid value in _klasses_got[%d] = " INTPTR_FORMAT, i, meta);
     }
   }
 }
@@ -886,6 +918,127 @@ void AOTCodeHeap::metadata_do(void f(Metadata*)) {
       aot->metadata_do(f);
     }
   }
-  // Scan metaspace_got cells.
+  // Scan klasses_got cells.
   got_metadata_do(f);
+}
+
+bool AOTCodeHeap::reconcile_dynamic_klass(AOTCompiledMethod *caller, InstanceKlass* holder, int index, Klass *dyno_klass, const char *descriptor1, const char *descriptor2) {
+  const char * const descriptors[2] = {descriptor1, descriptor2};
+  JavaThread *thread = JavaThread::current();
+  ResourceMark rm(thread);
+
+  AOTKlassData* holder_data = find_klass(holder);
+  vmassert(holder_data != NULL, "klass %s not found", holder->signature_name());
+  vmassert(is_dependent_method(holder, caller), "sanity");
+
+  AOTKlassData* dyno_data = NULL;
+  bool adapter_failed = false;
+  char buf[64];
+  int descriptor_index = 0;
+  // descriptors[0] specific name ("adapter:<method_id>") for matching
+  // descriptors[1] fall-back name ("adapter") for depdencies
+  while (descriptor_index < 2) {
+    const char *descriptor = descriptors[descriptor_index];
+    if (descriptor == NULL) {
+      break;
+    }
+    jio_snprintf(buf, sizeof buf, "%s<%d:%d>", descriptor, holder_data->_class_id, index);
+    dyno_data = find_klass(buf);
+    if (dyno_data != NULL) {
+      break;
+    }
+    // If match failed then try fall-back for dependencies
+    ++descriptor_index;
+    adapter_failed = true;
+  }
+
+  if (dyno_data == NULL && dyno_klass == NULL) {
+    // all is well, no (appendix) at compile-time, and still none
+    return true;
+  }
+
+  if (dyno_data == NULL) {
+    // no (appendix) at build-time, but now there is
+    sweep_dependent_methods(holder_data);
+    return false;
+  }
+
+  if (adapter_failed) {
+    // adapter method mismatch
+    sweep_dependent_methods(holder_data);
+    sweep_dependent_methods(dyno_data);
+    return false;
+  }
+
+  if (dyno_klass == NULL) {
+    // (appendix) at build-time, none now
+    sweep_dependent_methods(holder_data);
+    sweep_dependent_methods(dyno_data);
+    return false;
+  }
+
+  // TODO: support array appendix object
+  if (!dyno_klass->is_instance_klass()) {
+    sweep_dependent_methods(holder_data);
+    sweep_dependent_methods(dyno_data);
+    return false;
+  }
+
+  InstanceKlass* dyno = InstanceKlass::cast(dyno_klass);
+
+  if (!dyno->is_anonymous()) {
+    if (_klasses_got[dyno_data->_got_index] != dyno) {
+      // compile-time class different from runtime class, fail and deoptimize
+      sweep_dependent_methods(holder_data);
+      sweep_dependent_methods(dyno_data);
+      return false;
+    }
+
+    if (dyno->is_initialized()) {
+      _klasses_got[dyno_data->_got_index - 1] = dyno;
+    }
+    return true;
+  }
+
+  // TODO: support anonymous supers
+  if (!dyno->supers_have_passed_fingerprint_checks() || dyno->get_stored_fingerprint() != dyno_data->_fingerprint) {
+      NOT_PRODUCT( aot_klasses_fp_miss++; )
+      log_trace(aot, class, fingerprint)("class  %s%s  has bad fingerprint in  %s tid=" INTPTR_FORMAT,
+          dyno->internal_name(), dyno->is_shared() ? " (shared)" : "",
+          _lib->name(), p2i(thread));
+    sweep_dependent_methods(holder_data);
+    sweep_dependent_methods(dyno_data);
+    return false;
+  }
+
+  _klasses_got[dyno_data->_got_index] = dyno;
+  if (dyno->is_initialized()) {
+    _klasses_got[dyno_data->_got_index - 1] = dyno;
+  }
+
+  // TODO: hook up any AOT code
+  // load_klass_data(dyno_data, thread);
+  return true;
+}
+
+bool AOTCodeHeap::reconcile_dynamic_method(AOTCompiledMethod *caller, InstanceKlass* holder, int index, Method *adapter_method) {
+    InstanceKlass *adapter_klass = adapter_method->method_holder();
+    char buf[64];
+    jio_snprintf(buf, sizeof buf, "adapter:%d", adapter_method->method_idnum());
+    if (!reconcile_dynamic_klass(caller, holder, index, adapter_klass, buf, "adapter")) {
+      return false;
+    }
+    return true;
+}
+
+bool AOTCodeHeap::reconcile_dynamic_invoke(AOTCompiledMethod* caller, InstanceKlass* holder, int index, Method* adapter_method, Klass *appendix_klass) {
+    if (!reconcile_dynamic_klass(caller, holder, index, appendix_klass, "appendix")) {
+      return false;
+    }
+
+    if (!reconcile_dynamic_method(caller, holder, index, adapter_method)) {
+      return false;
+    }
+
+    return true;
 }

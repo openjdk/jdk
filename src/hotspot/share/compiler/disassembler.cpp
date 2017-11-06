@@ -35,9 +35,6 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include CPU_HEADER(depChecker)
-#ifdef SHARK
-#include "shark/sharkEntry.hpp"
-#endif
 
 void*       Disassembler::_library               = NULL;
 bool        Disassembler::_tried_to_load_library = false;
@@ -521,14 +518,8 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
   decode_env env(nm, st);
   env.output()->print_cr("----------------------------------------------------------------------");
 
-#ifdef SHARK
-  SharkEntry* entry = (SharkEntry *) nm->code_begin();
-  unsigned char* p   = entry->code_start();
-  unsigned char* end = entry->code_limit();
-#else
   unsigned char* p   = nm->code_begin();
   unsigned char* end = nm->code_end();
-#endif // SHARK
 
   nm->method()->method_holder()->name()->print_symbol_on(env.output());
   env.output()->print(".");

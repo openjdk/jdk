@@ -201,12 +201,15 @@ class StubQueue: public CHeapObj<mtCode> {
   void  remove_first(int n);                     // remove the first n stubs in the queue
   void  remove_all();                            // remove all stubs in the queue
 
+  void deallocate_unused_tail();                 // deallocate the unused tail of the underlying CodeBlob
+                                                 // only used from TemplateInterpreter::initialize()
   // Iteration
   static void queues_do(void f(StubQueue* s));   // call f with each StubQueue
   void  stubs_do(void f(Stub* s));               // call f with all stubs
   Stub* first() const                            { return number_of_stubs() > 0 ? stub_at(_queue_begin) : NULL; }
   Stub* next(Stub* s) const                      { int i = index_of(s) + stub_size(s);
-                                                   if (i == _buffer_limit) i = 0;
+                                                   // Only wrap around in the non-contiguous case (see stubss.cpp)
+                                                   if (i == _buffer_limit && _queue_end < _buffer_limit) i = 0;
                                                    return (i == _queue_end) ? NULL : stub_at(i);
                                                  }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-void KlassToOopClosure::do_klass(Klass* k) {
-  assert(_oop_closure != NULL, "Not initialized?");
-  k->oops_do(_oop_closure);
-}
+DoNothingClosure do_nothing_cl;
 
 void CLDToOopClosure::do_cld(ClassLoaderData* cld) {
-  cld->oops_do(_oop_closure, &_klass_closure, _must_claim_cld);
-}
-
-void CLDToKlassAndOopClosure::do_cld(ClassLoaderData* cld) {
-  cld->oops_do(_oop_closure, _klass_closure, _must_claim_cld);
+  cld->oops_do(_oop_closure, _must_claim_cld);
 }
 
 void ObjectToOopClosure::do_object(oop obj) {

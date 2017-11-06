@@ -135,6 +135,16 @@ objArrayOop ConstantPool::resolved_references() const {
   return (objArrayOop)_cache->resolved_references();
 }
 
+// Called from outside constant pool resolution where a resolved_reference array
+// may not be present.
+objArrayOop ConstantPool::resolved_references_or_null() const {
+  if (_cache == NULL) {
+    return NULL;
+  } else {
+    return (objArrayOop)_cache->resolved_references();
+  }
+}
+
 // Create resolved_references array and mapping array for original cp indexes
 // The ldc bytecode was rewritten to have the resolved reference array index so need a way
 // to map it back for resolving and some unlikely miscellaneous uses.
@@ -216,7 +226,7 @@ void ConstantPool::klass_at_put(int class_index, int name_index, int resolved_kl
   symbol_at_put(name_index, name);
   name->increment_refcount();
   Klass** adr = resolved_klasses()->adr_at(resolved_klass_index);
-  OrderAccess::release_store_ptr((Klass* volatile *)adr, k);
+  OrderAccess::release_store(adr, k);
 
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* non-NULL, so we need hardware store ordering here.
@@ -233,7 +243,7 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
   CPKlassSlot kslot = klass_slot_at(class_index);
   int resolved_klass_index = kslot.resolved_klass_index();
   Klass** adr = resolved_klasses()->adr_at(resolved_klass_index);
-  OrderAccess::release_store_ptr((Klass* volatile *)adr, k);
+  OrderAccess::release_store(adr, k);
 
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* non-NULL, so we need hardware store ordering here.
@@ -282,6 +292,28 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
     oop archived = MetaspaceShared::archive_heap_object(rr, THREAD);
     _cache->set_archived_references(archived);
     set_resolved_references(NULL);
+  }
+}
+
+void ConstantPool::resolve_class_constants(TRAPS) {
+  assert(DumpSharedSpaces, "used during dump time only");
+  // The _cache may be NULL if the _pool_holder klass fails verification
+  // at dump time due to missing dependencies.
+  if (cache() == NULL || reference_map() == NULL) {
+    return; // nothing to do
+  }
+
+  constantPoolHandle cp(THREAD, this);
+  for (int index = 1; index < length(); index++) { // Index 0 is unused
+    if (tag_at(index).is_string()) {
+      Symbol* sym = cp->unresolved_string_at(index);
+      // Look up only. Only resolve references to already interned strings.
+      oop str = StringTable::lookup(sym);
+      if (str != NULL) {
+        int cache_index = cp->cp_to_object_index(index);
+        cp->string_at_put(index, cache_index, str);
+      }
+    }
   }
 }
 #endif
@@ -479,7 +511,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
     trace_class_resolution(this_cp, k);
   }
   Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
-  OrderAccess::release_store_ptr((Klass* volatile *)adr, k);
+  OrderAccess::release_store(adr, k);
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* stored in _resolved_klasses is non-NULL, so we need
   // hardware store ordering here.
@@ -710,22 +742,6 @@ void ConstantPool::resolve_string_constants_impl(const constantPoolHandle& this_
       this_cp->string_at(index, CHECK);
     }
   }
-}
-
-bool ConstantPool::resolve_class_constants(TRAPS) {
-  constantPoolHandle cp(THREAD, this);
-  for (int index = 1; index < length(); index++) { // Index 0 is unused
-    if (tag_at(index).is_string()) {
-      Symbol* sym = cp->unresolved_string_at(index);
-      // Look up only. Only resolve references to already interned strings.
-      oop str = StringTable::lookup(sym);
-      if (str != NULL) {
-        int cache_index = cp->cp_to_object_index(index);
-        cp->string_at_put(index, cache_index, str);
-      }
-    }
-  }
-  return true;
 }
 
 Symbol* ConstantPool::exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/signature.hpp"
@@ -39,9 +40,6 @@
 #endif
 #ifdef COMPILER2
 #include "opto/optoreg.hpp"
-#endif
-#ifdef SPARC
-#include "vmreg_sparc.inline.hpp"
 #endif
 
 // OopMapStream
@@ -266,13 +264,6 @@ OopMap* OopMapSet::find_map_at_offset(int pc_offset) const {
   return m;
 }
 
-class DoNothingClosure: public OopClosure {
- public:
-  void do_oop(oop* p)       {}
-  void do_oop(narrowOop* p) {}
-};
-static DoNothingClosure do_nothing;
-
 static void add_derived_oop(oop* base, oop* derived) {
 #if !defined(TIERED) && !defined(INCLUDE_JVMCI)
   COMPILER1_PRESENT(ShouldNotReachHere();)
@@ -313,7 +304,7 @@ static void trace_codeblob_maps(const frame *fr, const RegisterMap *reg_map) {
 
 void OopMapSet::oops_do(const frame *fr, const RegisterMap* reg_map, OopClosure* f) {
   // add derived oops to a table
-  all_do(fr, reg_map, f, add_derived_oop, &do_nothing);
+  all_do(fr, reg_map, f, add_derived_oop, &do_nothing_cl);
 }
 
 

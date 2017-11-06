@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,6 @@ public:
 
   // demangle a C++ symbol
   virtual bool demangle(const char* symbol, char* buf, int buflen) = 0;
-  // if the decoder can decode symbols in vm
-  virtual bool can_decode_C_frame_in_vm() const = 0;
 
   virtual decoder_status status() const {
     return _decoder_status;
@@ -99,9 +97,6 @@ public:
     return false;
   }
 
-  virtual bool can_decode_C_frame_in_vm() const {
-    return false;
-  }
 };
 
 
@@ -113,10 +108,11 @@ public:
   }
   static bool decode(address pc, char* buf, int buflen, int* offset, const void* base);
   static bool demangle(const char* symbol, char* buf, int buflen);
-  static bool can_decode_C_frame_in_vm();
 
-  // shutdown shared instance
-  static void shutdown();
+  // Attempts to retrieve source file name and line number associated with a pc.
+  // If buf != NULL, points to a buffer of size buflen which will receive the
+  // file name. File name will be silently truncated if output buffer is too small.
+  static bool get_source_info(address pc, char* buf, size_t buflen, int* line);
 
   static void print_state_on(outputStream* st);
 

@@ -37,12 +37,6 @@ static pthread_t             tc_owner = 0;
 static pthread_mutex_t       tc_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int                   tc_count = 0;
 
-void ThreadCritical::initialize() {
-}
-
-void ThreadCritical::release() {
-}
-
 ThreadCritical::ThreadCritical() {
   pthread_t self = pthread_self();
   if (self != tc_owner) {

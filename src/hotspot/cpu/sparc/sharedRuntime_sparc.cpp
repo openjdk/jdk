@@ -41,10 +41,6 @@
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
-#ifdef SHARK
-#include "compiler/compileBroker.hpp"
-#include "shark/sharkCompiler.hpp"
-#endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif

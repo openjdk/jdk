@@ -36,6 +36,8 @@ import java.io.UncheckedIOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -52,6 +54,7 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.tools.Shell;
 
 /**
@@ -122,44 +125,18 @@ public final class Main extends Shell {
             Context.setGlobal(global);
         }
 
-        // Check if java.desktop module is available and we're running in non-headless mode.
-        // We access AWT via script to avoid direct dependency on java.desktop module.
-        final boolean isHeadless = (boolean) context.eval(global,
-            "(function() { \n" +
-            "    var env = java.awt.GraphicsEnvironment; \n" +
-            "    return env && typeof env.isHeadless == 'function'? \n" +
-            "        env.isHeadless() : true; \n" +
-            "})()",
-            global, "<headless-check>");
+        // jjs.js is read and evaluated. The result of the evaluation is an "exports" object. This is done
+        // to avoid polluting javascript global scope. These are internal funtions are retrieved from the
+        // 'exports' object and used from here.
+        final ScriptObject jjsObj = (ScriptObject)context.eval(global, readJJSScript(), global, "<jjs.js>");
 
-        // Function that shows a JFileChooser dialog and returns the file name chosen (if chosen).
-        // We access swing from script to avoid direct dependency on java.desktop module.
-        final ScriptFunction fileChooserFunc = isHeadless? null : (ScriptFunction) context.eval(global,
-            "(function() { \n" +
-            "    var ExtensionFilter = javax.swing.filechooser.FileNameExtensionFilter; \n" +
-            "    var JFileChooser = javax.swing.JFileChooser; \n" +
-            "    function run() { \n" +
-            "        var chooser = new JFileChooser(); \n" +
-            "        chooser.fileFilter = new ExtensionFilter('JavaScript Files', 'js'); \n" +
-            "        var retVal = chooser.showOpenDialog(null);  \n" +
-            "        return retVal == JFileChooser.APPROVE_OPTION ?  \n" +
-            "            chooser.selectedFile.absolutePath : null; \n" +
-            "    }; \n" +
-            "    var fileChooserTask = new java.util.concurrent.FutureTask(run); \n" +
-            "    javax.swing.SwingUtilities.invokeLater(fileChooserTask); \n" +
-            "    return fileChooserTask.get(); \n" +
-            "})",
-            global, "<file-chooser>");
+        final boolean isHeadless = (boolean) ScriptRuntime.apply((ScriptFunction) jjsObj.get("isHeadless"), null);
+        final ScriptFunction fileChooserFunc = isHeadless? null : (ScriptFunction) jjsObj.get("chooseFile");
 
         final NashornCompleter completer = new NashornCompleter(context, global, this, propsHelper, fileChooserFunc);
+        final ScriptFunction browseFunc = isHeadless? null : (ScriptFunction) jjsObj.get("browse");
 
-        // Function that opens up the desktop browser application with the given URI.
-        // We access AWT from script to avoid direct dependency on java.desktop module.
-        final ScriptFunction browseFunc = isHeadless? null : (ScriptFunction) context.eval(global,
-            "(function(uri) { \n" +
-            "    java.awt.Desktop.desktop.browse(uri); \n" +
-            "})",
-            global, "<browse>");
+        final ScriptFunction javadoc = (ScriptFunction) jjsObj.get("javadoc");
 
         try (final Console in = new Console(System.in, System.out, HIST_FILE, completer,
                 str -> {
@@ -175,6 +152,9 @@ public final class Main extends Shell {
                                 final String pkgName = ((NativeJavaPackage)res).getName();
                                 final String url = pkgName.replace('.', '/') + "/package-summary.html";
                                 openBrowserForJavadoc(browseFunc, url);
+                            } else if (NativeJava.isJavaMethod(UNDEFINED, res)) {
+                                ScriptRuntime.apply(javadoc, UNDEFINED, res);
+                                return ""; // javadoc function already prints javadoc
                             } else if (res instanceof ScriptObject) {
                                 final ScriptObject sobj = (ScriptObject)res;
                                 if (sobj.has(DOC_PROPERTY_NAME)) {
@@ -323,5 +303,23 @@ public final class Main extends Shell {
             ScriptRuntime.apply(browse, null, uri);
         } catch (Exception ignored) {
         }
+    }
+
+    private static String readJJSScript() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    try {
+                        final InputStream resStream = Main.class.getResourceAsStream("resources/jjs.js");
+                        if (resStream == null) {
+                            throw new RuntimeException("resources/jjs.js is missing!");
+                        }
+                        return new String(Source.readFully(resStream));
+                    } catch (final IOException exp) {
+                        throw new RuntimeException(exp);
+                    }
+                }
+            });
     }
 }

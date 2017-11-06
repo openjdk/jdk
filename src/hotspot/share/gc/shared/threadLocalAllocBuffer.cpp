@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,8 +275,7 @@ void ThreadLocalAllocBuffer::print_stats(const char* tag) {
   Thread* thrd = myThread();
   size_t waste = _gc_waste + _slow_refill_waste + _fast_refill_waste;
   size_t alloc = _number_of_refills * _desired_size;
-  double waste_percent = alloc == 0 ? 0.0 :
-                      100.0 * waste / alloc;
+  double waste_percent = percent_of(waste, alloc);
   size_t tlab_used  = Universe::heap()->tlab_used(thrd);
   log.trace("TLAB: %s thread: " INTPTR_FORMAT " [id: %2d]"
             " desired_size: " SIZE_FORMAT "KB"
@@ -416,8 +415,7 @@ void GlobalTLABStats::print() {
   }
 
   size_t waste = _total_gc_waste + _total_slow_refill_waste + _total_fast_refill_waste;
-  double waste_percent = _total_allocation == 0 ? 0.0 :
-                         100.0 * waste / _total_allocation;
+  double waste_percent = percent_of(waste, _total_allocation);
   log.debug("TLAB totals: thrds: %d  refills: %d max: %d"
             " slow allocs: %d max %d waste: %4.1f%%"
             " gc: " SIZE_FORMAT "B max: " SIZE_FORMAT "B"

@@ -43,9 +43,16 @@
 #include "trace/traceMacros.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#endif // INCLUDE_ALL_GCS
+
+void Klass::set_java_mirror(Handle m) {
+  assert(!m.is_null(), "New mirror should never be null.");
+  assert(_java_mirror.resolve() == NULL, "should only be used to initialize mirror");
+  _java_mirror = class_loader_data()->add_handle(m);
+}
+
+oop Klass::java_mirror() const {
+  return _java_mirror.resolve();
+}
 
 bool Klass::is_cloneable() const {
   return _access_flags.is_cloneable_fast() ||
@@ -441,51 +448,6 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive, bool clean_alive
   }
 }
 
-void Klass::klass_update_barrier_set(oop v) {
-  record_modified_oops();
-}
-
-// This barrier is used by G1 to remember the old oop values, so
-// that we don't forget any objects that were live at the snapshot at
-// the beginning. This function is only used when we write oops into Klasses.
-void Klass::klass_update_barrier_set_pre(oop* p, oop v) {
-#if INCLUDE_ALL_GCS
-  if (UseG1GC) {
-    oop obj = *p;
-    if (obj != NULL) {
-      G1SATBCardTableModRefBS::enqueue(obj);
-    }
-  }
-#endif
-}
-
-void Klass::klass_oop_store(oop* p, oop v) {
-  assert(!Universe::heap()->is_in_reserved((void*)p), "Should store pointer into metadata");
-  assert(v == NULL || Universe::heap()->is_in_reserved((void*)v), "Should store pointer to an object");
-
-  // do the store
-  if (always_do_update_barrier) {
-    klass_oop_store((volatile oop*)p, v);
-  } else {
-    klass_update_barrier_set_pre(p, v);
-    *p = v;
-    klass_update_barrier_set(v);
-  }
-}
-
-void Klass::klass_oop_store(volatile oop* p, oop v) {
-  assert(!Universe::heap()->is_in_reserved((void*)p), "Should store pointer into metadata");
-  assert(v == NULL || Universe::heap()->is_in_reserved((void*)v), "Should store pointer to an object");
-
-  klass_update_barrier_set_pre((oop*)p, v); // Cast away volatile.
-  OrderAccess::release_store_ptr(p, v);
-  klass_update_barrier_set(v);
-}
-
-void Klass::oops_do(OopClosure* cl) {
-  cl->do_oop(&_java_mirror);
-}
-
 void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
   if (log_is_enabled(Trace, cds)) {
     ResourceMark rm;
@@ -532,7 +494,8 @@ void Klass::remove_java_mirror() {
     ResourceMark rm;
     log_trace(cds, unshareable)("remove java_mirror: %s", external_name());
   }
-  set_java_mirror(NULL);
+  // Just null out the mirror.  The class_loader_data() no longer exists.
+  _java_mirror = NULL;
 }
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
