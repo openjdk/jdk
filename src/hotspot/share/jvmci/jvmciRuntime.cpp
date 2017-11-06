@@ -821,7 +821,7 @@ void JVMCIRuntime::shutdown(TRAPS) {
 }
 
 CompLevel JVMCIRuntime::adjust_comp_level_inner(const methodHandle& method, bool is_osr, CompLevel level, JavaThread* thread) {
-  JVMCICompiler* compiler = JVMCICompiler::instance(thread);
+  JVMCICompiler* compiler = JVMCICompiler::instance(false, thread);
   if (compiler != NULL && compiler->is_bootstrapping()) {
     return level;
   }
