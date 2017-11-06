@@ -1371,7 +1371,8 @@ public class Locations {
 
             private Pair<String,Path> inferModuleName(Path p) {
                 if (Files.isDirectory(p)) {
-                    if (Files.exists(p.resolve("module-info.class"))) {
+                    if (Files.exists(p.resolve("module-info.class")) ||
+                        Files.exists(p.resolve("module-info.sig"))) {
                         String name = p.getFileName().toString();
                         if (SourceVersion.isName(name))
                             return new Pair<>(name, p);

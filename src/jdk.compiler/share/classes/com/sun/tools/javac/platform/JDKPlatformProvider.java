@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.processing.Processor;
@@ -64,6 +65,7 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.StringUtils;
 
 /** PlatformProvider for JDK N.
  *
@@ -96,9 +98,11 @@ public class JDKPlatformProvider implements PlatformProvider {
                  DirectoryStream<Path> dir =
                          Files.newDirectoryStream(fs.getRootDirectories().iterator().next())) {
                 for (Path section : dir) {
+                    if (section.getFileName().toString().contains("-"))
+                        continue;
                     for (char ver : section.getFileName().toString().toCharArray()) {
                         String verString = Character.toString(ver);
-                        Target t = Target.lookup(verString);
+                        Target t = Target.lookup("" + Integer.parseInt(verString, 16));
 
                         if (t != null) {
                             SUPPORTED_JAVA_PLATFORM_VERSIONS.add(targetNumericVersion(t));
@@ -107,10 +111,6 @@ public class JDKPlatformProvider implements PlatformProvider {
                 }
             } catch (IOException | ProviderNotFoundException ex) {
             }
-        }
-
-        if (SUPPORTED_JAVA_PLATFORM_VERSIONS.contains("9")) {
-            SUPPORTED_JAVA_PLATFORM_VERSIONS.add("10");
         }
     }
 
@@ -121,10 +121,13 @@ public class JDKPlatformProvider implements PlatformProvider {
     static class PlatformDescriptionImpl implements PlatformDescription {
 
         private final Map<Path, FileSystem> ctSym2FileSystem = new HashMap<>();
-        private final String version;
+        private final String sourceVersion;
+        private final String ctSymVersion;
 
-        PlatformDescriptionImpl(String version) {
-            this.version = version;
+        PlatformDescriptionImpl(String sourceVersion) {
+            this.sourceVersion = sourceVersion;
+            this.ctSymVersion =
+                    StringUtils.toUpperCase(Integer.toHexString(Integer.parseInt(sourceVersion)));
         }
 
         @Override
@@ -234,13 +237,15 @@ public class JDKPlatformProvider implements PlatformProvider {
                     }
 
                     List<Path> paths = new ArrayList<>();
+                    Path modules = fs.getPath(ctSymVersion + "-modules");
                     Path root = fs.getRootDirectories().iterator().next();
                     boolean pathsSet = false;
                     Charset utf8 = Charset.forName("UTF-8");
 
                     try (DirectoryStream<Path> dir = Files.newDirectoryStream(root)) {
                         for (Path section : dir) {
-                            if (section.getFileName().toString().contains(version)) {
+                            if (section.getFileName().toString().contains(ctSymVersion) &&
+                                !section.getFileName().toString().contains("-")) {
                                 Path systemModules = section.resolve("system-modules");
 
                                 if (Files.isRegularFile(systemModules)) {
@@ -263,7 +268,19 @@ public class JDKPlatformProvider implements PlatformProvider {
                         }
                     }
 
-                    if (!pathsSet) {
+                    if (Files.isDirectory(modules)) {
+                        try (DirectoryStream<Path> dir = Files.newDirectoryStream(modules)) {
+                            fm.handleOption("--system", Arrays.asList("none").iterator());
+
+                            for (Path module : dir) {
+                                fm.setLocationForModule(StandardLocation.SYSTEM_MODULES,
+                                                        module.getFileName().toString(),
+                                                        Stream.concat(paths.stream(),
+                                                                      Stream.of(module))
+                                  .collect(Collectors.toList()));
+                            }
+                        }
+                    } else if (!pathsSet) {
                         fm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, paths);
                     }
 
@@ -309,12 +326,12 @@ public class JDKPlatformProvider implements PlatformProvider {
 
         @Override
         public String getSourceVersion() {
-            return version;
+            return sourceVersion;
         }
 
         @Override
         public String getTargetVersion() {
-            return version;
+            return sourceVersion;
         }
 
         @Override
