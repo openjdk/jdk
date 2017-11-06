@@ -227,6 +227,9 @@
     </copy>
     <copy file="${dynalink.module.src.dir}/jdk/dynalink/support/messages.properties" todir="${dynalink.module.classes.dir}/jdk/dynalink/support"/>
     <copy file="${nashorn.module.src.dir}/jdk/nashorn/internal/codegen/anchor.properties" todir="${nashorn.module.classes.dir}/jdk/nashorn/internal/codegen"/>
+    <copy todir="${nashorn.shell.module.classes.dir}/jdk/nashorn/tools/jjs/resources">
+       <fileset dir="${nashorn.shell.module.src.dir}/jdk/nashorn/tools/jjs/resources/"/>
+    </copy>
 
     <echo message="version_string=${nashorn.fullversion}" file="${nashorn.module.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties"/>
     <echo file="${nashorn.module.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true">${line.separator}</echo>
