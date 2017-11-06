@@ -825,24 +825,33 @@ CompLevel JVMCIRuntime::adjust_comp_level_inner(const methodHandle& method, bool
   if (compiler != NULL && compiler->is_bootstrapping()) {
     return level;
   }
-  if (!is_HotSpotJVMCIRuntime_initialized() || !_comp_level_adjustment) {
+  if (!is_HotSpotJVMCIRuntime_initialized() || _comp_level_adjustment == JVMCIRuntime::none) {
     // JVMCI cannot participate in compilation scheduling until
     // JVMCI is initialized and indicates it wants to participate.
     return level;
   }
 
 #define CHECK_RETURN THREAD); \
-if (HAS_PENDING_EXCEPTION) { \
-  Handle exception(THREAD, PENDING_EXCEPTION); \
-  CLEAR_PENDING_EXCEPTION; \
-\
-  java_lang_Throwable::java_printStackTrace(exception, THREAD); \
   if (HAS_PENDING_EXCEPTION) { \
+    Handle exception(THREAD, PENDING_EXCEPTION); \
     CLEAR_PENDING_EXCEPTION; \
+  \
+    if (exception->is_a(SystemDictionary::ThreadDeath_klass())) { \
+      /* In the special case of ThreadDeath, we need to reset the */ \
+      /* pending async exception so that it is propagated.        */ \
+      thread->set_pending_async_exception(exception()); \
+      return level; \
+    } \
+    tty->print("Uncaught exception while adjusting compilation level: "); \
+    java_lang_Throwable::print(exception(), tty); \
+    tty->cr(); \
+    java_lang_Throwable::print_stack_trace(exception, tty); \
+    if (HAS_PENDING_EXCEPTION) { \
+      CLEAR_PENDING_EXCEPTION; \
+    } \
+    return level; \
   } \
-  return level; \
-} \
-(void)(0
+  (void)(0
 
 
   Thread* THREAD = thread;
