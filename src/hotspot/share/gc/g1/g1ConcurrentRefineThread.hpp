@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,19 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_CONCURRENTG1REFINETHREAD_HPP
-#define SHARE_VM_GC_G1_CONCURRENTG1REFINETHREAD_HPP
+#ifndef SHARE_VM_GC_G1_G1CONCURRENTREFINETHREAD_HPP
+#define SHARE_VM_GC_G1_G1CONCURRENTREFINETHREAD_HPP
 
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
 
 // Forward Decl.
 class CardTableEntryClosure;
-class ConcurrentG1Refine;
+class G1ConcurrentRefine;
 
 // One or more G1 Concurrent Refinement Threads may be active if concurrent
 // refinement is in progress.
-class ConcurrentG1RefineThread: public ConcurrentGCThread {
+class G1ConcurrentRefineThread: public ConcurrentGCThread {
   friend class VMStructs;
   friend class G1CollectedHeap;
 
@@ -47,9 +47,9 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   // when the number of the rset update buffer crosses a certain threshold. A successor
   // would self-deactivate when the number of the buffers falls below the threshold.
   bool _active;
-  ConcurrentG1RefineThread* _next;
+  G1ConcurrentRefineThread* _next;
   Monitor* _monitor;
-  ConcurrentG1Refine* _cg1r;
+  G1ConcurrentRefine* _cr;
 
   // This thread's activation/deactivation thresholds
   size_t _activation_threshold;
@@ -69,7 +69,7 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
 
 public:
   // Constructor
-  ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread* next,
+  G1ConcurrentRefineThread(G1ConcurrentRefine* cr, G1ConcurrentRefineThread* next,
                            uint worker_id_offset, uint worker_id,
                            size_t activate, size_t deactivate);
 
@@ -79,7 +79,7 @@ public:
   // Total virtual time so far.
   double vtime_accum() { return _vtime_accum; }
 
-  ConcurrentG1Refine* cg1r() { return _cg1r;     }
+  G1ConcurrentRefine* cr() { return _cr;     }
 };
 
-#endif // SHARE_VM_GC_G1_CONCURRENTG1REFINETHREAD_HPP
+#endif // SHARE_VM_GC_G1_G1CONCURRENTREFINETHREAD_HPP
