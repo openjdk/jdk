@@ -521,7 +521,9 @@ JVMCIEnv::CodeInstallResult JVMCIEnv::register_method(
                                  debug_info, dependencies, code_buffer,
                                  frame_words, oop_map_set,
                                  handler_table, &implicit_tbl,
-                                 compiler, comp_level, installed_code, speculation_log);
+                                 compiler, comp_level,
+                                 JNIHandles::make_weak_global(installed_code),
+                                 JNIHandles::make_weak_global(speculation_log));
 
       // Free codeBlobs
       //code_buffer->free_blob();
