@@ -76,7 +76,7 @@ class G1RemSet;
 class HeapRegionRemSetIterator;
 class G1ConcurrentMark;
 class ConcurrentMarkThread;
-class ConcurrentG1Refine;
+class G1ConcurrentRefine;
 class GenerationCounters;
 class STWGCTimer;
 class G1NewTracer;
@@ -806,7 +806,7 @@ protected:
   ConcurrentMarkThread* _cmThread;
 
   // The concurrent refiner.
-  ConcurrentG1Refine* _cg1r;
+  G1ConcurrentRefine* _cr;
 
   // The parallel task queues
   RefToScanQueueSet *_task_queues;
@@ -1389,7 +1389,7 @@ public:
 
   // Refinement
 
-  ConcurrentG1Refine* concurrent_g1_refine() const { return _cg1r; }
+  G1ConcurrentRefine* concurrent_refine() const { return _cr; }
 
   // Optimized nmethod scanning support routines
 

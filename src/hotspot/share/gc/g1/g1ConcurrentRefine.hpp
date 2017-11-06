@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,23 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_CONCURRENTG1REFINE_HPP
-#define SHARE_VM_GC_G1_CONCURRENTG1REFINE_HPP
+#ifndef SHARE_VM_GC_G1_G1CONCURRENTREFINE_HPP
+#define SHARE_VM_GC_G1_G1CONCURRENTREFINE_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Forward decl
 class CardTableEntryClosure;
-class ConcurrentG1RefineThread;
+class G1ConcurrentRefineThread;
 class G1YoungRemSetSamplingThread;
 class outputStream;
 class ThreadClosure;
 
-class ConcurrentG1Refine: public CHeapObj<mtGC> {
+class G1ConcurrentRefine : public CHeapObj<mtGC> {
   G1YoungRemSetSamplingThread* _sample_thread;
 
-  ConcurrentG1RefineThread** _threads;
+  G1ConcurrentRefineThread** _threads;
   uint _n_worker_threads;
  /*
   * The value of the update buffer queue length falls into one of 3 zones:
@@ -62,7 +62,7 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
   size_t _red_zone;
   size_t _min_yellow_zone_size;
 
-  ConcurrentG1Refine(size_t green_zone,
+  G1ConcurrentRefine(size_t green_zone,
                      size_t yellow_zone,
                      size_t red_zone,
                      size_t min_yellow_zone_size);
@@ -76,11 +76,11 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
   void update_thread_thresholds();
 
  public:
-  ~ConcurrentG1Refine();
+  ~G1ConcurrentRefine();
 
-  // Returns ConcurrentG1Refine instance if succeeded to create/initialize ConcurrentG1Refine and ConcurrentG1RefineThread.
+  // Returns a G1ConcurrentRefine instance if succeeded to create/initialize G1ConcurrentRefine and G1ConcurrentRefineThreads.
   // Otherwise, returns NULL with error code.
-  static ConcurrentG1Refine* create(jint* ecode);
+  static G1ConcurrentRefine* create(jint* ecode);
 
   void stop();
 
@@ -104,4 +104,4 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
   size_t red_zone() const        { return _red_zone;    }
 };
 
-#endif // SHARE_VM_GC_G1_CONCURRENTG1REFINE_HPP
+#endif // SHARE_VM_GC_G1_G1CONCURRENTREFINE_HPP
