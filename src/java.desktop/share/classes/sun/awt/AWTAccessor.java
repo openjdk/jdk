@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,26 +290,6 @@ public final class AWTAccessor {
      * An interface of accessor for java.awt.Window class.
      */
     public interface WindowAccessor {
-        /*
-         * Get opacity level of the given window.
-         */
-        float getOpacity(Window window);
-        /*
-         * Set opacity level to the given window.
-         */
-        void setOpacity(Window window, float opacity);
-        /*
-         * Get a shape assigned to the given window.
-         */
-        Shape getShape(Window window);
-        /*
-         * Set a shape to the given window.
-         */
-        void setShape(Window window, Shape shape);
-        /*
-         * Set the opaque preoperty to the given window.
-         */
-        void setOpaque(Window window, boolean isOpaque);
         /*
          * Update the image of a non-opaque (translucent) window.
          */

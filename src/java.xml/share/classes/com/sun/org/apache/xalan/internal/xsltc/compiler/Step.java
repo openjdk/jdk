@@ -232,6 +232,7 @@ final class Step extends RelativeLocationPath {
         translateStep(classGen, methodGen, hasPredicates() ? _predicates.size() - 1 : -1);
     }
 
+    @SuppressWarnings("fallthrough") // at case NodeTest.ANODE and NodeTest.ELEMENT
     private void translateStep(ClassGenerator classGen,
                                MethodGenerator methodGen,
                                int predicateIndex) {

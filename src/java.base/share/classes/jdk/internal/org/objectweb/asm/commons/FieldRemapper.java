@@ -74,7 +74,7 @@ public class FieldRemapper extends FieldVisitor {
     private final Remapper remapper;
 
     public FieldRemapper(final FieldVisitor fv, final Remapper remapper) {
-        this(Opcodes.ASM5, fv, remapper);
+        this(Opcodes.ASM6, fv, remapper);
     }
 
     protected FieldRemapper(final int api, final FieldVisitor fv,

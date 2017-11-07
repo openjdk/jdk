@@ -745,7 +745,6 @@ public class MouseEvent extends InputEvent {
      * @see #getClickCount()
      * @see #isPopupTrigger()
      * @see #getButton()
-     * @see #button
      * @see Toolkit#areExtraMouseButtonsEnabled()
      * @see java.awt.MouseInfo#getNumberOfButtons()
      * @see InputEvent#getMaskForButton(int)

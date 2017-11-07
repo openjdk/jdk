@@ -657,7 +657,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
 
     /**
      * Sends the Bind request to the SOCKS proxy. In the SOCKS protocol, bind
-     * means "accept incoming connection from", so the SocketAddress is the
+     * means "accept incoming connection from", so the SocketAddress is
      * the one of the host we do accept connection from.
      *
      * @param      saddr   the Socket address of the remote host.

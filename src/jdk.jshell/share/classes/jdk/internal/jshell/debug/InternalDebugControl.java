@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,10 @@ import java.util.Map;
 import jdk.jshell.JShell;
 
 /**
-/**
  * This class is used to externally control output messages for debugging the
  * implementation of the JShell API.
  * <p>
- * This is not part of the SPI, not API.
+ * This is not part of the SPI nor API.
  */
 public class InternalDebugControl {
 
@@ -141,7 +140,7 @@ public class InternalDebugControl {
      * @param ex the fatal Exception
      * @param where additional context
      */
-    public static void debug(JShell state, PrintStream err, Exception ex, String where) {
+    public static void debug(JShell state, PrintStream err, Throwable ex, String where) {
         if (isDebugEnabled(state, 0xFFFFFFFF)) {
             err.printf("Fatal error: %s: %s\n", where, ex.getMessage());
             ex.printStackTrace(err);

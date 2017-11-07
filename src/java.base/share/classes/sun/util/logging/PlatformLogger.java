@@ -45,7 +45,7 @@ import jdk.internal.logger.LoggerWrapper;
  *
  * If the logging facility is not enabled, the platform loggers
  * will output log messages per the default logging configuration
- * (see below). In this implementation, it does not log the
+ * (see below). In this implementation, it does not log
  * the stack frame information issuing the log message.
  *
  * When the logging facility is enabled (at startup or runtime),

@@ -26,7 +26,7 @@
 package java.util;
 
 /**
- * FomattableFlags are passed to the {@link Formattable#formatTo
+ * FormattableFlags are passed to the {@link Formattable#formatTo
  * Formattable.formatTo()} method and modify the output format for {@linkplain
  * Formattable Formattables}.  Implementations of {@link Formattable} are
  * responsible for interpreting and validating any flags.

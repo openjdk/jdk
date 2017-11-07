@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,6 +352,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                 setVisible(true);
             }
             setSelectionVisible(true);
+            updateSystemSelection();
         }
     }
 
@@ -365,7 +366,9 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      */
     public void focusLost(FocusEvent e) {
         setVisible(false);
-        setSelectionVisible(ownsSelection || e.isTemporary());
+        setSelectionVisible((e.getCause() == FocusEvent.Cause.ACTIVATION ||
+                e.getOppositeComponent() instanceof JRootPane) &&
+                (ownsSelection || e.isTemporary()));
     }
 
 
@@ -866,7 +869,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                     Highlighter.HighlightPainter p = getSelectionPainter();
                     try {
                         selectionTag = h.addHighlight(p0, p1, p);
-                        updateOwnsSelection();
                     } catch (BadLocationException bl) {
                         selectionTag = null;
                     }
@@ -877,7 +879,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                     Highlighter h = component.getHighlighter();
                     h.removeHighlight(selectionTag);
                     selectionTag = null;
-                    updateOwnsSelection();
                 }
             }
         }
@@ -1119,7 +1120,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                     if (selectionTag != null) {
                         h.removeHighlight(selectionTag);
                         selectionTag = null;
-                        updateOwnsSelection();
                     }
                 // otherwise, change or add the highlight
                 } else {
@@ -1130,7 +1130,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                             Highlighter.HighlightPainter p = getSelectionPainter();
                             selectionTag = h.addHighlight(p0, p1, p);
                         }
-                        updateOwnsSelection();
                     } catch (BadLocationException e) {
                         throw new StateInvariantError("Bad caret position");
                     }
@@ -1181,7 +1180,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         if (this.dot != dot || this.dotBias != dotBias ||
             selectionTag != null || forceCaretPositionChange) {
             changeCaretPosition(dot, dotBias);
-            updateOwnsSelection();
         }
         this.markBias = this.dotBias;
         this.markLTR = dotLTR;
@@ -1189,7 +1187,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         if ((h != null) && (selectionTag != null)) {
             h.removeHighlight(selectionTag);
             selectionTag = null;
-            updateOwnsSelection();
         }
     }
 
@@ -1940,13 +1937,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         }
     }
 
-    /**
-     * Updates ownsSelection based on text selection in the caret.
-     */
-    private void updateOwnsSelection() {
-        ownsSelection = (selectionTag != null)
-                && SwingUtilities2.canAccessSystemClipboard();
-    }
 
     private class DefaultFilterBypass extends NavigationFilter.FilterBypass {
         public Caret getCaret() {

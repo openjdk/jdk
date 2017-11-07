@@ -639,6 +639,14 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
         elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
           SYSROOT="$DEVKIT_ROOT/$host/sys-root"
         fi
+
+        if test "x$DEVKIT_ROOT" != x; then
+          DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib"
+          if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+            DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib64"
+          fi
+          AC_SUBST(DEVKIT_LIB_DIR)
+        fi
       ]
   )
 

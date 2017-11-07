@@ -59,27 +59,32 @@ import javax.swing.text.*;
  * <caption>Possible JFormattedTextField configurations and their descriptions
  * </caption>
  * <thead>
- * <tr><th>Value</th>
- * <th>Description</th></tr>
+ *   <tr>
+ *     <th scope="col">Value
+ *     <th scope="col">Description
  * </thead>
  * <tbody>
- * <tr><td>JFormattedTextField.REVERT
- *            <td>Revert the display to match that of <code>getValue</code>,
- *                possibly losing the current edit.
- *        <tr><td>JFormattedTextField.COMMIT
- *            <td>Commits the current value. If the value being edited
- *                isn't considered a legal value by the
- *                <code>AbstractFormatter</code> that is, a
- *                <code>ParseException</code> is thrown, then the value
- *                will not change, and then edited value will persist.
- *        <tr><td>JFormattedTextField.COMMIT_OR_REVERT
- *            <td>Similar to <code>COMMIT</code>, but if the value isn't
- *                legal, behave like <code>REVERT</code>.
- *        <tr><td>JFormattedTextField.PERSIST
- *            <td>Do nothing, don't obtain a new
- *                <code>AbstractFormatter</code>, and don't update the value.
+ *   <tr>
+ *     <th scope="row">JFormattedTextField.REVERT
+ *     <td>Revert the display to match that of {@code getValue}, possibly losing
+ *     the current edit.
+ *   <tr>
+ *     <th scope="row">JFormattedTextField.COMMIT
+ *     <td>Commits the current value. If the value being edited isn't considered
+ *     a legal value by the {@code AbstractFormatter} that is, a
+ *     {@code ParseException} is thrown, then the value will not change, and
+ *     then edited value will persist.
+ *   <tr>
+ *     <th scope="row">JFormattedTextField.COMMIT_OR_REVERT
+ *     <td>Similar to {@code COMMIT}, but if the value isn't legal, behave like
+ *     {@code REVERT}.
+ *   <tr>
+ *     <th scope="row">JFormattedTextField.PERSIST
+ *     <td>Do nothing, don't obtain a new {@code AbstractFormatter}, and don't
+ *     update the value.
  * </tbody>
  * </table>
+ *
  * The default is <code>JFormattedTextField.COMMIT_OR_REVERT</code>,
  * refer to {@link #setFocusLostBehavior} for more information on this.
  * <p>

@@ -238,7 +238,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
     // This way we could simply do things like:
     //    push((logger) -> logger.log(level, msg));
     // Unfortunately, if we come to here it means we are in the bootsraping
-    // phase where using lambdas is not safe yet - so we have to use a
+    // phase where using lambdas is not safe yet - so we have to use
     // a data object instead...
     //
     static final class LogEvent {

@@ -188,6 +188,16 @@ ifneq ($(ARCHIVE_BUNDLE), )
   CLEAN_ARCHIVE_BUNDLE = @$(RM) $(ARCHIVE_BUNDLE)
 endif
 
+# AddressSanitizer
+ifeq ($(ASAN_ENABLED), yes)
+  export ASAN_OPTIONS="handle_segv=0 detect_leaks=0"
+  JTREG_BASIC_OPTIONS += -e:ASAN_OPTIONS=$(ASAN_OPTIONS)
+  ifneq ($(DEVKIT_LIB_DIR),)
+    export LD_LIBRARY_PATH:=$(LD_LIBRARY_PATH):$(DEVKIT_LIB_DIR)
+    JTREG_BASIC_OPTIONS += -e:LD_LIBRARY_PATH=$(LD_LIBRARY_PATH)
+  endif
+endif
+
 # important results files
 SUMMARY_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport/text/summary.txt")
 STATS_TXT_NAME = Stats.txt

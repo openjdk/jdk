@@ -63,6 +63,7 @@ import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.ModuleVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.TypePath;
 
@@ -80,7 +81,7 @@ public class RemappingClassAdapter extends ClassVisitor {
     protected String className;
 
     public RemappingClassAdapter(final ClassVisitor cv, final Remapper remapper) {
-        this(Opcodes.ASM5, cv, remapper);
+        this(Opcodes.ASM6, cv, remapper);
     }
 
     protected RemappingClassAdapter(final int api, final ClassVisitor cv,
@@ -96,6 +97,11 @@ public class RemappingClassAdapter extends ClassVisitor {
         super.visit(version, access, remapper.mapType(name), remapper
                 .mapSignature(signature, false), remapper.mapType(superName),
                 interfaces == null ? null : remapper.mapTypes(interfaces));
+    }
+
+    @Override
+    public ModuleVisitor visitModule(String name, int flags, String version) {
+        throw new RuntimeException("RemappingClassAdapter is deprecated, use ClassRemapper instead");
     }
 
     @Override

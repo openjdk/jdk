@@ -76,7 +76,7 @@ public class MethodRemapper extends MethodVisitor {
     protected final Remapper remapper;
 
     public MethodRemapper(final MethodVisitor mv, final Remapper remapper) {
-        this(Opcodes.ASM5, mv, remapper);
+        this(Opcodes.ASM6, mv, remapper);
     }
 
     protected MethodRemapper(final int api, final MethodVisitor mv,
@@ -122,18 +122,20 @@ public class MethodRemapper extends MethodVisitor {
     }
 
     private Object[] remapEntries(int n, Object[] entries) {
-        for (int i = 0; i < n; i++) {
-            if (entries[i] instanceof String) {
-                Object[] newEntries = new Object[n];
-                if (i > 0) {
-                    System.arraycopy(entries, 0, newEntries, 0, i);
+        if (entries != null) {
+            for (int i = 0; i < n; i++) {
+                if (entries[i] instanceof String) {
+                    Object[] newEntries = new Object[n];
+                    if (i > 0) {
+                        System.arraycopy(entries, 0, newEntries, 0, i);
+                    }
+                    do {
+                        Object t = entries[i];
+                        newEntries[i++] = t instanceof String ? remapper
+                                .mapType((String) t) : t;
+                    } while (i < n);
+                    return newEntries;
                 }
-                do {
-                    Object t = entries[i];
-                    newEntries[i++] = t instanceof String ? remapper
-                            .mapType((String) t) : t;
-                } while (i < n);
-                return newEntries;
             }
         }
         return entries;

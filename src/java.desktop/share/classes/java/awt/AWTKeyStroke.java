@@ -94,25 +94,23 @@ public class AWTKeyStroke implements Serializable {
      * <table class="striped">
      * <caption>AWTKeyStroke default values</caption>
      * <thead>
-     * <tr><th>Property</th><th>Default Value</th></tr>
+     *   <tr>
+     *     <th scope="col">Property
+     *     <th scope="col">Default Value
      * </thead>
      * <tbody>
-     * <tr>
-     *    <td>Key Char</td>
-     *    <td>{@code KeyEvent.CHAR_UNDEFINED}</td>
-     * </tr>
-     * <tr>
-     *    <td>Key Code</td>
-     *    <td>{@code KeyEvent.VK_UNDEFINED}</td>
-     * </tr>
-     * <tr>
-     *    <td>Modifiers</td>
-     *    <td>none</td>
-     * </tr>
-     * <tr>
-     *    <td>On key release?</td>
-     *    <td>{@code false}</td>
-     * </tr>
+     *   <tr>
+     *     <th scope="row">Key Char
+     *     <td>{@code KeyEvent.CHAR_UNDEFINED}
+     *   <tr>
+     *     <th scope="row">Key Code
+     *     <td>{@code KeyEvent.VK_UNDEFINED}
+     *   <tr>
+     *     <th scope="row">Modifiers
+     *     <td>none
+     *   <tr>
+     *     <th scope="row">On key release?
+     *     <td>{@code false}
      * </tbody>
      * </table>
      *

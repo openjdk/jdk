@@ -50,60 +50,47 @@ import javax.swing.text.*;
  * <table class="striped">
  * <caption>Shows what components get built by this view</caption>
  * <thead>
- * <tr>
- *   <th>Element Type</th>
- *   <th>Component built</th>
- * </tr>
+ *   <tr>
+ *     <th scope="col">Element Type
+ *     <th scope="col">Component built
  * </thead>
  * <tbody>
- * <tr>
- *   <td>input, type button</td>
- *   <td>JButton</td>
- * </tr>
- * <tr>
- *   <td>input, type checkbox</td>
- *   <td>JCheckBox</td>
- * </tr>
- * <tr>
- *   <td>input, type image</td>
- *   <td>JButton</td>
- * </tr>
- * <tr>
- *   <td>input, type password</td>
- *   <td>JPasswordField</td>
- * </tr>
- * <tr>
- *   <td>input, type radio</td>
- *   <td>JRadioButton</td>
- * </tr>
- * <tr>
- *   <td>input, type reset</td>
- *   <td>JButton</td>
- * </tr>
- * <tr>
- *   <td>input, type submit</td>
- *   <td>JButton</td>
- * </tr>
- * <tr>
- *   <td>input, type text</td>
- *   <td>JTextField</td>
- * </tr>
- * <tr>
- *   <td>select, size &gt; 1 or multiple attribute defined</td>
- *   <td>JList in a JScrollPane</td>
- * </tr>
- * <tr>
- *   <td>select, size unspecified or 1</td>
- *   <td>JComboBox</td>
- * </tr>
- * <tr>
- *   <td>textarea</td>
- *   <td>JTextArea in a JScrollPane</td>
- * </tr>
- * <tr>
- *   <td>input, type file</td>
- *   <td>JTextField</td>
- * </tr>
+ *   <tr>
+ *     <th scope="row">input, type button
+ *     <td>JButton
+ *   <tr>
+ *     <th scope="row">input, type checkbox
+ *     <td>JCheckBox
+ *   <tr>
+ *     <th scope="row">input, type image
+ *     <td>JButton
+ *   <tr>
+ *     <th scope="row">input, type password
+ *     <td>JPasswordField
+ *   <tr>
+ *     <th scope="row">input, type radio
+ *     <td>JRadioButton
+ *   <tr>
+ *     <th scope="row">input, type reset
+ *     <td>JButton
+ *   <tr>
+ *     <th scope="row">input, type submit
+ *     <td>JButton
+ *   <tr>
+ *     <th scope="row">input, type text
+ *     <td>JTextField
+ *   <tr>
+ *     <th scope="row">select, size &gt; 1 or multiple attribute defined
+ *     <td>JList in a JScrollPane
+ *   <tr>
+ *     <th scope="row">select, size unspecified or 1
+ *     <td>JComboBox
+ *   <tr>
+ *     <th scope="row">textarea
+ *     <td>JTextArea in a JScrollPane
+ *   <tr>
+ *     <th scope="row">input, type file
+ *     <td>JTextField
  * </tbody>
  * </table>
  *

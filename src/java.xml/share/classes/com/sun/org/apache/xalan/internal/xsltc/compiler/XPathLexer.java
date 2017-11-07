@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -73,6 +74,7 @@ class XPathLexer implements com.sun.java_cup.internal.runtime.Scanner {
          * name instead of a keyword (Jira-1912). Look two tokens behind
          * to desambiguate expressions like "* and *" or "and * and".
          */
+        @SuppressWarnings("fallthrough")
         Symbol disambiguateOperator(int ss) throws Exception {
             switch (last) {
             case sym.STAR:
@@ -745,6 +747,7 @@ class XPathLexer implements com.sun.java_cup.internal.runtime.Scanner {
 ":13,-1:2,184:10,-1:3,76,184,76:3,-1:4,184:6,64,-1:2,76,-1:6,184:5,-1:3,184:" +
 "4,232,184:8,-1:2,184:10,-1:3,76,184,76:3");
 
+        @SuppressWarnings("fallthrough") // at case 18 and -1
         public com.sun.java_cup.internal.runtime.Symbol next_token ()
                 throws java.io.IOException,
 Exception

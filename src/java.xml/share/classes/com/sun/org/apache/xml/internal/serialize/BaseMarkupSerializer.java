@@ -1020,6 +1020,7 @@ public abstract class BaseMarkupSerializer
      * @throws IOException An I/O exception occured while
      *   serializing
      */
+    @SuppressWarnings("fallthrough") // by design at case Node.DOCUMENT_FRAGMENT_NODE
     protected void serializeNode( Node node )
         throws IOException
     {

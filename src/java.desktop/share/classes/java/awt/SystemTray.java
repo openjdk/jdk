@@ -371,28 +371,26 @@ public class SystemTray {
      * <table class="striped">
      * <caption>SystemTray properties</caption>
      * <thead>
-     * <tr>
-     *    <th>Property</th>
-     *    <th>Description</th>
-     * </tr>
+     *   <tr>
+     *     <th scope="col">Property
+     *     <th scope="col">Description
      * </thead>
      * <tbody>
-     * <tr>
-     *    <td>{@code trayIcons}</td>
-     *    <td>The {@code SystemTray}'s array of {@code TrayIcon} objects.
-     *        The array is accessed via the {@link #getTrayIcons} method.<br>
-     *        This property is changed when a tray icon is added to (or removed
-     *        from) the system tray.<br> For example, this property is changed
-     *        when the system tray becomes unavailable on the desktop<br>
-     *        and the tray icons are automatically removed.</td>
-     * </tr>
-     * <tr>
-     *    <td>{@code systemTray}</td>
-     *    <td>This property contains {@code SystemTray} instance when the system tray
-     *        is available or {@code null} otherwise.<br> This property is changed
-     *        when the system tray becomes available or unavailable on the desktop.<br>
-     *        The property is accessed by the {@link #getSystemTray} method.</td>
-     * </tr>
+     *   <tr>
+     *     <th scope="row">{@code trayIcons}
+     *     <td>The {@code SystemTray}'s array of {@code TrayIcon} objects. The
+     *     array is accessed via the {@link #getTrayIcons} method. This property
+     *     is changed when a tray icon is added to (or removed from) the system
+     *     tray. For example, this property is changed when the system tray
+     *     becomes unavailable on the desktop and the tray icons are
+     *     automatically removed.
+     *   <tr>
+     *     <th scope="row">{@code systemTray}
+     *     <td>This property contains {@code SystemTray} instance when the
+     *     system tray is available or {@code null} otherwise. This property is
+     *     changed when the system tray becomes available or unavailable on the
+     *     desktop. The property is accessed by the {@link #getSystemTray}
+     *     method.
      * </tbody>
      * </table>
      * <p>

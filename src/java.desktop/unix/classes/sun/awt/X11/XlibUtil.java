@@ -38,6 +38,8 @@ import sun.awt.X11GraphicsConfig;
 import sun.awt.X11GraphicsDevice;
 import sun.awt.X11GraphicsEnvironment;
 
+import sun.java2d.pipe.Region;
+
 /*
  * This class is a collection of utility methods that operate
  * with native windows.
@@ -414,6 +416,6 @@ public class XlibUtil
     }
 
     static int scaleDown(int x, int scale) {
-        return x / scale;
+        return Region.clipRound(x / (double)scale);
     }
 }

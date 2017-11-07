@@ -38,6 +38,7 @@ import java.awt.dnd.InvalidDnDOperationException;
 
 import java.util.*;
 
+import sun.java2d.pipe.Region;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.dnd.SunDragSourceContextPeer;
@@ -811,10 +812,10 @@ public final class XDragSourceContextPeer
     }
 
     public int scaleUp(int x) {
-        return x * windowScale;
+        return Region.clipRound(x * (double)windowScale);
     }
 
     public int scaleDown(int x) {
-        return x / windowScale;
+        return Region.clipRound(x / (double)windowScale);
     }
 }

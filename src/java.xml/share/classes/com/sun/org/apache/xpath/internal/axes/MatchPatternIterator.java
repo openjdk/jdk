@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -299,7 +299,7 @@ public class MatchPatternIterator extends LocPathIterator
         System.out.println(", "+m_cdtm.getNodeName(n));
         // if(m_cdtm.getNodeName(n).equals("near-east"))
         System.out.println("pattern: "+m_pattern.toString());
-        m_pattern.debugWhatToShow(m_pattern.getWhatToShow());
+        NodeTest.debugWhatToShow(m_pattern.getWhatToShow());
       }
 
       XObject score = m_pattern.execute(xctxt);

@@ -104,13 +104,13 @@ public final class TraceSignatureVisitor extends SignatureVisitor {
     private String separator = "";
 
     public TraceSignatureVisitor(final int access) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM6);
         isInterface = (access & Opcodes.ACC_INTERFACE) != 0;
         this.declaration = new StringBuilder();
     }
 
     private TraceSignatureVisitor(final StringBuilder buf) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM6);
         this.declaration = buf;
     }
 
