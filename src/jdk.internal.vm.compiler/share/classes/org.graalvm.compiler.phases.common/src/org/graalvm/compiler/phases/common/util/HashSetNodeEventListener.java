@@ -37,7 +37,7 @@ import org.graalvm.util.EconomicSet;
  * A simple {@link NodeEventListener} implementation that accumulates event nodes in a
  * {@link HashSet}.
  */
-public class HashSetNodeEventListener implements NodeEventListener {
+public class HashSetNodeEventListener extends NodeEventListener {
 
     private final EconomicSet<Node> nodes;
     private final Set<NodeEvent> filter;
@@ -68,7 +68,7 @@ public class HashSetNodeEventListener implements NodeEventListener {
     }
 
     @Override
-    public void event(NodeEvent e, Node node) {
+    public void changed(NodeEvent e, Node node) {
         if (filter.contains(e)) {
             nodes.add(node);
             if (node instanceof IndirectCanonicalization) {

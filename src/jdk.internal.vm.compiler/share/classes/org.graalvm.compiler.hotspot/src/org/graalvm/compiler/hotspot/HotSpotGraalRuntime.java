@@ -317,7 +317,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         return compilationProblemsPerAction;
     }
 
-    final Object mbean() {
+    Object getMBean() {
         return mBean;
     }
 }

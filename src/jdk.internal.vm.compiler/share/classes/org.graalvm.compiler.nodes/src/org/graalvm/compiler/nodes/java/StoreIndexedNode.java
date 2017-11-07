@@ -89,7 +89,7 @@ public final class StoreIndexedNode extends AccessIndexedNode implements StateSp
                 ResolvedJavaType componentType = virtual.type().getComponentType();
                 if (componentType.isPrimitive() || StampTool.isPointerAlwaysNull(value) || componentType.getSuperclass() == null ||
                                 (StampTool.typeReferenceOrNull(value) != null && componentType.isAssignableFrom(StampTool.typeOrNull(value)))) {
-                    tool.setVirtualEntry(virtual, idx, value(), false);
+                    tool.setVirtualEntry(virtual, idx, value());
                     tool.delete();
                 }
             }

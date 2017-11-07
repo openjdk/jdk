@@ -71,7 +71,7 @@ public final class HubGetClassNode extends FloatingNode implements Lowerable, Ca
             return null;
         } else {
             MetaAccessProvider metaAccess = tool.getMetaAccess();
-            if (metaAccess != null && hub.isConstant() && !GraalOptions.ImmutableCode.getValue(graph().getOptions())) {
+            if (metaAccess != null && hub.isConstant() && !GraalOptions.ImmutableCode.getValue(tool.getOptions())) {
                 ResolvedJavaType exactType = tool.getConstantReflection().asJavaType(hub.asConstant());
                 if (exactType != null) {
                     return ConstantNode.forConstant(tool.getConstantReflection().asJavaClass(exactType), metaAccess);

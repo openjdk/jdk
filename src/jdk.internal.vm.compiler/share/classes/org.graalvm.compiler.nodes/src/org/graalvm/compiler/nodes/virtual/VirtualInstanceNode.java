@@ -32,7 +32,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-@NodeInfo(nameTemplate = "VirtualInstance {p#type/s}")
+@NodeInfo(nameTemplate = "VirtualInstance({p#objectId}) {p#type/s}")
 public class VirtualInstanceNode extends VirtualObjectNode {
 
     public static final NodeClass<VirtualInstanceNode> TYPE = NodeClass.create(VirtualInstanceNode.class);
@@ -78,7 +78,7 @@ public class VirtualInstanceNode extends VirtualObjectNode {
     @Override
     public String toString(Verbosity verbosity) {
         if (verbosity == Verbosity.Name) {
-            return super.toString(Verbosity.Name) + " " + type.toJavaName(false);
+            return super.toString(Verbosity.Name) + "(" + getObjectId() + ") " + type.toJavaName(false);
         } else {
             return super.toString(verbosity);
         }

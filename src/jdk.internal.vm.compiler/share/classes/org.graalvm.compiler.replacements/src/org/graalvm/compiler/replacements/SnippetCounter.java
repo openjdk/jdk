@@ -93,12 +93,7 @@ public final class SnippetCounter implements Comparable<SnippetCounter> {
      */
     @Override
     public int compareTo(SnippetCounter o) {
-        if (value > o.value) {
-            return -1;
-        } else if (o.value < value) {
-            return 1;
-        }
-        return 0;
+        return Long.signum(o.value - value);
     }
 
     private final Group group;

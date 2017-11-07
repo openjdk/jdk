@@ -28,8 +28,8 @@ import static org.graalvm.compiler.core.common.GraalOptions.InlineVTableStubs;
 import static org.graalvm.compiler.core.common.GraalOptions.OmitHotExceptionStacktrace;
 import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.OSR_MIGRATION_END;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.CLASS_KLASS_LOCATION;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.CLASS_MIRROR_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.CLASS_MIRROR_HANDLE_LOCATION;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.CLASS_MIRROR_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.COMPRESSED_HUB_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.DISPLACED_MARK_WORD_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.HUB_LOCATION;
@@ -41,6 +41,7 @@ import static org.graalvm.word.LocationIdentity.any;
 import java.lang.ref.Reference;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
+import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
@@ -90,10 +91,8 @@ import org.graalvm.compiler.hotspot.replacements.UnsafeLoadSnippets;
 import org.graalvm.compiler.hotspot.replacements.WriteBarrierSnippets;
 import org.graalvm.compiler.hotspot.replacements.aot.ResolveConstantSnippets;
 import org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopyNode;
-import org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopySlowPathNode;
+import org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopyWithSlowPathNode;
 import org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopySnippets;
-import org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopyUnrollNode;
-import org.graalvm.compiler.hotspot.replacements.arraycopy.UnsafeArrayCopySnippets;
 import org.graalvm.compiler.hotspot.replacements.profiling.ProfileSnippets;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
@@ -193,7 +192,7 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
 
     public DefaultHotSpotLoweringProvider(HotSpotGraalRuntimeProvider runtime, MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, HotSpotRegistersProvider registers,
                     HotSpotConstantReflectionProvider constantReflection, TargetDescription target) {
-        super(metaAccess, foreignCalls, target);
+        super(metaAccess, foreignCalls, target, runtime.getVMConfig().useCompressedOops);
         this.runtime = runtime;
         this.registers = registers;
         this.constantReflection = constantReflection;
@@ -216,7 +215,6 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
         hashCodeSnippets = new HashCodeSnippets.Templates(options, factories, providers, target);
         resolveConstantSnippets = new ResolveConstantSnippets.Templates(options, factories, providers, target);
         profileSnippets = new ProfileSnippets.Templates(options, factories, providers, target);
-        providers.getReplacements().registerSnippetTemplateCache(new UnsafeArrayCopySnippets.Templates(options, factories, providers, target));
     }
 
     public MonitorSnippets.Templates getMonitorSnippets() {
@@ -315,10 +313,8 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
             }
         } else if (n instanceof ArrayCopyNode) {
             arraycopySnippets.lower((ArrayCopyNode) n, tool);
-        } else if (n instanceof ArrayCopySlowPathNode) {
-            arraycopySnippets.lower((ArrayCopySlowPathNode) n, tool);
-        } else if (n instanceof ArrayCopyUnrollNode) {
-            arraycopySnippets.lower((ArrayCopyUnrollNode) n, tool);
+        } else if (n instanceof ArrayCopyWithSlowPathNode) {
+            arraycopySnippets.lower((ArrayCopyWithSlowPathNode) n, tool);
         } else if (n instanceof G1PreWriteBarrier) {
             writeBarrierSnippets.lower((G1PreWriteBarrier) n, registers, tool);
         } else if (n instanceof G1PostWriteBarrier) {
@@ -495,20 +491,18 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
         }
     }
 
-    @Override
-    protected Stamp loadStamp(Stamp stamp, JavaKind kind, boolean compressible) {
-        if (kind == JavaKind.Object && compressible && runtime.getVMConfig().useCompressedOops) {
-            return HotSpotNarrowOopStamp.compressed((ObjectStamp) stamp, runtime.getVMConfig().getOopEncoding());
-        }
-        return super.loadStamp(stamp, kind, compressible);
+    private CompressEncoding getOopEncoding() {
+        return runtime.getVMConfig().getOopEncoding();
     }
 
     @Override
-    protected ValueNode implicitLoadConvert(JavaKind kind, ValueNode value, boolean compressible) {
-        if (kind == JavaKind.Object && compressible && runtime.getVMConfig().useCompressedOops) {
-            return new HotSpotCompressionNode(CompressionOp.Uncompress, value, runtime.getVMConfig().getOopEncoding());
-        }
-        return super.implicitLoadConvert(kind, value, compressible);
+    protected Stamp loadCompressedStamp(ObjectStamp stamp) {
+        return HotSpotNarrowOopStamp.compressed(stamp, getOopEncoding());
+    }
+
+    @Override
+    protected ValueNode newCompressionNode(CompressionOp op, ValueNode value) {
+        return new HotSpotCompressionNode(op, value, getOopEncoding());
     }
 
     @Override
@@ -516,14 +510,6 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
         HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
         JavaConstant base = constantReflection.asJavaClass(field.getDeclaringClass());
         return ConstantNode.forConstant(base, metaAccess, graph);
-    }
-
-    @Override
-    protected ValueNode implicitStoreConvert(JavaKind kind, ValueNode value, boolean compressible) {
-        if (kind == JavaKind.Object && compressible && runtime.getVMConfig().useCompressedOops) {
-            return new HotSpotCompressionNode(CompressionOp.Compress, value, runtime.getVMConfig().getOopEncoding());
-        }
-        return super.implicitStoreConvert(kind, value, compressible);
     }
 
     @Override
@@ -799,5 +785,10 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
     @Override
     public int arrayLengthOffset() {
         return runtime.getVMConfig().arrayOopDescLengthOffset();
+    }
+
+    @Override
+    protected final JavaKind getStorageKind(ResolvedJavaField field) {
+        return field.getJavaKind();
     }
 }

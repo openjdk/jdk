@@ -394,6 +394,9 @@ public class OptionProcessor extends AbstractProcessor {
                     options = new OptionsInfo(topDeclaringType);
                     map.put(topDeclaringType, options);
                 }
+                if (!element.getEnclosingElement().getSimpleName().toString().endsWith("Options")) {
+                    processingEnv.getMessager().printMessage(Kind.ERROR, "Option declaring classes must have a name that ends with 'Options'", element.getEnclosingElement());
+                }
                 processElement(element, options);
             }
         }

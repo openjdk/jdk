@@ -77,8 +77,7 @@ final class SPARCHotSpotStrategySwitchOp extends SPARCControlFlow.StrategySwitch
                 boolean canUseShortBranch = masm.hasFeature(CPUFeature.CBCOND) && SPARCControlFlow.isShortBranch(masm, cbCondPosition, hint, target);
 
                 Register scratchRegister = asRegister(scratch);
-                final int byteCount = constant.isCompressed() ? 4 : 8;
-                loadFromConstantTable(crb, masm, byteCount, asRegister(constantTableBase), constant, scratchRegister, SPARCDelayedControlTransfer.DUMMY);
+                loadFromConstantTable(crb, masm, asRegister(constantTableBase), constant, scratchRegister, SPARCDelayedControlTransfer.DUMMY);
 
                 if (canUseShortBranch) {
                     CBCOND.emit(masm, conditionFlag, conditionCode == CC.Xcc, keyRegister, scratchRegister, target);

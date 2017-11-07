@@ -144,6 +144,11 @@ public class GuardedIntrinsicTest extends GraalCompilerTest {
     public void test01() {
         Super inheritsHC = new Super();
         Person overridesHC = new Person(0);
+
+        // Ensure the profile for getSuperAge includes both receiver types
+        getSuperAge(inheritsHC);
+        getSuperAge(overridesHC);
+
         test("getSuperAge", inheritsHC);
         test("getSuperAge", overridesHC);
 

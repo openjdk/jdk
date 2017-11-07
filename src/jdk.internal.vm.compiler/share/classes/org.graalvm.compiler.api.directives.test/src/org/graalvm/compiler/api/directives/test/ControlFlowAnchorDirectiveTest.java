@@ -46,6 +46,9 @@ import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.debug.ControlFlowAnchorNode;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.phases.OptimisticOptimizations;
+import org.graalvm.compiler.phases.OptimisticOptimizations.Optimization;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 public class ControlFlowAnchorDirectiveTest extends GraalCompilerTest {
 
@@ -236,6 +239,11 @@ public class ControlFlowAnchorDirectiveTest extends GraalCompilerTest {
         }
 
         return Collections.emptyList();
+    }
+
+    @Override
+    protected HighTierContext getDefaultHighTierContext() {
+        return new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL.remove(Optimization.RemoveNeverExecutedCode));
     }
 
     @Override

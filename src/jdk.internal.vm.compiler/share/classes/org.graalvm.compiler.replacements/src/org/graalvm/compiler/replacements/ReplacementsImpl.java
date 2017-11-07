@@ -433,13 +433,14 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
                 }
 
                 IntrinsicContext initialIntrinsicContext = null;
-                if (method.getAnnotation(Snippet.class) == null) {
+                Snippet snippetAnnotation = method.getAnnotation(Snippet.class);
+                if (snippetAnnotation == null) {
                     // Post-parse inlined intrinsic
                     initialIntrinsicContext = new IntrinsicContext(substitutedMethod, method, bytecodeProvider, INLINE_AFTER_PARSING);
                 } else {
                     // Snippet
                     ResolvedJavaMethod original = substitutedMethod != null ? substitutedMethod : method;
-                    initialIntrinsicContext = new IntrinsicContext(original, method, bytecodeProvider, INLINE_AFTER_PARSING);
+                    initialIntrinsicContext = new IntrinsicContext(original, method, bytecodeProvider, INLINE_AFTER_PARSING, snippetAnnotation.allowPartialIntrinsicArgumentMismatch());
                 }
 
                 createGraphBuilder(metaAccess, replacements.providers.getStampProvider(), replacements.providers.getConstantReflection(), replacements.providers.getConstantFieldProvider(), config,

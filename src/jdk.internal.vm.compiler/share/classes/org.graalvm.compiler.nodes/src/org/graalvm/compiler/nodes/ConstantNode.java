@@ -54,7 +54,7 @@ import jdk.vm.ci.meta.PrimitiveConstant;
 /**
  * The {@code ConstantNode} represents a {@link Constant constant}.
  */
-@NodeInfo(nameTemplate = "C({p#rawvalue})", cycles = CYCLES_0, size = SIZE_1)
+@NodeInfo(nameTemplate = "C({p#rawvalue}) {p#stampKind}", cycles = CYCLES_0, size = SIZE_1)
 public final class ConstantNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<ConstantNode> TYPE = NodeClass.create(ConstantNode.class);
@@ -518,13 +518,14 @@ public final class ConstantNode extends FloatingNode implements LIRLowerable {
     public Map<Object, Object> getDebugProperties(Map<Object, Object> map) {
         Map<Object, Object> properties = super.getDebugProperties(map);
         properties.put("rawvalue", value.toValueString());
+        properties.put("stampKind", stamp.unrestricted().toString());
         return properties;
     }
 
     @Override
     public String toString(Verbosity verbosity) {
         if (verbosity == Verbosity.Name) {
-            return super.toString(Verbosity.Name) + "(" + value.toValueString() + ")";
+            return super.toString(Verbosity.Name) + "(" + value.toValueString() + ", " + stamp().unrestricted().toString() + ")";
         } else {
             return super.toString(verbosity);
         }

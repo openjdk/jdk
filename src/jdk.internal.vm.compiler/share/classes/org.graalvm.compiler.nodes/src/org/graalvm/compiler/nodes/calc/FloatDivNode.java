@@ -25,6 +25,7 @@ package org.graalvm.compiler.nodes.calc;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_32;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
+import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Div;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -36,21 +37,20 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.PrimitiveConstant;
 
 @NodeInfo(shortName = "/", cycles = CYCLES_32)
-public class DivNode extends BinaryArithmeticNode<Div> {
+public class FloatDivNode extends BinaryArithmeticNode<Div> {
 
-    public static final NodeClass<DivNode> TYPE = NodeClass.create(DivNode.class);
+    public static final NodeClass<FloatDivNode> TYPE = NodeClass.create(FloatDivNode.class);
 
-    public DivNode(ValueNode x, ValueNode y) {
-        super(TYPE, ArithmeticOpTable::getDiv, x, y);
+    public FloatDivNode(ValueNode x, ValueNode y) {
+        this(TYPE, x, y);
     }
 
-    protected DivNode(NodeClass<? extends DivNode> c, ValueNode x, ValueNode y) {
+    protected FloatDivNode(NodeClass<? extends FloatDivNode> c, ValueNode x, ValueNode y) {
         super(c, ArithmeticOpTable::getDiv, x, y);
+        assert stamp instanceof FloatStamp;
     }
 
     public static ValueNode create(ValueNode x, ValueNode y) {
@@ -73,33 +73,14 @@ public class DivNode extends BinaryArithmeticNode<Div> {
         return canonical(this, getOp(forX, forY), forX, forY);
     }
 
-    private static ValueNode canonical(DivNode self, BinaryOp<Div> op, ValueNode forX, ValueNode forY) {
+    private static ValueNode canonical(FloatDivNode self, BinaryOp<Div> op, ValueNode forX, ValueNode forY) {
         if (forY.isConstant()) {
             Constant c = forY.asConstant();
             if (op.isNeutral(c)) {
                 return forX;
             }
-            if (c instanceof PrimitiveConstant && ((PrimitiveConstant) c).getJavaKind().isNumericInteger()) {
-                long i = ((PrimitiveConstant) c).asLong();
-                boolean signFlip = false;
-                if (i < 0) {
-                    i = -i;
-                    signFlip = true;
-                }
-                ValueNode divResult = null;
-                if (CodeUtil.isPowerOf2(i)) {
-                    divResult = new RightShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(i)));
-                }
-                if (divResult != null) {
-                    if (signFlip) {
-                        return NegateNode.create(divResult);
-                    } else {
-                        return divResult;
-                    }
-                }
-            }
         }
-        return self != null ? self : new DivNode(forX, forY);
+        return self != null ? self : new FloatDivNode(forX, forY);
     }
 
     @Override
