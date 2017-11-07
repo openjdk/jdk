@@ -58,17 +58,6 @@ public class NullStreamCheckTest {
     static BufferedImage inputImage = new BufferedImage(width, height,
             BufferedImage.TYPE_INT_ARGB);
 
-    // creates test file needed for read and write in local directory.
-    private static File createTestFile(String name) throws IOException {
-        String sep = System.getProperty("file.separator");
-        String dir = System.getProperty("test.src", ".");
-        String filePath = dir+sep;
-        File directory = new File(filePath);
-        File tmpTestFile = File.createTempFile(name, ".png", directory);
-        directory.delete();
-        return tmpTestFile;
-    }
-
     /* if we catch expected IOException message return
      * false otherwise return true.
      */
@@ -86,7 +75,7 @@ public class NullStreamCheckTest {
     }
 
     private static void verifyFileWrite() throws IOException {
-        File outputTestFile = createTestFile("outputTestFile");
+        File outputTestFile = File.createTempFile("outputTestFile", ".png");
         try {
             ImageIO.write(inputImage, "png", outputTestFile);
         } catch (IOException ex) {
@@ -113,7 +102,7 @@ public class NullStreamCheckTest {
     }
 
     private static void verifyFileRead() throws IOException {
-        File inputTestFile = createTestFile("inputTestFile");
+        File inputTestFile = File.createTempFile("inputTestFile", ".png");
         try {
             ImageIO.read(inputTestFile);
         } catch (IOException ex) {
@@ -141,7 +130,7 @@ public class NullStreamCheckTest {
 
     private static void verifyUrlRead() throws IOException {
         URL url;
-        File inputTestUrlFile = createTestFile("inputTestFile");
+        File inputTestUrlFile = File.createTempFile("inputTestFile", ".png");
         try {
             try {
                 url = inputTestUrlFile.toURI().toURL();
