@@ -108,39 +108,36 @@ import jdk.internal.misc.SharedSecrets;
  *
  * <table class="plain">
  * <caption>NumericShaper constants precedence</caption>
- *    <thead>
- *    <tr>
- *       <th class="TableHeadingColor">Unicode Range</th>
- *       <th class="TableHeadingColor">{@code NumericShaper} Constants</th>
- *       <th class="TableHeadingColor">Precedence</th>
- *    </tr>
- *    </thead>
- *    <tbody>
- *    <tr>
- *       <td rowspan="2">Arabic</td>
- *       <td>{@link NumericShaper#ARABIC NumericShaper.ARABIC}<br>
- *           {@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}</td>
- *       <td>{@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}</td>
- *    </tr>
- *    <tr>
- *       <td>{@link NumericShaper.Range#ARABIC}<br>
- *           {@link NumericShaper.Range#EASTERN_ARABIC}</td>
- *       <td>{@link NumericShaper.Range#EASTERN_ARABIC}</td>
- *    </tr>
- *    </tbody>
- *    <tbody>
- *    <tr>
- *       <td>Tai Tham</td>
- *       <td>{@link NumericShaper.Range#TAI_THAM_HORA}<br>
- *           {@link NumericShaper.Range#TAI_THAM_THAM}</td>
- *       <td>{@link NumericShaper.Range#TAI_THAM_THAM}</td>
- *    </tr>
- *    </tbody>
+ * <thead>
+ *   <tr>
+ *     <th scope="col">Unicode Range
+ *     <th scope="col">{@code NumericShaper} Constants
+ *     <th scope="col">Precedence
+ * </thead>
+ * <tbody>
+ *   <tr>
+ *     <th scope="row" rowspan="2">Arabic
+ *     <td>{@link NumericShaper#ARABIC NumericShaper.ARABIC}
+ *     <br>
+ *     {@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
+ *     <td>{@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
+ *   </tr>
+ *   <tr>
+ *     <th scope="row">{@link NumericShaper.Range#ARABIC}
+ *     <br>
+ *     {@link NumericShaper.Range#EASTERN_ARABIC}
+ *     <td>{@link NumericShaper.Range#EASTERN_ARABIC}
+ *   <tr>
+ *     <th scope="row">Tai Tham
+ *     <td>{@link NumericShaper.Range#TAI_THAM_HORA}
+ *     <br>
+ *     {@link NumericShaper.Range#TAI_THAM_THAM}
+ *     <td>{@link NumericShaper.Range#TAI_THAM_THAM}
+ * </tbody>
  * </table>
  *
  * @since 1.4
  */
-
 public final class NumericShaper implements java.io.Serializable {
 
     // For access from java.text.Bidi

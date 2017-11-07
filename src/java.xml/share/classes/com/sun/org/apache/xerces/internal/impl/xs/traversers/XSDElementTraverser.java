@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -439,7 +439,7 @@ class XSDElementTraverser extends XSDAbstractTraverser {
                         fSchemaHandler.checkForDuplicateNames(
                                 (schemaDoc.fTargetNamespace == null) ? ","+DOMUtil.getAttrValue(child, SchemaSymbols.ATT_NAME)
                                         : schemaDoc.fTargetNamespace+","+ DOMUtil.getAttrValue(child, SchemaSymbols.ATT_NAME),
-                                        fSchemaHandler.ATTRIBUTE_TYPE, fSchemaHandler.getIDRegistry(), fSchemaHandler.getIDRegistry_sub(),
+                                        XSDHandler.ATTRIBUTE_TYPE, fSchemaHandler.getIDRegistry(), fSchemaHandler.getIDRegistry_sub(),
                                         child, schemaDoc);
                     }
                 } else if (childName.equals(SchemaSymbols.ELT_KEYREF)) {

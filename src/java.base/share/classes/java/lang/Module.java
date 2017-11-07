@@ -57,8 +57,6 @@ import java.util.stream.Stream;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
-import jdk.internal.misc.JavaLangAccess;
-import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
@@ -68,6 +66,7 @@ import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.ModuleVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -1432,7 +1431,7 @@ public final class Module implements AnnotatedElement {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
                                          + ClassWriter.COMPUTE_FRAMES);
 
-        ClassVisitor cv = new ClassVisitor(Opcodes.ASM5, cw) {
+        ClassVisitor cv = new ClassVisitor(Opcodes.ASM6, cw) {
             @Override
             public void visit(int version,
                               int access,
@@ -1457,6 +1456,11 @@ public final class Module implements AnnotatedElement {
             @Override
             public void visitAttribute(Attribute attr) {
                 // drop non-annotation attributes
+            }
+            @Override
+            public ModuleVisitor visitModule(String name, int flags, String version) {
+                // drop Module attribute
+                return null;
             }
         };
 

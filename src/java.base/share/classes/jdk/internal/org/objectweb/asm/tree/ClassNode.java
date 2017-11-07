@@ -67,6 +67,7 @@ import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.ModuleVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.TypePath;
 
@@ -125,6 +126,11 @@ public class ClassNode extends ClassVisitor {
      * compiled elements of the class. May be <tt>null</tt>.
      */
     public String sourceDebug;
+
+    /**
+     * Module information. May be <tt>null</tt>.
+     */
+    public ModuleNode module;
 
     /**
      * The internal name of the enclosing class of the class. May be
@@ -221,7 +227,7 @@ public class ClassNode extends ClassVisitor {
      *             If a subclass calls this constructor.
      */
     public ClassNode() {
-        this(Opcodes.ASM5);
+        this(Opcodes.ASM6);
         if (getClass() != ClassNode.class) {
             throw new IllegalStateException();
         }
@@ -232,7 +238,7 @@ public class ClassNode extends ClassVisitor {
      *
      * @param api
      *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4} or {@link Opcodes#ASM5}.
+     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
      */
     public ClassNode(final int api) {
         super(api);
@@ -264,6 +270,12 @@ public class ClassNode extends ClassVisitor {
     public void visitSource(final String file, final String debug) {
         sourceFile = file;
         sourceDebug = debug;
+    }
+
+    @Override
+    public ModuleVisitor visitModule(final String name, final int access,
+            final String version) {
+        return module = new ModuleNode(name, access, version);
     }
 
     @Override
@@ -358,11 +370,16 @@ public class ClassNode extends ClassVisitor {
      * API than the given version.
      *
      * @param api
-     *            an ASM API version. Must be one of {@link Opcodes#ASM4} or
-     *            {@link Opcodes#ASM5}.
+     *            an ASM API version. Must be one of {@link Opcodes#ASM4},
+     *            {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
      */
     public void check(final int api) {
-        if (api == Opcodes.ASM4) {
+        if (api < Opcodes.ASM6) {
+            if (module != null) {
+                throw new RuntimeException();
+            }
+        }
+        if (api < Opcodes.ASM5) {
             if (visibleTypeAnnotations != null
                     && visibleTypeAnnotations.size() > 0) {
                 throw new RuntimeException();
@@ -371,12 +388,31 @@ public class ClassNode extends ClassVisitor {
                     && invisibleTypeAnnotations.size() > 0) {
                 throw new RuntimeException();
             }
-            for (FieldNode f : fields) {
-                f.check(api);
-            }
-            for (MethodNode m : methods) {
-                m.check(api);
-            }
+        }
+        // checks attributes
+        int i, n;
+        n = visibleAnnotations == null ? 0 : visibleAnnotations.size();
+        for (i = 0; i < n; ++i) {
+            visibleAnnotations.get(i).check(api);
+        }
+        n = invisibleAnnotations == null ? 0 : invisibleAnnotations.size();
+        for (i = 0; i < n; ++i) {
+            invisibleAnnotations.get(i).check(api);
+        }
+        n = visibleTypeAnnotations == null ? 0 : visibleTypeAnnotations.size();
+        for (i = 0; i < n; ++i) {
+            visibleTypeAnnotations.get(i).check(api);
+        }
+        n = invisibleTypeAnnotations == null ? 0 : invisibleTypeAnnotations
+                .size();
+        for (i = 0; i < n; ++i) {
+            invisibleTypeAnnotations.get(i).check(api);
+        }
+        for (FieldNode f : fields) {
+            f.check(api);
+        }
+        for (MethodNode m : methods) {
+            m.check(api);
         }
     }
 
@@ -394,6 +430,10 @@ public class ClassNode extends ClassVisitor {
         // visits source
         if (sourceFile != null || sourceDebug != null) {
             cv.visitSource(sourceFile, sourceDebug);
+        }
+        // visits module
+        if (module != null) {
+            module.accept(cv);
         }
         // visits outer class
         if (outerClass != null) {

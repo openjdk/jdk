@@ -146,10 +146,10 @@ import javax.swing.event.*;
  * <p>
  * The methods related to observing mutations to the document are:
  * <ul>
- * <li><a href="#addDocumentListener(javax.swing.event.DocumentListener)">addDocumentListener(DocumentListener)</a>
- * <li><a href="#removeDocumentListener(javax.swing.event.DocumentListener)">removeDocumentListener(DocumentListener)</a>
- * <li><a href="#addUndoableEditListener(javax.swing.event.UndoableEditListener)">addUndoableEditListener(UndoableEditListener)</a>
- * <li><a href="#removeUndoableEditListener(javax.swing.event.UndoableEditListener)">removeUndoableEditListener(UndoableEditListener)</a>
+ *   <li>{@link #addDocumentListener(DocumentListener)}
+ *   <li>{@link #removeDocumentListener(DocumentListener)}
+ *   <li>{@link #addUndoableEditListener(UndoableEditListener)}
+ *   <li>{@link #removeUndoableEditListener(UndoableEditListener)}
  * </ul>
  *
  * <p><b>Properties</b>

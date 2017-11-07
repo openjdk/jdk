@@ -147,7 +147,7 @@ final class FieldWriter extends FieldVisitor {
      */
     FieldWriter(final ClassWriter cw, final int access, final String name,
             final String desc, final String signature, final Object value) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM6);
         if (cw.firstField == null) {
             cw.firstField = this;
         } else {
@@ -158,7 +158,7 @@ final class FieldWriter extends FieldVisitor {
         this.access = access;
         this.name = cw.newUTF8(name);
         this.desc = cw.newUTF8(desc);
-        if (ClassReader.SIGNATURES && signature != null) {
+        if (signature != null) {
             this.signature = cw.newUTF8(signature);
         }
         if (value != null) {
@@ -173,9 +173,6 @@ final class FieldWriter extends FieldVisitor {
     @Override
     public AnnotationVisitor visitAnnotation(final String desc,
             final boolean visible) {
-        if (!ClassReader.ANNOTATIONS) {
-            return null;
-        }
         ByteVector bv = new ByteVector();
         // write type, and reserve space for values count
         bv.putShort(cw.newUTF8(desc)).putShort(0);
@@ -193,9 +190,6 @@ final class FieldWriter extends FieldVisitor {
     @Override
     public AnnotationVisitor visitTypeAnnotation(final int typeRef,
             final TypePath typePath, final String desc, final boolean visible) {
-        if (!ClassReader.ANNOTATIONS) {
-            return null;
-        }
         ByteVector bv = new ByteVector();
         // write target_type and target_info
         AnnotationWriter.putTarget(typeRef, typePath, bv);
@@ -249,23 +243,23 @@ final class FieldWriter extends FieldVisitor {
             cw.newUTF8("Deprecated");
             size += 6;
         }
-        if (ClassReader.SIGNATURES && signature != 0) {
+        if (signature != 0) {
             cw.newUTF8("Signature");
             size += 8;
         }
-        if (ClassReader.ANNOTATIONS && anns != null) {
+        if (anns != null) {
             cw.newUTF8("RuntimeVisibleAnnotations");
             size += 8 + anns.getSize();
         }
-        if (ClassReader.ANNOTATIONS && ianns != null) {
+        if (ianns != null) {
             cw.newUTF8("RuntimeInvisibleAnnotations");
             size += 8 + ianns.getSize();
         }
-        if (ClassReader.ANNOTATIONS && tanns != null) {
+        if (tanns != null) {
             cw.newUTF8("RuntimeVisibleTypeAnnotations");
             size += 8 + tanns.getSize();
         }
-        if (ClassReader.ANNOTATIONS && itanns != null) {
+        if (itanns != null) {
             cw.newUTF8("RuntimeInvisibleTypeAnnotations");
             size += 8 + itanns.getSize();
         }
@@ -299,19 +293,19 @@ final class FieldWriter extends FieldVisitor {
         if ((access & Opcodes.ACC_DEPRECATED) != 0) {
             ++attributeCount;
         }
-        if (ClassReader.SIGNATURES && signature != 0) {
+        if (signature != 0) {
             ++attributeCount;
         }
-        if (ClassReader.ANNOTATIONS && anns != null) {
+        if (anns != null) {
             ++attributeCount;
         }
-        if (ClassReader.ANNOTATIONS && ianns != null) {
+        if (ianns != null) {
             ++attributeCount;
         }
-        if (ClassReader.ANNOTATIONS && tanns != null) {
+        if (tanns != null) {
             ++attributeCount;
         }
-        if (ClassReader.ANNOTATIONS && itanns != null) {
+        if (itanns != null) {
             ++attributeCount;
         }
         if (attrs != null) {
@@ -331,23 +325,23 @@ final class FieldWriter extends FieldVisitor {
         if ((access & Opcodes.ACC_DEPRECATED) != 0) {
             out.putShort(cw.newUTF8("Deprecated")).putInt(0);
         }
-        if (ClassReader.SIGNATURES && signature != 0) {
+        if (signature != 0) {
             out.putShort(cw.newUTF8("Signature"));
             out.putInt(2).putShort(signature);
         }
-        if (ClassReader.ANNOTATIONS && anns != null) {
+        if (anns != null) {
             out.putShort(cw.newUTF8("RuntimeVisibleAnnotations"));
             anns.put(out);
         }
-        if (ClassReader.ANNOTATIONS && ianns != null) {
+        if (ianns != null) {
             out.putShort(cw.newUTF8("RuntimeInvisibleAnnotations"));
             ianns.put(out);
         }
-        if (ClassReader.ANNOTATIONS && tanns != null) {
+        if (tanns != null) {
             out.putShort(cw.newUTF8("RuntimeVisibleTypeAnnotations"));
             tanns.put(out);
         }
-        if (ClassReader.ANNOTATIONS && itanns != null) {
+        if (itanns != null) {
             out.putShort(cw.newUTF8("RuntimeInvisibleTypeAnnotations"));
             itanns.put(out);
         }

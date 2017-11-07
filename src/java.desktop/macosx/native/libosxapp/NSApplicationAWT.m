@@ -77,6 +77,8 @@ AWT_ASSERT_APPKIT_THREAD;
 
 - (void)dealloc
 {
+    [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:nil];
+
     [fApplicationName release];
     fApplicationName = nil;
 
@@ -138,8 +140,16 @@ AWT_ASSERT_APPKIT_THREAD;
 
     [super finishLaunching];
 
+    [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
+
     // inform any interested parties that the AWT has arrived and is pumping
     [[NSNotificationCenter defaultCenter] postNotificationName:JNFRunLoopDidStartNotification object:self];
+}
+
+- (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center
+     shouldPresentNotification:(NSUserNotification *)notification
+{
+    return YES; // We always show notifications to the user
 }
 
 - (void) registerWithProcessManager

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import com.sun.tools.javac.tree.Pretty;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo;
@@ -99,6 +100,12 @@ class Eval {
     private int varNumber = 0;
 
     private final JShell state;
+
+    // The set of names of methods on Object
+    private final Set<String> objectMethods = Arrays
+            .stream(Object.class.getMethods())
+            .map(m -> m.getName())
+            .collect(toSet());
 
     Eval(JShell state) {
         this.state = state;
@@ -528,10 +535,26 @@ class Eval {
     private List<Snippet> processMethod(String userSource, Tree unitTree, String compileSource, ParseTask pt) {
         TreeDependencyScanner tds = new TreeDependencyScanner();
         tds.scan(unitTree);
-        TreeDissector dis = TreeDissector.createByFirstClass(pt);
+        final TreeDissector dis = TreeDissector.createByFirstClass(pt);
 
-        MethodTree mt = (MethodTree) unitTree;
-        String name = mt.getName().toString();
+        final MethodTree mt = (MethodTree) unitTree;
+        final String name = mt.getName().toString();
+        if (objectMethods.contains(name)) {
+            // The name matches a method on Object, short of an overhaul, this
+            // fails, see 8187137.  Generate a descriptive error message
+
+            // The error position will be the position of the name, find it
+            long possibleStart = dis.getEndPosition(mt.getReturnType());
+            Range possibleRange = new Range((int) possibleStart,
+                    dis.getStartPosition(mt.getBody()));
+            String possibleNameSection = possibleRange.part(compileSource);
+            int offset = possibleNameSection.indexOf(name);
+            long start = offset < 0
+                    ? possibleStart // something wrong, punt
+                    : possibleStart + offset;
+
+            return compileFailResult(new DiagList(objectMethodNameDiag(name, start)), userSource, Kind.METHOD);
+        }
         String parameterTypes
                 = mt.getParameters()
                 .stream()
@@ -898,6 +921,47 @@ class Eval {
 
     private boolean isWrap(StackTraceElement ste) {
         return PREFIX_PATTERN.matcher(ste.getClassName()).find();
+    }
+
+    /**
+     * Construct a diagnostic for a method name matching an Object method name
+     * @param name the method name
+     * @param nameStart the position within the source of the method name
+     * @return the generated diagnostic
+     */
+    private Diag objectMethodNameDiag(String name, long nameStart) {
+        return new Diag() {
+            @Override
+            public boolean isError() {
+                return true;
+            }
+
+            @Override
+            public long getPosition() {
+                return nameStart;
+            }
+
+            @Override
+            public long getStartPosition() {
+                return nameStart;
+            }
+
+            @Override
+            public long getEndPosition() {
+                return nameStart + name.length();
+            }
+
+            @Override
+            public String getCode() {
+                return "jdk.eval.error.object.method";
+            }
+
+            @Override
+            public String getMessage(Locale locale) {
+                return state.messageFormat("jshell.diag.object.method.fatal",
+                        String.join(" ", objectMethods));
+            }
+        };
     }
 
     private DiagList modifierDiagnostics(ModifiersTree modtree,

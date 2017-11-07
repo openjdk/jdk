@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,6 +167,11 @@ public class Basic {
             readAndCheck(blah);
             blah.delete();
 
+            testNewChannelWriteAfterClose(blah);
+
+            testNewChannelReadAfterClose(blah);
+            blah.delete();
+
             writeOut(blah, ITERATIONS);
             testNewChannelIn(blah);
             test4481572(blah);
@@ -255,6 +260,7 @@ public class Basic {
     private static void testNewChannelOut(File blah) throws Exception {
         ExtendedFileOutputStream fos = new ExtendedFileOutputStream(blah);
         WritableByteChannel wbc = Channels.newChannel(fos);
+
         for (int i=0; i<ITERATIONS; i++)
             wbc.write(ByteBuffer.wrap(message.getBytes(encoding)));
         wbc.close();
@@ -285,6 +291,37 @@ public class Basic {
         }
         rbc.close();
         fis.close();
+    }
+
+    private static void testNewChannelWriteAfterClose(File blah)
+        throws Exception {
+        try (ExtendedFileOutputStream fos =
+            new ExtendedFileOutputStream(blah)) {
+            WritableByteChannel wbc = Channels.newChannel(fos);
+
+            wbc.close();
+            try {
+                wbc.write(ByteBuffer.allocate(0));
+                throw new RuntimeException
+                    ("No ClosedChannelException on WritableByteChannel::write");
+            } catch (ClosedChannelException expected) {
+            }
+        }
+    }
+
+    private static void testNewChannelReadAfterClose(File blah)
+        throws Exception {
+        try (ExtendedFileInputStream fis = new ExtendedFileInputStream(blah)) {
+            ReadableByteChannel rbc = Channels.newChannel(fis);
+
+            rbc.close();
+            try {
+                rbc.read(ByteBuffer.allocate(0));
+                throw new RuntimeException
+                    ("No ClosedChannelException on ReadableByteChannel::read");
+            } catch (ClosedChannelException expected) {
+            }
+        }
     }
 
     // Causes BufferOverflowException if bug 4481572 is present.

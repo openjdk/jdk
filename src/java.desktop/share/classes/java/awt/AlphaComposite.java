@@ -72,22 +72,40 @@ import sun.java2d.SunCompositeContext;
  * The following factors are used in the description of the blending
  * equation in the Porter and Duff paper:
  *
- * <blockquote>
- * <table class="borderless">
+ * <table class="striped">
  * <caption style="display:none">Factors</caption>
- * <tr><th style="text-align:left">Factor&nbsp;&nbsp;<th style="text-align:left">Definition
- * <tr><td><em>A<sub>s</sub></em><td>the alpha component of the source pixel
- * <tr><td><em>C<sub>s</sub></em><td>a color component of the source pixel in premultiplied form
- * <tr><td><em>A<sub>d</sub></em><td>the alpha component of the destination pixel
- * <tr><td><em>C<sub>d</sub></em><td>a color component of the destination pixel in premultiplied form
- * <tr><td><em>F<sub>s</sub></em><td>the fraction of the source pixel that contributes to the output
- * <tr><td><em>F<sub>d</sub></em><td>the fraction of the destination pixel that contributes
- * to the output
- * <tr><td><em>A<sub>r</sub></em><td>the alpha component of the result
- * <tr><td><em>C<sub>r</sub></em><td>a color component of the result in premultiplied form
+ * <thead>
+ *   <tr>
+ *     <th scope="col">Factor
+ *     <th scope="col">Definition
+ * </thead>
+ * <tbody>
+ *   <tr>
+ *     <th scope="row"><em>A<sub>s</sub></em>
+ *     <td>the alpha component of the source pixel
+ *   <tr>
+ *     <th scope="row"><em>C<sub>s</sub></em>
+ *     <td>a color component of the source pixel in premultiplied form
+ *   <tr>
+ *     <th scope="row"><em>A<sub>d</sub></em>
+ *     <td>the alpha component of the destination pixel
+ *   <tr>
+ *     <th scope="row"><em>C<sub>d</sub></em>
+ *     <td>a color component of the destination pixel in premultiplied form
+ *   <tr>
+ *     <th scope="row"><em>F<sub>s</sub></em>
+ *     <td>the fraction of the source pixel that contributes to the output
+ *   <tr>
+ *     <th scope="row"><em>F<sub>d</sub></em>
+ *     <td>the fraction of the destination pixel that contributes to the output
+ *   <tr>
+ *     <th scope="row"><em>A<sub>r</sub></em>
+ *     <td>the alpha component of the result
+ *   <tr>
+ *     <th scope="row"><em>C<sub>r</sub></em>
+ *     <td>a color component of the result in premultiplied form
+ * </tbody>
  * </table>
- * </blockquote>
- *
  * <p>
  * Using these factors, Porter and Duff define 12 ways of choosing
  * the blending factors <em>F<sub>s</sub></em> and <em>F<sub>d</sub></em> to
@@ -113,19 +131,37 @@ import sun.java2d.SunCompositeContext;
  * The following factors will be used to discuss our extensions to
  * the blending equation in the Porter and Duff paper:
  *
- * <blockquote>
- * <table class="borderless">
+ * <table class="striped">
  * <caption style="display:none">Factors</caption>
- * <tr><th style="text-align:left">Factor&nbsp;&nbsp;<th style="text-align:left">Definition
- * <tr><td><em>C<sub>sr</sub></em> <td>one of the raw color components of the source pixel
- * <tr><td><em>C<sub>dr</sub></em> <td>one of the raw color components of the destination pixel
- * <tr><td><em>A<sub>ac</sub></em>  <td>the "extra" alpha component from the AlphaComposite instance
- * <tr><td><em>A<sub>sr</sub></em> <td>the raw alpha component of the source pixel
- * <tr><td><em>A<sub>dr</sub></em><td>the raw alpha component of the destination pixel
- * <tr><td><em>A<sub>df</sub></em> <td>the final alpha component stored in the destination
- * <tr><td><em>C<sub>df</sub></em> <td>the final raw color component stored in the destination
+ * <thead>
+ *   <tr>
+ *     <th scope="col">Factor
+ *     <th scope="col">Definition
+ * </thead>
+ * <tbody>
+ *   <tr>
+ *     <th scope="row"><em>C<sub>sr</sub></em>
+ *     <td>one of the raw color components of the source pixel
+ *   <tr>
+ *     <th scope="row"><em>C<sub>dr</sub></em>
+ *     <td>one of the raw color components of the destination pixel
+ *   <tr>
+ *     <th scope="row"><em>A<sub>ac</sub></em>
+ *     <td>the "extra" alpha component from the AlphaComposite instance
+ *   <tr>
+ *     <th scope="row"><em>A<sub>sr</sub></em>
+ *     <td>the raw alpha component of the source pixel
+ *   <tr>
+ *     <th scope="row"><em>A<sub>dr</sub></em>
+ *     <td>the raw alpha component of the destination pixel
+ *   <tr>
+ *     <th scope="row"><em>A<sub>df</sub></em>
+ *     <td>the final alpha component stored in the destination
+ *   <tr>
+ *     <th scope="row"><em>C<sub>df</sub></em>
+ *     <td>the final raw color component stored in the destination
+ * </tbody>
  * </table>
- *</blockquote>
  *
  * <h3>Preparing Inputs</h3>
  *

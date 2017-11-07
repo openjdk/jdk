@@ -65,19 +65,35 @@ import sun.swing.DefaultLookup;
  * <caption>Properties</caption>
  * <thead>
  *   <tr>
- *     <th>Property:
- *     <th>Key:
+ *     <th scope="col">Property
+ *     <th scope="col">Key
  *   </tr>
  * </thead>
  * <tbody>
- *   <tr><td>"leafIcon"<td>"Tree.leafIcon"
- *   <tr><td>"closedIcon"<td>"Tree.closedIcon"
- *   <tr><td>"openIcon"<td>"Tree.openIcon"
- *   <tr><td>"textSelectionColor"<td>"Tree.selectionForeground"
- *   <tr><td>"textNonSelectionColor"<td>"Tree.textForeground"
- *   <tr><td>"backgroundSelectionColor"<td>"Tree.selectionBackground"
- *   <tr><td>"backgroundNonSelectionColor"<td>"Tree.textBackground"
- *   <tr><td>"borderSelectionColor"<td>"Tree.selectionBorderColor"
+ *   <tr>
+ *     <th scope="row">"leafIcon"
+ *     <td>"Tree.leafIcon"
+ *   <tr>
+ *     <th scope="row">"closedIcon"
+ *     <td>"Tree.closedIcon"
+ *   <tr>
+ *     <th scope="row">"openIcon"
+ *     <td>"Tree.openIcon"
+ *   <tr>
+ *     <th scope="row">"textSelectionColor"
+ *     <td>"Tree.selectionForeground"
+ *   <tr>
+ *     <th scope="row">"textNonSelectionColor"
+ *     <td>"Tree.textForeground"
+ *   <tr>
+ *     <th scope="row">"backgroundSelectionColor"
+ *     <td>"Tree.selectionBackground"
+ *   <tr>
+ *     <th scope="row">"backgroundNonSelectionColor"
+ *     <td>"Tree.textBackground"
+ *   <tr>
+ *     <th scope="row">"borderSelectionColor"
+ *     <td>"Tree.selectionBorderColor"
  * </tbody>
  * </table>
  * <p>

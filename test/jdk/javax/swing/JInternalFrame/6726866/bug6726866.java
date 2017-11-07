@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,20 @@
  */
 
 /* @test
-   @bug 6726866
-   @summary Repainting artifacts when resizing or dragging JInternalFrames in non-opaque toplevel
-   @author Alexander Potochkin
+   @bug 6726866 8186617
+   @summary Repainting artifacts when resizing or dragging JInternalFrames in
+            non-opaque toplevel
    @run applet/manual=yesno bug6726866.html
 */
 
-import javax.swing.*;
-import java.awt.*;
-import java.lang.reflect.Method;
+import java.awt.Color;
+import java.awt.Window;
+
+import javax.swing.JApplet;
+import javax.swing.JDesktopPane;
+import javax.swing.JFrame;
+import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
 
 public class bug6726866 extends JApplet {
 
@@ -54,14 +59,12 @@ public class bug6726866 extends JApplet {
         frame.toFront();
     }
 
-    private void setWindowNonOpaque(Window w) {
-        try {
-            Class<?> c = Class.forName("com.sun.awt.AWTUtilities");
-            Method m = c.getMethod("setWindowOpaque", Window.class, boolean.class);
-            m.invoke(null, w, false);
+    public static void setWindowNonOpaque(Window window) {
+        Color bg = window.getBackground();
+        if (bg == null) {
+            bg = new Color(0, 0, 0, 0);
         }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+        window.setBackground(
+                new Color(bg.getRed(), bg.getGreen(), bg.getBlue(), 0));
     }
 }

@@ -3025,6 +3025,7 @@ public class XSDHandler {
         return newComponents;
     }
 
+    @SuppressWarnings("fallthrough")
     private void expandRelatedComponents(XSObject component,List<XSObject>componentList, Map<String, List<String>> dependencies) {
         short componentType = component.getType();
         switch (componentType) {

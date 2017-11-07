@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,42 +22,50 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.awt.X11;
 
-import java.awt.*;
-
+import java.awt.AWTEvent;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.SystemColor;
+import java.awt.Window;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.WindowEvent;
-import java.awt.geom.AffineTransform;
-
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.WindowPeer;
-
 import java.io.UnsupportedEncodingException;
-
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import sun.awt.AWTAccessor.ComponentAccessor;
-import sun.util.logging.PlatformLogger;
-
 import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.DisplayChangedListener;
+import sun.awt.IconInfo;
 import sun.awt.SunToolkit;
 import sun.awt.X11GraphicsDevice;
 import sun.awt.X11GraphicsEnvironment;
-import sun.awt.IconInfo;
-
 import sun.java2d.pipe.Region;
+import sun.util.logging.PlatformLogger;
 
 class XWindowPeer extends XPanelPeer implements WindowPeer,
                                                 DisplayChangedListener {
@@ -446,16 +454,14 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     private void updateShape() {
-        // Shape shape = ((Window)target).getShape();
-        Shape shape = AWTAccessor.getWindowAccessor().getShape((Window)target);
+        Shape shape = ((Window)target).getShape();
         if (shape != null) {
             applyShape(Region.getInstance(shape, null));
         }
     }
 
     private void updateOpacity() {
-        // float opacity = ((Window)target).getOpacity();
-        float opacity = AWTAccessor.getWindowAccessor().getOpacity((Window)target);
+        float opacity = ((Window)target).getOpacity();
         if (opacity < 1.0f) {
             setOpacity(opacity);
         }
@@ -2375,7 +2381,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     public void print(Graphics g) {
         // We assume we print the whole frame,
         // so we expect no clip was set previously
-        Shape shape = AWTAccessor.getWindowAccessor().getShape((Window)target);
+        Shape shape = ((Window)target).getShape();
         if (shape != null) {
             g.setClip(shape);
         }

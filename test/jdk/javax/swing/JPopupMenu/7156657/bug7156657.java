@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,33 @@
  * questions.
  */
 
-import com.sun.awt.AWTUtilities;
-import sun.awt.SunToolkit;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.Callable;
 
+import javax.swing.JFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
+
+import sun.awt.SunToolkit;
+
 /*
    @test
-  @key headful
-   @bug 7156657
-   @summary Version 7 doesn't support translucent popup menus against a translucent window
+   @key headful
+   @bug 7156657 8186617
+   @summary Version 7 doesn't support translucent popup menus against a
+            translucent window
    @library ../../regtesthelpers
-   @author Pavel Porvatov
-   @modules java.desktop/com.sun.awt
-            java.desktop/sun.awt
+   @modules java.desktop/sun.awt
 */
 public class bug7156657 {
     private static JFrame lowerFrame;
@@ -54,8 +64,7 @@ public class bug7156657 {
             @Override
             public Boolean call() throws Exception {
                 frame = createFrame();
-
-                if (!AWTUtilities.isTranslucencyCapable(frame.getGraphicsConfiguration())) {
+                if (!frame.getGraphicsConfiguration().isTranslucencyCapable()) {
                     System.out.println("Translucency is not supported, the test skipped");
 
                     return true;
@@ -71,7 +80,7 @@ public class bug7156657 {
                 popupMenu.add(new TransparentMenuItem("2222"));
                 popupMenu.add(new TransparentMenuItem("3333"));
 
-                AWTUtilities.setWindowOpaque(frame, false);
+                setOpaque(frame, false);
                 JPanel pnContent = new JPanel();
                 pnContent.setBackground(new Color(255, 255, 255, 128));
                 frame.add(pnContent);
@@ -132,6 +141,14 @@ public class bug7156657 {
         System.out.println("The test passed");
     }
 
+    public static void setOpaque(Window window, boolean opaque) {
+        Color bg = window.getBackground();
+        if (bg == null) {
+            bg = new Color(0, 0, 0, 0);
+        }
+        window.setBackground(new Color(bg.getRed(), bg.getGreen(), bg.getBlue(),
+                                       opaque ? 255 : 0));
+    }
 
     private static JFrame createFrame() {
         JFrame result = new JFrame();

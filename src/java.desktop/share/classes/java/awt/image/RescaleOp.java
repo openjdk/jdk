@@ -360,7 +360,8 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      *         of {@code src} is an {@code IndexColorModel},
      *         or if the number of scaling factors and offsets in this
      *         {@code RescaleOp} do not meet the requirements
-     *         stated in the class comments.
+     *         stated in the class comments, or if the source and
+     *         destination images differ in size.
      */
     public final BufferedImage filter (BufferedImage src, BufferedImage dst) {
         ColorModel srcCM = src.getColorModel();
@@ -473,7 +474,8 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      *         {@code dst} do not have the same number of bands,
      *         or if the number of scaling factors and offsets in this
      *         {@code RescaleOp} do not meet the requirements
-     *         stated in the class comments.
+     *         stated in the class comments, or if the source and
+     *         destination rasters differ in size.
      */
     public final WritableRaster filter (Raster src, WritableRaster dst)  {
         return filterRasterImpl(src, dst, length, true);

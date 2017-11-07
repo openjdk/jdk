@@ -243,7 +243,7 @@ public class DefineClassTest {
     byte[] generateClass(String className) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
                                          + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V1_9,
+        cw.visit(V9,
                 ACC_PUBLIC + ACC_SUPER,
                 className.replace(".", "/"),
                 null,
@@ -272,7 +272,7 @@ public class DefineClassTest {
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
                                          + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V1_9,
+        cw.visit(V9,
                 ACC_PUBLIC + ACC_SUPER,
                 className.replace(".", "/"),
                 null,
@@ -309,7 +309,7 @@ public class DefineClassTest {
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
                                          + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V1_9,
+        cw.visit(V9,
                 ACC_PUBLIC + ACC_SUPER,
                 className.replace(".", "/"),
                 null,

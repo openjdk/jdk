@@ -2743,7 +2743,7 @@ public abstract class ResourceBundle {
          * of multiple subtags separated by underscore, generate candidate
          * <code>Locale</code>s by omitting the variant subtags one by one, then
          * insert them after every occurrence of <code> Locale</code>s with the
-         * full variant value in the original list.  For example, if the
+         * full variant value in the original list.  For example, if
          * the variant consists of two subtags <em>V1</em> and <em>V2</em>:
          *
          * <ul>

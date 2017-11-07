@@ -42,22 +42,23 @@ import javax.print.attribute.PrintRequestAttribute;
  * The table below shows the effects of specifying a Chromaticity attribute of
  * {@link #MONOCHROME MONOCHROME} or {@link #COLOR COLOR} for a monochrome or
  * color document.
+ *
  * <table class="striped">
  * <caption>Shows effects of specifying {@code MONOCHROME} or {@code COLOR}
  * Chromaticity attributes</caption>
  * <thead>
  *   <tr>
- *     <th>Chromaticity<br>Attribute
- *     <th>Effect on<br>Monochrome Document
- *     <th>Effect on<br>Color Document
+ *     <th scope="col">Chromaticity<br>Attribute
+ *     <th scope="col">Effect on<br>Monochrome Document
+ *     <th scope="col">Effect on<br>Color Document
  * </thead>
  * <tbody>
  *   <tr>
- *     <td>{@link #MONOCHROME MONOCHROME}
+ *     <th scope="row">{@link #MONOCHROME MONOCHROME}
  *     <td>Printed as is, in monochrome
  *     <td>Printed in monochrome, with colors converted to shades of gray
  *   <tr>
- *     <td>{@link #COLOR COLOR}
+ *     <th scope="row">{@link #COLOR COLOR}
  *     <td>Printed as is, in monochrome
  *     <td>Printed as is, in color
  * </tbody>

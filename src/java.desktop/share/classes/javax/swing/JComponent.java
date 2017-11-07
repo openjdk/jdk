@@ -121,7 +121,7 @@ import sun.swing.SwingUtilities2;
  *     both of which are sections in <em>The Java Tutorial</em>.
  * </ul>
  * For more information on these subjects, see the
- * <a href="package-summary.html#package_description">Swing package description</a>
+ * {@link javax.swing Swing package description}
  * and <em>The Java Tutorial</em> section
  * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/jcomponent.html">The JComponent Class</a>.
  * <p>

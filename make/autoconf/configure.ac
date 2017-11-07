@@ -1,5 +1,5 @@
 SRC#
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -202,6 +202,9 @@ FLAGS_SETUP_COMPILER_FLAGS_MISC
 # Setup debug symbols (need objcopy from the toolchain for that)
 JDKOPT_SETUP_DEBUG_SYMBOLS
 JDKOPT_SETUP_CODE_COVERAGE
+
+# AddressSanitizer
+JDKOPT_SETUP_ADDRESS_SANITIZER
 
 # Need toolchain to setup dtrace
 HOTSPOT_SETUP_DTRACE

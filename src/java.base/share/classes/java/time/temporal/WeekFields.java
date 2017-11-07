@@ -311,7 +311,7 @@ public final class WeekFields implements Serializable {
      * the new month or year.
      * <p>
      * WeekFields instances are singletons; for each unique combination
-     * of {@code firstDayOfWeek} and {@code minimalDaysInFirstWeek} the
+     * of {@code firstDayOfWeek} and {@code minimalDaysInFirstWeek}
      * the same instance will be returned.
      *
      * @param firstDayOfWeek  the first day of the week, not null

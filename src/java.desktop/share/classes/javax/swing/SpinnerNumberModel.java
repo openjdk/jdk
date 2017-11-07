@@ -260,8 +260,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      * as the <code>value</code> however it's possible to use any
      * <code>Comparable</code> with a <code>compareTo</code>
      * method for a <code>Number</code> with the same type as the value.
-     * See <a href="#setMinimum(java.lang.Comparable)">
-     * <code>setMinimum</code></a> for an example.
+     * See {@link #setMinimum(Comparable)} for an example.
      * <p>
      * This method fires a <code>ChangeEvent</code> if the
      * <code>maximum</code> has changed.
