@@ -2089,9 +2089,10 @@ void Arguments::set_heap_size() {
   // respecting the maximum and minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
     julong reasonable_max = (julong)((phys_mem * MaxRAMPercentage) / 100);
-    if (phys_mem <= (julong)((MaxHeapSize * MinRAMPercentage) / 100)) {
+    const julong reasonable_min = (julong)((phys_mem * MinRAMPercentage) / 100);
+    if (reasonable_min < MaxHeapSize) {
       // Small physical memory, so use a minimum fraction of it for the heap
-      reasonable_max = (julong)((phys_mem * MinRAMPercentage) / 100);
+      reasonable_max = reasonable_min;
     } else {
       // Not-small physical memory, so require a heap at least
       // as large as MaxHeapSize
