@@ -331,7 +331,7 @@ bool PSScavenge::invoke_no_policy() {
 
     save_to_space_top_before_gc();
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
 #endif
 
@@ -601,7 +601,7 @@ bool PSScavenge::invoke_no_policy() {
       assert(young_gen->to_space()->is_empty(), "to space should be empty now");
     }
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     DerivedPointerTable::update_pointers();
 #endif
 

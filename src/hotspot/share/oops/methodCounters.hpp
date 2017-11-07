@@ -40,7 +40,7 @@ class MethodCounters : public Metadata {
 #if INCLUDE_AOT
   Method*           _method;                     // Back link to Method
 #endif
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   int               _interpreter_invocation_count; // Count of times invoked (reused as prev_event_count in tiered)
   u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
 #endif
@@ -130,7 +130,7 @@ class MethodCounters : public Metadata {
   MetaspaceObj::Type type() const { return MethodCountersType; }
   void clear_counters();
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
 
   int interpreter_invocation_count() {
     return _interpreter_invocation_count;
@@ -154,7 +154,7 @@ class MethodCounters : public Metadata {
     _interpreter_throwout_count = count;
   }
 
-#else // defined(COMPILER2) || INCLUDE_JVMCI
+#else // COMPILER2_OR_JVMCI
 
   int interpreter_invocation_count() {
     return 0;
@@ -170,7 +170,7 @@ class MethodCounters : public Metadata {
     assert(count == 0, "count must be 0");
   }
 
-#endif // defined(COMPILER2) || INCLUDE_JVMCI
+#endif // COMPILER2_OR_JVMCI
 
 #if INCLUDE_JVMTI
   u2   number_of_breakpoints() const   { return _number_of_breakpoints; }
@@ -213,7 +213,7 @@ class MethodCounters : public Metadata {
     return byte_offset_of(MethodCounters, _nmethod_age);
   }
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
 
   static ByteSize interpreter_invocation_counter_offset() {
     return byte_offset_of(MethodCounters, _interpreter_invocation_count);
@@ -223,14 +223,14 @@ class MethodCounters : public Metadata {
     return offset_of(MethodCounters, _interpreter_invocation_count);
   }
 
-#else // defined(COMPILER2) || INCLUDE_JVMCI
+#else // COMPILER2_OR_JVMCI
 
   static ByteSize interpreter_invocation_counter_offset() {
     ShouldNotReachHere();
     return in_ByteSize(0);
   }
 
-#endif // defined(COMPILER2) || INCLUDE_JVMCI
+#endif // COMPILER2_OR_JVMCI
 
   static ByteSize invocation_counter_offset()    {
     return byte_offset_of(MethodCounters, _invocation_counter);
