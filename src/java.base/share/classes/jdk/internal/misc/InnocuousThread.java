@@ -62,10 +62,16 @@ public final class InnocuousThread extends Thread {
      * set to the system class loader.
      */
     public static Thread newThread(String name, Runnable target) {
-        return new InnocuousThread(INNOCUOUSTHREADGROUP,
-                                   target,
-                                   name,
-                                   ClassLoader.getSystemClassLoader());
+        return AccessController.doPrivileged(
+                new PrivilegedAction<Thread>() {
+                    @Override
+                    public Thread run() {
+                        return new InnocuousThread(INNOCUOUSTHREADGROUP,
+                                                   target,
+                                                   name,
+                                                   ClassLoader.getSystemClassLoader());
+                    }
+                });
     }
 
     /**
@@ -80,8 +86,14 @@ public final class InnocuousThread extends Thread {
      * Returns a new InnocuousThread with null context class loader.
      */
     public static Thread newSystemThread(String name, Runnable target) {
-        return new InnocuousThread(INNOCUOUSTHREADGROUP,
-                                   target, name, null);
+        return AccessController.doPrivileged(
+                new PrivilegedAction<Thread>() {
+                    @Override
+                    public Thread run() {
+                        return new InnocuousThread(INNOCUOUSTHREADGROUP,
+                                                   target, name, null);
+                    }
+                });
     }
 
     private InnocuousThread(ThreadGroup group, Runnable target, String name, ClassLoader tccl) {
