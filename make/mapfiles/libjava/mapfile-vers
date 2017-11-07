@@ -130,8 +130,8 @@ SUNWprivate_1.1 {
 		Java_java_lang_ClassLoader_defineClass2;
 		Java_java_lang_ClassLoader_findBuiltinLib;
 		Java_java_lang_ClassLoader_findLoadedClass0;
-		Java_java_lang_ClassLoader_00024NativeLibrary_find;
-		Java_java_lang_ClassLoader_00024NativeLibrary_load;
+		Java_java_lang_ClassLoader_00024NativeLibrary_findEntry;
+		Java_java_lang_ClassLoader_00024NativeLibrary_load0;
 		Java_java_lang_ClassLoader_00024NativeLibrary_unload;
 		Java_java_lang_ClassLoader_registerNatives;
 		Java_java_lang_Double_longBitsToDouble;
