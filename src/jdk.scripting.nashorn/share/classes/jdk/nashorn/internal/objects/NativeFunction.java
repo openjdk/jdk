@@ -35,6 +35,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.List;
 import jdk.dynalink.linker.support.Lookup;
 import jdk.nashorn.api.scripting.JSObject;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -101,8 +102,13 @@ public final class NativeFunction {
 
         if (self instanceof ScriptFunction) {
             return ScriptRuntime.apply((ScriptFunction)self, thiz, args);
-        } else if (self instanceof JSObject) {
+        } else if (self instanceof ScriptObjectMirror) {
             return ((JSObject)self).call(thiz, args);
+        } else if (self instanceof JSObject) {
+            final Global global = Global.instance();
+            final Object result = ((JSObject) self).call(ScriptObjectMirror.wrap(thiz, global),
+                    ScriptObjectMirror.wrapArray(args, global));
+            return ScriptObjectMirror.unwrap(result, global);
         }
         throw new AssertionError("Should not reach here");
     }
