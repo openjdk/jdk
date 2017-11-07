@@ -944,7 +944,7 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   if (MaxVectorSize > 0) {
     if (!is_power_of_2(MaxVectorSize)) {
       warning("MaxVectorSize must be a power of 2");
@@ -996,7 +996,7 @@ void VM_Version::get_processor_features() {
     }
 #endif // COMPILER2 && ASSERT
   }
-#endif // COMPILER2 || INCLUDE_JVMCI
+#endif // COMPILER2_OR_JVMCI
 
 #ifdef COMPILER2
 #ifdef _LP64
