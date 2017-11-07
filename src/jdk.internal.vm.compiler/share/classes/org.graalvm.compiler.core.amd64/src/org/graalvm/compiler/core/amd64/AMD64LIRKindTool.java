@@ -28,7 +28,7 @@ import org.graalvm.compiler.debug.GraalError;
 
 import jdk.vm.ci.amd64.AMD64Kind;
 
-public class AMD64LIRKindTool implements LIRKindTool {
+public abstract class AMD64LIRKindTool implements LIRKindTool {
 
     @Override
     public LIRKind getIntegerKind(int bits) {
@@ -67,12 +67,8 @@ public class AMD64LIRKindTool implements LIRKindTool {
     }
 
     @Override
-    public LIRKind getNarrowOopKind() {
-        return LIRKind.reference(AMD64Kind.DWORD);
-    }
+    public abstract LIRKind getNarrowOopKind();
 
     @Override
-    public LIRKind getNarrowPointerKind() {
-        return LIRKind.value(AMD64Kind.DWORD);
-    }
+    public abstract LIRKind getNarrowPointerKind();
 }

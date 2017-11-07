@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,8 +132,17 @@ public class DebugInfoBuilder {
                             slotKinds[pos] = toSlotKind(value);
                             pos++;
                         } else {
-                            assert currentField.values().get(i - 1).getStackKind() == JavaKind.Double || currentField.values().get(i - 1).getStackKind() == JavaKind.Long : vobjNode + " " + i + " " +
-                                            currentField.values().get(i - 1);
+                            assert value.getStackKind() == JavaKind.Illegal;
+                            ValueNode previousValue = currentField.values().get(i - 1);
+                            assert (previousValue != null && previousValue.getStackKind().needsTwoSlots()) : vobjNode + " " + i +
+                                            " " + previousValue + " " + currentField.values().snapshot();
+                            if (previousValue == null || !previousValue.getStackKind().needsTwoSlots()) {
+                                // Don't allow the IllegalConstant to leak into the debug info
+                                JavaKind entryKind = vobjNode.entryKind(i);
+                                values[pos] = JavaConstant.defaultForKind(entryKind.getStackKind());
+                                slotKinds[pos] = entryKind.getStackKind();
+                                pos++;
+                            }
                         }
                     }
                     if (pos != entryCount) {
@@ -164,19 +173,19 @@ public class DebugInfoBuilder {
             if (!type.isArray()) {
                 ResolvedJavaField[] fields = type.getInstanceFields(true);
                 int fieldIndex = 0;
-                for (int i = 0; i < values.length; i++) {
-                    ResolvedJavaField field = fields[fieldIndex++];
-                    JavaKind valKind = slotKinds[i].getStackKind();
+                for (int valueIndex = 0; valueIndex < values.length; valueIndex++, fieldIndex++) {
+                    ResolvedJavaField field = fields[fieldIndex];
+                    JavaKind valKind = slotKinds[valueIndex].getStackKind();
                     JavaKind fieldKind = storageKind(field.getType());
-                    if (fieldKind == JavaKind.Object) {
-                        assert valKind.isObject() : field + ": " + valKind + " != " + fieldKind;
+                    if ((valKind == JavaKind.Double || valKind == JavaKind.Long) && fieldKind == JavaKind.Int) {
+                        assert fieldIndex + 1 < fields.length : String.format("Not enough fields for fieldIndex = %d valueIndex = %d %s %s", fieldIndex, valueIndex, Arrays.toString(fields),
+                                        Arrays.toString(values));
+                        assert storageKind(fields[fieldIndex + 1].getType()) == JavaKind.Int : String.format("fieldIndex = %d valueIndex = %d %s %s %s", fieldIndex, valueIndex,
+                                        storageKind(fields[fieldIndex + 1].getType()), Arrays.toString(fields),
+                                        Arrays.toString(values));
+                        fieldIndex++;
                     } else {
-                        if ((valKind == JavaKind.Double || valKind == JavaKind.Long) && fieldKind == JavaKind.Int) {
-                            assert storageKind(fields[fieldIndex].getType()) == JavaKind.Int;
-                            fieldIndex++;
-                        } else {
-                            assert valKind == fieldKind.getStackKind() : field + ": " + valKind + " != " + fieldKind;
-                        }
+                        assert valKind == fieldKind.getStackKind() : field + ": " + valKind + " != " + fieldKind;
                     }
                 }
                 assert fields.length == fieldIndex : type + ": fields=" + Arrays.toString(fields) + ", field values=" + Arrays.toString(values);

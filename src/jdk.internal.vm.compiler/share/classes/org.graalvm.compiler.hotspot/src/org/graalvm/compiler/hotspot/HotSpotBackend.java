@@ -266,6 +266,8 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
         unsafeArraycopyStub(HotSpotBackend.UNSAFE_ARRAYCOPY, srcAddr, dstAddr, size);
     }
 
+    public static final ForeignCallDescriptor GENERIC_ARRAYCOPY = new ForeignCallDescriptor("generic_arraycopy", int.class, Word.class, int.class, Word.class, int.class, int.class);
+
     @NodeIntrinsic(ForeignCallNode.class)
     private static native void unsafeArraycopyStub(@ConstantNodeParameter ForeignCallDescriptor descriptor, Word srcAddr, Word dstAddr, Word size);
 

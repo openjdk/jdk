@@ -24,14 +24,16 @@ package org.graalvm.compiler.core.test;
 
 import java.io.Serializable;
 
+import org.graalvm.compiler.test.SubprocessUtil;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
+
 import jdk.vm.ci.meta.JavaTypeProfile;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.TriState;
-
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * Tests profiling information provided by the runtime.
@@ -40,7 +42,7 @@ import org.junit.Test;
  * information may be gathered for any given method. For example, HotSpot's advanced compilation
  * policy can decide to only gather partial profiles in a first level compilation (see
  * AdvancedThresholdPolicy::common(...) in advancedThresholdPolicy.cpp). Because of this,
- * occasionally tests for {@link ProfilingInfo#getNullSeen(int)} can fail since HotSpot only set's
+ * occasionally tests for {@link ProfilingInfo#getNullSeen(int)} can fail since HotSpot only sets
  * the null_seen bit when doing full profiling.
  */
 public class ProfilingInfoTest extends GraalCompilerTest {
@@ -180,6 +182,14 @@ public class ProfilingInfoTest extends GraalCompilerTest {
         resetProfile(testSnippet);
         typeProfile = info.getTypeProfile(bci);
         Assert.assertNull(typeProfile);
+    }
+
+    public ProfilingInfoTest() {
+        // These tests are explicitly testing the profiling behavior of the
+        // interpreter. C1-based profiling differs slightly and when -Xcomp
+        // is present, profiles will be created by C1 compiled code, not the
+        // interpreter.
+        Assume.assumeTrue(!SubprocessUtil.getVMCommandLine().contains("-Xcomp"));
     }
 
     @Test

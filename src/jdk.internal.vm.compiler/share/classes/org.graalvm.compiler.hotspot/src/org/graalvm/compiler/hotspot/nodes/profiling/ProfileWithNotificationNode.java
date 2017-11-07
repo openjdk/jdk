@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 @NodeInfo
-public class ProfileWithNotificationNode extends ProfileNode {
+public abstract class ProfileWithNotificationNode extends ProfileNode {
     public static final NodeClass<ProfileWithNotificationNode> TYPE = NodeClass.create(ProfileWithNotificationNode.class);
 
     protected int freqLog;

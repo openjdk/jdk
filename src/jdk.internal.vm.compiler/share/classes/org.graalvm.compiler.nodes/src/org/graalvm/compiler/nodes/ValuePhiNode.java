@@ -22,6 +22,8 @@
  */
 package org.graalvm.compiler.nodes;
 
+import java.util.Map;
+
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
@@ -35,7 +37,7 @@ import org.graalvm.util.CollectionsUtil;
 /**
  * Value {@link PhiNode}s merge data flow values at control flow merges.
  */
-@NodeInfo(nameTemplate = "Phi({i#values})")
+@NodeInfo(nameTemplate = "Phi({i#values}, {p#valueDescription})")
 public class ValuePhiNode extends PhiNode implements ArrayLengthProvider {
 
     public static final NodeClass<ValuePhiNode> TYPE = NodeClass.create(ValuePhiNode.class);
@@ -112,5 +114,17 @@ public class ValuePhiNode extends PhiNode implements ArrayLengthProvider {
             }
         }
         return super.verify();
+    }
+
+    @Override
+    protected String valueDescription() {
+        return stamp().unrestricted().toString();
+    }
+
+    @Override
+    public Map<Object, Object> getDebugProperties(Map<Object, Object> map) {
+        Map<Object, Object> properties = super.getDebugProperties(map);
+        properties.put("valueDescription", valueDescription());
+        return properties;
     }
 }

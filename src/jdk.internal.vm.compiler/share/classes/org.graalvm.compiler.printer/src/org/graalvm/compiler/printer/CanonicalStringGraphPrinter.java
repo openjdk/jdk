@@ -26,7 +26,6 @@ import static org.graalvm.compiler.debug.DebugOptions.CanonicalGraphStringsCheck
 import static org.graalvm.compiler.debug.DebugOptions.CanonicalGraphStringsExcludeVirtuals;
 import static org.graalvm.compiler.debug.DebugOptions.CanonicalGraphStringsRemoveIdentities;
 import static org.graalvm.compiler.debug.DebugOptions.PrintCanonicalGraphStringFlavor;
-import static org.graalvm.compiler.printer.GraalDebugHandlersFactory.sanitizedFileName;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -44,6 +43,7 @@ import java.util.regex.Pattern;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.Fields;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.PathUtilities;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
@@ -260,11 +260,11 @@ public class CanonicalStringGraphPrinter implements GraphPrinter {
     private StructuredGraph currentGraph;
     private Path currentDirectory;
 
-    private Path getDirectory(StructuredGraph graph) throws IOException {
+    private Path getDirectory(DebugContext debug, StructuredGraph graph) {
         if (graph == currentGraph) {
             return currentDirectory;
         }
-        currentDirectory = GraalDebugHandlersFactory.createDumpPath(graph.getOptions(), graph, "graph-strings", true);
+        currentDirectory = debug.getDumpPath(".graph-strings", true);
         currentGraph = graph;
         return currentDirectory;
     }
@@ -274,9 +274,9 @@ public class CanonicalStringGraphPrinter implements GraphPrinter {
         if (graph instanceof StructuredGraph) {
             OptionValues options = graph.getOptions();
             StructuredGraph structuredGraph = (StructuredGraph) graph;
-            Path outDirectory = getDirectory(structuredGraph);
+            Path outDirectory = getDirectory(debug, structuredGraph);
             String title = String.format("%03d-%s.txt", id, String.format(format, simplifyClassArgs(args)));
-            Path filePath = outDirectory.resolve(sanitizedFileName(title));
+            Path filePath = outDirectory.resolve(PathUtilities.sanitizeFileName(title));
             try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(filePath.toFile())))) {
                 switch (PrintCanonicalGraphStringFlavor.getValue(options)) {
                     case 1:

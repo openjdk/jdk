@@ -34,14 +34,6 @@ public final class CompressEncoding {
         this.shift = shift;
     }
 
-    public int compress(long ptr) {
-        if (ptr == 0L) {
-            return 0;
-        } else {
-            return (int) ((ptr - base) >>> shift);
-        }
-    }
-
     public boolean hasBase() {
         return base != 0;
     }
@@ -56,14 +48,6 @@ public final class CompressEncoding {
 
     public int getShift() {
         return shift;
-    }
-
-    public long uncompress(int ptr) {
-        if (ptr == 0) {
-            return 0L;
-        } else {
-            return ((ptr & 0xFFFFFFFFL) << shift) + base;
-        }
     }
 
     @Override
@@ -85,8 +69,7 @@ public final class CompressEncoding {
         if (obj instanceof CompressEncoding) {
             CompressEncoding other = (CompressEncoding) obj;
             return base == other.base && shift == other.shift;
-        } else {
-            return false;
         }
+        return false;
     }
 }

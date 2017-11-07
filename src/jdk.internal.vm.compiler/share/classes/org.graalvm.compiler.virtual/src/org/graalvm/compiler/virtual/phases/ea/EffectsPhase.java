@@ -99,8 +99,8 @@ public abstract class EffectsPhase<PhaseContextT extends PhaseContext> extends B
                             closure.applyEffects();
                         }
 
-                        if (debug.isDumpEnabled(DebugContext.INFO_LEVEL)) {
-                            debug.dump(DebugContext.DETAILED_LEVEL, graph, "%s iteration", getName());
+                        if (debug.isDumpEnabled(DebugContext.VERBOSE_LEVEL)) {
+                            debug.dump(DebugContext.VERBOSE_LEVEL, graph, "%s iteration", getName());
                         }
 
                         new DeadCodeEliminationPhase(Required).apply(graph);

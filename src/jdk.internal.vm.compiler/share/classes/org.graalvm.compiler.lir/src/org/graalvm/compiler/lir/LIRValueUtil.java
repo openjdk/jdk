@@ -69,6 +69,16 @@ public final class LIRValueUtil {
         return asConstantValue(value).getJavaConstant();
     }
 
+    public static boolean isIntConstant(Value value, long expected) {
+        if (isJavaConstant(value)) {
+            JavaConstant javaConstant = asJavaConstant(value);
+            if (javaConstant != null && javaConstant.getJavaKind().isNumericInteger()) {
+                return javaConstant.asLong() == expected;
+            }
+        }
+        return false;
+    }
+
     public static boolean isStackSlotValue(Value value) {
         assert value != null;
         return value instanceof StackSlot || value instanceof VirtualStackSlot;
