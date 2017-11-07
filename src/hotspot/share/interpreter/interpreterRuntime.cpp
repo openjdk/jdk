@@ -921,6 +921,14 @@ nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, addr
     int bci = method->bci_from(last_frame.bcp());
     nm = method->lookup_osr_nmethod_for(bci, CompLevel_none, false);
   }
+  if (nm != NULL && thread->is_interp_only_mode()) {
+    // Normally we never get an nm if is_interp_only_mode() is true, because
+    // policy()->event has a check for this and won't compile the method when
+    // true. However, it's possible for is_interp_only_mode() to become true
+    // during the compilation. We don't want to return the nm in that case
+    // because we want to continue to execute interpreted.
+    nm = NULL;
+  }
 #ifndef PRODUCT
   if (TraceOnStackReplacement) {
     if (nm != NULL) {
