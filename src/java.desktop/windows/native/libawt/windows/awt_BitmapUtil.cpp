@@ -246,17 +246,28 @@ HRGN BitmapUtil::BitmapToRgn(HBITMAP hBitmap)
     UINT height = abs(bi.bmiHeader.biHeight);
 
     BYTE * buf = (BYTE*)safe_Malloc(bi.bmiHeader.biSizeImage);
+    if (!buf) {
+        ::DeleteDC(hdc);
+        return NULL;
+    }
     bi.bmiHeader.biHeight = -(INT)height;
     ::GetDIBits(hdc, hBitmap, 0, height, buf,
             reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS);
 
     /* reserving memory for the worst case */
     if (!IS_SAFE_SIZE_MUL(width / 2 + 1, height)) {
-        throw std::bad_alloc();
+        ::DeleteDC(hdc);
+        free(buf);
+        return NULL;
     }
     RGNDATA * pRgnData = (RGNDATA *) SAFE_SIZE_STRUCT_ALLOC(safe_Malloc,
             sizeof(RGNDATAHEADER),
             sizeof(RECT), (width / 2 + 1) * height);
+    if (!pRgnData) {
+        ::DeleteDC(hdc);
+        free(buf);
+        return NULL;
+    }
     RGNDATAHEADER * pRgnHdr = (RGNDATAHEADER *) pRgnData;
     pRgnHdr->dwSize = sizeof(RGNDATAHEADER);
     pRgnHdr->iType = RDH_RECTANGLES;
@@ -309,6 +320,10 @@ HBITMAP BitmapUtil::BlendCopy(HBITMAP hSrcBitmap, COLORREF blendColor,
     UINT height = abs(bi.bmiHeader.biHeight);
 
     BYTE * buf = (BYTE*)safe_Malloc(bi.bmiHeader.biSizeImage);
+    if (!buf) {
+        ::DeleteDC(hdc);
+        return NULL;
+    }
     bi.bmiHeader.biHeight = -(INT)height;
     ::GetDIBits(hdc, hSrcBitmap, 0, height, buf,
             reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS);
