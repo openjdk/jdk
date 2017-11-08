@@ -1034,11 +1034,8 @@ public class Proxy implements java.io.Serializable {
 
                 // do permission check if the caller is in a different runtime package
                 // of the proxy class
-                int n = proxyClass.getName().lastIndexOf('.');
-                String pkg = (n == -1) ? "" : proxyClass.getName().substring(0, n);
-
-                n = caller.getName().lastIndexOf('.');
-                String callerPkg = (n == -1) ? "" : caller.getName().substring(0, n);
+                String pkg = proxyClass.getPackageName();
+                String callerPkg = caller.getPackageName();
 
                 if (pcl != ccl || !pkg.equals(callerPkg)) {
                     sm.checkPermission(new ReflectPermission("newProxyInPackage." + pkg));
