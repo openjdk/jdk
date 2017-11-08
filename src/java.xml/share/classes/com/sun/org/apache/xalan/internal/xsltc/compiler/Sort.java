@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -419,7 +419,7 @@ final class Sort extends Instruction implements Closure {
         final List<VariableRefBase> dups = new ArrayList<>();
 
         for (int j = 0; j < nsorts; j++) {
-            final Sort sort = (Sort) sortObjects.get(j);
+            final Sort sort = sortObjects.get(j);
             final int length = (sort._closureVars == null) ? 0 :
                 sort._closureVars.size();
 
@@ -553,7 +553,7 @@ final class Sort extends Instruction implements Closure {
         // Initialize closure in record class
         final int ndups = dups.size();
         for (int i = 0; i < ndups; i++) {
-            final VariableRefBase varRef = (VariableRefBase) dups.get(i);
+            final VariableRefBase varRef = dups.get(i);
             final VariableBase var = varRef.getVariable();
             final Type varType = var.getType();
 
@@ -617,7 +617,7 @@ final class Sort extends Instruction implements Closure {
             final int length = (sort._closureVars == null) ? 0 :
                 sort._closureVars.size();
             for (int i = 0; i < length; i++) {
-                final VariableRefBase varRef = (VariableRefBase) sort._closureVars.get(i);
+                final VariableRefBase varRef = sort._closureVars.get(i);
 
                 // Discard duplicate variable references
                 if (dups.contains(varRef)) continue;

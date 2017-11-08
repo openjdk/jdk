@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1518,7 +1518,7 @@ public class TransformerFactoryImpl
         if ( count > 0) {
             final byte[][] result = new byte[count][1];
             for (int i = 0; i < count; i++) {
-                result[i] = (byte[])bytecodes.get(i);
+                result[i] = bytecodes.get(i);
             }
 
             return result;
@@ -1612,7 +1612,7 @@ public class TransformerFactoryImpl
         if (count > 0) {
             final byte[][] result = new byte[count][1];
             for (int i = 0; i < count; i++) {
-                result[i] = (byte[])bytecodes.get(i);
+                result[i] = bytecodes.get(i);
             }
 
             return result;

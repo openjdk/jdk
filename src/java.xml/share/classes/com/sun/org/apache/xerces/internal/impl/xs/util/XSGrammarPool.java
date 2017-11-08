@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -64,7 +64,7 @@ public class XSGrammarPool extends XMLGrammarPoolImpl {
         if (size == 0) {
             return toXSModel(new SchemaGrammar[0], schemaVersion);
         }
-        SchemaGrammar[] gs = (SchemaGrammar[])list.toArray(new SchemaGrammar[size]);
+        SchemaGrammar[] gs = list.toArray(new SchemaGrammar[size]);
         return toXSModel(gs, schemaVersion);
     }
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1931,7 +1931,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
         if (DEBUG_EVENTS) {
             System.out.println ("==>internalEntityDecl: "+name);
             if (DEBUG_BASEURI) {
-                System.out.println ("   baseURI:"+ (String)fBaseURIStack.peek ());
+                System.out.println ("   baseURI:"+ fBaseURIStack.peek ());
             }
         }
         // internal subset string
@@ -1966,7 +1966,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
             EntityImpl entity = (EntityImpl)entities.getNamedItem (name);
             if (entity == null) {
                 entity = (EntityImpl)fDocumentImpl.createEntity (name);
-                entity.setBaseURI ((String)fBaseURIStack.peek ());
+                entity.setBaseURI (fBaseURIStack.peek ());
                 entities.setNamedItem (entity);
             }
         }
@@ -1988,7 +1988,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
             }
             if (!found) {
                 int entityIndex =
-                fDeferredDocumentImpl.createDeferredEntity (name, null, null, null, (String)fBaseURIStack.peek ());
+                fDeferredDocumentImpl.createDeferredEntity (name, null, null, null, fBaseURIStack.peek ());
                 fDeferredDocumentImpl.appendChild (fDocumentTypeIndex, entityIndex);
             }
         }

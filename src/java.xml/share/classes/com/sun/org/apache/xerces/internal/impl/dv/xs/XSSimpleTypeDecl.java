@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -235,7 +235,7 @@ public class XSSimpleTypeDecl implements XSSimpleType, TypeInfo {
     };
 
     protected static TypeValidator[] getGDVs() {
-        return (TypeValidator[])gDVs.clone();
+        return gDVs.clone();
     }
     private TypeValidator[] fDVs = gDVs;
     protected void setDVs(TypeValidator[] dvs) {
@@ -434,7 +434,7 @@ public class XSSimpleTypeDecl implements XSSimpleType, TypeInfo {
         fAnnotations = annotations;
 
         fVariety = VARIETY_LIST;
-        fItemType = (XSSimpleTypeDecl)itemType;
+        fItemType = itemType;
         fValidationDV = DV_LIST;
         fFacetsDefined = FACET_WHITESPACE;
         fFixedFacet = FACET_WHITESPACE;
@@ -544,7 +544,7 @@ public class XSSimpleTypeDecl implements XSSimpleType, TypeInfo {
         fAnnotations = annotations;
 
         fVariety = VARIETY_LIST;
-        fItemType = (XSSimpleTypeDecl)itemType;
+        fItemType = itemType;
         fValidationDV = DV_LIST;
         fFacetsDefined = FACET_WHITESPACE;
         fFixedFacet = FACET_WHITESPACE;
@@ -883,9 +883,9 @@ public class XSSimpleTypeDecl implements XSSimpleType, TypeInfo {
                 fEnumerationSize = 0;
                 for (int i = 0; i < size; i++) {
                     if (enumNSDecls != null)
-                        ctx.setNSContext((NamespaceContext)enumNSDecls.get(i));
+                        ctx.setNSContext(enumNSDecls.get(i));
                     try {
-                        ValidatedInfo info = getActualEnumValue((String)enumVals.get(i), ctx, null);
+                        ValidatedInfo info = getActualEnumValue(enumVals.get(i), ctx, null);
                         // check 4.3.5.c0 must: enumeration values from the value space of base
                         fEnumeration[fEnumerationSize++] = info;
                     } catch (InvalidDatatypeValueException ide) {
@@ -2604,7 +2604,7 @@ public class XSSimpleTypeDecl implements XSSimpleType, TypeInfo {
                 ((ancestorNS == null && type.getNamespace() == null) ||
                         (ancestorNS != null && ancestorNS.equals(type.getNamespace())))) &&   // compare with ancestor
                         type != fAnySimpleType) {  // reached anySimpleType
-            type = (XSTypeDefinition)type.getBaseType();
+            type = type.getBaseType();
         }
 
         return type != fAnySimpleType;

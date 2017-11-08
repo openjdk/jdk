@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -151,7 +151,7 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
             needToSetDocumentInfo = false;
         }
 
-        final Element tmp = (Element)_document.createElementNS(namespace, qName);
+        final Element tmp = _document.createElementNS(namespace, qName);
 
         // Add namespace declarations first
         if (_namespaceDecls != null) {

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -80,8 +80,8 @@ public final class  Base64 {
 
         for (int i = 52,  j = 0; i<=61; i++, j++)
             lookUpBase64Alphabet[i] = (char)('0' + j);
-        lookUpBase64Alphabet[62] = (char)'+';
-        lookUpBase64Alphabet[63] = (char)'/';
+        lookUpBase64Alphabet[62] = '+';
+        lookUpBase64Alphabet[63] = '/';
 
     }
 

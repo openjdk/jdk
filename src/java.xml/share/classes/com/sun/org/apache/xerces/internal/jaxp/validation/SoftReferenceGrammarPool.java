@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -191,7 +191,7 @@ final class SoftReferenceGrammarPool implements XMLGrammarPool {
             int hash = hashCode(desc);
             int index = (hash & 0x7FFFFFFF) % fGrammars.length;
             for (Entry entry = fGrammars[index]; entry != null; entry = entry.next) {
-                Grammar tempGrammar = (Grammar) entry.grammar.get();
+                Grammar tempGrammar = entry.grammar.get();
                 /** If the soft reference has been cleared, remove this entry from the pool. */
                 if (tempGrammar == null) {
                     removeEntry(entry);
@@ -241,7 +241,7 @@ final class SoftReferenceGrammarPool implements XMLGrammarPool {
             int hash = hashCode(desc);
             int index = (hash & 0x7FFFFFFF) % fGrammars.length;
             for (Entry entry = fGrammars[index]; entry != null ; entry = entry.next) {
-                Grammar tempGrammar = (Grammar) entry.grammar.get();
+                Grammar tempGrammar = entry.grammar.get();
                 /** If the soft reference has been cleared, remove this entry from the pool. */
                 if (tempGrammar == null) {
                     removeEntry(entry);
@@ -363,7 +363,7 @@ final class SoftReferenceGrammarPool implements XMLGrammarPool {
         }
         --fGrammarCount;
         entry.grammar.entry = null;
-        return (Grammar) entry.grammar.get();
+        return entry.grammar.get();
     }
 
     /**

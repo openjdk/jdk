@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -2581,7 +2581,7 @@ public class XSDHandler {
         List<SchemaGrammar> gs;
         for (int i = 0; i < currGrammars.size(); i++) {
             // get the grammar
-            sg1 = (SchemaGrammar)currGrammars.get(i);
+            sg1 = currGrammars.get(i);
             // we need to add grammars imported by sg1 too
             gs = sg1.getImportedGrammars();
             // for all grammars imported by sg2, but not in the vector
@@ -2591,7 +2591,7 @@ public class XSDHandler {
             }
 
             for (int j = gs.size() - 1; j >= 0; j--) {
-                sg2 = (SchemaGrammar)gs.get(j);
+                sg2 = gs.get(j);
                 if (!currGrammars.contains(sg2)) {
                     currGrammars.add(sg2);
                 }
@@ -2606,7 +2606,7 @@ public class XSDHandler {
         final XSDDescription desc = new XSDDescription();
 
         for (int i=0; i < length; i++) {
-            final SchemaGrammar sg1 = (SchemaGrammar)grammars.get(i);
+            final SchemaGrammar sg1 = grammars.get(i);
             desc.setNamespace(sg1.getTargetNamespace());
 
             final SchemaGrammar sg2 = findGrammar(desc, false);
@@ -2622,7 +2622,7 @@ public class XSDHandler {
         final int size = components.size();
         final XSDDescription desc = new XSDDescription();
         for (int i=0; i<size; i++) {
-            XSObject component = (XSObject) components.get(i);
+            XSObject component = components.get(i);
             if (!canAddComponent(component, desc)) {
                 return false;
             }
@@ -2763,7 +2763,7 @@ public class XSDHandler {
         final int size = importedSrc.size();
 
         for (int i=0; i<size; i++) {
-            final SchemaGrammar sg = (SchemaGrammar) importedSrc.get(i);
+            final SchemaGrammar sg =  importedSrc.get(i);
             if (!containedImportedGrammar(importedDst, sg)) {
                 importedDst.add(sg);
             }
@@ -3361,7 +3361,7 @@ public class XSDHandler {
         SchemaGrammar sg;
 
         for (int i=0; i<size; i++) {
-            sg = (SchemaGrammar) importedGrammar.get(i);
+            sg =  importedGrammar.get(i);
             if (null2EmptyString(sg.getTargetNamespace()).equals(null2EmptyString(grammar.getTargetNamespace()))) {
                 return true;
             }
@@ -3766,7 +3766,7 @@ public class XSDHandler {
         }
         else {
             Element collidingElem = (Element)objElem;
-            XSDocumentInfo collidingElemSchema = (XSDocumentInfo)registry_sub.get(qName);
+            XSDocumentInfo collidingElemSchema = registry_sub.get(qName);
             if (collidingElem == currComp) return;
             Element elemParent = null;
             XSDocumentInfo redefinedSchema = null;

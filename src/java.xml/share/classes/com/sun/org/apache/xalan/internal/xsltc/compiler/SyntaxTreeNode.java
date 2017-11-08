@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -856,7 +857,7 @@ public abstract class SyntaxTreeNode implements Constants {
      */
     protected final SyntaxTreeNode lastChild() {
         if (_contents.isEmpty()) return null;
-        return (SyntaxTreeNode)_contents.get(_contents.size() - 1);
+        return _contents.get(_contents.size() - 1);
     }
 
     /**
