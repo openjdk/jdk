@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @bug 4369826 8078582
+ * @bug 4369826 8078582 8190884
+ * @run main/othervm LotsOfOutput
  * @summary Process with lots of output should not crash VM
  * @author kladko
  */
