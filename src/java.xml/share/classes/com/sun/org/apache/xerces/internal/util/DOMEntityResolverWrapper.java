@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -142,7 +142,7 @@ public class DOMEntityResolverWrapper
                     xmlInputSource.setCharacterStream(charStream);
                 }
                 else if (byteStream != null) {
-                    xmlInputSource.setByteStream((InputStream) byteStream);
+                    xmlInputSource.setByteStream(byteStream);
                 }
                 else if (data != null && data.length() != 0) {
                     xmlInputSource.setCharacterStream(new StringReader(data));

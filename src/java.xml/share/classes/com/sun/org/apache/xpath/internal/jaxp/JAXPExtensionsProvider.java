@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -137,7 +137,7 @@ public class JAXPExtensionsProvider implements ExtensionsProvider {
                 if ( argument instanceof XNodeSet ) {
                     argList.add ( i, ((XNodeSet)argument).nodelist() );
                 } else if ( argument instanceof XObject ) {
-                    Object passedArgument = ((XObject)argument).object();
+                    Object passedArgument = argument.object();
                     argList.add ( i, passedArgument );
                 } else {
                     argList.add ( i, argument );
@@ -188,7 +188,7 @@ public class JAXPExtensionsProvider implements ExtensionsProvider {
                 if ( argument instanceof XNodeSet ) {
                     argList.add ( i, ((XNodeSet)argument).nodelist() );
                 } else if ( argument instanceof XObject ) {
-                    Object passedArgument = ((XObject)argument).object();
+                    Object passedArgument = argument.object();
                     argList.add ( i, passedArgument );
                 } else {
                     argList.add ( i, argument );

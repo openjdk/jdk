@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -284,7 +284,7 @@ public class SubstitutionGroupHandler {
         short dMethod, bMethod, dSubMethod, bSubMethod;
         for (int i = group.size()-1, j; i >= 0; i--) {
             // Check whether this element is blocked. If so, ignore it.
-            XSElementDecl sub = (XSElementDecl)group.get(i);
+            XSElementDecl sub = group.get(i);
             if (!getDBMethods(sub.fType, element.fType, methods))
                 continue;
             // Remember derivation methods and blocks from the types
@@ -307,7 +307,7 @@ public class SubstitutionGroupHandler {
         // Convert to an array
         OneSubGroup[] ret = new OneSubGroup[newGroup.size()];
         for (int i = newGroup.size()-1; i >= 0; i--) {
-            ret[i] = (OneSubGroup)newGroup.get(i);
+            ret[i] = newGroup.get(i);
         }
         // Store the potential sub group
         fSubGroupsB.put(element, ret);

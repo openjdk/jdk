@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -433,7 +433,7 @@ public class Parser implements Constants, ContentHandler {
             reader.setContentHandler(this);
             reader.parse(input);
             // Find the start of the stylesheet within the tree
-            return (SyntaxTreeNode)getStylesheet(_root);
+            return getStylesheet(_root);
         }
         catch (IOException e) {
             if (_xsltc.debug()) e.printStackTrace();
@@ -668,7 +668,7 @@ public class Parser implements Constants, ContentHandler {
         else
             source = new InputSource(location);
 
-        SyntaxTreeNode external = (SyntaxTreeNode)parse(source);
+        SyntaxTreeNode external = parse(source);
         return(external);
     }
 

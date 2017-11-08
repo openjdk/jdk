@@ -104,7 +104,7 @@ run PropertiesTest -c dump1 dump2 ${PROPS}
 WRITABLEJDK=.${FS}testjava
 cp -H -R $TESTJAVA $WRITABLEJDK || exit 1
 PROPLOCATION=${WRITABLEJDK}${FS}lib
-chmod -R a+rx $WRITABLEJDK || exit 1
+chmod -R u+w $WRITABLEJDK || exit 1
 cp ${PROPS} $PROPLOCATION || exit 1
 echo "Properties location: ${PROPLOCATION}"
 

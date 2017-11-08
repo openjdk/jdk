@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1607,7 +1607,7 @@ public class XSAttributeChecker {
             // for each of the values
             int count = values.size();
             for (int i = 1; i < count; i += 2) {
-                elName = (String)values.get(i);
+                elName = values.get(i);
                 try {
                     // and validate it using the XSSimpleType
                     // REVISIT: what would be the proper validation context?
@@ -1824,7 +1824,7 @@ class LargeContainer extends Container {
         values[pos++] = value;
     }
     OneAttr get(String key) {
-        OneAttr ret = (OneAttr)items.get(key);
+        OneAttr ret = items.get(key);
         return ret;
     }
 }

@@ -946,7 +946,7 @@ public abstract class lr_parser {
           if (debug)
             debug_message("# Pop stack by one, state was # " +
                           (stack.peek()).parse_state);
-          left_pos = ((Symbol)stack.pop()).left;
+          left_pos = stack.pop().left;
           tos--;
 
           /* if we have hit bottom, we fail */

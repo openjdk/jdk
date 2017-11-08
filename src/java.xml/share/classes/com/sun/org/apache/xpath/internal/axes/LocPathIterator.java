@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -294,7 +294,7 @@ public abstract class LocPathIterator extends PredicatedNodeTest
   public int asNode(XPathContext xctxt)
     throws javax.xml.transform.TransformerException
   {
-    DTMIterator iter = (DTMIterator)m_clones.getInstance();
+    DTMIterator iter = m_clones.getInstance();
 
     int current = xctxt.getCurrentNode();
 

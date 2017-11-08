@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -74,7 +74,7 @@ public class DTMNodeList extends DTMNodeListBase {
         if (dtmIterator != null) {
             int pos = dtmIterator.getCurrentPos();
             try {
-                m_iter=(DTMIterator)dtmIterator.cloneWithReset();
+                m_iter = dtmIterator.cloneWithReset();
             } catch(CloneNotSupportedException cnse) {
                 m_iter = dtmIterator;
             }

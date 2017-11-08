@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -446,7 +446,7 @@ public class OpMap
     // int index = (argLenOfStep == 3) ? m_opMap[opPosOfStep+5]
     //                                  : ((argLenOfStep == 1) ? -3 : -2);
     if (index >= 0)
-      return (String) m_tokenQueue.elementAt(index).toString();
+      return m_tokenQueue.elementAt(index).toString();
     else if (OpCodes.ELEMWILDCARD == index)
       return NodeTest.WILD;
     else

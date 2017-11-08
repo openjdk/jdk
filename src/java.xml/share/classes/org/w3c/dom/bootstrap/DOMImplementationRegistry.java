@@ -213,8 +213,7 @@ public final class DOMImplementationRegistry {
         int size = sources.size();
         String name = null;
         for (int i = 0; i < size; i++) {
-            DOMImplementationSource source =
-                (DOMImplementationSource) sources.get(i);
+            DOMImplementationSource source = sources.get(i);
             DOMImplementation impl = source.getDOMImplementation(features);
             if (impl != null) {
                 return impl;
@@ -238,8 +237,7 @@ public final class DOMImplementationRegistry {
         final List<DOMImplementation> implementations = new ArrayList<>();
         int size = sources.size();
         for (int i = 0; i < size; i++) {
-            DOMImplementationSource source =
-                (DOMImplementationSource) sources.get(i);
+            DOMImplementationSource source = sources.get(i);
             DOMImplementationList impls =
                 source.getDOMImplementationList(features);
             for (int j = 0; j < impls.getLength(); j++) {
@@ -251,8 +249,7 @@ public final class DOMImplementationRegistry {
                 public DOMImplementation item(final int index) {
                     if (index >= 0 && index < implementations.size()) {
                         try {
-                            return (DOMImplementation)
-                                implementations.get(index);
+                            return implementations.get(index);
                         } catch (IndexOutOfBoundsException e) {
                             return null;
                         }

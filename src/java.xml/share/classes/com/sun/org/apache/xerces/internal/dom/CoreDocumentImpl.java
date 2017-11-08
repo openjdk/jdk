@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1476,7 +1476,7 @@ public class CoreDocumentImpl
             num = --nodeCounter;
             nodeTable.put(node, num);
         } else {
-            Integer n = (Integer) nodeTable.get(node);
+            Integer n = nodeTable.get(node);
             if (n == null) {
                 num = --nodeCounter;
                 nodeTable.put(node, num);

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,8 +336,8 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
         if (namespaces != null) {
             final int nDecls = namespaces.size();
             for (int i = 0; i < nDecls; i++) {
-                final String prefix = (String) namespaces.get(i++);
-                String uri = (String) namespaces.get(i);
+                final String prefix = namespaces.get(i++);
+                String uri = namespaces.get(i);
                 Namespace ns = createNamespace(prefix, uri);
                 if (nsMap == null) {
                     nsMap = new HashMap<>();

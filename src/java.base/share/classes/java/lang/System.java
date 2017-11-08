@@ -1799,7 +1799,8 @@ public final class System {
      * is invoked rather than attempting to load a dynamic library.
      * A filename matching the argument does not have to exist in the
      * file system.
-     * See the JNI Specification for more details.
+     * See the <a href="{@docRoot}/../specs/jni/index.html"> JNI Specification</a>
+     * for more details.
      *
      * Otherwise, the filename argument is mapped to a native library image in
      * an implementation-dependent manner.
@@ -1835,7 +1836,8 @@ public final class System {
      * specific prefix, file extension or path. If a native library
      * called <code>libname</code> is statically linked with the VM, then the
      * JNI_OnLoad_<code>libname</code> function exported by the library is invoked.
-     * See the JNI Specification for more details.
+     * See the <a href="{@docRoot}/../specs/jni/index.html"> JNI Specification</a>
+     * for more details.
      *
      * Otherwise, the libname argument is loaded from a system library
      * location and mapped to a native library image in an implementation-

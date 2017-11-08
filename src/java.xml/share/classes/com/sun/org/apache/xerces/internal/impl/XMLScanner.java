@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -389,7 +389,7 @@ public abstract class XMLScanner
 
         fEntityManager = (XMLEntityManager)propertyManager.getProperty(ENTITY_MANAGER);
         fEntityStore = fEntityManager.getEntityStore() ;
-        fEntityScanner = (XMLEntityScanner)fEntityManager.getEntityScanner() ;
+        fEntityScanner = fEntityManager.getEntityScanner() ;
         fSecurityManager = (XMLSecurityManager)propertyManager.getProperty(SECURITY_MANAGER);
 
         //fEntityManager.reset();

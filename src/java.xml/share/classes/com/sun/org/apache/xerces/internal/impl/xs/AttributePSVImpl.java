@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -81,8 +82,7 @@ public class AttributePSVImpl implements AttributePSVI {
         fValidity = attrPSVI.getValidity();
         if (attrPSVI instanceof AttributePSVImpl) {
             final AttributePSVImpl attrPSVIImpl = (AttributePSVImpl) attrPSVI;
-            fErrors = (attrPSVIImpl.fErrors != null) ?
-                    (String[]) attrPSVIImpl.fErrors.clone() : null;
+            fErrors = (attrPSVIImpl.fErrors != null) ? attrPSVIImpl.fErrors.clone() : null;
         }
         else {
             final StringList errorCodes = attrPSVI.getErrorCodes();

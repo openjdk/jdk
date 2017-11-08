@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -335,7 +335,7 @@ public class DTMNodeProxy
   @Override
   public final short getNodeType()
   {
-    return (short) dtm.getNodeType(node);
+    return dtm.getNodeType(node);
   }
 
   /**

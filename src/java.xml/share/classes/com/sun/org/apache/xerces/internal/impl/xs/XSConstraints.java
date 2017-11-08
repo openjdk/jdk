@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -165,8 +165,7 @@ public class XSConstraints {
             else
                 return false;
         }
-        return checkSimpleDerivation((XSSimpleType)derived,
-                (XSSimpleType)base, block);
+        return checkSimpleDerivation(derived, (XSSimpleType)base, block);
     }
 
     /**
@@ -177,7 +176,7 @@ public class XSConstraints {
         // if derived is anyType, then it's valid only if base is anyType too
         if (derived == SchemaGrammar.fAnyType)
             return derived == base;
-        return checkComplexDerivation((XSComplexTypeDecl)derived, base, block);
+        return checkComplexDerivation(derived, base, block);
     }
 
     /**
@@ -1237,7 +1236,7 @@ public class XSConstraints {
         int count = children.size();
         try {
             for (int i = 0; i < count; i++) {
-                XSParticleDecl particle1 = (XSParticleDecl)children.get(i);
+                XSParticleDecl particle1 = children.get(i);
                 particleValidRestriction(particle1, dSGHandler, wildcard, null, false);
 
             }
@@ -1271,9 +1270,9 @@ public class XSConstraints {
         int current = 0;
         label: for (int i = 0; i<count1; i++) {
 
-            XSParticleDecl particle1 = (XSParticleDecl)dChildren.get(i);
+            XSParticleDecl particle1 = dChildren.get(i);
             for (int j = current; j<count2; j++) {
-                XSParticleDecl particle2 = (XSParticleDecl)bChildren.get(j);
+                XSParticleDecl particle2 = bChildren.get(j);
                 current +=1;
                 try {
                     particleValidRestriction(particle1, dSGHandler, particle2, bSGHandler);
@@ -1289,7 +1288,7 @@ public class XSConstraints {
 
         // Now, see if there are some elements in the base we didn't match up
         for (int j=current; j < count2; j++) {
-            XSParticleDecl particle2 = (XSParticleDecl)bChildren.get(j);
+            XSParticleDecl particle2 = bChildren.get(j);
             if (!particle2.emptiable()) {
                 throw new XMLSchemaException("rcase-Recurse.2", null);
             }
@@ -1319,10 +1318,10 @@ public class XSConstraints {
         boolean foundIt[] = new boolean[count2];
 
         label: for (int i = 0; i<count1; i++) {
-            XSParticleDecl particle1 = (XSParticleDecl)dChildren.get(i);
+            XSParticleDecl particle1 = dChildren.get(i);
 
             for (int j = 0; j<count2; j++) {
-                XSParticleDecl particle2 = (XSParticleDecl)bChildren.get(j);
+                XSParticleDecl particle2 = bChildren.get(j);
                 try {
                     particleValidRestriction(particle1, dSGHandler, particle2, bSGHandler);
                     if (foundIt[j])
@@ -1341,7 +1340,7 @@ public class XSConstraints {
 
         // Now, see if there are some elements in the base we didn't match up
         for (int j=0; j < count2; j++) {
-            XSParticleDecl particle2 = (XSParticleDecl)bChildren.get(j);
+            XSParticleDecl particle2 = bChildren.get(j);
             if (!foundIt[j] && !particle2.emptiable()) {
                 throw new XMLSchemaException("rcase-RecurseUnordered.2", null);
             }
@@ -1370,9 +1369,9 @@ public class XSConstraints {
         int current = 0;
         label: for (int i = 0; i<count1; i++) {
 
-            XSParticleDecl particle1 = (XSParticleDecl)dChildren.get(i);
+            XSParticleDecl particle1 = dChildren.get(i);
             for (int j = current; j<count2; j++) {
-                XSParticleDecl particle2 = (XSParticleDecl)bChildren.get(j);
+                XSParticleDecl particle2 = bChildren.get(j);
                 current +=1;
                 try {
                     // IHR: go back one element on b list because the next element may match
@@ -1425,9 +1424,9 @@ public class XSConstraints {
 
         label: for (int i = 0; i<count1; i++) {
 
-            XSParticleDecl particle1 = (XSParticleDecl)dChildren.get(i);
+            XSParticleDecl particle1 = dChildren.get(i);
             for (int j = 0; j<count2; j++) {
-                XSParticleDecl particle2 = (XSParticleDecl)bChildren.get(j);
+                XSParticleDecl particle2 = bChildren.get(j);
                 try {
                     particleValidRestriction(particle1, dSGHandler, particle2, bSGHandler);
                     continue label;

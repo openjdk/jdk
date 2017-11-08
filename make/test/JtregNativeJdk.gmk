@@ -44,6 +44,7 @@ $(eval $(call IncludeCustomExtension, test/JtregNativeJdk.gmk))
 # Add more directories here when needed.
 BUILD_JDK_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/jdk/native_sanity \
+    $(TOPDIR)/test/jdk/java/lang/ClassLoader/nativeLibrary \
     $(TOPDIR)/test/jdk/java/lang/String/nativeEncoding \
     #
 
