@@ -529,7 +529,7 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
 	$(call MakeDir, $(@D))
 	$(RM) '$(call DecodeSpace, $@)'
 	$(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
-	if [ -n "`$(XATTR) -l '$(call DecodeSpace, $@)'`" ]; then $(XATTR) -c '$(call DecodeSpace, $@)'; fi
+	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then $(XATTR) -cs '$(call DecodeSpace, $@)'; fi
   endef
 else
   define install-file
