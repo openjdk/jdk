@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -443,7 +443,7 @@ class FunctionCall extends Expression {
 
         if (ptype != null) {
             for (int i = 0; i < n; i++) {
-                final Type argType = (Type) ptype.argsType().get(i);
+                final Type argType = ptype.argsType().get(i);
                 final Expression exp = _arguments.get(i);
                 if (!argType.identicalTo(exp.getType())) {
                     try {
@@ -557,7 +557,7 @@ class FunctionCall extends Expression {
                     hasThisArgument = true;
 
                 Expression firstArg = _arguments.get(0);
-                Type firstArgType = (Type)firstArg.typeCheck(stable);
+                Type firstArgType = firstArg.typeCheck(stable);
 
                 if (_namespace_format == NAMESPACE_FORMAT_CLASS
                     && firstArgType instanceof ObjectType
@@ -608,7 +608,7 @@ class FunctionCall extends Expression {
         _type = null;                       // reset internal type
         for (int j, i = 0; i < nMethods; i++) {
             // Check if all paramteters to this method can be converted
-            final Method method = (Method)methods.get(i);
+            final Method method = methods.get(i);
             final Class<?>[] paramTypes = method.getParameterTypes();
 
             int currMethodDistance = 0;

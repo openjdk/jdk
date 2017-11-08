@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -864,7 +864,7 @@ public class MethodGenerator extends MethodGen
             // iteration after it reaches the end of the InstructionList, with
             // currentHandle set to null.
             currentHandle = instructions.hasNext()
-                                    ? (InstructionHandle) instructions.next()
+                                    ? instructions.next()
                                     : null;
             Instruction inst =
                     (currentHandle != null) ? currentHandle.getInstruction()
@@ -904,14 +904,13 @@ public class MethodGenerator extends MethodGen
                 // are better candidates for outlining than the current chunk.
                 if (!openChunkAtCurrLevel) {
                     nestedSubChunks = currLevelChunks;
-                    currLevelChunks = (List<InstructionHandle>)subChunkStack.pop();
+                    currLevelChunks = subChunkStack.pop();
                 }
 
                 // Get the handle for the start of this chunk (the last entry
                 // in currLevelChunks)
                 InstructionHandle chunkStart =
-                        (InstructionHandle) currLevelChunks.get(
-                                                      currLevelChunks.size()-1);
+                        currLevelChunks.get(currLevelChunks.size()-1);
 
                 int chunkEndPosition =
                         (currentHandle != null) ? currentHandle.getPosition()
@@ -940,12 +939,8 @@ public class MethodGenerator extends MethodGen
 
                             // Gather all the child chunks of the current chunk
                             for (int i = 0; i < childChunkCount; i++) {
-                                InstructionHandle start =
-                                    (InstructionHandle) nestedSubChunks
-                                                            .get(i*2);
-                                InstructionHandle end =
-                                    (InstructionHandle) nestedSubChunks
-                                                            .get(i*2+1);
+                                InstructionHandle start = nestedSubChunks.get(i*2);
+                                InstructionHandle end = nestedSubChunks.get(i*2+1);
 
                                 childChunks[i] = new Chunk(start, end);
                             }
@@ -1168,7 +1163,7 @@ public class MethodGenerator extends MethodGen
             for (int i = candidateChunks.size()-1;
                  i >= 0 && currentMethodSize > TARGET_METHOD_SIZE;
                  i--) {
-                Chunk chunkToOutline = (Chunk)candidateChunks.get(i);
+                Chunk chunkToOutline = candidateChunks.get(i);
 
                 methodsOutlined.add(outline(chunkToOutline.getChunkStart(),
                                             chunkToOutline.getChunkEnd(),

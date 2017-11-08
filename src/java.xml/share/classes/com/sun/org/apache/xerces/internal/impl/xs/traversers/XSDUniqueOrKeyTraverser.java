@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -61,7 +61,7 @@ class XSDUniqueOrKeyTraverser extends XSDAbstractIDConstraintTraverser {
             return;
         }
 
-        UniqueOrKey uniqueOrKey = null;
+        UniqueOrKey uniqueOrKey;
         if(DOMUtil.getLocalName(uElem).equals(SchemaSymbols.ELT_UNIQUE)) {
             uniqueOrKey = new UniqueOrKey(schemaDoc.fTargetNamespace, uName, element.fName, IdentityConstraint.IC_UNIQUE);
         } else {
@@ -89,7 +89,7 @@ class XSDUniqueOrKeyTraverser extends XSDAbstractIDConstraintTraverser {
             if (fSchemaHandler.fTolerateDuplicates) {
                 if (idc != null) {
                     if (idc instanceof UniqueOrKey) {
-                        uniqueOrKey = (UniqueOrKey) uniqueOrKey;
+                        uniqueOrKey = (UniqueOrKey)idc;
                     }
                 }
                 fSchemaHandler.addIDConstraintDecl(uniqueOrKey);

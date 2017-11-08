@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -350,7 +350,7 @@ public class NodeSet
 
     runTo(index);
 
-    return (Node) this.elementAt(index);
+    return this.elementAt(index);
   }
 
   /**
@@ -582,7 +582,7 @@ public class NodeSet
 
     for (i = end; i >= start; i--)
     {
-      Node child = (Node) elementAt(i);
+      Node child = elementAt(i);
 
       if (child == node)
       {
@@ -648,7 +648,7 @@ public class NodeSet
 
       for (i = size - 1; i >= 0; i--)
       {
-        Node child = (Node) elementAt(i);
+        Node child = elementAt(i);
 
         if (child == node)
         {

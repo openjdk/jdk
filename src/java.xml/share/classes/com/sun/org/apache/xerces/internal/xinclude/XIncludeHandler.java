@@ -1,8 +1,6 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
- * @modifiedBy: Oracle Inc.
- * @modifiedOn: Nov 2015, Sept 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -621,7 +619,7 @@ public class XIncludeHandler
      */
     @Override
     public String[] getRecognizedFeatures() {
-        return (String[])(RECOGNIZED_FEATURES.clone());
+        return RECOGNIZED_FEATURES.clone();
     } // getRecognizedFeatures():String[]
 
     /**
@@ -658,7 +656,7 @@ public class XIncludeHandler
      */
     @Override
     public String[] getRecognizedProperties() {
-        return (String[])(RECOGNIZED_PROPERTIES.clone());
+        return RECOGNIZED_PROPERTIES.clone();
     } // getRecognizedProperties():String[]
 
     /**
@@ -1772,7 +1770,7 @@ public class XIncludeHandler
 
                 // Parse the XPointer expression
                 try {
-                    ((XPointerProcessor)fXPtrProcessor).parseXPointer(xpointer);
+                    fXPtrProcessor.parseXPointer(xpointer);
 
                 } catch (XNIException ex) {
                     // report the XPointer error as a resource error
@@ -1803,7 +1801,7 @@ public class XIncludeHandler
                 // If the xpointer attribute is present
                 if (xpointer != null ) {
                         // and it was not resolved
-                        if (!((XPointerProcessor)fXPtrProcessor).isXPointerResolved()) {
+                        if (!fXPtrProcessor.isXPointerResolved()) {
                         Locale locale = (fErrorReporter != null) ? fErrorReporter.getLocale() : null;
                         String reason = fXIncludeMessageFormatter.formatMessage(locale, "XPointerResolutionUnsuccessful", null);
                         reportResourceError("XMLResourceError", new Object[] {href, reason});
@@ -2841,9 +2839,9 @@ public class XIncludeHandler
         fLiteralSystemID.pop();
         fExpandedSystemID.pop();
         fBaseURIScope.pop();
-        fCurrentBaseURI.setBaseSystemId((String)fBaseURI.peek());
-        fCurrentBaseURI.setLiteralSystemId((String)fLiteralSystemID.peek());
-        fCurrentBaseURI.setExpandedSystemId((String)fExpandedSystemID.peek());
+        fCurrentBaseURI.setBaseSystemId(fBaseURI.peek());
+        fCurrentBaseURI.setLiteralSystemId(fLiteralSystemID.peek());
+        fCurrentBaseURI.setExpandedSystemId(fExpandedSystemID.peek());
     }
 
     // The following methods are used for language processing
@@ -2864,7 +2862,7 @@ public class XIncludeHandler
     public String restoreLanguage() {
         fLanguageStack.pop();
         fLanguageScope.pop();
-        return (String) fLanguageStack.peek();
+        return fLanguageStack.peek();
     }
 
     /**

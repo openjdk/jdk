@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -60,7 +60,7 @@ final class UnionPathExpr extends Expression {
         final List<Expression> components = new ArrayList<>();
         flatten(components);
         final int size = components.size();
-        _components = (Expression[])components.toArray(new Expression[size]);
+        _components = components.toArray(new Expression[size]);
         for (int i = 0; i < size; i++) {
             _components[i].setParser(parser);
             _components[i].setParent(this);

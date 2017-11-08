@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -53,7 +53,7 @@ final class FunctionAvailableCall extends FunctionCall {
      */
     public FunctionAvailableCall(QName fname, List<Expression> arguments) {
         super(fname, arguments);
-        _arg = (Expression)arguments.get(0);
+        _arg = arguments.get(0);
         _type = null;
 
         if (_arg instanceof LiteralExpr) {

@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -69,7 +69,7 @@ public class BaseDVFactory extends SchemaDVFactory {
      * @return      a hashtable which contains all built-in simple types
      */
     public SymbolHash getBuiltInTypes() {
-        return (SymbolHash)fBaseTypes.makeClone();
+        return fBaseTypes.makeClone();
     }
 
     /**

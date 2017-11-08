@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -333,7 +333,7 @@ implements XMLDTDScanner, XMLComponent, XMLEntityHandler {
         //xxx:stax getText() is supposed to return only DTD internal subset
         //shouldn't we record position here before we go ahead ??
 
-        fEntityScanner = (XMLEntityScanner)fEntityManager.getEntityScanner();
+        fEntityScanner = fEntityManager.getEntityScanner();
         fEntityManager.setEntityHandler(this);
         fStandalone = standalone;
         //System.out.println("state"+fScannerState);
@@ -443,7 +443,7 @@ implements XMLDTDScanner, XMLComponent, XMLEntityHandler {
      * are recognized by this component.
      */
     public String[] getRecognizedFeatures() {
-        return (String[])(RECOGNIZED_FEATURES.clone());
+        return RECOGNIZED_FEATURES.clone();
     } // getRecognizedFeatures():String[]
 
     /**
@@ -452,7 +452,7 @@ implements XMLDTDScanner, XMLComponent, XMLEntityHandler {
      * are recognized by this component.
      */
     public String[] getRecognizedProperties() {
-        return (String[])(RECOGNIZED_PROPERTIES.clone());
+        return RECOGNIZED_PROPERTIES.clone();
     } // getRecognizedProperties():String[]
 
     /**

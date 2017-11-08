@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -63,8 +63,8 @@ public class VariableStack implements Cloneable
     VariableStack vs = (VariableStack) super.clone();
 
     // I *think* I can get away with a shallow clone here?
-    vs._stackFrames = (XObject[]) _stackFrames.clone();
-    vs._links = (int[]) _links.clone();
+    vs._stackFrames = _stackFrames.clone();
+    vs._links = _links.clone();
 
     return vs;
   }
