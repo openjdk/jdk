@@ -107,15 +107,11 @@ hotspot_tier1_compiler_3 = \
   -compiler/loopopts/Test7052494.java \
   -compiler/runtime/Test6826736.java
 
-hotspot_tier1_compiler_closed = \
-  sanity/ExecuteInternalVMTests.java
-
 hotspot_not_fast_compiler = \
   :hotspot_compiler \
   -:hotspot_tier1_compiler_1 \
   -:hotspot_tier1_compiler_2 \
   -:hotspot_tier1_compiler_3 \
-  -:hotspot_tier1_compiler_closed
 
 hotspot_tier1_gc_1 = \
   gc/g1/
@@ -129,9 +125,6 @@ hotspot_tier1_gc_2 = \
   -gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java \
   -gc/cms/TestMBeanCMS.java \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java
-
-hotspot_tier1_gc_closed = \
-  sanity/ExecuteInternalVMTests.java
 
 hotspot_tier1_gc_gcold = \
   gc/stress/gcold/TestGCOldWithG1.java
@@ -204,10 +197,8 @@ hotspot_tier1 = \
   :hotspot_tier1_compiler_1 \
   :hotspot_tier1_compiler_2 \
   :hotspot_tier1_compiler_3 \
-  :hotspot_tier1_compiler_closed \
   :hotspot_tier1_gc_1 \
   :hotspot_tier1_gc_2 \
-  :hotspot_tier1_gc_closed \
   :hotspot_tier1_gc_gcold \
   :hotspot_tier1_runtime \
   :hotspot_tier1_serviceability
