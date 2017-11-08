@@ -495,8 +495,8 @@ public interface ObjectInputFilter {
                         // Wildcard cases
                         if (p.endsWith(".*")) {
                             // Pattern is a package name with a wildcard
-                            final String pkg = p.substring(poffset, nameLen - 1);
-                            if (pkg.length() < 2) {
+                            final String pkg = p.substring(poffset, nameLen - 2);
+                            if (pkg.isEmpty()) {
                                 throw new IllegalArgumentException("package missing in: \"" + pattern + "\"");
                             }
                             if (negate) {
@@ -651,13 +651,12 @@ public interface ObjectInputFilter {
              * Returns {@code true} if the class is in the package.
              *
              * @param c   a class
-             * @param pkg a package name (including the trailing ".")
+             * @param pkg a package name
              * @return {@code true} if the class is in the package,
              * otherwise {@code false}
              */
             private static boolean matchesPackage(Class<?> c, String pkg) {
-                String n = c.getName();
-                return n.startsWith(pkg) && n.lastIndexOf('.') == pkg.length() - 1;
+                return pkg.equals(c.getPackageName());
             }
 
             /**

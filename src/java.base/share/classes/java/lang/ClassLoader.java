@@ -675,12 +675,11 @@ public abstract class ClassLoader {
                 return;
             }
 
-            final String name = cls.getName();
-            final int i = name.lastIndexOf('.');
-            if (i != -1) {
+            final String packageName = cls.getPackageName();
+            if (!packageName.isEmpty()) {
                 AccessController.doPrivileged(new PrivilegedAction<>() {
                     public Void run() {
-                        sm.checkPackageAccess(name.substring(0, i));
+                        sm.checkPackageAccess(packageName);
                         return null;
                     }
                 }, new AccessControlContext(new ProtectionDomain[] {pd}));
