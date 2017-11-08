@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
-import jdk.nashorn.internal.runtime.PropertyListeners;
+import jdk.nashorn.internal.runtime.PropertySwitchPoints;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -244,7 +244,7 @@ public final class NativeDebug extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static int getListenerCount(final Object self, final Object obj) {
-        return (obj instanceof ScriptObject) ? PropertyListeners.getListenerCount((ScriptObject) obj) : 0;
+        return (obj instanceof ScriptObject) ? PropertySwitchPoints.getSwitchPointCount((ScriptObject) obj) : 0;
     }
 
     /**
@@ -260,8 +260,8 @@ public final class NativeDebug extends ScriptObject {
 
         out.println("ScriptObject count " + ScriptObject.getCount());
         out.println("Scope count " + Scope.getScopeCount());
-        out.println("ScriptObject listeners added " + PropertyListeners.getListenersAdded());
-        out.println("ScriptObject listeners removed " + PropertyListeners.getListenersRemoved());
+        out.println("Property SwitchPoints added " + PropertySwitchPoints.getSwitchPointsAdded());
+        out.println("Property SwitchPoints invalidated " + PropertySwitchPoints.getSwitchPointsInvalidated());
         out.println("ScriptFunction constructor calls " + ScriptFunction.getConstructorCount());
         out.println("ScriptFunction invokes " + ScriptFunction.getInvokes());
         out.println("ScriptFunction allocations " + ScriptFunction.getAllocations());
