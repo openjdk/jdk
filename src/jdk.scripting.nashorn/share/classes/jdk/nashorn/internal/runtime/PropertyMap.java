@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,9 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.LongAdder;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -95,17 +95,14 @@ public class PropertyMap implements Iterable<Object>, Serializable {
      * property map should only be used if it the same as the actual prototype map. */
     private transient SharedPropertyMap sharedProtoMap;
 
-    /** {@link SwitchPoint}s for gets on inherited properties. */
-    private transient HashMap<Object, SwitchPoint> protoSwitches;
-
     /** History of maps, used to limit map duplication. */
     private transient WeakHashMap<Property, Reference<PropertyMap>> history;
 
     /** History of prototypes, used to limit map duplication. */
     private transient WeakHashMap<ScriptObject, SoftReference<PropertyMap>> protoHistory;
 
-    /** property listeners */
-    private transient PropertyListeners listeners;
+    /** SwitchPoints for properties inherited form this map */
+    private transient PropertySwitchPoints propertySwitchPoints;
 
     private transient BitSet freeSlots;
 
@@ -147,8 +144,8 @@ public class PropertyMap implements Iterable<Object>, Serializable {
         this.fieldCount   = fieldCount;
         this.fieldMaximum = propertyMap.fieldMaximum;
         this.className    = propertyMap.className;
-        // We inherit the parent property listeners instance. It will be cloned when a new listener is added.
-        this.listeners    = propertyMap.listeners;
+        // We inherit the parent property propertySwitchPoints instance. It will be cloned when a new listener is added.
+        this.propertySwitchPoints = propertyMap.propertySwitchPoints;
         this.freeSlots    = propertyMap.freeSlots;
         this.sharedProtoMap = propertyMap.sharedProtoMap;
         this.softReferenceDerivationLimit = softReferenceDerivationLimit;
@@ -245,142 +242,70 @@ public class PropertyMap implements Iterable<Object>, Serializable {
     }
 
     /**
-     * Get the number of listeners of this map
+     * Get the number of property SwitchPoints of this map
      *
-     * @return the number of listeners
+     * @return the number of property SwitchPoints
      */
-    public int getListenerCount() {
-        return listeners == null ? 0 : listeners.getListenerCount();
+    public int getSwitchPointCount() {
+        return propertySwitchPoints == null ? 0 : propertySwitchPoints.getSwitchPointCount();
     }
 
     /**
-     * Add {@code listenerMap} as a listener to this property map for the given {@code key}.
+     * Add a property switchpoint to this property map for the given {@code key}.
      *
      * @param key the property name
-     * @param listenerMap the listener map
+     * @param switchPoint the switchpoint
      */
-    public void addListener(final String key, final PropertyMap listenerMap) {
-        if (listenerMap != this) {
-            // We need to clone listener instance when adding a new listener since we share
-            // the listeners instance with our parent maps that don't need to see the new listener.
-            listeners = PropertyListeners.addListener(listeners, key, listenerMap);
+    public void addSwitchPoint(final String key, final SwitchPoint switchPoint) {
+        // We need to clone listener instance when adding a new listener since we share
+        // the propertySwitchPoints instance with our parent maps that don't need to see the new listener.
+        propertySwitchPoints = PropertySwitchPoints.addSwitchPoint(propertySwitchPoints, key, switchPoint);
+    }
+
+    /**
+     * Method called when a property of an object using this property map is being created,
+     * modified, or deleted. If a switchpoint for the property exists it will be invalidated.
+     *
+     * @param property The changed property.
+     */
+    public void propertyChanged(final Property property) {
+        if (propertySwitchPoints != null) {
+            propertySwitchPoints.invalidateProperty(property);
         }
     }
 
     /**
-     * A new property is being added.
-     *
-     * @param property The new Property added.
-     * @param isSelf was the property added to this map?
+     * Method called when the prototype of an object using this property map is changed.
      */
-    public void propertyAdded(final Property property, final boolean isSelf) {
-        if (!isSelf) {
-            invalidateProtoSwitchPoint(property.getKey());
-        }
-        if (listeners != null) {
-            listeners.propertyAdded(property);
-        }
-    }
-
-    /**
-     * An existing property is being deleted.
-     *
-     * @param property The property being deleted.
-     * @param isSelf was the property deleted from this map?
-     */
-    public void propertyDeleted(final Property property, final boolean isSelf) {
-        if (!isSelf) {
-            invalidateProtoSwitchPoint(property.getKey());
-        }
-        if (listeners != null) {
-            listeners.propertyDeleted(property);
-        }
-    }
-
-    /**
-     * An existing property is being redefined.
-     *
-     * @param oldProperty The old property
-     * @param newProperty The new property
-     * @param isSelf was the property modified on this map?
-     */
-    public void propertyModified(final Property oldProperty, final Property newProperty, final boolean isSelf) {
-        if (!isSelf) {
-            invalidateProtoSwitchPoint(oldProperty.getKey());
-        }
-        if (listeners != null) {
-            listeners.propertyModified(oldProperty, newProperty);
-        }
-    }
-
-    /**
-     * The prototype of an object associated with this {@link PropertyMap} is changed.
-     *
-     * @param isSelf was the prototype changed on the object using this map?
-     */
-    public void protoChanged(final boolean isSelf) {
-        if (!isSelf) {
-            invalidateAllProtoSwitchPoints();
-        } else if (sharedProtoMap != null) {
+    void protoChanged() {
+        if (sharedProtoMap != null) {
             sharedProtoMap.invalidateSwitchPoint();
         }
-        if (listeners != null) {
-            listeners.protoChanged();
+        if (propertySwitchPoints != null) {
+            propertySwitchPoints.invalidateInheritedProperties(this);
         }
     }
 
     /**
-     * Return a SwitchPoint used to track changes of a property in a prototype.
+     * Returns a SwitchPoint for use with a property inherited from this or a parent map.
+     * If such a switchpoint exists, it will be invalidated when the property is modified
+     * in an object using this map. This method returns {@code null} if no swichpoint exists
+     * for the property.
      *
      * @param key Property key.
-     * @return A shared {@link SwitchPoint} for the property.
+     * @return A {@link SwitchPoint} for the property, or null.
      */
     public synchronized SwitchPoint getSwitchPoint(final String key) {
-        if (protoSwitches == null) {
-            protoSwitches = new HashMap<>();
-        }
-
-        SwitchPoint switchPoint = protoSwitches.get(key);
-        if (switchPoint == null) {
-            switchPoint = new SwitchPoint();
-            protoSwitches.put(key, switchPoint);
-        }
-
-        return switchPoint;
-    }
-
-    /**
-     * Indicate that a prototype property has changed.
-     *
-     * @param key {@link Property} key to invalidate.
-     */
-    synchronized void invalidateProtoSwitchPoint(final Object key) {
-        if (protoSwitches != null) {
-            final SwitchPoint sp = protoSwitches.get(key);
-            if (sp != null) {
-                protoSwitches.remove(key);
-                if (Context.DEBUG) {
-                    protoInvalidations.increment();
+        if (propertySwitchPoints != null) {
+            final Set<SwitchPoint> existingSwitchPoints = propertySwitchPoints.getSwitchPoints(key);
+            for (final SwitchPoint switchPoint : existingSwitchPoints) {
+                if (switchPoint != null && !switchPoint.hasBeenInvalidated()) {
+                    return switchPoint;
                 }
-                SwitchPoint.invalidateAll(new SwitchPoint[]{sp});
             }
         }
-    }
 
-    /**
-     * Indicate that proto itself has changed in hierarchy somewhere.
-     */
-    synchronized void invalidateAllProtoSwitchPoints() {
-        if (protoSwitches != null) {
-            final int size = protoSwitches.size();
-            if (size > 0) {
-                if (Context.DEBUG) {
-                    protoInvalidations.add(size);
-                }
-                SwitchPoint.invalidateAll(protoSwitches.values().toArray(new SwitchPoint[0]));
-                protoSwitches.clear();
-            }
-        }
+        return null;
     }
 
     /**
@@ -452,7 +377,7 @@ public class PropertyMap implements Iterable<Object>, Serializable {
      * @return New {@link PropertyMap} with {@link Property} added.
      */
     public final PropertyMap addPropertyNoHistory(final Property property) {
-        propertyAdded(property, true);
+        propertyChanged(property);
         return addPropertyInternal(property);
     }
 
@@ -464,7 +389,7 @@ public class PropertyMap implements Iterable<Object>, Serializable {
      * @return New {@link PropertyMap} with {@link Property} added.
      */
     public final synchronized PropertyMap addProperty(final Property property) {
-        propertyAdded(property, true);
+        propertyChanged(property);
         PropertyMap newMap = checkHistory(property);
 
         if (newMap == null) {
@@ -494,7 +419,7 @@ public class PropertyMap implements Iterable<Object>, Serializable {
      * @return New {@link PropertyMap} with {@link Property} removed or {@code null} if not found.
      */
     public final synchronized PropertyMap deleteProperty(final Property property) {
-        propertyDeleted(property, true);
+        propertyChanged(property);
         PropertyMap newMap = checkHistory(property);
         final Object key = property.getKey();
 
@@ -529,7 +454,7 @@ public class PropertyMap implements Iterable<Object>, Serializable {
      * @return New {@link PropertyMap} with {@link Property} replaced.
      */
     public final PropertyMap replaceProperty(final Property oldProperty, final Property newProperty) {
-        propertyModified(oldProperty, newProperty, true);
+        propertyChanged(oldProperty);
         /*
          * See ScriptObject.modifyProperty and ScriptObject.setUserAccessors methods.
          *
