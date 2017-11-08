@@ -25,6 +25,9 @@
 
 package java.lang.management;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 /**
  * The management interface for the runtime system of
  * the Java virtual machine.
@@ -60,6 +63,22 @@ package java.lang.management;
  * @since   1.5
  */
 public interface RuntimeMXBean extends PlatformManagedObject {
+    /**
+     * Returns the {@linkplain ProcessHandle#pid process ID} representing
+     * the running Java virtual machine.
+     *
+     * @implSpec The default implementation returns {@link ProcessHandle#pid process ID}
+     * of the {@linkplain ProcessHandle#current current process}.
+     *
+     * @return the process ID representing the running Java virtual machine.
+     *
+     * @since 10
+     */
+    public default long getPid() {
+        return AccessController.doPrivileged((PrivilegedAction<Long>)
+                () -> ProcessHandle.current().pid());
+    }
+
     /**
      * Returns the name representing the running Java virtual machine.
      * The returned name string can be any arbitrary string and
