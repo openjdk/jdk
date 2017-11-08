@@ -25,19 +25,19 @@
 
 package com.apple.eawt;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Window;
 
 import javax.swing.RootPaneContainer;
 
-import sun.lwawt.macosx.*;
-
 import com.apple.eawt.event.GestureUtilities;
+import sun.lwawt.macosx.CPlatformWindow;
 
 /**
  * Utility class perform animated full screen actions to top-level {@link Window}s.
  *
  * This class manages the relationship between {@link Window}s and the {@link FullScreenListener}s
- * attached to them. It's design is similar to the Java SE 6u10 {@link com.sun.awt.AWTUtilities}
+ * attached to them. It's design is similar to the Java SE 6u10 {@code com.sun.awt.AWTUtilities}
  * class which adds additional functionality to AWT Windows, without adding new API to the
  * {@link java.awt.Window} class.
  *
@@ -45,7 +45,6 @@ import com.apple.eawt.event.GestureUtilities;
  *
  * @see FullScreenAdapter
  * @see GestureUtilities
- * @see com.sun.awt.AWTUtilities
  *
  * @since Java for Mac OS X 10.7 Update 1
  */

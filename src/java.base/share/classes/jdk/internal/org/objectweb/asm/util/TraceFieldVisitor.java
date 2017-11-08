@@ -79,7 +79,7 @@ public final class TraceFieldVisitor extends FieldVisitor {
     }
 
     public TraceFieldVisitor(final FieldVisitor fv, final Printer p) {
-        super(Opcodes.ASM5, fv);
+        super(Opcodes.ASM6, fv);
         this.p = p;
     }
 

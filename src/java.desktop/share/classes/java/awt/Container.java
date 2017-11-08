@@ -3069,33 +3069,28 @@ public class Container extends Component {
      * <caption>Recommended default values for a Container's focus traversal
      * keys</caption>
      * <thead>
-     * <tr>
-     *    <th>Identifier</th>
-     *    <th>Meaning</th>
-     *    <th>Default</th>
-     * </tr>
+     *   <tr>
+     *     <th scope="col">Identifier
+     *     <th scope="col">Meaning
+     *     <th scope="col">Default
      * </thead>
      * <tbody>
-     * <tr>
-     *    <td>KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS</td>
-     *    <td>Normal forward keyboard traversal</td>
-     *    <td>TAB on KEY_PRESSED, CTRL-TAB on KEY_PRESSED</td>
-     * </tr>
-     * <tr>
-     *    <td>KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS</td>
-     *    <td>Normal reverse keyboard traversal</td>
-     *    <td>SHIFT-TAB on KEY_PRESSED, CTRL-SHIFT-TAB on KEY_PRESSED</td>
-     * </tr>
-     * <tr>
-     *    <td>KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS</td>
-     *    <td>Go up one focus traversal cycle</td>
-     *    <td>none</td>
-     * </tr>
-     * <tr>
-     *    <td>KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS</td>
-     *    <td>Go down one focus traversal cycle</td>
-     *    <td>none</td>
-     * </tr>
+     *   <tr>
+     *     <th scope="row">KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS
+     *     <td>Normal forward keyboard traversal
+     *     <td>TAB on KEY_PRESSED, CTRL-TAB on KEY_PRESSED
+     *   <tr>
+     *     <th scope="row">KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS
+     *     <td>Normal reverse keyboard traversal
+     *     <td>SHIFT-TAB on KEY_PRESSED, CTRL-SHIFT-TAB on KEY_PRESSED
+     *   <tr>
+     *     <th scope="row">KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS
+     *     <td>Go up one focus traversal cycle
+     *     <td>none
+     *   <tr>
+     *     <th scope="row">KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS
+     *     <td>Go down one focus traversal cycle
+     *     <td>none
      * </tbody>
      * </table>
      *

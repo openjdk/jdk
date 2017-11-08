@@ -333,7 +333,7 @@ public abstract class SocketImpl implements SocketOptions {
      * latency, and low latency above short connection time, then it could
      * invoke this method with the values {@code (0, 1, 2)}.
      *
-     * By default, this method does nothing, unless it is overridden in a
+     * By default, this method does nothing, unless it is overridden in
      * a sub-class.
      *
      * @param  connectionTime

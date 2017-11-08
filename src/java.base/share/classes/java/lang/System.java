@@ -1937,7 +1937,7 @@ public final class System {
         // initialization. So make sure the "props" is available at the
         // very beginning of the initialization and all system properties to
         // be put into it directly.
-        props = new Properties();
+        props = new Properties(84);
         initProperties(props);  // initialized by the VM
 
         // There are certain system configurations that may be controlled by

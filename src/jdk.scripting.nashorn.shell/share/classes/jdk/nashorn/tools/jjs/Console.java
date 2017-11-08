@@ -25,7 +25,6 @@
 
 package jdk.nashorn.tools.jjs;
 
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,7 +68,7 @@ class Console implements AutoCloseable {
         });
         in.addCompleter(completer);
         Runtime.getRuntime().addShutdownHook(new Thread((Runnable)this::saveHistory));
-        bind(DOCUMENTATION_SHORTCUT, (ActionListener)evt -> showDocumentation(docHelper));
+        bind(DOCUMENTATION_SHORTCUT, (Runnable) ()->showDocumentation(docHelper));
         try {
             Signal.handle(new Signal("CONT"), new Handler() {
                 @Override public void handle(Signal sig) {

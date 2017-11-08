@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -181,6 +181,7 @@ public abstract class Utility {
      * @throws IOException if a failure from reading from the bytes argument
      * occurs
      */
+    @SuppressWarnings("fallthrough") // by design for case Const.INSTANCEOF
     public static String codeToString(final ByteSequence bytes, final ConstantPool constant_pool,
             final boolean verbose) throws IOException {
         final short opcode = (short) bytes.readUnsignedByte();

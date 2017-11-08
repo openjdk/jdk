@@ -192,6 +192,8 @@ public final class BinaryContainer implements SymbolTable {
 
         {"StubRoutines::_checkcast_arraycopy", "_aot_stub_routines_checkcast_arraycopy"},
 
+        {"StubRoutines::_generic_arraycopy", "_aot_stub_routines_generic_arraycopy"},
+
         {"StubRoutines::_aescrypt_encryptBlock", "_aot_stub_routines_aescrypt_encryptBlock"},
         {"StubRoutines::_aescrypt_decryptBlock", "_aot_stub_routines_aescrypt_decryptBlock"},
         {"StubRoutines::_cipherBlockChaining_encryptAESCrypt", "_aot_stub_routines_cipherBlockChaining_encryptAESCrypt"},

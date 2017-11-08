@@ -248,7 +248,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
         /**
          * Tests which may be eliminated because post dominating tests to prove a broader condition.
          */
-        private Deque<PendingTest> pendingTests;
+        private Deque<DeoptimizingGuard> pendingTests;
 
         public Instance(StructuredGraph graph, BlockMap<List<Node>> blockToNodes, PhaseContext context) {
             this.graph = graph;
@@ -555,7 +555,8 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
                 }
             }
             if (guard instanceof DeoptimizingGuard) {
-                pendingTests.push(new PendingTest(condition, (DeoptimizingGuard) guard));
+                assert ((DeoptimizingGuard) guard).getCondition() == condition;
+                pendingTests.push((DeoptimizingGuard) guard);
             }
             registerCondition(condition, negated, guard);
         }
@@ -628,15 +629,16 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
         }
 
         protected boolean foldPendingTest(DeoptimizingGuard thisGuard, ValueNode original, Stamp newStamp, GuardRewirer rewireGuardFunction) {
-            for (PendingTest pending : pendingTests) {
+            for (DeoptimizingGuard pendingGuard : pendingTests) {
+                LogicNode pendingCondition = pendingGuard.getCondition();
                 TriState result = TriState.UNKNOWN;
-                if (pending.condition instanceof UnaryOpLogicNode) {
-                    UnaryOpLogicNode unaryLogicNode = (UnaryOpLogicNode) pending.condition;
+                if (pendingCondition instanceof UnaryOpLogicNode) {
+                    UnaryOpLogicNode unaryLogicNode = (UnaryOpLogicNode) pendingCondition;
                     if (unaryLogicNode.getValue() == original) {
                         result = unaryLogicNode.tryFold(newStamp);
                     }
-                } else if (pending.condition instanceof BinaryOpLogicNode) {
-                    BinaryOpLogicNode binaryOpLogicNode = (BinaryOpLogicNode) pending.condition;
+                } else if (pendingCondition instanceof BinaryOpLogicNode) {
+                    BinaryOpLogicNode binaryOpLogicNode = (BinaryOpLogicNode) pendingCondition;
                     ValueNode x = binaryOpLogicNode.getX();
                     ValueNode y = binaryOpLogicNode.getY();
                     if (x == original) {
@@ -659,7 +661,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
                      */
                     InputFilter v = new InputFilter(original);
                     thisGuard.getCondition().applyInputs(v);
-                    if (v.ok && foldGuard(thisGuard, pending.guard, newStamp, rewireGuardFunction)) {
+                    if (v.ok && foldGuard(thisGuard, pendingGuard, newStamp, rewireGuardFunction)) {
                         return true;
                     }
                 }
@@ -1024,16 +1026,6 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
          * @return whether the transformation could be applied
          */
         boolean rewire(GuardingNode guard, boolean result, Stamp guardedValueStamp, ValueNode newInput);
-    }
-
-    protected static class PendingTest {
-        private final LogicNode condition;
-        private final DeoptimizingGuard guard;
-
-        public PendingTest(LogicNode condition, DeoptimizingGuard guard) {
-            this.condition = condition;
-            this.guard = guard;
-        }
     }
 
     protected static final class InfoElement {

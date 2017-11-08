@@ -184,6 +184,7 @@ public class JShellTool implements MessageHandler {
     private IOContext input = null;
     private boolean regenerateOnDeath = true;
     private boolean live = false;
+    private boolean interactiveModeBegun = false;
     private Options options;
 
     SourceCodeAnalysis analysis;
@@ -499,9 +500,13 @@ public class JShellTool implements MessageHandler {
 
         @Override
         void msg(String key, Object... args) {
-            startmsg(key, args);
+            errormsg(key, args);
         }
 
+        /**
+         * Parse the command line options.
+         * @return the options as an Options object, or null if error
+         */
         @Override
         Options parse(OptionSet options) {
             if (options.has(argHelp)) {
@@ -541,7 +546,7 @@ public class JShellTool implements MessageHandler {
             if (options.has(argStart)) {
                 List<String> sts = options.valuesOf(argStart);
                 if (options.has("no-startup")) {
-                    startmsg("jshell.err.opt.startup.conflict");
+                    msg("jshell.err.opt.startup.conflict");
                     return null;
                 }
                 initialStartup = Startup.fromFileList(sts, "--startup", new InitMessageHandler());
@@ -649,16 +654,6 @@ public class JShellTool implements MessageHandler {
     }
 
     /**
-     * Base output for command output -- no pre- or post-fix
-     *
-     * @param printf format
-     * @param printf args
-     */
-    void rawout(String format, Object... args) {
-        cmdout.printf(format, args);
-    }
-
-    /**
      * Must show command output
      *
      * @param format printf format
@@ -666,17 +661,17 @@ public class JShellTool implements MessageHandler {
      */
     @Override
     public void hard(String format, Object... args) {
-        rawout(prefix(format), args);
+        cmdout.printf(prefix(format), args);
     }
 
-    /**
+   /**
      * Error command output
      *
      * @param format printf format
      * @param args printf args
      */
     void error(String format, Object... args) {
-        rawout(prefixError(format), args);
+        (interactiveModeBegun? cmdout : cmderr).printf(prefixError(format), args);
     }
 
     /**
@@ -749,7 +744,8 @@ public class JShellTool implements MessageHandler {
 
     /**
      * Add prefixing/postfixing to embedded newlines in a string,
-     * bracketing with prefix/postfix
+     * bracketing with prefix/postfix.  No prefixing when non-interactive.
+     * Result is expected to be the format for a printf.
      *
      * @param s the string to prefix
      * @param pre the string to prepend to each line
@@ -759,6 +755,10 @@ public class JShellTool implements MessageHandler {
     String prefix(String s, String pre, String post) {
         if (s == null) {
             return "";
+        }
+        if (!interactiveModeBegun) {
+            // messages expect to be new-line terminated (even when not prefixed)
+            return s + "%n";
         }
         String pp = s.replaceAll("\\R", post + pre);
         if (pp.endsWith(post + pre)) {
@@ -810,21 +810,7 @@ public class JShellTool implements MessageHandler {
      */
     @Override
     public void errormsg(String key, Object... args) {
-        if (isRunningInteractive()) {
-            rawout(prefixError(messageFormat(key, args)));
-        } else {
-            startmsg(key, args);
-        }
-    }
-
-    /**
-     * Print command-line error using resource bundle look-up, MessageFormat
-     *
-     * @param key the resource key
-     * @param args
-     */
-    void startmsg(String key, Object... args) {
-        cmderr.println(messageFormat(key, args));
+        error(messageFormat(key, args));
     }
 
     /**
@@ -847,7 +833,7 @@ public class JShellTool implements MessageHandler {
                 LinkedHashMap::new));
         for (Entry<String, String> e : a2b.entrySet()) {
             hard("%s", e.getKey());
-            rawout(prefix(e.getValue(), feedback.getPre() + "\t", feedback.getPost()));
+            cmdout.printf(prefix(e.getValue(), feedback.getPre() + "\t", feedback.getPost()));
         }
     }
 
@@ -899,7 +885,10 @@ public class JShellTool implements MessageHandler {
         replayableHistoryPrevious = ReplayableHistory.fromPrevious(prefs);
         // load snippet/command files given on command-line
         for (String loadFile : commandLineArgs.nonOptions()) {
-            runFile(loadFile, "jshell");
+            if (!runFile(loadFile, "jshell")) {
+                // Load file failed -- abort
+                return;
+            }
         }
         // if we survived that...
         if (regenerateOnDeath) {
@@ -909,6 +898,7 @@ public class JShellTool implements MessageHandler {
         // check again, as feedback setting could have failed
         if (regenerateOnDeath) {
             // if we haven't died, and the feedback mode wants fluff, print welcome
+            interactiveModeBegun = true;
             if (feedback.shouldDisplayCommandFluff()) {
                 hardmsg("jshell.msg.welcome", version());
             }
@@ -994,7 +984,7 @@ public class JShellTool implements MessageHandler {
 
         @Override
         public void errormsg(String messageKey, Object... args) {
-            startmsg(messageKey, args);
+            JShellTool.this.errormsg(messageKey, args);
         }
 
         @Override
@@ -1034,6 +1024,7 @@ public class JShellTool implements MessageHandler {
         shutdownSubscription = state.onShutdown((JShell deadState) -> {
             if (deadState == state) {
                 hardmsg("jshell.msg.terminated");
+                fluffmsg("jshell.msg.terminated.restore");
                 live = false;
             }
         });
@@ -1054,10 +1045,6 @@ public class JShellTool implements MessageHandler {
         }
         // Record subsequent snippets in the main namespace.
         currentNameSpace = mainNamespace;
-    }
-
-    private boolean isRunningInteractive() {
-        return currentNameSpace != null && currentNameSpace == mainNamespace;
     }
 
     //where -- one-time per run initialization of feedback modes
@@ -1096,8 +1083,8 @@ public class JShellTool implements MessageHandler {
         try (IOContext suin = new ScannerIOContext(new StringReader(start))) {
             run(suin);
         } catch (Exception ex) {
-            hardmsg("jshell.err.startup.unexpected.exception", ex);
-            ex.printStackTrace(cmdout);
+            errormsg("jshell.err.startup.unexpected.exception", ex);
+            ex.printStackTrace(cmderr);
         }
     }
 
@@ -1123,7 +1110,7 @@ public class JShellTool implements MessageHandler {
             String incomplete = "";
             while (live) {
                 String prompt;
-                if (isRunningInteractive()) {
+                if (interactive()) {
                     prompt = testPrompt
                                     ? incomplete.isEmpty()
                                             ? "\u0005" //ENQ
@@ -1171,7 +1158,7 @@ public class JShellTool implements MessageHandler {
     }
 
     private void addToReplayHistory(String s) {
-        if (isRunningInteractive()) {
+        if (!isCurrentlyRunningStartup) {
             replayableHistory.add(s);
         }
     }
@@ -2127,7 +2114,7 @@ public class JShellTool implements MessageHandler {
                         fluff("Wrap debugging on");
                         break;
                     default:
-                        hard("Unknown debugging option: %c", ch);
+                        error("Unknown debugging option: %c", ch);
                         fluff("Use: 0 r g f c d e w");
                         return false;
                 }
@@ -2697,7 +2684,7 @@ public class JShellTool implements MessageHandler {
                     }
                     currSrcs = nextSrcs;
                 } catch (IllegalStateException ex) {
-                    hardmsg("jshell.msg.resetting");
+                    errormsg("jshell.msg.resetting");
                     resetState();
                     currSrcs = new LinkedHashSet<>(); // re-process everything
                 }
@@ -2746,16 +2733,21 @@ public class JShellTool implements MessageHandler {
     private boolean runFile(String filename, String context) {
         if (!filename.isEmpty()) {
             try {
-                Path path = toPathResolvingUserHome(filename);
-                Reader reader;
-                String resource;
-                if (!Files.exists(path) && (resource = getResource(filename)) != null) {
-                    // Not found as file, but found as resource
-                    reader = new StringReader(resource);
+                Scanner scanner;
+                if (!interactiveModeBegun && filename.equals("-")) {
+                    // - on command line: no interactive later, read from input
+                    regenerateOnDeath = false;
+                    scanner = new Scanner(cmdin);
                 } else {
-                    reader = new FileReader(path.toString());
+                    Path path = toPathResolvingUserHome(filename);
+                    String resource;
+                    scanner = new Scanner(
+                            (!Files.exists(path) && (resource = getResource(filename)) != null)
+                            ? new StringReader(resource) // Not found as file, but found as resource
+                            : new FileReader(path.toString())
+                    );
                 }
-                run(new ScannerIOContext(reader));
+                run(new ScannerIOContext(scanner));
                 return true;
             } catch (FileNotFoundException e) {
                 errormsg("jshell.err.file.not.found", context, filename, e.getMessage());
@@ -2841,7 +2833,7 @@ public class JShellTool implements MessageHandler {
                 sb.append(a);
             }
             if (sb.length() > 0) {
-                rawout(prefix(sb.toString()));
+                hard(sb.toString());
             }
             return false;
         }
@@ -3175,11 +3167,11 @@ public class JShellTool implements MessageHandler {
         if (ste.causeSnippet() == null) {
             // main event
             for (Diag d : diagnostics) {
-                hardmsg(d.isError()? "jshell.msg.error" : "jshell.msg.warning");
+                errormsg(d.isError()? "jshell.msg.error" : "jshell.msg.warning");
                 List<String> disp = new ArrayList<>();
                 displayDiagnostics(source, d, disp);
                 disp.stream()
-                        .forEach(l -> hard("%s", l));
+                        .forEach(l -> error("%s", l));
             }
 
             if (ste.status() != Status.REJECTED) {
@@ -3190,7 +3182,7 @@ public class JShellTool implements MessageHandler {
                     } else if (ste.exception() instanceof UnresolvedReferenceException) {
                         printUnresolvedException((UnresolvedReferenceException) ste.exception());
                     } else {
-                        hard("Unexpected execution exception: %s", ste.exception());
+                        error("Unexpected execution exception: %s", ste.exception());
                         return true;
                     }
                 } else {
@@ -3242,7 +3234,7 @@ public class JShellTool implements MessageHandler {
                             : lineNumber >= 0
                                     ? fileName + ":" + lineNumber
                                     : fileName;
-            hard("      at %s(%s)", sb, loc);
+            error("      at %s(%s)", sb, loc);
 
         }
     }
@@ -3253,9 +3245,9 @@ public class JShellTool implements MessageHandler {
     //where
     void printEvalException(EvalException ex) {
         if (ex.getMessage() == null) {
-            hard("%s thrown", ex.getExceptionClassName());
+            error("%s thrown", ex.getExceptionClassName());
         } else {
-            hard("%s thrown: %s", ex.getExceptionClassName(), ex.getMessage());
+            error("%s thrown: %s", ex.getExceptionClassName(), ex.getMessage());
         }
         printStackTrace(ex.getStackTrace());
     }
@@ -3394,7 +3386,7 @@ public class JShellTool implements MessageHandler {
                         resolution, unrcnt, errcnt,
                         name, type, value, unresolved, errorLines);
                 if (!resolutionErrors.trim().isEmpty()) {
-                    hard("    %s", resolutionErrors);
+                    error("    %s", resolutionErrors);
                 }
             } else if (interactive()) {
                 String display = feedback.format(fcase, action, update,
@@ -3625,7 +3617,6 @@ class ScannerIOContext extends NonInteractiveIOContext {
         scannerIn.close();
     }
 
-    @Override
     public int readUserInput() {
         return -1;
     }
@@ -3657,7 +3648,6 @@ class ReloadIOContext extends NonInteractiveIOContext {
     public void close() {
     }
 
-    @Override
     public int readUserInput() {
         return -1;
     }

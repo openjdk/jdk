@@ -129,7 +129,7 @@ public abstract class IntegerConvertNode<OP, REV> extends UnaryNode implements A
         ValueNode convert = convert(input, stamp, false);
         if (!convert.isAlive()) {
             assert !convert.isDeleted();
-            convert = graph.addOrUnique(convert);
+            convert = graph.addOrUniqueWithInputs(convert);
         }
         return convert;
     }

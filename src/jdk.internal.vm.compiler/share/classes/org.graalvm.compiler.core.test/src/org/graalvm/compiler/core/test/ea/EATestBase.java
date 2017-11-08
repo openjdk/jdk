@@ -77,7 +77,7 @@ public class EATestBase extends GraalCompilerTest {
 
         @Override
         public String toString() {
-            return "{" + x + "," + y + "}";
+            return "{" + x + "," + y + "," + z + "}";
         }
 
         @Override
@@ -158,11 +158,19 @@ public class EATestBase extends GraalCompilerTest {
             context = getDefaultHighTierContext();
             new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
             new DeadCodeEliminationPhase().apply(graph);
-            new CanonicalizerPhase().apply(graph, context);
+            canonicalizeGraph();
             new PartialEscapePhase(iterativeEscapeAnalysis, false, new CanonicalizerPhase(), null, graph.getOptions()).apply(graph, context);
+            postEACanonicalizeGraph();
             returnNodes = graph.getNodes(ReturnNode.TYPE).snapshot();
         } catch (Throwable e) {
             throw debug.handle(e);
         }
+    }
+
+    protected void postEACanonicalizeGraph() {
+    }
+
+    protected void canonicalizeGraph() {
+        new CanonicalizerPhase().apply(graph, context);
     }
 }

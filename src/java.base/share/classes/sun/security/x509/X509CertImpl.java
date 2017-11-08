@@ -1485,7 +1485,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     }
 
     /**
-     * Get the certificate constraints path length from the
+     * Get the certificate constraints path length from
      * the critical BasicConstraints extension, (oid = 2.5.29.19).
      * @return the length of the constraint.
      */

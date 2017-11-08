@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,10 @@ void VM_PrintThreads::doit_epilogue() {
 
 void VM_PrintJNI::doit() {
   JNIHandles::print_on(_out);
+}
+
+void VM_PrintMetadata::doit() {
+  MetaspaceAux::print_metadata_for_nmt(_out, _scale);
 }
 
 VM_FindDeadlocks::~VM_FindDeadlocks() {

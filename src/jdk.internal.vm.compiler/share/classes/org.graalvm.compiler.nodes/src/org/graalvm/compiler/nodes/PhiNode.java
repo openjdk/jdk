@@ -132,10 +132,22 @@ public abstract class PhiNode extends FloatingNode implements Canonicalizable {
                 }
                 str.append(valueAt(i) == null ? "-" : valueAt(i).toString(Verbosity.Id));
             }
+            String description = valueDescription();
+            if (description.length() > 0) {
+                str.append(", ").append(description);
+            }
             return super.toString(Verbosity.Name) + "(" + str + ")";
         } else {
             return super.toString(verbosity);
         }
+    }
+
+    /**
+     * String describing the kind of value this Phi merges. Used by {@link #toString(Verbosity)} and
+     * dumping.
+     */
+    protected String valueDescription() {
+        return "";
     }
 
     public void addInput(ValueNode x) {

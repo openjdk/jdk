@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Pair;
 import jdk.jshell.CompletenessAnalyzer.CaInfo;
 import jdk.jshell.TaskFactory.AnalyzeTask;
-import jdk.jshell.TaskFactory.ParseTask;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -255,6 +254,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         suspendIndexing();
         try {
             return completionSuggestionsImpl(code, cursor, anchor);
+        } catch (Throwable exc) {
+            proc.debug(exc, "Exception thrown in SourceCodeAnalysisImpl.completionSuggestions");
+            return Collections.emptyList();
         } finally {
             resumeIndexing();
         }
@@ -1148,6 +1150,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         suspendIndexing();
         try {
             return documentationImpl(code, cursor, computeJavadoc);
+        } catch (Throwable exc) {
+            proc.debug(exc, "Exception thrown in SourceCodeAnalysisImpl.documentation");
+            return Collections.emptyList();
         } finally {
             resumeIndexing();
         }

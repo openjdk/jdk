@@ -84,7 +84,7 @@ import sun.security.util.Debug;
  * exists (e.g., so-called <i>community parameters</i> in DSA), there are two
  * {@link #initialize(java.security.spec.AlgorithmParameterSpec)
  * initialize} methods that have an {@code AlgorithmParameterSpec}
- * argument. One also has a {@code SecureRandom} argument, while the
+ * argument. One also has a {@code SecureRandom} argument, while
  * the other uses the {@code SecureRandom}
  * implementation of the highest-priority installed provider as the source
  * of randomness. (If none of the installed providers supply an implementation

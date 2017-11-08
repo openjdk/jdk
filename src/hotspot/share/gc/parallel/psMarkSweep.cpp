@@ -192,7 +192,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     allocate_stacks();
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
 #endif
 
@@ -203,7 +203,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     mark_sweep_phase2();
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     // Don't add any more derived pointers during phase3
     assert(DerivedPointerTable::is_active(), "Sanity");
     DerivedPointerTable::set_active(false);
@@ -252,7 +252,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     CodeCache::gc_epilogue();
     JvmtiExport::gc_epilogue();
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     DerivedPointerTable::update_pointers();
 #endif
 

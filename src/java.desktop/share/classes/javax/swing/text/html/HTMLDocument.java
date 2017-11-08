@@ -2134,81 +2134,227 @@ public class HTMLDocument extends DefaultStyledDocument {
      * <table class="striped">
      * <caption>HTML tags and assigned actions</caption>
      * <thead>
-     * <tr><th>Tag</th><th>Action</th></tr>
+     *   <tr>
+     *     <th scope="col">Tag
+     *     <th scope="col">Action
      * </thead>
      * <tbody>
-     * <tr><td><code>HTML.Tag.A</code>         <td>CharacterAction
-     * <tr><td><code>HTML.Tag.ADDRESS</code>   <td>CharacterAction
-     * <tr><td><code>HTML.Tag.APPLET</code>    <td>HiddenAction
-     * <tr><td><code>HTML.Tag.AREA</code>      <td>AreaAction
-     * <tr><td><code>HTML.Tag.B</code>         <td>CharacterAction
-     * <tr><td><code>HTML.Tag.BASE</code>      <td>BaseAction
-     * <tr><td><code>HTML.Tag.BASEFONT</code>  <td>CharacterAction
-     * <tr><td><code>HTML.Tag.BIG</code>       <td>CharacterAction
-     * <tr><td><code>HTML.Tag.BLOCKQUOTE</code><td>BlockAction
-     * <tr><td><code>HTML.Tag.BODY</code>      <td>BlockAction
-     * <tr><td><code>HTML.Tag.BR</code>        <td>SpecialAction
-     * <tr><td><code>HTML.Tag.CAPTION</code>   <td>BlockAction
-     * <tr><td><code>HTML.Tag.CENTER</code>    <td>BlockAction
-     * <tr><td><code>HTML.Tag.CITE</code>      <td>CharacterAction
-     * <tr><td><code>HTML.Tag.CODE</code>      <td>CharacterAction
-     * <tr><td><code>HTML.Tag.DD</code>        <td>BlockAction
-     * <tr><td><code>HTML.Tag.DFN</code>       <td>CharacterAction
-     * <tr><td><code>HTML.Tag.DIR</code>       <td>BlockAction
-     * <tr><td><code>HTML.Tag.DIV</code>       <td>BlockAction
-     * <tr><td><code>HTML.Tag.DL</code>        <td>BlockAction
-     * <tr><td><code>HTML.Tag.DT</code>        <td>ParagraphAction
-     * <tr><td><code>HTML.Tag.EM</code>        <td>CharacterAction
-     * <tr><td><code>HTML.Tag.FONT</code>      <td>CharacterAction
-     * <tr><td><code>HTML.Tag.FORM</code>      <td>As of 1.4 a BlockAction
-     * <tr><td><code>HTML.Tag.FRAME</code>     <td>SpecialAction
-     * <tr><td><code>HTML.Tag.FRAMESET</code>  <td>BlockAction
-     * <tr><td><code>HTML.Tag.H1</code>        <td>ParagraphAction
-     * <tr><td><code>HTML.Tag.H2</code>        <td>ParagraphAction
-     * <tr><td><code>HTML.Tag.H3</code>        <td>ParagraphAction
-     * <tr><td><code>HTML.Tag.H4</code>        <td>ParagraphAction
-     * <tr><td><code>HTML.Tag.H5</code>        <td>ParagraphAction
-     * <tr><td><code>HTML.Tag.H6</code>        <td>ParagraphAction
-     * <tr><td><code>HTML.Tag.HEAD</code>      <td>HeadAction
-     * <tr><td><code>HTML.Tag.HR</code>        <td>SpecialAction
-     * <tr><td><code>HTML.Tag.HTML</code>      <td>BlockAction
-     * <tr><td><code>HTML.Tag.I</code>         <td>CharacterAction
-     * <tr><td><code>HTML.Tag.IMG</code>       <td>SpecialAction
-     * <tr><td><code>HTML.Tag.INPUT</code>     <td>FormAction
-     * <tr><td><code>HTML.Tag.ISINDEX</code>   <td>IsndexAction
-     * <tr><td><code>HTML.Tag.KBD</code>       <td>CharacterAction
-     * <tr><td><code>HTML.Tag.LI</code>        <td>BlockAction
-     * <tr><td><code>HTML.Tag.LINK</code>      <td>LinkAction
-     * <tr><td><code>HTML.Tag.MAP</code>       <td>MapAction
-     * <tr><td><code>HTML.Tag.MENU</code>      <td>BlockAction
-     * <tr><td><code>HTML.Tag.META</code>      <td>MetaAction
-     * <tr><td><code>HTML.Tag.NOFRAMES</code>  <td>BlockAction
-     * <tr><td><code>HTML.Tag.OBJECT</code>    <td>SpecialAction
-     * <tr><td><code>HTML.Tag.OL</code>        <td>BlockAction
-     * <tr><td><code>HTML.Tag.OPTION</code>    <td>FormAction
-     * <tr><td><code>HTML.Tag.P</code>         <td>ParagraphAction
-     * <tr><td><code>HTML.Tag.PARAM</code>     <td>HiddenAction
-     * <tr><td><code>HTML.Tag.PRE</code>       <td>PreAction
-     * <tr><td><code>HTML.Tag.SAMP</code>      <td>CharacterAction
-     * <tr><td><code>HTML.Tag.SCRIPT</code>    <td>HiddenAction
-     * <tr><td><code>HTML.Tag.SELECT</code>    <td>FormAction
-     * <tr><td><code>HTML.Tag.SMALL</code>     <td>CharacterAction
-     * <tr><td><code>HTML.Tag.STRIKE</code>    <td>CharacterAction
-     * <tr><td><code>HTML.Tag.S</code>         <td>CharacterAction
-     * <tr><td><code>HTML.Tag.STRONG</code>    <td>CharacterAction
-     * <tr><td><code>HTML.Tag.STYLE</code>     <td>StyleAction
-     * <tr><td><code>HTML.Tag.SUB</code>       <td>CharacterAction
-     * <tr><td><code>HTML.Tag.SUP</code>       <td>CharacterAction
-     * <tr><td><code>HTML.Tag.TABLE</code>     <td>BlockAction
-     * <tr><td><code>HTML.Tag.TD</code>        <td>BlockAction
-     * <tr><td><code>HTML.Tag.TEXTAREA</code>  <td>FormAction
-     * <tr><td><code>HTML.Tag.TH</code>        <td>BlockAction
-     * <tr><td><code>HTML.Tag.TITLE</code>     <td>TitleAction
-     * <tr><td><code>HTML.Tag.TR</code>        <td>BlockAction
-     * <tr><td><code>HTML.Tag.TT</code>        <td>CharacterAction
-     * <tr><td><code>HTML.Tag.U</code>         <td>CharacterAction
-     * <tr><td><code>HTML.Tag.UL</code>        <td>BlockAction
-     * <tr><td><code>HTML.Tag.VAR</code>       <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.A}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.ADDRESS}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.APPLET}
+     *     <td>HiddenAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.AREA}
+     *     <td>AreaAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.B}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.BASE}
+     *     <td>BaseAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.BASEFONT}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.BIG}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.BLOCKQUOTE}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.BODY}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.BR}
+     *     <td>SpecialAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.CAPTION}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.CENTER}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.CITE}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.CODE}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.DD}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.DFN}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.DIR}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.DIV}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.DL}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.DT}
+     *     <td>ParagraphAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.EM}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.FONT}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.FORM}
+     *     <td>As of 1.4 a BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.FRAME}
+     *     <td>SpecialAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.FRAMESET}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.H1}
+     *     <td>ParagraphAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.H2}
+     *     <td>ParagraphAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.H3}
+     *     <td>ParagraphAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.H4}
+     *     <td>ParagraphAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.H5}
+     *     <td>ParagraphAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.H6}
+     *     <td>ParagraphAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.HEAD}
+     *     <td>HeadAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.HR}
+     *     <td>SpecialAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.HTML}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.I}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.IMG}
+     *     <td>SpecialAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.INPUT}
+     *     <td>FormAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.ISINDEX}
+     *     <td>IsndexAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.KBD}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.LI}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.LINK}
+     *     <td>LinkAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.MAP}
+     *     <td>MapAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.MENU}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.META}
+     *     <td>MetaAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.NOFRAMES}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.OBJECT}
+     *     <td>SpecialAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.OL}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.OPTION}
+     *     <td>FormAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.P}
+     *     <td>ParagraphAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.PARAM}
+     *     <td>HiddenAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.PRE}
+     *     <td>PreAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.SAMP}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.SCRIPT}
+     *     <td>HiddenAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.SELECT}
+     *     <td>FormAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.SMALL}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.STRIKE}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.S}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.STRONG}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.STYLE}
+     *     <td>StyleAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.SUB}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.SUP}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.TABLE}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.TD}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.TEXTAREA}
+     *     <td>FormAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.TH}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.TITLE}
+     *     <td>TitleAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.TR}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.TT}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.U}
+     *     <td>CharacterAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.UL}
+     *     <td>BlockAction
+     *   <tr>
+     *     <th scope="row">{@code HTML.Tag.VAR}
+     *     <td>CharacterAction
      * </tbody>
      * </table>
      * <p>
@@ -3397,45 +3543,44 @@ public class HTMLDocument extends DefaultStyledDocument {
          * <caption>Model assignments for the various types of form elements
          * </caption>
          * <thead>
-         * <tr>
-         *   <th>Element Type
-         *   <th>Model Type
-         * </tr>
+         *   <tr>
+         *     <th scope="col">Element Type
+         *     <th scope="col">Model Type
          * </thead>
          * <tbody>
-         * <tr>
-         *   <td>input, type button
-         *   <td>{@link DefaultButtonModel}
-         * <tr>
-         *   <td>input, type checkbox
-         *   <td>{@link javax.swing.JToggleButton.ToggleButtonModel}
-         * <tr>
-         *   <td>input, type image
-         *   <td>{@link DefaultButtonModel}
-         * <tr>
-         *   <td>input, type password
-         *   <td>{@link PlainDocument}
-         * <tr>
-         *   <td>input, type radio
-         *   <td>{@link javax.swing.JToggleButton.ToggleButtonModel}
-         * <tr>
-         *   <td>input, type reset
-         *   <td>{@link DefaultButtonModel}
-         * <tr>
-         *   <td>input, type submit
-         *   <td>{@link DefaultButtonModel}
-         * <tr>
-         *   <td>input, type text or type is null.
-         *   <td>{@link PlainDocument}
-         * <tr>
-         *   <td>select
-         *   <td>{@link DefaultComboBoxModel} or an {@link DefaultListModel}, with an item type of Option
-         * <tr>
-         *   <td>textarea
-         *   <td>{@link PlainDocument}
+         *   <tr>
+         *     <th scope="row">input, type button
+         *     <td>{@link DefaultButtonModel}
+         *   <tr>
+         *     <th scope="row">input, type checkbox
+         *     <td>{@link JToggleButton.ToggleButtonModel}
+         *   <tr>
+         *     <th scope="row">input, type image
+         *     <td>{@link DefaultButtonModel}
+         *   <tr>
+         *     <th scope="row">input, type password
+         *     <td>{@link PlainDocument}
+         *   <tr>
+         *     <th scope="row">input, type radio
+         *     <td>{@link JToggleButton.ToggleButtonModel}
+         *   <tr>
+         *     <th scope="row">input, type reset
+         *     <td>{@link DefaultButtonModel}
+         *   <tr>
+         *     <th scope="row">input, type submit
+         *     <td>{@link DefaultButtonModel}
+         *   <tr>
+         *     <th scope="row">input, type text or type is null.
+         *     <td>{@link PlainDocument}
+         *   <tr>
+         *     <th scope="row">select
+         *     <td>{@link DefaultComboBoxModel} or an {@link DefaultListModel},
+         *     with an item type of Option
+         *   <tr>
+         *     <td>textarea
+         *     <td>{@link PlainDocument}
          * </tbody>
          * </table>
-         *
          */
         public class FormAction extends SpecialAction {
 

@@ -56,7 +56,7 @@ import java.nio.charset.StandardCharsets;
  *     base64 alphabet.</p></li>
  *
  * <li><a id="mime"><b>MIME</b></a>
- * <p> Uses the "The Base64 Alphabet" as specified in Table 1 of
+ * <p> Uses "The Base64 Alphabet" as specified in Table 1 of
  *     RFC 2045 for encoding and decoding operation. The encoded output
  *     must be represented in lines of no more than 76 characters each
  *     and uses a carriage return {@code '\r'} followed immediately by

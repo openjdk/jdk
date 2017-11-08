@@ -66,6 +66,34 @@ public class IntrinsicContext {
      */
     final BytecodeProvider bytecodeProvider;
 
+    final CompilationContext compilationContext;
+
+    final boolean allowPartialIntrinsicArgumentMismatch;
+
+    public IntrinsicContext(ResolvedJavaMethod method, ResolvedJavaMethod intrinsic, BytecodeProvider bytecodeProvider, CompilationContext compilationContext) {
+        this(method, intrinsic, bytecodeProvider, compilationContext, false);
+    }
+
+    public IntrinsicContext(ResolvedJavaMethod method, ResolvedJavaMethod intrinsic, BytecodeProvider bytecodeProvider, CompilationContext compilationContext,
+                    boolean allowPartialIntrinsicArgumentMismatch) {
+        this.method = method;
+        this.intrinsic = intrinsic;
+        this.bytecodeProvider = bytecodeProvider;
+        assert bytecodeProvider != null;
+        this.compilationContext = compilationContext;
+        this.allowPartialIntrinsicArgumentMismatch = allowPartialIntrinsicArgumentMismatch;
+        assert !isCompilationRoot() || method.hasBytecodes() : "Cannot root compile intrinsic for native or abstract method " + method.format("%H.%n(%p)");
+    }
+
+    /**
+     * A partial intrinsic exits by (effectively) calling the intrinsified method. Normally, this
+     * call must use exactly the same arguments as the call that is being intrinsified. This allows
+     * to override this behavior.
+     */
+    public boolean allowPartialIntrinsicArgumentMismatch() {
+        return allowPartialIntrinsicArgumentMismatch;
+    }
+
     /**
      * Gets the method being intrinsified.
      */
@@ -94,17 +122,6 @@ public class IntrinsicContext {
      */
     public boolean isCallToOriginal(ResolvedJavaMethod targetMethod) {
         return method.equals(targetMethod) || intrinsic.equals(targetMethod);
-    }
-
-    final CompilationContext compilationContext;
-
-    public IntrinsicContext(ResolvedJavaMethod method, ResolvedJavaMethod intrinsic, BytecodeProvider bytecodeProvider, CompilationContext compilationContext) {
-        this.method = method;
-        this.intrinsic = intrinsic;
-        this.bytecodeProvider = bytecodeProvider;
-        assert bytecodeProvider != null;
-        this.compilationContext = compilationContext;
-        assert !isCompilationRoot() || method.hasBytecodes() : "Cannot root compile intrinsic for native or abstract method " + method.format("%H.%n(%p)");
     }
 
     public boolean isPostParseInlined() {

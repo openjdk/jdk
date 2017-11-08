@@ -552,4 +552,21 @@ public class IntegerStampTest extends GraphTest {
             return result.longValue();
         }
     }
+
+    @Test
+    public void testDiv() {
+        testDiv(32, Integer.MIN_VALUE, Integer.MAX_VALUE);
+        testDiv(64, Long.MIN_VALUE, Long.MAX_VALUE);
+    }
+
+    private static void testDiv(int bits, long min, long max) {
+        BinaryOp<?> div = IntegerStamp.OPS.getDiv();
+        assertEquals(IntegerStamp.create(bits, -50, 50), div.foldStamp(IntegerStamp.create(bits, -100, 100), IntegerStamp.create(bits, 2, 5)));
+        assertEquals(IntegerStamp.create(bits, 20, 500), div.foldStamp(IntegerStamp.create(bits, 100, 1000), IntegerStamp.create(bits, 2, 5)));
+        assertEquals(IntegerStamp.create(bits, -500, -20), div.foldStamp(IntegerStamp.create(bits, -1000, -100), IntegerStamp.create(bits, 2, 5)));
+        assertEquals(IntegerStamp.create(bits, min, max), div.foldStamp(IntegerStamp.create(bits, min, max), IntegerStamp.create(bits, 1, max)));
+        assertEquals(IntegerStamp.create(bits, -100, 100), div.foldStamp(IntegerStamp.create(bits, -100, 100), IntegerStamp.create(bits, 1, max)));
+        assertEquals(IntegerStamp.create(bits, 0, 1000), div.foldStamp(IntegerStamp.create(bits, 100, 1000), IntegerStamp.create(bits, 1, max)));
+        assertEquals(IntegerStamp.create(bits, -1000, 0), div.foldStamp(IntegerStamp.create(bits, -1000, -100), IntegerStamp.create(bits, 1, max)));
+    }
 }

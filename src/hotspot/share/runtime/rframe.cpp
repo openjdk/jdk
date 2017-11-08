@@ -155,7 +155,7 @@ void InterpretedRFrame::init() {
 
 void RFrame::print(const char* kind) {
 #ifndef PRODUCT
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   int cnt = top_method()->interpreter_invocation_count();
 #else
   int cnt = top_method()->invocation_count();

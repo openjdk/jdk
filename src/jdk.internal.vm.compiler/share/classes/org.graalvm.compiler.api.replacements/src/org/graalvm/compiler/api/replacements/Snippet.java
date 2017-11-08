@@ -36,6 +36,13 @@ import java.lang.annotation.Target;
 public @interface Snippet {
 
     /**
+     * A partial intrinsic exits by (effectively) calling the intrinsified method. Normally, this
+     * call must use exactly the same arguments as the call that is being intrinsified. For well
+     * known snippets that are used after frame state assignment, we want to relax this restriction.
+     */
+    boolean allowPartialIntrinsicArgumentMismatch() default false;
+
+    /**
      * Denotes a snippet parameter representing 0 or more arguments that will be bound during
      * snippet template instantiation. During snippet template creation, its value must be an array
      * whose length specifies the number of arguments (the contents of the array are ignored) bound

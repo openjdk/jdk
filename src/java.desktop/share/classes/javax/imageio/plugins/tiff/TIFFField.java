@@ -40,221 +40,83 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * TIFF data types are referred to by Java constants and mapped internally
  * onto Java language data types and type names as follows:
  *
- * <br>
- * <br>
- * <table border="1">
+ * <table class="striped">
  * <caption>TIFF Data Type to Java Data Type Mapping</caption>
- *
- * <tr>
- * <th>
- * <b>TIFF Data Type</b>
- * </th>
- * <th>
- * <b>Java Constant</b>
- * </th>
- * <th>
- * <b>Java Data Type</b>
- * </th>
- * <th>
- * <b>Java Type Name</b>
- * </th>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code BYTE}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_BYTE}
- * </td>
- * <td>
- * {@code byte}
- * </td>
- * <td>
- * {@code "Byte"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code ASCII}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_ASCII}
- * </td>
- * <td>
- * {@code String}
- * </td>
- * <td>
- * {@code "Ascii"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code SHORT}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_SHORT}
- * </td>
- * <td>
- * {@code char}
- * </td>
- * <td>
- * {@code "Short"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code LONG}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_LONG}
- * </td>
- * <td>
- * {@code long}
- * </td>
- * <td>
- * {@code "Long"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code RATIONAL}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_RATIONAL}
- * </td>
- * <td>
- * {@code long[2]} {numerator, denominator}
- * </td>
- * <td>
- * {@code "Rational"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code SBYTE}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_SBYTE}
- * </td>
- * <td>
- * {@code byte}
- * </td>
- * <td>
- * {@code "SByte"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code UNDEFINED}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_UNDEFINED}
- * </td>
- * <td>
- * {@code byte}
- * </td>
- * <td>
- * {@code "Undefined"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code SSHORT}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_SSHORT}
- * </td>
- * <td>
- * {@code short}
- * </td>
- * <td>
- * {@code "SShort"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code SLONG}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_SLONG}
- * </td>
- * <td>
- * {@code int}
- * </td>
- * <td>
- * {@code "SLong"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code SRATIONAL}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_SRATIONAL}
- * </td>
- * <td>
- * {@code int[2]} {numerator, denominator}
- * </td>
- * <td>
- * {@code "SRational"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code FLOAT}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_FLOAT}
- * </td>
- * <td>
- * {@code float}
- * </td>
- * <td>
- * {@code "Float"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code DOUBLE}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_DOUBLE}
- * </td>
- * <td>
- * {@code double}
- * </td>
- * <td>
- * {@code "Double"}
- * </td>
- * </tr>
- *
- * <tr>
- * <td>
- * {@code IFD}
- * </td>
- * <td>
- * {@link TIFFTag#TIFF_IFD_POINTER}
- * </td>
- * <td>
- * {@code long}
- * </td>
- * <td>
- * {@code "IFDPointer"}
- * </td>
- * </tr>
- *
+ * <thead>
+ *   <tr>
+ *     <th scope="col">TIFF Data Type
+ *     <th scope="col">Java Constant
+ *     <th scope="col">Java Data Type
+ *     <th scope="col">Java Type Name
+ * </thead>
+ * <tbody>
+ *   <tr>
+ *     <th scope="row">{@code BYTE}
+ *     <td>{@link TIFFTag#TIFF_BYTE}
+ *     <td>{@code byte}
+ *     <td>{@code "Byte"}
+ *   <tr>
+ *     <th scope="row">{@code ASCII}
+ *     <td>{@link TIFFTag#TIFF_ASCII}
+ *     <td>{@code String}
+ *     <td>{@code "Ascii"}
+ *   <tr>
+ *     <th scope="row">{@code SHORT}
+ *     <td>{@link TIFFTag#TIFF_SHORT}
+ *     <td>{@code char}
+ *     <td>{@code "Short"}
+ *   <tr>
+ *     <th scope="row">{@code LONG}
+ *     <td>{@link TIFFTag#TIFF_LONG}
+ *     <td>{@code long}
+ *     <td>{@code "Long"}
+ *   <tr>
+ *     <th scope="row">{@code RATIONAL}
+ *     <td>{@link TIFFTag#TIFF_RATIONAL}
+ *     <td>{@code long[2]} {numerator, denominator}
+ *     <td>{@code "Rational"}
+ *   <tr>
+ *     <th scope="row">{@code SBYTE}
+ *     <td>{@link TIFFTag#TIFF_SBYTE}
+ *     <td>{@code byte}
+ *     <td>{@code "SByte"}
+ *   <tr>
+ *     <th scope="row">{@code UNDEFINED}
+ *     <td>{@link TIFFTag#TIFF_UNDEFINED}
+ *     <td>{@code byte}
+ *     <td>{@code "Undefined"}
+ *   <tr>
+ *     <th scope="row">{@code SSHORT}
+ *     <td>{@link TIFFTag#TIFF_SSHORT}
+ *     <td>{@code short}
+ *     <td>{@code "SShort"}
+ *   <tr>
+ *     <th scope="row">{@code SLONG}
+ *     <td>{@link TIFFTag#TIFF_SLONG}
+ *     <td>{@code int}
+ *     <td>{@code "SLong"}
+ *   <tr>
+ *     <th scope="row">{@code SRATIONAL}
+ *     <td>{@link TIFFTag#TIFF_SRATIONAL}
+ *     <td>{@code int[2]} {numerator, denominator}
+ *     <td>{@code "SRational"}
+ *   <tr>
+ *     <th scope="row">{@code FLOAT}
+ *     <td>{@link TIFFTag#TIFF_FLOAT}
+ *     <td>{@code float}
+ *     <td>{@code "Float"}
+ *   <tr>
+ *     <th scope="row">{@code DOUBLE}
+ *     <td>{@link TIFFTag#TIFF_DOUBLE}
+ *     <td>{@code double}
+ *     <td>{@code "Double"}
+ *   <tr>
+ *     <th scope="row">{@code IFD}
+ *     <td>{@link TIFFTag#TIFF_IFD_POINTER}
+ *     <td>{@code long}
+ *     <td>{@code "IFDPointer"}
+ *   </tr>
+ * </tbody>
  * </table>
  *
  * @since 9

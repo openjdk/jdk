@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023
+ * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023 8186708 8179856
  * @summary Testing start-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -147,7 +147,7 @@ public class StartOptionTest {
         for (String opt : new String[]{"-h", "--help"}) {
             start(s -> {
                 assertTrue(s.split("\n").length >= 7, "Not enough usage lines: " + s);
-                assertTrue(s.startsWith("Usage:   jshell <options>"), "Unexpect usage start: " + s);
+                assertTrue(s.startsWith("Usage:   jshell <option>..."), "Unexpect usage start: " + s);
                 assertTrue(s.contains("--show-version"), "Expected help: " + s);
                 assertFalse(s.contains("Welcome"), "Unexpected start: " + s);
             }, null, null, opt);
@@ -170,6 +170,38 @@ public class StartOptionTest {
               s -> assertEquals(s.trim(), "Unknown option: u"), "-unknown");
         start(null, null,
               s -> assertEquals(s.trim(), "Unknown option: unknown"), "--unknown");
+    }
+
+    /**
+     * Test that input is read with "-" and there is no extra output.
+     * @throws Exception
+     */
+    public void testHypenFile() throws Exception {
+        cmdInStream = new ByteArrayInputStream("System.out.print(\"Hello\");\n".getBytes());
+        startWithUserOutput("", "Hello", "", "-");
+        cmdInStream = new ByteArrayInputStream("System.out.print(\"Hello\");\n".getBytes());
+        startWithUserOutput("", "Hello", "", "-", "-");
+        Compiler compiler = new Compiler();
+        Path path = compiler.getPath("markload.jsh");
+        compiler.writeToFile(path, "System.out.print(\"===\");");
+        cmdInStream = new ByteArrayInputStream("System.out.print(\"Hello\");\n".getBytes());
+        startWithUserOutput("", "===Hello===", "", path.toString(), "-", path.toString());
+        // check that errors go to standard error
+        cmdInStream = new ByteArrayInputStream(") Foobar".getBytes());
+        start(
+                s -> assertEquals(s.trim(), "", "cmdout: empty"),
+                s -> assertEquals(s.trim(), "", "userout: empty"),
+                s -> assertTrue(s.contains("illegal start of expression"),
+                            "cmderr: illegal start of expression"),
+                "-");
+    }
+
+    /**
+     * Test that non-existent load file sends output to stderr and does not start (no welcome).
+     * @throws Exception
+     */
+    public void testUnknownLoadFile() throws Exception {
+        start("", "File 'UNKNOWN' for 'jshell' is not found.", "UNKNOWN");
     }
 
     public void testStartup() throws Exception {

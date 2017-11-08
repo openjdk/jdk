@@ -62,6 +62,7 @@ public class FilterExprWalker extends AxesWalker
    *
    * @throws javax.xml.transform.TransformerException
    */
+  @SuppressWarnings("fallthrough")
   public void init(Compiler compiler, int opPos, int stepType)
           throws javax.xml.transform.TransformerException
   {

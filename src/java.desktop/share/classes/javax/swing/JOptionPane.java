@@ -71,37 +71,30 @@ import sun.awt.AWTAccessor;
  * class may appear complex because of the large number of methods, almost
  * all uses of this class are one-line calls to one of the static
  * <code>showXxxDialog</code> methods shown below:
- * <blockquote>
  *
  * <table class="striped">
  * <caption>Common JOptionPane method names and their descriptions</caption>
  * <thead>
- * <tr>
- *    <th>Method Name</th>
- *    <th>Description</th>
- * </tr>
+ *   <tr>
+ *     <th scope="col">Method Name
+ *     <th scope="col">Description
  * </thead>
  * <tbody>
- * <tr>
- *    <td>showConfirmDialog</td>
- *    <td>Asks a confirming question, like yes/no/cancel.</td>
- * </tr>
- * <tr>
- *    <td>showInputDialog</td>
- *    <td>Prompt for some input.</td>
- * </tr>
- * <tr>
- *   <td>showMessageDialog</td>
- *   <td>Tell the user about something that has happened.</td>
- * </tr>
- * <tr>
- *   <td>showOptionDialog</td>
- *   <td>The Grand Unification of the above three.</td>
- * </tr>
+ *   <tr>
+ *     <th scope="row">showConfirmDialog
+ *     <td>Asks a confirming question, like yes/no/cancel.</td>
+ *   <tr>
+ *     <th scope="row">showInputDialog
+ *     <td>Prompt for some input.
+ *   <tr>
+ *     <th scope="row">showMessageDialog
+ *     <td>Tell the user about something that has happened.
+ *   <tr>
+ *     <th scope="row">showOptionDialog
+ *     <td>The Grand Unification of the above three.
  * </tbody>
  * </table>
  *
- * </blockquote>
  * Each of these methods also comes in a <code>showInternalXXX</code>
  * flavor, which uses an internal frame to hold the dialog box (see
  * {@link JInternalFrame}).
@@ -148,7 +141,7 @@ import sun.awt.AWTAccessor;
  * in which case a default <code>Frame</code> is used as the parent,
  * and the dialog will be
  * centered on the screen (depending on the {@literal L&F}).
- * <dt><a id=message>message</a><dd>
+ * <dt>message<dd>
  * A descriptive message to be placed in the dialog box.
  * In the most common usage, message is just a <code>String</code> or
  * <code>String</code> constant.

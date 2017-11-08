@@ -34,13 +34,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import jdk.internal.module.ClassFileAttributes;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.commons.ModuleTargetAttribute;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -48,6 +48,7 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.org.objectweb.asm.commons
  *          java.base/jdk.internal.module
  *          java.xml
  * @run testng AnnotationsTest
@@ -113,14 +114,11 @@ public class AnnotationsTest {
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
                                              + ClassWriter.COMPUTE_FRAMES);
 
-            ClassVisitor cv = new ClassVisitor(Opcodes.ASM5, cw) { };
+            ClassVisitor cv = new ClassVisitor(Opcodes.ASM6, cw) { };
 
             ClassReader cr = new ClassReader(in);
-
             List<Attribute> attrs = new ArrayList<>();
-            attrs.add(new ClassFileAttributes.ModuleAttribute());
-            attrs.add(new ClassFileAttributes.ModulePackagesAttribute());
-            attrs.add(new ClassFileAttributes.ModuleTargetAttribute());
+            attrs.add(new ModuleTargetAttribute());
             cr.accept(cv, attrs.toArray(new Attribute[0]), 0);
 
             AnnotationVisitor annotationVisitor

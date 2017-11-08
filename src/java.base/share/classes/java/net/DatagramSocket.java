@@ -988,7 +988,7 @@ class DatagramSocket implements java.io.Closeable {
 
     /**
      * Sets the SO_RCVBUF option to the specified value for this
-     * {@code DatagramSocket}. The SO_RCVBUF option is used by the
+     * {@code DatagramSocket}. The SO_RCVBUF option is used by
      * the network implementation as a hint to size the underlying
      * network I/O buffers. The SO_RCVBUF setting may also be used
      * by the network implementation to determine the maximum size

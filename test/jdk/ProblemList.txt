@@ -200,6 +200,8 @@ java/rmi/activation/Activatable/extLoadedImpl/ext.sh            8062724 generic-
 
 java/rmi/activation/ActivationGroup/downloadActivationGroup/DownloadActivationGroup.java 8169569 windows-all
 
+java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java 8170562 generic-all
+
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 
 ############################################################################
@@ -308,8 +310,12 @@ com/sun/tools/attach/StartManagementAgent.java                  8179700 generic-
 
 com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i586,macosx-all,windows-x64
 
-javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 linux-all
-
+javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 generic-all
+ 
 org/omg/CORBA/OrbPropertiesTest.java			        8175177 generic-all
+
+javax/rmi/PortableRemoteObject/ConcurrentHashMapTest.java       8080643 generic-all
+
+javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
 ############################################################################

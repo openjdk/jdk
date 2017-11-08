@@ -525,6 +525,7 @@ public class WhiteBox {
   public native boolean areSharedStringsIgnored();
   public native boolean isCDSIncludedInVmBuild();
   public native Object  getResolvedReferences(Class<?> c);
+  public native boolean areOpenArchiveHeapObjectsMapped();
 
   // Compiler Directive
   public native int addCompilerDirective(String compDirect);

@@ -69,40 +69,41 @@ import javax.print.attribute.PrintRequestAttribute;
  * The size of a doc is computed based on the print data representation class as
  * specified by the doc's {@link javax.print.DocFlavor DocFlavor}, as shown in
  * the table below.
+ *
  * <table class="striped">
  * <caption>Table showing computation of doc sizes</caption>
  * <thead>
  *   <tr>
- *     <th>Representation Class
- *     <th>Document Size
+ *     <th scope="col">Representation Class
+ *     <th scope="col">Document Size
  * </thead>
  * <tbody>
  *   <tr>
- *     <td>{@code byte[]}
+ *     <th scope="row">{@code byte[]}
  *     <td>Length of the byte array
  *   <tr>
- *     <td>{@code java.io.InputStream}
+ *     <th scope="row">{@code java.io.InputStream}
  *     <td>Number of bytes read from the stream
  *   <tr>
- *     <td>{@code char[]}
+ *     <th scope="row">{@code char[]}
  *     <td>Length of the character array x 2
  *   <tr>
- *     <td>{@code java.lang.String}
+ *     <th scope="row">{@code java.lang.String}
  *     <td>Length of the string x 2
  *   <tr>
- *     <td>{@code java.io.Reader}
+ *     <th scope="row">{@code java.io.Reader}
  *     <td>Number of characters read from the stream x 2
  *   <tr>
- *     <td>{@code java.net.URL}
+ *     <th scope="row">{@code java.net.URL}
  *     <td>Number of bytes read from the file at the given {@code URL} address
  *   <tr>
- *     <td>{@code java.awt.image.renderable.RenderableImage}
+ *     <th scope="row">{@code java.awt.image.renderable.RenderableImage}
  *     <td>Implementation dependent&#42;
  *   <tr>
- *     <td>{@code java.awt.print.Printable}
+ *     <th scope="row">{@code java.awt.print.Printable}
  *     <td>Implementation dependent&#42;
  *   <tr>
- *     <td>{@code java.awt.print.Pageable}
+ *     <th scope="row">{@code java.awt.print.Pageable}
  *     <td>Implementation dependent&#42;
  * </tbody>
  * </table>

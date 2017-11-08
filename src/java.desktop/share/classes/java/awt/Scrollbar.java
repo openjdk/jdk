@@ -299,58 +299,44 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * <table class="striped">
      * <caption>Scrollbar default properties</caption>
      * <thead>
-     * <tr>
-     *   <th>Property</th>
-     *   <th>Description</th>
-     *   <th>Default Value</th>
-     * </tr>
+     *   <tr>
+     *     <th scope="col">Property
+     *     <th scope="col">Description
+     *     <th scope="col">Default Value
      * </thead>
      * <tbody>
-     * <tr>
-     *   <td>orientation</td>
-     *   <td>indicates whether the scroll bar is vertical
-     *   <br>or horizontal</td>
-     *   <td>{@code Scrollbar.VERTICAL}</td>
-     * </tr>
-     * <tr>
-     *   <td>value</td>
-     *   <td>value which controls the location
-     *   <br>of the scroll bar's bubble</td>
-     *   <td>0</td>
-     * </tr>
-     * <tr>
-     *   <td>visible amount</td>
-     *   <td>visible amount of the scroll bar's range,
-     *   <br>typically represented by the size of the
-     *   <br>scroll bar's bubble</td>
-     *   <td>10</td>
-     * </tr>
-     * <tr>
-     *   <td>minimum</td>
-     *   <td>minimum value of the scroll bar</td>
-     *   <td>0</td>
-     * </tr>
-     * <tr>
-     *   <td>maximum</td>
-     *   <td>maximum value of the scroll bar</td>
-     *   <td>100</td>
-     * </tr>
-     * <tr>
-     *   <td>unit increment</td>
-     *   <td>amount the value changes when the
-     *   <br>Line Up or Line Down key is pressed,
-     *   <br>or when the end arrows of the scrollbar
-     *   <br>are clicked </td>
-     *   <td>1</td>
-     * </tr>
-     * <tr>
-     *   <td>block increment</td>
-     *   <td>amount the value changes when the
-     *   <br>Page Up or Page Down key is pressed,
-     *   <br>or when the scrollbar track is clicked
-     *   <br>on either side of the bubble </td>
-     *   <td>10</td>
-     * </tr>
+     *   <tr>
+     *     <th scope="row">orientation
+     *     <td>indicates whether the scroll bar is vertical or horizontal
+     *     <td>{@code Scrollbar.VERTICAL}
+     *   <tr>
+     *     <th scope="row">value
+     *     <td>value which controls the location of the scroll bar's bubble
+     *     <td>0
+     *   <tr>
+     *     <th scope="row">visible amount
+     *     <td>visible amount of the scroll bar's range, typically represented
+     *     by the size of the scroll bar's bubble
+     *     <td>10
+     *   <tr>
+     *     <th scope="row">minimum
+     *     <td>minimum value of the scroll bar
+     *     <td>0
+     *   <tr>
+     *     <th scope="row">maximum
+     *     <td>maximum value of the scroll bar
+     *     <td>100
+     *   <tr>
+     *     <th scope="row">unit increment
+     *     <td>amount the value changes when the Line Up or Line Down key is
+     *     pressed, or when the end arrows of the scrollbar are clicked
+     *     <td>1
+     *   <tr>
+     *     <th scope="row">block increment
+     *     <td>amount the value changes when the Page Up or Page Down key is
+     *     pressed, or when the scrollbar track is clicked<br>on either side of
+     *     the bubble
+     *     <td>10
      * </tbody>
      * </table>
      *

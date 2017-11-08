@@ -670,6 +670,11 @@ public class HotSpotReplacementsUtil {
     }
 
     @Fold
+    public static boolean useCMSIncrementalMode(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.cmsIncrementalMode;
+    }
+
+    @Fold
     public static boolean useCompressedOops(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.useCompressedOops;
     }

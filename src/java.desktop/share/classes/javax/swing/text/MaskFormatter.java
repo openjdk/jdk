@@ -40,36 +40,39 @@ import javax.swing.*;
  * <table class="striped">
  * <caption>Valid characters and their descriptions</caption>
  * <thead>
- * <tr>
- *    <th>Character&nbsp;</th>
- *    <th>Description</th>
- * </tr>
+ *   <tr>
+ *     <th scope="col">Character
+ *     <th scope="col">Description
  * </thead>
  * <tbody>
- * <tr>
- *    <td>#</td>
- *    <td>Any valid number, uses <code>Character.isDigit</code>.</td>
- * </tr>
- * <tr>
- *    <td>'</td>
- *    <td>Escape character, used to escape any of the
- *       special formatting characters.</td>
- * </tr>
- * <tr>
- *    <td>U</td><td>Any character (<code>Character.isLetter</code>). All
- *        lowercase letters are mapped to upper case.</td>
- * </tr>
- * <tr><td>L</td><td>Any character (<code>Character.isLetter</code>). All
- *        upper case letters are mapped to lower case.</td>
- * </tr>
- * <tr><td>A</td><td>Any character or number (<code>Character.isLetter</code>
- *       or <code>Character.isDigit</code>)</td>
- * </tr>
- * <tr><td>?</td><td>Any character
- *        (<code>Character.isLetter</code>).</td>
- * </tr>
- * <tr><td>*</td><td>Anything.</td></tr>
- * <tr><td>H</td><td>Any hex character (0-9, a-f or A-F).</td></tr>
+ *   <tr>
+ *     <th scope="row">#
+ *     <td>Any valid number, uses {@code Character.isDigit}.
+ *   <tr>
+ *     <th scope="row">'
+ *     <td>Escape character, used to escape any of the special formatting
+ *     characters.
+ *   <tr>
+ *     <th scope="row">U
+ *     <td>Any character ({@code Character.isLetter}). All lowercase letters are
+ *     mapped to upper case.
+ *   <tr>
+ *     <th scope="row">L
+ *     <td>Any character ({@code Character.isLetter}). All upper case letters
+ *     are mapped to lower case.
+ *   <tr>
+ *     <th scope="row">A
+ *     <td>Any character or number ({@code Character.isLetter} or
+ *     {@code Character.isDigit}).
+ *   <tr>
+ *     <th scope="row">?
+ *     <td>Any character ({@code Character.isLetter}).
+ *   <tr>
+ *     <th scope="row">*
+ *     <td>Anything.
+ *   <tr>
+ *     <th scope="row">H
+ *     <td>Any hex character (0-9, a-f or A-F).
  * </tbody>
  * </table>
  *

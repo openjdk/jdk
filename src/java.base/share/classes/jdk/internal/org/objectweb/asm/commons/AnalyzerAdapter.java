@@ -170,7 +170,7 @@ public class AnalyzerAdapter extends MethodVisitor {
      */
     public AnalyzerAdapter(final String owner, final int access,
             final String name, final String desc, final MethodVisitor mv) {
-        this(Opcodes.ASM5, owner, access, name, desc, mv);
+        this(Opcodes.ASM6, owner, access, name, desc, mv);
         if (getClass() != AnalyzerAdapter.class) {
             throw new IllegalStateException();
         }
@@ -181,7 +181,7 @@ public class AnalyzerAdapter extends MethodVisitor {
      *
      * @param api
      *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4} or {@link Opcodes#ASM5}.
+     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
      * @param owner
      *            the owner's class name.
      * @param access
@@ -690,6 +690,8 @@ public class AnalyzerAdapter extends MethodVisitor {
             t1 = pop();
             if (t1 instanceof String) {
                 pushDesc(((String) t1).substring(1));
+            } else if (t1 == Opcodes.NULL) {
+                push(t1);
             } else {
                 push("java/lang/Object");
             }

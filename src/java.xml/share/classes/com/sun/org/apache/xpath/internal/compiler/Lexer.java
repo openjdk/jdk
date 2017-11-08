@@ -106,6 +106,7 @@ class Lexer
    *
    * @throws javax.xml.transform.TransformerException
    */
+  @SuppressWarnings("fallthrough") // on purpose at case '-', '(' and default
   void tokenize(String pat, List<String> targetStrings)
           throws javax.xml.transform.TransformerException
   {

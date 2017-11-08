@@ -81,7 +81,7 @@ public final class TraceMethodVisitor extends MethodVisitor {
     }
 
     public TraceMethodVisitor(final MethodVisitor mv, final Printer p) {
-        super(Opcodes.ASM5, mv);
+        super(Opcodes.ASM6, mv);
         this.p = p;
     }
 

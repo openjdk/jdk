@@ -690,6 +690,7 @@ FREETYPE_LICENSE
 FREETYPE_BUNDLE_LIB_PATH
 FREETYPE_LIBS
 FREETYPE_CFLAGS
+FONTCONFIG_CFLAGS
 CUPS_CFLAGS
 X_EXTRA_LIBS
 X_LIBS
@@ -704,6 +705,7 @@ FIXPATH
 BUILD_GTEST
 ENABLE_CDS
 ENABLE_AOT
+ASAN_ENABLED
 GCOV_ENABLED
 ZIP_EXTERNAL_DEBUG_SYMBOLS
 COPY_DEBUG_SYMBOLS
@@ -958,6 +960,7 @@ CONF_NAME
 SPEC
 SDKROOT
 XCODEBUILD
+DEVKIT_LIB_DIR
 JVM_VARIANT_MAIN
 VALID_JVM_VARIANTS
 JVM_VARIANTS
@@ -1171,6 +1174,7 @@ with_native_debug_symbols
 enable_debug_symbols
 enable_zip_debug_info
 enable_native_coverage
+enable_asan
 enable_dtrace
 enable_aot
 enable_cds
@@ -1181,6 +1185,8 @@ with_msvcp_dll
 with_x
 with_cups
 with_cups_include
+with_fontconfig
+with_fontconfig_include
 with_freetype
 with_freetype_include
 with_freetype_lib
@@ -1976,6 +1982,7 @@ Optional Features:
   --enable-native-coverage
                           enable native compilation with code coverage
                           data[disabled]
+  --enable-asan           enable AddressSanitizer if possible [disabled]
   --enable-dtrace[=yes/no/auto]
                           enable dtrace. Default is auto, where dtrace is
                           enabled if all dependencies are present.
@@ -2109,6 +2116,10 @@ Optional Packages:
   --with-cups             specify prefix directory for the cups package
                           (expecting the headers under PATH/include)
   --with-cups-include     specify directory for the cups include files
+  --with-fontconfig       specify prefix directory for the fontconfig package
+                          (expecting the headers under PATH/include)
+  --with-fontconfig-include
+                          specify directory for the fontconfig include files
   --with-freetype         specify prefix directory for the freetype package
                           (expecting the libraries under PATH/lib and the
                           headers under PATH/include)
@@ -4166,6 +4177,8 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install libasound2-dev" ;;
     cups)
       PKGHANDLER_COMMAND="sudo apt-get install libcups2-dev" ;;
+    fontconfig)
+      PKGHANDLER_COMMAND="sudo apt-get install libfontconfig1-dev" ;;
     freetype)
       PKGHANDLER_COMMAND="sudo apt-get install libfreetype6-dev" ;;
     ffi)
@@ -4189,6 +4202,8 @@ yum_help() {
       PKGHANDLER_COMMAND="sudo yum install alsa-lib-devel" ;;
     cups)
       PKGHANDLER_COMMAND="sudo yum install cups-devel" ;;
+    fontconfig)
+      PKGHANDLER_COMMAND="sudo yum install fontconfig-devel" ;;
     freetype)
       PKGHANDLER_COMMAND="sudo yum install freetype-devel" ;;
     x11)
@@ -4400,6 +4415,12 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 ################################################################################
 #
 # Gcov coverage data for hotspot
+#
+
+
+###############################################################################
+#
+# AddressSanitizer
 #
 
 
@@ -4743,6 +4764,36 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 ################################################################################
 # Setup X11 Windows system
+################################################################################
+
+
+#
+# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Setup fontconfig
 ################################################################################
 
 
@@ -5115,7 +5166,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1509013542
+DATE_WHEN_GENERATED=1509128484
 
 ###############################################################################
 #
@@ -17271,6 +17322,14 @@ $as_echo "$DEVKIT_ROOT" >&6; }
           SYSROOT="$DEVKIT_ROOT/$host_alias/libc"
         elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
           SYSROOT="$DEVKIT_ROOT/$host/sys-root"
+        fi
+
+        if test "x$DEVKIT_ROOT" != x; then
+          DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib"
+          if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+            DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib64"
+          fi
+
         fi
 
 
@@ -54169,6 +54228,49 @@ $as_echo "no" >&6; }
 
 
 
+# AddressSanitizer
+
+  # Check whether --enable-asan was given.
+if test "${enable_asan+set}" = set; then :
+  enableval=$enable_asan;
+fi
+
+  ASAN_ENABLED="no"
+  if test "x$enable_asan" = "xyes"; then
+    case $TOOLCHAIN_TYPE in
+      gcc | clang)
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if asan is enabled" >&5
+$as_echo_n "checking if asan is enabled... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        ASAN_CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
+        ASAN_LDFLAGS="-fsanitize=address"
+        JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
+        JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $ASAN_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $ASAN_CFLAGS"
+        CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $ASAN_CFLAGS"
+        CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $ASAN_CFLAGS"
+        LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $ASAN_LDFLAGS"
+        LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $ASAN_LDFLAGS"
+        ASAN_ENABLED="yes"
+        ;;
+      *)
+        as_fn_error $? "--enable-asan only works with toolchain type gcc or clang" "$LINENO" 5
+        ;;
+    esac
+  elif test "x$enable_asan" = "xno"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if asan is enabled" >&5
+$as_echo_n "checking if asan is enabled... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  elif test "x$enable_asan" != "x"; then
+    as_fn_error $? "--enable-asan can only be assigned \"yes\" or \"no\"" "$LINENO" 5
+  fi
+
+
+
+
 # Need toolchain to setup dtrace
 
   # Test for dtrace dependencies
@@ -54478,6 +54580,16 @@ $as_echo "yes" >&6; }
     # All other instances need X11, even if building headless only, libawt still
     # needs X11 headers.
     NEEDS_LIB_X11=true
+  fi
+
+  # Check if fontconfig is needed
+  if test "x$OPENJDK_TARGET_OS" = xwindows || test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # No fontconfig support on windows or macosx
+    NEEDS_LIB_FONTCONFIG=false
+  else
+    # All other instances need fontconfig, even if building headless only,
+    # libawt still needs fontconfig headers.
+    NEEDS_LIB_FONTCONFIG=true
   fi
 
   # Check if cups is needed
@@ -58290,6 +58402,116 @@ done
   fi
 
       as_fn_error $? "Could not find cups! $HELP_MSG " "$LINENO" 5
+    fi
+  fi
+
+
+
+
+
+# Check whether --with-fontconfig was given.
+if test "${with_fontconfig+set}" = set; then :
+  withval=$with_fontconfig;
+fi
+
+
+# Check whether --with-fontconfig-include was given.
+if test "${with_fontconfig_include+set}" = set; then :
+  withval=$with_fontconfig_include;
+fi
+
+
+  if test "x$NEEDS_LIB_FONTCONFIG" = xfalse; then
+    if (test "x${with_fontconfig}" != x && test "x${with_fontconfig}" != xno) || \
+        (test "x${with_fontconfig_include}" != x && test "x${with_fontconfig_include}" != xno); then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: fontconfig not used, so --with-fontconfig[-*] is ignored" >&5
+$as_echo "$as_me: WARNING: fontconfig not used, so --with-fontconfig[-*] is ignored" >&2;}
+    fi
+    FONTCONFIG_CFLAGS=
+  else
+    FONTCONFIG_FOUND=no
+
+    if test "x${with_fontconfig}" = xno || test "x${with_fontconfig_include}" = xno; then
+      as_fn_error $? "It is not possible to disable the use of fontconfig. Remove the --without-fontconfig option." "$LINENO" 5
+    fi
+
+    if test "x${with_fontconfig}" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fontconfig headers" >&5
+$as_echo_n "checking for fontconfig headers... " >&6; }
+      if test -s "${with_fontconfig}/include/fontconfig/fontconfig.h"; then
+        FONTCONFIG_CFLAGS="-I${with_fontconfig}/include"
+        FONTCONFIG_FOUND=yes
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FONTCONFIG_FOUND" >&5
+$as_echo "$FONTCONFIG_FOUND" >&6; }
+      else
+        as_fn_error $? "Can't find 'include/fontconfig/fontconfig.h' under ${with_fontconfig} given with the --with-fontconfig option." "$LINENO" 5
+      fi
+    fi
+    if test "x${with_fontconfig_include}" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fontconfig headers" >&5
+$as_echo_n "checking for fontconfig headers... " >&6; }
+      if test -s "${with_fontconfig_include}/fontconfig/fontconfig.h"; then
+        FONTCONFIG_CFLAGS="-I${with_fontconfig_include}"
+        FONTCONFIG_FOUND=yes
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FONTCONFIG_FOUND" >&5
+$as_echo "$FONTCONFIG_FOUND" >&6; }
+      else
+        as_fn_error $? "Can't find 'fontconfig/fontconfig.h' under ${with_fontconfig_include} given with the --with-fontconfig-include option." "$LINENO" 5
+      fi
+    fi
+    if test "x$FONTCONFIG_FOUND" = xno; then
+      # Are the fontconfig headers installed in the default /usr/include location?
+      for ac_header in fontconfig/fontconfig.h
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "fontconfig/fontconfig.h" "ac_cv_header_fontconfig_fontconfig_h" "$ac_includes_default"
+if test "x$ac_cv_header_fontconfig_fontconfig_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_FONTCONFIG_FONTCONFIG_H 1
+_ACEOF
+
+          FONTCONFIG_FOUND=yes
+          FONTCONFIG_CFLAGS=
+          DEFAULT_FONTCONFIG=yes
+
+fi
+
+done
+
+    fi
+    if test "x$FONTCONFIG_FOUND" = xno; then
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # fontconfig is the help tag: freetype, cups, alsa etc
+  MISSING_DEPENDENCY=fontconfig
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      brew)
+        brew_help    $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+      as_fn_error $? "Could not find fontconfig! $HELP_MSG " "$LINENO" 5
     fi
   fi
 
@@ -65817,6 +66039,7 @@ $as_echo "no, not found at $STLPORT_LIB" >&6; }
     fi
 
   fi
+
 
 
 

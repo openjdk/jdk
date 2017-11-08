@@ -79,7 +79,7 @@ public class RawLoadNode extends UnsafeAccessNode implements Lowerable, Virtuali
         super(TYPE, stamp, object, offset, accessKind, locationIdentity, false);
     }
 
-    public RawLoadNode(NodeClass<? extends RawLoadNode> c, ValueNode object, ValueNode offset, JavaKind accessKind, LocationIdentity locationIdentity) {
+    protected RawLoadNode(NodeClass<? extends RawLoadNode> c, ValueNode object, ValueNode offset, JavaKind accessKind, LocationIdentity locationIdentity) {
         super(c, StampFactory.forKind(accessKind.getStackKind()), object, offset, accessKind, locationIdentity, false);
     }
 

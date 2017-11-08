@@ -43,32 +43,36 @@ import java.util.Map;
  * The following table lists some common properties that should be used in
  * implementations:
  *
- * <table border=1>
+ * <table class="striped">
  * <caption>MIDI File Format Properties</caption>
+ * <thead>
  *   <tr>
- *     <th>Property key
- *     <th>Value type
- *     <th>Description
+ *     <th scope="col">Property key
+ *     <th scope="col">Value type
+ *     <th scope="col">Description
+ * </thead>
+ * <tbody>
  *   <tr>
- *     <td>&quot;author&quot;
+ *     <th scope="row">"author"
  *     <td>{@link String String}
  *     <td>name of the author of this file
  *   <tr>
- *     <td>&quot;title&quot;
+ *     <th scope="row">"title"
  *     <td>{@link String String}
  *     <td>title of this file
  *   <tr>
- *     <td>&quot;copyright&quot;
+ *     <th scope="row">"copyright"
  *     <td>{@link String String}
  *     <td>copyright message
  *   <tr>
- *     <td>&quot;date&quot;
+ *     <th scope="row">"date"
  *     <td>{@link java.util.Date Date}
  *     <td>date of the recording or release
  *   <tr>
- *     <td>&quot;comment&quot;
+ *     <th scope="row">"comment"
  *     <td>{@link String String}
  *     <td>an arbitrary text
+ * </tbody>
  * </table>
  *
  * @author Kara Kytle

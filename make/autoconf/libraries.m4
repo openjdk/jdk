@@ -31,6 +31,7 @@ m4_include([lib-ffi.m4])
 m4_include([lib-freetype.m4])
 m4_include([lib-std.m4])
 m4_include([lib-x11.m4])
+m4_include([lib-fontconfig.m4])
 
 ################################################################################
 # Determine which libraries are needed for this configuration
@@ -45,6 +46,16 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
     # All other instances need X11, even if building headless only, libawt still
     # needs X11 headers.
     NEEDS_LIB_X11=true
+  fi
+
+  # Check if fontconfig is needed
+  if test "x$OPENJDK_TARGET_OS" = xwindows || test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # No fontconfig support on windows or macosx
+    NEEDS_LIB_FONTCONFIG=false
+  else
+    # All other instances need fontconfig, even if building headless only,
+    # libawt still needs fontconfig headers.
+    NEEDS_LIB_FONTCONFIG=true
   fi
 
   # Check if cups is needed
@@ -83,6 +94,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_STD_LIBS
   LIB_SETUP_X11
   LIB_SETUP_CUPS
+  LIB_SETUP_FONTCONFIG
   LIB_SETUP_FREETYPE
   LIB_SETUP_ALSA
   LIB_SETUP_LIBFFI

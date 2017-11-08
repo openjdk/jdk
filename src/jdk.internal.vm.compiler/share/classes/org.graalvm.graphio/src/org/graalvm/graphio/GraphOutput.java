@@ -113,9 +113,27 @@ public final class GraphOutput<G, M> implements Closeable {
         private GraphElements<M, ?, ?, ?> elements = null;
         private GraphTypes types = DefaultGraphTypes.DEFAULT;
         private GraphBlocks<G, ?, N> blocks = DefaultGraphBlocks.empty();
+        private int major = 4;
+        private int minor = 0;
 
         Builder(GraphStructure<G, N, ?, ?> structure) {
             this.structure = structure;
+        }
+
+        /**
+         * Chooses which version of the protocol to use. The default version is <code>4.0</code>
+         * (when the {@link GraphOutput} & co. classes were introduced). The default can be changed
+         * to other known versions manually by calling this method.
+         *
+         * @param majorVersion by default 4, newer version may be known
+         * @param minorVersion usually 0
+         * @return this builder
+         * @since 0.28
+         */
+        public Builder<G, N, M> protocolVersion(int majorVersion, int minorVersion) {
+            this.major = majorVersion;
+            this.minor = minorVersion;
+            return this;
         }
 
         /**
@@ -161,7 +179,28 @@ public final class GraphOutput<G, M> implements Closeable {
          * @throws IOException if something goes wrong when writing to the channel
          */
         public GraphOutput<G, M> build(WritableByteChannel channel) throws IOException {
-            ProtocolImpl<G, N, ?, ?, ?, M, ?, ?, ?> p = new ProtocolImpl<>(structure, types, blocks, elements, channel);
+            ProtocolImpl<G, N, ?, ?, ?, M, ?, ?, ?> p = new ProtocolImpl<>(major, minor, structure, types, blocks, elements, channel);
+            return new GraphOutput<>(p);
+        }
+
+        /**
+         * Support for nesting heterogenous graphs. The newly created output uses all the interfaces
+         * currently associated with this builder, but shares with {@code parent} the output
+         * {@code channel}, internal constant pool and {@link #protocolVersion(int, int) protocol
+         * version}.
+         * <p>
+         * Both GraphOutput (the {@code parent} and the returned one) has to be used in
+         * synchronization - e.g. only one
+         * {@link #beginGroup(java.lang.Object, java.lang.String, java.lang.String, java.lang.Object, int, java.util.Map)
+         * begin}, {@link #endGroup() end} of group or
+         * {@link #print(java.lang.Object, java.util.Map, int, java.lang.String, java.lang.Object...)
+         * printing} can be on at a given moment.
+         *
+         * @param parent the output to inherit {@code channel} and protocol version from
+         * @return new output sharing {@code channel} and other internals with {@code parent}
+         */
+        public GraphOutput<G, M> build(GraphOutput<?, ?> parent) {
+            ProtocolImpl<G, N, ?, ?, ?, M, ?, ?, ?> p = new ProtocolImpl<>(parent.printer, structure, types, blocks, elements);
             return new GraphOutput<>(p);
         }
     }

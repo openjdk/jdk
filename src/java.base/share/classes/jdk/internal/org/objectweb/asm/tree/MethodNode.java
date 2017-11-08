@@ -249,7 +249,7 @@ public class MethodNode extends MethodVisitor {
      *             If a subclass calls this constructor.
      */
     public MethodNode() {
-        this(Opcodes.ASM5);
+        this(Opcodes.ASM6);
         if (getClass() != MethodNode.class) {
             throw new IllegalStateException();
         }
@@ -260,7 +260,7 @@ public class MethodNode extends MethodVisitor {
      *
      * @param api
      *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4} or {@link Opcodes#ASM5}.
+     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
      */
     public MethodNode(final int api) {
         super(api);
@@ -291,7 +291,7 @@ public class MethodNode extends MethodVisitor {
      */
     public MethodNode(final int access, final String name, final String desc,
             final String signature, final String[] exceptions) {
-        this(Opcodes.ASM5, access, name, desc, signature, exceptions);
+        this(Opcodes.ASM6, access, name, desc, signature, exceptions);
         if (getClass() != MethodNode.class) {
             throw new IllegalStateException();
         }
@@ -302,7 +302,7 @@ public class MethodNode extends MethodVisitor {
      *
      * @param api
      *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4} or {@link Opcodes#ASM5}.
+     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
      * @param access
      *            the method's access flags (see {@link Opcodes}). This
      *            parameter also indicates if the method is synthetic and/or
@@ -688,8 +688,8 @@ public class MethodNode extends MethodVisitor {
      * versions of the ASM API than the given version.
      *
      * @param api
-     *            an ASM API version. Must be one of {@link Opcodes#ASM4} or
-     *            {@link Opcodes#ASM5}.
+     *            an ASM API version. Must be one of {@link Opcodes#ASM4},
+     *            {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
      */
     public void check(final int api) {
         if (api == Opcodes.ASM4) {

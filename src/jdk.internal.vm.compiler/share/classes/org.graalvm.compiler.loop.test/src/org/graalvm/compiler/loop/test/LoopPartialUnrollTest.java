@@ -214,7 +214,7 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
             }
         };
         ResolvedJavaMethod method = getResolvedJavaMethod(name);
-        OptionValues options = new OptionValues(getInitialOptions(), DefaultLoopPolicies.UnrollMaxIterations, 2);
+        OptionValues options = new OptionValues(getInitialOptions(), DefaultLoopPolicies.Options.UnrollMaxIterations, 2);
         StructuredGraph graph = parse(builder(method, StructuredGraph.AllowAssumptions.YES, id, options), getEagerGraphBuilderSuite());
         try (DebugContext.Scope buildScope = graph.getDebug().scope(name, method, graph)) {
             MidTierContext context = new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, null);

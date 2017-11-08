@@ -49,8 +49,8 @@ import org.graalvm.compiler.core.CompilerThreadFactory;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -73,6 +73,8 @@ import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.phases.verify.VerifyBailoutUsage;
 import org.graalvm.compiler.phases.verify.VerifyCallerSensitiveMethods;
 import org.graalvm.compiler.phases.verify.VerifyDebugUsage;
+import org.graalvm.compiler.phases.verify.VerifyGetOptionsUsage;
+import org.graalvm.compiler.phases.verify.VerifyGraphAddUsage;
 import org.graalvm.compiler.phases.verify.VerifyInstanceOfUsage;
 import org.graalvm.compiler.phases.verify.VerifyUpdateUsages;
 import org.graalvm.compiler.phases.verify.VerifyUsageWithEquals;
@@ -381,6 +383,8 @@ public class CheckGraalInvariants extends GraalCompilerTest {
         new VerifyUpdateUsages().apply(graph, context);
         new VerifyBailoutUsage().apply(graph, context);
         new VerifyInstanceOfUsage().apply(graph, context);
+        new VerifyGraphAddUsage().apply(graph, context);
+        new VerifyGetOptionsUsage().apply(graph, context);
         if (graph.method().isBridge()) {
             BridgeMethodUtils.getBridgedMethod(graph.method());
         }

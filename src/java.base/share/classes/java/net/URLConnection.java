@@ -785,7 +785,7 @@ public abstract class URLConnection {
      * required to make the connection. By default, this method
      * returns {@code java.security.AllPermission}. Subclasses
      * should override this method and return the permission
-     * that best represents the permission required to make a
+     * that best represents the permission required to make
      * a connection to the URL. For example, a {@code URLConnection}
      * representing a {@code file:} URL would return a
      * {@code java.io.FilePermission} object.

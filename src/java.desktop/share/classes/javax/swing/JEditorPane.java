@@ -1914,11 +1914,13 @@ public class JEditorPane extends JTextComponent {
 
             /**
              * Return an object that represents the link anchor,
-             * as appropriate for that link.  E.g. from HTML:
-             *   <a href="http://www.sun.com/access">Accessibility</a>
+             * as appropriate for that link.
+             * <p>
+             * E.g. from HTML:
+             *   &lt;a href="http://openjdk.java.net"&gt;OpenJDK&lt;/a&gt;
              * this method would return a String containing the text:
-             * 'Accessibility'.
-             *
+             * 'OpenJDK'.
+             * <p>
              * Similarly, from this HTML:
              *   &lt;a HREF="#top"&gt;&lt;img src="top-hat.gif" alt="top hat"&gt;&lt;/a&gt;
              * this might return the object ImageIcon("top-hat.gif", "top hat");

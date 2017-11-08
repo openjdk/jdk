@@ -1042,35 +1042,30 @@ public abstract class KeyboardFocusManager
      * <table class="striped">
      * <caption>Recommended default values for focus traversal keys</caption>
      * <thead>
-     * <tr>
-     *    <th>Identifier</th>
-     *    <th>Meaning</th>
-     *    <th>Default</th>
-     * </tr>
+     *   <tr>
+     *     <th scope="col">Identifier
+     *     <th scope="col">Meaning
+     *     <th scope="col">Default
      * </thead>
      * <tbody>
-     * <tr>
-     *    <td>{@code KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS}</td>
-     *    <td>Normal forward keyboard traversal</td>
-     *    <td>{@code TAB} on {@code KEY_PRESSED},
-     *        {@code CTRL-TAB} on {@code KEY_PRESSED}</td>
-     * </tr>
-     * <tr>
-     *    <td>{@code KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS}</td>
-     *    <td>Normal reverse keyboard traversal</td>
-     *    <td>{@code SHIFT-TAB} on {@code KEY_PRESSED},
-     *        {@code CTRL-SHIFT-TAB} on {@code KEY_PRESSED}</td>
-     * </tr>
-     * <tr>
-     *    <td>{@code KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS}</td>
-     *    <td>Go up one focus traversal cycle</td>
-     *    <td>none</td>
-     * </tr>
-     * <tr>
-     *    <td>{@code KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS}</td>
-     *    <td>Go down one focus traversal cycle</td>
-     *    <td>none</td>
-     * </tr>
+     *   <tr>
+     *     <th scope="row">{@code KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS}
+     *     <td>Normal forward keyboard traversal
+     *     <td>{@code TAB} on {@code KEY_PRESSED}, {@code CTRL-TAB} on
+     *     {@code KEY_PRESSED}
+     *   <tr>
+     *     <th scope="row">{@code KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS}
+     *     <td>Normal reverse keyboard traversal
+     *     <td>{@code SHIFT-TAB} on {@code KEY_PRESSED}, {@code CTRL-SHIFT-TAB}
+     *     on {@code KEY_PRESSED}
+     *   <tr>
+     *     <th scope="row">{@code KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS}
+     *     <td>Go up one focus traversal cycle
+     *     <td>none
+     *   <tr>
+     *     <th scope="row">{@code KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS}
+     *     <td>Go down one focus traversal cycle
+     *     <td>none
      * </tbody>
      * </table>
      *
