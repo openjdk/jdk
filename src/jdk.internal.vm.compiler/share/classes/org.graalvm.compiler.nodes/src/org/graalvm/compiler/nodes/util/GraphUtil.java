@@ -242,7 +242,7 @@ public class GraphUtil {
                 EconomicSet<Node> collectedUnusedNodes = unusedNodes = EconomicSet.create(Equivalence.IDENTITY);
                 nodeEventScope = node.graph().trackNodeEvents(new Graph.NodeEventListener() {
                     @Override
-                    public void event(Graph.NodeEvent e, Node n) {
+                    public void changed(Graph.NodeEvent e, Node n) {
                         if (e == Graph.NodeEvent.ZERO_USAGES && isFloatingNode(n) && !(n instanceof GuardNode)) {
                             collectedUnusedNodes.add(n);
                         }

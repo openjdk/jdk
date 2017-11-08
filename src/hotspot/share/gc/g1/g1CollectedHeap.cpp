@@ -2597,7 +2597,7 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   // FIXME: what is this about?
   // I'm ignoring the "fill_newgen()" call if "alloc_event_enabled"
   // is set.
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
 #endif
   // always_do_update_barrier = true;
@@ -3010,7 +3010,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
       _verifier->check_bitmaps("GC Start");
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
       DerivedPointerTable::clear();
 #endif
 
@@ -4439,7 +4439,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   purge_code_root_memory();
 
   redirty_logged_cards();
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   double start = os::elapsedTime();
   DerivedPointerTable::update_pointers();
   g1_policy()->phase_times()->record_derived_pointer_table_update_time((os::elapsedTime() - start) * 1000.0);

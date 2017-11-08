@@ -58,8 +58,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jdk.internal.module.Checks;
-import jdk.internal.module.ClassFileAttributes;
-import jdk.internal.module.ClassFileConstants;
 import jdk.internal.module.DefaultRoots;
 import jdk.internal.module.IllegalAccessMaps;
 import jdk.internal.module.ModuleHashes;
@@ -68,13 +66,13 @@ import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
-import jdk.internal.org.objectweb.asm.Attribute;
+
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.ModuleVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 import jdk.tools.jlink.internal.ModuleSorter;
@@ -435,24 +433,25 @@ public final class SystemModulesPlugin implements Plugin {
         }
 
         boolean hasModulePackages() throws IOException {
-            Set<String> attrTypes = new HashSet<>();
-            ClassVisitor cv = new ClassVisitor(Opcodes.ASM5) {
+            Set<String> packages = new HashSet<>();
+            ClassVisitor cv = new ClassVisitor(Opcodes.ASM6) {
                 @Override
-                public void visitAttribute(Attribute attr) {
-                    attrTypes.add(attr.type);
+                public ModuleVisitor visitModule(String name,
+                                                 int flags,
+                                                 String version) {
+                    return new ModuleVisitor(Opcodes.ASM6) {
+                        public void visitPackage(String pn) {
+                            packages.add(pn);
+                        }
+                    };
                 }
-            };
-
-            // prototype of attributes that should be parsed
-            Attribute[] attrs = new Attribute[] {
-                new ClassFileAttributes.ModulePackagesAttribute()
             };
 
             try (InputStream in = getInputStream()) {
                 // parse module-info.class
                 ClassReader cr = new ClassReader(in);
-                cr.accept(cv, attrs, 0);
-                return attrTypes.contains(ClassFileConstants.MODULE_PACKAGES);
+                cr.accept(cv, 0);
+                return packages.size() > 0;
             }
         }
 

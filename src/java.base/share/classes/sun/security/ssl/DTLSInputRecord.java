@@ -539,7 +539,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
                 // Should be repacked for suitable fragment length.
                 //
-                // Note that the acquiring processes will reassemble the
+                // Note that the acquiring processes will reassemble
                 // the fragments later.
                 return compareToSequence(o.recordEpoch, o.recordSeq);
             }

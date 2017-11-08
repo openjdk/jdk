@@ -122,6 +122,10 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * <p>This class is thread-safe: multiple threads can share a single
  * {@code Properties} object without the need for external synchronization.
  *
+ * @apiNote
+ * The {@code Properties} class does not inherit the concept of a load factor
+ * from its superclass, {@code Hashtable}.
+ *
  * @author  Arthur van Hoff
  * @author  Michael McCloskey
  * @author  Xueming Shen
@@ -148,25 +152,49 @@ class Properties extends Hashtable<Object,Object> {
      * simple read operations.  Writes and bulk operations remain synchronized,
      * as in Hashtable.
      */
-    private transient ConcurrentHashMap<Object, Object> map =
-            new ConcurrentHashMap<>(8);
+    private transient ConcurrentHashMap<Object, Object> map;
 
     /**
      * Creates an empty property list with no default values.
+     *
+     * @implNote The initial capacity of a {@code Properties} object created
+     * with this constructor is unspecified.
      */
     public Properties() {
-        this(null);
+        this(null, 8);
+    }
+
+    /**
+     * Creates an empty property list with no default values, and with an
+     * initial size accommodating the specified number of elements without the
+     * need to dynamically resize.
+     *
+     * @param  initialCapacity the {@code Properties} will be sized to
+     *         accommodate this many elements
+     * @throws IllegalArgumentException if the initial capacity is less than
+     *         zero.
+     */
+    public Properties(int initialCapacity) {
+        this(null, initialCapacity);
     }
 
     /**
      * Creates an empty property list with the specified defaults.
      *
+     * @implNote The initial capacity of a {@code Properties} object created
+     * with this constructor is unspecified.
+     *
      * @param   defaults   the defaults.
      */
     public Properties(Properties defaults) {
+        this(defaults, 8);
+    }
+
+    private Properties(Properties defaults, int initialCapacity) {
         // use package-private constructor to
         // initialize unused fields with dummy values
         super((Void) null);
+        map = new ConcurrentHashMap<>(initialCapacity);
         this.defaults = defaults;
     }
 

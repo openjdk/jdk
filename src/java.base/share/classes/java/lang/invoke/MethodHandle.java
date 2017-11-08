@@ -765,7 +765,7 @@ public abstract class MethodHandle {
      * In every other case, all conversions are applied <em>pairwise</em>,
      * which means that each argument or return value is converted to
      * exactly one argument or return value (or no return value).
-     * The applied conversions are defined by consulting the
+     * The applied conversions are defined by consulting
      * the corresponding component types of the old and new
      * method handle types.
      * <p>

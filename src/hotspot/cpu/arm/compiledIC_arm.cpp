@@ -33,7 +33,7 @@
 #include "runtime/safepoint.hpp"
 
 // ----------------------------------------------------------------------------
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
 #define __ _masm.
 // emit call stub, compiled java to interpreter
 address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
@@ -89,7 +89,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
 int CompiledStaticCall::reloc_to_interp_stub() {
   return 10;  // 4 in emit_to_interp_stub + 1 in Java_Static_Call
 }
-#endif // COMPILER2 || JVMCI
+#endif // COMPILER2_OR_JVMCI
 
 // size of C2 call stub, compiled java to interpretor
 int CompiledStaticCall::to_interp_stub_size() {

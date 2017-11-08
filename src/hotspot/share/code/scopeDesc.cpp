@@ -228,7 +228,7 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
     }
   }
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   if (NOT_JVMCI(DoEscapeAnalysis &&) is_top() && _objects != NULL) {
     st->print_cr("   Objects");
     for (int i = 0; i < _objects->length(); i++) {
@@ -239,7 +239,7 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
       st->cr();
     }
   }
-#endif // COMPILER2 || INCLUDE_JVMCI
+#endif // COMPILER2_OR_JVMCI
 }
 
 #endif

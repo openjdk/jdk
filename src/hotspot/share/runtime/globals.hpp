@@ -99,11 +99,11 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 #define CI_COMPILER_COUNT 0
 #else
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
 #define CI_COMPILER_COUNT 2
 #else
 #define CI_COMPILER_COUNT 1
-#endif // COMPILER2 || INCLUDE_JVMCI
+#endif // COMPILER2_OR_JVMCI
 
 #endif // no compilers
 
@@ -3900,18 +3900,6 @@ public:
   product(bool, PrintSharedDictionary, false,                               \
           "If PrintSharedArchiveAndExit is true, also print the shared "    \
           "dictionary")                                                     \
-                                                                            \
-  product(size_t, SharedReadWriteSize, 0,                                   \
-          "Deprecated")                                                     \
-                                                                            \
-  product(size_t, SharedReadOnlySize, 0,                                    \
-          "Deprecated")                                                     \
-                                                                            \
-  product(size_t, SharedMiscDataSize,  0,                                   \
-          "Deprecated")                                                     \
-                                                                            \
-  product(size_t, SharedMiscCodeSize,  0,                                   \
-          "Deprecated")                                                     \
                                                                             \
   product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \

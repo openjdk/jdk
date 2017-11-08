@@ -39,84 +39,77 @@
  * <p>
  * All implementations of javax.imageio provide the following standard image
  * format plug-ins:
- * <div>
- * <table border=1 cellpadding=5 style="margin: 0px auto;" summary="Standard
- * image format plug-ins">
- *     <tr>
- *         <th>&nbsp;</th><th>Reading</th><th>Writing</th><th>Notes</th>
- *         <th>Metadata</th>
- *     </tr>
  *
+ * <table class="striped">
+ * <caption>Standard image format plug-ins</caption>
+ * <thead>
+ *   <tr>
+ *     <th scope="col">Image format
+ *     <th scope="col">Reading
+ *     <th scope="col">Writing
+ *     <th scope="col">Notes
+ *     <th scope="col">Metadata
+ * </thead>
+ * <tbody>
  * <!-- BMP plugin -->
- *     <tr>
- *         <td><a href="https://msdn.microsoft.com/en-us/library/dd183391.aspx">
- *         BMP</a></td>
- *         <td align='center'>yes</td>
- *         <td align='center'>yes</td>
- *         <td align='center'>none</td>
- *         <td align='center'><a href='metadata/doc-files/bmp_metadata.html'>BMP
- *         metadata format</a></td>
- *     </tr>
- *
+ *   <tr>
+ *     <th scope="row">
+ *     <a href="https://msdn.microsoft.com/en-us/library/dd183391.aspx">BMP</a>
+ *     <td>yes
+ *     <td>yes
+ *     <td>none
+ *     <td><a href='metadata/doc-files/bmp_metadata.html'>BMP
+ *     metadata format</a>
  * <!-- GIF plugin -->
- *     <tr>
- *         <td><a href="http://www.w3.org/Graphics/GIF/spec-gif89a.txt">GIF</a>
- *         </td>
- *         <td align='center'>yes</td>
- *         <td align='center'>yes</td>
- *         <td align='center'><a href="#gif_plugin_notes">GIF plug-in notes</a>
- *         </td>
- *         <td align='center'><a href='metadata/doc-files/gif_metadata.html'>GIF
- *         metadata format</a></td>
- *     </tr>
- *
+ *   <tr>
+ *     <th scope="row">
+ *     <a href="http://www.w3.org/Graphics/GIF/spec-gif89a.txt">GIF</a>
+ *     <td>yes
+ *     <td>yes
+ *     <td><a href="#gif_plugin_notes">GIF plug-in notes</a>
+ *     <td><a href='metadata/doc-files/gif_metadata.html'>GIF
+ *     metadata format</a>
  * <!-- JPEG plugin -->
- *     <tr>
- *         <td><a href="http://www.jpeg.org">JPEG</a></td>
- *         <td align='center'>yes</td>
- *         <td align='center'>yes</td>
- *         <td align='center'>none</td>
- *         <td align='center'><a href='metadata/doc-files/jpeg_metadata.html'>
- *         JPEG metadata format</a></td>
- *     </tr>
- *
+ *   <tr>
+ *     <th scope="row"><a href="http://www.jpeg.org">JPEG</a>
+ *     <td>yes
+ *     <td>yes
+ *     <td>none
+ *     <td><a href='metadata/doc-files/jpeg_metadata.html'>
+ *     JPEG metadata format</a>
  * <!-- PNG plugin -->
- *     <tr>
- *         <td><a href="http://www.libpng.org/pub/png/spec/">PNG</a></td>
- *         <td align='center'>yes</td>
- *         <td align='center'>yes</td>
- *         <td align='center'>none</td>
- *         <td align='center'><a href='metadata/doc-files/png_metadata.html'>PNG
- *         metadata format</a></td>
- *     </tr>
- *
+ *   <tr>
+ *     <th scope="row"><a href="http://www.libpng.org/pub/png/spec/">PNG</a>
+ *     <td>yes
+ *     <td>yes
+ *     <td>none
+ *     <td><a href='metadata/doc-files/png_metadata.html'>PNG
+ *     metadata format</a>
  * <!-- TIFF plugin -->
- *     <tr>
- *         <td><a href="https://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf">
- *         TIFF</a></td>
- *         <td align='center'>yes</td>
- *         <td align='center'>yes</td>
- *         <td align='center'><a href='metadata/doc-files/tiff_metadata.html#Reading'>
- *         TIFF plug-in notes</a></td>
- *         <td align='center'><a href='metadata/doc-files/tiff_metadata.html#StreamMetadata'>
- *         TIFF metadata format</a></td>
- *     </tr>
- *
+ *   <tr>
+ *     <th scope="row">
+ *     <a href="https://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf">
+ *     TIFF</a>
+ *     <td>yes
+ *     <td>yes
+ *     <td>
+ *     <a href='metadata/doc-files/tiff_metadata.html#Reading'>TIFF plug-in
+ *     notes</a>
+ *     <td>
+ *     <a href='metadata/doc-files/tiff_metadata.html#StreamMetadata'>TIFF
+ *     metadata format</a>
  * <!-- WBMP plugin -->
- *     <tr>
- *         <td><a href="http://www.wapforum.org/what/technical/SPEC-WAESpec-19990524.pdf">
- *         WBMP</a></td>
- *         <td align='center'>yes</td>
- *         <td align='center'>yes</td>
- *         <td align='center'>none</td>
- *         <td align='center'><a href='metadata/doc-files/wbmp_metadata.html'>
- *         WBMP metadata format</a></td>
- *     </tr>
+ *   <tr>
+ *     <th scope="row">
+ *     <a href="http://www.wapforum.org/what/technical/SPEC-WAESpec-19990524.pdf">
+ *     WBMP</a>
+ *     <td>yes
+ *     <td>yes
+ *     <td>none
+ *     <td><a href='metadata/doc-files/wbmp_metadata.html'>
+ *     WBMP metadata format</a>
+ * </tbody>
  * </table>
- * </div>
- * <BR>
- * <BR>
- * <BR>
  *
  * <h2> Standard Plug-in Notes</h2>
  *

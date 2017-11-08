@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3433,6 +3433,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  address generate_libmExp() {
+    StubCodeMark mark(this, "StubRoutines", "libmExp");
+
     address start = __ pc();
 
     const XMMRegister x0  = xmm0;
@@ -3458,6 +3460,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  address generate_libmLog() {
+   StubCodeMark mark(this, "StubRoutines", "libmLog");
+
    address start = __ pc();
 
    const XMMRegister x0 = xmm0;
@@ -3483,6 +3487,8 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libmLog10() {
+   StubCodeMark mark(this, "StubRoutines", "libmLog10");
+
    address start = __ pc();
 
    const XMMRegister x0 = xmm0;
@@ -3508,6 +3514,8 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libmPow() {
+   StubCodeMark mark(this, "StubRoutines", "libmPow");
+
    address start = __ pc();
 
    const XMMRegister x0 = xmm0;
@@ -3533,6 +3541,8 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libm_reduce_pi04l() {
+   StubCodeMark mark(this, "StubRoutines", "libm_reduce_pi04l");
+
    address start = __ pc();
 
    BLOCK_COMMENT("Entry:");
@@ -3543,6 +3553,8 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libm_sin_cos_huge() {
+   StubCodeMark mark(this, "StubRoutines", "libm_sin_cos_huge");
+
    address start = __ pc();
 
    const XMMRegister x0 = xmm0;
@@ -3556,6 +3568,8 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libmSin() {
+   StubCodeMark mark(this, "StubRoutines", "libmSin");
+
    address start = __ pc();
 
    const XMMRegister x0 = xmm0;
@@ -3579,6 +3593,8 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libmCos() {
+   StubCodeMark mark(this, "StubRoutines", "libmCos");
+
    address start = __ pc();
 
    const XMMRegister x0 = xmm0;
@@ -3604,6 +3620,8 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libm_tan_cot_huge() {
+   StubCodeMark mark(this, "StubRoutines", "libm_tan_cot_huge");
+
    address start = __ pc();
 
    const XMMRegister x0 = xmm0;
@@ -3617,6 +3635,8 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libmTan() {
+   StubCodeMark mark(this, "StubRoutines", "libmTan");
+
    address start = __ pc();
 
    const XMMRegister x0 = xmm0;

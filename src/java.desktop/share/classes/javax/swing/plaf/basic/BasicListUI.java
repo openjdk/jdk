@@ -588,52 +588,53 @@ public class BasicListUI extends ListUI
      * <caption>Describes the preferred size for each layout orientation
      * </caption>
      * <thead>
-     * <tr><th>Layout Orientation</th><th>Preferred Size</th></tr>
+     *   <tr>
+     *     <th scope="col">Layout Orientation
+     *     <th scope="col">Preferred Size
      * </thead>
      * <tbody>
-     * <tr>
-     *   <td>JList.VERTICAL
-     *   <td>The preferredSize of the list is total height of the rows
-     *       and the maximum width of the cells.  If JList.fixedCellHeight
-     *       is specified then the total height of the rows is just
-     *       (cellVerticalMargins + fixedCellHeight) * model.getSize() where
-     *       rowVerticalMargins is the space we allocate for drawing
-     *       the yellow focus outline.  Similarly if fixedCellWidth is
-     *       specified then we just use that.
-     *   </td>
-     * <tr>
-     *   <td>JList.VERTICAL_WRAP
-     *   <td>If the visible row count is greater than zero, the preferredHeight
-     *       is the maximum cell height * visibleRowCount. If the visible row
-     *       count is &lt;= 0, the preferred height is either the current height
-     *       of the list, or the maximum cell height, whichever is
-     *       bigger. The preferred width is than the maximum cell width *
-     *       number of columns needed. Where the number of columns needs is
-     *       list.height / max cell height. Max cell height is either the fixed
-     *       cell height, or is determined by iterating through all the cells
-     *       to find the maximum height from the ListCellRenderer.
-     * <tr>
-     *   <td>JList.HORIZONTAL_WRAP
-     *   <td>If the visible row count is greater than zero, the preferredHeight
-     *       is the maximum cell height * adjustedRowCount.  Where
-     *       visibleRowCount is used to determine the number of columns.
-     *       Because this lays out horizontally the number of rows is
-     *       then determined from the column count.  For example, lets say
-     *       you have a model with 10 items and the visible row count is 8.
-     *       The number of columns needed to display this is 2, but you no
-     *       longer need 8 rows to display this, you only need 5, thus
-     *       the adjustedRowCount is 5.
-     *       <p>If the visible row
-     *       count is &lt;= 0, the preferred height is dictated by the
-     *       number of columns, which will be as many as can fit in the width
-     *       of the <code>JList</code> (width / max cell width), with at
-     *       least one column.  The preferred height then becomes the
-     *       model size / number of columns * maximum cell height.
-     *       Max cell height is either the fixed
-     *       cell height, or is determined by iterating through all the cells
-     *       to find the maximum height from the ListCellRenderer.
+     *   <tr>
+     *     <th scope="row">JList.VERTICAL
+     *     <td>The preferredSize of the list is total height of the rows
+     *     and the maximum width of the cells. If JList.fixedCellHeight
+     *     is specified then the total height of the rows is just
+     *     (cellVerticalMargins + fixedCellHeight) * model.getSize() where
+     *     rowVerticalMargins is the space we allocate for drawing
+     *     the yellow focus outline. Similarly if fixedCellWidth is
+     *     specified then we just use that.
+     *   <tr>
+     *     <th scope="row">JList.VERTICAL_WRAP
+     *     <td>If the visible row count is greater than zero, the preferredHeight
+     *     is the maximum cell height * visibleRowCount. If the visible row
+     *     count is &lt;= 0, the preferred height is either the current height
+     *     of the list, or the maximum cell height, whichever is
+     *     bigger. The preferred width is than the maximum cell width *
+     *     number of columns needed. Where the number of columns needs is
+     *     list.height / max cell height. Max cell height is either the fixed
+     *     cell height, or is determined by iterating through all the cells
+     *     to find the maximum height from the ListCellRenderer.
+     *   <tr>
+     *     <th scope="row">JList.HORIZONTAL_WRAP
+     *     <td>If the visible row count is greater than zero, the preferredHeight
+     *     is the maximum cell height * adjustedRowCount. Where
+     *     visibleRowCount is used to determine the number of columns.
+     *     Because this lays out horizontally the number of rows is
+     *     then determined from the column count. For example, lets say
+     *     you have a model with 10 items and the visible row count is 8.
+     *     The number of columns needed to display this is 2, but you no
+     *     longer need 8 rows to display this, you only need 5, thus
+     *     the adjustedRowCount is 5.
+     *     <p>
+     *     If the visible row count is &lt;= 0, the preferred height is dictated
+     *     by the number of columns, which will be as many as can fit in the
+     *     width of the {@code JList} (width / max cell width), with at least
+     *     one column. The preferred height then becomes the model size / number
+     *     of columns * maximum cell height. Max cell height is either the fixed
+     *     cell height, or is determined by iterating through all the cells to
+     *     find the maximum height from the ListCellRenderer.
      * </tbody>
      * </table>
+     *
      * The above specifies the raw preferred width and height. The resulting
      * preferred width is the above width + insets.left + insets.right and
      * the resulting preferred height is the above height + insets.top +

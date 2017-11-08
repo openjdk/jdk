@@ -66,7 +66,7 @@ public class ParameterizedTypeImpl implements ParameterizedType {
     /**
      * Static factory. Given a (generic) class, actual type arguments
      * and an owner type, creates a parameterized type.
-     * This class can be instantiated with a a raw type that does not
+     * This class can be instantiated with a raw type that does not
      * represent a generic type, provided the list of actual type
      * arguments is empty.
      * If the ownerType argument is null, the declaring class of the

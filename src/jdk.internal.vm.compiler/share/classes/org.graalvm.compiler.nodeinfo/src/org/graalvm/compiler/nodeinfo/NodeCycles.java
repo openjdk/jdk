@@ -68,6 +68,10 @@ public enum NodeCycles {
         this.value = value;
     }
 
+    public boolean isValueKnown() {
+        return this != NodeCycles.CYCLES_UNKNOWN && this != NodeCycles.CYCLES_UNSET;
+    }
+
     public static final int IGNORE_CYCLES_CONTRACT_FACTOR = 0xFFFF;
 
     public static NodeCycles compute(NodeCycles base, int opCount) {

@@ -399,6 +399,46 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
   AC_SUBST(GCOV_ENABLED)
 ])
 
+###############################################################################
+#
+# AddressSanitizer
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
+[
+  AC_ARG_ENABLE(asan, [AS_HELP_STRING([--enable-asan],
+      [enable AddressSanitizer if possible @<:@disabled@:>@])])
+  ASAN_ENABLED="no"
+  if test "x$enable_asan" = "xyes"; then
+    case $TOOLCHAIN_TYPE in
+      gcc | clang)
+        AC_MSG_CHECKING([if asan is enabled])
+        AC_MSG_RESULT([yes])
+        ASAN_CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
+        ASAN_LDFLAGS="-fsanitize=address"
+        JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
+        JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $ASAN_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $ASAN_CFLAGS"
+        CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $ASAN_CFLAGS"
+        CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $ASAN_CFLAGS"
+        LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $ASAN_LDFLAGS"
+        LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $ASAN_LDFLAGS"
+        ASAN_ENABLED="yes"
+        ;;
+      *)
+        AC_MSG_ERROR([--enable-asan only works with toolchain type gcc or clang])
+        ;;
+    esac
+  elif test "x$enable_asan" = "xno"; then
+    AC_MSG_CHECKING([if asan is enabled])
+    AC_MSG_RESULT([no])
+  elif test "x$enable_asan" != "x"; then
+    AC_MSG_ERROR([--enable-asan can only be assigned "yes" or "no"])
+  fi
+
+  AC_SUBST(ASAN_ENABLED)
+])
+
 ################################################################################
 #
 # Static build support.  When enabled will generate static

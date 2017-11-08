@@ -1473,11 +1473,6 @@ public class Modules extends JCTree.Visitor {
                 d.packge.modle = msym;
             }
         }
-
-        if (!allowAccessIntoSystem && (msym.flags() & Flags.SYSTEM_MODULE) != 0 &&
-            msym.patchLocation != null) {
-            log.error(Errors.PatchModuleWithRelease(msym));
-        }
     }
 
     private Set<ModuleSymbol> retrieveRequiresTransitive(ModuleSymbol msym) {

@@ -43,7 +43,6 @@ import org.graalvm.compiler.phases.common.inlining.InliningUtil;
 import org.graalvm.compiler.phases.graph.FixedNodeProbabilityCache;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 
-import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
@@ -159,11 +158,11 @@ public class InlineableGraph implements Inlineable {
             if (param.usages().isNotEmpty()) {
                 ValueNode arg = args.get(param.index());
                 if (arg.isConstant()) {
-                    Constant constant = arg.asConstant();
+                    ConstantNode constant = (ConstantNode) arg;
                     parameterUsages = trackParameterUsages(param, parameterUsages);
                     // collect param usages before replacing the param
                     param.replaceAtUsagesAndDelete(graph.unique(
-                                    ConstantNode.forConstant(arg.stamp(), constant, ((ConstantNode) arg).getStableDimension(), ((ConstantNode) arg).isDefaultStable(), context.getMetaAccess())));
+                                    ConstantNode.forConstant(arg.stamp(), constant.getValue(), constant.getStableDimension(), constant.isDefaultStable(), context.getMetaAccess())));
                     // param-node gone, leaving a gap in the sequence given by param.index()
                 } else {
                     Stamp impro = improvedStamp(arg, param);

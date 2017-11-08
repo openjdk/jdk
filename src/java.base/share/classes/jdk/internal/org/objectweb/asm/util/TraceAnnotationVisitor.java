@@ -76,7 +76,7 @@ public final class TraceAnnotationVisitor extends AnnotationVisitor {
     }
 
     public TraceAnnotationVisitor(final AnnotationVisitor av, final Printer p) {
-        super(Opcodes.ASM5, av);
+        super(Opcodes.ASM6, av);
         this.p = p;
     }
 

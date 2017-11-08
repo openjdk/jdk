@@ -184,7 +184,6 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
         };
         ReentrantBlockIterator.apply(closure, cfg.getStartBlock());
         for (GraphEffectList effects : effectList) {
-            debug.log(" ==== effects");
             effects.apply(graph, obsoleteNodes, false);
         }
         /*
@@ -193,7 +192,6 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
          * indexes.
          */
         for (GraphEffectList effects : effectList) {
-            debug.log(" ==== cfg kill effects");
             effects.apply(graph, obsoleteNodes, true);
         }
         debug.dump(DebugContext.DETAILED_LEVEL, graph, "After applying effects");

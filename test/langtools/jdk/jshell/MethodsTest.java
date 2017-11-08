@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8080357 8167643
+ * @bug 8080357 8167643 8187359
  * @summary Tests for EvaluationState.methods
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng MethodsTest
@@ -228,6 +228,24 @@ public class MethodsTest extends KullaTesting {
         assertEval("String x() { return \"\"; };");
         assertMethods(method("()String", "x"));
         assertActiveKeys();
+    }
+
+    public void objectMethodNamedMethodsErrors() {
+        assertDeclareFail("boolean equals(double d1, double d2) {  return d1 == d2; }",
+                new ExpectedDiagnostic("jdk.eval.error.object.method", 8, 14, 8, -1, -1, Diagnostic.Kind.ERROR));
+        assertNumberOfActiveMethods(0);
+        assertActiveKeys();
+
+        assertDeclareFail("void          wait() { }",
+                new ExpectedDiagnostic("jdk.eval.error.object.method", 14, 18, 14, -1, -1, Diagnostic.Kind.ERROR));
+        assertNumberOfActiveMethods(0);
+        assertActiveKeys();
+
+        assertDeclareFail("  String   toString() throws NullPointerException{ }",
+                new ExpectedDiagnostic("jdk.eval.error.object.method", 11, 19, 11, -1, -1, Diagnostic.Kind.ERROR));
+        assertNumberOfActiveMethods(0);
+        assertActiveKeys();
+
     }
 
 

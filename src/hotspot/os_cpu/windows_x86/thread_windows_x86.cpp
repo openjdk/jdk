@@ -81,7 +81,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
 
     frame ret_frame(ret_sp, ret_fp, addr.pc());
     if (!ret_frame.safe_for_sender(jt)) {
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
       // C2 and JVMCI use ebp as a general register see if NULL fp helps
       frame ret_frame2(ret_sp, NULL, addr.pc());
       if (!ret_frame2.safe_for_sender(jt)) {
@@ -92,7 +92,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
 #else
       // nothing else to try if the frame isn't good
       return false;
-#endif /* COMPILER2 || INCLUDE_JVMCI */
+#endif // COMPILER2_OR_JVMCI
     }
     *fr_addr = ret_frame;
     return true;

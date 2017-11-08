@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,21 @@
  * questions.
  */
 
-
 package javax.swing;
 
-import com.sun.awt.AWTUtilities;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.beans.PropertyVetoException;
+
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
-
-import java.awt.*;
-import java.beans.PropertyVetoException;
 
 /** This is an implementation of the <code>DesktopManager</code>.
   * It currently implements the basic behaviors for managing
@@ -315,7 +321,7 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
         if (p != null) {
             String mode = (String)p.getClientProperty("JDesktopPane.dragMode");
             Window window = SwingUtilities.getWindowAncestor(f);
-            if (window != null && !AWTUtilities.isWindowOpaque(window)) {
+            if (window != null && !window.isOpaque()) {
                 dragMode = DEFAULT_DRAG_MODE;
             } else if (mode != null && mode.equals("outline")) {
                 dragMode = OUTLINE_DRAG_MODE;

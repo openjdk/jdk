@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,41 +22,135 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.awt.X11;
 
-import java.awt.peer.TaskbarPeer;
-import java.awt.*;
-import java.awt.event.InputEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.KeyEvent;
+import java.awt.AWTError;
+import java.awt.AWTException;
+import java.awt.Button;
+import java.awt.Canvas;
+import java.awt.Checkbox;
+import java.awt.CheckboxMenuItem;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Desktop;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.FileDialog;
+import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.JobAttributes;
+import java.awt.Label;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
+import java.awt.PageAttributes;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.PrintJob;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.ScrollPane;
+import java.awt.Scrollbar;
+import java.awt.SystemColor;
+import java.awt.SystemTray;
+import java.awt.Taskbar;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
+import java.awt.Window;
 import java.awt.datatransfer.Clipboard;
-import java.awt.dnd.DragSource;
-import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragGestureEvent;
+import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragGestureRecognizer;
-import java.awt.dnd.MouseDragGestureRecognizer;
+import java.awt.dnd.DragSource;
 import java.awt.dnd.InvalidDnDOperationException;
+import java.awt.dnd.MouseDragGestureRecognizer;
 import java.awt.dnd.peer.DragSourceContextPeer;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
 import java.awt.im.InputMethodHighlight;
 import java.awt.im.spi.InputMethodDescriptor;
-import java.awt.peer.*;
+import java.awt.peer.ButtonPeer;
+import java.awt.peer.CanvasPeer;
+import java.awt.peer.CheckboxMenuItemPeer;
+import java.awt.peer.CheckboxPeer;
+import java.awt.peer.ChoicePeer;
+import java.awt.peer.DesktopPeer;
+import java.awt.peer.DialogPeer;
+import java.awt.peer.FileDialogPeer;
+import java.awt.peer.FontPeer;
+import java.awt.peer.FramePeer;
+import java.awt.peer.KeyboardFocusManagerPeer;
+import java.awt.peer.LabelPeer;
+import java.awt.peer.ListPeer;
+import java.awt.peer.MenuBarPeer;
+import java.awt.peer.MenuItemPeer;
+import java.awt.peer.MenuPeer;
+import java.awt.peer.MouseInfoPeer;
+import java.awt.peer.PanelPeer;
+import java.awt.peer.PopupMenuPeer;
+import java.awt.peer.RobotPeer;
+import java.awt.peer.ScrollPanePeer;
+import java.awt.peer.ScrollbarPeer;
+import java.awt.peer.SystemTrayPeer;
+import java.awt.peer.TaskbarPeer;
+import java.awt.peer.TextAreaPeer;
+import java.awt.peer.TextFieldPeer;
+import java.awt.peer.TrayIconPeer;
+import java.awt.peer.WindowPeer;
 import java.beans.PropertyChangeListener;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Properties;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.Vector;
+
 import javax.swing.LookAndFeel;
 import javax.swing.UIDefaults;
-import sun.awt.*;
+
+import sun.awt.AWTAccessor;
+import sun.awt.AWTPermissions;
+import sun.awt.AppContext;
+import sun.awt.DisplayChangedListener;
+import sun.awt.LightweightFrame;
+import sun.awt.SunToolkit;
+import sun.awt.UNIXToolkit;
+import sun.awt.X11GraphicsConfig;
+import sun.awt.X11GraphicsDevice;
+import sun.awt.X11GraphicsEnvironment;
+import sun.awt.XSettings;
 import sun.awt.datatransfer.DataTransferer;
-import sun.font.FontConfigManager;
-import sun.java2d.SunGraphicsEnvironment;
 import sun.awt.util.PerformanceLogger;
 import sun.awt.util.ThreadGroupUtils;
+import sun.font.FontConfigManager;
+import sun.java2d.SunGraphicsEnvironment;
 import sun.print.PrintJob2D;
-import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
+import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
+
 import static sun.awt.X11.XlibUtil.scaleDown;
 
 public final class XToolkit extends UNIXToolkit implements Runnable {
@@ -2587,7 +2681,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     @Override
     public boolean isWindowTranslucencySupported() {
         //NOTE: it may not be supported. The actual check is being performed
-        //      at com.sun.awt.AWTUtilities(). In X11 we need to check
+        //      at java.awt.GraphicsDevice. In X11 we need to check
         //      whether there's any translucency-capable GC available.
         return true;
     }

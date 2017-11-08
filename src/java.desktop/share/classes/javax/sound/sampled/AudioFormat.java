@@ -94,21 +94,21 @@ import java.util.Objects;
  * <caption>Audio Format Properties</caption>
  * <thead>
  *   <tr>
- *     <th>Property key
- *     <th>Value type
- *     <th>Description
+ *     <th scope="col">Property key
+ *     <th scope="col">Value type
+ *     <th scope="col">Description
  * </thead>
  * <tbody>
  *   <tr>
- *     <td>&quot;bitrate&quot;
+ *     <th scope="row">"bitrate"
  *     <td>{@link java.lang.Integer Integer}
  *     <td>average bit rate in bits per second
  *   <tr>
- *     <td>&quot;vbr&quot;
+ *     <th scope="row">"vbr"
  *     <td>{@link java.lang.Boolean Boolean}
  *     <td>{@code true}, if the file is encoded in variable bit rate (VBR)
  *   <tr>
- *     <td>&quot;quality&quot;
+ *     <th scope="row">"quality"
  *     <td>{@link java.lang.Integer Integer}
  *     <td>encoding/conversion quality, 1..100
  * </tbody>

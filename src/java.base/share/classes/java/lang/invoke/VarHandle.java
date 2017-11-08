@@ -205,7 +205,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * and {@code double} on 32-bit platforms.
  *
  * <p>Access modes will override any memory ordering effects specified at
- * the declaration site of a variable.  For example, a VarHandle accessing a
+ * the declaration site of a variable.  For example, a VarHandle accessing
  * a field using the {@code get} access mode will access the field as
  * specified <em>by its access mode</em> even if that field is declared
  * {@code volatile}.  When mixed access is performed extreme care should be
@@ -423,7 +423,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * {@link java.lang.invoke.MethodHandles#varHandleInvoker}.
  *
  * <h1>Interoperation between VarHandles and Java generics</h1>
- * A VarHandle can be obtained for a variable, such as a a field, which is
+ * A VarHandle can be obtained for a variable, such as a field, which is
  * declared with Java generic types.  As with the Core Reflection API, the
  * VarHandle's variable type will be constructed from the erasure of the
  * source-level type.  When a VarHandle access mode method is invoked, the

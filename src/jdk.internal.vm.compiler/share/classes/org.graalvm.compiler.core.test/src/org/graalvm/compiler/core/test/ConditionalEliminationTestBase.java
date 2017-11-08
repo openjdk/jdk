@@ -27,12 +27,15 @@ import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.phases.OptimisticOptimizations;
+import org.graalvm.compiler.phases.OptimisticOptimizations.Optimization;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.ConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.junit.Assert;
 
@@ -44,6 +47,15 @@ public class ConditionalEliminationTestBase extends GraalCompilerTest {
     protected static int sink0;
     protected static int sink1;
     protected static int sink2;
+
+    /**
+     * These tests assume all code paths in called routines are reachable so disable removal of dead
+     * code based on method profiles.
+     */
+    @Override
+    protected HighTierContext getDefaultHighTierContext() {
+        return new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL.remove(Optimization.RemoveNeverExecutedCode));
+    }
 
     protected void testConditionalElimination(String snippet, String referenceSnippet) {
         testConditionalElimination(snippet, referenceSnippet, false, false);

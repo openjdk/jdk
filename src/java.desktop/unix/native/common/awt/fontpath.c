@@ -578,7 +578,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_FcFontManager_getFontPathNative
 
 #include <dlfcn.h>
 
-#include "fontconfig.h"
+#include <fontconfig/fontconfig.h>
 
 
 static void* openFontConfig() {
@@ -1254,6 +1254,7 @@ Java_sun_font_FontConfigManager_getFontConfig
                 && (strcmp((char*)fontformat, "TrueType") != 0)
 #if defined(__linux__) || defined(_AIX)
                 && (strcmp((char*)fontformat, "Type 1") != 0)
+                && (strcmp((char*)fontformat, "CFF") != 0)
 #endif
              ) {
                 continue;

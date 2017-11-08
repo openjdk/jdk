@@ -182,7 +182,7 @@ public class Textifier extends Printer {
      *             If a subclass calls this constructor.
      */
     public Textifier() {
-        this(Opcodes.ASM5);
+        this(Opcodes.ASM6);
         if (getClass() != Textifier.class) {
             throw new IllegalStateException();
         }
@@ -193,7 +193,7 @@ public class Textifier extends Printer {
      *
      * @param api
      *            the ASM API version implemented by this visitor. Must be one
-     *            of {@link Opcodes#ASM4} or {@link Opcodes#ASM5}.
+     *            of {@link Opcodes#ASM4}, {@link Opcodes#ASM5} or {@link Opcodes#ASM6}.
      */
     protected Textifier(final int api) {
         super(api);
@@ -250,6 +250,10 @@ public class Textifier extends Printer {
     public void visit(final int version, final int access, final String name,
             final String signature, final String superName,
             final String[] interfaces) {
+        if ((access & Opcodes.ACC_MODULE) != 0) {
+            // visitModule will print the module
+            return;
+        }
         this.access = access;
         int major = version & 0xFFFF;
         int minor = version >>> 16;
@@ -271,7 +275,7 @@ public class Textifier extends Printer {
                     .append(sv.getDeclaration()).append('\n');
         }
 
-        appendAccess(access & ~Opcodes.ACC_SUPER);
+        appendAccess(access & ~(Opcodes.ACC_SUPER | Opcodes.ACC_MODULE));
         if ((access & Opcodes.ACC_ANNOTATION) != 0) {
             buf.append("@interface ");
         } else if ((access & Opcodes.ACC_INTERFACE) != 0) {
@@ -312,6 +316,24 @@ public class Textifier extends Printer {
         if (buf.length() > 0) {
             text.add(buf.toString());
         }
+    }
+
+    @Override
+    public Printer visitModule(final String name, final int access,
+            final String version) {
+        buf.setLength(0);
+        if ((access & Opcodes.ACC_OPEN) != 0) {
+            buf.append("open ");
+        }
+        buf.append("module ")
+           .append(name)
+           .append(" { ")
+           .append(version == null ? "" : "// " + version)
+           .append("\n\n");
+        text.add(buf.toString());
+        Textifier t = createTextifier();
+        text.add(t.getText());
+        return t;
     }
 
     @Override
@@ -443,7 +465,7 @@ public class Textifier extends Printer {
         }
 
         buf.append(tab);
-        appendAccess(access & ~Opcodes.ACC_VOLATILE);
+        appendAccess(access & ~(Opcodes.ACC_VOLATILE | Opcodes.ACC_TRANSIENT));
         if ((access & Opcodes.ACC_NATIVE) != 0) {
             buf.append("native ");
         }
@@ -480,6 +502,118 @@ public class Textifier extends Printer {
     @Override
     public void visitClassEnd() {
         text.add("}\n");
+    }
+
+    // ------------------------------------------------------------------------
+    // Module
+    // ------------------------------------------------------------------------
+
+    @Override
+    public void visitMainClass(String mainClass) {
+        buf.setLength(0);
+        buf.append("  // main class ").append(mainClass).append('\n');
+        text.add(buf.toString());
+    }
+
+    @Override
+    public void visitPackage(String packaze) {
+        buf.setLength(0);
+        buf.append("  // package ").append(packaze).append('\n');
+        text.add(buf.toString());
+    }
+
+    @Override
+    public void visitRequire(String require, int access, String version) {
+        buf.setLength(0);
+        buf.append(tab).append("requires ");
+        if ((access & Opcodes.ACC_TRANSITIVE) != 0) {
+            buf.append("transitive ");
+        }
+        if ((access & Opcodes.ACC_STATIC_PHASE) != 0) {
+            buf.append("static ");
+        }
+        buf.append(require)
+           .append(";  // access flags 0x")
+           .append(Integer.toHexString(access).toUpperCase())
+           .append('\n');
+        if (version != null) {
+            buf.append("  // version ")
+               .append(version)
+               .append('\n');
+        }
+        text.add(buf.toString());
+    }
+
+    @Override
+    public void visitExport(String export, int access, String... modules) {
+        buf.setLength(0);
+        buf.append(tab).append("exports ");
+        buf.append(export);
+        if (modules != null && modules.length > 0) {
+            buf.append(" to");
+        } else {
+            buf.append(';');
+        }
+        buf.append("  // access flags 0x")
+           .append(Integer.toHexString(access).toUpperCase())
+           .append('\n');
+        if (modules != null && modules.length > 0) {
+            for (int i = 0; i < modules.length; ++i) {
+                buf.append(tab2).append(modules[i]);
+                buf.append(i != modules.length - 1 ? ",\n": ";\n");
+            }
+        }
+        text.add(buf.toString());
+    }
+
+    @Override
+    public void visitOpen(String export, int access, String... modules) {
+        buf.setLength(0);
+        buf.append(tab).append("opens ");
+        buf.append(export);
+        if (modules != null && modules.length > 0) {
+            buf.append(" to");
+        } else {
+            buf.append(';');
+        }
+        buf.append("  // access flags 0x")
+           .append(Integer.toHexString(access).toUpperCase())
+           .append('\n');
+        if (modules != null && modules.length > 0) {
+            for (int i = 0; i < modules.length; ++i) {
+                buf.append(tab2).append(modules[i]);
+                buf.append(i != modules.length - 1 ? ",\n": ";\n");
+            }
+        }
+        text.add(buf.toString());
+    }
+
+    @Override
+    public void visitUse(String use) {
+        buf.setLength(0);
+        buf.append(tab).append("uses ");
+        appendDescriptor(INTERNAL_NAME, use);
+        buf.append(";\n");
+        text.add(buf.toString());
+    }
+
+    @Override
+    public void visitProvide(String provide, String... providers) {
+        buf.setLength(0);
+        buf.append(tab).append("provides ");
+        appendDescriptor(INTERNAL_NAME, provide);
+        buf.append(" with\n");
+        for (int i = 0; i < providers.length; ++i) {
+            buf.append(tab2);
+            appendDescriptor(INTERNAL_NAME, providers[i]);
+            buf.append(i != providers.length - 1 ? ",\n": ";\n");
+        }
+        text.add(buf.toString());
+    }
+
+    @Override
+    public void visitModuleEnd() {
+        // empty
     }
 
     // ------------------------------------------------------------------------
@@ -1296,12 +1430,15 @@ public class Textifier extends Printer {
         appendDescriptor(INTERNAL_NAME, h.getOwner());
         buf.append('.');
         buf.append(h.getName());
-        if(!isMethodHandle){
+        if (!isMethodHandle) {
             buf.append('(');
         }
         appendDescriptor(HANDLE_DESCRIPTOR, h.getDesc());
-        if(!isMethodHandle){
+        if (!isMethodHandle) {
             buf.append(')');
+        }
+        if (h.isInterface()) {
+            buf.append(" itf");
         }
     }
 

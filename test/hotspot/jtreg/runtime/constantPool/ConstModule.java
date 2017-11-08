@@ -47,13 +47,13 @@ public class ConstModule {
 
         // Test that the JVM throws CFE for constant pool CONSTANT_Module type, for
         // class file version 53, when ACC_MODULE is not set in the access_flags.
-        ConstModule.write_and_load(Opcodes.V1_9,
+        ConstModule.write_and_load(Opcodes.V9,
             Opcodes.ACC_INTERFACE + Opcodes.ACC_ABSTRACT + Opcodes.ACC_SYNTHETIC,
             "jdk.fooMod", "FooMod", MODULE_TEST, CFE_EXCEPTION);
 
         // Test that the JVM throws NCDFE for constant pool CONSTANT_Module type,
         // for class file version 53, when ACC_MODULE is set in the access_flags.
-        ConstModule.write_and_load(Opcodes.V1_9,
+        ConstModule.write_and_load(Opcodes.V9,
             Opcodes.ACC_INTERFACE + Opcodes.ACC_ABSTRACT + Opcodes.ACC_SYNTHETIC + ACC_MODULE,
             "jdk.fooModACC", "FooModACC", MODULE_TEST, NCDFE_EXCEPTION);
 
@@ -65,13 +65,13 @@ public class ConstModule {
 
         // Test that the JVM throws CFE for constant pool CONSTANT_Package type, for
         // class file version 53, when ACC_MODULE is not set in the access_flags.
-        ConstModule.write_and_load(Opcodes.V1_9,
+        ConstModule.write_and_load(Opcodes.V9,
             Opcodes.ACC_INTERFACE + Opcodes.ACC_ABSTRACT + Opcodes.ACC_SYNTHETIC,
             "jdk.fooPkg", "FooPkg", PACKAGE_TEST, CFE_EXCEPTION);
 
         // Test that the JVM throws NCDFE for constant pool CONSTANT_Package type,
         // for class file version 53, when ACC_MODULE is set in the access_flags.
-        ConstModule.write_and_load(Opcodes.V1_9,
+        ConstModule.write_and_load(Opcodes.V9,
             Opcodes.ACC_INTERFACE + Opcodes.ACC_ABSTRACT + Opcodes.ACC_SYNTHETIC + ACC_MODULE,
             "jdk.fooModACC", "FooModACC", PACKAGE_TEST, NCDFE_EXCEPTION);
 

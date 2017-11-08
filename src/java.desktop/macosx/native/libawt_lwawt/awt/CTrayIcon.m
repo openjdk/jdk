@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,8 +134,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     NSPoint absP = [NSEvent mouseLocation];
     NSEventType type = [event type];
 
-    NSRect screenRect = [[NSScreen mainScreen] frame];
-    absP.y = screenRect.size.height - absP.y;
+    absP = ConvertNSScreenPoint(NULL, absP);
     jint clickCount;
 
     clickCount = [event clickCount];
@@ -179,15 +178,15 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     isHighlighted = NO;
     image = nil;
     trackingArea = nil;
-	
+
     [self addTrackingArea];
-	
+
     return self;
 }
 
 - (void)addTrackingArea {
-    NSTrackingAreaOptions options = NSTrackingMouseMoved | 
-                                    NSTrackingInVisibleRect | 
+    NSTrackingAreaOptions options = NSTrackingMouseMoved |
+                                    NSTrackingInVisibleRect |
                                     NSTrackingActiveAlways;
     trackingArea = [[NSTrackingArea alloc] initWithRect: CGRectZero
                                                 options: options
@@ -409,4 +408,29 @@ JNF_COCOA_ENTER(env);
 JNF_COCOA_EXIT(env);
 
     return jpt;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_lwawt_macosx_CTrayIcon_nativeShowNotification
+(JNIEnv *env, jobject self, jlong model, jobject jcaption, jobject jtext,
+              long nsimage) {
+JNF_COCOA_ENTER(env);
+
+    AWTTrayIcon *icon = jlong_to_ptr(model);
+    NSString *caption = JNFJavaToNSString(env, jcaption);
+    NSString *text = JNFJavaToNSString(env, jtext);
+    NSImage * contentImage = jlong_to_ptr(nsimage);
+
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        NSUserNotification *notification = [[NSUserNotification alloc] init];
+        notification.title = caption;
+        notification.informativeText = text;
+        notification.contentImage = contentImage;
+        notification.soundName = NSUserNotificationDefaultSoundName;
+
+        [[NSUserNotificationCenter defaultUserNotificationCenter]
+            deliverNotification:notification];
+    }];
+
+JNF_COCOA_EXIT(env);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,35 +34,13 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Set;
 
-import jdk.internal.module.ClassFileAttributes;
-import jdk.internal.module.ClassFileAttributes.ModuleTargetAttribute;
-import jdk.internal.module.ClassFileConstants;
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.module.ModuleInfo;
+import jdk.internal.module.ModuleInfo.Attributes;
 
 public class Main {
     private static boolean hasModuleTarget(InputStream in) throws IOException {
-        ModuleTargetAttribute[] modTargets = new ModuleTargetAttribute[1];
-        ClassVisitor cv = new ClassVisitor(Opcodes.ASM5) {
-            @Override
-            public void visitAttribute(Attribute attr) {
-                if (attr instanceof ModuleTargetAttribute) {
-                    modTargets[0] = (ModuleTargetAttribute)attr;
-                }
-            }
-        };
-
-        // prototype of attributes that should be parsed
-        Attribute[] attrs = new Attribute[] {
-            new ModuleTargetAttribute()
-        };
-
-        // parse module-info.class
-        ClassReader cr = new ClassReader(in);
-        cr.accept(cv, attrs, 0);
-        return modTargets[0] != null && modTargets[0].targetPlatform() != null;
+        ModuleInfo.Attributes attrs = ModuleInfo.read(in, null);
+        return attrs.target() != null;
     }
 
     public static void main(String... args) throws Exception {
