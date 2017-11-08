@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -105,8 +106,7 @@ public class ElementPSVImpl implements ElementPSVI {
         fValidationContext = elementPSVI.getValidationContext();
         if (elementPSVI instanceof ElementPSVImpl) {
             final ElementPSVImpl elementPSVIImpl = (ElementPSVImpl) elementPSVI;
-            fErrors = (elementPSVIImpl.fErrors != null) ?
-                    (String[]) elementPSVIImpl.fErrors.clone() : null;
+            fErrors = (elementPSVIImpl.fErrors != null) ? elementPSVIImpl.fErrors.clone() : null;
             elementPSVIImpl.copySchemaInformationTo(this);
         }
         else {

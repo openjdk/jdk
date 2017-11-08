@@ -40,7 +40,6 @@ import org.testng.TestNG;
 
 /*
  * @test
- * @key intermittent
  * @library /test/lib
  * @build jdk.test.lib.Utils
  * @run testng OnExitTest

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1667,7 +1667,7 @@ abstract public class ToStream extends SerializerBase {
             startClean =
                 accumDefaultEscape(
                     m_writer,
-                    (char)ch,
+                    ch,
                     i,
                     chars,
                     end,
@@ -2739,9 +2739,8 @@ abstract public class ToStream extends SerializerBase {
                     // whitspace separated "{uri1}local1 {uri2}local2 ..."
                     if (i != 0)
                         sb.append(' ');
-                    final String uri = (String) URI_and_localNames.get(i);
-                    final String localName =
-                        (String) URI_and_localNames.get(i + 1);
+                    final String uri = URI_and_localNames.get(i);
+                    final String localName = URI_and_localNames.get(i + 1);
                     if (uri != null) {
                         // If there is no URI don't put this in, just the localName then.
                         sb.append('{');

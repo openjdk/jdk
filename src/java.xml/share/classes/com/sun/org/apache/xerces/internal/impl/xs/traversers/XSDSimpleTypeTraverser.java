@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -296,7 +296,7 @@ class XSDSimpleTypeTraverser extends XSDAbstractTraverser {
             // for each qname in the list
             for (int i = 0; i < size; i++) {
                 // get the type decl
-                dv = findDTValidator(child, name, (QName)memberTypes.get(i),
+                dv = findDTValidator(child, name, memberTypes.get(i),
                         XSConstants.DERIVATION_UNION, schemaDoc);
                 if (dv != null) {
                     // if it's a union, expand it
@@ -389,7 +389,7 @@ class XSDSimpleTypeTraverser extends XSDAbstractTraverser {
                     annotations == null? null : new XSObjectListImpl(annotations, annotations.length));
         }
         else if (union) {
-            XSSimpleType[] memberDecls = (XSSimpleType[]) dTValidators.toArray(new XSSimpleType[dTValidators.size()]);
+            XSSimpleType[] memberDecls = dTValidators.toArray(new XSSimpleType[dTValidators.size()]);
             newDecl = fSchemaHandler.fDVFactory.createTypeUnion(name, schemaDoc.fTargetNamespace, (short)finalProperty, memberDecls,
                     annotations == null? null : new XSObjectListImpl(annotations, annotations.length));
         }

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -229,12 +229,12 @@ final class Mode implements Constants {
     }
 
     private int partition(List<Template> templates, int p, int r) {
-        final Template x = (Template)templates.get(p);
+        final Template x = templates.get(p);
         int i = p - 1;
         int j = r + 1;
         while (true) {
-            while (x.compareTo((Template)templates.get(--j)) > 0);
-            while (x.compareTo((Template)templates.get(++i)) < 0);
+            while (x.compareTo(templates.get(--j)) > 0);
+            while (x.compareTo(templates.get(++i)) < 0);
             if (i < j) {
                 templates.set(j, templates.set(i, templates.get(j)));
             }
@@ -366,7 +366,7 @@ final class Mode implements Constants {
             boolean inserted = false;
             for (int i = 0; i < patterns.size(); i++) {
                 final LocationPathPattern lppToCompare =
-                    (LocationPathPattern)patterns.get(i);
+                    patterns.get(i);
 
                 if (pattern.noSmallerThan(lppToCompare)) {
                     inserted = true;
@@ -1136,7 +1136,7 @@ final class Mode implements Constants {
         final boolean[] isAttribute = new boolean[types.length];
         final boolean[] isNamespace = new boolean[types.length];
         for (int i = 0; i < names.size(); i++) {
-            final String name = (String)names.get(i);
+            final String name = names.get(i);
             isAttribute[i+DTM.NTYPES] = isAttributeName(name);
             isNamespace[i+DTM.NTYPES] = isNamespaceName(name);
         }

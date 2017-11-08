@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -52,7 +52,7 @@ public class XSGrammarBucket {
     public SchemaGrammar getGrammar(String namespace) {
         if (namespace == null)
             return fNoNSGrammar;
-        return (SchemaGrammar)fGrammarRegistry.get(namespace);
+        return fGrammarRegistry.get(namespace);
     }
 
     /**
@@ -191,7 +191,7 @@ public class XSGrammarBucket {
                 // we add them to the vector
                 if(gs == null) continue;
                 for (int j = gs.size() - 1; j >= 0; j--) {
-                    sg2 = (SchemaGrammar)gs.get(j);
+                    sg2 = gs.get(j);
                     if (!grammars.contains(sg2))
                         grammars.add(sg2);
                 }

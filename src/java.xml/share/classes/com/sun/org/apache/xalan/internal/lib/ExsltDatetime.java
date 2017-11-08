@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -616,7 +616,7 @@ public class ExsltDatetime
     public static boolean leapYear()
     {
       Calendar cal = Calendar.getInstance();
-      int yr = (int)cal.get(Calendar.YEAR);
+      int yr = cal.get(Calendar.YEAR);
       return (yr % 400 == 0 || (yr % 100 != 0 && yr % 4 == 0));
     }
 

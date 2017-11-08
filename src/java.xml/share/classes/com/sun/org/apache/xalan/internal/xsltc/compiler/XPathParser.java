@@ -1311,7 +1311,7 @@ class parser_actions {
               QName RESULT = null;
                 int qnameleft = (parser_stack.get(parser_top-0)).left;
                 int qnameright = (parser_stack.get(parser_top-0)).right;
-                String qname = (String)((Symbol) parser_stack.get(parser_top-0)).value;
+                String qname = (String)(parser_stack.get(parser_top-0)).value;
                  RESULT = parser.getQNameIgnoreDefaultNs(qname);
               parser_result = new Symbol(37/*QName*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1323,7 +1323,7 @@ class parser_actions {
               Object RESULT = null;
                 int qnleft = (parser_stack.get(parser_top-0)).left;
                 int qnright = (parser_stack.get(parser_top-0)).right;
-                QName qn = (QName)((Symbol) parser_stack.get(parser_top-0)).value;
+                QName qn = (QName)(parser_stack.get(parser_top-0)).value;
                  RESULT = qn;
               parser_result = new Symbol(26/*NameTest*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1353,7 +1353,7 @@ class parser_actions {
               Object RESULT = null;
                 int lleft = (parser_stack.get(parser_top-1)).left;
                 int lright = (parser_stack.get(parser_top-1)).right;
-                String l = (String)((Symbol) parser_stack.get(parser_top-1)).value;
+                String l = (String)(parser_stack.get(parser_top-1)).value;
 
            QName name = parser.getQNameIgnoreDefaultNs("name");
            Expression exp = new EqualityExpr(Operators.EQ,
@@ -1400,7 +1400,7 @@ class parser_actions {
               Object RESULT = null;
                 int ntleft = (parser_stack.get(parser_top-0)).left;
                 int ntright = (parser_stack.get(parser_top-0)).right;
-                Object nt = (Object)((Symbol) parser_stack.get(parser_top-0)).value;
+                Object nt = parser_stack.get(parser_top-0).value;
                  RESULT = nt;
               parser_result = new Symbol(25/*NodeTest*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1412,7 +1412,7 @@ class parser_actions {
               Expression RESULT = null;
                 int exleft = (parser_stack.get(parser_top-0)).left;
                 int exright = (parser_stack.get(parser_top-0)).right;
-                Expression ex = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ex = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = ex;
               parser_result = new Symbol(3/*Argument*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1424,7 +1424,7 @@ class parser_actions {
               QName RESULT = null;
                 int vnameleft = (parser_stack.get(parser_top-0)).left;
                 int vnameright = (parser_stack.get(parser_top-0)).right;
-                QName vname = (QName)((Symbol) parser_stack.get(parser_top-0)).value;
+                QName vname = (QName)(parser_stack.get(parser_top-0)).value;
 
             RESULT = vname;
 
@@ -1438,7 +1438,7 @@ class parser_actions {
               QName RESULT = null;
                 int fnameleft = (parser_stack.get(parser_top-0)).left;
                 int fnameright = (parser_stack.get(parser_top-0)).right;
-                QName fname = (QName)((Symbol) parser_stack.get(parser_top-0)).value;
+                QName fname = (QName)(parser_stack.get(parser_top-0)).value;
 
             RESULT = fname;
 
@@ -1452,11 +1452,11 @@ class parser_actions {
                 List<Expression> RESULT = null;
                 int argleft = (parser_stack.get(parser_top-2)).left;
                 int argright = (parser_stack.get(parser_top-2)).right;
-                Expression arg = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression arg = (Expression)(parser_stack.get(parser_top-2)).value;
                 int arglleft = (parser_stack.get(parser_top-0)).left;
                 int arglright = (parser_stack.get(parser_top-0)).right;
                 @SuppressWarnings("unchecked")
-                List<Expression> argl = (ArrayList<Expression>)((Symbol) parser_stack.get(parser_top-0)).value;
+                List<Expression> argl = (ArrayList<Expression>)(parser_stack.get(parser_top-0)).value;
                 argl.add(0, arg);
                 RESULT = argl;
               parser_result = new Symbol(36/*NonemptyArgumentList*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
@@ -1469,7 +1469,7 @@ class parser_actions {
               List<Expression> RESULT = null;
                 int argleft = (parser_stack.get(parser_top-0)).left;
                 int argright = (parser_stack.get(parser_top-0)).right;
-                Expression arg = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression arg = (Expression)(parser_stack.get(parser_top-0)).value;
 
             List<Expression> temp = new ArrayList<>();
             temp.add(arg);
@@ -1485,11 +1485,11 @@ class parser_actions {
                 Expression RESULT = null;
                 int fnameleft = (parser_stack.get(parser_top-3)).left;
                 int fnameright = (parser_stack.get(parser_top-3)).right;
-                QName fname = (QName)((Symbol) parser_stack.get(parser_top-3)).value;
+                QName fname = (QName)(parser_stack.get(parser_top-3)).value;
                 int arglleft = (parser_stack.get(parser_top-1)).left;
                 int arglright = (parser_stack.get(parser_top-1)).right;
                 @SuppressWarnings("unchecked")
-                List<Expression> argl = (ArrayList<Expression>)((Symbol) parser_stack.get(parser_top-1)).value;
+                List<Expression> argl = (ArrayList<Expression>)(parser_stack.get(parser_top-1)).value;
 
           if (fname == parser.getQNameIgnoreDefaultNs("concat")) {
             RESULT = new ConcatCall(fname, argl);
@@ -1584,7 +1584,7 @@ class parser_actions {
               Expression RESULT = null;
                 int fnameleft = (parser_stack.get(parser_top-2)).left;
                 int fnameright = (parser_stack.get(parser_top-2)).right;
-                QName fname = (QName)((Symbol) parser_stack.get(parser_top-2)).value;
+                QName fname = (QName)(parser_stack.get(parser_top-2)).value;
 
 
           if (fname == parser.getQNameIgnoreDefaultNs("current")) {
@@ -1640,7 +1640,7 @@ class parser_actions {
               Expression RESULT = null;
                 int varNameleft = (parser_stack.get(parser_top-0)).left;
                 int varNameright = (parser_stack.get(parser_top-0)).right;
-                QName varName = (QName)((Symbol) parser_stack.get(parser_top-0)).value;
+                QName varName = (QName)(parser_stack.get(parser_top-0)).value;
 
             // An empty qname prefix for a variable or parameter reference
             // should map to the null namespace and not the default URI.
@@ -1672,7 +1672,7 @@ class parser_actions {
               Expression RESULT = null;
                 int fcleft = (parser_stack.get(parser_top-0)).left;
                 int fcright = (parser_stack.get(parser_top-0)).right;
-                Expression fc = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression fc = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = fc;
               parser_result = new Symbol(17/*PrimaryExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1684,7 +1684,7 @@ class parser_actions {
               Expression RESULT = null;
                 int numleft = (parser_stack.get(parser_top-0)).left;
                 int numright = (parser_stack.get(parser_top-0)).right;
-                Double num = (Double)((Symbol) parser_stack.get(parser_top-0)).value;
+                Double num = (Double)(parser_stack.get(parser_top-0)).value;
                  RESULT = new RealExpr(num.doubleValue());
               parser_result = new Symbol(17/*PrimaryExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1696,7 +1696,7 @@ class parser_actions {
               Expression RESULT = null;
                 int numleft = (parser_stack.get(parser_top-0)).left;
                 int numright = (parser_stack.get(parser_top-0)).right;
-                Long num = (Long)((Symbol) parser_stack.get(parser_top-0)).value;
+                Long num = (Long)(parser_stack.get(parser_top-0)).value;
 
            long value = num.longValue();
            if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
@@ -1723,7 +1723,7 @@ class parser_actions {
               Expression RESULT = null;
                 int stringleft = (parser_stack.get(parser_top-0)).left;
                 int stringright = (parser_stack.get(parser_top-0)).right;
-                String string = (String)((Symbol) parser_stack.get(parser_top-0)).value;
+                String string = (String)(parser_stack.get(parser_top-0)).value;
 
         /*
         * If the string appears to have the syntax of a QName, store
@@ -1751,7 +1751,7 @@ class parser_actions {
               Expression RESULT = null;
                 int exleft = (parser_stack.get(parser_top-1)).left;
                 int exright = (parser_stack.get(parser_top-1)).right;
-                Expression ex = (Expression)((Symbol) parser_stack.get(parser_top-1)).value;
+                Expression ex = (Expression)(parser_stack.get(parser_top-1)).value;
                  RESULT = ex;
               parser_result = new Symbol(17/*PrimaryExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1763,7 +1763,7 @@ class parser_actions {
               Expression RESULT = null;
                 int vrleft = (parser_stack.get(parser_top-0)).left;
                 int vrright = (parser_stack.get(parser_top-0)).right;
-                Expression vr = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression vr = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = vr;
               parser_result = new Symbol(17/*PrimaryExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1775,11 +1775,11 @@ class parser_actions {
               Expression RESULT = null;
                 int primaryleft = (parser_stack.get(parser_top-1)).left;
                 int primaryright = (parser_stack.get(parser_top-1)).right;
-                Expression primary = (Expression)((Symbol) parser_stack.get(parser_top-1)).value;
+                Expression primary = (Expression)(parser_stack.get(parser_top-1)).value;
                 int ppleft = (parser_stack.get(parser_top-0)).left;
                 int ppright = (parser_stack.get(parser_top-0)).right;
                 @SuppressWarnings("unchecked")
-                List<Expression> pp = (ArrayList<Expression>)((Symbol) parser_stack.get(parser_top-0)).value;
+                List<Expression> pp = (ArrayList<Expression>)(parser_stack.get(parser_top-0)).value;
                  RESULT = new FilterExpr(primary, pp);
               parser_result = new Symbol(6/*FilterExpr*/, (parser_stack.get(parser_top-1)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1791,7 +1791,7 @@ class parser_actions {
               Expression RESULT = null;
                 int primaryleft = (parser_stack.get(parser_top-0)).left;
                 int primaryright = (parser_stack.get(parser_top-0)).right;
-                Expression primary = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression primary = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = primary;
               parser_result = new Symbol(6/*FilterExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1947,7 +1947,7 @@ class parser_actions {
               Integer RESULT = null;
                 int anleft = (parser_stack.get(parser_top-1)).left;
                 int anright = (parser_stack.get(parser_top-1)).right;
-                Integer an = (Integer)((Symbol) parser_stack.get(parser_top-1)).value;
+                Integer an = (Integer)(parser_stack.get(parser_top-1)).value;
                  RESULT = an;
               parser_result = new Symbol(41/*AxisSpecifier*/, (parser_stack.get(parser_top-1)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1959,7 +1959,7 @@ class parser_actions {
               Expression RESULT = null;
                 int abbrevleft = (parser_stack.get(parser_top-0)).left;
                 int abbrevright = (parser_stack.get(parser_top-0)).right;
-                Expression abbrev = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression abbrev = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = abbrev;
               parser_result = new Symbol(7/*Step*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -1971,10 +1971,10 @@ class parser_actions {
               Expression RESULT = null;
                 int axisleft = (parser_stack.get(parser_top-1)).left;
                 int axisright = (parser_stack.get(parser_top-1)).right;
-                Integer axis = (Integer)((Symbol) parser_stack.get(parser_top-1)).value;
+                Integer axis = (Integer)(parser_stack.get(parser_top-1)).value;
                 int ntestleft = (parser_stack.get(parser_top-0)).left;
                 int ntestright = (parser_stack.get(parser_top-0)).right;
-                Object ntest = (Object)((Symbol) parser_stack.get(parser_top-0)).value;
+                Object ntest = parser_stack.get(parser_top-0).value;
                  RESULT = new Step(axis.intValue(),
                              parser.findNodeType(axis.intValue(), ntest),
                              null);
@@ -1989,14 +1989,14 @@ class parser_actions {
               Expression RESULT = null;
                 int axisleft = (parser_stack.get(parser_top-2)).left;
                 int axisright = (parser_stack.get(parser_top-2)).right;
-                Integer axis = (Integer)((Symbol) parser_stack.get(parser_top-2)).value;
+                Integer axis = (Integer)(parser_stack.get(parser_top-2)).value;
                 int ntestleft = (parser_stack.get(parser_top-1)).left;
                 int ntestright = (parser_stack.get(parser_top-1)).right;
-                Object ntest = (Object)((Symbol) parser_stack.get(parser_top-1)).value;
+                Object ntest = parser_stack.get(parser_top-1).value;
                 int ppleft = (parser_stack.get(parser_top-0)).left;
                 int ppright = (parser_stack.get(parser_top-0)).right;
                 @SuppressWarnings("unchecked")
-                List<Predicate> pp = (ArrayList<Predicate>)((Symbol) parser_stack.get(parser_top-0)).value;
+                List<Predicate> pp = (ArrayList<Predicate>)(parser_stack.get(parser_top-0)).value;
                  RESULT = new Step(axis.intValue(),
                              parser.findNodeType(axis.intValue(), ntest),
                              pp);
@@ -2011,11 +2011,11 @@ class parser_actions {
               Expression RESULT = null;
                 int ntestleft = (parser_stack.get(parser_top-1)).left;
                 int ntestright = (parser_stack.get(parser_top-1)).right;
-                Object ntest = (Object)((Symbol) parser_stack.get(parser_top-1)).value;
+                Object ntest = parser_stack.get(parser_top-1).value;
                 int ppleft = (parser_stack.get(parser_top-0)).left;
                 int ppright = (parser_stack.get(parser_top-0)).right;
                 @SuppressWarnings("unchecked")
-                List<Predicate> pp = (ArrayList<Predicate>)((Symbol) parser_stack.get(parser_top-0)).value;
+                List<Predicate> pp = (ArrayList<Predicate>)(parser_stack.get(parser_top-0)).value;
 
             if (ntest instanceof Step) {
                 Step step = (Step)ntest;
@@ -2037,7 +2037,7 @@ class parser_actions {
               Expression RESULT = null;
                 int ntestleft = (parser_stack.get(parser_top-0)).left;
                 int ntestright = (parser_stack.get(parser_top-0)).right;
-                Object ntest = (Object)((Symbol) parser_stack.get(parser_top-0)).value;
+                Object ntest = parser_stack.get(parser_top-0).value;
 
             if (ntest instanceof Step) {
                 RESULT = (Step)ntest;
@@ -2058,7 +2058,7 @@ class parser_actions {
               Expression RESULT = null;
                 int rlpleft = (parser_stack.get(parser_top-0)).left;
                 int rlpright = (parser_stack.get(parser_top-0)).right;
-                Expression rlp = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression rlp = (Expression)(parser_stack.get(parser_top-0)).value;
 
            //
            // Expand '//' into '/descendant-or-self::node()/' or
@@ -2084,10 +2084,10 @@ class parser_actions {
               Expression RESULT = null;
                 int rlpleft = (parser_stack.get(parser_top-2)).left;
                 int rlpright = (parser_stack.get(parser_top-2)).right;
-                Expression rlp = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression rlp = (Expression)(parser_stack.get(parser_top-2)).value;
                 int stepleft = (parser_stack.get(parser_top-0)).left;
                 int stepright = (parser_stack.get(parser_top-0)).right;
-                Expression step = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression step = (Expression)(parser_stack.get(parser_top-0)).value;
 
            final Step right  = (Step)step;
            final int  axis   = right.getAxis();
@@ -2151,7 +2151,7 @@ class parser_actions {
               Expression RESULT = null;
                 int aalpleft = (parser_stack.get(parser_top-0)).left;
                 int aalpright = (parser_stack.get(parser_top-0)).right;
-                Expression aalp = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression aalp = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = aalp;
               parser_result = new Symbol(23/*AbsoluteLocationPath*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2163,7 +2163,7 @@ class parser_actions {
               Expression RESULT = null;
                 int rlpleft = (parser_stack.get(parser_top-0)).left;
                 int rlpright = (parser_stack.get(parser_top-0)).right;
-                Expression rlp = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression rlp = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new AbsoluteLocationPath(rlp);
               parser_result = new Symbol(23/*AbsoluteLocationPath*/, (parser_stack.get(parser_top-1)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2184,7 +2184,7 @@ class parser_actions {
               Expression RESULT = null;
                 int arlpleft = (parser_stack.get(parser_top-0)).left;
                 int arlpright = (parser_stack.get(parser_top-0)).right;
-                Expression arlp = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression arlp = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = arlp;
               parser_result = new Symbol(21/*RelativeLocationPath*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2196,10 +2196,10 @@ class parser_actions {
               Expression RESULT = null;
                 int rlpleft = (parser_stack.get(parser_top-2)).left;
                 int rlpright = (parser_stack.get(parser_top-2)).right;
-                Expression rlp = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression rlp = (Expression)(parser_stack.get(parser_top-2)).value;
                 int stepleft = (parser_stack.get(parser_top-0)).left;
                 int stepright = (parser_stack.get(parser_top-0)).right;
-                Expression step = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression step = (Expression)(parser_stack.get(parser_top-0)).value;
 
         if (rlp instanceof Step && ((Step) rlp).isAbbreviatedDot()) {
               RESULT = step;       // Remove './' from the middle
@@ -2222,7 +2222,7 @@ class parser_actions {
               Expression RESULT = null;
                 int stepleft = (parser_stack.get(parser_top-0)).left;
                 int stepright = (parser_stack.get(parser_top-0)).right;
-                Expression step = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression step = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = step;
               parser_result = new Symbol(21/*RelativeLocationPath*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2234,7 +2234,7 @@ class parser_actions {
               Expression RESULT = null;
                 int alpleft = (parser_stack.get(parser_top-0)).left;
                 int alpright = (parser_stack.get(parser_top-0)).right;
-                Expression alp = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression alp = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = alp;
               parser_result = new Symbol(4/*LocationPath*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2246,7 +2246,7 @@ class parser_actions {
               Expression RESULT = null;
                 int rlpleft = (parser_stack.get(parser_top-0)).left;
                 int rlpright = (parser_stack.get(parser_top-0)).right;
-                Expression rlp = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression rlp = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = rlp;
               parser_result = new Symbol(4/*LocationPath*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2258,10 +2258,10 @@ class parser_actions {
               Expression RESULT = null;
                 int fexpleft = (parser_stack.get(parser_top-2)).left;
                 int fexpright = (parser_stack.get(parser_top-2)).right;
-                Expression fexp = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression fexp = (Expression)(parser_stack.get(parser_top-2)).value;
                 int rlpleft = (parser_stack.get(parser_top-0)).left;
                 int rlpright = (parser_stack.get(parser_top-0)).right;
-                Expression rlp = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression rlp = (Expression)(parser_stack.get(parser_top-0)).value;
 
            //
            // Expand '//' into '/descendant-or-self::node()/' or
@@ -2291,10 +2291,10 @@ class parser_actions {
               Expression RESULT = null;
                 int fexpleft = (parser_stack.get(parser_top-2)).left;
                 int fexpright = (parser_stack.get(parser_top-2)).right;
-                Expression fexp = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression fexp = (Expression)(parser_stack.get(parser_top-2)).value;
                 int rlpleft = (parser_stack.get(parser_top-0)).left;
                 int rlpright = (parser_stack.get(parser_top-0)).right;
-                Expression rlp = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression rlp = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new FilterParentPath(fexp, rlp);
               parser_result = new Symbol(19/*PathExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2306,7 +2306,7 @@ class parser_actions {
               Expression RESULT = null;
                 int fexpleft = (parser_stack.get(parser_top-0)).left;
                 int fexpright = (parser_stack.get(parser_top-0)).right;
-                Expression fexp = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression fexp = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = fexp;
               parser_result = new Symbol(19/*PathExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2318,7 +2318,7 @@ class parser_actions {
               Expression RESULT = null;
                 int lpleft = (parser_stack.get(parser_top-0)).left;
                 int lpright = (parser_stack.get(parser_top-0)).right;
-                Expression lp = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression lp = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = lp;
               parser_result = new Symbol(19/*PathExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2330,10 +2330,10 @@ class parser_actions {
               Expression RESULT = null;
                 int peleft = (parser_stack.get(parser_top-2)).left;
                 int peright = (parser_stack.get(parser_top-2)).right;
-                Expression pe = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression pe = (Expression)(parser_stack.get(parser_top-2)).value;
                 int restleft = (parser_stack.get(parser_top-0)).left;
                 int restright = (parser_stack.get(parser_top-0)).right;
-                Expression rest = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression rest = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new UnionPathExpr(pe, rest);
               parser_result = new Symbol(18/*UnionExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2345,7 +2345,7 @@ class parser_actions {
               Expression RESULT = null;
                 int peleft = (parser_stack.get(parser_top-0)).left;
                 int peright = (parser_stack.get(parser_top-0)).right;
-                Expression pe = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression pe = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = pe;
               parser_result = new Symbol(18/*UnionExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2357,7 +2357,7 @@ class parser_actions {
               Expression RESULT = null;
                 int ueleft = (parser_stack.get(parser_top-0)).left;
                 int ueright = (parser_stack.get(parser_top-0)).right;
-                Expression ue = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ue = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new UnaryOpExpr(ue);
               parser_result = new Symbol(14/*UnaryExpr*/, (parser_stack.get(parser_top-1)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2369,7 +2369,7 @@ class parser_actions {
               Expression RESULT = null;
                 int ueleft = (parser_stack.get(parser_top-0)).left;
                 int ueright = (parser_stack.get(parser_top-0)).right;
-                Expression ue = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ue = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = ue;
               parser_result = new Symbol(14/*UnaryExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2381,10 +2381,10 @@ class parser_actions {
               Expression RESULT = null;
                 int meleft = (parser_stack.get(parser_top-2)).left;
                 int meright = (parser_stack.get(parser_top-2)).right;
-                Expression me = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression me = (Expression)(parser_stack.get(parser_top-2)).value;
                 int ueleft = (parser_stack.get(parser_top-0)).left;
                 int ueright = (parser_stack.get(parser_top-0)).right;
-                Expression ue = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ue = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new BinOpExpr(BinOpExpr.MOD, me, ue);
               parser_result = new Symbol(13/*MultiplicativeExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2396,10 +2396,10 @@ class parser_actions {
               Expression RESULT = null;
                 int meleft = (parser_stack.get(parser_top-2)).left;
                 int meright = (parser_stack.get(parser_top-2)).right;
-                Expression me = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression me = (Expression)(parser_stack.get(parser_top-2)).value;
                 int ueleft = (parser_stack.get(parser_top-0)).left;
                 int ueright = (parser_stack.get(parser_top-0)).right;
-                Expression ue = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ue = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new BinOpExpr(BinOpExpr.DIV, me, ue);
               parser_result = new Symbol(13/*MultiplicativeExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2411,10 +2411,10 @@ class parser_actions {
               Expression RESULT = null;
                 int meleft = (parser_stack.get(parser_top-2)).left;
                 int meright = (parser_stack.get(parser_top-2)).right;
-                Expression me = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression me = (Expression)(parser_stack.get(parser_top-2)).value;
                 int ueleft = (parser_stack.get(parser_top-0)).left;
                 int ueright = (parser_stack.get(parser_top-0)).right;
-                Expression ue = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ue = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new BinOpExpr(BinOpExpr.TIMES, me, ue);
               parser_result = new Symbol(13/*MultiplicativeExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2426,7 +2426,7 @@ class parser_actions {
               Expression RESULT = null;
                 int ueleft = (parser_stack.get(parser_top-0)).left;
                 int ueright = (parser_stack.get(parser_top-0)).right;
-                Expression ue = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ue = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = ue;
               parser_result = new Symbol(13/*MultiplicativeExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2438,10 +2438,10 @@ class parser_actions {
               Expression RESULT = null;
                 int aeleft = (parser_stack.get(parser_top-2)).left;
                 int aeright = (parser_stack.get(parser_top-2)).right;
-                Expression ae = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression ae = (Expression)(parser_stack.get(parser_top-2)).value;
                 int meleft = (parser_stack.get(parser_top-0)).left;
                 int meright = (parser_stack.get(parser_top-0)).right;
-                Expression me = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression me = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new BinOpExpr(BinOpExpr.MINUS, ae, me);
               parser_result = new Symbol(12/*AdditiveExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2453,10 +2453,10 @@ class parser_actions {
               Expression RESULT = null;
                 int aeleft = (parser_stack.get(parser_top-2)).left;
                 int aeright = (parser_stack.get(parser_top-2)).right;
-                Expression ae = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression ae = (Expression)(parser_stack.get(parser_top-2)).value;
                 int meleft = (parser_stack.get(parser_top-0)).left;
                 int meright = (parser_stack.get(parser_top-0)).right;
-                Expression me = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression me = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new BinOpExpr(BinOpExpr.PLUS, ae, me);
               parser_result = new Symbol(12/*AdditiveExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2468,7 +2468,7 @@ class parser_actions {
               Expression RESULT = null;
                 int meleft = (parser_stack.get(parser_top-0)).left;
                 int meright = (parser_stack.get(parser_top-0)).right;
-                Expression me = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression me = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = me;
               parser_result = new Symbol(12/*AdditiveExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2480,10 +2480,10 @@ class parser_actions {
               Expression RESULT = null;
                 int releft = (parser_stack.get(parser_top-2)).left;
                 int reright = (parser_stack.get(parser_top-2)).right;
-                Expression re = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression re = (Expression)(parser_stack.get(parser_top-2)).value;
                 int aeleft = (parser_stack.get(parser_top-0)).left;
                 int aeright = (parser_stack.get(parser_top-0)).right;
-                Expression ae = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ae = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new RelationalExpr(Operators.GE, re, ae);
               parser_result = new Symbol(11/*RelationalExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2495,10 +2495,10 @@ class parser_actions {
               Expression RESULT = null;
                 int releft = (parser_stack.get(parser_top-2)).left;
                 int reright = (parser_stack.get(parser_top-2)).right;
-                Expression re = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression re = (Expression)(parser_stack.get(parser_top-2)).value;
                 int aeleft = (parser_stack.get(parser_top-0)).left;
                 int aeright = (parser_stack.get(parser_top-0)).right;
-                Expression ae = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ae = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new RelationalExpr(Operators.LE, re, ae);
               parser_result = new Symbol(11/*RelationalExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2510,10 +2510,10 @@ class parser_actions {
               Expression RESULT = null;
                 int releft = (parser_stack.get(parser_top-2)).left;
                 int reright = (parser_stack.get(parser_top-2)).right;
-                Expression re = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression re = (Expression)(parser_stack.get(parser_top-2)).value;
                 int aeleft = (parser_stack.get(parser_top-0)).left;
                 int aeright = (parser_stack.get(parser_top-0)).right;
-                Expression ae = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ae = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new RelationalExpr(Operators.GT, re, ae);
               parser_result = new Symbol(11/*RelationalExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2525,10 +2525,10 @@ class parser_actions {
               Expression RESULT = null;
                 int releft = (parser_stack.get(parser_top-2)).left;
                 int reright = (parser_stack.get(parser_top-2)).right;
-                Expression re = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression re = (Expression)(parser_stack.get(parser_top-2)).value;
                 int aeleft = (parser_stack.get(parser_top-0)).left;
                 int aeright = (parser_stack.get(parser_top-0)).right;
-                Expression ae = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ae = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new RelationalExpr(Operators.LT, re, ae);
               parser_result = new Symbol(11/*RelationalExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2540,7 +2540,7 @@ class parser_actions {
               Expression RESULT = null;
                 int aeleft = (parser_stack.get(parser_top-0)).left;
                 int aeright = (parser_stack.get(parser_top-0)).right;
-                Expression ae = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ae = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = ae;
               parser_result = new Symbol(11/*RelationalExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2552,10 +2552,10 @@ class parser_actions {
               Expression RESULT = null;
                 int eeleft = (parser_stack.get(parser_top-2)).left;
                 int eeright = (parser_stack.get(parser_top-2)).right;
-                Expression ee = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression ee = (Expression)(parser_stack.get(parser_top-2)).value;
                 int releft = (parser_stack.get(parser_top-0)).left;
                 int reright = (parser_stack.get(parser_top-0)).right;
-                Expression re = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression re = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new EqualityExpr(Operators.NE, ee, re);
               parser_result = new Symbol(10/*EqualityExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2567,10 +2567,10 @@ class parser_actions {
               Expression RESULT = null;
                 int eeleft = (parser_stack.get(parser_top-2)).left;
                 int eeright = (parser_stack.get(parser_top-2)).right;
-                Expression ee = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression ee = (Expression)(parser_stack.get(parser_top-2)).value;
                 int releft = (parser_stack.get(parser_top-0)).left;
                 int reright = (parser_stack.get(parser_top-0)).right;
-                Expression re = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression re = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new EqualityExpr(Operators.EQ, ee, re);
               parser_result = new Symbol(10/*EqualityExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2582,7 +2582,7 @@ class parser_actions {
               Expression RESULT = null;
                 int releft = (parser_stack.get(parser_top-0)).left;
                 int reright = (parser_stack.get(parser_top-0)).right;
-                Expression re = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression re = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = re;
               parser_result = new Symbol(10/*EqualityExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2594,10 +2594,10 @@ class parser_actions {
               Expression RESULT = null;
                 int aeleft = (parser_stack.get(parser_top-2)).left;
                 int aeright = (parser_stack.get(parser_top-2)).right;
-                Expression ae = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression ae = (Expression)(parser_stack.get(parser_top-2)).value;
                 int eeleft = (parser_stack.get(parser_top-0)).left;
                 int eeright = (parser_stack.get(parser_top-0)).right;
-                Expression ee = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ee = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new LogicalExpr(LogicalExpr.AND, ae, ee);
               parser_result = new Symbol(9/*AndExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2609,7 +2609,7 @@ class parser_actions {
               Expression RESULT = null;
                 int eleft = (parser_stack.get(parser_top-0)).left;
                 int eright = (parser_stack.get(parser_top-0)).right;
-                Expression e = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression e = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = e;
               parser_result = new Symbol(9/*AndExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2621,10 +2621,10 @@ class parser_actions {
               Expression RESULT = null;
                 int oeleft = (parser_stack.get(parser_top-2)).left;
                 int oeright = (parser_stack.get(parser_top-2)).right;
-                Expression oe = (Expression)((Symbol) parser_stack.get(parser_top-2)).value;
+                Expression oe = (Expression)(parser_stack.get(parser_top-2)).value;
                 int aeleft = (parser_stack.get(parser_top-0)).left;
                 int aeright = (parser_stack.get(parser_top-0)).right;
-                Expression ae = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ae = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = new LogicalExpr(LogicalExpr.OR, oe, ae);
               parser_result = new Symbol(8/*OrExpr*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2636,7 +2636,7 @@ class parser_actions {
               Expression RESULT = null;
                 int aeleft = (parser_stack.get(parser_top-0)).left;
                 int aeright = (parser_stack.get(parser_top-0)).right;
-                Expression ae = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ae = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = ae;
               parser_result = new Symbol(8/*OrExpr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2648,7 +2648,7 @@ class parser_actions {
               Expression RESULT = null;
                 int exleft = (parser_stack.get(parser_top-0)).left;
                 int exright = (parser_stack.get(parser_top-0)).right;
-                Expression ex = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression ex = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = ex;
               parser_result = new Symbol(2/*Expr*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2660,7 +2660,7 @@ class parser_actions {
               Expression RESULT = null;
                 int eleft = (parser_stack.get(parser_top-1)).left;
                 int eright = (parser_stack.get(parser_top-1)).right;
-                Expression e = (Expression)((Symbol) parser_stack.get(parser_top-1)).value;
+                Expression e = (Expression)(parser_stack.get(parser_top-1)).value;
 
                 RESULT = new Predicate(e);
 
@@ -2674,11 +2674,11 @@ class parser_actions {
                 List<Expression> RESULT = null;
                 int pleft = (parser_stack.get(parser_top-1)).left;
                 int pright = (parser_stack.get(parser_top-1)).right;
-                Expression p = (Expression)((Symbol) parser_stack.get(parser_top-1)).value;
+                Expression p = (Expression)(parser_stack.get(parser_top-1)).value;
                 int ppleft = (parser_stack.get(parser_top-0)).left;
                 int ppright = (parser_stack.get(parser_top-0)).right;
                 @SuppressWarnings("unchecked")
-                List<Expression> pp = (ArrayList<Expression>)((Symbol) parser_stack.get(parser_top-0)).value;
+                List<Expression> pp = (ArrayList<Expression>)(parser_stack.get(parser_top-0)).value;
                 pp.add(0, p); RESULT = pp;
               parser_result = new Symbol(35/*Predicates*/, (parser_stack.get(parser_top-1)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2690,7 +2690,7 @@ class parser_actions {
                 List<Expression> RESULT = null;
                 int pleft = (parser_stack.get(parser_top-0)).left;
                 int pright = (parser_stack.get(parser_top-0)).right;
-                Expression p = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression p = (Expression)(parser_stack.get(parser_top-0)).value;
 
                 List<Expression> temp = new ArrayList<>();
                 temp.add(p);
@@ -2733,7 +2733,7 @@ class parser_actions {
               Object RESULT = null;
                 int qnleft = (parser_stack.get(parser_top-0)).left;
                 int qnright = (parser_stack.get(parser_top-0)).right;
-                QName qn = (QName)((Symbol) parser_stack.get(parser_top-0)).value;
+                QName qn = (QName)(parser_stack.get(parser_top-0)).value;
                  RESULT = qn;
               parser_result = new Symbol(34/*NameTestPattern*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2790,7 +2790,7 @@ class parser_actions {
               Object RESULT = null;
                 int ntleft = (parser_stack.get(parser_top-0)).left;
                 int ntright = (parser_stack.get(parser_top-0)).right;
-                Object nt = (Object)((Symbol) parser_stack.get(parser_top-0)).value;
+                Object nt = parser_stack.get(parser_top-0).value;
                  RESULT = nt;
               parser_result = new Symbol(33/*NodeTestPattern*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2802,14 +2802,14 @@ class parser_actions {
               StepPattern RESULT = null;
                 int axisleft = (parser_stack.get(parser_top-2)).left;
                 int axisright = (parser_stack.get(parser_top-2)).right;
-                Integer axis = (Integer)((Symbol) parser_stack.get(parser_top-2)).value;
+                Integer axis = (Integer)(parser_stack.get(parser_top-2)).value;
                 int pipleft = (parser_stack.get(parser_top-1)).left;
                 int pipright = (parser_stack.get(parser_top-1)).right;
-                StepPattern pip = (StepPattern)((Symbol) parser_stack.get(parser_top-1)).value;
+                StepPattern pip = (StepPattern)(parser_stack.get(parser_top-1)).value;
                 int ppleft = (parser_stack.get(parser_top-0)).left;
                 int ppright = (parser_stack.get(parser_top-0)).right;
                 @SuppressWarnings("unchecked")
-                List<Predicate> pp = (ArrayList<Predicate>)((Symbol) parser_stack.get(parser_top-0)).value;
+                List<Predicate> pp = (ArrayList<Predicate>)(parser_stack.get(parser_top-0)).value;
 
                // TODO: report error if axis is attribute
                RESULT = (ProcessingInstructionPattern)pip.setPredicates(pp);
@@ -2824,10 +2824,10 @@ class parser_actions {
               StepPattern RESULT = null;
                 int axisleft = (parser_stack.get(parser_top-1)).left;
                 int axisright = (parser_stack.get(parser_top-1)).right;
-                Integer axis = (Integer)((Symbol) parser_stack.get(parser_top-1)).value;
+                Integer axis = (Integer)(parser_stack.get(parser_top-1)).value;
                 int pipleft = (parser_stack.get(parser_top-0)).left;
                 int pipright = (parser_stack.get(parser_top-0)).right;
-                StepPattern pip = (StepPattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                StepPattern pip = (StepPattern)(parser_stack.get(parser_top-0)).value;
 
                RESULT = pip;    // TODO: report error if axis is attribute
 
@@ -2841,14 +2841,14 @@ class parser_actions {
               StepPattern RESULT = null;
                 int axisleft = (parser_stack.get(parser_top-2)).left;
                 int axisright = (parser_stack.get(parser_top-2)).right;
-                Integer axis = (Integer)((Symbol) parser_stack.get(parser_top-2)).value;
+                Integer axis = (Integer)(parser_stack.get(parser_top-2)).value;
                 int ntleft = (parser_stack.get(parser_top-1)).left;
                 int ntright = (parser_stack.get(parser_top-1)).right;
-                Object nt = (Object)((Symbol) parser_stack.get(parser_top-1)).value;
+                Object nt = parser_stack.get(parser_top-1).value;
                 int ppleft = (parser_stack.get(parser_top-0)).left;
                 int ppright = (parser_stack.get(parser_top-0)).right;
                 @SuppressWarnings("unchecked")
-               List<Predicate>pp = (ArrayList<Predicate>)((Symbol) parser_stack.get(parser_top-0)).value;
+               List<Predicate>pp = (ArrayList<Predicate>)(parser_stack.get(parser_top-0)).value;
 
                RESULT = parser.createStepPattern(axis.intValue(), nt, pp);
 
@@ -2862,10 +2862,10 @@ class parser_actions {
               StepPattern RESULT = null;
                 int axisleft = (parser_stack.get(parser_top-1)).left;
                 int axisright = (parser_stack.get(parser_top-1)).right;
-                Integer axis = (Integer)((Symbol) parser_stack.get(parser_top-1)).value;
+                Integer axis = (Integer)(parser_stack.get(parser_top-1)).value;
                 int ntleft = (parser_stack.get(parser_top-0)).left;
                 int ntright = (parser_stack.get(parser_top-0)).right;
-                Object nt = (Object)((Symbol) parser_stack.get(parser_top-0)).value;
+                Object nt = parser_stack.get(parser_top-0).value;
 
                RESULT = parser.createStepPattern(axis.intValue(), nt, null);
 
@@ -2879,11 +2879,11 @@ class parser_actions {
               StepPattern RESULT = null;
                 int pipleft = (parser_stack.get(parser_top-1)).left;
                 int pipright = (parser_stack.get(parser_top-1)).right;
-                StepPattern pip = (StepPattern)((Symbol) parser_stack.get(parser_top-1)).value;
+                StepPattern pip = (StepPattern)(parser_stack.get(parser_top-1)).value;
                 int ppleft = (parser_stack.get(parser_top-0)).left;
                 int ppright = (parser_stack.get(parser_top-0)).right;
                 @SuppressWarnings("unchecked")
-                List<Predicate> pp = (ArrayList<Predicate>)((Symbol) parser_stack.get(parser_top-0)).value;
+                List<Predicate> pp = (ArrayList<Predicate>)(parser_stack.get(parser_top-0)).value;
                  RESULT = (ProcessingInstructionPattern)pip.setPredicates(pp);
               parser_result = new Symbol(32/*StepPattern*/, (parser_stack.get(parser_top-1)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2895,7 +2895,7 @@ class parser_actions {
               StepPattern RESULT = null;
                 int pipleft = (parser_stack.get(parser_top-0)).left;
                 int pipright = (parser_stack.get(parser_top-0)).right;
-                StepPattern pip = (StepPattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                StepPattern pip = (StepPattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = pip;
               parser_result = new Symbol(32/*StepPattern*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2907,11 +2907,11 @@ class parser_actions {
               StepPattern RESULT = null;
                 int ntleft = (parser_stack.get(parser_top-1)).left;
                 int ntright = (parser_stack.get(parser_top-1)).right;
-                Object nt = (Object)((Symbol) parser_stack.get(parser_top-1)).value;
+                Object nt = parser_stack.get(parser_top-1).value;
                 int ppleft = (parser_stack.get(parser_top-0)).left;
                 int ppright = (parser_stack.get(parser_top-0)).right;
                 @SuppressWarnings("unchecked")
-                List<Predicate> pp = (ArrayList<Predicate>)((Symbol) parser_stack.get(parser_top-0)).value;
+                List<Predicate> pp = (ArrayList<Predicate>)(parser_stack.get(parser_top-0)).value;
 
                 RESULT = parser.createStepPattern(Axis.CHILD, nt, pp);
 
@@ -2925,7 +2925,7 @@ class parser_actions {
               StepPattern RESULT = null;
                 int ntleft = (parser_stack.get(parser_top-0)).left;
                 int ntright = (parser_stack.get(parser_top-0)).right;
-                Object nt = (Object)((Symbol) parser_stack.get(parser_top-0)).value;
+                Object nt = parser_stack.get(parser_top-0).value;
 
                 RESULT = parser.createStepPattern(Axis.CHILD, nt, null);
 
@@ -2939,10 +2939,10 @@ class parser_actions {
               RelativePathPattern RESULT = null;
                 int spleft = (parser_stack.get(parser_top-2)).left;
                 int spright = (parser_stack.get(parser_top-2)).right;
-                StepPattern sp = (StepPattern)((Symbol) parser_stack.get(parser_top-2)).value;
+                StepPattern sp = (StepPattern)(parser_stack.get(parser_top-2)).value;
                 int rppleft = (parser_stack.get(parser_top-0)).left;
                 int rppright = (parser_stack.get(parser_top-0)).right;
-                RelativePathPattern rpp = (RelativePathPattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                RelativePathPattern rpp = (RelativePathPattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = new AncestorPattern(sp, rpp);
               parser_result = new Symbol(31/*RelativePathPattern*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2954,10 +2954,10 @@ class parser_actions {
               RelativePathPattern RESULT = null;
                 int spleft = (parser_stack.get(parser_top-2)).left;
                 int spright = (parser_stack.get(parser_top-2)).right;
-                StepPattern sp = (StepPattern)((Symbol) parser_stack.get(parser_top-2)).value;
+                StepPattern sp = (StepPattern)(parser_stack.get(parser_top-2)).value;
                 int rppleft = (parser_stack.get(parser_top-0)).left;
                 int rppright = (parser_stack.get(parser_top-0)).right;
-                RelativePathPattern rpp = (RelativePathPattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                RelativePathPattern rpp = (RelativePathPattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = new ParentPattern(sp, rpp);
               parser_result = new Symbol(31/*RelativePathPattern*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2969,7 +2969,7 @@ class parser_actions {
               RelativePathPattern RESULT = null;
                 int spleft = (parser_stack.get(parser_top-0)).left;
                 int spright = (parser_stack.get(parser_top-0)).right;
-                StepPattern sp = (StepPattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                StepPattern sp = (StepPattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = sp;
               parser_result = new Symbol(31/*RelativePathPattern*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2981,7 +2981,7 @@ class parser_actions {
               StepPattern RESULT = null;
                 int lleft = (parser_stack.get(parser_top-1)).left;
                 int lright = (parser_stack.get(parser_top-1)).right;
-                String l = (String)((Symbol) parser_stack.get(parser_top-1)).value;
+                String l = (String)(parser_stack.get(parser_top-1)).value;
                  RESULT = new ProcessingInstructionPattern(l);
               parser_result = new Symbol(30/*ProcessingInstructionPattern*/, (parser_stack.get(parser_top-3)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -2993,10 +2993,10 @@ class parser_actions {
               IdKeyPattern RESULT = null;
                 int l1left = (parser_stack.get(parser_top-3)).left;
                 int l1right = (parser_stack.get(parser_top-3)).right;
-                String l1 = (String)((Symbol) parser_stack.get(parser_top-3)).value;
+                String l1 = (String)(parser_stack.get(parser_top-3)).value;
                 int l2left = (parser_stack.get(parser_top-1)).left;
                 int l2right = (parser_stack.get(parser_top-1)).right;
-                String l2 = (String)((Symbol) parser_stack.get(parser_top-1)).value;
+                String l2 = (String)(parser_stack.get(parser_top-1)).value;
                  RESULT = new KeyPattern(l1, l2);
               parser_result = new Symbol(27/*IdKeyPattern*/, (parser_stack.get(parser_top-5)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -3008,7 +3008,7 @@ class parser_actions {
               IdKeyPattern RESULT = null;
                 int lleft = (parser_stack.get(parser_top-1)).left;
                 int lright = (parser_stack.get(parser_top-1)).right;
-                String l = (String)((Symbol) parser_stack.get(parser_top-1)).value;
+                String l = (String)(parser_stack.get(parser_top-1)).value;
                  RESULT = new IdPattern(l);
                parser.setHasIdCall(true);
 
@@ -3022,7 +3022,7 @@ class parser_actions {
               Pattern RESULT = null;
                 int rppleft = (parser_stack.get(parser_top-0)).left;
                 int rppright = (parser_stack.get(parser_top-0)).right;
-                RelativePathPattern rpp = (RelativePathPattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                RelativePathPattern rpp = (RelativePathPattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = rpp;
               parser_result = new Symbol(29/*LocationPathPattern*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -3034,7 +3034,7 @@ class parser_actions {
               Pattern RESULT = null;
                 int rppleft = (parser_stack.get(parser_top-0)).left;
                 int rppright = (parser_stack.get(parser_top-0)).right;
-                RelativePathPattern rpp = (RelativePathPattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                RelativePathPattern rpp = (RelativePathPattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = new AncestorPattern(rpp);
               parser_result = new Symbol(29/*LocationPathPattern*/, (parser_stack.get(parser_top-1)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -3046,10 +3046,10 @@ class parser_actions {
               Pattern RESULT = null;
                 int ikpleft = (parser_stack.get(parser_top-2)).left;
                 int ikpright = (parser_stack.get(parser_top-2)).right;
-                IdKeyPattern ikp = (IdKeyPattern)((Symbol) parser_stack.get(parser_top-2)).value;
+                IdKeyPattern ikp = (IdKeyPattern)(parser_stack.get(parser_top-2)).value;
                 int rppleft = (parser_stack.get(parser_top-0)).left;
                 int rppright = (parser_stack.get(parser_top-0)).right;
-                RelativePathPattern rpp = (RelativePathPattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                RelativePathPattern rpp = (RelativePathPattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = new AncestorPattern(ikp, rpp);
               parser_result = new Symbol(29/*LocationPathPattern*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -3061,10 +3061,10 @@ class parser_actions {
               Pattern RESULT = null;
                 int ikpleft = (parser_stack.get(parser_top-2)).left;
                 int ikpright = (parser_stack.get(parser_top-2)).right;
-                IdKeyPattern ikp = (IdKeyPattern)((Symbol) parser_stack.get(parser_top-2)).value;
+                IdKeyPattern ikp = (IdKeyPattern)(parser_stack.get(parser_top-2)).value;
                 int rppleft = (parser_stack.get(parser_top-0)).left;
                 int rppright = (parser_stack.get(parser_top-0)).right;
-                RelativePathPattern rpp = (RelativePathPattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                RelativePathPattern rpp = (RelativePathPattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = new ParentPattern(ikp, rpp);
               parser_result = new Symbol(29/*LocationPathPattern*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -3076,7 +3076,7 @@ class parser_actions {
               Pattern RESULT = null;
                 int ikpleft = (parser_stack.get(parser_top-0)).left;
                 int ikpright = (parser_stack.get(parser_top-0)).right;
-                IdKeyPattern ikp = (IdKeyPattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                IdKeyPattern ikp = (IdKeyPattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = ikp;
               parser_result = new Symbol(29/*LocationPathPattern*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -3088,7 +3088,7 @@ class parser_actions {
               Pattern RESULT = null;
                 int rppleft = (parser_stack.get(parser_top-0)).left;
                 int rppright = (parser_stack.get(parser_top-0)).right;
-                RelativePathPattern rpp = (RelativePathPattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                RelativePathPattern rpp = (RelativePathPattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = new AbsolutePathPattern(rpp);
               parser_result = new Symbol(29/*LocationPathPattern*/, (parser_stack.get(parser_top-1)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -3109,10 +3109,10 @@ class parser_actions {
               Pattern RESULT = null;
                 int lppleft = (parser_stack.get(parser_top-2)).left;
                 int lppright = (parser_stack.get(parser_top-2)).right;
-                Pattern lpp = (Pattern)((Symbol) parser_stack.get(parser_top-2)).value;
+                Pattern lpp = (Pattern)(parser_stack.get(parser_top-2)).value;
                 int pleft = (parser_stack.get(parser_top-0)).left;
                 int pright = (parser_stack.get(parser_top-0)).right;
-                Pattern p = (Pattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                Pattern p = (Pattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = new AlternativePattern(lpp, p);
               parser_result = new Symbol(28/*Pattern*/, (parser_stack.get(parser_top-2)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -3124,7 +3124,7 @@ class parser_actions {
               Pattern RESULT = null;
                 int lppleft = (parser_stack.get(parser_top-0)).left;
                 int lppright = (parser_stack.get(parser_top-0)).right;
-                Pattern lpp = (Pattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                Pattern lpp = (Pattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = lpp;
               parser_result = new Symbol(28/*Pattern*/, (parser_stack.get(parser_top-0)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -3136,7 +3136,7 @@ class parser_actions {
               SyntaxTreeNode RESULT = null;
                 int exprleft = (parser_stack.get(parser_top-0)).left;
                 int exprright = (parser_stack.get(parser_top-0)).right;
-                Expression expr = (Expression)((Symbol) parser_stack.get(parser_top-0)).value;
+                Expression expr = (Expression)(parser_stack.get(parser_top-0)).value;
                  RESULT = expr;
               parser_result = new Symbol(1/*TopLevel*/, (parser_stack.get(parser_top-1)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -3148,7 +3148,7 @@ class parser_actions {
               SyntaxTreeNode RESULT = null;
                 int patternleft = (parser_stack.get(parser_top-0)).left;
                 int patternright = (parser_stack.get(parser_top-0)).right;
-                Pattern pattern = (Pattern)((Symbol) parser_stack.get(parser_top-0)).value;
+                Pattern pattern = (Pattern)(parser_stack.get(parser_top-0)).value;
                  RESULT = pattern;
               parser_result = new Symbol(1/*TopLevel*/, (parser_stack.get(parser_top-1)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }
@@ -3160,7 +3160,7 @@ class parser_actions {
               Object RESULT = null;
                 int start_valleft = (parser_stack.get(parser_top-1)).left;
                 int start_valright = (parser_stack.get(parser_top-1)).right;
-                SyntaxTreeNode start_val = (SyntaxTreeNode)((Symbol) parser_stack.get(parser_top-1)).value;
+                SyntaxTreeNode start_val = (SyntaxTreeNode)(parser_stack.get(parser_top-1)).value;
                 RESULT = start_val;
               parser_result = new Symbol(0/*$START*/, (parser_stack.get(parser_top-1)).left, (parser_stack.get(parser_top-0)).right, RESULT);
             }

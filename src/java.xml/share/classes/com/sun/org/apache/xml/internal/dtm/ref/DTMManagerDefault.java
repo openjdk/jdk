@@ -1,6 +1,6 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -571,7 +571,7 @@ public class DTMManagerDefault extends DTMManager
                                 handle=dtm.getAttributeNode(handle,node.getNamespaceURI(),node.getLocalName());
       }
       else
-                                handle = ((DOM2DTM)dtm).getHandleOfNode(node);
+                                handle = dtm.getHandleOfNode(node);
 
       if(DTM.NULL == handle)
         throw new RuntimeException(XMLMessages.createXMLMessage(XMLErrorResources.ER_COULD_NOT_RESOLVE_NODE, null)); //"Could not resolve the node to a handle!");

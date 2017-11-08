@@ -37,17 +37,20 @@ import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.Stack;
 import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,9 +61,9 @@ import java.util.stream.StreamSupport;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
-import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
+import jdk.internal.ref.CleanerFactory;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
@@ -2375,74 +2378,160 @@ public abstract class ClassLoader {
      * @since    1.2
      */
     static class NativeLibrary {
+        // the class from which the library is loaded, also indicates
+        // the loader this native library belongs.
+        final Class<?> fromClass;
+        // the canonicalized name of the native library.
+        // or static library name
+        final String name;
+        // Indicates if the native library is linked into the VM
+        final boolean isBuiltin;
+
         // opaque handle to native library, used in native code.
         long handle;
         // the version of JNI environment the native library requires.
-        private int jniVersion;
-        // the class from which the library is loaded, also indicates
-        // the loader this native library belongs.
-        private Class<?> fromClass;
-        // the canonicalized name of the native library.
-        // or static library name
-        String name;
-        // Indicates if the native library is linked into the VM
-        boolean isBuiltin;
-        // Indicates if the native library is loaded
-        boolean loaded;
-        native void load(String name, boolean isBuiltin);
+        int jniVersion;
 
-        native long find(String name);
-        native void unload(String name, boolean isBuiltin);
+        native boolean load0(String name, boolean isBuiltin);
 
-        public NativeLibrary(Class<?> fromClass, String name, boolean isBuiltin) {
+        native long findEntry(String name);
+
+        NativeLibrary(Class<?> fromClass, String name, boolean isBuiltin) {
             this.name = name;
             this.fromClass = fromClass;
             this.isBuiltin = isBuiltin;
         }
 
-        @SuppressWarnings("deprecation")
-        protected void finalize() {
-            synchronized (loadedLibraryNames) {
-                if (fromClass.getClassLoader() != null && loaded) {
-                    this.fromClass = null;   // no context when unloaded
+        /*
+         * Loads the native library and registers for cleanup when its
+         * associated class loader is unloaded
+         */
+        boolean load() {
+            if (handle != 0) {
+                throw new InternalError("Native library " + name + " has been loaded");
+            }
 
-                    /* remove the native library name */
-                    int size = loadedLibraryNames.size();
-                    for (int i = 0; i < size; i++) {
-                        if (name.equals(loadedLibraryNames.elementAt(i))) {
-                            loadedLibraryNames.removeElementAt(i);
-                            break;
+            if (!load0(name, isBuiltin)) return false;
+
+            // register the class loader for cleanup when unloaded
+            // built class loaders are never unloaded
+            ClassLoader loader = fromClass.getClassLoader();
+            if (loader != null &&
+                loader != getBuiltinPlatformClassLoader() &&
+                loader != getBuiltinAppClassLoader()) {
+                CleanerFactory.cleaner().register(loader,
+                        new Unloader(name, handle, isBuiltin));
+            }
+            return true;
+        }
+
+        static boolean loadLibrary(Class<?> fromClass, String name, boolean isBuiltin) {
+            ClassLoader loader =
+                fromClass == null ? null : fromClass.getClassLoader();
+
+            synchronized (loadedLibraryNames) {
+                Map<String, NativeLibrary> libs =
+                    loader != null ? loader.nativeLibraries() : systemNativeLibraries();
+                if (libs.containsKey(name)) {
+                    return true;
+                }
+
+                if (loadedLibraryNames.contains(name)) {
+                    throw new UnsatisfiedLinkError("Native Library " + name +
+                        " already loaded in another classloader");
+                }
+
+                /*
+                 * When a library is being loaded, JNI_OnLoad function can cause
+                 * another loadLibrary invocation that should succeed.
+                 *
+                 * We use a static stack to hold the list of libraries we are
+                 * loading because this can happen only when called by the
+                 * same thread because Runtime.load and Runtime.loadLibrary
+                 * are synchronous.
+                 *
+                 * If there is a pending load operation for the library, we
+                 * immediately return success; otherwise, we raise
+                 * UnsatisfiedLinkError.
+                 */
+                for (NativeLibrary lib : nativeLibraryContext) {
+                    if (name.equals(lib.name)) {
+                        if (loader == lib.fromClass.getClassLoader()) {
+                            return true;
+                        } else {
+                            throw new UnsatisfiedLinkError("Native Library " +
+                                name + " is being loaded in another classloader");
                         }
                     }
-                    /* unload the library. */
-                    ClassLoader.nativeLibraryContext.push(this);
+                }
+                NativeLibrary lib = new NativeLibrary(fromClass, name, isBuiltin);
+                // load the native library
+                nativeLibraryContext.push(lib);
+                try {
+                    if (!lib.load()) return false;
+                } finally {
+                    nativeLibraryContext.pop();
+                }
+                // register the loaded native library
+                loadedLibraryNames.add(name);
+                libs.put(name, lib);
+            }
+            return true;
+        }
+
+        // Invoked in the VM to determine the context class in JNI_OnLoad
+        // and JNI_OnUnload
+        static Class<?> getFromClass() {
+            return nativeLibraryContext.peek().fromClass;
+        }
+
+        // native libraries being loaded
+        static Deque<NativeLibrary> nativeLibraryContext = new LinkedList<>();
+
+        /*
+         * The run() method will be invoked when this class loader becomes
+         * phantom reachable to unload the native library.
+         */
+        static class Unloader implements Runnable {
+            // This represents the context when a native library is unloaded
+            // and getFromClass() will return null,
+            static final NativeLibrary UNLOADER =
+                new NativeLibrary(null, "dummy", false);
+            final String name;
+            final long handle;
+            final boolean isBuiltin;
+
+            Unloader(String name, long handle, boolean isBuiltin) {
+                if (handle == 0) {
+                    throw new IllegalArgumentException(
+                        "Invalid handle for native library " + name);
+                }
+
+                this.name = name;
+                this.handle = handle;
+                this.isBuiltin = isBuiltin;
+            }
+
+            @Override
+            public void run() {
+                synchronized (loadedLibraryNames) {
+                    /* remove the native library name */
+                    loadedLibraryNames.remove(name);
+                    nativeLibraryContext.push(UNLOADER);
                     try {
-                        unload(name, isBuiltin);
+                        unload(name, isBuiltin, handle);
                     } finally {
-                        ClassLoader.nativeLibraryContext.pop();
+                        nativeLibraryContext.pop();
                     }
+
                 }
             }
         }
-        // Invoked in the VM to determine the context class in
-        // JNI_Load/JNI_Unload
-        static Class<?> getFromClass() {
-            return ClassLoader.nativeLibraryContext.peek().fromClass;
-        }
+
+        // JNI FindClass expects the caller class if invoked from JNI_OnLoad
+        // and JNI_OnUnload is NativeLibrary class
+        static native void unload(String name, boolean isBuiltin, long handle);
     }
-
-    // All native library names we've loaded.
-    private static Vector<String> loadedLibraryNames = new Vector<>();
-
-    // Native libraries belonging to system classes.
-    private static Vector<NativeLibrary> systemNativeLibraries
-        = new Vector<>();
-
-    // Native libraries associated with the class loader.
-    private Vector<NativeLibrary> nativeLibraries = new Vector<>();
-
-    // native libraries being loaded/unloaded.
-    private static Stack<NativeLibrary> nativeLibraryContext = new Stack<>();
 
     // The paths searched for libraries
     private static String usr_paths[];
@@ -2455,7 +2544,7 @@ public abstract class ClassLoader {
         int psCount = 0;
 
         if (ClassLoaderHelper.allowsQuotedPathElements &&
-                ldPath.indexOf('\"') >= 0) {
+            ldPath.indexOf('\"') >= 0) {
             // First, remove quotes put around quoted parts of paths.
             // Second, use a quotation mark as a new path separator.
             // This will preserve any quoted old path separators.
@@ -2465,7 +2554,7 @@ public abstract class ClassLoader {
                 char ch = ldPath.charAt(i);
                 if (ch == '\"') {
                     while (++i < ldLen &&
-                            (ch = ldPath.charAt(i)) != '\"') {
+                        (ch = ldPath.charAt(i)) != '\"') {
                         buf[bufLen++] = ch;
                     }
                 } else {
@@ -2481,7 +2570,7 @@ public abstract class ClassLoader {
             ps = '\"';
         } else {
             for (int i = ldPath.indexOf(ps); i >= 0;
-                    i = ldPath.indexOf(ps, i + 1)) {
+                 i = ldPath.indexOf(ps, i + 1)) {
                 psCount++;
             }
         }
@@ -2491,11 +2580,11 @@ public abstract class ClassLoader {
         for (int j = 0; j < psCount; ++j) {
             int pathEnd = ldPath.indexOf(ps, pathStart);
             paths[j] = (pathStart < pathEnd) ?
-                    ldPath.substring(pathStart, pathEnd) : ".";
+                ldPath.substring(pathStart, pathEnd) : ".";
             pathStart = pathEnd + 1;
         }
         paths[psCount] = (pathStart < ldLen) ?
-                ldPath.substring(pathStart, ldLen) : ".";
+            ldPath.substring(pathStart, ldLen) : ".";
         return paths;
     }
 
@@ -2520,7 +2609,7 @@ public abstract class ClassLoader {
                 File libfile = new File(libfilename);
                 if (!libfile.isAbsolute()) {
                     throw new UnsatisfiedLinkError(
-    "ClassLoader.findLibrary failed to return an absolute path: " + libfilename);
+                        "ClassLoader.findLibrary failed to return an absolute path: " + libfilename);
                 }
                 if (loadLibrary0(fromClass, libfile)) {
                     return;
@@ -2551,10 +2640,11 @@ public abstract class ClassLoader {
             }
         }
         // Oops, it failed
-        throw new UnsatisfiedLinkError("no " + name + " in java.library.path");
+        throw new UnsatisfiedLinkError("no " + name +
+            " in java.library.path: " + Arrays.toString(usr_paths));
     }
 
-    static native String findBuiltinLib(String name);
+    private static native String findBuiltinLib(String name);
 
     private static boolean loadLibrary0(Class<?> fromClass, final File file) {
         // Check to see if we're attempting to access a static library
@@ -2575,85 +2665,72 @@ public abstract class ClassLoader {
                 return false;
             }
         }
-        ClassLoader loader =
-            (fromClass == null) ? null : fromClass.getClassLoader();
-        Vector<NativeLibrary> libs =
-            loader != null ? loader.nativeLibraries : systemNativeLibraries;
-        synchronized (libs) {
-            int size = libs.size();
-            for (int i = 0; i < size; i++) {
-                NativeLibrary lib = libs.elementAt(i);
-                if (name.equals(lib.name)) {
-                    return true;
-                }
-            }
-
-            synchronized (loadedLibraryNames) {
-                if (loadedLibraryNames.contains(name)) {
-                    throw new UnsatisfiedLinkError
-                        ("Native Library " +
-                         name +
-                         " already loaded in another classloader");
-                }
-                /* If the library is being loaded (must be by the same thread,
-                 * because Runtime.load and Runtime.loadLibrary are
-                 * synchronous). The reason is can occur is that the JNI_OnLoad
-                 * function can cause another loadLibrary invocation.
-                 *
-                 * Thus we can use a static stack to hold the list of libraries
-                 * we are loading.
-                 *
-                 * If there is a pending load operation for the library, we
-                 * immediately return success; otherwise, we raise
-                 * UnsatisfiedLinkError.
-                 */
-                int n = nativeLibraryContext.size();
-                for (int i = 0; i < n; i++) {
-                    NativeLibrary lib = nativeLibraryContext.elementAt(i);
-                    if (name.equals(lib.name)) {
-                        if (loader == lib.fromClass.getClassLoader()) {
-                            return true;
-                        } else {
-                            throw new UnsatisfiedLinkError
-                                ("Native Library " +
-                                 name +
-                                 " is being loaded in another classloader");
-                        }
-                    }
-                }
-                NativeLibrary lib = new NativeLibrary(fromClass, name, isBuiltin);
-                nativeLibraryContext.push(lib);
-                try {
-                    lib.load(name, isBuiltin);
-                } finally {
-                    nativeLibraryContext.pop();
-                }
-                if (lib.loaded) {
-                    loadedLibraryNames.addElement(name);
-                    libs.addElement(lib);
-                    return true;
-                }
-                return false;
-            }
-        }
+        return NativeLibrary.loadLibrary(fromClass, name, isBuiltin);
     }
 
-    // Invoked in the VM class linking code.
-    static long findNative(ClassLoader loader, String name) {
-        Vector<NativeLibrary> libs =
-            loader != null ? loader.nativeLibraries : systemNativeLibraries;
-        synchronized (libs) {
-            int size = libs.size();
-            for (int i = 0; i < size; i++) {
-                NativeLibrary lib = libs.elementAt(i);
-                long entry = lib.find(name);
-                if (entry != 0)
-                    return entry;
-            }
+    /*
+     * Invoked in the VM class linking code.
+     */
+    private static long findNative(ClassLoader loader, String entryName) {
+        Map<String, NativeLibrary> libs =
+            loader != null ? loader.nativeLibraries() : systemNativeLibraries();
+        if (libs.isEmpty())
+            return 0;
+
+        // the native libraries map may be updated in another thread
+        // when a native library is being loaded.  No symbol will be
+        // searched from it yet.
+        for (NativeLibrary lib : libs.values()) {
+            long entry = lib.findEntry(entryName);
+            if (entry != 0) return entry;
         }
         return 0;
     }
 
+    // All native library names we've loaded.
+    // This also serves as the lock to obtain nativeLibraries
+    // and write to nativeLibraryContext.
+    private static final Set<String> loadedLibraryNames = new HashSet<>();
+
+    // Native libraries belonging to system classes.
+    private static volatile Map<String, NativeLibrary> systemNativeLibraries;
+
+    // Native libraries associated with the class loader.
+    private volatile Map<String, NativeLibrary> nativeLibraries;
+
+    /*
+     * Returns the native libraries map associated with bootstrap class loader
+     * This method will create the map at the first time when called.
+     */
+    private static Map<String, NativeLibrary> systemNativeLibraries() {
+        Map<String, NativeLibrary> libs = systemNativeLibraries;
+        if (libs == null) {
+            synchronized (loadedLibraryNames) {
+                libs = systemNativeLibraries;
+                if (libs == null) {
+                    libs = systemNativeLibraries = new ConcurrentHashMap<>();
+                }
+            }
+        }
+        return libs;
+    }
+
+    /*
+     * Returns the native libraries map associated with this class loader
+     * This method will create the map at the first time when called.
+     */
+    private Map<String, NativeLibrary> nativeLibraries() {
+        Map<String, NativeLibrary> libs = nativeLibraries;
+        if (libs == null) {
+            synchronized (loadedLibraryNames) {
+                libs = nativeLibraries;
+                if (libs == null) {
+                    libs = nativeLibraries = new ConcurrentHashMap<>();
+                }
+            }
+        }
+        return libs;
+    }
 
     // -- Assertion management --
 

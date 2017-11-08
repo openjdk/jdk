@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -481,7 +481,7 @@ final class Number extends Instruction implements Closure {
 
         // Initialize closure variables
         for (int i = 0; i < closureLen; i++) {
-            final VariableRefBase varRef = (VariableRefBase) _closureVars.get(i);
+            final VariableRefBase varRef = _closureVars.get(i);
             final VariableBase var = varRef.getVariable();
             final Type varType = var.getType();
 

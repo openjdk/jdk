@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -407,7 +407,7 @@ public final class TransformerImpl extends Transformer
         _method = (String) _properties.get(OutputKeys.METHOD);
 
         // Get encoding using getProperty() to use defaults
-        _encoding = (String) _properties.getProperty(OutputKeys.ENCODING);
+        _encoding = _properties.getProperty(OutputKeys.ENCODING);
 
         _tohFactory = TransletOutputHandlerFactory.newInstance(_useServicesMechanism);
         _tohFactory.setEncoding(_encoding);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ public class XPathException extends Exception {
             throws IOException
     {
         ObjectOutputStream.PutField fields = out.putFields();
-        fields.put("cause", (Throwable) super.getCause());
+        fields.put("cause", super.getCause());
         out.writeFields();
     }
 

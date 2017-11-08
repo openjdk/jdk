@@ -666,7 +666,7 @@ public class NamespaceSupport
             // Start by looking in the cache, and
             // return immediately if the name
             // is already known in this content
-            name = (String[])table.get(qName);
+            name = table.get(qName);
             if (name != null) {
                 return name;
             }
@@ -703,7 +703,7 @@ public class NamespaceSupport
                 if ("".equals(prefix)) {
                     uri = defaultNS;
                 } else {
-                    uri = (String)prefixTable.get(prefix);
+                    uri = prefixTable.get(prefix);
                 }
                 if (uri == null
                         || (!isAttribute && "xmlns".equals (prefix))) {
@@ -735,7 +735,7 @@ public class NamespaceSupport
             } else if (prefixTable == null) {
                 return null;
             } else {
-                return (String)prefixTable.get(prefix);
+                return prefixTable.get(prefix);
             }
         }
 
@@ -755,7 +755,7 @@ public class NamespaceSupport
             if (uriTable == null) {
                 return null;
             } else {
-                return (String)uriTable.get(uri);
+                return uriTable.get(uri);
             }
         }
 

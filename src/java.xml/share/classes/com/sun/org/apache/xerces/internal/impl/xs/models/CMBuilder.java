@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -457,7 +458,7 @@ public class CMBuilder {
             XSModelGroupImpl group = (XSModelGroupImpl) particle.fValue;
             if (minOccurs != 1 || maxOccurs != 1) {
                 if (group.fParticleCount == 1) {
-                    XSParticleDecl particle2 = (XSParticleDecl) group.fParticles[0];
+                    XSParticleDecl particle2 = group.fParticles[0];
                     short type2 = particle2.fType;
                     return ((type2 == XSParticleDecl.PARTICLE_ELEMENT ||
                             type2 == XSParticleDecl.PARTICLE_WILDCARD) &&

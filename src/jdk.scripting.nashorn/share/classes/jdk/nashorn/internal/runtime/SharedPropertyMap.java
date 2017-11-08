@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,33 +48,15 @@ public final class SharedPropertyMap extends PropertyMap {
      * Create a new shared property map from the given {@code map}.
      * @param map property map to copy
      */
-    public SharedPropertyMap(final PropertyMap map) {
+    SharedPropertyMap(final PropertyMap map) {
         super(map);
         this.switchPoint = new SwitchPoint();
     }
 
     @Override
-    public void propertyAdded(final Property property, final boolean isSelf) {
-        if (isSelf) {
-            invalidateSwitchPoint();
-        }
-        super.propertyAdded(property, isSelf);
-    }
-
-    @Override
-    public void propertyDeleted(final Property property, final boolean isSelf) {
-        if (isSelf) {
-            invalidateSwitchPoint();
-        }
-        super.propertyDeleted(property, isSelf);
-    }
-
-    @Override
-    public void propertyModified(final Property oldProperty, final Property newProperty, final boolean isSelf) {
-        if (isSelf) {
-            invalidateSwitchPoint();
-        }
-        super.propertyModified(oldProperty, newProperty, isSelf);
+    public void propertyChanged(final Property property) {
+        invalidateSwitchPoint();
+        super.propertyChanged(property);
     }
 
     @Override

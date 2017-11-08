@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -572,7 +572,7 @@ public class XMLSchemaValidator
      * are recognized by this component.
      */
     public String[] getRecognizedFeatures() {
-        return (String[]) (RECOGNIZED_FEATURES.clone());
+        return RECOGNIZED_FEATURES.clone();
     } // getRecognizedFeatures():String[]
 
     /**
@@ -599,7 +599,7 @@ public class XMLSchemaValidator
      * are recognized by this component.
      */
     public String[] getRecognizedProperties() {
-        return (String[]) (RECOGNIZED_PROPERTIES.clone());
+        return RECOGNIZED_PROPERTIES.clone();
     } // getRecognizedProperties():String[]
 
     /**
@@ -3037,7 +3037,7 @@ public class XMLSchemaValidator
                     // 5 Let [Definition:]  the wild IDs be the set of all attribute information item to which clause 3.2 applied and whose validation resulted in a context-determined declaration of mustFind or no context-determined declaration at all, and whose [local name] and [namespace name] resolve (as defined by QName resolution (Instance) (3.15.4)) to an attribute declaration whose {type definition} is or is derived from ID. Then all of the following must be true:
                     // 5.1 There must be no more than one item in wild IDs.
                     if (currDecl.fType.getTypeCategory() == XSTypeDefinition.SIMPLE_TYPE
-                        && ((XSSimpleType) currDecl.fType).isIDType()) {
+                        && (currDecl.fType).isIDType()) {
                         if (wildcardIDName != null) {
                             reportSchemaError(
                                 "cvc-complex-type.5.1",
@@ -4120,7 +4120,7 @@ public class XMLSchemaValidator
 
         private ShortList getItemValueTypeAt(int index) {
             if (fUseItemValueTypeVector) {
-                return (ShortList) fItemValueTypes.get(index);
+                return fItemValueTypes.get(index);
             }
             return fItemValueType;
         }
@@ -4245,8 +4245,7 @@ public class XMLSchemaValidator
 
             // verify references
             // get the key store corresponding (if it exists):
-            fKeyValueStore =
-                (ValueStoreBase) fValueStoreCache.fGlobalIDConstraintMap.get(
+            fKeyValueStore = fValueStoreCache.fGlobalIDConstraintMap.get(
                     ((KeyRef) fIdentityConstraint).getKey());
 
             if (fKeyValueStore == null) {
