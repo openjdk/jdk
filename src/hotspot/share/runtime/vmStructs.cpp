@@ -2175,6 +2175,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(vframeArray)                                      \
   declare_toplevel_type(vframeArrayElement)                               \
   declare_toplevel_type(Annotations*)                                     \
+  declare_type(OopMapValue, StackObj)                                     \
                                                                           \
   /***************/                                                       \
   /* Miscellaneous types */                                               \
