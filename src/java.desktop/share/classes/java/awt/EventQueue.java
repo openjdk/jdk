@@ -858,15 +858,13 @@ public class EventQueue {
     private AWTEvent getCurrentEventImpl() {
         pushPopLock.lock();
         try {
-            if (fxAppThreadIsDispatchThread) {
+            if (Thread.currentThread() == dispatchThread
+                    || fxAppThreadIsDispatchThread) {
                 return (currentEvent != null)
                         ? currentEvent.get()
                         : null;
-            } else {
-                return (Thread.currentThread() == dispatchThread)
-                        ? currentEvent.get()
-                        : null;
             }
+            return null;
         } finally {
             pushPopLock.unlock();
         }
