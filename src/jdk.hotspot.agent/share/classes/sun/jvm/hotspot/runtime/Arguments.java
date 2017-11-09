@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,11 @@ public class Arguments {
     }
 
     public static String getJVMFlags() {
-        return buildString(jvmFlagsField, jvmFlagsCount);
+        return buildString(jvmFlagsArrayField, numJvmFlags);
     }
 
     public static String getJVMArgs() {
-        return buildString(jvmArgsField, jvmArgsCount);
+        return buildString(jvmArgsArrayField, numJvmArgs);
     }
 
     public static String getJavaCommand() {
@@ -56,20 +56,20 @@ public class Arguments {
     // Internals only below this point
 
     // Fields
-    private static AddressField jvmFlagsField;
-    private static AddressField jvmArgsField;
+    private static AddressField jvmFlagsArrayField;
+    private static AddressField jvmArgsArrayField;
     private static AddressField javaCommandField;
-    private static long jvmFlagsCount;
-    private static long jvmArgsCount;
+    private static long numJvmFlags;
+    private static long numJvmArgs;
 
     private static synchronized void initialize(TypeDataBase db) {
         Type argumentsType = db.lookupType("Arguments");
-        jvmFlagsField = argumentsType.getAddressField("_jvm_flags_array");
-        jvmArgsField = argumentsType.getAddressField("_jvm_args_array");
+        jvmFlagsArrayField = argumentsType.getAddressField("_jvm_flags_array");
+        jvmArgsArrayField = argumentsType.getAddressField("_jvm_args_array");
         javaCommandField = argumentsType.getAddressField("_java_command");
 
-        jvmArgsCount = argumentsType.getCIntegerField("_num_jvm_args").getValue();
-        jvmFlagsCount = argumentsType.getCIntegerField("_num_jvm_flags").getValue();
+        numJvmArgs = argumentsType.getCIntegerField("_num_jvm_args").getValue();
+        numJvmFlags = argumentsType.getCIntegerField("_num_jvm_flags").getValue();
     }
 
     private static String buildString(AddressField arrayField, long count) {

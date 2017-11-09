@@ -118,6 +118,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   };
   static size_t IndexSetStart;
   static size_t IndexSetStride;
+  static size_t _min_chunk_size_in_bytes;
 
  private:
   enum FitStrategyOptions {
@@ -134,6 +135,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // A lock protecting the free lists and free blocks;
   // mutable because of ubiquity of locking even for otherwise const methods
   mutable Mutex _freelistLock;
+
   // Locking verifier convenience function
   void assert_locked() const PRODUCT_RETURN;
   void assert_locked(const Mutex* lock) const PRODUCT_RETURN;
