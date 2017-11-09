@@ -347,7 +347,6 @@ public class VMProps implements Callable<Map<String, String>> {
             isSupported = checkDockerSupport();
         } catch (Exception e) {
             isSupported = false;
-            System.err.println("dockerSupport() threw exception: " + e);
         }
 
         return (isSupported) ? "true" : "false";
