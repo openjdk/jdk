@@ -169,7 +169,8 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
             JNI_CHECK_PEER_GOTO(parent, done);
             {
                 AwtFrame* parent = (AwtFrame *)pData;
-                hwndParent = parent->GetHWnd();
+                HWND oHWnd = parent->GetOverriddenHWnd();
+                hwndParent = oHWnd ? oHWnd : parent->GetHWnd();
             }
         }
 
