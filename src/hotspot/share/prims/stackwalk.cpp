@@ -272,9 +272,8 @@ objArrayHandle LiveFrameStream::monitors_to_object_array(GrowableArray<MonitorIn
   return array_h;
 }
 
-// Fill StackFrameInfo with declaringClass and bci and initialize memberName
+// Fill StackFrameInfo with bci and initialize memberName
 void BaseFrameStream::fill_stackframe(Handle stackFrame, const methodHandle& method, TRAPS) {
-  java_lang_StackFrameInfo::set_declaringClass(stackFrame(), method->method_holder()->java_mirror());
   java_lang_StackFrameInfo::set_method_and_bci(stackFrame, method, bci(), THREAD);
 }
 
