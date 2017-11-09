@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,32 +30,38 @@ import java.util.Map;
 
 public interface JavaLangInvokeAccess {
     /**
-     * Create a new MemberName instance. Used by {@see StackFrameInfo}.
+     * Create a new MemberName instance. Used by {@code StackFrameInfo}.
      */
     Object newMemberName();
 
     /**
-     * Returns the name for the given MemberName. Used by {@see StackFrameInfo}.
+     * Returns the name for the given MemberName. Used by {@code StackFrameInfo}.
      */
     String getName(Object mname);
 
     /**
      * Returns the {@code MethodType} for the given MemberName.
-     * Used by {@see StackFrameInfo}.
+     * Used by {@code StackFrameInfo}.
      */
     MethodType getMethodType(Object mname);
 
     /**
      * Returns the descriptor for the given MemberName.
-     * Used by {@see StackFrameInfo}.
+     * Used by {@code StackFrameInfo}.
      */
     String getMethodDescriptor(Object mname);
 
     /**
-     * Returns {@code true} if the given MemberName is a native method. Used by
-     * {@see StackFrameInfo}.
+     * Returns {@code true} if the given MemberName is a native method.
+     * Used by {@code StackFrameInfo}.
      */
     boolean isNative(Object mname);
+
+    /**
+     * Returns the declaring class for the given MemberName.
+     * Used by {@code StackFrameInfo}.
+     */
+    Class<?> getDeclaringClass(Object mname);
 
     /**
      * Returns a {@code byte[]} representation of a class implementing
