@@ -112,18 +112,7 @@ void G1MMUTrackerQueue::add_pause(double start, double end) {
   }
 }
 
-// basically the _internal call does not remove expired entries
-// this is for trying things out in the future and a couple
-// of other places (debugging)
-
 double G1MMUTrackerQueue::when_sec(double current_time, double pause_time) {
-  remove_expired_entries(current_time);
-
-  return when_internal(current_time, pause_time);
-}
-
-double G1MMUTrackerQueue::when_internal(double current_time,
-                                        double pause_time) {
   // if the pause is over the maximum, just assume that it's the maximum
   double adjusted_pause_time =
     (pause_time > max_gc_time()) ? max_gc_time() : pause_time;
