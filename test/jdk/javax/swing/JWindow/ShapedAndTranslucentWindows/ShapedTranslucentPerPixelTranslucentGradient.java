@@ -25,6 +25,7 @@ import java.awt.*;
 
 /*
  * @test
+ * @bug 8164811
  * @key headful
  * @summary Check if shaped, translucent and per-pixel translucent window is
  *          dragged and resized by mouse correctly.
@@ -48,6 +49,7 @@ import java.awt.*;
  * @library ../../../../lib/testlibrary
  * @build Common ExtendedRobot
  * @run main ShapedTranslucentPerPixelTranslucentGradient
+ * @run main/othervm -Dsun.java2d.uiScale=1.5 ShapedTranslucentPerPixelTranslucentGradient
  */
 
 public class ShapedTranslucentPerPixelTranslucentGradient extends Common {
