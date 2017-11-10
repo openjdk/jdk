@@ -108,6 +108,7 @@ public class FlakyMutex implements Lock {
             case 0: throw new MyError();
             case 1: throw new MyRuntimeException();
             case 2: FlakyMutex.<RuntimeException>uncheckedThrow(new MyException());
+                // fall through ... NOT!
             default: return compareAndSetState(0, 1);
             }
         }

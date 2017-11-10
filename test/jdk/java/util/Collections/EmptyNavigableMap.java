@@ -48,7 +48,7 @@ import static org.testng.Assert.assertFalse;
 public class EmptyNavigableMap {
 
     public static <T> void assertInstance(T actual, Class<? extends T> expected) {
-        assertInstance(expected.isInstance(actual), null);
+        assertInstance(actual, expected, null);
     }
 
     public static <T> void assertInstance(T actual, Class<? extends T> expected, String message) {

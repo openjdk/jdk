@@ -39,7 +39,7 @@ public class SubMapClear {
         Set subSet = treeSet.subSet(new Integer(4),new Integer(10));
         subSet.clear();  // Used to throw exception
 
-        int a[] = new int[] {1, 2, 3, 10};
+        int[] a = { 1, 2, 3, 10 };
         Set s = new TreeSet();
         for (int i = 0; i < a.length; i++)
             s.add(new Integer(a[i]));

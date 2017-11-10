@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4268780
  * @summary Collection-views of submap-views of synchronized-views of
