@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4627516
  * @summary HashMap.Entry.setValue() returns new value (as opposed to old)
@@ -35,7 +35,7 @@ public class SetValue {
     static final String oldValue = "old";
     static final String newValue = "new";
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         Map m = new HashMap();
         m.put(key, oldValue);
         Map.Entry e = (Map.Entry) m.entrySet().iterator().next();

@@ -46,7 +46,7 @@ public class SyncLastIndexOf {
         }
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         Integer x = new Integer(1);
         v.addElement(x);
         new RemovingThread().start();

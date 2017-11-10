@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4559052
  * @summary Hashtable's hashCode method always returns zero(!)

@@ -23,7 +23,7 @@
 
 import java.util.*;
 
-/**
+/*
  * @test
  * @bug     4503146
  * @summary Zero initial capacity should be legal
@@ -31,7 +31,7 @@ import java.util.*;
  */
 
 public class ZeroInitCap {
-    public static void main(String[] argv) {
+    public static void main(String[] args) {
         Map map = new WeakHashMap(0);
         map.put("a","b");
     }

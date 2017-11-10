@@ -57,12 +57,14 @@ public class FlakyThreadFactory {
                 }});
         test(OutOfMemoryError.class,
              new ThreadFactory() {
-                public Thread newThread(Runnable r) {
-                    new Thread(null, r, "a natural OOME", 1L << 60);
-                    // """On some platforms, the value of the stackSize
-                    // parameter may have no effect whatsoever."""
-                    throw new OutOfMemoryError("artificial OOME");
-                }});
+                 @SuppressWarnings("DeadThread")
+                 public Thread newThread(Runnable r) {
+                     // We expect this to throw OOME, but ...
+                     new Thread(null, r, "a natural OOME", 1L << 60);
+                     // """On some platforms, the value of the stackSize
+                     // parameter may have no effect whatsoever."""
+                     throw new OutOfMemoryError("artificial OOME");
+                 }});
         test(null,
              new ThreadFactory() {
                 public Thread newThread(Runnable r) {

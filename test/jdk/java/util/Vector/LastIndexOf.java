@@ -31,7 +31,7 @@
 import java.util.*;
 
 public class LastIndexOf {
-    public static void main(String argv[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         Vector v = new Vector(10);
 
         try {
