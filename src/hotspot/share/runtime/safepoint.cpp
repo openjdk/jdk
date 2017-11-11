@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -616,6 +617,14 @@ public:
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
       ClassLoaderDataGraph::purge_if_needed();
+      event_safepoint_cleanup_task_commit(event, name);
+    }
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE)) {
+      const char* name = "resizing system dictionaries";
+      EventSafepointCleanupTask event;
+      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+      ClassLoaderDataGraph::resize_if_needed();
       event_safepoint_cleanup_task_commit(event, name);
     }
     _subtasks.all_tasks_completed(_num_workers);

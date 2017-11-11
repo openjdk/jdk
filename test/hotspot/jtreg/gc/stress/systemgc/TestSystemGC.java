@@ -103,6 +103,8 @@ class SystemGCTask extends Exitable implements Runnable {
 }
 
 public class TestSystemGC {
+    private static long endTime;
+
     private static final int numGroups = 7;
     private static final int numGCsPerGroup = 4;
 
@@ -133,8 +135,11 @@ public class TestSystemGC {
 
         for (int i = 0; i < numGroups; i++) {
             for (int j = 0; j < numGCsPerGroup; j++) {
-                System.gc();
-                ThreadUtils.sleep(getDelayMS(i));
+               System.gc();
+               if (System.currentTimeMillis() >= endTime) {
+                   return;
+               }
+               ThreadUtils.sleep(getDelayMS(i));
             }
         }
     }
@@ -159,7 +164,7 @@ public class TestSystemGC {
     }
 
     private static void runAllPhases() {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4 && System.currentTimeMillis() < endTime; i++) {
             SystemGCTask gcTask =
                 (i % 2 == 1) ? createSystemGCTask(numGroups / 3) : null;
             ShortLivedAllocationTask shortTask =
@@ -181,12 +186,15 @@ public class TestSystemGC {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            throw new IllegalArgumentException("Must specify timeout in seconds as first argument");
+        }
+        int timeout = Integer.parseInt(args[0]) * 1000;
+        System.out.println("Running with timeout of " + timeout + "ms");
+        endTime = System.currentTimeMillis() + timeout;
         // First allocate the long lived objects and then run all phases.
         populateLongLived();
         runAllPhases();
-        if (args.length > 0 && args[0].equals("long")) {
-            runAllPhases();
-        }
     }
 }

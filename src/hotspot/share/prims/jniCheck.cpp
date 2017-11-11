@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
+#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -32,7 +33,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jniCheck.hpp"
-#include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.hpp"

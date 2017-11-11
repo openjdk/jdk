@@ -55,8 +55,8 @@ import jdk.vm.ci.meta.AllocatableValue;
  * this case absolute addressing (without using the base pointer is used). See also:
  * CodeInstaller::pd_patch_DataSectionReference
  *
- * @see SPARCMove#loadFromConstantTable(CompilationResultBuilder, SPARCMacroAssembler, int,
- *      Register, jdk.vm.ci.meta.Constant, Register, SPARCDelayedControlTransfer)
+ * @see SPARCMove#loadFromConstantTable(CompilationResultBuilder, SPARCMacroAssembler, Register,
+ *      jdk.vm.ci.meta.Constant, Register, SPARCDelayedControlTransfer)
  */
 public class SPARCLoadConstantTableBaseOp extends SPARCLIRInstruction {
     public static final LIRInstructionClass<SPARCLoadConstantTableBaseOp> TYPE = LIRInstructionClass.create(SPARCLoadConstantTableBaseOp.class);

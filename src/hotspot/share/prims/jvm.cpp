@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -46,7 +47,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -215,7 +215,7 @@ void trace_class_resolution(Klass* to_class) {
 
 #ifdef ASSERT
   Histogram* JVMHistogram;
-  volatile jint JVMHistogram_lock = 0;
+  volatile int JVMHistogram_lock = 0;
 
   class JVMHistogramElement : public HistogramElement {
     public:
@@ -3766,7 +3766,7 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
   // when we add a new capability in the jvm_version_info struct, we should also
   // consider to expose this new capability in the sun.rt.jvmCapabilities jvmstat
   // counter defined in runtimeService.cpp.
-  info->is_attachable = AttachListener::is_attach_supported();
+  info->is_attach_supported = AttachListener::is_attach_supported();
 }
 JVM_END
 

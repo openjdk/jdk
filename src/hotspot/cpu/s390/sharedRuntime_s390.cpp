@@ -1309,15 +1309,42 @@ static void save_or_restore_arguments(MacroAssembler *masm,
         }
       } else {
         __ z_lg(reg, offset, Z_SP);
-        slot += VMRegImpl::slots_per_word;
-        assert(slot <= stack_slots, "overflow (after LONG/ARRAY stack slot)");
       }
+      slot += VMRegImpl::slots_per_word;
+      assert(slot <= stack_slots, "overflow (after LONG/ARRAY stack slot)");
     }
   }
 
   // Save or restore single word registers.
   for (int i = 0; i < total_in_args; i++) {
-    if (in_regs[i].first()->is_FloatRegister()) {
+    if (in_regs[i].first()->is_Register()) {
+      int offset = slot * VMRegImpl::stack_slot_size;
+      // Value lives in an input register. Save it on stack.
+      switch (in_sig_bt[i]) {
+        case T_BOOLEAN:
+        case T_CHAR:
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT: {
+          const Register   reg = in_regs[i].first()->as_Register();
+          Address   stackaddr(Z_SP, offset);
+          if (map != NULL) {
+            __ z_st(reg, stackaddr);
+          } else {
+            __ z_lgf(reg, stackaddr);
+          }
+          slot++;
+          assert(slot <= stack_slots, "overflow (after INT or smaller stack slot)");
+          break;
+        }
+        case T_ARRAY:
+        case T_LONG:
+          // handled above
+          break;
+        case T_OBJECT:
+        default: ShouldNotReachHere();
+      }
+    } else if (in_regs[i].first()->is_FloatRegister()) {
       if (in_sig_bt[i] == T_FLOAT) {
         int offset = slot * VMRegImpl::stack_slot_size;
         slot++;
@@ -1908,7 +1935,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
       case T_ARRAY:
         if (is_critical_native) {
           int body_arg = cix;
-          cix -= 2; // Point to length arg.
+          cix -= 1; // Point to length arg.
           unpack_array_argument(masm, in_regs[jix], in_elem_bt[jix], out_regs[body_arg], out_regs[cix], stack_slots);
           break;
         }

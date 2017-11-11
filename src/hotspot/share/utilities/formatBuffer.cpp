@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "memory/allocation.hpp"
-#include "prims/jvm.h"
 #include "utilities/formatBuffer.hpp"
 
 #include <stdarg.h>

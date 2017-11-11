@@ -108,6 +108,7 @@ Declares a structure type that can be used in other events.
          description="Revoked bias of object" has_thread="true" has_stacktrace="true" is_instant="false">
     <value type="CLASS" field="lockClass" label="Lock Class" description="Class of object whose biased lock was revoked"/>
     <value type="INTEGER" field="safepointId" label="Safepoint Identifier" relation="SafepointId"/>
+    <value type="THREAD" field="previousOwner" label="Previous Owner" description="Thread owning the bias before revocation"/>
   </event>
 
   <event id="BiasedLockSelfRevocation" path="java/biased_lock_self_revocation" label="Biased Lock Self Revocation"

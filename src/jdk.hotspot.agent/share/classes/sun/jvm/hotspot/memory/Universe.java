@@ -28,6 +28,7 @@ import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc.cms.CMSHeap;
+import sun.jvm.hotspot.gc.serial.SerialHeap;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
 import sun.jvm.hotspot.gc.parallel.*;
@@ -77,8 +78,8 @@ public class Universe {
     collectedHeapField = type.getAddressField("_collectedHeap");
 
     heapConstructor = new VirtualConstructor(db);
-    heapConstructor.addMapping("GenCollectedHeap", GenCollectedHeap.class);
     heapConstructor.addMapping("CMSHeap", CMSHeap.class);
+    heapConstructor.addMapping("SerialHeap", SerialHeap.class);
     heapConstructor.addMapping("ParallelScavengeHeap", ParallelScavengeHeap.class);
     heapConstructor.addMapping("G1CollectedHeap", G1CollectedHeap.class);
 

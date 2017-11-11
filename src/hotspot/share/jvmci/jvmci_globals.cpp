@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "jvmci/jvmci_globals.hpp"
-#include "prims/jvm.h"
 #include "utilities/defaultStream.hpp"
 #include "runtime/globals_extension.hpp"
 

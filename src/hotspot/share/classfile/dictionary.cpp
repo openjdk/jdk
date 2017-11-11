@@ -29,6 +29,7 @@
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
@@ -39,6 +40,11 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/hashtable.inline.hpp"
 
+// Optimization: if any dictionary needs resizing, we set this flag,
+// so that we dont't have to walk all dictionaries to check if any actually
+// needs resizing, which is costly to do at Safepoint.
+bool Dictionary::_some_dictionary_needs_resizing = false;
+
 size_t Dictionary::entry_size() {
   if (DumpSharedSpaces) {
     return SystemDictionaryShared::dictionary_entry_size();
@@ -47,15 +53,17 @@ size_t Dictionary::entry_size() {
   }
 }
 
-Dictionary::Dictionary(ClassLoaderData* loader_data, int table_size)
-  : _loader_data(loader_data), Hashtable<InstanceKlass*, mtClass>(table_size, (int)entry_size()) {
+Dictionary::Dictionary(ClassLoaderData* loader_data, int table_size, bool resizable)
+  : _loader_data(loader_data), _resizable(resizable), _needs_resizing(false),
+  Hashtable<InstanceKlass*, mtClass>(table_size, (int)entry_size()) {
 };
 
 
 Dictionary::Dictionary(ClassLoaderData* loader_data,
                        int table_size, HashtableBucket<mtClass>* t,
-                       int number_of_entries)
-  : _loader_data(loader_data), Hashtable<InstanceKlass*, mtClass>(table_size, (int)entry_size(), t, number_of_entries) {
+                       int number_of_entries, bool resizable)
+  : _loader_data(loader_data), _resizable(resizable), _needs_resizing(false),
+  Hashtable<InstanceKlass*, mtClass>(table_size, (int)entry_size(), t, number_of_entries) {
 };
 
 Dictionary::~Dictionary() {
@@ -96,6 +104,60 @@ void Dictionary::free_entry(DictionaryEntry* entry) {
   FREE_C_HEAP_ARRAY(char, entry);
 }
 
+const int _resize_load_trigger = 5;       // load factor that will trigger the resize
+const double _resize_factor    = 2.0;     // by how much we will resize using current number of entries
+const int _resize_max_size     = 40423;   // the max dictionary size allowed
+const int _primelist[] = {107, 1009, 2017, 4049, 5051, 10103, 20201, _resize_max_size};
+const int _prime_array_size = sizeof(_primelist)/sizeof(int);
+
+// Calculate next "good" dictionary size based on requested count
+static int calculate_dictionary_size(int requested) {
+  int newsize = _primelist[0];
+  int index = 0;
+  for (newsize = _primelist[index]; index < (_prime_array_size - 1);
+       newsize = _primelist[++index]) {
+    if (requested <= newsize) {
+      break;
+    }
+  }
+  return newsize;
+}
+
+bool Dictionary::does_any_dictionary_needs_resizing() {
+  return Dictionary::_some_dictionary_needs_resizing;
+}
+
+void Dictionary::check_if_needs_resize() {
+  if (_resizable == true) {
+    if (number_of_entries() > (_resize_load_trigger*table_size())) {
+      _needs_resizing = true;
+      Dictionary::_some_dictionary_needs_resizing = true;
+    }
+  }
+}
+
+bool Dictionary::resize_if_needed() {
+  int desired_size = 0;
+  if (_needs_resizing == true) {
+    desired_size = calculate_dictionary_size((int)(_resize_factor*number_of_entries()));
+    if (desired_size >= _resize_max_size) {
+      desired_size = _resize_max_size;
+      // We have reached the limit, turn resizing off
+      _resizable = false;
+    }
+    if ((desired_size != 0) && (desired_size != table_size())) {
+      if (!resize(desired_size)) {
+        // Something went wrong, turn resizing off
+        _resizable = false;
+      }
+    }
+  }
+
+  _needs_resizing = false;
+  Dictionary::_some_dictionary_needs_resizing = false;
+
+  return (desired_size != 0);
+}
 
 bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
 #ifdef ASSERT
@@ -264,14 +326,16 @@ void Dictionary::classes_do(MetaspaceClosure* it) {
 // also cast to volatile;  we do this to ensure store order is maintained
 // by the compilers.
 
-void Dictionary::add_klass(int index, unsigned int hash, Symbol* class_name,
+void Dictionary::add_klass(unsigned int hash, Symbol* class_name,
                            InstanceKlass* obj) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(obj != NULL, "adding NULL obj");
   assert(obj->name() == class_name, "sanity check on name");
 
   DictionaryEntry* entry = new_entry(hash, obj);
+  int index = hash_to_index(hash);
   add_entry(index, entry);
+  check_if_needs_resize();
 }
 
 
@@ -299,8 +363,11 @@ DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
 }
 
 
-InstanceKlass* Dictionary::find(int index, unsigned int hash, Symbol* name,
+InstanceKlass* Dictionary::find(unsigned int hash, Symbol* name,
                                 Handle protection_domain) {
+  NoSafepointVerifier nsv;
+
+  int index = hash_to_index(hash);
   DictionaryEntry* entry = get_entry(index, hash, name);
   if (entry != NULL && entry->is_valid_protection_domain(protection_domain)) {
     return entry->instance_klass();
@@ -350,13 +417,24 @@ void Dictionary::add_protection_domain(int index, unsigned int hash,
 }
 
 
-bool Dictionary::is_valid_protection_domain(int index, unsigned int hash,
+bool Dictionary::is_valid_protection_domain(unsigned int hash,
                                             Symbol* name,
                                             Handle protection_domain) {
+  int index = hash_to_index(hash);
   DictionaryEntry* entry = get_entry(index, hash, name);
   return entry->is_valid_protection_domain(protection_domain);
 }
 
+#if INCLUDE_CDS
+static bool is_jfr_event_class(Klass *k) {
+  while (k) {
+    if (k->name()->equals("jdk/jfr/Event")) {
+      return true;
+    }
+    k = k->super();
+  }
+  return false;
+}
 
 void Dictionary::reorder_dictionary_for_sharing() {
 
@@ -368,13 +446,21 @@ void Dictionary::reorder_dictionary_for_sharing() {
     while (p != NULL) {
       DictionaryEntry* next = p->next();
       InstanceKlass*ik = p->instance_klass();
-      // we cannot include signed classes in the archive because the certificates
-      // used during dump time may be different than those used during
-      // runtime (due to expiration, etc).
       if (ik->signers() != NULL) {
+        // We cannot include signed classes in the archive because the certificates
+        // used during dump time may be different than those used during
+        // runtime (due to expiration, etc).
         ResourceMark rm;
         tty->print_cr("Preload Warning: Skipping %s from signed JAR",
                        ik->name()->as_C_string());
+        free_entry(p);
+      } else if (is_jfr_event_class(ik)) {
+        // We cannot include JFR event classes because they need runtime-specific
+        // instrumentation in order to work with -XX:FlightRecorderOptions=retransform=false.
+        // There are only a small number of these classes, so it's not worthwhile to
+        // support them and make CDS more complicated.
+        ResourceMark rm;
+        tty->print_cr("Skipping JFR event class %s", ik->name()->as_C_string());
         free_entry(p);
       } else {
         p->set_next(master_list);
@@ -400,7 +486,7 @@ void Dictionary::reorder_dictionary_for_sharing() {
     set_entry(index, p);
   }
 }
-
+#endif
 
 SymbolPropertyTable::SymbolPropertyTable(int table_size)
   : Hashtable<Symbol*, mtSymbol>(table_size, sizeof(SymbolPropertyEntry))

@@ -151,7 +151,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   if (UseAVX < 3) {
     num_xmm_regs = num_xmm_regs/2;
   }
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   if (save_vectors) {
     assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
     assert(MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
@@ -260,7 +260,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     }
   }
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   if (save_vectors) {
     off = ymm0_off;
     int delta = ymm1_off - off;
@@ -270,7 +270,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       off += delta;
     }
   }
-#endif // COMPILER2 || INCLUDE_JVMCI
+#endif // COMPILER2_OR_JVMCI
 
   // %%% These should all be a waste but we'll keep things as they were for now
   if (true) {
@@ -323,7 +323,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     __ addptr(rsp, frame::arg_reg_save_area_bytes);
   }
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   if (restore_vectors) {
     assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
     assert(MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
@@ -2183,7 +2183,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // critical natives they are offset down.
   GrowableArray<int> arg_order(2 * total_in_args);
   VMRegPair tmp_vmreg;
-  tmp_vmreg.set1(rbx->as_VMReg());
+  tmp_vmreg.set2(rbx->as_VMReg());
 
   if (!is_critical_native) {
     for (int i = total_in_args - 1, c_arg = total_c_args - 1; i >= 0; i--, c_arg--) {

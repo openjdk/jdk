@@ -26,6 +26,7 @@
 #define _WIN32_WINNT 0x0600
 
 // no precompiled headers
+#include "jvm.h"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -34,7 +35,6 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
-#include "jvm_windows.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
@@ -42,7 +42,6 @@
 #include "os_share_windows.hpp"
 #include "os_windows.inline.hpp"
 #include "prims/jniFastGetField.hpp"
-#include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -100,6 +99,7 @@
 #include <imagehlp.h>             // For os::dll_address_to_function_name
 // for enumerating dll libraries
 #include <vdmdbg.h>
+#include <psapi.h>
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(-1)
@@ -3656,7 +3656,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
 
     static INIT_ONCE init_once_crit_sect = INIT_ONCE_STATIC_INIT;
     static CRITICAL_SECTION crit_sect;
-    static volatile jint process_exiting = 0;
+    static volatile DWORD process_exiting = 0;
     int i, j;
     DWORD res;
     HANDLE hproc, hthr;
@@ -3675,7 +3675,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
       if (what != EPT_THREAD) {
         // Atomically set process_exiting before the critical section
         // to increase the visibility between racing threads.
-        Atomic::cmpxchg((jint)GetCurrentThreadId(), &process_exiting, 0);
+        Atomic::cmpxchg(GetCurrentThreadId(), &process_exiting, (DWORD)0);
       }
       EnterCriticalSection(&crit_sect);
 
@@ -3793,7 +3793,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
 
     if (!registered &&
         OrderAccess::load_acquire(&process_exiting) != 0 &&
-        process_exiting != (jint)GetCurrentThreadId()) {
+        process_exiting != GetCurrentThreadId()) {
       // Some other thread is about to call exit(), so we don't let
       // the current unregistered thread proceed to exit() or _endthreadex()
       while (true) {

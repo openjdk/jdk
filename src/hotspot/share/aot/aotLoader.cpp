@@ -22,12 +22,12 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.inline.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/method.hpp"
-#include "prims/jvm.h"
 #include "runtime/os.hpp"
 #include "runtime/timerTrace.hpp"
 

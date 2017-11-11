@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
 
+import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.code.TargetDescription;
 
 public class ProfileSnippets implements Snippets {
@@ -61,12 +62,19 @@ public class ProfileSnippets implements Snippets {
     public static native void methodInvocationEvent(@ConstantNodeParameter ForeignCallDescriptor descriptor, MethodCountersPointer counters);
 
     @Snippet
-    public static void profileMethodEntry(MethodCountersPointer counters, @ConstantParameter int freqLog) {
-        int counterValue = counters.readInt(config(INJECTED_VMCONFIG).invocationCounterOffset) + config(INJECTED_VMCONFIG).invocationCounterIncrement;
+    protected static int notificationMask(int freqLog, int stepLog) {
+        int stepMask = (1 << stepLog) - 1;
+        int frequencyMask = (1 << freqLog) - 1;
+        return frequencyMask & ~stepMask;
+    }
+
+    @Snippet
+    public static void profileMethodEntry(MethodCountersPointer counters, int step, int stepLog, @ConstantParameter int freqLog) {
+        int counterValue = counters.readInt(config(INJECTED_VMCONFIG).invocationCounterOffset) + config(INJECTED_VMCONFIG).invocationCounterIncrement * step;
         counters.writeInt(config(INJECTED_VMCONFIG).invocationCounterOffset, counterValue);
         if (freqLog >= 0) {
-            final int frequencyMask = (1 << freqLog) - 1;
-            if (probability(SLOW_PATH_PROBABILITY, (counterValue & (frequencyMask << config(INJECTED_VMCONFIG).invocationCounterShift)) == 0)) {
+            final int mask = notificationMask(freqLog, stepLog);
+            if (probability(SLOW_PATH_PROBABILITY, (counterValue & (mask << config(INJECTED_VMCONFIG).invocationCounterShift)) == 0)) {
                 methodInvocationEvent(HotSpotBackend.INVOCATION_EVENT, counters);
             }
         }
@@ -76,19 +84,19 @@ public class ProfileSnippets implements Snippets {
     public static native void methodBackedgeEvent(@ConstantNodeParameter ForeignCallDescriptor descriptor, MethodCountersPointer counters, int bci, int targetBci);
 
     @Snippet
-    public static void profileBackedge(MethodCountersPointer counters, @ConstantParameter int freqLog, int bci, int targetBci) {
-        int counterValue = counters.readInt(config(INJECTED_VMCONFIG).backedgeCounterOffset) + config(INJECTED_VMCONFIG).invocationCounterIncrement;
+    public static void profileBackedge(MethodCountersPointer counters, int step, int stepLog, @ConstantParameter int freqLog, int bci, int targetBci) {
+        int counterValue = counters.readInt(config(INJECTED_VMCONFIG).backedgeCounterOffset) + config(INJECTED_VMCONFIG).invocationCounterIncrement * step;
         counters.writeInt(config(INJECTED_VMCONFIG).backedgeCounterOffset, counterValue);
-        final int frequencyMask = (1 << freqLog) - 1;
-        if (probability(SLOW_PATH_PROBABILITY, (counterValue & (frequencyMask << config(INJECTED_VMCONFIG).invocationCounterShift)) == 0)) {
+        final int mask = notificationMask(freqLog, stepLog);
+        if (probability(SLOW_PATH_PROBABILITY, (counterValue & (mask << config(INJECTED_VMCONFIG).invocationCounterShift)) == 0)) {
             methodBackedgeEvent(HotSpotBackend.BACKEDGE_EVENT, counters, bci, targetBci);
         }
     }
 
     @Snippet
-    public static void profileConditionalBackedge(MethodCountersPointer counters, @ConstantParameter int freqLog, boolean branchCondition, int bci, int targetBci) {
+    public static void profileConditionalBackedge(MethodCountersPointer counters, int step, int stepLog, @ConstantParameter int freqLog, boolean branchCondition, int bci, int targetBci) {
         if (branchCondition) {
-            profileBackedge(counters, freqLog, bci, targetBci);
+            profileBackedge(counters, step, stepLog, freqLog, bci, targetBci);
         }
     }
 
@@ -104,6 +112,8 @@ public class ProfileSnippets implements Snippets {
         public void lower(ProfileNode profileNode, LoweringTool tool) {
             StructuredGraph graph = profileNode.graph();
             LoadMethodCountersNode counters = graph.unique(new LoadMethodCountersNode(profileNode.getProfiledMethod()));
+            ConstantNode step = ConstantNode.forInt(profileNode.getStep(), graph);
+            ConstantNode stepLog = ConstantNode.forInt(CodeUtil.log2(profileNode.getStep()), graph);
 
             if (profileNode instanceof ProfileBranchNode) {
                 // Backedge event
@@ -113,6 +123,8 @@ public class ProfileSnippets implements Snippets {
                 ConstantNode bci = ConstantNode.forInt(profileBranchNode.bci(), graph);
                 ConstantNode targetBci = ConstantNode.forInt(profileBranchNode.targetBci(), graph);
                 args.add("counters", counters);
+                args.add("step", step);
+                args.add("stepLog", stepLog);
                 args.addConst("freqLog", profileBranchNode.getNotificationFreqLog());
                 if (profileBranchNode.hasCondition()) {
                     args.add("branchCondition", profileBranchNode.branchCondition());
@@ -127,6 +139,8 @@ public class ProfileSnippets implements Snippets {
                 // Method invocation event
                 Arguments args = new Arguments(profileMethodEntry, graph.getGuardsStage(), tool.getLoweringStage());
                 args.add("counters", counters);
+                args.add("step", step);
+                args.add("stepLog", stepLog);
                 args.addConst("freqLog", profileInvokeNode.getNotificationFreqLog());
                 SnippetTemplate template = template(graph.getDebug(), args);
                 template.instantiate(providers.getMetaAccess(), profileNode, DEFAULT_REPLACER, args);

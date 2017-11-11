@@ -29,6 +29,7 @@
 #endif
 
 // no precompiled headers
+#include "jvm.h"
 #include "assembler_zero.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -36,12 +37,10 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
-#include "jvm_bsd.h"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"
 #include "os_share_bsd.hpp"
 #include "prims/jniFastGetField.hpp"
-#include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/extendedPC.hpp"

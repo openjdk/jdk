@@ -472,7 +472,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
 #if INCLUDE_JVMCI
   // Check if we need to take lock at entry of synchronized method.  This can
   // only occur on method entry so emit it only for vtos with step 0.
-  if (UseJVMCICompiler && state == vtos && step == 0) {
+  if (EnableJVMCI && state == vtos && step == 0) {
     Label L;
     __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
     __ cbz(rscratch1, L);
@@ -483,7 +483,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
     __ bind(L);
   } else {
 #ifdef ASSERT
-    if (UseJVMCICompiler) {
+    if (EnableJVMCI) {
       Label L;
       __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
       __ cbz(rscratch1, L);
@@ -984,9 +984,9 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     __ adrp(tbl, ExternalAddress(StubRoutines::crc_table_addr()), offset);
     __ add(tbl, tbl, offset);
 
-    __ ornw(crc, zr, crc); // ~crc
+    __ mvnw(crc, crc); // ~crc
     __ update_byte_crc32(crc, val, tbl);
-    __ ornw(crc, zr, crc); // ~crc
+    __ mvnw(crc, crc); // ~crc
 
     // result in c_rarg0
 
@@ -1061,8 +1061,44 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   return NULL;
 }
 
-// Not supported
+/**
+ * Method entry for intrinsic-candidate (non-native) methods:
+ *   int java.util.zip.CRC32C.updateBytes(int crc, byte[] b, int off, int end)
+ *   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long buf, int off, int end)
+ * Unlike CRC32, CRC32C does not have any methods marked as native
+ * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
+ */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+  if (UseCRC32Intrinsics) {
+    address entry = __ pc();
+
+    // Prepare jump to stub using parameters from the stack
+    const Register crc = c_rarg0; // initial crc
+    const Register buf = c_rarg1; // source java byte array address
+    const Register len = c_rarg2; // len argument to the kernel
+
+    const Register end = len; // index of last element to process
+    const Register off = crc; // offset
+
+    __ ldrw(end, Address(esp)); // int end
+    __ ldrw(off, Address(esp, wordSize)); // int offset
+    __ sub(len, end, off);
+    __ ldr(buf, Address(esp, 2*wordSize)); // byte[] buf | long buf
+    __ add(buf, buf, off); // + offset
+    if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
+      __ ldrw(crc, Address(esp, 4*wordSize)); // long crc
+    } else {
+      __ add(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
+      __ ldrw(crc, Address(esp, 3*wordSize)); // long crc
+    }
+
+    __ andr(sp, r13, -16); // Restore the caller's SP
+
+    // Jump to the stub.
+    __ b(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32C()));
+
+    return entry;
+  }
   return NULL;
 }
 

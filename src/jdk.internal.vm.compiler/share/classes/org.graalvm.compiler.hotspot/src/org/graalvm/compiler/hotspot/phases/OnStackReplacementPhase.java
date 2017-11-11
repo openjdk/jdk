@@ -22,10 +22,16 @@
  */
 package org.graalvm.compiler.hotspot.phases;
 
+import static jdk.vm.ci.meta.SpeculationLog.SpeculationReason;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.cfg.Loop;
+import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugContext;
@@ -37,13 +43,15 @@ import org.graalvm.compiler.loop.phases.LoopTransformations;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
-import org.graalvm.compiler.nodes.AbstractLocalNode;
 import org.graalvm.compiler.nodes.EntryMarkerNode;
 import org.graalvm.compiler.nodes.EntryProxyNode;
+import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -53,6 +61,7 @@ import org.graalvm.compiler.nodes.extended.OSRLockNode;
 import org.graalvm.compiler.nodes.extended.OSRMonitorEnterNode;
 import org.graalvm.compiler.nodes.extended.OSRStartNode;
 import org.graalvm.compiler.nodes.java.AccessMonitorNode;
+import org.graalvm.compiler.nodes.java.InstanceOfNode;
 import org.graalvm.compiler.nodes.java.MonitorEnterNode;
 import org.graalvm.compiler.nodes.java.MonitorExitNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
@@ -172,15 +181,32 @@ public class OnStackReplacementPhase extends Phase {
             if (value instanceof EntryProxyNode) {
                 EntryProxyNode proxy = (EntryProxyNode) value;
                 /*
-                 * we need to drop the stamp since the types we see during OSR may be too precise
-                 * (if a branch was not parsed for example).
+                 * We need to drop the stamp since the types we see during OSR may be too precise
+                 * (if a branch was not parsed for example). In cases when this is possible, we
+                 * insert a guard and narrow the OSRLocal stamp at its usages.
                  */
-                Stamp s = proxy.stamp().unrestricted();
-                AbstractLocalNode osrLocal = null;
+                Stamp narrowedStamp = proxy.value().stamp();
+                Stamp unrestrictedStamp = proxy.stamp().unrestricted();
+                ValueNode osrLocal;
                 if (i >= localsSize) {
-                    osrLocal = graph.addOrUnique(new OSRLockNode(i - localsSize, s));
+                    osrLocal = graph.addOrUnique(new OSRLockNode(i - localsSize, unrestrictedStamp));
                 } else {
-                    osrLocal = graph.addOrUnique(new OSRLocalNode(i, s));
+                    osrLocal = graph.addOrUnique(new OSRLocalNode(i, unrestrictedStamp));
+                }
+                // Speculate on the OSRLocal stamps that could be more precise.
+                OSRLocalSpeculationReason reason = new OSRLocalSpeculationReason(osrState.bci, narrowedStamp, i);
+                if (graph.getSpeculationLog().maySpeculate(reason) && osrLocal instanceof OSRLocalNode && value.getStackKind().equals(JavaKind.Object) && !narrowedStamp.isUnrestricted()) {
+                    // Add guard.
+                    LogicNode check = graph.addOrUniqueWithInputs(InstanceOfNode.createHelper((ObjectStamp) narrowedStamp, osrLocal, null, null));
+                    JavaConstant constant = graph.getSpeculationLog().speculate(reason);
+                    FixedGuardNode guard = graph.add(new FixedGuardNode(check, DeoptimizationReason.OptimizedTypeCheckViolated, DeoptimizationAction.InvalidateRecompile, constant, false));
+                    graph.addAfterFixed(osrStart, guard);
+
+                    // Replace with a more specific type at usages.
+                    // We know that we are at the root,
+                    // so we need to replace the proxy in the state.
+                    proxy.replaceAtMatchingUsages(osrLocal, n -> n == osrState);
+                    osrLocal = graph.addOrUnique(new PiNode(osrLocal, narrowedStamp, guard));
                 }
                 proxy.replaceAndDelete(osrLocal);
             } else {
@@ -267,5 +293,31 @@ public class OnStackReplacementPhase extends Phase {
     @Override
     public float codeSizeIncrease() {
         return 5.0f;
+    }
+
+    private static class OSRLocalSpeculationReason implements SpeculationReason {
+        private int bci;
+        private Stamp speculatedStamp;
+        private int localIndex;
+
+        OSRLocalSpeculationReason(int bci, Stamp speculatedStamp, int localIndex) {
+            this.bci = bci;
+            this.speculatedStamp = speculatedStamp;
+            this.localIndex = localIndex;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof OSRLocalSpeculationReason) {
+                OSRLocalSpeculationReason that = (OSRLocalSpeculationReason) obj;
+                return this.bci == that.bci && this.speculatedStamp.equals(that.speculatedStamp) && this.localIndex == that.localIndex;
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return (bci << 16) ^ speculatedStamp.hashCode() ^ localIndex;
+        }
     }
 }

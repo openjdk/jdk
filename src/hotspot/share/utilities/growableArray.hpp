@@ -402,7 +402,7 @@ template<class E> class GrowableArray : public GenericGrowableArray {
   // matching key according to the static compare function.  Insert
   // that element is not already in the list.  Assumes the list is
   // already sorted according to compare function.
-  template <int compare(const E&, const E&)> E insert_sorted(E& key) {
+  template <int compare(const E&, const E&)> E insert_sorted(const E& key) {
     bool found;
     int location = find_sorted<E, compare>(key, found);
     if (!found) {

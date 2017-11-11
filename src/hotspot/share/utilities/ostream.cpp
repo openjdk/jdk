@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "compiler/compileLog.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"

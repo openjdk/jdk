@@ -28,6 +28,7 @@
 #pragma alloca
 
 // no precompiled headers
+#include "jvm.h"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -35,7 +36,6 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
-#include "jvm_aix.h"
 #include "logging/log.hpp"
 #include "libo4.hpp"
 #include "libperfstat_aix.hpp"
@@ -49,7 +49,6 @@
 #include "os_share_aix.hpp"
 #include "porting_aix.hpp"
 #include "prims/jniFastGetField.hpp"
-#include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -3249,7 +3248,7 @@ void os::run_periodic_checks() {
   }
 
   // ReduceSignalUsage allows the user to override these handlers
-  // see comments at the very top and jvm_solaris.h
+  // see comments at the very top and jvm_md.h
   if (!ReduceSignalUsage) {
     DO_SIGNAL_CHECK(SHUTDOWN1_SIGNAL);
     DO_SIGNAL_CHECK(SHUTDOWN2_SIGNAL);

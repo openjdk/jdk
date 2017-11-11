@@ -43,8 +43,8 @@ class AltHashing : AllStatic {
   static juint Integer_rotateLeft(juint i, int distance) {
     return (i << distance) | (i >> (32 - distance));
   }
-  static juint murmur3_32(const int* data, int len);
-  static juint murmur3_32(juint seed, const int* data, int len);
+  static juint murmur3_32(const jint* data, int len);
+  static juint murmur3_32(juint seed, const jint* data, int len);
 
  public:
   static juint compute_seed();

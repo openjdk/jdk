@@ -30,18 +30,22 @@ import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
+import org.graalvm.compiler.nodes.calc.UnpackEndianHalfNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
+import org.graalvm.compiler.nodes.virtual.VirtualInstanceNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 
@@ -58,6 +62,7 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
     private final OptionValues options;
     private final DebugContext debug;
     private final LoweringProvider loweringProvider;
+    private ConstantNode illegalConstant;
 
     VirtualizerToolImpl(MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider, PartialEscapeClosure<?> closure,
                     Assumptions assumptions, OptionValues options, DebugContext debug, LoweringProvider loweringProvider) {
@@ -125,17 +130,81 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
     }
 
     @Override
-    public void setVirtualEntry(VirtualObjectNode virtual, int index, ValueNode value, boolean unsafe) {
+    public boolean setVirtualEntry(VirtualObjectNode virtual, int index, ValueNode value, JavaKind theAccessKind, long offset) {
         ObjectState obj = state.getObjectState(virtual);
         assert obj.isVirtual() : "not virtual: " + obj;
         ValueNode newValue;
+        JavaKind entryKind = virtual.entryKind(index);
+        JavaKind accessKind = theAccessKind != null ? theAccessKind : entryKind;
         if (value == null) {
             newValue = null;
         } else {
             newValue = closure.getAliasAndResolve(state, value);
-            assert unsafe || obj.getEntry(index) == null || obj.getEntry(index).getStackKind() == newValue.getStackKind() || (isObjectEntry(obj.getEntry(index)) && isObjectEntry(newValue));
         }
-        state.setEntry(virtual.getObjectId(), index, newValue);
+        getDebug().log(DebugContext.DETAILED_LEVEL, "Setting entry %d in virtual object %s %s results in %s", index, virtual.getObjectId(), virtual, state.getObjectState(virtual.getObjectId()));
+        ValueNode oldValue = getEntry(virtual, index);
+        boolean canVirtualize = entryKind == accessKind || (entryKind == accessKind.getStackKind() && virtual instanceof VirtualInstanceNode);
+        if (!canVirtualize) {
+            if (entryKind == JavaKind.Long && oldValue.getStackKind() == newValue.getStackKind() && oldValue.getStackKind().isPrimitive()) {
+                /*
+                 * Special case: If the entryKind is long, allow arbitrary kinds as long as a value
+                 * of the same kind is already there. This can only happen if some other node
+                 * initialized the entry with a value of a different kind. One example where this
+                 * happens is the Truffle NewFrameNode.
+                 */
+                getDebug().log(DebugContext.DETAILED_LEVEL, "virtualizing %s with primitive of kind %s in long entry ", current, oldValue.getStackKind());
+                canVirtualize = true;
+            } else if (entryKind == JavaKind.Int && (accessKind == JavaKind.Long || accessKind == JavaKind.Double) && offset % 8 == 0) {
+                /*
+                 * Special case: Allow storing a single long or double value into two consecutive
+                 * int slots.
+                 */
+                int nextIndex = virtual.entryIndexForOffset(offset + 4, JavaKind.Int);
+                if (nextIndex != -1) {
+                    canVirtualize = true;
+                    assert nextIndex == index + 1 : "expected to be sequential";
+                    getDebug().log(DebugContext.DETAILED_LEVEL, "virtualizing %s for double word stored in two ints", current);
+                }
+            }
+        }
+
+        if (canVirtualize) {
+            getDebug().log(DebugContext.DETAILED_LEVEL, "virtualizing %s for entryKind %s and access kind %s", current, entryKind, accessKind);
+            state.setEntry(virtual.getObjectId(), index, newValue);
+            if (entryKind == JavaKind.Int) {
+                if (accessKind.needsTwoSlots()) {
+                    // Storing double word value two int slots
+                    assert virtual.entryKind(index + 1) == JavaKind.Int;
+                    state.setEntry(virtual.getObjectId(), index + 1, getIllegalConstant());
+                } else if (oldValue.getStackKind() == JavaKind.Double || oldValue.getStackKind() == JavaKind.Long) {
+                    // Splitting double word constant by storing over it with an int
+                    getDebug().log(DebugContext.DETAILED_LEVEL, "virtualizing %s producing second half of double word value %s", current, oldValue);
+                    ValueNode secondHalf = UnpackEndianHalfNode.create(oldValue, false);
+                    addNode(secondHalf);
+                    state.setEntry(virtual.getObjectId(), index + 1, secondHalf);
+                }
+            }
+            if (oldValue.isConstant() && oldValue.asConstant().equals(JavaConstant.forIllegal())) {
+                // Storing into second half of double, so replace previous value
+                ValueNode previous = getEntry(virtual, index - 1);
+                getDebug().log(DebugContext.DETAILED_LEVEL, "virtualizing %s producing first half of double word value %s", current, previous);
+                ValueNode firstHalf = UnpackEndianHalfNode.create(previous, true);
+                addNode(firstHalf);
+                state.setEntry(virtual.getObjectId(), index - 1, firstHalf);
+            }
+            return true;
+        }
+        // Should only occur if there are mismatches between the entry and access kind
+        assert entryKind != accessKind;
+        return false;
+    }
+
+    private ValueNode getIllegalConstant() {
+        if (illegalConstant == null) {
+            illegalConstant = ConstantNode.forConstant(JavaConstant.forIllegal(), getMetaAccessProvider());
+            addNode(illegalConstant);
+        }
+        return illegalConstant;
     }
 
     @Override
@@ -147,10 +216,6 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
     @Override
     public boolean getEnsureVirtualized(VirtualObjectNode virtualObject) {
         return state.getObjectState(virtualObject).getEnsureVirtualized();
-    }
-
-    private static boolean isObjectEntry(ValueNode value) {
-        return value.getStackKind() == JavaKind.Object || value instanceof VirtualObjectNode;
     }
 
     @Override

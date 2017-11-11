@@ -22,11 +22,11 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
-#include "prims/jvm.h"
 #include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
 

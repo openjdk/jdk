@@ -103,6 +103,9 @@ public class InstrumentationImpl implements Instrumentation {
             }
         } else {
             mTransformerManager.addTransformer(transformer);
+            if (mTransformerManager.getTransformerCount() == 1) {
+                setHasTransformers(mNativeAgent, true);
+            }
         }
     }
 
@@ -114,8 +117,12 @@ public class InstrumentationImpl implements Instrumentation {
         TransformerManager mgr = findTransformerManager(transformer);
         if (mgr != null) {
             mgr.removeTransformer(transformer);
-            if (mgr.isRetransformable() && mgr.getTransformerCount() == 0) {
-                setHasRetransformableTransformers(mNativeAgent, false);
+            if (mgr.getTransformerCount() == 0) {
+                if (mgr.isRetransformable()) {
+                    setHasRetransformableTransformers(mNativeAgent, false);
+                } else {
+                    setHasTransformers(mNativeAgent, false);
+                }
             }
             return true;
         }
@@ -360,6 +367,9 @@ public class InstrumentationImpl implements Instrumentation {
 
     private native boolean
     isRetransformClassesSupported0(long nativeAgent);
+
+    private native void
+    setHasTransformers(long nativeAgent, boolean has);
 
     private native void
     setHasRetransformableTransformers(long nativeAgent, boolean has);

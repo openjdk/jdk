@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,18 +75,12 @@ public class InitialAndMaxUsageTest {
         }
     }
 
-    private void fillWithSize(long size, List<Long> blobs, MemoryPoolMXBean bean) {
-        long blob;
-        /* Don't fill too much to have space for adapters. So, stop after crossing 95% and
-           don't allocate in case we'll cross 97% on next allocation. We can hit situation
-           like 94% -> (1 allocation) -> 100% otherwise. So, check if
-           <Usage + allocatedSize> is less than 97%, then allocate in case it is, then, stop
-           further allocations with given size in case <Usage> more than 95% */
-        while (((double) bean.getUsage().getUsed() + size <= (CACHE_USAGE_COEF + 0.02d)  * maxSize)
-                && (blob = CodeCacheUtils.WB.allocateCodeBlob(size, btype.id)) != 0L
-                && ((double) bean.getUsage().getUsed() <= CACHE_USAGE_COEF * maxSize)) {
-            blobs.add(blob);
-        }
+    private boolean canAllocate(double size, long maxSize, MemoryPoolMXBean bean) {
+        // Don't fill too much to have space for adapters. So, stop after crossing 95% and
+        // don't allocate in case we'll cross 97% on next allocation.
+        double used = bean.getUsage().getUsed();
+        return (used <= CACHE_USAGE_COEF * maxSize) &&
+               (used + size <= (CACHE_USAGE_COEF + 0.02d)  * maxSize);
     }
 
     protected void runTest() {
@@ -106,8 +100,12 @@ public class InitialAndMaxUsageTest {
          lots of small allocations takes too much time, so, just a small
          optimization */
         try {
-            for (int coef = 1000000; coef > 0; coef /= 10) {
-                fillWithSize(coef * minAllocationUnit, blobs, bean);
+            for (long size = 100_000 * minAllocationUnit; size > 0; size /= 10) {
+                long blob = 0;
+                while (canAllocate(size, maxSize, bean) &&
+                       (blob = CodeCacheUtils.WB.allocateCodeBlob(size, btype.id)) != 0) {
+                    blobs.add(blob);
+                }
             }
             Asserts.assertGT((double) bean.getUsage().getUsed(),
                     CACHE_USAGE_COEF * maxSize, String.format("Unable to fill "

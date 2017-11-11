@@ -1503,7 +1503,7 @@ bool TypeInt::eq( const Type *t ) const {
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeInt::hash(void) const {
-  return java_add(java_add(_lo, _hi), java_add(_widen, (int)Type::Int));
+  return java_add(java_add(_lo, _hi), java_add((jint)_widen, (jint)Type::Int));
 }
 
 //------------------------------is_finite--------------------------------------
@@ -2505,7 +2505,7 @@ bool TypePtr::eq( const Type *t ) const {
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypePtr::hash(void) const {
-  return java_add(java_add(_ptr, _offset), java_add( hash_speculative(), _inline_depth));
+  return java_add(java_add((jint)_ptr, (jint)_offset), java_add((jint)hash_speculative(), (jint)_inline_depth));
 ;
 }
 
@@ -3338,8 +3338,8 @@ bool TypeOopPtr::eq( const Type *t ) const {
 // Type-specific hashing function.
 int TypeOopPtr::hash(void) const {
   return
-    java_add(java_add(const_oop() ? const_oop()->hash() : 0, _klass_is_exact),
-             java_add(_instance_id, TypePtr::hash()));
+    java_add(java_add((jint)(const_oop() ? const_oop()->hash() : 0), (jint)_klass_is_exact),
+             java_add((jint)_instance_id, (jint)TypePtr::hash()));
 }
 
 //------------------------------dump2------------------------------------------
@@ -3946,7 +3946,7 @@ bool TypeInstPtr::eq( const Type *t ) const {
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeInstPtr::hash(void) const {
-  int hash = java_add(klass()->hash(), TypeOopPtr::hash());
+  int hash = java_add((jint)klass()->hash(), (jint)TypeOopPtr::hash());
   return hash;
 }
 
@@ -4871,7 +4871,7 @@ bool TypeKlassPtr::eq( const Type *t ) const {
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeKlassPtr::hash(void) const {
-  return java_add(klass()->hash(), TypePtr::hash());
+  return java_add((jint)klass()->hash(), (jint)TypePtr::hash());
 }
 
 //------------------------------singleton--------------------------------------

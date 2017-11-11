@@ -23,7 +23,6 @@
 
 package sun.hotspot.tools.ctw;
 
-
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
@@ -67,8 +66,7 @@ public class ClassPathDirEntry extends PathHandler.PathEntry {
         for (String c : Utils.classNameToFileName(classname).split("/")) {
             path = path.resolve(c);
         }
-        if (!path.toFile()
-                 .exists()) {
+        if (!Files.exists(path)) {
             return null;
         }
         try {

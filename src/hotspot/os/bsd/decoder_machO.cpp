@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 
 #ifdef __APPLE__
-#include "prims/jvm.h"
+#include "jvm.h"
 #include "decoder_machO.hpp"
 
 #include <cxxabi.h>

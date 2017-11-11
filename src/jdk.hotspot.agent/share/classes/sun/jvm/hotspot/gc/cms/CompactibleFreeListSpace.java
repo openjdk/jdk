@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,11 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
    private static AddressField dictionaryField;
    private static long         smallLinearAllocBlockFieldOffset;
 
-   private int    heapWordSize;     // 4 for 32bit, 8 for 64 bits
-   private int    IndexSetStart;    // for small indexed list
-   private int    IndexSetSize;
-   private int    IndexSetStride;
+   private int heapWordSize;     // 4 for 32bit, 8 for 64 bits
+   private int IndexSetStart;    // for small indexed list
+   private int IndexSetSize;
+   private int IndexSetStride;
+   private static long MinChunkSizeInBytes;
 
    static {
       VM.registerVMInitializedObserver(new Observer() {
@@ -57,8 +58,6 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
    private static synchronized void initialize(TypeDataBase db) {
       long sizeofFreeChunk = db.lookupType("FreeChunk").getSize();
       VM vm = VM.getVM();
-      MinChunkSizeInBytes = numQuanta(sizeofFreeChunk, vm.getMinObjAlignmentInBytes()) *
-                     vm.getMinObjAlignmentInBytes();
 
      Type type = db.lookupType("CompactibleFreeListSpace");
      collectorField = type.getAddressField("_collector");
@@ -66,6 +65,7 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
      dictionaryField      = type.getAddressField("_dictionary");
      indexedFreeListField = type.getAddressField("_indexedFreeList[0]");
      smallLinearAllocBlockFieldOffset = type.getField("_smallLinearAllocBlock").getOffset();
+     MinChunkSizeInBytes = (type.getCIntegerField("_min_chunk_size_in_bytes")).getValue();
    }
 
    public CompactibleFreeListSpace(Address addr) {
@@ -74,7 +74,7 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
       heapWordSize   = vm.getHeapWordSize();
       IndexSetStart  = vm.getMinObjAlignmentInBytes() / heapWordSize;
       IndexSetStride = IndexSetStart;
-      IndexSetSize   = 257;
+      IndexSetSize   = vm.getIndexSetSize();
    }
 
    // Accessing block offset table
@@ -201,14 +201,8 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
    // Unlike corresponding VM code, we operate on byte size rather than
    // HeapWord size for convenience.
 
-   private static long numQuanta(long x, long y) {
-      return  ((x+y-1)/y);
-   }
-
    public static long adjustObjectSizeInBytes(long sizeInBytes) {
       return Oop.alignObjectSize(Math.max(sizeInBytes, MinChunkSizeInBytes));
    }
 
-   // FIXME: should I read this directly from VM?
-   private static long MinChunkSizeInBytes;
 }

@@ -24,6 +24,7 @@
  */
 
 // no precompiled headers
+#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -32,12 +33,10 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
-#include "jvm_aix.h"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_ppc.hpp"
 #include "os_share_aix.hpp"
 #include "prims/jniFastGetField.hpp"
-#include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "porting_aix.hpp"
 #include "runtime/arguments.hpp"
