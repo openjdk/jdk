@@ -237,6 +237,8 @@ public:
 
   int number_of_entries() const { return _number_of_entries; }
 
+  bool resize(int new_size);
+
   template <class T> void verify_table(const char* table_name) PRODUCT_RETURN;
 };
 
@@ -281,7 +283,6 @@ public:
   HashtableEntry<T, F>** bucket_addr(int i) {
     return (HashtableEntry<T, F>**)BasicHashtable<F>::bucket_addr(i);
   }
-
 };
 
 template <class T, MEMFLAGS F> class RehashableHashtable : public Hashtable<T, F> {

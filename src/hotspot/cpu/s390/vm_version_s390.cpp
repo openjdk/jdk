@@ -24,11 +24,11 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "code/compiledIC.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/jvm.h"
 #include "runtime/java.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "vm_version_s390.hpp"

@@ -32,7 +32,6 @@ import org.graalvm.compiler.core.amd64.AMD64AddressLowering;
 import org.graalvm.compiler.core.amd64.AMD64AddressNode;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.CounterKey;
@@ -44,6 +43,7 @@ import org.graalvm.compiler.hotspot.nodes.type.KlassPointerStamp;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.CompressionNode.CompressionOp;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -93,76 +93,76 @@ public class AMD64HotSpotAddressLowering extends AMD64AddressLowering {
     }
 
     @Override
-    protected boolean improve(DebugContext debug, AMD64AddressNode addr) {
-
-        boolean result = false;
-
-        while (super.improve(debug, addr)) {
-            result = true;
+    protected boolean improve(StructuredGraph graph, DebugContext debug, AMD64AddressNode addr, boolean isBaseNegated, boolean isIndexNegated) {
+        if (super.improve(graph, debug, addr, isBaseNegated, isIndexNegated)) {
+            return true;
         }
 
         if (addr.getScale() == Scale.Times1) {
             if (addr.getIndex() instanceof CompressionNode) {
-                if (improveUncompression(addr, (CompressionNode) addr.getIndex(), addr.getBase())) {
+                if (improveUncompression(addr, (CompressionNode) addr.getIndex(), addr.getBase(), isBaseNegated, isIndexNegated)) {
                     counterFoldedUncompressDuringAddressLowering.increment(debug);
                     return true;
                 }
             }
 
             if (addr.getBase() instanceof CompressionNode) {
-                if (improveUncompression(addr, (CompressionNode) addr.getBase(), addr.getIndex())) {
+                if (improveUncompression(addr, (CompressionNode) addr.getBase(), addr.getIndex(), isBaseNegated, isIndexNegated)) {
                     counterFoldedUncompressDuringAddressLowering.increment(debug);
                     return true;
                 }
             }
         }
 
-        return result;
+        return false;
     }
 
-    private boolean improveUncompression(AMD64AddressNode addr, CompressionNode compression, ValueNode other) {
-        if (compression.getOp() == CompressionOp.Uncompress) {
-            CompressEncoding encoding = compression.getEncoding();
-            Scale scale = Scale.fromShift(encoding.getShift());
-            if (scale == null) {
+    @Override
+    protected boolean mightBeOptimized(ValueNode value) {
+        return super.mightBeOptimized(value) || value instanceof CompressionNode;
+    }
+
+    private boolean improveUncompression(AMD64AddressNode addr, CompressionNode compression, ValueNode other, boolean isBaseNegated, boolean isIndexNegated) {
+        if (isBaseNegated || isIndexNegated || compression.getOp() != CompressionOp.Uncompress) {
+            return false;
+        }
+
+        CompressEncoding encoding = compression.getEncoding();
+        Scale scale = Scale.fromShift(encoding.getShift());
+        if (scale == null) {
+            return false;
+        }
+
+        if (heapBaseRegister != null && encoding.getBase() == heapBase) {
+            if ((!generatePIC || compression.stamp() instanceof ObjectStamp) && other == null) {
+                // With PIC it is only legal to do for oops since the base value may be
+                // different at runtime.
+                ValueNode base = compression.graph().unique(new HeapBaseNode(heapBaseRegister));
+                addr.setBase(base);
+            } else {
                 return false;
             }
-
-            if (heapBaseRegister != null && encoding.getBase() == heapBase) {
-                if ((!generatePIC || compression.stamp() instanceof ObjectStamp) && other == null) {
-                    // With PIC it is only legal to do for oops since the base value may be
-                    // different at runtime.
-                    ValueNode base = compression.graph().unique(new HeapBaseNode(heapBaseRegister));
+        } else if (encoding.getBase() != 0 || (generatePIC && compression.stamp() instanceof KlassPointerStamp)) {
+            if (generatePIC) {
+                if (other == null) {
+                    ValueNode base = compression.graph().unique(new GraalHotSpotVMConfigNode(config, config.MARKID_NARROW_KLASS_BASE_ADDRESS, JavaKind.Long));
                     addr.setBase(base);
                 } else {
                     return false;
                 }
-            } else if (encoding.getBase() != 0 || (generatePIC && compression.stamp() instanceof KlassPointerStamp)) {
-                if (generatePIC) {
-                    if (other == null) {
-                        ValueNode base = compression.graph().unique(new GraalHotSpotVMConfigNode(config, config.MARKID_NARROW_KLASS_BASE_ADDRESS, JavaKind.Long));
-                        addr.setBase(base);
-                    } else {
-                        return false;
-                    }
-                } else {
-                    long disp = addr.getDisplacement() + encoding.getBase();
-                    if (NumUtil.isInt(disp)) {
-                        addr.setDisplacement((int) disp);
-                        addr.setBase(other);
-                    } else {
-                        return false;
-                    }
-                }
             } else {
-                addr.setBase(other);
+                if (updateDisplacement(addr, encoding.getBase(), isBaseNegated)) {
+                    addr.setBase(other);
+                } else {
+                    return false;
+                }
             }
-
-            addr.setScale(scale);
-            addr.setIndex(compression.getValue());
-            return true;
         } else {
-            return false;
+            addr.setBase(other);
         }
+
+        addr.setScale(scale);
+        addr.setIndex(compression.getValue());
+        return true;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,6 +296,7 @@ public final class StackWalker {
     private final Set<Option> options;
     private final ExtendedOption extendedOption;
     private final int estimateDepth;
+    final boolean retainClassRef; // cached for performance
 
     /**
      * Returns a {@code StackWalker} instance.
@@ -412,6 +413,7 @@ public final class StackWalker {
         this.options = options;
         this.estimateDepth = estimateDepth;
         this.extendedOption = extendedOption;
+        this.retainClassRef = hasOption(Option.RETAIN_CLASS_REFERENCE);
     }
 
     private static void checkPermission(Set<Option> options) {
@@ -590,7 +592,7 @@ public final class StackWalker {
      */
     @CallerSensitive
     public Class<?> getCallerClass() {
-        if (!options.contains(Option.RETAIN_CLASS_REFERENCE)) {
+        if (!retainClassRef) {
             throw new UnsupportedOperationException("This stack walker " +
                     "does not have RETAIN_CLASS_REFERENCE access");
         }
@@ -616,12 +618,5 @@ public final class StackWalker {
 
     boolean hasLocalsOperandsOption() {
         return extendedOption == ExtendedOption.LOCALS_AND_OPERANDS;
-    }
-
-    void ensureAccessEnabled(Option access) {
-        if (!hasOption(access)) {
-            throw new UnsupportedOperationException("No access to " + access +
-                    ": " + options.toString());
-        }
     }
 }

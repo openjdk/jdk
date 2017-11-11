@@ -293,10 +293,12 @@ address NativeLookup::lookup_critical_entry(const methodHandle& method) {
   char* critical_name = critical_jni_name(method);
 
   // Compute argument size
-  int args_size = 1                             // JNIEnv
-                + (method->is_static() ? 1 : 0) // class for static methods
-                + method->size_of_parameters(); // actual parameters
-
+  int args_size = method->size_of_parameters();
+  for (SignatureStream ss(signature); !ss.at_return_type(); ss.next()) {
+    if (ss.is_array()) {
+      args_size += T_INT_size; // array length parameter
+    }
+  }
 
   // 1) Try JNI short style
   entry = lookup_critical_style(method, critical_name, "",        args_size, true);

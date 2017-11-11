@@ -2657,9 +2657,9 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   __ adrp(res, ExternalAddress(StubRoutines::crc_table_addr()), offset);
   if (offset) __ add(res, res, offset);
 
-  __ ornw(crc, zr, crc); // ~crc
+  __ mvnw(crc, crc); // ~crc
   __ update_byte_crc32(crc, val, res);
-  __ ornw(res, zr, crc); // ~crc
+  __ mvnw(res, crc); // ~crc
 }
 
 void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {

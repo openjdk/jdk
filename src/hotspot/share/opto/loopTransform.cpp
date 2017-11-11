@@ -2129,7 +2129,7 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
       // Look for trip_counter + offset vs limit
       Node *rc_exp = cmp->in(1);
       Node *limit  = cmp->in(2);
-      jint scale_con= 1;        // Assume trip counter not scaled
+      int scale_con= 1;        // Assume trip counter not scaled
 
       Node *limit_c = get_ctrl(limit);
       if( loop->is_member(get_loop(limit_c) ) ) {

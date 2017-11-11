@@ -134,8 +134,6 @@ private:
   void remove_expired_entries(double current_time);
   double calculate_gc_time(double current_time);
 
-  double when_internal(double current_time, double pause_time);
-
 public:
   G1MMUTrackerQueue(double time_slice, double max_gc_time);
 

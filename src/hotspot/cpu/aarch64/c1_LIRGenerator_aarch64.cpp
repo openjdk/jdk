@@ -1030,7 +1030,81 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
 }
 
 void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
-  Unimplemented();
+  assert(UseCRC32CIntrinsics, "why are we here?");
+  // Make all state_for calls early since they can emit code
+  LIR_Opr result = rlock_result(x);
+  int flags = 0;
+  switch (x->id()) {
+    case vmIntrinsics::_updateBytesCRC32C:
+    case vmIntrinsics::_updateDirectByteBufferCRC32C: {
+      bool is_updateBytes = (x->id() == vmIntrinsics::_updateBytesCRC32C);
+      int offset = is_updateBytes ? arrayOopDesc::base_offset_in_bytes(T_BYTE) : 0;
+
+      LIRItem crc(x->argument_at(0), this);
+      LIRItem buf(x->argument_at(1), this);
+      LIRItem off(x->argument_at(2), this);
+      LIRItem end(x->argument_at(3), this);
+
+      buf.load_item();
+      off.load_nonconstant();
+      end.load_nonconstant();
+
+      // len = end - off
+      LIR_Opr len  = end.result();
+      LIR_Opr tmpA = new_register(T_INT);
+      LIR_Opr tmpB = new_register(T_INT);
+      __ move(end.result(), tmpA);
+      __ move(off.result(), tmpB);
+      __ sub(tmpA, tmpB, tmpA);
+      len = tmpA;
+
+      LIR_Opr index = off.result();
+      if(off.result()->is_constant()) {
+        index = LIR_OprFact::illegalOpr;
+        offset += off.result()->as_jint();
+      }
+      LIR_Opr base_op = buf.result();
+
+      if (index->is_valid()) {
+        LIR_Opr tmp = new_register(T_LONG);
+        __ convert(Bytecodes::_i2l, index, tmp);
+        index = tmp;
+      }
+
+      if (offset) {
+        LIR_Opr tmp = new_pointer_register();
+        __ add(base_op, LIR_OprFact::intConst(offset), tmp);
+        base_op = tmp;
+        offset = 0;
+      }
+
+      LIR_Address* a = new LIR_Address(base_op,
+                                       index,
+                                       offset,
+                                       T_BYTE);
+      BasicTypeList signature(3);
+      signature.append(T_INT);
+      signature.append(T_ADDRESS);
+      signature.append(T_INT);
+      CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+      const LIR_Opr result_reg = result_register_for(x->type());
+
+      LIR_Opr addr = new_pointer_register();
+      __ leal(LIR_OprFact::address(a), addr);
+
+      crc.load_item_force(cc->at(0));
+      __ move(addr, cc->at(1));
+      __ move(len, cc->at(2));
+
+      __ call_runtime_leaf(StubRoutines::updateBytesCRC32C(), getThreadTemp(), result_reg, cc->args());
+      __ move(result_reg, result);
+
+      break;
+    }
+    default: {
+      ShouldNotReachHere();
+    }
+  }
 }
 
 void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {

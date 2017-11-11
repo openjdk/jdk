@@ -1370,7 +1370,6 @@ class Backtrace: AllStatic {
 
 class java_lang_StackFrameInfo: AllStatic {
 private:
-  static int _declaringClass_offset;
   static int _memberName_offset;
   static int _bci_offset;
   static int _version_offset;
@@ -1379,7 +1378,6 @@ private:
 
 public:
   // Setters
-  static void set_declaringClass(oop info, oop value);
   static void set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci, TRAPS);
   static void set_bci(oop info, int value);
 

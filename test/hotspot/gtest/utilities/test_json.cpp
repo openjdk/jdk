@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
-#include "prims/jvm.h"
 #include "utilities/json.hpp"
 #include "unittest.hpp"
 

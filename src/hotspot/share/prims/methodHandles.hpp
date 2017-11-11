@@ -27,7 +27,6 @@
 
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "prims/jvm.h"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"

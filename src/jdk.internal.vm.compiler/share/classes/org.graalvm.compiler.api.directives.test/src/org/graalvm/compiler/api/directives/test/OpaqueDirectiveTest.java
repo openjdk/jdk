@@ -37,6 +37,9 @@ import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
+import org.graalvm.compiler.phases.OptimisticOptimizations;
+import org.graalvm.compiler.phases.OptimisticOptimizations.Optimization;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 /**
  * Tests for {@link GraalDirectives#opaque}.
@@ -125,6 +128,11 @@ public class OpaqueDirectiveTest extends GraalCompilerTest {
     public void testObject() {
         test("objectSnippet");
         test("opaqueObjectSnippet");
+    }
+
+    @Override
+    protected HighTierContext getDefaultHighTierContext() {
+        return new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL.remove(Optimization.RemoveNeverExecutedCode));
     }
 
     @Override

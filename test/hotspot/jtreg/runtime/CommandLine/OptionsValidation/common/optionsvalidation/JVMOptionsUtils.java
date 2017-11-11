@@ -216,6 +216,9 @@ public class JVMOptionsUtils {
             case "CMSPrecleanDenominator":
                 option.addPrepend("-XX:CMSPrecleanNumerator=" + ((new Integer(option.getMin())) - 1));
                 break;
+            case "G1RefProcDrainInterval":
+                option.addPrepend("-XX:+ExplicitGCInvokesConcurrent");
+                break;
             case "InitialTenuringThreshold":
                 option.addPrepend("-XX:MaxTenuringThreshold=" + option.getMax());
                 break;

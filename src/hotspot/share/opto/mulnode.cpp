@@ -235,13 +235,13 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
   const TypeInt *r1 = t1->is_int();
 
   // Fetch endpoints of all ranges
-  int32_t lo0 = r0->_lo;
+  jint lo0 = r0->_lo;
   double a = (double)lo0;
-  int32_t hi0 = r0->_hi;
+  jint hi0 = r0->_hi;
   double b = (double)hi0;
-  int32_t lo1 = r1->_lo;
+  jint lo1 = r1->_lo;
   double c = (double)lo1;
-  int32_t hi1 = r1->_hi;
+  jint hi1 = r1->_hi;
   double d = (double)hi1;
 
   // Compute all endpoints & check for overflow

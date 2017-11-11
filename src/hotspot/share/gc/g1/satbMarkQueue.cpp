@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"

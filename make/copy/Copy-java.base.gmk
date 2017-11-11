@@ -42,7 +42,7 @@ $(INCLUDE_DST_DIR)/%.h: $(TOPDIR)/src/java.base/share/native/include/%.h
 	$(call install-file)
 
 $(INCLUDE_DST_OS_DIR)/%.h: \
-    $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_EXPORT_DIR)/native/include/%.h
+    $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include/%.h
 	$(call install-file)
 
 ################################################################################

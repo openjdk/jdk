@@ -221,7 +221,12 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             EconomicMap<ValueNode, Stamp> endMap = endMaps.get(node);
             MapCursor<ValueNode, Stamp> entries = endMap.getEntries();
             while (entries.advance()) {
-                if (registerNewValueStamp(entries.getKey(), entries.getValue())) {
+                ValueNode value = entries.getKey();
+                if (value.isDeleted()) {
+                    // nodes from this map can be deleted when a loop dies
+                    continue;
+                }
+                if (registerNewValueStamp(value, entries.getValue())) {
                     counterBetterMergedStamps.increment(debug);
                 }
             }

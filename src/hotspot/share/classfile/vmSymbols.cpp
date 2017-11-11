@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
 #include "utilities/xmlstream.hpp"
 

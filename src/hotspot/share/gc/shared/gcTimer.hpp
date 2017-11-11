@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_SHARED_GCTIMER_HPP
 
 #include "memory/allocation.hpp"
-#include "prims/jni_md.h"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 

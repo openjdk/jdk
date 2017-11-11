@@ -1784,6 +1784,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 MemberName memberName = (MemberName)mname;
                 return memberName.getName();
             }
+            @Override
+            public Class<?> getDeclaringClass(Object mname) {
+                MemberName memberName = (MemberName)mname;
+                return memberName.getDeclaringClass();
+            }
 
             @Override
             public MethodType getMethodType(Object mname) {

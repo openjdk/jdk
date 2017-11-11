@@ -22,21 +22,21 @@
  */
 package org.graalvm.compiler.lir.amd64;
 
+import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.HINT;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
-import static jdk.vm.ci.code.ValueUtil.asRegister;
-import static jdk.vm.ci.code.ValueUtil.isRegister;
 
 import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.code.CompilationResult.JumpTable;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRInstructionClass;
@@ -312,6 +312,42 @@ public class AMD64ControlFlow {
         }
     }
 
+    @Opcode("SETcc")
+    public static final class CondSetOp extends AMD64LIRInstruction {
+        public static final LIRInstructionClass<CondSetOp> TYPE = LIRInstructionClass.create(CondSetOp.class);
+        @Def({REG, HINT}) protected Value result;
+        private final ConditionFlag condition;
+
+        public CondSetOp(Variable result, Condition condition) {
+            super(TYPE);
+            this.result = result;
+            this.condition = intCond(condition);
+        }
+
+        @Override
+        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
+            setcc(masm, result, condition);
+        }
+    }
+
+    @Opcode("SETcc")
+    public static final class FloatCondSetOp extends AMD64LIRInstruction {
+        public static final LIRInstructionClass<FloatCondSetOp> TYPE = LIRInstructionClass.create(FloatCondSetOp.class);
+        @Def({REG, HINT}) protected Value result;
+        private final ConditionFlag condition;
+
+        public FloatCondSetOp(Variable result, Condition condition) {
+            super(TYPE);
+            this.result = result;
+            this.condition = floatCond(condition);
+        }
+
+        @Override
+        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
+            setcc(masm, result, condition);
+        }
+    }
+
     @Opcode("CMOVE")
     public static final class CondMoveOp extends AMD64LIRInstruction {
         public static final LIRInstructionClass<CondMoveOp> TYPE = LIRInstructionClass.create(CondMoveOp.class);
@@ -418,6 +454,21 @@ public class AMD64ControlFlow {
         }
     }
 
+    private static void setcc(AMD64MacroAssembler masm, Value result, ConditionFlag cond) {
+        switch ((AMD64Kind) result.getPlatformKind()) {
+            case BYTE:
+            case WORD:
+            case DWORD:
+                masm.setl(cond, asRegister(result));
+                break;
+            case QWORD:
+                masm.setq(cond, asRegister(result));
+                break;
+            default:
+                throw GraalError.shouldNotReachHere();
+        }
+    }
+
     private static ConditionFlag intCond(Condition cond) {
         switch (cond) {
             case EQ:
@@ -462,6 +513,10 @@ public class AMD64ControlFlow {
             default:
                 throw GraalError.shouldNotReachHere();
         }
+    }
+
+    public static boolean trueOnUnordered(Condition condition) {
+        return trueOnUnordered(floatCond(condition));
     }
 
     private static boolean trueOnUnordered(ConditionFlag condition) {

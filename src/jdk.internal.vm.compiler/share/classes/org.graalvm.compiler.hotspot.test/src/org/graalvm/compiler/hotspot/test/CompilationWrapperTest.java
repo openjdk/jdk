@@ -122,10 +122,26 @@ public class CompilationWrapperTest extends GraalCompilerTest {
      * Tests compilation requested by Truffle.
      */
     @Test
-    public void testTruffleCompilation() throws IOException, InterruptedException {
+    public void testTruffleCompilation1() throws IOException, InterruptedException {
         testHelper(Collections.emptyList(),
                         Arrays.asList(
                                         "-Dgraal.CompilationFailureAction=ExitVM",
+                                        "-Dgraal.CrashAt=root test1"),
+                        "org.graalvm.compiler.truffle.test.SLTruffleGraalTestSuite", "test");
+    }
+
+    /**
+     * Tests that TruffleCompilationExceptionsAreFatal works as expected.
+     */
+    @Test
+    public void testTruffleCompilation2() throws IOException, InterruptedException {
+        Probe[] probes = {
+                        new Probe("Exiting VM due to TruffleCompilationExceptionsAreFatal=true", 1),
+        };
+        testHelper(Arrays.asList(probes),
+                        Arrays.asList(
+                                        "-Dgraal.CompilationFailureAction=Silent",
+                                        "-Dgraal.TruffleCompilationExceptionsAreFatal=true",
                                         "-Dgraal.CrashAt=root test1"),
                         "org.graalvm.compiler.truffle.test.SLTruffleGraalTestSuite", "test");
     }
@@ -149,14 +165,17 @@ public class CompilationWrapperTest extends GraalCompilerTest {
         }
 
         List<Probe> probes = new ArrayList<>(initialProbes);
-        Probe diagnosticProbe = new Probe("Graal diagnostic output saved in ", 1);
-        probes.add(diagnosticProbe);
-        probes.add(new Probe("Forced crash after compiling", Integer.MAX_VALUE) {
-            @Override
-            String test() {
-                return actualOccurrences > 0 ? null : "expected at least 1 occurrence";
-            }
-        });
+        Probe diagnosticProbe = null;
+        if (!extraVmArgs.contains("-Dgraal.TruffleCompilationExceptionsAreFatal=true")) {
+            diagnosticProbe = new Probe("Graal diagnostic output saved in ", 1);
+            probes.add(diagnosticProbe);
+            probes.add(new Probe("Forced crash after compiling", Integer.MAX_VALUE) {
+                @Override
+                String test() {
+                    return actualOccurrences > 0 ? null : "expected at least 1 occurrence";
+                }
+            });
+        }
 
         for (String line : proc.output) {
             for (Probe probe : probes) {
@@ -171,38 +190,42 @@ public class CompilationWrapperTest extends GraalCompilerTest {
                 Assert.fail(String.format("Did not find expected occurences of '%s' in output of command: %s%n%s", probe.substring, error, proc));
             }
         }
+        if (diagnosticProbe != null) {
+            String line = diagnosticProbe.lastMatchingLine;
+            int substringStart = line.indexOf(diagnosticProbe.substring);
+            int substringLength = diagnosticProbe.substring.length();
+            String diagnosticOutputZip = line.substring(substringStart + substringLength).trim();
 
-        String diagnosticOutputZip = diagnosticProbe.lastMatchingLine.substring(diagnosticProbe.substring.length()).trim();
+            List<String> dumpPathEntries = Arrays.asList(dumpPath.list());
 
-        List<String> dumpPathEntries = Arrays.asList(dumpPath.list());
-
-        File zip = new File(diagnosticOutputZip).getAbsoluteFile();
-        Assert.assertTrue(zip.toString(), zip.exists());
-        Assert.assertTrue(zip + " not in " + dumpPathEntries, dumpPathEntries.contains(zip.getName()));
-        try {
-            int bgv = 0;
-            int cfg = 0;
-            ZipFile dd = new ZipFile(diagnosticOutputZip);
-            List<String> entries = new ArrayList<>();
-            for (Enumeration<? extends ZipEntry> e = dd.entries(); e.hasMoreElements();) {
-                ZipEntry ze = e.nextElement();
-                String name = ze.getName();
-                entries.add(name);
-                if (name.endsWith(".bgv")) {
-                    bgv++;
-                } else if (name.endsWith(".cfg")) {
-                    cfg++;
+            File zip = new File(diagnosticOutputZip).getAbsoluteFile();
+            Assert.assertTrue(zip.toString(), zip.exists());
+            Assert.assertTrue(zip + " not in " + dumpPathEntries, dumpPathEntries.contains(zip.getName()));
+            try {
+                int bgv = 0;
+                int cfg = 0;
+                ZipFile dd = new ZipFile(diagnosticOutputZip);
+                List<String> entries = new ArrayList<>();
+                for (Enumeration<? extends ZipEntry> e = dd.entries(); e.hasMoreElements();) {
+                    ZipEntry ze = e.nextElement();
+                    String name = ze.getName();
+                    entries.add(name);
+                    if (name.endsWith(".bgv")) {
+                        bgv++;
+                    } else if (name.endsWith(".cfg")) {
+                        cfg++;
+                    }
                 }
+                if (bgv == 0) {
+                    Assert.fail(String.format("Expected at least one .bgv file in %s: %s%n%s", diagnosticOutputZip, entries, proc));
+                }
+                if (cfg == 0) {
+                    Assert.fail(String.format("Expected at least one .cfg file in %s: %s", diagnosticOutputZip, entries));
+                }
+            } finally {
+                zip.delete();
+                dumpPath.delete();
             }
-            if (bgv == 0) {
-                Assert.fail(String.format("Expected at least one .bgv file in %s: %s%n%s", diagnosticOutputZip, entries, proc));
-            }
-            if (cfg == 0) {
-                Assert.fail(String.format("Expected at least one .cfg file in %s: %s", diagnosticOutputZip, entries));
-            }
-        } finally {
-            zip.delete();
-            dumpPath.delete();
         }
     }
 }

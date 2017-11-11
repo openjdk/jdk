@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_UTILITIES_ACCESSFLAGS_HPP
 #define SHARE_VM_UTILITIES_ACCESSFLAGS_HPP
 
+#include "jvm.h"
 #include "memory/allocation.hpp"
-#include "prims/jvm.h"
 #include "utilities/macros.hpp"
 
 // AccessFlags is an abstraction over Java access flags.

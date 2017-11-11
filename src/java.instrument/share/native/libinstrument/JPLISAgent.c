@@ -404,8 +404,8 @@ processJavaStart(   JPLISAgent *    agent,
 
 
     /*
-     *  Then turn off the VMInit handler and turn on the ClassFileLoadHook.
-     *  This way it is on before anyone registers a transformer.
+     *  Register a handler for ClassFileLoadHook (without enabling this event).
+     *  Turn off the VMInit handler.
      */
     if ( result ) {
         result = setLivePhaseEventHandlers(agent);
@@ -644,17 +644,6 @@ setLivePhaseEventHandlers(  JPLISAgent * agent) {
                                                     jvmtienv,
                                                     JVMTI_DISABLE,
                                                     JVMTI_EVENT_VM_INIT,
-                                                    NULL /* all threads */);
-        check_phase_ret_false(jvmtierror);
-        jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
-    }
-
-    if ( jvmtierror == JVMTI_ERROR_NONE ) {
-        /* turn on ClassFileLoadHook */
-        jvmtierror = (*jvmtienv)->SetEventNotificationMode(
-                                                    jvmtienv,
-                                                    JVMTI_ENABLE,
-                                                    JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
                                                     NULL /* all threads */);
         check_phase_ret_false(jvmtierror);
         jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
@@ -1097,6 +1086,21 @@ isRetransformClassesSupported(JNIEnv * jnienv, JPLISAgent * agent) {
 }
 
 void
+setHasTransformers(JNIEnv * jnienv, JPLISAgent * agent, jboolean has) {
+    jvmtiEnv *          jvmtienv = jvmti(agent);
+    jvmtiError          jvmtierror;
+
+    jplis_assert(jvmtienv != NULL);
+    jvmtierror = (*jvmtienv)->SetEventNotificationMode(
+                                            jvmtienv,
+                                            has? JVMTI_ENABLE : JVMTI_DISABLE,
+                                            JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
+                                            NULL /* all threads */);
+    check_phase_ret(jvmtierror);
+    jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
+}
+
+void
 setHasRetransformableTransformers(JNIEnv * jnienv, JPLISAgent * agent, jboolean has) {
     jvmtiEnv *          retransformerEnv     = retransformableEnvironment(agent);
     jvmtiError          jvmtierror;
@@ -1107,6 +1111,7 @@ setHasRetransformableTransformers(JNIEnv * jnienv, JPLISAgent * agent, jboolean 
                                                     has? JVMTI_ENABLE : JVMTI_DISABLE,
                                                     JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
                                                     NULL /* all threads */);
+    check_phase_ret(jvmtierror);
     jplis_assert(jvmtierror == JVMTI_ERROR_NONE);
 }
 
@@ -1184,6 +1189,10 @@ retransformClasses(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray classes) {
     if (classArray != NULL) {
         deallocate(retransformerEnv, (void*)classArray);
     }
+
+    /* Return back if we executed the JVMTI API in a wrong phase
+     */
+    check_phase_ret(errorCode);
 
     if (errorCode != JVMTI_ERROR_NONE) {
         createAndThrowThrowableFromJVMTIErrorCode(jnienv, errorCode);

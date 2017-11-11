@@ -30,7 +30,8 @@
                    static_field) \
   nonstatic_field(CompactibleFreeListSpace,    _collector,                                    CMSCollector*)                         \
   nonstatic_field(CompactibleFreeListSpace,    _bt,                                           BlockOffsetArrayNonContigSpace)        \
-                                                                                                                                     \
+     static_field(CompactibleFreeListSpace,    _min_chunk_size_in_bytes,                      size_t)                                \
+  nonstatic_field(CMSBitMap,                   _bmStartWord,                                  HeapWord*)                             \
   nonstatic_field(CMSBitMap,                   _bmWordSize,                                   size_t)                                \
   nonstatic_field(CMSBitMap,                   _shifter,                                      const int)                             \
   nonstatic_field(CMSBitMap,                   _bm,                                           BitMapView)                            \
@@ -63,6 +64,7 @@
   declare_toplevel_type(LinearAllocBlock)
 
 #define VM_INT_CONSTANTS_CMS(declare_constant)                            \
+  declare_constant(CompactibleFreeListSpace::IndexSetSize)                \
   declare_constant(Generation::ConcurrentMarkSweep)                       \
 
 #endif // SHARE_VM_GC_CMS_VMSTRUCTS_CMS_HPP

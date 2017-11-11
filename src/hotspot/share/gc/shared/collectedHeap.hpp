@@ -81,9 +81,10 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 //
 // CollectedHeap
 //   GenCollectedHeap
+//     SerialHeap
+//     CMSHeap
 //   G1CollectedHeap
 //   ParallelScavengeHeap
-//   CMSHeap
 //
 class CollectedHeap : public CHeapObj<mtInternal> {
   friend class VMStructs;
@@ -193,7 +194,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
  public:
   enum Name {
-    GenCollectedHeap,
+    SerialHeap,
     ParallelScavengeHeap,
     G1CollectedHeap,
     CMSHeap

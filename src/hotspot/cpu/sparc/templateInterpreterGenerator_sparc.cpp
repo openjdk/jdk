@@ -319,7 +319,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
 #if INCLUDE_JVMCI
   // Check if we need to take lock at entry of synchronized method.  This can
   // only occur on method entry so emit it only for vtos with step 0.
-  if (UseJVMCICompiler && state == vtos && step == 0) {
+  if (EnableJVMCI && state == vtos && step == 0) {
     Label L;
     Address pending_monitor_enter_addr(G2_thread, JavaThread::pending_monitorenter_offset());
     __ ldbool(pending_monitor_enter_addr, Gtemp);  // Load if pending monitor enter
@@ -331,7 +331,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
     __ bind(L);
   } else {
 #ifdef ASSERT
-    if (UseJVMCICompiler) {
+    if (EnableJVMCI) {
       Label L;
       Address pending_monitor_enter_addr(G2_thread, JavaThread::pending_monitorenter_offset());
       __ ldbool(pending_monitor_enter_addr, Gtemp);  // Load if pending monitor enter

@@ -117,8 +117,6 @@ extern Mutex*   FreeList_lock;                   // protects the free region lis
 extern Monitor* SecondaryFreeList_lock;          // protects the secondary free region list
 extern Mutex*   OldSets_lock;                    // protects the old region sets
 extern Monitor* RootRegionScan_lock;             // used to notify that the CM threads have finished scanning the IM snapshot regions
-extern Mutex*   MMUTracker_lock;                 // protects the MMU
-                                                 // tracker data structures
 
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management
 extern Monitor* Service_lock;                    // a lock used for service thread operation
@@ -130,7 +128,6 @@ extern Mutex*   JfrStacktrace_lock;              // used to guard access to the 
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
 extern Mutex*   JfrStream_lock;                  // protects JFR stream access
-extern Mutex*   JfrThreadGroups_lock;            // protects JFR access to Thread Groups
 #endif
 
 #ifndef SUPPORTS_NATIVE_CX8

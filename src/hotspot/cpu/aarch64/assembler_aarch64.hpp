@@ -1489,6 +1489,17 @@ public:
 
 #undef INSN
 
+  // Aliases for short forms of orn
+void mvn(Register Rd, Register Rm,
+            enum shift_kind kind = LSL, unsigned shift = 0) {
+  orn(Rd, zr, Rm, kind, shift);
+}
+
+void mvnw(Register Rd, Register Rm,
+            enum shift_kind kind = LSL, unsigned shift = 0) {
+  ornw(Rd, zr, Rm, kind, shift);
+}
+
   // Add/subtract (shifted register)
 #define INSN(NAME, size, op)                            \
   void NAME(Register Rd, Register Rn, Register Rm,      \

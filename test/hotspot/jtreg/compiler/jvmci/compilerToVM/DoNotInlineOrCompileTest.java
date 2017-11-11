@@ -71,10 +71,10 @@ public class DoNotInlineOrCompileTest {
         boolean hasNeverInlineDirective = CompilerToVMHelper.hasNeverInlineDirective(method);
         Asserts.assertFalse(hasNeverInlineDirective, "Unexpected initial " +
                 "value of property 'hasNeverInlineDirective'");
-        CompilerToVMHelper.setNotInlineableOrCompileable(method);
+        CompilerToVMHelper.setNotInlinableOrCompilable(method);
         hasNeverInlineDirective = CompilerToVMHelper.hasNeverInlineDirective(method);
         Asserts.assertTrue(hasNeverInlineDirective, aMethod
-                + " : hasNeverInlineDirective is false even after setNotInlineableOrCompileable'");
+                + " : hasNeverInlineDirective is false even after setNotInlinableOrCompilable'");
     }
 
     private static List<Executable> createTestCases() {
