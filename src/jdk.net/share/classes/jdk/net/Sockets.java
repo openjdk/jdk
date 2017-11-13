@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,6 +279,9 @@ public class Sockets {
         if (flowsupported) {
             set.add(ExtendedSocketOptions.SO_FLOW_SLA);
         }
+        if (QuickAck.available) {
+            set.add(ExtendedSocketOptions.TCP_QUICKACK);
+        }
         set = Collections.unmodifiableSet(set);
         options.put(Socket.class, set);
 
@@ -289,6 +292,9 @@ public class Sockets {
         set.add(StandardSocketOptions.SO_REUSEADDR);
         if (reuseportsupported) {
             set.add(StandardSocketOptions.SO_REUSEPORT);
+        }
+        if (QuickAck.available) {
+            set.add(ExtendedSocketOptions.TCP_QUICKACK);
         }
         set.add(StandardSocketOptions.IP_TOS);
         set = Collections.unmodifiableSet(set);
@@ -330,5 +336,18 @@ public class Sockets {
         options.put(MulticastSocket.class, set);
 
         return Collections.unmodifiableMap(options);
+    }
+
+    /**
+     * Tells whether TCP_QUICKACK is supported.
+     */
+    static class QuickAck {
+
+        static final boolean available;
+
+        static {
+            Set<SocketOption<?>> s = new Socket().supportedOptions();
+            available = s.contains(ExtendedSocketOptions.TCP_QUICKACK);
+        }
     }
 }
