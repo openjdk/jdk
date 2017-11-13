@@ -297,7 +297,7 @@ public class IOUtil {
                      NativeDispatcher nd)
         throws IOException
     {
-        return read(fd, bufs, offset, bufs.length, false, -1, nd);
+        return read(fd, bufs, offset, length, false, -1, nd);
     }
 
     static long read(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length,

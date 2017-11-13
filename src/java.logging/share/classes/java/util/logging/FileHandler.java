@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -616,79 +616,96 @@ public class FileHandler extends StreamHandler {
      * @throws IOException
      */
     private File generate(String pattern, int generation, int unique)
-            throws IOException {
-        File file = null;
-        String word = "";
-        int ix = 0;
+            throws IOException
+    {
+        return generate(pattern, count, generation, unique);
+    }
+
+    // The static method here is provided for whitebox testing of the algorithm.
+    static File generate(String pat, int count, int generation, int unique)
+            throws IOException
+    {
+        Path path = Paths.get(pat);
+        Path result = null;
         boolean sawg = false;
         boolean sawu = false;
-        while (ix < pattern.length()) {
-            char ch = pattern.charAt(ix);
-            ix++;
-            char ch2 = 0;
-            if (ix < pattern.length()) {
-                ch2 = Character.toLowerCase(pattern.charAt(ix));
+        StringBuilder word = new StringBuilder();
+        Path prev = null;
+        for (Path elem : path) {
+            if (prev != null) {
+                prev = prev.resolveSibling(word.toString());
+                result = result == null ? prev : result.resolve(prev);
             }
-            if (ch == '/') {
-                if (file == null) {
-                    file = new File(word);
-                } else {
-                    file = new File(file, word);
+            String pattern = elem.toString();
+            int ix = 0;
+            word.setLength(0);
+            while (ix < pattern.length()) {
+                char ch = pattern.charAt(ix);
+                ix++;
+                char ch2 = 0;
+                if (ix < pattern.length()) {
+                    ch2 = Character.toLowerCase(pattern.charAt(ix));
                 }
-                word = "";
-                continue;
-            } else  if (ch == '%') {
-                if (ch2 == 't') {
-                    String tmpDir = System.getProperty("java.io.tmpdir");
-                    if (tmpDir == null) {
-                        tmpDir = System.getProperty("user.home");
+                if (ch == '%') {
+                    if (ch2 == 't') {
+                        String tmpDir = System.getProperty("java.io.tmpdir");
+                        if (tmpDir == null) {
+                            tmpDir = System.getProperty("user.home");
+                        }
+                        result = Paths.get(tmpDir);
+                        ix++;
+                        word.setLength(0);
+                        continue;
+                    } else if (ch2 == 'h') {
+                        result = Paths.get(System.getProperty("user.home"));
+                        if (jdk.internal.misc.VM.isSetUID()) {
+                            // Ok, we are in a set UID program.  For safety's sake
+                            // we disallow attempts to open files relative to %h.
+                            throw new IOException("can't use %h in set UID program");
+                        }
+                        ix++;
+                        word.setLength(0);
+                        continue;
+                    } else if (ch2 == 'g') {
+                        word = word.append(generation);
+                        sawg = true;
+                        ix++;
+                        continue;
+                    } else if (ch2 == 'u') {
+                        word = word.append(unique);
+                        sawu = true;
+                        ix++;
+                        continue;
+                    } else if (ch2 == '%') {
+                        word = word.append('%');
+                        ix++;
+                        continue;
                     }
-                    file = new File(tmpDir);
-                    ix++;
-                    word = "";
-                    continue;
-                } else if (ch2 == 'h') {
-                    file = new File(System.getProperty("user.home"));
-                    if (jdk.internal.misc.VM.isSetUID()) {
-                        // Ok, we are in a set UID program.  For safety's sake
-                        // we disallow attempts to open files relative to %h.
-                        throw new IOException("can't use %h in set UID program");
-                    }
-                    ix++;
-                    word = "";
-                    continue;
-                } else if (ch2 == 'g') {
-                    word = word + generation;
-                    sawg = true;
-                    ix++;
-                    continue;
-                } else if (ch2 == 'u') {
-                    word = word + unique;
-                    sawu = true;
-                    ix++;
-                    continue;
-                } else if (ch2 == '%') {
-                    word = word + "%";
-                    ix++;
-                    continue;
                 }
+                word = word.append(ch);
             }
-            word = word + ch;
+            prev = elem;
         }
+
         if (count > 1 && !sawg) {
-            word = word + "." + generation;
+            word = word.append('.').append(generation);
         }
         if (unique > 0 && !sawu) {
-            word = word + "." + unique;
+            word = word.append('.').append(unique);
         }
         if (word.length() > 0) {
-            if (file == null) {
-                file = new File(word);
-            } else {
-                file = new File(file, word);
-            }
+            String n = word.toString();
+            Path p = prev == null ? Paths.get(n) : prev.resolveSibling(n);
+            result = result == null ? p : result.resolve(p);
+        } else if (result == null) {
+            result = Paths.get("");
         }
-        return file;
+
+        if (path.getRoot() == null) {
+            return result.toFile();
+        } else {
+            return path.getRoot().resolve(result).toFile();
+        }
     }
 
     /**

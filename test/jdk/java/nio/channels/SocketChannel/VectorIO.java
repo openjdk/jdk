@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 8191025
  * @summary Test socketchannel vector IO (use -Dseed=X to set PRNG seed)
  * @library .. /test/lib
  * @build jdk.test.lib.RandomFactory
@@ -42,11 +43,16 @@ public class VectorIO {
 
     static int testSize;
 
+    // whether to use the write/read variant with a length parameter
+    static boolean setLength;
+
     public static void main(String[] args) throws Exception {
         testSize = 1;
+        setLength = false;
         runTest();
         for(int i=15; i<18; i++) {
             testSize = i;
+            setLength = !setLength;
             runTest();
         }
     }
@@ -75,6 +81,9 @@ public class VectorIO {
             total += bufs[i].remaining();
         }
 
+        ByteBuffer[] bufsPlus1 = new ByteBuffer[bufs.length + 1];
+        System.arraycopy(bufs, 0, bufsPlus1, 0, bufs.length);
+
         // Get a connection to the server
         InetAddress lh = InetAddress.getLocalHost();
         InetSocketAddress isa = new InetSocketAddress(lh, port);
@@ -85,7 +94,12 @@ public class VectorIO {
         // Write the data out
         long rem = total;
         while (rem > 0L) {
-            long bytesWritten = sc.write(bufs);
+            long bytesWritten;
+            if (setLength) {
+                bytesWritten = sc.write(bufsPlus1, 0, bufs.length);
+            } else {
+                bytesWritten = sc.write(bufs);
+            }
             if (bytesWritten == 0) {
                 if (sc.isBlocking()) {
                     throw new RuntimeException("write did not block");
@@ -134,6 +148,9 @@ public class VectorIO {
                 total += bufs[i].capacity();
             }
 
+            ByteBuffer[] bufsPlus1 = new ByteBuffer[bufs.length + 1];
+            System.arraycopy(bufs, 0, bufsPlus1, 0, bufs.length);
+
             // Get a connection from client
             SocketChannel sc = null;
 
@@ -155,7 +172,12 @@ public class VectorIO {
                 // Read data into multiple buffers
                 long avail = total;
                 while (avail > 0) {
-                    long bytesRead = sc.read(bufs);
+                    long bytesRead;
+                    if (setLength) {
+                        bytesRead = sc.read(bufsPlus1, 0, bufs.length);
+                    } else {
+                        bytesRead = sc.read(bufs);
+                    }
                     if (bytesRead < 0)
                         break;
                     if (bytesRead == 0) {

@@ -758,6 +758,8 @@ public class CountedCompleterTest extends JSR166TestCase {
                 CCF f = new LCCF(8);
                 assertSame(f, f.fork());
                 helpQuiesce();
+                while (!f.isDone()) // wait out race
+                    ;
                 assertEquals(21, f.number);
                 assertEquals(0, getQueuedTaskCount());
                 checkCompletedNormally(f);
