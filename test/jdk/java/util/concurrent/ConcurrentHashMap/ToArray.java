@@ -43,7 +43,7 @@ public class ToArray {
     }
 
     static void executeTest() throws Throwable {
-        final Throwable throwable[] = new Throwable[1];
+        final Throwable[] throwable = new Throwable[1];
         final ConcurrentHashMap<Integer, Integer> m = new ConcurrentHashMap<>();
 
         // Number of workers equal to the number of processors

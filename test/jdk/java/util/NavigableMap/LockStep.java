@@ -848,11 +848,11 @@ public class LockStep {
     }
     interface Fun {void f() throws Throwable;}
     static void THROWS(Class<? extends Throwable> k, Fun... fs) {
-          for (Fun f : fs)
-              try { f.f(); fail("Expected " + k.getName() + " not thrown"); }
-              catch (Throwable t) {
-                  if (k.isAssignableFrom(t.getClass())) pass();
-                  else unexpected(t);}}
+        for (Fun f : fs)
+            try { f.f(); fail("Expected " + k.getName() + " not thrown"); }
+            catch (Throwable t) {
+                if (k.isAssignableFrom(t.getClass())) pass();
+                else unexpected(t);}}
     static byte[] serializedForm(Object obj) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();

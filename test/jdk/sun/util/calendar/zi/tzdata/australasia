@@ -316,7 +316,7 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=1096:3310-cabinet-approves-change-in-daylight-savings-dates&catid=49:cabinet-releases&Itemid=166
 #
 # A bit more background info here:
-# http://www.timeanddate.com/news/time/fiji-dst-ends-march-2010.html
+# https://www.timeanddate.com/news/time/fiji-dst-ends-march-2010.html
 
 # From Alexander Krivenyshev (2010-10-24):
 # According to Radio Fiji and Fiji Times online, Fiji will end DST 3
@@ -380,9 +380,12 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # clocks go forward an hour at 2am to 3am....  Daylight Saving will
 # end at 3.00am on Sunday 15th January 2017."
 
-# From Paul Eggert (2016-10-03):
-# For now, guess DST from 02:00 the first Sunday in November to
-# 03:00 the third Sunday in January.  Although ad hoc, it matches
+# From Paul Eggert (2017-08-21):
+# Dominic Fok writes (2017-08-20) that DST ends 2018-01-14, citing
+# Extraordinary Government of Fiji Gazette Supplement No. 21 (2017-08-27),
+# [Legal Notice No. 41] of an order of the previous day by J Usamate.
+# For now, guess DST from 02:00 the first Sunday in November to 03:00
+# the first Sunday on or after January 14.  Although ad hoc, it matches
 # transitions since late 2014 and seems more likely to match future
 # practice than guessing no DST.
 
@@ -396,7 +399,7 @@ Rule	Fiji	2011	only	-	Mar	Sun>=1	3:00	0	-
 Rule	Fiji	2012	2013	-	Jan	Sun>=18	3:00	0	-
 Rule	Fiji	2014	only	-	Jan	Sun>=18	2:00	0	-
 Rule	Fiji	2014	max	-	Nov	Sun>=1	2:00	1:00	S
-Rule	Fiji	2015	max	-	Jan	Sun>=15	3:00	0	-
+Rule	Fiji	2015	max	-	Jan	Sun>=14	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26 # Suva
 			12:00	Fiji	+12/+13
@@ -580,7 +583,7 @@ Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
 # The World War II entries below are instead based on Arawa-Kieta.
 # The Japanese occupied Kieta in July 1942,
 # according to the Pacific War Online Encyclopedia
-# http://pwencycl.kgbudge.com/B/o/Bougainville.htm
+# https://pwencycl.kgbudge.com/B/o/Bougainville.htm
 # and seem to have controlled it until their 1945-08-21 surrender.
 #
 # The Autonomous Region of Bougainville switched from UT +10 to +11
@@ -602,7 +605,7 @@ Zone Pacific/Pitcairn	-8:40:20 -	LMT	1901        # Adamstown
 			-8:00	-	-08
 
 # American Samoa
-Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
+Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1892 Jul  5
 			-11:22:48 -	LMT	1911
 			-11:00	-	SST	            # S=Samoa
 Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
@@ -618,7 +621,7 @@ Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
 # Sunday of April 2011."
 #
 # Background info:
-# http://www.timeanddate.com/news/time/samoa-dst-plan-2009.html
+# https://www.timeanddate.com/news/time/samoa-dst-plan-2009.html
 #
 # Samoa's Daylight Saving Time Act 2009 is available here, but does not
 # contain any dates:
@@ -682,7 +685,7 @@ Rule	WS	2011	only	-	Sep	lastSat	3:00	1	D
 Rule	WS	2012	max	-	Apr	Sun>=1	4:00	0	S
 Rule	WS	2012	max	-	Sep	lastSun	3:00	1	D
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
+Zone Pacific/Apia	 12:33:04 -	LMT	1892 Jul  5
 			-11:26:56 -	LMT	1911
 			-11:30	-	-1130	1950
 			-11:00	WS	-11/-10	2011 Dec 29 24:00
@@ -709,7 +712,7 @@ Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct # Honiara
 # From Paul Eggert (2012-07-25)
 # A Google Books snippet of Appendix to the Journals of the House of
 # Representatives of New Zealand, Session 1948,
-# <http://books.google.com/books?id=ZaVCAQAAIAAJ>, page 65, says Tokelau
+# <https://books.google.com/books?id=ZaVCAQAAIAAJ>, page 65, says Tokelau
 # was "11 hours slow on G.M.T."  Go with Thorsen and assume Shanks & Pottenger
 # are off by an hour starting in 1901.
 
@@ -724,8 +727,8 @@ Rule	Tonga	1999	only	-	Oct	 7	2:00s	1:00	S
 Rule	Tonga	2000	only	-	Mar	19	2:00s	0	-
 Rule	Tonga	2000	2001	-	Nov	Sun>=1	2:00	1:00	S
 Rule	Tonga	2001	2002	-	Jan	lastSun	2:00	0	-
-Rule	Tonga	2016	max	-	Nov	Sun>=1	2:00	1:00	S
-Rule	Tonga	2017	max	-	Jan	Sun>=15	3:00	0	-
+Rule	Tonga	2016	only	-	Nov	Sun>=1	2:00	1:00	S
+Rule	Tonga	2017	only	-	Jan	Sun>=15	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Tongatapu	12:19:20 -	LMT	1901
 			12:20	-	+1220	1941
@@ -779,7 +782,7 @@ Zone Pacific/Funafuti	11:56:52 -	LMT	1901
 # Operation Fishbowl shot (Tightrope, 1962-11-04).... [See] Herman Hoerlin,
 # "The United States High-Altitude Test Experience: A Review Emphasizing the
 # Impact on the Environment", Los Alamos LA-6405, Oct 1976.
-# http://www.fas.org/sgp/othergov/doe/lanl/docs1/00322994.pdf
+# https://www.fas.org/sgp/othergov/doe/lanl/docs1/00322994.pdf
 # See the table on page 4 where he lists GMT and local times for the tests; a
 # footnote for the JI tests reads that local time is "JI time = Hawaii Time
 # Minus One Hour".
@@ -845,7 +848,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 #
 # For data circa 1899, a common source is:
 # Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94.
-# http://www.jstor.org/stable/1774359
+# https://www.jstor.org/stable/1774359
 #
 # A reliable and entertaining source about time zones is
 # Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
@@ -992,7 +995,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 #   AEST ACST AWST AEDT ACDT
 #
 #   Parliamentary Library (2008-11-10)
-#   http://www.aph.gov.au/binaries/library/pubs/rp/2008-09/09rp14.pdf
+#   https://www.aph.gov.au/binaries/library/pubs/rp/2008-09/09rp14.pdf
 #   EST CST WST preferred for standard time; AEST AEDT ACST ACDT also used
 #
 #   The Transport Safety Bureau has an extensive series of accident reports,
@@ -1028,13 +1031,13 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 #
 # NSW (including LHI and Broken Hill):
 # Standard Time Act 1987 (updated 1995-04-04)
-# http://www.austlii.edu.au/au/legis/nsw/consol_act/sta1987137/index.html
+# https://www.austlii.edu.au/au/legis/nsw/consol_act/sta1987137/index.html
 # ACT
 # Standard Time and Summer Time Act 1972
-# http://www.austlii.edu.au/au/legis/act/consol_act/stasta1972279/index.html
+# https://www.austlii.edu.au/au/legis/act/consol_act/stasta1972279/index.html
 # SA
 # Standard Time Act, 1898
-# http://www.austlii.edu.au/au/legis/sa/consol_act/sta1898137/index.html
+# https://www.austlii.edu.au/au/legis/sa/consol_act/sta1898137/index.html
 
 # From David Grosz (2005-06-13):
 # It was announced last week that Daylight Saving would be extended by
@@ -1329,7 +1332,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # http://abc.net.au/news/regionals/neweng/monthly/regeng-22jul1999-1.htm
 # (1999-07-22).  For now, we'll wait to see if this really happens.
 #
-# Victoria will following NSW.  See:
+# Victoria will follow NSW.  See:
 # Vic to extend daylight saving (1999-07-28)
 # http://abc.net.au/local/news/olympics/1999/07/item19990728112314_1.htm
 #
@@ -1432,7 +1435,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # the ACT for all 52 weeks of the year...
 #
 # We have a wrap-up here:
-# http://www.timeanddate.com/news/time/south-australia-extends-dst.html
+# https://www.timeanddate.com/news/time/south-australia-extends-dst.html
 ###############################################################################
 
 # New Zealand
@@ -1486,7 +1489,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # From Paul Eggert (2014-07-14):
 # Chatham Island time was formally standardized on 1957-01-01 by
 # New Zealand's Standard Time Amendment Act 1956 (1956-10-26).
-# http://www.austlii.edu.au/nz/legis/hist_act/staa19561956n100244.pdf
+# https://www.austlii.edu.au/nz/legis/hist_act/staa19561956n100244.pdf
 # According to Google Books snippet view, a speaker in the New Zealand
 # parliamentary debates in 1956 said "Clause 78 makes provision for standard
 # time in the Chatham Islands.  The time there is 45 minutes in advance of New
@@ -1601,7 +1604,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # the Norfolk Island Museum and the Australian Bureau of Meteorology's
 # Norfolk Island station, and found no record of Norfolk observing DST
 # other than in 1974/5.  See:
-# http://www.timeanddate.com/time/australia/norfolk-island.html
+# https://www.timeanddate.com/time/australia/norfolk-island.html
 
 # Pitcairn
 
@@ -1629,11 +1632,13 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # (Western) Samoa and American Samoa
 
-# Howse writes (p 153, citing p 10 of the 1883-11-18 New York Herald)
-# that in 1879 the King of Samoa decided to change
+# Howse writes (p 153) that after the 1879 standardization on Antipodean
+# time by the British governor of Fiji, the King of Samoa decided to change
 # "the date in his kingdom from the Antipodean to the American system,
 # ordaining - by a masterpiece of diplomatic flattery - that
 # the Fourth of July should be celebrated twice in that year."
+# This happened in 1892, according to the Evening News (Sydney) of 1892-07-20.
+# https://www.staff.science.uu.nl/~gent0113/idl/idl.htm
 
 # Although Shanks & Pottenger says they both switched to UT -11:30
 # in 1911, and to -11 in 1950. many earlier sources give -11
@@ -1643,6 +1648,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # and that after 1950 they agreed until (western) Samoa skipped a
 # day in 2011.  Assume also that the Samoas follow the US and New
 # Zealand's "ST"/"DT" style of daylight-saving abbreviations.
+
 
 # Tonga
 
@@ -1738,6 +1744,15 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # Assume Tonga will observe DST from the first Sunday in November at 02:00
 # through the third Sunday in January at 03:00, like Fiji, for now.
 
+# From David Wade (2017-10-18):
+# In August government was disolved by the King.  The current prime minister
+# continued in office in care taker mode.  It is easy to see that few
+# decisions will be made until elections 16th November.
+#
+# From Paul Eggert (2017-10-18):
+# For now, guess that DST is discontinued.  That's what the IATA is guessing.
+
+
 # Wake
 
 # From Vernice Anderson, Personal Secretary to Philip Jessup,
@@ -1750,7 +1765,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # making calculation of time in Washington difficult if not almost
 # impossible.
 #
-# http://www.trumanlibrary.org/wake/meeting.htm
+# https://www.trumanlibrary.org/oralhist/andrsonv.htm
 
 # From Paul Eggert (2003-03-23):
 # We have no other report of DST in Wake Island, so omit this info for now.
@@ -1778,7 +1793,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # an international standard, there are some places on the high seas where the
 # correct date is ambiguous.
 
-# From Wikipedia <http://en.wikipedia.org/wiki/Time_zone> (2005-08-31):
+# From Wikipedia <https://en.wikipedia.org/wiki/Time_zone> (2005-08-31):
 # Before 1920, all ships kept local apparent time on the high seas by setting
 # their clocks at night or at the morning sight so that, given the ship's
 # speed and direction, it would be 12 o'clock when the Sun crossed the ship's

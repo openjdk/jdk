@@ -332,16 +332,6 @@ public class VerifyAccess {
         return Objects.equals(class1.getPackageName(), class2.getPackageName());
     }
 
-    /** Return the package name for this class.
-     */
-    public static String getPackageName(Class<?> cls) {
-        assert (!cls.isArray());
-        String name = cls.getName();
-        int dot = name.lastIndexOf('.');
-        if (dot < 0) return "";
-        return name.substring(0, dot);
-    }
-
     /**
      * Test if two classes are defined as part of the same package member (top-level class).
      * If this is true, they can share private access with each other.
