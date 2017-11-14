@@ -39,8 +39,8 @@ public class ModularJarArchive extends JarArchive {
     private static final String JAR_EXT = ".jar";
     private static final String MODULE_INFO = "module-info.class";
 
-    public ModularJarArchive(String mn, Path jmod) {
-        super(mn, jmod);
+    public ModularJarArchive(String mn, Path jmod, Runtime.Version version) {
+        super(mn, jmod, version);
         String filename = Objects.requireNonNull(jmod.getFileName()).toString();
         if (!filename.endsWith(JAR_EXT)) {
             throw new UnsupportedOperationException("Unsupported format: " + filename);
