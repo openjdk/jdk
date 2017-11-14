@@ -2020,8 +2020,8 @@ public:
   product(bool, ZeroTLAB, false,                                            \
           "Zero out the newly created TLAB")                                \
                                                                             \
-  product(bool, FastTLABRefill, true,                                       \
-          "Use fast TLAB refill code")                                      \
+  product(bool, FastTLABRefill, false,                                      \
+          "(Deprecated) Use fast TLAB refill code")                         \
                                                                             \
   product(bool, TLABStats, true,                                            \
           "Provide more detailed and expensive TLAB statistics.")           \
