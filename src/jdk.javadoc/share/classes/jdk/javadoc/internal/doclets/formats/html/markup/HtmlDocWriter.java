@@ -311,9 +311,9 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Returns a link to the stylesheet file.
      *
      * @param configuration the configuration for this doclet
-     * @return an HtmlTree for the lINK tag which provides the stylesheet location
+     * @param head HtmlTree to which the stylesheet links will be added
      */
-    public HtmlTree getStyleSheetProperties(HtmlConfiguration configuration) {
+    public void addStyleSheetProperties(HtmlConfiguration configuration, Content head) {
         String stylesheetfile = configuration.stylesheetfile;
         DocPath stylesheet;
         if (stylesheetfile.isEmpty()) {
@@ -325,7 +325,21 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         HtmlTree link = HtmlTree.LINK("stylesheet", "text/css",
                 pathToRoot.resolve(stylesheet).getPath(),
                 "Style");
-        return link;
+        head.addContent(link);
+        addStylesheets(configuration, head);
+    }
+
+    protected void addStylesheets(HtmlConfiguration configuration, Content tree) {
+        List<String> stylesheets = configuration.additionalStylesheets;
+        if (!stylesheets.isEmpty()) {
+            stylesheets.forEach((ssheet) -> {
+                DocFile file = DocFile.createFileForInput(configuration, ssheet);
+                DocPath ssheetPath = DocPath.create(file.getName());
+                HtmlTree slink = HtmlTree.LINK("stylesheet", "text/css", pathToRoot.resolve(ssheetPath).getPath(),
+                        "Style");
+                tree.addContent(slink);
+            });
+        }
     }
 
     protected Comment getGeneratedBy(boolean timestamp) {
