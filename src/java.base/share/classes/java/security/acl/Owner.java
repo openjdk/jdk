@@ -37,10 +37,12 @@ import java.security.Principal;
  * @since 1.1
  * @see java.security.acl.Acl
  *
- * @deprecated This package has been replaced by {@code java.security.Policy}
- *      and related classes since 1.2.
+ * @deprecated This class is deprecated and subject to removal in a future
+ *     version of Java SE. It has been replaced by {@code java.security.Policy}
+ *     and related classes since 1.2.
  */
-@Deprecated(since="9")
+@Deprecated(since="9", forRemoval=true)
+@SuppressWarnings("removal")
 public interface Owner {
 
     /**

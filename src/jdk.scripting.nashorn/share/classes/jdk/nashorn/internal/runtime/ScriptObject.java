@@ -2050,7 +2050,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
         final PropertyMap newMap = oldMap.replaceProperty(property, property.removeFlags(Property.NEEDS_DECLARATION));
         setMap(newMap);
-        set(key, value, 0);
+        set(key, value, NashornCallSiteDescriptor.CALLSITE_DECLARE);
     }
 
     /**
@@ -3071,7 +3071,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
 
         if (f != null) {
-            if (!f.getProperty().isWritable() || !f.getProperty().hasNativeSetter()) {
+            if ((!f.getProperty().isWritable() && !NashornCallSiteDescriptor.isDeclaration(callSiteFlags)) || !f.getProperty().hasNativeSetter()) {
                 if (isScopeFlag(callSiteFlags) && f.getProperty().isLexicalBinding()) {
                     throw typeError("assign.constant", key.toString()); // Overwriting ES6 const should throw also in non-strict mode.
                 }
