@@ -324,7 +324,6 @@ jdk_awt = \
 
 jdk_2d = \
     javax/print \
-    sun/pisces  \
     sun/java2d
 
 jdk_beans = \
@@ -426,7 +425,6 @@ jdk_stable = \
     :jdk_sctp \
     javax/accessibility \
     com/sun/java/swing \
-    sun/pisces \
     com/sun/awt
 
 
