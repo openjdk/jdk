@@ -65,10 +65,10 @@ bool G1StringDedup::is_candidate_from_mark(oop obj) {
   return false;
 }
 
-void G1StringDedup::enqueue_from_mark(oop java_string) {
+void G1StringDedup::enqueue_from_mark(oop java_string, uint worker_id) {
   assert(is_enabled(), "String deduplication not enabled");
   if (is_candidate_from_mark(java_string)) {
-    G1StringDedupQueue::push(0 /* worker_id */, java_string);
+    G1StringDedupQueue::push(worker_id, java_string);
   }
 }
 

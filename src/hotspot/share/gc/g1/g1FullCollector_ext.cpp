@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,9 @@
  *
  */
 
-package sun.jvm.hotspot.gc.shared;
+#include "precompiled.hpp"
+#include "gc/g1/g1FullCollector.hpp"
 
-//These definitions should be kept in sync with the definitions in the HotSpot code.
-
-public enum GCName {
-  ParallelOld ("ParallelOld"),
-  SerialOld ("SerialOld"),
-  PSMarkSweep ("PSMarkSweep"),
-  ParallelScavenge ("ParallelScavenge"),
-  DefNew ("DefNew"),
-  ParNew ("ParNew"),
-  G1New ("G1New"),
-  ConcurrentMarkSweep ("ConcurrentMarkSweep"),
-  G1Old ("G1Old"),
-  G1Full ("G1Full"),
-  GCNameEndSentinel ("GCNameEndSentinel");
-
-  private final String value;
-
-  GCName(String val) {
-    this.value = val;
-  }
-  public String value() {
-    return value;
-  }
+void G1FullCollector::prepare_compaction_ext() {
+  prepare_compaction_common();
 }
-

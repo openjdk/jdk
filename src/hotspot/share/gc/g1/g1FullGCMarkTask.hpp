@@ -22,28 +22,25 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1SERIALCOLLECTOR_HPP
-#define SHARE_VM_GC_G1_G1SERIALCOLLECTOR_HPP
+#ifndef SHARE_GC_G1_G1FULLGCMARKTASK_HPP
+#define SHARE_GC_G1_G1FULLGCMARKTASK_HPP
 
-#include "memory/allocation.hpp"
+#include "gc/g1/g1FullGCCompactionPoint.hpp"
+#include "gc/g1/g1FullGCScope.hpp"
+#include "gc/g1/g1FullGCTask.hpp"
+#include "gc/g1/g1RootProcessor.hpp"
+#include "gc/g1/g1StringDedup.hpp"
+#include "gc/g1/heapRegionManager.hpp"
+#include "gc/shared/referenceProcessor.hpp"
+#include "utilities/ticks.hpp"
 
-class G1FullGCScope;
-class ReferenceProcessor;
-
-class G1SerialFullCollector : StackObj {
-  G1FullGCScope*                       _scope;
-  ReferenceProcessor*                  _reference_processor;
-  ReferenceProcessorIsAliveMutator     _is_alive_mutator;
-  ReferenceProcessorMTDiscoveryMutator _mt_discovery_mutator;
-
-  void rebuild_remembered_sets();
+class G1FullGCMarkTask : public G1FullGCTask {
+  G1RootProcessor          _root_processor;
+  ParallelTaskTerminator   _terminator;
 
 public:
-  G1SerialFullCollector(G1FullGCScope* scope, ReferenceProcessor* reference_processor);
-
-  void prepare_collection();
-  void collect();
-  void complete_collection();
+  G1FullGCMarkTask(G1FullCollector* collector);
+  void work(uint worker_id);
 };
 
-#endif // SHARE_VM_GC_G1_G1SERIALCOLLECTOR_HPP
+#endif // SHARE_GC_G1_G1FULLGCMARKTASK_HPP
