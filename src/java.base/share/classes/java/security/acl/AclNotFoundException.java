@@ -32,10 +32,11 @@ package java.security.acl;
  * @author      Satish Dharmaraj
  * @since 1.1
  *
- * @deprecated This package has been replaced by {@code java.security.Policy}
- *      and related classes since 1.2.
+ * @deprecated This class is deprecated and subject to removal in a future
+ *     version of Java SE. It has been replaced by {@code java.security.Policy}
+ *     and related classes since 1.2.
  */
-@Deprecated(since="9")
+@Deprecated(since="9", forRemoval=true)
 public class AclNotFoundException extends Exception {
 
     private static final long serialVersionUID = 5684295034092681791L;
