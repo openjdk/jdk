@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,42 +22,24 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_GCNAME_HPP
-#define SHARE_VM_GC_SHARED_GCNAME_HPP
+#ifndef SHARE_GC_G1_G1FULLGCTASK_HPP
+#define SHARE_GC_G1_G1FULLGCTASK_HPP
 
-#include "utilities/debug.hpp"
+#include "gc/shared/workgroup.hpp"
+#include "utilities/ticks.hpp"
 
-enum GCName {
-  ParallelOld,
-  SerialOld,
-  PSMarkSweep,
-  ParallelScavenge,
-  DefNew,
-  ParNew,
-  G1New,
-  ConcurrentMarkSweep,
-  G1Old,
-  G1Full,
-  GCNameEndSentinel
+class G1FullCollector;
+
+class G1FullGCTask : public AbstractGangTask {
+  G1FullCollector* _collector;
+
+protected:
+  G1FullGCTask(const char* name, G1FullCollector* collector) :
+    AbstractGangTask(name),
+    _collector(collector) { }
+
+  G1FullCollector* collector() { return _collector; }
+  void log_task(const char* name, uint worker_id, const Ticks& start, const Ticks& stop = Ticks::now());
 };
 
-class GCNameHelper {
- public:
-  static const char* to_string(GCName name) {
-    switch(name) {
-      case ParallelOld: return "ParallelOld";
-      case SerialOld: return "SerialOld";
-      case PSMarkSweep: return "PSMarkSweep";
-      case ParallelScavenge: return "ParallelScavenge";
-      case DefNew: return "DefNew";
-      case ParNew: return "ParNew";
-      case G1New: return "G1New";
-      case ConcurrentMarkSweep: return "ConcurrentMarkSweep";
-      case G1Old: return "G1Old";
-      case G1Full: return "G1Full";
-      default: ShouldNotReachHere(); return NULL;
-    }
-  }
-};
-
-#endif // SHARE_VM_GC_SHARED_GCNAME_HPP
+#endif // SHARE_GC_G1_G1FULLGCTASK_HPP

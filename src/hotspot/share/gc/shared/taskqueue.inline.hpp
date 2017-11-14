@@ -42,6 +42,11 @@ inline GenericTaskQueueSet<T, F>::GenericTaskQueueSet(int n) : _n(n) {
   }
 }
 
+template <class T, MEMFLAGS F>
+inline GenericTaskQueueSet<T, F>::~GenericTaskQueueSet() {
+  FREE_C_HEAP_ARRAY(T*, _queues);
+}
+
 template<class E, MEMFLAGS F, unsigned int N>
 inline void GenericTaskQueue<E, F, N>::initialize() {
   _elems = ArrayAllocator<E>::allocate(N, F);
@@ -49,7 +54,6 @@ inline void GenericTaskQueue<E, F, N>::initialize() {
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline GenericTaskQueue<E, F, N>::~GenericTaskQueue() {
-  assert(false, "This code is currently never called");
   ArrayAllocator<E>::free(const_cast<E*>(_elems), N);
 }
 

@@ -264,6 +264,14 @@ inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
   return is_obj_ill(obj, heap_region_containing(obj));
 }
 
+inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {
+   return !isMarkedNext(obj) && !hr->is_archive();
+}
+
+inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
+    return is_obj_dead_full(obj, heap_region_containing(obj));
+}
+
 inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool value) {
   assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
   _humongous_reclaim_candidates.set_candidate(region, value);

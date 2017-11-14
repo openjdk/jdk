@@ -634,7 +634,7 @@ public:
 
   void work(uint worker_id) {
     SuspendibleThreadSetJoiner sts_join(_suspendible);
-    G1CollectedHeap::heap()->heap_region_par_iterate(&_cl, worker_id, &_hr_claimer);
+    G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&_cl, &_hr_claimer, worker_id);
   }
 
   bool is_complete() {
@@ -1140,7 +1140,7 @@ public:
     HRRSCleanupTask hrrs_cleanup_task;
     G1NoteEndOfConcMarkClosure g1_note_end(_g1h, &local_cleanup_list,
                                            &hrrs_cleanup_task);
-    _g1h->heap_region_par_iterate(&g1_note_end, worker_id, &_hrclaimer);
+    _g1h->heap_region_par_iterate_from_worker_offset(&g1_note_end, &_hrclaimer, worker_id);
     assert(g1_note_end.complete(), "Shouldn't have yielded!");
 
     // Now update the lists
