@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,16 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     protected Set<SocketOption<?>> supportedOptions() {
         HashSet<SocketOption<?>> options = new HashSet<>(super.supportedOptions());
-        options.addAll(extendedOptions.options());
+        addExtSocketOptions(extendedOptions.options(), options);
         return options;
+    }
+
+    private void addExtSocketOptions(Set<SocketOption<?>> extOptions,
+                                     Set<SocketOption<?>> options) {
+        // TCP_QUICKACK is applicable for TCP Sockets only.
+        extOptions.stream()
+                .filter((option) -> !option.name().equals("TCP_QUICKACK"))
+                .forEach((option) -> options.add(option));
     }
 
     protected void socketSetOption(int opt, Object val) throws SocketException {

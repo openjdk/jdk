@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -941,21 +941,21 @@ public class TCKZoneRules {
     }
 
     public void test_Apia_jumpForwardOverInternationalDateLine_P12_to_M12() {
-        // transition occurred at 1879-07-04T00:00+12:33:04
+        // transition occurred at 1892-07-04T00:00+12:33:04
         ZoneRules test = pacificApia();
-        Instant instantBefore = LocalDate.of(1879, 7, 2).atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant instantBefore = LocalDate.of(1892, 7, 2).atStartOfDay(ZoneOffset.UTC).toInstant();
         ZoneOffsetTransition trans = test.nextTransition(instantBefore);
-        assertEquals(trans.getDateTimeBefore(), LocalDateTime.of(1879, 7, 5, 0, 0));
-        assertEquals(trans.getDateTimeAfter(), LocalDateTime.of(1879, 7, 4, 0, 0));
+        assertEquals(trans.getDateTimeBefore(), LocalDateTime.of(1892, 7, 5, 0, 0));
+        assertEquals(trans.getDateTimeAfter(), LocalDateTime.of(1892, 7, 4, 0, 0));
         assertEquals(trans.isGap(), false);
         assertEquals(trans.isOverlap(), true);
         assertEquals(trans.isValidOffset(ZoneOffset.ofHoursMinutesSeconds(+12, 33, 4)), true);
         assertEquals(trans.isValidOffset(ZoneOffset.ofHoursMinutesSeconds(-11, -26, -56)), true);
         assertEquals(trans.getDuration(), Duration.ofHours(-24));
-        assertEquals(trans.getInstant(), LocalDateTime.of(1879, 7, 4, 0, 0).toInstant(ZoneOffset.ofHoursMinutesSeconds(-11, -26, -56)));
+        assertEquals(trans.getInstant(), LocalDateTime.of(1892, 7, 4, 0, 0).toInstant(ZoneOffset.ofHoursMinutesSeconds(-11, -26, -56)));
 
-        ZonedDateTime zdt = ZonedDateTime.of(1879, 7, 4, 23, 0, 0, 0, ZoneId.of("Pacific/Apia"));
-        assertEquals(zdt.plusHours(2).toLocalDateTime(), LocalDateTime.of(1879, 7, 4, 1, 0, 0));
+        ZonedDateTime zdt = ZonedDateTime.of(1892, 7, 4, 23, 0, 0, 0, ZoneId.of("Pacific/Apia"));
+        assertEquals(zdt.plusHours(2).toLocalDateTime(), LocalDateTime.of(1892, 7, 4, 1, 0, 0));
     }
 
     //-------------------------------------------------------------------------
