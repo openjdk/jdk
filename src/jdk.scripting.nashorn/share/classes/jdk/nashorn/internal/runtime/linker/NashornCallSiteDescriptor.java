@@ -505,6 +505,15 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
     }
 
     /**
+     * Returns true if {@code flags} has the {@link  #CALLSITE_DECLARE} bit set.
+     * @param flags the flags
+     * @return true if the flag is set, false otherwise.
+     */
+    public static boolean isDeclaration(final int flags) {
+        return (flags & CALLSITE_DECLARE) != 0;
+    }
+
+    /**
      * Get a program point from a descriptor (must be optimistic)
      * @param desc descriptor
      * @return program point
