@@ -269,11 +269,11 @@ public class PNGImageReader extends ImageReader {
 
             stream.flushBefore(stream.getStreamPosition());
 
-            if (width == 0) {
-                throw new IIOException("Image width == 0!");
+            if (width <= 0) {
+                throw new IIOException("Image width <= 0!");
             }
-            if (height == 0) {
-                throw new IIOException("Image height == 0!");
+            if (height <= 0) {
+                throw new IIOException("Image height <= 0!");
             }
             if (bitDepth != 1 && bitDepth != 2 && bitDepth != 4 &&
                 bitDepth != 8 && bitDepth != 16) {
