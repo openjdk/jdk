@@ -270,7 +270,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"The.1.algorithm.specified.for.the.2.option.is.considered.a.security.risk.",
                 "The %1$s algorithm specified for the %2$s option is considered a security risk."},
         {"The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk.",
-                "The %s signing key has a keysize of %d which is considered a security risk."},
+                "The %1$s signing key has a keysize of %2$d which is considered a security risk."},
         {"This.jar.contains.entries.whose.certificate.chain.is.invalid.reason.1",
                  "This jar contains entries whose certificate chain is invalid. Reason: %s"},
         {"This.jar.contains.entries.whose.tsa.certificate.chain.is.invalid.reason.1",
