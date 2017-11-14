@@ -36,6 +36,9 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -55,6 +58,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -2771,8 +2775,56 @@ public class JShellTool implements MessageHandler {
         return null;
     }
 
-    // Read a built-in file from resources
-    static String readResource(String name) throws IOException {
+    // Read a built-in file from resources or compute it
+    static String readResource(String name) throws Exception {
+        // Class to compute imports by following requires for a module
+        class ComputeImports {
+            final String base;
+            ModuleFinder finder = ModuleFinder.ofSystem();
+
+            ComputeImports(String base) {
+                this.base = base;
+            }
+
+            Set<ModuleDescriptor> modules() {
+                Set<ModuleDescriptor> closure = new HashSet<>();
+                moduleClosure(finder.find(base), closure);
+                return closure;
+            }
+
+            void moduleClosure(Optional<ModuleReference> omr, Set<ModuleDescriptor> closure) {
+                if (omr.isPresent()) {
+                    ModuleDescriptor mdesc = omr.get().descriptor();
+                    if (closure.add(mdesc)) {
+                        for (ModuleDescriptor.Requires req : mdesc.requires()) {
+                            if (!req.modifiers().contains(ModuleDescriptor.Requires.Modifier.STATIC)) {
+                                moduleClosure(finder.find(req.name()), closure);
+                            }
+                        }
+                    }
+                }
+            }
+
+            Set<String> packages() {
+                return modules().stream().flatMap(md -> md.exports().stream())
+                        .filter(e -> !e.isQualified()).map(Object::toString).collect(Collectors.toSet());
+            }
+
+            String imports() {
+                Set<String> si = packages();
+                String[] ai = si.toArray(new String[si.size()]);
+                Arrays.sort(ai);
+                return Arrays.stream(ai)
+                        .map(p -> String.format("import %s.*;\n", p))
+                        .collect(Collectors.joining());
+            }
+        }
+
+        if (name.equals("JAVASE")) {
+            // The built-in JAVASE is computed as the imports of all the packages in Java SE
+            return new ComputeImports("java.se").imports();
+        }
+
         // Attempt to find the file as a resource
         String spec = String.format(BUILTIN_FILE_PATH_FORMAT, name);
 
