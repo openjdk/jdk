@@ -28,6 +28,7 @@
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -35,6 +36,7 @@
 class G1CMBitMap;
 class G1CMTask;
 class G1ConcurrentMark;
+class HeapRegion;
 
 // Closure for iteration over bitmaps
 class G1CMBitMapClosure VALUE_OBJ_CLASS_SPEC {
@@ -96,6 +98,7 @@ public:
   void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);
 
   // Read marks
+  bool is_marked(oop obj) const;
   bool is_marked(HeapWord* addr) const {
     assert(_covered.contains(addr),
            "Address " PTR_FORMAT " is outside underlying space from " PTR_FORMAT " to " PTR_FORMAT,
@@ -120,9 +123,12 @@ public:
   // Write marks.
   inline void mark(HeapWord* addr);
   inline void clear(HeapWord* addr);
+  inline void clear(oop obj);
   inline bool par_mark(HeapWord* addr);
+  inline bool par_mark(oop obj);
 
   void clear_range(MemRegion mr);
+  void clear_region(HeapRegion* hr);
 };
 
 #endif // SHARE_VM_GC_G1_G1CONCURRENTMARKBITMAP_HPP

@@ -31,7 +31,7 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
-#include "gc/g1/g1RemSet.inline.hpp"
+#include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
@@ -532,7 +532,7 @@ public:
 
 void G1RemSet::scrub(uint worker_num, HeapRegionClaimer *hrclaimer) {
   G1ScrubRSClosure scrub_cl(&_card_live_data);
-  _g1->heap_region_par_iterate(&scrub_cl, worker_num, hrclaimer);
+  _g1->heap_region_par_iterate_from_worker_offset(&scrub_cl, hrclaimer, worker_num);
 }
 
 inline void check_card_ptr(jbyte* card_ptr, CardTableModRefBS* ct_bs) {

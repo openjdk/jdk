@@ -38,6 +38,7 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
+#include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
@@ -48,10 +49,9 @@
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
-#include "gc/g1/g1RemSet.inline.hpp"
+#include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
-#include "gc/g1/g1SerialFullCollector.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
@@ -141,6 +141,12 @@ void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_region
   // The from card cache is not the memory that is actually committed. So we cannot
   // take advantage of the zero_filled parameter.
   reset_from_card_cache(start_idx, num_regions);
+}
+
+
+HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
+                                             MemRegion mr) {
+  return new HeapRegion(hrs_index, bot(), mr);
 }
 
 // Private methods.
@@ -1155,7 +1161,6 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
 
 void G1CollectedHeap::abort_refinement() {
   if (_hot_card_cache->use_cache()) {
-    _hot_card_cache->reset_card_counts();
     _hot_card_cache->reset_hot_cache();
   }
 
@@ -1199,6 +1204,10 @@ void G1CollectedHeap::verify_after_full_collection() {
 }
 
 void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_transition) {
+  // Post collection logging.
+  // We should do this after we potentially resize the heap so
+  // that all the COMMIT / UNCOMMIT events are generated before
+  // the compaction events.
   print_hrm_post_compaction();
   heap_transition->print();
   print_heap_after_gc();
@@ -1221,23 +1230,18 @@ void G1CollectedHeap::do_full_collection_inner(G1FullGCScope* scope) {
   gc_prologue(true);
   prepare_heap_for_full_collection();
 
-  G1SerialFullCollector serial(scope, ref_processor_stw());
-  serial.prepare_collection();
-  serial.collect();
-  serial.complete_collection();
+  G1FullCollector collector(scope, ref_processor_stw(), concurrent_mark()->next_mark_bitmap(), workers()->active_workers());
+  collector.prepare_collection();
+  collector.collect();
+  collector.complete_collection();
 
   prepare_heap_for_mutators();
 
   g1_policy()->record_full_collection_end();
   gc_epilogue(true);
 
-  // Post collection verification.
   verify_after_full_collection();
 
-  // Post collection logging.
-  // We should do this after we potentially resize the heap so
-  // that all the COMMIT / UNCOMMIT events are generated before
-  // the compaction events.
   print_heap_after_full_collection(scope->heap_transition());
 }
 
@@ -1269,10 +1273,10 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
 }
 
 void G1CollectedHeap::resize_if_necessary_after_full_collection() {
-  // Include bytes that will be pre-allocated to support collections, as "used".
-  const size_t used_after_gc = used();
+  // Capacity, free and used after the GC counted as full regions to
+  // include the waste in the following calculations.
   const size_t capacity_after_gc = capacity();
-  const size_t free_after_gc = capacity_after_gc - used_after_gc;
+  const size_t used_after_gc = capacity_after_gc - unused_committed_regions_in_bytes();
 
   // This is enforced in arguments.cpp.
   assert(MinHeapFreeRatio <= MaxHeapFreeRatio,
@@ -1326,8 +1330,9 @@ void G1CollectedHeap::resize_if_necessary_after_full_collection() {
     size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
 
     log_debug(gc, ergo, heap)("Attempt heap expansion (capacity lower than min desired capacity after Full GC). "
-                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B min_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
-                              capacity_after_gc, used_after_gc, minimum_desired_capacity, MinHeapFreeRatio);
+                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
+                              "min_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
+                              capacity_after_gc, used_after_gc, used(), minimum_desired_capacity, MinHeapFreeRatio);
 
     expand(expand_bytes, _workers);
 
@@ -1337,8 +1342,9 @@ void G1CollectedHeap::resize_if_necessary_after_full_collection() {
     size_t shrink_bytes = capacity_after_gc - maximum_desired_capacity;
 
     log_debug(gc, ergo, heap)("Attempt heap shrinking (capacity higher than max desired capacity after Full GC). "
-                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B min_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
-                              capacity_after_gc, used_after_gc, minimum_desired_capacity, MinHeapFreeRatio);
+                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
+                              "maximum_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
+                              capacity_after_gc, used_after_gc, used(), maximum_desired_capacity, MaxHeapFreeRatio);
 
     shrink(shrink_bytes);
   }
@@ -1959,6 +1965,10 @@ size_t G1CollectedHeap::capacity() const {
   return _hrm.length() * HeapRegion::GrainBytes;
 }
 
+size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
+  return _hrm.total_free_bytes();
+}
+
 void G1CollectedHeap::reset_gc_time_stamps(HeapRegion* hr) {
   hr->reset_gc_time_stamp();
 }
@@ -2262,10 +2272,15 @@ void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
   _hrm.iterate(cl);
 }
 
-void G1CollectedHeap::heap_region_par_iterate(HeapRegionClosure* cl,
-                                              uint worker_id,
-                                              HeapRegionClaimer *hrclaimer) const {
-  _hrm.par_iterate(cl, worker_id, hrclaimer);
+void G1CollectedHeap::heap_region_par_iterate_from_worker_offset(HeapRegionClosure* cl,
+                                                                 HeapRegionClaimer *hrclaimer,
+                                                                 uint worker_id) const {
+  _hrm.par_iterate(cl, hrclaimer, hrclaimer->offset_for_worker(worker_id));
+}
+
+void G1CollectedHeap::heap_region_par_iterate_from_start(HeapRegionClosure* cl,
+                                                         HeapRegionClaimer *hrclaimer) const {
+  _hrm.par_iterate(cl, hrclaimer, 0);
 }
 
 void G1CollectedHeap::collection_set_iterate(HeapRegionClosure* cl) {
@@ -2274,14 +2289,6 @@ void G1CollectedHeap::collection_set_iterate(HeapRegionClosure* cl) {
 
 void G1CollectedHeap::collection_set_iterate_from(HeapRegionClosure *cl, uint worker_id) {
   _collection_set.iterate_from(cl, worker_id, workers()->active_workers());
-}
-
-HeapRegion* G1CollectedHeap::next_compaction_region(const HeapRegion* from) const {
-  HeapRegion* result = _hrm.next_region_in_heap(from);
-  while (result != NULL && result->is_pinned()) {
-    result = _hrm.next_region_in_heap(result);
-  }
-  return result;
 }
 
 HeapWord* G1CollectedHeap::block_start(const void* addr) const {
@@ -2375,7 +2382,7 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
   switch (vo) {
   case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
   case VerifyOption_G1UseNextMarking: return is_obj_ill(obj, hr);
-  case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked() && !hr->is_archive();
+  case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj, hr);
   default:                            ShouldNotReachHere();
   }
   return false; // keep some compilers happy
@@ -2386,10 +2393,7 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
   switch (vo) {
   case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
   case VerifyOption_G1UseNextMarking: return is_obj_ill(obj);
-  case VerifyOption_G1UseMarkWord: {
-    HeapRegion* hr = _hrm.addr_to_region((HeapWord*)obj);
-    return !obj->is_gc_marked() && !hr->is_archive();
-  }
+  case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj);
   default:                            ShouldNotReachHere();
   }
   return false; // keep some compilers happy

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,8 +247,8 @@ public:
       _g1(G1CollectedHeap::heap()), _hrclaimer(n_workers) {}
 
   void work(uint worker_id) {
-    ParKnownGarbageHRClosure parKnownGarbageCl(_hrSorted, _chunk_size);
-    _g1->heap_region_par_iterate(&parKnownGarbageCl, worker_id, &_hrclaimer);
+    ParKnownGarbageHRClosure par_known_garbage_cl(_hrSorted, _chunk_size);
+    _g1->heap_region_par_iterate_from_worker_offset(&par_known_garbage_cl, &_hrclaimer, worker_id);
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1MarkSweep.hpp"
+#include "gc/g1/g1FullGCTask.hpp"
+#include "logging/log.hpp"
+#include "utilities/ticks.inline.hpp"
 
-void G1MarkSweep::prepare_compaction() {
-  G1PrepareCompactClosure blk;
-  G1MarkSweep::prepare_compaction_work(&blk);
+void G1FullGCTask::log_task(const char* name, uint worker_id, const Ticks& start, const Ticks& stop) {
+  Tickspan duration = stop - start;
+  double duration_ms = TimeHelper::counter_to_millis(duration.value());
+  log_trace(gc, phases)("%s (%u) %.3fms", name, worker_id, duration_ms);
 }

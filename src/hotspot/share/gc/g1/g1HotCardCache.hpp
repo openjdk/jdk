@@ -128,9 +128,6 @@ class G1HotCardCache: public CHeapObj<mtGC> {
     }
   }
 
-  // Zeros the values in the card counts table for entire committed heap
-  void reset_card_counts();
-
   // Zeros the values in the card counts table for the given region
   void reset_card_counts(HeapRegion* hr);
 

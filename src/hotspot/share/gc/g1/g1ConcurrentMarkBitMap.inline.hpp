@@ -83,4 +83,16 @@ inline bool G1CMBitMap::par_mark(HeapWord* addr) {
   return _bm.par_set_bit(addr_to_offset(addr));
 }
 
+inline bool G1CMBitMap::par_mark(oop obj) {
+  return par_mark((HeapWord*) obj);
+}
+
+inline bool G1CMBitMap::is_marked(oop obj) const{
+  return is_marked((HeapWord*) obj);
+}
+
+inline void G1CMBitMap::clear(oop obj) {
+  clear((HeapWord*) obj);
+}
+
 #endif // SHARE_VM_GC_G1_G1CONCURRENTMARKBITMAP_INLINE_HPP

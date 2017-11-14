@@ -110,7 +110,3 @@ void G1HotCardCache::drain(CardTableEntryClosure* cl, uint worker_i) {
 void G1HotCardCache::reset_card_counts(HeapRegion* hr) {
   _card_counts.clear_region(hr);
 }
-
-void G1HotCardCache::reset_card_counts() {
-  _card_counts.clear_all();
-}

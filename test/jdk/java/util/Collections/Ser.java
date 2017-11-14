@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4190323
  * @summary EMPTY_SET, EMPTY_LIST, and the collections returned by

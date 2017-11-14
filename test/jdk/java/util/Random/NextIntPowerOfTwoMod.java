@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4187412
  * @summary The FCS release of 1.2 did not special case the Random.nextInt

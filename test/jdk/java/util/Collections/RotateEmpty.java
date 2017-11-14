@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4389747
  * @summary Collections.rotate(...) returns ArithmeticException

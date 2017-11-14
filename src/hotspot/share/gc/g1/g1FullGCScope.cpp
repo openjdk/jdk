@@ -25,13 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 
-G1FullGCScope* G1FullGCScope::_instance = NULL;
-
-G1FullGCScope* G1FullGCScope::instance() {
-  assert(_instance != NULL, "Must be setup already");
-  return _instance;
-}
-
 G1FullGCScope::G1FullGCScope(bool explicit_gc, bool clear_soft) :
     _rm(),
     _explicit_gc(explicit_gc),
@@ -46,12 +39,10 @@ G1FullGCScope::G1FullGCScope(bool explicit_gc, bool clear_soft) :
     _memory_stats(true, _g1h->gc_cause()),
     _collector_stats(_g1h->g1mm()->full_collection_counters()),
     _heap_transition(_g1h) {
-  assert(_instance == NULL, "Only one scope at a time");
   _timer.register_gc_start();
   _tracer.report_gc_start(_g1h->gc_cause(), _timer.gc_start());
   _g1h->pre_full_gc_dump(&_timer);
   _g1h->trace_heap_before_gc(&_tracer);
-  _instance = this;
 }
 
 G1FullGCScope::~G1FullGCScope() {
@@ -64,7 +55,6 @@ G1FullGCScope::~G1FullGCScope() {
   _g1h->post_full_gc_dump(&_timer);
   _timer.register_gc_end();
   _tracer.report_gc_end(_timer.gc_end(), _timer.time_partitions());
-  _instance = NULL;
 }
 
 bool G1FullGCScope::is_explicit_gc() {
@@ -79,7 +69,7 @@ STWGCTimer* G1FullGCScope::timer() {
   return &_timer;
 }
 
-SerialOldTracer* G1FullGCScope::tracer() {
+G1FullGCTracer* G1FullGCScope::tracer() {
   return &_tracer;
 }
 

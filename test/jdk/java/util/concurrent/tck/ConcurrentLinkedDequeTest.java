@@ -936,6 +936,14 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
         }
     }
 
+    void runAsync(Runnable r1, Runnable r2) {
+        boolean b = ThreadLocalRandom.current().nextBoolean();
+        CompletableFuture<Void> f1 = CompletableFuture.runAsync(b ? r1 : r2);
+        CompletableFuture<Void> f2 = CompletableFuture.runAsync(b ? r2 : r1);
+        f1.join();
+        f2.join();
+    }
+
     /**
      * Non-traversing Deque operations are linearizable.
      * https://bugs.openjdk.java.net/browse/JDK-8188900
@@ -959,18 +967,9 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
                             x, nulls.sum(), zeros.sum()));
             };
 
-            Runnable adder = () -> {
-                d.addFirst(0);
-                d.addLast(42);
-            };
+            Runnable adder = () -> { d.addFirst(0); d.addLast(42); };
 
-            boolean b = rnd.nextBoolean();
-            Runnable r1 = b ? getter : adder;
-            Runnable r2 = b ? adder : getter;
-            CompletableFuture<Void> f1 = CompletableFuture.runAsync(r1);
-            CompletableFuture<Void> f2 = CompletableFuture.runAsync(r2);
-            f1.join();
-            f2.join();
+            runAsync(getter, adder);
         }
     }
 
@@ -995,18 +994,48 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
                             x, nulls.sum(), zeros.sum()));
             };
 
-            Runnable adder = () -> {
-                d.addLast(0);
-                d.addFirst(42);
-            };
+            Runnable adder = () -> { d.addLast(0); d.addFirst(42); };
 
-            boolean b = rnd.nextBoolean();
-            Runnable r1 = b ? getter : adder;
-            Runnable r2 = b ? adder : getter;
-            CompletableFuture<Void> f1 = CompletableFuture.runAsync(r1);
-            CompletableFuture<Void> f2 = CompletableFuture.runAsync(r2);
-            f1.join();
-            f2.join();
+            runAsync(getter, adder);
+        }
+    }
+
+    <T> T chooseRandomly(T... choices) {
+        return choices[ThreadLocalRandom.current().nextInt(choices.length)];
+    }
+
+    /**
+     * Non-traversing Deque operations (that return null) are linearizable.
+     * Don't return null when the deque is observably never empty.
+     * https://bugs.openjdk.java.net/browse/JDK-8189387
+     * ant -Djsr166.expensiveTests=true -Djsr166.tckTestClass=ConcurrentLinkedDequeTest -Djsr166.methodFilter=testBug8189387 tck
+     */
+    public void testBug8189387() {
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        Object x = new Object();
+        for (int n = expensiveTests ? 100_000 : 10; n--> 0; ) {
+            ConcurrentLinkedDeque<Object> d = new ConcurrentLinkedDeque<>();
+            Runnable add = chooseRandomly(
+                () -> d.addFirst(x),
+                () -> d.offerFirst(x),
+                () -> d.addLast(x),
+                () -> d.offerLast(x));
+
+            Runnable get = chooseRandomly(
+                () -> assertFalse(d.isEmpty()),
+                () -> assertSame(x, d.peekFirst()),
+                () -> assertSame(x, d.peekLast()),
+                () -> assertSame(x, d.pollFirst()),
+                () -> assertSame(x, d.pollLast()));
+
+            Runnable addRemove = chooseRandomly(
+                () -> { d.addFirst(x); d.pollLast(); },
+                () -> { d.offerFirst(x); d.removeFirst(); },
+                () -> { d.offerLast(x); d.removeLast(); },
+                () -> { d.addLast(x); d.pollFirst(); });
+
+            add.run();
+            runAsync(get, addRemove);
         }
     }
 }

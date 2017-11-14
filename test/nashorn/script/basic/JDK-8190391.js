@@ -19,31 +19,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_GC_G1_G1SERIALCOLLECTOR_HPP
-#define SHARE_VM_GC_G1_G1SERIALCOLLECTOR_HPP
+/**
+ * JDK-8190391 : nashorn: "!!" of nonzero even integer var becomes false when returned
+ *
+ * @test
+ * @run
+ */
 
-#include "memory/allocation.hpp"
 
-class G1FullGCScope;
-class ReferenceProcessor;
-
-class G1SerialFullCollector : StackObj {
-  G1FullGCScope*                       _scope;
-  ReferenceProcessor*                  _reference_processor;
-  ReferenceProcessorIsAliveMutator     _is_alive_mutator;
-  ReferenceProcessorMTDiscoveryMutator _mt_discovery_mutator;
-
-  void rebuild_remembered_sets();
-
-public:
-  G1SerialFullCollector(G1FullGCScope* scope, ReferenceProcessor* reference_processor);
-
-  void prepare_collection();
-  void collect();
-  void complete_collection();
-};
-
-#endif // SHARE_VM_GC_G1_G1SERIALCOLLECTOR_HPP
+function func(x){
+    return !!x;
+}
+print(func(0));
+print(func(2));
+print(func(3));

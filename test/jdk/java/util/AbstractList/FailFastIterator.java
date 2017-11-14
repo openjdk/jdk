@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4189896
  * @summary AbstractList iterators previously checked for co-modification

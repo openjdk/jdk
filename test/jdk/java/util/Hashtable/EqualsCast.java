@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4208530
  * @summary Hashtable was less robust to extension that it could have been

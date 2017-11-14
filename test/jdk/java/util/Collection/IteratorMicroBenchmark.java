@@ -233,7 +233,7 @@ public class IteratorMicroBenchmark {
     }
 
     // Checks for correctness *and* prevents loop optimizations
-    class Check {
+    static class Check {
         private int sum;
         public void sum(int sum) {
             if (this.sum == 0)

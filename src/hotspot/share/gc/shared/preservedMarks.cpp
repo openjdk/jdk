@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,18 @@ void PreservedMarks::restore() {
     elem.set_mark();
   }
   assert_empty();
+}
+
+void PreservedMarks::adjust_during_full_gc() {
+  StackIterator<OopAndMarkOop, mtGC> iter(_stack);
+  while (!iter.is_empty()) {
+    OopAndMarkOop* elem = iter.next_addr();
+
+    oop obj = elem->get_oop();
+    if (obj->is_forwarded()) {
+      elem->set_oop(obj->forwardee());
+    }
+  }
 }
 
 void PreservedMarks::restore_and_increment(volatile size_t* const total_size_addr) {
@@ -103,7 +115,6 @@ public:
     _sub_tasks.set_n_tasks(preserved_marks_set->num());
   }
 };
-
 
 void PreservedMarksSet::reclaim() {
   assert_empty();
