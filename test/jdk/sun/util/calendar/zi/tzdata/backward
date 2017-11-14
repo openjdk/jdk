@@ -84,7 +84,9 @@ Link	America/Sao_Paulo	Brazil/East
 Link	America/Manaus		Brazil/West
 Link	America/Halifax		Canada/Atlantic
 Link	America/Winnipeg	Canada/Central
-Link	America/Regina		Canada/East-Saskatchewan
+# This line is commented out, as the name exceeded the 14-character limit
+# and was an unused misnomer.
+#Link	America/Regina		Canada/East-Saskatchewan
 Link	America/Toronto		Canada/Eastern
 Link	America/Edmonton	Canada/Mountain
 Link	America/St_Johns	Canada/Newfoundland

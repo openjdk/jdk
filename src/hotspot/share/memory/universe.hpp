@@ -90,7 +90,7 @@ enum VerifyOption {
       // G1
       VerifyOption_G1UsePrevMarking = VerifyOption_Default,
       VerifyOption_G1UseNextMarking = VerifyOption_G1UsePrevMarking + 1,
-      VerifyOption_G1UseMarkWord    = VerifyOption_G1UseNextMarking + 1
+      VerifyOption_G1UseFullMarking = VerifyOption_G1UseNextMarking + 1
 };
 
 class Universe: AllStatic {

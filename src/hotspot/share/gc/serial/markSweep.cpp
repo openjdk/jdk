@@ -65,13 +65,6 @@ CLDToOopClosure               MarkSweep::follow_cld_closure(&mark_and_push_closu
 CLDToOopClosure               MarkSweep::adjust_cld_closure(&adjust_pointer_closure);
 
 inline void MarkSweep::mark_object(oop obj) {
-#if INCLUDE_ALL_GCS
-  if (G1StringDedup::is_enabled()) {
-    // We must enqueue the object before it is marked
-    // as we otherwise can't read the object's age.
-    G1StringDedup::enqueue_from_mark(obj);
-  }
-#endif
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of markSweep.
   markOop mark = obj->mark();

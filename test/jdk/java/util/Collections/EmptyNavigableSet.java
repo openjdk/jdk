@@ -50,7 +50,7 @@ import static org.testng.Assert.assertTrue;
 public class EmptyNavigableSet {
 
     public static <T> void assertInstance(T actual, Class<? extends T> expected) {
-        assertInstance(expected.isInstance(actual), null);
+        assertInstance(actual, expected, null);
     }
 
     public static <T> void assertInstance(T actual, Class<? extends T> expected, String message) {

@@ -36,7 +36,6 @@ import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
 import static org.testng.Assert.fail;
-import static org.testng.Assert.assertTrue;
 
 public class CheckedMapBash {
     static final Random rnd = new Random();
