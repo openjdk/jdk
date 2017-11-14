@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -140,13 +141,17 @@ public class Invoke {
         final boolean timed = rnd.nextBoolean();
         final ExecutorService pool = Executors.newSingleThreadExecutor();
         final AtomicLong count = new AtomicLong(0);
+        final CountDownLatch invokeAnyDone = new CountDownLatch(1);
         class Task implements Callable<Long> {
             public Long call() throws Exception {
                 long x = count.incrementAndGet();
                 check(x <= 2);
-                if (x == 2)
-                    // wait for main thread to interrupt us
+                if (x == 2) {
+                    // wait for main thread to interrupt us ...
                     awaitInterrupt(timeoutSeconds);
+                    // ... and then for invokeAny to return
+                    check(invokeAnyDone.await(timeoutSeconds, SECONDS));
+                }
                 return x;
             }
         }
@@ -166,6 +171,7 @@ public class Invoke {
             else
                 val = pool.invokeAny(tasks);
             check(val == 1);
+            invokeAnyDone.countDown();
 
             // inherent race between main thread interrupt and
             // start of second task

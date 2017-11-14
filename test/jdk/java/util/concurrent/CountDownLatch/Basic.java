@@ -96,7 +96,7 @@ public class Basic {
         int count = 0;
         Basic test = new Basic();
         CountDownLatch latch = new CountDownLatch(3);
-        Awaiter a[] = new Awaiter[12];
+        Awaiter[] a = new Awaiter[12];
 
         for (int i = 0; i < 3; i++) {
             CountDownLatch gate = new CountDownLatch(4);
@@ -125,7 +125,7 @@ public class Basic {
         int count = 0;
         Basic test = new Basic();
         CountDownLatch latch = new CountDownLatch(3);
-        Awaiter a[] = new Awaiter[12];
+        Awaiter[] a = new Awaiter[12];
 
         for (int i = 0; i < 3; i++) {
             CountDownLatch gate = new CountDownLatch(4);
@@ -156,7 +156,7 @@ public class Basic {
         int count =0;
         Basic test = new Basic();
         CountDownLatch latch = new CountDownLatch(3);
-        Awaiter a[] = new Awaiter[12];
+        Awaiter[] a = new Awaiter[12];
 
         long[] timeout = { 0L, 5L, 10L };
 
