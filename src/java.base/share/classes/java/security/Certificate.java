@@ -57,13 +57,12 @@ import java.util.Date;
  *
  * @author Benjamin Renaud
  * @since 1.1
- * @deprecated A new certificate handling package is created in the Java platform.
- *             This Certificate interface is entirely deprecated and
- *             is here to allow for a smooth transition to the new
- *             package.
+ * @deprecated This class is deprecated and subject to removal in a future
+ *     version of Java SE. It has been replaced by
+ *     {@code java.security.cert.Certificate} and related classes.
  * @see java.security.cert.Certificate
  */
-@Deprecated(since="1.2")
+@Deprecated(since="1.2", forRemoval=true)
 public interface Certificate {
 
     /**

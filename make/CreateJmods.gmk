@@ -80,8 +80,8 @@ ifneq ($(MAN_DIR), )
 endif
 
 LEGAL_NOTICES := \
-    $(SUPPORT_OUTPUTDIR)/modules_legal/java.base \
-    $(call FindModuleLegalDirs, $(MODULE)) \
+    $(call uniq, $(SUPPORT_OUTPUTDIR)/modules_legal/java.base \
+    $(call FindModuleLegalDirs, $(MODULE))) \
     #
 
 LEGAL_NOTICES_PATH := $(call PathList, $(LEGAL_NOTICES))
