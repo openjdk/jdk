@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4245809
  * @summary Basic test of removeEldestElement method.

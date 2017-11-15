@@ -35,6 +35,7 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/threadService.hpp"
@@ -1282,7 +1283,7 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
   OrderAccess::release_store(&_owner, (void*)NULL);
   OrderAccess::fence();                               // ST _owner vs LD in unpark()
 
-  if (SafepointSynchronize::do_call_back()) {
+  if (SafepointMechanism::poll(Self)) {
     TEVENT(unpark before SAFEPOINT);
   }
 
@@ -1936,7 +1937,7 @@ int ObjectMonitor::TrySpin(Thread * Self) {
     // This is in keeping with the "no loitering in runtime" rule.
     // We periodically check to see if there's a safepoint pending.
     if ((ctr & 0xFF) == 0) {
-      if (SafepointSynchronize::do_call_back()) {
+      if (SafepointMechanism::poll(Self)) {
         TEVENT(Spin: safepoint);
         goto Abort;           // abrupt spin egress
       }

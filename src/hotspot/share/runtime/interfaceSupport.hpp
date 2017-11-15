@@ -30,7 +30,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
-#include "runtime/safepoint.hpp"
+#include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -142,9 +142,7 @@ class ThreadStateTransition : public StackObj {
 
     InterfaceSupport::serialize_thread_state(thread);
 
-    if (SafepointSynchronize::do_call_back()) {
-      SafepointSynchronize::block(thread);
-    }
+    SafepointMechanism::block_if_requested(thread);
     thread->set_thread_state(to);
 
     CHECK_UNHANDLED_OOPS_ONLY(thread->clear_unhandled_oops();)
@@ -164,9 +162,7 @@ class ThreadStateTransition : public StackObj {
 
     InterfaceSupport::serialize_thread_state_with_handler(thread);
 
-    if (SafepointSynchronize::do_call_back()) {
-      SafepointSynchronize::block(thread);
-    }
+    SafepointMechanism::block_if_requested(thread);
     thread->set_thread_state(to);
 
     CHECK_UNHANDLED_OOPS_ONLY(thread->clear_unhandled_oops();)
@@ -191,7 +187,7 @@ class ThreadStateTransition : public StackObj {
     // We never install asynchronous exceptions when coming (back) in
     // to the runtime from native code because the runtime is not set
     // up to handle exceptions floating around at arbitrary points.
-    if (SafepointSynchronize::do_call_back() || thread->is_suspend_after_native()) {
+    if (SafepointMechanism::poll(thread) || thread->is_suspend_after_native()) {
       JavaThread::check_safepoint_and_suspend_for_native_trans(thread);
 
       // Clear unhandled oops anywhere where we could block, even if we don't.
@@ -207,6 +203,38 @@ class ThreadStateTransition : public StackObj {
    void trans_and_fence(JavaThreadState from, JavaThreadState to) { transition_and_fence(_thread, from, to); }
 };
 
+class ThreadInVMForHandshake : public ThreadStateTransition {
+  const JavaThreadState _original_state;
+
+  void transition_back() {
+    // This can be invoked from transition states and must return to the original state properly
+    assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
+    _thread->set_thread_state(_thread_in_vm_trans);
+
+    InterfaceSupport::serialize_thread_state(_thread);
+
+    SafepointMechanism::block_if_requested(_thread);
+
+    _thread->set_thread_state(_original_state);
+  }
+
+ public:
+
+  ThreadInVMForHandshake(JavaThread* thread) : ThreadStateTransition(thread),
+      _original_state(thread->thread_state()) {
+
+    if (thread->has_last_Java_frame()) {
+      thread->frame_anchor()->make_walkable(thread);
+    }
+
+    thread->set_thread_state(_thread_in_vm);
+  }
+
+  ~ThreadInVMForHandshake() {
+    transition_back();
+  }
+
+};
 
 class ThreadInVMfromJava : public ThreadStateTransition {
  public:

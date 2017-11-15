@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,6 @@ private:
 
   ciObject* create_new_object(oop o);
   ciMetadata* create_new_metadata(Metadata* o);
-
-  void ensure_metadata_alive(ciMetadata* m);
 
   static bool is_equal(NonPermObject* p, oop key) {
     return p->object()->get_oop() == key;

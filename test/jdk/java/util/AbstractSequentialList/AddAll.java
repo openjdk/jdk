@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4295163
  * @summary AddAll(int, Collection) intersperses the Collection with this List.

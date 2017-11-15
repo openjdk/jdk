@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4245809 8029795
  * @summary Basic test for LinkedHashMap.  (Based on MapBash)

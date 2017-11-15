@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class WorkGang;
 
 class PreservedMarks VALUE_OBJ_CLASS_SPEC {
 private:
-  class OopAndMarkOop {
+  class OopAndMarkOop VALUE_OBJ_CLASS_SPEC {
   private:
     oop _o;
     markOop _m;
@@ -43,23 +43,26 @@ private:
   public:
     OopAndMarkOop(oop obj, markOop m) : _o(obj), _m(m) { }
 
-    void set_mark() const {
-      _o->set_mark(_m);
-    }
+    oop get_oop() { return _o; }
+    void set_mark() const { _o->set_mark(_m); }
+    void set_oop(oop obj) { _o = obj; }
   };
   typedef Stack<OopAndMarkOop, mtGC> OopAndMarkOopStack;
 
   OopAndMarkOopStack _stack;
 
   inline bool should_preserve_mark(oop obj, markOop m) const;
-  inline void push(oop obj, markOop m);
 
 public:
   size_t size() const { return _stack.size(); }
+  inline void push(oop obj, markOop m);
   inline void push_if_necessary(oop obj, markOop m);
   // Iterate over the stack, restore all preserved marks, and
   // reclaim the memory taken up by the stack segments.
   void restore();
+  // Iterate over the stack, adjust all preserved marks according
+  // to their forwarding location stored in the mark.
+  void adjust_during_full_gc();
 
   void restore_and_increment(volatile size_t* const _total_size_addr);
   inline static void init_forwarded_mark(oop obj);

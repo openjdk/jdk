@@ -37,6 +37,9 @@ hotspot_gc = \
 hotspot_runtime = \
   runtime
 
+hotspot_handshake = \
+  runtime/handshake
+
 hotspot_serviceability = \
   serviceability
 

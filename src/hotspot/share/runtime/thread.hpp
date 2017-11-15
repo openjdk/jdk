@@ -31,6 +31,7 @@
 #include "oops/oop.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -270,6 +271,8 @@ class Thread: public ThreadShadow {
   friend class NoSafepointVerifier;
   friend class PauseNoSafepointVerifier;
   friend class GCLocker;
+
+  volatile void* _polling_page;                 // Thread local polling page
 
   ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
@@ -549,6 +552,8 @@ protected:
   uintptr_t        _self_raw_id;      // used by get_thread (mutable)
   int              _lgrp_id;
 
+  volatile void** polling_page_addr() { return &_polling_page; }
+
  public:
   // Stack overflow support
   address stack_base() const           { assert(_stack_base != NULL,"Sanity check"); return _stack_base; }
@@ -616,6 +621,8 @@ protected:
 
   static ByteSize stack_base_offset()            { return byte_offset_of(Thread, _stack_base); }
   static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size); }
+
+  static ByteSize polling_page_offset()          { return byte_offset_of(Thread, _polling_page); }
 
 #define TLAB_FIELD_OFFSET(name) \
   static ByteSize tlab_##name##_offset()         { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::name##_offset(); }
@@ -1134,6 +1141,33 @@ class JavaThread: public Thread {
 
   bool do_not_unlock_if_synchronized()             { return _do_not_unlock_if_synchronized; }
   void set_do_not_unlock_if_synchronized(bool val) { _do_not_unlock_if_synchronized = val; }
+
+  inline void set_polling_page(void* poll_value);
+  inline volatile void* get_polling_page();
+
+ private:
+  // Support for thread handshake operations
+  HandshakeState _handshake;
+ public:
+  void set_handshake_operation(HandshakeOperation* op) {
+    _handshake.set_operation(this, op);
+  }
+
+  bool has_handshake() const {
+    return _handshake.has_operation();
+  }
+
+  void cancel_handshake() {
+    _handshake.cancel(this);
+  }
+
+  void handshake_process_by_self() {
+    _handshake.process_by_self(this);
+  }
+
+  void handshake_process_by_vmthread() {
+    _handshake.process_by_vmthread(this);
+  }
 
   // Suspend/resume support for JavaThread
  private:

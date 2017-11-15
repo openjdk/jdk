@@ -163,4 +163,16 @@ inline bool JavaThread::stack_guards_enabled() {
   return _stack_guard_state == stack_guard_enabled;
 }
 
+// The release make sure this store is done after storing the handshake
+// operation or global state
+inline void JavaThread::set_polling_page(void* poll_value) {
+  OrderAccess::release_store(polling_page_addr(), poll_value);
+}
+
+// The aqcquire make sure reading of polling page is done before
+// the reading the handshake operation or the global state
+inline volatile void* JavaThread::get_polling_page() {
+  return OrderAccess::load_acquire(polling_page_addr());
+}
+
 #endif // SHARE_VM_RUNTIME_THREAD_INLINE_HPP

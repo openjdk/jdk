@@ -47,9 +47,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldType.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-# include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#endif
 
 // ciObjectFactory
 //
@@ -363,19 +360,6 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
 ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
   EXCEPTION_CONTEXT;
 
-  // Hold metadata from unloading by keeping it's holder alive.
-  if (_initialized && o->is_klass()) {
-    Klass* holder = ((Klass*)o);
-    if (holder->is_instance_klass() && InstanceKlass::cast(holder)->is_anonymous()) {
-      // Though ciInstanceKlass records class loader oop, it's not enough to keep
-      // VM anonymous classes alive (loader == NULL). Klass holder should be used instead.
-      // It is enough to record a ciObject, since cached elements are never removed
-      // during ciObjectFactory lifetime. ciObjectFactory itself is created for
-      // every compilation and lives for the whole duration of the compilation.
-      ciObject* h = get(holder->klass_holder());
-    }
-  }
-
   if (o->is_klass()) {
     Klass* k = (Klass*)o;
     if (k->is_instance_klass()) {
@@ -399,38 +383,6 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
   // The Metadata* is of some type not supported by the compiler interface.
   ShouldNotReachHere();
   return NULL;
-}
-
-// ------------------------------------------------------------------
-// ciObjectFactory::ensure_metadata_alive
-//
-// Ensure that the metadata wrapped by the ciMetadata is kept alive by GC.
-// This is primarily useful for metadata which is considered as weak roots
-// by the GC but need to be strong roots if reachable from a current compilation.
-//
-void ciObjectFactory::ensure_metadata_alive(ciMetadata* m) {
-  ASSERT_IN_VM; // We're handling raw oops here.
-
-#if INCLUDE_ALL_GCS
-  if (!UseG1GC) {
-    return;
-  }
-  Klass* metadata_owner_klass;
-  if (m->is_klass()) {
-    metadata_owner_klass = m->as_klass()->get_Klass();
-  } else if (m->is_method()) {
-    metadata_owner_klass = m->as_method()->get_Method()->constants()->pool_holder();
-  } else {
-    fatal("Not implemented for other types of metadata");
-    return;
-  }
-
-  oop metadata_holder = metadata_owner_klass->klass_holder();
-  if (metadata_holder != NULL) {
-    G1SATBCardTableModRefBS::enqueue(metadata_holder);
-  }
-
-#endif
 }
 
 //------------------------------------------------------------------

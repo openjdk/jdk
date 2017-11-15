@@ -1206,7 +1206,11 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   Compile* C = ra_->C;
 
   if(do_polling() && ra_->C->is_method_compilation()) {
-    st->print("SETHI  #PollAddr,L0\t! Load Polling address\n\t");
+    if (SafepointMechanism::uses_global_page_poll()) {
+      st->print("SETHI  #PollAddr,L0\t! Load Polling address\n\t");
+    } else {
+      st->print("LDX    [R_G2 + #poll_offset],L0\t! Load local polling address\n\t");
+    }
     st->print("LDX    [L0],G0\t!Poll for Safepointing\n\t");
   }
 
@@ -1233,8 +1237,12 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // If this does safepoint polling, then do it here
   if(do_polling() && ra_->C->is_method_compilation()) {
-    AddressLiteral polling_page(os::get_polling_page());
-    __ sethi(polling_page, L0);
+    if (SafepointMechanism::uses_thread_local_poll()) {
+      __ ld_ptr(Address(G2_thread, Thread::polling_page_offset()), L0);
+    } else {
+      AddressLiteral polling_page(os::get_polling_page());
+      __ sethi(polling_page, L0);
+    }
     __ relocate(relocInfo::poll_return_type);
     __ ld_ptr(L0, 0, G0);
   }
@@ -1266,6 +1274,7 @@ const Pipeline * MachEpilogNode::pipeline() const {
 }
 
 int MachEpilogNode::safepoint_offset() const {
+  assert(SafepointMechanism::uses_global_page_poll(), "sanity");
   assert( do_polling(), "no return for this epilog node");
   return MacroAssembler::insts_for_sethi(os::get_polling_page()) * BytesPerInstWord;
 }

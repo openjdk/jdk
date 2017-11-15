@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4421469 6282555
  * @summary Hashtable's toString method should detect self-referential

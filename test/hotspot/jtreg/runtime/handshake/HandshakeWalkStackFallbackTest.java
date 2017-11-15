@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/g1/g1MarkSweep.hpp"
+/*
+ * @test HandshakeWalkStackFallbackTest
+ * @summary This test the global safepoint fallback path for handshakes
+ * @library /testlibrary /test/lib
+ * @build HandshakeWalkStackTest
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-ThreadLocalHandshakes HandshakeWalkStackTest
+ */
 
-void G1MarkSweep::prepare_compaction() {
-  G1PrepareCompactClosure blk;
-  G1MarkSweep::prepare_compaction_work(&blk);
-}

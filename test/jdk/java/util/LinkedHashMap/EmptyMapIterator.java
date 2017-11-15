@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4473440
  * @summary iterators on collection views of empty map weren't fail-fast.
@@ -30,7 +30,7 @@
 import java.util.*;
 
 public class EmptyMapIterator {
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         HashMap map = new HashMap();
         Iterator iter = iter = map.entrySet().iterator();
         map.put("key", "value");

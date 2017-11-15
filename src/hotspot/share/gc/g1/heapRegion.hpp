@@ -57,6 +57,7 @@
 
 class G1CollectedHeap;
 class G1CMBitMap;
+class G1IsAliveAndApplyClosure;
 class HeapRegionRemSet;
 class HeapRegionRemSetIterator;
 class HeapRegion;
@@ -355,8 +356,14 @@ class HeapRegion: public G1ContiguousSpace {
   // and the amount of unallocated words if called on top()
   size_t block_size(const HeapWord* p) const;
 
+  // Scans through the region using the bitmap to determine what
+  // objects to call size_t ApplyToMarkedClosure::apply(oop) for.
+  template<typename ApplyToMarkedClosure>
+  inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
   // Override for scan_and_forward support.
   void prepare_for_compaction(CompactPoint* cp);
+  // Update heap region to be consistent after compaction.
+  void complete_compaction();
 
   inline HeapWord* par_allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* word_size);
   inline HeapWord* allocate_no_bot_updates(size_t word_size);
@@ -672,10 +679,6 @@ class HeapRegion: public G1ContiguousSpace {
     _predicted_elapsed_time_ms = ms;
   }
 
-  virtual CompactibleSpace* next_compaction_space() const;
-
-  virtual void reset_after_compaction();
-
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.
   void add_strong_code_root(nmethod* nm);
@@ -693,9 +696,9 @@ class HeapRegion: public G1ContiguousSpace {
   void print() const;
   void print_on(outputStream* st) const;
 
-  // vo == UsePrevMarking  -> use "prev" marking information,
+  // vo == UsePrevMarking -> use "prev" marking information,
   // vo == UseNextMarking -> use "next" marking information
-  // vo == UseMarkWord    -> use the mark word in the object header
+  // vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   //
   // NOTE: Only the "prev" marking information is guaranteed to be
   // consistent most of the time, so most calls to this should use
@@ -704,7 +707,7 @@ class HeapRegion: public G1ContiguousSpace {
   // vo == UseNextMarking, which is to verify the "next" marking
   // information at the end of remark.
   // Currently there is only one place where this is called with
-  // vo == UseMarkWord, which is to verify the marking during a
+  // vo == UseFullMarking, which is to verify the marking during a
   // full GC.
   void verify(VerifyOption vo, bool *failures) const;
 

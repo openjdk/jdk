@@ -114,10 +114,6 @@ public:
 
   G1RemSetScanState* scan_state() const { return _scan_state; }
 
-  // Record, if necessary, the fact that *p (where "p" is in region "from",
-  // which is required to be non-NULL) has changed to a new non-NULL value.
-  template <class T> void par_write_ref(HeapRegion* from, T* p, uint tid);
-
   // Eliminates any remembered set entries that correspond to dead heap ranges.
   void scrub(uint worker_num, HeapRegionClaimer* hrclaimer);
 
@@ -189,27 +185,6 @@ public:
   size_t cards_scanned() const { return _cards_scanned; }
   size_t cards_claimed() const { return _cards_claimed; }
   size_t cards_skipped() const { return _cards_skipped; }
-};
-
-class RebuildRSOopClosure: public ExtendedOopClosure {
-  HeapRegion* _from;
-  G1RemSet* _rs;
-  uint _worker_i;
-
-  template <class T> void do_oop_work(T* p);
-
-public:
-  RebuildRSOopClosure(G1RemSet* rs, uint worker_i = 0) :
-    _from(NULL), _rs(rs), _worker_i(worker_i)
-  {}
-
-  void set_from(HeapRegion* from) {
-    assert(from != NULL, "from region must be non-NULL");
-    _from = from;
-  }
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
 };
 
 #endif // SHARE_VM_GC_G1_G1REMSET_HPP

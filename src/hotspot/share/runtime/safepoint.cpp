@@ -52,6 +52,7 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -169,21 +170,32 @@ void SafepointSynchronize::begin() {
     int initial_running = 0;
 
     _state            = _synchronizing;
-    OrderAccess::fence();
+
+    if (SafepointMechanism::uses_thread_local_poll()) {
+      // Arming the per thread poll while having _state != _not_synchronized means safepointing
+      log_trace(safepoint)("Setting thread local yield flag for threads");
+      for (JavaThread *cur = Threads::first(); cur != NULL; cur = cur->next()) {
+        // Make sure the threads start polling, it is time to yield.
+        SafepointMechanism::arm_local_poll(cur); // release store, global state -> local state
+      }
+    }
+    OrderAccess::fence(); // storestore|storeload, global state -> local state
 
     // Flush all thread states to memory
     if (!UseMembar) {
       os::serialize_thread_states();
     }
 
-    // Make interpreter safepoint aware
-    Interpreter::notice_safepoints();
+    if (SafepointMechanism::uses_global_page_poll()) {
+      // Make interpreter safepoint aware
+      Interpreter::notice_safepoints();
 
-    if (DeferPollingPageLoopCount < 0) {
-      // Make polling safepoint aware
-      guarantee (PageArmed == 0, "invariant") ;
-      PageArmed = 1 ;
-      os::make_polling_page_unreadable();
+      if (DeferPollingPageLoopCount < 0) {
+        // Make polling safepoint aware
+        guarantee (PageArmed == 0, "invariant") ;
+        PageArmed = 1 ;
+        os::make_polling_page_unreadable();
+      }
     }
 
     // Consider using active_processor_count() ... but that call is expensive.
@@ -293,7 +305,7 @@ void SafepointSynchronize::begin() {
         // 9. On windows consider using the return value from SwitchThreadTo()
         //    to drive subsequent spin/SwitchThreadTo()/Sleep(N) decisions.
 
-        if (int(iterations) == DeferPollingPageLoopCount) {
+        if (SafepointMechanism::uses_global_page_poll() && int(iterations) == DeferPollingPageLoopCount) {
           guarantee (PageArmed == 0, "invariant") ;
           PageArmed = 1 ;
           os::make_polling_page_unreadable();
@@ -444,7 +456,7 @@ void SafepointSynchronize::end() {
   // A pending_exception cannot be installed during a safepoint.  The threads
   // may install an async exception after they come back from a safepoint into
   // pending_exception after they unblock.  But that should happen later.
-  for(JavaThread *cur = Threads::first(); cur; cur = cur->next()) {
+  for (JavaThread *cur = Threads::first(); cur; cur = cur->next()) {
     assert (!(cur->has_pending_exception() &&
               cur->safepoint_state()->is_at_poll_safepoint()),
             "safepoint installed a pending exception");
@@ -452,46 +464,60 @@ void SafepointSynchronize::end() {
 #endif // ASSERT
 
   if (PageArmed) {
+    assert(SafepointMechanism::uses_global_page_poll(), "sanity");
     // Make polling safepoint aware
     os::make_polling_page_readable();
     PageArmed = 0 ;
   }
 
-  // Remove safepoint check from interpreter
-  Interpreter::ignore_safepoints();
+  if (SafepointMechanism::uses_global_page_poll()) {
+    // Remove safepoint check from interpreter
+    Interpreter::ignore_safepoints();
+  }
 
   {
     MutexLocker mu(Safepoint_lock);
 
     assert(_state == _synchronized, "must be synchronized before ending safepoint synchronization");
 
-    // Set to not synchronized, so the threads will not go into the signal_thread_blocked method
-    // when they get restarted.
-    _state = _not_synchronized;
-    OrderAccess::fence();
-
-    log_debug(safepoint)("Leaving safepoint region");
-
-    // Start suspended threads
-    for(JavaThread *current = Threads::first(); current; current = current->next()) {
-      // A problem occurring on Solaris is when attempting to restart threads
-      // the first #cpus - 1 go well, but then the VMThread is preempted when we get
-      // to the next one (since it has been running the longest).  We then have
-      // to wait for a cpu to become available before we can continue restarting
-      // threads.
-      // FIXME: This causes the performance of the VM to degrade when active and with
-      // large numbers of threads.  Apparently this is due to the synchronous nature
-      // of suspending threads.
-      //
-      // TODO-FIXME: the comments above are vestigial and no longer apply.
-      // Furthermore, using solaris' schedctl in this particular context confers no benefit
-      if (VMThreadHintNoPreempt) {
-        os::hint_no_preempt();
+    if (SafepointMechanism::uses_thread_local_poll()) {
+      _state = _not_synchronized;
+      OrderAccess::storestore(); // global state -> local state
+      for (JavaThread *current = Threads::first(); current; current = current->next()) {
+        ThreadSafepointState* cur_state = current->safepoint_state();
+        cur_state->restart(); // TSS _running
+        SafepointMechanism::disarm_local_poll(current); // release store, local state -> polling page
       }
-      ThreadSafepointState* cur_state = current->safepoint_state();
-      assert(cur_state->type() != ThreadSafepointState::_running, "Thread not suspended at safepoint");
-      cur_state->restart();
-      assert(cur_state->is_running(), "safepoint state has not been reset");
+      log_debug(safepoint)("Leaving safepoint region");
+    } else {
+      // Set to not synchronized, so the threads will not go into the signal_thread_blocked method
+      // when they get restarted.
+      _state = _not_synchronized;
+      OrderAccess::fence();
+
+      log_debug(safepoint)("Leaving safepoint region");
+
+      // Start suspended threads
+      for (JavaThread *current = Threads::first(); current; current = current->next()) {
+        // A problem occurring on Solaris is when attempting to restart threads
+        // the first #cpus - 1 go well, but then the VMThread is preempted when we get
+        // to the next one (since it has been running the longest).  We then have
+        // to wait for a cpu to become available before we can continue restarting
+        // threads.
+        // FIXME: This causes the performance of the VM to degrade when active and with
+        // large numbers of threads.  Apparently this is due to the synchronous nature
+        // of suspending threads.
+        //
+        // TODO-FIXME: the comments above are vestigial and no longer apply.
+        // Furthermore, using solaris' schedctl in this particular context confers no benefit
+        if (VMThreadHintNoPreempt) {
+          os::hint_no_preempt();
+        }
+        ThreadSafepointState* cur_state = current->safepoint_state();
+        assert(cur_state->type() != ThreadSafepointState::_running, "Thread not suspended at safepoint");
+        cur_state->restart();
+        assert(cur_state->is_running(), "safepoint state has not been reset");
+      }
     }
 
     RuntimeService::record_safepoint_end();
@@ -855,7 +881,9 @@ void SafepointSynchronize::block(JavaThread *thread) {
 void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
   assert(thread->is_Java_thread(), "polling reference encountered by VM thread");
   assert(thread->thread_state() == _thread_in_Java, "should come from Java code");
-  assert(SafepointSynchronize::is_synchronizing(), "polling encountered outside safepoint synchronization");
+  if (!ThreadLocalHandshakes) {
+    assert(SafepointSynchronize::is_synchronizing(), "polling encountered outside safepoint synchronization");
+  }
 
   if (ShowSafepointMsgs) {
     tty->print("handle_polling_page_exception: ");
@@ -887,7 +915,7 @@ void SafepointSynchronize::print_safepoint_timeout(SafepointTimeoutReason reason
     tty->print_cr("# SafepointSynchronize::begin: Threads which did not reach the safepoint:");
     ThreadSafepointState *cur_state;
     ResourceMark rm;
-    for(JavaThread *cur_thread = Threads::first(); cur_thread;
+    for (JavaThread *cur_thread = Threads::first(); cur_thread;
         cur_thread = cur_thread->next()) {
       cur_state = cur_thread->safepoint_state();
 
@@ -1053,13 +1081,14 @@ void ThreadSafepointState::print_on(outputStream *st) const {
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-// Block the thread at the safepoint poll or poll return.
+// Block the thread at poll or poll return for safepoint/handshake.
 void ThreadSafepointState::handle_polling_page_exception() {
 
   // Check state.  block() will set thread state to thread_in_vm which will
   // cause the safepoint state _type to become _call_back.
-  assert(type() == ThreadSafepointState::_running,
-         "polling page exception on thread not running state");
+  suspend_type t = type();
+  assert(!SafepointMechanism::uses_global_page_poll() || t == ThreadSafepointState::_running,
+         "polling page exception on thread not running state: %u", uint(t));
 
   // Step 1: Find the nmethod from the return address
   if (ShowSafepointMsgs && Verbose) {
@@ -1101,7 +1130,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
     }
 
     // Block the thread
-    SafepointSynchronize::block(thread());
+    SafepointMechanism::block_if_requested(thread());
 
     // restore oop result, if any
     if (return_oop) {
@@ -1117,7 +1146,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
     assert(real_return_addr == caller_fr.pc(), "must match");
 
     // Block the thread
-    SafepointSynchronize::block(thread());
+    SafepointMechanism::block_if_requested(thread());
     set_at_poll_safepoint(false);
 
     // If we have a pending async exception deoptimize the frame
@@ -1398,7 +1427,7 @@ void SafepointSynchronize::print_state() {
     tty->print_cr("State: %s", (_state == _synchronizing) ? "synchronizing" :
                   "synchronized");
 
-    for(JavaThread *cur = Threads::first(); cur; cur = cur->next()) {
+    for (JavaThread *cur = Threads::first(); cur; cur = cur->next()) {
        cur->safepoint_state()->print();
     }
   }

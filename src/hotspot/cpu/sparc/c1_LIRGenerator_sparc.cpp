@@ -33,6 +33,7 @@
 #include "ci/ciArray.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "vmreg_sparc.inline.hpp"
@@ -1304,7 +1305,7 @@ void LIRGenerator::do_If(If* x) {
   if (x->is_safepoint()) {
     // increment backedge counter if needed
     increment_backedge_counter(state_for(x, x->state_before()), x->profiled_bci());
-    __ safepoint(new_register(T_INT), state_for(x, x->state_before()));
+    __ safepoint(safepoint_poll_register(), state_for(x, x->state_before()));
   }
 
   __ cmp(lir_cond(cond), left, right);

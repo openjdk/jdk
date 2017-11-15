@@ -49,7 +49,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
                             bool check_exceptions);
 
   // base routine for all dispatches
-  void dispatch_base(TosState state, address* table, bool verifyoop = true);
+  void dispatch_base(TosState state, address* table, bool verifyoop = true, bool generate_poll = false);
 
  public:
   InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code),
@@ -184,12 +184,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void dispatch_prolog(TosState state, int step = 0);
   void dispatch_epilog(TosState state, int step = 0);
   // dispatch via rbx (assume rbx is loaded already)
-  void dispatch_only(TosState state);
+  void dispatch_only(TosState state, bool generate_poll = false);
   // dispatch normal table via rbx (assume rbx is loaded already)
   void dispatch_only_normal(TosState state);
   void dispatch_only_noverify(TosState state);
   // load rbx from [_bcp_register + step] and dispatch via rbx
-  void dispatch_next(TosState state, int step = 0);
+  void dispatch_next(TosState state, int step = 0, bool generate_poll = false);
   // load rbx from [_bcp_register] and dispatch via rbx and table
   void dispatch_via (TosState state, address* table);
 
