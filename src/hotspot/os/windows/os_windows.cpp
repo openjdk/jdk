@@ -2487,6 +2487,20 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
+      CompiledMethod* nm = NULL;
+      JavaThread* thread = (JavaThread*)t;
+      if (in_java) {
+        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
+      }
+      if ((thread->thread_state() == _thread_in_vm &&
+          thread->doing_unsafe_access()) ||
+          (nm != NULL && nm->has_unsafe_access())) {
+        return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, (address)Assembler::locate_next_instruction(pc)));
+      }
+    }
+
     if (in_java) {
       switch (exception_code) {
       case EXCEPTION_INT_DIVIDE_BY_ZERO:
