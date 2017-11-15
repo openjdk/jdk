@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8177076
+ * @bug 8177076 8185840
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
@@ -107,11 +107,16 @@ public class ToolTabCommandTest extends UITesting {
             waitOutput(out, Pattern.quote(getResource("help.exit.summary")) + "\n\n" +
                             Pattern.quote(getResource("jshell.console.see.full.documentation")) + "\n\r\u0005/exit ");
             inputSink.write("\011");
-            waitOutput(out, Pattern.quote(getResource("help.exit")) + "\n" +
+            waitOutput(out, Pattern.quote(getResource("help.exit").replaceAll("\t", "    ")) + "\n" +
                             "\r\u0005/exit ");
             inputSink.write("\011");
             waitOutput(out, Pattern.quote(getResource("help.exit.summary")) + "\n\n" +
                             Pattern.quote(getResource("jshell.console.see.full.documentation")) + "\n\r\u0005/exit ");
+            inputSink.write("\u0003");
+            inputSink.write("int zebraStripes = 11\n");
+            waitOutput(out, "zebraStripes ==> 11\n\u0005");
+            inputSink.write("/exit zeb\011");
+            waitOutput(out, "braStr.*es");
             inputSink.write("\u0003/doesnotexist\011");
             waitOutput(out, "\u0005/doesnotexist\n" +
                             Pattern.quote(getResource("jshell.console.no.such.command")) + "\n" +

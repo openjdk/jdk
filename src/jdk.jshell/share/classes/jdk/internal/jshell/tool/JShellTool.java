@@ -27,6 +27,7 @@ package jdk.internal.jshell.tool;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -81,10 +82,12 @@ import jdk.jshell.JShell;
 import jdk.jshell.JShell.Subscription;
 import jdk.jshell.MethodSnippet;
 import jdk.jshell.Snippet;
+import jdk.jshell.Snippet.Kind;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.SnippetEvent;
 import jdk.jshell.SourceCodeAnalysis;
 import jdk.jshell.SourceCodeAnalysis.CompletionInfo;
+import jdk.jshell.SourceCodeAnalysis.Completeness;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.UnresolvedReferenceException;
@@ -112,6 +115,7 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static jdk.jshell.Snippet.SubKind.TEMP_VAR_EXPRESSION_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.VAR_VALUE_SUBKIND;
 import static java.util.stream.Collectors.toMap;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_COMPA;
@@ -203,6 +207,7 @@ public class JShellTool implements MessageHandler {
     private boolean isCurrentlyRunningStartup = false;
     private String executionControlSpec = null;
     private EditorSetting editor = BUILT_IN_EDITOR;
+    private int exitCode = 0;
 
     private static final String[] EDITOR_ENV_VARS = new String[] {
         "JSHELLEDITOR", "VISUAL", "EDITOR"};
@@ -219,6 +224,7 @@ public class JShellTool implements MessageHandler {
 
     static final Pattern BUILTIN_FILE_PATTERN = Pattern.compile("\\w+");
     static final String BUILTIN_FILE_PATH_FORMAT = "/jdk/jshell/tool/resources/%s.jsh";
+    static final String INT_PREFIX = "int $$exit$$ = ";
 
     // match anything followed by whitespace
     private static final Pattern OPTION_PRE_PATTERN =
@@ -364,6 +370,7 @@ public class JShellTool implements MessageHandler {
                             .stream()
                             .collect(joining(", ")));
                 }
+                exitCode = 1;
                 return null;
             }
         }
@@ -424,7 +431,12 @@ public class JShellTool implements MessageHandler {
                     .collect(toList())
             );
 
-            return failed ? null : opts;
+            if (failed) {
+                exitCode = 1;
+                return null;
+            } else {
+                return opts;
+            }
         }
 
         void addOptions(OptionKind kind, Collection<String> vals) {
@@ -537,6 +549,7 @@ public class JShellTool implements MessageHandler {
                     (options.has(argS) ? 1 : 0) +
                     (options.has(argV) ? 1 : 0)) > 1) {
                 msg("jshell.err.opt.feedback.one");
+                exitCode = 1;
                 return null;
             } else if (options.has(argFeedback)) {
                 feedbackMode = options.valueOf(argFeedback);
@@ -551,10 +564,12 @@ public class JShellTool implements MessageHandler {
                 List<String> sts = options.valuesOf(argStart);
                 if (options.has("no-startup")) {
                     msg("jshell.err.opt.startup.conflict");
+                    exitCode = 1;
                     return null;
                 }
                 initialStartup = Startup.fromFileList(sts, "--startup", new InitMessageHandler());
                 if (initialStartup == null) {
+                    exitCode = 1;
                     return null;
                 }
             } else if (options.has(argNoStart)) {
@@ -865,13 +880,15 @@ public class JShellTool implements MessageHandler {
      *
      * @param args the command-line arguments
      * @throws Exception catastrophic fatal exception
+     * @return the exit code
      */
-    public void start(String[] args) throws Exception {
+    public int start(String[] args) throws Exception {
         OptionParserCommandLine commandLineArgs = new OptionParserCommandLine();
         options = commandLineArgs.parse(args);
         if (options == null) {
-            // Abort
-            return;
+            // A null means end immediately, this may be an error or because
+            // of options like --version.  Exit code has been set.
+            return exitCode;
         }
         startup = commandLineArgs.startup();
         // initialize editor settings
@@ -883,7 +900,7 @@ public class JShellTool implements MessageHandler {
             // Display just the cause (not a exception backtrace)
             cmderr.println(ex.getMessage());
             //abort
-            return;
+            return 1;
         }
         // Read replay history from last jshell session into previous history
         replayableHistoryPrevious = ReplayableHistory.fromPrevious(prefs);
@@ -891,7 +908,7 @@ public class JShellTool implements MessageHandler {
         for (String loadFile : commandLineArgs.nonOptions()) {
             if (!runFile(loadFile, "jshell")) {
                 // Load file failed -- abort
-                return;
+                return 1;
             }
         }
         // if we survived that...
@@ -934,6 +951,7 @@ public class JShellTool implements MessageHandler {
             }
         }
         closeState();
+        return exitCode;
     }
 
     private EditorSetting configEditor() {
@@ -1071,6 +1089,7 @@ public class JShellTool implements MessageHandler {
             // The feedback mode to use was specified on the command line, use it
             if (!setFeedback(initmh, new ArgTokenizer("--feedback", initMode))) {
                 regenerateOnDeath = false;
+                exitCode = 1;
             }
         } else {
             String fb = prefs.get(FEEDBACK_KEY);
@@ -1105,60 +1124,127 @@ public class JShellTool implements MessageHandler {
 
     /**
      * Main loop
+     *
      * @param in the line input/editing context
      */
     private void run(IOContext in) {
         IOContext oldInput = input;
         input = in;
         try {
-            String incomplete = "";
+            // remaining is the source left after one snippet is evaluated
+            String remaining = "";
             while (live) {
-                String prompt;
-                if (interactive()) {
-                    prompt = testPrompt
-                                    ? incomplete.isEmpty()
-                                            ? "\u0005" //ENQ
-                                            : "\u0006" //ACK
-                                    : incomplete.isEmpty()
-                                            ? feedback.getPrompt(currentNameSpace.tidNext())
-                                            : feedback.getContinuationPrompt(currentNameSpace.tidNext())
-                    ;
-                } else {
-                    prompt = "";
-                }
-                String raw;
-                try {
-                    raw = in.readLine(prompt, incomplete);
-                } catch (InputInterruptedException ex) {
-                    //input interrupted - clearing current state
-                    incomplete = "";
-                    continue;
-                }
-                if (raw == null) {
-                    //EOF
-                    if (in.interactiveOutput()) {
-                        // End after user ctrl-D
-                        regenerateOnDeath = false;
-                    }
-                    break;
-                }
-                String trimmed = trimEnd(raw);
-                if (!trimmed.isEmpty() || !incomplete.isEmpty()) {
-                    String line = incomplete + trimmed;
-
-                    // No commands in the middle of unprocessed source
-                    if (incomplete.isEmpty() && line.startsWith("/") && !line.startsWith("//") && !line.startsWith("/*")) {
-                        processCommand(line.trim());
-                    } else {
-                        incomplete = processSourceCatchingReset(line);
-                    }
-                }
+                // Get a line(s) of input
+                String src = getInput(remaining);
+                // Process the snippet or command, returning the remaining source
+                remaining = processInput(src);
             }
+        } catch (EOFException ex) {
+            // Just exit loop
         } catch (IOException ex) {
             errormsg("jshell.err.unexpected.exception", ex);
         } finally {
             input = oldInput;
         }
+    }
+
+    /**
+     * Process an input command or snippet.
+     *
+     * @param src the source to process
+     * @return any remaining input to processed
+     */
+    private String processInput(String src) {
+        if (isCommand(src)) {
+            // It is a command
+            processCommand(src.trim());
+            // No remaining input after a command
+            return "";
+        } else {
+            // It is a snipet. Separate the source from the remaining. Evaluate
+            // the source
+            CompletionInfo an = analysis.analyzeCompletion(src);
+            if (processSourceCatchingReset(trimEnd(an.source()))) {
+                // Snippet was successful use any leftover source
+                return an.remaining();
+            } else {
+                // Snippet failed, throw away any remaining source
+                return "";
+            }
+        }
+    }
+
+    /**
+     * Get the input line (or, if incomplete, lines).
+     *
+     * @param initial leading input (left over after last snippet)
+     * @return the complete input snippet or command
+     * @throws IOException on unexpected I/O error
+     */
+    private String getInput(String initial) throws IOException{
+        String src = initial;
+        while (live) { // loop while incomplete (and live)
+            if (!src.isEmpty()) {
+                // We have some source, see if it is complete, if so, use it
+                String check;
+
+                if (isCommand(src)) {
+                    // A command can only be incomplete if it is a /exit with
+                    // an argument
+                    int sp = src.indexOf(" ");
+                    if (sp < 0) return src;
+                    check = src.substring(sp).trim();
+                    if (check.isEmpty()) return src;
+                    String cmd = src.substring(0, sp);
+                    Command[] match = findCommand(cmd, c -> c.kind.isRealCommand);
+                    if (match.length != 1 || !match[0].command.equals("/exit")) {
+                        // A command with no snippet arg, so no multi-line input
+                        return src;
+                    }
+                } else {
+                    // For a snippet check the whole source
+                    check = src;
+                }
+                Completeness comp = analysis.analyzeCompletion(check).completeness();
+                if (comp.isComplete() || comp == Completeness.EMPTY) {
+                    return src;
+                }
+            }
+            String prompt = interactive()
+                    ? testPrompt
+                            ? src.isEmpty()
+                                    ? "\u0005" //ENQ -- test prompt
+                                    : "\u0006" //ACK -- test continuation prompt
+                            : src.isEmpty()
+                                    ? feedback.getPrompt(currentNameSpace.tidNext())
+                                    : feedback.getContinuationPrompt(currentNameSpace.tidNext())
+                    : "" // Non-interactive -- no prompt
+                    ;
+            String line;
+            try {
+                line = input.readLine(prompt, src);
+            } catch (InputInterruptedException ex) {
+                //input interrupted - clearing current state
+                src = "";
+                continue;
+            }
+            if (line == null) {
+                //EOF
+                if (input.interactiveOutput()) {
+                    // End after user ctrl-D
+                    regenerateOnDeath = false;
+                }
+                throw new EOFException(); // no more input
+            }
+            src = src.isEmpty()
+                    ? line
+                    : src + "\n" + line;
+        }
+        throw new EOFException(); // not longer live
+    }
+
+    private boolean isCommand(String line) {
+        return line.startsWith("/") && !line.startsWith("//") && !line.startsWith("/*");
     }
 
     private void addToReplayHistory(String s) {
@@ -1167,14 +1253,20 @@ public class JShellTool implements MessageHandler {
         }
     }
 
-    private String processSourceCatchingReset(String src) {
+    /**
+     * Process a source snippet.
+     *
+     * @param src the snippet source to process
+     * @return true on success, false on failure
+     */
+    private boolean processSourceCatchingReset(String src) {
         try {
             input.beforeUserCode();
             return processSource(src);
         } catch (IllegalStateException ex) {
             hard("Resetting...");
             live = false; // Make double sure
-            return "";
+            return false;
         } finally {
             input.afterUserCode();
         }
@@ -1648,8 +1740,19 @@ public class JShellTool implements MessageHandler {
                 arg -> cmdImports(),
                 EMPTY_COMPLETION_PROVIDER));
         registerCommand(new Command("/exit",
-                arg -> cmdExit(),
-                EMPTY_COMPLETION_PROVIDER));
+                arg -> cmdExit(arg),
+                (sn, c, a) -> {
+                    if (analysis == null || sn.isEmpty()) {
+                        // No completions if uninitialized or snippet not started
+                        return Collections.emptyList();
+                    } else {
+                        // Give exit code an int context by prefixing the arg
+                        List<Suggestion> suggestions = analysis.completionSuggestions(INT_PREFIX + sn,
+                                INT_PREFIX.length() + c, a);
+                        a[0] -= INT_PREFIX.length();
+                        return suggestions;
+                    }
+                }));
         registerCommand(new Command("/env",
                 arg -> cmdEnv(arg),
                 envCompletion()));
@@ -2128,10 +2231,83 @@ public class JShellTool implements MessageHandler {
         return true;
     }
 
-    private boolean cmdExit() {
+    private boolean cmdExit(String arg) {
+        if (!arg.trim().isEmpty()) {
+            debug("Compiling exit: %s", arg);
+            List<SnippetEvent> events = state.eval(arg);
+            for (SnippetEvent e : events) {
+                // Only care about main snippet
+                if (e.causeSnippet() == null) {
+                    Snippet sn = e.snippet();
+
+                    // Show any diagnostics
+                    List<Diag> diagnostics = state.diagnostics(sn).collect(toList());
+                    String source = sn.source();
+                    displayDiagnostics(source, diagnostics);
+
+                    // Show any exceptions
+                    if (e.exception() != null && e.status() != Status.REJECTED) {
+                        if (displayException(e.exception())) {
+                            // Abort: an exception occurred (reported)
+                            return false;
+                        }
+                    }
+
+                    if (e.status() != Status.VALID) {
+                        // Abort: can only use valid snippets, diagnostics have been reported (above)
+                        return false;
+                    }
+                    String typeName;
+                    if (sn.kind() == Kind.EXPRESSION) {
+                        typeName = ((ExpressionSnippet) sn).typeName();
+                    } else if (sn.subKind() == TEMP_VAR_EXPRESSION_SUBKIND) {
+                        typeName = ((VarSnippet) sn).typeName();
+                    } else {
+                        // Abort: not an expression
+                        errormsg("jshell.err.exit.not.expression", arg);
+                        return false;
+                    }
+                    switch (typeName) {
+                        case "int":
+                        case "Integer":
+                        case "byte":
+                        case "Byte":
+                        case "short":
+                        case "Short":
+                            try {
+                                int i = Integer.parseInt(e.value());
+                                /**
+                                addToReplayHistory("/exit " + arg);
+                                replayableHistory.storeHistory(prefs);
+                                closeState();
+                                try {
+                                    input.close();
+                                } catch (Exception exc) {
+                                    // ignore
+                                }
+                                * **/
+                                exitCode = i;
+                                break;
+                            } catch (NumberFormatException exc) {
+                                // Abort: bad value
+                                errormsg("jshell.err.exit.bad.value", arg, e.value());
+                                return false;
+                            }
+                        default:
+                            // Abort: bad type
+                            errormsg("jshell.err.exit.bad.type", arg, typeName);
+                            return false;
+                    }
+                }
+            }
+        }
         regenerateOnDeath = false;
         live = false;
-        fluffmsg("jshell.msg.goodbye");
+        if (exitCode == 0) {
+            fluffmsg("jshell.msg.goodbye");
+        } else {
+            fluffmsg("jshell.msg.goodbye.value", exitCode);
+        }
         return true;
     }
 
@@ -2678,7 +2854,7 @@ public class JShellTool implements MessageHandler {
                         }
                         String tsrc = trimNewlines(an.source());
                         if (!failed && !currSrcs.contains(tsrc)) {
-                            failed = processCompleteSource(tsrc);
+                            failed = processSource(tsrc);
                         }
                         nextSrcs.add(tsrc);
                         if (an.remaining().isEmpty()) {
@@ -3118,7 +3294,50 @@ public class JShellTool implements MessageHandler {
                 .collect(toList());
     }
 
-    void displayDiagnostics(String source, Diag diag, List<String> toDisplay) {
+    /**
+     * Print out a snippet exception.
+     *
+     * @param exception the exception to print
+     * @return true on fatal exception
+     */
+    private boolean displayException(Exception exception) {
+        if (exception instanceof EvalException) {
+            printEvalException((EvalException) exception);
+            return true;
+        } else if (exception instanceof UnresolvedReferenceException) {
+            printUnresolvedException((UnresolvedReferenceException) exception);
+            return false;
+        } else {
+            error("Unexpected execution exception: %s", exception);
+            return true;
+        }
+    }
+
+    /**
+     * Display a list of diagnostics.
+     *
+     * @param source the source line with the error/warning
+     * @param diagnostics the diagnostics to display
+     */
+    private void displayDiagnostics(String source, List<Diag> diagnostics) {
+        for (Diag d : diagnostics) {
+            errormsg(d.isError() ? "jshell.msg.error" : "jshell.msg.warning");
+            List<String> disp = new ArrayList<>();
+            displayableDiagnostic(source, d, disp);
+            disp.stream()
+                    .forEach(l -> error("%s", l));
+        }
+    }
+
+    /**
+     * Convert a diagnostic into a list of pretty displayable strings with
+     * source context.
+     *
+     * @param source the source line for the error/warning
+     * @param diag the diagnostic to convert
+     * @param toDisplay a list that the displayable strings are added to
+     */
+    private void displayableDiagnostic(String source, Diag diag, List<String> toDisplay) {
         for (String line : diag.getMessage(null).split("\\r?\\n")) { // TODO: Internationalize
             if (!line.trim().startsWith("location:")) {
                 toDisplay.add(line);
@@ -3169,21 +3388,13 @@ public class JShellTool implements MessageHandler {
                 diag.getStartPosition(), diag.getEndPosition());
     }
 
-    private String processSource(String srcInput) throws IllegalStateException {
-        while (true) {
-            CompletionInfo an = analysis.analyzeCompletion(srcInput);
-            if (!an.completeness().isComplete()) {
-                return an.remaining();
-            }
-            boolean failed = processCompleteSource(an.source());
-            if (failed || an.remaining().isEmpty()) {
-                return "";
-            }
-            srcInput = an.remaining();
-        }
-    }
-    //where
-    boolean processCompleteSource(String source) throws IllegalStateException {
+    /**
+     * Process a source snippet.
+     *
+     * @param source the input source
+     * @return true if the snippet succeeded
+     */
+    boolean processSource(String source) {
         debug("Compiling: %s", source);
         boolean failed = false;
         boolean isActive = false;
@@ -3204,7 +3415,7 @@ public class JShellTool implements MessageHandler {
             addToReplayHistory(source);
         }
 
-        return failed;
+        return !failed;
     }
 
     // Handle incoming snippet events -- return true on failure
@@ -3218,23 +3429,11 @@ public class JShellTool implements MessageHandler {
         String source = sn.source();
         if (ste.causeSnippet() == null) {
             // main event
-            for (Diag d : diagnostics) {
-                errormsg(d.isError()? "jshell.msg.error" : "jshell.msg.warning");
-                List<String> disp = new ArrayList<>();
-                displayDiagnostics(source, d, disp);
-                disp.stream()
-                        .forEach(l -> error("%s", l));
-            }
+            displayDiagnostics(source, diagnostics);
 
             if (ste.status() != Status.REJECTED) {
                 if (ste.exception() != null) {
-                    if (ste.exception() instanceof EvalException) {
-                        printEvalException((EvalException) ste.exception());
-                        return true;
-                    } else if (ste.exception() instanceof UnresolvedReferenceException) {
-                        printUnresolvedException((UnresolvedReferenceException) ste.exception());
-                    } else {
-                        error("Unexpected execution exception: %s", ste.exception());
+                    if (displayException(ste.exception())) {
                         return true;
                     }
                 } else {
@@ -3371,7 +3570,7 @@ public class JShellTool implements MessageHandler {
             this.value = value;
             this.errorLines = new ArrayList<>();
             for (Diag d : errors) {
-                displayDiagnostics(sn.source(), d, errorLines);
+                displayableDiagnostic(sn.source(), d, errorLines);
             }
             if (resolve) {
                 // resolve needs error lines indented
@@ -3669,6 +3868,7 @@ class ScannerIOContext extends NonInteractiveIOContext {
         scannerIn.close();
     }
 
+    @Override
     public int readUserInput() {
         return -1;
     }
@@ -3700,6 +3900,7 @@ class ReloadIOContext extends NonInteractiveIOContext {
     public void close() {
     }
 
+    @Override
     public int readUserInput() {
         return -1;
     }
