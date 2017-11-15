@@ -385,6 +385,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "FastTLABRefill",               JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "UseCGroupMemoryLimitForHeap",  JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::jdk(11) },
   { "IgnoreUnverifiableClassesDuringDump", JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
@@ -2689,6 +2690,14 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
     return result;
   }
 
+  // We need to ensure processor and memory resources have been properly
+  // configured - which may rely on arguments we just processed - before
+  // doing the final argument processing. Any argument processing that
+  // needs to know about processor and memory resources must occur after
+  // this point.
+
+  os::init_container_support();
+
   // Do final processing now that all arguments have been parsed
   result = finalize_vm_init_args(patch_mod_javabase);
   if (result != JNI_OK) {
@@ -3364,12 +3373,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       _exit_hook = CAST_TO_FN_PTR(exit_hook_t, option->extraInfo);
     } else if (match_option(option, "abort")) {
       _abort_hook = CAST_TO_FN_PTR(abort_hook_t, option->extraInfo);
-    // -XX:+AggressiveHeap
-    } else if (match_option(option, "-XX:+AggressiveHeap")) {
-      jint result = set_aggressive_heap_flags();
-      if (result != JNI_OK) {
-          return result;
-      }
     // Need to keep consistency of MaxTenuringThreshold and AlwaysTenure/NeverTenure;
     // and the last option wins.
     } else if (match_option(option, "-XX:+NeverTenure")) {
@@ -3649,6 +3652,16 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
       "Use -classpath instead.\n.");
     os::closedir(dir);
     return JNI_ERR;
+  }
+
+  // This must be done after all arguments have been processed
+  // and the container support has been initialized since AggressiveHeap
+  // relies on the amount of total memory available.
+  if (AggressiveHeap) {
+    jint result = set_aggressive_heap_flags();
+    if (result != JNI_OK) {
+      return result;
+    }
   }
 
   // This must be done after all arguments have been processed.

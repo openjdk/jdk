@@ -54,6 +54,7 @@
   LOG_TAG(compilation) \
   LOG_TAG(constraints) \
   LOG_TAG(constantpool) \
+  LOG_TAG(container) \
   LOG_TAG(coops) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
