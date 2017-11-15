@@ -723,6 +723,14 @@ bool os::has_allocatable_memory_limit(julong* limit) {
 }
 
 int os::active_processor_count() {
+  // User has overridden the number of active processors
+  if (ActiveProcessorCount > 0) {
+    log_trace(os)("active_processor_count: "
+                  "active processor count set by user : %d",
+                  ActiveProcessorCount);
+    return ActiveProcessorCount;
+  }
+
   DWORD_PTR lpProcessAffinityMask = 0;
   DWORD_PTR lpSystemAffinityMask = 0;
   int proc_count = processor_count();

@@ -3528,6 +3528,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   LogConfiguration::initialize(create_vm_timer.begin_time());
 
   // Parse arguments
+  // Note: this internally calls os::init_container_support()
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
 
