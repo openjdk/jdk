@@ -76,7 +76,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public int hashCode() {
-        return offset ^ modifiers;
+        return holder.hashCode() ^ offset;
     }
 
     @Override
