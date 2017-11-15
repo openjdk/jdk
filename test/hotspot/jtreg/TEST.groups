@@ -197,7 +197,8 @@ hotspot_cds = \
 
 hotspot_tier1_serviceability = \
   serviceability/dcmd/compiler \
-  serviceability/logging
+  serviceability/logging \
+  serviceability/sa
 
 hotspot_tier1 = \
   :hotspot_tier1_common \
