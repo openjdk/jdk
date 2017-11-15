@@ -25,6 +25,8 @@
 
 package java.lang.invoke;
 
+import jdk.internal.vm.annotation.Stable;
+
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 
@@ -33,6 +35,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * @author jrose
  */
 final class SimpleMethodHandle extends BoundMethodHandle {
+
     private SimpleMethodHandle(MethodType type, LambdaForm form) {
         super(type, form);
     }
@@ -41,10 +44,11 @@ final class SimpleMethodHandle extends BoundMethodHandle {
         return new SimpleMethodHandle(type, form);
     }
 
-    /*non-public*/ static final SpeciesData SPECIES_DATA = SpeciesData.EMPTY;
+    /*non-public*/ static @Stable BoundMethodHandle.SpeciesData BMH_SPECIES;
 
-    /*non-public*/ public SpeciesData speciesData() {
-            return SPECIES_DATA;
+    @Override
+    /*non-public*/ BoundMethodHandle.SpeciesData speciesData() {
+            return BMH_SPECIES;
     }
 
     @Override
@@ -58,18 +62,13 @@ final class SimpleMethodHandle extends BoundMethodHandle {
     }
 
     @Override
-    /*non-public*/ public int fieldCount() {
-        return 0;
-    }
-
-    @Override
     /*non-public*/ final BoundMethodHandle copyWithExtendL(MethodType mt, LambdaForm lf, Object narg) {
         return BoundMethodHandle.bindSingle(mt, lf, narg); // Use known fast path.
     }
     @Override
     /*non-public*/ final BoundMethodHandle copyWithExtendI(MethodType mt, LambdaForm lf, int narg) {
         try {
-            return (BoundMethodHandle) SPECIES_DATA.extendWith(I_TYPE).constructor().invokeBasic(mt, lf, narg);
+            return (BoundMethodHandle) BMH_SPECIES.extendWith(I_TYPE_NUM).factory().invokeBasic(mt, lf, narg);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -77,7 +76,7 @@ final class SimpleMethodHandle extends BoundMethodHandle {
     @Override
     /*non-public*/ final BoundMethodHandle copyWithExtendJ(MethodType mt, LambdaForm lf, long narg) {
         try {
-            return (BoundMethodHandle) SPECIES_DATA.extendWith(J_TYPE).constructor().invokeBasic(mt, lf, narg);
+            return (BoundMethodHandle) BMH_SPECIES.extendWith(J_TYPE_NUM).factory().invokeBasic(mt, lf, narg);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -85,7 +84,7 @@ final class SimpleMethodHandle extends BoundMethodHandle {
     @Override
     /*non-public*/ final BoundMethodHandle copyWithExtendF(MethodType mt, LambdaForm lf, float narg) {
         try {
-            return (BoundMethodHandle) SPECIES_DATA.extendWith(F_TYPE).constructor().invokeBasic(mt, lf, narg);
+            return (BoundMethodHandle) BMH_SPECIES.extendWith(F_TYPE_NUM).factory().invokeBasic(mt, lf, narg);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -93,7 +92,7 @@ final class SimpleMethodHandle extends BoundMethodHandle {
     @Override
     /*non-public*/ final BoundMethodHandle copyWithExtendD(MethodType mt, LambdaForm lf, double narg) {
         try {
-            return (BoundMethodHandle) SPECIES_DATA.extendWith(D_TYPE).constructor().invokeBasic(mt, lf, narg);
+            return (BoundMethodHandle) BMH_SPECIES.extendWith(D_TYPE_NUM).factory().invokeBasic(mt, lf, narg);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
