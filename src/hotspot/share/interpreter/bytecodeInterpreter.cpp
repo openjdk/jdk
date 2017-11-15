@@ -99,12 +99,10 @@
   in relation to a safepoint.
 */
 #define SAFEPOINT                                                                 \
-    if ( SafepointSynchronize::is_synchronizing()) {                              \
-        {                                                                         \
-          /* zap freed handles rather than GC'ing them */                         \
-          HandleMarkCleaner __hmc(THREAD);                                        \
-        }                                                                         \
-        CALL_VM(SafepointSynchronize::block(THREAD), handle_exception);           \
+    {                                                                             \
+       /* zap freed handles rather than GC'ing them */                            \
+       HandleMarkCleaner __hmc(THREAD);                                           \
+       CALL_VM(SafepointMechanism::block_if_requested(THREAD), handle_exception); \
     }
 
 /*
