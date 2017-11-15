@@ -631,6 +631,27 @@ extern "C" void pns(void* sp, void* fp, void* pc) { // print native stack
   VMError::print_native_stack(tty, fr, t, buf, sizeof(buf));
 }
 
+//
+// This version of pns() will not work when called from the debugger, but is
+// useful when called from within hotspot code. The advantages over pns()
+// are not having to pass in any arguments, and it will work on Windows/x64.
+//
+// WARNING: Only intended for use when debugging. Do not leave calls to
+// pns2() in committed source (product or debug).
+//
+extern "C" void pns2() { // print native stack
+  Command c("pns2");
+  static char buf[O_BUFLEN];
+  if (os::platform_print_native_stack(tty, NULL, buf, sizeof(buf))) {
+    // We have printed the native stack in platform-specific code,
+    // so nothing else to do in this case.
+  } else {
+    Thread* t = Thread::current_or_null();
+    frame fr = os::current_frame();
+    VMError::print_native_stack(tty, fr, t, buf, sizeof(buf));
+  }
+}
+
 #endif // !PRODUCT
 
 //////////////////////////////////////////////////////////////////////////////
