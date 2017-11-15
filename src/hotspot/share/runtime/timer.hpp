@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ class TimeHelper {
  public:
   static double counter_to_seconds(jlong counter);
   static double counter_to_millis(jlong counter);
+  static jlong millis_to_counter(jlong millis);
 };
 
 #endif // SHARE_VM_RUNTIME_TIMER_HPP

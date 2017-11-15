@@ -2359,7 +2359,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Block, if necessary, before resuming in _thread_in_Java state.
   // In order for GC to work, don't clear the last_Java_sp until after blocking.
   { Label no_block;
-    AddressLiteral sync_state(SafepointSynchronize::address_of_state());
 
     // Switch thread to "native transition" state before reading the synchronization state.
     // This additional state is necessary because reading and testing the synchronization
@@ -2382,12 +2381,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
         __ serialize_memory(G2_thread, G1_scratch, G3_scratch);
       }
     }
-    __ load_contents(sync_state, G3_scratch);
-    __ cmp(G3_scratch, SafepointSynchronize::_not_synchronized);
 
     Label L;
     Address suspend_state(G2_thread, JavaThread::suspend_flags_offset());
-    __ br(Assembler::notEqual, false, Assembler::pn, L);
+    __ safepoint_poll(L, false, G2_thread, G3_scratch);
     __ delayed()->ld(suspend_state, G3_scratch);
     __ cmp_and_br_short(G3_scratch, 0, Assembler::equal, Assembler::pt, no_block);
     __ bind(L);
@@ -3118,7 +3115,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   } else {
     // Make it look like we were called via the poll
     // so that frame constructor always sees a valid return address
-    __ ld_ptr(G2_thread, in_bytes(JavaThread::saved_exception_pc_offset()), O7);
+    __ ld_ptr(Address(G2_thread, JavaThread::saved_exception_pc_offset()), O7);
     __ sub(O7, frame::pc_return_offset, O7);
   }
 
@@ -3126,6 +3123,15 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // setup last_Java_sp (blows G4)
   __ set_last_Java_frame(SP, noreg);
+
+  Register saved_O7 = O7->after_save();
+  if (!cause_return && SafepointMechanism::uses_thread_local_poll()) {
+    // Keep a copy of the return pc in L0 to detect if it gets modified
+    __ mov(saved_O7, L0);
+    // Adjust and keep a copy of our npc saved by the signal handler
+    __ ld_ptr(Address(G2_thread, JavaThread::saved_exception_npc_offset()), L1);
+    __ sub(L1, frame::pc_return_offset, L1);
+  }
 
   // call into the runtime to handle illegal instructions exception
   // Do not use call_VM_leaf, because we need to make a GC map at this call site.
@@ -3149,6 +3155,12 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   __ ld_ptr(G2_thread, in_bytes(Thread::pending_exception_offset()), O1);
   __ br_notnull_short(O1, Assembler::pn, pending);
+
+  if (!cause_return && SafepointMechanism::uses_thread_local_poll()) {
+    // If nobody modified our return pc then we must return to the npc which he saved in L1
+    __ cmp(saved_O7, L0);
+    __ movcc(Assembler::equal, false, Assembler::ptr_cc, L1, saved_O7);
+  }
 
   RegisterSaver::restore_live_registers(masm);
 

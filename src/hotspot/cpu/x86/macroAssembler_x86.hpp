@@ -656,6 +656,12 @@ class MacroAssembler: public Assembler {
   // Support for serializing memory accesses between threads
   void serialize_memory(Register thread, Register tmp);
 
+#ifdef _LP64
+  void safepoint_poll(Label& slow_path, Register thread_reg, Register temp_reg);
+#else
+  void safepoint_poll(Label& slow_path);
+#endif
+
   void verify_tlab();
 
   // Biased locking support

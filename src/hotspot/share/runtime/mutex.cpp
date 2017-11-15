@@ -28,6 +28,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
@@ -394,7 +395,7 @@ int Monitor::TrySpin(Thread * const Self) {
       jint rv = Self->rng[0];
       for (int k = Delay; --k >= 0;) {
         rv = MarsagliaXORV(rv);
-        if ((flgs & 4) == 0 && SafepointSynchronize::do_call_back()) return 0;
+        if ((flgs & 4) == 0 && SafepointMechanism::poll(Self)) return 0;
       }
       Self->rng[0] = rv;
     } else {

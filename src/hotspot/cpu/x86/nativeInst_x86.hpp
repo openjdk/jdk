@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointMechanism.hpp"
 
 // We have interfaces for the following instructions:
 // - NativeInstruction
@@ -678,6 +679,7 @@ class NativeTstRegMem: public NativeInstruction {
   enum Intel_specific_constants {
     instruction_rex_prefix_mask = 0xF0,
     instruction_rex_prefix      = Assembler::REX,
+    instruction_rex_b_prefix    = Assembler::REX_B,
     instruction_code_memXregl   = 0x85,
     modrm_mask                  = 0x38, // select reg from the ModRM byte
     modrm_reg                   = 0x00  // rax
@@ -703,6 +705,16 @@ inline bool NativeInstruction::is_cond_jump()    { return (int_at(0) & 0xF0FF) =
                                                           (ubyte_at(0) & 0xF0) == 0x70;  /* short jump */ }
 inline bool NativeInstruction::is_safepoint_poll() {
 #ifdef AMD64
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    // We know that the poll must have a REX_B prefix since we enforce its source to be
+    // a rex-register and the destination to be rax.
+    const bool has_rex_prefix = ubyte_at(0) == NativeTstRegMem::instruction_rex_b_prefix;
+    const bool is_test_opcode = ubyte_at(1) == NativeTstRegMem::instruction_code_memXregl;
+    const bool is_rax_target = (ubyte_at(2) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg;
+    if (has_rex_prefix && is_test_opcode && is_rax_target) {
+      return true;
+    }
+  }
   // Try decoding a near safepoint first:
   if (ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
       ubyte_at(1) == 0x05) { // 00 rax 101

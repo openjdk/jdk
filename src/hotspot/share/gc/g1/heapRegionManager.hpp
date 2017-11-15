@@ -189,7 +189,7 @@ public:
     return _free_list.length();
   }
 
-  size_t total_capacity_bytes() const {
+  size_t total_free_bytes() const {
     return num_free_regions() * HeapRegion::GrainBytes;
   }
 
@@ -240,7 +240,7 @@ public:
   // terminating the iteration early if doHeapRegion() returns true.
   void iterate(HeapRegionClosure* blk) const;
 
-  void par_iterate(HeapRegionClosure* blk, uint worker_id, HeapRegionClaimer* hrclaimer) const;
+  void par_iterate(HeapRegionClosure* blk, HeapRegionClaimer* hrclaimer, const uint start_index) const;
 
   // Uncommit up to num_regions_to_remove regions that are completely free.
   // Return the actual number of uncommitted regions.
@@ -274,9 +274,8 @@ class HeapRegionClaimer : public StackObj {
     return _n_regions;
   }
 
-  // Calculate the starting region for given worker so
-  // that they do not all start from the same region.
-  uint start_region_for_worker(uint worker_id) const;
+  // Return a start offset given a worker id.
+  uint offset_for_worker(uint worker_id) const;
 
   // Check if region has been claimed with this HRClaimer.
   bool is_region_claimed(uint region_index) const;

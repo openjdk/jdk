@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ class ZoneName {
         "Africa/Ndjamena", "Africa_Western", "Africa/Lagos",
         "Asia/Macau", "China", "Asia/Shanghai",
         "America/Lima", "Peru", "America/Lima",
-        "Africa/Windhoek", "Africa_Western", "Africa/Lagos",
+        "Africa/Windhoek", "Africa_Central", "Africa/Maputo",
         "America/Sitka", "Alaska", "America/Juneau",
         "America/Mazatlan", "America_Mountain", "America/Denver",
         "Asia/Saigon", "Indochina", "Asia/Saigon",
@@ -324,7 +324,7 @@ class ZoneName {
         "Atlantic/Faroe", "Europe_Western", "Atlantic/Canary",
         "America/Cambridge_Bay", "America_Mountain", "America/Denver",
         "America/Los_Angeles", "America_Pacific", "America/Los_Angeles",
-        "Africa/Khartoum", "Africa_Eastern", "Africa/Nairobi",
+        "Africa/Khartoum", "Africa_Central", "Africa/Maputo",
         "Europe/Simferopol", "Europe_Eastern", "Europe/Bucharest",
         "Australia/Currie", "Australia_Eastern", "Australia/Sydney",
         "Europe/Guernsey", "GMT", "Atlantic/Reykjavik",
@@ -744,7 +744,6 @@ class ZoneName {
         "UTC", "Etc/UTC",
         "Canada/Newfoundland", "America/St_Johns",
         "Europe/Skopje", "Europe/Belgrade",
-        "Canada/East-Saskatchewan", "America/Regina",
         "PRC", "Asia/Shanghai",
         "UCT", "Etc/UCT",
         "America/Mendoza", "America/Argentina/Mendoza",

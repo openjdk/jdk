@@ -447,7 +447,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
       // a fault inside compiled code, the interpreter, or a stub
 
       // Support Safepoint Polling
-      if ( sig == SIGSEGV && (address)info->si_addr == os::get_polling_page() ) {
+      if (sig == SIGSEGV && os::is_poll_address((address)info->si_addr)) {
         stub = SharedRuntime::get_poll_stub(pc);
       }
 

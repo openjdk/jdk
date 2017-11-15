@@ -918,11 +918,18 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
         const TypeInt* stride_t = phase->type(stride)->isa_int();
         if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
           assert(stride_t->_hi >= stride_t->_lo, "bad stride type");
-          if (stride_t->_hi < 0) {          // Down-counter loop
-            swap(lo, hi);
-            return TypeInt::make(MIN2(lo->_lo, hi->_lo) , hi->_hi, 3);
-          } else if (stride_t->_lo >= 0) {
-            return TypeInt::make(lo->_lo, MAX2(lo->_hi, hi->_hi), 3);
+          BoolTest::mask bt = l->loopexit()->test_trip();
+          // If the loop exit condition is "not equal", the condition
+          // would not trigger if init > limit (if stride > 0) or if
+          // init < limit if (stride > 0) so we can't deduce bounds
+          // for the iv from the exit condition.
+          if (bt != BoolTest::ne) {
+            if (stride_t->_hi < 0) {          // Down-counter loop
+              swap(lo, hi);
+              return TypeInt::make(MIN2(lo->_lo, hi->_lo) , hi->_hi, 3);
+            } else if (stride_t->_lo >= 0) {
+              return TypeInt::make(lo->_lo, MAX2(lo->_hi, hi->_hi), 3);
+            }
           }
         }
       }
@@ -933,7 +940,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
       // before the special code for counted loop above has a chance
       // to run (that is as long as the type of the backedge's control
       // is top), we might end up with non monotonic types
-      return phase->type(in(LoopNode::EntryControl));
+      return phase->type(in(LoopNode::EntryControl))->filter_speculative(_type);
     }
   }
 

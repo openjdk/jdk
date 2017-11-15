@@ -46,9 +46,9 @@ public:
 
   // Perform verification.
 
-  // vo == UsePrevMarking  -> use "prev" marking information,
+  // vo == UsePrevMarking -> use "prev" marking information,
   // vo == UseNextMarking -> use "next" marking information
-  // vo == UseMarkWord    -> use the mark word in the object header
+  // vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   //
   // NOTE: Only the "prev" marking information is guaranteed to be
   // consistent most of the time, so most calls to this should use
@@ -57,7 +57,7 @@ public:
   // vo == UseNextMarking, which is to verify the "next" marking
   // information at the end of remark.
   // Currently there is only one place where this is called with
-  // vo == UseMarkWord, which is to verify the marking during a
+  // vo == UseFullMarking, which is to verify the marking during a
   // full GC.
   void verify(VerifyOption vo);
 

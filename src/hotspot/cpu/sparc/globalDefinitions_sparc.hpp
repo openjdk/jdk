@@ -52,4 +52,7 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 #define SUPPORT_RESERVED_STACK_AREA
 #endif
 
+// SPARC have implemented the local polling
+#define THREAD_LOCAL_POLL
+
 #endif // CPU_SPARC_VM_GLOBALDEFINITIONS_SPARC_HPP

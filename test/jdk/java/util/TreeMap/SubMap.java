@@ -30,7 +30,7 @@
 import java.util.*;
 
 public class SubMap {
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         SortedMap m = new TreeMap();
         m.put(new Integer(1), new Integer(1));
         m.put(new Integer(2), new Integer(2));

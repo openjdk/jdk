@@ -67,6 +67,7 @@
   LOG_TAG(fingerprint) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
+  LOG_TAG(handshake) \
   LOG_TAG(hashtables) \
   LOG_TAG(heap) \
   LOG_TAG(humongous) \
