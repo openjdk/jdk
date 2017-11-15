@@ -30,33 +30,6 @@
 #include "memory/universe.hpp"
 #include "oops/markOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1Allocator.inline.hpp"
-#endif // INCLUDE_ALL_GCS
-
-inline bool MarkSweep::is_closed_archive_object(oop object) {
-#if INCLUDE_ALL_GCS
-  return G1ArchiveAllocator::is_closed_archive_object(object);
-#else
-  return false;
-#endif
-}
-
-inline bool MarkSweep::is_open_archive_object(oop object) {
-#if INCLUDE_ALL_GCS
-  return G1ArchiveAllocator::is_open_archive_object(object);
-#else
-  return false;
-#endif
-}
-
-inline bool MarkSweep::is_archive_object(oop object) {
-#if INCLUDE_ALL_GCS
-  return G1ArchiveAllocator::is_archive_object(object);
-#else
-  return false;
-#endif
-}
 
 inline int MarkSweep::adjust_pointers(oop obj) {
   return obj->oop_iterate_size(&MarkSweep::adjust_pointer_closure);
@@ -70,27 +43,16 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
 
     oop new_obj = oop(obj->mark()->decode_pointer());
 
-    assert(is_archive_object(obj) ||             // no forwarding of archive objects
-           new_obj != NULL ||                         // is forwarding ptr?
+    assert(new_obj != NULL ||                         // is forwarding ptr?
            obj->mark() == markOopDesc::prototype() || // not gc marked?
            (UseBiasedLocking && obj->mark()->has_bias_pattern()),
            // not gc marked?
            "should be forwarded");
 
-#ifndef PRODUCT
-    // open_archive objects are marked by GC. Their mark should
-    // not have forwarding ptr.
-    if (is_open_archive_object(obj)) {
-      assert(new_obj == NULL, "archive heap object has forwarding ptr");
-    }
-#endif
-
     if (new_obj != NULL) {
-      if (!is_closed_archive_object(obj)) {
-        assert(Universe::heap()->is_in_reserved(new_obj),
-              "should be in object space");
-        oopDesc::encode_store_heap_oop_not_null(p, new_obj);
-      }
+      assert(Universe::heap()->is_in_reserved(new_obj),
+             "should be in object space");
+      oopDesc::encode_store_heap_oop_not_null(p, new_obj);
     }
   }
 }
