@@ -379,7 +379,7 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Handle safepoint operations, pending suspend requests,
   // and pending asynchronous exceptions.
-  if (SafepointSynchronize::do_call_back() ||
+  if (SafepointMechanism::poll(thread) ||
       thread->has_special_condition_for_native_trans()) {
     JavaThread::check_special_condition_for_native_trans(thread);
     CHECK_UNHANDLED_OOPS_ONLY(thread->clear_unhandled_oops());
@@ -511,7 +511,7 @@ int CppInterpreter::accessor_entry(Method* method, intptr_t UNUSED, TRAPS) {
   intptr_t *locals = stack->sp();
 
   // Drop into the slow path if we need a safepoint check
-  if (SafepointSynchronize::do_call_back()) {
+  if (SafepointMechanism::poll(THREAD)) {
     return normal_entry(method, 0, THREAD);
   }
 
@@ -643,7 +643,7 @@ int CppInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
   ZeroStack *stack = thread->zero_stack();
 
   // Drop into the slow path if we need a safepoint check
-  if (SafepointSynchronize::do_call_back()) {
+  if (SafepointMechanism::poll(THREAD)) {
     return normal_entry(method, 0, THREAD);
   }
 
