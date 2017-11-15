@@ -24,6 +24,10 @@
 hotspot_all = \
   /
 
+hotspot_all_no_apps = \
+  / \
+  -applications
+
 hotspot_compiler = \
   compiler
 
