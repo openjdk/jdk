@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import org.testng.annotations.Test;
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build SimpleJvmtiAgent
  * @run main ClassFileInstaller SimpleJvmtiAgent
- * @run testng LoadAgentDcmdTest
+ * @run testng/othervm LoadAgentDcmdTest
  */
 public class LoadAgentDcmdTest {
 

@@ -2036,6 +2036,9 @@ public:
           "Real memory size (in bytes) used to set maximum heap size")      \
           range(0, 0XFFFFFFFFFFFFFFFF)                                      \
                                                                             \
+  product(bool, AggressiveHeap, false,                                      \
+          "Optimize heap options for long-running memory intensive apps")   \
+                                                                            \
   product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
           "MaxRAM * MaxRAMPercentage / 100")                                \
@@ -2043,7 +2046,8 @@ public:
                                                                             \
   experimental(bool, UseCGroupMemoryLimitForHeap, false,                    \
           "Use CGroup memory limit as physical memory limit for heap "      \
-          "sizing")                                                         \
+          "sizing"                                                          \
+          "Deprecated, replaced by container support")                      \
                                                                             \
   product(uintx, MaxRAMFraction, 4,                                         \
           "Maximum fraction (1/n) of real memory used for maximum heap "    \
@@ -2074,6 +2078,9 @@ public:
   product(double, InitialRAMPercentage, 1.5625,                             \
           "Percentage of real memory used for initial heap size")           \
           range(0.0, 100.0)                                                 \
+                                                                            \
+  product(int, ActiveProcessorCount, -1,                                    \
+          "Specify the CPU count the VM should use and report as active")   \
                                                                             \
   develop(uintx, MaxVirtMemFraction, 2,                                     \
           "Maximum fraction (1/n) of virtual memory used for ergonomically "\
