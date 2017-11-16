@@ -1117,6 +1117,14 @@ class ClassHierarchyWalker {
     _signature = NULL;
     initialize(participant);
   }
+  ClassHierarchyWalker(Klass* participants[], int num_participants) {
+    _name      = NULL;
+    _signature = NULL;
+    initialize(NULL);
+    for (int i = 0; i < num_participants; ++i) {
+      add_participant(participants[i]);
+    }
+  }
 
   // This is common code for two searches:  One for concrete subtypes,
   // the other for concrete method implementations and overrides.
@@ -1222,6 +1230,24 @@ class ClassHierarchyWalker {
       // Search class hierarchy first.
       Method* m = InstanceKlass::cast(k)->find_instance_method(_name, _signature);
       if (!Dependencies::is_concrete_method(m, k)) {
+        // Check for re-abstraction of method
+        if (!k->is_interface() && m != NULL && m->is_abstract()) {
+          // Found a matching abstract method 'm' in the class hierarchy.
+          // This is fine iff 'k' is an abstract class and all concrete subtypes
+          // of 'k' override 'm' and are participates of the current search.
+          ClassHierarchyWalker wf(_participants, _num_participants);
+          Klass* w = wf.find_witness_subtype(k);
+          if (w != NULL) {
+            Method* wm = InstanceKlass::cast(w)->find_instance_method(_name, _signature);
+            if (!Dependencies::is_concrete_method(wm, w)) {
+              // Found a concrete subtype 'w' which does not override abstract method 'm'.
+              // Bail out because 'm' could be called with 'w' as receiver (leading to an
+              // AbstractMethodError) and thus the method we are looking for is not unique.
+              _found_methods[_num_participants] = m;
+              return true;
+            }
+          }
+        }
         // Check interface defaults also, if any exist.
         Array<Method*>* default_methods = InstanceKlass::cast(k)->default_methods();
         if (default_methods == NULL)
