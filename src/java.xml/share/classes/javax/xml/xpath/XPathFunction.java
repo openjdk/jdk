@@ -51,6 +51,6 @@ public interface XPathFunction {
    *
    * @throws XPathFunctionException If <code>args</code> cannot be evaluated with this <code>XPath</code> function.
    */
-  public Object evaluate(List<Object> args)
+  public Object evaluate(List<?> args)
     throws XPathFunctionException;
 }
