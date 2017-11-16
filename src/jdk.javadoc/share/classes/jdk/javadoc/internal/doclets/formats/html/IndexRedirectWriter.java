@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
+import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
@@ -68,33 +68,27 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
     void generateIndexFile() throws DocFileIOException {
         DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
         Content htmlComment = contents.newPage;
-        Content head = new HtmlTree(HtmlTag.HEAD);
-        head.addContent(getGeneratedBy(!configuration.notimestamp));
+        Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
+                .setTimestamp(true, false)
+                .addDefaultScript(false);
 
         String title = (configuration.windowtitle.length() > 0)
                 ? configuration.windowtitle
                 : resources.getText("doclet.Generated_Docs_Untitled");
 
-        Content windowTitle = HtmlTree.TITLE(title);
-        head.addContent(windowTitle);
-        Content metaContentType = HtmlTree.META("Content", CONTENT_TYPE, configuration.charset);
-        head.addContent(metaContentType);
+        head.setTitle(title)
+                .setCharset(configuration.charset);
 
         String topFilePath = configuration.topFile.getPath();
         Script script = new Script("window.location.replace(")
                 .appendStringLiteral(topFilePath, '\'')
                 .append(")");
-        head.addContent(script.asContent());
-        HtmlTree metaRefresh = new HtmlTree(HtmlTag.META);
-        metaRefresh.addAttr(HtmlAttr.HTTP_EQUIV, "Refresh");
-        metaRefresh.addAttr(HtmlAttr.CONTENT, "0;" + topFilePath);
-        if (configuration.isOutputHtml5()) {
-            head.addContent(HtmlTree.NOSCRIPT(metaRefresh));
-        } else {
-            head.addContent(metaRefresh);
-        }
-
-        addStyleSheetProperties(configuration, head);
+        HtmlTree metaRefresh = new HtmlTree(HtmlTag.META)
+                .addAttr(HtmlAttr.HTTP_EQUIV, "Refresh")
+                .addAttr(HtmlAttr.CONTENT, "0;" + topFilePath);
+        head.addContent(
+                script.asContent(),
+                configuration.isOutputHtml5() ? HtmlTree.NOSCRIPT(metaRefresh) : metaRefresh);
 
         ContentBuilder bodyContent = new ContentBuilder();
         bodyContent.addContent(HtmlTree.NOSCRIPT(
@@ -110,7 +104,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
             body.addContent(bodyContent);
         }
 
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
         HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlComment, htmlTree);
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }

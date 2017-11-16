@@ -25,9 +25,9 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -412,28 +412,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             Content body) throws DocFileIOException {
         DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
         Content htmlComment = contents.newPage;
-        Content head = new HtmlTree(HtmlTag.HEAD);
-        head.addContent(getGeneratedBy(!configuration.notimestamp));
-        head.addContent(HtmlTree.TITLE(winTitle));
-        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE, configuration.charset);
-        head.addContent(meta);
-        if (!configuration.notimestamp) {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            meta = HtmlTree.META(configuration.isOutputHtml5()
-                    ? "dc.created"
-                    : "date", dateFormat.format(new Date()));
-            head.addContent(meta);
-        }
-        if (metakeywords != null) {
-            for (String metakeyword : metakeywords) {
-                meta = HtmlTree.META("keywords", metakeyword);
-                head.addContent(meta);
-            }
-        }
-        addStyleSheetProperties(head);
-        addScriptProperties(head);
+        Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
+                .setTimestamp(!configuration.notimestamp)
+                .setTitle(winTitle)
+                .setCharset(configuration.charset)
+                .addKeywords(metakeywords)
+                .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())
+                .setIndex(configuration.createindex, mainBodyScript);
 
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
         HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlComment, htmlTree);
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
@@ -2071,78 +2058,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return text;
     }
 
-    static final Set<String> blockTags = new HashSet<>();
-    static {
-        for (HtmlTag t: HtmlTag.values()) {
-            if (t.blockType == HtmlTag.BlockType.BLOCK)
-                blockTags.add(t.value);
-        }
-    }
-
-    /**
-     * Add a link to the stylesheet file.
-     *
-     * @param head the content tree to which the files will be added
-     */
-    public void addStyleSheetProperties(Content head) {
-        String stylesheetfile = configuration.stylesheetfile;
-        DocPath stylesheet;
-        if (stylesheetfile.isEmpty()) {
-            stylesheet = DocPaths.STYLESHEET;
-        } else {
-            DocFile file = DocFile.createFileForInput(configuration, stylesheetfile);
-            stylesheet = DocPath.create(file.getName());
-        }
-        HtmlTree link = HtmlTree.LINK("stylesheet", "text/css",
-                pathToRoot.resolve(stylesheet).getPath(),
-                "Style");
-        head.addContent(link);
-        addStylesheets(configuration, head);
-        if (configuration.createindex) {
-            HtmlTree jq_link = HtmlTree.LINK("stylesheet", "text/css",
-                    pathToRoot.resolve(DocPaths.JQUERY_FILES.resolve(DocPaths.JQUERY_STYLESHEET_FILE)).getPath(),
-                    "Style");
-            head.addContent(jq_link);
-        }
-    }
-
-    /**
-     * Add a link to the JavaScript file.
-     *
-     * @param head the content tree to which the files will be added
-     */
-    public void addScriptProperties(Content head) {
-        HtmlTree javascript = HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath());
-        head.addContent(javascript);
-        if (configuration.createindex) {
-            if (pathToRoot != null && mainBodyScript != null) {
-                String ptrPath = pathToRoot.isEmpty() ? "." : pathToRoot.getPath();
-                mainBodyScript.append("var pathtoroot = ")
-                        .appendStringLiteral(ptrPath + "/")
-                        .append(";loadScripts(document, \'script\');");
-            }
-            addJQueryFile(head, DocPaths.JSZIP_MIN);
-            addJQueryFile(head, DocPaths.JSZIPUTILS_MIN);
-            head.addContent(new RawHtml("<!--[if IE]>"));
-            addJQueryFile(head, DocPaths.JSZIPUTILS_IE_MIN);
-            head.addContent(new RawHtml("<![endif]-->"));
-            addJQueryFile(head, DocPaths.JQUERY_JS_1_10);
-            addJQueryFile(head, DocPaths.JQUERY_JS);
-        }
-    }
-
-    /**
-     * Add a link to the JQuery javascript file.
-     *
-     * @param head the content tree to which the files will be added
-     * @param filePath the DocPath of the file that needs to be added
-     */
-    private void addJQueryFile(Content head, DocPath filePath) {
-        HtmlTree jqueryScriptFile = HtmlTree.SCRIPT(
-                pathToRoot.resolve(DocPaths.JQUERY_FILES.resolve(filePath)).getPath());
-        head.addContent(jqueryScriptFile);
-    }
-
     /**
      * According to
      * <cite>The Java&trade; Language Specification</cite>,
@@ -2188,7 +2103,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Adds the annotatation types for the given element.
+     * Adds the annotation types for the given element.
      *
      * @param element the package to write annotations for
      * @param htmltree the content tree to which the annotation types will be added

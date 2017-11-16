@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Head;
+
 import java.io.*;
 import java.util.List;
 
@@ -209,11 +211,14 @@ public class SourceToHTMLConverter {
      */
     private void writeToFile(Content body, DocPath path) throws DocFileIOException {
         DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
-        Content head = new HtmlTree(HtmlTag.HEAD);
-        head.addContent(HtmlTree.TITLE(resources.getText("doclet.Window_Source_title")));
-        addStyleSheetProperties(head);
+        Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
+//                .setTimestamp(!configuration.notimestamp) // temporary: compatibility!
+                .setTitle(resources.getText("doclet.Window_Source_title"))
+//                .setCharset(configuration.charset) // temporary: compatibility!
+                .addDefaultScript(false)
+                .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets());
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
-                head, body);
+                head.toContent(), body);
         HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
         messages.notice("doclet.Generating_0", path.getPath());
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));

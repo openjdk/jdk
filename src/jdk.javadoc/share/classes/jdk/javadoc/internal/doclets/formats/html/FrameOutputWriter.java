@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
+import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
@@ -130,16 +130,15 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     private void printFramesDocument(String title, HtmlTree body) throws DocFileIOException {
         DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
         Content htmlComment = contents.newPage;
-        Content head = new HtmlTree(HtmlTag.HEAD);
-        head.addContent(getGeneratedBy(!configuration.notimestamp));
-        Content windowTitle = HtmlTree.TITLE(title);
-        head.addContent(windowTitle);
-        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE, configuration.charset);
-        head.addContent(meta);
-        addStyleSheetProperties(configuration, head);
-        head.addContent(getFramesScript().asContent());
+        Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
+                .setTimestamp(!configuration.notimestamp, false)
+                .setTitle(title)
+                .setCharset(configuration.charset)
+                .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())
+                .addDefaultScript(false)
+                .addScript(getFramesScript());
 
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
         HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlComment, htmlTree);
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
    }
