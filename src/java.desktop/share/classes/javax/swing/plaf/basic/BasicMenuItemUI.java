@@ -1106,7 +1106,8 @@ public class BasicMenuItemUI extends MenuItemUI
                 name == "accelerator") {
                 updateAcceleratorBinding();
             } else if (name == "text" || "font" == name ||
-                       "foreground" == name) {
+                       "foreground" == name ||
+                       "ancestor" == name || "graphicsConfiguration" == name) {
                 // remove the old html view client property if one
                 // existed, and install a new one if the text installed
                 // into the JLabel is html source.

@@ -1135,8 +1135,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if (graphicsConfig == gc) {
             return false;
         }
-
+        GraphicsConfiguration oldConfig = graphicsConfig;
         graphicsConfig = gc;
+
+        /*
+         * If component is moved from one screen to another sceeen
+         * graphicsConfiguration property is fired to enable the component
+         * to recalculate any rendering data, if needed
+         */
+        if (oldConfig != null && gc != null) {
+            firePropertyChange("graphicsConfiguration", oldConfig, gc);
+        }
 
         ComponentPeer peer = this.peer;
         if (peer != null) {

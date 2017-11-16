@@ -227,7 +227,8 @@ public class SynthToolTipUI extends BasicToolTipUI
         }
         String name = e.getPropertyName();
         if (name.equals("tiptext") || "font".equals(name) ||
-                "foreground".equals(name)) {
+                "foreground".equals(name) ||
+                "ancestor" == name || "graphicsConfiguration" == name) {
             // remove the old html view client property if one
             // existed, and install a new one if the text installed
             // into the JLabel is html source.
