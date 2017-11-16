@@ -523,7 +523,7 @@ void JvmtiCurrentBreakpoints::gc_epilogue() {
 //
 
 // Constructor for non-object getter
-VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, int index, BasicType type)
+VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type)
   : _thread(thread)
   , _calling_thread(NULL)
   , _depth(depth)
@@ -536,7 +536,7 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, int index, Ba
 }
 
 // Constructor for object or non-object setter
-VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, int index, BasicType type, jvalue value)
+VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value)
   : _thread(thread)
   , _calling_thread(NULL)
   , _depth(depth)

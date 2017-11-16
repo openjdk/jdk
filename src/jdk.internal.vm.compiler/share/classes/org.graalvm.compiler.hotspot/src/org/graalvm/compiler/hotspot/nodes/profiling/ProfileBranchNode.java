@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,15 @@ public class ProfileBranchNode extends ProfileWithNotificationNode {
 
     public boolean hasCondition() {
         return branchCondition != null;
+    }
+
+    @Override
+    protected boolean canBeMergedWith(ProfileNode p) {
+        if (p instanceof ProfileBranchNode) {
+            ProfileBranchNode that = (ProfileBranchNode) p;
+            return this.method.equals(that.method) && this.bci == that.bci;
+        }
+        return false;
     }
 
     /**

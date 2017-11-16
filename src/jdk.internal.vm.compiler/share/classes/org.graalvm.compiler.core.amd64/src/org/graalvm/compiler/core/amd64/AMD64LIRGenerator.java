@@ -33,15 +33,17 @@ import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.lir.LIRValueUtil.asConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.asJavaConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
+import static org.graalvm.compiler.lir.LIRValueUtil.isIntConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 
-import org.graalvm.compiler.core.common.NumUtil;
+import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64BinaryArithmetic;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64MIOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.SSEOp;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.spi.LIRKindTool;
@@ -58,13 +60,17 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.amd64.AMD64AddressValue;
 import org.graalvm.compiler.lir.amd64.AMD64ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.lir.amd64.AMD64ArrayEqualsOp;
+import org.graalvm.compiler.lir.amd64.AMD64Binary;
 import org.graalvm.compiler.lir.amd64.AMD64BinaryConsumer;
 import org.graalvm.compiler.lir.amd64.AMD64ByteSwapOp;
 import org.graalvm.compiler.lir.amd64.AMD64Call;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.BranchOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.CondMoveOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.CondSetOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.FloatBranchOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.FloatCondMoveOp;
+import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.FloatCondSetOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.ReturnOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.StrategySwitchOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.TableSwitchOp;
@@ -257,8 +263,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
 
     @Override
     public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueLabel, LabelRef falseLabel, double trueLabelProbability) {
-        boolean mirrored = emitCompare(cmpKind, left, right);
-        Condition finalCondition = mirrored ? cond.mirror() : cond;
+        Condition finalCondition = emitCompare(cmpKind, left, right, cond);
         if (cmpKind == AMD64Kind.SINGLE || cmpKind == AMD64Kind.DOUBLE) {
             append(new FloatBranchOp(finalCondition, unorderedIsTrue, trueLabel, falseLabel, trueLabelProbability));
         } else {
@@ -290,14 +295,60 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitConditionalMove(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, Value trueValue, Value falseValue) {
-        boolean mirrored = emitCompare(cmpKind, left, right);
-        Condition finalCondition = mirrored ? cond.mirror() : cond;
+        boolean isFloatComparison = cmpKind == AMD64Kind.SINGLE || cmpKind == AMD64Kind.DOUBLE;
 
-        Variable result = newVariable(trueValue.getValueKind());
-        if (cmpKind == AMD64Kind.SINGLE || cmpKind == AMD64Kind.DOUBLE) {
-            append(new FloatCondMoveOp(result, finalCondition, unorderedIsTrue, load(trueValue), load(falseValue)));
+        Condition finalCondition = cond;
+        Value finalTrueValue = trueValue;
+        Value finalFalseValue = falseValue;
+        if (isFloatComparison) {
+            // eliminate the parity check in case of a float comparison
+            Value finalLeft = left;
+            Value finalRight = right;
+            if (unorderedIsTrue != AMD64ControlFlow.trueOnUnordered(finalCondition)) {
+                if (unorderedIsTrue == AMD64ControlFlow.trueOnUnordered(finalCondition.mirror())) {
+                    finalCondition = finalCondition.mirror();
+                    finalLeft = right;
+                    finalRight = left;
+                } else if (finalCondition != Condition.EQ && finalCondition != Condition.NE) {
+                    // negating EQ and NE does not make any sense as we would need to negate
+                    // unorderedIsTrue as well (otherwise, we would no longer fulfill the Java
+                    // NaN semantics)
+                    assert unorderedIsTrue == AMD64ControlFlow.trueOnUnordered(finalCondition.negate());
+                    finalCondition = finalCondition.negate();
+                    finalTrueValue = falseValue;
+                    finalFalseValue = trueValue;
+                }
+            }
+            emitRawCompare(cmpKind, finalLeft, finalRight);
         } else {
-            append(new CondMoveOp(result, finalCondition, load(trueValue), loadNonConst(falseValue)));
+            finalCondition = emitCompare(cmpKind, left, right, cond);
+        }
+
+        boolean isParityCheckNecessary = isFloatComparison && unorderedIsTrue != AMD64ControlFlow.trueOnUnordered(finalCondition);
+        Variable result = newVariable(finalTrueValue.getValueKind());
+        if (!isParityCheckNecessary && isIntConstant(finalTrueValue, 1) && isIntConstant(finalFalseValue, 0)) {
+            if (isFloatComparison) {
+                append(new FloatCondSetOp(result, finalCondition));
+            } else {
+                append(new CondSetOp(result, finalCondition));
+            }
+        } else if (!isParityCheckNecessary && isIntConstant(finalTrueValue, 0) && isIntConstant(finalFalseValue, 1)) {
+            if (isFloatComparison) {
+                if (unorderedIsTrue == AMD64ControlFlow.trueOnUnordered(finalCondition.negate())) {
+                    append(new FloatCondSetOp(result, finalCondition.negate()));
+                } else {
+                    append(new FloatCondSetOp(result, finalCondition));
+                    Variable negatedResult = newVariable(result.getValueKind());
+                    append(new AMD64Binary.ConstOp(AMD64BinaryArithmetic.XOR, OperandSize.get(result.getPlatformKind()), negatedResult, result, 1));
+                    result = negatedResult;
+                }
+            } else {
+                append(new CondSetOp(result, finalCondition.negate()));
+            }
+        } else if (isFloatComparison) {
+            append(new FloatCondMoveOp(result, finalCondition, unorderedIsTrue, load(finalTrueValue), load(finalFalseValue)));
+        } else {
+            append(new CondMoveOp(result, finalCondition, load(finalTrueValue), loadNonConst(finalFalseValue)));
         }
         return result;
     }
@@ -394,23 +445,21 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
      *
      * @param a the left operand of the comparison
      * @param b the right operand of the comparison
+     * @param cond the condition of the comparison
      * @return true if the left and right operands were switched, false otherwise
      */
-    private boolean emitCompare(PlatformKind cmpKind, Value a, Value b) {
-        Variable left;
-        Value right;
-        boolean mirrored;
+    private Condition emitCompare(PlatformKind cmpKind, Value a, Value b, Condition cond) {
         if (LIRValueUtil.isVariable(b)) {
-            left = load(b);
-            right = loadNonConst(a);
-            mirrored = true;
+            emitRawCompare(cmpKind, b, a);
+            return cond.mirror();
         } else {
-            left = load(a);
-            right = loadNonConst(b);
-            mirrored = false;
+            emitRawCompare(cmpKind, a, b);
+            return cond;
         }
-        ((AMD64ArithmeticLIRGeneratorTool) arithmeticLIRGen).emitCompareOp((AMD64Kind) cmpKind, left, right);
-        return mirrored;
+    }
+
+    private void emitRawCompare(PlatformKind cmpKind, Value left, Value right) {
+        ((AMD64ArithmeticLIRGeneratorTool) arithmeticLIRGen).emitCompareOp((AMD64Kind) cmpKind, load(left), loadNonConst(right));
     }
 
     @Override

@@ -32,7 +32,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/universe.hpp"
-#include "prims/jni_md.h"
 #include "utilities/ticks.hpp"
 
 #define LOG_STOP_HEAP_FORMAT SIZE_FORMAT "M->" SIZE_FORMAT "M("  SIZE_FORMAT "M)"

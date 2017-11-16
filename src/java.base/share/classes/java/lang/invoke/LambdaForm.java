@@ -143,11 +143,21 @@ class LambdaForm {
         D_TYPE('D', double.class, Wrapper.DOUBLE),  // all primitive types
         V_TYPE('V', void.class,   Wrapper.VOID);    // not valid in all contexts
 
-        static final BasicType[] ALL_TYPES = BasicType.values();
-        static final BasicType[] ARG_TYPES = Arrays.copyOf(ALL_TYPES, ALL_TYPES.length-1);
+        static final @Stable BasicType[] ALL_TYPES = BasicType.values();
+        static final @Stable BasicType[] ARG_TYPES = Arrays.copyOf(ALL_TYPES, ALL_TYPES.length-1);
 
         static final int ARG_TYPE_LIMIT = ARG_TYPES.length;
         static final int TYPE_LIMIT = ALL_TYPES.length;
+
+        // Derived int constants, which (unlike the enums) can be constant folded.
+        // We can remove them when JDK-8161245 is fixed.
+        static final byte
+                L_TYPE_NUM = (byte) L_TYPE.ordinal(),
+                I_TYPE_NUM = (byte) I_TYPE.ordinal(),
+                J_TYPE_NUM = (byte) J_TYPE.ordinal(),
+                F_TYPE_NUM = (byte) F_TYPE.ordinal(),
+                D_TYPE_NUM = (byte) D_TYPE.ordinal(),
+                V_TYPE_NUM = (byte) V_TYPE.ordinal();
 
         final char btChar;
         final Class<?> btClass;
@@ -678,6 +688,9 @@ class LambdaForm {
             ptypes[i] = basicType(sig.charAt(i)).btClass;
         Class<?> rtype = signatureReturn(sig).btClass;
         return MethodType.makeImpl(rtype, ptypes, true);
+    }
+    static MethodType basicMethodType(MethodType mt) {
+        return signatureType(basicTypeSignature(mt));
     }
 
     /**
@@ -1291,14 +1304,28 @@ class LambdaForm {
         assert(sigp == sig.length);
         return String.valueOf(sig);
     }
+
+    /** Hack to make signatures more readable when they show up in method names.
+     * Signature should start with a sequence of uppercase ASCII letters.
+     * Runs of three or more are replaced by a single letter plus a decimal repeat count.
+     * A tail of anything other than uppercase ASCII is passed through unchanged.
+     * @param signature sequence of uppercase ASCII letters with possible repetitions
+     * @return same sequence, with repetitions counted by decimal numerals
+     */
     public static String shortenSignature(String signature) {
-        // Hack to make signatures more readable when they show up in method names.
         final int NO_CHAR = -1, MIN_RUN = 3;
         int c0, c1 = NO_CHAR, c1reps = 0;
         StringBuilder buf = null;
         int len = signature.length();
         if (len < MIN_RUN)  return signature;
         for (int i = 0; i <= len; i++) {
+            if (c1 != NO_CHAR && !('A' <= c1 && c1 <= 'Z')) {
+                // wrong kind of char; bail out here
+                if (buf != null) {
+                    buf.append(signature.substring(i - c1reps, len));
+                }
+                break;
+            }
             // shift in the next char:
             c0 = c1; c1 = (i == len ? NO_CHAR : signature.charAt(i));
             if (c1 == c0) { ++c1reps; continue; }
@@ -1342,7 +1369,7 @@ class LambdaForm {
             this.arguments = that.arguments;
             this.constraint = constraint;
             assert(constraint == null || isParam());  // only params have constraints
-            assert(constraint == null || constraint instanceof BoundMethodHandle.SpeciesData || constraint instanceof Class);
+            assert(constraint == null || constraint instanceof ClassSpecializer.SpeciesData || constraint instanceof Class);
         }
         Name(MethodHandle function, Object... arguments) {
             this(new NamedFunction(function), arguments);

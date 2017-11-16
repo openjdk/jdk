@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/concurrentG1Refine.hpp"
-#include "gc/g1/concurrentG1RefineThread.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1RemSet.inline.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
@@ -45,7 +45,7 @@ public:
   }
 
   virtual void do_thread(Thread* t) {
-    ConcurrentG1RefineThread* crt = (ConcurrentG1RefineThread*) t;
+    G1ConcurrentRefineThread* crt = (G1ConcurrentRefineThread*) t;
     _summary->set_rs_thread_vtime(_counter, crt->vtime_accum());
     _counter++;
   }
@@ -59,12 +59,13 @@ void G1RemSetSummary::update() {
 
   _num_coarsenings = HeapRegionRemSet::n_coarsenings();
 
-  ConcurrentG1Refine * cg1r = G1CollectedHeap::heap()->concurrent_g1_refine();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1ConcurrentRefine* cg1r = g1h->concurrent_refine();
   if (_rs_threads_vtimes != NULL) {
     GetRSThreadVTimeClosure p(this);
-    cg1r->worker_threads_do(&p);
+    cg1r->threads_do(&p);
   }
-  set_sampling_thread_vtime(cg1r->sampling_thread()->vtime_accum());
+  set_sampling_thread_vtime(g1h->sampling_thread()->vtime_accum());
 }
 
 void G1RemSetSummary::set_rs_thread_vtime(uint thread, double value) {
@@ -85,7 +86,7 @@ G1RemSetSummary::G1RemSetSummary() :
   _num_processed_buf_mutator(0),
   _num_processed_buf_rs_threads(0),
   _num_coarsenings(0),
-  _num_vtimes(ConcurrentG1Refine::thread_num()),
+  _num_vtimes(G1ConcurrentRefine::thread_num()),
   _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
   _sampling_thread_vtime(0.0f) {
 
@@ -98,7 +99,7 @@ G1RemSetSummary::G1RemSetSummary(G1RemSet* rem_set) :
   _num_processed_buf_mutator(0),
   _num_processed_buf_rs_threads(0),
   _num_coarsenings(0),
-  _num_vtimes(ConcurrentG1Refine::thread_num()),
+  _num_vtimes(G1ConcurrentRefine::thread_num()),
   _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
   _sampling_thread_vtime(0.0f) {
   update();

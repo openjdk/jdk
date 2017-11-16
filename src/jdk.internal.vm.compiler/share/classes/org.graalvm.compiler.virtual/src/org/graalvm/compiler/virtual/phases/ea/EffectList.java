@@ -171,9 +171,14 @@ public class EffectList implements Iterable<EffectList.Effect> {
     }
 
     public void apply(StructuredGraph graph, ArrayList<Node> obsoleteNodes, boolean cfgKills) {
+        boolean message = false;
         for (int i = 0; i < size(); i++) {
             Effect effect = effects[i];
             if (effect.isCfgKill() == cfgKills) {
+                if (!message) {
+                    message = true;
+                    debug.log(cfgKills ? " ==== cfg kill effects" : " ==== effects");
+                }
                 try {
                     effect.apply(graph, obsoleteNodes);
                 } catch (Throwable t) {
@@ -202,7 +207,7 @@ public class EffectList implements Iterable<EffectList.Effect> {
                     // Inner classes could capture the EffectList itself.
                     continue;
                 }
-                str.append(first ? "" : ", ").append(format(object));
+                str.append(first ? "" : ", ").append(field.getName()).append("=").append(format(object));
                 first = false;
             } catch (SecurityException | IllegalAccessException e) {
                 throw new RuntimeException(e);

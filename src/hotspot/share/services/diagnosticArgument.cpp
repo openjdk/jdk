@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/jvm.h"
 #include "runtime/thread.hpp"
 #include "services/diagnosticArgument.hpp"
 

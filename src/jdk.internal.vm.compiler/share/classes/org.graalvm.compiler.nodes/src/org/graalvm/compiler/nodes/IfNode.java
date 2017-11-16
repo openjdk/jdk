@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import java.util.ArrayList;
@@ -74,7 +74,7 @@ import jdk.vm.ci.meta.PrimitiveConstant;
  * The {@code IfNode} represents a branch that can go one of two directions depending on the outcome
  * of a comparison.
  */
-@NodeInfo(cycles = CYCLES_2, size = SIZE_2, sizeRationale = "2 jmps")
+@NodeInfo(cycles = CYCLES_1, size = SIZE_2, sizeRationale = "2 jmps")
 public final class IfNode extends ControlSplitNode implements Simplifiable, LIRLowerable {
     public static final NodeClass<IfNode> TYPE = NodeClass.create(IfNode.class);
 
@@ -375,7 +375,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
         }
 
         // Falsify the reference check.
-        setCondition(graph().addOrUnique(LogicConstantNode.contradiction()));
+        setCondition(graph().addOrUniqueWithInputs(LogicConstantNode.contradiction()));
 
         return true;
     }
@@ -726,10 +726,11 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
 
     protected void removeThroughFalseBranch(SimplifierTool tool, AbstractMergeNode merge) {
         AbstractBeginNode trueBegin = trueSuccessor();
+        LogicNode conditionNode = condition();
         graph().removeSplitPropagate(this, trueBegin);
         tool.addToWorkList(trueBegin);
-        if (condition() != null) {
-            GraphUtil.tryKillUnused(condition());
+        if (conditionNode != null) {
+            GraphUtil.tryKillUnused(conditionNode);
         }
         if (merge.isAlive() && merge.forwardEndCount() > 1) {
             for (FixedNode end : merge.forwardEnds()) {

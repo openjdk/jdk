@@ -160,7 +160,7 @@ public class ArrayCopyIntrinsificationTest extends GraalCompilerTest {
     }
 
     /**
-     * Tests {@link ArrayCopySnippets#checkcastArraycopyWork}.
+     * Tests {@link ArrayCopySnippets#arraycopyCheckcastSnippet}.
      */
     @Test
     public void testArrayStoreException() {

@@ -489,7 +489,7 @@ void external_word_Relocation::unpack_data() {
 #ifndef _LP64
   _target = (address) (intptr_t)unpack_1_int();
 #else
-  int32_t lo, hi;
+  jint lo, hi;
   unpack_2_ints(lo, hi);
   jlong t = jlong_from(hi, lo);;
   _target = (address) t;

@@ -37,7 +37,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
-import org.graalvm.compiler.nodes.calc.DivNode;
+import org.graalvm.compiler.nodes.calc.FloatDivNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.SqrtNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
@@ -141,7 +141,7 @@ public final class BinaryMathIntrinsicNode extends BinaryNode implements Arithme
 
             // x**-1 = 1/x
             if (yValue == -1.0D) {
-                return new DivNode(ConstantNode.forDouble(1), x);
+                return new FloatDivNode(ConstantNode.forDouble(1), x);
             }
 
             // x**2 = x*x

@@ -1469,8 +1469,31 @@ static void save_or_restore_arguments(MacroAssembler* masm,
   }
   // Save or restore single word registers.
   for (int i = 0; i < total_in_args; i++) {
-    // PPC64: pass ints as longs: must only deal with floats here.
-    if (in_regs[i].first()->is_FloatRegister()) {
+    if (in_regs[i].first()->is_Register()) {
+      int offset = slot * VMRegImpl::stack_slot_size;
+      // Value lives in an input register. Save it on stack.
+      switch (in_sig_bt[i]) {
+        case T_BOOLEAN:
+        case T_CHAR:
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          if (map != NULL) {
+            __ stw(in_regs[i].first()->as_Register(), offset, R1_SP);
+          } else {
+            __ lwa(in_regs[i].first()->as_Register(), offset, R1_SP);
+          }
+          slot++;
+          assert(slot <= stack_slots, "overflow (after INT or smaller stack slot)");
+          break;
+        case T_ARRAY:
+        case T_LONG:
+          // handled above
+          break;
+        case T_OBJECT:
+        default: ShouldNotReachHere();
+      }
+    } else if (in_regs[i].first()->is_FloatRegister()) {
       if (in_sig_bt[i] == T_FLOAT) {
         int offset = slot * VMRegImpl::stack_slot_size;
         slot++;

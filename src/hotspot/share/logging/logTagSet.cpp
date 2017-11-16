@@ -22,6 +22,7 @@
  *
  */
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logLevel.hpp"
@@ -31,7 +32,6 @@
 #include "logging/logTagSet.hpp"
 #include "logging/logTagSetDescriptions.hpp"
 #include "memory/allocation.inline.hpp"
-#include "prims/jvm.h"
 #include "utilities/ostream.hpp"
 
 LogTagSet*  LogTagSet::_list      = NULL;

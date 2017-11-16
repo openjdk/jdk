@@ -57,6 +57,7 @@ int CompactibleFreeListSpace::_lockRank = Mutex::leaf + 3;
 // Defaults are 0 so things will break badly if incorrectly initialized.
 size_t CompactibleFreeListSpace::IndexSetStart  = 0;
 size_t CompactibleFreeListSpace::IndexSetStride = 0;
+size_t CompactibleFreeListSpace::_min_chunk_size_in_bytes = 0;
 
 size_t MinChunkSize = 0;
 
@@ -66,8 +67,8 @@ void CompactibleFreeListSpace::set_cms_values() {
 
   // MinChunkSize should be a multiple of MinObjAlignment and be large enough
   // for chunks to contain a FreeChunk.
-  size_t min_chunk_size_in_bytes = align_up(sizeof(FreeChunk), MinObjAlignmentInBytes);
-  MinChunkSize = min_chunk_size_in_bytes / BytesPerWord;
+  _min_chunk_size_in_bytes = align_up(sizeof(FreeChunk), MinObjAlignmentInBytes);
+  MinChunkSize = _min_chunk_size_in_bytes / BytesPerWord;
 
   assert(IndexSetStart == 0 && IndexSetStride == 0, "already set");
   IndexSetStart  = MinChunkSize;

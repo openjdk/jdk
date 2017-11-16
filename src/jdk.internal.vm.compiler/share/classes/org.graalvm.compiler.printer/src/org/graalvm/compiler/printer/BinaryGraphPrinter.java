@@ -26,18 +26,17 @@ import static org.graalvm.compiler.graph.Edges.Type.Inputs;
 import static org.graalvm.compiler.graph.Edges.Type.Successors;
 
 import java.io.IOException;
-import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import jdk.vm.ci.meta.ResolvedJavaField;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.graph.Edges;
@@ -46,6 +45,7 @@ import org.graalvm.compiler.graph.InputEdges;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeMap;
+import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
@@ -55,21 +55,22 @@ import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.VirtualState;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Signature;
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.graph.NodeSourcePosition;
-import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.util.JavaConstantFormattable;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.graphio.GraphBlocks;
 import org.graalvm.graphio.GraphElements;
 import org.graalvm.graphio.GraphOutput;
 import org.graalvm.graphio.GraphStructure;
 import org.graalvm.graphio.GraphTypes;
+
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Signature;
 
 public class BinaryGraphPrinter implements
                 GraphStructure<BinaryGraphPrinter.GraphInfo, Node, NodeClass<?>, Edges>,
@@ -79,8 +80,8 @@ public class BinaryGraphPrinter implements
     private final SnippetReflectionProvider snippetReflection;
     private final GraphOutput<BinaryGraphPrinter.GraphInfo, ResolvedJavaMethod> output;
 
-    public BinaryGraphPrinter(WritableByteChannel channel, SnippetReflectionProvider snippetReflection) throws IOException {
-        this.output = GraphOutput.newBuilder(this).blocks(this).elements(this).types(this).build(channel);
+    public BinaryGraphPrinter(DebugContext ctx, SnippetReflectionProvider snippetReflection) throws IOException {
+        this.output = ctx.buildOutput(GraphOutput.newBuilder(this).protocolVersion(5, 0).blocks(this).elements(this).types(this));
         this.snippetReflection = snippetReflection;
     }
 
@@ -116,14 +117,21 @@ public class BinaryGraphPrinter implements
     }
 
     @Override
+    public Node node(Object obj) {
+        return obj instanceof Node ? (Node) obj : null;
+    }
+
+    @Override
     public NodeClass<?> nodeClass(Object obj) {
         if (obj instanceof NodeClass<?>) {
             return (NodeClass<?>) obj;
         }
-        if (obj instanceof Node) {
-            return ((Node) obj).getNodeClass();
-        }
         return null;
+    }
+
+    @Override
+    public NodeClass<?> classForNode(Node node) {
+        return node.getNodeClass();
     }
 
     @Override
@@ -256,6 +264,13 @@ public class BinaryGraphPrinter implements
                 updateStringPropertiesForConstant((Map) props, cn);
             }
             props.put("category", "floating");
+        }
+        if (getSnippetReflectionProvider() != null) {
+            for (Map.Entry<String, Object> prop : props.entrySet()) {
+                if (prop.getValue() instanceof JavaConstantFormattable) {
+                    props.put(prop.getKey(), ((JavaConstantFormattable) prop.getValue()).format(this));
+                }
+            }
         }
     }
 

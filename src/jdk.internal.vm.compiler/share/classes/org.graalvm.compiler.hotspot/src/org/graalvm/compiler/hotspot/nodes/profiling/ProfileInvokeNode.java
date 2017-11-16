@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,15 @@ public class ProfileInvokeNode extends ProfileWithNotificationNode {
 
     public ProfileInvokeNode(ResolvedJavaMethod method, int freqLog, int probabilityLog) {
         super(TYPE, method, freqLog, probabilityLog);
+    }
+
+    @Override
+    protected boolean canBeMergedWith(ProfileNode p) {
+        if (p instanceof ProfileInvokeNode) {
+            ProfileInvokeNode that = (ProfileInvokeNode) p;
+            return this.method.equals(that.method);
+        }
+        return false;
     }
 
     /**

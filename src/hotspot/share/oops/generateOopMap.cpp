@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
-#include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/relocator.hpp"
@@ -2146,8 +2146,14 @@ void GenerateOopMap::error_work(const char *format, va_list ap) {
   // Append method name
   char msg_buffer2[512];
   jio_snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg_buffer, method()->name()->as_C_string());
-  _exception = Exceptions::new_exception(Thread::current(),
-                vmSymbols::java_lang_LinkageError(), msg_buffer2);
+  if (Thread::current()->can_call_java()) {
+    _exception = Exceptions::new_exception(Thread::current(),
+                  vmSymbols::java_lang_LinkageError(), msg_buffer2);
+  } else {
+    // We cannot instantiate an exception object from a compiler thread.
+    // Exit the VM with a useful error message.
+    fatal("%s", msg_buffer2);
+  }
 }
 
 void GenerateOopMap::report_error(const char *format, ...) {
@@ -2159,14 +2165,7 @@ void GenerateOopMap::report_error(const char *format, ...) {
 void GenerateOopMap::verify_error(const char *format, ...) {
   // We do not distinguish between different types of errors for verification
   // errors.  Let the verifier give a better message.
-  const char *msg = "Illegal class file encountered. Try running with -Xverify:all";
-  _got_error = true;
-  // Append method name
-  char msg_buffer2[512];
-  jio_snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg,
-               method()->name()->as_C_string());
-  _exception = Exceptions::new_exception(Thread::current(),
-                vmSymbols::java_lang_LinkageError(), msg_buffer2);
+  report_error("Illegal class file encountered. Try running with -Xverify:all");
 }
 
 //

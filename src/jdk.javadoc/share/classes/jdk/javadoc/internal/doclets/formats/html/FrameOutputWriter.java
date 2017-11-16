@@ -139,7 +139,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         head.addContent(windowTitle);
         Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE, configuration.charset);
         head.addContent(meta);
-        head.addContent(getStyleSheetProperties(configuration));
+        addStyleSheetProperties(configuration, head);
         head.addContent(getFramesJavaScript());
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
                 head, body);

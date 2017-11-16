@@ -62,7 +62,7 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   HandleMark hm;  // Discard invalid handles created during gc
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   DerivedPointerTable::clear();
 #endif
 #ifdef ASSERT
@@ -96,7 +96,7 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   // Prepare compaction.
   mark_sweep_phase2();
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   // Don't add any more derived pointers during phase3
   DerivedPointerTable::set_active(false);
 #endif
@@ -111,7 +111,7 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   BiasedLocking::restore_marks();
   GenMarkSweep::deallocate_stacks();
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   // Now update the derived pointers.
   DerivedPointerTable::update_pointers();
 #endif
@@ -204,7 +204,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     DerivedPointerTableDeactivate dpt_deact;
 #endif
     g1h->prepare_for_verify();

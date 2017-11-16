@@ -37,7 +37,6 @@ import org.graalvm.compiler.hotspot.nodes.SerialArrayRangeWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.SerialWriteBarrier;
 import org.graalvm.compiler.hotspot.phases.WriteBarrierAdditionPhase;
 import org.graalvm.compiler.hotspot.phases.WriteBarrierVerificationPhase;
-import org.graalvm.compiler.hotspot.replacements.arraycopy.UnsafeArrayCopyNode;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.FieldLocationIdentity;
@@ -627,12 +626,6 @@ public class WriteBarrierVerificationTest extends HotSpotGraalCompilerTest {
 
     public static void test13Snippet(Object[] a, Object[] b) {
         System.arraycopy(a, 0, b, 0, a.length);
-    }
-
-    @Test
-    public void test61() {
-        GraphPredicate checkForUnsafeArrayCopy = graph -> graph.getNodes().filter(UnsafeArrayCopyNode.class).count() > 0 ? 1 : 0;
-        testPredicate("test13Snippet", checkForUnsafeArrayCopy, new int[]{});
     }
 
     private interface GraphPredicate {

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -51,7 +52,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/verifyOopClosure.hpp"
-#include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -762,7 +762,7 @@ bool Thread::is_interrupted(Thread* thread, bool clear_interrupted) {
 
 // GC Support
 bool Thread::claim_oops_do_par_case(int strong_roots_parity) {
-  jint thread_parity = _oops_do_parity;
+  int thread_parity = _oops_do_parity;
   if (thread_parity != strong_roots_parity) {
     jint res = Atomic::cmpxchg(strong_roots_parity, &_oops_do_parity, thread_parity);
     if (res == thread_parity) {
@@ -3724,7 +3724,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // initialize compiler(s)
-#if defined(COMPILER1) || defined(COMPILER2) || INCLUDE_JVMCI
+#if defined(COMPILER1) || COMPILER2_OR_JVMCI
   CompileBroker::compilation_init(CHECK_JNI_ERR);
 #endif
 

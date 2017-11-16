@@ -258,7 +258,7 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
         return false;
     }
 
-    private final class GraphChangeListener implements NodeEventListener {
+    private final class GraphChangeListener extends NodeEventListener {
         boolean changed;
         private StructuredGraph graph;
         private Mark mark;
@@ -269,7 +269,7 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
         }
 
         @Override
-        public void event(NodeEvent e, Node node) {
+        public void changed(NodeEvent e, Node node) {
             if (!graph.isNew(mark, node) && node.isAlive()) {
                 if (e == NodeEvent.INPUT_CHANGED || e == NodeEvent.ZERO_USAGES) {
                     changed = true;

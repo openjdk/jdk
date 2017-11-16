@@ -27,12 +27,12 @@
 // Last synchronization: changeset f8c9417e3571
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/jvm.h"
 #include "prims/methodHandles.hpp"
 
 #define __ _masm->

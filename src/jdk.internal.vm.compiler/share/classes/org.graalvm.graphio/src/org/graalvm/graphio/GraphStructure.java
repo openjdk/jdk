@@ -38,9 +38,9 @@ import java.util.Map;
  */
 public interface GraphStructure<G, N, C, P> {
     /**
-     * Casts the provided object to graph, if possible. If the given object <code>obj</code> can be
-     * seen as a graph or sub-graph of a graph, then return the properly typed instance. Otherwise
-     * return <code>null</code>
+     * Casts {@code obj} to graph, if possible. If the given object <code>obj</code> can be seen as
+     * a graph or sub-graph of a graph, then return the properly typed instance. Otherwise return
+     * <code>null</code>
      *
      * @param currentGraph the currently processed graph
      * @param obj an object to check and view as a graph
@@ -69,8 +69,8 @@ public interface GraphStructure<G, N, C, P> {
     int nodesCount(G graph);
 
     /**
-     * Id of a node. Each node in the graph is uniquely identified by a integer value. If two nodes
-     * have the same id, then they shall be <code>==</code> to each other.
+     * Id of {@code node}. Each node in the graph is uniquely identified by an integer value. If two
+     * nodes have the same id, then they shall be <code>==</code> to each other.
      *
      * @param node the node to query for an id
      * @return the id of the node
@@ -96,14 +96,33 @@ public interface GraphStructure<G, N, C, P> {
     void nodeProperties(G graph, N node, Map<String, ? super Object> properties);
 
     /**
-     * Finds the node class for the provided object, if possible. If the given object
-     * <code>obj</code> can be seen as an instance of node class or it is a node in this graph,
-     * return the properly typed instance of the node class. Otherwise return <code>null</code>
+     * Finds a node for {@code obj}, if possible. If the given object <code>obj</code> can be seen
+     * as an instance of node return the properly typed instance of the node class. Otherwise return
+     * <code>null</code>.
+     *
+     * @param obj an object to find node for
+     * @return appropriate graph object or <code>null</code> if the object doesn't represent a node
+     */
+    N node(Object obj);
+
+    /**
+     * Finds a node class for {@code obj}, if possible. If the given object <code>obj</code> can be
+     * seen as an instance of node class return the properly typed instance of the node class.
+     * Otherwise return <code>null</code>.
      *
      * @param obj an object to find node class for
-     * @return appropriate graph object or <code>null</code> if the object doesn't represent a graph
+     * @return appropriate graph object or <code>null</code> if the object doesn't represent a node
+     *         class
      */
     C nodeClass(Object obj);
+
+    /**
+     * Finds a node class for {@code node}.
+     *
+     * @param node an instance of node in this graph
+     * @return the node's node class, never <code>null</code>
+     */
+    C classForNode(N node);
 
     /**
      * The template used to build the name of nodes of this class. The template may use references

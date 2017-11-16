@@ -91,5 +91,6 @@ public class VMDeprecatedOptions {
     public static void main(String[] args) throws Throwable {
         testDeprecated(DEPRECATED_OPTIONS);  // Make sure that each deprecated option is mentioned in the output.
         testDeprecatedDiagnostic("UnsyncloadClass", "false");
+        testDeprecatedDiagnostic("IgnoreUnverifiableClassesDuringDump", "false");
     }
 }

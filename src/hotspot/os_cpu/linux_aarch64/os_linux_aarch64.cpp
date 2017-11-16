@@ -24,6 +24,7 @@
  */
 
 // no precompiled headers
+#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -33,11 +34,9 @@
 #include "code/vtableStubs.hpp"
 #include "code/nativeInst.hpp"
 #include "interpreter/interpreter.hpp"
-#include "jvm_linux.h"
 #include "memory/allocation.inline.hpp"
 #include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
-#include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/extendedPC.hpp"
@@ -234,8 +233,17 @@ frame os::get_sender_for_C_frame(frame* fr) {
 }
 
 intptr_t* _get_previous_fp() {
-  register intptr_t **ebp __asm__ (SPELL_REG_FP);
-  return (intptr_t*) *ebp;   // we want what it points to.
+  register intptr_t **fp __asm__ (SPELL_REG_FP);
+
+  // fp is for this frame (_get_previous_fp). We want the fp for the
+  // caller of os::current_frame*(), so go up two frames. However, for
+  // optimized builds, _get_previous_fp() will be inlined, so only go
+  // up 1 frame in that case.
+  #ifdef _NMT_NOINLINE_
+    return **(intptr_t***)fp;
+  #else
+    return *fp;
+  #endif
 }
 
 

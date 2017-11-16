@@ -941,7 +941,7 @@ inline void Assembler::vpmsumh(  VectorRegister d, VectorRegister a, VectorRegis
 inline void Assembler::vpmsumw(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPMSUMW_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 
 // Vector Permute and Xor (introduced with Power 8)
-inline void Assembler::vpermxor( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VPMSUMW_OPCODE | vrt(d) | vra(a) | vrb(b) | vrc(c)); }
+inline void Assembler::vpermxor( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VPERMXOR_OPCODE | vrt(d) | vra(a) | vrb(b) | vrc(c)); }
 
 // Transactional Memory instructions (introduced with Power 8)
 inline void Assembler::tbegin_()                                { emit_int32( TBEGIN_OPCODE | rc(1)); }

@@ -82,6 +82,9 @@ public final class BranchProbabilityNode extends FloatingNode implements Simplif
 
     @Override
     public void simplify(SimplifierTool tool) {
+        if (!hasUsages()) {
+            return;
+        }
         if (probability.isConstant()) {
             double probabilityValue = probability.asJavaConstant().asDouble();
             if (probabilityValue < 0.0) {

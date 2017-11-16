@@ -22,10 +22,14 @@
  */
 package org.graalvm.compiler.asm.amd64;
 
-import static org.graalvm.compiler.core.common.NumUtil.isByte;
-import static org.graalvm.compiler.core.common.NumUtil.isInt;
-import static org.graalvm.compiler.core.common.NumUtil.isShiftCount;
-import static org.graalvm.compiler.core.common.NumUtil.isUByte;
+import static jdk.vm.ci.amd64.AMD64.CPU;
+import static jdk.vm.ci.amd64.AMD64.XMM;
+import static jdk.vm.ci.amd64.AMD64.r12;
+import static jdk.vm.ci.amd64.AMD64.r13;
+import static jdk.vm.ci.amd64.AMD64.rbp;
+import static jdk.vm.ci.amd64.AMD64.rip;
+import static jdk.vm.ci.amd64.AMD64.rsp;
+import static jdk.vm.ci.code.MemoryBarriers.STORE_LOAD;
 import static org.graalvm.compiler.asm.amd64.AMD64AsmOptions.UseAddressNop;
 import static org.graalvm.compiler.asm.amd64.AMD64AsmOptions.UseNormalNop;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64BinaryArithmetic.ADD;
@@ -47,25 +51,24 @@ import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.QWORD;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.SD;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.SS;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.WORD;
-import static jdk.vm.ci.amd64.AMD64.CPU;
-import static jdk.vm.ci.amd64.AMD64.XMM;
-import static jdk.vm.ci.amd64.AMD64.r12;
-import static jdk.vm.ci.amd64.AMD64.r13;
-import static jdk.vm.ci.amd64.AMD64.rbp;
-import static jdk.vm.ci.amd64.AMD64.rip;
-import static jdk.vm.ci.amd64.AMD64.rsp;
-import static jdk.vm.ci.code.MemoryBarriers.STORE_LOAD;
+import static org.graalvm.compiler.core.common.NumUtil.isByte;
+import static org.graalvm.compiler.core.common.NumUtil.isInt;
+import static org.graalvm.compiler.core.common.NumUtil.isShiftCount;
+import static org.graalvm.compiler.core.common.NumUtil.isUByte;
 
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
+import org.graalvm.compiler.core.common.NumUtil;
+import org.graalvm.compiler.debug.GraalError;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;
+import jdk.vm.ci.amd64.AMD64Kind;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.PlatformKind;
 
 /**
  * This class implements an assembler that can encode most X86 instructions.
@@ -225,7 +228,7 @@ public class AMD64Assembler extends Assembler {
      * The x86 operand sizes.
      */
     public enum OperandSize {
-        BYTE(1) {
+        BYTE(1, AMD64Kind.BYTE) {
             @Override
             protected void emitImmediate(AMD64Assembler asm, int imm) {
                 assert imm == (byte) imm;
@@ -238,7 +241,7 @@ public class AMD64Assembler extends Assembler {
             }
         },
 
-        WORD(2, 0x66) {
+        WORD(2, AMD64Kind.WORD, 0x66) {
             @Override
             protected void emitImmediate(AMD64Assembler asm, int imm) {
                 assert imm == (short) imm;
@@ -251,7 +254,7 @@ public class AMD64Assembler extends Assembler {
             }
         },
 
-        DWORD(4) {
+        DWORD(4, AMD64Kind.DWORD) {
             @Override
             protected void emitImmediate(AMD64Assembler asm, int imm) {
                 asm.emitInt(imm);
@@ -263,7 +266,7 @@ public class AMD64Assembler extends Assembler {
             }
         },
 
-        QWORD(8) {
+        QWORD(8, AMD64Kind.QWORD) {
             @Override
             protected void emitImmediate(AMD64Assembler asm, int imm) {
                 asm.emitInt(imm);
@@ -275,34 +278,35 @@ public class AMD64Assembler extends Assembler {
             }
         },
 
-        SS(4, 0xF3, true),
+        SS(4, AMD64Kind.SINGLE, 0xF3, true),
 
-        SD(8, 0xF2, true),
+        SD(8, AMD64Kind.DOUBLE, 0xF2, true),
 
-        PS(16, true),
+        PS(16, AMD64Kind.V128_SINGLE, true),
 
-        PD(16, 0x66, true);
+        PD(16, AMD64Kind.V128_DOUBLE, 0x66, true);
 
         private final int sizePrefix;
-
         private final int bytes;
         private final boolean xmm;
+        private final AMD64Kind kind;
 
-        OperandSize(int bytes) {
-            this(bytes, 0);
+        OperandSize(int bytes, AMD64Kind kind) {
+            this(bytes, kind, 0);
         }
 
-        OperandSize(int bytes, int sizePrefix) {
-            this(bytes, sizePrefix, false);
+        OperandSize(int bytes, AMD64Kind kind, int sizePrefix) {
+            this(bytes, kind, sizePrefix, false);
         }
 
-        OperandSize(int bytes, boolean xmm) {
-            this(bytes, 0, xmm);
+        OperandSize(int bytes, AMD64Kind kind, boolean xmm) {
+            this(bytes, kind, 0, xmm);
         }
 
-        OperandSize(int bytes, int sizePrefix, boolean xmm) {
+        OperandSize(int bytes, AMD64Kind kind, int sizePrefix, boolean xmm) {
             this.sizePrefix = sizePrefix;
             this.bytes = bytes;
+            this.kind = kind;
             this.xmm = xmm;
         }
 
@@ -312,6 +316,19 @@ public class AMD64Assembler extends Assembler {
 
         public boolean isXmmType() {
             return xmm;
+        }
+
+        public AMD64Kind getKind() {
+            return kind;
+        }
+
+        public static OperandSize get(PlatformKind kind) {
+            for (OperandSize operandSize : OperandSize.values()) {
+                if (operandSize.kind.equals(kind)) {
+                    return operandSize;
+                }
+            }
+            throw GraalError.shouldNotReachHere("Unexpected kind: " + kind.toString());
         }
 
         /**
@@ -2230,6 +2247,14 @@ public class AMD64Assembler extends Assembler {
         emitOperandHelper(dst, src, 0);
     }
 
+    public final void movzbl(Register dst, Register src) {
+        AMD64RMOp.MOVZXB.emit(this, OperandSize.DWORD, dst, src);
+    }
+
+    public final void movzbq(Register dst, Register src) {
+        AMD64RMOp.MOVZXB.emit(this, OperandSize.QWORD, dst, src);
+    }
+
     public final void movzwl(Register dst, AMD64Address src) {
         prefix(src, dst);
         emitByte(0x0F);
@@ -3195,6 +3220,13 @@ public class AMD64Assembler extends Assembler {
         int encode = prefixqAndEncode(dst.encoding, src.encoding);
         emitByte(0x0F);
         emitByte(0x40 | cc.getValue());
+        emitByte(0xC0 | encode);
+    }
+
+    public final void setb(ConditionFlag cc, Register dst) {
+        int encode = prefixAndEncode(dst.encoding, true);
+        emitByte(0x0F);
+        emitByte(0x90 | cc.getValue());
         emitByte(0xC0 | encode);
     }
 

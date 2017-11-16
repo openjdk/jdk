@@ -22,8 +22,8 @@
  *
  */
 
+#include "jvm.h"
 #include "utilities/globalDefinitions.hpp"
-#include "prims/jvm.h"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"

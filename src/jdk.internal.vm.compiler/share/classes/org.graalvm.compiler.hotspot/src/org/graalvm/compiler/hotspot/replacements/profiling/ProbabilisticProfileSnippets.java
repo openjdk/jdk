@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
 
+import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.code.TargetDescription;
 
 public class ProbabilisticProfileSnippets implements Snippets {
@@ -64,22 +65,22 @@ public class ProbabilisticProfileSnippets implements Snippets {
     }
 
     @Snippet
-    public static int notificationMask(int freqLog, int probLog) {
-        int probabilityMask = (1 << probLog) - 1;
+    public static int notificationMask(int freqLog, int probLog, int stepLog) {
         int frequencyMask = (1 << freqLog) - 1;
-        return frequencyMask & ~probabilityMask;
+        int stepMask = (1 << (stepLog + probLog)) - 1;
+        return frequencyMask & ~stepMask;
     }
 
     @NodeIntrinsic(ForeignCallNode.class)
     public static native void methodInvocationEvent(@ConstantNodeParameter ForeignCallDescriptor descriptor, MethodCountersPointer counters);
 
     @Snippet
-    public static void profileMethodEntryWithProbability(MethodCountersPointer counters, int random, @ConstantParameter int freqLog, @ConstantParameter int probLog) {
+    public static void profileMethodEntryWithProbability(MethodCountersPointer counters, int random, int step, int stepLog, @ConstantParameter int freqLog, @ConstantParameter int probLog) {
         if (probability(1.0 / (1 << probLog), shouldProfile(probLog, random))) {
-            int counterValue = counters.readInt(config(INJECTED_VMCONFIG).invocationCounterOffset) + (config(INJECTED_VMCONFIG).invocationCounterIncrement << probLog);
+            int counterValue = counters.readInt(config(INJECTED_VMCONFIG).invocationCounterOffset) + ((config(INJECTED_VMCONFIG).invocationCounterIncrement * step) << probLog);
             counters.writeInt(config(INJECTED_VMCONFIG).invocationCounterOffset, counterValue);
             if (freqLog >= 0) {
-                int mask = notificationMask(freqLog, probLog);
+                int mask = notificationMask(freqLog, probLog, stepLog);
                 if (probability(SLOW_PATH_PROBABILITY, (counterValue & (mask << config(INJECTED_VMCONFIG).invocationCounterShift)) == 0)) {
                     methodInvocationEvent(HotSpotBackend.INVOCATION_EVENT, counters);
                 }
@@ -91,11 +92,12 @@ public class ProbabilisticProfileSnippets implements Snippets {
     public static native void methodBackedgeEvent(@ConstantNodeParameter ForeignCallDescriptor descriptor, MethodCountersPointer counters, int bci, int targetBci);
 
     @Snippet
-    public static void profileBackedgeWithProbability(MethodCountersPointer counters, int random, @ConstantParameter int freqLog, @ConstantParameter int probLog, int bci, int targetBci) {
+    public static void profileBackedgeWithProbability(MethodCountersPointer counters, int random, int step, int stepLog, @ConstantParameter int freqLog, @ConstantParameter int probLog, int bci,
+                    int targetBci) {
         if (probability(1.0 / (1 << probLog), shouldProfile(probLog, random))) {
-            int counterValue = counters.readInt(config(INJECTED_VMCONFIG).backedgeCounterOffset) + (config(INJECTED_VMCONFIG).invocationCounterIncrement << probLog);
+            int counterValue = counters.readInt(config(INJECTED_VMCONFIG).backedgeCounterOffset) + ((config(INJECTED_VMCONFIG).invocationCounterIncrement * step) << probLog);
             counters.writeInt(config(INJECTED_VMCONFIG).backedgeCounterOffset, counterValue);
-            int mask = notificationMask(freqLog, probLog);
+            int mask = notificationMask(freqLog, probLog, stepLog);
             if (probability(SLOW_PATH_PROBABILITY, (counterValue & (mask << config(INJECTED_VMCONFIG).invocationCounterShift)) == 0)) {
                 methodBackedgeEvent(HotSpotBackend.BACKEDGE_EVENT, counters, bci, targetBci);
             }
@@ -103,10 +105,11 @@ public class ProbabilisticProfileSnippets implements Snippets {
     }
 
     @Snippet
-    public static void profileConditionalBackedgeWithProbability(MethodCountersPointer counters, int random, @ConstantParameter int freqLog, @ConstantParameter int probLog, boolean branchCondition,
+    public static void profileConditionalBackedgeWithProbability(MethodCountersPointer counters, int random, int step, int stepLog, @ConstantParameter int freqLog,
+                    @ConstantParameter int probLog, boolean branchCondition,
                     int bci, int targetBci) {
         if (branchCondition) {
-            profileBackedgeWithProbability(counters, random, freqLog, probLog, bci, targetBci);
+            profileBackedgeWithProbability(counters, random, step, stepLog, freqLog, probLog, bci, targetBci);
         }
     }
 
@@ -124,6 +127,8 @@ public class ProbabilisticProfileSnippets implements Snippets {
 
             StructuredGraph graph = profileNode.graph();
             LoadMethodCountersNode counters = graph.unique(new LoadMethodCountersNode(profileNode.getProfiledMethod()));
+            ConstantNode step = ConstantNode.forInt(profileNode.getStep(), graph);
+            ConstantNode stepLog = ConstantNode.forInt(CodeUtil.log2(profileNode.getStep()), graph);
 
             if (profileNode instanceof ProfileBranchNode) {
                 // Backedge event
@@ -132,8 +137,11 @@ public class ProbabilisticProfileSnippets implements Snippets {
                 Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
                 ConstantNode bci = ConstantNode.forInt(profileBranchNode.bci(), graph);
                 ConstantNode targetBci = ConstantNode.forInt(profileBranchNode.targetBci(), graph);
+
                 args.add("counters", counters);
                 args.add("random", profileBranchNode.getRandom());
+                args.add("step", step);
+                args.add("stepLog", stepLog);
                 args.addConst("freqLog", profileBranchNode.getNotificationFreqLog());
                 args.addConst("probLog", profileBranchNode.getProbabilityLog());
                 if (profileBranchNode.hasCondition()) {
@@ -148,8 +156,11 @@ public class ProbabilisticProfileSnippets implements Snippets {
                 ProfileInvokeNode profileInvokeNode = (ProfileInvokeNode) profileNode;
                 // Method invocation event
                 Arguments args = new Arguments(profileMethodEntryWithProbability, graph.getGuardsStage(), tool.getLoweringStage());
+
                 args.add("counters", counters);
                 args.add("random", profileInvokeNode.getRandom());
+                args.add("step", step);
+                args.add("stepLog", stepLog);
                 args.addConst("freqLog", profileInvokeNode.getNotificationFreqLog());
                 args.addConst("probLog", profileInvokeNode.getProbabilityLog());
                 SnippetTemplate template = template(graph.getDebug(), args);

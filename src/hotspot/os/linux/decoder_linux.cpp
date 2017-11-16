@@ -22,7 +22,7 @@
  *
  */
 
-#include "prims/jvm.h"
+#include "jvm.h"
 #include "utilities/decoder_elf.hpp"
 
 #include <cxxabi.h>

@@ -37,6 +37,7 @@ import org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.SSEOp;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
@@ -132,12 +133,19 @@ public final class AMD64ArrayEqualsOp extends AMD64LIRInstruction {
         masm.leaq(array2, new AMD64Address(asRegister(array2Value), arrayBaseOffset));
 
         // Get array length in bytes.
-        masm.imull(length, asRegister(lengthValue), arrayIndexScale);
+        masm.movl(length, asRegister(lengthValue));
+
+        if (arrayIndexScale > 1) {
+            masm.shll(length, NumUtil.log2Ceil(arrayIndexScale)); // scale length
+        }
+
         masm.movl(result, length); // copy
 
         if (supportsAVX2(crb.target)) {
             emitAVXCompare(crb, masm, result, array1, array2, length, trueLabel, falseLabel);
         } else if (supportsSSE41(crb.target)) {
+            // this code is used for AVX as well because our backend correctly ensures that
+            // VEX-prefixed instructions are emitted if AVX is supported
             emitSSE41Compare(crb, masm, result, array1, array2, length, trueLabel, falseLabel);
         }
 

@@ -39,6 +39,10 @@
 
 #define JNI_ONLOAD_SYMBOLS   {"JNI_OnLoad"}
 #define JNI_ONUNLOAD_SYMBOLS {"JNI_OnUnload"}
+#define JVM_ONLOAD_SYMBOLS      {"JVM_OnLoad"}
+#define AGENT_ONLOAD_SYMBOLS    {"Agent_OnLoad"}
+#define AGENT_ONUNLOAD_SYMBOLS  {"Agent_OnUnload"}
+#define AGENT_ONATTACH_SYMBOLS  {"Agent_OnAttach"}
 
 #define JNI_LIB_PREFIX "lib"
 #ifdef __APPLE__
@@ -50,7 +54,15 @@
 #endif
 #define JNI_LIB_NAME(NAME) JNI_LIB_PREFIX NAME JNI_LIB_SUFFIX
 
+#if defined(AIX) || defined(SOLARIS)
 #define JVM_MAXPATHLEN MAXPATHLEN
+#else
+// Hack: MAXPATHLEN is 4095 on some Linux and 4096 on others. This may
+//       cause problems if JVM and the rest of JDK are built on different
+//       Linux releases. Here we define JVM_MAXPATHLEN to be MAXPATHLEN + 1,
+//       so buffers declared in VM are always >= 4096.
+#define JVM_MAXPATHLEN MAXPATHLEN + 1
+#endif
 
 #define JVM_R_OK    R_OK
 #define JVM_W_OK    W_OK
@@ -67,19 +79,22 @@
 #include <errno.h>
 #include <signal.h>
 
-/* O Flags */
-
-#define JVM_O_RDONLY     O_RDONLY
-#define JVM_O_WRONLY     O_WRONLY
-#define JVM_O_RDWR       O_RDWR
-#define JVM_O_O_APPEND   O_APPEND
-#define JVM_O_EXCL       O_EXCL
-#define JVM_O_CREAT      O_CREAT
-
 /* Signals */
+
+#include <sys/socket.h>   // for socklen_t
 
 #define JVM_SIGINT     SIGINT
 #define JVM_SIGTERM    SIGTERM
 
+#define BREAK_SIGNAL     SIGQUIT           /* Thread dumping support.    */
+#ifdef SOLARIS
+#define ASYNC_SIGNAL     SIGJVM2           /* Event-based suspend/resume support */
+#endif // SOLARIS
+#define SHUTDOWN1_SIGNAL SIGHUP            /* Shutdown Hooks support.    */
+#define SHUTDOWN2_SIGNAL SIGINT
+#define SHUTDOWN3_SIGNAL SIGTERM
+
+/* With 1.4.1 libjsig added versioning: used in os_solaris.cpp and jsig.c */
+#define JSIG_VERSION_1_4_1   0x30140100
 
 #endif /* !_JAVASOFT_JVM_MD_H_ */

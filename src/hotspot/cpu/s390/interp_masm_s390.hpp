@@ -86,6 +86,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void dispatch_next_noverify_oop(TosState state, int step = 0);
   void dispatch_via(TosState state, address* table);
 
+  void narrow(Register result, Register ret_type);
+
   // Jump to an invoked target.
   void prepare_to_jump_from_interpreted(Register method);
   void jump_from_interpreted(Register method, Register temp);

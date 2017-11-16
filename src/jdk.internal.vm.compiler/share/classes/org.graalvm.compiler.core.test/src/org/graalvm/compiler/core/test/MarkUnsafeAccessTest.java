@@ -25,6 +25,7 @@ package org.graalvm.compiler.core.test;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -33,22 +34,20 @@ import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import jdk.vm.ci.code.InstalledCode;
-import jdk.vm.ci.code.InvalidInstalledCodeException;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
-
-import sun.misc.Unsafe;
-
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.common.inlining.policy.InlineEverythingPolicy;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
+
+import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.code.InvalidInstalledCodeException;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import sun.misc.Unsafe;
 
 public class MarkUnsafeAccessTest extends GraalCompilerTest {
 
@@ -170,7 +169,9 @@ public class MarkUnsafeAccessTest extends GraalCompilerTest {
         try {
             mbb.position(BLOCK_SIZE);
             getter.get(mbb);
-            System.currentTimeMillis(); // materialize async exception
+
+            // Make a call that goes into native code to materialize async exception
+            new File("").exists();
         } catch (InternalError e) {
             return;
         }

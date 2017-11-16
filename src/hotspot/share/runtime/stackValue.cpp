@@ -191,12 +191,12 @@ BasicLock* StackValue::resolve_monitor_lock(const frame* fr, Location location) 
 void StackValue::print_on(outputStream* st) const {
   switch(_type) {
     case T_INT:
-      st->print("%d (int) %f (float) %x (hex)",  *(int *)&_i, *(float *)&_i,  *(int *)&_i);
+      st->print("%d (int) %f (float) %x (hex)",  *(int *)&_integer_value, *(float *)&_integer_value,  *(int *)&_integer_value);
       break;
 
     case T_OBJECT:
-     _o()->print_value_on(st);
-      st->print(" <" INTPTR_FORMAT ">", p2i((address)_o()));
+      _handle_value()->print_value_on(st);
+      st->print(" <" INTPTR_FORMAT ">", p2i((address)_handle_value()));
      break;
 
     case T_CONFLICT:

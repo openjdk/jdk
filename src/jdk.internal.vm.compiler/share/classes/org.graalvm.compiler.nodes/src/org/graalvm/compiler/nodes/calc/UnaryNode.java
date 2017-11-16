@@ -45,6 +45,11 @@ public abstract class UnaryNode extends FloatingNode implements Canonicalizable.
         return value;
     }
 
+    public void setValue(ValueNode value) {
+        updateUsages(this.value, value);
+        this.value = value;
+    }
+
     /**
      * Creates a new UnaryNode instance.
      *

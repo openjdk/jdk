@@ -217,7 +217,7 @@ class CompileBroker: AllStatic {
   static int _sum_nmethod_code_size;
   static long _peak_compilation_time;
 
-  static volatile jint _print_compilation_warning;
+  static volatile int _print_compilation_warning;
 
   static JavaThread* make_thread(const char* name, CompileQueue* queue, CompilerCounters* counters, AbstractCompiler* comp, bool compiler_thread, TRAPS);
   static void init_compiler_sweeper_threads(int c1_compiler_count, int c2_compiler_count);

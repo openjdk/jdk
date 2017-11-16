@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_UTILITIES_FORMATBUFFER_HPP
 #define SHARE_VM_UTILITIES_FORMATBUFFER_HPP
 
+#include "jvm.h"
 #include "utilities/globalDefinitions.hpp"
-#include "prims/jvm.h"
 #include <stdarg.h>
 
 // Simple class to format the ctor arguments into a fixed-sized buffer.
