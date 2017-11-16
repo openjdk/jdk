@@ -2162,6 +2162,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 pathToRoot.resolve(stylesheet).getPath(),
                 "Style");
         head.addContent(link);
+        addStylesheets(configuration, head);
         if (configuration.createindex) {
             HtmlTree jq_link = HtmlTree.LINK("stylesheet", "text/css",
                     pathToRoot.resolve(DocPaths.JQUERY_FILES.resolve(DocPaths.JQUERY_STYLESHEET_FILE)).getPath(),

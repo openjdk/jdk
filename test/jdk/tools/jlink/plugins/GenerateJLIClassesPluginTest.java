@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -74,11 +76,30 @@ public class GenerateJLIClassesPluginTest {
                     classFilesForSpecies(GenerateJLIClassesPlugin.defaultSpecies()),
                     List.of());
 
+        // Check that --generate-jli-classes=@file works as intended
+        Path baseFile = Files.createTempFile("base", "trace");
+        String species = "LLLLLLLLLLLLLLLLLLL";
+        String fileString = "[SPECIES_RESOLVE] java.lang.invoke.BoundMethodHandle$Species_" + species + " (salvaged)\n";
+        Files.write(baseFile, fileString.getBytes(Charset.defaultCharset()));
+        result = JImageGenerator.getJLinkTask()
+                .modulePath(helper.defaultModulePath())
+                .output(helper.createNewImageDir("generate-jli-file"))
+                .option("--generate-jli-classes=@" + baseFile.toString())
+                .addMods("java.base")
+                .call();
+
+        image = result.assertSuccess();
+
+        JImageValidator.validate(
+            image.resolve("lib").resolve("modules"),
+                    classFilesForSpecies(List.of(species)), // species should be in the image
+                    classFilesForSpecies(List.of(species.substring(1)))); // but not it's immediate parent
     }
 
     private static List<String> classFilesForSpecies(Collection<String> species) {
         return species.stream()
-                .map(s -> "/java.base/java/lang/invoke/BoundMethodHandle$Species_" + s + ".class")
+                .map(s -> "/java.base/java/lang/invoke/BoundMethodHandle$Species_"
+                        + GenerateJLIClassesPlugin.expandSignature(s) + ".class")
                 .collect(Collectors.toList());
     }
 }

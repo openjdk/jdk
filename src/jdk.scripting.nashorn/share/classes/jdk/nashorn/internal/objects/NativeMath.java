@@ -105,8 +105,8 @@ public final class NativeMath extends ScriptObject {
      * @return abs of argument
      */
     @SpecializedFunction
-    public static int abs(final Object self, final int x) {
-        return Math.abs(x);
+    public static double abs(final Object self, final int x) {
+        return x == Integer.MIN_VALUE? Math.abs((double)x) : Math.abs(x);
     }
 
     /**

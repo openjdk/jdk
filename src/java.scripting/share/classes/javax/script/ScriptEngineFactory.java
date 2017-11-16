@@ -176,6 +176,8 @@ public interface ScriptEngineFactory {
      * @param args names of the arguments in the method call.
      *
      * @return The String used to invoke the method in the syntax of the scripting language.
+     *
+     * @throws NullPointerException if obj or m or args or any of the elements of args is null.
      */
     public String getMethodCallSyntax(String obj, String m, String... args);
 

@@ -89,6 +89,9 @@ public enum JSType {
     /** JavaScript compliant conversion function from number to boolean */
     public static final Call TO_BOOLEAN_D = staticCall(JSTYPE_LOOKUP, JSType.class, "toBoolean", boolean.class, double.class);
 
+    /** JavaScript compliant conversion function from int to boolean */
+    public static final Call TO_BOOLEAN_I = staticCall(JSTYPE_LOOKUP, JSType.class, "toBoolean", boolean.class, int.class);
+
     /** JavaScript compliant conversion function from Object to integer */
     public static final Call TO_INTEGER = staticCall(JSTYPE_LOOKUP, JSType.class, "toInteger", int.class, Object.class);
 
@@ -545,6 +548,17 @@ public enum JSType {
      */
     public static boolean toBoolean(final double num) {
         return num != 0 && !Double.isNaN(num);
+    }
+
+    /**
+     * JavaScript compliant conversion of int to boolean
+     *
+     * @param num an int
+     *
+     * @return a boolean
+     */
+    public static boolean toBoolean(final int num) {
+        return num != 0;
     }
 
     /**

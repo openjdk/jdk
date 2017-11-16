@@ -421,6 +421,9 @@ public class JlinkTask {
      * the observable modules to those in the transitive closure of
      * the modules specified in {@code limitMods} plus other modules
      * specified in the {@code roots} set.
+     *
+     * @throws IllegalArgumentException if java.base module is present
+     * but its descriptor has no version
      */
     public static ModuleFinder newModuleFinder(List<Path> paths,
                                                Set<String> limitMods,
@@ -429,8 +432,25 @@ public class JlinkTask {
         if (Objects.requireNonNull(paths).isEmpty()) {
              throw new IllegalArgumentException("Empty module path");
         }
+
         Path[] entries = paths.toArray(new Path[0]);
-        ModuleFinder finder = ModulePath.of(Runtime.version(), true, entries);
+        Runtime.Version version = Runtime.version();
+        ModuleFinder finder = ModulePath.of(version, true, entries);
+
+        if (finder.find("java.base").isPresent()) {
+            // use the version of java.base module, if present, as
+            // the release version for multi-release JAR files
+            ModuleDescriptor.Version v = finder.find("java.base").get()
+                .descriptor().version().orElseThrow(() ->
+                    new IllegalArgumentException("No version in java.base descriptor")
+                );
+
+            // java.base version is different than the current runtime version
+            version = Runtime.Version.parse(v.toString());
+            if (Runtime.version().major() != version.major()) {
+                finder = ModulePath.of(version, true, entries);
+            }
+        }
 
         // if limitmods is specified then limit the universe
         if (limitMods != null && !limitMods.isEmpty()) {
@@ -744,6 +764,7 @@ public class JlinkTask {
         final ByteOrder order;
         final Path packagedModulesPath;
         final boolean ignoreSigning;
+        final Runtime.Version version;
         final Set<Archive> archives;
 
         ImageHelper(Configuration cf,
@@ -754,6 +775,17 @@ public class JlinkTask {
             this.order = order;
             this.packagedModulesPath = packagedModulesPath;
             this.ignoreSigning = ignoreSigning;
+
+            // use the version of java.base module, if present, as
+            // the release version for multi-release JAR files
+            this.version = cf.findModule("java.base")
+                .map(ResolvedModule::reference)
+                .map(ModuleReference::descriptor)
+                .flatMap(ModuleDescriptor::version)
+                .map(ModuleDescriptor.Version::toString)
+                .map(Runtime.Version::parse)
+                .orElse(Runtime.version());
+
             this.archives = modsPaths.entrySet().stream()
                                 .map(e -> newArchive(e.getKey(), e.getValue()))
                                 .collect(Collectors.toSet());
@@ -763,7 +795,7 @@ public class JlinkTask {
             if (path.toString().endsWith(".jmod")) {
                 return new JmodArchive(module, path);
             } else if (path.toString().endsWith(".jar")) {
-                ModularJarArchive modularJarArchive = new ModularJarArchive(module, path);
+                ModularJarArchive modularJarArchive = new ModularJarArchive(module, path, version);
 
                 Stream<Archive.Entry> signatures = modularJarArchive.entries().filter((entry) -> {
                     String name = entry.name().toUpperCase(Locale.ENGLISH);

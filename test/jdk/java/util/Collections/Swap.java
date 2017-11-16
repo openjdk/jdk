@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug     4323074
  * @summary Basic test for newly public swap algorithm

@@ -45,7 +45,7 @@
 #
 # For data circa 1899, a common source is:
 # Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94.
-# http://www.jstor.org/stable/1774359
+# https://www.jstor.org/stable/1774359
 #
 # These tables use numeric abbreviations like -03 and -0330 for
 # integer hour and minute UTC offsets.  Although earlier editions used
@@ -288,8 +288,8 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 #
 # Es inminente que en San Luis atrasen una hora los relojes
 # (It is imminent in San Luis clocks one hour delay)
-# http://www.lagaceta.com.ar/nota/253414/Economia/Es-inminente-que-en-San-Luis-atrasen-una-hora-los-relojes.html
-# http://www.worldtimezone.net/dst_news/dst_news_argentina02.html
+# https://www.lagaceta.com.ar/nota/253414/Economia/Es-inminente-que-en-San-Luis-atrasen-una-hora-los-relojes.html
+# http://www.worldtimezone.com/dst_news/dst_news_argentina02.html
 
 # From Jesper Nørgaard Welen (2008-01-18):
 # The page of the San Luis provincial government
@@ -408,7 +408,7 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # Perhaps San Luis operates on the legal fiction that it is at -04
 # with perpetual summer time, but ordinary usage typically seems to
 # just say it's at -03; see, for example,
-# http://es.wikipedia.org/wiki/Hora_oficial_argentina
+# https://es.wikipedia.org/wiki/Hora_oficial_argentina
 # We've documented similar situations as being plain changes to
 # standard time, so let's do that here too.  This does not change UTC
 # offsets, only tm_isdst and the time zone abbreviations.  One minor
@@ -739,7 +739,7 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # (Portuguese)
 #
 # We have a written a short article about it as well:
-# http://www.timeanddate.com/news/time/brazil-dst-2008-2009.html
+# https://www.timeanddate.com/news/time/brazil-dst-2008-2009.html
 #
 # From Alexander Krivenyshev (2011-10-04):
 # State Bahia will return to Daylight savings time this year after 8 years off.
@@ -748,7 +748,7 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 
 # In Portuguese:
 # http://g1.globo.com/bahia/noticia/2011/10/governador-jaques-wagner-confirma-horario-de-verao-na-bahia.html
-# http://noticias.terra.com.br/brasil/noticias/0,,OI5390887-EI8139,00-Bahia+volta+a+ter+horario+de+verao+apos+oito+anos.html
+# https://noticias.terra.com.br/brasil/noticias/0,,OI5390887-EI8139,00-Bahia+volta+a+ter+horario+de+verao+apos+oito+anos.html
 
 # From Guilherme Bernardes Rodrigues (2011-10-07):
 # There is news in the media, however there is still no decree about it.
@@ -774,16 +774,16 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 
 # From Rodrigo Severo (2012-10-16):
 # Tocantins state will have DST.
-# http://noticias.terra.com.br/brasil/noticias/0,,OI6232536-EI306.html
+# https://noticias.terra.com.br/brasil/noticias/0,,OI6232536-EI306.html
 
 # From Steffen Thorsen (2013-09-20):
 # Tocantins in Brazil is very likely not to observe DST from October....
 # http://conexaoto.com.br/2013/09/18/ministerio-confirma-que-tocantins-esta-fora-do-horario-de-verao-em-2013-mas-falta-publicacao-de-decreto
 # We will keep this article updated when this is confirmed:
-# http://www.timeanddate.com/news/time/brazil-starts-dst-2013.html
+# https://www.timeanddate.com/news/time/brazil-starts-dst-2013.html
 
 # From Steffen Thorsen (2013-10-17):
-# http://www.timeanddate.com/news/time/acre-amazonas-change-time-zone.html
+# https://www.timeanddate.com/news/time/acre-amazonas-change-time-zone.html
 # Senator Jorge Viana announced that Acre will change time zone on November 10.
 # He did not specify the time of the change, nor if western parts of Amazonas
 # will change as well.
@@ -1099,18 +1099,18 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # the following source, cited by Oscar van Vlijmen (2006-10-08):
 # [1] Chile Law
 # http://www.webexhibits.org/daylightsaving/chile.html
-# This contains a copy of a this official table:
+# This contains a copy of this official table:
 # Cambios en la hora oficial de Chile desde 1900 (retrieved 2008-03-30)
-# http://web.archive.org/web/20080330200901/http://www.horaoficial.cl/cambio.htm
+# https://web.archive.org/web/20080330200901/http://www.horaoficial.cl/cambio.htm
 # [1] needs several corrections, though.
 #
 # The first set of corrections is from:
 # [2] History of the Official Time of Chile
 # http://www.horaoficial.cl/ing/horaof_ing.html (retrieved 2012-03-06).  See:
-# http://web.archive.org/web/20120306042032/http://www.horaoficial.cl/ing/horaof_ing.html
+# https://web.archive.org/web/20120306042032/http://www.horaoficial.cl/ing/horaof_ing.html
 # This is an English translation of:
 # Historia de la hora oficial de Chile (retrieved 2012-10-24).  See:
-# http://web.archive.org/web/20121024234627/http://www.horaoficial.cl/horaof.htm
+# https://web.archive.org/web/20121024234627/http://www.horaoficial.cl/horaof.htm
 # A fancier Spanish version (requiring mouse-clicking) is at:
 # http://www.horaoficial.cl/historia_hora.html
 # Conflicts between [1] and [2] were resolved as follows:
@@ -1386,10 +1386,10 @@ Link	America/Curacao	America/Kralendijk	# Caribbean Netherlands
 # Milne says the Central and South American Telegraph Company used -5:24:15.
 #
 # From Alois Treindl (2016-12-15):
-# http://www.elcomercio.com/actualidad/hora-sixto-1993.html
+# https://www.elcomercio.com/actualidad/hora-sixto-1993.html
 # ... Whether the law applied also to Galápagos, I do not know.
 # From Paul Eggert (2016-12-15):
-# http://www.elcomercio.com/afull/modificacion-husohorario-ecuador-presidentes-decreto.html
+# https://www.elcomercio.com/afull/modificacion-husohorario-ecuador-presidentes-decreto.html
 # This says President Sixto Durán Ballén signed decree No. 285, which
 # established DST from 1992-11-28 to 1993-02-05; it does not give transition
 # times.  The people called it "hora de Sixto" ("Sixto hour").  The change did
@@ -1801,7 +1801,7 @@ Zone America/Montevideo	-3:44:44 -	LMT	1898 Jun 28
 # hours of presidential broadcasts, hours of lines,' quipped comedian
 # Jean Mary Curró ...". See: Cawthorne A, Kai D. Venezuela scraps
 # half-hour time difference set by Chavez. Reuters 2016-04-15 14:50 -0400
-# http://www.reuters.com/article/us-venezuela-timezone-idUSKCN0XC2BE
+# https://www.reuters.com/article/us-venezuela-timezone-idUSKCN0XC2BE
 #
 # From Matt Johnson (2016-04-20):
 # ... published in the official Gazette [2016-04-18], here:
