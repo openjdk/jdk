@@ -29,6 +29,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 
 #if INCLUDE_ALL_GCS
