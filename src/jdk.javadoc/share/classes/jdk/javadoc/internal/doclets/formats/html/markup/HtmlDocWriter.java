@@ -54,7 +54,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * @author Atul M Dambalkar
  * @author Robert Field
  */
-public abstract class HtmlDocWriter extends HtmlWriter {
+public abstract class HtmlDocWriter {
 
     public static final String CONTENT_TYPE = "text/html";
 
@@ -62,14 +62,12 @@ public abstract class HtmlDocWriter extends HtmlWriter {
     private final DocPath pathToRoot;
 
     /**
-     * Constructor. Initializes the destination file name through the super
-     * class HtmlWriter.
+     * Constructor.
      *
      * @param configuration the configuration for this doclet
-     * @param filename String file name.
+     * @param filename the path for the output file
      */
     public HtmlDocWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename);
         this.configuration = configuration;
         this.pathToRoot = filename.parent().invert();
         Messages messages = configuration.getMessages();

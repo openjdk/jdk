@@ -60,7 +60,7 @@ public class Script  {
     }
 
     /**
-     * Appends the given code to the content.
+     * Appends the given code to the script.
      *
      * @param code the code
      * @return this object
@@ -71,7 +71,7 @@ public class Script  {
     }
 
     /**
-     * Appends the given text as a string constant to the content.
+     * Appends the given text as a string constant to the string.
      * Characters within the string will be escaped as needed.
      *
      * @param text the text
@@ -83,7 +83,7 @@ public class Script  {
     }
 
     /**
-     * Appends the given text as a string constant to the content.
+     * Appends the given text as a string constant to the string.
      * Characters within the string will be escaped as needed.
      *
      * @param text the text
@@ -98,6 +98,12 @@ public class Script  {
         return this;
     }
 
+    /**
+     * Returns a "live" view of the script as a {@code Content} object.
+     * Any later modifications to the script will be reflected in the
+     * object that is returned.
+     * @return the script, as a {@code Content} object.
+     */
     public Content asContent() {
         ScriptContent scriptContent = new ScriptContent(sb);
         HtmlTree tree = new HtmlTree(HtmlTag.SCRIPT) {
@@ -119,21 +125,23 @@ public class Script  {
     }
 
     /**
-     * Returns a String with escaped special JavaScript characters.
+     * Returns a JavaScript string literal containing a specified string,
+     * escaping the characters of that string as needed.
      *
-     * @param s String that needs to be escaped
-     * @return a valid escaped JavaScript string
+     * @param s the string
+     * @return a string literal containing the string
      */
     public static String stringLiteral(CharSequence s) {
         return stringLiteral(s, '"');
     }
 
     /**
-     * Returns a String with escaped special JavaScript characters.
+     * Returns a JavaScript string literal containing a specified string,
+     * escaping the characters of that string as needed.
      *
-     * @param s String that needs to be escaped
+     * @param s the string
      * @param quoteChar the quote character to use for the literal
-     * @return a valid escaped JavaScript string
+     * @return a string literal containing the string
      */
     // The ability to specify the quote character is for backwards
     // compatibility. Ideally, we should simplify the code so that

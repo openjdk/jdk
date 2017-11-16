@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class TestHtmlDocument extends JavadocTester {
     // Generate the HTML output using the HTML document generation within doclet.
     public static String generateHtmlTree() {
         // Document type for the HTML document
-        DocType htmlDocType = DocType.TRANSITIONAL;
+        DocType htmlDocType = DocType.HTML4_TRANSITIONAL;
         HtmlTree html = new HtmlTree(HtmlTag.HTML);
         HtmlTree head = new HtmlTree(HtmlTag.HEAD);
         HtmlTree title = new HtmlTree(HtmlTag.TITLE);
