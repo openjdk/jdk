@@ -32,6 +32,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -73,18 +74,18 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
         String title = (configuration.windowtitle.length() > 0)
                 ? configuration.windowtitle
-                : configuration.getText("doclet.Generated_Docs_Untitled");
+                : resources.getText("doclet.Generated_Docs_Untitled");
 
-        Content windowTitle = HtmlTree.TITLE(new StringContent(title));
+        Content windowTitle = HtmlTree.TITLE(title);
         head.addContent(windowTitle);
         Content metaContentType = HtmlTree.META("Content", CONTENT_TYPE, configuration.charset);
         head.addContent(metaContentType);
 
         String topFilePath = configuration.topFile.getPath();
-        String javaScriptRefresh = "window.location.replace('" + topFilePath + "')";
-        HtmlTree scriptTree = HtmlTree.SCRIPT();
-        scriptTree.addContent(javaScriptRefresh);
-        head.addContent(scriptTree);
+        Script script = new Script("window.location.replace(")
+                .appendStringLiteral(topFilePath, '\'')
+                .append(")");
+        head.addContent(script.asContent());
         HtmlTree metaRefresh = new HtmlTree(HtmlTag.META);
         metaRefresh.addAttr(HtmlAttr.HTTP_EQUIV, "Refresh");
         metaRefresh.addAttr(HtmlAttr.CONTENT, "0;" + topFilePath);
@@ -98,7 +99,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
         ContentBuilder bodyContent = new ContentBuilder();
         bodyContent.addContent(HtmlTree.NOSCRIPT(
-                HtmlTree.P(configuration.getContent("doclet.No_Script_Message"))));
+                HtmlTree.P(contents.getContent("doclet.No_Script_Message"))));
 
         bodyContent.addContent(HtmlTree.P(HtmlTree.A(topFilePath, new StringContent(topFilePath))));
 

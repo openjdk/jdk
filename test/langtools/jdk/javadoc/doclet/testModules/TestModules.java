@@ -1100,7 +1100,7 @@ public class TestModules extends JavadocTester {
                 + "&nbsp;</span></span><span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:showGroups(4);\">"
                 + "Other Modules</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>",
                 "var groups = {\"i0\":1,\"i1\":2,\"i2\":2,\"i3\":4};\n"
-                + "var tabs = {65535:[\"t0\",\"All Modules\"],1:[\"t1\",\"Module Group A\"],2:[\"t2\",\"Module Group B &amp; C\"],4:[\"t4\",\"Other Modules\"]};\n"
+                + "var tabs = {65535:[\"t0\",\"All Modules\"],1:[\"t1\",\"Module Group A\"],2:[\"t2\",\"Module Group B & C\"],4:[\"t4\",\"Other Modules\"]};\n"
                 + "var altColor = \"altColor\";\n"
                 + "var rowColor = \"rowColor\";\n"
                 + "var tableTab = \"tableTab\";\n"

@@ -626,7 +626,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         addPackageTableRows(table);
         li.addContent(table.toContent());
         if (table.needsScript()) {
-            script.addContent(new RawHtml(table.getScript()));
+            mainBodyScript.append(table.getScript());
         }
     }
 

@@ -570,7 +570,12 @@ public class Table {
     }
 
     private void appendTabInfo(StringBuilder sb, int value, String id, String name) {
-        sb.append(value).append(":[\"").append(id).append("\",").append("\"").append(name).append("\"]");
+        sb.append(value)
+                .append(":[")
+                .append(Script.stringLiteral(id))
+                .append(",")
+                .append(Script.stringLiteral(name))
+                .append("]");
     }
 
     private void appendStyleInfo(StringBuilder sb, HtmlStyle... styles) {

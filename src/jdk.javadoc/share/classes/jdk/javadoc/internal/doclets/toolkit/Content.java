@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,10 @@ public abstract class Content {
     /**
      * Writes content to a writer.
      *
+     * @param writer the writer
+     * @param atNewline whether the writer has just written a newline
+     * @return  whether the writer has just written a newline
+     * @throws IOException if an error occurs while writing the output
      */
     public abstract boolean write(Writer writer, boolean atNewline) throws IOException ;
 
@@ -107,6 +111,7 @@ public abstract class Content {
     /**
      * Checks for null values.
      *
+     * @param <T> the type of the item being checked
      * @param t reference type to check for null values
      * @return the reference type if not null or else throws a null pointer exception
      */
