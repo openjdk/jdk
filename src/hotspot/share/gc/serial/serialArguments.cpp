@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,10 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SERIAL_GENMARKSWEEP_HPP
-#define SHARE_VM_GC_SERIAL_GENMARKSWEEP_HPP
+#include "precompiled.hpp"
+#include "gc/serial/serialArguments.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
 
-#include "gc/serial/markSweep.hpp"
-
-class GenMarkSweep : public MarkSweep {
-  friend class VM_MarkSweep;
- public:
-  static void invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_softrefs);
-
- private:
-
-  // Mark live objects
-  static void mark_sweep_phase1(bool clear_all_softrefs);
-  // Calculate new addresses
-  static void mark_sweep_phase2();
-  // Update pointers
-  static void mark_sweep_phase3();
-  // Move objects to new positions
-  static void mark_sweep_phase4();
-
-  // Temporary data structures for traversal and storing/restoring marks
-  static void allocate_stacks();
-  static void deallocate_stacks();
-};
-
-#endif // SHARE_VM_GC_SERIAL_GENMARKSWEEP_HPP
+size_t SerialArguments::conservative_max_heap_alignment() {
+  return GenCollectedHeap::conservative_max_heap_alignment();
+}
