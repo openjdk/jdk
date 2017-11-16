@@ -97,7 +97,6 @@ public class LinkFactoryImpl extends LinkFactory {
                                 filename.fragment(classLinkInfo.where),
                                 label,
                                 classLinkInfo.isStrong,
-                                classLinkInfo.styleName,
                                 title,
                                 classLinkInfo.target));
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
@@ -109,8 +108,7 @@ public class LinkFactoryImpl extends LinkFactory {
         } else {
             Content crossLink = m_writer.getCrossClassLink(
                 typeElement.getQualifiedName().toString(), classLinkInfo.where,
-                label, classLinkInfo.isStrong, classLinkInfo.styleName,
-                true);
+                label, classLinkInfo.isStrong, true);
             if (crossLink != null) {
                 link.addContent(crossLink);
                 if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {

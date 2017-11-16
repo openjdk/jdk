@@ -170,7 +170,7 @@ public class Links {
      * @return a content tree for the link
      */
     public static Content createLink(DocPath path, String label) {
-        return Links.createLink(path, new StringContent(label), false, "", "", "");
+        return Links.createLink(path, new StringContent(label), false, "", "");
     }
 
     /**
@@ -192,14 +192,13 @@ public class Links {
      * @param path      the path for the link
      * @param label     the content for the link
      * @param strong    whether to wrap the {@code label} in a SPAN element
-     * @param stylename (deprecated)
      * @param title     the title for the link
      * @param target    the target for the link, or null
      * @return a content tree for the link
      */
-    public static Content createLink(DocPath path, Content label, boolean strong, String stylename,
+    public static Content createLink(DocPath path, Content label, boolean strong,
             String title, String target) {
-        return createLink(new DocLink(path), label, strong, stylename, title, target);
+        return createLink(new DocLink(path), label, strong, title, target);
     }
 
     /**
@@ -254,21 +253,15 @@ public class Links {
      * @param link      the details for the link
      * @param label     the content for the link
      * @param strong    whether to wrap the {@code label} in a SPAN element
-     * @param stylename (deprecated)
      * @param title     the title for the link
      * @param target    the target for the link, or null
      * @return a content tree for the link
      */
-    public static Content createLink(DocLink link, Content label, boolean strong, String stylename,
+    public static Content createLink(DocLink link, Content label, boolean strong,
             String title, String target) {
         Content body = label;
         if (strong) {
             body = HtmlTree.SPAN(HtmlStyle.typeNameLink, body);
-        }
-        if (stylename != null && stylename.length() != 0) {
-            HtmlTree t = new HtmlTree(HtmlTag.FONT, body);
-            t.addAttr(HtmlAttr.CLASS, stylename);
-            body = t;
         }
         HtmlTree l = HtmlTree.A(link.toString(), body);
         if (title != null && title.length() != 0) {
