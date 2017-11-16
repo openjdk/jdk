@@ -31,6 +31,7 @@ import java.util.Set;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -40,6 +41,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
@@ -109,6 +111,17 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
         moduleLinkContent = getModuleFramesHyperLink(mdle, mdlLabel, "packageListFrame");
         Content li = HtmlTree.LI(moduleLinkContent);
         return li;
+    }
+
+    private Content getModuleFramesHyperLink(ModuleElement mdle, Content label, String target) {
+        DocLink mdlLink = new DocLink(DocPaths.moduleFrame(mdle));
+        DocLink mtFrameLink = new DocLink(DocPaths.moduleTypeFrame(mdle));
+        DocLink cFrameLink = new DocLink(DocPaths.moduleSummary(mdle));
+        HtmlTree anchor = HtmlTree.A(mdlLink.toString(), label);
+        String onclickStr = "updateModuleFrame('" + mtFrameLink + "','" + cFrameLink + "');";
+        anchor.addAttr(HtmlAttr.TARGET, target);
+        anchor.addAttr(HtmlAttr.ONCLICK, onclickStr);
+        return anchor;
     }
 
     /**
