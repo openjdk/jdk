@@ -144,5 +144,8 @@ template <class T> void G1VerifyOopClosure::do_oop_nv(T* p) {
   }
 }
 
+template void G1VerifyOopClosure::do_oop_nv(oop*);
+template void G1VerifyOopClosure::do_oop_nv(narrowOop*);
+
 // Generate G1 full GC specialized oop_oop_iterate functions.
 SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1FULL(ALL_KLASS_OOP_OOP_ITERATE_DEFN)
