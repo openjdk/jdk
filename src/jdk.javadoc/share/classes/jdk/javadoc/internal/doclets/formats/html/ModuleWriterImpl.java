@@ -50,6 +50,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -455,7 +456,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public void addSummaryHeader(Content startMarker, SectionName markerAnchor, Content heading,
             Content htmltree) {
         htmltree.addContent(startMarker);
-        htmltree.addContent(getMarkerAnchor(markerAnchor));
+        htmltree.addContent(links.createAnchor(markerAnchor));
         htmltree.addContent(HtmlTree.HEADING(HtmlTag.H3, heading));
     }
 
@@ -846,7 +847,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             Content tree = configuration.allowTag(HtmlTag.SECTION) ? HtmlTree.SECTION() : moduleContentTree;
             addDeprecationInfo(tree);
             tree.addContent(HtmlConstants.START_OF_MODULE_DESCRIPTION);
-            tree.addContent(getMarkerAnchor(SectionName.MODULE_DESCRIPTION));
+            tree.addContent(links.createAnchor(SectionName.MODULE_DESCRIPTION));
             addInlineComment(mdle, tree);
             if (configuration.allowTag(HtmlTag.SECTION)) {
                 moduleContentTree.addContent(tree);
@@ -890,20 +891,20 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
         Content liNav = new HtmlTree(HtmlTag.LI);
         liNav.addContent(!utils.getFullBody(mdle).isEmpty() && !configuration.nocomment
-                ? getHyperLink(SectionName.MODULE_DESCRIPTION, contents.navModuleDescription)
+                ? Links.createLink(SectionName.MODULE_DESCRIPTION, contents.navModuleDescription)
                 : contents.navModuleDescription);
         addNavGap(liNav);
         liNav.addContent((display(requires) || display(indirectModules))
-                ? getHyperLink(SectionName.MODULES, contents.navModules)
+                ? Links.createLink(SectionName.MODULES, contents.navModules)
                 : contents.navModules);
         addNavGap(liNav);
         liNav.addContent((display(exportedPackages) || display(openedPackages) || display(concealedPackages)
                 || display(indirectPackages) || display(indirectOpenPackages))
-                ? getHyperLink(SectionName.PACKAGES, contents.navPackages)
+                ? Links.createLink(SectionName.PACKAGES, contents.navPackages)
                 : contents.navPackages);
         addNavGap(liNav);
         liNav.addContent((displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees))
-                ? getHyperLink(SectionName.SERVICES, contents.navServices)
+                ? Links.createLink(SectionName.SERVICES, contents.navServices)
                 : contents.navServices);
         ulNav.addContent(liNav);
         return ulNav;
@@ -995,7 +996,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         if (prevModule == null) {
             li = HtmlTree.LI(contents.prevModuleLabel);
         } else {
-            li = HtmlTree.LI(getHyperLink(pathToRoot.resolve(DocPaths.moduleSummary(
+            li = HtmlTree.LI(Links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(
                     prevModule)), contents.prevModuleLabel, "", ""));
         }
         return li;
@@ -1012,7 +1013,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         if (nextModule == null) {
             li = HtmlTree.LI(contents.nextModuleLabel);
         } else {
-            li = HtmlTree.LI(getHyperLink(pathToRoot.resolve(DocPaths.moduleSummary(
+            li = HtmlTree.LI(Links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(
                     nextModule)), contents.nextModuleLabel, "", ""));
         }
         return li;

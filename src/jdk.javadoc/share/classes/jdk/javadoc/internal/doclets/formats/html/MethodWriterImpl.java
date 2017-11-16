@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -108,8 +109,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public Content getMethodDetailsTreeHeader(TypeElement typeElement, Content memberDetailsTree) {
         memberDetailsTree.addContent(HtmlConstants.START_OF_METHOD_DETAILS);
         Content methodDetailsTree = writer.getMemberTreeHeader();
-        methodDetailsTree.addContent(writer.getMarkerAnchor(
-                SectionName.METHOD_DETAIL));
+        methodDetailsTree.addContent(links.createAnchor(SectionName.METHOD_DETAIL));
         Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
                 contents.methodDetailLabel);
         methodDetailsTree.addContent(heading);
@@ -123,10 +123,9 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public Content getMethodDocTreeHeader(ExecutableElement method, Content methodDetailsTree) {
         String erasureAnchor;
         if ((erasureAnchor = getErasureAnchor(method)) != null) {
-            methodDetailsTree.addContent(writer.getMarkerAnchor((erasureAnchor)));
+            methodDetailsTree.addContent(links.createAnchor((erasureAnchor)));
         }
-        methodDetailsTree.addContent(
-                writer.getMarkerAnchor(writer.getAnchor(method)));
+        methodDetailsTree.addContent(links.createAnchor(writer.getAnchor(method)));
         Content methodDocTree = writer.getMemberTreeHeader();
         Content heading = new HtmlTree(HtmlConstants.MEMBER_HEADING);
         heading.addContent(name(method));
@@ -280,8 +279,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.addContent(writer.getMarkerAnchor(
-                SectionName.METHOD_SUMMARY));
+        memberTree.addContent(links.createAnchor(SectionName.METHOD_SUMMARY));
     }
 
     /**
@@ -289,7 +287,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public void addInheritedSummaryAnchor(TypeElement typeElement, Content inheritedTree) {
-        inheritedTree.addContent(writer.getMarkerAnchor(
+        inheritedTree.addContent(links.createAnchor(
                 SectionName.METHODS_INHERITANCE, configuration.getClassName(typeElement)));
     }
 
@@ -365,7 +363,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             Content methlink = writer.getLink(
                     new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER,
                     holder)
-                    .where(writer.getName(writer.getAnchor(method))).label(method.getSimpleName()));
+                    .where(writer.links.getName(writer.getAnchor(method))).label(method.getSimpleName()));
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
             dd.addContent(Contents.SPACE);
@@ -435,11 +433,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
         if (link) {
             if (typeElement == null) {
-                return writer.getHyperLink(
+                return Links.createLink(
                         SectionName.METHOD_SUMMARY,
                         contents.navMethod);
             } else {
-                return writer.getHyperLink(
+                return links.createLink(
                         SectionName.METHODS_INHERITANCE,
                         configuration.getClassName(typeElement), contents.navMethod);
             }
@@ -454,7 +452,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(writer.getHyperLink(
+            liNav.addContent(Links.createLink(
                     SectionName.METHOD_DETAIL, contents.navMethod));
         } else {
             liNav.addContent(contents.navMethod);

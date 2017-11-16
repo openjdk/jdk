@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -134,14 +135,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         //add link to summary
         Content link;
         if (pkg.isUnnamed()) {
-            link = getHyperLink(getDocLink(
-                    SectionName.UNNAMED_PACKAGE_ANCHOR),
+            link = Links.createLink(SectionName.UNNAMED_PACKAGE_ANCHOR,
                     contents.defaultPackageLabel, "", "");
         } else {
             String parsedPackageName = utils.parsePackageName(pkg);
             Content packageNameContent = getPackageLabel(parsedPackageName);
             packageNameContent.addContent(".*");
-            link = getHyperLink(DocLink.fragment(parsedPackageName),
+            link = Links.createLink(DocLink.fragment(parsedPackageName),
                     packageNameContent, "", "");
             PackageElement abbrevPkg = configuration.workArounds.getAbbreviatedPackageElement(pkg);
             printedPackageHeaders.add(abbrevPkg);
@@ -193,12 +193,11 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
             summariesTree.addContent(summaryTree);
         }
         if (pkg.isUnnamed()) {
-            summariesTree.addContent(getMarkerAnchor(
-                    SectionName.UNNAMED_PACKAGE_ANCHOR));
+            summariesTree.addContent(links.createAnchor(SectionName.UNNAMED_PACKAGE_ANCHOR));
             pkgNameContent = contents.defaultPackageLabel;
         } else {
             String parsedPackageName = utils.parsePackageName(pkg);
-            summariesTree.addContent(getMarkerAnchor(parsedPackageName));
+            summariesTree.addContent(links.createAnchor(parsedPackageName));
             pkgNameContent = getPackageLabel(parsedPackageName);
         }
         Content headingContent = new StringContent(".*");
@@ -277,8 +276,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      * @return the type column of the constant table row
      */
     private Content getTypeColumn(VariableElement member) {
-        Content anchor = getMarkerAnchor(currentTypeElement.getQualifiedName() +
-                "." + member.getSimpleName());
+        Content anchor = links.createAnchor(
+                currentTypeElement.getQualifiedName() + "." + member.getSimpleName());
         Content typeContent = new ContentBuilder();
         typeContent.addContent(anchor);
         Content code = new HtmlTree(HtmlTag.CODE);

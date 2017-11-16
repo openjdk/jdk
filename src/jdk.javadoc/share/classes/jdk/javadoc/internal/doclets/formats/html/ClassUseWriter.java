@@ -47,6 +47,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
@@ -348,7 +349,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setStyle(HtmlStyle.blockList);
         for (PackageElement pkg : pkgSet) {
-            Content markerAnchor = getMarkerAnchor(getPackageAnchorName(pkg));
+            Content markerAnchor = links.createAnchor(getPackageAnchorName(pkg));
             HtmlTree htmlTree = (configuration.allowTag(HtmlTag.SECTION))
                     ? HtmlTree.SECTION(markerAnchor)
                     : HtmlTree.LI(HtmlStyle.blockList, markerAnchor);
@@ -377,7 +378,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageUse(PackageElement pkg, Table table) {
         Content pkgLink =
-                getHyperLink(getPackageAnchorName(pkg), new StringContent(utils.getPackageName(pkg)));
+                links.createLink(getPackageAnchorName(pkg), new StringContent(utils.getPackageName(pkg)));
         Content summary = new ContentBuilder();
         addSummaryComment(pkg, summary);
         table.addRow(pkgLink, summary);
@@ -514,7 +515,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected Content getNavLinkPackage() {
         Content linkContent =
-                getHyperLink(DocPath.parent.resolve(DocPaths.PACKAGE_SUMMARY), contents.packageLabel);
+                Links.createLink(DocPath.parent.resolve(DocPaths.PACKAGE_SUMMARY), contents.packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -549,8 +550,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected Content getNavLinkTree() {
         Content linkContent = utils.isEnclosingPackageIncluded(typeElement)
-                ? getHyperLink(DocPath.parent.resolve(DocPaths.PACKAGE_TREE), contents.treeLabel)
-                : getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE), contents.treeLabel);
+                ? Links.createLink(DocPath.parent.resolve(DocPaths.PACKAGE_TREE), contents.treeLabel)
+                : Links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE), contents.treeLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }

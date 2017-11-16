@@ -37,6 +37,7 @@ import javax.lang.model.element.TypeElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -129,7 +130,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     @Override
     public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.addContent(writer.getMarkerAnchor(
+        memberTree.addContent(links.createAnchor(
                 SectionName.NESTED_CLASS_SUMMARY));
     }
 
@@ -138,7 +139,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
      */
     @Override
     public void addInheritedSummaryAnchor(TypeElement typeElement, Content inheritedTree) {
-        inheritedTree.addContent(writer.getMarkerAnchor(
+        inheritedTree.addContent(links.createAnchor(
                 SectionName.NESTED_CLASSES_INHERITANCE,
                 utils.getFullyQualifiedName(typeElement)));
     }
@@ -212,11 +213,11 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
         if (link) {
             if (typeElement == null) {
-                return writer.getHyperLink(
+                return Links.createLink(
                         SectionName.NESTED_CLASS_SUMMARY,
                         contents.navNested);
             } else {
-                return writer.getHyperLink(
+                return links.createLink(
                         SectionName.NESTED_CLASSES_INHERITANCE,
                         utils.getFullyQualifiedName(typeElement), contents.navNested);
             }

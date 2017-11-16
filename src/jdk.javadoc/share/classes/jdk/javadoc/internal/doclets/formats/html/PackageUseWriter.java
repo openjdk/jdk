@@ -38,6 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
@@ -178,7 +179,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (String pkgname: usingPackageToUsedClasses.keySet()) {
             PackageElement pkg = utils.elementUtils.getPackageElement(pkgname);
-            Content packageLink = getHyperLink(utils.getPackageName(pkg),
+            Content packageLink = links.createLink(utils.getPackageName(pkg),
                     new StringContent(utils.getPackageName(pkg)));
             Content summary = new ContentBuilder();
             if (pkg != null && !pkg.isUnnamed()) {
@@ -205,7 +206,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.setStyle(HtmlStyle.blockList);
             if (usingPackage != null) {
-                li.addContent(getMarkerAnchor(utils.getPackageName(usingPackage)));
+                li.addContent(links.createAnchor(utils.getPackageName(usingPackage)));
             }
             String tableSummary = resources.getText("doclet.Use_Table_Summary",
                                                         resources.getText("doclet.classes"));
@@ -222,7 +223,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 DocPath dp = pathString(te,
                         DocPaths.CLASS_USE.resolve(DocPath.forName(utils, te)));
                 Content stringContent = new StringContent(utils.getSimpleName(te));
-                Content typeContent = getHyperLink(dp.fragment(getPackageAnchorName(usingPackage)),
+                Content typeContent = Links.createLink(dp.fragment(getPackageAnchorName(usingPackage)),
                         stringContent);
                 Content summary = new ContentBuilder();
                 addIndexComment(te, summary);
@@ -287,7 +288,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     @Override
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
+        Content linkContent = Links.createLink(DocPaths.PACKAGE_SUMMARY,
                 contents.packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -311,7 +312,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     @Override
     protected Content getNavLinkTree() {
-        Content linkContent = getHyperLink(DocPaths.PACKAGE_TREE,
+        Content linkContent = Links.createLink(DocPaths.PACKAGE_TREE,
                 contents.treeLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;

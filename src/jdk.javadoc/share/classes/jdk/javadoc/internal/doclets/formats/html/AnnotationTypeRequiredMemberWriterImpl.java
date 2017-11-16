@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -110,7 +111,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     public void addAnnotationDetailsTreeHeader(TypeElement te,
             Content memberDetailsTree) {
         if (!writer.printedAnnotationHeading) {
-            memberDetailsTree.addContent(writer.getMarkerAnchor(
+            memberDetailsTree.addContent(links.createAnchor(
                     SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL));
             Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
                     contents.annotationTypeDetailsLabel);
@@ -122,11 +123,11 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public Content getAnnotationDocTreeHeader(Element member,
-            Content annotationDetailsTree) {
+    @Override
+    public Content getAnnotationDocTreeHeader(Element member, Content annotationDetailsTree) {
         String simpleName = name(member);
-        annotationDetailsTree.addContent(writer.getMarkerAnchor(simpleName +
-                utils.signature((ExecutableElement) member)));
+        annotationDetailsTree.addContent(links.createAnchor(
+                simpleName + utils.signature((ExecutableElement) member)));
         Content annotationDocTree = writer.getMemberTreeHeader();
         Content heading = new HtmlTree(HtmlConstants.MEMBER_HEADING);
         heading.addContent(simpleName);
@@ -252,7 +253,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.addContent(writer.getMarkerAnchor(
+        memberTree.addContent(links.createAnchor(
                 SectionName.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY));
     }
 
@@ -307,7 +308,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
         if (link) {
-            return writer.getHyperLink(
+            return Links.createLink(
                     SectionName.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY,
                     contents.navAnnotationTypeRequiredMember);
         } else {
@@ -320,7 +321,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(writer.getHyperLink(
+            liNav.addContent(Links.createLink(
                     SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL,
                     contents.navAnnotationTypeMember));
         } else {
