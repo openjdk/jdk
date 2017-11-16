@@ -26,11 +26,13 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.TableHeader;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -70,11 +72,6 @@ public class PropertyWriterImpl extends AbstractMemberWriter
         Content memberTree = writer.getMemberTreeHeader();
         writer.addSummaryHeader(this, typeElement, memberTree);
         return memberTree;
-    }
-
-    @Override
-    public boolean showTabs() {
-        return false;
     }
 
     /**
@@ -218,27 +215,27 @@ public class PropertyWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public String getTableSummary() {
-        return resources.getText("doclet.Member_Table_Summary",
-                resources.getText("doclet.Property_Summary"),
-                resources.getText("doclet.properties"));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Content getCaption() {
-        return contents.properties;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public TableHeader getSummaryTableHeader(Element member) {
         return new TableHeader(contents.typeLabel, contents.propertyLabel,
                 contents.descriptionLabel);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Table createSummaryTable() {
+        String summary = resources.getText("doclet.Member_Table_Summary",
+            resources.getText("doclet.Property_Summary"),
+            resources.getText("doclet.properties"));
+
+        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
+                .setSummary(summary)
+                .setCaption(contents.properties)
+                .setHeader(getSummaryTableHeader(typeElement))
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
+                .setRowScopeColumn(1)
+                .setUseTBody(false);
     }
 
     /**
@@ -270,12 +267,12 @@ public class PropertyWriterImpl extends AbstractMemberWriter
         Content label;
         if (configuration.summarizeOverriddenMethods) {
             label = new StringContent(utils.isClass(typeElement)
-                    ? configuration.getText("doclet.Properties_Declared_In_Class")
-                    : configuration.getText("doclet.Properties_Declared_In_Interface"));
+                    ? resources.getText("doclet.Properties_Declared_In_Class")
+                    : resources.getText("doclet.Properties_Declared_In_Interface"));
         } else {
             label = new StringContent(utils.isClass(typeElement)
-                    ? configuration.getText("doclet.Properties_Inherited_From_Class")
-                    : configuration.getText("doclet.Properties_Inherited_From_Interface"));
+                    ? resources.getText("doclet.Properties_Inherited_From_Class")
+                    : resources.getText("doclet.Properties_Inherited_From_Interface"));
         }
         Content labelHeading = HtmlTree.HEADING(HtmlConstants.INHERITED_SUMMARY_HEADING,
                 label);

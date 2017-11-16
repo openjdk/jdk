@@ -25,15 +25,14 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.Arrays;
-import java.util.List;
+
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.TableHeader;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -71,6 +70,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
+    @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
             Content memberSummaryTree) {
         memberSummaryTree.addContent(
@@ -83,6 +83,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
         writer.addMemberTree(memberSummaryTree, memberTree);
     }
@@ -90,6 +91,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addDefaultValueInfo(Element member, Content annotationDocTree) {
         if (utils.isAnnotationType(member)) {
             ExecutableElement ee = (ExecutableElement)member;
@@ -107,6 +109,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addSummaryLabel(Content memberTree) {
         Content label = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING,
                 contents.annotateTypeOptionalMemberSummaryLabel);
@@ -116,7 +119,8 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
-    public String getTableSummary() {
+    @Override
+    protected String getTableSummary() {
         return resources.getText("doclet.Member_Table_Summary",
                 resources.getText("doclet.Annotation_Type_Optional_Member_Summary"),
                 resources.getText("doclet.annotation_type_optional_members"));
@@ -125,8 +129,9 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
-    public Content getCaption() {
-        return configuration.getContent("doclet.Annotation_Type_Optional_Members");
+    @Override
+    protected Content getCaption() {
+        return contents.getContent("doclet.Annotation_Type_Optional_Members");
     }
 
     /**
@@ -141,6 +146,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
         memberTree.addContent(writer.getMarkerAnchor(
                 SectionName.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY));
@@ -149,6 +155,7 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
+    @Override
     protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
         if (link) {
             return writer.getHyperLink(

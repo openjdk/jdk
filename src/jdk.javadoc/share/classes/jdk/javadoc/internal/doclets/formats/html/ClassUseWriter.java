@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -245,7 +247,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     protected void generateClassUseFile() throws DocFileIOException {
         HtmlTree body = getClassUseHeader();
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.classUseContainer);
+        div.setStyle(HtmlStyle.classUseContainer);
         if (pkgSet.size() > 0) {
             addClassUse(div);
         } else {
@@ -276,7 +278,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addClassUse(Content contentTree) {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addStyle(HtmlStyle.blockList);
+        ul.setStyle(HtmlStyle.blockList);
         if (configuration.packages.size() > 1) {
             addPackageList(ul);
             addPackageAnnotationList(ul);
@@ -291,25 +293,19 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the packages elements will be added
      */
     protected void addPackageList(Content contentTree) {
-        Content caption = getTableCaption(configuration.getContent(
+        Content caption = getTableCaption(contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement))));
-        Content table = (configuration.isOutputHtml5())
-                ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
-                : HtmlTree.TABLE(HtmlStyle.useSummary, packageUseTableSummary, caption);
-        table.addContent(getPackageTableHeader().toContent());
-        Content tbody = new HtmlTree(HtmlTag.TBODY);
-        boolean altColor = true;
+        Table table = new Table(configuration.htmlVersion, HtmlStyle.useSummary)
+                .setSummary(packageUseTableSummary)
+                .setCaption(caption)
+                .setHeader(getPackageTableHeader())
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (PackageElement pkg : pkgSet) {
-            HtmlTree tr = new HtmlTree(HtmlTag.TR);
-            tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-            altColor = !altColor;
-            addPackageUse(pkg, tr);
-            tbody.addContent(tr);
+            addPackageUse(pkg, table);
         }
-        table.addContent(tbody);
-        Content li = HtmlTree.LI(HtmlStyle.blockList, table);
+        Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
         contentTree.addContent(li);
     }
 
@@ -324,30 +320,22 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 pkgToPackageAnnotations.isEmpty()) {
             return;
         }
-        Content caption = getTableCaption(configuration.getContent(
+        Content caption = getTableCaption(contents.getContent(
                 "doclet.ClassUse_PackageAnnotation",
                 getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement))));
-        Content table = (configuration.isOutputHtml5())
-                ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
-                : HtmlTree.TABLE(HtmlStyle.useSummary, packageUseTableSummary, caption);
-        table.addContent(getPackageTableHeader().toContent());
-        Content tbody = new HtmlTree(HtmlTag.TBODY);
-        boolean altColor = true;
+
+        Table table = new Table(configuration.htmlVersion, HtmlStyle.useSummary)
+                .setSummary(packageUseTableSummary)
+                .setCaption(caption)
+                .setHeader(getPackageTableHeader())
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (PackageElement pkg : pkgToPackageAnnotations) {
-            HtmlTree tr = new HtmlTree(HtmlTag.TR);
-            tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-            altColor = !altColor;
-            Content thFirst = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, getPackageLink(pkg));
-            tr.addContent(thFirst);
-            HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
-            tdLast.addStyle(HtmlStyle.colLast);
-            addSummaryComment(pkg, tdLast);
-            tr.addContent(tdLast);
-            tbody.addContent(tr);
+            Content summary = new ContentBuilder();
+            addSummaryComment(pkg, summary);
+            table.addRow(getPackageLink(pkg), summary);
         }
-        table.addContent(tbody);
-        Content li = HtmlTree.LI(HtmlStyle.blockList, table);
+        Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
         contentTree.addContent(li);
     }
 
@@ -358,7 +346,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addClassList(Content contentTree) {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addStyle(HtmlStyle.blockList);
+        ul.setStyle(HtmlStyle.blockList);
         for (PackageElement pkg : pkgSet) {
             Content markerAnchor = getMarkerAnchor(getPackageAnchorName(pkg));
             HtmlTree htmlTree = (configuration.allowTag(HtmlTag.SECTION))
@@ -385,16 +373,14 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * Add the package use information.
      *
      * @param pkg the package that uses the given class
-     * @param contentTree the content tree to which the package use information will be added
+     * @param table the table to which the package use information will be added
      */
-    protected void addPackageUse(PackageElement pkg, Content contentTree) {
-        Content thFirst = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst,
-                getHyperLink(getPackageAnchorName(pkg), new StringContent(utils.getPackageName(pkg))));
-        contentTree.addContent(thFirst);
-        HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
-        tdLast.addStyle(HtmlStyle.colLast);
-        addSummaryComment(pkg, tdLast);
-        contentTree.addContent(tdLast);
+    protected void addPackageUse(PackageElement pkg, Table table) {
+        Content pkgLink =
+                getHyperLink(getPackageAnchorName(pkg), new StringContent(utils.getPackageName(pkg)));
+        Content summary = new ContentBuilder();
+        addSummaryComment(pkg, summary);
+        table.addRow(pkgLink, summary);
     }
 
     /**

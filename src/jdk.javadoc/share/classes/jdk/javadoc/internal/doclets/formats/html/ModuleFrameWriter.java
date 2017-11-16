@@ -103,7 +103,7 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
                 mdlgen.getHyperLink(DocPaths.moduleSummary(moduleElement), mdlLabel, "", "classFrame"));
         htmlTree.addContent(heading);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.indexContainer);
+        div.setStyle(HtmlStyle.indexContainer);
         mdlgen.addClassListing(div);
         htmlTree.addContent(div);
         if (configuration.allowTag(HtmlTag.MAIN)) {

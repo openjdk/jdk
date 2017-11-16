@@ -145,7 +145,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             body.addContent(htmlTree);
         }
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
-        divTree.addStyle(HtmlStyle.contentContainer);
+        divTree.setStyle(HtmlStyle.contentContainer);
         addLinksForIndexes(divTree);
         if (configuration.tagSearchIndexMap.get(unicode) == null) {
             addContents(unicode, indexbuilder.getMemberList(unicode), divTree);

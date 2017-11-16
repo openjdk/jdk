@@ -146,7 +146,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
             HtmlTree htmlTree = (configuration.allowTag(HtmlTag.NAV))
                     ? HtmlTree.NAV()
                     : new HtmlTree(HtmlTag.DIV);
-            htmlTree.addStyle(HtmlStyle.indexNav);
+            htmlTree.setStyle(HtmlStyle.indexNav);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             addAllClassesLink(ul);
             if (configuration.showModules  && configuration.modules.size() > 1) {

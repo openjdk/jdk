@@ -275,7 +275,7 @@ public class SourceToHTMLConverter {
      */
     private static void addLineNo(Content pre, int lineno) {
         HtmlTree span = new HtmlTree(HtmlTag.SPAN);
-        span.addStyle(HtmlStyle.sourceLineNo);
+        span.setStyle(HtmlStyle.sourceLineNo);
         if (lineno < 10) {
             span.addContent("00" + Integer.toString(lineno));
         } else if (lineno < 100) {

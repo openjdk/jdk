@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
 import java.io.*;
-import java.util.*;
 
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -35,8 +34,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes;
-import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes.TableTabs;
 
 
 /**
@@ -249,110 +246,6 @@ public class HtmlWriter {
             body.addContent(noScript);
         }
         return body;
-    }
-
-    /**
-     * Generated javascript variables for the document.
-     *
-     * @param typeMap map comprising of method and type relationship
-     * @param tabTypes set comprising of all table tab types for this class
-     * @param elementName packages or methods table for which tabs need to be displayed
-     */
-    public void generateTableTabTypesScript(Map<String,Integer> typeMap,
-            Set<? extends TableTabTypes> tabTypes, String elementName) {
-        String sep = "";
-        StringBuilder vars = new StringBuilder("var ");
-        vars.append(elementName)
-                .append(" = {");
-        for (Map.Entry<String,Integer> entry : typeMap.entrySet()) {
-            vars.append(sep);
-            sep = ",";
-            vars.append("\"")
-                    .append(entry.getKey())
-                    .append("\":")
-                    .append(entry.getValue());
-        }
-        vars.append("};").append(DocletConstants.NL);
-        sep = "";
-        vars.append("var tabs = {");
-        for (TableTabTypes entry : tabTypes) {
-            vars.append(sep);
-            sep = ",";
-            vars.append(entry.tableTabs().value())
-                    .append(":")
-                    .append("[")
-                    .append("\"")
-                    .append(entry.tableTabs().tabId())
-                    .append("\"")
-                    .append(sep)
-                    .append("\"")
-                    .append(configuration.getText(entry.tableTabs().resourceKey()))
-                    .append("\"]");
-        }
-        vars.append("};")
-                .append(DocletConstants.NL);
-        addStyles(HtmlStyle.altColor, vars);
-        addStyles(HtmlStyle.rowColor, vars);
-        addStyles(HtmlStyle.tableTab, vars);
-        addStyles(HtmlStyle.activeTableTab, vars);
-        script.addContent(new RawHtml(vars));
-    }
-
-    /**
-     * Generated javascript variables for the document.
-     *
-     * @param groupTypeMap map comprising of group relationship
-     * @param groupTypes map comprising of all table tab types
-     */
-    public void generateGroupTypesScript(Map<String,Integer> groupTypeMap,
-            Map<String,TableTabs> groupTypes) {
-        String sep = "";
-        StringBuilder vars = new StringBuilder("var groups");
-        vars.append(" = {");
-        for (Map.Entry<String,Integer> entry : groupTypeMap.entrySet()) {
-            vars.append(sep);
-            sep = ",";
-            vars.append("\"")
-                    .append(entry.getKey())
-                    .append("\":")
-                    .append(entry.getValue());
-        }
-        vars.append("};").append(DocletConstants.NL);
-        sep = "";
-        vars.append("var tabs = {");
-        for (String group : groupTypes.keySet()) {
-            TableTabs tab = groupTypes.get(group);
-            vars.append(sep);
-            sep = ",";
-            vars.append(tab.value())
-                    .append(":")
-                    .append("[")
-                    .append("\"")
-                    .append(tab.tabId())
-                    .append("\"")
-                    .append(sep)
-                    .append("\"")
-                    .append(new StringContent(tab.resourceKey()))
-                    .append("\"]");
-        }
-        vars.append("};")
-                .append(DocletConstants.NL);
-        addStyles(HtmlStyle.altColor, vars);
-        addStyles(HtmlStyle.rowColor, vars);
-        addStyles(HtmlStyle.tableTab, vars);
-        addStyles(HtmlStyle.activeTableTab, vars);
-        script.addContent(new RawHtml(vars));
-    }
-
-    /**
-     * Adds javascript style variables to the document.
-     *
-     * @param style style to be added as a javascript variable
-     * @param vars variable string to which the style variable will be added
-     */
-    public void addStyles(HtmlStyle style, StringBuilder vars) {
-        vars.append("var ").append(style).append(" = \"").append(style)
-                .append("\";").append(DocletConstants.NL);
     }
 
     /**

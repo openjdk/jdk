@@ -112,7 +112,7 @@ public class TreeWriter extends AbstractTreeWriter {
                 : body;
         htmlTree.addContent(div);
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
-        divTree.addStyle(HtmlStyle.contentContainer);
+        divTree.setStyle(HtmlStyle.contentContainer);
         addTree(classtree.baseClasses(), "doclet.Class_Hierarchy", divTree);
         addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", divTree);
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", divTree);
@@ -149,7 +149,7 @@ public class TreeWriter extends AbstractTreeWriter {
                     contents.packageHierarchies);
             contentTree.addContent(span);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
-            ul.addStyle(HtmlStyle.horizontal);
+            ul.setStyle(HtmlStyle.horizontal);
             int i = 0;
             for (PackageElement pkg : packages) {
                 // If the package name length is 0 or if -nodeprecated option

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     public Content getSerializableFieldsHeader() {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addStyle(HtmlStyle.blockList);
+        ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
 
@@ -88,9 +88,9 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     public Content getFieldsContentHeader(boolean isLastContent) {
         HtmlTree li = new HtmlTree(HtmlTag.LI);
         if (isLastContent)
-            li.addStyle(HtmlStyle.blockListLast);
+            li.setStyle(HtmlStyle.blockListLast);
         else
-            li.addStyle(HtmlStyle.blockList);
+            li.setStyle(HtmlStyle.blockList);
         return li;
     }
 
@@ -104,7 +104,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     public Content getSerializableFields(String heading, Content serializableFieldsTree) {
         HtmlTree li = new HtmlTree(HtmlTag.LI);
-        li.addStyle(HtmlStyle.blockList);
+        li.setStyle(HtmlStyle.blockList);
         if (serializableFieldsTree.isValid()) {
             Content headingContent = new StringContent(heading);
             Content serialHeading = HtmlTree.HEADING(HtmlConstants.SERIALIZED_MEMBER_HEADING,

@@ -124,7 +124,7 @@ public class HelpWriter extends HtmlDocletWriter {
         }
         HtmlTree htmlTree;
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addStyle(HtmlStyle.blockList);
+        ul.setStyle(HtmlStyle.blockList);
         if (configuration.createoverview) {
             Content overviewHeading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
                 contents.overviewLabel);
