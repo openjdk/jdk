@@ -133,11 +133,6 @@ class MarkSweep : AllStatic {
   static ReferenceProcessor* const ref_processor() { return _ref_processor; }
   static void set_ref_processor(ReferenceProcessor* rp);
 
-  // Archive Object handling
-  static inline bool is_closed_archive_object(oop object);
-  static inline bool is_open_archive_object(oop object);
-  static inline bool is_archive_object(oop object);
-
   static STWGCTimer* gc_timer() { return _gc_timer; }
   static SerialOldTracer* gc_tracer() { return _gc_tracer; }
 

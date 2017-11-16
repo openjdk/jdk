@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,27 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SERIAL_GENMARKSWEEP_HPP
-#define SHARE_VM_GC_SERIAL_GENMARKSWEEP_HPP
+#ifndef SHARE_GC_SHARED_GCARGUMENTS_HPP
+#define SHARE_GC_SHARED_GCARGUMENTS_HPP
 
-#include "gc/serial/markSweep.hpp"
+#include "memory/allocation.hpp"
 
-class GenMarkSweep : public MarkSweep {
-  friend class VM_MarkSweep;
- public:
-  static void invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_softrefs);
+class GCArguments : public CHeapObj<mtGC> {
+private:
+  static GCArguments* _instance;
 
- private:
+  static void select_gc();
+  static void select_gc_ergonomically();
+  static bool gc_selected();
 
-  // Mark live objects
-  static void mark_sweep_phase1(bool clear_all_softrefs);
-  // Calculate new addresses
-  static void mark_sweep_phase2();
-  // Update pointers
-  static void mark_sweep_phase3();
-  // Move objects to new positions
-  static void mark_sweep_phase4();
+public:
+  static jint initialize();
+  static bool is_initialized();
+  static GCArguments* arguments();
 
-  // Temporary data structures for traversal and storing/restoring marks
-  static void allocate_stacks();
-  static void deallocate_stacks();
+  virtual void initialize_flags();
+
+  virtual size_t conservative_max_heap_alignment() = 0;
 };
 
-#endif // SHARE_VM_GC_SERIAL_GENMARKSWEEP_HPP
+#endif // SHARE_GC_SHARED_GCARGUMENTS_HPP

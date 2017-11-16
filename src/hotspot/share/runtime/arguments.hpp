@@ -472,8 +472,7 @@ class Arguments : AllStatic {
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
   static void set_use_compressed_klass_ptrs();
-  static void select_gc();
-  static void set_ergonomics_flags();
+  static jint set_ergonomics_flags();
   static void set_shared_spaces_flags();
   // limits the given memory size by the maximum amount of memory this process is
   // currently allowed to allocate or reserve.
@@ -635,8 +634,6 @@ class Arguments : AllStatic {
   static jint adjust_after_os();
 
   static void set_gc_specific_flags();
-  static bool gc_selected(); // whether a gc has been selected
-  static void select_gc_ergonomically();
 #if INCLUDE_JVMCI
   // Check consistency of jvmci vm argument settings.
   static bool check_jvmci_args_consistency();
