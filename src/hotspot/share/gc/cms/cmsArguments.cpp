@@ -24,7 +24,10 @@
 
 #include "precompiled.hpp"
 #include "gc/cms/cmsArguments.hpp"
+#include "gc/cms/cmsCollectorPolicy.hpp"
+#include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/compactibleFreeListSpace.hpp"
+#include "gc/shared/gcArguments.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
@@ -191,4 +194,8 @@ void CMSArguments::disable_adaptive_size_policy(const char* collector_name) {
     }
     FLAG_SET_DEFAULT(UseAdaptiveSizePolicy, false);
   }
+}
+
+CollectedHeap* CMSArguments::create_heap() {
+  return create_heap_with_policy<CMSHeap, ConcurrentMarkSweepPolicy>();
 }

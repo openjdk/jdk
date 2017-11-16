@@ -27,6 +27,8 @@
 
 #include "memory/allocation.hpp"
 
+class CollectedHeap;
+
 class GCArguments : public CHeapObj<mtGC> {
 private:
   static GCArguments* _instance;
@@ -34,6 +36,10 @@ private:
   static void select_gc();
   static void select_gc_ergonomically();
   static bool gc_selected();
+
+protected:
+  template <class Heap, class Policy>
+  CollectedHeap* create_heap_with_policy();
 
 public:
   static jint initialize();
@@ -43,6 +49,8 @@ public:
   virtual void initialize_flags();
 
   virtual size_t conservative_max_heap_alignment() = 0;
+
+  virtual CollectedHeap* create_heap() = 0;
 };
 
 #endif // SHARE_GC_SHARED_GCARGUMENTS_HPP

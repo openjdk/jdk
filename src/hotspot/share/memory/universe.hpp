@@ -220,7 +220,6 @@ class Universe: AllStatic {
   static size_t _heap_capacity_at_last_gc;
   static size_t _heap_used_at_last_gc;
 
-  template <class Heap, class Policy> static CollectedHeap* create_heap_with_policy();
   static CollectedHeap* create_heap();
   static CollectedHeap* create_heap_ext();
   static jint initialize_heap();
