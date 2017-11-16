@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import java.util.Observable;
 import java.util.Observer;
 
 public class ImmutableOopMapPair {
-  private static CIntegerField pcField;
-  private static CIntegerField offsetField;
+  private static CIntegerField pcOffsetField;
+  private static CIntegerField oopmapOffsetField;
   private static long classSize;
 
   static {
@@ -57,18 +57,18 @@ public class ImmutableOopMapPair {
   }
 
   public int getPC() {
-    return (int) pcField.getValue(address);
+    return (int) pcOffsetField.getValue(address);
   }
 
   public int getOffset() {
-    return (int) offsetField.getValue(address);
+    return (int) oopmapOffsetField.getValue(address);
   }
 
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("ImmutableOopMapPair");
 
-    pcField = type.getCIntegerField("_pc_offset");
-    offsetField = type.getCIntegerField("_oopmap_offset");
+    pcOffsetField = type.getCIntegerField("_pc_offset");
+    oopmapOffsetField = type.getCIntegerField("_oopmap_offset");
     classSize = type.getSize();
   }
 

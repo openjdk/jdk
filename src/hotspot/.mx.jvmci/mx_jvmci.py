@@ -42,11 +42,6 @@ _suite = mx.suite('jvmci')
 
 JVMCI_VERSION = 9
 
-"""
-Top level directory of the JDK source workspace.
-"""
-_jdkSourceRoot = dirname(_suite.dir)
-
 _JVMCI_JDK_TAG = 'jvmci'
 
 _minVersion = mx.VersionSpec('1.9')
@@ -145,7 +140,7 @@ def isJVMCIEnabled(vm):
     return True
 
 def _makehelp():
-    return subprocess.check_output([mx.gmake_cmd(), 'help'], cwd=_jdkSourceRoot)
+    return subprocess.check_output([mx.gmake_cmd(), 'help'], cwd=_get_jdk_dir())
 
 def _runmake(args):
     """run the JDK make process
@@ -155,12 +150,12 @@ To build hotspot and import it into the JDK: "mx make hotspot import-hotspot"
 
     jdkBuildDir = _get_jdk_build_dir()
     if not exists(jdkBuildDir):
-        # JDK9 must be bootstrapped with a JDK8
-        compliance = mx.JavaCompliance('8')
-        jdk8 = mx.get_jdk(compliance.exactMatch, versionDescription=compliance.value)
+        # JDK10 must be bootstrapped with a JDK9
+        compliance = mx.JavaCompliance('9')
+        jdk9 = mx.get_jdk(compliance.exactMatch, versionDescription=compliance.value)
         cmd = ['sh', 'configure', '--with-debug-level=' + _vm.debugLevel, '--with-native-debug-symbols=external', '--disable-precompiled-headers', '--with-jvm-features=graal',
-               '--with-jvm-variants=' + _vm.jvmVariant, '--disable-warnings-as-errors', '--with-boot-jdk=' + jdk8.home, '--with-jvm-features=graal']
-        mx.run(cmd, cwd=_jdkSourceRoot)
+               '--with-jvm-variants=' + _vm.jvmVariant, '--disable-warnings-as-errors', '--with-boot-jdk=' + jdk9.home, '--with-jvm-features=graal']
+        mx.run(cmd, cwd=_get_jdk_dir())
     cmd = [mx.gmake_cmd(), 'CONF=' + _vm.debugLevel]
     if mx.get_opts().verbose:
         cmd.append('LOG=debug')
@@ -170,11 +165,11 @@ To build hotspot and import it into the JDK: "mx make hotspot import-hotspot"
 
     if not mx.get_opts().verbose:
         mx.log('--------------- make execution ----------------------')
-        mx.log('Working directory: ' + _jdkSourceRoot)
+        mx.log('Working directory: ' + _get_jdk_dir())
         mx.log('Command line: ' + ' '.join(cmd))
         mx.log('-----------------------------------------------------')
 
-    mx.run(cmd, cwd=_jdkSourceRoot)
+    mx.run(cmd, cwd=_get_jdk_dir())
 
 def _runmultimake(args):
     """run the JDK make process for one or more configurations"""

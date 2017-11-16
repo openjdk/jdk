@@ -30,6 +30,7 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/align.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
@@ -125,6 +126,11 @@ oop JNIHandles::resolve_jweak(jweak handle) {
 
 template oop JNIHandles::resolve_jweak<true>(jweak);
 template oop JNIHandles::resolve_jweak<false>(jweak);
+
+bool JNIHandles::is_global_weak_cleared(jweak handle) {
+  assert(is_jweak(handle), "not a weak handle");
+  return guard_value<false>(jweak_ref(handle)) == NULL;
+}
 
 void JNIHandles::destroy_global(jobject handle) {
   if (handle != NULL) {

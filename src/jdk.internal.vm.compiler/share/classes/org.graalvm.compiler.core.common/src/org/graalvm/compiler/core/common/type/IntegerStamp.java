@@ -597,6 +597,10 @@ public final class IntegerStamp extends PrimitiveStamp {
                         public Stamp foldStamp(Stamp s) {
                             IntegerStamp stamp = (IntegerStamp) s;
                             int bits = stamp.getBits();
+                            if (stamp.lowerBound == stamp.upperBound) {
+                                long value = CodeUtil.convert(-stamp.lowerBound(), stamp.getBits(), false);
+                                return StampFactory.forInteger(stamp.getBits(), value, value);
+                            }
                             if (stamp.lowerBound() != CodeUtil.minValue(bits)) {
                                 // TODO(ls) check if the mask calculation is correct...
                                 return StampFactory.forInteger(bits, -stamp.upperBound(), -stamp.lowerBound());
@@ -623,6 +627,11 @@ public final class IntegerStamp extends PrimitiveStamp {
 
                             int bits = a.getBits();
                             assert bits == b.getBits();
+
+                            if (a.lowerBound == a.upperBound && b.lowerBound == b.upperBound) {
+                                long value = CodeUtil.convert(a.lowerBound() + b.lowerBound(), a.getBits(), false);
+                                return StampFactory.forInteger(a.getBits(), value, value);
+                            }
 
                             if (a.isUnrestricted()) {
                                 return a;
@@ -711,6 +720,12 @@ public final class IntegerStamp extends PrimitiveStamp {
 
                             int bits = a.getBits();
                             assert bits == b.getBits();
+
+                            if (a.lowerBound == a.upperBound && b.lowerBound == b.upperBound) {
+                                long value = CodeUtil.convert(a.lowerBound() * b.lowerBound(), a.getBits(), false);
+                                return StampFactory.forInteger(a.getBits(), value, value);
+                            }
+
                             // if a==0 or b==0 result of a*b is always 0
                             if (a.upMask() == 0) {
                                 return a;
@@ -791,7 +806,7 @@ public final class IntegerStamp extends PrimitiveStamp {
                                 long maxPosB = b.upperBound();
 
                                 // multiplication has shift semantics
-                                long newUpMask = ~CodeUtil.mask(Long.numberOfTrailingZeros(a.upMask) + Long.numberOfTrailingZeros(b.upMask)) & CodeUtil.mask(bits);
+                                long newUpMask = ~CodeUtil.mask(Math.min(64, Long.numberOfTrailingZeros(a.upMask) + Long.numberOfTrailingZeros(b.upMask))) & CodeUtil.mask(bits);
 
                                 if (a.canBePositive()) {
                                     if (b.canBePositive()) {
@@ -1023,6 +1038,9 @@ public final class IntegerStamp extends PrimitiveStamp {
                             PrimitiveConstant a = (PrimitiveConstant) const1;
                             PrimitiveConstant b = (PrimitiveConstant) const2;
                             assert a.getJavaKind() == b.getJavaKind();
+                            if (b.asLong() == 0) {
+                                return null;
+                            }
                             return JavaConstant.forIntegerKind(a.getJavaKind(), a.asLong() / b.asLong());
                         }
 
@@ -1031,9 +1049,12 @@ public final class IntegerStamp extends PrimitiveStamp {
                             IntegerStamp a = (IntegerStamp) stamp1;
                             IntegerStamp b = (IntegerStamp) stamp2;
                             assert a.getBits() == b.getBits();
-                            if (b.isStrictlyPositive()) {
-                                long newLowerBound = a.lowerBound() / b.upperBound();
-                                long newUpperBound = a.upperBound() / b.lowerBound();
+                            if (a.lowerBound == a.upperBound && b.lowerBound == b.upperBound && b.lowerBound != 0) {
+                                long value = CodeUtil.convert(a.lowerBound() / b.lowerBound(), a.getBits(), false);
+                                return StampFactory.forInteger(a.getBits(), value, value);
+                            } else if (b.isStrictlyPositive()) {
+                                long newLowerBound = a.lowerBound() < 0 ? a.lowerBound() / b.lowerBound() : a.lowerBound() / b.upperBound();
+                                long newUpperBound = a.upperBound() < 0 ? a.upperBound() / b.upperBound() : a.upperBound() / b.lowerBound();
                                 return StampFactory.forInteger(a.getBits(), newLowerBound, newUpperBound);
                             } else {
                                 return a.unrestricted();
@@ -1054,6 +1075,9 @@ public final class IntegerStamp extends PrimitiveStamp {
                             PrimitiveConstant a = (PrimitiveConstant) const1;
                             PrimitiveConstant b = (PrimitiveConstant) const2;
                             assert a.getJavaKind() == b.getJavaKind();
+                            if (b.asLong() == 0) {
+                                return null;
+                            }
                             return JavaConstant.forIntegerKind(a.getJavaKind(), a.asLong() % b.asLong());
                         }
 
@@ -1062,6 +1086,12 @@ public final class IntegerStamp extends PrimitiveStamp {
                             IntegerStamp a = (IntegerStamp) stamp1;
                             IntegerStamp b = (IntegerStamp) stamp2;
                             assert a.getBits() == b.getBits();
+
+                            if (a.lowerBound == a.upperBound && b.lowerBound == b.upperBound && b.lowerBound != 0) {
+                                long value = CodeUtil.convert(a.lowerBound() % b.lowerBound(), a.getBits(), false);
+                                return StampFactory.forInteger(a.getBits(), value, value);
+                            }
+
                             // zero is always possible
                             long newLowerBound = Math.min(a.lowerBound(), 0);
                             long newUpperBound = Math.max(a.upperBound(), 0);
@@ -1364,6 +1394,10 @@ public final class IntegerStamp extends PrimitiveStamp {
                         public Stamp foldStamp(Stamp input) {
                             IntegerStamp stamp = (IntegerStamp) input;
                             int bits = stamp.getBits();
+                            if (stamp.lowerBound == stamp.upperBound) {
+                                long value = CodeUtil.convert(Math.abs(stamp.lowerBound()), stamp.getBits(), false);
+                                return StampFactory.forInteger(stamp.getBits(), value, value);
+                            }
                             if (stamp.lowerBound() == CodeUtil.minValue(bits)) {
                                 return input.unrestricted();
                             } else {

@@ -83,7 +83,11 @@ public class CountedLoopInfo {
             range = add(graph, range, oneDirection);
         }
         // round-away-from-zero divison: (range + stride -/+ 1) / stride
-        ValueNode denominator = add(graph, sub(graph, range, oneDirection), iv.strideNode());
+        ValueNode denominator = range;
+        if (!oneDirection.stamp().equals(iv.strideNode().stamp())) {
+            ValueNode subedRanged = sub(graph, range, oneDirection);
+            denominator = add(graph, subedRanged, iv.strideNode());
+        }
         ValueNode div = divBefore(graph, loop.entryPoint(), denominator, iv.strideNode());
 
         if (assumePositive) {

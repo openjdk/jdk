@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -41,7 +42,6 @@
 #endif
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"

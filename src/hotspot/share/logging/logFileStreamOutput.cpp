@@ -22,12 +22,12 @@
  *
  */
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "logging/logDecorators.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
-#include "prims/jvm.h"
 
 static bool initialized;
 static union {

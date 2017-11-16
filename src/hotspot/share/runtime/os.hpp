@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_RUNTIME_OS_HPP
 #define SHARE_VM_RUNTIME_OS_HPP
 
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
-#include "prims/jvm.h"
 #include "runtime/extendedPC.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/macros.hpp"

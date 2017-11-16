@@ -41,7 +41,7 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
 #include "adfiles/ad_aarch64.hpp"
 #include "opto/runtime.hpp"
 #endif
@@ -114,7 +114,7 @@ class RegisterSaver {
 };
 
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words, bool save_vectors) {
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   if (save_vectors) {
     // Save upper half of vector registers
     int vect_words = 32 * 8 / wordSize;
@@ -2688,7 +2688,7 @@ uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
 //------------------------------generate_uncommon_trap_blob--------------------
 void SharedRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
@@ -2894,7 +2894,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   }
 #endif
 }
-#endif // COMPILER2
+#endif // COMPILER2_OR_JVMCI
 
 
 //------------------------------generate_handler_blob------
@@ -3070,8 +3070,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
 }
 
-
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
 // This is here instead of runtime_x86_64.cpp because it uses SimpleRuntimeFrame
 //
 //------------------------------generate_exception_blob---------------------------
@@ -3200,4 +3199,4 @@ void OptoRuntime::generate_exception_blob() {
   // Set exception blob
   _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
 }
-#endif // COMPILER2
+#endif // COMPILER2_OR_JVMCI

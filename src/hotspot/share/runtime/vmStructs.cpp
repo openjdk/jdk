@@ -47,6 +47,7 @@
 #include "gc/parallel/immutableSpace.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/cms/cmsHeap.hpp"
 #include "gc/shared/cardTableRS.hpp"
@@ -356,7 +357,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(Symbol,                      _length,                                       unsigned short)                        \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(jbyte)) /* NOTE: no type */     \
   nonstatic_field(Symbol,                      _body[0],                                      jbyte)                                 \
-  nonstatic_field(TypeArrayKlass,              _max_length,                                   int)                                   \
+  nonstatic_field(TypeArrayKlass,              _max_length,                                   jint)                                  \
                                                                                                                                      \
   /***********************/                                                                                                          \
   /* Constant Pool Cache */                                                                                                          \
@@ -579,7 +580,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
      static_field(PerfMemory,                  _top,                                          char*)                                 \
      static_field(PerfMemory,                  _capacity,                                     size_t)                                \
      static_field(PerfMemory,                  _prologue,                                     PerfDataPrologue*)                     \
-     static_field(PerfMemory,                  _initialized,                                  jint)                                  \
+     static_field(PerfMemory,                  _initialized,                                  int)                                   \
                                                                                                                                      \
   /***************/                                                                                                                  \
   /* SymbolTable */                                                                                                                  \
@@ -1465,6 +1466,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(CollectedHeap)                                    \
            declare_type(GenCollectedHeap,             CollectedHeap)      \
            declare_type(CMSHeap,                      GenCollectedHeap)   \
+           declare_type(SerialHeap,                   GenCollectedHeap)   \
   declare_toplevel_type(Generation)                                       \
            declare_type(DefNewGeneration,             Generation)         \
            declare_type(CardGeneration,               Generation)         \
@@ -2175,6 +2177,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(vframeArray)                                      \
   declare_toplevel_type(vframeArrayElement)                               \
   declare_toplevel_type(Annotations*)                                     \
+  declare_type(OopMapValue, StackObj)                                     \
                                                                           \
   /***************/                                                       \
   /* Miscellaneous types */                                               \
@@ -2257,7 +2260,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                           \
   declare_constant(G1SATBCardTableModRefBS::g1_young_gen)                 \
                                                                           \
-  declare_constant(CollectedHeap::GenCollectedHeap)                       \
+  declare_constant(CollectedHeap::SerialHeap)                             \
+  declare_constant(CollectedHeap::CMSHeap)                                \
   declare_constant(CollectedHeap::ParallelScavengeHeap)                   \
   declare_constant(CollectedHeap::G1CollectedHeap)                        \
                                                                           \

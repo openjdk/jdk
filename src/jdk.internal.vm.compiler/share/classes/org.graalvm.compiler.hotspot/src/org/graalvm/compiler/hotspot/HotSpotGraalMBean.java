@@ -283,10 +283,8 @@ public final class HotSpotGraalMBean implements javax.management.DynamicMBean {
     @Override
     public javax.management.MBeanInfo getMBeanInfo() {
         List<javax.management.MBeanAttributeInfo> attrs = new ArrayList<>();
-        if (registered != null) {
-            for (OptionDescriptor descr : allOptionDescriptors()) {
-                attrs.add(new javax.management.MBeanAttributeInfo(descr.getName(), descr.getType().getName(), descr.getHelp(), true, true, false));
-            }
+        for (OptionDescriptor descr : allOptionDescriptors()) {
+            attrs.add(new javax.management.MBeanAttributeInfo(descr.getName(), descr.getType().getName(), descr.getHelp(), true, true, false));
         }
         javax.management.MBeanOperationInfo[] ops = {
                         new javax.management.MBeanOperationInfo("dumpMethod", "Enable IGV dumps for provided method", new javax.management.MBeanParameterInfo[]{

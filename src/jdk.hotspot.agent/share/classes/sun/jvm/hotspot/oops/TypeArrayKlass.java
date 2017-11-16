@@ -44,14 +44,14 @@ public class TypeArrayKlass extends ArrayKlass {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type t             = db.lookupType("TypeArrayKlass");
-    maxLength          = new CIntField(t.getCIntegerField("_max_length"), 0);
+    maxLength          = new IntField(t.getJIntField("_max_length"), 0);
   }
 
   public TypeArrayKlass(Address addr) {
     super(addr);
   }
 
-  private static CIntField  maxLength;
+  private static IntField  maxLength;
 
   public long getMaxLength()          { return  maxLength.getValue(this); }
 
@@ -98,7 +98,7 @@ public class TypeArrayKlass extends ArrayKlass {
 
   public void iterateFields(MetadataVisitor visitor) {
     super.iterateFields(visitor);
-      visitor.doCInt(maxLength, true);
+      visitor.doInt(maxLength, true);
     }
 
   public Klass arrayKlassImpl(boolean orNull, int n) {

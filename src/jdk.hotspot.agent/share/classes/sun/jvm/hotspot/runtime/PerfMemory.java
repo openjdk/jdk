@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class PerfMemory {
     private static AddressField  topField;
     private static CIntegerField capacityField;
     private static AddressField  prologueField;
-    private static JIntField     initializedField;
+    private static CIntegerField initializedField;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -52,7 +52,7 @@ public class PerfMemory {
         topField = type.getAddressField("_top");
         capacityField = type.getCIntegerField("_capacity");
         prologueField = type.getAddressField("_prologue");
-        initializedField = type.getJIntField("_initialized");
+        initializedField = type.getCIntegerField("_initialized");
     }
 
     // Accessors
@@ -73,7 +73,7 @@ public class PerfMemory {
     }
 
     public static boolean initialized() {
-        return ((int) initializedField.getValue()) != 0;
+        return (initializedField.getValue()) != 0;
     }
 
     public static PerfDataPrologue prologue() {

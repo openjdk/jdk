@@ -24,12 +24,12 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/jvm.h"
 #include "prims/methodHandles.hpp"
 
 #define __ _masm->

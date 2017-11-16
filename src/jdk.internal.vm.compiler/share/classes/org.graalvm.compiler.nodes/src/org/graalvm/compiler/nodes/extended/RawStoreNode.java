@@ -29,7 +29,6 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -39,12 +38,10 @@ import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
-import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.Assumptions;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
 
@@ -123,41 +120,8 @@ public final class RawStoreNode extends UnsafeAccessNode implements StateSplit, 
             if (indexValue.isConstant()) {
                 long off = indexValue.asJavaConstant().asLong();
                 int entryIndex = virtual.entryIndexForOffset(off, accessKind());
-                if (entryIndex != -1) {
-                    JavaKind entryKind = virtual.entryKind(entryIndex);
-                    boolean canVirtualize = entryKind == accessKind() || (entryKind == accessKind().getStackKind() && !StampTool.typeOrNull(object()).isArray());
-                    if (!canVirtualize) {
-                        /*
-                         * Special case: If the entryKind is long, allow arbitrary kinds as long as
-                         * a value of the same kind is already there. This can only happen if some
-                         * other node initialized the entry with a value of a different kind. One
-                         * example where this happens is the Truffle NewFrameNode.
-                         */
-                        ValueNode entry = tool.getEntry(virtual, entryIndex);
-                        if (entryKind == JavaKind.Long && entry.getStackKind() == value.getStackKind()) {
-                            canVirtualize = true;
-                        }
-                    }
-                    if (canVirtualize) {
-                        tool.setVirtualEntry(virtual, entryIndex, value(), true);
-                        tool.delete();
-                    } else {
-                        /*
-                         * Special case: Allow storing a single long or double value into two
-                         * consecutive int slots.
-                         */
-                        if ((accessKind() == JavaKind.Long || accessKind() == JavaKind.Double) && entryKind == JavaKind.Int) {
-                            int nextIndex = virtual.entryIndexForOffset(off + 4, entryKind);
-                            if (nextIndex != -1) {
-                                JavaKind nextKind = virtual.entryKind(nextIndex);
-                                if (nextKind == JavaKind.Int) {
-                                    tool.setVirtualEntry(virtual, entryIndex, value(), true);
-                                    tool.setVirtualEntry(virtual, nextIndex, ConstantNode.forConstant(JavaConstant.forIllegal(), tool.getMetaAccessProvider(), graph()), true);
-                                    tool.delete();
-                                }
-                            }
-                        }
-                    }
+                if (entryIndex != -1 && tool.setVirtualEntry(virtual, entryIndex, value(), accessKind(), off)) {
+                    tool.delete();
                 }
             }
         }

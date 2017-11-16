@@ -38,11 +38,13 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <limits.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <dirent.h>
 
 #include "jni.h"
 #include "jni_util.h"
 #include "jlong.h"
-#include "jvm.h"
 #include "io_util.h"
 #include "io_util_md.h"
 #include "java_io_FileSystem.h"
@@ -97,9 +99,9 @@ Java_java_io_UnixFileSystem_canonicalize0(JNIEnv *env, jobject this,
     jstring rv = NULL;
 
     WITH_PLATFORM_STRING(env, pathname, path) {
-        char canonicalPath[JVM_MAXPATHLEN];
+        char canonicalPath[PATH_MAX];
         if (canonicalize((char *)path,
-                         canonicalPath, JVM_MAXPATHLEN) < 0) {
+                         canonicalPath, PATH_MAX) < 0) {
             JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
         } else {
 #ifdef MACOSX

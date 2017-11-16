@@ -723,7 +723,7 @@ ConNode* PhaseValues::uncached_makecon(const Type *t) {
 
 //------------------------------intcon-----------------------------------------
 // Fast integer constant.  Same as "transform(new ConINode(TypeInt::make(i)))"
-ConINode* PhaseTransform::intcon(int i) {
+ConINode* PhaseTransform::intcon(jint i) {
   // Small integer?  Check cache! Check that cached node is not dead
   if (i >= _icon_min && i <= _icon_max) {
     ConINode* icon = _icons[i-_icon_min];

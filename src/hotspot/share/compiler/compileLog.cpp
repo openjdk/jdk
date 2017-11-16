@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "ci/ciMethod.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/method.hpp"
-#include "prims/jvm.h"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 

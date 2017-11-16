@@ -35,7 +35,9 @@ import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.hotspot.CompilationTask;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
+import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.java.BciBlockMapping;
 import org.graalvm.compiler.java.BciBlockMapping.BciBlock;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -76,6 +78,13 @@ public abstract class GraalOSRTestBase extends GraalCompilerTest {
         HotSpotCompilationRequest request = new HotSpotCompilationRequest((HotSpotResolvedJavaMethod) method, bci, jvmciEnv);
         HotSpotGraalCompiler compiler = (HotSpotGraalCompiler) runtime.getCompiler();
         CompilationTask task = new CompilationTask(runtime, compiler, request, true, true, debug.getOptions());
+        if (method instanceof HotSpotResolvedJavaMethod) {
+            HotSpotGraalRuntimeProvider graalRuntime = compiler.getGraalRuntime();
+            GraalHotSpotVMConfig config = graalRuntime.getVMConfig();
+            if (((HotSpotResolvedJavaMethod) method).hasCodeAtLevel(bci, config.compilationLevelFullOptimization)) {
+                return;
+            }
+        }
         HotSpotCompilationRequestResult result = task.runCompilation(debug);
         if (result.getFailure() != null) {
             throw new GraalError(result.getFailureMessage());

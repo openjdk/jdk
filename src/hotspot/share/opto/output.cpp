@@ -577,10 +577,10 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     // arbitrary, and are not tied to any machine-level encodings.)
 #ifdef _LP64
     if( t->base() == Type::DoubleBot || t->base() == Type::DoubleCon ) {
-      array->append(new ConstantIntValue(0));
+      array->append(new ConstantIntValue((jint)0));
       array->append(new_loc_value( _regalloc, regnum, Location::dbl ));
     } else if ( t->base() == Type::Long ) {
-      array->append(new ConstantIntValue(0));
+      array->append(new ConstantIntValue((jint)0));
       array->append(new_loc_value( _regalloc, regnum, Location::lng ));
     } else if ( t->base() == Type::RawPtr ) {
       // jsr/ret return address which must be restored into a the full
@@ -663,7 +663,7 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
   case Type::DoubleCon: {
     jdouble d = t->is_double_constant()->getd();
 #ifdef _LP64
-    array->append(new ConstantIntValue(0));
+    array->append(new ConstantIntValue((jint)0));
     array->append(new ConstantDoubleValue(d));
 #else
     // Repack the double as two jints.
@@ -683,7 +683,7 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
   case Type::Long: {
     jlong d = t->is_long()->get_con();
 #ifdef _LP64
-    array->append(new ConstantIntValue(0));
+    array->append(new ConstantIntValue((jint)0));
     array->append(new ConstantLongValue(d));
 #else
     // Repack the long as two jints.

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "compiler/compileBroker.hpp"
@@ -30,7 +31,6 @@
 #include "gc/shared/vmGCOperations.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/globals.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"

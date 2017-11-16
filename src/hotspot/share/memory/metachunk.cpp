@@ -55,8 +55,8 @@ Metachunk::Metachunk(size_t word_size,
     _container(container)
 {
   _top = initial_top();
-#ifdef ASSERT
   set_is_tagged_free(false);
+#ifdef ASSERT
   mangle(uninitMetaWordVal);
 #endif
 }

@@ -31,8 +31,8 @@ import static org.graalvm.compiler.asm.amd64.AMD64AsmOptions.UseXmmLoadAndClearU
 import static org.graalvm.compiler.asm.amd64.AMD64AsmOptions.UseXmmRegToRegMoveAll;
 
 import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
+import org.graalvm.compiler.core.common.NumUtil;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64Kind;
@@ -279,6 +279,16 @@ public class AMD64MacroAssembler extends AMD64Assembler {
             movl(high, (int) (src >> 32));
         }
 
+    }
+
+    public final void setl(ConditionFlag cc, Register dst) {
+        setb(cc, dst);
+        movzbl(dst, dst);
+    }
+
+    public final void setq(ConditionFlag cc, Register dst) {
+        setb(cc, dst);
+        movzbq(dst, dst);
     }
 
     public final void flog(Register dest, Register value, boolean base10) {

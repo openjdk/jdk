@@ -538,7 +538,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return result;
     }
 
-    synchronized HotSpotResolvedJavaField createField(JavaType type, long offset, int rawFlags, int index) {
+    HotSpotResolvedJavaField createField(JavaType type, long offset, int rawFlags, int index) {
         return new HotSpotResolvedJavaFieldImpl(this, type, offset, rawFlags, index);
     }
 

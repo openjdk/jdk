@@ -22,6 +22,8 @@
  */
 package org.graalvm.compiler.core.test;
 
+import java.util.HashMap;
+
 import org.graalvm.compiler.core.phases.HighTier;
 import org.graalvm.compiler.core.phases.MidTier;
 import org.graalvm.compiler.nodes.InvokeNode;
@@ -139,6 +141,10 @@ public class HashCodeTest extends GraalCompilerTest {
     public void test08() {
         initialize(Appendable.class);
         checkForGuardedIntrinsicPattern("hashCodeInterface");
+
+        // Ensure the profile for the dispatch in hashCodeSnippet01
+        // has a receiver type that does not select Object.hashCode intrinsic
+        hashCodeSnippet01(new HashMap<>());
         checkForGuardedIntrinsicPattern("hashCodeSnippet01");
     }
 

@@ -39,7 +39,6 @@ import java.util.List;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.core.amd64.AMD64ArithmeticLIRGenerator;
 import org.graalvm.compiler.core.amd64.AMD64LIRGenerator;
-import org.graalvm.compiler.core.amd64.AMD64LIRKindTool;
 import org.graalvm.compiler.core.amd64.AMD64MoveFactoryBase.BackupSlotProvider;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -116,7 +115,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
     }
 
     private AMD64HotSpotLIRGenerator(HotSpotProviders providers, GraalHotSpotVMConfig config, LIRGenerationResult lirGenRes, BackupSlotProvider backupSlotProvider) {
-        this(new AMD64LIRKindTool(), new AMD64HotSpotArithmeticLIRGenerator(), new AMD64HotSpotMoveFactory(backupSlotProvider), providers, config, lirGenRes);
+        this(new AMD64HotSpotLIRKindTool(), new AMD64HotSpotArithmeticLIRGenerator(), new AMD64HotSpotMoveFactory(backupSlotProvider), providers, config, lirGenRes);
     }
 
     protected AMD64HotSpotLIRGenerator(LIRKindTool lirKindTool, AMD64ArithmeticLIRGenerator arithmeticLIRGen, MoveFactory moveFactory, HotSpotProviders providers, GraalHotSpotVMConfig config,
@@ -363,7 +362,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
         Stub stub = getStub();
         if (destroysRegisters) {
             if (stub != null && stub.preservesRegisters()) {
-                Register[] savedRegisters = getResult().getFrameMapBuilder().getRegisterConfig().getAllocatableRegisters().toArray();
+                Register[] savedRegisters = getRegisterConfig().getAllocatableRegisters().toArray();
                 save = emitSaveAllRegisters(savedRegisters, true);
             }
         }
@@ -567,28 +566,29 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
     @Override
     public Value emitCompress(Value pointer, CompressEncoding encoding, boolean nonNull) {
         LIRKind inputKind = pointer.getValueKind(LIRKind.class);
-        assert inputKind.getPlatformKind() == AMD64Kind.QWORD;
+        LIRKindTool lirKindTool = getLIRKindTool();
+        assert inputKind.getPlatformKind() == lirKindTool.getObjectKind().getPlatformKind();
         if (inputKind.isReference(0)) {
             // oop
-            Variable result = newVariable(LIRKind.reference(AMD64Kind.DWORD));
-            append(new AMD64HotSpotMove.CompressPointer(result, asAllocatable(pointer), getProviders().getRegisters().getHeapBaseRegister().asValue(), encoding, nonNull));
+            Variable result = newVariable(lirKindTool.getNarrowOopKind());
+            append(new AMD64Move.CompressPointer(result, asAllocatable(pointer), getProviders().getRegisters().getHeapBaseRegister().asValue(), encoding, nonNull, getLIRKindTool()));
             return result;
         } else {
             // metaspace pointer
-            Variable result = newVariable(LIRKind.value(AMD64Kind.DWORD));
+            Variable result = newVariable(lirKindTool.getNarrowPointerKind());
             AllocatableValue base = Value.ILLEGAL;
             OptionValues options = getResult().getLIR().getOptions();
             if (encoding.hasBase() || GeneratePIC.getValue(options)) {
                 if (GeneratePIC.getValue(options)) {
-                    Variable baseAddress = newVariable(LIRKind.value(AMD64Kind.QWORD));
+                    Variable baseAddress = newVariable(lirKindTool.getWordKind());
                     AMD64HotSpotMove.BaseMove move = new AMD64HotSpotMove.BaseMove(baseAddress, config);
                     append(move);
                     base = baseAddress;
                 } else {
-                    base = emitLoadConstant(LIRKind.value(AMD64Kind.QWORD), JavaConstant.forLong(encoding.getBase()));
+                    base = emitLoadConstant(lirKindTool.getWordKind(), JavaConstant.forLong(encoding.getBase()));
                 }
             }
-            append(new AMD64HotSpotMove.CompressPointer(result, asAllocatable(pointer), base, encoding, nonNull));
+            append(new AMD64Move.CompressPointer(result, asAllocatable(pointer), base, encoding, nonNull, getLIRKindTool()));
             return result;
         }
     }
@@ -596,35 +596,37 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
     @Override
     public Value emitUncompress(Value pointer, CompressEncoding encoding, boolean nonNull) {
         LIRKind inputKind = pointer.getValueKind(LIRKind.class);
-        assert inputKind.getPlatformKind() == AMD64Kind.DWORD;
+        LIRKindTool lirKindTool = getLIRKindTool();
+        assert inputKind.getPlatformKind() == lirKindTool.getNarrowOopKind().getPlatformKind();
         if (inputKind.isReference(0)) {
             // oop
-            Variable result = newVariable(LIRKind.reference(AMD64Kind.QWORD));
-            append(new AMD64HotSpotMove.UncompressPointer(result, asAllocatable(pointer), getProviders().getRegisters().getHeapBaseRegister().asValue(), encoding, nonNull));
+            Variable result = newVariable(lirKindTool.getObjectKind());
+            append(new AMD64Move.UncompressPointer(result, asAllocatable(pointer), getProviders().getRegisters().getHeapBaseRegister().asValue(), encoding, nonNull, lirKindTool));
             return result;
         } else {
             // metaspace pointer
-            Variable result = newVariable(LIRKind.value(AMD64Kind.QWORD));
+            LIRKind uncompressedKind = lirKindTool.getWordKind();
+            Variable result = newVariable(uncompressedKind);
             AllocatableValue base = Value.ILLEGAL;
             OptionValues options = getResult().getLIR().getOptions();
             if (encoding.hasBase() || GeneratePIC.getValue(options)) {
                 if (GeneratePIC.getValue(options)) {
-                    Variable baseAddress = newVariable(LIRKind.value(AMD64Kind.QWORD));
+                    Variable baseAddress = newVariable(uncompressedKind);
                     AMD64HotSpotMove.BaseMove move = new AMD64HotSpotMove.BaseMove(baseAddress, config);
                     append(move);
                     base = baseAddress;
                 } else {
-                    base = emitLoadConstant(LIRKind.value(AMD64Kind.QWORD), JavaConstant.forLong(encoding.getBase()));
+                    base = emitLoadConstant(uncompressedKind, JavaConstant.forLong(encoding.getBase()));
                 }
             }
-            append(new AMD64HotSpotMove.UncompressPointer(result, asAllocatable(pointer), base, encoding, nonNull));
+            append(new AMD64Move.UncompressPointer(result, asAllocatable(pointer), base, encoding, nonNull, lirKindTool));
             return result;
         }
     }
 
     @Override
     public void emitNullCheck(Value address, LIRFrameState state) {
-        if (address.getValueKind().getPlatformKind() == AMD64Kind.DWORD) {
+        if (address.getValueKind().getPlatformKind() == getLIRKindTool().getNarrowOopKind().getPlatformKind()) {
             CompressEncoding encoding = config.getOopEncoding();
             Value uncompressed;
             if (encoding.getShift() <= 3) {
@@ -635,9 +637,9 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
                 uncompressed = emitUncompress(address, encoding, false);
             }
             append(new AMD64Move.NullCheckOp(asAddressValue(uncompressed), state));
-        } else {
-            super.emitNullCheck(address, state);
+            return;
         }
+        super.emitNullCheck(address, state);
     }
 
     @Override

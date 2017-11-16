@@ -26,6 +26,7 @@
 #include <sys/types.h>
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -38,7 +39,6 @@
 #include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/node.hpp"
-#include "prims/jvm.h"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -2929,6 +2929,105 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp,
   eor(crc, crc, tmp);
 }
 
+void MacroAssembler::kernel_crc32_using_crc32(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        Register tmp3) {
+    Label CRC_by64_loop, CRC_by4_loop, CRC_by1_loop, CRC_less64, CRC_by64_pre, CRC_by32_loop, CRC_less32, L_exit;
+    assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2, tmp3);
+
+    mvnw(crc, crc);
+
+    subs(len, len, 128);
+    br(Assembler::GE, CRC_by64_pre);
+  BIND(CRC_less64);
+    adds(len, len, 128-32);
+    br(Assembler::GE, CRC_by32_loop);
+  BIND(CRC_less32);
+    adds(len, len, 32-4);
+    br(Assembler::GE, CRC_by4_loop);
+    adds(len, len, 4);
+    br(Assembler::GT, CRC_by1_loop);
+    b(L_exit);
+
+  BIND(CRC_by32_loop);
+    ldp(tmp0, tmp1, Address(post(buf, 16)));
+    subs(len, len, 32);
+    crc32x(crc, crc, tmp0);
+    ldr(tmp2, Address(post(buf, 8)));
+    crc32x(crc, crc, tmp1);
+    ldr(tmp3, Address(post(buf, 8)));
+    crc32x(crc, crc, tmp2);
+    crc32x(crc, crc, tmp3);
+    br(Assembler::GE, CRC_by32_loop);
+    cmn(len, 32);
+    br(Assembler::NE, CRC_less32);
+    b(L_exit);
+
+  BIND(CRC_by4_loop);
+    ldrw(tmp0, Address(post(buf, 4)));
+    subs(len, len, 4);
+    crc32w(crc, crc, tmp0);
+    br(Assembler::GE, CRC_by4_loop);
+    adds(len, len, 4);
+    br(Assembler::LE, L_exit);
+  BIND(CRC_by1_loop);
+    ldrb(tmp0, Address(post(buf, 1)));
+    subs(len, len, 1);
+    crc32b(crc, crc, tmp0);
+    br(Assembler::GT, CRC_by1_loop);
+    b(L_exit);
+
+  BIND(CRC_by64_pre);
+    sub(buf, buf, 8);
+    ldp(tmp0, tmp1, Address(buf, 8));
+    crc32x(crc, crc, tmp0);
+    ldr(tmp2, Address(buf, 24));
+    crc32x(crc, crc, tmp1);
+    ldr(tmp3, Address(buf, 32));
+    crc32x(crc, crc, tmp2);
+    ldr(tmp0, Address(buf, 40));
+    crc32x(crc, crc, tmp3);
+    ldr(tmp1, Address(buf, 48));
+    crc32x(crc, crc, tmp0);
+    ldr(tmp2, Address(buf, 56));
+    crc32x(crc, crc, tmp1);
+    ldr(tmp3, Address(pre(buf, 64)));
+
+    b(CRC_by64_loop);
+
+    align(CodeEntryAlignment);
+  BIND(CRC_by64_loop);
+    subs(len, len, 64);
+    crc32x(crc, crc, tmp2);
+    ldr(tmp0, Address(buf, 8));
+    crc32x(crc, crc, tmp3);
+    ldr(tmp1, Address(buf, 16));
+    crc32x(crc, crc, tmp0);
+    ldr(tmp2, Address(buf, 24));
+    crc32x(crc, crc, tmp1);
+    ldr(tmp3, Address(buf, 32));
+    crc32x(crc, crc, tmp2);
+    ldr(tmp0, Address(buf, 40));
+    crc32x(crc, crc, tmp3);
+    ldr(tmp1, Address(buf, 48));
+    crc32x(crc, crc, tmp0);
+    ldr(tmp2, Address(buf, 56));
+    crc32x(crc, crc, tmp1);
+    ldr(tmp3, Address(pre(buf, 64)));
+    br(Assembler::GE, CRC_by64_loop);
+
+    // post-loop
+    crc32x(crc, crc, tmp2);
+    crc32x(crc, crc, tmp3);
+
+    sub(len, len, 64);
+    add(buf, buf, 8);
+    cmn(len, 128);
+    br(Assembler::NE, CRC_less64);
+  BIND(L_exit);
+    mvnw(crc, crc);
+}
+
 /**
  * @param crc   register containing existing CRC (32-bit)
  * @param buf   register pointing to input byte buffer (byte*)
@@ -2942,57 +3041,12 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   Label L_by16, L_by16_loop, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
   unsigned long offset;
 
-    ornw(crc, zr, crc);
-
   if (UseCRC32) {
-    Label CRC_by64_loop, CRC_by4_loop, CRC_by1_loop;
-
-      subs(len, len, 64);
-      br(Assembler::GE, CRC_by64_loop);
-      adds(len, len, 64-4);
-      br(Assembler::GE, CRC_by4_loop);
-      adds(len, len, 4);
-      br(Assembler::GT, CRC_by1_loop);
-      b(L_exit);
-
-    BIND(CRC_by4_loop);
-      ldrw(tmp, Address(post(buf, 4)));
-      subs(len, len, 4);
-      crc32w(crc, crc, tmp);
-      br(Assembler::GE, CRC_by4_loop);
-      adds(len, len, 4);
-      br(Assembler::LE, L_exit);
-    BIND(CRC_by1_loop);
-      ldrb(tmp, Address(post(buf, 1)));
-      subs(len, len, 1);
-      crc32b(crc, crc, tmp);
-      br(Assembler::GT, CRC_by1_loop);
-      b(L_exit);
-
-      align(CodeEntryAlignment);
-    BIND(CRC_by64_loop);
-      subs(len, len, 64);
-      ldp(tmp, tmp3, Address(post(buf, 16)));
-      crc32x(crc, crc, tmp);
-      crc32x(crc, crc, tmp3);
-      ldp(tmp, tmp3, Address(post(buf, 16)));
-      crc32x(crc, crc, tmp);
-      crc32x(crc, crc, tmp3);
-      ldp(tmp, tmp3, Address(post(buf, 16)));
-      crc32x(crc, crc, tmp);
-      crc32x(crc, crc, tmp3);
-      ldp(tmp, tmp3, Address(post(buf, 16)));
-      crc32x(crc, crc, tmp);
-      crc32x(crc, crc, tmp3);
-      br(Assembler::GE, CRC_by64_loop);
-      adds(len, len, 64-4);
-      br(Assembler::GE, CRC_by4_loop);
-      adds(len, len, 4);
-      br(Assembler::GT, CRC_by1_loop);
-    BIND(L_exit);
-      ornw(crc, zr, crc);
+      kernel_crc32_using_crc32(crc, buf, len, table0, table1, table2, table3);
       return;
   }
+
+    mvnw(crc, crc);
 
     adrp(table0, ExternalAddress(StubRoutines::crc_table_addr()), offset);
     if (offset) add(table0, table0, offset);
@@ -3171,7 +3225,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     adds(len, len, 4);
     br(Assembler::GT, L_by1_loop);
   BIND(L_exit);
-    ornw(crc, zr, crc);
+    mvnw(crc, crc);
 }
 
 /**

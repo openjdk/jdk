@@ -43,6 +43,11 @@ class BoolObjectClosure;
 class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
   friend class VMStructs;
 
+  static bool _some_dictionary_needs_resizing;
+  bool _resizable;
+  bool _needs_resizing;
+  void check_if_needs_resize();
+
   ClassLoaderData* _loader_data;  // backpointer to owning loader
   ClassLoaderData* loader_data() const { return _loader_data; }
 
@@ -51,13 +56,16 @@ class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
 protected:
   static size_t entry_size();
 public:
-  Dictionary(ClassLoaderData* loader_data, int table_size);
-  Dictionary(ClassLoaderData* loader_data, int table_size, HashtableBucket<mtClass>* t, int number_of_entries);
+  Dictionary(ClassLoaderData* loader_data, int table_size, bool resizable = false);
+  Dictionary(ClassLoaderData* loader_data, int table_size, HashtableBucket<mtClass>* t, int number_of_entries, bool resizable = false);
   ~Dictionary();
+
+  static bool does_any_dictionary_needs_resizing();
+  bool resize_if_needed();
 
   DictionaryEntry* new_entry(unsigned int hash, InstanceKlass* klass);
 
-  void add_klass(int index, unsigned int hash, Symbol* class_name, InstanceKlass* obj);
+  void add_klass(unsigned int hash, Symbol* class_name, InstanceKlass* obj);
 
   InstanceKlass* find_class(int index, unsigned int hash, Symbol* name);
 
@@ -79,8 +87,8 @@ public:
   void do_unloading();
 
   // Protection domains
-  InstanceKlass* find(int index, unsigned int hash, Symbol* name, Handle protection_domain);
-  bool is_valid_protection_domain(int index, unsigned int hash,
+  InstanceKlass* find(unsigned int hash, Symbol* name, Handle protection_domain);
+  bool is_valid_protection_domain(unsigned int hash,
                                   Symbol* name,
                                   Handle protection_domain);
   void add_protection_domain(int index, unsigned int hash,
@@ -88,7 +96,7 @@ public:
                              Handle protection_domain, TRAPS);
 
   // Sharing support
-  void reorder_dictionary_for_sharing();
+  void reorder_dictionary_for_sharing() NOT_CDS_RETURN;
 
   void print_on(outputStream* st) const;
   void verify();

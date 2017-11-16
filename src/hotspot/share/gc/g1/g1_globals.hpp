@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,10 +74,10 @@
           "in milliseconds.")                                               \
           range(1.0, DBL_MAX)                                               \
                                                                             \
-  product(intx, G1RefProcDrainInterval, 10,                                 \
+  product(int, G1RefProcDrainInterval, 10,                                  \
           "The number of discovered reference objects to process before "   \
           "draining concurrent marking work queues.")                       \
-          range(1, max_intx)                                                \
+          range(1, INT_MAX)                                                 \
                                                                             \
   experimental(double, G1LastPLABAverageOccupancy, 50.0,                    \
                "The expected average occupancy of the last PLAB in "        \

@@ -22,14 +22,26 @@
  */
 package org.graalvm.compiler.core.test.ea;
 
-import jdk.vm.ci.meta.JavaConstant;
+import java.nio.ByteBuffer;
 
+import org.graalvm.compiler.api.directives.GraalDirectives;
+import org.graalvm.compiler.graph.Graph;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.NamedLocationIdentity;
+import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.calc.UnpackEndianHalfNode;
+import org.graalvm.compiler.nodes.extended.RawLoadNode;
+import org.graalvm.compiler.nodes.extended.RawStoreNode;
+import org.graalvm.compiler.nodes.extended.UnsafeAccessNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.junit.Assert;
 import org.junit.Test;
 
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class UnsafeEATest extends EATestBase {
 
@@ -55,6 +67,64 @@ public class UnsafeEATest extends EATestBase {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    protected void testEscapeAnalysis(String snippet, JavaConstant expectedConstantResult, boolean iterativeEscapeAnalysis) {
+        // Exercise both a graph containing UnsafeAccessNodes and one which has been possibly been
+        // canonicalized into AccessFieldNodes.
+        testingUnsafe = true;
+        super.testEscapeAnalysis(snippet, expectedConstantResult, iterativeEscapeAnalysis);
+        testingUnsafe = false;
+        super.testEscapeAnalysis(snippet, expectedConstantResult, iterativeEscapeAnalysis);
+        if (expectedConstantResult != null) {
+            // Check that a compiled version of this method returns the same value if we expect a
+            // constant result.
+            ResolvedJavaMethod method = getResolvedJavaMethod(snippet);
+            JavaKind[] javaKinds = method.getSignature().toParameterKinds(false);
+            Object[] args = new Object[javaKinds.length];
+            int i = 0;
+            for (JavaKind k : javaKinds) {
+                args[i++] = JavaConstant.defaultForKind(k).asBoxedPrimitive();
+            }
+            Result result = executeExpected(method, null, args);
+            assertTrue(result.returnValue.equals(expectedConstantResult.asBoxedPrimitive()));
+        }
+    }
+
+    @Override
+    protected void canonicalizeGraph() {
+        if (testingUnsafe) {
+            // For testing purposes we'd like to ensure that our raw unsafe operations stay as
+            // unsafe nodes, so force them to appear to have LocationIdentity.any to disable
+            // transformation into field access nodes.
+            for (Node node : graph.getNodes().filter(x -> x instanceof UnsafeAccessNode).snapshot()) {
+                if (node instanceof RawStoreNode) {
+                    RawStoreNode store = (RawStoreNode) node;
+                    RawStoreNode newStore = graph.add(new RawStoreNode(store.object(), store.offset(), store.value(), store.accessKind(), NamedLocationIdentity.any(),
+                                    store.needsBarrier(), store.stateAfter(), true));
+                    graph.replaceFixedWithFixed(store, newStore);
+                } else if (node instanceof RawLoadNode) {
+                    RawLoadNode load = (RawLoadNode) node;
+                    RawLoadNode newLoad = graph.add(new RawLoadNode(load.object(), load.offset(), load.accessKind(), NamedLocationIdentity.any(),
+                                    true));
+                    graph.replaceFixedWithFixed(load, newLoad);
+                }
+            }
+        }
+        super.canonicalizeGraph();
+    }
+
+    @Override
+    protected void postEACanonicalizeGraph() {
+        // Simplify any UnpackEndianHalfNode so we end up with constants.
+        Graph.Mark mark = graph.getMark();
+        for (UnpackEndianHalfNode node : graph.getNodes().filter(UnpackEndianHalfNode.class)) {
+            node.lower(getTarget().arch.getByteOrder());
+        }
+        new CanonicalizerPhase().applyIncremental(graph, context, mark);
+    }
+
+    private boolean testingUnsafe;
 
     @Test
     public void testSimpleInt() {
@@ -90,6 +160,82 @@ public class UnsafeEATest extends EATestBase {
     }
 
     @Test
+    public void testSimpleDoubleOverwriteWithInt() {
+        testEscapeAnalysis("testSimpleDoubleOverwriteWithIntSnippet", JavaConstant.forInt(10), false);
+    }
+
+    public static int testSimpleDoubleOverwriteWithIntSnippet() {
+        TestClassInt x = new TestClassInt();
+        UNSAFE.putDouble(x, fieldOffset1, 10.1);
+        UNSAFE.putInt(x, fieldOffset1, 10);
+        return UNSAFE.getInt(x, fieldOffset1);
+    }
+
+    @Test
+    public void testSimpleDoubleOverwriteWithSecondInt() {
+        ByteBuffer bb = ByteBuffer.allocate(8).order(getTarget().arch.getByteOrder());
+        bb.putDouble(10.1);
+        int value = bb.getInt(4);
+
+        testEscapeAnalysis("testSimpleDoubleOverwriteWithSecondIntSnippet", JavaConstant.forInt(value), false);
+    }
+
+    public static int testSimpleDoubleOverwriteWithSecondIntSnippet() {
+        TestClassInt x = new TestClassInt();
+        UNSAFE.putDouble(x, fieldOffset1, 10.1);
+        UNSAFE.putInt(x, fieldOffset1, 10);
+        return UNSAFE.getInt(x, fieldOffset2);
+    }
+
+    @Test
+    public void testSimpleDoubleOverwriteWithFirstInt() {
+        ByteBuffer bb = ByteBuffer.allocate(8).order(getTarget().arch.getByteOrder());
+        bb.putDouble(10.1);
+        int value = bb.getInt(0);
+
+        testEscapeAnalysis("testSimpleDoubleOverwriteWithFirstIntSnippet", JavaConstant.forInt(value), false);
+    }
+
+    public static int testSimpleDoubleOverwriteWithFirstIntSnippet() {
+        TestClassInt x = new TestClassInt();
+        UNSAFE.putDouble(x, fieldOffset1, 10.1);
+        UNSAFE.putInt(x, fieldOffset2, 10);
+        return UNSAFE.getInt(x, fieldOffset1);
+    }
+
+    @Test
+    public void testSimpleLongOverwriteWithSecondInt() {
+        ByteBuffer bb = ByteBuffer.allocate(8).order(getTarget().arch.getByteOrder());
+        bb.putLong(0, 0x1122334455667788L);
+        int value = bb.getInt(4);
+
+        testEscapeAnalysis("testSimpleLongOverwriteWithSecondIntSnippet", JavaConstant.forInt(value), false);
+    }
+
+    public static int testSimpleLongOverwriteWithSecondIntSnippet() {
+        TestClassInt x = new TestClassInt();
+        UNSAFE.putLong(x, fieldOffset1, 0x1122334455667788L);
+        UNSAFE.putInt(x, fieldOffset1, 10);
+        return UNSAFE.getInt(x, fieldOffset2);
+    }
+
+    @Test
+    public void testSimpleLongOverwriteWithFirstInt() {
+        ByteBuffer bb = ByteBuffer.allocate(8).order(getTarget().arch.getByteOrder());
+        bb.putLong(0, 0x1122334455667788L);
+        int value = bb.getInt(0);
+
+        testEscapeAnalysis("testSimpleLongOverwriteWithFirstIntSnippet", JavaConstant.forInt(value), false);
+    }
+
+    public static int testSimpleLongOverwriteWithFirstIntSnippet() {
+        TestClassInt x = new TestClassInt();
+        UNSAFE.putLong(x, fieldOffset1, 0x1122334455667788L);
+        UNSAFE.putInt(x, fieldOffset2, 10);
+        return UNSAFE.getInt(x, fieldOffset1);
+    }
+
+    @Test
     public void testMergedDouble() {
         testEscapeAnalysis("testMergedDoubleSnippet", null, false);
         Assert.assertEquals(1, returnNodes.size());
@@ -109,6 +255,32 @@ public class UnsafeEATest extends EATestBase {
             UNSAFE.putDouble(x, fieldOffset1, doubleField2);
         }
         return UNSAFE.getDouble(x, fieldOffset1);
+    }
+
+    static class ExtendedTestClassInt extends TestClassInt {
+        public long l;
+    }
+
+    @Test
+    public void testMergedVirtualObjects() {
+        testEscapeAnalysis("testMergedVirtualObjectsSnippet", null, false);
+    }
+
+    public static TestClassInt testMergedVirtualObjectsSnippet(int value) {
+        TestClassInt x;
+        if (value == 1) {
+            x = new TestClassInt();
+            UNSAFE.putDouble(x, fieldOffset1, 10);
+        } else {
+            x = new TestClassInt();
+            UNSAFE.putInt(x, fieldOffset1, 0);
+        }
+        UNSAFE.putInt(x, fieldOffset1, 0);
+        if (value == 2) {
+            UNSAFE.putInt(x, fieldOffset2, 0);
+        }
+        GraalDirectives.deoptimizeAndInvalidate();
+        return x;
     }
 
     @Test

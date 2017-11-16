@@ -137,15 +137,21 @@ public class TestPrintReferences {
   //      Actual value:  SoftReference(5.55) = phase1(1.85) + phase2(1.85) + phase3(1.85)
   //      Log value:     SoftReference(5.6) = phase1(1.9) + phase2(1.9) + phase3(1.9)
   //      When checked:  5.6 < 5.7 (sum of phase1~3)
-  public static boolean approximatelyEqual(BigDecimal phaseTime, BigDecimal sumOfSubPhasesTime, BigDecimal tolerance) {
-    BigDecimal abs = phaseTime.subtract(sumOfSubPhasesTime).abs();
+  // Because of this we need method to verify that our measurements and calculations are valid.
+  public static boolean greaterThanOrApproximatelyEqual(BigDecimal phaseTime, BigDecimal sumOfSubPhasesTime, BigDecimal tolerance) {
+    if (phaseTime.compareTo(sumOfSubPhasesTime) >= 0) {
+      // phaseTime is greater than or equal.
+      return true;
+    }
 
-    int result = abs.compareTo(tolerance);
+    BigDecimal diff = sumOfSubPhasesTime.subtract(phaseTime);
+    if (diff.compareTo(tolerance) <= 0) {
+      // Difference is within tolerance, so approximately equal.
+      return true;
+    }
 
-    // result == -1, abs is less than tolerance.
-    // result == 0,  abs is equal to tolerance.
-    // result == 1,  abs is greater than tolerance.
-    return (result != 1);
+    // sumOfSubPhasesTime is greater than phaseTime and not within tolerance.
+    return false;
   }
 
   public static BigDecimal checkPhaseTime(String refType) {
@@ -160,7 +166,7 @@ public class TestPrintReferences {
 
     // If there are 3 sub-phases, we should allow 0.1 tolerance.
     final BigDecimal toleranceFor3SubPhases = BigDecimal.valueOf(0.1);
-    if (!approximatelyEqual(phaseTime, sumOfSubPhasesTime, toleranceFor3SubPhases)) {
+    if (!greaterThanOrApproximatelyEqual(phaseTime, sumOfSubPhasesTime, toleranceFor3SubPhases)) {
       throw new RuntimeException(refType +" time(" + phaseTime +
                                  "ms) is less than the sum(" + sumOfSubPhasesTime + "ms) of each phases");
     }
@@ -181,7 +187,7 @@ public class TestPrintReferences {
 
     // If there are 4 sub-phases, we should allow 0.2 tolerance.
     final BigDecimal toleranceFor4SubPhases = BigDecimal.valueOf(0.2);
-    if (!approximatelyEqual(refProcTime, sumOfSubPhasesTime, toleranceFor4SubPhases)) {
+    if (!greaterThanOrApproximatelyEqual(refProcTime, sumOfSubPhasesTime, toleranceFor4SubPhases)) {
       throw new RuntimeException("Reference Processing time(" + refProcTime + "ms) is less than the sum("
                                  + sumOfSubPhasesTime + "ms) of each phases");
     }

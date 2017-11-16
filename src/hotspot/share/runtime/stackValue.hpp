@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,63 +31,63 @@
 class StackValue : public ResourceObj {
  private:
   BasicType _type;
-  intptr_t  _i; // Blank java stack slot value
-  Handle    _o; // Java stack slot value interpreted as a Handle
+  intptr_t  _integer_value; // Blank java stack slot value
+  Handle    _handle_value;  // Java stack slot value interpreted as a Handle
  public:
 
   StackValue(intptr_t value) {
-    _type  = T_INT;
-    _i     = value;
+    _type              = T_INT;
+    _integer_value     = value;
   }
 
   StackValue(Handle value, intptr_t scalar_replaced = 0) {
-    _type    = T_OBJECT;
-    _i       = scalar_replaced;
-    _o       = value;
-    assert(_i == 0 || _o.is_null(), "not null object should not be marked as scalar replaced");
+    _type                = T_OBJECT;
+    _integer_value       = scalar_replaced;
+    _handle_value        = value;
+    assert(_integer_value == 0 ||  _handle_value.is_null(), "not null object should not be marked as scalar replaced");
   }
 
   StackValue() {
-    _type   = T_CONFLICT;
-    _i      = 0;
+    _type           = T_CONFLICT;
+    _integer_value  = 0;
   }
 
   // Only used during deopt- preserve object type.
   StackValue(intptr_t o, BasicType t) {
     assert(t == T_OBJECT, "should not be used");
-    _type   = t;
-    _i      = o;
+    _type          = t;
+    _integer_value = o;
   }
 
   Handle get_obj() const {
     assert(type() == T_OBJECT, "type check");
-    return _o;
+    return _handle_value;
   }
 
   bool obj_is_scalar_replaced() const {
     assert(type() == T_OBJECT, "type check");
-    return _i != 0;
+    return _integer_value != 0;
   }
 
   void set_obj(Handle value) {
     assert(type() == T_OBJECT, "type check");
-    _o = value;
+    _handle_value = value;
   }
 
   intptr_t get_int() const {
     assert(type() == T_INT, "type check");
-    return _i;
+    return _integer_value;
   }
 
   // For special case in deopt.
   intptr_t get_int(BasicType t) const {
     assert(t == T_OBJECT && type() == T_OBJECT, "type check");
-    return _i;
+    return _integer_value;
   }
 
   void set_int(intptr_t value) {
     assert(type() == T_INT, "type check");
-    _i = value;
+    _integer_value = value;
   }
 
   BasicType type() const { return  _type; }
@@ -95,11 +95,11 @@ class StackValue : public ResourceObj {
   bool equal(StackValue *value) {
     if (_type != value->_type) return false;
     if (_type == T_OBJECT)
-      return (_o == value->_o);
+      return (_handle_value == value->_handle_value);
     else {
       assert(_type == T_INT, "sanity check");
       // [phh] compare only low addressed portions of intptr_t slots
-      return (*(int *)&_i == *(int *)&value->_i);
+      return (*(int *)&_integer_value == *(int *)&value->_integer_value);
     }
   }
 

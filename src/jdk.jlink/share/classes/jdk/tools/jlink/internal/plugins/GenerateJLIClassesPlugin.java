@@ -242,8 +242,14 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         lines.map(line -> line.split(" "))
              .forEach(parts -> {
                 switch (parts[0]) {
-                    case "[BMH_RESOLVE]":
-                        speciesTypes.add(expandSignature(parts[1]));
+                    case "[SPECIES_RESOLVE]":
+                        // Allow for new types of species data classes being resolved here
+                        if (parts.length == 3 && parts[1].startsWith("java.lang.invoke.BoundMethodHandle$Species_")) {
+                            String species = parts[1].substring("java.lang.invoke.BoundMethodHandle$Species_".length());
+                            if (!"L".equals(species)) {
+                                speciesTypes.add(expandSignature(species));
+                            }
+                        }
                         break;
                     case "[LF_RESOLVE]":
                         String methodType = parts[3];
@@ -449,7 +455,7 @@ public final class GenerateJLIClassesPlugin implements Plugin {
             "/java.base/" + INVOKERS_HOLDER + ".class";
 
     // Convert LL -> LL, L3 -> LLL
-    private static String expandSignature(String signature) {
+    public static String expandSignature(String signature) {
         StringBuilder sb = new StringBuilder();
         char last = 'X';
         int count = 0;

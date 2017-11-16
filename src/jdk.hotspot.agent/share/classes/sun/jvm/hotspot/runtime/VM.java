@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,7 @@ public class VM {
   private int          heapOopSize;
   private int          klassPtrSize;
   private int          oopSize;
+  private final int    IndexSetSize;
   /** This is only present in a non-core build */
   private CodeCache    codeCache;
   /** This is only present in a C1 build */
@@ -376,6 +377,7 @@ public class VM {
     bytesPerWord = db.lookupIntConstant("BytesPerWord").intValue();
     heapWordSize = db.lookupIntConstant("HeapWordSize").intValue();
     oopSize  = db.lookupIntConstant("oopSize").intValue();
+    IndexSetSize = db.lookupIntConstant("CompactibleFreeListSpace::IndexSetSize").intValue();
 
     intType = db.lookupType("int");
     uintType = db.lookupType("uint");
@@ -592,6 +594,10 @@ public class VM {
 
   public int getHeapOopSize() {
     return heapOopSize;
+  }
+
+  public int getIndexSetSize() {
+    return IndexSetSize;
   }
 
   public int getKlassPtrSize() {

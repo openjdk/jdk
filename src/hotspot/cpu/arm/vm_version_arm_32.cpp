@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/jvm.h"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"

@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 
+import jdk.vm.ci.code.RegisterConfig;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.CounterKey;
@@ -138,8 +139,8 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
         private void doOptimize(LIR lir) {
             DebugContext debug = lir.getDebug();
             try (Indent indent = debug.logAndIndent("eliminate redundant moves")) {
-
-                callerSaveRegs = frameMap.getRegisterConfig().getCallerSaveRegisters();
+                RegisterConfig registerConfig = frameMap.getRegisterConfig();
+                callerSaveRegs = registerConfig.getCallerSaveRegisters();
 
                 initBlockData(lir);
 
@@ -147,7 +148,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
                 // Unallocatable registers should never be optimized.
                 eligibleRegs = new int[numRegs];
                 Arrays.fill(eligibleRegs, -1);
-                for (Register reg : frameMap.getRegisterConfig().getAllocatableRegisters()) {
+                for (Register reg : registerConfig.getAllocatableRegisters()) {
                     if (reg.number < numRegs) {
                         eligibleRegs[reg.number] = reg.number;
                     }

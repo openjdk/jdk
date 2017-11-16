@@ -54,8 +54,28 @@ enum {
     JVM_ACC_STRICT        = 0x0800,
     JVM_ACC_SYNTHETIC     = 0x1000,
     JVM_ACC_ANNOTATION    = 0x2000,
-    JVM_ACC_ENUM          = 0x4000
+    JVM_ACC_ENUM          = 0x4000,
+    JVM_ACC_MODULE        = 0x8000
 };
+
+#define JVM_ACC_PUBLIC_BIT        0
+#define JVM_ACC_PRIVATE_BIT       1
+#define JVM_ACC_PROTECTED_BIT     2
+#define JVM_ACC_STATIC_BIT        3
+#define JVM_ACC_FINAL_BIT         4
+#define JVM_ACC_SYNCHRONIZED_BIT  5
+#define JVM_ACC_SUPER_BIT         5
+#define JVM_ACC_VOLATILE_BIT      6
+#define JVM_ACC_BRIDGE_BIT        6
+#define JVM_ACC_TRANSIENT_BIT     7
+#define JVM_ACC_VARARGS_BIT       7
+#define JVM_ACC_NATIVE_BIT        8
+#define JVM_ACC_INTERFACE_BIT     9
+#define JVM_ACC_ABSTRACT_BIT      10
+#define JVM_ACC_STRICT_BIT        11
+#define JVM_ACC_SYNTHETIC_BIT     12
+#define JVM_ACC_ANNOTATION_BIT    13
+#define JVM_ACC_ENUM_BIT          14
 
 /* Used in newarray instruction. */
 
@@ -86,8 +106,9 @@ enum {
     JVM_CONSTANT_InterfaceMethodref     = 11,
     JVM_CONSTANT_NameAndType            = 12,
     JVM_CONSTANT_MethodHandle           = 15,  // JSR 292
-    JVM_CONSTANT_MethodType             = 16,   // JSR 292
-    JVM_CONSTANT_InvokeDynamic          = 18
+    JVM_CONSTANT_MethodType             = 16,  // JSR 292
+    JVM_CONSTANT_InvokeDynamic          = 18,
+    JVM_CONSTANT_ExternalMax            = 18
 };
 
 /* JVM_CONSTANT_MethodHandle subtypes */

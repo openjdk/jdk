@@ -125,6 +125,9 @@ public class HtmlDoclet extends AbstractDoclet {
         boolean nodeprecated = configuration.nodeprecated;
         performCopy(configuration.helpfile);
         performCopy(configuration.stylesheetfile);
+        for (String stylesheet : configuration.additionalStylesheets) {
+            performCopy(stylesheet);
+        }
         // do early to reduce memory footprint
         if (configuration.classuse) {
             ClassUseWriter.generate(configuration, classtree);

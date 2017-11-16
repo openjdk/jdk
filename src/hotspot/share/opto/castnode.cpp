@@ -237,8 +237,8 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (in_type != NULL && this_type != NULL &&
         (in_type->_lo != this_type->_lo ||
          in_type->_hi != this_type->_hi)) {
-      int lo1 = this_type->_lo;
-      int hi1 = this_type->_hi;
+      jint lo1 = this_type->_lo;
+      jint hi1 = this_type->_hi;
       int w1  = this_type->_widen;
 
       if (lo1 >= 0) {

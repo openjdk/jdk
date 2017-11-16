@@ -29,6 +29,9 @@ import jdk.vm.ci.meta.DeoptimizationReason;
 import org.junit.Test;
 
 import org.graalvm.compiler.jtt.JTTTest;
+import org.graalvm.compiler.phases.OptimisticOptimizations;
+import org.graalvm.compiler.phases.OptimisticOptimizations.Optimization;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 public class ConditionalElimination02 extends JTTTest {
 
@@ -57,6 +60,14 @@ public class ConditionalElimination02 extends JTTTest {
             }
         }
         return -1;
+    }
+
+    /**
+     * These tests assume all code paths are reachable so disable profile based dead code removal.
+     */
+    @Override
+    protected HighTierContext getDefaultHighTierContext() {
+        return new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL.remove(Optimization.RemoveNeverExecutedCode));
     }
 
     @Test

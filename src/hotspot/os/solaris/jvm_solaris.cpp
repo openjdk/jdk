@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "prims/jvm.h"
+#include "jvm.h"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/osThread.hpp"
 
