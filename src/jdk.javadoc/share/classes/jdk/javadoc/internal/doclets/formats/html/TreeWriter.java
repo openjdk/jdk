@@ -33,6 +33,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
@@ -161,7 +162,7 @@ public class TreeWriter extends AbstractTreeWriter {
                     continue;
                 }
                 DocPath link = pathString(pkg, DocPaths.PACKAGE_TREE);
-                Content li = HtmlTree.LI(getHyperLink(link,
+                Content li = HtmlTree.LI(Links.createLink(link,
                         new StringContent(utils.getPackageName(pkg))));
                 if (i < packages.size() - 1) {
                     li.addContent(", ");

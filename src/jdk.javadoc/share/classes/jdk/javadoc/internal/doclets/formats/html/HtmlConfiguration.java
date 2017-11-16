@@ -44,6 +44,7 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlVersion;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
@@ -239,9 +240,11 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     protected Set<Character> tagSearchIndexKeys;
 
-    protected Contents contents;
+    protected final Contents contents;
 
-    protected Messages messages;
+    protected final Messages messages;
+
+    protected Links links;
 
     /**
      * Creates an object to hold the configuration for a doclet.
@@ -353,6 +356,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         setTopFile(docEnv);
         workArounds.initDocLint(doclintOpts.values(), tagletManager.getCustomTagNames(),
                 Utils.toLowerCase(htmlVersion.name()));
+        links = new Links(htmlVersion);
         return true;
     }
 

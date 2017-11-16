@@ -38,6 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.ConstructorWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -119,7 +120,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
             Content memberDetailsTree) {
         memberDetailsTree.addContent(HtmlConstants.START_OF_CONSTRUCTOR_DETAILS);
         Content constructorDetailsTree = writer.getMemberTreeHeader();
-        constructorDetailsTree.addContent(writer.getMarkerAnchor(
+        constructorDetailsTree.addContent(links.createAnchor(
                 SectionName.CONSTRUCTOR_DETAIL));
         Content heading = HtmlTree.HEADING(HtmlConstants.DETAILS_HEADING,
                 contents.constructorDetailsLabel);
@@ -135,10 +136,9 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
             Content constructorDetailsTree) {
         String erasureAnchor;
         if ((erasureAnchor = getErasureAnchor(constructor)) != null) {
-            constructorDetailsTree.addContent(writer.getMarkerAnchor((erasureAnchor)));
+            constructorDetailsTree.addContent(links.createAnchor((erasureAnchor)));
         }
-        constructorDetailsTree.addContent(
-                writer.getMarkerAnchor(writer.getAnchor(constructor)));
+        constructorDetailsTree.addContent(links.createAnchor(writer.getAnchor(constructor)));
         Content constructorDocTree = writer.getMemberTreeHeader();
         Content heading = new HtmlTree(HtmlConstants.MEMBER_HEADING);
         heading.addContent(name(constructor));
@@ -277,8 +277,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
-        memberTree.addContent(writer.getMarkerAnchor(
-                SectionName.CONSTRUCTOR_SUMMARY));
+        memberTree.addContent(links.createAnchor(SectionName.CONSTRUCTOR_SUMMARY));
     }
 
     /**
@@ -301,7 +300,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
         if (link) {
-            return writer.getHyperLink(SectionName.CONSTRUCTOR_SUMMARY,
+            return Links.createLink(SectionName.CONSTRUCTOR_SUMMARY,
                     contents.navConstructor);
         } else {
             return contents.navConstructor;
@@ -314,7 +313,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(writer.getHyperLink(
+            liNav.addContent(Links.createLink(
                     SectionName.CONSTRUCTOR_DETAIL,
                     contents.navConstructor));
         } else {

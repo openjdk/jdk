@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
@@ -320,7 +321,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void addPackageDescription(Content packageContentTree) {
         if (!utils.getBody(packageElement).isEmpty()) {
             Content tree = configuration.allowTag(HtmlTag.SECTION) ? sectionTree : packageContentTree;
-            tree.addContent(getMarkerAnchor(SectionName.PACKAGE_DESCRIPTION));
+            tree.addContent(links.createAnchor(SectionName.PACKAGE_DESCRIPTION));
             addDeprecationInfo(tree);
             addInlineComment(packageElement, tree);
         }
@@ -384,7 +385,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     @Override
     protected Content getNavLinkClassUse() {
-        Content useLink = getHyperLink(DocPaths.PACKAGE_USE,
+        Content useLink = Links.createLink(DocPaths.PACKAGE_USE,
                 contents.useLabel, "", "");
         Content li = HtmlTree.LI(useLink);
         return li;
@@ -402,7 +403,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             li = HtmlTree.LI(contents.prevPackageLabel);
         } else {
             DocPath p = DocPath.relativePath(packageElement, prev);
-            li = HtmlTree.LI(getHyperLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
+            li = HtmlTree.LI(Links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
                 contents.prevPackageLabel, "", ""));
         }
         return li;
@@ -420,7 +421,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             li = HtmlTree.LI(contents.nextPackageLabel);
         } else {
             DocPath p = DocPath.relativePath(packageElement, next);
-            li = HtmlTree.LI(getHyperLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
+            li = HtmlTree.LI(Links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
                 contents.nextPackageLabel, "", ""));
         }
         return li;
@@ -434,7 +435,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     @Override
     protected Content getNavLinkTree() {
-        Content useLink = getHyperLink(DocPaths.PACKAGE_TREE,
+        Content useLink = Links.createLink(DocPaths.PACKAGE_TREE,
                 contents.treeLabel, "", "");
         Content li = HtmlTree.LI(useLink);
         return li;

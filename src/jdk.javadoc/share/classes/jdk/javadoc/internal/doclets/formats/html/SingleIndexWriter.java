@@ -141,7 +141,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         for (Object ch : elements) {
             String unicode = ch.toString();
             contentTree.addContent(
-                    getHyperLink(getNameForIndex(unicode),
+                    links.createLink(getNameForIndex(unicode),
                             new StringContent(unicode)));
             contentTree.addContent(Contents.SPACE);
         }

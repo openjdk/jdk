@@ -325,7 +325,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
     private void addIndexLink(DeprecatedAPIListBuilder builder,
             DeprElementKind kind, Content contentTree) {
         if (builder.hasDocumentation(kind)) {
-            Content li = HtmlTree.LI(getHyperLink(getAnchorName(kind),
+            Content li = HtmlTree.LI(links.createLink(getAnchorName(kind),
                     contents.getContent(getHeadingKey(kind))));
             contentTree.addContent(li);
         }
@@ -362,7 +362,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      */
     private void addAnchor(DeprecatedAPIListBuilder builder, DeprElementKind kind, Content htmlTree) {
         if (builder.hasDocumentation(kind)) {
-            htmlTree.addContent(getMarkerAnchor(getAnchorName(kind)));
+            htmlTree.addContent(links.createAnchor(getAnchorName(kind)));
         }
     }
 

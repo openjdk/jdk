@@ -35,6 +35,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -138,7 +139,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all classes link should be added
      */
     protected void addAllClassesLink(Content ul) {
-        Content linkContent = getHyperLink(DocPaths.ALLCLASSES_FRAME,
+        Content linkContent = Links.createLink(DocPaths.ALLCLASSES_FRAME,
                 contents.allClassesLabel, "", "packageFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
@@ -151,7 +152,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all packages link should be added
      */
     protected void addAllPackagesLink(Content ul) {
-        Content linkContent = getHyperLink(DocPaths.OVERVIEW_FRAME,
+        Content linkContent = Links.createLink(DocPaths.OVERVIEW_FRAME,
                 contents.allPackagesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);

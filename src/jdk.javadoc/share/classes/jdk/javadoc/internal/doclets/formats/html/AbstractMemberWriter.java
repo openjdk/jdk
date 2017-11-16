@@ -44,6 +44,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -74,6 +75,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
     protected final SubWriterHolderWriter writer;
     protected final Contents contents;
     protected final Resources resources;
+    protected final Links links;
 
     protected final TypeElement typeElement;
     public final boolean nodepr;
@@ -88,6 +90,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         this.utils = configuration.utils;
         this.contents = configuration.contents;
         this.resources = configuration.resources;
+        this.links = configuration.links;
     }
 
     public AbstractMemberWriter(SubWriterHolderWriter writer) {
@@ -519,6 +522,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      * @param member the member being documented
      * @param firstSentenceTags the first sentence tags to be added to the summary
      */
+    @Override
     public void addMemberSummary(TypeElement tElement, Element member,
             List<? extends DocTree> firstSentenceTags) {
         if (tElement != typeElement) {
