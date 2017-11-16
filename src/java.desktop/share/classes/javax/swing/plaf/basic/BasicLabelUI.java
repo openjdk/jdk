@@ -472,7 +472,8 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
 
     public void propertyChange(PropertyChangeEvent e) {
         String name = e.getPropertyName();
-        if (name == "text" || "font" == name || "foreground" == name) {
+        if (name == "text" || "font" == name || "foreground" == name ||
+            "ancestor" == name || "graphicsConfiguration" == name) {
             // remove the old html view client property if one
             // existed, and install a new one if the text installed
             // into the JLabel is html source.
