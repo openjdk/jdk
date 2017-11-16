@@ -67,12 +67,10 @@ import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocWriter;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -118,7 +116,7 @@ import static jdk.javadoc.internal.doclets.toolkit.util.CommentHelper.SPACER;
  * @author Robert Field
  * @author Bhavesh Patel (Modified)
  */
-public class HtmlDocletWriter extends HtmlDocWriter {
+public class HtmlDocletWriter {
 
     /**
      * Relative path from the file getting generated to the destination
@@ -191,10 +189,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * Constructor to construct the HtmlStandardWriter object.
      *
-     * @param path File to be generated.
+     * @param configuration the configuration for this doclet
+     * @param path the file to be generated.
      */
     public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
-        super(configuration, path);
         this.configuration = configuration;
         this.contents = configuration.contents;
         this.messages = configuration.messages;
@@ -204,6 +202,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         this.path = path;
         this.pathToRoot = path.parent().invert();
         this.filename = path.basename();
+
+        messages.notice("doclet.Generating_0",
+            DocFile.createFileForOutput(configuration, path).getPath());
     }
 
     /**
@@ -1201,6 +1202,18 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 .strong(isStrong);
         Content link = getLink(linkinfo);
         contentTree.addContent(link);
+    }
+
+    /**
+     * Get the enclosed name of the package
+     *
+     * @param te  TypeElement
+     * @return the name
+     */
+    public String getEnclosingPackageName(TypeElement te) {
+
+        PackageElement encl = configuration.utils.containingPackage(te);
+        return (encl.isUnnamed()) ? "" : (encl.getQualifiedName() + ".");
     }
 
     /**
