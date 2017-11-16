@@ -24,7 +24,10 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1Arguments.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "gc/shared/gcArguments.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/vm_version.hpp"
@@ -89,4 +92,8 @@ void G1Arguments::initialize_flags() {
   }
 
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
+}
+
+CollectedHeap* G1Arguments::create_heap() {
+  return create_heap_with_policy<G1CollectedHeap, G1CollectorPolicy>();
 }

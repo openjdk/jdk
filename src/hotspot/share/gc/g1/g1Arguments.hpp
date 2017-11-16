@@ -27,10 +27,13 @@
 
 #include "gc/shared/gcArguments.hpp"
 
+class CollectedHeap;
+
 class G1Arguments : public GCArguments {
 public:
   virtual void initialize_flags();
   virtual size_t conservative_max_heap_alignment();
+  virtual CollectedHeap* create_heap();
 };
 
 #endif // SHARE_GC_G1_G1ARGUMENTS_HPP

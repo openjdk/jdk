@@ -27,6 +27,8 @@
 
 #include "gc/shared/gcArguments.hpp"
 
+class CollectedHeap;
+
 class CMSArguments : public GCArguments {
 private:
   void disable_adaptive_size_policy(const char* collector_name);
@@ -34,6 +36,7 @@ private:
 public:
   virtual void initialize_flags();
   virtual size_t conservative_max_heap_alignment();
+  virtual CollectedHeap* create_heap();
 };
 
 #endif // SHARE_GC_CMS_CMSARGUMENTS_HPP

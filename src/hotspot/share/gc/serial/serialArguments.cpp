@@ -24,8 +24,15 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/serialArguments.hpp"
+#include "gc/serial/serialHeap.hpp"
+#include "gc/shared/collectorPolicy.hpp"
+#include "gc/shared/gcArguments.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 
 size_t SerialArguments::conservative_max_heap_alignment() {
   return GenCollectedHeap::conservative_max_heap_alignment();
+}
+
+CollectedHeap* SerialArguments::create_heap() {
+  return create_heap_with_policy<SerialHeap, MarkSweepPolicy>();
 }

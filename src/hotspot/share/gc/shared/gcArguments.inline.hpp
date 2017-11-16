@@ -22,17 +22,13 @@
  *
  */
 
-#ifndef SHARE_GC_SERIAL_SERIALARGUMENTS_HPP
-#define SHARE_GC_SERIAL_SERIALARGUMENTS_HPP
-
 #include "gc/shared/gcArguments.hpp"
 
 class CollectedHeap;
 
-class SerialArguments : public GCArguments {
-public:
-  virtual size_t conservative_max_heap_alignment();
-  virtual CollectedHeap* create_heap();
-};
-
-#endif // SHARE_GC_SERIAL_SERIALARGUMENTS_HPP
+template <class Heap, class Policy>
+CollectedHeap* GCArguments::create_heap_with_policy() {
+  Policy* policy = new Policy();
+  policy->initialize_all();
+  return new Heap(policy);
+}

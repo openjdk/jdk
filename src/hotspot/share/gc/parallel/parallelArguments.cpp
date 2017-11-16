@@ -24,7 +24,10 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/parallelArguments.hpp"
+#include "gc/parallel/parallelScavengeHeap.hpp"
+#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/collectorPolicy.hpp"
+#include "gc/shared/gcArguments.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
@@ -86,4 +89,8 @@ void ParallelArguments::initialize_flags() {
       FLAG_SET_DEFAULT(MarkSweepDeadRatio, 1);
     }
   }
+}
+
+CollectedHeap* ParallelArguments::create_heap() {
+  return create_heap_with_policy<ParallelScavengeHeap, GenerationSizer>();
 }
