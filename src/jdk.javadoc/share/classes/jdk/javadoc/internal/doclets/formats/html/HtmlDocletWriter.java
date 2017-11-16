@@ -78,6 +78,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
+import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
@@ -178,6 +179,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     final static Pattern IMPROPER_HTML_CHARS = Pattern.compile(".*[&<>].*");
 
     /**
+     * The window title of this file.
+     */
+    protected String winTitle;
+
+    protected Script mainBodyScript;
+
+    /**
      * Constructor to construct the HtmlStandardWriter object.
      *
      * @param path File to be generated.
@@ -258,19 +266,18 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the script
      */
     public Content getAllClassesLinkScript(String id) {
-        HtmlTree script = HtmlTree.SCRIPT();
-        String scriptCode = "<!--\n" +
-                "  allClassesLink = document.getElementById(\"" + id + "\");\n" +
+        Script script = new Script("<!--\n" +
+                "  allClassesLink = document.getElementById(")
+                .appendStringLiteral(id)
+                .append(");\n" +
                 "  if(window==top) {\n" +
                 "    allClassesLink.style.display = \"block\";\n" +
                 "  }\n" +
                 "  else {\n" +
                 "    allClassesLink.style.display = \"none\";\n" +
                 "  }\n" +
-                "  //-->\n";
-        Content scriptContent = new RawHtml(scriptCode.replace("\n", DocletConstants.NL));
-        script.addContent(scriptContent);
-        Content div = HtmlTree.DIV(script);
+                "  //-->\n");
+        Content div = HtmlTree.DIV(script.asContent());
         Content div_noscript = HtmlTree.DIV(contents.noScriptMessage);
         Content noScript = HtmlTree.NOSCRIPT(div_noscript);
         div.addContent(noScript);
@@ -409,7 +416,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(getGeneratedBy(!configuration.notimestamp));
-        head.addContent(getTitle());
+        head.addContent(HtmlTree.TITLE(winTitle));
         Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE, configuration.charset);
         head.addContent(meta);
         if (!configuration.notimestamp) {
@@ -607,13 +614,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 tree.addContent(fixedNavDiv);
                 HtmlTree paddingDiv = HtmlTree.DIV(HtmlStyle.navPadding, Contents.SPACE);
                 tree.addContent(paddingDiv);
-                HtmlTree scriptTree = HtmlTree.SCRIPT();
-                String scriptCode = "<!--\n"
+                Script script = new Script(
+                        "<!--\n"
                         + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                        + "//-->\n";
-                RawHtml scriptContent = new RawHtml(scriptCode.replace("\n", DocletConstants.NL));
-                scriptTree.addContent(scriptContent);
-                tree.addContent(scriptTree);
+                        + "//-->\n");
+                tree.addContent(script.asContent());
             } else {
                 subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_BOTTOM));
                 tree.addContent(subDiv);
@@ -2113,9 +2118,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         HtmlTree javascript = HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath());
         head.addContent(javascript);
         if (configuration.createindex) {
-            if (pathToRoot != null && script != null) {
+            if (pathToRoot != null && mainBodyScript != null) {
                 String ptrPath = pathToRoot.isEmpty() ? "." : pathToRoot.getPath();
-                script.addContent(new RawHtml("var pathtoroot = \"" + ptrPath + "/\";loadScripts(document, \'script\');"));
+                mainBodyScript.append("var pathtoroot = ")
+                        .appendStringLiteral(ptrPath + "/")
+                        .append(";loadScripts(document, \'script\');");
             }
             addJQueryFile(head, DocPaths.JSZIP_MIN);
             addJQueryFile(head, DocPaths.JSZIPUTILS_MIN);
@@ -2548,7 +2555,52 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return new TableHeader(contents.packageLabel, contents.descriptionLabel);
     }
 
-    Content getScript() {
+    /**
+     * Returns an HtmlTree for the SCRIPT tag.
+     *
+     * @return an HtmlTree for the SCRIPT tag
+     */
+    protected Script getWinTitleScript() {
+        Script script = new Script();
+        if (winTitle != null && winTitle.length() > 0) {
+            script.append("<!--\n" +
+                    "    try {\n" +
+                    "        if (location.href.indexOf('is-external=true') == -1) {\n" +
+                    "            parent.document.title=")
+                    .appendStringLiteral(winTitle)
+                    .append(";\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "    catch(err) {\n" +
+                    "    }\n" +
+                    "//-->\n");
+        }
         return script;
+    }
+
+    /**
+     * Returns an HtmlTree for the BODY tag.
+     *
+     * @param includeScript  set true if printing windowtitle script
+     * @param title title for the window
+     * @return an HtmlTree for the BODY tag
+     */
+    public HtmlTree getBody(boolean includeScript, String title) {
+        HtmlTree body = new HtmlTree(HtmlTag.BODY);
+        // Set window title string which is later printed
+        this.winTitle = title;
+        // Don't print windowtitle script for overview-frame, allclasses-frame
+        // and package-frame
+        if (includeScript) {
+            this.mainBodyScript = getWinTitleScript();
+            body.addContent(mainBodyScript.asContent());
+            Content noScript = HtmlTree.NOSCRIPT(HtmlTree.DIV(contents.noScriptMessage));
+            body.addContent(noScript);
+        }
+        return body;
+    }
+
+    Script getMainBodyScript() {
+        return mainBodyScript;
     }
 }

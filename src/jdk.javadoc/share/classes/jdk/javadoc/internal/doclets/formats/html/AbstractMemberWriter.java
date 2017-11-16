@@ -592,7 +592,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         }
         Table table = getSummaryTable();
         if (table.needsScript()) {
-            writer.getScript().addContent(table.getScript());
+            writer.getMainBodyScript().append(table.getScript());
         }
         return table.toContent();
     }

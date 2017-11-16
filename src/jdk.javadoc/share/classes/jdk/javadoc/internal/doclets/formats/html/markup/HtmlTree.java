@@ -74,8 +74,8 @@ public class HtmlTree extends Content {
      */
     public HtmlTree(HtmlTag tag, Content... contents) {
         this(tag);
-        for (Content content: contents)
-            addContent(content);
+        for (Content c: contents)
+            addContent(c);
     }
 
     /**
@@ -86,8 +86,8 @@ public class HtmlTree extends Content {
      */
     public HtmlTree(HtmlTag tag, List<Content> contents) {
         this(tag);
-        for (Content content: contents)
-            addContent(content);
+        for (Content c: contents)
+            addContent(c);
     }
 
     /**
@@ -146,8 +146,8 @@ public class HtmlTree extends Content {
     @Override
     public void addContent(Content tagContent) {
         if (tagContent instanceof ContentBuilder) {
-            for (Content content: ((ContentBuilder)tagContent).contents) {
-                addContent(content);
+            for (Content c: ((ContentBuilder)tagContent).contents) {
+                addContent(c);
             }
         }
         else if (tagContent == HtmlTree.EMPTY || tagContent.isValid()) {
@@ -158,9 +158,9 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * This method adds a string content to the htmltree. If the last content member
+     * Adds String content to the HTML tree. If the last content member
      * added is a StringContent, append the string to that StringContent or else
-     * create a new StringContent and add it to the html tree.
+     * create a new StringContent and add it to the HTML tree.
      *
      * @param stringContent string content that needs to be added
      */
@@ -177,6 +177,10 @@ public class HtmlTree extends Content {
             addContent(new StringContent(stringContent));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public int charCount() {
         int n = 0;
         for (Content c : content)
@@ -185,7 +189,7 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Given a string, escape all special html characters and
+     * Given a string, escape all special HTML characters and
      * return the result.
      *
      * @param s The string to check.
@@ -717,24 +721,13 @@ public class HtmlTree extends Content {
     /**
      * Generates a SCRIPT tag with the type and src attributes.
      *
-     * @param type type of link
      * @param src the path for the script
      * @return an HtmlTree object for the SCRIPT tag
      */
     public static HtmlTree SCRIPT(String src) {
-        HtmlTree htmltree = HtmlTree.SCRIPT();
-        htmltree.addAttr(HtmlAttr.SRC, nullCheck(src));
-        return htmltree;
-    }
-
-    /**
-     * Generates a SCRIPT tag with the type attribute.
-     *
-     * @return an HtmlTree object for the SCRIPT tag
-     */
-    public static HtmlTree SCRIPT() {
         HtmlTree htmltree = new HtmlTree(HtmlTag.SCRIPT);
         htmltree.addAttr(HtmlAttr.TYPE, "text/javascript");
+        htmltree.addAttr(HtmlAttr.SRC, nullCheck(src));
         return htmltree;
     }
 
@@ -912,8 +905,8 @@ public class HtmlTree extends Content {
      * @param body content for the tag
      * @return an HtmlTree object for the TITLE tag
      */
-    public static HtmlTree TITLE(Content body) {
-        HtmlTree htmltree = new HtmlTree(HtmlTag.TITLE, nullCheck(body));
+    public static HtmlTree TITLE(String body) {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.TITLE, new StringContent(body));
         return htmltree;
     }
 
@@ -949,6 +942,7 @@ public class HtmlTree extends Content {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isEmpty() {
         return (!hasContent() && !hasAttrs());
     }
@@ -988,6 +982,7 @@ public class HtmlTree extends Content {
      *
      * @return true if the HTML tree is valid
      */
+    @Override
     public boolean isValid() {
         switch (htmlTag) {
             case A :

@@ -144,7 +144,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             }
 
             if (table.needsScript()) {
-                getScript().addContent(table.getScript());
+                getMainBodyScript().append(table.getScript());
             }
         }
     }
