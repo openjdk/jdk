@@ -49,7 +49,7 @@
 # Heard Island, McDonald Islands (uninhabited)
 #	previously sealers and scientific personnel wintered
 #	Margaret Turner reports
-#	http://web.archive.org/web/20021204222245/http://www.dstc.qut.edu.au/DST/marg/daylight.html
+#	https://web.archive.org/web/20021204222245/http://www.dstc.qut.edu.au/DST/marg/daylight.html
 #	(1999-09-30) that they're UT +05, with no DST;
 #	presumably this is when they have visitors.
 #
@@ -70,7 +70,7 @@
 # http://www.aad.gov.au/default.asp?casid=37079
 #
 # We have more background information here:
-# http://www.timeanddate.com/news/time/antarctica-new-times.html
+# https://www.timeanddate.com/news/time/antarctica-new-times.html
 
 # From Steffen Thorsen (2010-03-10):
 # We got these changes from the Australian Antarctic Division: ...
@@ -85,7 +85,7 @@
 # - Mawson station stays on UTC+5.
 #
 # Background:
-# http://www.timeanddate.com/news/time/antartica-time-changes-2010.html
+# https://www.timeanddate.com/news/time/antartica-time-changes-2010.html
 
 # From Steffen Thorsen (2016-10-28):
 # Australian Antarctica Division informed us that Casey changed time
@@ -168,7 +168,7 @@ Zone Indian/Kerguelen	0	-	-00	1950 # Port-aux-Français
 #
 # year-round base in the main continent
 # Dumont d'Urville, Île des Pétrels, -6640+14001, since 1956-11
-# <http://en.wikipedia.org/wiki/Dumont_d'Urville_Station> (2005-12-05)
+# <https://en.wikipedia.org/wiki/Dumont_d'Urville_Station> (2005-12-05)
 #
 # Another base at Port-Martin, 50km east, began operation in 1947.
 # It was destroyed by fire on 1952-01-14.

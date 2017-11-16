@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4323074
  * @summary Basic test for Collections.indexOfSubList/lastIndexOfSubList
@@ -33,8 +33,8 @@ public class FindSubList {
     public static void main(String[] args) throws Exception {
         int N = 500;
         List source = new ArrayList(3 * N);
-        List target[]= new List[N+1];
-        int  index[] = new  int[N+1];
+        List[] target = new List[N+1];
+        int[] index = new int[N+1];
         for (int i=0; i<=N; i++) {
             List t = new ArrayList();
             String s = Integer.toString(i, 2);
@@ -50,8 +50,12 @@ public class FindSubList {
             }
         }
 
-        List src[] = {source, new LinkedList(source), new Vector(source),
-                      Arrays.asList(source.toArray())};
+        List[] src = {
+            source,
+            new LinkedList(source),
+            new Vector(source),
+            Arrays.asList(source.toArray())
+        };
         for (int j=0; j<src.length; j++) {
             List s = src[j];
 
@@ -75,8 +79,12 @@ public class FindSubList {
             if (i != N)
                 index[i] = srcSize - index[i] - target[i].size();
         }
-        List src2[] = {source, new LinkedList(source), new Vector(source),
-                       Arrays.asList(source.toArray())};
+        List[] src2 = {
+            source,
+            new LinkedList(source),
+            new Vector(source),
+            Arrays.asList(source.toArray())
+        };
         for (int j=0; j<src2.length; j++) {
             List s = src2[j];
 

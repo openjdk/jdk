@@ -36,12 +36,12 @@ import java.util.*;
  */
 public class IllegalConstructorArgs {
 
-      public static void main(String argv[]) {
-          int testSucceeded=0;
+    public static void main(String[] args) {
+        int testSucceeded=0;
 
         try {
-           // this should generate an IllegalArgumentException
-           Vector bad1 = new Vector(-100, 10);
+            // this should generate an IllegalArgumentException
+            Vector bad1 = new Vector(-100, 10);
         }
         catch (IllegalArgumentException e1) {
             testSucceeded =1;

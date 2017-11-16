@@ -138,7 +138,7 @@ class IntType extends BitwiseType {
         } else if (to.isLong()) {
             method.visitInsn(I2L);
         } else if (to.isBoolean()) {
-            //nop
+            invokestatic(method, JSType.TO_BOOLEAN_I);
         } else if (to.isString()) {
             invokestatic(method, TO_STRING);
         } else if (to.isObject()) {

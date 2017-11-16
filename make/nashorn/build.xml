@@ -830,8 +830,8 @@ grant codeBase "file:/${basedir}/${test.script.dir}/basic/JDK-8158467.js" {
 
     <!-- underscorejs -->
     <mkdir dir="${test.external.dir}/underscore"/>
-    <get src="http://underscorejs.org/underscore.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true"/>
-    <get src="http://underscorejs.org/underscore-min.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true"/>
+    <get src="http://underscorejs.org/underscore.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true" tryGzipEncoding="true"/>
+    <get src="http://underscorejs.org/underscore-min.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true" tryGzipEncoding="true"/>
 
     <!-- yui -->
     <mkdir dir="${test.external.dir}/yui"/>

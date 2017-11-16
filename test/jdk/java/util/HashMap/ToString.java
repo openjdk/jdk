@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4189821
  * @summary HashMap's entry.toString threw a null pointer exc if the HashMap

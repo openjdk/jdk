@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.io.*;
+import java.util.List;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
@@ -210,7 +211,7 @@ public class SourceToHTMLConverter {
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(HtmlTree.TITLE(new StringContent(
                 configuration.getText("doclet.Window_Source_title"))));
-        head.addContent(getStyleSheetProperties());
+        addStyleSheetProperties(head);
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
                 head, body);
         Content htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
@@ -227,9 +228,9 @@ public class SourceToHTMLConverter {
     /**
      * Returns a link to the stylesheet file.
      *
-     * @return an HtmlTree for the lINK tag which provides the stylesheet location
+     * @param head an HtmlTree to which the stylesheet links will be added
      */
-    public HtmlTree getStyleSheetProperties() {
+    public void addStyleSheetProperties(Content head) {
         String filename = configuration.stylesheetfile;
         DocPath stylesheet;
         if (filename.length() > 0) {
@@ -240,7 +241,21 @@ public class SourceToHTMLConverter {
         }
         DocPath p = relativePath.resolve(stylesheet);
         HtmlTree link = HtmlTree.LINK("stylesheet", "text/css", p.getPath(), "Style");
-        return link;
+        head.addContent(link);
+        addStylesheets(head);
+    }
+
+    protected void addStylesheets(Content tree) {
+        List<String> stylesheets = configuration.additionalStylesheets;
+        if (!stylesheets.isEmpty()) {
+            stylesheets.forEach((ssheet) -> {
+                DocFile file = DocFile.createFileForInput(configuration, ssheet);
+                DocPath ssheetPath = DocPath.create(file.getName());
+                HtmlTree slink = HtmlTree.LINK("stylesheet", "text/css", relativePath.resolve(ssheetPath).getPath(),
+                        "Style");
+                tree.addContent(slink);
+            });
+        }
     }
 
     /**

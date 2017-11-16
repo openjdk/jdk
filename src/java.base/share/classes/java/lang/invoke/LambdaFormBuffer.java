@@ -27,6 +27,8 @@ package java.lang.invoke;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 
@@ -325,15 +327,15 @@ final class LambdaFormBuffer {
      *  whose function is in the corresponding position in newFns.
      *  Only do this if the arguments are exactly equal to the given.
      */
-    LambdaFormBuffer replaceFunctions(NamedFunction[] oldFns, NamedFunction[] newFns,
+    LambdaFormBuffer replaceFunctions(List<NamedFunction> oldFns, List<NamedFunction> newFns,
                                       Object... forArguments) {
         assert(inTrans());
-        if (oldFns.length == 0)  return this;
+        if (oldFns.isEmpty())  return this;
         for (int i = arity; i < length; i++) {
             Name n = names[i];
-            int nfi = indexOf(n.function, oldFns);
+            int nfi = oldFns.indexOf(n.function);
             if (nfi >= 0 && Arrays.equals(n.arguments, forArguments)) {
-                changeName(i, new Name(newFns[nfi], n.arguments));
+                changeName(i, new Name(newFns.get(nfi), n.arguments));
             }
         }
         return this;

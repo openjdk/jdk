@@ -60,14 +60,14 @@
 #	[PDF] (1914-03)
 #
 #	Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94
-#	<http://www.jstor.org/stable/1774359>.  He writes:
+#	<https://www.jstor.org/stable/1774359>.  He writes:
 #	"It is requested that corrections and additions to these tables
 #	may be sent to Mr. John Milne, Royal Geographical Society,
 #	Savile Row, London."  Nowadays please email them to tz@iana.org.
 #
 #	Byalokoz EL. New Counting of Time in Russia since July 1, 1919.
 #	This Russian-language source was consulted by Vladimir Karpinsky; see
-#	http://mm.icann.org/pipermail/tz/2014-August/021320.html
+#	https://mm.icann.org/pipermail/tz/2014-August/021320.html
 #	The full Russian citation is:
 #	Бялокоз, Евгений Людвигович. Новый счет времени в течении суток
 #	введенный декретом Совета народных комиссаров для всей России с 1-го
@@ -210,7 +210,7 @@
 # foundations of civilization throughout the world.
 #	-- "A Silent Toast to William Willett", Pictorial Weekly;
 #	republished in Finest Hour (Spring 2002) 1(114):26
-#	http://www.winstonchurchill.org/images/finesthour/Vol.01%20No.114.pdf
+#	https://www.winstonchurchill.org/publications/finest-hour/finest-hour-114/a-silent-toast-to-william-willett-by-winston-s-churchill
 
 # From Paul Eggert (2015-08-08):
 # The OED Supplement says that the English originally said "Daylight Saving"
@@ -248,8 +248,8 @@
 # official designation; the reply of the 21st was that there wasn't
 # but he couldn't think of anything better than the "Double British
 # Summer Time" that the BBC had been using informally.
-# http://www.polyomino.org.uk/british-time/bbc-19410418.png
-# http://www.polyomino.org.uk/british-time/ho-19410421.png
+# https://www.polyomino.org.uk/british-time/bbc-19410418.png
+# https://www.polyomino.org.uk/british-time/ho-19410421.png
 
 # From Sir Alexander Maxwell in the above-mentioned letter (1941-04-21):
 # [N]o official designation has as far as I know been adopted for the time
@@ -266,13 +266,13 @@
 # the history of summer time legislation in the United Kingdom.
 # Since 1998 Joseph S. Myers has been updating
 # and extending this list, which can be found in
-# http://www.polyomino.org.uk/british-time/
+# https://www.polyomino.org.uk/british-time/
 
 # From Joseph S. Myers (1998-01-06):
 #
 # The legal time in the UK outside of summer time is definitely GMT, not UTC;
 # see Lord Tanlaw's speech
-# http://www.publications.parliament.uk/pa/ld199798/ldhansrd/vo970611/text/70611-10.htm#70611-10_head0
+# https://www.publications.parliament.uk/pa/ld199798/ldhansrd/vo970611/text/70611-10.htm#70611-10_head0
 # (Lords Hansard 11 June 1997 columns 964 to 976).
 
 # From Paul Eggert (2006-03-22):
@@ -318,7 +318,7 @@
 # Irish 'public feeling (was) outraged by forcing of English time on us'."
 # -- Parsons M. Dublin lost its time zone - and 25 minutes - after 1916 Rising.
 # Irish Times 2014-10-27.
-# http://www.irishtimes.com/news/politics/dublin-lost-its-time-zone-and-25-minutes-after-1916-rising-1.1977411
+# https://www.irishtimes.com/news/politics/dublin-lost-its-time-zone-and-25-minutes-after-1916-rising-1.1977411
 
 # From Joseph S. Myers (2005-01-26):
 # Irish laws are available online at <http://www.irishstatutebook.ie>.
@@ -370,6 +370,12 @@
 # regulations. I spoke this morning with the Secretary of the Department of
 # Justice (tel +353 1 678 9711) who confirmed to me that the correct name is
 # "Irish Summer Time", abbreviated to "IST".
+
+# Michael Deckers (2017-06-01) gave the following URLs for Ireland's
+# Summer Time Act, 1925 and Summer Time Orders, 1926 and 1947:
+# http://www.irishstatutebook.ie/eli/1925/act/8/enacted/en/print.html
+# http://www.irishstatutebook.ie/eli/1926/sro/919/made/en/print.html
+# http://www.irishstatutebook.ie/eli/1947/sro/71/made/en/print.html
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 # Summer Time Act, 1916
@@ -495,14 +501,14 @@ Link	Europe/London	Europe/Isle_of_Man
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Dublin	-0:25:00 -	LMT	1880 Aug  2
-			-0:25:21 -	DMT	1916 May 21  2:00 # Dublin MT
+			-0:25:21 -	DMT	1916 May 21  2:00s # Dublin MT
 			-0:25:21 1:00	IST	1916 Oct  1  2:00s
 			 0:00	GB-Eire	%s	1921 Dec  6 # independence
-			 0:00	GB-Eire	GMT/IST	1940 Feb 25  2:00
-			 0:00	1:00	IST	1946 Oct  6  2:00
-			 0:00	-	GMT	1947 Mar 16  2:00
-			 0:00	1:00	IST	1947 Nov  2  2:00
-			 0:00	-	GMT	1948 Apr 18  2:00
+			 0:00	GB-Eire	GMT/IST	1940 Feb 25  2:00s
+			 0:00	1:00	IST	1946 Oct  6  2:00s
+			 0:00	-	GMT	1947 Mar 16  2:00s
+			 0:00	1:00	IST	1947 Nov  2  2:00s
+			 0:00	-	GMT	1948 Apr 18  2:00s
 			 0:00	GB-Eire	GMT/IST	1968 Oct 27
 			 1:00	-	IST	1971 Oct 31  2:00u
 			 0:00	GB-Eire	GMT/IST	1996
@@ -648,7 +654,7 @@ Rule	Russia	1996	2010	-	Oct	lastSun	 2:00s	0	-
 # Council of Ministers of the USSR from 1989-03-14 No. 227.
 #
 # I did not find full texts of these acts.  For the 1989 one we have
-# title at http://base.garant.ru/70754136/ :
+# title at https://base.garant.ru/70754136/ :
 # "About change in calculation of time on the territories of
 # Lithuanian SSR, Latvian SSR and Estonian SSR, Astrakhan,
 # Kaliningrad, Kirov, Kuybyshev, Ulyanovsk and Uralsk oblasts".
@@ -679,7 +685,7 @@ Rule	Russia	1996	2010	-	Oct	lastSun	 2:00s	0	-
 # http://bmockbe.ru/events/?ID=7583
 #
 # Medvedev signed a law on the calculation of the time (in russian):
-# http://www.regnum.ru/news/polit/1413906.html
+# https://www.regnum.ru/news/polit/1413906.html
 
 # From Arthur David Olson (2011-06-15):
 # Take "abolishing daylight saving time" to mean that time is now considered
@@ -806,7 +812,7 @@ Zone	Europe/Vienna	1:05:21 -	LMT	1893 Apr
 # Sources (Russian language):
 # http://www.belta.by/ru/all_news/society/V-Belarusi-otmenjaetsja-perexod-na-sezonnoe-vremja_i_572952.html
 # http://naviny.by/rubrics/society/2011/09/16/ic_articles_116_175144/
-# http://news.tut.by/society/250578.html
+# https://news.tut.by/society/250578.html
 #
 # From Alexander Bokovoy (2014-10-09):
 # Belarussian government decided against changing to winter time....
@@ -1127,7 +1133,7 @@ Zone America/Thule	-4:35:08 -	LMT	1916 Jul 28 # Pituffik air base
 # for their standard and summer times. He says no, they use "suveaeg"
 # (summer time) and "talveaeg" (winter time).
 
-# From The Baltic Times <http://www.baltictimes.com/> (1999-09-09)
+# From The Baltic Times <https://www.baltictimes.com/> (1999-09-09)
 # via Steffen Thorsen:
 # This year will mark the last time Estonia shifts to summer time,
 # a council of the ruling coalition announced Sept. 6....
@@ -1179,7 +1185,7 @@ Zone	Europe/Tallinn	1:39:00	-	LMT	1880
 # This is documented in Heikki Oja: Aikakirja 2007, published by The Almanac
 # Office of University of Helsinki, ISBN 952-10-3221-9, available online (in
 # Finnish) at
-# http://almanakka.helsinki.fi/aikakirja/Aikakirja2007kokonaan.pdf
+# https://almanakka.helsinki.fi/aikakirja/Aikakirja2007kokonaan.pdf
 #
 # Page 105 (56 in PDF version) has a handy table of all past daylight savings
 # transitions. It is easy enough to interpret without Finnish skills.
@@ -1192,7 +1198,7 @@ Zone	Europe/Tallinn	1:39:00	-	LMT	1880
 
 # From Konstantin Hyppönen (2014-06-13):
 # [Heikki Oja's book Aikakirja 2013]
-# http://almanakka.helsinki.fi/images/aikakirja/Aikakirja2013kokonaan.pdf
+# https://almanakka.helsinki.fi/images/aikakirja/Aikakirja2013kokonaan.pdf
 # pages 104-105, including a scan from a newspaper published on Apr 2 1942
 # say that ... [o]n Apr 2 1942, 24 o'clock (which means Apr 3 1942,
 # 00:00), clocks were moved one hour forward. The newspaper
@@ -1322,7 +1328,7 @@ Zone	Europe/Paris	0:09:21 -	LMT	1891 Mar 15  0:01
 
 # From Jörg Schilling (2002-10-23):
 # In 1945, Berlin was switched to Moscow Summer time (GMT+4) by
-# http://www.dhm.de/lemo/html/biografien/BersarinNikolai/
+# https://www.dhm.de/lemo/html/biografien/BersarinNikolai/
 # General [Nikolai] Bersarin.
 
 # From Paul Eggert (2003-03-08):
@@ -1547,7 +1553,7 @@ Zone Atlantic/Reykjavik	-1:28	-	LMT	1908
 # From Paul Eggert (2016-10-27):
 # Go with INRiM for DST rules, except as corrected by Inglis for 1944
 # for the Kingdom of Italy.  This is consistent with Renzo Baldini.
-# Model Rome's occupation by using using C-Eur rules from 1943-09-10
+# Model Rome's occupation by using C-Eur rules from 1943-09-10
 # to 1944-06-04; although Rome was an open city during this period, it
 # was effectively controlled by Germany.
 #
@@ -1862,14 +1868,14 @@ Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2  0:00s # Valletta
 # Following Moldova and neighboring Ukraine- Transnistria (Pridnestrovie)-
 # Tiraspol will go back to winter time on October 30, 2011.
 # News from Moldova (in russian):
-# http://ru.publika.md/link_317061.html
+# https://ru.publika.md/link_317061.html
 
 # From Roman Tudos (2015-07-02):
 # http://lex.justice.md/index.php?action=view&view=doc&lang=1&id=355077
 # From Paul Eggert (2015-07-01):
 # The abovementioned official link to IGO1445-868/2014 states that
 # 2014-10-26's fallback transition occurred at 03:00 local time.  Also,
-# http://www.trm.md/en/social/la-30-martie-vom-trece-la-ora-de-vara
+# https://www.trm.md/en/social/la-30-martie-vom-trece-la-ora-de-vara
 # says the 2014-03-30 spring-forward transition was at 02:00 local time.
 # Guess that since 1997 Moldova has switched one hour before the EU.
 
@@ -1941,7 +1947,7 @@ Zone	Europe/Monaco	0:29:32 -	LMT	1891 Mar 15
 # Amsterdam mean time.
 
 # The data entries before 1945 are taken from
-# http://www.staff.science.uu.nl/~gent0113/wettijd/wettijd.htm
+# https://www.staff.science.uu.nl/~gent0113/wettijd/wettijd.htm
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Neth	1916	only	-	May	 1	0:00	1:00	NST	# Netherlands Summer Time
@@ -2022,7 +2028,7 @@ Zone	Europe/Oslo	0:43:00 -	LMT	1895 Jan  1
 # so it must have diverged from Oslo time during the war, as Oslo was
 # keeping Berlin time.
 #
-# <http://home.no.net/janmayen/history.htm> says that the meteorologists
+# <https://www.jan-mayen.no/history.htm> says that the meteorologists
 # burned down their station in 1940 and left the island, but returned in
 # 1941 with a small Norwegian garrison and continued operations despite
 # frequent air attacks from Germans.  In 1943 the Americans established a
@@ -2060,7 +2066,7 @@ Rule	Poland	1945	only	-	Apr	29	0:00	1:00	S
 Rule	Poland	1945	only	-	Nov	 1	0:00	0	-
 # For 1946 on the source is Kazimierz Borkowski,
 # Toruń Center for Astronomy, Dept. of Radio Astronomy, Nicolaus Copernicus U.,
-# http://www.astro.uni.torun.pl/~kb/Artykuly/U-PA/Czas2.htm#tth_tAb1
+# https://www.astro.uni.torun.pl/~kb/Artykuly/U-PA/Czas2.htm#tth_tAb1
 # Thanks to Przemysław Augustyniak (2005-05-28) for this reference.
 # He also gives these further references:
 # Mon Pol nr 13, poz 162 (1995) <http://www.abc.com.pl/serwis/mp/1995/0162.htm>
@@ -2094,7 +2100,7 @@ Zone	Europe/Warsaw	1:24:00 -	LMT	1880
 #
 # From Paul Eggert (2014-08-11), after a heads-up from Stephen Colebourne:
 # According to a Portuguese decree (1911-05-26)
-# http://dre.pt/pdf1sdip/1911/05/12500/23132313.pdf
+# https://dre.pt/application/dir/pdf1sdip/1911/05/12500/23132313.pdf
 # Lisbon was at -0:36:44.68, but switched to GMT on 1912-01-01 at 00:00.
 # Round the old offset to -0:36:45.  This agrees with Willett but disagrees
 # with Shanks, who says the transition occurred on 1911-05-24 at 00:00 for
@@ -2276,7 +2282,7 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # 2011 No. 725" and contains no other dates or "effective date" information.
 #
 # Another source is
-# http://www.rg.ru/2011/09/06/chas-zona-dok.html
+# https://rg.ru/2011/09/06/chas-zona-dok.html
 # which, according to translate.google.com, begins "Resolution of the
 # Government of the Russian Federation on August 31, 2011 N 725" and also
 # contains "Date first official publication: September 6, 2011 Posted on:
@@ -2284,7 +2290,7 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # does not contain any "effective date" information.
 #
 # Another source is
-# http://en.wikipedia.org/wiki/Oymyakonsky_District#cite_note-RuTime-7
+# https://en.wikipedia.org/wiki/Oymyakonsky_District#cite_note-RuTime-7
 # which, in note 8, contains "Resolution No. 725 of August 31, 2011...
 # Effective as of after 7 days following the day of the official publication"
 # but which does not contain any reference to September 6, 2011.
@@ -2320,7 +2326,7 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # http://itar-tass.com/obschestvo/1333711
 # http://www.pravo.gov.ru:8080/page.aspx?111660
 # http://www.kremlin.ru/acts/46279
-# From October 26, 2014 the new Russian time zone map will looks like this:
+# From October 26, 2014 the new Russian time zone map will look like this:
 # http://www.worldtimezone.com/dst_news/dst_news_russia-map-2014-07.html
 
 # From Paul Eggert (2006-03-22):
@@ -2367,7 +2373,7 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # with maintenance only and represent our best guesses as to which regions
 # are covered by each zone.  They are not meant to be taken as an authoritative
 # listing.  The region codes listed come from
-# http://en.wikipedia.org/w/?title=Federal_subjects_of_Russia&oldid=611810498
+# https://en.wikipedia.org/w/?title=Federal_subjects_of_Russia&oldid=611810498
 # and are used for convenience only; no guarantees are made regarding their
 # future stability.  ISO 3166-2:RU codes are also listed for first-level
 # divisions where available.
@@ -2532,7 +2538,7 @@ Zone Europe/Kaliningrad	 1:22:00 -	LMT	1893 Apr
 # http://www.kaliningradka.ru/site_pc/cherez/index.php?ELEMENT_ID=40091
 # says that Kaliningrad decided not to be an exception 2 days before the
 # 1991-03-31 switch and one person at
-# http://izhevsk.ru/forum_light_message/50/682597-m8369040.html
+# https://izhevsk.ru/forum_light_message/50/682597-m8369040.html
 # says he remembers that Samara opted out of the 1992-01-19 exception
 # 2 days before the switch.
 #
@@ -2604,7 +2610,7 @@ Zone Europe/Simferopol	 2:16:24 -	LMT	1880
 			 3:00	-	MSK	1997 Mar lastSun  1:00u
 # From Alexander Krivenyshev (2014-03-17):
 # time change at 2:00 (2am) on March 30, 2014
-# http://vz.ru/news/2014/3/17/677464.html
+# https://vz.ru/news/2014/3/17/677464.html
 # From Paul Eggert (2014-03-30):
 # Simferopol and Sevastopol reportedly changed their central town clocks
 # late the previous day, but this appears to have been ceremonial
@@ -2787,7 +2793,7 @@ Zone Asia/Omsk		 4:53:30 -	LMT	1919 Nov 14
 # suggests that Altai Republic transitioned to Moscow+3 on
 # 1995-05-28.
 #
-# http://regnum.ru/news/society/1957270.html
+# https://regnum.ru/news/society/1957270.html
 # has some historical data for Altai Krai:
 # before 1957: west part on UTC+6, east on UTC+7
 # after 1957: UTC+7
@@ -3161,8 +3167,8 @@ Zone Asia/Magadan	10:03:12 -	LMT	1924 May  2
 # districts, but have very similar populations.  In fact, Wikipedia currently
 # lists them both as having 3528 people, exactly 1668 males and 1860 females
 # each!  (Yikes!)
-# http://en.wikipedia.org/w/?title=Srednekolymsky_District&oldid=603435276
-# http://en.wikipedia.org/w/?title=Verkhnekolymsky_District&oldid=594378493
+# https://en.wikipedia.org/w/?title=Srednekolymsky_District&oldid=603435276
+# https://en.wikipedia.org/w/?title=Verkhnekolymsky_District&oldid=594378493
 # Assume this is a mistake, albeit an amusing one.
 #
 # Looking at censuses, the populations of the two municipalities seem to have
@@ -3483,7 +3489,7 @@ Zone Europe/Stockholm	1:12:12 -	LMT	1879 Jan  1
 #
 # From Alois Treindl (2013-09-11):
 # The Federal regulations say
-# http://www.admin.ch/opc/de/classified-compilation/20071096/index.html
+# https://www.admin.ch/opc/de/classified-compilation/20071096/index.html
 # ... the meridian for Bern mean time ... is 7 degrees 26' 22.50".
 # Expressed in time, it is 0h29m45.5s.
 
@@ -3560,9 +3566,9 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
 # According to the articles linked below, Turkey will change into summer
 # time zone (GMT+3) on March 28, 2011 at 3:00 a.m. instead of March 27.
 # This change is due to a nationwide exam on 27th.
-# http://www.worldbulletin.net/?aType=haber&ArticleID=70872
+# https://www.worldbulletin.net/?aType=haber&ArticleID=70872
 # Turkish:
-# http://www.hurriyet.com.tr/ekonomi/17230464.asp?gid=373
+# https://www.hurriyet.com.tr/yaz-saati-uygulamasi-bir-gun-ileri-alindi-17230464
 
 # From Faruk Pasin (2014-02-14):
 # The DST for Turkey has been changed for this year because of the
@@ -3698,7 +3704,7 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # http://www.segodnya.ua/news/14290482.html
 #
 # Deputies cancelled the winter time (in Russian)
-# http://www.pravda.com.ua/rus/news/2011/09/20/6600616/
+# https://www.pravda.com.ua/rus/news/2011/09/20/6600616/
 #
 # From Philip Pizzey (2011-10-18):
 # Today my Ukrainian colleagues have informed me that the

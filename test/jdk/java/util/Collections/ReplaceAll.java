@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4323074
  * @summary Basic test for new replaceAll algorithm
@@ -33,7 +33,7 @@ public class ReplaceAll {
     static final int SIZE = 20;
 
     public static void main(String[] args) throws Exception {
-        List a[] = {new ArrayList(), new LinkedList(), new Vector()};
+        List[] a = {new ArrayList(), new LinkedList(), new Vector()};
 
         for (int i=0; i<a.length; i++) {
             List lst = a[i];

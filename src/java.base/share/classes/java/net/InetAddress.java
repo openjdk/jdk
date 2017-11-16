@@ -1133,7 +1133,7 @@ class InetAddress implements java.io.Serializable {
 
     /**
      * Create an instance of the NameService interface based on
-     * the setting of the {@codejdk.net.hosts.file} system property.
+     * the setting of the {@code jdk.net.hosts.file} system property.
      *
      * <p>The default NameService is the PlatformNameService, which typically
      * delegates name and address resolution calls to the underlying

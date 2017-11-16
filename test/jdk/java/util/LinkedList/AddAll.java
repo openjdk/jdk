@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4163207
  * @summary AddAll was prepending instead of appending!
