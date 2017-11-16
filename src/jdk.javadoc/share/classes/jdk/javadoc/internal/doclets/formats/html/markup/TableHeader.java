@@ -23,15 +23,13 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html;
+package jdk.javadoc.internal.doclets.formats.html.markup;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.Contents;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
@@ -41,6 +39,10 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * The attribute {@code scope="col"} is automatically added to each header cell.
  * In addition, a series of style class names can be specified, to be applied one per cell.
  *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 public class TableHeader {
 
@@ -60,7 +62,7 @@ public class TableHeader {
      * @param contents a factory to get the content for each header cell.
      * @param colHeaderKeys the resource keys for the content in each cell.
      */
-    TableHeader(Contents contents, String... colHeaderKeys) {
+    public TableHeader(Contents contents, String... colHeaderKeys) {
         this.cellContents = Arrays.stream(colHeaderKeys)
                 .map((key) -> contents.getContent(key))
                 .collect(Collectors.toList());
@@ -70,7 +72,7 @@ public class TableHeader {
      * Creates a header row, with specified content for each cell.
      * @param headerCellContents a content object for each header cell
      */
-    TableHeader(Content... headerCellContents) {
+    public TableHeader(Content... headerCellContents) {
         this.cellContents = Arrays.asList(headerCellContents);
     }
 
@@ -80,7 +82,7 @@ public class TableHeader {
      * @param styles the style class names
      * @return this object
      */
-    TableHeader styles(HtmlStyle... styles) {
+    public TableHeader styles(HtmlStyle... styles) {
         if (styles.length != cellContents.size()) {
             throw new IllegalStateException();
         }
@@ -90,9 +92,9 @@ public class TableHeader {
 
     /**
      * Converts this header to a {@link Content} object, for use in an {@link HtmlTree}.
-     * @returns a Content object
+     * @return a Content object
      */
-    Content toContent() {
+    public Content toContent() {
         String scope = "col";
         Content tr = new HtmlTree(HtmlTag.TR);
         int i = 0;

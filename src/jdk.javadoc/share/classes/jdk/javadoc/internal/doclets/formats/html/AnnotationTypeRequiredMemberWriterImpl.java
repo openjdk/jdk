@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -33,7 +35,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.javadoc.internal.doclets.formats.html.TableHeader;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -203,27 +205,47 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     }
 
     /**
-     * {@inheritDoc}
+     * Get the summary for the member summary table.
+     *
+     * @return a string for the table summary
      */
-    public String getTableSummary() {
-        return configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Annotation_Type_Required_Member_Summary"),
-                configuration.getText("doclet.annotation_type_required_members"));
+    // Overridden by AnnotationTypeOptionalMemberWriterImpl
+    protected String getTableSummary() {
+        return resources.getText("doclet.Member_Table_Summary",
+                resources.getText("doclet.Annotation_Type_Required_Member_Summary"),
+                resources.getText("doclet.annotation_type_required_members"));
+    }
+
+    /**
+     * Get the caption for the summary table.
+     * @return the caption
+     */
+    // Overridden by AnnotationTypeOptionalMemberWriterImpl
+    protected Content getCaption() {
+        return contents.getContent("doclet.Annotation_Type_Required_Members");
     }
 
     /**
      * {@inheritDoc}
      */
-    public Content getCaption() {
-        return configuration.getContent("doclet.Annotation_Type_Required_Members");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public TableHeader getSummaryTableHeader(Element member) {
         return new TableHeader(contents.modifierAndTypeLabel,
                 contents.annotationTypeRequiredMemberLabel, contents.descriptionLabel);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Table createSummaryTable() {
+        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
+                .setSummary(getTableSummary())
+                .setCaption(getCaption())
+                .setHeader(getSummaryTableHeader(typeElement))
+                .setRowScopeColumn(1)
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
+                .setUseTBody(false);  // temporary? compatibility mode for TBody
     }
 
     /**

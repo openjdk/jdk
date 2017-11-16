@@ -202,7 +202,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         }
         bodyTree.addContent(HtmlConstants.START_OF_CLASS_DATA);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.header);
+        div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
             Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInType, contents.moduleLabel);
@@ -380,13 +380,13 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     private Content getClassInheritenceTree(TypeMirror type) {
         TypeMirror sup;
         HtmlTree classTreeUl = new HtmlTree(HtmlTag.UL);
-        classTreeUl.addStyle(HtmlStyle.inheritance);
+        classTreeUl.setStyle(HtmlStyle.inheritance);
         Content liTree = null;
         do {
             sup = utils.getFirstVisibleSuperClass(type);
             if (sup != null) {
                 HtmlTree ul = new HtmlTree(HtmlTag.UL);
-                ul.addStyle(HtmlStyle.inheritance);
+                ul.setStyle(HtmlStyle.inheritance);
                 ul.addContent(getTreeForClassHelper(type));
                 if (liTree != null)
                     ul.addContent(liTree);

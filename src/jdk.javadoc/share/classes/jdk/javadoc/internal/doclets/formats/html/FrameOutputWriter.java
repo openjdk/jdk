@@ -156,8 +156,8 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     protected Content getFrameDetails() {
         HtmlTree leftContainerDiv = new HtmlTree(HtmlTag.DIV);
         HtmlTree rightContainerDiv = new HtmlTree(HtmlTag.DIV);
-        leftContainerDiv.addStyle(HtmlStyle.leftContainer);
-        rightContainerDiv.addStyle(HtmlStyle.rightContainer);
+        leftContainerDiv.setStyle(HtmlStyle.leftContainer);
+        rightContainerDiv.setStyle(HtmlStyle.rightContainer);
         if (configuration.showModules && configuration.modules.size() > 1) {
             addAllModulesFrameTag(leftContainerDiv);
         } else if (noOfPackages > 1) {
@@ -214,7 +214,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     private void addClassFrameTag(Content contentTree) {
         HtmlTree frame = HtmlTree.IFRAME(configuration.topFile.getPath(), "classFrame",
                 configuration.getText("doclet.Package_class_and_interface_descriptions"));
-        frame.addStyle(HtmlStyle.rightIframe);
+        frame.setStyle(HtmlStyle.rightIframe);
         contentTree.addContent(frame);
     }
 }

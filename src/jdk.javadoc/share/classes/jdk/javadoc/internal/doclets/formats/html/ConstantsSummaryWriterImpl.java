@@ -25,6 +25,9 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+
 import java.util.*;
 
 import javax.lang.model.element.Modifier;
@@ -75,7 +78,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     /**
      * The HTML tree for main tag.
      */
-    private HtmlTree mainTree = HtmlTree.MAIN();
+    private final HtmlTree mainTree = HtmlTree.MAIN();
 
     /**
      * The HTML tree for constant values summary.
@@ -99,6 +102,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     /**
      * {@inheritDoc}
      */
+    @Override
     public Content getHeader() {
         String label = configuration.getText("doclet.Constants_Summary");
         HtmlTree bodyTree = getBody(true, getWindowTitle(label));
@@ -116,6 +120,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     /**
      * {@inheritDoc}
      */
+    @Override
     public Content getContentsHeader() {
         return new HtmlTree(HtmlTag.UL);
     }
@@ -123,6 +128,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addLinkToPackageContent(PackageElement pkg,
             Set<PackageElement> printedPackageHeaders, Content contentListTree) {
         //add link to summary
@@ -146,6 +152,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addContentsList(Content contentTree, Content contentListTree) {
         Content titleContent = contents.constantsSummaryTitle;
         Content pHeading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
@@ -169,15 +176,17 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     /**
      * {@inheritDoc}
      */
+    @Override
     public Content getConstantSummaries() {
         HtmlTree summariesDiv = new HtmlTree(HtmlTag.DIV);
-        summariesDiv.addStyle(HtmlStyle.constantValuesContainer);
+        summariesDiv.setStyle(HtmlStyle.constantValuesContainer);
         return summariesDiv;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addPackageName(PackageElement pkg, Content summariesTree, boolean first) {
         Content pkgNameContent;
         if (!first && configuration.allowTag(HtmlTag.SECTION)) {
@@ -206,15 +215,17 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     /**
      * {@inheritDoc}
      */
+    @Override
     public Content getClassConstantHeader() {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addStyle(HtmlStyle.blockList);
+        ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addClassConstant(Content summariesTree, Content classConstantTree) {
         if (configuration.allowTag(HtmlTag.SECTION)) {
             summaryTree.addContent(classConstantTree);
@@ -224,12 +235,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     }
 
     /**
-     * Get the table caption and header for the constant summary table
-     *
-     * @param typeElement the TypeElement to be documented
-     * @return constant members header content
+     * {@inheritDoc}
      */
-    public Content getConstantMembersHeader(TypeElement typeElement) {
+    @Override
+    public void addConstantMembers(TypeElement typeElement, Collection<VariableElement> fields,
+            Content classConstantTree) {
+        currentTypeElement = typeElement;
+
         //generate links backward only to public classes.
         Content classlink = (utils.isPublic(typeElement) || utils.isProtected(typeElement)) ?
             getLink(new LinkInfoImpl(configuration,
@@ -237,63 +249,25 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
             new StringContent(utils.getFullyQualifiedName(typeElement));
 
         PackageElement enclosingPackage  = utils.containingPackage(typeElement);
+        Content caption = new ContentBuilder();
         if (!enclosingPackage.isUnnamed()) {
-            Content cb = new ContentBuilder();
-            cb.addContent(enclosingPackage.getQualifiedName());
-            cb.addContent(".");
-            cb.addContent(classlink);
-            return getClassName(cb);
-        } else {
-            return getClassName(classlink);
+            caption.addContent(enclosingPackage.getQualifiedName());
+            caption.addContent(".");
         }
-    }
+        caption.addContent(classlink);
 
-    /**
-     * Get the class name in the table caption and the table header.
-     *
-     * @param classStr the class name to print.
-     * @return the table caption and header
-     */
-    protected Content getClassName(Content classStr) {
-        Content caption = getTableCaption(classStr);
-        Content table = (configuration.isOutputHtml5())
-                ? HtmlTree.TABLE(HtmlStyle.constantsSummary, caption)
-                : HtmlTree.TABLE(HtmlStyle.constantsSummary, constantsTableSummary, caption);
-        table.addContent(constantsTableHeader.toContent());
-        return table;
-    }
+        Table table = new Table(configuration.htmlVersion, HtmlStyle.constantsSummary)
+                .setSummary(constantsTableSummary)
+                .setCaption(caption)
+                .setHeader(constantsTableHeader)
+                .setRowScopeColumn(1)
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
 
-    /**
-     * {@inheritDoc}
-     */
-    public void addConstantMembers(TypeElement typeElement, Collection<VariableElement> fields,
-            Content classConstantTree) {
-        currentTypeElement = typeElement;
-        Content tbody = new HtmlTree(HtmlTag.TBODY);
-        boolean altColor = true;
         for (VariableElement field : fields) {
-            HtmlTree tr = new HtmlTree(HtmlTag.TR);
-            tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-            addConstantMember(field, tr);
-            tbody.addContent(tr);
-            altColor = !altColor;
+            table.addRow(getTypeColumn(field), getNameColumn(field), getValue(field));
         }
-        Content table = getConstantMembersHeader(typeElement);
-        table.addContent(tbody);
-        Content li = HtmlTree.LI(HtmlStyle.blockList, table);
+        Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
         classConstantTree.addContent(li);
-    }
-
-    /**
-     * Add the row for the constant summary table.
-     *
-     * @param member the field to be documented.
-     * @param trTree an htmltree object for the table row
-     */
-    private void addConstantMember(VariableElement member, HtmlTree trTree) {
-        trTree.addContent(getTypeColumn(member));
-        trTree.addContent(getNameColumn(member));
-        trTree.addContent(getValue(member));
     }
 
     /**
@@ -305,7 +279,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     private Content getTypeColumn(VariableElement member) {
         Content anchor = getMarkerAnchor(currentTypeElement.getQualifiedName() +
                 "." + member.getSimpleName());
-        Content tdType = HtmlTree.TD(HtmlStyle.colFirst, anchor);
+        Content typeContent = new ContentBuilder();
+        typeContent.addContent(anchor);
         Content code = new HtmlTree(HtmlTag.CODE);
         for (Modifier mod : member.getModifiers()) {
             Content modifier = new StringContent(mod.toString());
@@ -315,8 +290,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         Content type = getLink(new LinkInfoImpl(configuration,
                 LinkInfoImpl.Kind.CONSTANT_SUMMARY, member.asType()));
         code.addContent(type);
-        tdType.addContent(code);
-        return tdType;
+        typeContent.addContent(code);
+        return typeContent;
     }
 
     /**
@@ -328,8 +303,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     private Content getNameColumn(VariableElement member) {
         Content nameContent = getDocLink(LinkInfoImpl.Kind.CONSTANT_SUMMARY,
                 member, member.getSimpleName(), false);
-        Content code = HtmlTree.CODE(nameContent);
-        return HtmlTree.TH_ROW_SCOPE(HtmlStyle.colSecond, code);
+        return HtmlTree.CODE(nameContent);
     }
 
     /**
@@ -341,13 +315,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     private Content getValue(VariableElement member) {
         String value = utils.constantValueExpresion(member);
         Content valueContent = new StringContent(value);
-        Content code = HtmlTree.CODE(valueContent);
-        return HtmlTree.TD(HtmlStyle.colLast, code);
+        return HtmlTree.CODE(valueContent);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addConstantSummaries(Content contentTree, Content summariesTree) {
         if (configuration.allowTag(HtmlTag.SECTION) && summaryTree != null) {
             summariesTree.addContent(summaryTree);
@@ -363,6 +337,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addFooter(Content contentTree) {
         Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()

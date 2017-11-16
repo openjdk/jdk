@@ -126,7 +126,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         }
         htmlTree.addContent(div);
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
-        divTree.addStyle(HtmlStyle.contentContainer);
+        divTree.setStyle(HtmlStyle.contentContainer);
         addTree(classtree.baseClasses(), "doclet.Class_Hierarchy", divTree);
         addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", divTree);
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", divTree);
@@ -176,7 +176,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
                 contents.packageHierarchies);
         div.addContent(span);
         HtmlTree ul = new HtmlTree (HtmlTag.UL);
-        ul.addStyle(HtmlStyle.horizontal);
+        ul.setStyle(HtmlStyle.horizontal);
         ul.addContent(getNavLinkMainTree(configuration.getText("doclet.All_Packages")));
         div.addContent(ul);
     }

@@ -25,11 +25,16 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+
+import java.util.Arrays;
+import java.util.List;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-import jdk.javadoc.internal.doclets.formats.html.TableHeader;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -78,6 +83,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
         writer.addMemberTree(memberSummaryTree, memberTree);
     }
@@ -192,27 +198,27 @@ public class FieldWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public String getTableSummary() {
-        return resources.getText("doclet.Member_Table_Summary",
-                resources.getText("doclet.Field_Summary"),
-                resources.getText("doclet.fields"));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Content getCaption() {
-        return contents.fields;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public TableHeader getSummaryTableHeader(Element member) {
         return new TableHeader(contents.modifierAndTypeLabel, contents.fieldLabel,
                 contents.descriptionLabel);
+    }
+
+    @Override
+    protected Table createSummaryTable() {
+        String summary =  resources.getText("doclet.Member_Table_Summary",
+                resources.getText("doclet.Field_Summary"),
+                resources.getText("doclet.fields"));
+
+        List<HtmlStyle> bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colSecond,
+                HtmlStyle.colLast);
+
+        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
+                .setSummary(summary)
+                .setCaption(contents.fields)
+                .setHeader(getSummaryTableHeader(typeElement))
+                .setRowScopeColumn(1)
+                .setColumnStyles(bodyRowStyles)
+                .setUseTBody(false);  // temporary? compatibility mode for TBody
     }
 
     /**

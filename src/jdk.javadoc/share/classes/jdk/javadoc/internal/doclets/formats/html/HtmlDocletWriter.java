@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -92,9 +94,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclets.toolkit.util.GroupTypes;
 import jdk.javadoc.internal.doclets.toolkit.util.ImplementedMethods;
-import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes.TableTabs;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
@@ -503,11 +503,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     : htmlTree;
             String allClassesId = "allclasses_";
             HtmlTree navDiv = new HtmlTree(HtmlTag.DIV);
-            fixedNavDiv.addStyle(HtmlStyle.fixedNav);
+            fixedNavDiv.setStyle(HtmlStyle.fixedNav);
             Content skipNavLinks = configuration.getContent("doclet.Skip_navigation_links");
             if (header) {
                 fixedNavDiv.addContent(HtmlConstants.START_OF_TOP_NAVBAR);
-                navDiv.addStyle(HtmlStyle.topNav);
+                navDiv.setStyle(HtmlStyle.topNav);
                 allClassesId += "navbar_top";
                 Content a = getMarkerAnchor(SectionName.NAVBAR_TOP);
                 //WCAG - Hyperlinks should contain text or an image with alt text - for AT tools
@@ -518,7 +518,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 navDiv.addContent(skipLinkContent);
             } else {
                 tree.addContent(HtmlConstants.START_OF_BOTTOM_NAVBAR);
-                navDiv.addStyle(HtmlStyle.bottomNav);
+                navDiv.setStyle(HtmlStyle.bottomNav);
                 allClassesId += "navbar_bottom";
                 Content a = getMarkerAnchor(SectionName.NAVBAR_BOTTOM);
                 navDiv.addContent(a);
@@ -533,7 +533,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 navDiv.addContent(getMarkerAnchor(SectionName.NAVBAR_BOTTOM_FIRSTROW));
             }
             HtmlTree navList = new HtmlTree(HtmlTag.UL);
-            navList.addStyle(HtmlStyle.navList);
+            navList.setStyle(HtmlStyle.navList);
             navList.addAttr(HtmlAttr.TITLE,
                             configuration.getText("doclet.Navigation"));
             if (configuration.createoverview) {
@@ -911,73 +911,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content caption = HtmlTree.CAPTION(captionSpan);
         caption.addContent(tabSpan);
         return caption;
-    }
-
-    /**
-     * Get table header.
-     *
-     * @param caption the table caption
-     * @param tableSummary the summary for the table
-     * @param tableStyle the table style
-     * @return a content object
-     */
-    public Content getTableHeader(Content caption, String tableSummary, HtmlStyle tableStyle) {
-        Content table = (configuration.isOutputHtml5())
-                ? HtmlTree.TABLE(tableStyle, caption)
-                : HtmlTree.TABLE(tableStyle, tableSummary, caption);
-        return table;
-    }
-
-    /**
-     * Get the summary table caption.
-     *
-     * @param groupTypes the group types for table tabs
-     * @return the caption for the summary table
-     */
-    public Content getTableCaption(GroupTypes groupTypes) {
-        Content tabbedCaption = new HtmlTree(HtmlTag.CAPTION);
-        Map<String, TableTabs> groups = groupTypes.getGroupTypes();
-        for (String group : groups.keySet()) {
-            Content captionSpan;
-            Content span;
-            TableTabs tab = groups.get(group);
-            if (tab.isDefaultTab()) {
-                captionSpan = HtmlTree.SPAN(new StringContent(tab.resourceKey()));
-                span = HtmlTree.SPAN(tab.tabId(),
-                        HtmlStyle.activeTableTab, captionSpan);
-            } else {
-                captionSpan = HtmlTree.SPAN(getGroupTypeLinks(groupTypes, group));
-                span = HtmlTree.SPAN(tab.tabId(),
-                        HtmlStyle.tableTab, captionSpan);
-            }
-            Content tabSpan = HtmlTree.SPAN(HtmlStyle.tabEnd, Contents.SPACE);
-            span.addContent(tabSpan);
-            tabbedCaption.addContent(span);
-        }
-        return tabbedCaption;
-    }
-
-    /**
-     * Get the group type links for the table caption.
-     *
-     * @param groupTypes the group types for table tabs
-     * @param groupName the group name to be displayed as link
-     * @return the content tree for the group type link
-     */
-    public Content getGroupTypeLinks(GroupTypes groupTypes, String groupName) {
-        String jsShow = "javascript:showGroups(" + groupTypes.getTableTab(groupName).value() + ");";
-        HtmlTree link = HtmlTree.A(jsShow, new StringContent(groupTypes.getTableTab(groupName).resourceKey()));
-        return link;
-    }
-
-    /**
-     * Returns true if the table tabs needs to be displayed.
-     *
-     * @param groupTypes the group types for table tabs
-     * @return true if the tabs should be displayed
-     */
-    public boolean showTabs(GroupTypes groupTypes) {
-        return groupTypes.getGroupTypes().size() > 1;
     }
 
     /**
@@ -2201,9 +2134,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @param filePath the DocPath of the file that needs to be added
      */
     private void addJQueryFile(Content head, DocPath filePath) {
-        HtmlTree jqyeryScriptFile = HtmlTree.SCRIPT(
+        HtmlTree jqueryScriptFile = HtmlTree.SCRIPT(
                 pathToRoot.resolve(DocPaths.JQUERY_FILES.resolve(filePath)).getPath());
-        head.addContent(jqyeryScriptFile);
+        head.addContent(jqueryScriptFile);
     }
 
     /**
@@ -2613,5 +2546,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
 
     protected TableHeader getPackageTableHeader() {
         return new TableHeader(contents.packageLabel, contents.descriptionLabel);
+    }
+
+    Content getScript() {
+        return script;
     }
 }

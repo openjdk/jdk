@@ -102,7 +102,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
             body.addContent(htmlTree);
         }
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
-        divTree.addStyle(HtmlStyle.contentContainer);
+        divTree.setStyle(HtmlStyle.contentContainer);
         elements = new TreeSet<>(indexbuilder.getIndexMap().keySet());
         elements.addAll(configuration.tagSearchIndexKeys);
         addLinksForIndexes(divTree);

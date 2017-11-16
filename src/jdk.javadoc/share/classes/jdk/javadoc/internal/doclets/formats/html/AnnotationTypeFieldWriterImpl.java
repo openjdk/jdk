@@ -25,12 +25,16 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+
+import java.util.Arrays;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.javadoc.internal.doclets.formats.html.TableHeader;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -200,26 +204,29 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public String getTableSummary() {
-        return configuration.getText("doclet.Member_Table_Summary",
-                configuration.getText("doclet.Field_Summary"),
-                configuration.getText("doclet.fields"));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public Content getCaption() {
-        return configuration.getContent("doclet.Fields");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public TableHeader getSummaryTableHeader(Element member) {
         return new TableHeader(contents.modifierAndTypeLabel, contents.fields,
                 contents.descriptionLabel);
+    }
+
+    @Override
+    protected Table createSummaryTable() {
+        String summary = resources.getText("doclet.Member_Table_Summary",
+            resources.getText("doclet.Field_Summary"),
+            resources.getText("doclet.fields"));
+        Content caption = contents.getContent("doclet.Fields");
+
+        TableHeader header = new TableHeader(contents.modifierAndTypeLabel, contents.fields,
+            contents.descriptionLabel);
+
+        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
+                .setSummary(summary)
+                .setCaption(caption)
+                .setHeader(header)
+                .setRowScopeColumn(1)
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
+                .setUseTBody(false);  // temporary? compatibility mode for TBody
     }
 
     /**

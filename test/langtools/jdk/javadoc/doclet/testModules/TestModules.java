@@ -1050,7 +1050,7 @@ public class TestModules extends JavadocTester {
                 + "<li><a href=\"#module\">Modules</a></li>\n"
                 + "</ul>",
                 "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleA-summary.html\">moduleA</a></th>\n"
+                + "<th class=\"colDeprecatedItemName\" scope=\"row\"><a href=\"moduleA-summary.html\">moduleA</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"deprecationComment\">This module is deprecated.</div>\n"
                 + "</td>\n"

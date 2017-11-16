@@ -25,16 +25,14 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-import jdk.javadoc.internal.doclets.formats.html.TableHeader;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -81,6 +79,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addMemberTree(Content memberSummaryTree, Content memberTree) {
         writer.addMemberTree(memberSummaryTree, memberTree);
     }
@@ -196,26 +195,25 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     @Override
-    public String getTableSummary() {
-        return resources.getText("doclet.Member_Table_Summary",
-                resources.getText("doclet.Enum_Constant_Summary"),
-                resources.getText("doclet.enum_constants"));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Content getCaption() {
-        return configuration.getContent("doclet.Enum_Constants");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public TableHeader getSummaryTableHeader(Element member) {
         return new TableHeader(contents.enumConstantLabel, contents.descriptionLabel);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Table createSummaryTable() {
+        String summary = resources.getText("doclet.Member_Table_Summary",
+            resources.getText("doclet.Enum_Constant_Summary"),
+            resources.getText("doclet.enum_constants"));
+
+        return new Table(configuration.htmlVersion, HtmlStyle.memberSummary)
+                .setSummary(summary)
+                .setCaption(contents.getContent("doclet.Enum_Constants"))
+                .setHeader(getSummaryTableHeader(typeElement))
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                .setUseTBody(false);
     }
 
     /**
@@ -251,15 +249,6 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
                 writer.getDocLink(context, member, name(member), false));
         Content code = HtmlTree.CODE(memberLink);
         tdSummary.addContent(code);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setSummaryColumnStyleAndScope(HtmlTree thTree) {
-        thTree.addStyle(HtmlStyle.colFirst);
-        thTree.addAttr(HtmlAttr.SCOPE, "row");
     }
 
     /**
