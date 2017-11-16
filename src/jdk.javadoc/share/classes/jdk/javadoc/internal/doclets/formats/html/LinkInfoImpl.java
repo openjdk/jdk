@@ -231,11 +231,6 @@ public class LinkInfoImpl extends LinkInfo {
     public String where = "";
 
     /**
-     * String style of text defined in style sheet.
-     */
-    public String styleName = "";
-
-    /**
      * The value of the target.
      */
     public String target = "";
@@ -312,15 +307,6 @@ public class LinkInfoImpl extends LinkInfo {
      */
     public LinkInfoImpl strong(boolean strong) {
         this.isStrong = strong;
-        return this;
-    }
-
-    /**
-     * Set the style to be used for the link.
-     * @param styleName  String style of text defined in style sheet.
-     */
-    public LinkInfoImpl styleName(String styleName) {
-        this.styleName = styleName;
         return this;
     }
 
@@ -443,7 +429,6 @@ public class LinkInfoImpl extends LinkInfo {
         return "LinkInfoImpl{" +
                 "context=" + context +
                 ", where=" + where +
-                ", styleName=" + styleName +
                 ", target=" + target +
                 super.toString() + '}';
     }

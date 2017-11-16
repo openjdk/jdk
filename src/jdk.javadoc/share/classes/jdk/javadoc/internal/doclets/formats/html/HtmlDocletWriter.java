@@ -1089,12 +1089,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * be null or empty string if no member is being referenced.
      * @param label the label for the external link.
      * @param strong true if the link should be strong.
-     * @param style the style of the link.
      * @param code true if the label should be code font.
+     * @return the link
      */
     public Content getCrossClassLink(String qualifiedClassName, String refMemName,
-                                    Content label, boolean strong, String style,
-                                    boolean code) {
+                                    Content label, boolean strong, boolean code) {
         String className = "";
         String packageName = qualifiedClassName == null ? "" : qualifiedClassName;
         int periodIndex;
@@ -1117,8 +1116,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                                 className + ".html", refMemName);
                 return Links.createLink(link,
                     (label == null) || label.isEmpty() ? defaultLabel : label,
-                    strong, style,
-                    configuration.getText("doclet.Href_Class_Or_Interface_Title", packageName),
+                    strong,
+                    resources.getText("doclet.Href_Class_Or_Interface_Title", packageName),
                     "");
             }
         }
@@ -1407,7 +1406,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     return Links.createLink(packageCrossLink,
                         (label.isEmpty() ? text : label));
                 } else if ((classCrossLink = getCrossClassLink(refClassName,
-                        refMemName, label, false, "", !isLinkPlain)) != null) {
+                        refMemName, label, false, !isLinkPlain)) != null) {
                     // Class cross link found (possibly to a member in the class)
                     return classCrossLink;
                 } else {
