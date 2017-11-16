@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "gc/shared/referenceProcessor.hpp"
-#include "prims/jvm.h"
 #include "oops/markOop.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"

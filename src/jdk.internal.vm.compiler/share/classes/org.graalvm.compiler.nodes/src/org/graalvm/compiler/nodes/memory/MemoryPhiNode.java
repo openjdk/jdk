@@ -62,4 +62,9 @@ public final class MemoryPhiNode extends PhiNode implements MemoryNode {
     public NodeInputList<ValueNode> values() {
         return values;
     }
+
+    @Override
+    protected String valueDescription() {
+        return locationIdentity.toString();
+    }
 }

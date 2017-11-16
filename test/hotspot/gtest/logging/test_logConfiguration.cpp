@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
 #include "logging/logConfiguration.hpp"
@@ -31,7 +32,6 @@
 #include "logging/logTag.hpp"
 #include "logging/logTagSet.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/jvm.h"
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
 

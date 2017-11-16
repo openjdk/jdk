@@ -76,14 +76,16 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
 
     @Override
     public String getMethodCallSyntax(final String obj, final String method, final String... args) {
-        final StringBuilder sb = new StringBuilder().append(obj).append('.').append(method).append('(');
+        final StringBuilder sb = new StringBuilder().
+            append(Objects.requireNonNull(obj)).append('.').
+            append(Objects.requireNonNull(method)).append('(');
         final int len = args.length;
 
         if (len > 0) {
-            sb.append(args[0]);
+            sb.append(Objects.requireNonNull(args[0]));
         }
         for (int i = 1; i < len; i++) {
-            sb.append(',').append(args[i]);
+            sb.append(',').append(Objects.requireNonNull(args[i]));
         }
         sb.append(')');
 

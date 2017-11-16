@@ -39,13 +39,15 @@ class ThreadClosure;
 class WorkGang;
 
 class CMSHeap : public GenCollectedHeap {
+
+protected:
+  virtual void check_gen_kinds();
+
 public:
   CMSHeap(GenCollectorPolicy *policy);
 
   // Returns JNI_OK on success
   virtual jint initialize();
-
-  virtual void check_gen_kinds();
 
   // Convenience function to be used in situations where the heap type can be
   // asserted to be this type.
@@ -69,10 +71,6 @@ public:
   // "System.gc". This implies as full a collection as the CollectedHeap
   // supports. Caller does not hold the Heap_lock on entry.
   void collect(GCCause::Cause cause);
-
-  bool is_in_closed_subset(const void* p) const {
-    return is_in_reserved(p);
-  }
 
   bool card_mark_must_follow_store() const {
     return true;

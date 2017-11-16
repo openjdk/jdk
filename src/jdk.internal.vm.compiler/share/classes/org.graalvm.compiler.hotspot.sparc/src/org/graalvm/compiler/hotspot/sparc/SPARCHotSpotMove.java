@@ -113,8 +113,7 @@ public class SPARCHotSpotMove {
                 } else {
                     register = asRegister(result);
                 }
-                int bytes = result.getPlatformKind().getSizeInBytes();
-                loadFromConstantTable(crb, masm, bytes, asRegister(constantTableBase), constant, register, SPARCDelayedControlTransfer.DUMMY);
+                int bytes = loadFromConstantTable(crb, masm, asRegister(constantTableBase), constant, register, SPARCDelayedControlTransfer.DUMMY);
                 if (isStack) {
                     masm.st(register, (SPARCAddress) crb.asAddress(result), bytes);
                 }

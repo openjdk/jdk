@@ -2006,7 +2006,7 @@ inline bool CallbackInvoker::invoke_basic_stack_ref_callback(jvmtiHeapRootKind r
                                                              jlong thread_tag,
                                                              jint depth,
                                                              jmethodID method,
-                                                             jint slot,
+                                                             int slot,
                                                              oop obj) {
   assert(ServiceUtil::visible_oop(obj), "checking");
 

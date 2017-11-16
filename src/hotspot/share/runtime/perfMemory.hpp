@@ -120,7 +120,7 @@ class PerfMemory : AllStatic {
     static char*  _top;
     static size_t _capacity;
     static PerfDataPrologue*  _prologue;
-    static jint   _initialized;
+    static int    _initialized;
     static bool   _destroyed;
 
     static void create_memory_region(size_t sizep);

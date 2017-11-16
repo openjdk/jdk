@@ -284,7 +284,7 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
 
     public Object mbean() {
         if (graalRuntime instanceof HotSpotGraalRuntime) {
-            return ((HotSpotGraalRuntime)graalRuntime).mbean();
+            return ((HotSpotGraalRuntime) graalRuntime).getMBean();
         }
         return null;
     }

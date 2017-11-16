@@ -72,7 +72,7 @@ public class FinalizableSubclassTest extends GraalCompilerTest {
         Assert.assertTrue(constructors.length == 1);
         final ResolvedJavaMethod javaMethod = getMetaAccess().lookupJavaMethod(constructors[0]);
         OptionValues options = getInitialOptions();
-        StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(options), allowAssumptions).method(javaMethod).build();
+        StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(options, null, javaMethod), allowAssumptions).method(javaMethod).build();
 
         GraphBuilderConfiguration conf = GraphBuilderConfiguration.getSnippetDefault(getDefaultGraphBuilderPlugins());
         new GraphBuilderPhase.Instance(getMetaAccess(), getProviders().getStampProvider(), getProviders().getConstantReflection(), getProviders().getConstantFieldProvider(), conf,

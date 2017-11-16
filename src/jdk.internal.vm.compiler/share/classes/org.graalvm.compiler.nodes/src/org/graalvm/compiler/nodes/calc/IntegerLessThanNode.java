@@ -52,7 +52,7 @@ import org.graalvm.compiler.options.OptionValues;
 @NodeInfo(shortName = "<")
 public final class IntegerLessThanNode extends IntegerLowerThanNode {
     public static final NodeClass<IntegerLessThanNode> TYPE = NodeClass.create(IntegerLessThanNode.class);
-    public static final LessThanOp OP = new LessThanOp();
+    private static final LessThanOp OP = new LessThanOp();
 
     public IntegerLessThanNode(ValueNode x, ValueNode y) {
         super(TYPE, x, y, OP);
@@ -203,49 +203,52 @@ public final class IntegerLessThanNode extends IntegerLowerThanNode {
                 }
             }
 
-            int bits = ((IntegerStamp) forX.stamp()).getBits();
-            assert ((IntegerStamp) forY.stamp()).getBits() == bits;
-            long min = OP.minValue(bits);
-            long xResidue = 0;
-            ValueNode left = null;
-            JavaConstant leftCst = null;
-            if (forX instanceof AddNode) {
-                AddNode xAdd = (AddNode) forX;
-                if (xAdd.getY().isJavaConstant()) {
-                    long xCst = xAdd.getY().asJavaConstant().asLong();
-                    xResidue = xCst - min;
-                    left = xAdd.getX();
-                }
-            } else if (forX.isJavaConstant()) {
-                leftCst = forX.asJavaConstant();
-            }
-            if (left != null || leftCst != null) {
-                long yResidue = 0;
-                ValueNode right = null;
-                JavaConstant rightCst = null;
-                if (forY instanceof AddNode) {
-                    AddNode yAdd = (AddNode) forY;
-                    if (yAdd.getY().isJavaConstant()) {
-                        long yCst = yAdd.getY().asJavaConstant().asLong();
-                        yResidue = yCst - min;
-                        right = yAdd.getX();
+            if (forX.stamp() instanceof IntegerStamp) {
+                assert forY.stamp() instanceof IntegerStamp;
+                int bits = ((IntegerStamp) forX.stamp()).getBits();
+                assert ((IntegerStamp) forY.stamp()).getBits() == bits;
+                long min = OP.minValue(bits);
+                long xResidue = 0;
+                ValueNode left = null;
+                JavaConstant leftCst = null;
+                if (forX instanceof AddNode) {
+                    AddNode xAdd = (AddNode) forX;
+                    if (xAdd.getY().isJavaConstant()) {
+                        long xCst = xAdd.getY().asJavaConstant().asLong();
+                        xResidue = xCst - min;
+                        left = xAdd.getX();
                     }
-                } else if (forY.isJavaConstant()) {
-                    rightCst = forY.asJavaConstant();
+                } else if (forX.isJavaConstant()) {
+                    leftCst = forX.asJavaConstant();
                 }
-                if (right != null || rightCst != null) {
-                    if ((xResidue == 0 && left != null) || (yResidue == 0 && right != null)) {
-                        if (left == null) {
-                            left = ConstantNode.forIntegerBits(bits, leftCst.asLong() - min);
-                        } else if (xResidue != 0) {
-                            left = AddNode.create(left, ConstantNode.forIntegerBits(bits, xResidue));
+                if (left != null || leftCst != null) {
+                    long yResidue = 0;
+                    ValueNode right = null;
+                    JavaConstant rightCst = null;
+                    if (forY instanceof AddNode) {
+                        AddNode yAdd = (AddNode) forY;
+                        if (yAdd.getY().isJavaConstant()) {
+                            long yCst = yAdd.getY().asJavaConstant().asLong();
+                            yResidue = yCst - min;
+                            right = yAdd.getX();
                         }
-                        if (right == null) {
-                            right = ConstantNode.forIntegerBits(bits, rightCst.asLong() - min);
-                        } else if (yResidue != 0) {
-                            right = AddNode.create(right, ConstantNode.forIntegerBits(bits, yResidue));
+                    } else if (forY.isJavaConstant()) {
+                        rightCst = forY.asJavaConstant();
+                    }
+                    if (right != null || rightCst != null) {
+                        if ((xResidue == 0 && left != null) || (yResidue == 0 && right != null)) {
+                            if (left == null) {
+                                left = ConstantNode.forIntegerBits(bits, leftCst.asLong() - min);
+                            } else if (xResidue != 0) {
+                                left = AddNode.create(left, ConstantNode.forIntegerBits(bits, xResidue));
+                            }
+                            if (right == null) {
+                                right = ConstantNode.forIntegerBits(bits, rightCst.asLong() - min);
+                            } else if (yResidue != 0) {
+                                right = AddNode.create(right, ConstantNode.forIntegerBits(bits, yResidue));
+                            }
+                            return new IntegerBelowNode(left, right);
                         }
-                        return new IntegerBelowNode(left, right);
                     }
                 }
             }

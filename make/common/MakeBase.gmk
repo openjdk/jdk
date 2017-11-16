@@ -473,14 +473,31 @@ EncodeSpace = \
     $(subst $(SPACE),?,$(strip $1))
 
 ################################################################################
-# Make directory without forking mkdir if not needed
+# Make directory without forking mkdir if not needed.
+#
+# If a directory with an encoded space is provided, the wildcard function
+# sometimes returns false answers (typically if the dir existed when the
+# makefile was parsed, but was deleted by a previous rule). In that case, always
+# call mkdir regardless of what wildcard says.
+#
 # 1: List of directories to create
 MakeDir = \
     $(strip \
-        $(eval MakeDir_dirs_to_make := $(strip $(foreach d, $1, $(if $(wildcard $d), , \
-            "$(call DecodeSpace, $d)")))) \
+        $(eval MakeDir_dirs_to_make := $(strip $(foreach d, $1, \
+          $(if $(findstring ?, $d), '$(call DecodeSpace, $d)', \
+            $(if $(wildcard $d), , $d) \
+          ) \
+        ))) \
         $(if $(MakeDir_dirs_to_make), $(shell $(MKDIR) -p $(MakeDir_dirs_to_make))) \
     )
+
+# Make directory for target file. Should handle spaces in filenames. Just
+# calling $(call MakeDir $(@D)) will not work if the directory contains a space
+# and the target file already exists. In that case, the target file will have
+# its wildcard ? resolved and the $(@D) will evaluate each space separated dir
+# part on its own.
+MakeTargetDir = \
+    $(call MakeDir, $(dir $(call EncodeSpace, $@)))
 
 ################################################################################
 # Assign a variable only if it is empty
@@ -499,7 +516,7 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
   # If the source and target parent directories are the same, recursive copy doesn't work
   # so we fall back on regular copy, which isn't preserving symlinks.
   define install-file
-	$(call MakeDir, $(@D))
+	$(call MakeTargetDir)
 	$(RM) '$(call DecodeSpace, $@)'
 	if [ '$(call DecodeSpace, $(dir $@))' != \
 	    '$(call DecodeSpace, $(dir $(call EncodeSpace, $<)))' ]; then \
@@ -526,21 +543,21 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
   # If copying a soft link to a directory, need to delete the target first to avoid
   # weird errors.
   define install-file
-	$(call MakeDir, $(@D))
+	$(call MakeTargetDir)
 	$(RM) '$(call DecodeSpace, $@)'
 	$(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
 	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then $(XATTR) -cs '$(call DecodeSpace, $@)'; fi
   endef
 else
   define install-file
-	$(call MakeDir, $(@D))
+	$(call MakeTargetDir)
 	$(CP) -fP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
   endef
 endif
 
 # Variant of install file that does not preserve symlinks
 define install-file-nolink
-	$(call MakeDir, $(@D))
+	$(call MakeTargetDir)
 	$(CP) -f '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
 endef
 
@@ -590,13 +607,13 @@ RelativePath = \
 # careful when using this on Windows since the symlink created is only valid in
 # the unix emulation environment.
 define link-file-relative
-	$(call MakeDir, $(@D))
+	$(call MakeTargetDir)
 	$(RM) '$(call DecodeSpace, $@)'
 	$(LN) -s '$(call DecodeSpace, $(call RelativePath, $<, $(@D)))' '$(call DecodeSpace, $@)'
 endef
 
 define link-file-absolute
-	$(call MakeDir, $(@D))
+	$(call MakeTargetDir)
 	$(RM) '$(call DecodeSpace, $@)'
 	$(LN) -s '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
 endef

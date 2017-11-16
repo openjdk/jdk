@@ -26,9 +26,11 @@
 #include "gc/shared/allocTracer.hpp"
 #include "runtime/handles.hpp"
 #include "trace/tracing.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-void AllocTracer::send_allocation_outside_tlab_event(Klass* klass, size_t alloc_size) {
+void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size_t alloc_size, Thread* thread) {
+  TRACE_ALLOCATION(obj, alloc_size, thread);
   EventObjectAllocationOutsideTLAB event;
   if (event.should_commit()) {
     event.set_objectClass(klass);
@@ -37,7 +39,8 @@ void AllocTracer::send_allocation_outside_tlab_event(Klass* klass, size_t alloc_
   }
 }
 
-void AllocTracer::send_allocation_in_new_tlab_event(Klass* klass, size_t tlab_size, size_t alloc_size) {
+void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, Thread* thread) {
+  TRACE_ALLOCATION(obj, tlab_size, thread);
   EventObjectAllocationInNewTLAB event;
   if (event.should_commit()) {
     event.set_objectClass(klass);

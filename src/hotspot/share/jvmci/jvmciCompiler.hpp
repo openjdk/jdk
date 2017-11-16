@@ -55,9 +55,12 @@ private:
 public:
   JVMCICompiler();
 
-  static JVMCICompiler* instance(TRAPS) {
+  static JVMCICompiler* instance(bool require_non_null, TRAPS) {
     if (!EnableJVMCI) {
       THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVMCI is not enabled")
+    }
+    if (_instance == NULL && require_non_null) {
+      THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "The JVMCI compiler instance has not been created");
     }
     return _instance;
   }

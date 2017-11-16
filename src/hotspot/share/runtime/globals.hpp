@@ -99,11 +99,11 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 #define CI_COMPILER_COUNT 0
 #else
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
 #define CI_COMPILER_COUNT 2
 #else
 #define CI_COMPILER_COUNT 1
-#endif // COMPILER2 || INCLUDE_JVMCI
+#endif // COMPILER2_OR_JVMCI
 
 #endif // no compilers
 
@@ -1144,8 +1144,8 @@ public:
   notproduct(bool, PrintSystemDictionaryAtExit, false,                      \
           "Print the system dictionary at exit")                            \
                                                                             \
-  experimental(intx, PredictedLoadedClassCount, 0,                          \
-          "Experimental: Tune loaded class cache starting size")            \
+  diagnostic(bool, DynamicallyResizeSystemDictionaries, true,               \
+          "Dynamically resize system dictionaries as needed")               \
                                                                             \
   diagnostic(bool, UnsyncloadClass, false,                                  \
           "Unstable: VM calls loadClass unsynchronized. Custom "            \
@@ -3901,18 +3901,6 @@ public:
           "If PrintSharedArchiveAndExit is true, also print the shared "    \
           "dictionary")                                                     \
                                                                             \
-  product(size_t, SharedReadWriteSize, 0,                                   \
-          "Deprecated")                                                     \
-                                                                            \
-  product(size_t, SharedReadOnlySize, 0,                                    \
-          "Deprecated")                                                     \
-                                                                            \
-  product(size_t, SharedMiscDataSize,  0,                                   \
-          "Deprecated")                                                     \
-                                                                            \
-  product(size_t, SharedMiscCodeSize,  0,                                   \
-          "Deprecated")                                                     \
-                                                                            \
   product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
           "Address to allocate shared memory region for class data")        \
@@ -3922,7 +3910,7 @@ public:
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
                                                                             \
-  diagnostic(bool, IgnoreUnverifiableClassesDuringDump, false,              \
+  diagnostic(bool, IgnoreUnverifiableClassesDuringDump, true,              \
           "Do not quit -Xshare:dump even if we encounter unverifiable "     \
           "classes. Just exclude them from the shared dictionary.")         \
                                                                             \

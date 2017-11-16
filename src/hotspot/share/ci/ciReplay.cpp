@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
@@ -33,7 +34,6 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 
@@ -790,7 +790,7 @@ class CompileReplay : public StackObj {
         while (field_signature[rank] == '[') {
           rank++;
         }
-        int* dims = NEW_RESOURCE_ARRAY(int, rank);
+        jint* dims = NEW_RESOURCE_ARRAY(jint, rank);
         dims[0] = length;
         for (int i = 1; i < rank; i++) {
           dims[i] = 1; // These aren't relevant to the compiler

@@ -24,14 +24,15 @@
 
 /*
  * @test TestSystemGCWithSerial
+ * @bug 8190703
  * @key gc
  * @key stress
  * @requires vm.gc.Serial
  * @summary Stress the Serial GC full GC by allocating objects of different lifetimes concurrently with System.gc().
- * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UseSerialGC TestSystemGCWithSerial
+ * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UseSerialGC TestSystemGCWithSerial 270
  */
 public class TestSystemGCWithSerial {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         TestSystemGC.main(args);
     }
 }

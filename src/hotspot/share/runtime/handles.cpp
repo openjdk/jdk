@@ -99,7 +99,7 @@ static uintx chunk_oops_do(OopClosure* f, Chunk* chunk, char* chunk_top) {
   while (bottom < top) {
     // This test can be moved up but for now check every oop.
 
-    assert(oopDesc::is_oop(*bottom), "handle should point to oop");
+    assert(oopDesc::is_oop(*bottom, true), "handle should point to oop");
 
     f->do_oop(bottom++);
   }

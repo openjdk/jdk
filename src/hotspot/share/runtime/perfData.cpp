@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutex.hpp"
@@ -420,11 +420,11 @@ PerfLongConstant* PerfDataManager::create_long_constant(CounterNS ns,
 
 PerfStringVariable* PerfDataManager::create_string_variable(CounterNS ns,
                                                             const char* name,
-                                                            jint max_length,
+                                                            int max_length,
                                                             const char* s,
                                                             TRAPS) {
 
-  if (max_length == 0 && s != NULL) max_length = (jint)strlen(s);
+  if (max_length == 0 && s != NULL) max_length = (int)strlen(s);
 
   assert(max_length != 0, "PerfStringVariable with length 0");
 

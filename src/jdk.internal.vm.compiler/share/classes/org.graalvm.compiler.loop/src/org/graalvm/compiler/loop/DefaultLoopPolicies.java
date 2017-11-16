@@ -55,16 +55,19 @@ import org.graalvm.compiler.options.OptionValues;
 import jdk.vm.ci.meta.MetaAccessProvider;
 
 public class DefaultLoopPolicies implements LoopPolicies {
-    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> LoopUnswitchMaxIncrease = new OptionKey<>(500);
-    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> LoopUnswitchTrivial = new OptionKey<>(10);
-    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Double> LoopUnswitchFrequencyBoost = new OptionKey<>(10.0);
 
-    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> FullUnrollMaxNodes = new OptionKey<>(300);
-    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> FullUnrollMaxIterations = new OptionKey<>(600);
-    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> ExactFullUnrollMaxNodes = new OptionKey<>(1200);
-    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> ExactPartialUnrollMaxNodes = new OptionKey<>(200);
+    public static class Options {
+        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> LoopUnswitchMaxIncrease = new OptionKey<>(500);
+        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> LoopUnswitchTrivial = new OptionKey<>(10);
+        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Double> LoopUnswitchFrequencyBoost = new OptionKey<>(10.0);
 
-    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> UnrollMaxIterations = new OptionKey<>(16);
+        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> FullUnrollMaxNodes = new OptionKey<>(300);
+        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> FullUnrollMaxIterations = new OptionKey<>(600);
+        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> ExactFullUnrollMaxNodes = new OptionKey<>(1200);
+        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> ExactPartialUnrollMaxNodes = new OptionKey<>(200);
+
+        @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> UnrollMaxIterations = new OptionKey<>(16);
+    }
 
     @Override
     public boolean shouldPeel(LoopEx loop, ControlFlowGraph cfg, MetaAccessProvider metaAccess) {
@@ -87,10 +90,10 @@ public class DefaultLoopPolicies implements LoopPolicies {
         OptionValues options = loop.entryPoint().getOptions();
         CountedLoopInfo counted = loop.counted();
         long maxTrips = counted.constantMaxTripCount();
-        int maxNodes = (counted.isExactTripCount() && counted.isConstantExactTripCount()) ? ExactFullUnrollMaxNodes.getValue(options) : FullUnrollMaxNodes.getValue(options);
+        int maxNodes = (counted.isExactTripCount() && counted.isConstantExactTripCount()) ? Options.ExactFullUnrollMaxNodes.getValue(options) : Options.FullUnrollMaxNodes.getValue(options);
         maxNodes = Math.min(maxNodes, Math.max(0, MaximumDesiredSize.getValue(options) - loop.loopBegin().graph().getNodeCount()));
         int size = Math.max(1, loop.size() - 1 - loop.loopBegin().phis().count());
-        if (maxTrips <= FullUnrollMaxIterations.getValue(options) && size * (maxTrips - 1) <= maxNodes) {
+        if (maxTrips <= Options.FullUnrollMaxIterations.getValue(options) && size * (maxTrips - 1) <= maxNodes) {
             // check whether we're allowed to unroll this loop
             return loop.canDuplicateLoop();
         } else {
@@ -106,7 +109,7 @@ public class DefaultLoopPolicies implements LoopPolicies {
             return false;
         }
         OptionValues options = loop.entryPoint().getOptions();
-        int maxNodes = ExactPartialUnrollMaxNodes.getValue(options);
+        int maxNodes = Options.ExactPartialUnrollMaxNodes.getValue(options);
         maxNodes = Math.min(maxNodes, Math.max(0, MaximumDesiredSize.getValue(options) - loop.loopBegin().graph().getNodeCount()));
         int size = Math.max(1, loop.size() - 1 - loop.loopBegin().phis().count());
         int unrollFactor = loopBegin.getUnrollFactor();
@@ -118,7 +121,7 @@ public class DefaultLoopPolicies implements LoopPolicies {
             }
             loopBegin.setLoopOrigFrequency(loopFrequency);
         }
-        int maxUnroll = UnrollMaxIterations.getValue(options);
+        int maxUnroll = Options.UnrollMaxIterations.getValue(options);
         // Now correct size for the next unroll. UnrollMaxIterations == 1 means perform the
         // pre/main/post transformation but don't actually unroll the main loop.
         size += size;
@@ -190,9 +193,9 @@ public class DefaultLoopPolicies implements LoopPolicies {
         CountingClosure stateNodesCount = new CountingClosure();
         double loopFrequency = loop.loopBegin().loopFrequency();
         OptionValues options = loop.loopBegin().getOptions();
-        int maxDiff = LoopUnswitchTrivial.getValue(options) + (int) (LoopUnswitchFrequencyBoost.getValue(options) * (loopFrequency - 1.0 + phis));
+        int maxDiff = Options.LoopUnswitchTrivial.getValue(options) + (int) (Options.LoopUnswitchFrequencyBoost.getValue(options) * (loopFrequency - 1.0 + phis));
 
-        maxDiff = Math.min(maxDiff, LoopUnswitchMaxIncrease.getValue(options));
+        maxDiff = Math.min(maxDiff, Options.LoopUnswitchMaxIncrease.getValue(options));
         int remainingGraphSpace = MaximumDesiredSize.getValue(options) - graph.getNodeCount();
         maxDiff = Math.min(maxDiff, remainingGraphSpace);
 

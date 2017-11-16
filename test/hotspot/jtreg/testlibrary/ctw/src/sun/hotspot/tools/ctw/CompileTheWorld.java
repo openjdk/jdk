@@ -23,9 +23,10 @@
 
 package sun.hotspot.tools.ctw;
 
+import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 
-import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -39,20 +40,23 @@ public class CompileTheWorld {
     static PrintStream OUT = System.out;
     static final PrintStream ERR = System.err;
     /**
-     * Entry point. Compiles classes in {@code paths}
+     * Entry point. Compiles classes in {@code targets}
      *
-     * @param paths paths to jar/zip, dir contains classes, or to .lst file
-     *              contains list of classes to compile
+     * @param targets each element can be either
+     *                'modules:&lt;comma separated list of modules to compile&gt'
+     *                 or path to jimage file
+     *                 or path to jar/zip, dir contains classes
+     *                 or path to .lst file contains list of classes to compile
      */
-    public static void main(String[] paths) {
-        if (paths.length == 0) {
-            throw new IllegalArgumentException("Expect a path to a compile target.");
+    public static void main(String[] targets) {
+        if (targets.length == 0) {
+            throw new IllegalArgumentException("Expect a compile target.");
         }
         String logfile = Utils.LOG_FILE;
         PrintStream os = null;
         if (logfile != null) {
             try {
-                os = new PrintStream(Files.newOutputStream(Paths.get(logfile)));
+                os = new PrintStream(Files.newOutputStream(Paths.get(logfile)), true);
             } catch (IOException io) {
             }
         }
@@ -74,7 +78,7 @@ public class CompileTheWorld {
             ExecutorService executor = createExecutor();
             long start = System.currentTimeMillis();
             try {
-                Arrays.stream(paths)
+                Arrays.stream(targets)
                       .map(PathHandler::create)
                       .flatMap(List::stream)
                       .forEach(p -> {
@@ -87,10 +91,10 @@ public class CompileTheWorld {
             } finally {
                 await(executor);
             }
-            CompileTheWorld.OUT.printf("Done (%d classes, %d methods, %d ms)%n",
+            CompileTheWorld.OUT.println(String.format("Done (%d classes, %d methods, %d ms)",
                     PathHandler.getProcessedClassCount(),
                     Compiler.getMethodCount(),
-                    System.currentTimeMillis() - start);
+                    System.currentTimeMillis() - start));
             passed = true;
         } catch (Throwable t){
             t.printStackTrace(ERR);

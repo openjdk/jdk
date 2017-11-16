@@ -55,7 +55,9 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   ConcurrentGCPhaseManager::Stack _phase_manager_stack;
 
   void sleepBeforeNextCycle();
+  // Delay marking to meet MMU.
   void delay_to_keep_mmu(G1Policy* g1_policy, bool remark);
+  double mmu_sleep_time(G1Policy* g1_policy, bool remark);
 
   void run_service();
   void stop_service();

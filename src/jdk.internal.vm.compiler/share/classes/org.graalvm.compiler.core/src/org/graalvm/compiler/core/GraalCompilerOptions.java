@@ -47,7 +47,7 @@ public class GraalCompilerOptions {
      public static final EnumOptionKey<ExceptionAction> CompilationFailureAction = new EnumOptionKey<>(ExceptionAction.Diagnose);
     @Option(help = "The maximum number of compilation failures or bailouts to handle with the action specified " +
                    "by CompilationFailureAction or CompilationBailoutAction before changing to a less verbose action.", type = OptionType.User)
-    public static final OptionKey<Integer> MaxCompilationProblemsPerAction = new OptionKey<>(5);
+    public static final OptionKey<Integer> MaxCompilationProblemsPerAction = new OptionKey<>(2);
     @Option(help = "Alias for CompilationFailureAction=ExitVM.", type = OptionType.User)
     public static final OptionKey<Boolean> ExitVMOnException = new OptionKey<>(false);
     // @formatter:on

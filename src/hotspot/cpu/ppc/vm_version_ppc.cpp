@@ -24,11 +24,11 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
-#include "prims/jvm.h"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -109,7 +109,8 @@ void VM_Version::initialize() {
 
   if (PowerArchitecturePPC64 >= 8) {
     if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
-      FLAG_SET_ERGO(bool, SuperwordUseVSX, true);
+      // TODO: Switch on when it works stable. Currently, MachSpillCopyNode::implementation code is missing.
+      //FLAG_SET_ERGO(bool, SuperwordUseVSX, true);
     }
   } else {
     if (SuperwordUseVSX) {

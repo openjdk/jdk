@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_UTILITIES_CONSTANTTAG_HPP
 #define SHARE_VM_UTILITIES_CONSTANTTAG_HPP
 
+#include "jvm.h"
 #include "memory/allocation.hpp"
-#include "prims/jvm.h"
 
 // constant tags in Java .class files
 

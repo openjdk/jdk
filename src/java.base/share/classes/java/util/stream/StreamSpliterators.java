@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -897,7 +897,7 @@ class StreamSpliterators {
      * Note: The source spliterator may report {@code ORDERED} since that
      * spliterator be the result of a previous pipeline stage that was
      * collected to a {@code Node}. It is the order of the pipeline stage
-     * that governs whether the this slice spliterator is to be used or not.
+     * that governs whether this slice spliterator is to be used or not.
      */
     abstract static class UnorderedSliceSpliterator<T, T_SPLITR extends Spliterator<T>> {
         static final int CHUNK_SIZE = 1 << 7;
@@ -914,7 +914,7 @@ class StreamSpliterators {
             this.unlimited = limit < 0;
             this.skipThreshold = limit >= 0 ? limit : 0;
             this.chunkSize = limit >= 0 ? (int)Math.min(CHUNK_SIZE,
-                ((skip + limit) / AbstractTask.LEAF_TARGET) + 1) : CHUNK_SIZE;
+                                                        ((skip + limit) / AbstractTask.getLeafTarget()) + 1) : CHUNK_SIZE;
             this.permits = new AtomicLong(limit >= 0 ? skip + limit : skip);
         }
 
