@@ -208,23 +208,15 @@ public class SourceToHTMLConverter {
      * @param path the path for the file.
      */
     private void writeToFile(Content body, DocPath path) throws DocFileIOException {
-        Content htmlDocType = configuration.isOutputHtml5()
-                ? DocType.HTML5
-                : DocType.TRANSITIONAL;
+        DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(HtmlTree.TITLE(resources.getText("doclet.Window_Source_title")));
         addStyleSheetProperties(head);
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
                 head, body);
-        Content htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
+        HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
         messages.notice("doclet.Generating_0", path.getPath());
-        DocFile df = DocFile.createFileForOutput(configuration, path);
-        try (Writer w = df.openWriter()) {
-            htmlDocument.write(w, true);
-        } catch (IOException e) {
-            throw new DocFileIOException(df, DocFileIOException.Mode.WRITE, e);
-        }
-
+        htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
 
     /**

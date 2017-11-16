@@ -410,10 +410,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public void printHtmlDocument(List<String> metakeywords, boolean includeScript,
             Content body) throws DocFileIOException {
-        Content htmlDocType = configuration.isOutputHtml5()
-                ? DocType.HTML5
-                : DocType.TRANSITIONAL;
-        Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
+        DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
+        Content htmlComment = contents.newPage;
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(getGeneratedBy(!configuration.notimestamp));
         head.addContent(HtmlTree.TITLE(winTitle));
@@ -434,11 +432,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         }
         addStyleSheetProperties(head);
         addScriptProperties(head);
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
-                head, body);
-        Content htmlDocument = new HtmlDocument(htmlDocType,
-                htmlComment, htmlTree);
-        write(htmlDocument);
+
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
+        HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlComment, htmlTree);
+        htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
 
     /**

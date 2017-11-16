@@ -35,6 +35,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -65,10 +66,8 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem generating the file
      */
     void generateIndexFile() throws DocFileIOException {
-        Content htmlDocType = configuration.isOutputHtml5()
-                ? DocType.HTML5
-                : DocType.TRANSITIONAL;
-        Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
+        DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
+        Content htmlComment = contents.newPage;
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(getGeneratedBy(!configuration.notimestamp));
 
@@ -111,11 +110,8 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
             body.addContent(bodyContent);
         }
 
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
-                head, body);
-        Content htmlDocument = new HtmlDocument(htmlDocType,
-                htmlComment, htmlTree);
-        write(htmlDocument);
-
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
+        HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlComment, htmlTree);
+        htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
 }
