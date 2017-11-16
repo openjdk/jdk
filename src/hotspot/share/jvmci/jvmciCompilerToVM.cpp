@@ -1000,7 +1000,7 @@ C2V_VMENTRY(jlong, getMaxCallTargetOffset, (JNIEnv*, jobject, jlong addr))
   return -1;
 C2V_END
 
-C2V_VMENTRY(void, setNotInlineableOrCompileable,(JNIEnv *, jobject,  jobject jvmci_method))
+C2V_VMENTRY(void, setNotInlinableOrCompilable,(JNIEnv *, jobject,  jobject jvmci_method))
   methodHandle method = CompilerToVM::asMethod(jvmci_method);
   method->set_not_c1_compilable();
   method->set_not_c2_compilable();
@@ -1018,7 +1018,7 @@ C2V_VMENTRY(jint, installCode, (JNIEnv *jniEnv, jobject, jobject target, jobject
   Handle installed_code_handle(THREAD, JNIHandles::resolve(installed_code));
   Handle speculation_log_handle(THREAD, JNIHandles::resolve(speculation_log));
 
-  JVMCICompiler* compiler = JVMCICompiler::instance(CHECK_JNI_ERR);
+  JVMCICompiler* compiler = JVMCICompiler::instance(true, CHECK_JNI_ERR);
 
   TraceTime install_time("installCode", JVMCICompiler::codeInstallTimer());
   bool is_immutable_PIC = HotSpotCompiledCode::isImmutablePIC(compiled_code_handle) > 0;
@@ -1039,7 +1039,7 @@ C2V_VMENTRY(jint, installCode, (JNIEnv *jniEnv, jobject, jobject target, jobject
   if (result != JVMCIEnv::ok) {
     assert(cb == NULL, "should be");
   } else {
-    if (!installed_code_handle.is_null()) {
+    if (installed_code_handle.not_null()) {
       assert(installed_code_handle->is_a(InstalledCode::klass()), "wrong type");
       nmethod::invalidate_installed_code(installed_code_handle, CHECK_0);
       {
@@ -1056,13 +1056,6 @@ C2V_VMENTRY(jint, installCode, (JNIEnv *jniEnv, jobject, jobject target, jobject
           HotSpotInstalledCode::set_size(installed_code_handle, cb->size());
           HotSpotInstalledCode::set_codeStart(installed_code_handle, (jlong) cb->code_begin());
           HotSpotInstalledCode::set_codeSize(installed_code_handle, cb->code_size());
-        }
-      }
-      nmethod* nm = cb->as_nmethod_or_null();
-      if (nm != NULL && installed_code_handle->is_scavengable()) {
-        assert(nm->detect_scavenge_root_oops(), "nm should be scavengable if installed_code is scavengable");
-        if (!UseG1GC) {
-          assert(nm->on_scavenge_root_list(), "nm should be on scavengable list");
         }
       }
     }
@@ -1143,7 +1136,7 @@ C2V_VMENTRY(jint, getMetadata, (JNIEnv *jniEnv, jobject, jobject target, jobject
 C2V_END
 
 C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv *jniEnv, jobject))
-  JVMCICompiler* compiler = JVMCICompiler::instance(CHECK);
+  JVMCICompiler* compiler = JVMCICompiler::instance(true, CHECK);
   CompilerStatistics* stats = compiler->stats();
   stats->_standard.reset();
   stats->_osr.reset();
@@ -1697,7 +1690,7 @@ C2V_VMENTRY(void, writeDebugOutput, (JNIEnv*, jobject, jbyteArray bytes, jint of
   }
   while (length > 0) {
     jbyte* start = array->byte_at_addr(offset);
-    tty->write((char*) start, MIN2(length, O_BUFLEN));
+    tty->write((char*) start, MIN2(length, (jint)O_BUFLEN));
     length -= O_BUFLEN;
     offset += O_BUFLEN;
   }
@@ -1820,7 +1813,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getImplementor",                               CC "(" HS_RESOLVED_KLASS ")" HS_RESOLVED_KLASS,                                       FN_PTR(getImplementor)},
   {CC "getStackTraceElement",                         CC "(" HS_RESOLVED_METHOD "I)" STACK_TRACE_ELEMENT,                                   FN_PTR(getStackTraceElement)},
   {CC "methodIsIgnoredBySecurityStackWalk",           CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(methodIsIgnoredBySecurityStackWalk)},
-  {CC "setNotInlineableOrCompileable",                CC "(" HS_RESOLVED_METHOD ")V",                                                       FN_PTR(setNotInlineableOrCompileable)},
+  {CC "setNotInlinableOrCompilable",                  CC "(" HS_RESOLVED_METHOD ")V",                                                       FN_PTR(setNotInlinableOrCompilable)},
   {CC "isCompilable",                                 CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(isCompilable)},
   {CC "hasNeverInlineDirective",                      CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(hasNeverInlineDirective)},
   {CC "shouldInlineMethod",                           CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(shouldInlineMethod)},

@@ -32,10 +32,10 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/dependencies.hpp"
+#include "gc/serial/serialHeap.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/space.hpp"
@@ -762,7 +762,7 @@ CollectedHeap* Universe::create_heap() {
     return Universe::create_heap_with_policy<CMSHeap, ConcurrentMarkSweepPolicy>();
 #endif
   } else if (UseSerialGC) {
-    return Universe::create_heap_with_policy<GenCollectedHeap, MarkSweepPolicy>();
+    return Universe::create_heap_with_policy<SerialHeap, MarkSweepPolicy>();
   }
 
   ShouldNotReachHere();

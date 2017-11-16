@@ -52,8 +52,8 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 //JaCoCo Exclude
 
 /**
- * Observes compilation events and uses {@link IdealGraphPrinter} to generate a graph representation
- * that can be inspected with the Graph Visualizer.
+ * Observes compilation events and uses {@link BinaryGraphPrinter} to generate a graph
+ * representation that can be inspected with the Graph Visualizer.
  */
 public class GraphPrinterDumpHandler implements DebugDumpHandler {
 
@@ -69,7 +69,7 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
 
     @FunctionalInterface
     public interface GraphPrinterSupplier {
-        GraphPrinter get(Graph graph) throws IOException;
+        GraphPrinter get(DebugContext ctx, Graph graph) throws IOException;
     }
 
     /**
@@ -93,7 +93,7 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
         }
     }
 
-    private void ensureInitialized(Graph graph) {
+    private void ensureInitialized(DebugContext ctx, Graph graph) {
         if (printer == null) {
             if (failuresCount >= FAILURE_LIMIT) {
                 return;
@@ -102,7 +102,7 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
             inlineContextMap = new WeakHashMap<>();
             DebugContext debug = graph.getDebug();
             try {
-                printer = printerSupplier.get(graph);
+                printer = printerSupplier.get(ctx, graph);
             } catch (IOException e) {
                 handleException(debug, e);
             }
@@ -123,7 +123,7 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
         OptionValues options = debug.getOptions();
         if (object instanceof Graph && DebugOptions.PrintGraph.getValue(options)) {
             final Graph graph = (Graph) object;
-            ensureInitialized(graph);
+            ensureInitialized(debug, graph);
             if (printer == null) {
                 return;
             }
@@ -168,11 +168,13 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
             // Save inline context for next dump.
             previousInlineContext = inlineContext;
 
+            // Capture before creating the sandbox
+            String currentScopeName = debug.getCurrentScopeName();
             try (DebugContext.Scope s = debug.sandbox("PrintingGraph", null)) {
                 // Finally, output the graph.
                 Map<Object, Object> properties = new HashMap<>();
                 properties.put("graph", graph.toString());
-                properties.put("scope", debug.getCurrentScopeName());
+                properties.put("scope", currentScopeName);
                 if (graph instanceof StructuredGraph) {
                     properties.put("compilationIdentifier", ((StructuredGraph) graph).compilationId());
                     try {

@@ -429,7 +429,6 @@
   template(append_name,                               "append")                                   \
   template(klass_name,                                "klass")                                    \
   template(array_klass_name,                          "array_klass")                              \
-  template(declaringClass_name,                       "declaringClass")                           \
   template(memberName_name,                           "memberName")                               \
   template(mid_name,                                  "mid")                                      \
   template(cpref_name,                                "cpref")                                    \

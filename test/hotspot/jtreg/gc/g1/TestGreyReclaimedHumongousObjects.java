@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test TestGreyReclaimedHumongousObjects.java
- * @bug 8069367
+ * @bug 8069367 8185278
  * @requires vm.gc.G1
  * @summary Test handling of marked but unscanned reclaimed humongous objects.
  * @key gc

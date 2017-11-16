@@ -25,9 +25,9 @@
 #ifndef SHARE_VM_CI_CIFLAGS_HPP
 #define SHARE_VM_CI_CIFLAGS_HPP
 
+#include "jvm.h"
 #include "ci/ciClassList.hpp"
 #include "memory/allocation.hpp"
-#include "prims/jvm.h"
 #include "utilities/accessFlags.hpp"
 #include "utilities/ostream.hpp"
 

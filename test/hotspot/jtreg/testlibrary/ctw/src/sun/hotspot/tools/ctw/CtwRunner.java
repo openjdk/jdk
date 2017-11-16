@@ -35,8 +35,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -62,19 +60,27 @@ public class CtwRunner {
     }
 
     private final List<Throwable> errors;
+    private final String target;
     private final Path targetPath;
     private final String targetName;
 
     private CtwRunner(String target) {
-        if (target.equals("modules")) {
+        if (target.startsWith("modules")) {
             targetPath = Paths
                     .get(Utils.TEST_JDK)
                     .resolve("lib")
-                    .resolve(target);
+                    .resolve("modules");
+            if (target.equals("modules")){
+                target = targetPath.toString();
+            }
+            targetName = target.replace(':', '_')
+                               .replace('.', '_')
+                               .replace(',', '_');
         } else {
             targetPath = Paths.get(target).toAbsolutePath();
+            targetName = targetPath.getFileName().toString();
         }
-        targetName = targetPath.getFileName().toString();
+        this.target = target;
         errors = new ArrayList<>();
     }
 
@@ -104,7 +110,7 @@ public class CtwRunner {
         long classStart = 0L;
         long classCount = classCount();
         Asserts.assertGreaterThan(classCount, 0L,
-                targetPath + " does not have any classes");
+                target + "(at " + targetPath + ") does not have any classes");
         boolean done = false;
         while (!done) {
             String[] cmd = cmd(classStart);
@@ -138,7 +144,7 @@ public class CtwRunner {
                                 + "] != classCount[" + classCount + "]"));
                     } else {
                         System.out.println("Executed CTW for all " + classCount
-                                + " classes in " + targetPath);
+                                + " classes in " + target + "(at " + targetPath + ")");
                     }
                     done = true;
                 } else {
@@ -162,7 +168,7 @@ public class CtwRunner {
     }
 
     private long classCount() {
-        List<PathHandler> phs = PathHandler.create(targetPath.toString());
+        List<PathHandler> phs = PathHandler.create(target);
         long result = phs.stream()
                          .mapToLong(PathHandler::classCount)
                          .sum();
@@ -215,7 +221,7 @@ public class CtwRunner {
                 "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
                 // CTW entry point
                 CompileTheWorld.class.getName(),
-                targetPath.toString(),
+                target,
         };
     }
 

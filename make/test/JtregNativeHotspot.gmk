@@ -63,6 +63,8 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/hotspot/jtreg/runtime/RedefineTests \
     $(TOPDIR)/test/hotspot/jtreg/compiler/floatingpoint/ \
     $(TOPDIR)/test/hotspot/jtreg/compiler/calls \
+    $(TOPDIR)/test/hotspot/jtreg/compiler/runtime/criticalnatives/lookup \
+    $(TOPDIR)/test/hotspot/jtreg/compiler/runtime/criticalnatives/argumentcorruption \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetOwnedMonitorInfo \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetNamedModule \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/IsModifiableModule \

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/metadataOnStackMark.hpp"
@@ -41,7 +42,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/fieldType.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
@@ -305,14 +305,9 @@ void ConstantPool::resolve_class_constants(TRAPS) {
 
   constantPoolHandle cp(THREAD, this);
   for (int index = 1; index < length(); index++) { // Index 0 is unused
-    if (tag_at(index).is_string()) {
-      Symbol* sym = cp->unresolved_string_at(index);
-      // Look up only. Only resolve references to already interned strings.
-      oop str = StringTable::lookup(sym);
-      if (str != NULL) {
-        int cache_index = cp->cp_to_object_index(index);
-        cp->string_at_put(index, cache_index, str);
-      }
+    if (tag_at(index).is_string() && !cp->is_pseudo_string_at(index)) {
+      int cache_index = cp->cp_to_object_index(index);
+      string_at_impl(cp, index, cache_index, CHECK);
     }
   }
 }

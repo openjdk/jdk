@@ -51,7 +51,7 @@ static const juint MURMUR3_32_X86_CHECK_VALUE = 0xB0F57EE3;
 class AltHashingTest : public ::testing::Test {
  public:
 
-  static juint murmur3_32(const int* data, int len) {
+  static juint murmur3_32(const jint* data, int len) {
     return AltHashing::murmur3_32(data, len);
   }
 };

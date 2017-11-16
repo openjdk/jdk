@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
-#include "prims/jvm.h"
 #include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutex.hpp"
@@ -51,7 +51,7 @@ char*                    PerfMemory::_start = NULL;
 char*                    PerfMemory::_end = NULL;
 char*                    PerfMemory::_top = NULL;
 size_t                   PerfMemory::_capacity = 0;
-jint                     PerfMemory::_initialized = false;
+int                      PerfMemory::_initialized = false;
 PerfDataPrologue*        PerfMemory::_prologue = NULL;
 bool                     PerfMemory::_destroyed = false;
 

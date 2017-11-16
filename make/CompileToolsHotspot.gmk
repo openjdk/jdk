@@ -67,6 +67,7 @@ ifeq ($(INCLUDE_GRAAL), true)
           $(SRC_DIR)/org.graalvm.compiler.phases.common/src \
           $(SRC_DIR)/org.graalvm.compiler.serviceprovider/src \
           $(SRC_DIR)/org.graalvm.compiler.virtual/src \
+          $(SRC_DIR)/org.graalvm.graphio/src \
           $(SRC_DIR)/org.graalvm.util/src \
           $(VM_CI_SRC_DIR)/jdk.vm.ci.code/src \
           $(VM_CI_SRC_DIR)/jdk.vm.ci.common/src \
@@ -125,6 +126,7 @@ ifeq ($(INCLUDE_GRAAL), true)
           $(SRC_DIR)/org.graalvm.compiler.nodeinfo/src \
           $(SRC_DIR)/org.graalvm.compiler.options/src \
           $(SRC_DIR)/org.graalvm.compiler.serviceprovider/src \
+          $(SRC_DIR)/org.graalvm.graphio/src \
           $(SRC_DIR)/org.graalvm.util/src \
           $(VM_CI_SRC_DIR)/jdk.vm.ci.code/src \
           $(VM_CI_SRC_DIR)/jdk.vm.ci.common/src \

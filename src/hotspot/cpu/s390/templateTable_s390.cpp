@@ -1174,8 +1174,20 @@ void TemplateTable::bastore() {
   __ pop_i(Z_ARG3);
   __ pop_ptr(Z_tmp_2);
   // Z_tos   : value
-  // Z_ARG3 : index
+  // Z_ARG3  : index
   // Z_tmp_2 : array
+
+  // Need to check whether array is boolean or byte
+  // since both types share the bastore bytecode.
+  __ load_klass(Z_tmp_1, Z_tmp_2);
+  __ z_llgf(Z_tmp_1, Address(Z_tmp_1, Klass::layout_helper_offset()));
+  __ z_tmll(Z_tmp_1, Klass::layout_helper_boolean_diffbit());
+  Label L_skip;
+  __ z_bfalse(L_skip);
+  // if it is a T_BOOLEAN array, mask the stored value to 0/1
+  __ z_nilf(Z_tos, 0x1);
+  __ bind(L_skip);
+
   // No index shift necessary - pass 0.
   index_check(Z_tmp_2, Z_ARG3, 0); // Prefer index in Z_ARG3.
   __ z_stc(Z_tos,
@@ -2319,6 +2331,13 @@ void TemplateTable::_return(TosState state) {
     __ z_bfalse(skip_register_finalizer);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), Rthis);
     __ bind(skip_register_finalizer);
+  }
+
+  if (state == itos) {
+    // Narrow result if state is itos but result type is smaller.
+    // Need to narrow in the return bytecode rather than in generate_return_entry
+    // since compiled code callers expect the result to already be narrowed.
+    __ narrow(Z_tos, Z_tmp_1); /* fall through */
   }
 
   __ remove_activation(state, Z_R14);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,14 +280,19 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
         }
         if (offset == -1) {
             try {
-                offset = getFieldOffset(name, Integer.class, "OopHandle");
+                offset = getFieldOffset(name, Integer.class, "jobject");
                 isHandle = true;
             } catch (JVMCIError e) {
-
+                try {
+                    // JDK-8186777
+                    offset = getFieldOffset(name, Integer.class, "OopHandle");
+                    isHandle = true;
+                } catch (JVMCIError e2) {
+                }
             }
         }
         if (offset == -1) {
-            throw new JVMCIError("cannot get offset of field " + name + " with type oop or OopHandle");
+            throw new JVMCIError("cannot get offset of field " + name + " with type oop, jobject or OopHandle");
         }
         classMirrorOffset = offset;
         classMirrorIsHandle = isHandle;
@@ -647,6 +652,8 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final boolean inlineContiguousAllocationSupported = getFieldValue("CompilerToVM::Data::_supports_inline_contig_alloc", Boolean.class);
     public final long heapEndAddress = getFieldValue("CompilerToVM::Data::_heap_end_addr", Long.class, "HeapWord**");
     public final long heapTopAddress = getFieldValue("CompilerToVM::Data::_heap_top_addr", Long.class, isJDK8 ? "HeapWord**" : "HeapWord* volatile*");
+
+    public final boolean cmsIncrementalMode = getFlag("CMSIncrementalMode", Boolean.class, false);
 
     public final long inlineCacheMissStub = getFieldValue("CompilerToVM::Data::SharedRuntime_ic_miss_stub", Long.class, "address");
     public final long handleWrongMethodStub = getFieldValue("CompilerToVM::Data::SharedRuntime_handle_wrong_method_stub", Long.class, "address");

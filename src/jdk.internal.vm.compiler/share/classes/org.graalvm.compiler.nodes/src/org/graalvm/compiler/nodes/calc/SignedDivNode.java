@@ -63,29 +63,9 @@ public class SignedDivNode extends IntegerDivRemNode implements LIRLowerable {
             return ConstantNode.forIntegerStamp(stamp(), forX.asJavaConstant().asLong() / y);
         } else if (forY.isConstant()) {
             long c = forY.asJavaConstant().asLong();
-            if (c == 1) {
-                return forX;
-            }
-            if (c == -1) {
-                return NegateNode.create(forX);
-            }
-            long abs = Math.abs(c);
-            if (CodeUtil.isPowerOf2(abs) && forX.stamp() instanceof IntegerStamp) {
-                ValueNode dividend = forX;
-                IntegerStamp stampX = (IntegerStamp) forX.stamp();
-                int log2 = CodeUtil.log2(abs);
-                // no rounding if dividend is positive or if its low bits are always 0
-                if (stampX.canBeNegative() || (stampX.upMask() & (abs - 1)) != 0) {
-                    int bits = PrimitiveStamp.getBits(stamp());
-                    RightShiftNode sign = new RightShiftNode(forX, ConstantNode.forInt(bits - 1));
-                    UnsignedRightShiftNode round = new UnsignedRightShiftNode(sign, ConstantNode.forInt(bits - log2));
-                    dividend = BinaryArithmeticNode.add(dividend, round);
-                }
-                RightShiftNode shift = new RightShiftNode(dividend, ConstantNode.forInt(log2));
-                if (c < 0) {
-                    return NegateNode.create(shift);
-                }
-                return shift;
+            ValueNode v = canonical(forX, c);
+            if (v != null) {
+                return v;
             }
         }
 
@@ -111,6 +91,34 @@ public class SignedDivNode extends IntegerDivRemNode implements LIRLowerable {
         }
 
         return this;
+    }
+
+    public static ValueNode canonical(ValueNode forX, long c) {
+        if (c == 1) {
+            return forX;
+        }
+        if (c == -1) {
+            return NegateNode.create(forX);
+        }
+        long abs = Math.abs(c);
+        if (CodeUtil.isPowerOf2(abs) && forX.stamp() instanceof IntegerStamp) {
+            ValueNode dividend = forX;
+            IntegerStamp stampX = (IntegerStamp) forX.stamp();
+            int log2 = CodeUtil.log2(abs);
+            // no rounding if dividend is positive or if its low bits are always 0
+            if (stampX.canBeNegative() || (stampX.upMask() & (abs - 1)) != 0) {
+                int bits = PrimitiveStamp.getBits(forX.stamp());
+                RightShiftNode sign = new RightShiftNode(forX, ConstantNode.forInt(bits - 1));
+                UnsignedRightShiftNode round = new UnsignedRightShiftNode(sign, ConstantNode.forInt(bits - log2));
+                dividend = BinaryArithmeticNode.add(dividend, round);
+            }
+            RightShiftNode shift = new RightShiftNode(dividend, ConstantNode.forInt(log2));
+            if (c < 0) {
+                return NegateNode.create(shift);
+            }
+            return shift;
+        }
+        return null;
     }
 
     @Override

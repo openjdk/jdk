@@ -67,7 +67,7 @@ public class IdentityHashCodeNode extends FixedWithNextNode implements Canonical
         if (object.isConstant()) {
             assert object.stamp() instanceof AbstractObjectStamp;
             JavaConstant c = (JavaConstant) object.asConstant();
-            if (ImmutableCode.getValue(getOptions())) {
+            if (ImmutableCode.getValue(tool.getOptions())) {
                 return this;
             }
             JavaConstant identityHashCode = null;

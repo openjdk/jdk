@@ -22,9 +22,9 @@
  */
 
 #include "precompiled.hpp"
-#include "prims/jvm.h"
-#include "runtime/arguments.hpp"
+#include "jvm.h"
 #include "unittest.hpp"
+#include "runtime/arguments.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 

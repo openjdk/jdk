@@ -24,16 +24,13 @@ package org.graalvm.compiler.hotspot.amd64;
 
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.HINT;
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
 
-import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
-import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.debug.GraalError;
@@ -41,10 +38,8 @@ import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.StandardOp.LoadConstantOp;
 import org.graalvm.compiler.lir.amd64.AMD64LIRInstruction;
-import org.graalvm.compiler.lir.amd64.AMD64Move;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
-import jdk.vm.ci.amd64.AMD64Kind;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
@@ -177,91 +172,6 @@ public class AMD64HotSpotMove {
         @Override
         public AllocatableValue getResult() {
             return result;
-        }
-    }
-
-    public static final class CompressPointer extends AMD64LIRInstruction {
-        public static final LIRInstructionClass<CompressPointer> TYPE = LIRInstructionClass.create(CompressPointer.class);
-
-        private final CompressEncoding encoding;
-        private final boolean nonNull;
-
-        @Def({REG, HINT}) protected AllocatableValue result;
-        @Use({REG}) protected AllocatableValue input;
-        @Alive({REG, ILLEGAL}) protected AllocatableValue baseRegister;
-
-        public CompressPointer(AllocatableValue result, AllocatableValue input, AllocatableValue baseRegister, CompressEncoding encoding, boolean nonNull) {
-            super(TYPE);
-            this.result = result;
-            this.input = input;
-            this.baseRegister = baseRegister;
-            this.encoding = encoding;
-            this.nonNull = nonNull;
-        }
-
-        @Override
-        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
-            AMD64Move.move(AMD64Kind.QWORD, crb, masm, result, input);
-
-            Register resReg = asRegister(result);
-            if (encoding.hasBase() || GeneratePIC.getValue(crb.getOptions())) {
-                Register baseReg = asRegister(baseRegister);
-                if (!nonNull) {
-                    masm.testq(resReg, resReg);
-                    masm.cmovq(ConditionFlag.Equal, resReg, baseReg);
-                }
-                masm.subq(resReg, baseReg);
-            }
-
-            if (encoding.hasShift()) {
-                masm.shrq(resReg, encoding.getShift());
-            }
-        }
-    }
-
-    public static final class UncompressPointer extends AMD64LIRInstruction {
-        public static final LIRInstructionClass<UncompressPointer> TYPE = LIRInstructionClass.create(UncompressPointer.class);
-
-        private final CompressEncoding encoding;
-        private final boolean nonNull;
-
-        @Def({REG, HINT}) protected AllocatableValue result;
-        @Use({REG}) protected AllocatableValue input;
-        @Alive({REG, ILLEGAL}) protected AllocatableValue baseRegister;
-
-        public UncompressPointer(AllocatableValue result, AllocatableValue input, AllocatableValue baseRegister, CompressEncoding encoding, boolean nonNull) {
-            super(TYPE);
-            this.result = result;
-            this.input = input;
-            this.baseRegister = baseRegister;
-            this.encoding = encoding;
-            this.nonNull = nonNull;
-        }
-
-        @Override
-        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
-            AMD64Move.move(AMD64Kind.DWORD, crb, masm, result, input);
-
-            Register resReg = asRegister(result);
-            if (encoding.getShift() != 0) {
-                masm.shlq(resReg, encoding.getShift());
-            }
-
-            if (encoding.hasBase() || GeneratePIC.getValue(crb.getOptions())) {
-                if (nonNull) {
-                    masm.addq(resReg, asRegister(baseRegister));
-                } else {
-                    if (!encoding.hasShift()) {
-                        // if encoding.shift != 0, the flags are already set by the shlq
-                        masm.testq(resReg, resReg);
-                    }
-
-                    Label done = new Label();
-                    masm.jccb(ConditionFlag.Equal, done);
-                    masm.addq(resReg, asRegister(baseRegister));
-                    masm.bind(done);
-                }
-            }
         }
     }
 

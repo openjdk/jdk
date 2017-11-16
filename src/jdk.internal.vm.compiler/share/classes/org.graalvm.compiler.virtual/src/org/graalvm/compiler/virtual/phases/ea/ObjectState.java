@@ -68,6 +68,7 @@ public class ObjectState {
     }
 
     public ObjectState(ValueNode[] entries, LockState locks, boolean ensureVirtualized) {
+        assert checkIllegalValues(entries);
         this.entries = entries;
         this.locks = locks;
         this.ensureVirtualized = ensureVirtualized;
@@ -90,6 +91,30 @@ public class ObjectState {
 
     public ObjectState cloneState() {
         return new ObjectState(this);
+    }
+
+    /**
+     * Ensure that if an {@link JavaConstant#forIllegal() illegal value} is seen that the previous
+     * value is a double word value.
+     */
+    public static boolean checkIllegalValues(ValueNode[] values) {
+        if (values != null) {
+            for (int v = 1; v < values.length; v++) {
+                checkIllegalValue(values, v);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Ensure that if an {@link JavaConstant#forIllegal() illegal value} is seen that the previous
+     * value is a double word value.
+     */
+    public static boolean checkIllegalValue(ValueNode[] values, int v) {
+        if (v > 0 && values[v].isConstant() && values[v].asConstant().equals(JavaConstant.forIllegal())) {
+            assert values[v - 1].getStackKind().needsTwoSlots();
+        }
+        return true;
     }
 
     public EscapeObjectState createEscapeObjectState(DebugContext debug, VirtualObjectNode virtual) {

@@ -235,8 +235,8 @@ bool MallocSiteTable::walk_malloc_site(MallocSiteWalker* walker) {
 
 
 void MallocSiteTable::AccessLock::exclusiveLock() {
-  jint target;
-  jint val;
+  int target;
+  int val;
 
   assert(_lock_state != ExclusiveLock, "Can only call once");
   assert(*_lock >= 0, "Can not content exclusive lock");

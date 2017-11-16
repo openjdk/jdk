@@ -23,13 +23,13 @@
 package org.graalvm.compiler.printer;
 
 import static org.graalvm.compiler.debug.DebugOptions.PrintCFG;
-import static org.graalvm.compiler.printer.GraalDebugHandlersFactory.createDumpPath;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -153,8 +153,8 @@ public class CFGPrinterObserver implements DebugDumpHandler {
 
         if (cfgPrinter == null) {
             try {
-                Graph graph = debug.contextLookupTopdown(Graph.class);
-                cfgFile = createDumpPath(options, graph, "cfg", false).toFile();
+                Path dumpFile = debug.getDumpPath(".cfg", false);
+                cfgFile = dumpFile.toFile();
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(cfgFile));
                 cfgPrinter = new CFGPrinter(out);
             } catch (IOException e) {

@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpHandler;
@@ -392,6 +393,20 @@ public class GraalTest {
      * {@link DebugDumpHandler}s closed in {@link #afterTest()}.
      */
     protected DebugContext getDebugContext(OptionValues options) {
+        return getDebugContext(options, null, null);
+    }
+
+    /**
+     * Gets a {@link DebugContext} object corresponding to {@code options}, creating a new one if
+     * none currently exists.Debug contexts created by this method will have their
+     * {@link DebugDumpHandler}s closed in {@link #afterTest()}.
+     *
+     * @param options currently active options
+     * @param id identification of the compilation or {@code null}
+     * @param method method to use for a proper description of the context or {@code null}
+     * @return configured context for compilation
+     */
+    protected DebugContext getDebugContext(OptionValues options, String id, ResolvedJavaMethod method) {
         List<DebugContext> cached = cachedDebugs.get();
         if (cached == null) {
             cached = new ArrayList<>();
@@ -402,7 +417,13 @@ public class GraalTest {
                 return debug;
             }
         }
-        DebugContext debug = DebugContext.create(options, NO_DESCRIPTION, NO_GLOBAL_METRIC_VALUES, DEFAULT_LOG_STREAM, getDebugHandlersFactories());
+        final DebugContext.Description descr;
+        if (method == null) {
+            descr = NO_DESCRIPTION;
+        } else {
+            descr = new DebugContext.Description(method, id == null ? method.getName() : id);
+        }
+        DebugContext debug = DebugContext.create(options, descr, NO_GLOBAL_METRIC_VALUES, DEFAULT_LOG_STREAM, getDebugHandlersFactories());
         cached.add(debug);
         return debug;
     }

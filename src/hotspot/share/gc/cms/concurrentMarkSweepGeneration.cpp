@@ -2296,7 +2296,7 @@ bool CMSCollector::verify_after_remark() {
   // way with the marking information used by GC.
   NoRefDiscovery no_discovery(ref_processor());
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
   DerivedPointerTableDeactivate dpt_deact;
 #endif
 
@@ -2869,7 +2869,7 @@ void CMSCollector::checkpointRootsInitialWork() {
   print_eden_and_survivor_chunk_arrays();
 
   {
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     DerivedPointerTableDeactivate dpt_deact;
 #endif
     if (CMSParallelInitialMarkEnabled) {
@@ -4171,7 +4171,7 @@ void CMSCollector::checkpointRootsFinalWork() {
   print_eden_and_survivor_chunk_arrays();
 
   {
-#if defined(COMPILER2) || INCLUDE_JVMCI
+#if COMPILER2_OR_JVMCI
     DerivedPointerTableDeactivate dpt_deact;
 #endif
 

@@ -195,9 +195,12 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
     public InstalledCode createInstalledCode(DebugContext debug, ResolvedJavaMethod method, CompilationRequest compilationRequest, CompilationResult compilationResult,
                     SpeculationLog speculationLog, InstalledCode predefinedInstalledCode, boolean isDefault, Object[] context) {
         Object[] debugContext = context != null ? context : new Object[]{getProviders().getCodeCache(), method, compilationResult};
-        CodeInstallationTask[] tasks = new CodeInstallationTask[codeInstallationTaskFactories.size()];
-        for (int i = 0; i < codeInstallationTaskFactories.size(); i++) {
-            tasks[i] = codeInstallationTaskFactories.get(i).create();
+        CodeInstallationTask[] tasks;
+        synchronized (this) {
+            tasks = new CodeInstallationTask[codeInstallationTaskFactories.size()];
+            for (int i = 0; i < codeInstallationTaskFactories.size(); i++) {
+                tasks[i] = codeInstallationTaskFactories.get(i).create();
+            }
         }
         try (DebugContext.Scope s2 = debug.scope("CodeInstall", debugContext);
                         DebugContext.Activation a = debug.activate()) {

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm.h"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
@@ -41,7 +42,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvm.h"
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"
@@ -409,6 +409,7 @@ void nmethod::init_defaults() {
 #if INCLUDE_JVMCI
   _jvmci_installed_code   = NULL;
   _speculation_log        = NULL;
+  _jvmci_installed_code_triggers_unloading = false;
 #endif
 }
 
@@ -461,8 +462,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   AbstractCompiler* compiler,
   int comp_level
 #if INCLUDE_JVMCI
-  , Handle installed_code,
-  Handle speculationLog
+  , jweak installed_code,
+  jweak speculationLog
 #endif
 )
 {
@@ -642,8 +643,8 @@ nmethod::nmethod(
   AbstractCompiler* compiler,
   int comp_level
 #if INCLUDE_JVMCI
-  , Handle installed_code,
-  Handle speculation_log
+  , jweak installed_code,
+  jweak speculation_log
 #endif
   )
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
@@ -671,8 +672,14 @@ nmethod::nmethod(
     set_ctable_begin(header_begin() + _consts_offset);
 
 #if INCLUDE_JVMCI
-    _jvmci_installed_code = installed_code();
-    _speculation_log = (instanceOop)speculation_log();
+    _jvmci_installed_code = installed_code;
+    _speculation_log = speculation_log;
+    oop obj = JNIHandles::resolve(installed_code);
+    if (obj == NULL || (obj->is_a(HotSpotNmethod::klass()) && HotSpotNmethod::isDefault(obj))) {
+      _jvmci_installed_code_triggers_unloading = false;
+    } else {
+      _jvmci_installed_code_triggers_unloading = true;
+    }
 
     if (compiler->is_jvmci()) {
       // JVMCI might not produce any stub sections
@@ -1026,8 +1033,6 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
                   " unloadable, Method*(" INTPTR_FORMAT
                   "), cause(" INTPTR_FORMAT ")",
                   p2i(this), p2i(_method), p2i(cause));
-    if (!Universe::heap()->is_gc_active())
-      cause->klass()->print_on(&ls);
   }
   // Unlink the osr method, so we do not look this up again
   if (is_osr_method()) {
@@ -1077,14 +1082,8 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
 #if INCLUDE_JVMCI
   // The method can only be unloaded after the pointer to the installed code
   // Java wrapper is no longer alive. Here we need to clear out this weak
-  // reference to the dead object. Nulling out the reference has to happen
-  // after the method is unregistered since the original value may be still
-  // tracked by the rset.
+  // reference to the dead object.
   maybe_invalidate_installed_code();
-  // Clear these out after the nmethod has been unregistered and any
-  // updates to the InstalledCode instance have been performed.
-  _jvmci_installed_code = NULL;
-  _speculation_log = NULL;
 #endif
 
   // The Method* is gone at this point
@@ -1246,10 +1245,6 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       if (nmethod_needs_unregister) {
         Universe::heap()->unregister_nmethod(this);
-#ifdef JVMCI
-        _jvmci_installed_code = NULL;
-        _speculation_log = NULL;
-#endif
       }
       flush_dependencies(NULL);
     }
@@ -1313,6 +1308,11 @@ void nmethod::flush() {
   if (on_scavenge_root_list()) {
     CodeCache::drop_scavenge_root_nmethod(this);
   }
+
+#if INCLUDE_JVMCI
+  assert(_jvmci_installed_code == NULL, "should have been nulled out when transitioned to zombie");
+  assert(_speculation_log == NULL, "should have been nulled out when transitioned to zombie");
+#endif
 
   CodeBlob::flush();
   CodeCache::free(this);
@@ -1500,29 +1500,18 @@ bool nmethod::do_unloading_oops(address low_boundary, BoolObjectClosure* is_aliv
 
 #if INCLUDE_JVMCI
 bool nmethod::do_unloading_jvmci(BoolObjectClosure* is_alive, bool unloading_occurred) {
-  bool is_unloaded = false;
-  // Follow JVMCI method
-  BarrierSet* bs = Universe::heap()->barrier_set();
   if (_jvmci_installed_code != NULL) {
-    if (_jvmci_installed_code->is_a(HotSpotNmethod::klass()) && HotSpotNmethod::isDefault(_jvmci_installed_code)) {
-      if (!is_alive->do_object_b(_jvmci_installed_code)) {
+    if (JNIHandles::is_global_weak_cleared(_jvmci_installed_code)) {
+      if (_jvmci_installed_code_triggers_unloading) {
+        // jweak reference processing has already cleared the referent
+        make_unloaded(is_alive, NULL);
+        return true;
+      } else {
         clear_jvmci_installed_code();
       }
-    } else {
-      if (can_unload(is_alive, (oop*)&_jvmci_installed_code, unloading_occurred)) {
-        return true;
-      }
     }
   }
-
-  if (_speculation_log != NULL) {
-    if (!is_alive->do_object_b(_speculation_log)) {
-      bs->write_ref_nmethod_pre(&_speculation_log, this);
-      _speculation_log = NULL;
-      bs->write_ref_nmethod_post(&_speculation_log, this);
-    }
-  }
-  return is_unloaded;
+  return false;
 }
 #endif
 
@@ -1593,15 +1582,6 @@ void nmethod::oops_do(OopClosure* f, bool allow_zombie) {
     // %%% Note:  On SPARC we patch only a 4-byte trap, not a full NativeJump.
     // (See comment above.)
   }
-
-#if INCLUDE_JVMCI
-  if (_jvmci_installed_code != NULL) {
-    f->do_oop((oop*) &_jvmci_installed_code);
-  }
-  if (_speculation_log != NULL) {
-    f->do_oop((oop*) &_speculation_log);
-  }
-#endif
 
   RelocIterator iter(this, low_boundary);
 
@@ -2860,43 +2840,49 @@ void nmethod::print_statistics() {
 
 #if INCLUDE_JVMCI
 void nmethod::clear_jvmci_installed_code() {
-  // write_ref_method_pre/post can only be safely called at a
-  // safepoint or while holding the CodeCache_lock
-  assert(CodeCache_lock->is_locked() ||
-         SafepointSynchronize::is_at_safepoint(), "should be performed under a lock for consistency");
+  assert_locked_or_safepoint(Patching_lock);
   if (_jvmci_installed_code != NULL) {
-    // This must be done carefully to maintain nmethod remembered sets properly
-    BarrierSet* bs = Universe::heap()->barrier_set();
-    bs->write_ref_nmethod_pre(&_jvmci_installed_code, this);
+    JNIHandles::destroy_weak_global(_jvmci_installed_code);
     _jvmci_installed_code = NULL;
-    bs->write_ref_nmethod_post(&_jvmci_installed_code, this);
+  }
+}
+
+void nmethod::clear_speculation_log() {
+  assert_locked_or_safepoint(Patching_lock);
+  if (_speculation_log != NULL) {
+    JNIHandles::destroy_weak_global(_speculation_log);
+    _speculation_log = NULL;
   }
 }
 
 void nmethod::maybe_invalidate_installed_code() {
   assert(Patching_lock->is_locked() ||
          SafepointSynchronize::is_at_safepoint(), "should be performed under a lock for consistency");
-  oop installed_code = jvmci_installed_code();
+  oop installed_code = JNIHandles::resolve(_jvmci_installed_code);
   if (installed_code != NULL) {
+    // Update the values in the InstalledCode instance if it still refers to this nmethod
     nmethod* nm = (nmethod*)InstalledCode::address(installed_code);
-    if (nm == NULL || nm != this) {
-      // The link has been broken or the InstalledCode instance is
-      // associated with another nmethod so do nothing.
-      return;
+    if (nm == this) {
+      if (!is_alive()) {
+        // Break the link between nmethod and InstalledCode such that the nmethod
+        // can subsequently be flushed safely.  The link must be maintained while
+        // the method could have live activations since invalidateInstalledCode
+        // might want to invalidate all existing activations.
+        InstalledCode::set_address(installed_code, 0);
+        InstalledCode::set_entryPoint(installed_code, 0);
+      } else if (is_not_entrant()) {
+        // Remove the entry point so any invocation will fail but keep
+        // the address link around that so that existing activations can
+        // be invalidated.
+        InstalledCode::set_entryPoint(installed_code, 0);
+      }
     }
-    if (!is_alive()) {
-      // Break the link between nmethod and InstalledCode such that the nmethod
-      // can subsequently be flushed safely.  The link must be maintained while
-      // the method could have live activations since invalidateInstalledCode
-      // might want to invalidate all existing activations.
-      InstalledCode::set_address(installed_code, 0);
-      InstalledCode::set_entryPoint(installed_code, 0);
-    } else if (is_not_entrant()) {
-      // Remove the entry point so any invocation will fail but keep
-      // the address link around that so that existing activations can
-      // be invalidated.
-      InstalledCode::set_entryPoint(installed_code, 0);
-    }
+  }
+  if (!is_alive()) {
+    // Clear these out after the nmethod has been unregistered and any
+    // updates to the InstalledCode instance have been performed.
+    clear_jvmci_installed_code();
+    clear_speculation_log();
   }
 }
 
@@ -2916,45 +2902,49 @@ void nmethod::invalidate_installed_code(Handle installedCode, TRAPS) {
   {
     MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
     // This relationship can only be checked safely under a lock
-    assert(nm == NULL || !nm->is_alive() || nm->jvmci_installed_code() == installedCode(), "sanity check");
+    assert(!nm->is_alive() || nm->jvmci_installed_code() == installedCode(), "sanity check");
   }
 #endif
 
   if (nm->is_alive()) {
-    // The nmethod state machinery maintains the link between the
-    // HotSpotInstalledCode and nmethod* so as long as the nmethod appears to be
-    // alive assume there is work to do and deoptimize the nmethod.
+    // Invalidating the InstalledCode means we want the nmethod
+    // to be deoptimized.
     nm->mark_for_deoptimization();
     VM_Deoptimize op;
     VMThread::execute(&op);
   }
 
+  // Multiple threads could reach this point so we now need to
+  // lock and re-check the link to the nmethod so that only one
+  // thread clears it.
   MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
-  // Check that it's still associated with the same nmethod and break
-  // the link if it is.
   if (InstalledCode::address(installedCode) == nativeMethod) {
-    InstalledCode::set_address(installedCode, 0);
+      InstalledCode::set_address(installedCode, 0);
   }
+}
+
+oop nmethod::jvmci_installed_code() {
+  return JNIHandles::resolve(_jvmci_installed_code);
+}
+
+oop nmethod::speculation_log() {
+  return JNIHandles::resolve(_speculation_log);
 }
 
 char* nmethod::jvmci_installed_code_name(char* buf, size_t buflen) {
   if (!this->is_compiled_by_jvmci()) {
     return NULL;
   }
-  oop installedCode = this->jvmci_installed_code();
-  if (installedCode != NULL) {
-    oop installedCodeName = NULL;
-    if (installedCode->is_a(InstalledCode::klass())) {
-      installedCodeName = InstalledCode::name(installedCode);
+  oop installed_code = JNIHandles::resolve(_jvmci_installed_code);
+  if (installed_code != NULL) {
+    oop installed_code_name = NULL;
+    if (installed_code->is_a(InstalledCode::klass())) {
+      installed_code_name = InstalledCode::name(installed_code);
     }
-    if (installedCodeName != NULL) {
-      return java_lang_String::as_utf8_string(installedCodeName, buf, (int)buflen);
-    } else {
-      jio_snprintf(buf, buflen, "null");
-      return buf;
+    if (installed_code_name != NULL) {
+      return java_lang_String::as_utf8_string(installed_code_name, buf, (int)buflen);
     }
   }
-  jio_snprintf(buf, buflen, "noInstalledCode");
-  return buf;
+  return NULL;
 }
 #endif

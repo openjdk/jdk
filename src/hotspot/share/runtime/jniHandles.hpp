@@ -82,6 +82,7 @@ class JNIHandles : AllStatic {
   // Weak global handles
   static jobject make_weak_global(Handle obj);
   static void destroy_weak_global(jobject handle);
+  static bool is_global_weak_cleared(jweak handle); // Test jweak without resolution
 
   // Sentinel marking deleted handles in block. Note that we cannot store NULL as
   // the sentinel, since clearing weak global JNI refs are done by storing NULL in

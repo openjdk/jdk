@@ -94,7 +94,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
             head.addContent(metaRefresh);
         }
 
-        head.addContent(getStyleSheetProperties(configuration));
+        addStyleSheetProperties(configuration, head);
 
         ContentBuilder bodyContent = new ContentBuilder();
         bodyContent.addContent(HtmlTree.NOSCRIPT(

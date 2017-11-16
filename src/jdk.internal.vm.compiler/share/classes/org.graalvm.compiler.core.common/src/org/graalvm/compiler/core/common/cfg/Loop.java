@@ -41,7 +41,6 @@ public abstract class Loop<T extends AbstractBlockBase<T>> {
         this.parent = parent;
         if (parent != null) {
             this.depth = parent.getDepth() + 1;
-            parent.getChildren().add(this);
         } else {
             this.depth = 1;
         }

@@ -322,7 +322,9 @@
 #endif
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
+#ifndef BSD
 #define BSD
+#endif // BSD defined in <sys/param.h>
 #define BSD_ONLY(code) code
 #define NOT_BSD(code)
 #else
