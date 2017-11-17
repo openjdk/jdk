@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,12 +22,11 @@
  */
 
 /**
- * The classes and interfaces in this package have been deprecated. New
- * classes should not be added to this package. The {@code java.security}
- * package contains suitable replacements. See {@link java.security.Policy}
- * and related classes for details. This package is subject to removal in a
- * future version of Java SE.
+ * JDK-8191306 Math.abs corner case with optimistic typing
  *
- * @since 1.1
+ * @test
+ * @run
  */
-package java.security.acl;
+
+print(Math.abs(-2147483648))
+print(Math.abs(java.lang.Integer.MIN_VALUE))

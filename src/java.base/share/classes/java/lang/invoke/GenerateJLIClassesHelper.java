@@ -25,14 +25,14 @@
 
 package java.lang.invoke;
 
-import java.util.Map;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import java.util.ArrayList;
-import java.util.HashSet;
 import sun.invoke.util.Wrapper;
 
-import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Helper class to assist the GenerateJLIClassesPlugin to get access to
@@ -118,8 +118,7 @@ class GenerateJLIClassesHelper {
                 // require an even more complex naming scheme
                 LambdaForm reinvoker = makeReinvokerFor(methodTypes[i]);
                 forms.add(reinvoker);
-                String speciesSig = BoundMethodHandle
-                        .speciesData(reinvoker).fieldSignature();
+                String speciesSig = BoundMethodHandle.speciesDataFor(reinvoker).key();
                 assert(speciesSig.equals("L"));
                 names.add(reinvoker.kind.defaultLambdaName + "_" + speciesSig);
 
@@ -205,20 +204,19 @@ class GenerateJLIClassesHelper {
                 DelegatingMethodHandle.NF_getTarget);
     }
 
-    static Map.Entry<String, byte[]> generateConcreteBMHClassBytes(
-            final String types) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    static Map.Entry<String, byte[]> generateConcreteBMHClassBytes(final String types) {
         for (char c : types.toCharArray()) {
             if ("LIJFD".indexOf(c) < 0) {
                 throw new IllegalArgumentException("All characters must "
                         + "correspond to a basic field type: LIJFD");
             }
         }
-        String shortTypes = LambdaForm.shortenSignature(types);
-        final String className =
-                BoundMethodHandle.Factory.speciesInternalClassName(shortTypes);
-        return Map.entry(className,
-                         BoundMethodHandle.Factory.generateConcreteBMHClassBytes(
-                                 shortTypes, types, className));
+        final BoundMethodHandle.SpeciesData species = BoundMethodHandle.SPECIALIZER.findSpecies(types);
+        final String className = species.speciesCode().getName();
+        final ClassSpecializer.Factory factory = BoundMethodHandle.SPECIALIZER.factory();
+        final byte[] code = factory.generateConcreteSpeciesCodeFile(className, species);
+        return Map.entry(className.replace('.', '/'), code);
     }
 
 }

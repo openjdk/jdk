@@ -40,12 +40,13 @@ import java.io.*;
  * @author Benjamin Renaud
  * @since 1.1
  *
- * @deprecated This class is no longer used. Its functionality has been
- * replaced by {@code java.security.KeyStore}, the
- * {@code java.security.cert} package, and
- * {@code java.security.Principal}.
+ * @deprecated This class is deprecated and subject to removal in a future
+ *     version of Java SE. It has been replaced by
+ *     {@code java.security.KeyStore}, the {@code java.security.cert} package,
+ *     and {@code java.security.Principal}.
  */
-@Deprecated(since="1.2")
+@Deprecated(since="1.2", forRemoval=true)
+@SuppressWarnings("removal")
 public abstract class Signer extends Identity {
 
     private static final long serialVersionUID = -1763464102261361480L;
