@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug      4749567 8071982 8175200 8186332
- * @summary  Test the output for -header, -footer, -nooverview, -nodeprecatedlist, -nonavbar, -notree, -stylesheetfile options.
+ * @bug      4749567 8071982 8175200 8186332 8185371
+ * @summary  Test the output for -header, -footer, -nooverview, -nodeprecatedlist, -nonavbar, -notree,
+ *           -stylesheetfile, --main-stylesheet, --add-stylesheet options.
  * @author   Bhavesh Patel
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -115,6 +116,64 @@ public class TestOptions extends JavadocTester {
         checkOutput("custom-stylesheet.css", true, "Custom javadoc style sheet");
         checkOutput("pkg/Foo.html", true, "<link rel=\"stylesheet\" type=\"text/css\" "
                 + "href=\"../custom-stylesheet.css\" title=\"Style\">");
+    }
+
+    @Test
+    void testStylesheetFileAltOption() {
+        javadoc("-d", "out-stylesheet-file",
+                "--main-stylesheet", new File(testSrc, "custom-stylesheet.css").getAbsolutePath(),
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("custom-stylesheet.css", true, "Custom javadoc style sheet");
+        checkOutput("pkg/Foo.html", true, "<link rel=\"stylesheet\" type=\"text/css\" "
+                + "href=\"../custom-stylesheet.css\" title=\"Style\">");
+    }
+
+    @Test
+    void testAdditionalStylesheetFile() {
+        javadoc("-d", "out-additional-css",
+                "--add-stylesheet", new File(testSrc, "additional-stylesheet-1.css").getAbsolutePath(),
+                "--add-stylesheet", new File(testSrc, "additional-stylesheet-2.css").getAbsolutePath(),
+                "--add-stylesheet", new File(testSrc, "additional-stylesheet-3.css").getAbsolutePath(),
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("additional-stylesheet-1.css", true, "Additional javadoc style sheet 1");
+        checkOutput("additional-stylesheet-2.css", true, "Additional javadoc style sheet 2");
+        checkOutput("additional-stylesheet-3.css", true, "Additional javadoc style sheet 3");
+        checkOutput("pkg/Foo.html", true,
+                "<link rel=\"stylesheet\" type=\"text/css\" href=\"../additional-stylesheet-1.css\" title=\"Style\">\n"
+                + "<link rel=\"stylesheet\" type=\"text/css\" href=\"../additional-stylesheet-2.css\" title=\"Style\">\n"
+                + "<link rel=\"stylesheet\" type=\"text/css\" href=\"../additional-stylesheet-3.css\" title=\"Style\">");
+    }
+
+    @Test
+    void testInvalidStylesheetFile() {
+        javadoc("-d", "out-invalid-css",
+                "--main-stylesheet", new File(testSrc, "custom-stylesheet-1.css").getAbsolutePath(),
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                "javadoc: error - File not found:",
+                "custom-stylesheet-1.css");
+    }
+
+    @Test
+    void testInvalidAdditionalStylesheetFiles() {
+        javadoc("-d", "out-invalid-additional-css",
+                "--add-stylesheet", new File(testSrc, "additional-stylesheet-4.css").getAbsolutePath(),
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                "javadoc: error - File not found:",
+                "additional-stylesheet-4.css");
     }
 
     @Test

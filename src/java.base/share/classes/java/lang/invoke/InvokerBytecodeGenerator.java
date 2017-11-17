@@ -183,8 +183,7 @@ class InvokerBytecodeGenerator {
             new java.security.PrivilegedAction<>() {
                 public Void run() {
                     try {
-                        String dumpName = className;
-                        //dumpName = dumpName.replace('/', '-');
+                        String dumpName = className.replace('.','/');
                         File dumpFile = new File(DUMP_CLASS_FILES_DIR, dumpName+".class");
                         System.out.println("dump: " + dumpFile);
                         dumpFile.getParentFile().mkdirs();
@@ -630,7 +629,7 @@ class InvokerBytecodeGenerator {
         String name = form.kind.methodName;
         switch (form.kind) {
             case BOUND_REINVOKER: {
-                name = name + "_" + BoundMethodHandle.speciesData(form).fieldSignature();
+                name = name + "_" + BoundMethodHandle.speciesDataFor(form).key();
                 return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
             }
             case DELEGATE:                  return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);

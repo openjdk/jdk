@@ -133,6 +133,11 @@ public class HtmlConfiguration extends BaseConfiguration {
     public String stylesheetfile = "";
 
     /**
+     * Argument for command line option "--add-stylesheet".
+     */
+    public List<String> additionalStylesheets = new ArrayList<>();
+
+    /**
      * Argument for command line option "-Xdocrootparent".
      */
     public String docrootparent = "";
@@ -301,6 +306,22 @@ public class HtmlConfiguration extends BaseConfiguration {
             DocFile help = DocFile.createFileForInput(this, helpfile);
             if (!help.exists()) {
                 reporter.print(ERROR, getText("doclet.File_not_found", helpfile));
+                return false;
+            }
+        }
+        // check if stylesheetfile exists
+        if (!stylesheetfile.isEmpty()) {
+            DocFile stylesheet = DocFile.createFileForInput(this, stylesheetfile);
+            if (!stylesheet.exists()) {
+                reporter.print(ERROR, getText("doclet.File_not_found", stylesheetfile));
+                return false;
+            }
+        }
+        // check if additional stylesheets exists
+        for (String ssheet : additionalStylesheets) {
+            DocFile ssfile = DocFile.createFileForInput(this, ssheet);
+            if (!ssfile.exists()) {
+                reporter.print(ERROR, getText("doclet.File_not_found", ssheet));
                 return false;
             }
         }
@@ -554,6 +575,13 @@ public class HtmlConfiguration extends BaseConfiguration {
     public Set<Doclet.Option> getSupportedOptions() {
         Resources resources = getResources();
         Doclet.Option[] options = {
+            new Option(resources, "--add-stylesheet", 1) {
+                @Override
+                public boolean process(String opt, List<String> args) {
+                    additionalStylesheets.add(args.get(0));
+                    return true;
+                }
+            },
             new Option(resources, "-bottom", 1) {
                 @Override
                 public boolean process(String opt,  List<String> args) {
@@ -722,7 +750,7 @@ public class HtmlConfiguration extends BaseConfiguration {
                     return true;
                 }
             },
-            new Option(resources, "-stylesheetfile", 1) {
+            new Option(resources, "--main-stylesheet -stylesheetfile", 1) {
                 @Override
                 public boolean process(String opt,  List<String> args) {
                     stylesheetfile = args.get(0);
