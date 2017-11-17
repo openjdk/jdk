@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Basic (sanity) test for JDK-under-test inside a docker image.
- * @requires (docker.support)
+ * @requires docker.support
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -62,8 +62,10 @@ public class DockerBasicTest {
 
 
     private static void testJavaVersion() throws Exception {
-        DockerTestUtils.dockerRunJava(
-            new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", "-version"))
+        DockerRunOptions opts =
+            new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", "-version");
+
+        DockerTestUtils.dockerRunJava(opts)
             .shouldHaveExitValue(0)
             .shouldContain(Platform.vmName);
     }
@@ -79,5 +81,4 @@ public class DockerBasicTest {
             .shouldHaveExitValue(0)
             .shouldContain("Hello Docker");
     }
-
 }
