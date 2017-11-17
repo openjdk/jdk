@@ -76,6 +76,7 @@
 
 #ifdef LINUX
 #include "utilities/elfFile.hpp"
+#include "osContainer_linux.hpp"
 #endif
 
 #define SIZE_T_MAX_VALUE ((size_t) -1)
@@ -1879,6 +1880,16 @@ WB_ENTRY(jboolean, WB_CheckLibSpecifiesNoexecstack(JNIEnv* env, jobject o, jstri
   return ret;
 WB_END
 
+WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
+  LINUX_ONLY(return OSContainer::is_containerized();)
+  return false;
+WB_END
+
+WB_ENTRY(void, WB_PrintOsInfo(JNIEnv* env, jobject o))
+  os::print_os_info(tty);
+WB_END
+
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2087,7 +2098,10 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_RequestConcurrentGCPhase},
   {CC"checkLibSpecifiesNoexecstack", CC"(Ljava/lang/String;)Z",
                                                       (void*)&WB_CheckLibSpecifiesNoexecstack},
+  {CC"isContainerized",           CC"()Z",            (void*)&WB_IsContainerized },
+  {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
 };
+
 
 #undef CC
 

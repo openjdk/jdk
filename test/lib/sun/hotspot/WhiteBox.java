@@ -536,4 +536,9 @@ public class WhiteBox {
 
   // Returns true on linux if library has the noexecstack flag set.
   public native boolean checkLibSpecifiesNoexecstack(String libfilename);
+
+  // Container testing
+  public native boolean isContainerized();
+  public native void printOsInfo();
+
 }

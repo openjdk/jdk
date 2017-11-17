@@ -187,6 +187,7 @@ hotspot_tier1_runtime = \
  -runtime/Thread/CancellableThreadTest.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
  -runtime/Unsafe/RangeCheck.java \
+ -runtime/containers/ \
   sanity/ \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java
 
@@ -216,6 +217,7 @@ hotspot_tier2_runtime = \
   serviceability/ \
  -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
+ -runtime/containers/ \
  -:hotspot_tier1_runtime \
  -:hotspot_tier1_serviceability \
  -:hotspot_tier2_runtime_platform_agnostic
@@ -227,6 +229,7 @@ hotspot_tier2_runtime_platform_agnostic = \
 hotspot_tier3_runtime = \
   runtime/ \
   serviceability/ \
+ -runtime/containers/ \
  -:hotspot_tier1_runtime \
  -:hotspot_tier1_serviceability \
  -:hotspot_tier2_runtime_platform_agnostic \
