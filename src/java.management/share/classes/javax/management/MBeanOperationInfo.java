@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,9 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
      * @param descriptor The descriptor for the operation.  This may be null
      * which is equivalent to an empty descriptor.
      *
+     * @throws IllegalArgumentException if {@code impact} is not one of
+     * {@linkplain #ACTION}, {@linkplain #ACTION_INFO}, {@linkplain #INFO} or {@linkplain #UNKNOWN}.
+     *
      * @since 1.6
      */
     public MBeanOperationInfo(String name,
@@ -156,6 +159,12 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
                               Descriptor descriptor) {
 
         super(name, description, descriptor);
+
+        if (impact < INFO || impact > UNKNOWN) {
+            throw new IllegalArgumentException("Argument impact can only be "
+                    + "one of ACTION, ACTION_INFO, "
+                    + "INFO, or UNKNOWN" + " given value is :" + impact);
+        }
 
         if (signature == null || signature.length == 0)
             signature = MBeanParameterInfo.NO_PARAMS;
@@ -259,8 +268,7 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
         case ACTION: impactString = "action"; break;
         case ACTION_INFO: impactString = "action/info"; break;
         case INFO: impactString = "info"; break;
-        case UNKNOWN: impactString = "unknown"; break;
-        default: impactString = "(" + getImpact() + ")";
+        default: impactString = "unknown";
         }
         return getClass().getName() + "[" +
             "description=" + getDescription() + ", " +

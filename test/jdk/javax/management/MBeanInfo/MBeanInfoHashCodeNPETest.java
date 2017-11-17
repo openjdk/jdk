@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,10 +95,6 @@ public class MBeanInfoHashCodeNPETest {
         mbeanOperationInfo = new MBeanOperationInfo(
                 "name", "description", new MBeanParameterInfo[]{}, null, 1, new DescriptorSupport());
         test(mbeanOperationInfo, "type");
-
-        mbeanOperationInfo = new MBeanOperationInfo(
-                "name", "description", new MBeanParameterInfo[]{}, "type", -1, new DescriptorSupport());
-        test(mbeanOperationInfo, "native impact");
 
         mbeanOperationInfo = new MBeanOperationInfo(
                 "name", "description", new MBeanParameterInfo[]{}, "type", 1, null);
