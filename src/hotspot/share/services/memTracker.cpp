@@ -25,11 +25,14 @@
 #include "jvm.h"
 
 #include "runtime/mutex.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_operations.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memReporter.hpp"
 #include "services/mallocTracker.inline.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/vmError.hpp"
 
 #ifdef SOLARIS
   volatile bool NMT_stack_walkable = false;
@@ -173,6 +176,11 @@ void MemTracker::report(bool summary_only, outputStream* output) {
     } else {
       MemDetailReporter rpt(baseline, output);
       rpt.report();
+
+      // Metadata reporting requires a safepoint, so avoid it if VM is not in good state.
+      assert(!VMError::fatal_error_in_progress(), "Do not report metadata in error report");
+      VM_PrintMetadata vmop(output, K);
+      VMThread::execute(&vmop);
     }
   }
 }
