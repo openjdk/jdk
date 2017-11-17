@@ -115,9 +115,9 @@ final class LambdaFormBuffer {
         return true;
     }
 
-    private static int indexOf(NamedFunction fn, NamedFunction[] fns) {
-        for (int i = 0; i < fns.length; i++) {
-            if (fns[i] == fn)  return i;
+    private static int indexOf(NamedFunction fn, List<NamedFunction> fns) {
+        for (int i = 0; i < fns.size(); i++) {
+            if (fns.get(i) == fn)  return i;
         }
         return -1;
     }
@@ -333,7 +333,7 @@ final class LambdaFormBuffer {
         if (oldFns.isEmpty())  return this;
         for (int i = arity; i < length; i++) {
             Name n = names[i];
-            int nfi = oldFns.indexOf(n.function);
+            int nfi = indexOf(n.function, oldFns);
             if (nfi >= 0 && Arrays.equals(n.arguments, forArguments)) {
                 changeName(i, new Name(newFns.get(nfi), n.arguments));
             }
