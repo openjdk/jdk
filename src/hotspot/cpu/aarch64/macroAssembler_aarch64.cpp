@@ -3228,6 +3228,102 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     mvnw(crc, crc);
 }
 
+void MacroAssembler::kernel_crc32c_using_crc32c(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        Register tmp3) {
+    Label CRC_by64_loop, CRC_by4_loop, CRC_by1_loop, CRC_less64, CRC_by64_pre, CRC_by32_loop, CRC_less32, L_exit;
+    assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2, tmp3);
+
+    subs(len, len, 128);
+    br(Assembler::GE, CRC_by64_pre);
+  BIND(CRC_less64);
+    adds(len, len, 128-32);
+    br(Assembler::GE, CRC_by32_loop);
+  BIND(CRC_less32);
+    adds(len, len, 32-4);
+    br(Assembler::GE, CRC_by4_loop);
+    adds(len, len, 4);
+    br(Assembler::GT, CRC_by1_loop);
+    b(L_exit);
+
+  BIND(CRC_by32_loop);
+    ldp(tmp0, tmp1, Address(post(buf, 16)));
+    subs(len, len, 32);
+    crc32cx(crc, crc, tmp0);
+    ldr(tmp2, Address(post(buf, 8)));
+    crc32cx(crc, crc, tmp1);
+    ldr(tmp3, Address(post(buf, 8)));
+    crc32cx(crc, crc, tmp2);
+    crc32cx(crc, crc, tmp3);
+    br(Assembler::GE, CRC_by32_loop);
+    cmn(len, 32);
+    br(Assembler::NE, CRC_less32);
+    b(L_exit);
+
+  BIND(CRC_by4_loop);
+    ldrw(tmp0, Address(post(buf, 4)));
+    subs(len, len, 4);
+    crc32cw(crc, crc, tmp0);
+    br(Assembler::GE, CRC_by4_loop);
+    adds(len, len, 4);
+    br(Assembler::LE, L_exit);
+  BIND(CRC_by1_loop);
+    ldrb(tmp0, Address(post(buf, 1)));
+    subs(len, len, 1);
+    crc32cb(crc, crc, tmp0);
+    br(Assembler::GT, CRC_by1_loop);
+    b(L_exit);
+
+  BIND(CRC_by64_pre);
+    sub(buf, buf, 8);
+    ldp(tmp0, tmp1, Address(buf, 8));
+    crc32cx(crc, crc, tmp0);
+    ldr(tmp2, Address(buf, 24));
+    crc32cx(crc, crc, tmp1);
+    ldr(tmp3, Address(buf, 32));
+    crc32cx(crc, crc, tmp2);
+    ldr(tmp0, Address(buf, 40));
+    crc32cx(crc, crc, tmp3);
+    ldr(tmp1, Address(buf, 48));
+    crc32cx(crc, crc, tmp0);
+    ldr(tmp2, Address(buf, 56));
+    crc32cx(crc, crc, tmp1);
+    ldr(tmp3, Address(pre(buf, 64)));
+
+    b(CRC_by64_loop);
+
+    align(CodeEntryAlignment);
+  BIND(CRC_by64_loop);
+    subs(len, len, 64);
+    crc32cx(crc, crc, tmp2);
+    ldr(tmp0, Address(buf, 8));
+    crc32cx(crc, crc, tmp3);
+    ldr(tmp1, Address(buf, 16));
+    crc32cx(crc, crc, tmp0);
+    ldr(tmp2, Address(buf, 24));
+    crc32cx(crc, crc, tmp1);
+    ldr(tmp3, Address(buf, 32));
+    crc32cx(crc, crc, tmp2);
+    ldr(tmp0, Address(buf, 40));
+    crc32cx(crc, crc, tmp3);
+    ldr(tmp1, Address(buf, 48));
+    crc32cx(crc, crc, tmp0);
+    ldr(tmp2, Address(buf, 56));
+    crc32cx(crc, crc, tmp1);
+    ldr(tmp3, Address(pre(buf, 64)));
+    br(Assembler::GE, CRC_by64_loop);
+
+    // post-loop
+    crc32cx(crc, crc, tmp2);
+    crc32cx(crc, crc, tmp3);
+
+    sub(len, len, 64);
+    add(buf, buf, 8);
+    cmn(len, 128);
+    br(Assembler::NE, CRC_less64);
+  BIND(L_exit);
+}
+
 /**
  * @param crc   register containing existing CRC (32-bit)
  * @param buf   register pointing to input byte buffer (byte*)
@@ -3238,54 +3334,9 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 void MacroAssembler::kernel_crc32c(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp, Register tmp2, Register tmp3) {
-  Label L_exit;
-  Label CRC_by64_loop, CRC_by4_loop, CRC_by1_loop;
-
-    subs(len, len, 64);
-    br(Assembler::GE, CRC_by64_loop);
-    adds(len, len, 64-4);
-    br(Assembler::GE, CRC_by4_loop);
-    adds(len, len, 4);
-    br(Assembler::GT, CRC_by1_loop);
-    b(L_exit);
-
-  BIND(CRC_by4_loop);
-    ldrw(tmp, Address(post(buf, 4)));
-    subs(len, len, 4);
-    crc32cw(crc, crc, tmp);
-    br(Assembler::GE, CRC_by4_loop);
-    adds(len, len, 4);
-    br(Assembler::LE, L_exit);
-  BIND(CRC_by1_loop);
-    ldrb(tmp, Address(post(buf, 1)));
-    subs(len, len, 1);
-    crc32cb(crc, crc, tmp);
-    br(Assembler::GT, CRC_by1_loop);
-    b(L_exit);
-
-    align(CodeEntryAlignment);
-  BIND(CRC_by64_loop);
-    subs(len, len, 64);
-    ldp(tmp, tmp3, Address(post(buf, 16)));
-    crc32cx(crc, crc, tmp);
-    crc32cx(crc, crc, tmp3);
-    ldp(tmp, tmp3, Address(post(buf, 16)));
-    crc32cx(crc, crc, tmp);
-    crc32cx(crc, crc, tmp3);
-    ldp(tmp, tmp3, Address(post(buf, 16)));
-    crc32cx(crc, crc, tmp);
-    crc32cx(crc, crc, tmp3);
-    ldp(tmp, tmp3, Address(post(buf, 16)));
-    crc32cx(crc, crc, tmp);
-    crc32cx(crc, crc, tmp3);
-    br(Assembler::GE, CRC_by64_loop);
-    adds(len, len, 64-4);
-    br(Assembler::GE, CRC_by4_loop);
-    adds(len, len, 4);
-    br(Assembler::GT, CRC_by1_loop);
-  BIND(L_exit);
-    return;
+  kernel_crc32c_using_crc32c(crc, buf, len, table0, table1, table2, table3);
 }
+
 
 SkipIfEqual::SkipIfEqual(
     MacroAssembler* masm, const bool* flag_addr, bool value) {
