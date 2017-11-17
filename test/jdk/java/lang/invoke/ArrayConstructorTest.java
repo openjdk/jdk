@@ -88,4 +88,11 @@ public class ArrayConstructorTest {
         assertEquals(17, a.length);
     }
 
+    @Test(expectedExceptions = {NegativeArraySizeException.class})
+    public static void testArrayConstructorNegativeIndex() throws Throwable {
+        MethodHandle h = MethodHandles.arrayConstructor(String[].class);
+        assertEquals(methodType(String[].class, int.class), h.type());
+        h.invoke(-1); // throws exception
+    }
+
 }

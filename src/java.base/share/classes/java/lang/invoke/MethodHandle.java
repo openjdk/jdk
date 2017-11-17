@@ -886,9 +886,13 @@ public abstract class MethodHandle {
      * to the target method handle.
      * (The array may also be null when zero elements are required.)
      * <p>
-     * If, when the adapter is called, the supplied array argument does
-     * not have the correct number of elements, the adapter will throw
-     * an {@link IllegalArgumentException} instead of invoking the target.
+     * When the adapter is called, the length of the supplied {@code array}
+     * argument is queried as if by {@code array.length} or {@code arraylength}
+     * bytecode. If the adapter accepts a zero-length trailing array argument,
+     * the supplied {@code array} argument can either be a zero-length array or
+     * {@code null}; otherwise, the adapter will throw a {@code NullPointerException}
+     * if the array is {@code null} and throw an {@link IllegalArgumentException}
+     * if the array does not have the correct number of elements.
      * <p>
      * Here are some simple examples of array-spreading method handles:
      * <blockquote><pre>{@code
@@ -902,7 +906,7 @@ assert( (boolean) eq2.invokeExact(new Object[]{ "me", "me" }));
 assert(!(boolean) eq2.invokeExact(new Object[]{ "me", "thee" }));
 // try to spread from anything but a 2-array:
 for (int n = 0; n <= 10; n++) {
-  Object[] badArityArgs = (n == 2 ? null : new Object[n]);
+  Object[] badArityArgs = (n == 2 ? new Object[0] : new Object[n]);
   try { assert((boolean) eq2.invokeExact(badArityArgs) && false); }
   catch (IllegalArgumentException ex) { } // OK
 }
