@@ -58,7 +58,7 @@ public interface JavaLangAccess {
     ConstantPool getConstantPool(Class<?> klass);
 
     /**
-     * Compare-And-Swap the AnnotationType instance corresponding to this class.
+     * Compare-And-Set the AnnotationType instance corresponding to this class.
      * (This method only applies to annotation types.)
      */
     boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType);
