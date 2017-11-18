@@ -226,7 +226,7 @@ public class Table {
      *
      * <p>Notes:
      * <ul>
-     * <liThis currently does not use a {@code <thead>} tag, but probably should, eventually
+     * <li>This currently does not use a {@code <thead>} tag, but probably should, eventually
      * <li>The column styles are not currently applied to the header, but probably should, eventually
      * </ul>
      *
@@ -546,7 +546,7 @@ public class Table {
             sb.append("\"").append(rowIdPrefix).append(rowIndex).append("\":").append(mask);
             rowIndex++;
         }
-        sb.append("};").append(DocletConstants.NL);
+        sb.append("};\n");
 
         // Add the variable defining the tabs
         sb.append("var tabs = {");
@@ -561,7 +561,7 @@ public class Table {
             tabIndex++;
             maskBit = (maskBit << 1);
         }
-        sb.append("};").append(DocletConstants.NL);
+        sb.append("};\n");
 
         // Add the variables defining the stylenames
         appendStyleInfo(sb,
@@ -580,8 +580,7 @@ public class Table {
 
     private void appendStyleInfo(StringBuilder sb, HtmlStyle... styles) {
         for (HtmlStyle style : styles) {
-            sb.append("var ").append(style).append(" = \"").append(style)
-                    .append("\";").append(DocletConstants.NL);
+            sb.append("var ").append(style).append(" = \"").append(style).append("\";\n");
         }
 
     }
