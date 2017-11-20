@@ -3274,7 +3274,8 @@ public:
           "Delay in scheduling GC workers (in milliseconds)")               \
                                                                             \
   product(intx, DeferThrSuspendLoopCount,     4000,                         \
-          "(Unstable) Number of times to iterate in safepoint loop "        \
+          "(Unstable, Deprecated) "                                         \
+          "Number of times to iterate in safepoint loop "                   \
           "before blocking VM threads ")                                    \
           range(-1, max_jint-1)                                             \
                                                                             \
