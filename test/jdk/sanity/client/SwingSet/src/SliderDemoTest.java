@@ -82,6 +82,7 @@ public class SliderDemoTest {
         JSliderOperator jso = new JSliderOperator(jfo,
                 new AccessibleNameChooser(accessibleName));
         if (accessibleName.equals(HORIZONTAL_PLAIN_SLIDER)) {
+            jso.waitHasFocus();
             checkKeyboard(jso);
             checkMouse(jso);
         }
