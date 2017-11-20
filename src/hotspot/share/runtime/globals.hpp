@@ -3280,7 +3280,8 @@ public:
           range(-1, max_jint-1)                                             \
                                                                             \
   product(intx, DeferPollingPageLoopCount,     -1,                          \
-          "(Unsafe,Unstable) Number of iterations in safepoint loop "       \
+          "(Unsafe,Unstable,Deprecated) "                                   \
+          "Number of iterations in safepoint loop "                         \
           "before changing safepoint polling page to RO ")                  \
           range(-1, max_jint-1)                                             \
                                                                             \
