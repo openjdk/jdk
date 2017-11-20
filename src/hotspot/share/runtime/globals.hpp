@@ -3283,7 +3283,7 @@ public:
           "before changing safepoint polling page to RO ")                  \
           range(-1, max_jint-1)                                             \
                                                                             \
-  product(intx, SafepointSpinBeforeYield, 2000, "(Unstable)")               \
+  product(intx, SafepointSpinBeforeYield, 2000, "(Unstable, Deprecated)")   \
           range(0, max_intx)                                                \
                                                                             \
   product(bool, PSChunkLargeArrays, true,                                   \
