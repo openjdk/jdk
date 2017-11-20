@@ -380,6 +380,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "FastTLABRefill",               JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "SafepointSpinBeforeYield",     JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "UseCGroupMemoryLimitForHeap",  JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::jdk(11) },
   { "IgnoreUnverifiableClassesDuringDump", JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
 
