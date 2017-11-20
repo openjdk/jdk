@@ -3274,16 +3274,18 @@ public:
           "Delay in scheduling GC workers (in milliseconds)")               \
                                                                             \
   product(intx, DeferThrSuspendLoopCount,     4000,                         \
-          "(Unstable) Number of times to iterate in safepoint loop "        \
+          "(Unstable, Deprecated) "                                         \
+          "Number of times to iterate in safepoint loop "                   \
           "before blocking VM threads ")                                    \
           range(-1, max_jint-1)                                             \
                                                                             \
   product(intx, DeferPollingPageLoopCount,     -1,                          \
-          "(Unsafe,Unstable) Number of iterations in safepoint loop "       \
+          "(Unsafe,Unstable,Deprecated) "                                   \
+          "Number of iterations in safepoint loop "                         \
           "before changing safepoint polling page to RO ")                  \
           range(-1, max_jint-1)                                             \
                                                                             \
-  product(intx, SafepointSpinBeforeYield, 2000, "(Unstable)")               \
+  product(intx, SafepointSpinBeforeYield, 2000, "(Unstable, Deprecated)")   \
           range(0, max_intx)                                                \
                                                                             \
   product(bool, PSChunkLargeArrays, true,                                   \
