@@ -226,8 +226,13 @@ public class BasicMenuUI extends BasicMenuItemUI
         return (MenuKeyListener)getHandler();
     }
 
+    public Dimension getMinimumSize(JComponent c) {
+        return (((JMenu)menuItem).isTopLevelMenu()) ?
+            c.getPreferredSize() : null;
+    }
+
     public Dimension getMaximumSize(JComponent c) {
-        if (((JMenu)menuItem).isTopLevelMenu() == true) {
+        if (((JMenu)menuItem).isTopLevelMenu()) {
             Dimension d = c.getPreferredSize();
             return new Dimension(d.width, Short.MAX_VALUE);
         }
