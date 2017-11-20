@@ -266,32 +266,55 @@ void SharedClassPathEntry::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void FileMapInfo::allocate_classpath_entry_table() {
+  assert(DumpSharedSpaces, "Sanity");
+
   Thread* THREAD = Thread::current();
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+  ClassPathEntry* jrt = ClassLoader::get_jrt_entry();
+
+  assert(jrt != NULL,
+         "No modular java runtime image present when allocating the CDS classpath entry table");
+
   size_t entry_size = SharedClassUtil::shared_class_path_entry_size(); // assert ( should be 8 byte aligned??)
-  int num_entries = ClassLoader::number_of_classpath_entries();
+  int num_boot_classpath_entries = ClassLoader::num_boot_classpath_entries();
+  int num_app_classpath_entries = ClassLoader::num_app_classpath_entries();
+  int num_entries = num_boot_classpath_entries + num_app_classpath_entries;
   size_t bytes = entry_size * num_entries;
 
   _classpath_entry_table = MetadataFactory::new_array<u8>(loader_data, (int)(bytes + 7 / 8), THREAD);
   _classpath_entry_table_size = num_entries;
   _classpath_entry_size = entry_size;
 
-  assert(ClassLoader::get_jrt_entry() != NULL,
-         "No modular java runtime image present when allocating the CDS classpath entry table");
-
-  for (int i=0; i<num_entries; i++) {
-    ClassPathEntry *cpe = ClassLoader::classpath_entry(i);
-    const char* type = ((i == 0) ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
-
+  // 1. boot class path
+  int i = 0;
+  ClassPathEntry* cpe = jrt;
+  while (cpe != NULL) {
+    const char* type = ((cpe == jrt) ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
     log_info(class, path)("add main shared path (%s) %s", type, cpe->name());
     SharedClassPathEntry* ent = shared_classpath(i);
     ent->init(cpe->name(), THREAD);
-
-    if (i > 0) { // No need to do jimage.
+    if (cpe != jrt) { // No need to do jimage.
       EXCEPTION_MARK; // The following call should never throw, but would exit VM on error.
       SharedClassUtil::update_shared_classpath(cpe, ent, THREAD);
     }
+    cpe = ClassLoader::get_next_boot_classpath_entry(cpe);
+    i++;
   }
+  assert(i == num_boot_classpath_entries,
+         "number of boot class path entry mismatch");
+
+  // 2. app class path
+  ClassPathEntry *acpe = ClassLoader::app_classpath_entries();
+  while (acpe != NULL) {
+    log_info(class, path)("add app shared path %s", acpe->name());
+    SharedClassPathEntry* ent = shared_classpath(i);
+    ent->init(acpe->name(), THREAD);
+    EXCEPTION_MARK;
+    SharedClassUtil::update_shared_classpath(acpe, ent, THREAD);
+    acpe = acpe->next();
+    i ++;
+  }
+  assert(i == num_entries, "number of app class path entry mismatch");
 }
 
 bool FileMapInfo::validate_classpath_entry_table() {
