@@ -84,13 +84,6 @@ void GCArguments::select_gc_ergonomically() {
 
 void GCArguments::initialize_flags() {
 #if INCLUDE_ALL_GCS
-  if (AssumeMP && !UseSerialGC) {
-    if (FLAG_IS_DEFAULT(ParallelGCThreads) && ParallelGCThreads == 1) {
-      warning("If the number of processors is expected to increase from one, then"
-              " you should configure the number of parallel GC threads appropriately"
-              " using -XX:ParallelGCThreads=N");
-    }
-  }
   if (MinHeapFreeRatio == 100) {
     // Keeping the heap 100% free is hard ;-) so limit it to 99%.
     FLAG_SET_ERGO(uintx, MinHeapFreeRatio, 99);
