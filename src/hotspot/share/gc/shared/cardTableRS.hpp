@@ -28,6 +28,7 @@
 #include "gc/shared/cardTableModRefBSForCTRS.hpp"
 #include "memory/memRegion.hpp"
 
+class Generation;
 class Space;
 class OopsInGenClosure;
 

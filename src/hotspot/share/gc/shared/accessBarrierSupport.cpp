@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,18 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/barrierSet.inline.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "memory/universe.hpp"
+#include "classfile/javaClasses.inline.hpp"
+#include "gc/shared/accessBarrierSupport.inline.hpp"
+#include "oops/access.hpp"
 
-BarrierSet* BarrierSet::_bs = NULL;
-
-// count is number of array elements being written
-void BarrierSet::static_write_ref_array_pre(HeapWord* start, size_t count) {
-  assert(count <= (size_t)max_intx, "count too large");
-  if (UseCompressedOops) {
-    Universe::heap()->barrier_set()->write_ref_array_pre((narrowOop*)start, (int)count, false);
+DecoratorSet AccessBarrierSupport::resolve_unknown_oop_ref_strength(DecoratorSet decorators, oop base, ptrdiff_t offset) {
+  DecoratorSet ds = decorators & ~ON_UNKNOWN_OOP_REF;
+  if (!java_lang_ref_Reference::is_referent_field(base, offset)) {
+    ds |= ON_STRONG_OOP_REF;
+  } else if (java_lang_ref_Reference::is_phantom(base)) {
+    ds |= ON_PHANTOM_OOP_REF;
   } else {
-    Universe::heap()->barrier_set()->write_ref_array_pre(      (oop*)start, (int)count, false);
+    ds |= ON_WEAK_OOP_REF;
   }
-}
-
-// count is number of array elements being written
-void BarrierSet::static_write_ref_array_post(HeapWord* start, size_t count) {
-  // simply delegate to instance method
-  Universe::heap()->barrier_set()->write_ref_array(start, count);
+  return ds;
 }
