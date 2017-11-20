@@ -1178,6 +1178,10 @@ public:
           "Use detached threads that are recycled upon termination "        \
           "(for Solaris only)")                                             \
                                                                             \
+  experimental(bool, DisablePrimordialThreadGuardPages, false,              \
+               "Disable the use of stack guard pages if the JVM is loaded " \
+               "on the primordial process thread")                          \
+                                                                            \
   product(bool, UseLWPSynchronization, true,                                \
           "Use LWP-based instead of libthread-based synchronization "       \
           "(SPARC only)")                                                   \

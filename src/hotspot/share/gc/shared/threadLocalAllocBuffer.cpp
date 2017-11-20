@@ -193,7 +193,7 @@ void ThreadLocalAllocBuffer::initialize() {
 
   set_desired_size(initial_desired_size());
 
-  // Following check is needed because at startup the main (primordial)
+  // Following check is needed because at startup the main
   // thread is initialized before the heap is.  The initialization for
   // this thread is redone in startup_initialization below.
   if (Universe::heap() != NULL) {
@@ -240,7 +240,7 @@ void ThreadLocalAllocBuffer::startup_initialization() {
   }
 #endif
 
-  // During jvm startup, the main (primordial) thread is initialized
+  // During jvm startup, the main thread is initialized
   // before the heap is initialized.  So reinitialize it now.
   guarantee(Thread::current()->is_Java_thread(), "tlab initialization thread not Java thread");
   Thread::current()->tlab().initialize();
