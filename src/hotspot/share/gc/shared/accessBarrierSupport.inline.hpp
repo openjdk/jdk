@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,18 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/barrierSet.inline.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "memory/universe.hpp"
+#ifndef SHARE_VM_GC_SHARED_ACCESSBARRIERSUPPORT_INLINE_HPP
+#define SHARE_VM_GC_SHARED_ACCESSBARRIERSUPPORT_INLINE_HPP
 
-BarrierSet* BarrierSet::_bs = NULL;
+#include "gc/shared/accessBarrierSupport.hpp"
 
-// count is number of array elements being written
-void BarrierSet::static_write_ref_array_pre(HeapWord* start, size_t count) {
-  assert(count <= (size_t)max_intx, "count too large");
-  if (UseCompressedOops) {
-    Universe::heap()->barrier_set()->write_ref_array_pre((narrowOop*)start, (int)count, false);
+template <DecoratorSet decorators>
+DecoratorSet AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength(oop base, ptrdiff_t offset) {
+  if (!HasDecorator<decorators, ON_UNKNOWN_OOP_REF>::value) {
+    return decorators;
   } else {
-    Universe::heap()->barrier_set()->write_ref_array_pre(      (oop*)start, (int)count, false);
+    return resolve_unknown_oop_ref_strength(decorators, base, offset);
   }
 }
 
-// count is number of array elements being written
-void BarrierSet::static_write_ref_array_post(HeapWord* start, size_t count) {
-  // simply delegate to instance method
-  Universe::heap()->barrier_set()->write_ref_array(start, count);
-}
+#endif // SHARE_VM_GC_SHARED_ACCESSBARRIERSUPPORT_INLINE_HPP

@@ -3064,6 +3064,25 @@ void java_lang_boxing_object::print(BasicType type, jvalue* value, outputStream*
   }
 }
 
+// Support for java_lang_ref_Reference
+
+bool java_lang_ref_Reference::is_referent_field(oop obj, ptrdiff_t offset) {
+  assert(!oopDesc::is_null(obj), "sanity");
+  if (offset != java_lang_ref_Reference::referent_offset) {
+    return false;
+  }
+
+  Klass* k = obj->klass();
+  if (!k->is_instance_klass()) {
+    return false;
+  }
+
+  InstanceKlass* ik = InstanceKlass::cast(obj->klass());
+  bool is_reference = ik->reference_type() != REF_NONE;
+  assert(!is_reference || ik->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
+  return is_reference;
+}
+
 // Support for java_lang_ref_SoftReference
 
 jlong java_lang_ref_SoftReference::timestamp(oop ref) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,23 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/barrierSet.inline.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "memory/universe.hpp"
+#ifndef SHARE_VM_GC_SHARED_ACCESSBARRIERSUPPORT_HPP
+#define SHARE_VM_GC_SHARED_ACCESSBARRIERSUPPORT_HPP
 
-BarrierSet* BarrierSet::_bs = NULL;
+#include "memory/allocation.hpp"
+#include "oops/access.hpp"
 
-// count is number of array elements being written
-void BarrierSet::static_write_ref_array_pre(HeapWord* start, size_t count) {
-  assert(count <= (size_t)max_intx, "count too large");
-  if (UseCompressedOops) {
-    Universe::heap()->barrier_set()->write_ref_array_pre((narrowOop*)start, (int)count, false);
-  } else {
-    Universe::heap()->barrier_set()->write_ref_array_pre(      (oop*)start, (int)count, false);
-  }
-}
+class AccessBarrierSupport: AllStatic {
+private:
+  static DecoratorSet resolve_unknown_oop_ref_strength(DecoratorSet decorators, oop base, ptrdiff_t offset);
 
-// count is number of array elements being written
-void BarrierSet::static_write_ref_array_post(HeapWord* start, size_t count) {
-  // simply delegate to instance method
-  Universe::heap()->barrier_set()->write_ref_array(start, count);
-}
+public:
+  // Some collectors, like G1, needs to keep referents alive when loading them.
+  // Therefore, for APIs that accept unknown oop ref strength (e.g. unsafe),
+  // we need to dynamically find out if a given field is on a java.lang.ref.Reference object.
+  // and in that case what strength it has.
+  template<DecoratorSet decorators>
+  static DecoratorSet resolve_possibly_unknown_oop_ref_strength(oop base, ptrdiff_t offset);
+};
+
+#endif // SHARE_VM_GC_SHARED_ACCESSBARRIERSUPPORT_HPP

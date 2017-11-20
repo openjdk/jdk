@@ -25,6 +25,7 @@
 #define SHARE_VM_JVMCI_JVMCIJAVACLASSES_HPP
 
 #include "classfile/systemDictionary.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -351,22 +352,15 @@ class name : AllStatic {                                                        
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
       address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
-      if (UseCompressedOops) {                                                                                 \
-        return (type) oopDesc::load_decode_heap_oop((narrowOop *)addr);                                        \
-      } else {                                                                                                 \
-        return (type) oopDesc::load_decode_heap_oop((oop*)addr);                                               \
-      }                                                                                                        \
+      oop result = HeapAccess<>::oop_load((HeapWord*)addr);                                                    \
+      return type(result);                                                                                     \
     }                                                                                                          \
     static void set_##name(type x) {                                                                           \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       assert(klassName::klass() != NULL, "Class not yet loaded: " #klassName);                                 \
       InstanceKlass* ik = klassName::klass();                                                                  \
       address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
-      if (UseCompressedOops) {                                                                                 \
-        oop_store((narrowOop *)addr, x);                                                                       \
-      } else {                                                                                                 \
-        oop_store((oop*)addr, x);                                                                              \
-      }                                                                                                        \
+      HeapAccess<>::oop_store((HeapWord*)addr, x);                                                             \
     }
 #define STATIC_PRIMITIVE_FIELD(klassName, name, jtypename)                                                     \
     static int _##name##_offset;                                                                               \
@@ -374,13 +368,13 @@ class name : AllStatic {                                                        
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
       address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
-      return *((jtypename *)addr);                                                                             \
+      return HeapAccess<>::load((jtypename*)addr);                                                             \
     }                                                                                                          \
     static void set_##name(jtypename x) {                                                                      \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
       address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
-      *((jtypename *)addr) = x;                                                                                \
+      HeapAccess<>::store((jtypename*)addr, x);                                                                \
     }
 
 #define STATIC_INT_FIELD(klassName, name) STATIC_PRIMITIVE_FIELD(klassName, name, jint)
