@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile TriggerResize.java
+ * @requires (vm.debug == true)
  * @run driver TestResize
  */
 
@@ -95,9 +96,11 @@ public class TestResize {
   }
 
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSystemDictionaryAtExit",
-                                                              "TriggerResize",
-                                                              "50000");
-    analyzeOutputOn(pb);
+    if (Platform.isDebugBuild()) {
+      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSystemDictionaryAtExit",
+                                                                "TriggerResize",
+                                                                "50000");
+      analyzeOutputOn(pb);
+    }
   }
 }
