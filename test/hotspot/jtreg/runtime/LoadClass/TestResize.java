@@ -33,11 +33,12 @@
  * @run driver TestResize
  */
 
-import java.lang.ProcessBuilder;
-import java.lang.Process;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.Process;
+import java.lang.ProcessBuilder;
 import java.util.Scanner;
 
 public class TestResize {
