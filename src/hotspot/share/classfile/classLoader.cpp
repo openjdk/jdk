@@ -262,11 +262,11 @@ ClassPathDirEntry::ClassPathDirEntry(const char* dir) : ClassPathEntry() {
 
 ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
   // construct full path name
-  char* path = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
-  if (jio_snprintf(path, JVM_MAXPATHLEN, "%s%s%s", _dir, os::file_separator(), name) == -1) {
-    FREE_RESOURCE_ARRAY(char, path, JVM_MAXPATHLEN);
-    return NULL;
-  }
+  assert((_dir != NULL) && (name != NULL), "sanity");
+  size_t path_len = strlen(_dir) + strlen(name) + strlen(os::file_separator()) + 1;
+  char* path = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, path_len);
+  int len = jio_snprintf(path, path_len, "%s%s%s", _dir, os::file_separator(), name);
+  assert(len == (int)(path_len - 1), "sanity");
   // check if file exists
   struct stat st;
   if (os::stat(path, &st) == 0) {
@@ -291,7 +291,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
         if (UsePerfData) {
           ClassLoader::perf_sys_classfile_bytes_read()->inc(num_read);
         }
-        FREE_RESOURCE_ARRAY(char, path, JVM_MAXPATHLEN);
+        FREE_RESOURCE_ARRAY(char, path, path_len);
         // Resource allocated
         return new ClassFileStream(buffer,
                                    st.st_size,
@@ -300,7 +300,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
       }
     }
   }
-  FREE_RESOURCE_ARRAY(char, path, JVM_MAXPATHLEN);
+  FREE_RESOURCE_ARRAY(char, path, path_len);
   return NULL;
 }
 
@@ -381,9 +381,13 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
 
     if (is_multi_ver) {
       int n;
-      char* entry_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, JVM_MAXPATHLEN);
+      const char* version_entry = "META-INF/versions/";
+      // 10 is the max length of a decimal 32-bit non-negative number
+      // 2 includes the '/' and trailing zero
+      size_t entry_name_len = strlen(version_entry) + 10 + strlen(name) + 2;
+      char* entry_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, entry_name_len);
       if (version > 0) {
-        n = jio_snprintf(entry_name, JVM_MAXPATHLEN, "META-INF/versions/%d/%s", version, name);
+        n = jio_snprintf(entry_name, entry_name_len, "%s%d/%s", version_entry, version, name);
         entry_name[n] = '\0';
         buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
         if (buffer == NULL) {
@@ -392,7 +396,7 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
       }
       if (buffer == NULL) {
         for (int i = cur_ver; i >= base_version; i--) {
-          n = jio_snprintf(entry_name, JVM_MAXPATHLEN, "META-INF/versions/%d/%s", i, name);
+          n = jio_snprintf(entry_name, entry_name_len, "%s%d/%s", version_entry, i, name);
           entry_name[n] = '\0';
           buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
           if (buffer != NULL) {
@@ -400,7 +404,7 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
           }
         }
       }
-      FREE_RESOURCE_ARRAY(char, entry_name, JVM_MAXPATHLEN);
+      FREE_RESOURCE_ARRAY(char, entry_name, entry_name_len);
     }
   }
   return buffer;
