@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 4625883
- * @summary Make sure that bad -link arguments trigger warnings.
+ * @bug 4625883 8180019
+ * @summary Make sure that bad -link arguments trigger errors.
  * @author jamieh
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -44,11 +44,10 @@ public class TestBadLinkOption extends JavadocTester {
         String out = "out";
         javadoc("-d", out,
                 "-sourcepath", testSrc,
-                "-link", out,
+                "-link", "a-non-existent-link",
                 "pkg");
-        checkExit(Exit.OK);
+        checkExit(Exit.ERROR);
 
-        // TODO: the file it is trying to read, out/out/package-list, warrants investigation
         checkOutput(Output.OUT, true,
                 "Error reading file:");
     }
