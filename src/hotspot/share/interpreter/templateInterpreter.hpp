@@ -92,8 +92,10 @@ class TemplateInterpreter: public AbstractInterpreter {
  public:
 
   enum MoreConstants {
-    number_of_return_entries  = number_of_states,               // number of return entry points
-    number_of_deopt_entries   = number_of_states,               // number of deoptimization entry points
+    max_invoke_length = 5,    // invokedynamic is the longest
+    max_bytecode_length = 6,  // worse case is wide iinc, "reexecute" bytecodes are excluded because "skip" will be 0
+    number_of_return_entries  = max_invoke_length + 1,          // number of return entry points
+    number_of_deopt_entries   = max_bytecode_length + 1,        // number of deoptimization entry points
     number_of_return_addrs    = number_of_states                // number of return addresses
   };
 
@@ -119,6 +121,7 @@ class TemplateInterpreter: public AbstractInterpreter {
   static EntryPoint _return_entry[number_of_return_entries];    // entry points to return to from a call
   static EntryPoint _earlyret_entry;                            // entry point to return early from a call
   static EntryPoint _deopt_entry[number_of_deopt_entries];      // entry points to return to from a deoptimization
+  static address    _deopt_reexecute_return_entry;
   static EntryPoint _safept_entry;
 
   static address _invoke_return_entry[number_of_return_addrs];           // for invokestatic, invokespecial, invokevirtual return entries
@@ -173,6 +176,7 @@ class TemplateInterpreter: public AbstractInterpreter {
   static address* invoke_return_entry_table_for(Bytecodes::Code code);
 
   static address deopt_entry(TosState state, int length);
+  static address deopt_reexecute_return_entry()                 { return _deopt_reexecute_return_entry; }
   static address return_entry(TosState state, int length, Bytecodes::Code code);
 
   // Safepoint support

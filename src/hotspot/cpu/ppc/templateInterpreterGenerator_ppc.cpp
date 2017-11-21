@@ -694,7 +694,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step) {
+address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step, address continuation) {
   address entry = __ pc();
   // If state != vtos, we're returning from a native method, which put it's result
   // into the result register. So move the value out of the return register back
@@ -721,7 +721,11 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   __ check_and_forward_exception(R11_scratch1, R12_scratch2);
 
   // Start executing bytecodes.
-  __ dispatch_next(state, step);
+  if (continuation == NULL) {
+    __ dispatch_next(state, step);
+  } else {
+    __ jump_to_entry(continuation, R11_scratch1);
+  }
 
   return entry;
 }

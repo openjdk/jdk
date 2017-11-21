@@ -2844,19 +2844,6 @@ void TemplateTable::_return(TosState state) {
     __ bind(skip_register_finalizer);
   }
 
-  // Explicitly reset last_sp, for handling special case in TemplateInterpreter::deopt_reexecute_entry
-#ifdef ASSERT
-  if (state == vtos) {
-#ifndef AARCH64
-    __ mov(Rtemp, 0);
-    __ str(Rtemp, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
-#else
-    __ restore_sp_after_call(Rtemp);
-    __ restore_stack_top();
-#endif
-  }
-#endif
-
   // Narrow result if state is itos but result type is smaller.
   // Need to narrow in the return bytecode rather than in generate_return_entry
   // since compiled code callers expect the result to already be narrowed.
