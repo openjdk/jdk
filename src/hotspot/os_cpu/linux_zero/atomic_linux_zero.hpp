@@ -30,74 +30,6 @@
 
 // Implementation of class atomic
 
-#ifdef M68K
-
-/*
- * __m68k_cmpxchg
- *
- * Atomically store newval in *ptr if *ptr is equal to oldval for user space.
- * Returns newval on success and oldval if no exchange happened.
- * This implementation is processor specific and works on
- * 68020 68030 68040 and 68060.
- *
- * It will not work on ColdFire, 68000 and 68010 since they lack the CAS
- * instruction.
- * Using a kernelhelper would be better for arch complete implementation.
- *
- */
-
-static inline int __m68k_cmpxchg(int oldval, int newval, volatile int *ptr) {
-  int ret;
-  __asm __volatile ("cas%.l %0,%2,%1"
-                   : "=d" (ret), "+m" (*(ptr))
-                   : "d" (newval), "0" (oldval));
-  return ret;
-}
-
-/* Perform an atomic compare and swap: if the current value of `*PTR'
-   is OLDVAL, then write NEWVAL into `*PTR'.  Return the contents of
-   `*PTR' before the operation.*/
-static inline int m68k_compare_and_swap(int newval,
-                                        volatile int *ptr,
-                                        int oldval) {
-  for (;;) {
-      int prev = *ptr;
-      if (prev != oldval)
-        return prev;
-
-      if (__m68k_cmpxchg (prev, newval, ptr) == newval)
-        // Success.
-        return prev;
-
-      // We failed even though prev == oldval.  Try again.
-    }
-}
-
-/* Atomically add an int to memory.  */
-static inline int m68k_add_and_fetch(int add_value, volatile int *ptr) {
-  for (;;) {
-      // Loop until success.
-
-      int prev = *ptr;
-
-      if (__m68k_cmpxchg (prev, prev + add_value, ptr) == prev + add_value)
-        return prev + add_value;
-    }
-}
-
-/* Atomically write VALUE into `*PTR' and returns the previous
-   contents of `*PTR'.  */
-static inline int m68k_lock_test_and_set(int newval, volatile int *ptr) {
-  for (;;) {
-      // Loop until success.
-      int prev = *ptr;
-
-      if (__m68k_cmpxchg (prev, newval, ptr) == prev)
-        return prev;
-    }
-}
-#endif // M68K
-
 #ifdef ARM
 
 /*
@@ -176,11 +108,7 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) co
 #ifdef ARM
   return add_using_helper<int>(arm_add_and_fetch, add_value, dest);
 #else
-#ifdef M68K
-  return add_using_helper<int>(m68k_add_and_fetch, add_value, dest);
-#else
   return __sync_add_and_fetch(dest, add_value);
-#endif // M68K
 #endif // ARM
 }
 
@@ -201,9 +129,6 @@ inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
 #ifdef ARM
   return xchg_using_helper<int>(arm_lock_test_and_set, exchange_value, dest);
 #else
-#ifdef M68K
-  return xchg_using_helper<int>(m68k_lock_test_and_set, exchange_value, dest);
-#else
   // __sync_lock_test_and_set is a bizarrely named atomic exchange
   // operation.  Note that some platforms only support this with the
   // limitation that the only valid value to store is the immediate
@@ -215,7 +140,6 @@ inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
   // barrier.
   __sync_synchronize();
   return result;
-#endif // M68K
 #endif // ARM
 }
 
@@ -243,11 +167,7 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
 #ifdef ARM
   return cmpxchg_using_helper<int>(arm_compare_and_swap, exchange_value, dest, compare_value);
 #else
-#ifdef M68K
-  return cmpxchg_using_helper<int>(m68k_compare_and_swap, exchange_value, dest, compare_value);
-#else
   return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
-#endif // M68K
 #endif // ARM
 }
 
