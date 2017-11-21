@@ -25,6 +25,7 @@
  * @test
  * @bug 8189204
  * @summary Possible NPE in Component::getLocationOnScreen()
+ * @key headful
  * @run main ComponentGetLocationOnScreenNPETest
  */
 

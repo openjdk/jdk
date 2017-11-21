@@ -20,10 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
+
+/**
  * @test
  * @bug 8191428
  * @summary  Verifies if text view is not borken into multiple lines
+ * @key headful
  * @run main/othervm -Dsun.java2d.uiScale=1.2 TestGlyphBreak
  */
 

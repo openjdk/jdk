@@ -20,12 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
+
+/**
  * @test
  * @bug 8182577
  * @summary  Verifies if moving focus via custom ButtonModel causes crash
+ * @key headful
  * @run main DefaultButtonModelCrashTest
  */
+
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Point;
@@ -61,7 +64,7 @@ public class DefaultButtonModelCrashTest {
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
         } finally {
-            SwingUtilities.invokeAndWait(()->frame  .dispose());
+            if (frame != null) { SwingUtilities.invokeAndWait(()->frame.dispose()); }
         }
     }
 
