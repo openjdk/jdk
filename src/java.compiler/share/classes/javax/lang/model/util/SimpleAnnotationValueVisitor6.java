@@ -113,9 +113,10 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * The default action for visit methods.  The implementation in
-     * this class just returns {@link #DEFAULT_VALUE}; subclasses will
-     * commonly override this method.
+     * The default action for visit methods.
+     *
+     * @implSpec The implementation in this class just returns {@link
+     * #DEFAULT_VALUE}; subclasses will commonly override this method.
      *
      * @param o the value of the annotation
      * @param p a visitor-specified parameter
@@ -126,7 +127,9 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param b {@inheritDoc}
      * @param p {@inheritDoc}
@@ -137,7 +140,9 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param b {@inheritDoc}
      * @param p {@inheritDoc}
@@ -148,7 +153,9 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param c {@inheritDoc}
      * @param p {@inheritDoc}
@@ -159,7 +166,10 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
      *
      * @param d {@inheritDoc}
      * @param p {@inheritDoc}
@@ -170,7 +180,10 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
      *
      * @param f {@inheritDoc}
      * @param p {@inheritDoc}
@@ -181,7 +194,9 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param i {@inheritDoc}
      * @param p {@inheritDoc}
@@ -192,7 +207,9 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param i {@inheritDoc}
      * @param p {@inheritDoc}
@@ -203,7 +220,9 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param s {@inheritDoc}
      * @param p {@inheritDoc}
@@ -214,7 +233,9 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param s {@inheritDoc}
      * @param p {@inheritDoc}
@@ -225,7 +246,9 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param t {@inheritDoc}
      * @param p {@inheritDoc}
@@ -236,7 +259,9 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param c {@inheritDoc}
      * @param p {@inheritDoc}
@@ -247,7 +272,9 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param a {@inheritDoc}
      * @param p {@inheritDoc}
@@ -258,7 +285,9 @@ public class SimpleAnnotationValueVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param vals {@inheritDoc}
      * @param p {@inheritDoc}

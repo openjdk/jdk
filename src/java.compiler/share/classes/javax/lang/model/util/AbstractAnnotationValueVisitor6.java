@@ -84,6 +84,7 @@ public abstract class AbstractAnnotationValueVisitor6<R, P>
      * {@code v.visit(av, p)} is equivalent to {@code av.accept(v, p)}.
      * @param av {@inheritDoc}
      * @param p  {@inheritDoc}
+     * @return   {@inheritDoc}
      */
     public final R visit(AnnotationValue av, P p) {
         return av.accept(this, p);
@@ -96,6 +97,7 @@ public abstract class AbstractAnnotationValueVisitor6<R, P>
      * {@code v.visit(av)} is equivalent to {@code av.accept(v,
      * null)}.
      * @param av {@inheritDoc}
+     * @return   {@inheritDoc}
      */
     public final R visit(AnnotationValue av) {
         return av.accept(this, null);
@@ -111,6 +113,7 @@ public abstract class AbstractAnnotationValueVisitor6<R, P>
      *
      * @param av {@inheritDoc}
      * @param p  {@inheritDoc}
+     * @return   {@inheritDoc}
      */
     @Override
     public R visitUnknown(AnnotationValue av, P p) {

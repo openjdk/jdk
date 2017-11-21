@@ -114,6 +114,8 @@ public class ElementKindVisitor6<R, P>
      *
      * The element argument has kind {@code PACKAGE}.
      *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
      * @param e {@inheritDoc}
      * @param p {@inheritDoc}
      * @return  {@inheritDoc}
@@ -125,7 +127,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits a type element, dispatching to the visit method for the
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation dispatches to the visit method for the
      * specific {@linkplain ElementKind kind} of type, {@code
      * ANNOTATION_TYPE}, {@code CLASS}, {@code ENUM}, or {@code
      * INTERFACE}.
@@ -156,8 +160,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits an {@code ANNOTATION_TYPE} type element by calling
-     * {@code defaultAction}.
+     * Visits an {@code ANNOTATION_TYPE} type element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter
@@ -168,8 +173,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits a {@code CLASS} type element by calling {@code
-     * defaultAction}.
+     * Visits a {@code CLASS} type element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter
@@ -180,8 +186,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits an {@code ENUM} type element by calling {@code
-     * defaultAction}.
+     * Visits an {@code ENUM} type element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter
@@ -192,8 +199,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits an {@code INTERFACE} type element by calling {@code
-     * defaultAction}.
+     * Visits an {@code INTERFACE} type element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *.
      * @param e the element to visit
      * @param p a visitor-specified parameter
@@ -204,7 +212,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits a variable element, dispatching to the visit method for
+     * Visits a variable element
+     *
+     * @implSpec This implementation dispatches to the visit method for
      * the specific {@linkplain ElementKind kind} of variable, {@code
      * ENUM_CONSTANT}, {@code EXCEPTION_PARAMETER}, {@code FIELD},
      * {@code LOCAL_VARIABLE}, {@code PARAMETER}, or {@code RESOURCE_VARIABLE}.
@@ -241,9 +251,10 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits an {@code ENUM_CONSTANT} variable element by calling
-     * {@code defaultAction}.
+     * Visits an {@code ENUM_CONSTANT} variable element.
      *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *.
      * @param e the element to visit
      * @param p a visitor-specified parameter
      * @return  the result of {@code defaultAction}
@@ -253,9 +264,10 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits an {@code EXCEPTION_PARAMETER} variable element by calling
-     * {@code defaultAction}.
+     * Visits an {@code EXCEPTION_PARAMETER} variable element.
      *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *.
      * @param e the element to visit
      * @param p a visitor-specified parameter
      * @return  the result of {@code defaultAction}
@@ -265,9 +277,10 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits a {@code FIELD} variable element by calling
-     * {@code defaultAction}.
+     * Visits a {@code FIELD} variable element.
      *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *.
      * @param e the element to visit
      * @param p a visitor-specified parameter
      * @return  the result of {@code defaultAction}
@@ -277,8 +290,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits a {@code LOCAL_VARIABLE} variable element by calling
-     * {@code defaultAction}.
+     * Visits a {@code LOCAL_VARIABLE} variable element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter
@@ -289,8 +303,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits a {@code PARAMETER} variable element by calling
-     * {@code defaultAction}.
+     * Visits a {@code PARAMETER} variable element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter
@@ -301,8 +316,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits a {@code RESOURCE_VARIABLE} variable element by calling
-     * {@code visitUnknown}.
+     * Visits a {@code RESOURCE_VARIABLE} variable element.
+     *
+     * @implSpec This implementation calls {@code visitUnknown}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter
@@ -315,7 +331,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits an executable element, dispatching to the visit method
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation dispatches to the visit method
      * for the specific {@linkplain ElementKind kind} of executable,
      * {@code CONSTRUCTOR}, {@code INSTANCE_INIT}, {@code METHOD}, or
      * {@code STATIC_INIT}.
@@ -346,8 +364,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits a {@code CONSTRUCTOR} executable element by calling
-     * {@code defaultAction}.
+     * Visits a {@code CONSTRUCTOR} executable element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter
@@ -358,8 +377,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits an {@code INSTANCE_INIT} executable element by calling
-     * {@code defaultAction}.
+     * Visits an {@code INSTANCE_INIT} executable element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter
@@ -370,8 +390,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits a {@code METHOD} executable element by calling
-     * {@code defaultAction}.
+     * Visits a {@code METHOD} executable element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter
@@ -382,8 +403,9 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits a {@code STATIC_INIT} executable element by calling
-     * {@code defaultAction}.
+     * Visits a {@code STATIC_INIT} executable element.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter
@@ -393,11 +415,12 @@ public class ElementKindVisitor6<R, P>
         return defaultAction(e, p);
     }
 
-
     /**
      * {@inheritDoc}
      *
      * The element argument has kind {@code TYPE_PARAMETER}.
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e {@inheritDoc}
      * @param p {@inheritDoc}
