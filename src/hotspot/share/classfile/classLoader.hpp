@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_CLASSLOADER_HPP
 #define SHARE_VM_CLASSFILE_CLASSLOADER_HPP
 
-#include "classfile/jimage.hpp"
+#include "jimage.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"

@@ -24,12 +24,12 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "jimage.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/jimage.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
