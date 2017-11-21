@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,10 +108,10 @@ public class ReversePtrsAnalysis {
 
     // Do global JNI handles
     JNIHandles handles = VM.getVM().getJNIHandles();
-    doJNIHandleBlock(handles.globalHandles(),
-                     new RootVisitor("Global JNI handle root"));
-    doJNIHandleBlock(handles.weakGlobalHandles(),
-                     new RootVisitor("Weak global JNI handle root"));
+    doOopStorage(handles.globalHandles(),
+                 new RootVisitor("Global JNI handle root"));
+    doOopStorage(handles.weakGlobalHandles(),
+                 new RootVisitor("Weak global JNI handle root"));
 
     // Do Java-level static fields
     ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
@@ -305,5 +305,10 @@ public class ReversePtrsAnalysis {
   // Traverse a JNIHandleBlock
   private void doJNIHandleBlock(JNIHandleBlock handles, AddressVisitor oopVisitor) {
     handles.oopsDo(oopVisitor);
+  }
+
+  // Traverse jobjects in global JNIHandles
+  private void doOopStorage(OopStorage oopSet, AddressVisitor oopVisitor) {
+    oopSet.oopsDo(oopVisitor);
   }
 }

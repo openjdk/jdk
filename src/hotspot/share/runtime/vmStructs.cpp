@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
+#include "gc/shared/oopStorage.hpp"
 #include "gc/shared/space.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -948,10 +949,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /*********************************/                                                                                                \
   /* JNIHandles and JNIHandleBlock */                                                                                                \
   /*********************************/                                                                                                \
-     static_field(JNIHandles,                  _global_handles,                               JNIHandleBlock*)                       \
-     static_field(JNIHandles,                  _weak_global_handles,                          JNIHandleBlock*)                       \
-     static_field(JNIHandles,                  _deleted_handle,                               oop)                                   \
-                                                                                                                                     \
+  static_field(JNIHandles,                     _global_handles,                               OopStorage*)                           \
+  static_field(JNIHandles,                     _weak_global_handles,                          OopStorage*)                           \
   unchecked_nonstatic_field(JNIHandleBlock,    _handles,       JNIHandleBlock::block_size_in_oops * sizeof(Oop)) /* Note: no type */ \
   nonstatic_field(JNIHandleBlock,              _top,                                          int)                                   \
   nonstatic_field(JNIHandleBlock,              _next,                                         JNIHandleBlock*)                       \
@@ -1676,6 +1675,12 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(JNIHandles)                                       \
   declare_toplevel_type(JNIHandleBlock)                                   \
   declare_toplevel_type(jobject)                                          \
+                                                                          \
+  /**************/                                                        \
+  /* OopStorage */                                                        \
+  /**************/                                                        \
+                                                                          \
+  declare_toplevel_type(OopStorage)                                       \
                                                                           \
   /**********************/                                                \
   /* Runtime1 (C1 only) */                                                \

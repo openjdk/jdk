@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -435,10 +435,7 @@ static void* check_wrapped_array_release(JavaThread* thr, const char* fn_name,
 }
 
 oop jniCheck::validate_handle(JavaThread* thr, jobject obj) {
-  if (JNIHandles::is_frame_handle(thr, obj) ||
-      JNIHandles::is_local_handle(thr, obj) ||
-      JNIHandles::is_global_handle(obj) ||
-      JNIHandles::is_weak_global_handle(obj)) {
+  if (JNIHandles::handle_type(thr, obj) != JNIInvalidRefType) {
     ASSERT_OOPS_ALLOWED;
     return JNIHandles::resolve_external_guard(obj);
   }

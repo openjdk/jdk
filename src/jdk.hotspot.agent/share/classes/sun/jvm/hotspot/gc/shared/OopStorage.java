@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,15 @@
  *
  */
 
-package sun.jvm.hotspot.runtime;
+package sun.jvm.hotspot.gc.shared;
 
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.gc.shared.OopStorage;
+import sun.jvm.hotspot.utilities.*;
 
-public class JNIHandles {
-  private static AddressField      globalHandlesField;
-  private static AddressField      weakGlobalHandlesField;
+public class OopStorage extends VMObject {
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -42,30 +41,19 @@ public class JNIHandles {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("JNIHandles");
-
-    globalHandlesField = type.getAddressField("_global_handles");
-    weakGlobalHandlesField = type.getAddressField("_weak_global_handles");
-
+    Type type = db.lookupType("OopStorage");
   }
 
-  public JNIHandles() {
+  public OopStorage(Address addr) {
+    super(addr);
   }
 
-  public OopStorage globalHandles() {
-    Address handleAddr  = globalHandlesField.getValue();
-    if (handleAddr == null) {
-      return null;
-    }
-    return new OopStorage(handleAddr);
+  public boolean findOop(Address handle) {
+    // TODO: walk OopStorage to find the Oop
+    return false;
   }
 
-  public OopStorage weakGlobalHandles() {
-    Address handleAddr  = weakGlobalHandlesField.getValue();
-    if (handleAddr == null) {
-      return null;
-    }
-    return new OopStorage(handleAddr);
+  public void oopsDo(AddressVisitor visitor) {
+    // TODO: Visit handles in OopStorage
   }
-
 }
