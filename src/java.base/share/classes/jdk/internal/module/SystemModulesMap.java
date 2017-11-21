@@ -59,7 +59,7 @@ class SystemModulesMap {
     }
 
     /**
-     * Returns the array of of SystemModules class names. The elements
+     * Returns the array of SystemModules class names. The elements
      * correspond to the elements in the array returned by moduleNames().
      */
     static String[] classNames() {

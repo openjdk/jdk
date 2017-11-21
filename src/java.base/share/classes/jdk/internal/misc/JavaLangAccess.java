@@ -254,7 +254,7 @@ public interface JavaLangAccess {
     ServicesCatalog getServicesCatalog(ModuleLayer layer);
 
     /**
-     * Returns an ordered stream of layers. The first element is is the
+     * Returns an ordered stream of layers. The first element is the
      * given layer, the remaining elements are its parents, in DFS order.
      */
     Stream<ModuleLayer> layers(ModuleLayer layer);
