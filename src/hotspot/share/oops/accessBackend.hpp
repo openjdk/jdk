@@ -82,7 +82,7 @@ namespace AccessInternal {
 #ifdef SUPPORTS_NATIVE_CX8
   struct PossiblyLockedAccess: public IntegralConstant<bool, false> {};
 #else
-  struct PossiblyLockedAccess: public IntegralConstant<bool, (sizeof(T) > 4)>::value> {};
+  struct PossiblyLockedAccess: public IntegralConstant<bool, (sizeof(T) > 4)> {};
 #endif
 
   template <DecoratorSet decorators, typename T>
