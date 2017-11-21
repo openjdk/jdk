@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,40 +108,35 @@ public class PointerFinder {
 
     // Check JNIHandles; both local and global
     JNIHandles handles = VM.getVM().getJNIHandles();
-    JNIHandleBlock handleBlock = handles.globalHandles();
-    if (handleBlock != null) {
-      handleBlock = handleBlock.blockContainingHandle(a);
-    }
-    if (handleBlock != null) {
-      loc.inStrongGlobalJNIHandleBlock = true;
-      loc.handleBlock = handleBlock;
+
+    // --- looking in oopstorage should model OopStorage::allocation_status?
+    // --- that is, if in a block but not allocated, then not valid.
+
+    // Look in global handles
+    OopStorage storage = handles.globalHandles();
+    if ((storage != null) && storage.findOop(a)) {
+      loc.inStrongGlobalJNIHandles = true;
       return loc;
-    } else {
-      handleBlock = handles.weakGlobalHandles();
+    }
+    // Look in weak global handles
+    storage = handles.weakGlobalHandles();
+    if ((storage != null) && storage.findOop(a)) {
+      loc.inWeakGlobalJNIHandles = true;
+      return loc;
+    }
+    // Look in thread-local handles
+    for (JavaThread t = VM.getVM().getThreads().first(); t != null; t = t.next()) {
+      JNIHandleBlock handleBlock = t.activeHandles();
       if (handleBlock != null) {
         handleBlock = handleBlock.blockContainingHandle(a);
         if (handleBlock != null) {
-          loc.inWeakGlobalJNIHandleBlock = true;
+          loc.inLocalJNIHandleBlock = true;
           loc.handleBlock = handleBlock;
+          loc.handleThread = t;
           return loc;
-        } else {
-          // Look in thread-local handles
-          for (JavaThread t = VM.getVM().getThreads().first(); t != null; t = t.next()) {
-            handleBlock = t.activeHandles();
-            if (handleBlock != null) {
-              handleBlock = handleBlock.blockContainingHandle(a);
-              if (handleBlock != null) {
-                loc.inLocalJNIHandleBlock = true;
-                loc.handleBlock = handleBlock;
-                loc.handleThread = t;
-                return loc;
-              }
-            }
-          }
         }
       }
     }
-
 
     // Fall through; have to return it anyway.
     return loc;

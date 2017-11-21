@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1087,7 +1087,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 #ifndef PRODUCT
   // we don't keep the block list in product mode
-  if (JNIHandleBlock::any_contains((jobject) addr)) {
+  if (JNIHandles::is_local_handle((jobject) addr)) {
     st->print_cr(INTPTR_FORMAT " is a local jni handle", p2i(addr));
     return;
   }

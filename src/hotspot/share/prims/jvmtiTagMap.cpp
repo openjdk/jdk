@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2582,9 +2582,9 @@ class SimpleRootsClosure : public OopClosure {
       return;
     }
 
-    // ignore null or deleted handles
     oop o = *obj_p;
-    if (o == NULL || o == JNIHandles::deleted_handle()) {
+    // ignore null
+    if (o == NULL) {
       return;
     }
 
@@ -2641,9 +2641,9 @@ class JNILocalRootsClosure : public OopClosure {
       return;
     }
 
-    // ignore null or deleted handles
     oop o = *obj_p;
-    if (o == NULL || o == JNIHandles::deleted_handle()) {
+    // ignore null
+    if (o == NULL) {
       return;
     }
 
