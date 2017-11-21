@@ -104,7 +104,6 @@ $(eval $(call SetupJvmtiGeneration, jvmtiEnterTrace.cpp, jvmtiEnter.xsl, \
 $(eval $(call SetupJvmtiGeneration, jvmtiEnv.hpp, jvmtiHpp.xsl))
 $(eval $(call SetupJvmtiGeneration, jvmti.h, jvmtiH.xsl))
 $(eval $(call SetupJvmtiGeneration, jvmti.html, jvmti.xsl))
-$(eval $(call SetupJvmtiGeneration, jvmtiEnvStub.cpp, jvmtiEnv.xsl))
 
 JVMTI_BC_SRCDIR := $(TOPDIR)/src/hotspot/share/interpreter
 
@@ -114,20 +113,6 @@ $(eval $(call SetupXslTransform, bytecodeInterpreterWithChecks.cpp, \
     OUTPUT_DIR := $(JVMTI_OUTPUTDIR), \
     DEPS := $(JVMTI_BC_SRCDIR)/bytecodeInterpreter.cpp, \
 ))
-
-# We need $(JVMTI_OUTPUTDIR)/jvmtiEnvStub.cpp (generated above) as input
-$(JVMTI_OUTPUTDIR)/jvmtiEnvRecommended.cpp: $(JVMTI_SRCDIR)/jvmtiEnv.cpp \
-    $(JVMTI_OUTPUTDIR)/jvmtiEnvStub.cpp $(BUILD_JVMTI_TOOLS)
-	$(call LogInfo, Generating $(@F))
-	$(call MakeDir, $(@D))
-	$(call ExecuteWithLog, $@, $(TOOL_JVMTI_ENV_FILL) $(JVMTI_SRCDIR)/jvmtiEnv.cpp \
-	    $(JVMTI_OUTPUTDIR)/jvmtiEnvStub.cpp \
-	    $(JVMTI_OUTPUTDIR)/jvmtiEnvRecommended.cpp)
-        # jvmtiEnvFill does not necessarily return an error code on failure.
-        # NOTE: We should really fix jvmtiEnvFill.java instead.
-	test -f $@
-
-TARGETS += $(JVMTI_OUTPUTDIR)/jvmtiEnvRecommended.cpp
 
 ################################################################################
 # Copy jvmti.h to include dir
