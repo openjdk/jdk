@@ -20,12 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
+
+/**
  * @test
  * @bug 8182031
  * @summary  Verifies if ComboBox Popup opens and closes immediately
+ * @key headful
  * @run main ComboPopupTest
  */
+
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -80,7 +83,7 @@ public class ComboPopupTest {
                 throw new RuntimeException("combobox popup is not visible");
             }
         } finally {
-            SwingUtilities.invokeAndWait(()->frame.dispose());
+            if (frame != null) { SwingUtilities.invokeAndWait(()->frame.dispose()); }
         }
     }
 
