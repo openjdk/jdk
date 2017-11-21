@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/serial/serialArguments.hpp"
+#include "memory/allocation.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
