@@ -112,7 +112,7 @@ public class ModulePath implements ModuleFinder {
     }
 
     /**
-     * Returns a ModuleFinder that that locates modules on the file system by
+     * Returns a ModuleFinder that locates modules on the file system by
      * searching a sequence of directories and/or packaged modules. The modules
      * may be patched by the given ModulePatcher.
      */
@@ -121,7 +121,7 @@ public class ModulePath implements ModuleFinder {
     }
 
     /**
-     * Returns a ModuleFinder that that locates modules on the file system by
+     * Returns a ModuleFinder that locates modules on the file system by
      * searching a sequence of directories and/or packaged modules.
      */
     public static ModuleFinder of(Path... entries) {
@@ -129,7 +129,7 @@ public class ModulePath implements ModuleFinder {
     }
 
     /**
-     * Returns a ModuleFinder that that locates modules on the file system by
+     * Returns a ModuleFinder that locates modules on the file system by
      * searching a sequence of directories and/or packaged modules.
      *
      * @param version The release version to use for multi-release JAR files
