@@ -1988,6 +1988,7 @@ Optional Features:
   --enable-cds[=yes/no]   enable class data sharing feature in non-minimal VM.
                           Default is yes.
   --disable-hotspot-gtest Disables building of the Hotspot unit tests
+                          [enabled]
   --disable-freetype-bundling
                           disable bundling of the freetype library with the
                           build result [enabled on Windows or when using
@@ -5154,7 +5155,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1511216793
+DATE_WHEN_GENERATED=1511254554
 
 ###############################################################################
 #

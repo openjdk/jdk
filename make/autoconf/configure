@@ -90,13 +90,13 @@ check_autoconf_timestamps() {
 
 check_hg_updates() {
   if test "x`which hg 2> /dev/null | grep -v '^no hg in'`" != x; then
-    conf_updated_autoconf_files=`cd $conf_script_dir && hg status -mard 2> /dev/null | grep autoconf`
+    conf_updated_autoconf_files=`cd $conf_script_dir && hg status -mard . 2> /dev/null`
     if test "x$conf_updated_autoconf_files" != x; then
       echo "Configure source code has been updated, checking time stamps"
       check_autoconf_timestamps
     elif test "x$CUSTOM_CONFIG_DIR" != x; then
       # If custom source configure is available, make sure it is up-to-date as well.
-      conf_custom_updated_autoconf_files=`cd $CUSTOM_CONFIG_DIR && hg status -mard 2> /dev/null | grep autoconf`
+      conf_custom_updated_autoconf_files=`cd $CUSTOM_CONFIG_DIR && hg status -mard . 2> /dev/null`
       if test "x$conf_custom_updated_autoconf_files" != x; then
         echo "Configure custom source code has been updated, checking time stamps"
         check_autoconf_timestamps
