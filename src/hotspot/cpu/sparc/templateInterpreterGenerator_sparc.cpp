@@ -313,7 +313,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 }
 
 
-address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step) {
+address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step, address continuation) {
   address entry = __ pc();
   __ get_constant_pool_cache(LcpoolCache); // load LcpoolCache
 #if INCLUDE_JVMCI
@@ -350,7 +350,11 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
     __ should_not_reach_here();
     __ bind(L);
   }
-  __ dispatch_next(state, step);
+  if (continuation == NULL) {
+    __ dispatch_next(state, step);
+  } else {
+    __ jump_to_entry(continuation);
+  }
   return entry;
 }
 
