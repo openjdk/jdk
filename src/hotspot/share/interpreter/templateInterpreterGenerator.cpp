@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,15 +84,17 @@ void TemplateInterpreterGenerator::generate_all() {
 
   { CodeletMark cm(_masm, "return entry points");
     const int index_size = sizeof(u2);
-    for (int i = 0; i < Interpreter::number_of_return_entries; i++) {
+    Interpreter::_return_entry[0] = EntryPoint();
+    for (int i = 1; i < Interpreter::number_of_return_entries; i++) {
+      address return_itos = generate_return_entry_for(itos, i, index_size);
       Interpreter::_return_entry[i] =
         EntryPoint(
-                   generate_return_entry_for(itos, i, index_size),
-                   generate_return_entry_for(itos, i, index_size),
-                   generate_return_entry_for(itos, i, index_size),
-                   generate_return_entry_for(itos, i, index_size),
+                   return_itos,
+                   return_itos,
+                   return_itos,
+                   return_itos,
                    generate_return_entry_for(atos, i, index_size),
-                   generate_return_entry_for(itos, i, index_size),
+                   return_itos,
                    generate_return_entry_for(ltos, i, index_size),
                    generate_return_entry_for(ftos, i, index_size),
                    generate_return_entry_for(dtos, i, index_size),
@@ -132,24 +134,6 @@ void TemplateInterpreterGenerator::generate_all() {
                  generate_earlyret_entry_for(dtos),
                  generate_earlyret_entry_for(vtos)
                  );
-  }
-
-  { CodeletMark cm(_masm, "deoptimization entry points");
-    for (int i = 0; i < Interpreter::number_of_deopt_entries; i++) {
-      Interpreter::_deopt_entry[i] =
-        EntryPoint(
-                   generate_deopt_entry_for(itos, i),
-                   generate_deopt_entry_for(itos, i),
-                   generate_deopt_entry_for(itos, i),
-                   generate_deopt_entry_for(itos, i),
-                   generate_deopt_entry_for(atos, i),
-                   generate_deopt_entry_for(itos, i),
-                   generate_deopt_entry_for(ltos, i),
-                   generate_deopt_entry_for(ftos, i),
-                   generate_deopt_entry_for(dtos, i),
-                   generate_deopt_entry_for(vtos, i)
-                   );
-    }
   }
 
   { CodeletMark cm(_masm, "result handlers for native calls");
@@ -250,6 +234,31 @@ void TemplateInterpreterGenerator::generate_all() {
   // installation of code in other places in the runtime
   // (ExcutableCodeManager calls not needed to copy the entries)
   set_safepoints_for_all_bytes();
+
+  { CodeletMark cm(_masm, "deoptimization entry points");
+    Interpreter::_deopt_entry[0] = EntryPoint();
+    Interpreter::_deopt_entry[0].set_entry(vtos, generate_deopt_entry_for(vtos, 0));
+    for (int i = 1; i < Interpreter::number_of_deopt_entries; i++) {
+      address deopt_itos = generate_deopt_entry_for(itos, i);
+      Interpreter::_deopt_entry[i] =
+        EntryPoint(
+                   deopt_itos, /* btos */
+                   deopt_itos, /* ztos */
+                   deopt_itos, /* ctos */
+                   deopt_itos, /* stos */
+                   generate_deopt_entry_for(atos, i),
+                   deopt_itos, /* itos */
+                   generate_deopt_entry_for(ltos, i),
+                   generate_deopt_entry_for(ftos, i),
+                   generate_deopt_entry_for(dtos, i),
+                   generate_deopt_entry_for(vtos, i)
+                   );
+    }
+    address return_continuation = Interpreter::_normal_table.entry(Bytecodes::_return).entry(vtos);
+    vmassert(return_continuation != NULL, "return entry not generated yet");
+    Interpreter::_deopt_reexecute_return_entry = generate_deopt_entry_for(vtos, 0, return_continuation);
+  }
+
 }
 
 //------------------------------------------------------------------------------------------------------------------------

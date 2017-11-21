@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,7 @@ EntryPoint TemplateInterpreter::_trace_code;
 EntryPoint TemplateInterpreter::_return_entry[TemplateInterpreter::number_of_return_entries];
 EntryPoint TemplateInterpreter::_earlyret_entry;
 EntryPoint TemplateInterpreter::_deopt_entry [TemplateInterpreter::number_of_deopt_entries ];
+address    TemplateInterpreter::_deopt_reexecute_return_entry;
 EntryPoint TemplateInterpreter::_safept_entry;
 
 address TemplateInterpreter::_invoke_return_entry[TemplateInterpreter::number_of_return_addrs];
@@ -248,14 +249,18 @@ address TemplateInterpreter::return_entry(TosState state, int length, Bytecodes:
     return _invokedynamic_return_entry[index];
   default:
     assert(!Bytecodes::is_invoke(code), "invoke instructions should be handled separately: %s", Bytecodes::name(code));
-    return _return_entry[length].entry(state);
+    address entry = _return_entry[length].entry(state);
+    vmassert(entry != NULL, "unsupported return entry requested, length=%d state=%d", length, index);
+    return entry;
   }
 }
 
 
 address TemplateInterpreter::deopt_entry(TosState state, int length) {
   guarantee(0 <= length && length < Interpreter::number_of_deopt_entries, "illegal length");
-  return _deopt_entry[length].entry(state);
+  address entry = _deopt_entry[length].entry(state);
+  vmassert(entry != NULL, "unsupported deopt entry requested, length=%d state=%d", length, TosState_as_index(state));
+  return entry;
 }
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -313,14 +318,14 @@ address TemplateInterpreter::deopt_continue_after_entry(Method* method, address 
 //       that do not return "Interpreter::deopt_entry(vtos, 0)"
 address TemplateInterpreter::deopt_reexecute_entry(Method* method, address bcp) {
   assert(method->contains(bcp), "just checkin'");
-  Bytecodes::Code code   = Bytecodes::java_code_at(method, bcp);
-  if (code == Bytecodes::_return) {
+  Bytecodes::Code code   = Bytecodes::code_at(method, bcp);
+  if (code == Bytecodes::_return_register_finalizer) {
     // This is used for deopt during registration of finalizers
     // during Object.<init>.  We simply need to resume execution at
     // the standard return vtos bytecode to pop the frame normally.
     // reexecuting the real bytecode would cause double registration
     // of the finalizable object.
-    return _normal_table.entry(Bytecodes::_return).entry(vtos);
+    return Interpreter::deopt_reexecute_return_entry();
   } else {
     return AbstractInterpreter::deopt_reexecute_entry(method, bcp);
   }

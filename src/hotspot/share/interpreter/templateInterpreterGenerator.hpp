@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_ArrayIndexOutOfBounds_handler(const char* name);
   address generate_return_entry_for(TosState state, int step, size_t index_size);
   address generate_earlyret_entry_for(TosState state);
-  address generate_deopt_entry_for(TosState state, int step);
+  address generate_deopt_entry_for(TosState state, int step, address continuation = NULL);
   address generate_safept_entry_for(TosState state, address runtime_entry);
   void    generate_throw_exception();
 
