@@ -38,6 +38,9 @@ jdk/javadoc/doclet/testIOException/TestIOException.java                         
 
 jdk/jshell/UserJdiUserRemoteTest.java                                           8173079    linux-all
 jdk/jshell/UserInputTest.java                                                   8169536    generic-all   
+jdk/jshell/StartOptionTest.java                                                 8191455    windows-all 
+jdk/jshell/ToolProviderTest.java                                                8191455    windows-all
+jdk/jshell/ExternalEditorTest.java                                              8191456    generic-all
 
 ###########################################################################
 #
