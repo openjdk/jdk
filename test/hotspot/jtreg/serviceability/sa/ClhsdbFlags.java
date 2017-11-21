@@ -48,7 +48,7 @@ public class ClhsdbFlags {
             ClhsdbLauncher test = new ClhsdbLauncher();
             List<String> vmArgs = new ArrayList<String>();
             vmArgs.add("-XX:+UnlockExperimentalVMOptions");
-            vmArgs.add("-XX:+UseJVMCICompiler");
+            vmArgs.add("-XX:+UnlockDiagnosticVMOptions");
             vmArgs.add("-XX:-MaxFDLimit");
             vmArgs.addAll(Utils.getVmOptions());
             theApp = LingeredApp.startApp(vmArgs);
@@ -56,25 +56,24 @@ public class ClhsdbFlags {
 
             List<String> cmds = List.of(
                     "flags", "flags -nd",
-                    "flags UseJVMCICompiler", "flags MaxFDLimit",
+                    "flags UnlockDiagnosticVMOptions", "flags MaxFDLimit",
                     "flags MaxJavaStackTraceDepth");
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put("flags", List.of(
-                    "UseJVMCICompiler = true",
+                    "UnlockDiagnosticVMOptions = true",
                     "MaxFDLimit = false",
                     "MaxJavaStackTraceDepth = 1024",
-                    "UseCompressedClassPointers", "VerifyMergedCPBytecodes",
+                    "VerifyMergedCPBytecodes",
                     "ConcGCThreads", "UseThreadPriorities",
-                    "UseInterpreter", "StartFlightRecording",
-                    "ShowHiddenFrames", "UseAppCDS"));
+                    "ShowHiddenFrames"));
             expStrMap.put("flags -nd", List.of(
-                    "UseJVMCICompiler = true",
+                    "UnlockDiagnosticVMOptions = true",
                     "MaxFDLimit = false",
-                    "UseCompressedClassPointers",
-                    "ConcGCThreads"));
-            expStrMap.put("flags UseJVMCICompiler", List.of(
-                    "UseJVMCICompiler = true"));
+                    "InitialHeapSize",
+                    "MaxHeapSize"));
+            expStrMap.put("flags UnlockDiagnosticVMOptions", List.of(
+                    "UnlockDiagnosticVMOptions = true"));
             expStrMap.put("flags MaxFDLimit", List.of(
                     "MaxFDLimit = false"));
             expStrMap.put("flags MaxJavaStackTraceDepth", List.of(
