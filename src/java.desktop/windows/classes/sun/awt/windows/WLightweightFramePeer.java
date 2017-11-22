@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,11 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 
 import sun.awt.LightweightFrame;
+import sun.awt.OverrideNativeWindowHandle;
 import sun.swing.JLightweightFrame;
 import sun.swing.SwingAccessor;
 
-public class WLightweightFramePeer extends WFramePeer {
+public class WLightweightFramePeer extends WFramePeer implements OverrideNativeWindowHandle {
 
     public WLightweightFramePeer(LightweightFrame target) {
         super(target);
@@ -48,6 +49,13 @@ public class WLightweightFramePeer extends WFramePeer {
     @Override
     public Graphics getGraphics() {
         return getLwTarget().getGraphics();
+    }
+
+    private native void overrideNativeHandle(long hwnd);
+
+    @Override
+    public void overrideWindowHandle(final long handle) {
+        overrideNativeHandle(handle);
     }
 
     @Override

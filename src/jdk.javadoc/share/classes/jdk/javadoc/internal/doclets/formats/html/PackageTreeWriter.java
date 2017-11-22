@@ -31,6 +31,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -126,7 +127,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         }
         htmlTree.addContent(div);
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
-        divTree.addStyle(HtmlStyle.contentContainer);
+        divTree.setStyle(HtmlStyle.contentContainer);
         addTree(classtree.baseClasses(), "doclet.Class_Hierarchy", divTree);
         addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", divTree);
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", divTree);
@@ -176,7 +177,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
                 contents.packageHierarchies);
         div.addContent(span);
         HtmlTree ul = new HtmlTree (HtmlTag.UL);
-        ul.addStyle(HtmlStyle.horizontal);
+        ul.setStyle(HtmlStyle.horizontal);
         ul.addContent(getNavLinkMainTree(configuration.getText("doclet.All_Packages")));
         div.addContent(ul);
     }
@@ -231,7 +232,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      */
     @Override
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
+        Content linkContent = Links.createLink(DocPaths.PACKAGE_SUMMARY,
                 contents.packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;

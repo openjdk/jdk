@@ -333,8 +333,6 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             VisibleMemberMap visibleMemberMap, LinkedList<Content> summaryTreeList) {
         SortedSet<Element> members = asSortedSet(visibleMemberMap.getLeafMembers());
         if (!members.isEmpty()) {
-            List<Content> tableContents = new LinkedList<>();
-            int counter = 0;
             for (Element member : members) {
                 final Element property = visibleMemberMap.getPropertyElement(member);
                 if (property != null) {
@@ -355,11 +353,9 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                         firstSentenceTags = utils.getFirstSentenceTrees(inheritedDoc.holder);
                     }
                 }
-                writer.addMemberSummary(typeElement, member, firstSentenceTags,
-                        tableContents, counter, visibleMemberMap.kind);
-                counter++;
+                writer.addMemberSummary(typeElement, member, firstSentenceTags);
             }
-            summaryTreeList.add(writer.getSummaryTableTree(typeElement, tableContents));
+            summaryTreeList.add(writer.getSummaryTableTree(typeElement));
         }
     }
 

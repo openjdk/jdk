@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,6 +164,11 @@ struct ScaleStruct {
     jfloat scaleY;
 };
 
+struct OverrideHandle {
+    jobject frame;
+    HWND handle;
+};
+
 /************************************************************************
  * AwtWindow fields
  */
@@ -242,6 +247,7 @@ AwtWindow::AwtWindow() {
     prevScaleRec.screen = -1;
     prevScaleRec.scaleX = -1.0f;
     prevScaleRec.scaleY = -1.0f;
+    m_overriddenHwnd = NULL;
 }
 
 AwtWindow::~AwtWindow()
@@ -2571,6 +2577,24 @@ ret:
    delete rfs;
 }
 
+void AwtWindow::_OverrideHandle(void *param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    OverrideHandle* oh = (OverrideHandle *) param;
+    jobject self = oh->frame;
+    AwtWindow *f = NULL;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    f = (AwtWindow *)pData;
+    f->OverrideHWnd(oh->handle);
+ret:
+    env->DeleteGlobalRef(self);
+
+    delete oh;
+}
+
 /*
  * This is AwtWindow-specific function that is not intended for reusing
  */
@@ -3946,4 +3970,25 @@ Java_sun_awt_windows_WWindowPeer_windowDPIChange(JNIEnv *env, jobject self,
 
     CATCH_BAD_ALLOC;
 }
+
+/*
+ * Class:     sun_awt_windows_WLightweightFramePeer
+ * Method:    overrideNativeHandle
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_windows_WLightweightFramePeer_overrideNativeHandle
+  (JNIEnv *env, jobject self, jlong hwnd)
+{
+    TRY;
+
+    OverrideHandle *oh = new OverrideHandle;
+    oh->frame = env->NewGlobalRef(self);
+    oh->handle = (HWND) hwnd;
+
+    AwtToolkit::GetInstance().SyncCall(AwtFrame::_OverrideHandle, oh);
+    // global ref and oh are deleted in _OverrideHandle()
+
+    CATCH_BAD_ALLOC;
+}
+
 } /* extern "C" */

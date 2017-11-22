@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -629,6 +629,17 @@ public class ToolSimpleTest extends ReplToolTesting {
         test(new String[]{"--startup", "JAVASE"},
                 (a) -> assertCommand(a, "ZoneOffsetTransitionRule.TimeDefinition.WALL",
                         "$1 ==> WALL")
+        );
+    }
+
+    @Test
+    public void testJavaSeSetStart() {
+        test(
+                (a) -> assertCommand(a, "/set sta JAVASE", ""),
+                (a) -> assertCommand(a, "/reset", "|  Resetting state."),
+                (a) -> assertCommandCheckOutput(a, "/li -a",
+                            s -> assertTrue(s.split("import ").length > 160,
+                            "not enough imports for JAVASE:\n" + s))
         );
     }
 

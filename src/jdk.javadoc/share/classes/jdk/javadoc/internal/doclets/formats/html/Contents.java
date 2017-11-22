@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
@@ -137,6 +138,7 @@ public class Contents {
     public final Content navProperty;
     public final Content navServices;
     public final Content nestedClassSummary;
+    public final Content newPage;
     public final Content nextClassLabel;
     public final Content nextLabel;
     public final Content nextLetter;
@@ -269,6 +271,7 @@ public class Contents {
         navProperty = getContent("doclet.navProperty");
         navServices = getContent("doclet.navServices");
         nestedClassSummary = getContent("doclet.Nested_Class_Summary");
+        newPage = new Comment(resources.getText("doclet.New_Page"));
         nextClassLabel = getNonBreakContent("doclet.Next_Class");
         nextLabel = getNonBreakContent("doclet.Next");
         nextLetter = getContent("doclet.Next_Letter");

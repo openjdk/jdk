@@ -186,10 +186,29 @@ public interface JavaShellToolBuilder {
     /**
      * Run an instance of the Java shell tool as configured by the other methods
      * in this interface.  This call is not destructive, more than one call of
-     * this method may be made from a configured builder.
+     * this method may be made from a configured builder. The  exit code from
+     * the Java shell tool is ignored.
      *
      * @param arguments the command-line arguments (including options), if any
      * @throws Exception an unexpected fatal exception
      */
     void run(String... arguments) throws Exception;
+
+    /**
+     * Run an instance of the Java shell tool as configured by the other methods
+     * in this interface.  This call is not destructive, more than one call of
+     * this method may be made from a configured builder.
+     *
+     * @implSpec The default implementation always returns zero. Implementations
+     * of this interface should override this method, returning the exit status.
+     *
+     * @param arguments the command-line arguments (including options), if any
+     * @throws Exception an unexpected fatal exception
+     * @return the exit status with which the tool explicitly exited (if any),
+     * otherwise 0 for success or 1 for failure
+     */
+    default int start(String... arguments) throws Exception {
+        run(arguments);
+        return 0;
+    }
 }

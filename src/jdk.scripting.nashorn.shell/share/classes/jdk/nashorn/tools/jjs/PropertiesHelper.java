@@ -57,7 +57,7 @@ final class PropertiesHelper {
      */
     PropertiesHelper(final Context context) {
         try {
-            this.pkgsHelper = new PackagesHelper(context);
+            this.pkgsHelper = PackagesHelper.create(context);
         } catch (final IOException exp) {
             if (Main.DEBUG) {
                 exp.printStackTrace();

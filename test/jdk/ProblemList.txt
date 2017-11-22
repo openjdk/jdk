@@ -245,8 +245,6 @@ javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 
 # jdk_swing
 
-sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java        8157338 generic-all
-
 ############################################################################
 
 # jdk_text

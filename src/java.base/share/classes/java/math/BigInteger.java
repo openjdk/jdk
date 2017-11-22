@@ -2741,7 +2741,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
          return z;
     }
 
-    // These methods are intended to be be replaced by virtual machine
+    // These methods are intended to be replaced by virtual machine
     // intrinsics.
     @HotSpotIntrinsicCandidate
     private static int[] implMontgomeryMultiply(int[] a, int[] b, int[] n, int len,

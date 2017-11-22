@@ -3893,25 +3893,34 @@ void AwtComponent::OpenCandidateWindow(int x, int y)
         if ( m_bitsCandType & bits )
             SetCandidateWindow(iCandType, x - p.x, y - p.y);
     }
-    if (m_bitsCandType != 0) {
-        // REMIND: is there any chance GetProxyFocusOwner() returns NULL here?
-        ::DefWindowProc(ImmGetHWnd(),
-                        WM_IME_NOTIFY, IMN_OPENCANDIDATE, m_bitsCandType);
-    }
 }
 
 void AwtComponent::SetCandidateWindow(int iCandType, int x, int y)
 {
     HWND hwnd = ImmGetHWnd();
     HIMC hIMC = ImmGetContext(hwnd);
-    CANDIDATEFORM cf;
-    cf.dwIndex = iCandType;
-    cf.dwStyle = CFS_POINT;
-    cf.ptCurrentPos.x = x;
-    cf.ptCurrentPos.y = y;
-
-    ImmSetCandidateWindow(hIMC, &cf);
-    ImmReleaseContext(hwnd, hIMC);
+    if (hIMC) {
+        CANDIDATEFORM cf;
+        cf.dwStyle = CFS_POINT;
+        ImmGetCandidateWindow(hIMC, 0, &cf);
+        if (x != cf.ptCurrentPos.x || y != cf.ptCurrentPos.y) {
+            cf.dwIndex = iCandType;
+            cf.dwStyle = CFS_POINT;
+            cf.ptCurrentPos = {x, y};
+            cf.rcArea = {0, 0, 0, 0};
+            ImmSetCandidateWindow(hIMC, &cf);
+        }
+        COMPOSITIONFORM cfr;
+        cfr.dwStyle = CFS_POINT;
+        ImmGetCompositionWindow(hIMC, &cfr);
+        if (x != cfr.ptCurrentPos.x || y != cfr.ptCurrentPos.y) {
+            cfr.dwStyle = CFS_POINT;
+            cfr.ptCurrentPos = {x, y};
+            cfr.rcArea = {0, 0, 0, 0};
+            ImmSetCompositionWindow(hIMC, &cfr);
+        }
+        ImmReleaseContext(hwnd, hIMC);
+    }
 }
 
 MsgRouting AwtComponent::WmImeSetContext(BOOL fSet, LPARAM *lplParam)
@@ -3939,17 +3948,14 @@ MsgRouting AwtComponent::WmImeSetContext(BOOL fSet, LPARAM *lplParam)
 MsgRouting AwtComponent::WmImeNotify(WPARAM subMsg, LPARAM bitsCandType)
 {
     if (!m_useNativeCompWindow) {
-        if (subMsg == IMN_OPENCANDIDATE) {
+        if (subMsg == IMN_OPENCANDIDATE || subMsg == IMN_CHANGECANDIDATE) {
             m_bitsCandType = bitsCandType;
             InquireCandidatePosition();
         } else if (subMsg == IMN_OPENSTATUSWINDOW ||
-                   subMsg == WM_IME_STARTCOMPOSITION) {
-            m_bitsCandType = 0;
-            InquireCandidatePosition();
-        } else if (subMsg == IMN_SETCANDIDATEPOS) {
+                   subMsg == WM_IME_STARTCOMPOSITION ||
+                   subMsg == IMN_SETCANDIDATEPOS) {
             InquireCandidatePosition();
         }
-        return mrConsume;
     }
     return mrDoDefault;
 }

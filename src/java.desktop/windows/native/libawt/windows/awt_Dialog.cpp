@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,8 @@ AwtDialog* AwtDialog::Create(jobject peer, jobject parent)
         if (parent != NULL) {
             JNI_CHECK_PEER_GOTO(parent, done);
             awtParent = (AwtWindow *)pData;
-            hwndParent = awtParent->GetHWnd();
+            HWND oHWnd = awtParent->GetOverriddenHWnd();
+            hwndParent = oHWnd ? oHWnd : awtParent->GetHWnd();
         } else {
             // There is no way to prevent a parentless dialog from showing on
             //  the taskbar other than to specify an invisible parent and set

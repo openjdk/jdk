@@ -112,7 +112,9 @@ public class ElementScanner7<R, P> extends ElementScanner6<R, P> {
     }
 
     /**
-     * This implementation scans the enclosed elements.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the enclosed elements.
      *
      * @param e  {@inheritDoc}
      * @param p  {@inheritDoc}

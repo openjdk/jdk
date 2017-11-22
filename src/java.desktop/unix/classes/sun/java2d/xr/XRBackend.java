@@ -36,7 +36,6 @@ import java.awt.geom.*;
 import java.util.*;
 
 import sun.font.*;
-import sun.java2d.jules.*;
 import sun.java2d.pipe.*;
 
 public interface XRBackend {
@@ -110,7 +109,4 @@ public interface XRBackend {
 
     public void setGCMode(long gc, boolean copy);
 
-    public void renderCompositeTrapezoids(byte op, int src, int maskFormat,
-                                          int dst, int srcX, int srcY,
-                                          TrapezoidList trapList);
 }

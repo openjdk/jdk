@@ -47,34 +47,17 @@ class GTKGraphicsUtils extends SynthGraphicsUtils {
             return;
         }
         int componentState = context.getComponentState();
-        if ((componentState & SynthConstants.DISABLED) ==
-                              SynthConstants.DISABLED){
-            if (!GTKLookAndFeel.is3()) {
-                Color orgColor = g.getColor();
-                g.setColor(context.getStyle().getColor(context,
-                        GTKColorType.WHITE));
-                x += 1;
-                y += 1;
-                super.paintText(context, g, text, x, y, mnemonicIndex);
 
-                g.setColor(orgColor);
-                x -= 1;
-                y -= 1;
-            }
-            super.paintText(context, g, text, x, y, mnemonicIndex);
+        String themeName = GTKLookAndFeel.getGtkThemeName();
+        if (themeName != null && themeName.startsWith("blueprint") &&
+            shouldShadowText(context.getRegion(), componentState)) {
+
+            g.setColor(Color.BLACK);
+            super.paintText(context, g, text, x+1, y+1, mnemonicIndex);
+            g.setColor(Color.WHITE);
         }
-        else {
-            String themeName = GTKLookAndFeel.getGtkThemeName();
-            if (themeName != null && themeName.startsWith("blueprint") &&
-                shouldShadowText(context.getRegion(), componentState)) {
 
-                g.setColor(Color.BLACK);
-                super.paintText(context, g, text, x+1, y+1, mnemonicIndex);
-                g.setColor(Color.WHITE);
-            }
-
-            super.paintText(context, g, text, x, y, mnemonicIndex);
-        }
+        super.paintText(context, g, text, x, y, mnemonicIndex);
     }
 
     /**
