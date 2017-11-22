@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,7 +472,7 @@ public class LookupOp implements BufferedImageOp, RasterOp {
         return hints;
     }
 
-    private final void byteFilter(ByteLookupTable lookup, Raster src,
+    private void byteFilter(ByteLookupTable lookup, Raster src,
                                   WritableRaster dst,
                                   int width, int height, int numBands) {
         int[] srcPix = null;
@@ -519,7 +519,7 @@ public class LookupOp implements BufferedImageOp, RasterOp {
         }
     }
 
-    private final void shortFilter(ShortLookupTable lookup, Raster src,
+    private void shortFilter(ShortLookupTable lookup, Raster src,
                                    WritableRaster dst,
                                    int width, int height, int numBands) {
         int band;

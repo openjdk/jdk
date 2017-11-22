@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -998,14 +998,14 @@ public class StandardGlyphVector extends GlyphVector {
     }
 
     // called by getGlyphsPixelBounds
-    private final void setDTX(AffineTransform tx) {
+    private void setDTX(AffineTransform tx) {
         if (!equalNonTranslateTX(dtx, tx)) {
             resetDTX(getNonTranslateTX(tx));
         }
     }
 
     // called by most functions
-    private final void setFRCTX() {
+    private void setFRCTX() {
         if (!equalNonTranslateTX(frctx, dtx)) {
             resetDTX(getNonTranslateTX(frctx));
         }
@@ -1016,7 +1016,7 @@ public class StandardGlyphVector extends GlyphVector {
      * must not contain translation.
      * Called by setRenderTransform, setDTX, initFontData.
      */
-    private final void resetDTX(AffineTransform at) {
+    private void resetDTX(AffineTransform at) {
         fsref = null;
         dtx = at;
         invdtx = null;

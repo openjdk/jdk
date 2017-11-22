@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,7 +329,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
             }
         }
 
-        private final void swap(final Vector<Object> a, final int i, final int j) {
+        private void swap(final Vector<Object> a, final int i, final int j) {
             final Object T = a.elementAt(i);
             a.setElementAt(a.elementAt(j), i);
             a.setElementAt(T, j);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class PNGImageDecoder extends ImageDecoder
     private void property(String key,float value) {
         property(key, Float.valueOf(value));
     }
-    private final void pngassert(boolean b) throws IOException {
+    private void pngassert(boolean b) throws IOException {
         if(!b) {
             PNGException e = new PNGException("Broken file");
             e.printStackTrace();
@@ -692,20 +692,20 @@ public class PNGImageDecoder extends ImageDecoder
         fill();
         return limit-pos>=n;
     }
-    private final int getInt(int pos) {
+    private int getInt(int pos) {
         return ((inbuf[pos  ]&0xFF)<<24)
              | ((inbuf[pos+1]&0xFF)<<16)
              | ((inbuf[pos+2]&0xFF)<< 8)
              | ((inbuf[pos+3]&0xFF)    );
     }
-    private final int getShort(int pos) {
+    private int getShort(int pos) {
         return (short)(((inbuf[pos  ]&0xFF)<<8)
                      | ((inbuf[pos+1]&0xFF)   ));
     }
-    private final int getByte(int pos) {
+    private int getByte(int pos) {
         return inbuf[pos]&0xFF;
     }
-    private final boolean getChunk() throws IOException {
+    private boolean getChunk() throws IOException {
         chunkLength = 0;
         if (!need(8)) return false;
         chunkLength = getInt(pos);

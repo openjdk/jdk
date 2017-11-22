@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,7 +295,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
         }
     }
 
-    private final BufferedImage ICCBIFilter(BufferedImage src,
+    private BufferedImage ICCBIFilter(BufferedImage src,
                                             ColorSpace srcColorSpace,
                                             BufferedImage dest,
                                             ColorSpace destColorSpace) {
@@ -753,7 +753,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
         return hints;
     }
 
-    private final BufferedImage nonICCBIFilter(BufferedImage src,
+    private BufferedImage nonICCBIFilter(BufferedImage src,
                                                ColorSpace srcColorSpace,
                                                BufferedImage dst,
                                                ColorSpace dstColorSpace) {
@@ -947,7 +947,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
 
     /* color convert a Raster - handles byte, ushort, int, short, float,
        or double transferTypes */
-    private final WritableRaster nonICCRasterFilter(Raster src,
+    private WritableRaster nonICCRasterFilter(Raster src,
                                                     WritableRaster dst)  {
 
         if (CSList.length != 2) {

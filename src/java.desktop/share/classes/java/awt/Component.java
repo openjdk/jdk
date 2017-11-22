@@ -10227,7 +10227,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         applyCompoundShape(getAppliedShape().getDifference(s));
     }
 
-    private final void applyCurrentShapeBelowMe() {
+    private void applyCurrentShapeBelowMe() {
         checkTreeLock();
         Container parent = getContainer();
         if (parent != null && parent.isShowing()) {
