@@ -158,12 +158,10 @@ cp ${TESTSRC}${FS}${MAKEFILE} .
 
 JAVA=${TESTJAVA}${FS}bin${FS}java
 JAVAC=${TESTJAVA}${FS}bin${FS}javac
-JAVAH=${TESTJAVA}${FS}bin${FS}javah
 
 export CC SYST ARCH LD_LIBRARY_PATH
 
-${JAVAC} -d . ${TESTSRC}${FS}MyCanvas.java
-${JAVAH} -jni -classpath . -d . MyCanvas
+${JAVAC} -d . -h . ${TESTSRC}${FS}MyCanvas.java
 ${MAKE} -f ${MAKEFILE}
 ${JAVA} ${TESTVMOPTS} -classpath . MyCanvas
 

@@ -26,7 +26,6 @@ CLASSES =	MyCanvas.class
 
 JAVA =		$(TESTJAVA)/bin/java -classpath .
 JAVAC =		$(TESTJAVA)/bin/javac
-JAVAH =		$(TESTJAVA)/bin/javah
 DEL =		rm -rf
 LINK =		$(CC)
 
