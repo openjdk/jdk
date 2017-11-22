@@ -87,6 +87,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _balanced_monitors  = !_uses_monitors || h_m()->access_flags().is_monitor_matching();
   _is_c1_compilable   = !h_m()->is_not_c1_compilable();
   _is_c2_compilable   = !h_m()->is_not_c2_compilable();
+  _can_be_parsed      = true;
   _has_reserved_stack_access = h_m()->has_reserved_stack_access();
   // Lazy fields, filled in on demand.  Require allocation.
   _code               = NULL;
@@ -99,12 +100,13 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
 #endif // COMPILER2
 
   ciEnv *env = CURRENT_ENV;
-  if (env->jvmti_can_hotswap_or_post_breakpoint() && can_be_compiled()) {
+  if (env->jvmti_can_hotswap_or_post_breakpoint()) {
     // 6328518 check hotswap conditions under the right lock.
     MutexLocker locker(Compile_lock);
     if (Dependencies::check_evol_method(h_m()) != NULL) {
       _is_c1_compilable = false;
       _is_c2_compilable = false;
+      _can_be_parsed = false;
     }
   } else {
     CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
