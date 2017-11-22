@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class X11Renderer implements
                 : new X11Renderer());
     }
 
-    private final long validate(SunGraphics2D sg2d) {
+    private long validate(SunGraphics2D sg2d) {
         // NOTE: getCompClip() will revalidateAll() if the
         // surfaceData is invalid.  This should ensure that
         // the clip and pixel that we are validating against

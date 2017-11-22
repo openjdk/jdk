@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,7 +310,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     return new Rectangle2D.Float(l, t, r - l, b - t);
   }
 
-  private final StandardGlyphVector getGV() {
+  private StandardGlyphVector getGV() {
     if (gv == null) {
       gv = createGV();
     }
@@ -543,7 +543,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
       }
   }
 
-  private final float[] getCharinfo() {
+  private float[] getCharinfo() {
     if (charinfo == null) {
       charinfo = createCharinfo();
     }

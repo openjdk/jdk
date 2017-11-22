@@ -755,7 +755,7 @@ public class IndexColorModel extends ColorModel {
      * value is used to mask off the pixel parameters for methods such
      * as getRed(), getGreen(), getBlue(), getAlpha(), and getRGB().
      */
-    private final void calculatePixelMask() {
+    private void calculatePixelMask() {
         // Note that we adjust the mask so that our masking behavior here
         // is consistent with that of our native rendering loops.
         int maskbits = pixel_bits;

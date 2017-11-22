@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -397,7 +397,7 @@ public class BufferedImageFilter extends ImageFilter implements Cloneable {
         consumer.imageComplete(status);
     }
 
-    private final WritableRaster createDCMraster() {
+    private WritableRaster createDCMraster() {
         WritableRaster wr;
         DirectColorModel dcm = (DirectColorModel) model;
         boolean hasAlpha = model.hasAlpha();
