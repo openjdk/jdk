@@ -223,7 +223,7 @@ public class Extern {
             }
             return true;
         } catch (Fault f) {
-            reporter.print(Diagnostic.Kind.WARNING, f.getMessage());
+            reporter.print(Diagnostic.Kind.ERROR, f.getMessage());
             return false;
         }
     }

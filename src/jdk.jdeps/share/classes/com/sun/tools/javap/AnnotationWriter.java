@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,24 +61,45 @@ public class AnnotationWriter extends BasicWriter {
 
     public void write(Annotation annot) {
         write(annot, false);
+        println();
+        indent(+1);
+        write(annot, true);
+        indent(-1);
     }
 
     public void write(Annotation annot, boolean resolveIndices) {
         writeDescriptor(annot.type_index, resolveIndices);
-        boolean showParens = annot.num_element_value_pairs > 0 || !resolveIndices;
-        if (showParens)
+        if (resolveIndices) {
+            boolean showParens = annot.num_element_value_pairs > 0;
+            if (showParens) {
+                println("(");
+                indent(+1);
+            }
+            for (int i = 0; i < annot.num_element_value_pairs; i++) {
+                write(annot.element_value_pairs[i], true);
+                println();
+            }
+            if (showParens) {
+                indent(-1);
+                print(")");
+            }
+        } else {
             print("(");
-        for (int i = 0; i < annot.num_element_value_pairs; i++) {
-            if (i > 0)
-                print(",");
-            write(annot.element_value_pairs[i], resolveIndices);
-        }
-        if (showParens)
+            for (int i = 0; i < annot.num_element_value_pairs; i++) {
+                if (i > 0)
+                    print(",");
+                write(annot.element_value_pairs[i], false);
+            }
             print(")");
+        }
     }
 
     public void write(TypeAnnotation annot) {
         write(annot, true, false);
+        println();
+        indent(+1);
+        write(annot.annotation, true);
+        indent(-1);
     }
 
     public void write(TypeAnnotation annot, boolean showOffsets, boolean resolveIndices) {
@@ -194,10 +215,6 @@ public class AnnotationWriter extends BasicWriter {
         }
     }
 
-    public void write(Annotation.element_value_pair pair) {
-        write(pair, false);
-    }
-
     public void write(Annotation.element_value_pair pair, boolean resolveIndices) {
         writeIndex(pair.element_name_index, resolveIndices);
         print("=");
@@ -206,6 +223,10 @@ public class AnnotationWriter extends BasicWriter {
 
     public void write(Annotation.element_value value) {
         write(value, false);
+        println();
+        indent(+1);
+        write(value, true);
+        indent(-1);
     }
 
     public void write(Annotation.element_value value, boolean resolveIndices) {
@@ -240,39 +261,79 @@ public class AnnotationWriter extends BasicWriter {
             value.accept(this, resolveIndices);
         }
 
+        @Override
         public Void visitPrimitive(Primitive_element_value ev, Boolean resolveIndices) {
-            if (resolveIndices)
-                writeIndex(ev.const_value_index, resolveIndices);
-            else
+            if (resolveIndices) {
+                int index = ev.const_value_index;
+                switch (ev.tag) {
+                    case 'B':
+                        print("(byte) ");
+                        print(constantWriter.stringValue(index));
+                        break;
+                    case 'C':
+                        print("'");
+                        print(constantWriter.charValue(index));
+                        print("'");
+                        break;
+                    case 'D':
+                    case 'F':
+                    case 'I':
+                    case 'J':
+                        print(constantWriter.stringValue(index));
+                        break;
+                    case 'S':
+                        print("(short) ");
+                        print(constantWriter.stringValue(index));
+                        break;
+                    case 'Z':
+                        print(constantWriter.booleanValue(index));
+                        break;
+                    case 's':
+                        print("\"");
+                        print(constantWriter.stringValue(index));
+                        print("\"");
+                        break;
+                    default:
+                        print(((char) ev.tag) + "#" + ev.const_value_index);
+                        break;
+                }
+            } else {
                 print(((char) ev.tag) + "#" + ev.const_value_index);
+            }
             return null;
         }
 
+        @Override
         public Void visitEnum(Enum_element_value ev, Boolean resolveIndices) {
             if (resolveIndices) {
                 writeIndex(ev.type_name_index, resolveIndices);
                 print(".");
                 writeIndex(ev.const_name_index, resolveIndices);
-            } else
+            } else {
                 print(((char) ev.tag) + "#" + ev.type_name_index + ".#" + ev.const_name_index);
+            }
             return null;
         }
 
+        @Override
         public Void visitClass(Class_element_value ev, Boolean resolveIndices) {
             if (resolveIndices) {
+                print("class ");
                 writeIndex(ev.class_info_index, resolveIndices);
-                print(".class");
-            } else
+            } else {
                 print(((char) ev.tag) + "#" + ev.class_info_index);
+            }
             return null;
         }
 
+        @Override
         public Void visitAnnotation(Annotation_element_value ev, Boolean resolveIndices) {
             print((char) ev.tag);
             AnnotationWriter.this.write(ev.annotation_value, resolveIndices);
             return null;
         }
 
+        @Override
         public Void visitArray(Array_element_value ev, Boolean resolveIndices) {
             print("[");
             for (int i = 0; i < ev.num_values; i++) {
@@ -286,6 +347,6 @@ public class AnnotationWriter extends BasicWriter {
 
     }
 
-    private ClassWriter classWriter;
-    private ConstantWriter constantWriter;
+    private final ClassWriter classWriter;
+    private final ConstantWriter constantWriter;
 }

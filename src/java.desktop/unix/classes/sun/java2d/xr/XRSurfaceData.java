@@ -33,7 +33,6 @@ import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.SurfaceDataProxy;
-import sun.java2d.jules.*;
 import sun.java2d.loops.*;
 import sun.java2d.pipe.*;
 import sun.java2d.x11.*;
@@ -146,29 +145,21 @@ public abstract class XRSurfaceData extends XSurfaceData {
             }
         }
 
-        if (sg2d.antialiasHint == SunHints.INTVAL_ANTIALIAS_ON &&
-            JulesPathBuf.isCairoAvailable())
-        {
-            sg2d.shapepipe = aaShapePipe;
-            sg2d.drawpipe = aaPixelToShapeConv;
-            sg2d.fillpipe = aaPixelToShapeConv;
-        } else {
-            if (txPipe != null) {
-                if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
-                    sg2d.drawpipe = txPipe;
-                    sg2d.fillpipe = txPipe;
-                } else if (sg2d.strokeState != SunGraphics2D.STROKE_THIN) {
-                    sg2d.drawpipe = txPipe;
-                    sg2d.fillpipe = nonTxPipe;
-                } else {
-                    sg2d.drawpipe = nonTxPipe;
-                    sg2d.fillpipe = nonTxPipe;
-                }
-                sg2d.shapepipe = nonTxPipe;
+        if (txPipe != null) {
+            if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
+                sg2d.drawpipe = txPipe;
+                sg2d.fillpipe = txPipe;
+            } else if (sg2d.strokeState != SunGraphics2D.STROKE_THIN) {
+                sg2d.drawpipe = txPipe;
+                sg2d.fillpipe = nonTxPipe;
             } else {
-                if (!validated) {
-                    super.validatePipe(sg2d);
-                }
+                sg2d.drawpipe = nonTxPipe;
+                sg2d.fillpipe = nonTxPipe;
+            }
+            sg2d.shapepipe = nonTxPipe;
+        } else {
+            if (!validated) {
+                super.validatePipe(sg2d);
             }
         }
 
@@ -528,11 +519,6 @@ public abstract class XRSurfaceData extends XSurfaceData {
                 xrtextpipe = maskBuffer.getTextRenderer();
                 xrDrawImage = new XRDrawImage();
 
-                if (JulesPathBuf.isCairoAvailable()) {
-                    aaShapePipe =
-                       new JulesShapePipe(XRCompositeManager.getInstance(this));
-                    aaPixelToShapeConv = new PixelToShapeConverter(aaShapePipe);
-                }
             } finally {
                 SunToolkit.awtUnlock();
             }

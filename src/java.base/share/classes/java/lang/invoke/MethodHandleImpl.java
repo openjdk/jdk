@@ -662,8 +662,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     }
 
     static void checkSpreadArgument(Object av, int n) {
-        if (av == null) {
-            if (n == 0)  return;
+        if (av == null && n == 0) {
+            return;
+        } else if (av == null) {
+            throw new NullPointerException("null array reference");
         } else if (av instanceof Object[]) {
             int len = ((Object[])av).length;
             if (len == n)  return;

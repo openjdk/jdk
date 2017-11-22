@@ -283,6 +283,7 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
             // Ask peer class for the text component font name
             jstring jTextComponentFontName = GetTextComponentFontName(env, font);
             if (jTextComponentFontName == NULL) {
+                delete awtFont;
                 return NULL;
             }
             LPCWSTR textComponentFontName = JNU_GetStringPlatformChars(env, jTextComponentFontName, NULL);

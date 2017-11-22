@@ -422,7 +422,7 @@ int enqueue_command(jvm_t* jvm, const char* cstr, int arg_count, const char** ar
         print_debug("door_call failed\n");
     } else {
         /*
-         * door_call succeeded but the call didn't return the the expected jint.
+         * door_call succeeded but the call didn't return the expected jint.
          */
         if (door_args.data_size < sizeof(int)) {
             print_debug("Enqueue error - reason unknown as result is truncated!");

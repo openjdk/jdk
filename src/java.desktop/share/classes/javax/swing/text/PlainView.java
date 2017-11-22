@@ -646,7 +646,7 @@ public class PlainView extends View implements TabExpander {
         if (tabSize == 0) {
             return x;
         }
-        float ntabs = (x - tabBase) / tabSize;
+        int ntabs = (int) ((x - tabBase) / tabSize);
         return tabBase + ((ntabs + 1) * tabSize);
     }
 

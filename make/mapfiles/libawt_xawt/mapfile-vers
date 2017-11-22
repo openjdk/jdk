@@ -408,7 +408,6 @@ SUNWprivate_1.1 {
         Java_sun_java2d_xr_XRBackendNative_XRenderCompositeTextNative;
         Java_sun_java2d_xr_XRBackendNative_setGCMode;
         Java_sun_java2d_xr_XRBackendNative_GCRectanglesNative;
-        Java_sun_java2d_xr_XRBackendNative_renderCompositeTrapezoidsNative;
 
         Java_com_sun_java_swing_plaf_gtk_GTKEngine_native_1paint_1arrow;
         Java_com_sun_java_swing_plaf_gtk_GTKEngine_native_1paint_1box;

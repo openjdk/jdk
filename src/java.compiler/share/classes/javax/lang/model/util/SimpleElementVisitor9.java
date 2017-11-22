@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,12 +94,14 @@ public class SimpleElementVisitor9<R, P> extends SimpleElementVisitor8<R, P> {
     }
 
     /**
-     * Visits a {@code ModuleElement} by calling {@code
+     * {@inheritDoc}
+     *
+     * @implSpec Visits a {@code ModuleElement} by calling {@code
      * defaultAction}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter
-     * @return  the result of {@code defaultAction}
+     * @return  {@inheritDoc}
      */
     @Override
     public R visitModule(ModuleElement e, P p) {

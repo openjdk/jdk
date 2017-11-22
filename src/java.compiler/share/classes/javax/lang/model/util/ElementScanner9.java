@@ -111,8 +111,9 @@ public class ElementScanner9<R, P> extends ElementScanner8<R, P> {
     }
 
     /**
-     * Visits a {@code ModuleElement} by scanning the enclosed
-     * elements.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the enclosed elements.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,11 @@ import java.awt.Graphics;
 import java.awt.dnd.DropTarget;
 
 import sun.awt.LightweightFrame;
+import sun.awt.OverrideNativeWindowHandle;
 import sun.swing.JLightweightFrame;
 import sun.swing.SwingAccessor;
 
-public class XLightweightFramePeer extends XFramePeer {
+public class XLightweightFramePeer extends XFramePeer implements OverrideNativeWindowHandle {
 
     XLightweightFramePeer(LightweightFrame target) {
         super(target);
@@ -79,5 +80,16 @@ public class XLightweightFramePeer extends XFramePeer {
     @Override
     public void removeDropTarget(DropTarget dt) {
         getLwTarget().removeDropTarget(dt);
+    }
+
+    private volatile long overriddenWindowHandle = 0L;
+
+    @Override
+    public void overrideWindowHandle(final long handle) {
+        overriddenWindowHandle = handle;
+    }
+
+    public long getOverriddenWindowHandle() {
+        return overriddenWindowHandle;
     }
 }

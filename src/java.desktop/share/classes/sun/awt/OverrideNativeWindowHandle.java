@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,19 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.util;
+package sun.awt;
 
 /**
- * Enum representing method types.
- *
- * @author Bhavesh Patel
+ * Used for replacing window owner with another non-Swing window.
+ * It is useful in case of JavaFX-Swing interop:
+ * it helps to keep Swing dialogs above its owner(JavaFX stage).
  */
-public enum MethodTypes implements TableTabTypes {
 
-    ALL(TableTabs.tab(0xffff, "doclet.All_Methods", "t0", true)),
-    STATIC(TableTabs.tab(0x1, "doclet.Static_Methods", "t1", false)),
-    INSTANCE(TableTabs.tab(0x2, "doclet.Instance_Methods", "t2", false)),
-    ABSTRACT(TableTabs.tab(0x4, "doclet.Abstract_Methods", "t3", false)),
-    CONCRETE(TableTabs.tab(0x8, "doclet.Concrete_Methods", "t4", false)),
-    DEFAULT(TableTabs.tab(0x10, "doclet.Default_Methods", "t5", false)),
-    DEPRECATED(TableTabs.tab(0x20, "doclet.Deprecated_Methods", "t6", false));
+public interface OverrideNativeWindowHandle {
 
-    private final TableTabs tabs;
-
-    private MethodTypes(TableTabs t) {
-        this.tabs = t;
-    }
-
-    public TableTabs tableTabs() {
-        return this.tabs;
-    }
-    }
+    /**
+     * Replaces an owner window with a window with provided handle.
+     * @param handle native window handle
+     */
+    void overrideWindowHandle(final long handle);
+}
