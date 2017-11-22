@@ -393,7 +393,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti vm-structs jni-check services management all-gcs nmt"
   if test "x$ENABLE_CDS" = "xtrue"; then
     NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cds"
-  fi                                            
+  fi
 
   # Enable features depending on variant.
   JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_aot $JVM_FEATURES_graal"
@@ -476,7 +476,7 @@ AC_DEFUN([SETUP_HOTSPOT_TARGET_CPU_PORT],
 AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_GTEST],
 [
   AC_ARG_ENABLE([hotspot-gtest], [AS_HELP_STRING([--disable-hotspot-gtest],
-      [Disables building of the Hotspot unit tests])])
+      [Disables building of the Hotspot unit tests @<:@enabled@:>@])])
 
   if test -e "${TOPDIR}/test/hotspot/gtest"; then
     GTEST_DIR_EXISTS="true"

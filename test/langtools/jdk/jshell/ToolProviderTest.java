@@ -21,21 +21,14 @@
  * questions.
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.ServiceLoader;
-import java.util.function.Consumer;
 import javax.tools.Tool;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 /*
  * @test
- * @bug 8170044 8171343 8179856
+ * @bug 8170044 8171343 8179856 8185840 8190383
  * @summary Test ServiceLoader launching of jshell tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -48,30 +41,25 @@ import static org.testng.Assert.fail;
 @Test
 public class ToolProviderTest extends StartOptionTest {
 
-    private ByteArrayOutputStream cmdout;
-    private ByteArrayOutputStream cmderr;
-    private InputStream cmdInStream;
-
-    @BeforeMethod
+    // Through the provider, the console and console go to command out (we assume,
+    // because it works with the current tests) that console and user output are
+    // after command out.
     @Override
-    public void setUp() {
-        cmdout = new ByteArrayOutputStream();
-        cmderr = new ByteArrayOutputStream();
-        cmdInStream = new ByteArrayInputStream("/exit\n".getBytes());
+    protected void startExCoUoCeCn(int expectedExitCode,
+            String expectedCmdOutput,
+            String expectedUserOutput,
+            String expectedError,
+            String expectedConsole,
+            String... args) {
+        super.startExCoUoCeCn(expectedExitCode,
+                (expectedCmdOutput  == null? "" : expectedCmdOutput) +
+                (expectedConsole    == null? "" : expectedConsole) +
+                (expectedUserOutput == null? "" : expectedUserOutput),
+                null, expectedError, null, args);
     }
 
     @Override
-    protected void start(Consumer<String> checkCmdOutput,
-            Consumer<String> checkUserOutput, Consumer<String> checkError,
-            String... args) throws Exception {
-        if (runShellServiceLoader(args) != 0) {
-            fail("Repl tool failed");
-        }
-        check(cmdout, checkCmdOutput, "cmdout");
-        check(cmderr, checkError, "cmderr");
-    }
-
-    private int runShellServiceLoader(String... args) {
+    protected int runShell(String... args) {
         ServiceLoader<Tool> sl = ServiceLoader.load(Tool.class);
         for (Tool provider : sl) {
             if (provider.name().equals("jshell")) {
@@ -81,38 +69,14 @@ public class ToolProviderTest extends StartOptionTest {
         throw new AssertionError("Repl tool not found by ServiceLoader: " + sl);
     }
 
+    // Test --show-version
     @Override
-    public void testCommandFile() throws Exception {
-        String fn = writeToFile("String str = \"Hello \"\n/list\nSystem.out.println(str + str)\n/exit\n");
-        start("1 : String str = \"Hello \";" + "\n" + "Hello Hello", "", "--no-startup", fn, "-s");
-    }
-
-    @Override
-    public void testShowVersion() throws Exception {
-        start(
-                s -> {
-                    assertTrue(s.startsWith("jshell "), "unexpected version: " + s);
-                    assertTrue(s.contains("Welcome"), "Expected start (but got no welcome): " + s);
-                    assertTrue(s.trim().contains("jshell>"), "Expected prompt, got: " + s);
-                },
-                null, null,
+    public void testShowVersion() {
+        startCo(s -> {
+            assertTrue(s.startsWith("jshell "), "unexpected version: " + s);
+            assertTrue(s.contains("Welcome"), "Expected start (but got no welcome): " + s);
+            assertTrue(s.trim().contains("jshell>"), "Expected prompt, got: " + s);
+        },
                 "--show-version");
     }
-    /**
-     * Test that input is read with "-" and there is no extra output.
-     * @throws Exception
-     */
-    @Override
-    public void testHypenFile() throws Exception {
-        cmdInStream = new ByteArrayInputStream("System.out.print(\"Hello\");\n".getBytes());
-        start("Hello", "", "-");
-        cmdInStream = new ByteArrayInputStream("System.out.print(\"Hello\");\n".getBytes());
-        start("Hello", "", "-", "-");
-        Compiler compiler = new Compiler();
-        Path path = compiler.getPath("markload.jsh");
-        compiler.writeToFile(path, "System.out.print(\"===\");");
-        cmdInStream = new ByteArrayInputStream("System.out.print(\"Hello\");\n".getBytes());
-        start("===Hello===", "", path.toString(), "-", path.toString());
-    }
-
 }

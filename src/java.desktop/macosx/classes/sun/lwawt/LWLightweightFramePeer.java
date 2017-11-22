@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,11 @@ import java.awt.dnd.DropTarget;
 import java.awt.event.FocusEvent;
 
 import sun.awt.LightweightFrame;
+import sun.awt.OverrideNativeWindowHandle;
 import sun.swing.JLightweightFrame;
 import sun.swing.SwingAccessor;
 
-public class LWLightweightFramePeer extends LWWindowPeer {
+public class LWLightweightFramePeer extends LWWindowPeer implements OverrideNativeWindowHandle {
 
     public LWLightweightFramePeer(LightweightFrame target,
                                   PlatformComponent platformComponent,
@@ -115,5 +116,17 @@ public class LWLightweightFramePeer extends LWWindowPeer {
     @Override
     public void updateCursorImmediately() {
         SwingAccessor.getJLightweightFrameAccessor().updateCursor((JLightweightFrame)getLwTarget());
+    }
+
+    // SwingNode
+    private volatile long overriddenWindowHandle = 0L;
+
+    @Override
+    public void overrideWindowHandle(final long handle) {
+        this.overriddenWindowHandle = handle;
+    }
+
+    public long getOverriddenWindowHandle() {
+        return overriddenWindowHandle;
     }
 }

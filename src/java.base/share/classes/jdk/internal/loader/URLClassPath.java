@@ -687,7 +687,7 @@ public class URLClassPath {
     }
 
     /*
-     * Nested class class used to represent a Loader of resources from a JAR URL.
+     * Nested class used to represent a Loader of resources from a JAR URL.
      */
     static class JarLoader extends Loader {
         private JarFile jar;

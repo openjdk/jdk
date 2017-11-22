@@ -81,7 +81,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       $(error Unknown target OS $(OPENJDK_TARGET_OS) in CompileLibjsig.gmk)
     endif
 
-    LIBJSIG_SRC_FILE := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjsig/jsig.c
+    LIBJSIG_SRC_DIR := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjsig
     LIBJSIG_MAPFILE := $(wildcard $(TOPDIR)/make/mapfiles/libjsig/mapfile-vers-$(OPENJDK_TARGET_OS))
     LIBJSIG_OUTPUTDIR := $(HOTSPOT_OUTPUTDIR)/libjsig
 
@@ -91,7 +91,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
 
     $(eval $(call SetupNativeCompilation, BUILD_LIBJSIG, \
         LIBRARY := jsig, \
-        EXTRA_FILES := $(LIBJSIG_SRC_FILE), \
+        SRC := $(LIBJSIG_SRC_DIR), \
         OUTPUT_DIR := $(LIB_OUTPUTDIR), \
         LANG := C, \
         CFLAGS := $(LIBJSIG_CFLAGS) $(LIBJSIG_CPU_FLAGS), \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@ package p;
 /** Test that when running javadoc on a package, we only get
  *  documentation for those classes for which source was provided.
  */
-public class SourceOnly extends com.sun.javadoc.Doclet
-{
+public class SourceOnly extends com.sun.javadoc.Doclet {
+    NonSource dependency; // force a compilation error if not on classpath.
+
     public static void main(String[] args) {
         // run javadoc on package p
         int result = com.sun.tools.javadoc.Main.

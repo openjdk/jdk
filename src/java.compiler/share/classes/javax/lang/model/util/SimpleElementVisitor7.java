@@ -95,11 +95,13 @@ public class SimpleElementVisitor7<R, P> extends SimpleElementVisitor6<R, P> {
     }
 
     /**
-     * This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e {@inheritDoc}
      * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
+     * @return  {@inheritDoc}
      */
     @Override
     public R visitVariable(VariableElement e, P p) {

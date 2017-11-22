@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.net.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
@@ -43,6 +44,7 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlVersion;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
@@ -80,12 +82,6 @@ import static javax.tools.Diagnostic.Kind.*;
  * @author Bhavesh Patel (Modified)
  */
 public class HtmlConfiguration extends BaseConfiguration {
-
-    /**
-     * The build date.  Note: For now, we will use
-     * a version number instead of a date.
-     */
-    public static final String BUILD_DATE = System.getProperty("java.version");
 
     /**
      * Argument for command line option "-header".
@@ -244,13 +240,16 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     protected Set<Character> tagSearchIndexKeys;
 
-    protected Contents contents;
+    protected final Contents contents;
 
-    protected Messages messages;
+    protected final Messages messages;
+
+    protected Links links;
 
     /**
-     * Constructor. Initializes resource for the
-     * {@link jdk.javadoc.internal.tool.Messager Messager}.
+     * Creates an object to hold the configuration for a doclet.
+     *
+     * @param doclet the doclet
      */
     public HtmlConfiguration(Doclet doclet) {
         super(doclet);
@@ -260,30 +259,28 @@ public class HtmlConfiguration extends BaseConfiguration {
 
         messages = new Messages(this);
         contents = new Contents(this);
+
+        String v;
+        try {
+            ResourceBundle rb = ResourceBundle.getBundle(versionBundleName, getLocale());
+            try {
+                v = rb.getString("release");
+            } catch (MissingResourceException e) {
+                v = defaultDocletVersion;
+            }
+        } catch (MissingResourceException e) {
+            v = defaultDocletVersion;
+        }
+        docletVersion = v;
     }
 
-    private final String versionRBName = "jdk.javadoc.internal.tool.resources.version";
-    private ResourceBundle versionRB;
+    private static final String versionBundleName = "jdk.javadoc.internal.tool.resources.version";
+    private static final String defaultDocletVersion = System.getProperty("java.version");
+    public final String docletVersion;
 
-    /**
-     * Return the build date for the doclet.
-     * @return the build date
-     */
     @Override
-    public String getDocletSpecificBuildDate() {
-        if (versionRB == null) {
-            try {
-                versionRB = ResourceBundle.getBundle(versionRBName, getLocale());
-            } catch (MissingResourceException e) {
-                return BUILD_DATE;
-            }
-        }
-
-        try {
-            return versionRB.getString("release");
-        } catch (MissingResourceException e) {
-            return BUILD_DATE;
-        }
+    public String getDocletVersion() {
+        return docletVersion;
     }
 
     @Override
@@ -359,6 +356,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         setTopFile(docEnv);
         workArounds.initDocLint(doclintOpts.values(), tagletManager.getCustomTagNames(),
                 Utils.toLowerCase(htmlVersion.name()));
+        links = new Links(htmlVersion);
         return true;
     }
 
@@ -478,6 +476,16 @@ public class HtmlConfiguration extends BaseConfiguration {
             return fm.getJavaFileObjects(overviewpath).iterator().next();
         }
         return null;
+    }
+
+    public DocFile getMainStylesheet() {
+        return stylesheetfile.isEmpty() ? null : DocFile.createFileForInput(this, stylesheetfile);
+    }
+
+    public List<DocFile> getAdditionalStylesheets() {
+        return additionalStylesheets.stream()
+                .map(ssf -> DocFile.createFileForInput(this, ssf))
+                .collect(Collectors.toList());
     }
 
     /**

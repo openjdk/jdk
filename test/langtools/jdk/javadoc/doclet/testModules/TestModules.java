@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
- *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218 8175823 8166306
- *      8178043 8181622 8183511 8169819 8074407 8183037
+ *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
+ *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -1050,7 +1050,7 @@ public class TestModules extends JavadocTester {
                 + "<li><a href=\"#module\">Modules</a></li>\n"
                 + "</ul>",
                 "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleA-summary.html\">moduleA</a></th>\n"
+                + "<th class=\"colDeprecatedItemName\" scope=\"row\"><a href=\"moduleA-summary.html\">moduleA</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"deprecationComment\">This module is deprecated.</div>\n"
                 + "</td>\n"
@@ -1100,7 +1100,7 @@ public class TestModules extends JavadocTester {
                 + "&nbsp;</span></span><span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:showGroups(4);\">"
                 + "Other Modules</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>",
                 "var groups = {\"i0\":1,\"i1\":2,\"i2\":2,\"i3\":4};\n"
-                + "var tabs = {65535:[\"t0\",\"All Modules\"],1:[\"t1\",\"Module Group A\"],2:[\"t2\",\"Module Group B &amp; C\"],4:[\"t4\",\"Other Modules\"]};\n"
+                + "var tabs = {65535:[\"t0\",\"All Modules\"],1:[\"t1\",\"Module Group A\"],2:[\"t2\",\"Module Group B & C\"],4:[\"t4\",\"Other Modules\"]};\n"
                 + "var altColor = \"altColor\";\n"
                 + "var rowColor = \"rowColor\";\n"
                 + "var tableTab = \"tableTab\";\n"

@@ -217,7 +217,7 @@ final class Resolver {
     Resolver bind() {
 
         // Scan the finders for all available service provider modules. As
-        // java.base uses services then then module finders will be scanned
+        // java.base uses services then the module finders will be scanned
         // anyway.
         Map<String, Set<ModuleReference>> availableProviders = new HashMap<>();
         for (ModuleReference mref : findAll()) {

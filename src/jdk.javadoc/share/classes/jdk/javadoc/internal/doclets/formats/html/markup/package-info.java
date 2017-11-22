@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,17 @@
  */
 
 /**
-    This package contains classes that write HTML markup tags.
-
-    <p><b>This is NOT part of any supported API.
-    If you write code that depends on this, you do so at your own risk.
-    This code and its internal interfaces are subject to change or
-    deletion without notice.</b>
+ * This package contains classes that create and write HTML markup tags.
+ *
+ * The primary low level classes are {@link HtmlTree} and subtypes
+ * of {@code Content}. In addition, there are mid-level builders
+ * like {@link TableHeader} and {@link Table} to help build more
+ * complex HTML trees.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 
 package jdk.javadoc.internal.doclets.formats.html.markup;

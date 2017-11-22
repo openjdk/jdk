@@ -442,7 +442,8 @@ public interface List<E> extends Collection<E> {
 
     /**
      * Sorts this list according to the order induced by the specified
-     * {@link Comparator}.
+     * {@link Comparator}.  The sort is <i>stable</i>: this method must not
+     * reorder equal elements.
      *
      * <p>All elements in this list must be <i>mutually comparable</i> using the
      * specified comparator (that is, {@code c.compare(e1, e2)} must not throw

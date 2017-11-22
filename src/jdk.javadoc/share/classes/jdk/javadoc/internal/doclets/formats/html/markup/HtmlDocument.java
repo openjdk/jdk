@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,14 @@
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.*;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
  * Class for generating an HTML document for javadoc output.
@@ -41,9 +45,9 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  *
  * @author Bhavesh Patel
  */
-public class HtmlDocument extends Content {
-
-    private List<Content> docContent = Collections.emptyList();
+public class HtmlDocument {
+    private final DocType docType;
+    private final List<Content> docContent;
 
     /**
      * Constructor to construct an HTML document.
@@ -52,11 +56,9 @@ public class HtmlDocument extends Content {
      * @param docComment comment for the document
      * @param htmlTree HTML tree of the document
      */
-    public HtmlDocument(Content docType, Content docComment, Content htmlTree) {
-        docContent = new ArrayList<>();
-        addContent(nullCheck(docType));
-        addContent(nullCheck(docComment));
-        addContent(nullCheck(htmlTree));
+    public HtmlDocument(DocType docType, Content docComment, Content htmlTree) {
+        this.docType = docType;
+        docContent = Arrays.asList(docComment, htmlTree);
     }
 
     /**
@@ -65,46 +67,41 @@ public class HtmlDocument extends Content {
      * @param docType document type for the HTML document
      * @param htmlTree HTML tree of the document
      */
-    public HtmlDocument(Content docType, Content htmlTree) {
-        docContent = new ArrayList<>();
-        addContent(nullCheck(docType));
-        addContent(nullCheck(htmlTree));
+    public HtmlDocument(DocType docType, Content htmlTree) {
+        this.docType = docType;
+        docContent = Collections.singletonList(htmlTree);
     }
 
     /**
-     * Adds content for the HTML document.
+     * Writes the content of this document to the specified file.
      *
-     * @param htmlContent html content to be added
+     * @param docFile the file
+     * @throws DocFileIOException if an {@code IOException} occurs while writing the file
      */
-    public final void addContent(Content htmlContent) {
-        if (htmlContent.isValid())
-            docContent.add(htmlContent);
+    public void write(DocFile docFile) throws DocFileIOException {
+        try (Writer writer = docFile.openWriter()) {
+            write(writer);
+        } catch (IOException e) {
+            throw new DocFileIOException(docFile, DocFileIOException.Mode.WRITE, e);
+        }
     }
 
-    /**
-     * This method is not supported by the class.
-     *
-     * @param stringContent string content that needs to be added
-     * @throws UnsupportedOperationException always
-     */
     @Override
-    public void addContent(CharSequence stringContent) {
-        throw new UnsupportedOperationException();
+    public String toString() {
+        try (Writer writer = new StringWriter()) {
+            write(writer);
+            return writer.toString();
+        } catch (IOException e) {
+            throw new Error(e);
+        }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public boolean isEmpty() {
-        return (docContent.isEmpty());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean write(Writer out,  boolean atNewline) throws IOException {
-        for (Content c : docContent)
-            atNewline = c.write(out, atNewline);
-        return atNewline;
+    private void write(Writer writer) throws IOException {
+        writer.write(docType.text);
+        writer.write(DocletConstants.NL);
+        boolean atNewline = true;
+        for (Content c : docContent) {
+            atNewline = c.write(writer, atNewline);
+        }
     }
 }

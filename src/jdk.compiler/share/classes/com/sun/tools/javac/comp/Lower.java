@@ -3226,7 +3226,7 @@ public class Lower extends TreeTranslator {
             JCVariableDecl indexdef = make.VarDef(index, make.Literal(INT, 0));
             indexdef.init.type = indexdef.type = syms.intType.constType(0);
 
-            List<JCStatement> loopinit = List.of(arraycachedef, lencachedef, indexdef);
+            List<JCStatement> loopinit = List.of(lencachedef, indexdef);
             JCBinary cond = makeBinary(LT, make.Ident(index), make.Ident(lencache));
 
             JCExpressionStatement step = make.Exec(makeUnary(PREINC, make.Ident(index)));
@@ -3236,18 +3236,27 @@ public class Lower extends TreeTranslator {
                                                     make.Ident(index)).setType(elemtype);
             JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(tree.var.mods,
                                                   tree.var.name,
-                                                  tree.var.vartype,
-                                                  loopvarinit).setType(tree.var.type);
+                                                  tree.var.vartype, null).setType(tree.var.type);
             loopvardef.sym = tree.var.sym;
-            JCBlock body = make.
-                Block(0, List.of(loopvardef, tree.body));
 
+            JCStatement loopVarAssign = make.Assignment(tree.var.sym, loopvarinit);
+            JCBlock body = make.
+                Block(0, List.of(loopVarAssign, tree.body));
+
+            arraycachedef = translate(arraycachedef);
             result = translate(make.
                                ForLoop(loopinit,
                                        cond,
                                        List.of(step),
                                        body));
             patchTargets(body, tree, result);
+            JCStatement nullAssignToArr = make.Assignment(arraycache, make.Literal(BOT, null).setType(syms.botType));
+            JCStatement nullAssignToLoopVar = tree.var.type.isPrimitive() ?
+                    null :
+                    make.Assignment(tree.var.sym, make.Literal(BOT, null).setType(syms.botType));
+            result = nullAssignToLoopVar == null ?
+                    make.Block(0, List.of(arraycachedef, loopvardef, (JCStatement)result, nullAssignToArr)):
+                    make.Block(0, List.of(arraycachedef, loopvardef, (JCStatement)result, nullAssignToArr, nullAssignToLoopVar));
         }
         /** Patch up break and continue targets. */
         private void patchTargets(JCTree body, final JCTree src, final JCTree dest) {
@@ -3322,16 +3331,25 @@ public class Lower extends TreeTranslator {
             JCVariableDecl indexDef = (JCVariableDecl)make.VarDef(tree.var.mods,
                                                   tree.var.name,
                                                   tree.var.vartype,
-                                                  vardefinit).setType(tree.var.type);
+                                                  null).setType(tree.var.type);
             indexDef.sym = tree.var.sym;
-            JCBlock body = make.Block(0, List.of(indexDef, tree.body));
+            JCStatement loopVarAssign = make.Assignment(tree.var.sym, vardefinit);
+            JCBlock body = make.Block(0, List.of(loopVarAssign, tree.body));
             body.endpos = TreeInfo.endPos(tree.body);
+            init = translate(init);
             result = translate(make.
-                ForLoop(List.of(init),
+                ForLoop(List.nil(),
                         cond,
                         List.nil(),
                         body));
             patchTargets(body, tree, result);
+            JCStatement nullAssignToIterator = make.Assignment(itvar, make.Literal(BOT, null).setType(syms.botType));
+            JCStatement nullAssignToLoopVar = tree.var.type.isPrimitive() ?
+                    null :
+                    make.Assignment(tree.var.sym, make.Literal(BOT, null).setType(syms.botType));
+            result = nullAssignToLoopVar == null ?
+                    make.Block(0, List.of(init, indexDef, (JCStatement)result, nullAssignToIterator)):
+                    make.Block(0, List.of(init, indexDef, (JCStatement)result, nullAssignToIterator, nullAssignToLoopVar));
         }
 
     public void visitVarDef(JCVariableDecl tree) {

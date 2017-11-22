@@ -94,6 +94,21 @@ public class SpreadCollectTest {
         MethodHandle s = h.asSpreader(String[].class, 1);
     }
 
+    @Test(expectedExceptions = {NullPointerException.class})
+    public static void testAsSpreaderNullArrayType() {
+        SpreadCollect.MH_forSpreading.asSpreader(null, 0);
+    }
+
+    @Test(expectedExceptions = {NullPointerException.class})
+    public static void testAsSpreaderNullArrayNonZeroLength() {
+        SpreadCollect.MH_forSpreading.asSpreader(null, 1);
+    }
+
+    @Test(expectedExceptions = {IllegalArgumentException.class})
+    public static void testAsSpreaderTooManyParams() throws Throwable {
+        SpreadCollect.MH_forSpreading.asSpreader(1, int[].class, 6);
+    }
+
     @Test
     public static void testAsCollector() throws Throwable {
         MethodHandle collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 1);

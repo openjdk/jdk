@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import javax.swing.SwingUtilities;
 import sun.awt.AWTAccessor;
 import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
+import sun.awt.OverrideNativeWindowHandle;
 import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2.RepaintListener;
 
@@ -525,6 +526,18 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
             content.setCursor(target.getCursor());
         }
     }
+
+    //Called by reflection by SwingNode
+    public void overrideNativeWindowHandle(long handle, Runnable closeWindow) {
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(this);
+        if (peer instanceof OverrideNativeWindowHandle) {
+            ((OverrideNativeWindowHandle) peer).overrideWindowHandle(handle);
+        }
+        if (closeWindow != null) {
+            closeWindow.run();
+        }
+    }
+
 
     public <T extends DragGestureRecognizer> T createDragGestureRecognizer(
             Class<T> abstractRecognizerClass,

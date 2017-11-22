@@ -62,7 +62,8 @@ public class JShellToolProvider implements Tool {
      * @param err start-up errors and execution "standard" error; use System.err
      * if null
      * @param arguments arguments to pass to the tool
-     * @return 0 for success; nonzero otherwise
+     * @return the exit status with which the tool explicitly exited (if any),
+     * otherwise 0 for success or 1 for failure
      * @throws NullPointerException if the array of arguments contains
      * any {@code null} elements.
      */
@@ -85,13 +86,12 @@ public class JShellToolProvider implements Tool {
                                 ? (PrintStream) err
                                 : new PrintStream(err);
         try {
-            JavaShellToolBuilder
+            return JavaShellToolBuilder
                     .builder()
                     .in(xin, null)
                     .out(xout)
                     .err(xerr)
-                    .run(arguments);
-            return 0;
+                    .start(arguments);
         } catch (Throwable ex) {
             xerr.println(ex.getMessage());
             return 1;
@@ -109,13 +109,14 @@ public class JShellToolProvider implements Tool {
     }
 
     /**
-     * Launch the tool.
+     * Launch the tool and exit.
      * @param arguments the command-line arguments (including options), if any
      * @throws Exception an unexpected fatal exception
      */
     public static void main(String[] arguments) throws Exception {
-        JavaShellToolBuilder
-                .builder()
-                .run(arguments);
+        System.exit(
+                JavaShellToolBuilder
+                        .builder()
+                        .start(arguments));
     }
 }

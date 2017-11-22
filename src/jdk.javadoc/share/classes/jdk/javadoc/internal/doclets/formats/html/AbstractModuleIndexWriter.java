@@ -203,7 +203,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.NAV))
                 ? HtmlTree.NAV()
                 : new HtmlTree(HtmlTag.DIV);
-        htmlTree.addStyle(HtmlStyle.indexNav);
+        htmlTree.setStyle(HtmlStyle.indexNav);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         addAllClassesLink(ul);
         addAllPackagesLink(ul);
@@ -226,7 +226,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.NAV))
                 ? HtmlTree.NAV()
                 : new HtmlTree(HtmlTag.DIV);
-        htmlTree.addStyle(HtmlStyle.indexNav);
+        htmlTree.setStyle(HtmlStyle.indexNav);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         addAllClassesLink(ul);
         addAllPackagesLink(ul);
