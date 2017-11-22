@@ -1110,20 +1110,3 @@ Java_sun_java2d_xr_XRBackendNative_GCRectanglesNative
       free(xRects);
     }
 }
-
-JNIEXPORT void JNICALL
-Java_sun_java2d_xr_XRBackendNative_renderCompositeTrapezoidsNative
- (JNIEnv *env, jclass cls, jbyte op, jint src, jlong maskFmt,
- jint dst, jint srcX, jint srcY, jintArray  trapArray) {
-    jint *traps;
-
-    if ((traps = (jint *) (*env)->GetPrimitiveArrayCritical(env, trapArray, NULL)) == NULL) {
-      return;
-    }
-
-    XRenderCompositeTrapezoids(awt_display, op, (Picture) src, (Picture) dst,
-                               (XRenderPictFormat *) jlong_to_ptr(maskFmt),
-                               srcX, srcY, (XTrapezoid *) (traps+5), traps[0]);
-
-    (*env)->ReleasePrimitiveArrayCritical(env, trapArray, traps, JNI_ABORT);
-}

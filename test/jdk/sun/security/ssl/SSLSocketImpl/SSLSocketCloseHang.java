@@ -100,8 +100,11 @@ public class SSLSocketCloseHang {
          */
         serverReady = true;
 
+        System.err.println("Server accepting: " + System.nanoTime());
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
+        System.err.println("Server accepted: " + System.nanoTime());
         sslSocket.startHandshake();
+        System.err.println("Server handshake complete: " + System.nanoTime());
         while (!clientClosed) {
             Thread.sleep(500);
         }
@@ -123,10 +126,11 @@ public class SSLSocketCloseHang {
         while (!serverReady) {
             Thread.sleep(50);
         }
+        Thread.sleep(500);
         System.out.println("server ready");
 
         Socket baseSocket = new Socket("localhost", serverPort);
-        baseSocket.setSoTimeout(100);
+        baseSocket.setSoTimeout(1000);
 
         SSLSocketFactory sslsf =
             (SSLSocketFactory) SSLSocketFactory.getDefault();
@@ -134,15 +138,16 @@ public class SSLSocketCloseHang {
             sslsf.createSocket(baseSocket, "localhost", serverPort, false);
 
         // handshaking
+        System.err.println("Client starting handshake: " + System.nanoTime());
         sslSocket.startHandshake();
-        System.out.println("handshake done");
+        System.err.println("Client handshake done: " + System.nanoTime());
 
         Thread.sleep(500);
-        System.out.println("client closing");
+        System.err.println("Client closing: " + System.nanoTime());
 
         sslSocket.close();
         clientClosed = true;
-        System.out.println("client closed");
+        System.err.println("Client closed: " + System.nanoTime());
     }
 
     /*

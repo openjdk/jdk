@@ -415,7 +415,7 @@ assert( (boolean) eq2.invokeExact(new Object[]{ "me", "me" }));
 assert(!(boolean) eq2.invokeExact(new Object[]{ "me", "thee" }));
 // try to spread from anything but a 2-array:
 for (int n = 0; n <= 10; n++) {
-  Object[] badArityArgs = (n == 2 ? null : new Object[n]);
+  Object[] badArityArgs = (n == 2 ? new Object[0] : new Object[n]);
   try { assert((boolean) eq2.invokeExact(badArityArgs) && false); }
   catch (IllegalArgumentException ex) { } // OK
 }

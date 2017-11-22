@@ -572,7 +572,7 @@ public final class Unsafe {
         checkPointer(o, offset);
 
         if (o != null) {
-            // If on heap, it it must be a primitive array
+            // If on heap, it must be a primitive array
             checkPrimitiveArray(o.getClass());
         }
     }

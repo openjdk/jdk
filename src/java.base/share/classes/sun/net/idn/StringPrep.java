@@ -212,7 +212,7 @@ public final class StringPrep {
 
         //indexes[INDEX_MAPPING_DATA_SIZE] store the size of mappingData in bytes
         mappingData = new char[indexes[INDEX_MAPPING_DATA_SIZE]/2];
-        // load the rest of the data data and initialize the data members
+        // load the rest of the data and initialize the data members
         reader.read(sprepBytes,mappingData);
 
         sprepTrieImpl           = new StringPrepTrieImpl();

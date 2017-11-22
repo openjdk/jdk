@@ -25,6 +25,7 @@ import java.awt.*;
 
 /*
  * @test
+ * @bug 8164811
  * @key headful
  * @summary Check if a per-pixel translucent window is dragged and resized
  *          by mouse correctly.
@@ -42,6 +43,7 @@ import java.awt.*;
  * @library ../../../../lib/testlibrary
  * @build Common ExtendedRobot
  * @run main PerPixelTranslucent
+ * @run main/othervm -Dsun.java2d.uiScale=1.5 PerPixelTranslucent
  */
 
 public class PerPixelTranslucent extends Common {

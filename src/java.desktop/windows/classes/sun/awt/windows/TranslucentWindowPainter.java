@@ -26,10 +26,12 @@ package sun.awt.windows;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.Window;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.VolatileImage;
@@ -38,6 +40,7 @@ import sun.awt.image.BufImgSurfaceData;
 import sun.java2d.DestSurfaceProvider;
 import sun.java2d.InvalidPipeException;
 import sun.java2d.Surface;
+import sun.java2d.pipe.Region;
 import sun.java2d.pipe.RenderQueue;
 import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.hw.AccelGraphicsConfig;
@@ -117,6 +120,12 @@ abstract class TranslucentWindowPainter {
     protected abstract boolean update(Image bb);
 
     /**
+     * Create (if needed), clears back buffer (if requested) and return
+     * graphics for this class depending upon the buffer type
+     */
+    protected abstract Graphics getGraphics(boolean clear);
+
+    /**
      * Flushes the resources associated with the painter. They will be
      * recreated as needed.
      */
@@ -130,10 +139,9 @@ abstract class TranslucentWindowPainter {
      */
     public void updateWindow(boolean repaint) {
         boolean done = false;
-        Image bb = getBackBuffer(repaint);
         while (!done) {
             if (repaint) {
-                Graphics2D g = (Graphics2D)bb.getGraphics();
+                Graphics2D g = (Graphics2D) getGraphics(repaint);
                 try {
                     window.paintAll(g);
                 } finally {
@@ -141,10 +149,9 @@ abstract class TranslucentWindowPainter {
                 }
             }
 
-            done = update(bb);
+            done = update(getBackBuffer(false));
             if (!done) {
                 repaint = true;
-                bb = getBackBuffer(true);
             }
         }
     }
@@ -178,8 +185,12 @@ abstract class TranslucentWindowPainter {
 
         @Override
         protected Image getBackBuffer(boolean clear) {
-            int w = window.getWidth();
-            int h = window.getHeight();
+            GraphicsConfiguration gc = peer.getGraphicsConfiguration();
+            AffineTransform transform = gc.getDefaultTransform();
+            int w = Region.clipRound(
+                    window.getWidth() * transform.getScaleX());
+            int h = Region.clipRound(
+                    window.getHeight() * transform.getScaleY());
             if (backBuffer == null ||
                 backBuffer.getWidth() != w ||
                 backBuffer.getHeight() != h)
@@ -236,6 +247,19 @@ abstract class TranslucentWindowPainter {
                 backBuffer = null;
             }
         }
+
+        @Override
+        protected Graphics getGraphics(boolean clear) {
+            Graphics g = getBackBuffer(clear).getGraphics();
+            /*
+             * This graphics object returned by BuffereImage is not scaled to
+             * graphics configuration, but this graphics object can be used by
+             * components inside this TranslucentWindow. So need to scale this
+             * before returning.
+             */
+            ((Graphics2D)g).transform(peer.getGraphicsConfiguration().getDefaultTransform());
+            return g;
+        }
     }
 
     /**
@@ -282,6 +306,11 @@ abstract class TranslucentWindowPainter {
                 viBB.flush();
                 viBB = null;
             }
+        }
+
+        @Override
+        protected Graphics getGraphics(boolean clear) {
+            return getBackBuffer(clear).getGraphics();
         }
     }
 

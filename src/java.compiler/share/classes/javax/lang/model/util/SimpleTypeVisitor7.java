@@ -95,8 +95,9 @@ public class SimpleTypeVisitor7<R, P> extends SimpleTypeVisitor6<R, P> {
     }
 
     /**
-     * This implementation visits a {@code UnionType} by calling
-     * {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param t  {@inheritDoc}
      * @param p  {@inheritDoc}

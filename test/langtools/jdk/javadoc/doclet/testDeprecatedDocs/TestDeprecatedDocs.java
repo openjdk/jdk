@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4927552 8026567 8071982 8162674 8175200 8175218 8183511 8186332 8169819 8074407
- * @summary  <DESC>
+ * @summary  test generated docs for deprecated items
  * @author   jamieh
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -254,6 +254,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "<tbody>\n"
                 + "<tr class=\"altColor\">\n"
                 + "<th class=\"colDeprecatedItemName\" scope=\"row\"><a href=\"pkg/DeprecatedClassByAnnotation.html#field\">pkg.DeprecatedClassByAnnotation.field</a></th>\n"
+                + "<td class=\"colLast\"></td>\n"
                 + "</tr>\n"
                 + "<tr class=\"rowColor\">\n"
                 + "<th class=\"colDeprecatedItemName\" scope=\"row\"><a href=\"pkg/TestClass.html#field\">pkg.TestClass.field</a></th>\n"

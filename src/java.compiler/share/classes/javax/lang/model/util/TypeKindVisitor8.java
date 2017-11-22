@@ -94,8 +94,9 @@ public class TypeKindVisitor8<R, P> extends TypeKindVisitor7<R, P> {
     }
 
     /**
-     * This implementation visits an {@code IntersectionType} by calling
-     * {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param t  {@inheritDoc}
      * @param p  {@inheritDoc}

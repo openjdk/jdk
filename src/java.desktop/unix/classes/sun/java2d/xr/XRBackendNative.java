@@ -29,7 +29,6 @@ import java.awt.geom.*;
 import java.util.*;
 
 import sun.font.*;
-import sun.java2d.jules.*;
 import sun.java2d.pipe.*;
 
 import static sun.java2d.xr.XRUtils.XDoubleToFixed;
@@ -315,16 +314,4 @@ public class XRBackendNative implements XRBackend {
                                              int sx, int sy, int dx, int dy,
                                              int w, int h);
 
-    public void renderCompositeTrapezoids(byte op, int src, int maskFormat,
-                                          int dst, int srcX, int srcY,
-                                          TrapezoidList trapList) {
-        renderCompositeTrapezoidsNative(op, src, getFormatPtr(maskFormat),
-                                        dst, srcX, srcY,
-                                        trapList.getTrapArray());
-    }
-
-    private static native void
-        renderCompositeTrapezoidsNative(byte op, int src, long maskFormat,
-                                        int dst, int srcX, int srcY,
-                                        int[] trapezoids);
 }

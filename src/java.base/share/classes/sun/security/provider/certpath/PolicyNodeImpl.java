@@ -306,7 +306,7 @@ final class PolicyNodeImpl implements PolicyNode {
     }
 
     /**
-     * Add all nodes at depth depth to set and return the Set.
+     * Add all nodes at depth to set and return the Set.
      * Internal recursion helper.
      */
     private void getPolicyNodes(int depth, Set<PolicyNodeImpl> set) {

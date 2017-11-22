@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     public Content getSerializableMethodsHeader() {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addStyle(HtmlStyle.blockList);
+        ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
 
@@ -79,9 +79,9 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
     public Content getMethodsContentHeader(boolean isLastContent) {
         HtmlTree li = new HtmlTree(HtmlTag.LI);
         if (isLastContent)
-            li.addStyle(HtmlStyle.blockListLast);
+            li.setStyle(HtmlStyle.blockListLast);
         else
-            li.addStyle(HtmlStyle.blockList);
+            li.setStyle(HtmlStyle.blockList);
         return li;
     }
 

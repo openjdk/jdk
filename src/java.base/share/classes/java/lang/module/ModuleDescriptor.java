@@ -1593,7 +1593,7 @@ public class ModuleDescriptor
         /**
          * Adds a dependence on a module with the given (and possibly empty)
          * set of modifiers. The dependence includes the version of the
-         * module that that was recorded at compile-time.
+         * module that was recorded at compile-time.
          *
          * @param  ms
          *         The set of modifiers

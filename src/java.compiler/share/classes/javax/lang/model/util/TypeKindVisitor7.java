@@ -96,8 +96,9 @@ public class TypeKindVisitor7<R, P> extends TypeKindVisitor6<R, P> {
     }
 
     /**
-     * This implementation visits a {@code UnionType} by calling
-     * {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param t  {@inheritDoc}
      * @param p  {@inheritDoc}

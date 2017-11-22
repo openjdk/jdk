@@ -293,7 +293,7 @@ public final class StackTraceElement implements java.io.Serializable {
      * <li>
      *     "{@code acme@2.1/org.acme.Lib.test(Lib.java:80)}"
      * - The class of the execution point is defined in {@code acme} module
-     * loaded by by a built-in class loader such as the application class loader.
+     * loaded by a built-in class loader such as the application class loader.
      * </li>
      * <li>
      *     "{@code MyClass.mash(MyClass.java:9)}"

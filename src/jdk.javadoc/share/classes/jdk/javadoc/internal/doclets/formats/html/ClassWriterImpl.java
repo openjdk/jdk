@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -119,7 +120,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     @Override
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
+        Content linkContent = Links.createLink(DocPaths.PACKAGE_SUMMARY,
                 contents.packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -143,7 +144,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     @Override
     protected Content getNavLinkClassUse() {
-        Content linkContent = getHyperLink(DocPaths.CLASS_USE.resolve(filename), contents.useLabel);
+        Content linkContent = Links.createLink(DocPaths.CLASS_USE.resolve(filename), contents.useLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
     }
@@ -202,7 +203,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         }
         bodyTree.addContent(HtmlConstants.START_OF_CLASS_DATA);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.header);
+        div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
             Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInType, contents.moduleLabel);
@@ -380,13 +381,13 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     private Content getClassInheritenceTree(TypeMirror type) {
         TypeMirror sup;
         HtmlTree classTreeUl = new HtmlTree(HtmlTag.UL);
-        classTreeUl.addStyle(HtmlStyle.inheritance);
+        classTreeUl.setStyle(HtmlStyle.inheritance);
         Content liTree = null;
         do {
             sup = utils.getFirstVisibleSuperClass(type);
             if (sup != null) {
                 HtmlTree ul = new HtmlTree(HtmlTag.UL);
-                ul.addStyle(HtmlStyle.inheritance);
+                ul.setStyle(HtmlStyle.inheritance);
                 ul.addContent(getTreeForClassHelper(type));
                 if (liTree != null)
                     ul.addContent(liTree);
@@ -659,7 +660,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     @Override
     protected Content getNavLinkTree() {
-        Content treeLinkContent = getHyperLink(DocPaths.PACKAGE_TREE,
+        Content treeLinkContent = Links.createLink(DocPaths.PACKAGE_TREE,
                 contents.treeLabel, "", "");
         Content li = HtmlTree.LI(treeLinkContent);
         return li;
