@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jmm.h"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compileBroker.hpp"
 #include "memory/iterator.hpp"
@@ -46,7 +47,6 @@
 #include "services/diagnosticFramework.hpp"
 #include "services/writeableFlags.hpp"
 #include "services/heapDumper.hpp"
-#include "services/jmm.h"
 #include "services/lowMemoryDetector.hpp"
 #include "services/gcNotifier.hpp"
 #include "services/nmtDCmd.hpp"
