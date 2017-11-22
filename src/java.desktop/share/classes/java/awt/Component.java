@@ -2039,14 +2039,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * used by GlobalCursormanager to update cursor
      */
     final Point getLocationOnScreen_NoTreeLock() {
-
+        ComponentPeer peer = this.peer;
         if (peer != null && isShowing()) {
             if (peer instanceof LightweightPeer) {
                 // lightweight component location needs to be translated
                 // relative to a native component.
                 Container host = getNativeContainer();
                 Point pt = host.peer.getLocationOnScreen();
-                for(Component c = this; c != host; c = c.getParent()) {
+                for(Component c = this; c != host; c = c.getContainer()) {
                     pt.x += c.x;
                     pt.y += c.y;
                 }
