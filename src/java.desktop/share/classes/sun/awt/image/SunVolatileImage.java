@@ -40,6 +40,7 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceManagerFactory;
 import sun.java2d.DestSurfaceProvider;
 import sun.java2d.Surface;
+import sun.java2d.pipe.Region;
 import static sun.java2d.pipe.hw.AccelSurface.*;
 
 /**
@@ -245,8 +246,8 @@ public class SunVolatileImage extends VolatileImage
      * or a backup surface with the given horizontal and vertical scale factors.
      */
     public BufferedImage getBackupImage(double scaleX, double scaleY) {
-        int w = (int) Math.ceil(getWidth() * scaleX);
-        int h = (int) Math.ceil(getHeight() * scaleY);
+        int w = Region.clipRound(getWidth() * scaleX);
+        int h = Region.clipRound(getHeight() * scaleY);
         return graphicsConfig.createCompatibleImage(w, h, getTransparency());
     }
 

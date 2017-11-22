@@ -37,6 +37,7 @@ import sun.awt.SunToolkit;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.SurfaceData;
+import sun.java2d.pipe.Region;
 
 public abstract class WGLSurfaceData extends OGLSurfaceData {
 
@@ -165,8 +166,8 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
         public Rectangle getBounds() {
             Rectangle r = peer.getBounds();
             r.x = r.y = 0;
-            r.width = (int) Math.ceil(r.width * scaleX);
-            r.height = (int) Math.ceil(r.height * scaleY);
+            r.width = Region.clipRound(r.width * scaleX);
+            r.height = Region.clipRound(r.height * scaleY);
             return r;
         }
 
@@ -227,8 +228,8 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
         {
             super(peer, gc, cm, type);
 
-            this.width = (int) Math.ceil(width * scaleX);
-            this.height = (int) Math.ceil(height * scaleY);
+            this.width = Region.clipRound(width * scaleX);
+            this.height = Region.clipRound(height * scaleY);
             offscreenImage = image;
 
             initSurface(this.width, this.height);
@@ -241,8 +242,8 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
         public Rectangle getBounds() {
             if (type == FLIP_BACKBUFFER) {
                 Rectangle r = peer.getBounds();
-                r.width = (int) Math.ceil(r.width * scaleX);
-                r.height = (int) Math.ceil(r.height * scaleY);
+                r.width = Region.clipRound(r.width * scaleX);
+                r.height = Region.clipRound(r.height * scaleY);
                 r.x = r.y = 0;
                 return r;
             } else {
