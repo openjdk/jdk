@@ -60,7 +60,7 @@ class GlyphPainter1 extends GlyphView.GlyphPainter {
         Segment text = v.getText(p0, p1);
         int[] justificationData = getJustificationData(v);
 
-        float width = Utilities.getTabbedTextWidth(v, text, metrics, x, e, p0,
+        int width = Utilities.getTabbedTextWidth(v, text, metrics, (int)x, e, p0,
                                                  justificationData);
         SegmentCache.releaseSharedSegment(text);
         return width;
