@@ -33,12 +33,13 @@ import java.awt.image.BufferedImage;
  * @library ../../../../lib/testlibrary
  * @build Common ExtendedRobot
  * @run main PerPixelTranslucentCanvas
+ * @run main/othervm -Dsun.java2d.uiScale=1.5 PerPixelTranslucentCanvas
  */
 
 public class PerPixelTranslucentCanvas extends Common {
 
     JPanel center;
-    Color OVAL_COLOR = Color.BLUE;
+    static Color OVAL_COLOR = Color.BLUE;
 
     public static void main(String[] ignored) throws Exception {
         FG_COLOR = new Color(200, 0, 0, 100);
