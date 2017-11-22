@@ -58,6 +58,7 @@ import sun.java2d.pipe.ParallelogramPipe;
 import sun.java2d.pipe.PixelToParallelogramConverter;
 import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.TextPipe;
+import sun.java2d.pipe.Region;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
 import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
@@ -236,8 +237,8 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
             this.width = scaledSize.width;
             this.height = scaledSize.height;
         } else {
-            this.width = (int) Math.ceil(width * scaleX);
-            this.height = (int) Math.ceil(height * scaleY);
+            this.width = Region.clipRound(width * scaleX);
+            this.height = Region.clipRound(height * scaleY);
         }
 
         this.offscreenImage = image;
@@ -812,8 +813,8 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
             double scaleY = getDefaultScaleY();
             Rectangle r = peer.getBounds();
             r.x = r.y = 0;
-            r.width = (int) Math.ceil(r.width * scaleX);
-            r.height = (int) Math.ceil(r.height * scaleY);
+            r.width = Region.clipRound(r.width * scaleX);
+            r.height = Region.clipRound(r.height * scaleY);
             return r;
         } else {
             return new Rectangle(width, height);

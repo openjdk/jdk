@@ -23,11 +23,12 @@
 /*
  * @test
  * @key headful
- * @bug 5009033 6603000 6666362
+ * @bug 5009033 6603000 6666362 8159142
  * @summary Verifies that images transformed with bilinear filtering do not
  * leave artifacts at the edges.
- * @run main/othervm DrawImageBilinear
- * @run main/othervm -Dsun.java2d.opengl=True DrawImageBilinear
+ * @run main/othervm -Dsun.java2d.uiScale=2.5 DrawImageBilinear
+ * @run main/othervm -Dsun.java2d.uiScale=2.5 -Dsun.java2d.opengl=True DrawImageBilinear
+ * @run main/othervm -Dsun.java2d.uiScale=2.5 -Dsun.java2d.d3d=false DrawImageBilinear
  * @author campbelc
  */
 
