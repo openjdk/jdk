@@ -172,8 +172,6 @@ class StubQueue: public CHeapObj<mtCode> {
   void  stub_verify(Stub* s)                     { _stub_interface->verify(s); }
   void  stub_print(Stub* s)                      { _stub_interface->print(s); }
 
-  static void register_queue(StubQueue*);
-
  public:
   StubQueue(StubInterface* stub_interface, int buffer_size, Mutex* lock,
             const char* name);
@@ -204,17 +202,12 @@ class StubQueue: public CHeapObj<mtCode> {
   void deallocate_unused_tail();                 // deallocate the unused tail of the underlying CodeBlob
                                                  // only used from TemplateInterpreter::initialize()
   // Iteration
-  static void queues_do(void f(StubQueue* s));   // call f with each StubQueue
-  void  stubs_do(void f(Stub* s));               // call f with all stubs
   Stub* first() const                            { return number_of_stubs() > 0 ? stub_at(_queue_begin) : NULL; }
   Stub* next(Stub* s) const                      { int i = index_of(s) + stub_size(s);
                                                    // Only wrap around in the non-contiguous case (see stubss.cpp)
                                                    if (i == _buffer_limit && _queue_end < _buffer_limit) i = 0;
                                                    return (i == _queue_end) ? NULL : stub_at(i);
                                                  }
-
-  address stub_code_begin(Stub* s) const         { return _stub_interface->code_begin(s); }
-  address stub_code_end(Stub* s) const           { return _stub_interface->code_end(s);   }
 
   // Debugging/printing
   void  verify();                                // verifies the stub queue
