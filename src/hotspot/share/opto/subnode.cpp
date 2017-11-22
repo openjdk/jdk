@@ -1595,3 +1595,12 @@ const Type* SqrtDNode::Value(PhaseGVN* phase) const {
   if( d < 0.0 ) return Type::DOUBLE;
   return TypeD::make( sqrt( d ) );
 }
+
+const Type* SqrtFNode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  if( t1 == Type::TOP ) return Type::TOP;
+  if( t1->base() != Type::FloatCon ) return Type::FLOAT;
+  float f = t1->getf();
+  if( f < 0.0f ) return Type::FLOAT;
+  return TypeF::make( (float)sqrt( (double)f ) );
+}
