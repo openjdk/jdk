@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class SAAJResult extends DOMResult {
      * internally. The {@code SOAPPart} returned by {@link DOMResult#getNode()}
      * is not guaranteed to be well-formed.
      *
-     * @param protocol - the name of the SOAP protocol that the resulting SAAJ
+     * @param protocol the name of the SOAP protocol that the resulting SAAJ
      *                      tree should support
      *
      * @throws SOAPException if a {@code SOAPMessage} supporting the
@@ -95,7 +95,7 @@ public class SAAJResult extends DOMResult {
      * after the transformation can be guaranteed only by means outside SAAJ
      * specification.
      *
-     * @param message - the message whose {@code SOAPPart} will be
+     * @param message the message whose {@code SOAPPart} will be
      *                  populated as a result of some transformation or
      *                  marshalling operation
      *
@@ -114,7 +114,7 @@ public class SAAJResult extends DOMResult {
      * incoming data can be guaranteed by means outside of the SAAJ
      * specification.
      *
-     * @param rootNode - the root to which the results will be appended
+     * @param rootNode the root to which the results will be appended
      *
      * @since 1.6, SAAJ 1.3
      */

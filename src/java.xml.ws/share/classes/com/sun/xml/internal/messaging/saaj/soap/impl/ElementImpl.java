@@ -1720,7 +1720,11 @@ public class ElementImpl implements SOAPElement, SOAPBodyElement {
 
     @Override
     public NamedNodeMap getAttributes() {
-        return new NamedNodeMapImpl(element.getAttributes(), soapDocument);
+        NamedNodeMap attributes = element.getAttributes();
+        if (attributes == null) {
+            return null;
+        }
+        return new NamedNodeMapImpl(attributes, soapDocument);
     }
 
     public Element getDomElement() {

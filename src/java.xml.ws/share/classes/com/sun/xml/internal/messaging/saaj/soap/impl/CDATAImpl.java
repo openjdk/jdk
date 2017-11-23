@@ -46,20 +46,19 @@ public class CDATAImpl extends TextImpl<CDATASection> implements CDATASection {
 
     @Override
     protected CDATASection createN(SOAPDocumentImpl ownerDoc, String text) {
-        CDATASection c = ownerDoc.getDomDocument().createCDATASection(text);
-//        ownerDoc.register(this);
-        return c;
+        return ownerDoc.getDomDocument().createCDATASection(text);
     }
 
     @Override
     protected CDATASection createN(SOAPDocumentImpl ownerDoc, CharacterData data) {
-        CDATASection c = (CDATASection) data;
-        return c;
+        return (CDATASection) data;
     }
 
     @Override
     public Text splitText(int offset) throws DOMException {
-        return getDomElement().splitText(offset);
+        Text text = getDomElement().splitText(offset);
+        getSoapDocument().registerChildNodes(text, true);
+        return text;
     }
 
     @Override
@@ -74,7 +73,9 @@ public class CDATAImpl extends TextImpl<CDATASection> implements CDATASection {
 
     @Override
     public Text replaceWholeText(String content) throws DOMException {
-        return getDomElement().replaceWholeText(content);
+        Text text = getDomElement().replaceWholeText(content);
+        getSoapDocument().registerChildNodes(text, true);
+        return text;
     }
 
     @Override
