@@ -32,6 +32,7 @@
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/task.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
@@ -214,12 +215,8 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
   if (requesting_thread == biased_thread) {
     thread_is_alive = true;
   } else {
-    for (JavaThread* cur_thread = Threads::first(); cur_thread != NULL; cur_thread = cur_thread->next()) {
-      if (cur_thread == biased_thread) {
-        thread_is_alive = true;
-        break;
-      }
-    }
+    ThreadsListHandle tlh;
+    thread_is_alive = tlh.includes(biased_thread);
   }
   if (!thread_is_alive) {
     if (allow_rebias) {
@@ -390,72 +387,76 @@ static BiasedLocking::Condition bulk_revoke_or_rebias_at_safepoint(oop o,
   Klass* k_o = o->klass();
   Klass* klass = k_o;
 
-  if (bulk_rebias) {
-    // Use the epoch in the klass of the object to implicitly revoke
-    // all biases of objects of this data type and force them to be
-    // reacquired. However, we also need to walk the stacks of all
-    // threads and update the headers of lightweight locked objects
-    // with biases to have the current epoch.
+  {
+    JavaThreadIteratorWithHandle jtiwh;
 
-    // If the prototype header doesn't have the bias pattern, don't
-    // try to update the epoch -- assume another VM operation came in
-    // and reset the header to the unbiased state, which will
-    // implicitly cause all existing biases to be revoked
-    if (klass->prototype_header()->has_bias_pattern()) {
-      int prev_epoch = klass->prototype_header()->bias_epoch();
-      klass->set_prototype_header(klass->prototype_header()->incr_bias_epoch());
-      int cur_epoch = klass->prototype_header()->bias_epoch();
+    if (bulk_rebias) {
+      // Use the epoch in the klass of the object to implicitly revoke
+      // all biases of objects of this data type and force them to be
+      // reacquired. However, we also need to walk the stacks of all
+      // threads and update the headers of lightweight locked objects
+      // with biases to have the current epoch.
 
-      // Now walk all threads' stacks and adjust epochs of any biased
-      // and locked objects of this data type we encounter
-      for (JavaThread* thr = Threads::first(); thr != NULL; thr = thr->next()) {
+      // If the prototype header doesn't have the bias pattern, don't
+      // try to update the epoch -- assume another VM operation came in
+      // and reset the header to the unbiased state, which will
+      // implicitly cause all existing biases to be revoked
+      if (klass->prototype_header()->has_bias_pattern()) {
+        int prev_epoch = klass->prototype_header()->bias_epoch();
+        klass->set_prototype_header(klass->prototype_header()->incr_bias_epoch());
+        int cur_epoch = klass->prototype_header()->bias_epoch();
+
+        // Now walk all threads' stacks and adjust epochs of any biased
+        // and locked objects of this data type we encounter
+        for (; JavaThread *thr = jtiwh.next(); ) {
+          GrowableArray<MonitorInfo*>* cached_monitor_info = get_or_compute_monitor_info(thr);
+          for (int i = 0; i < cached_monitor_info->length(); i++) {
+            MonitorInfo* mon_info = cached_monitor_info->at(i);
+            oop owner = mon_info->owner();
+            markOop mark = owner->mark();
+            if ((owner->klass() == k_o) && mark->has_bias_pattern()) {
+              // We might have encountered this object already in the case of recursive locking
+              assert(mark->bias_epoch() == prev_epoch || mark->bias_epoch() == cur_epoch, "error in bias epoch adjustment");
+              owner->set_mark(mark->set_bias_epoch(cur_epoch));
+            }
+          }
+        }
+      }
+
+      // At this point we're done. All we have to do is potentially
+      // adjust the header of the given object to revoke its bias.
+      revoke_bias(o, attempt_rebias_of_object && klass->prototype_header()->has_bias_pattern(), true, requesting_thread, NULL);
+    } else {
+      if (log_is_enabled(Info, biasedlocking)) {
+        ResourceMark rm;
+        log_info(biasedlocking)("* Disabling biased locking for type %s", klass->external_name());
+      }
+
+      // Disable biased locking for this data type. Not only will this
+      // cause future instances to not be biased, but existing biased
+      // instances will notice that this implicitly caused their biases
+      // to be revoked.
+      klass->set_prototype_header(markOopDesc::prototype());
+
+      // Now walk all threads' stacks and forcibly revoke the biases of
+      // any locked and biased objects of this data type we encounter.
+      for (; JavaThread *thr = jtiwh.next(); ) {
         GrowableArray<MonitorInfo*>* cached_monitor_info = get_or_compute_monitor_info(thr);
         for (int i = 0; i < cached_monitor_info->length(); i++) {
           MonitorInfo* mon_info = cached_monitor_info->at(i);
           oop owner = mon_info->owner();
           markOop mark = owner->mark();
           if ((owner->klass() == k_o) && mark->has_bias_pattern()) {
-            // We might have encountered this object already in the case of recursive locking
-            assert(mark->bias_epoch() == prev_epoch || mark->bias_epoch() == cur_epoch, "error in bias epoch adjustment");
-            owner->set_mark(mark->set_bias_epoch(cur_epoch));
+            revoke_bias(owner, false, true, requesting_thread, NULL);
           }
         }
       }
+
+      // Must force the bias of the passed object to be forcibly revoked
+      // as well to ensure guarantees to callers
+      revoke_bias(o, false, true, requesting_thread, NULL);
     }
-
-    // At this point we're done. All we have to do is potentially
-    // adjust the header of the given object to revoke its bias.
-    revoke_bias(o, attempt_rebias_of_object && klass->prototype_header()->has_bias_pattern(), true, requesting_thread, NULL);
-  } else {
-    if (log_is_enabled(Info, biasedlocking)) {
-      ResourceMark rm;
-      log_info(biasedlocking)("* Disabling biased locking for type %s", klass->external_name());
-    }
-
-    // Disable biased locking for this data type. Not only will this
-    // cause future instances to not be biased, but existing biased
-    // instances will notice that this implicitly caused their biases
-    // to be revoked.
-    klass->set_prototype_header(markOopDesc::prototype());
-
-    // Now walk all threads' stacks and forcibly revoke the biases of
-    // any locked and biased objects of this data type we encounter.
-    for (JavaThread* thr = Threads::first(); thr != NULL; thr = thr->next()) {
-      GrowableArray<MonitorInfo*>* cached_monitor_info = get_or_compute_monitor_info(thr);
-      for (int i = 0; i < cached_monitor_info->length(); i++) {
-        MonitorInfo* mon_info = cached_monitor_info->at(i);
-        oop owner = mon_info->owner();
-        markOop mark = owner->mark();
-        if ((owner->klass() == k_o) && mark->has_bias_pattern()) {
-          revoke_bias(owner, false, true, requesting_thread, NULL);
-        }
-      }
-    }
-
-    // Must force the bias of the passed object to be forcibly revoked
-    // as well to ensure guarantees to callers
-    revoke_bias(o, false, true, requesting_thread, NULL);
-  }
+  } // ThreadsListHandle is destroyed here.
 
   log_info(biasedlocking)("* Ending bulk revocation");
 
@@ -481,7 +482,7 @@ static BiasedLocking::Condition bulk_revoke_or_rebias_at_safepoint(oop o,
 
 static void clean_up_cached_monitor_info() {
   // Walk the thread list clearing out the cached monitors
-  for (JavaThread* thr = Threads::first(); thr != NULL; thr = thr->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thr = jtiwh.next(); ) {
     thr->set_cached_monitor_info(NULL);
   }
 }
@@ -768,7 +769,7 @@ void BiasedLocking::preserve_marks() {
 
   ResourceMark rm;
   Thread* cur = Thread::current();
-  for (JavaThread* thread = Threads::first(); thread != NULL; thread = thread->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
     if (thread->has_last_Java_frame()) {
       RegisterMap rm(thread);
       for (javaVFrame* vf = thread->last_java_vframe(&rm); vf != NULL; vf = vf->java_sender()) {
