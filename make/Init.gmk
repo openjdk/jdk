@@ -329,7 +329,7 @@ else # HAS_SPEC=true
 	$(call PrintFailureReports)
 	$(call PrintBuildLogFailures)
 	$(call ReportProfileTimes)
-	$(PRINTF) "Hint: See common/doc/building.html#troubleshooting for assistance.\n\n"
+	$(PRINTF) "Hint: See doc/building.html#troubleshooting for assistance.\n\n"
         ifneq ($(COMPARE_BUILD), )
 	  $(call CleanupCompareBuild)
         endif
