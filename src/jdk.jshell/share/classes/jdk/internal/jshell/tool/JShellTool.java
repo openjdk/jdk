@@ -96,6 +96,7 @@ import jdk.jshell.VarSnippet;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.ServiceLoader;
@@ -1835,24 +1836,40 @@ public class JShellTool implements MessageHandler {
     }
 
     public List<String> commandDocumentation(String code, int cursor, boolean shortDescription) {
-        code = code.substring(0, cursor);
-        int space = code.indexOf(' ');
-        String prefix = space != (-1) ? code.substring(0, space) : code;
+        code = code.substring(0, cursor).replaceAll("\\h+", " ");
+        String stripped = code.replaceFirst("/help ", "");
+        boolean inHelp = !code.equals(stripped);
+        int space = stripped.indexOf(' ');
+        String prefix = space != (-1) ? stripped.substring(0, space) : stripped;
         List<String> result = new ArrayList<>();
 
-        List<Entry<String, Command>> toShow =
-                commands.entrySet()
-                        .stream()
-                        .filter(e -> e.getKey().startsWith(prefix))
-                        .filter(e -> e.getValue().kind.showInHelp)
-                        .sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey()))
-                        .collect(Collectors.toList());
+        List<Entry<String, String>> toShow;
 
-        if (toShow.size() == 1) {
-            result.add(getResourceString(toShow.get(0).getValue().helpKey + (shortDescription ? ".summary" : "")));
+        if (stripped.matches("/set .*") || stripped.matches("set .*")) {
+            String setSubcommand = stripped.replaceFirst("/?set ([^ ]*)($| .*)", "$1");
+            toShow =
+                Arrays.stream(SET_SUBCOMMANDS)
+                       .filter(s -> s.startsWith(setSubcommand))
+                       .map(s -> new SimpleEntry<>("/set " + s, "help.set." + s))
+                       .collect(Collectors.toList());
         } else {
-            for (Entry<String, Command> e : toShow) {
-                result.add(e.getKey() + "\n" +getResourceString(e.getValue().helpKey + (shortDescription ? ".summary" : "")));
+            toShow =
+                commands.values()
+                        .stream()
+                        .filter(c -> c.command.startsWith(prefix)
+                                     || c.command.substring(1).startsWith(prefix))
+                        .filter(c -> c.kind.showInHelp ||
+                                     (inHelp && c.kind == CommandKind.HELP_SUBJECT))
+                        .sorted((c1, c2) -> c1.command.compareTo(c2.command))
+                        .map(c -> new SimpleEntry<>(c.command, c.helpKey))
+                        .collect(Collectors.toList());
+        }
+
+        if (toShow.size() == 1 && !inHelp) {
+            result.add(getResourceString(toShow.get(0).getValue() + (shortDescription ? ".summary" : "")));
+        } else {
+            for (Entry<String, String> e : toShow) {
+                result.add(e.getKey() + "\n" + getResourceString(e.getValue() + (shortDescription ? ".summary" : "")));
             }
         }
 
