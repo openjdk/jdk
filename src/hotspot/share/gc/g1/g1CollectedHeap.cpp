@@ -39,7 +39,6 @@
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
-#include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
@@ -1217,34 +1216,6 @@ void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_tr
 #endif
 }
 
-void G1CollectedHeap::do_full_collection_inner(G1FullGCScope* scope) {
-  GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
-  g1_policy()->record_full_collection_start();
-
-  print_heap_before_gc();
-  print_heap_regions();
-
-  abort_concurrent_cycle();
-  verify_before_full_collection(scope->is_explicit_gc());
-
-  gc_prologue(true);
-  prepare_heap_for_full_collection();
-
-  G1FullCollector collector(scope, ref_processor_stw(), concurrent_mark()->next_mark_bitmap(), workers()->active_workers());
-  collector.prepare_collection();
-  collector.collect();
-  collector.complete_collection();
-
-  prepare_heap_for_mutators();
-
-  g1_policy()->record_full_collection_end();
-  gc_epilogue(true);
-
-  verify_after_full_collection();
-
-  print_heap_after_full_collection(scope->heap_transition());
-}
-
 bool G1CollectedHeap::do_full_collection(bool explicit_gc,
                                          bool clear_all_soft_refs) {
   assert_at_safepoint(true /* should_be_vm_thread */);
@@ -1257,8 +1228,12 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       collector_policy()->should_clear_all_soft_refs();
 
-  G1FullGCScope scope(explicit_gc, do_clear_all_soft_refs);
-  do_full_collection_inner(&scope);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs);
+  GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
+
+  collector.prepare_collection();
+  collector.collect();
+  collector.complete_collection();
 
   // Full collection was successfully completed.
   return true;
