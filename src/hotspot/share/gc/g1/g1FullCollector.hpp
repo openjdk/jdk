@@ -28,6 +28,7 @@
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.hpp"
+#include "gc/g1/g1FullGCScope.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -42,41 +43,36 @@ class ReferenceProcessor;
 
 // The G1FullCollector holds data associated with the current Full GC.
 class G1FullCollector : StackObj {
-  G1FullGCScope*            _scope;
+  G1CollectedHeap*          _heap;
+  G1FullGCScope             _scope;
   uint                      _num_workers;
   G1FullGCMarker**          _markers;
   G1FullGCCompactionPoint** _compaction_points;
-  G1CMBitMap*               _mark_bitmap;
   OopQueueSet               _oop_queue_set;
   ObjArrayTaskQueueSet      _array_queue_set;
   PreservedMarksSet         _preserved_marks_set;
-  ReferenceProcessor*       _reference_processor;
   G1FullGCCompactionPoint   _serial_compaction_point;
-
   G1IsAliveClosure          _is_alive;
   ReferenceProcessorIsAliveMutator _is_alive_mutator;
 
 public:
-  G1FullCollector(G1FullGCScope* scope,
-                  ReferenceProcessor* reference_processor,
-                  G1CMBitMap* mark_bitmap,
-                  uint workers);
+  G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs);
   ~G1FullCollector();
 
   void prepare_collection();
   void collect();
   void complete_collection();
 
-  G1FullGCScope*           scope() { return _scope; }
+  G1FullGCScope*           scope() { return &_scope; }
   uint                     workers() { return _num_workers; }
   G1FullGCMarker*          marker(uint id) { return _markers[id]; }
   G1FullGCCompactionPoint* compaction_point(uint id) { return _compaction_points[id]; }
-  G1CMBitMap*              mark_bitmap() { return _mark_bitmap; }
   OopQueueSet*             oop_queue_set() { return &_oop_queue_set; }
   ObjArrayTaskQueueSet*    array_queue_set() { return &_array_queue_set; }
   PreservedMarksSet*       preserved_mark_set() { return &_preserved_marks_set; }
-  ReferenceProcessor*      reference_processor() { return _reference_processor; }
   G1FullGCCompactionPoint* serial_compaction_point() { return &_serial_compaction_point; }
+  G1CMBitMap*              mark_bitmap();
+  ReferenceProcessor*      reference_processor();
 
 private:
   void phase1_mark_live_objects();

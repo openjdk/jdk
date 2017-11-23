@@ -126,6 +126,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class VM_G1IncCollectionPause;
   friend class VMStructs;
   friend class MutatorAllocRegion;
+  friend class G1FullCollector;
   friend class G1GCAllocRegion;
   friend class G1HeapVerifier;
 
@@ -517,7 +518,6 @@ protected:
 private:
   // Internal helpers used during full GC to split it up to
   // increase readability.
-  void do_full_collection_inner(G1FullGCScope* scope);
   void abort_concurrent_cycle();
   void verify_before_full_collection(bool explicit_gc);
   void prepare_heap_for_full_collection();
