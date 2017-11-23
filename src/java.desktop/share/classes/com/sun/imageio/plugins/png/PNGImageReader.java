@@ -1698,5 +1698,6 @@ public class PNGImageReader extends ImageReader {
         gotMetadata = false;
         metadata = null;
         pixelStream = null;
+        imageStartPosition = -1L;
     }
 }
