@@ -43,43 +43,29 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
   uint _worker_id;
   uint _worker_id_offset;
 
-  // The refinement threads collection is linked list. A predecessor can activate a successor
-  // when the number of the rset update buffer crosses a certain threshold. A successor
-  // would self-deactivate when the number of the buffers falls below the threshold.
   bool _active;
-  G1ConcurrentRefineThread* _next;
   Monitor* _monitor;
   G1ConcurrentRefine* _cr;
-
-  // This thread's activation/deactivation thresholds
-  size_t _activation_threshold;
-  size_t _deactivation_threshold;
 
   void wait_for_completed_buffers();
 
   void set_active(bool x) { _active = x; }
-  bool is_active();
-  void activate();
+  // Deactivate this thread.
   void deactivate();
 
   bool is_primary() { return (_worker_id == 0); }
 
   void run_service();
   void stop_service();
-
 public:
-  // Constructor
-  G1ConcurrentRefineThread(G1ConcurrentRefine* cr, G1ConcurrentRefineThread* next,
-                           uint worker_id_offset, uint worker_id,
-                           size_t activate, size_t deactivate);
+  G1ConcurrentRefineThread(G1ConcurrentRefine* cg1r, uint worker_id);
 
-  void update_thresholds(size_t activate, size_t deactivate);
-  size_t activation_threshold() const { return _activation_threshold; }
+  bool is_active();
+  // Activate this thread.
+  void activate();
 
   // Total virtual time so far.
   double vtime_accum() { return _vtime_accum; }
-
-  G1ConcurrentRefine* cr() { return _cr;     }
 };
 
 #endif // SHARE_VM_GC_G1_G1CONCURRENTREFINETHREAD_HPP

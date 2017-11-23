@@ -86,7 +86,7 @@ G1RemSetSummary::G1RemSetSummary() :
   _num_processed_buf_mutator(0),
   _num_processed_buf_rs_threads(0),
   _num_coarsenings(0),
-  _num_vtimes(G1ConcurrentRefine::thread_num()),
+  _num_vtimes(G1ConcurrentRefine::max_num_threads()),
   _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
   _sampling_thread_vtime(0.0f) {
 
@@ -99,7 +99,7 @@ G1RemSetSummary::G1RemSetSummary(G1RemSet* rem_set) :
   _num_processed_buf_mutator(0),
   _num_processed_buf_rs_threads(0),
   _num_coarsenings(0),
-  _num_vtimes(G1ConcurrentRefine::thread_num()),
+  _num_vtimes(G1ConcurrentRefine::max_num_threads()),
   _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
   _sampling_thread_vtime(0.0f) {
   update();
