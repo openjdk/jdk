@@ -37,8 +37,6 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/preserveException.hpp"
 
-#define ALL_JAVA_THREADS(X) for (JavaThread* X = Threads::first(); X; X = X->next())
-
 class HandshakeOperation: public StackObj {
 public:
   virtual void do_handshake(JavaThread* thread) = 0;
@@ -94,8 +92,7 @@ bool VM_Handshake::handshake_has_timed_out(jlong start_time) {
 
 void VM_Handshake::handle_timeout() {
   LogStreamHandle(Warning, handshake) log_stream;
-  MutexLockerEx ml(Threads_lock, Mutex::_no_safepoint_check_flag);
-  ALL_JAVA_THREADS(thr) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thr = jtiwh.next(); ) {
     if (thr->has_handshake()) {
       log_stream.print("Thread " PTR_FORMAT " has not cleared its handshake op", p2i(thr));
       thr->print_thread_state_on(&log_stream);
@@ -117,8 +114,8 @@ class VM_HandshakeOneThread: public VM_Handshake {
     TraceTime timer("Performing single-target operation (vmoperation doit)", TRACETIME_LOG(Info, handshake));
 
     {
-      MutexLockerEx ml(Threads_lock, Mutex::_no_safepoint_check_flag);
-      if (Threads::includes(_target)) {
+      ThreadsListHandle tlh;
+      if (tlh.includes(_target)) {
         set_handshake(_target);
         _thread_alive = true;
       }
@@ -139,9 +136,24 @@ class VM_HandshakeOneThread: public VM_Handshake {
         handle_timeout();
       }
 
+      // We need to re-think this with SMR ThreadsList.
+      // There is an assumption in the code that the Threads_lock should be
+      // locked during certain phases.
       MutexLockerEx ml(Threads_lock, Mutex::_no_safepoint_check_flag);
-      _target->handshake_process_by_vmthread();
-
+      ThreadsListHandle tlh;
+      if (tlh.includes(_target)) {
+        // Warning _target's address might be re-used.
+        // handshake_process_by_vmthread will check the semaphore for us again.
+        // Since we can't have more then one handshake in flight a reuse of
+        // _target's address should be okay since the new thread will not have
+        // an operation.
+        _target->handshake_process_by_vmthread();
+      } else {
+        // We can't warn here since the thread does cancel_handshake after
+        // it has been removed from the ThreadsList. So we should just keep
+        // looping here until while below returns false. If we have a bug,
+        // then we hang here, which is good for debugging.
+      }
     } while (!poll_for_completed_thread());
   }
 
@@ -157,15 +169,15 @@ class VM_HandshakeAllThreads: public VM_Handshake {
   void doit() {
     TraceTime timer("Performing operation (vmoperation doit)", TRACETIME_LOG(Info, handshake));
 
-    int number_of_threads_issued = -1;
-    int number_of_threads_completed = 0;
-    {
-      MutexLockerEx ml(Threads_lock, Mutex::_no_safepoint_check_flag);
-      number_of_threads_issued = Threads::number_of_threads();
+    int number_of_threads_issued = 0;
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thr = jtiwh.next(); ) {
+      set_handshake(thr);
+      number_of_threads_issued++;
+    }
 
-      ALL_JAVA_THREADS(thr) {
-        set_handshake(thr);
-      }
+    if (number_of_threads_issued < 1) {
+      log_debug(handshake)("No threads to handshake.");
+      return;
     }
 
     if (!UseMembar) {
@@ -174,6 +186,7 @@ class VM_HandshakeAllThreads: public VM_Handshake {
 
     log_debug(handshake)("Threads signaled, begin processing blocked threads by VMThtread");
     const jlong start_time = os::elapsed_counter();
+    int number_of_threads_completed = 0;
     do {
       // Check if handshake operation has timed out
       if (handshake_has_timed_out(start_time)) {
@@ -184,13 +197,19 @@ class VM_HandshakeAllThreads: public VM_Handshake {
       // Observing a blocked state may of course be transient but the processing is guarded
       // by semaphores and we optimistically begin by working on the blocked threads
       {
+          // We need to re-think this with SMR ThreadsList.
+          // There is an assumption in the code that the Threads_lock should
+          // be locked during certain phases.
           MutexLockerEx ml(Threads_lock, Mutex::_no_safepoint_check_flag);
-          ALL_JAVA_THREADS(thr) {
+          for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thr = jtiwh.next(); ) {
+            // A new thread on the ThreadsList will not have an operation,
+            // hence it is skipped in handshake_process_by_vmthread.
             thr->handshake_process_by_vmthread();
           }
       }
 
       while (poll_for_completed_thread()) {
+        // Includes canceled operations by exiting threads.
         number_of_threads_completed++;
       }
 
@@ -212,7 +231,7 @@ public:
       _thread_cl(cl), _target_thread(target), _all_threads(false), _thread_alive(false) {}
 
   void doit() {
-    ALL_JAVA_THREADS(t) {
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
       if (_all_threads || t == _target_thread) {
         if (t == _target_thread) {
           _thread_alive = true;
@@ -298,8 +317,8 @@ void HandshakeState::cancel_inner(JavaThread* thread) {
   assert(thread->thread_state() == _thread_in_vm, "must be in vm state");
 #ifdef DEBUG
   {
-    MutexLockerEx ml(Threads_lock,  Mutex::_no_safepoint_check_flag);
-    assert(!Threads::includes(thread), "java thread must not be on threads list");
+    ThreadsListHandle tlh;
+    assert(!tlh.includes(_target), "java thread must not be on threads list");
   }
 #endif
   HandshakeOperation* op = _operation;

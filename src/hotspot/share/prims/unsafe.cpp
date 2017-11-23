@@ -39,6 +39,8 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/reflection.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/threadService.hpp"
 #include "trace/tracing.hpp"
@@ -937,8 +939,12 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) 
   Parker* p = NULL;
 
   if (jthread != NULL) {
-    oop java_thread = JNIHandles::resolve_non_null(jthread);
+    ThreadsListHandle tlh;
+    JavaThread* thr = NULL;
+    oop java_thread = NULL;
+    (void) tlh.cv_internal_thread_to_JavaThread(jthread, &thr, &java_thread);
     if (java_thread != NULL) {
+      // This is a valid oop.
       jlong lp = java_lang_Thread::park_event(java_thread);
       if (lp != 0) {
         // This cast is OK even though the jlong might have been read
@@ -946,22 +952,19 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) 
         // always be zero anyway and the value set is always the same
         p = (Parker*)addr_from_java(lp);
       } else {
-        // Grab lock if apparently null or using older version of library
-        MutexLocker mu(Threads_lock);
-        java_thread = JNIHandles::resolve_non_null(jthread);
-
-        if (java_thread != NULL) {
-          JavaThread* thr = java_lang_Thread::thread(java_thread);
-          if (thr != NULL) {
-            p = thr->parker();
-            if (p != NULL) { // Bind to Java thread for next time.
-              java_lang_Thread::set_park_event(java_thread, addr_to_java(p));
-            }
+        // Not cached in the java.lang.Thread oop yet (could be an
+        // older version of library).
+        if (thr != NULL) {
+          // The JavaThread is alive.
+          p = thr->parker();
+          if (p != NULL) {
+            // Cache the Parker in the java.lang.Thread oop for next time.
+            java_lang_Thread::set_park_event(java_thread, addr_to_java(p));
           }
         }
       }
     }
-  }
+  } // ThreadsListHandle is destroyed here.
 
   if (p != NULL) {
     HOTSPOT_THREAD_UNPARK((uintptr_t) p);

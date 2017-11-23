@@ -399,6 +399,14 @@ class JvmtiExport : public AllStatic {
 
   // SetNativeMethodPrefix support
   static char** get_all_native_method_prefixes(int* count_ptr) NOT_JVMTI_RETURN_(NULL);
+
+  // JavaThread lifecycle support:
+  static jvmtiError cv_external_thread_to_JavaThread(ThreadsList * t_list,
+                                                     jthread thread,
+                                                     JavaThread ** jt_pp,
+                                                     oop * thread_oop_p);
+  static jvmtiError cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
+                                         JavaThread ** jt_pp);
 };
 
 // Support class used by JvmtiDynamicCodeEventCollector and others. It

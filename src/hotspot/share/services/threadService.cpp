@@ -34,9 +34,9 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/thread.hpp"
-#include "runtime/vframe.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.inline.hpp"
+#include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/threadService.hpp"
@@ -148,7 +148,7 @@ void ThreadService::current_thread_exiting(JavaThread* jt) {
 // FIXME: JVMTI should call this function
 Handle ThreadService::get_current_contended_monitor(JavaThread* thread) {
   assert(thread != NULL, "should be non-NULL");
-  assert(Threads_lock->owned_by_self(), "must grab Threads_lock or be at safepoint");
+  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   ObjectMonitor *wait_obj = thread->current_waiting_monitor();
 
@@ -266,6 +266,7 @@ Handle ThreadService::dump_stack_traces(GrowableArray<instanceHandle>* threads,
 
   int num_snapshots = dump_result.num_snapshots();
   assert(num_snapshots == num_threads, "Must have num_threads thread snapshots");
+  assert(num_snapshots == 0 || dump_result.t_list_has_been_set(), "ThreadsList must have been set if we have a snapshot");
   int i = 0;
   for (ThreadSnapshot* ts = dump_result.snapshots(); ts != NULL; i++, ts = ts->next()) {
     ThreadStackTrace* stacktrace = ts->get_stack_trace();
@@ -297,7 +298,9 @@ void ThreadService::reset_contention_time_stat(JavaThread* thread) {
 }
 
 // Find deadlocks involving object monitors and concurrent locks if concurrent_locks is true
-DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(bool concurrent_locks) {
+DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, bool concurrent_locks) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+
   // This code was modified from the original Threads::find_deadlocks code.
   int globalDfn = 0, thisDfn;
   ObjectMonitor* waitingToLockMonitor = NULL;
@@ -306,15 +309,16 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(bool concurrent_locks)
   JavaThread *currentThread, *previousThread;
   int num_deadlocks = 0;
 
-  for (JavaThread* p = Threads::first(); p != NULL; p = p->next()) {
-    // Initialize the depth-first-number
-    p->set_depth_first_number(-1);
+  // Initialize the depth-first-number for each JavaThread.
+  JavaThreadIterator jti(t_list);
+  for (JavaThread* jt = jti.first(); jt != NULL; jt = jti.next()) {
+    jt->set_depth_first_number(-1);
   }
 
   DeadlockCycle* deadlocks = NULL;
   DeadlockCycle* last = NULL;
   DeadlockCycle* cycle = new DeadlockCycle();
-  for (JavaThread* jt = Threads::first(); jt != NULL; jt = jt->next()) {
+  for (JavaThread* jt = jti.first(); jt != NULL; jt = jti.next()) {
     if (jt->depth_first_number() >= 0) {
       // this thread was already visited
       continue;
@@ -339,9 +343,8 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(bool concurrent_locks)
       if (waitingToLockMonitor != NULL) {
         address currentOwner = (address)waitingToLockMonitor->owner();
         if (currentOwner != NULL) {
-          currentThread = Threads::owning_thread_from_monitor_owner(
-                            currentOwner,
-                            false /* no locking needed */);
+          currentThread = Threads::owning_thread_from_monitor_owner(t_list,
+                                                                    currentOwner);
           if (currentThread == NULL) {
             // This function is called at a safepoint so the JavaThread
             // that owns waitingToLockMonitor should be findable, but
@@ -366,6 +369,8 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(bool concurrent_locks)
         if (concurrent_locks) {
           if (waitingToLockBlocker->is_a(SystemDictionary::abstract_ownable_synchronizer_klass())) {
             oop threadObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(waitingToLockBlocker);
+            // This JavaThread (if there is one) is protected by the
+            // ThreadsListSetter in VM_FindDeadlocks::doit().
             currentThread = threadObj != NULL ? java_lang_Thread::thread(threadObj) : NULL;
           } else {
             currentThread = NULL;
@@ -414,7 +419,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(bool concurrent_locks)
   return deadlocks;
 }
 
-ThreadDumpResult::ThreadDumpResult() : _num_threads(0), _num_snapshots(0), _snapshots(NULL), _next(NULL), _last(NULL) {
+ThreadDumpResult::ThreadDumpResult() : _num_threads(0), _num_snapshots(0), _snapshots(NULL), _next(NULL), _last(NULL), _setter() {
 
   // Create a new ThreadDumpResult object and append to the list.
   // If GC happens before this function returns, Method*
@@ -422,7 +427,7 @@ ThreadDumpResult::ThreadDumpResult() : _num_threads(0), _num_snapshots(0), _snap
   ThreadService::add_thread_dump(this);
 }
 
-ThreadDumpResult::ThreadDumpResult(int num_threads) : _num_threads(num_threads), _num_snapshots(0), _snapshots(NULL), _next(NULL), _last(NULL) {
+ThreadDumpResult::ThreadDumpResult(int num_threads) : _num_threads(num_threads), _num_snapshots(0), _snapshots(NULL), _next(NULL), _last(NULL), _setter() {
   // Create a new ThreadDumpResult object and append to the list.
   // If GC happens before this function returns, oops
   // will be visited.
@@ -465,6 +470,10 @@ void ThreadDumpResult::metadata_do(void f(Metadata*)) {
   for (ThreadSnapshot* ts = _snapshots; ts != NULL; ts = ts->next()) {
     ts->metadata_do(f);
   }
+}
+
+ThreadsList* ThreadDumpResult::t_list() {
+  return _setter.list();
 }
 
 StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
@@ -683,6 +692,8 @@ void ConcurrentLocksDump::build_map(GrowableArray<oop>* aos_objects) {
     oop o = aos_objects->at(i);
     oop owner_thread_obj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(o);
     if (owner_thread_obj != NULL) {
+      // See comments in ThreadConcurrentLocks to see how this
+      // JavaThread* is protected.
       JavaThread* thread = java_lang_Thread::thread(owner_thread_obj);
       assert(o->is_instance(), "Must be an instanceOop");
       add_lock(thread, (instanceOop) o);
@@ -764,7 +775,7 @@ ThreadStatistics::ThreadStatistics() {
   memset((void*) _perf_recursion_counts, 0, sizeof(_perf_recursion_counts));
 }
 
-ThreadSnapshot::ThreadSnapshot(JavaThread* thread) {
+ThreadSnapshot::ThreadSnapshot(ThreadsList * t_list, JavaThread* thread) {
   _thread = thread;
   _threadObj = thread->threadObj();
   _stack_trace = NULL;
@@ -796,7 +807,7 @@ ThreadSnapshot::ThreadSnapshot(JavaThread* thread) {
       _thread_status = java_lang_Thread::RUNNABLE;
     } else {
       _blocker_object = obj();
-      JavaThread* owner = ObjectSynchronizer::get_lock_owner(obj, false);
+      JavaThread* owner = ObjectSynchronizer::get_lock_owner(t_list, obj);
       if ((owner == NULL && _thread_status == java_lang_Thread::BLOCKED_ON_MONITOR_ENTER)
           || (owner != NULL && owner->is_attaching_via_jni())) {
         // ownership information of the monitor is not available
@@ -865,7 +876,7 @@ DeadlockCycle::~DeadlockCycle() {
   delete _threads;
 }
 
-void DeadlockCycle::print_on(outputStream* st) const {
+void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const {
   st->cr();
   st->print_cr("Found one Java-level deadlock:");
   st->print("=============================");
@@ -895,9 +906,8 @@ void DeadlockCycle::print_on(outputStream* st) const {
         // No Java object associated - a JVMTI raw monitor
         owner_desc = " (JVMTI raw monitor),\n  which is held by";
       }
-      currentThread = Threads::owning_thread_from_monitor_owner(
-                        (address)waitingToLockMonitor->owner(),
-                        false /* no locking needed */);
+      currentThread = Threads::owning_thread_from_monitor_owner(t_list,
+                                                                (address)waitingToLockMonitor->owner());
       if (currentThread == NULL) {
         // The deadlock was detected at a safepoint so the JavaThread
         // that owns waitingToLockMonitor should be findable, but
@@ -915,6 +925,7 @@ void DeadlockCycle::print_on(outputStream* st) const {
              "Must be an AbstractOwnableSynchronizer");
       oop ownerObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(waitingToLockBlocker);
       currentThread = java_lang_Thread::thread(ownerObj);
+      assert(currentThread != NULL, "AbstractOwnableSynchronizer owning thread is unexpectedly NULL");
     }
     st->print("%s \"%s\"", owner_desc, currentThread->get_thread_name());
   }
@@ -943,9 +954,7 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
   int init_size = ThreadService::get_live_thread_count();
   _threads_array = new GrowableArray<instanceHandle>(init_size);
 
-  MutexLockerEx ml(Threads_lock);
-
-  for (JavaThread* jt = Threads::first(); jt != NULL; jt = jt->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     // skips JavaThreads in the process of exiting
     // and also skips VM internal JavaThreads
     // Threads in _thread_new or _thread_new_trans state are included.

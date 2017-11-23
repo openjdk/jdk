@@ -336,34 +336,10 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // already holding JvmtiThreadState_lock - retrieve or create JvmtiThreadState
   // Can return NULL if JavaThread is exiting.
-  inline static JvmtiThreadState *state_for_while_locked(JavaThread *thread) {
-    assert(JvmtiThreadState_lock->is_locked(), "sanity check");
-
-    JvmtiThreadState *state = thread->jvmti_thread_state();
-    if (state == NULL) {
-      if (thread->is_exiting()) {
-        // don't add a JvmtiThreadState to a thread that is exiting
-        return NULL;
-      }
-
-      state = new JvmtiThreadState(thread);
-    }
-    return state;
-  }
-
+  static JvmtiThreadState *state_for_while_locked(JavaThread *thread);
   // retrieve or create JvmtiThreadState
   // Can return NULL if JavaThread is exiting.
-  inline static JvmtiThreadState *state_for(JavaThread *thread) {
-    JvmtiThreadState *state = thread->jvmti_thread_state();
-    if (state == NULL) {
-      MutexLocker mu(JvmtiThreadState_lock);
-      // check again with the lock held
-      state = state_for_while_locked(thread);
-    } else {
-      CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
-    }
-    return state;
-  }
+  static JvmtiThreadState *state_for(JavaThread *thread);
 
   // JVMTI ForceEarlyReturn support
 

@@ -44,6 +44,7 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmThread.hpp"
@@ -487,37 +488,6 @@ JvmtiEnvBase::set_event_callbacks(const jvmtiEventCallbacks* callbacks,
   }
 }
 
-// Called from JVMTI entry points which perform stack walking. If the
-// associated JavaThread is the current thread, then wait_for_suspend
-// is not used. Otherwise, it determines if we should wait for the
-// "other" thread to complete external suspension. (NOTE: in future
-// releases the suspension mechanism should be reimplemented so this
-// is not necessary.)
-//
-bool
-JvmtiEnvBase::is_thread_fully_suspended(JavaThread* thr, bool wait_for_suspend, uint32_t *bits) {
-  // "other" threads require special handling
-  if (thr != JavaThread::current()) {
-    if (wait_for_suspend) {
-      // We are allowed to wait for the external suspend to complete
-      // so give the other thread a chance to get suspended.
-      if (!thr->wait_for_ext_suspend_completion(SuspendRetryCount,
-          SuspendRetryDelay, bits)) {
-        // didn't make it so let the caller know
-        return false;
-      }
-    }
-    // We aren't allowed to wait for the external suspend to complete
-    // so if the other thread isn't externally suspended we need to
-    // let the caller know.
-    else if (!thr->is_ext_suspend_completed_with_lock(bits)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 
 // In the fullness of time, all users of the method should instead
 // directly use allocate, besides being cleaner and faster, this will
@@ -559,19 +529,6 @@ jthreadGroup *
 JvmtiEnvBase::new_jthreadGroupArray(int length, Handle *handles) {
   return (jthreadGroup *) new_jobjectArray(length,handles);
 }
-
-
-JavaThread *
-JvmtiEnvBase::get_JavaThread(jthread jni_thread) {
-  oop t = JNIHandles::resolve_external_guard(jni_thread);
-  if (t == NULL || !t->is_a(SystemDictionary::Thread_klass())) {
-    return NULL;
-  }
-  // The following returns NULL if the thread has not yet run or is in
-  // process of exiting
-  return java_lang_Thread::thread(t);
-}
-
 
 // return the vframe on the specified thread and depth, NULL if no such frame
 vframe*
@@ -670,7 +627,7 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThre
   uint32_t debug_bits = 0;
 #endif
   assert((SafepointSynchronize::is_at_safepoint() ||
-          is_thread_fully_suspended(java_thread, false, &debug_bits)),
+          java_thread->is_thread_fully_suspended(false, &debug_bits)),
          "at safepoint or target thread is suspended");
   oop obj = NULL;
   ObjectMonitor *mon = java_thread->current_waiting_monitor();
@@ -709,7 +666,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
   uint32_t debug_bits = 0;
 #endif
   assert((SafepointSynchronize::is_at_safepoint() ||
-          is_thread_fully_suspended(java_thread, false, &debug_bits)),
+          java_thread->is_thread_fully_suspended(false, &debug_bits)),
          "at safepoint or target thread is suspended");
 
   if (java_thread->has_last_Java_frame()) {
@@ -831,7 +788,7 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
   uint32_t debug_bits = 0;
 #endif
   assert((SafepointSynchronize::is_at_safepoint() ||
-          is_thread_fully_suspended(java_thread, false, &debug_bits)),
+          java_thread->is_thread_fully_suspended(false, &debug_bits)),
          "at safepoint or target thread is suspended");
   int count = 0;
   if (java_thread->has_last_Java_frame()) {
@@ -914,7 +871,7 @@ JvmtiEnvBase::get_frame_location(JavaThread *java_thread, jint depth,
   uint32_t debug_bits = 0;
 #endif
   assert((SafepointSynchronize::is_at_safepoint() ||
-          is_thread_fully_suspended(java_thread, false, &debug_bits)),
+          java_thread->is_thread_fully_suspended(false, &debug_bits)),
          "at safepoint or target thread is suspended");
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
@@ -976,7 +933,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   // first derive the object's owner and entry_count (if any)
   {
     // Revoke any biases before querying the mark word
-    if (SafepointSynchronize::is_at_safepoint()) {
+    if (at_safepoint) {
       BiasedLocking::revoke_at_safepoint(hobj);
     } else {
       BiasedLocking::revoke_and_rebias(hobj, false, calling_thread);
@@ -1008,11 +965,11 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     }
 
     if (owner != NULL) {
+      // Use current thread since function can be called from a
+      // JavaThread or the VMThread.
+      ThreadsListHandle tlh;
       // This monitor is owned so we have to find the owning JavaThread.
-      // Since owning_thread_from_monitor_owner() grabs a lock, GC can
-      // move our object at this point. However, our owner value is safe
-      // since it is either the Lock word on a stack or a JavaThread *.
-      owning_thread = Threads::owning_thread_from_monitor_owner(owner, !at_safepoint);
+      owning_thread = Threads::owning_thread_from_monitor_owner(tlh.list(), owner);
       // Cannot assume (owning_thread != NULL) here because this function
       // may not have been called at a safepoint and the owning_thread
       // might not be suspended.
@@ -1021,7 +978,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
         // or it has to be suspended. Any of these conditions will prevent both
         // contending and waiting threads from modifying the state of
         // the monitor.
-        if (!at_safepoint && !JvmtiEnv::is_thread_fully_suspended(owning_thread, true, &debug_bits)) {
+        if (!at_safepoint && !owning_thread->is_thread_fully_suspended(true, &debug_bits)) {
           // Don't worry! This return of JVMTI_ERROR_THREAD_NOT_SUSPENDED
           // will not make it back to the JVM/TI agent. The error code will
           // get intercepted in JvmtiEnv::GetObjectMonitorUsage() which
@@ -1033,7 +990,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
         ret.owner = (jthread)jni_reference(calling_thread, th);
       }
       // implied else: no owner
-    }
+    } // ThreadsListHandle is destroyed here.
 
     if (owning_thread != NULL) {  // monitor is owned
       // The recursions field of a monitor does not reflect recursions
@@ -1084,13 +1041,15 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     if (ret.waiter_count > 0) {
       // we have contending and/or waiting threads
       HandleMark hm;
+      // Use current thread since function can be called from a
+      // JavaThread or the VMThread.
+      ThreadsListHandle tlh;
       if (nWant > 0) {
         // we have contending threads
         ResourceMark rm;
         // get_pending_threads returns only java thread so we do not need to
-        // check for  non java threads.
-        GrowableArray<JavaThread*>* wantList = Threads::get_pending_threads(
-          nWant, (address)mon, !at_safepoint);
+        // check for non java threads.
+        GrowableArray<JavaThread*>* wantList = Threads::get_pending_threads(tlh.list(), nWant, (address)mon);
         if (wantList->length() < nWant) {
           // robustness: the pending list has gotten smaller
           nWant = wantList->length();
@@ -1101,7 +1060,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
           // thread could potentially change the state of the monitor by
           // entering it. The JVM/TI spec doesn't allow this.
           if (owning_thread == NULL && !at_safepoint &
-              !JvmtiEnv::is_thread_fully_suspended(pending_thread, true, &debug_bits)) {
+              !pending_thread->is_thread_fully_suspended(true, &debug_bits)) {
             if (ret.owner != NULL) {
               destroy_jni_reference(calling_thread, ret.owner);
             }
@@ -1139,7 +1098,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
           waiter = mon->next_waiter(waiter);
         }
       }
-    }
+    } // ThreadsListHandle is destroyed here.
 
     // Adjust count. nWant and nWait count values may be less than original.
     ret.waiter_count = nWant + nWait;
@@ -1291,14 +1250,23 @@ VM_GetThreadListStackTraces::doit() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
   ResourceMark rm;
+  ThreadsListHandle tlh;
   for (int i = 0; i < _thread_count; ++i) {
     jthread jt = _thread_list[i];
-    oop thread_oop = JNIHandles::resolve_external_guard(jt);
-    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
-      set_result(JVMTI_ERROR_INVALID_THREAD);
-      return;
+    JavaThread* java_thread = NULL;
+    oop thread_oop = NULL;
+    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), jt, &java_thread, &thread_oop);
+    if (err != JVMTI_ERROR_NONE) {
+      // We got an error code so we don't have a JavaThread *, but
+      // only return an error from here if we didn't get a valid
+      // thread_oop.
+      if (thread_oop == NULL) {
+        set_result(err);
+        return;
+      }
+      // We have a valid thread_oop.
     }
-    fill_frames(jt, java_lang_Thread::thread(thread_oop), thread_oop);
+    fill_frames(jt, java_thread, thread_oop);
   }
   allocate_and_fill_stacks(_thread_count);
 }
@@ -1309,7 +1277,7 @@ VM_GetAllStackTraces::doit() {
 
   ResourceMark rm;
   _final_thread_count = 0;
-  for (JavaThread *jt = Threads::first(); jt != NULL; jt = jt->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     oop thread_oop = jt->threadObj();
     if (thread_oop != NULL &&
         !jt->is_exiting() &&
@@ -1404,9 +1372,7 @@ JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState
   }
 
   // Check if java_thread is fully suspended
-  if (!is_thread_fully_suspended(java_thread,
-                                 true /* wait for suspend completion */,
-                                 &debug_bits)) {
+  if (!java_thread->is_thread_fully_suspended(true /* wait for suspend completion */, &debug_bits)) {
     return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
   }
 
@@ -1521,3 +1487,79 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
   return JVMTI_ERROR_NONE;
 }
 
+void
+VM_UpdateForPopTopFrame::doit() {
+  JavaThread* jt = _state->get_thread();
+  ThreadsListHandle tlh;
+  if (jt != NULL && tlh.includes(jt) && !jt->is_exiting() && jt->threadObj() != NULL) {
+    _state->update_for_pop_top_frame();
+  } else {
+    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+}
+
+void
+VM_SetFramePop::doit() {
+  JavaThread* jt = _state->get_thread();
+  ThreadsListHandle tlh;
+  if (jt != NULL && tlh.includes(jt) && !jt->is_exiting() && jt->threadObj() != NULL) {
+    int frame_number = _state->count_frames() - _depth;
+    _state->env_thread_state((JvmtiEnvBase*)_env)->set_frame_pop(frame_number);
+  } else {
+    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+}
+
+void
+VM_GetOwnedMonitorInfo::doit() {
+  _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+  ThreadsListHandle tlh;
+  if (_java_thread != NULL && tlh.includes(_java_thread)
+      && !_java_thread->is_exiting() && _java_thread->threadObj() != NULL) {
+    _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread, _java_thread,
+                                                          _owned_monitors_list);
+  }
+}
+
+void
+VM_GetCurrentContendedMonitor::doit() {
+  _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+  ThreadsListHandle tlh;
+  if (_java_thread != NULL && tlh.includes(_java_thread)
+      && !_java_thread->is_exiting() && _java_thread->threadObj() != NULL) {
+    _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor(_calling_thread,_java_thread,_owned_monitor_ptr);
+  }
+}
+
+void
+VM_GetStackTrace::doit() {
+  _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+  ThreadsListHandle tlh;
+  if (_java_thread != NULL && tlh.includes(_java_thread)
+      && !_java_thread->is_exiting() && _java_thread->threadObj() != NULL) {
+    _result = ((JvmtiEnvBase *)_env)->get_stack_trace(_java_thread,
+                                                      _start_depth, _max_count,
+                                                      _frame_buffer, _count_ptr);
+  }
+}
+
+void
+VM_GetFrameCount::doit() {
+  _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+  JavaThread* jt = _state->get_thread();
+  ThreadsListHandle tlh;
+  if (jt != NULL && tlh.includes(jt) && !jt->is_exiting() && jt->threadObj() != NULL) {
+    _result = ((JvmtiEnvBase*)_env)->get_frame_count(_state, _count_ptr);
+  }
+}
+
+void
+VM_GetFrameLocation::doit() {
+  _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
+  ThreadsListHandle tlh;
+  if (_java_thread != NULL && tlh.includes(_java_thread)
+      && !_java_thread->is_exiting() && _java_thread->threadObj() != NULL) {
+    _result = ((JvmtiEnvBase*)_env)->get_frame_location(_java_thread, _depth,
+                                                        _method_ptr, _location_ptr);
+  }
+}
