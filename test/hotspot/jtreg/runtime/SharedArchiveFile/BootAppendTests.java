@@ -169,7 +169,7 @@ public class BootAppendTests {
             CDSOptions opts = (new CDSOptions())
                 .setXShareMode(mode).setUseVersion(false)
                 .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-showversion",
-                           "--limit-modules=java.base,jdk.internal.vm.compiler", "-cp", appJar)
+                           "--limit-modules=java.base", "-cp", appJar)
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_MODULE_CLASS_NAME);
 
@@ -198,7 +198,7 @@ public class BootAppendTests {
             CDSOptions opts = (new CDSOptions())
                 .setXShareMode(mode).setUseVersion(false)
                 .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-showversion",
-                           "--limit-modules=java.base,jdk.internal.vm.compiler", "-cp", appJar)
+                           "--limit-modules=java.base", "-cp", appJar)
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
 
@@ -226,7 +226,7 @@ public class BootAppendTests {
             CDSOptions opts = (new CDSOptions())
                 .setXShareMode(mode).setUseVersion(false)
                 .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-showversion",
-                           "--limit-modules=java.base,jdk.internal.vm.compiler", "-cp", appJar)
+                           "--limit-modules=java.base", "-cp", appJar)
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_CLASS_NAME);
 
