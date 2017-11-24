@@ -25,7 +25,10 @@
 #ifndef SHARE_VM_SERVICES_MEMORYMANAGER_HPP
 #define SHARE_VM_SERVICES_MEMORYMANAGER_HPP
 
+#include "gc/shared/gcCause.hpp"
 #include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/handles.hpp"
 #include "runtime/timer.hpp"
 #include "services/memoryUsage.hpp"
 
