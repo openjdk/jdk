@@ -497,7 +497,7 @@ bool Arguments::is_obsolete_flag(const char *flag_name, JDK_Version* version) {
   SpecialFlag flag;
   if (lookup_special_flag(flag_name, flag)) {
     if (!flag.obsolete_in.is_undefined()) {
-      if (version_less_than(JDK_Version::current(), flag.expired_in)) {
+      if (!version_less_than(JDK_Version::current(), flag.obsolete_in)) {
         *version = flag.obsolete_in;
         return true;
       }
