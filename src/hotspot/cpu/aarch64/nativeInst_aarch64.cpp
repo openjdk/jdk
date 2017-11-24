@@ -245,6 +245,11 @@ bool NativeInstruction::is_safepoint_poll() {
   // mov(reg, polling_page);
   // ldr(zr, [reg, #offset]);
   //
+  // or
+  //
+  // ldr(reg, [rthread, #offset]);
+  // ldr(zr, [reg, #offset]);
+  //
   // however, we cannot rely on the polling page address load always
   // directly preceding the read from the page. C1 does that but C2
   // has to do the load and read as two independent instruction

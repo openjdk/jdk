@@ -30,12 +30,13 @@
 #include "logging/log.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markOop.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/methodData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -438,13 +439,26 @@ void InterpreterMacroAssembler::dispatch_epilog(TosState state, int step) {
 
 void InterpreterMacroAssembler::dispatch_base(TosState state,
                                               address* table,
-                                              bool verifyoop) {
+                                              bool verifyoop,
+                                              bool generate_poll) {
   if (VerifyActivationFrameSize) {
     Unimplemented();
   }
   if (verifyoop) {
     verify_oop(r0, state);
   }
+
+  Label safepoint;
+  address* const safepoint_table = Interpreter::safept_table(state);
+  bool needs_thread_local_poll = generate_poll &&
+    SafepointMechanism::uses_thread_local_poll() && table != safepoint_table;
+
+  if (needs_thread_local_poll) {
+    NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
+    ldr(rscratch2, Address(rthread, Thread::polling_page_offset()));
+    tbnz(rscratch2, exact_log2(SafepointMechanism::poll_bit()), safepoint);
+  }
+
   if (table == Interpreter::dispatch_table(state)) {
     addw(rscratch2, rscratch1, Interpreter::distance_from_dispatch_table(state));
     ldr(rscratch2, Address(rdispatch, rscratch2, Address::uxtw(3)));
@@ -453,10 +467,17 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     ldr(rscratch2, Address(rscratch2, rscratch1, Address::uxtw(3)));
   }
   br(rscratch2);
+
+  if (needs_thread_local_poll) {
+    bind(safepoint);
+    lea(rscratch2, ExternalAddress((address)safepoint_table));
+    ldr(rscratch2, Address(rscratch2, rscratch1, Address::uxtw(3)));
+    br(rscratch2);
+  }
 }
 
-void InterpreterMacroAssembler::dispatch_only(TosState state) {
-  dispatch_base(state, Interpreter::dispatch_table(state));
+void InterpreterMacroAssembler::dispatch_only(TosState state, bool generate_poll) {
+  dispatch_base(state, Interpreter::dispatch_table(state), true, generate_poll);
 }
 
 void InterpreterMacroAssembler::dispatch_only_normal(TosState state) {
@@ -468,10 +489,10 @@ void InterpreterMacroAssembler::dispatch_only_noverify(TosState state) {
 }
 
 
-void InterpreterMacroAssembler::dispatch_next(TosState state, int step) {
+void InterpreterMacroAssembler::dispatch_next(TosState state, int step, bool generate_poll) {
   // load next bytecode
   ldrb(rscratch1, Address(pre(rbcp, step)));
-  dispatch_base(state, Interpreter::dispatch_table(state));
+  dispatch_base(state, Interpreter::dispatch_table(state), generate_poll);
 }
 
 void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {

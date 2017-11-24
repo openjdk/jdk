@@ -967,12 +967,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
     Label slow_path;
     // If we need a safepoint check, generate full interpreter entry.
-    ExternalAddress state(SafepointSynchronize::address_of_state());
-    unsigned long offset;
-    __ adrp(rscratch1, ExternalAddress(SafepointSynchronize::address_of_state()), offset);
-    __ ldrw(rscratch1, Address(rscratch1, offset));
-    assert(SafepointSynchronize::_not_synchronized == 0, "rewrite this code");
-    __ cbnz(rscratch1, slow_path);
+    __ safepoint_poll(slow_path);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.
@@ -986,6 +981,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     __ ldrw(val, Address(esp, 0));              // byte value
     __ ldrw(crc, Address(esp, wordSize));       // Initial CRC
 
+    unsigned long offset;
     __ adrp(tbl, ExternalAddress(StubRoutines::crc_table_addr()), offset);
     __ add(tbl, tbl, offset);
 
@@ -1020,12 +1016,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 
     Label slow_path;
     // If we need a safepoint check, generate full interpreter entry.
-    ExternalAddress state(SafepointSynchronize::address_of_state());
-    unsigned long offset;
-    __ adrp(rscratch1, ExternalAddress(SafepointSynchronize::address_of_state()), offset);
-    __ ldrw(rscratch1, Address(rscratch1, offset));
-    assert(SafepointSynchronize::_not_synchronized == 0, "rewrite this code");
-    __ cbnz(rscratch1, slow_path);
+    __ safepoint_poll(slow_path);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.
@@ -1375,7 +1366,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   if (os::is_MP()) {
     if (UseMembar) {
       // Force this write out before the read below
-      __ dsb(Assembler::SY);
+      __ dmb(Assembler::ISH);
     } else {
       // Write serialization page so VM thread can do a pseudo remote membar.
       // We use the current thread pointer to calculate a thread specific
@@ -1387,16 +1378,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // check for safepoint operation in progress and/or pending suspend requests
   {
-    Label Continue;
-    {
-      unsigned long offset;
-      __ adrp(rscratch2, SafepointSynchronize::address_of_state(), offset);
-      __ ldrw(rscratch2, Address(rscratch2, offset));
-    }
-    assert(SafepointSynchronize::_not_synchronized == 0,
-           "SafepointSynchronize::_not_synchronized");
-    Label L;
-    __ cbnz(rscratch2, L);
+    Label L, Continue;
+    __ safepoint_poll_acquire(L);
     __ ldrw(rscratch2, Address(rthread, JavaThread::suspend_flags_offset()));
     __ cbz(rscratch2, Continue);
     __ bind(L);
