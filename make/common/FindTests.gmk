@@ -29,6 +29,9 @@ _FIND_TESTS_GMK := 1
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, common/FindTests.gmk))
 
+# TEST_BASEDIRS might have been set by a custom extension
+TEST_BASEDIRS += $(TOPDIR)/test $(TOPDIR)
+
 # JTREG_TESTROOTS might have been set by a custom extension
 JTREG_TESTROOTS += $(addprefix $(TOPDIR)/test/, hotspot/jtreg jdk langtools nashorn jaxp)
 
