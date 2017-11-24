@@ -498,7 +498,7 @@ final class WInputMethod extends InputMethodAdapter
             // set Clause and Reading Information
             if (clauseBoundary!=null && clauseReading!=null &&
                 clauseReading.length!=0 && clauseBoundary.length==clauseReading.length+1 &&
-                clauseBoundary[0]==0 && clauseBoundary[clauseReading.length]==text.length() )
+                clauseBoundary[0]==0 && clauseBoundary[clauseReading.length]<=text.length() )
             {
                 for (int i=0; i<clauseBoundary.length-1; i++) {
                     attrStr.addAttribute(Attribute.INPUT_METHOD_SEGMENT,
