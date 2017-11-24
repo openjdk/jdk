@@ -32,7 +32,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfData.inline.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -610,4 +610,11 @@ PerfDataList* PerfDataList::clone() {
   assert(copy != NULL, "just checking");
 
   return copy;
+}
+
+PerfTraceTime::~PerfTraceTime() {
+  if (!UsePerfData || (_recursion_counter != NULL &&
+      --(*_recursion_counter) > 0)) return;
+  _t.stop();
+  _timerp->inc(_t.ticks());
 }
