@@ -25,10 +25,11 @@
 #ifndef SHARE_VM_RUNTIME_PERFDATA_HPP
 #define SHARE_VM_RUNTIME_PERFDATA_HPP
 
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/timer.hpp"
-#include "utilities/growableArray.hpp"
+
+template <typename T> class GrowableArray;
 
 /* jvmstat global and subsystem counter name space - enumeration value
  * serve as an index into the PerfDataManager::_name_space[] array
@@ -629,10 +630,10 @@ class PerfDataList : public CHeapObj<mtInternal> {
     bool contains(const char* name) { return find_by_name(name) != NULL; }
 
     // return the number of PerfData items in this list
-    int length() { return _set->length(); }
+    inline int length();
 
     // add a PerfData item to this list
-    void append(PerfData *p) { _set->append(p); }
+    inline void append(PerfData *p);
 
     // remove the given PerfData item from this list. When called
     // while iterating over the list, this method will result in a
@@ -640,7 +641,7 @@ class PerfDataList : public CHeapObj<mtInternal> {
     // method is also impacted by this method as elements with an
     // index greater than the index of the element removed by this
     // method will be shifted down by one.
-    void remove(PerfData *p) { _set->remove(p); }
+    inline void remove(PerfData *p);
 
     // create a new PerfDataList from this list. The new list is
     // a shallow copy of the original list and care should be taken
@@ -651,7 +652,7 @@ class PerfDataList : public CHeapObj<mtInternal> {
     // for backward compatibility with GrowableArray - need to implement
     // some form of iterator to provide a cleaner abstraction for
     // iteration over the container.
-    PerfData* at(int index) { return _set->at(index); }
+    inline PerfData* at(int index);
 };
 
 
@@ -677,23 +678,23 @@ class PerfDataManager : AllStatic {
   protected:
     // return the list of all known PerfData items
     static PerfDataList* all();
-    static int count() { return _all->length(); }
+    static inline int count();
 
     // return the list of all known PerfData items that are to be
     // sampled by the StatSampler.
     static PerfDataList* sampled();
-    static int sampled_count() { return _sampled->length(); }
+    static inline int sampled_count();
 
     // return the list of all known PerfData items that have a
     // variability classification of type Constant
     static PerfDataList* constants();
-    static int constants_count() { return _constants->length(); }
+    static inline int constants_count();
 
   public:
 
     // method to check for the existence of a PerfData item with
     // the given name.
-    static bool exists(const char* name) { return _all->contains(name); }
+    static inline bool exists(const char* name);
 
     // method to search for a instrumentation object by name
     static PerfData* find_by_name(const char* name);
@@ -929,12 +930,7 @@ class PerfTraceTime : public StackObj {
     inline void suspend() { if (!UsePerfData) return; _t.stop(); }
     inline void resume() { if (!UsePerfData) return; _t.start(); }
 
-    inline ~PerfTraceTime() {
-      if (!UsePerfData || (_recursion_counter != NULL &&
-                           --(*_recursion_counter) > 0)) return;
-      _t.stop();
-      _timerp->inc(_t.ticks());
-    }
+    ~PerfTraceTime();
 };
 
 /* The PerfTraceTimedEvent class is responsible for counting the

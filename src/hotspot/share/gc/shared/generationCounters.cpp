@@ -78,6 +78,12 @@ GenerationCounters::GenerationCounters(const char* name,
   initialize(name, ordinal, spaces, min_capacity, max_capacity, curr_capacity);
 }
 
+GenerationCounters::~GenerationCounters() {
+  if (_name_space != NULL) {
+    FREE_C_HEAP_ARRAY(char, _name_space);
+  }
+}
+
 void GenerationCounters::update_all() {
   assert(_virtual_space != NULL, "otherwise, override this method");
   _current_size->set_value(_virtual_space->committed_size());

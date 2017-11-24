@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_OBJECTMONITOR_HPP
 #define SHARE_VM_RUNTIME_OBJECTMONITOR_HPP
 
+#include "memory/allocation.inline.hpp"
 #include "memory/padded.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
