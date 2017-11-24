@@ -952,6 +952,9 @@ public class Check {
         if (t.hasTag(BOT)) {
             log.error(pos, Errors.CantInferLocalVarType(name, Fragments.LocalCantInferNull));
             return types.createErrorType(t);
+        } else if (t.hasTag(VOID)) {
+            log.error(pos, Errors.CantInferLocalVarType(name, Fragments.LocalCantInferVoid));
+            return types.createErrorType(t);
         }
         return t;
     }
