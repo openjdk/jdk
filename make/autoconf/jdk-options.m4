@@ -296,13 +296,13 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
       ],
       [
         if test "x$OPENJDK_TARGET_OS" = xaix; then
-          # AIX doesn't support 'zipped' so use 'internal' as default
+          # AIX doesn't support 'external' so use 'internal' as default
           with_native_debug_symbols="internal"
         else
           if test "x$STATIC_BUILD" = xtrue; then
             with_native_debug_symbols="none"
           else
-            with_native_debug_symbols="zipped"
+            with_native_debug_symbols="external"
           fi
         fi
       ])

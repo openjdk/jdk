@@ -5155,7 +5155,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1511254554
+DATE_WHEN_GENERATED=1511359342
 
 ###############################################################################
 #
@@ -54080,13 +54080,13 @@ if test "${with_native_debug_symbols+set}" = set; then :
 else
 
         if test "x$OPENJDK_TARGET_OS" = xaix; then
-          # AIX doesn't support 'zipped' so use 'internal' as default
+          # AIX doesn't support 'external' so use 'internal' as default
           with_native_debug_symbols="internal"
         else
           if test "x$STATIC_BUILD" = xtrue; then
             with_native_debug_symbols="none"
           else
-            with_native_debug_symbols="zipped"
+            with_native_debug_symbols="external"
           fi
         fi
 
