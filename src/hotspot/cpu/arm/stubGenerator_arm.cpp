@@ -2968,7 +2968,9 @@ class StubGenerator: public StubCodeGenerator {
         CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
         assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
-        Label L_cardtable_loop;
+        Label L_cardtable_loop, L_done;
+
+        __ cbz_32(count, L_done); // zero count - nothing to do
 
         __ add_ptr_scaled_int32(count, addr, count, LogBytesPerHeapOop);
         __ sub(count, count, BytesPerHeapOop);                            // last addr
@@ -2987,6 +2989,7 @@ class StubGenerator: public StubCodeGenerator {
         __ strb(zero, Address(addr, 1, post_indexed));
         __ subs(count, count, 1);
         __ b(L_cardtable_loop, ge);
+        __ BIND(L_done);
       }
       break;
     case BarrierSet::ModRef:
