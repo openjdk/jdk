@@ -1074,7 +1074,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
  * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
  */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  if (UseCRC32Intrinsics) {
+  if (UseCRC32CIntrinsics) {
     address entry = __ pc();
 
     // Prepare jump to stub using parameters from the stack

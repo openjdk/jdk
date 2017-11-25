@@ -26,11 +26,10 @@
 #define SHARE_VM_OOPS_OOP_INLINE_HPP
 
 #include "gc/shared/ageTable.hpp"
-#include "gc/shared/barrierSet.inline.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/klass.inline.hpp"
@@ -41,50 +40,6 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
-
-inline void update_barrier_set(void* p, oop v, bool release = false) {
-  assert(oopDesc::bs() != NULL, "Uninitialized bs in oop!");
-  oopDesc::bs()->write_ref_field(p, v, release);
-}
-
-template <class T> inline void update_barrier_set_pre(T* p, oop v) {
-  oopDesc::bs()->write_ref_field_pre(p, v);
-}
-
-template <class T> void oop_store(T* p, oop v) {
-  if (always_do_update_barrier) {
-    oop_store((volatile T*)p, v);
-  } else {
-    update_barrier_set_pre(p, v);
-    oopDesc::encode_store_heap_oop(p, v);
-    // always_do_update_barrier == false =>
-    // Either we are at a safepoint (in GC) or CMS is not used. In both
-    // cases it's unnecessary to mark the card as dirty with release sematics.
-    update_barrier_set((void*)p, v, false /* release */);  // cast away type
-  }
-}
-
-template <class T> void oop_store(volatile T* p, oop v) {
-  update_barrier_set_pre((T*)p, v);   // cast away volatile
-  // Used by release_obj_field_put, so use release_store.
-  oopDesc::release_encode_store_heap_oop(p, v);
-  // When using CMS we must mark the card corresponding to p as dirty
-  // with release sematics to prevent that CMS sees the dirty card but
-  // not the new value v at p due to reordering of the two
-  // stores. Note that CMS has a concurrent precleaning phase, where
-  // it reads the card table while the Java threads are running.
-  update_barrier_set((void*)p, v, true /* release */);    // cast away type
-}
-
-// Should replace *addr = oop assignments where addr type depends on UseCompressedOops
-// (without having to remember the function name this calls).
-inline void oop_store_raw(HeapWord* addr, oop value) {
-  if (UseCompressedOops) {
-    oopDesc::encode_store_heap_oop((narrowOop*)addr, value);
-  } else {
-    oopDesc::encode_store_heap_oop((oop*)addr, value);
-  }
-}
 
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
@@ -339,15 +294,27 @@ narrowOop oopDesc::encode_heap_oop(oop v) {
   return (is_null(v)) ? (narrowOop)0 : encode_heap_oop_not_null(v);
 }
 
+narrowOop oopDesc::load_heap_oop(narrowOop* p) { return *p; }
+oop       oopDesc::load_heap_oop(oop* p)       { return *p; }
+
+void oopDesc::store_heap_oop(narrowOop* p, narrowOop v) { *p = v; }
+void oopDesc::store_heap_oop(oop* p, oop v)             { *p = v; }
+
 // Load and decode an oop out of the Java heap into a wide oop.
 oop oopDesc::load_decode_heap_oop_not_null(narrowOop* p) {
-  return decode_heap_oop_not_null(*p);
+  return decode_heap_oop_not_null(load_heap_oop(p));
 }
 
 // Load and decode an oop out of the heap accepting null
 oop oopDesc::load_decode_heap_oop(narrowOop* p) {
-  return decode_heap_oop(*p);
+  return decode_heap_oop(load_heap_oop(p));
 }
+
+oop oopDesc::load_decode_heap_oop_not_null(oop* p) { return *p; }
+oop oopDesc::load_decode_heap_oop(oop* p)          { return *p; }
+
+void oopDesc::encode_store_heap_oop_not_null(oop* p, oop v) { *p = v; }
+void oopDesc::encode_store_heap_oop(oop* p, oop v)          { *p = v; }
 
 // Encode and store a heap oop.
 void oopDesc::encode_store_heap_oop_not_null(narrowOop* p, oop v) {
@@ -359,167 +326,32 @@ void oopDesc::encode_store_heap_oop(narrowOop* p, oop v) {
   *p = encode_heap_oop(v);
 }
 
-// Store heap oop as is for volatile fields.
-void oopDesc::release_store_heap_oop(volatile oop* p, oop v) {
-  OrderAccess::release_store(p, v);
-}
-void oopDesc::release_store_heap_oop(volatile narrowOop* p, narrowOop v) {
-  OrderAccess::release_store(p, v);
-}
+inline oop  oopDesc::obj_field(int offset) const                    { return HeapAccess<>::oop_load_at(as_oop(), offset);  }
+inline void oopDesc::obj_field_put(int offset, oop value)           { HeapAccess<>::oop_store_at(as_oop(), offset, value); }
 
-void oopDesc::release_encode_store_heap_oop_not_null(volatile narrowOop* p, oop v) {
-  // heap oop is not pointer sized.
-  OrderAccess::release_store(p, encode_heap_oop_not_null(v));
-}
-void oopDesc::release_encode_store_heap_oop_not_null(volatile oop* p, oop v) {
-  OrderAccess::release_store(p, v);
-}
+inline jbyte oopDesc::byte_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
+inline void  oopDesc::byte_field_put(int offset, jbyte value)       { HeapAccess<>::store_at(as_oop(), offset, value); }
 
-void oopDesc::release_encode_store_heap_oop(volatile oop* p, oop v) {
-  OrderAccess::release_store(p, v);
-}
-void oopDesc::release_encode_store_heap_oop(volatile narrowOop* p, oop v) {
-  OrderAccess::release_store(p, encode_heap_oop(v));
-}
+inline jchar oopDesc::char_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
+inline void  oopDesc::char_field_put(int offset, jchar value)       { HeapAccess<>::store_at(as_oop(), offset, value); }
 
-// These functions are only used to exchange oop fields in instances,
-// not headers.
-oop oopDesc::atomic_exchange_oop(oop exchange_value, volatile HeapWord *dest) {
-  if (UseCompressedOops) {
-    // encode exchange value from oop to T
-    narrowOop val = encode_heap_oop(exchange_value);
-    narrowOop old = Atomic::xchg(val, (narrowOop*)dest);
-    // decode old from T to oop
-    return decode_heap_oop(old);
-  } else {
-    return Atomic::xchg(exchange_value, (oop*)dest);
-  }
-}
+inline jboolean oopDesc::bool_field(int offset) const               { return HeapAccess<>::load_at(as_oop(), offset);                }
+inline void     oopDesc::bool_field_put(int offset, jboolean value) { HeapAccess<>::store_at(as_oop(), offset, jboolean(value & 1)); }
 
-oop oopDesc::atomic_compare_exchange_oop(oop exchange_value,
-                                         volatile HeapWord *dest,
-                                         oop compare_value,
-                                         bool prebarrier) {
-  if (UseCompressedOops) {
-    if (prebarrier) {
-      update_barrier_set_pre((narrowOop*)dest, exchange_value);
-    }
-    // encode exchange and compare value from oop to T
-    narrowOop val = encode_heap_oop(exchange_value);
-    narrowOop cmp = encode_heap_oop(compare_value);
+inline jshort oopDesc::short_field(int offset) const                { return HeapAccess<>::load_at(as_oop(), offset);  }
+inline void   oopDesc::short_field_put(int offset, jshort value)    { HeapAccess<>::store_at(as_oop(), offset, value); }
 
-    narrowOop old = Atomic::cmpxchg(val, (narrowOop*)dest, cmp);
-    // decode old from T to oop
-    return decode_heap_oop(old);
-  } else {
-    if (prebarrier) {
-      update_barrier_set_pre((oop*)dest, exchange_value);
-    }
-    return Atomic::cmpxchg(exchange_value, (oop*)dest, compare_value);
-  }
-}
+inline jint oopDesc::int_field(int offset) const                    { return HeapAccess<>::load_at(as_oop(), offset);  }
+inline void oopDesc::int_field_put(int offset, jint value)          { HeapAccess<>::store_at(as_oop(), offset, value); }
 
-// In order to put or get a field out of an instance, must first check
-// if the field has been compressed and uncompress it.
-oop oopDesc::obj_field(int offset) const {
-  return UseCompressedOops ?
-    load_decode_heap_oop(obj_field_addr<narrowOop>(offset)) :
-    load_decode_heap_oop(obj_field_addr<oop>(offset));
-}
+inline jlong oopDesc::long_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
+inline void  oopDesc::long_field_put(int offset, jlong value)       { HeapAccess<>::store_at(as_oop(), offset, value); }
 
-void oopDesc::obj_field_put(int offset, oop value) {
-  UseCompressedOops ? oop_store(obj_field_addr<narrowOop>(offset), value) :
-                      oop_store(obj_field_addr<oop>(offset),       value);
-}
+inline jfloat oopDesc::float_field(int offset) const                { return HeapAccess<>::load_at(as_oop(), offset);  }
+inline void   oopDesc::float_field_put(int offset, jfloat value)    { HeapAccess<>::store_at(as_oop(), offset, value); }
 
-void oopDesc::obj_field_put_raw(int offset, oop value) {
-  UseCompressedOops ?
-    encode_store_heap_oop(obj_field_addr<narrowOop>(offset), value) :
-    encode_store_heap_oop(obj_field_addr<oop>(offset),       value);
-}
-void oopDesc::obj_field_put_volatile(int offset, oop value) {
-  OrderAccess::release();
-  obj_field_put(offset, value);
-  OrderAccess::fence();
-}
-
-Metadata* oopDesc::metadata_field(int offset) const           { return *metadata_field_addr(offset);   }
-void oopDesc::metadata_field_put(int offset, Metadata* value) { *metadata_field_addr(offset) = value;  }
-
-Metadata* oopDesc::metadata_field_acquire(int offset) const   {
-  return OrderAccess::load_acquire(metadata_field_addr(offset));
-}
-
-void oopDesc::release_metadata_field_put(int offset, Metadata* value) {
-  OrderAccess::release_store(metadata_field_addr(offset), value);
-}
-
-jbyte oopDesc::byte_field(int offset) const                   { return (jbyte) *byte_field_addr(offset);    }
-void oopDesc::byte_field_put(int offset, jbyte contents)      { *byte_field_addr(offset) = (jint) contents; }
-
-jchar oopDesc::char_field(int offset) const                   { return (jchar) *char_field_addr(offset);    }
-void oopDesc::char_field_put(int offset, jchar contents)      { *char_field_addr(offset) = (jint) contents; }
-
-jboolean oopDesc::bool_field(int offset) const                { return (jboolean) *bool_field_addr(offset); }
-void oopDesc::bool_field_put(int offset, jboolean contents)   { *bool_field_addr(offset) = (((jint) contents) & 1); }
-
-jint oopDesc::int_field(int offset) const                     { return *int_field_addr(offset);        }
-void oopDesc::int_field_put(int offset, jint contents)        { *int_field_addr(offset) = contents;    }
-
-jshort oopDesc::short_field(int offset) const                 { return (jshort) *short_field_addr(offset);  }
-void oopDesc::short_field_put(int offset, jshort contents)    { *short_field_addr(offset) = (jint) contents;}
-
-jlong oopDesc::long_field(int offset) const                   { return *long_field_addr(offset);       }
-void oopDesc::long_field_put(int offset, jlong contents)      { *long_field_addr(offset) = contents;   }
-
-jfloat oopDesc::float_field(int offset) const                 { return *float_field_addr(offset);      }
-void oopDesc::float_field_put(int offset, jfloat contents)    { *float_field_addr(offset) = contents;  }
-
-jdouble oopDesc::double_field(int offset) const               { return *double_field_addr(offset);     }
-void oopDesc::double_field_put(int offset, jdouble contents)  { *double_field_addr(offset) = contents; }
-
-address oopDesc::address_field(int offset) const              { return *address_field_addr(offset);     }
-void oopDesc::address_field_put(int offset, address contents) { *address_field_addr(offset) = contents; }
-
-oop oopDesc::obj_field_acquire(int offset) const {
-  return UseCompressedOops ?
-             decode_heap_oop((narrowOop)
-               OrderAccess::load_acquire(obj_field_addr<narrowOop>(offset)))
-           : decode_heap_oop(
-                OrderAccess::load_acquire(obj_field_addr<oop>(offset)));
-}
-void oopDesc::release_obj_field_put(int offset, oop value) {
-  UseCompressedOops ?
-    oop_store((volatile narrowOop*)obj_field_addr<narrowOop>(offset), value) :
-    oop_store((volatile oop*)      obj_field_addr<oop>(offset),       value);
-}
-
-jbyte oopDesc::byte_field_acquire(int offset) const                   { return OrderAccess::load_acquire(byte_field_addr(offset));     }
-void oopDesc::release_byte_field_put(int offset, jbyte contents)      { OrderAccess::release_store(byte_field_addr(offset), contents); }
-
-jchar oopDesc::char_field_acquire(int offset) const                   { return OrderAccess::load_acquire(char_field_addr(offset));     }
-void oopDesc::release_char_field_put(int offset, jchar contents)      { OrderAccess::release_store(char_field_addr(offset), contents); }
-
-jboolean oopDesc::bool_field_acquire(int offset) const                { return OrderAccess::load_acquire(bool_field_addr(offset));     }
-void oopDesc::release_bool_field_put(int offset, jboolean contents)   { OrderAccess::release_store(bool_field_addr(offset), jboolean(contents & 1)); }
-
-jint oopDesc::int_field_acquire(int offset) const                     { return OrderAccess::load_acquire(int_field_addr(offset));      }
-void oopDesc::release_int_field_put(int offset, jint contents)        { OrderAccess::release_store(int_field_addr(offset), contents);  }
-
-jshort oopDesc::short_field_acquire(int offset) const                 { return (jshort)OrderAccess::load_acquire(short_field_addr(offset)); }
-void oopDesc::release_short_field_put(int offset, jshort contents)    { OrderAccess::release_store(short_field_addr(offset), contents);     }
-
-jlong oopDesc::long_field_acquire(int offset) const                   { return OrderAccess::load_acquire(long_field_addr(offset));       }
-void oopDesc::release_long_field_put(int offset, jlong contents)      { OrderAccess::release_store(long_field_addr(offset), contents);   }
-
-jfloat oopDesc::float_field_acquire(int offset) const                 { return OrderAccess::load_acquire(float_field_addr(offset));      }
-void oopDesc::release_float_field_put(int offset, jfloat contents)    { OrderAccess::release_store(float_field_addr(offset), contents);  }
-
-jdouble oopDesc::double_field_acquire(int offset) const               { return OrderAccess::load_acquire(double_field_addr(offset));     }
-void oopDesc::release_double_field_put(int offset, jdouble contents)  { OrderAccess::release_store(double_field_addr(offset), contents); }
-
-address oopDesc::address_field_acquire(int offset) const              { return OrderAccess::load_acquire(address_field_addr(offset)); }
-void oopDesc::release_address_field_put(int offset, address contents) { OrderAccess::release_store(address_field_addr(offset), contents); }
+inline jdouble oopDesc::double_field(int offset) const              { return HeapAccess<>::load_at(as_oop(), offset);  }
+inline void    oopDesc::double_field_put(int offset, jdouble value) { HeapAccess<>::store_at(as_oop(), offset, value); }
 
 bool oopDesc::is_locked() const {
   return mark()->is_locked();

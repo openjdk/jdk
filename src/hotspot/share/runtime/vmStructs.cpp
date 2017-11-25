@@ -228,8 +228,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markOop)                               \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
-  volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowOop)                             \
-     static_field(oopDesc,                     _bs,                                           BarrierSet*)                           \
+  volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
+  static_field(BarrierSet,                     _bs,                                           BarrierSet*)                           \
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             Klass*)                                \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              Klass*)                                \
@@ -830,7 +830,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(nmethod,                     _osr_link,                                     nmethod*)                              \
   nonstatic_field(nmethod,                     _scavenge_root_link,                           nmethod*)                              \
   nonstatic_field(nmethod,                     _scavenge_root_state,                          jbyte)                                 \
-  nonstatic_field(nmethod,                     _state,                                        volatile unsigned char)                \
+  nonstatic_field(nmethod,                     _state,                                        volatile char)                         \
   nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
@@ -1351,7 +1351,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_integer_type(long)                                              \
   declare_integer_type(char)                                              \
   declare_unsigned_integer_type(unsigned char)                            \
-  declare_unsigned_integer_type(volatile unsigned char)                   \
+  declare_unsigned_integer_type(volatile char)                            \
   declare_unsigned_integer_type(u_char)                                   \
   declare_unsigned_integer_type(unsigned int)                             \
   declare_unsigned_integer_type(uint)                                     \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #include "gc/shared/barrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
+
+BarrierSet* BarrierSet::_bs = NULL;
 
 // count is number of array elements being written
 void BarrierSet::static_write_ref_array_pre(HeapWord* start, size_t count) {

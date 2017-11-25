@@ -39,6 +39,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xmixed -XX:-UseCounterDecay
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.DeoptimizeFramesTest$TestCaseImpl::method
+ *                   -XX:CompileCommand=dontinline,java.util.concurrent.Phaser::*
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
  *                   compiler.whitebox.DeoptimizeFramesTest false
  */
@@ -110,6 +111,7 @@ public class DeoptimizeFramesTest extends CompilerWhiteBoxTest {
                         String.format("compilation %d can't be available", nm.compile_id));
             }
         } else {
+            Asserts.assertNE(nm2, null, "must not be null");
             Asserts.assertEQ(nm.compile_id, nm2.compile_id, "should be the same nmethod");
         }
     }
