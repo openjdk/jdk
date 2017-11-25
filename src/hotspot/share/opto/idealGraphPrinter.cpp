@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "opto/machnode.hpp"
 #include "opto/parse.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threadSMR.hpp"
 
 #ifndef PRODUCT
 
@@ -91,8 +92,7 @@ IdealGraphPrinter *IdealGraphPrinter::printer() {
 }
 
 void IdealGraphPrinter::clean_up() {
-  JavaThread *p;
-  for (p = Threads::first(); p; p = p->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *p = jtiwh.next(); ) {
     if (p->is_Compiler_thread()) {
       CompilerThread *c = (CompilerThread *)p;
       IdealGraphPrinter *printer = c->ideal_graph_printer();

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jmm.h"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compileBroker.hpp"
 #include "memory/iterator.hpp"
@@ -41,12 +42,12 @@
 #include "runtime/os.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "services/writeableFlags.hpp"
 #include "services/heapDumper.hpp"
-#include "services/jmm.h"
 #include "services/lowMemoryDetector.hpp"
 #include "services/gcNotifier.hpp"
 #include "services/nmtDCmd.hpp"
@@ -1025,11 +1026,15 @@ static void do_thread_dump(ThreadDumpResult* dump_result,
   // First get an array of threadObj handles.
   // A JavaThread may terminate before we get the stack trace.
   GrowableArray<instanceHandle>* thread_handle_array = new GrowableArray<instanceHandle>(num_threads);
+
   {
-    MutexLockerEx ml(Threads_lock);
+    // Need this ThreadsListHandle for converting Java thread IDs into
+    // threadObj handles; dump_result->set_t_list() is called in the
+    // VM op below so we can't use it yet.
+    ThreadsListHandle tlh;
     for (int i = 0; i < num_threads; i++) {
       jlong tid = ids_ah->long_at(i);
-      JavaThread* jt = Threads::find_java_thread_from_java_tid(tid);
+      JavaThread* jt = tlh.list()->find_JavaThread_from_java_tid(tid);
       oop thread_obj = (jt != NULL ? jt->threadObj() : (oop)NULL);
       instanceHandle threadObj_h(THREAD, (instanceOop) thread_obj);
       thread_handle_array->append(threadObj_h);
@@ -1101,22 +1106,21 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
   ThreadDumpResult dump_result(num_threads);
 
   if (maxDepth == 0) {
-    // no stack trace dumped - do not need to stop the world
-    {
-      MutexLockerEx ml(Threads_lock);
-      for (int i = 0; i < num_threads; i++) {
-        jlong tid = ids_ah->long_at(i);
-        JavaThread* jt = Threads::find_java_thread_from_java_tid(tid);
-        ThreadSnapshot* ts;
-        if (jt == NULL) {
-          // if the thread does not exist or now it is terminated,
-          // create dummy snapshot
-          ts = new ThreadSnapshot();
-        } else {
-          ts = new ThreadSnapshot(jt);
-        }
-        dump_result.add_thread_snapshot(ts);
+    // No stack trace to dump so we do not need to stop the world.
+    // Since we never do the VM op here we must set the threads list.
+    dump_result.set_t_list();
+    for (int i = 0; i < num_threads; i++) {
+      jlong tid = ids_ah->long_at(i);
+      JavaThread* jt = dump_result.t_list()->find_JavaThread_from_java_tid(tid);
+      ThreadSnapshot* ts;
+      if (jt == NULL) {
+        // if the thread does not exist or now it is terminated,
+        // create dummy snapshot
+        ts = new ThreadSnapshot();
+      } else {
+        ts = new ThreadSnapshot(dump_result.t_list(), jt);
       }
+      dump_result.add_thread_snapshot(ts);
     }
   } else {
     // obtain thread dump with the specific list of threads with stack trace
@@ -1131,6 +1135,7 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
 
   int num_snapshots = dump_result.num_snapshots();
   assert(num_snapshots == num_threads, "Must match the number of thread snapshots");
+  assert(num_snapshots == 0 || dump_result.t_list_has_been_set(), "ThreadsList must have been set if we have a snapshot");
   int index = 0;
   for (ThreadSnapshot* ts = dump_result.snapshots(); ts != NULL; index++, ts = ts->next()) {
     // For each thread, create an java/lang/management/ThreadInfo object
@@ -1196,6 +1201,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
   }
 
   int num_snapshots = dump_result.num_snapshots();
+  assert(num_snapshots == 0 || dump_result.t_list_has_been_set(), "ThreadsList must have been set if we have a snapshot");
 
   // create the result ThreadInfo[] object
   InstanceKlass* ik = Management::java_lang_management_ThreadInfo_klass(CHECK_NULL);
@@ -1319,10 +1325,10 @@ JVM_ENTRY(jboolean, jmm_ResetStatistic(JNIEnv *env, jvalue obj, jmmStatisticType
       }
 
       // Look for the JavaThread of this given tid
-      MutexLockerEx ml(Threads_lock);
+      JavaThreadIteratorWithHandle jtiwh;
       if (tid == 0) {
         // reset contention statistics for all threads if tid == 0
-        for (JavaThread* java_thread = Threads::first(); java_thread != NULL; java_thread = java_thread->next()) {
+        for (; JavaThread *java_thread = jtiwh.next(); ) {
           if (type == JMM_STAT_THREAD_CONTENTION_COUNT) {
             ThreadService::reset_contention_count_stat(java_thread);
           } else {
@@ -1331,7 +1337,7 @@ JVM_ENTRY(jboolean, jmm_ResetStatistic(JNIEnv *env, jvalue obj, jmmStatisticType
         }
       } else {
         // reset contention statistics for a given thread
-        JavaThread* java_thread = Threads::find_java_thread_from_java_tid(tid);
+        JavaThread* java_thread = jtiwh.list()->find_JavaThread_from_java_tid(tid);
         if (java_thread == NULL) {
           return false;
         }
@@ -1399,8 +1405,8 @@ JVM_ENTRY(jlong, jmm_GetThreadCpuTime(JNIEnv *env, jlong thread_id))
     // current thread
     return os::current_thread_cpu_time();
   } else {
-    MutexLockerEx ml(Threads_lock);
-    java_thread = Threads::find_java_thread_from_java_tid(thread_id);
+    ThreadsListHandle tlh;
+    java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
     if (java_thread != NULL) {
       return os::thread_cpu_time((Thread*) java_thread);
     }
@@ -1649,6 +1655,7 @@ ThreadTimesClosure::ThreadTimesClosure(objArrayHandle names,
 // Called with Threads_lock held
 //
 void ThreadTimesClosure::do_thread(Thread* thread) {
+  assert(Threads_lock->owned_by_self(), "Must hold Threads_lock");
   assert(thread != NULL, "thread was NULL");
 
   // exclude externally visible JavaThreads
@@ -2109,9 +2116,9 @@ JVM_ENTRY(void, jmm_GetThreadAllocatedMemory(JNIEnv *env, jlongArray ids,
               "the given array of thread IDs");
   }
 
-  MutexLockerEx ml(Threads_lock);
+  ThreadsListHandle tlh;
   for (int i = 0; i < num_threads; i++) {
-    JavaThread* java_thread = Threads::find_java_thread_from_java_tid(ids_ah->long_at(i));
+    JavaThread* java_thread = tlh.list()->find_JavaThread_from_java_tid(ids_ah->long_at(i));
     if (java_thread != NULL) {
       sizeArray_h->long_at_put(i, java_thread->cooked_allocated_bytes());
     }
@@ -2138,8 +2145,8 @@ JVM_ENTRY(jlong, jmm_GetThreadCpuTimeWithKind(JNIEnv *env, jlong thread_id, jboo
     // current thread
     return os::current_thread_cpu_time(user_sys_cpu_time != 0);
   } else {
-    MutexLockerEx ml(Threads_lock);
-    java_thread = Threads::find_java_thread_from_java_tid(thread_id);
+    ThreadsListHandle tlh;
+    java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
     if (java_thread != NULL) {
       return os::thread_cpu_time((Thread*) java_thread, user_sys_cpu_time != 0);
     }
@@ -2180,9 +2187,9 @@ JVM_ENTRY(void, jmm_GetThreadCpuTimesWithKind(JNIEnv *env, jlongArray ids,
               "the given array of thread IDs");
   }
 
-  MutexLockerEx ml(Threads_lock);
+  ThreadsListHandle tlh;
   for (int i = 0; i < num_threads; i++) {
-    JavaThread* java_thread = Threads::find_java_thread_from_java_tid(ids_ah->long_at(i));
+    JavaThread* java_thread = tlh.list()->find_JavaThread_from_java_tid(ids_ah->long_at(i));
     if (java_thread != NULL) {
       timeArray_h->long_at_put(i, os::thread_cpu_time((Thread*)java_thread,
                                                       user_sys_cpu_time != 0));

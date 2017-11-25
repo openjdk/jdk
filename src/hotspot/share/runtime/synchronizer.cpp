@@ -894,7 +894,7 @@ ObjectSynchronizer::LockOwnership ObjectSynchronizer::query_lock_ownership
 }
 
 // FIXME: jvmti should call this
-JavaThread* ObjectSynchronizer::get_lock_owner(Handle h_obj, bool doLock) {
+JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_obj) {
   if (UseBiasedLocking) {
     if (SafepointSynchronize::is_at_safepoint()) {
       BiasedLocking::revoke_at_safepoint(h_obj);
@@ -923,7 +923,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(Handle h_obj, bool doLock) {
 
   if (owner != NULL) {
     // owning_thread_from_monitor_owner() may also return NULL here
-    return Threads::owning_thread_from_monitor_owner(owner, doLock);
+    return Threads::owning_thread_from_monitor_owner(t_list, owner);
   }
 
   // Unlocked case, header in place

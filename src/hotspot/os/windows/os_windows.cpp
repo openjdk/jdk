@@ -3490,9 +3490,7 @@ OSReturn os::get_native_priority(const Thread* const thread,
 void os::hint_no_preempt() {}
 
 void os::interrupt(Thread* thread) {
-  assert(!thread->is_Java_thread() || Thread::current() == thread ||
-         Threads_lock->owned_by_self(),
-         "possibility of dangling Thread pointer");
+  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   OSThread* osthread = thread->osthread();
   osthread->set_interrupted(true);
@@ -3513,8 +3511,7 @@ void os::interrupt(Thread* thread) {
 
 
 bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
-  assert(!thread->is_Java_thread() || Thread::current() == thread || Threads_lock->owned_by_self(),
-         "possibility of dangling Thread pointer");
+  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   OSThread* osthread = thread->osthread();
   // There is no synchronization between the setting of the interrupt

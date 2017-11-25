@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/thread.hpp"
 #include "services/management.hpp"
 #include "services/serviceUtil.hpp"
 
@@ -109,7 +110,7 @@ public:
   static void   reset_contention_count_stat(JavaThread* thread);
   static void   reset_contention_time_stat(JavaThread* thread);
 
-  static DeadlockCycle*       find_deadlocks_at_safepoint(bool object_monitors_only);
+  static DeadlockCycle*       find_deadlocks_at_safepoint(ThreadsList * t_list, bool object_monitors_only);
 
   // GC support
   static void   oops_do(OopClosure* f);
@@ -189,6 +190,8 @@ public:
 // Thread snapshot to represent the thread state and statistics
 class ThreadSnapshot : public CHeapObj<mtInternal> {
 private:
+  // This JavaThread* is protected by being stored in objects that are
+  // protected by a ThreadsListSetter (ThreadDumpResult).
   JavaThread* _thread;
   oop         _threadObj;
   java_lang_Thread::ThreadStatus _thread_status;
@@ -213,7 +216,7 @@ public:
   // Dummy snapshot
   ThreadSnapshot() : _thread(NULL), _threadObj(NULL), _stack_trace(NULL), _concurrent_locks(NULL), _next(NULL),
                      _blocker_object(NULL), _blocker_object_owner(NULL) {};
-  ThreadSnapshot(JavaThread* thread);
+  ThreadSnapshot(ThreadsList * t_list, JavaThread* thread);
   ~ThreadSnapshot();
 
   java_lang_Thread::ThreadStatus thread_status() { return _thread_status; }
@@ -310,6 +313,12 @@ class ThreadConcurrentLocks : public CHeapObj<mtInternal> {
 private:
   GrowableArray<instanceOop>* _owned_locks;
   ThreadConcurrentLocks*      _next;
+  // This JavaThread* is protected in one of two different ways
+  // depending on the usage of the ThreadConcurrentLocks object:
+  // 1) by being stored in objects that are only allocated and used at a
+  // safepoint (ConcurrentLocksDump), or 2) by being stored in objects
+  // that are protected by a ThreadsListSetter (ThreadSnapshot inside
+  // ThreadDumpResult).
   JavaThread*                 _thread;
  public:
   ThreadConcurrentLocks(JavaThread* thread);
@@ -333,8 +342,12 @@ class ConcurrentLocksDump : public StackObj {
   void add_lock(JavaThread* thread, instanceOop o);
 
  public:
-  ConcurrentLocksDump(bool retain_map_on_free) : _map(NULL), _last(NULL), _retain_map_on_free(retain_map_on_free) {};
-  ConcurrentLocksDump() : _map(NULL), _last(NULL), _retain_map_on_free(false) {};
+  ConcurrentLocksDump(bool retain_map_on_free) : _map(NULL), _last(NULL), _retain_map_on_free(retain_map_on_free) {
+    assert(SafepointSynchronize::is_at_safepoint(), "Must be constructed at a safepoint.");
+  };
+  ConcurrentLocksDump() : _map(NULL), _last(NULL), _retain_map_on_free(false) {
+    assert(SafepointSynchronize::is_at_safepoint(), "Must be constructed at a safepoint.");
+  };
   ~ConcurrentLocksDump();
 
   void                        dump_at_safepoint();
@@ -349,6 +362,9 @@ class ThreadDumpResult : public StackObj {
   ThreadSnapshot*      _snapshots;
   ThreadSnapshot*      _last;
   ThreadDumpResult*    _next;
+  ThreadsListSetter    _setter;  // Helper to set hazard ptr in the originating thread
+                                 // which protects the JavaThreads in _snapshots.
+
  public:
   ThreadDumpResult();
   ThreadDumpResult(int num_threads);
@@ -360,6 +376,9 @@ class ThreadDumpResult : public StackObj {
   int                  num_threads()                    { return _num_threads; }
   int                  num_snapshots()                  { return _num_snapshots; }
   ThreadSnapshot*      snapshots()                      { return _snapshots; }
+  void                 set_t_list()                     { _setter.set(); }
+  ThreadsList*         t_list();
+  bool                 t_list_has_been_set()            { return _setter.target_needs_release(); }
   void                 oops_do(OopClosure* f);
   void                 metadata_do(void f(Metadata*));
 };
@@ -381,7 +400,7 @@ class DeadlockCycle : public CHeapObj<mtInternal> {
   bool           is_deadlock()              { return _is_deadlock; }
   int            num_threads()              { return _threads->length(); }
   GrowableArray<JavaThread*>* threads()     { return _threads; }
-  void           print_on(outputStream* st) const;
+  void           print_on_with(ThreadsList * t_list, outputStream* st) const;
 };
 
 // Utility class to get list of java threads.

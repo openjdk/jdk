@@ -42,22 +42,18 @@ public class HandshakeWalkExitTest  implements Runnable {
     }
 
     static volatile boolean exit_now = false;
-    static Thread[] threads;
 
     public static void main(String... args) throws Exception {
-        int testRuns = 100;
-        int testThreads = 500;
+        int testRuns = 20;
+        int testThreads = 128;
 
         HandshakeWalkExitTest test = new HandshakeWalkExitTest();
-
-        threads = new Thread[64];
 
         Runnable hser = new Runnable(){
             public void run(){
                 WhiteBox wb = WhiteBox.getWhiteBox();
                 while(!exit_now) {
                     wb.handshakeWalkStack(null, true);
-                    try { Thread.sleep(1); } catch(Exception e) {}
                 }
             }
         };
