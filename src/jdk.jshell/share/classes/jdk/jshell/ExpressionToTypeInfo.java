@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import com.sun.source.tree.Tree.Kind;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
+import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
@@ -69,6 +71,7 @@ class ExpressionToTypeInfo {
     public static class ExpressionInfo {
         ExpressionTree tree;
         String typeName;
+        String accessibleTypeName;
         String fullTypeName;
         List<String> parameterTypes;
         String enclosingInstanceType;
@@ -215,6 +218,63 @@ class ExpressionToTypeInfo {
         return null;
     }
 
+    /**
+     * A type is accessible if it is public or if it is package-private and is a
+     * type defined in JShell.  Additionally, all its type arguments must be
+     * accessible
+     *
+     * @param type the type to check for accessibility
+     * @return true if the type name can be referenced
+     */
+    private boolean isAccessible(Type type) {
+        Symbol.TypeSymbol tsym = type.asElement();
+        return ((tsym.flags() & Flags.PUBLIC) != 0 ||
+                ((tsym.flags() & Flags.PRIVATE) == 0 &&
+                Util.isInJShellClass(tsym.flatName().toString()))) &&
+                 type.getTypeArguments().stream()
+                        .allMatch(this::isAccessible);
+    }
+
+    /**
+     * Return the superclass.
+     *
+     * @param type the type
+     * @return the superclass, or Object on error
+     */
+    private Type supertype(Type type) {
+        Type sup = types.supertype(type);
+        if (sup == Type.noType || sup == null) {
+            return syms.objectType;
+        }
+        return sup;
+    }
+
+    /**
+     * Find an accessible supertype.
+     *
+     * @param type the type
+     * @return the type, if it is accessible, otherwise a superclass or
+     * interface which is
+     */
+    private Type findAccessibleSupertype(Type type) {
+        // Iterate up the superclasses, see if any are accessible
+        for (Type sup = type; !types.isSameType(sup, syms.objectType); sup = supertype(sup)) {
+            if (isAccessible(sup)) {
+                return sup;
+            }
+        }
+        // Failing superclasses, look through superclasses for accessible interfaces
+        for (Type sup = type; !types.isSameType(sup, syms.objectType); sup = supertype(sup)) {
+            for (Type itf : types.interfaces(sup)) {
+                if (isAccessible(itf)) {
+                    return itf;
+                }
+            }
+        }
+        // Punt, return Object which is the supertype of everything
+        return syms.objectType;
+    }
+
     private ExpressionInfo treeToInfo(TreePath tp) {
         if (tp != null) {
             Tree tree = tp.getLeaf();
@@ -234,10 +294,12 @@ class ExpressionToTypeInfo {
                         case NULL:
                             ei.isNonVoid = true;
                             ei.typeName = OBJECT_TYPE_NAME;
+                            ei.accessibleTypeName = OBJECT_TYPE_NAME;
                             break;
                         default: {
                             ei.isNonVoid = true;
                             ei.typeName = varTypeName(type, false);
+                            ei.accessibleTypeName = varTypeName(findAccessibleSupertype(type), false);
                             ei.fullTypeName = varTypeName(type, true);
                             break;
                         }
