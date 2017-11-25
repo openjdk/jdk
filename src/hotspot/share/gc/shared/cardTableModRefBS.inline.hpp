@@ -26,13 +26,14 @@
 #define SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_INLINE_HPP
 
 #include "gc/shared/cardTableModRefBS.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "runtime/orderAccess.inline.hpp"
 
-template <class T> inline void CardTableModRefBS::inline_write_ref_field(T* field, oop newVal, bool release) {
-  volatile jbyte* byte = byte_for((void*)field);
-  if (release) {
-    // Perform a releasing store if requested.
+template <DecoratorSet decorators, typename T>
+inline void CardTableModRefBS::write_ref_field_post(T* field, oop newVal) {
+  volatile jbyte* byte = byte_for(field);
+  if (UseConcMarkSweepGC) {
+    // Perform a releasing store if using CMS so that it may
+    // scan and clear the cards concurrently during pre-cleaning.
     OrderAccess::release_store(byte, jbyte(dirty_card));
   } else {
     *byte = dirty_card;

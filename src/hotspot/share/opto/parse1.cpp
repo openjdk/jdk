@@ -487,7 +487,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     log->elem("observe that='has_exception_handlers'");
   }
 
-  assert(method()->can_be_compiled(),       "Can not parse this method, cutout earlier");
+  assert(InlineTree::check_can_parse(method()) == NULL, "Can not parse this method, cutout earlier");
   assert(method()->has_balanced_monitors(), "Can not parse unbalanced monitors, cutout earlier");
 
   // Always register dependence if JVMTI is enabled, because

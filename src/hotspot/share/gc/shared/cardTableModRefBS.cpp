@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"
-#include "memory/virtualspace.hpp"
 #include "logging/log.hpp"
+#include "memory/virtualspace.hpp"
+#include "oops/oop.inline.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
@@ -363,11 +364,6 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
 // Note that these versions are precise!  The scanning code has to handle the
 // fact that the write barrier may be either precise or imprecise.
 
-void CardTableModRefBS::write_ref_field_work(void* field, oop newVal, bool release) {
-  inline_write_ref_field(field, newVal, release);
-}
-
-
 void CardTableModRefBS::dirty_MemRegion(MemRegion mr) {
   assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
@@ -525,4 +521,3 @@ void CardTableModRefBS::print_on(outputStream* st) const {
   st->print_cr("Card table byte_map: [" INTPTR_FORMAT "," INTPTR_FORMAT "] byte_map_base: " INTPTR_FORMAT,
                p2i(_byte_map), p2i(_byte_map + _byte_map_size), p2i(byte_map_base));
 }
-

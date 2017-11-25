@@ -54,17 +54,14 @@ public:
   // pre-marking object graph.
   static void enqueue(oop pre_val);
 
-  // We export this to make it available in cases where the static
-  // type of the barrier set is known.  Note that it is non-virtual.
-  template <class T> inline void inline_write_ref_field_pre(T* field, oop newVal);
-
-  // These are the more general virtual versions.
-  inline virtual void write_ref_field_pre_work(oop* field, oop new_val);
-  inline virtual void write_ref_field_pre_work(narrowOop* field, oop new_val);
+  static void enqueue_if_weak(DecoratorSet decorators, oop value);
 
   template <class T> void write_ref_array_pre_work(T* dst, int count);
   virtual void write_ref_array_pre(oop* dst, int count, bool dest_uninitialized);
   virtual void write_ref_array_pre(narrowOop* dst, int count, bool dest_uninitialized);
+
+  template <DecoratorSet decorators, typename T>
+  void write_ref_field_pre(T* field);
 
 /*
    Claimed and deferred bits are used together in G1 during the evacuation
@@ -102,6 +99,11 @@ struct BarrierSet::GetName<G1SATBCardTableModRefBS> {
   static const BarrierSet::Name value = BarrierSet::G1SATBCT;
 };
 
+template<>
+struct BarrierSet::GetType<BarrierSet::G1SATBCT> {
+  typedef G1SATBCardTableModRefBS type;
+};
+
 class G1SATBCardTableLoggingModRefBSChangedListener : public G1MappingChangedListener {
  private:
   G1SATBCardTableLoggingModRefBS* _card_table;
@@ -120,9 +122,6 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
  private:
   G1SATBCardTableLoggingModRefBSChangedListener _listener;
   DirtyCardQueueSet& _dcqs;
-
- protected:
-  virtual void write_ref_field_work(void* field, oop new_val, bool release);
 
  public:
   static size_t compute_size(size_t mem_region_size_in_words) {
@@ -148,11 +147,43 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
 
   void write_region_work(MemRegion mr)    { invalidate(mr); }
   void write_ref_array_work(MemRegion mr) { invalidate(mr); }
+
+  template <DecoratorSet decorators, typename T>
+  void write_ref_field_post(T* field, oop new_val);
+  void write_ref_field_post_slow(volatile jbyte* byte);
+
+  // Callbacks for runtime accesses.
+  template <DecoratorSet decorators, typename BarrierSetT = G1SATBCardTableLoggingModRefBS>
+  class AccessBarrier: public ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> {
+    typedef ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> ModRef;
+    typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
+
+  public:
+    // Needed for loads on non-heap weak references
+    template <typename T>
+    static oop oop_load_not_in_heap(T* addr);
+
+    // Needed for non-heap stores
+    template <typename T>
+    static void oop_store_not_in_heap(T* addr, oop new_value);
+
+    // Needed for weak references
+    static oop oop_load_in_heap_at(oop base, ptrdiff_t offset);
+
+    // Defensive: will catch weak oops at addresses in heap
+    template <typename T>
+    static oop oop_load_in_heap(T* addr);
+  };
 };
 
 template<>
 struct BarrierSet::GetName<G1SATBCardTableLoggingModRefBS> {
   static const BarrierSet::Name value = BarrierSet::G1SATBCTLogging;
+};
+
+template<>
+struct BarrierSet::GetType<BarrierSet::G1SATBCTLogging> {
+  typedef G1SATBCardTableLoggingModRefBS type;
 };
 
 #endif // SHARE_VM_GC_G1_G1SATBCARDTABLEMODREFBS_HPP

@@ -43,6 +43,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/markOop.hpp"
@@ -84,9 +85,6 @@
 #include "utilities/internalVMTests.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#endif // INCLUDE_ALL_GCS
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -2069,28 +2067,9 @@ JNI_ENTRY(jobject, jni_GetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID
   if (JvmtiExport::should_post_field_access()) {
     o = JvmtiExport::jni_GetField_probe(thread, obj, o, k, fieldID, false);
   }
-  jobject ret = JNIHandles::make_local(env, o->obj_field(offset));
-#if INCLUDE_ALL_GCS
-  // If G1 is enabled and we are accessing the value of the referent
-  // field in a reference object then we need to register a non-null
-  // referent with the SATB barrier.
-  if (UseG1GC) {
-    bool needs_barrier = false;
-
-    if (ret != NULL &&
-        offset == java_lang_ref_Reference::referent_offset &&
-        InstanceKlass::cast(k)->reference_type() != REF_NONE) {
-      assert(InstanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
-      needs_barrier = true;
-    }
-
-    if (needs_barrier) {
-      oop referent = JNIHandles::resolve(ret);
-      G1SATBCardTableModRefBS::enqueue(referent);
-    }
-  }
-#endif // INCLUDE_ALL_GCS
-HOTSPOT_JNI_GETOBJECTFIELD_RETURN(ret);
+  oop loaded_obj = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(o, offset);
+  jobject ret = JNIHandles::make_local(env, loaded_obj);
+  HOTSPOT_JNI_GETOBJECTFIELD_RETURN(ret);
   return ret;
 JNI_END
 
@@ -2187,7 +2166,7 @@ JNI_QUICK_ENTRY(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldID fiel
     field_value.l = value;
     o = JvmtiExport::jni_SetField_probe_nh(thread, obj, o, k, fieldID, false, 'L', (jvalue *)&field_value);
   }
-  o->obj_field_put(offset, JNIHandles::resolve(value));
+  HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(o, offset, JNIHandles::resolve(value));
   HOTSPOT_JNI_SETOBJECTFIELD_RETURN();
 JNI_END
 

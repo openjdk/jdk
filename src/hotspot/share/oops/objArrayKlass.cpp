@@ -44,7 +44,6 @@
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 
 ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS) {
@@ -221,55 +220,25 @@ oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
 // Either oop or narrowOop depending on UseCompressedOops.
 template <class T> void ObjArrayKlass::do_copy(arrayOop s, T* src,
                                arrayOop d, T* dst, int length, TRAPS) {
-
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  // For performance reasons, we assume we are that the write barrier we
-  // are using has optimized modes for arrays of references.  At least one
-  // of the asserts below will fail if this is not the case.
-
   if (s == d) {
     // since source and destination are equal we do not need conversion checks.
     assert(length > 0, "sanity check");
-    bs->write_ref_array_pre(dst, length);
-    Copy::conjoint_oops_atomic(src, dst, length);
+    HeapAccess<>::oop_arraycopy(s, d, src, dst, length);
   } else {
     // We have to make sure all elements conform to the destination array
     Klass* bound = ObjArrayKlass::cast(d->klass())->element_klass();
     Klass* stype = ObjArrayKlass::cast(s->klass())->element_klass();
     if (stype == bound || stype->is_subtype_of(bound)) {
       // elements are guaranteed to be subtypes, so no check necessary
-      bs->write_ref_array_pre(dst, length);
-      Copy::conjoint_oops_atomic(src, dst, length);
+      HeapAccess<ARRAYCOPY_DISJOINT>::oop_arraycopy(s, d, src, dst, length);
     } else {
       // slow case: need individual subtype checks
       // note: don't use obj_at_put below because it includes a redundant store check
-      T* from = src;
-      T* end = from + length;
-      for (T* p = dst; from < end; from++, p++) {
-        // XXX this is going to be slow.
-        T element = *from;
-        // even slower now
-        bool element_is_null = oopDesc::is_null(element);
-        oop new_val = element_is_null ? oop(NULL)
-                                      : oopDesc::decode_heap_oop_not_null(element);
-        if (element_is_null ||
-            (new_val->klass())->is_subtype_of(bound)) {
-          bs->write_ref_field_pre(p, new_val);
-          *p = element;
-        } else {
-          // We must do a barrier to cover the partial copy.
-          const size_t pd = pointer_delta(p, dst, (size_t)heapOopSize);
-          // pointer delta is scaled to number of elements (length field in
-          // objArrayOop) which we assume is 32 bit.
-          assert(pd == (size_t)(int)pd, "length field overflow");
-          bs->write_ref_array((HeapWord*)dst, pd);
-          THROW(vmSymbols::java_lang_ArrayStoreException());
-          return;
-        }
+      if (!HeapAccess<ARRAYCOPY_DISJOINT | ARRAYCOPY_CHECKCAST>::oop_arraycopy(s, d, src, dst, length)) {
+        THROW(vmSymbols::java_lang_ArrayStoreException());
       }
     }
   }
-  bs->write_ref_array((HeapWord*)dst, length);
 }
 
 void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,

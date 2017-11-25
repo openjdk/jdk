@@ -1465,25 +1465,23 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
       // java.base packages in the boot loader's PackageEntryTable.
       // No class outside of java.base is allowed to be loaded during
       // this bootstrapping window.
-      if (!DumpSharedSpaces) {
-        if (pkg_entry == NULL || pkg_entry->in_unnamed_module()) {
-          // Class is either in the unnamed package or in
-          // a named package within the unnamed module.  Either
-          // case is outside of java.base, do not attempt to
-          // load the class post java.base definition.  If
-          // java.base has not been defined, let the class load
-          // and its package will be checked later by
-          // ModuleEntryTable::verify_javabase_packages.
-          if (ModuleEntryTable::javabase_defined()) {
-            return NULL;
-          }
-        } else {
-          // Check that the class' package is defined within java.base.
-          ModuleEntry* mod_entry = pkg_entry->module();
-          Symbol* mod_entry_name = mod_entry->name();
-          if (mod_entry_name->fast_compare(vmSymbols::java_base()) != 0) {
-            return NULL;
-          }
+      if (pkg_entry == NULL || pkg_entry->in_unnamed_module()) {
+        // Class is either in the unnamed package or in
+        // a named package within the unnamed module.  Either
+        // case is outside of java.base, do not attempt to
+        // load the class post java.base definition.  If
+        // java.base has not been defined, let the class load
+        // and its package will be checked later by
+        // ModuleEntryTable::verify_javabase_packages.
+        if (ModuleEntryTable::javabase_defined()) {
+          return NULL;
+        }
+      } else {
+        // Check that the class' package is defined within java.base.
+        ModuleEntry* mod_entry = pkg_entry->module();
+        Symbol* mod_entry_name = mod_entry->name();
+        if (mod_entry_name->fast_compare(vmSymbols::java_base()) != 0) {
+          return NULL;
         }
       }
     } else {
@@ -1501,7 +1499,7 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
 
     // Prior to bootstrapping's module initialization, never load a class outside
     // of the boot loader's module path
-    assert(Universe::is_module_initialized() || DumpSharedSpaces ||
+    assert(Universe::is_module_initialized() ||
            !search_only_bootloader_append,
            "Attempt to load a class outside of boot loader's module path");
 

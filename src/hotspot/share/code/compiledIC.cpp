@@ -494,7 +494,7 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
   bool far_c2a = entry != NULL && caller_is_nmethod && method_code->is_far_code();
   if (entry != NULL && !far_c2a) {
     // Call to near compiled code (nmethod or aot).
-    info.set_compiled_entry(entry, (static_bound || is_optimized) ? NULL : receiver_klass, is_optimized);
+    info.set_compiled_entry(entry, is_optimized ? NULL : receiver_klass, is_optimized);
   } else {
     if (is_optimized) {
       if (far_c2a) {

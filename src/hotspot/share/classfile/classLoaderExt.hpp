@@ -50,40 +50,28 @@ public:
       return false;
     }
 
-    InstanceKlass* record_result(Symbol* class_name,
-                                 ClassPathEntry* e,
-                                 const s2 classpath_index,
-                                 InstanceKlass* result, TRAPS) {
-      if (ClassLoader::add_package(_file_name, classpath_index, THREAD)) {
+    void record_result(Symbol* class_name,
+                       const s2 classpath_index,
+                       InstanceKlass* result, TRAPS) {
 #if INCLUDE_CDS
-        if (DumpSharedSpaces) {
-          oop loader = result->class_loader();
-          s2 classloader_type = ClassLoader::BOOT_LOADER;
-          if (SystemDictionary::is_system_class_loader(loader)) {
-            classloader_type = ClassLoader::APP_LOADER;
-            ClassLoaderExt::set_has_app_classes();
-          } else if (SystemDictionary::is_platform_class_loader(loader)) {
-            classloader_type = ClassLoader::PLATFORM_LOADER;
-            ClassLoaderExt::set_has_platform_classes();
-          }
-          result->set_shared_classpath_index(classpath_index);
-          result->set_class_loader_type(classloader_type);
-        }
-#endif
-        return result;
-      } else {
-        return NULL;
+      assert(DumpSharedSpaces, "Sanity");
+      oop loader = result->class_loader();
+      s2 classloader_type = ClassLoader::BOOT_LOADER;
+      if (SystemDictionary::is_system_class_loader(loader)) {
+        classloader_type = ClassLoader::APP_LOADER;
+        ClassLoaderExt::set_has_app_classes();
+      } else if (SystemDictionary::is_platform_class_loader(loader)) {
+        classloader_type = ClassLoader::PLATFORM_LOADER;
+        ClassLoaderExt::set_has_platform_classes();
       }
+      result->set_shared_classpath_index(classpath_index);
+      result->set_class_loader_type(classloader_type);
+#endif
     }
   };
 
-
-  static void add_class_path_entry(const char* path, bool check_for_duplicates,
-                                   ClassPathEntry* new_entry) {
-    ClassLoader::add_to_list(new_entry);
-  }
   static void append_boot_classpath(ClassPathEntry* new_entry) {
-    ClassLoader::add_to_list(new_entry);
+    ClassLoader::add_to_boot_append_entries(new_entry);
   }
   static void setup_search_paths() {}
   static bool is_boot_classpath(int classpath_index) {
@@ -96,6 +84,7 @@ public:
   static char* read_manifest(ClassPathEntry* entry, jint *manifest_size, TRAPS) {
     return NULL;
   }
+  static void process_jar_manifest(ClassPathEntry* entry, bool check_for_duplicates) {}
 #endif
 };
 

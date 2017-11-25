@@ -399,7 +399,7 @@ static void query_multipage_support() {
   // thread (because primordial thread's stack may have different page size than
   // pthread thread stacks). Running a VM on the primordial thread won't work for a
   // number of reasons so we may just as well guarantee it here.
-  guarantee0(!os::Aix::is_primordial_thread());
+  guarantee0(!os::is_primordial_thread());
 
   // Query pthread stack page size. Should be the same as data page size because
   // pthread stacks are allocated from C-Heap.
@@ -3448,7 +3448,7 @@ void os::init(void) {
 
   init_random(1234567);
 
-  // Main_thread points to the aboriginal thread.
+  // _main_thread points to the thread that created/loaded the JVM.
   Aix::_main_thread = pthread_self();
 
   initial_time_count = os::elapsed_counter();
@@ -3995,7 +3995,7 @@ void os::pause() {
   }
 }
 
-bool os::Aix::is_primordial_thread() {
+bool os::is_primordial_thread(void) {
   if (pthread_self() == (pthread_t)1) {
     return true;
   } else {

@@ -64,6 +64,8 @@ bool CompiledMethod::is_method_handle_return(address return_pc) {
 const char* CompiledMethod::state() const {
   int state = get_state();
   switch (state) {
+  case not_installed:
+    return "not installed";
   case in_use:
     return "in use";
   case not_used:
