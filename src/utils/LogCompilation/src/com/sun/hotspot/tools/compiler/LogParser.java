@@ -898,7 +898,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             m.setName(parts[1]);
             m.setSignature(parts[2]);
             m.setFlags("0");
-            m.setBytes("unknown");
+            m.setBytes(search(atts, "bytes", "unknown"));
             compile.setMethod(m);
             events.add(compile);
             compiles.put(id, compile);

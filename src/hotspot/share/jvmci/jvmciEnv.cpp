@@ -582,6 +582,7 @@ JVMCIEnv::CodeInstallResult JVMCIEnv::register_method(
             InstanceKlass::cast(method->method_holder())->add_osr_nmethod(nm);
           }
         }
+        nm->make_in_use();
       }
       result = nm != NULL ? JVMCIEnv::ok :JVMCIEnv::cache_full;
     }

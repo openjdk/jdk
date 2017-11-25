@@ -478,7 +478,6 @@ const char* InlineTree::check_can_parse(ciMethod* callee) {
   // Certain methods cannot be parsed at all:
   if ( callee->is_native())                     return "native method";
   if ( callee->is_abstract())                   return "abstract method";
-  if (!callee->can_be_compiled())               return "not compilable (disabled)";
   if (!callee->has_balanced_monitors())         return "not compilable (unbalanced monitors)";
   if ( callee->get_flow_analysis()->failing())  return "not compilable (flow analysis failed)";
   return NULL;

@@ -121,6 +121,9 @@ void java_lang_ref_Reference::set_discovered_raw(oop ref, oop value) {
 HeapWord* java_lang_ref_Reference::discovered_addr(oop ref) {
   return ref->obj_field_addr<HeapWord>(discovered_offset);
 }
+bool java_lang_ref_Reference::is_phantom(oop ref) {
+  return InstanceKlass::cast(ref->klass())->reference_type() == REF_PHANTOM;
+}
 
 inline void java_lang_invoke_CallSite::set_target_volatile(oop site, oop target) {
   site->obj_field_put_volatile(_target_offset, target);

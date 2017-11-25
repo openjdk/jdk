@@ -73,6 +73,7 @@ void G1SATBCardTableModRefBS::write_ref_array_pre(oop* dst, int count, bool dest
     write_ref_array_pre_work(dst, count);
   }
 }
+
 void G1SATBCardTableModRefBS::write_ref_array_pre(narrowOop* dst, int count, bool dest_uninitialized) {
   if (!dest_uninitialized) {
     write_ref_array_pre_work(dst, count);
@@ -154,14 +155,9 @@ void G1SATBCardTableLoggingModRefBS::initialize(G1RegionToSpaceMapper* mapper) {
   log_trace(gc, barrier)("    byte_map_base: " INTPTR_FORMAT,  p2i(byte_map_base));
 }
 
-void
-G1SATBCardTableLoggingModRefBS::write_ref_field_work(void* field,
-                                                     oop new_val,
-                                                     bool release) {
-  volatile jbyte* byte = byte_for(field);
-  if (*byte == g1_young_gen) {
-    return;
-  }
+void G1SATBCardTableLoggingModRefBS::write_ref_field_post_slow(volatile jbyte* byte) {
+  // In the slow path, we know a card is not young
+  assert(*byte != g1_young_gen, "slow path invoked without filtering");
   OrderAccess::storeload();
   if (*byte != dirty_card) {
     *byte = dirty_card;

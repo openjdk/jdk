@@ -29,14 +29,16 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile TriggerResize.java
+ * @requires (vm.debug == true)
  * @run driver TestResize
  */
 
-import java.lang.ProcessBuilder;
-import java.lang.Process;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.Process;
+import java.lang.ProcessBuilder;
 import java.util.Scanner;
 
 public class TestResize {
@@ -95,9 +97,11 @@ public class TestResize {
   }
 
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSystemDictionaryAtExit",
-                                                              "TriggerResize",
-                                                              "50000");
-    analyzeOutputOn(pb);
+    if (Platform.isDebugBuild()) {
+      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSystemDictionaryAtExit",
+                                                                "TriggerResize",
+                                                                "50000");
+      analyzeOutputOn(pb);
+    }
   }
 }

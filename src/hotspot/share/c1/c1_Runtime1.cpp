@@ -46,6 +46,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -1367,25 +1368,16 @@ enum {
 template <class T> int obj_arraycopy_work(oopDesc* src, T* src_addr,
                                           oopDesc* dst, T* dst_addr,
                                           int length) {
-
-  // For performance reasons, we assume we are using a card marking write
-  // barrier. The assert will fail if this is not the case.
-  // Note that we use the non-virtual inlineable variant of write_ref_array.
-  BarrierSet* bs = Universe::heap()->barrier_set();
   if (src == dst) {
     // same object, no check
-    bs->write_ref_array_pre(dst_addr, length);
-    Copy::conjoint_oops_atomic(src_addr, dst_addr, length);
-    bs->write_ref_array((HeapWord*)dst_addr, length);
+    HeapAccess<>::oop_arraycopy(arrayOop(src), arrayOop(dst), src_addr, dst_addr, length);
     return ac_ok;
   } else {
     Klass* bound = ObjArrayKlass::cast(dst->klass())->element_klass();
     Klass* stype = ObjArrayKlass::cast(src->klass())->element_klass();
     if (stype == bound || stype->is_subtype_of(bound)) {
       // Elements are guaranteed to be subtypes, so no check necessary
-      bs->write_ref_array_pre(dst_addr, length);
-      Copy::conjoint_oops_atomic(src_addr, dst_addr, length);
-      bs->write_ref_array((HeapWord*)dst_addr, length);
+      HeapAccess<ARRAYCOPY_DISJOINT>::oop_arraycopy(arrayOop(src), arrayOop(dst), src_addr, dst_addr, length);
       return ac_ok;
     }
   }

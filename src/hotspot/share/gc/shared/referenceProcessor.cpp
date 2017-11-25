@@ -34,6 +34,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 
@@ -294,14 +295,13 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list) {
     // Self-loop next, so as to make Ref not active.
     java_lang_ref_Reference::set_next_raw(obj, obj);
     if (next_d != obj) {
-      oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(obj), next_d);
+      HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(obj, java_lang_ref_Reference::discovered_offset, next_d);
     } else {
       // This is the last object.
       // Swap refs_list into pending list and set obj's
       // discovered to what we read from the pending list.
       oop old = Universe::swap_reference_pending_list(refs_list.head());
-      java_lang_ref_Reference::set_discovered_raw(obj, old); // old may be NULL
-      oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(obj), old);
+      HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(obj, java_lang_ref_Reference::discovered_offset, old);
     }
   }
 }
@@ -382,7 +382,7 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
 
 void DiscoveredListIterator::remove() {
   assert(oopDesc::is_oop(_ref), "Dropping a bad reference");
-  oop_store_raw(_discovered_addr, NULL);
+  RawAccess<>::oop_store(_discovered_addr, oop(NULL));
 
   // First _prev_next ref actually points into DiscoveredList (gross).
   oop new_next;
@@ -397,13 +397,13 @@ void DiscoveredListIterator::remove() {
   // Remove Reference object from discovered list. Note that G1 does not need a
   // pre-barrier here because we know the Reference has already been found/marked,
   // that's how it ended up in the discovered list in the first place.
-  oop_store_raw(_prev_next, new_next);
+  RawAccess<>::oop_store(_prev_next, new_next);
   NOT_PRODUCT(_removed++);
   _refs_list.dec_length(1);
 }
 
 void DiscoveredListIterator::clear_referent() {
-  oop_store_raw(_referent_addr, NULL);
+  RawAccess<>::oop_store(_referent_addr, oop(NULL));
 }
 
 // NOTE: process_phase*() are largely similar, and at a high level
@@ -917,8 +917,8 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
   // The last ref must have its discovered field pointing to itself.
   oop next_discovered = (current_head != NULL) ? current_head : obj;
 
-  oop retest = oopDesc::atomic_compare_exchange_oop(next_discovered, discovered_addr,
-                                                    NULL);
+  oop retest = RawAccess<>::oop_atomic_cmpxchg(next_discovered, discovered_addr, oop(NULL));
+
   if (retest == NULL) {
     // This thread just won the right to enqueue the object.
     // We have separate lists for enqueueing, so no synchronization
@@ -933,8 +933,8 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
     // The reference has already been discovered...
     log_develop_trace(gc, ref)("Already discovered reference (" INTPTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
-    }
   }
+}
 
 #ifndef PRODUCT
 // Non-atomic (i.e. concurrent) discovery might allow us
@@ -1076,7 +1076,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     oop next_discovered = (current_head != NULL) ? current_head : obj;
 
     assert(discovered == NULL, "control point invariant");
-    oop_store_raw(discovered_addr, next_discovered);
+    RawAccess<>::oop_store(discovered_addr, next_discovered);
     list->set_head(obj);
     list->inc_length(1);
 

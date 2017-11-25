@@ -4061,41 +4061,116 @@ void os::make_polling_page_readable(void) {
   }
 }
 
+// combine the high and low DWORD into a ULONGLONG
+static ULONGLONG make_double_word(DWORD high_word, DWORD low_word) {
+  ULONGLONG value = high_word;
+  value <<= sizeof(high_word) * 8;
+  value |= low_word;
+  return value;
+}
+
+// Transfers data from WIN32_FILE_ATTRIBUTE_DATA structure to struct stat
+static void file_attribute_data_to_stat(struct stat* sbuf, WIN32_FILE_ATTRIBUTE_DATA file_data) {
+  ::memset((void*)sbuf, 0, sizeof(struct stat));
+  sbuf->st_size = (_off_t)make_double_word(file_data.nFileSizeHigh, file_data.nFileSizeLow);
+  sbuf->st_mtime = make_double_word(file_data.ftLastWriteTime.dwHighDateTime,
+                                  file_data.ftLastWriteTime.dwLowDateTime);
+  sbuf->st_ctime = make_double_word(file_data.ftCreationTime.dwHighDateTime,
+                                  file_data.ftCreationTime.dwLowDateTime);
+  sbuf->st_atime = make_double_word(file_data.ftLastAccessTime.dwHighDateTime,
+                                  file_data.ftLastAccessTime.dwLowDateTime);
+  if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+    sbuf->st_mode |= S_IFDIR;
+  } else {
+    sbuf->st_mode |= S_IFREG;
+  }
+}
+
+// The following function is adapted from java.base/windows/native/libjava/canonicalize_md.c
+// Creates an UNC path from a single byte path. Return buffer is
+// allocated in C heap and needs to be freed by the caller.
+// Returns NULL on error.
+static wchar_t* create_unc_path(const char* path, errno_t &err) {
+  wchar_t* wpath = NULL;
+  size_t converted_chars = 0;
+  size_t path_len = strlen(path) + 1; // includes the terminating NULL
+  if (path[0] == '\\' && path[1] == '\\') {
+    if (path[2] == '?' && path[3] == '\\'){
+      // if it already has a \\?\ don't do the prefix
+      wpath = (wchar_t*)os::malloc(path_len * sizeof(wchar_t), mtInternal);
+      if (wpath != NULL) {
+        err = ::mbstowcs_s(&converted_chars, wpath, path_len, path, path_len);
+      } else {
+        err = ENOMEM;
+      }
+    } else {
+      // only UNC pathname includes double slashes here
+      wpath = (wchar_t*)os::malloc((path_len + 7) * sizeof(wchar_t), mtInternal);
+      if (wpath != NULL) {
+        ::wcscpy(wpath, L"\\\\?\\UNC\0");
+        err = ::mbstowcs_s(&converted_chars, &wpath[7], path_len, path, path_len);
+      } else {
+        err = ENOMEM;
+      }
+    }
+  } else {
+    wpath = (wchar_t*)os::malloc((path_len + 4) * sizeof(wchar_t), mtInternal);
+    if (wpath != NULL) {
+      ::wcscpy(wpath, L"\\\\?\\\0");
+      err = ::mbstowcs_s(&converted_chars, &wpath[4], path_len, path, path_len);
+    } else {
+      err = ENOMEM;
+    }
+  }
+  return wpath;
+}
+
+static void destroy_unc_path(wchar_t* wpath) {
+  os::free(wpath);
+}
 
 int os::stat(const char *path, struct stat *sbuf) {
-  char pathbuf[MAX_PATH];
-  if (strlen(path) > MAX_PATH - 1) {
-    errno = ENAMETOOLONG;
+  char* pathbuf = (char*)os::strdup(path, mtInternal);
+  if (pathbuf == NULL) {
+    errno = ENOMEM;
     return -1;
   }
-  os::native_path(strcpy(pathbuf, path));
-  int ret = ::stat(pathbuf, sbuf);
-  if (sbuf != NULL && UseUTCFileTimestamp) {
-    // Fix for 6539723.  st_mtime returned from stat() is dependent on
-    // the system timezone and so can return different values for the
-    // same file if/when daylight savings time changes.  This adjustment
-    // makes sure the same timestamp is returned regardless of the TZ.
-    //
-    // See:
-    // http://msdn.microsoft.com/library/
-    //   default.asp?url=/library/en-us/sysinfo/base/
-    //   time_zone_information_str.asp
-    // and
-    // http://msdn.microsoft.com/library/default.asp?url=
-    //   /library/en-us/sysinfo/base/settimezoneinformation.asp
-    //
-    // NOTE: there is a insidious bug here:  If the timezone is changed
-    // after the call to stat() but before 'GetTimeZoneInformation()', then
-    // the adjustment we do here will be wrong and we'll return the wrong
-    // value (which will likely end up creating an invalid class data
-    // archive).  Absent a better API for this, or some time zone locking
-    // mechanism, we'll have to live with this risk.
-    TIME_ZONE_INFORMATION tz;
-    DWORD tzid = GetTimeZoneInformation(&tz);
-    int daylightBias =
-      (tzid == TIME_ZONE_ID_DAYLIGHT) ?  tz.DaylightBias : tz.StandardBias;
-    sbuf->st_mtime += (tz.Bias + daylightBias) * 60;
+  os::native_path(pathbuf);
+  int ret;
+  WIN32_FILE_ATTRIBUTE_DATA file_data;
+  // Not using stat() to avoid the problem described in JDK-6539723
+  if (strlen(path) < MAX_PATH) {
+    BOOL bret = ::GetFileAttributesExA(pathbuf, GetFileExInfoStandard, &file_data);
+    if (!bret) {
+      errno = ::GetLastError();
+      ret = -1;
+    }
+    else {
+      file_attribute_data_to_stat(sbuf, file_data);
+      ret = 0;
+    }
+  } else {
+    errno_t err = ERROR_SUCCESS;
+    wchar_t* wpath = create_unc_path(pathbuf, err);
+    if (err != ERROR_SUCCESS) {
+      if (wpath != NULL) {
+        destroy_unc_path(wpath);
+      }
+      os::free(pathbuf);
+      errno = err;
+      return -1;
+    }
+    BOOL bret = ::GetFileAttributesExW(wpath, GetFileExInfoStandard, &file_data);
+    if (!bret) {
+      errno = ::GetLastError();
+      ret = -1;
+    } else {
+      file_attribute_data_to_stat(sbuf, file_data);
+      ret = 0;
+    }
+    destroy_unc_path(wpath);
   }
+  os::free(pathbuf);
   return ret;
 }
 
@@ -4208,14 +4283,34 @@ bool os::dont_yield() {
 // from src/windows/hpi/src/sys_api_md.c
 
 int os::open(const char *path, int oflag, int mode) {
-  char pathbuf[MAX_PATH];
-
-  if (strlen(path) > MAX_PATH - 1) {
-    errno = ENAMETOOLONG;
+  char* pathbuf = (char*)os::strdup(path, mtInternal);
+  if (pathbuf == NULL) {
+    errno = ENOMEM;
     return -1;
   }
-  os::native_path(strcpy(pathbuf, path));
-  return ::open(pathbuf, oflag | O_BINARY | O_NOINHERIT, mode);
+  os::native_path(pathbuf);
+  int ret;
+  if (strlen(path) < MAX_PATH) {
+    ret = ::open(pathbuf, oflag | O_BINARY | O_NOINHERIT, mode);
+  } else {
+    errno_t err = ERROR_SUCCESS;
+    wchar_t* wpath = create_unc_path(pathbuf, err);
+    if (err != ERROR_SUCCESS) {
+      if (wpath != NULL) {
+        destroy_unc_path(wpath);
+      }
+      os::free(pathbuf);
+      errno = err;
+      return -1;
+    }
+    ret = ::_wopen(wpath, oflag | O_BINARY | O_NOINHERIT, mode);
+    if (ret == -1) {
+      errno = ::GetLastError();
+    }
+    destroy_unc_path(wpath);
+  }
+  os::free(pathbuf);
+  return ret;
 }
 
 FILE* os::open(int fd, const char* mode) {

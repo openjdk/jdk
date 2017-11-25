@@ -90,7 +90,9 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _non_young_other_cost_per_region_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _pending_cards_seq(new TruncatedSeq(TruncatedSeqLength)),
     _rs_lengths_seq(new TruncatedSeq(TruncatedSeqLength)),
-    _recent_prev_end_times_for_all_gcs_sec(new TruncatedSeq(NumPrevPausesForHeuristics)) {
+    _recent_prev_end_times_for_all_gcs_sec(new TruncatedSeq(NumPrevPausesForHeuristics)),
+    _recent_avg_pause_time_ratio(0.0),
+    _last_pause_time_ratio(0.0) {
 
   // Seed sequences with initial values.
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());

@@ -231,7 +231,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
-    ClassLoader::record_shared_class_loader_type(result, stream);
+    ClassLoader::record_result(result, stream);
 #if INCLUDE_JVMTI
     assert(cached_class_file == NULL, "Sanity");
     // Archive the class stream data into the optional data section

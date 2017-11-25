@@ -26,7 +26,7 @@
  * @bug 8044538
  * @summary assert hit while printing relocations for jump table entries
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:+PrintRelocations
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:CompileCommand=compileonly,java.lang.String*::* -XX:+PrintRelocations
  *                   compiler.relocations.TestPrintRelocations
  */
 /**

@@ -26,16 +26,8 @@
 #define SHARE_VM_GC_SHARED_BARRIERSET_INLINE_HPP
 
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetConfig.inline.hpp"
 #include "utilities/align.hpp"
-
-
-template <class T> void BarrierSet::write_ref_field_pre(T* field, oop new_val) {
-  write_ref_field_pre_work(field, new_val);
-}
-
-void BarrierSet::write_ref_field(void* field, oop new_val, bool release) {
-  write_ref_field_work(field, new_val, release);
-}
 
 // count is number of array elements being written
 void BarrierSet::write_ref_array(HeapWord* start, size_t count) {
@@ -59,7 +51,6 @@ void BarrierSet::write_ref_array(HeapWord* start, size_t count) {
          "Expected heap word alignment of start and end");
   write_ref_array_work(MemRegion(aligned_start, aligned_end));
 }
-
 
 inline void BarrierSet::write_region(MemRegion mr) {
   write_region_work(mr);
