@@ -3360,7 +3360,7 @@ void os::init(void) {
 
   Bsd::initialize_system_info();
 
-  // main_thread points to the aboriginal thread
+  // _main_thread points to the thread that created/loaded the JVM.
   Bsd::_main_thread = pthread_self();
 
   Bsd::clock_init();

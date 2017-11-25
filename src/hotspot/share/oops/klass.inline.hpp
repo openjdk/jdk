@@ -71,4 +71,13 @@ inline Klass* Klass::decode_klass(narrowKlass v) {
   return is_null(v) ? (Klass*)NULL : decode_klass_not_null(v);
 }
 
+template <typename T>
+bool Klass::is_instanceof_or_null(T element) {
+  if (oopDesc::is_null(element)) {
+    return true;
+  }
+  oop obj = oopDesc::decode_heap_oop_not_null(element);
+  return obj->klass()->is_subtype_of(this);
+}
+
 #endif // SHARE_VM_OOPS_KLASS_INLINE_HPP

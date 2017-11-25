@@ -25,7 +25,10 @@
 #ifndef SHARE_VM_GC_SHARED_BARRIERSET_HPP
 #define SHARE_VM_GC_SHARED_BARRIERSET_HPP
 
+#include "gc/shared/barrierSetConfig.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/access.hpp"
+#include "oops/accessBackend.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/fakeRttiSupport.hpp"
 
@@ -34,7 +37,20 @@
 
 class BarrierSet: public CHeapObj<mtGC> {
   friend class VMStructs;
+
+  static BarrierSet* _bs;
+
 public:
+  enum Name {
+#define BARRIER_SET_DECLARE_BS_ENUM(bs_name) bs_name ,
+    FOR_EACH_BARRIER_SET_DO(BARRIER_SET_DECLARE_BS_ENUM)
+#undef BARRIER_SET_DECLARE_BS_ENUM
+    UnknownBS
+  };
+
+  static BarrierSet* barrier_set() { return _bs; }
+
+protected:
   // Fake RTTI support.  For a derived class T to participate
   // - T must have a corresponding Name entry.
   // - GetName<T> must be specialized to return the corresponding Name
@@ -45,32 +61,20 @@ public:
   // - If T is a concrete class, the constructor must create a
   //   FakeRtti object whose tag set includes the corresponding Name
   //   entry, and pass it up to its base class.
-
-  enum Name {                   // associated class
-    ModRef,                     // ModRefBarrierSet
-    CardTableModRef,            // CardTableModRefBS
-    CardTableForRS,             // CardTableModRefBSForCTRS
-    CardTableExtension,         // CardTableExtension
-    G1SATBCT,                   // G1SATBCardTableModRefBS
-    G1SATBCTLogging             // G1SATBCardTableLoggingModRefBS
-  };
-
-protected:
   typedef FakeRttiSupport<BarrierSet, Name> FakeRtti;
 
 private:
   FakeRtti _fake_rtti;
 
+public:
   // Metafunction mapping a class derived from BarrierSet to the
   // corresponding Name enum tag.
   template<typename T> struct GetName;
 
-  // Downcast argument to a derived barrier set type.
-  // The cast is checked in a debug build.
-  // T must have a specialization for BarrierSet::GetName<T>.
-  template<typename T> friend T* barrier_set_cast(BarrierSet* bs);
+  // Metafunction mapping a Name enum type to the corresponding
+  // lass derived from BarrierSet.
+  template<BarrierSet::Name T> struct GetType;
 
-public:
   // Note: This is not presently the Name corresponding to the
   // concrete class of this object.
   BarrierSet::Name kind() const { return _fake_rtti.concrete_tag(); }
@@ -83,23 +87,6 @@ public:
 protected:
   BarrierSet(const FakeRtti& fake_rtti) : _fake_rtti(fake_rtti) { }
   ~BarrierSet() { }
-
-public:
-  // Invoke the barrier, if any, necessary when writing "new_val" into the
-  // ref field at "offset" in "obj".
-  // (For efficiency reasons, this operation is specialized for certain
-  // barrier types.  Semantically, it should be thought of as a call to the
-  // virtual "_work" function below, which must implement the barrier.)
-  // First the pre-write versions...
-  template <class T> inline void write_ref_field_pre(T* field, oop new_val);
-
-  // ...then the post-write version.
-  inline void write_ref_field(void* field, oop new_val, bool release = false);
-
-protected:
-  virtual void write_ref_field_pre_work(      oop* field, oop new_val) {};
-  virtual void write_ref_field_pre_work(narrowOop* field, oop new_val) {};
-  virtual void write_ref_field_work(void* field, oop new_val, bool release) = 0;
 
 public:
   // Operations on arrays, or general regions (e.g., for "clone") may be
@@ -144,6 +131,147 @@ public:
 
   // Print a description of the memory for the barrier set
   virtual void print_on(outputStream* st) const = 0;
+
+  static void set_bs(BarrierSet* bs) { _bs = bs; }
+
+  // The AccessBarrier of a BarrierSet subclass is called by the Access API
+  // (cf. oops/access.hpp) to perform decorated accesses. GC implementations
+  // may override these default access operations by declaring an
+  // AccessBarrier class in its BarrierSet. Its accessors will then be
+  // automatically resolved at runtime.
+  //
+  // In order to register a new FooBarrierSet::AccessBarrier with the Access API,
+  // the following steps should be taken:
+  // 1) Provide an enum "name" for the BarrierSet in barrierSetConfig.hpp
+  // 2) Make sure the barrier set headers are included from barrierSetConfig.inline.hpp
+  // 3) Provide specializations for BarrierSet::GetName and BarrierSet::GetType.
+  template <DecoratorSet decorators, typename BarrierSetT>
+  class AccessBarrier: protected RawAccessBarrier<decorators> {
+  protected:
+    typedef RawAccessBarrier<decorators> Raw;
+    typedef typename BarrierSetT::template AccessBarrier<decorators> CRTPAccessBarrier;
+
+  public:
+    // Primitive heap accesses. These accessors get resolved when
+    // IN_HEAP is set (e.g. when using the HeapAccess API), it is
+    // not an oop_* overload, and the barrier strength is AS_NORMAL.
+    template <typename T>
+    static T load_in_heap(T* addr) {
+      return Raw::template load<T>(addr);
+    }
+
+    template <typename T>
+    static T load_in_heap_at(oop base, ptrdiff_t offset) {
+      return Raw::template load_at<T>(base, offset);
+    }
+
+    template <typename T>
+    static void store_in_heap(T* addr, T value) {
+      Raw::store(addr, value);
+    }
+
+    template <typename T>
+    static void store_in_heap_at(oop base, ptrdiff_t offset, T value) {
+      Raw::store_at(base, offset, value);
+    }
+
+    template <typename T>
+    static T atomic_cmpxchg_in_heap(T new_value, T* addr, T compare_value) {
+      return Raw::atomic_cmpxchg(new_value, addr, compare_value);
+    }
+
+    template <typename T>
+    static T atomic_cmpxchg_in_heap_at(T new_value, oop base, ptrdiff_t offset, T compare_value) {
+      return Raw::oop_atomic_cmpxchg_at(new_value, base, offset, compare_value);
+    }
+
+    template <typename T>
+    static T atomic_xchg_in_heap(T new_value, T* addr) {
+      return Raw::atomic_xchg(new_value, addr);
+    }
+
+    template <typename T>
+    static T atomic_xchg_in_heap_at(T new_value, oop base, ptrdiff_t offset) {
+      return Raw::atomic_xchg_at(new_value, base, offset);
+    }
+
+    template <typename T>
+    static bool arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
+      return Raw::arraycopy(src_obj, dst_obj, src, dst, length);
+    }
+
+    // Heap oop accesses. These accessors get resolved when
+    // IN_HEAP is set (e.g. when using the HeapAccess API), it is
+    // an oop_* overload, and the barrier strength is AS_NORMAL.
+    template <typename T>
+    static oop oop_load_in_heap(T* addr) {
+      return Raw::template oop_load<oop>(addr);
+    }
+
+    static oop oop_load_in_heap_at(oop base, ptrdiff_t offset) {
+      return Raw::template oop_load_at<oop>(base, offset);
+    }
+
+    template <typename T>
+    static void oop_store_in_heap(T* addr, oop value) {
+      Raw::oop_store(addr, value);
+    }
+
+    static void oop_store_in_heap_at(oop base, ptrdiff_t offset, oop value) {
+      Raw::oop_store_at(base, offset, value);
+    }
+
+    template <typename T>
+    static oop oop_atomic_cmpxchg_in_heap(oop new_value, T* addr, oop compare_value) {
+      return Raw::oop_atomic_cmpxchg(new_value, addr, compare_value);
+    }
+
+    static oop oop_atomic_cmpxchg_in_heap_at(oop new_value, oop base, ptrdiff_t offset, oop compare_value) {
+      return Raw::oop_atomic_cmpxchg_at(new_value, base, offset, compare_value);
+    }
+
+    template <typename T>
+    static oop oop_atomic_xchg_in_heap(oop new_value, T* addr) {
+      return Raw::oop_atomic_xchg(new_value, addr);
+    }
+
+    static oop oop_atomic_xchg_in_heap_at(oop new_value, oop base, ptrdiff_t offset) {
+      return Raw::oop_atomic_xchg_at(new_value, base, offset);
+    }
+
+    template <typename T>
+    static bool oop_arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
+      return Raw::oop_arraycopy(src_obj, dst_obj, src, dst, length);
+    }
+
+    // Off-heap oop accesses. These accessors get resolved when
+    // IN_HEAP is not set (e.g. when using the RootAccess API), it is
+    // an oop* overload, and the barrier strength is AS_NORMAL.
+    template <typename T>
+    static oop oop_load_not_in_heap(T* addr) {
+      return Raw::template oop_load<oop>(addr);
+    }
+
+    template <typename T>
+    static void oop_store_not_in_heap(T* addr, oop value) {
+      Raw::oop_store(addr, value);
+    }
+
+    template <typename T>
+    static oop oop_atomic_cmpxchg_not_in_heap(oop new_value, T* addr, oop compare_value) {
+      return Raw::oop_atomic_cmpxchg(new_value, addr, compare_value);
+    }
+
+    template <typename T>
+    static oop oop_atomic_xchg_not_in_heap(oop new_value, T* addr) {
+      return Raw::oop_atomic_xchg(new_value, addr);
+    }
+
+    // Clone barrier support
+    static void clone_in_heap(oop src, oop dst, size_t size) {
+      Raw::clone(src, dst, size);
+    }
+  };
 };
 
 template<typename T>

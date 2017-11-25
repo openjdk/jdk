@@ -699,7 +699,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
 
 void NMethodSweeper::possibly_flush(nmethod* nm) {
   if (UseCodeCacheFlushing) {
-    if (!nm->is_locked_by_vm() && !nm->is_native_method()) {
+    if (!nm->is_locked_by_vm() && !nm->is_native_method() && !nm->is_not_installed()) {
       bool make_not_entrant = false;
 
       // Do not make native methods not-entrant

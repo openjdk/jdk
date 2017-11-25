@@ -124,7 +124,7 @@ class nmethod : public CompiledMethod {
   bool _unload_reported;
 
   // Protected by Patching_lock
-  volatile unsigned char _state;             // {in_use, not_entrant, zombie, unloaded}
+  volatile char _state;             // {not_installed, in_use, not_entrant, zombie, unloaded}
 
 #ifdef ASSERT
   bool _oops_are_stale;  // indicates that it's no longer safe to access oops section
@@ -216,7 +216,7 @@ class nmethod : public CompiledMethod {
   const char* reloc_string_for(u_char* begin, u_char* end);
   // Returns true if this thread changed the state of the nmethod or
   // false if another thread performed the transition.
-  bool make_not_entrant_or_zombie(unsigned int state);
+  bool make_not_entrant_or_zombie(int state);
   bool make_entrant() { Unimplemented(); return false; }
   void inc_decompile_count();
 
@@ -316,8 +316,9 @@ class nmethod : public CompiledMethod {
   address verified_entry_point() const            { return _verified_entry_point;    } // if klass is correct
 
   // flag accessing and manipulation
-  bool  is_in_use() const                         { return _state == in_use; }
-  bool  is_alive() const                          { unsigned char s = _state; return s < zombie; }
+  bool  is_not_installed() const                  { return _state == not_installed; }
+  bool  is_in_use() const                         { return _state <= in_use; }
+  bool  is_alive() const                          { return _state < zombie; }
   bool  is_not_entrant() const                    { return _state == not_entrant; }
   bool  is_zombie() const                         { return _state == zombie; }
   bool  is_unloaded() const                       { return _state == unloaded; }
@@ -328,6 +329,7 @@ class nmethod : public CompiledMethod {
   void set_rtm_state(RTMState state)              { _rtm_state = state; }
 #endif
 
+  void make_in_use()                              { _state = in_use; }
   // Make the nmethod non entrant. The nmethod will continue to be
   // alive.  It is used when an uncommon trap happens.  Returns true
   // if this thread changed the state of the nmethod or false if
