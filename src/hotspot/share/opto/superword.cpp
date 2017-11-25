@@ -2307,7 +2307,7 @@ void SuperWord::output() {
           vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
           vlen_in_bytes = vn->as_Vector()->length_in_bytes();
         }
-      } else if (opc == Op_SqrtD || opc == Op_AbsF || opc == Op_AbsD || opc == Op_NegF || opc == Op_NegD) {
+      } else if (opc == Op_SqrtF || opc == Op_SqrtD || opc == Op_AbsF || opc == Op_AbsD || opc == Op_NegF || opc == Op_NegD) {
         // Promote operand to vector (Sqrt/Abs/Neg are 2 address instructions)
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));

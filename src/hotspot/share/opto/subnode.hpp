@@ -442,6 +442,20 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
+//------------------------------SqrtFNode--------------------------------------
+// square root a float
+class SqrtFNode : public Node {
+public:
+  SqrtFNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
+    init_flags(Flag_is_expensive);
+    C->add_expensive_node(this);
+  }
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return Type::FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
 //-------------------------------ReverseBytesINode--------------------------------
 // reverse bytes of an integer
 class ReverseBytesINode : public Node {

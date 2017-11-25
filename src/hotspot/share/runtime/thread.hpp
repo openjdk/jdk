@@ -57,6 +57,8 @@
 #endif
 
 class ThreadSafepointState;
+class ThreadsList;
+class NestedThreadsList;
 
 class JvmtiThreadState;
 class JvmtiGetLoadedClassesClosure;
@@ -101,6 +103,7 @@ class WorkerThread;
 //   - WatcherThread
 
 class Thread: public ThreadShadow {
+  friend class Threads;
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
@@ -118,6 +121,47 @@ class Thread: public ThreadShadow {
  protected:
   // Support for forcing alignment of thread objects for biased locking
   void*       _real_malloc_address;
+  // JavaThread lifecycle support:
+  friend class ScanHazardPtrGatherProtectedThreadsClosure;
+  friend class ScanHazardPtrGatherThreadsListClosure;
+  friend class ScanHazardPtrPrintMatchingThreadsClosure;
+  friend class ThreadsListHandle;
+  friend class ThreadsListSetter;
+  ThreadsList* volatile _threads_hazard_ptr;
+  ThreadsList*          cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value);
+  ThreadsList*          get_threads_hazard_ptr();
+  void                  set_threads_hazard_ptr(ThreadsList* new_list);
+  static bool           is_hazard_ptr_tagged(ThreadsList* list) {
+    return (intptr_t(list) & intptr_t(1)) == intptr_t(1);
+  }
+  static ThreadsList*   tag_hazard_ptr(ThreadsList* list) {
+    return (ThreadsList*)(intptr_t(list) | intptr_t(1));
+  }
+  static ThreadsList*   untag_hazard_ptr(ThreadsList* list) {
+    return (ThreadsList*)(intptr_t(list) & ~intptr_t(1));
+  }
+  NestedThreadsList* _nested_threads_hazard_ptr;
+  NestedThreadsList* get_nested_threads_hazard_ptr() {
+    return _nested_threads_hazard_ptr;
+  }
+  void set_nested_threads_hazard_ptr(NestedThreadsList* value) {
+    assert(Threads_lock->owned_by_self(),
+           "must own Threads_lock for _nested_threads_hazard_ptr to be valid.");
+    _nested_threads_hazard_ptr = value;
+  }
+  // This field is enabled via -XX:+EnableThreadSMRStatistics:
+  uint _nested_threads_hazard_ptr_cnt;
+  void dec_nested_threads_hazard_ptr_cnt() {
+    assert(_nested_threads_hazard_ptr_cnt != 0, "mismatched {dec,inc}_nested_threads_hazard_ptr_cnt()");
+    _nested_threads_hazard_ptr_cnt--;
+  }
+  void inc_nested_threads_hazard_ptr_cnt() {
+    _nested_threads_hazard_ptr_cnt++;
+  }
+  uint nested_threads_hazard_ptr_cnt() {
+    return _nested_threads_hazard_ptr_cnt;
+  }
+
  public:
   void* operator new(size_t size) throw() { return allocate(size, true); }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
@@ -359,6 +403,9 @@ class Thread: public ThreadShadow {
   static inline Thread* current_or_null_safe();
 
   // Common thread operations
+#ifdef ASSERT
+  static void check_for_dangling_thread_pointer(Thread *thread);
+#endif
   static void set_priority(Thread* thread, ThreadPriority priority);
   static ThreadPriority get_priority(const Thread* const thread);
   static void start(Thread* thread);
@@ -576,6 +623,7 @@ protected:
 
   // Printing
   virtual void print_on(outputStream* st) const;
+  virtual void print_nested_threads_hazard_ptrs_on(outputStream* st) const;
   void print() const { print_on(tty); }
   virtual void print_on_error(outputStream* st, char* buf, int buflen) const;
   void print_value_on(outputStream* st) const;
@@ -798,6 +846,7 @@ class JavaThread: public Thread {
   friend class WhiteBox;
  private:
   JavaThread*    _next;                          // The next thread in the Threads list
+  bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
   oop            _threadObj;                     // The Java level thread object
 
 #ifdef ASSERT
@@ -1125,15 +1174,23 @@ class JavaThread: public Thread {
   void set_safepoint_state(ThreadSafepointState *state) { _safepoint_state = state; }
   bool is_at_poll_safepoint()                    { return _safepoint_state->is_at_poll_safepoint(); }
 
+  // JavaThread termination and lifecycle support:
+  void smr_delete();
+  bool on_thread_list() const { return _on_thread_list; }
+  void set_on_thread_list() { _on_thread_list = true; }
+
   // thread has called JavaThread::exit() or is terminated
-  bool is_exiting()                              { return _terminated == _thread_exiting || is_terminated(); }
+  bool is_exiting() const;
   // thread is terminated (no longer on the threads list); we compare
   // against the two non-terminated values so that a freed JavaThread
   // will also be considered terminated.
-  bool is_terminated()                           { return _terminated != _not_terminated && _terminated != _thread_exiting; }
-  void set_terminated(TerminatedTypes t)         { _terminated = t; }
+  bool check_is_terminated(TerminatedTypes l_terminated) const {
+    return l_terminated != _not_terminated && l_terminated != _thread_exiting;
+  }
+  bool is_terminated() const;
+  void set_terminated(TerminatedTypes t);
   // special for Threads::remove() which is static:
-  void set_terminated_value()                    { _terminated = _thread_terminated; }
+  void set_terminated_value();
   void block_if_vm_exited();
 
   bool doing_unsafe_access()                     { return _doing_unsafe_access; }
@@ -1219,6 +1276,9 @@ class JavaThread: public Thread {
   // other values in the code. Experiments with all calls can be done
   // via the appropriate -XX options.
   bool wait_for_ext_suspend_completion(int count, int delay, uint32_t *bits);
+
+  // test for suspend - most (all?) of these should go away
+  bool is_thread_fully_suspended(bool wait_for_suspend, uint32_t *bits);
 
   inline void set_external_suspend();
   inline void clear_external_suspend();
@@ -2066,27 +2126,83 @@ inline CompilerThread* CompilerThread::current() {
 class Threads: AllStatic {
   friend class VMStructs;
  private:
-  static JavaThread* _thread_list;
-  static int         _number_of_threads;
-  static int         _number_of_non_daemon_threads;
-  static int         _return_code;
-  static int         _thread_claim_parity;
+  // Safe Memory Reclamation (SMR) support:
+  static Monitor*              _smr_delete_lock;
+  // The '_cnt', '_max' and '_times" fields are enabled via
+  // -XX:+EnableThreadSMRStatistics (see thread.cpp for a
+  // description about each field):
+  static uint                  _smr_delete_lock_wait_cnt;
+  static uint                  _smr_delete_lock_wait_max;
+  static volatile uint         _smr_delete_notify;
+  static volatile uint         _smr_deleted_thread_cnt;
+  static volatile uint         _smr_deleted_thread_time_max;
+  static volatile uint         _smr_deleted_thread_times;
+  static ThreadsList* volatile _smr_java_thread_list;
+  static ThreadsList*          get_smr_java_thread_list();
+  static ThreadsList*          xchg_smr_java_thread_list(ThreadsList* new_list);
+  static uint64_t              _smr_java_thread_list_alloc_cnt;
+  static uint64_t              _smr_java_thread_list_free_cnt;
+  static uint                  _smr_java_thread_list_max;
+  static uint                  _smr_nested_thread_list_max;
+  static volatile uint         _smr_tlh_cnt;
+  static volatile uint         _smr_tlh_time_max;
+  static volatile uint         _smr_tlh_times;
+  static ThreadsList*          _smr_to_delete_list;
+  static uint                  _smr_to_delete_list_cnt;
+  static uint                  _smr_to_delete_list_max;
+
+  static JavaThread*           _thread_list;
+  static int                   _number_of_threads;
+  static int                   _number_of_non_daemon_threads;
+  static int                   _return_code;
+  static int                   _thread_claim_parity;
 #ifdef ASSERT
-  static bool        _vm_complete;
+  static bool                  _vm_complete;
 #endif
 
   static void initialize_java_lang_classes(JavaThread* main_thread, TRAPS);
   static void initialize_jsr292_core_classes(TRAPS);
+
+  static void smr_free_list(ThreadsList* threads);
+
  public:
   // Thread management
   // force_daemon is a concession to JNI, where we may need to add a
   // thread to the thread list before allocating its thread object
   static void add(JavaThread* p, bool force_daemon = false);
   static void remove(JavaThread* p);
-  static bool includes(JavaThread* p);
-  static JavaThread* first()                     { return _thread_list; }
   static void threads_do(ThreadClosure* tc);
   static void possibly_parallel_threads_do(bool is_par, ThreadClosure* tc);
+
+  // SMR support:
+  static ThreadsList *acquire_stable_list(Thread *self, bool is_ThreadsListSetter);
+  static ThreadsList *acquire_stable_list_fast_path(Thread *self);
+  static ThreadsList *acquire_stable_list_nested_path(Thread *self);
+  static void release_stable_list(Thread *self);
+  static void release_stable_list_fast_path(Thread *self);
+  static void release_stable_list_nested_path(Thread *self);
+  static void release_stable_list_wake_up(char *log_str);
+  static bool is_a_protected_JavaThread(JavaThread *thread);
+  static bool is_a_protected_JavaThread_with_lock(JavaThread *thread) {
+    MutexLockerEx ml(Threads_lock->owned_by_self() ? NULL : Threads_lock);
+    return is_a_protected_JavaThread(thread);
+  }
+  static void smr_delete(JavaThread *thread);
+  // The coordination between Threads::release_stable_list() and
+  // Threads::smr_delete() uses the smr_delete_lock in order to
+  // reduce the traffic on the Threads_lock.
+  static Monitor* smr_delete_lock() { return _smr_delete_lock; }
+  // The smr_delete_notify flag is used for proper double-check
+  // locking in order to reduce the traffic on the smr_delete_lock.
+  static bool smr_delete_notify();
+  static void set_smr_delete_notify();
+  static void clear_smr_delete_notify();
+  static void inc_smr_deleted_thread_cnt();
+  static void update_smr_deleted_thread_time_max(uint new_value);
+  static void add_smr_deleted_thread_times(uint add_value);
+  static void inc_smr_tlh_cnt();
+  static void update_smr_tlh_time_max(uint new_value);
+  static void add_smr_tlh_times(uint add_value);
 
   // Initializes the vm and creates the vm thread
   static jint create_vm(JavaVMInitArgs* args, bool* canTryAgain);
@@ -2148,7 +2264,10 @@ class Threads: AllStatic {
 
   // Verification
   static void verify();
+  static void log_smr_statistics();
   static void print_on(outputStream* st, bool print_stacks, bool internal_format, bool print_concurrent_locks);
+  static void print_smr_info_on(outputStream* st);
+  static void print_smr_info_elements_on(outputStream* st, ThreadsList* t_list);
   static void print(bool print_stacks, bool internal_format) {
     // this function is only used by debug.cpp
     print_on(tty, print_stacks, internal_format, false /* no concurrent lock printed */);
@@ -2158,17 +2277,13 @@ class Threads: AllStatic {
                              int buflen, bool* found_current);
   static void print_threads_compiling(outputStream* st, char* buf, int buflen);
 
-  // Get Java threads that are waiting to enter a monitor. If doLock
-  // is true, then Threads_lock is grabbed as needed. Otherwise, the
-  // VM needs to be at a safepoint.
-  static GrowableArray<JavaThread*>* get_pending_threads(int count,
-                                                         address monitor, bool doLock);
+  // Get Java threads that are waiting to enter a monitor.
+  static GrowableArray<JavaThread*>* get_pending_threads(ThreadsList * t_list,
+                                                         int count, address monitor);
 
-  // Get owning Java thread from the monitor's owner field. If doLock
-  // is true, then Threads_lock is grabbed as needed. Otherwise, the
-  // VM needs to be at a safepoint.
-  static JavaThread *owning_thread_from_monitor_owner(address owner,
-                                                      bool doLock);
+  // Get owning Java thread from the monitor's owner field.
+  static JavaThread *owning_thread_from_monitor_owner(ThreadsList * t_list,
+                                                      address owner);
 
   // Number of threads on the active threads list
   static int number_of_threads()                 { return _number_of_threads; }
@@ -2177,9 +2292,6 @@ class Threads: AllStatic {
 
   // Deoptimizes all frames tied to marked nmethods
   static void deoptimized_wrt_marked_nmethods();
-
-  static JavaThread* find_java_thread_from_java_tid(jlong java_tid);
-
 };
 
 

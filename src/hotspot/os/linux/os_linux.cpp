@@ -59,6 +59,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
 #include "semaphore_posix.hpp"
 #include "services/attachListener.hpp"
@@ -1646,7 +1647,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
         //
         // Dynamic loader will make all stacks executable after
         // this function returns, and will not do that again.
-        assert(Threads::first() == NULL, "no Java threads should exist yet.");
+#ifdef ASSERT
+        ThreadsListHandle tlh;
+        assert(tlh.length() == 0, "no Java threads should exist yet.");
+#endif
       } else {
         warning("You have loaded library %s which might have disabled stack guard. "
                 "The VM will try to fix the stack guard now.\n"
@@ -1874,16 +1878,13 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
   // may have been queued at the same time.
 
   if (!_stack_is_executable) {
-    JavaThread *jt = Threads::first();
-
-    while (jt) {
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
       if (!jt->stack_guard_zone_unused() &&     // Stack not yet fully initialized
           jt->stack_guards_enabled()) {         // No pending stack overflow exceptions
         if (!os::guard_memory((char *)jt->stack_end(), jt->stack_guard_zone_size())) {
           warning("Attempt to reguard stack yellow zone failed.");
         }
       }
-      jt = jt->next();
     }
   }
 

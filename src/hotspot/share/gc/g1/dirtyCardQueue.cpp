@@ -32,6 +32,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 
 // Closure used for updating remembered sets and recording references that
 // point into the collection set while the mutator is running.
@@ -319,7 +320,7 @@ void DirtyCardQueueSet::abandon_logs() {
   clear();
   // Since abandon is done only at safepoints, we can safely manipulate
   // these queues.
-  for (JavaThread* t = Threads::first(); t; t = t->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     t->dirty_card_queue().reset();
   }
   shared_dirty_card_queue()->reset();
@@ -338,7 +339,7 @@ void DirtyCardQueueSet::concatenate_logs() {
   int save_max_completed_queue = _max_completed_queue;
   _max_completed_queue = max_jint;
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
-  for (JavaThread* t = Threads::first(); t; t = t->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     concatenate_log(t->dirty_card_queue());
   }
   concatenate_log(_shared_dirty_card_queue);

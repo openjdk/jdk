@@ -40,6 +40,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "services/heapDumper.hpp"
 #include "utilities/align.hpp"
 
@@ -540,10 +541,11 @@ void CollectedHeap::ensure_parsability(bool retire_tlabs) {
   const bool deferred = _defer_initial_card_mark;
   // The main thread starts allocating via a TLAB even before it
   // has added itself to the threads list at vm boot-up.
-  assert(!use_tlab || Threads::first() != NULL,
+  JavaThreadIteratorWithHandle jtiwh;
+  assert(!use_tlab || jtiwh.length() > 0,
          "Attempt to fill tlabs before main thread has been added"
          " to threads list is doomed to failure!");
-  for (JavaThread *thread = Threads::first(); thread; thread = thread->next()) {
+  for (; JavaThread *thread = jtiwh.next(); ) {
      if (use_tlab) thread->tlab().make_parsable(retire_tlabs);
 #if COMPILER2_OR_JVMCI
      // The deferred store barriers must all have been flushed to the
