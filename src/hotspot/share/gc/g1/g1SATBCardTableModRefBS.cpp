@@ -175,6 +175,9 @@ void G1SATBCardTableLoggingModRefBS::write_ref_field_post_slow(volatile jbyte* b
 
 void
 G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr) {
+  if (mr.is_empty()) {
+    return;
+  }
   volatile jbyte* byte = byte_for(mr.start());
   jbyte* last_byte = byte_for(mr.last());
   Thread* thr = Thread::current();

@@ -63,6 +63,7 @@ import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.AWTAccessor.WindowAccessor;
 import sun.java2d.SurfaceData;
 import sun.java2d.opengl.CGLSurfaceData;
+import sun.lwawt.LWLightweightFramePeer;
 import sun.lwawt.LWToolkit;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.LWWindowPeer.PeerType;
@@ -636,6 +637,20 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     boolean isKeyWindow = CWrapper.NSWindow.isKeyWindow(ptr);
                     if (!isKeyWindow) {
                         CWrapper.NSWindow.makeKeyWindow(ptr);
+                    }
+
+                    if (owner != null
+                            && owner.getPeer() instanceof LWLightweightFramePeer) {
+                        LWLightweightFramePeer peer =
+                                (LWLightweightFramePeer) owner.getPeer();
+
+                        long ownerWindowPtr = peer.getOverriddenWindowHandle();
+                        if (ownerWindowPtr != 0) {
+                            //Place window above JavaFX stage
+                            CWrapper.NSWindow.addChildWindow(
+                                    ownerWindowPtr, ptr,
+                                    CWrapper.NSWindow.NSWindowAbove);
+                        }
                     }
                 });
             } else {

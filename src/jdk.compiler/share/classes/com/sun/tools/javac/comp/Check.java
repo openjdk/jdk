@@ -3918,6 +3918,8 @@ public class Check {
                     todo = todo.tail;
                     if (current == whatPackage.modle)
                         return ; //OK
+                    if ((current.flags() & Flags.AUTOMATIC_MODULE) != 0)
+                        continue; //for automatic modules, don't look into their dependencies
                     for (RequiresDirective req : current.requires) {
                         if (req.isTransitive()) {
                             todo = todo.prepend(req.module);

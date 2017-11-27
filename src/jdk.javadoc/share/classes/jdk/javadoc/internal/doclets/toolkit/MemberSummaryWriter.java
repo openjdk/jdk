@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.io.*;
 import java.util.*;
 
 import javax.lang.model.element.Element;
@@ -62,11 +61,9 @@ public interface MemberSummaryWriter {
      * Get the summary table for the given class.
      *
      * @param typeElement the class the summary table belongs to
-     * @param tableContents list of contents that will be added to the summary table
      * @return a content tree for the member summary table
      */
-    public Content getSummaryTableTree(TypeElement typeElement,
-            List<Content> tableContents);
+    public Content getSummaryTableTree(TypeElement typeElement);
 
     /**
      * Add the member summary for the given class and member.
@@ -74,12 +71,9 @@ public interface MemberSummaryWriter {
      * @param typeElement the class the summary belongs to
      * @param member the member that is documented
      * @param firstSentenceTags the tags for the sentence being documented
-     * @param tableContents list of contents to which the summary will be added
-     * @param counter the counter for determining id and style for the table row
      */
     public void addMemberSummary(TypeElement typeElement, Element member,
-            List<? extends DocTree> firstSentenceTags, List<Content> tableContents, int counter,
-            VisibleMemberMap.Kind vmmKind);
+            List<? extends DocTree> firstSentenceTags);
 
     /**
      * Get the inherited member summary header for the given class.

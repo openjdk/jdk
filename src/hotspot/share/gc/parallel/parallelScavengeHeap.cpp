@@ -105,9 +105,9 @@ jint ParallelScavengeHeap::initialize() {
     (old_gen()->virtual_space()->high_boundary() ==
      young_gen()->virtual_space()->low_boundary()),
     "Boundaries must meet");
-  // initialize the policy counters - 2 collectors, 3 generations
+  // initialize the policy counters - 2 collectors, 2 generations
   _gc_policy_counters =
-    new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 3, _size_policy);
+    new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 2, _size_policy);
 
   // Set up the GCTaskManager
   _gc_task_manager = GCTaskManager::create(ParallelGCThreads);

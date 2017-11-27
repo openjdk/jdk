@@ -64,7 +64,7 @@ public abstract class SOAPFactory {
      * part of the tree rooted in {@code domElement} violates SOAP rules, a
      * {@code SOAPException} will be thrown.
      *
-     * @param domElement - the {@code Element} to be copied.
+     * @param domElement the {@code Element} to be copied.
      *
      * @return a new {@code SOAPElement} that is a copy of {@code domElement}.
      *

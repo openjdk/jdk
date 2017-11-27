@@ -71,6 +71,6 @@ void ConcurrentMarkSweepPolicy::initialize_size_policy(size_t init_eden_size,
 }
 
 void ConcurrentMarkSweepPolicy::initialize_gc_policy_counters() {
-  // initialize the policy counters - 2 collectors, 3 generations
-  _gc_policy_counters = new GCPolicyCounters("ParNew:CMS", 2, 3);
+  // initialize the policy counters - 2 collectors, 2 generations
+  _gc_policy_counters = new GCPolicyCounters("ParNew:CMS", 2, 2);
 }

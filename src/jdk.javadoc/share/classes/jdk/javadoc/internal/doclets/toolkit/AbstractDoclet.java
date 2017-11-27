@@ -201,7 +201,7 @@ public abstract class AbstractDoclet implements Doclet {
             return;
         }
         messages.notice("doclet.build_version",
-            configuration.getDocletSpecificBuildDate());
+            configuration.getDocletVersion());
         ClassTree classtree = new ClassTree(configuration, configuration.nodeprecated);
 
         generateClassFiles(docEnv, classtree);

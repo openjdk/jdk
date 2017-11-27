@@ -108,7 +108,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
                 packgen.getTargetPackageLink(packageElement, "classFrame", pkgNameContent));
         htmlTree.addContent(heading);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.indexContainer);
+        div.setStyle(HtmlStyle.indexContainer);
         packgen.addClassListing(div);
         htmlTree.addContent(div);
         if (configuration.allowTag(HtmlTag.MAIN)) {

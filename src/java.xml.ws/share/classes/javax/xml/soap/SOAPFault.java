@@ -468,7 +468,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * this {@code SOAPFault} object. The Node element
      * is optional in SOAP 1.2.
      *
-     * @param uri - the URI of the Node
+     * @param uri the URI of the Node
      *
      * @exception SOAPException  if there was an error in setting the
      *            Node for this  {@code SOAPFault} object.
@@ -500,7 +500,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * this {@code SOAPFault} object. The Role element
      * is optional in SOAP 1.2.
      *
-     * @param uri - the URI of the Role
+     * @param uri the URI of the Role
      *
      * @exception SOAPException  if there was an error in setting the
      *            Role for this  {@code SOAPFault} object.

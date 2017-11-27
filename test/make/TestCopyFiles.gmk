@@ -52,7 +52,7 @@ $(OUTPUT_DIR)/_src_created: $(DEPS)
 	$(TOUCH) $(SRC_DIR)/foo/foofile
 	$(TOUCH) "$(SRC_DIR)/foo/foo file"
         # Spaces in directories only works with gnu make 4.0 or later
-        ifeq (4.0dfd, $(firstword $(sort 4.0 $(MAKE_VERSION))))
+        ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
 	  $(MKDIR) -p "$(SRC_DIR)/foo bar"
 	  $(TOUCH) "$(SRC_DIR)/foo bar/foobarfile"
 	  $(TOUCH) "$(SRC_DIR)/foo bar/foo bar file"

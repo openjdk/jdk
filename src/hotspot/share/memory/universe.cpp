@@ -687,6 +687,10 @@ jint universe_init() {
 
   Metaspace::global_initialize();
 
+  // Initialize performance counters for metaspaces
+  MetaspaceCounters::initialize_performance_counters();
+  CompressedClassSpaceCounters::initialize_performance_counters();
+
   AOTLoader::universe_init();
 
   // Checks 'AfterMemoryInit' constraints.
@@ -1084,10 +1088,6 @@ bool universe_post_init() {
 
   // ("weak") refs processing infrastructure initialization
   Universe::heap()->post_initialize();
-
-  // Initialize performance counters for metaspaces
-  MetaspaceCounters::initialize_performance_counters();
-  CompressedClassSpaceCounters::initialize_performance_counters();
 
   MemoryService::add_metaspace_memory_pools();
 

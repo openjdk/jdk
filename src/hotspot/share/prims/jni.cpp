@@ -4119,7 +4119,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   thread->initialize_thread_current();
 
   if (!os::create_attached_thread(thread)) {
-    delete thread;
+    thread->smr_delete();
     return JNI_ERR;
   }
   // Enable stack overflow checks
@@ -4250,7 +4250,7 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
   // (platform-dependent) methods where we do alternate stack
   // maintenance work?)
   thread->exit(false, JavaThread::jni_detach);
-  delete thread;
+  thread->smr_delete();
 
   HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN(JNI_OK);
   return JNI_OK;

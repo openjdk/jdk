@@ -59,6 +59,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
 #include "semaphore_posix.hpp"
 #include "services/attachListener.hpp"
@@ -1646,7 +1647,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
         //
         // Dynamic loader will make all stacks executable after
         // this function returns, and will not do that again.
-        assert(Threads::first() == NULL, "no Java threads should exist yet.");
+#ifdef ASSERT
+        ThreadsListHandle tlh;
+        assert(tlh.length() == 0, "no Java threads should exist yet.");
+#endif
       } else {
         warning("You have loaded library %s which might have disabled stack guard. "
                 "The VM will try to fix the stack guard now.\n"
@@ -1874,16 +1878,13 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
   // may have been queued at the same time.
 
   if (!_stack_is_executable) {
-    JavaThread *jt = Threads::first();
-
-    while (jt) {
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
       if (!jt->stack_guard_zone_unused() &&     // Stack not yet fully initialized
           jt->stack_guards_enabled()) {         // No pending stack overflow exceptions
         if (!os::guard_memory((char *)jt->stack_end(), jt->stack_guard_zone_size())) {
           warning("Attempt to reguard stack yellow zone failed.");
         }
       }
-      jt = jt->next();
     }
   }
 
@@ -4947,25 +4948,20 @@ jint os::init_2(void) {
         UseNUMA = false;
       }
     }
-    // With SHM and HugeTLBFS large pages we cannot uncommit a page, so there's no way
-    // we can make the adaptive lgrp chunk resizing work. If the user specified
-    // both UseNUMA and UseLargePages (or UseSHM/UseHugeTLBFS) on the command line - warn and
-    // disable adaptive resizing.
-    if (UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
-      if (FLAG_IS_DEFAULT(UseNUMA)) {
-        UseNUMA = false;
-      } else {
-        if (FLAG_IS_DEFAULT(UseLargePages) &&
-            FLAG_IS_DEFAULT(UseSHM) &&
-            FLAG_IS_DEFAULT(UseHugeTLBFS)) {
-          UseLargePages = false;
-        } else if (UseAdaptiveSizePolicy || UseAdaptiveNUMAChunkSizing) {
-          warning("UseNUMA is not fully compatible with SHM/HugeTLBFS large pages, disabling adaptive resizing (-XX:-UseAdaptiveSizePolicy -XX:-UseAdaptiveNUMAChunkSizing)");
-          UseAdaptiveSizePolicy = false;
-          UseAdaptiveNUMAChunkSizing = false;
-        }
+
+    if (UseParallelGC && UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
+      // With SHM and HugeTLBFS large pages we cannot uncommit a page, so there's no way
+      // we can make the adaptive lgrp chunk resizing work. If the user specified both
+      // UseNUMA and UseLargePages (or UseSHM/UseHugeTLBFS) on the command line - warn
+      // and disable adaptive resizing.
+      if (UseAdaptiveSizePolicy || UseAdaptiveNUMAChunkSizing) {
+        warning("UseNUMA is not fully compatible with SHM/HugeTLBFS large pages, "
+                "disabling adaptive resizing (-XX:-UseAdaptiveSizePolicy -XX:-UseAdaptiveNUMAChunkSizing)");
+        UseAdaptiveSizePolicy = false;
+        UseAdaptiveNUMAChunkSizing = false;
       }
     }
+
     if (!UseNUMA && ForceNUMA) {
       UseNUMA = true;
     }

@@ -78,4 +78,9 @@ public class ArrayLengthTest {
         MethodHandles.arrayLength(null);
     }
 
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testNullReference() throws Throwable {
+        MethodHandle arrayLength = MethodHandles.arrayLength(String[].class);
+        int len = (int)arrayLength.invokeExact((String[])null);
+    }
 }

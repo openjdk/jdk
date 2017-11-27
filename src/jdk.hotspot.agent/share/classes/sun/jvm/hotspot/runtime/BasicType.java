@@ -133,6 +133,27 @@ public class BasicType {
     return tIllegal;
   }
 
+  public static BasicType intToBasicType(int i) {
+    switch(i) {
+      case tBoolean:     return T_BOOLEAN;
+      case tChar:        return T_CHAR;
+      case tFloat:       return T_FLOAT;
+      case tDouble:      return T_DOUBLE;
+      case tByte:        return T_BYTE;
+      case tShort:       return T_SHORT;
+      case tInt:         return T_INT;
+      case tLong:        return T_LONG;
+      case tObject:      return T_OBJECT;
+      case tArray:       return T_ARRAY;
+      case tVoid:        return T_VOID;
+      case tAddress:     return T_ADDRESS;
+      case tNarrowOop:   return T_NARROWOOP;
+      case tMetadata:    return T_METADATA;
+      case tNarrowKlass: return T_NARROWKLASS;
+      default:           return T_ILLEGAL;
+    }
+  }
+
   public static BasicType charToBasicType(char c) {
     switch( c ) {
     case 'B': return T_BYTE;
@@ -156,6 +177,28 @@ public class BasicType {
 
   public int getType() {
     return type;
+  }
+
+  public String getName() {
+    switch (type) {
+      case tBoolean:     return "boolean";
+      case tChar:        return "char";
+      case tFloat:       return "float";
+      case tDouble:      return "double";
+      case tByte:        return "byte";
+      case tShort:       return "short";
+      case tInt:         return "int";
+      case tLong:        return "long";
+      case tObject:      return "object";
+      case tArray:       return "array";
+      case tVoid:        return "void";
+      case tAddress:     return "address";
+      case tNarrowOop:   return "narrow oop";
+      case tMetadata:    return "metadata";
+      case tNarrowKlass: return "narrow klass";
+      case tConflict:    return "conflict";
+      default:           return "ILLEGAL TYPE";
+    }
   }
 
   //-- Internals only below this point

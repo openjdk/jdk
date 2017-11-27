@@ -32,9 +32,6 @@ include FindTests.gmk
 # We will always run multiple tests serially
 .NOTPARALLEL:
 
-# Directories to find jtreg tests relative to
-JTREG_TEST_TOPDIRS := $(TOPDIR) $(JTREG_TESTROOTS)
-
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, RunTests.gmk))
 
@@ -119,12 +116,40 @@ define ParseGtestTestSelection
   )
 endef
 
+# Take a partial Jtreg root path and return a full, absolute path to that Jtreg
+# root. Also support having "hotspot" as an alias for "hotspot/jtreg".
+ExpandJtregRoot = \
+  $(strip $(wildcard $(patsubst %/, %, \
+    $(if $(filter /%, $1), \
+      $1 \
+    , \
+      $(filter $(addprefix %, $1), $(JTREG_TESTROOTS) $(addsuffix /, $(JTREG_TESTROOTS))) \
+      $(filter $(addprefix %, $(strip $1)/jtreg), $(JTREG_TESTROOTS) $(addsuffix /, $(JTREG_TESTROOTS))) \
+    ) \
+  )))
+
+# Take a partial Jtreg test path and return a full, absolute path to that Jtreg
+# test. Also support having "hotspot" as an alias for "hotspot/jtreg".
+ExpandJtregPath = \
+  $(if $(call ExpandJtregRoot, $1), \
+    $(call ExpandJtregRoot, $1) \
+  , \
+    $(strip $(wildcard $(patsubst %/, %, \
+      $(if $(filter /%, $1), \
+        $1 \
+      , \
+        $(addsuffix /$(strip $1), $(JTREG_TESTROOTS) $(TEST_BASEDIRS)) \
+        $(addsuffix $(strip $(patsubst hotspot/%, /hotspot/jtreg/%, $1)), $(JTREG_TESTROOTS) $(TEST_BASEDIRS)) \
+      ) \
+    ))) \
+  )
+
 # Helper function to determine if a test specification is a Jtreg test
 #
 # It is a Jtreg test if it optionally begins with jtreg:, and then is either
 # an unspecified group name (possibly prefixed by :), or a group in a
-# specified test/<component> directory, or a path to a test or test directory,
-# either absolute or relative to any of the JTREG_TEST_TOPDIRS.
+# specified test root, or a path to a test or test directory,
+# either absolute or relative to any of the TEST_BASEDIRS or test roots.
 define ParseJtregTestSelection
   $(eval TEST_NAME := $(strip $(patsubst jtreg:%, %, $1))) \
   $(if $(or $(findstring :, $(TEST_NAME)), $(findstring /, $(TEST_NAME))), , \
@@ -132,20 +157,16 @@ define ParseJtregTestSelection
   ) \
   $(if $(findstring :, $(TEST_NAME)), \
     $(if $(filter :%, $(TEST_NAME)), \
-      $(foreach root, $(JTREG_TESTROOTS), \
-        $(if $(filter $(patsubst :%, %, $(TEST_NAME)), \
-            $($(root)_JTREG_TEST_GROUPS)), \
-          jtreg:$(root):$(patsubst :%,%,$(TEST_NAME)) \
-        ) \
-      ) \
+      $(eval TEST_GROUP := $(patsubst :%, %, $(TEST_NAME))) \
+      $(eval TEST_ROOTS := $(JTREG_TESTROOTS)) \
     , \
-      $(eval ROOT_PART := $(word 1, $(subst :, $(SPACE), $(TEST_NAME)))) \
-      $(eval ROOT := $(filter $(addprefix %, $(ROOT_PART)), $(JTREG_TESTROOTS))) \
-      $(eval GROUP := $(word 2, $(subst :, $(SPACE), $(TEST_NAME)))) \
-      $(foreach root, $(ROOT), \
-        $(if $(filter $(GROUP), $($(root)_JTREG_TEST_GROUPS)), \
-          jtreg:$(root):$(GROUP) \
-        ) \
+      $(eval TEST_PATH := $(word 1, $(subst :, $(SPACE), $(TEST_NAME)))) \
+      $(eval TEST_GROUP := $(word 2, $(subst :, $(SPACE), $(TEST_NAME)))) \
+      $(eval TEST_ROOTS := $(call ExpandJtregRoot, $(TEST_PATH))) \
+    ) \
+    $(foreach test_root, $(TEST_ROOTS), \
+      $(if $(filter $(TEST_GROUP), $($(test_root)_JTREG_TEST_GROUPS)), \
+        jtreg:$(test_root):$(TEST_GROUP) \
       ) \
     ) \
   , \
@@ -154,7 +175,10 @@ define ParseJtregTestSelection
         jtreg:$(TEST_NAME) \
       ) \
     , \
-      $(addprefix jtreg:, $(wildcard $(addsuffix /$(TEST_NAME), $(JTREG_TEST_TOPDIRS)))) \
+      $(eval TEST_PATHS := $(call ExpandJtregPath, $(TEST_NAME))) \
+      $(foreach test_path, $(TEST_PATHS), \
+        jtreg:$(test_path) \
+      ) \
     ) \
   )
 endef
@@ -162,7 +186,7 @@ endef
 ifeq ($(TEST), )
   $(info No test selection given in TEST!)
   $(info Please use e.g. 'run-test TEST=tier1' or 'run-test-tier1')
-  $(info See common/doc/testing.[md|html] for help)
+  $(info See doc/testing.[md|html] for help)
   $(error Cannot continue)
 endif
 
@@ -185,7 +209,7 @@ $(foreach test, $(TEST), \
 
 ifneq ($(UNKNOWN_TEST), )
   $(info Unknown test selection: '$(UNKNOWN_TEST)')
-  $(info See common/doc/testing.[md|html] for help)
+  $(info See doc/testing.[md|html] for help)
   $(error Cannot continue)
 endif
 
@@ -299,8 +323,17 @@ define SetupRunJtregTestBody
   $1_TEST_SUPPORT_DIR := $$(TEST_SUPPORT_DIR)/$1
 
   $1_TEST_NAME := $$(strip $$(patsubst jtreg:%, %, $$($1_TEST)))
-  $1_COMPONENT := $$(firstword $$(subst /, $$(SPACE), \
-      $$(patsubst test/%, %, $$($1_TEST_NAME))))
+
+  $1_COMPONENT := \
+      $$(strip $$(foreach root, $$(JTREG_TESTROOTS), \
+        $$(if $$(filter $$(root)%, $$($1_TEST_NAME)), \
+          $$(lastword $$(subst /, $$(SPACE), $$(root))) \
+        ) \
+      ))
+  # This will work only as long as just hotspot has the additional "jtreg" directory
+  ifeq ($$($1_COMPONENT), jtreg)
+    $1_COMPONENT := hotspot
+  endif
 
   ifeq ($$(JT_HOME), )
     $$(info Error: jtreg framework is not found.)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,8 @@ import sun.awt.im.InputMethodContext;
  * <p>
  * The Java Platform supports input methods that have been developed in the Java
  * programming language, using the interfaces in the {@link java.awt.im.spi} package,
- * and installed into a Java SE Runtime Environment as extensions. Implementations
- * may also support using the native input methods of the platforms they run on;
+ * which can be made available by adding them to the application's class path.
+ * Implementations may also support using the native input methods of the platforms they run on;
  * however, not all platforms and locales provide input methods. Keyboard layouts
  * are provided by the host platform.
  *

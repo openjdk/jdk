@@ -766,7 +766,7 @@ public final class ModuleLayer {
 
 
     /**
-     * Returns an ordered stream of layers. The first element is is this layer,
+     * Returns an ordered stream of layers. The first element is this layer,
      * the remaining elements are the parent layers in DFS order.
      *
      * @implNote For now, the assumption is that the number of elements will

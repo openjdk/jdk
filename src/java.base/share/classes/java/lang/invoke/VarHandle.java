@@ -30,7 +30,6 @@ import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +45,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * non-static fields, array elements, or components of an off-heap data
  * structure.  Access to such variables is supported under various
  * <em>access modes</em>, including plain read/write access, volatile
- * read/write access, and compare-and-swap.
+ * read/write access, and compare-and-set.
  *
  * <p>VarHandles are immutable and have no visible state.  VarHandles cannot be
  * subclassed by the user.
@@ -1529,7 +1528,7 @@ public abstract class VarHandle {
     enum AccessType {
         GET(Object.class),
         SET(void.class),
-        COMPARE_AND_SWAP(boolean.class),
+        COMPARE_AND_SET(boolean.class),
         COMPARE_AND_EXCHANGE(Object.class),
         GET_AND_UPDATE(Object.class);
 
@@ -1555,7 +1554,7 @@ public abstract class VarHandle {
                     i = fillParameters(ps, receiver, intermediate);
                     ps[i] = value;
                     return MethodType.methodType(void.class, ps);
-                case COMPARE_AND_SWAP:
+                case COMPARE_AND_SET:
                     ps = allocateParameters(2, receiver, intermediate);
                     i = fillParameters(ps, receiver, intermediate);
                     ps[i++] = value;
@@ -1652,7 +1651,7 @@ public abstract class VarHandle {
          * method
          * {@link VarHandle#compareAndSet VarHandle.compareAndSet}
          */
-        COMPARE_AND_SET("compareAndSet", AccessType.COMPARE_AND_SWAP),
+        COMPARE_AND_SET("compareAndSet", AccessType.COMPARE_AND_SET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
@@ -1676,25 +1675,25 @@ public abstract class VarHandle {
          * method
          * {@link VarHandle#weakCompareAndSetPlain VarHandle.weakCompareAndSetPlain}
          */
-        WEAK_COMPARE_AND_SET_PLAIN("weakCompareAndSetPlain", AccessType.COMPARE_AND_SWAP),
+        WEAK_COMPARE_AND_SET_PLAIN("weakCompareAndSetPlain", AccessType.COMPARE_AND_SET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSet VarHandle.weakCompareAndSet}
          */
-        WEAK_COMPARE_AND_SET("weakCompareAndSet", AccessType.COMPARE_AND_SWAP),
+        WEAK_COMPARE_AND_SET("weakCompareAndSet", AccessType.COMPARE_AND_SET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSetAcquire VarHandle.weakCompareAndSetAcquire}
          */
-        WEAK_COMPARE_AND_SET_ACQUIRE("weakCompareAndSetAcquire", AccessType.COMPARE_AND_SWAP),
+        WEAK_COMPARE_AND_SET_ACQUIRE("weakCompareAndSetAcquire", AccessType.COMPARE_AND_SET),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSetRelease VarHandle.weakCompareAndSetRelease}
          */
-        WEAK_COMPARE_AND_SET_RELEASE("weakCompareAndSetRelease", AccessType.COMPARE_AND_SWAP),
+        WEAK_COMPARE_AND_SET_RELEASE("weakCompareAndSetRelease", AccessType.COMPARE_AND_SET),
         /**
          * The access mode whose access is specified by the corresponding
          * method

@@ -87,6 +87,7 @@ class ciMethod : public ciMetadata {
   bool _balanced_monitors;
   bool _is_c1_compilable;
   bool _is_c2_compilable;
+  bool _can_be_parsed;
   bool _can_be_statically_bound;
   bool _has_reserved_stack_access;
 
@@ -291,6 +292,7 @@ class ciMethod : public ciMetadata {
   bool has_option(const char *option);
   bool has_option_value(const char* option, double& value);
   bool can_be_compiled();
+  bool can_be_parsed() const { return _can_be_parsed; }
   bool can_be_osr_compiled(int entry_bci);
   void set_not_compilable(const char* reason = NULL);
   bool has_compiled_code();

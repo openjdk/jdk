@@ -25,13 +25,10 @@
 #ifndef SHARE_VM_RUNTIME_THREAD_INLINE_HPP
 #define SHARE_VM_RUNTIME_THREAD_INLINE_HPP
 
-#define SHARE_VM_RUNTIME_THREAD_INLINE_HPP_SCOPE
-
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
-
-#undef SHARE_VM_RUNTIME_THREAD_INLINE_HPP_SCOPE
+#include "runtime/threadSMR.hpp"
 
 inline void Thread::set_suspend_flag(SuspendFlags f) {
   assert(sizeof(jint) == sizeof(_suspend_flags), "size mismatch");
@@ -87,6 +84,18 @@ inline jlong Thread::cooked_allocated_bytes() {
     }
   }
   return allocated_bytes;
+}
+
+inline ThreadsList* Thread::cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value) {
+  return (ThreadsList*)Atomic::cmpxchg(exchange_value, &_threads_hazard_ptr, compare_value);
+}
+
+inline ThreadsList* Thread::get_threads_hazard_ptr() {
+  return (ThreadsList*)OrderAccess::load_acquire(&_threads_hazard_ptr);
+}
+
+inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
+  OrderAccess::release_store_fence(&_threads_hazard_ptr, new_list);
 }
 
 inline void JavaThread::set_ext_suspended() {
@@ -174,6 +183,85 @@ inline void JavaThread::set_polling_page(void* poll_value) {
 // the reading the handshake operation or the global state
 inline volatile void* JavaThread::get_polling_page() {
   return OrderAccess::load_acquire(polling_page_addr());
+}
+
+inline bool JavaThread::is_exiting() const {
+  // Use load-acquire so that setting of _terminated by
+  // JavaThread::exit() is seen more quickly.
+  TerminatedTypes l_terminated = (TerminatedTypes)
+      OrderAccess::load_acquire((volatile jint *) &_terminated);
+  return l_terminated == _thread_exiting || check_is_terminated(l_terminated);
+}
+
+inline bool JavaThread::is_terminated() const {
+  // Use load-acquire so that setting of _terminated by
+  // JavaThread::exit() is seen more quickly.
+  TerminatedTypes l_terminated = (TerminatedTypes)
+      OrderAccess::load_acquire((volatile jint *) &_terminated);
+  return check_is_terminated(l_terminated);
+}
+
+inline void JavaThread::set_terminated(TerminatedTypes t) {
+  // use release-store so the setting of _terminated is seen more quickly
+  OrderAccess::release_store((volatile jint *) &_terminated, (jint) t);
+}
+
+// special for Threads::remove() which is static:
+inline void JavaThread::set_terminated_value() {
+  // use release-store so the setting of _terminated is seen more quickly
+  OrderAccess::release_store((volatile jint *) &_terminated, (jint) _thread_terminated);
+}
+
+inline ThreadsList* Threads::get_smr_java_thread_list() {
+  return (ThreadsList*)OrderAccess::load_acquire(&_smr_java_thread_list);
+}
+
+inline ThreadsList* Threads::xchg_smr_java_thread_list(ThreadsList* new_list) {
+  return (ThreadsList*)Atomic::xchg(new_list, &_smr_java_thread_list);
+}
+
+inline void Threads::inc_smr_deleted_thread_cnt() {
+  Atomic::inc(&_smr_deleted_thread_cnt);
+}
+
+inline void Threads::update_smr_deleted_thread_time_max(uint new_value) {
+  while (true) {
+    uint cur_value = _smr_deleted_thread_time_max;
+    if (new_value <= cur_value) {
+      // No need to update max value so we're done.
+      break;
+    }
+    if (Atomic::cmpxchg(new_value, &_smr_deleted_thread_time_max, cur_value) == cur_value) {
+      // Updated max value so we're done. Otherwise try it all again.
+      break;
+    }
+  }
+}
+
+inline void Threads::add_smr_deleted_thread_times(uint add_value) {
+  Atomic::add(add_value, &_smr_deleted_thread_times);
+}
+
+inline void Threads::inc_smr_tlh_cnt() {
+  Atomic::inc(&_smr_tlh_cnt);
+}
+
+inline void Threads::update_smr_tlh_time_max(uint new_value) {
+  while (true) {
+    uint cur_value = _smr_tlh_time_max;
+    if (new_value <= cur_value) {
+      // No need to update max value so we're done.
+      break;
+    }
+    if (Atomic::cmpxchg(new_value, &_smr_tlh_time_max, cur_value) == cur_value) {
+      // Updated max value so we're done. Otherwise try it all again.
+      break;
+    }
+  }
+}
+
+inline void Threads::add_smr_tlh_times(uint add_value) {
+  Atomic::add(add_value, &_smr_tlh_times);
 }
 
 #endif // SHARE_VM_RUNTIME_THREAD_INLINE_HPP

@@ -114,7 +114,7 @@ JVM_LIBS += \
     #
 
 # These files and directories are always excluded
-JVM_EXCLUDE_FILES += jsig.c args.cc
+JVM_EXCLUDE_FILES += args.cc
 JVM_EXCLUDES += adlc
 
 # Needed by vm_version.cpp

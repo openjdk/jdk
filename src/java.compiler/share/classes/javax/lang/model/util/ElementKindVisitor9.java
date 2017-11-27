@@ -98,8 +98,9 @@ public class ElementKindVisitor9<R, P> extends ElementKindVisitor8<R, P> {
     }
 
     /**
-     * Visits a {@code ModuleElement} by calling {@code
-     * defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e the element to visit
      * @param p a visitor-specified parameter

@@ -30,6 +30,7 @@ import java.util.Hashtable;
 
 import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.FrameWaiter;
+import org.netbeans.jemmy.JemmyException;
 import org.netbeans.jemmy.JemmyProperties;
 import org.netbeans.jemmy.Outputable;
 import org.netbeans.jemmy.TestOut;

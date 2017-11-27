@@ -497,7 +497,7 @@ bool Arguments::is_obsolete_flag(const char *flag_name, JDK_Version* version) {
   SpecialFlag flag;
   if (lookup_special_flag(flag_name, flag)) {
     if (!flag.obsolete_in.is_undefined()) {
-      if (version_less_than(JDK_Version::current(), flag.expired_in)) {
+      if (!version_less_than(JDK_Version::current(), flag.obsolete_in)) {
         *version = flag.obsolete_in;
         return true;
       }
@@ -2152,12 +2152,7 @@ bool Arguments::check_vm_args_consistency() {
   // Check lower bounds of the code cache
   // Template Interpreter code is approximately 3X larger in debug builds.
   uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
-  if (InitialCodeCacheSize < (uintx)os::vm_page_size()) {
-    jio_fprintf(defaultStream::error_stream(),
-                "Invalid InitialCodeCacheSize=%dK. Must be at least %dK.\n", InitialCodeCacheSize/K,
-                os::vm_page_size()/K);
-    status = false;
-  } else if (ReservedCodeCacheSize < InitialCodeCacheSize) {
+  if (ReservedCodeCacheSize < InitialCodeCacheSize) {
     jio_fprintf(defaultStream::error_stream(),
                 "Invalid ReservedCodeCacheSize: %dK. Must be at least InitialCodeCacheSize=%dK.\n",
                 ReservedCodeCacheSize/K, InitialCodeCacheSize/K);
@@ -2770,18 +2765,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (FLAG_SET_CMDLINE(intx, ThreadStackSize, value) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-    } else if (match_option(option, "-XX:CodeCacheExpansionSize=", &tail)) {
-      julong long_CodeCacheExpansionSize = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_CodeCacheExpansionSize, os::vm_page_size());
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                   "Invalid argument: %s. Must be at least %luK.\n", option->optionString,
-                   os::vm_page_size()/K);
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(uintx, CodeCacheExpansionSize, (uintx)long_CodeCacheExpansionSize) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
     } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
                match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
       julong long_ReservedCodeCacheSize = 0;
@@ -2793,45 +2776,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_EINVAL;
       }
       if (FLAG_SET_CMDLINE(uintx, ReservedCodeCacheSize, (uintx)long_ReservedCodeCacheSize) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      // -XX:NonNMethodCodeHeapSize=
-    } else if (match_option(option, "-XX:NonNMethodCodeHeapSize=", &tail)) {
-      julong long_NonNMethodCodeHeapSize = 0;
-
-      ArgsRange errcode = parse_memory_size(tail, &long_NonNMethodCodeHeapSize, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid maximum non-nmethod code heap size: %s.\n", option->optionString);
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(uintx, NonNMethodCodeHeapSize, (uintx)long_NonNMethodCodeHeapSize) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      // -XX:ProfiledCodeHeapSize=
-    } else if (match_option(option, "-XX:ProfiledCodeHeapSize=", &tail)) {
-      julong long_ProfiledCodeHeapSize = 0;
-
-      ArgsRange errcode = parse_memory_size(tail, &long_ProfiledCodeHeapSize, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid maximum profiled code heap size: %s.\n", option->optionString);
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(uintx, ProfiledCodeHeapSize, (uintx)long_ProfiledCodeHeapSize) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      // -XX:NonProfiledCodeHeapSizee=
-    } else if (match_option(option, "-XX:NonProfiledCodeHeapSize=", &tail)) {
-      julong long_NonProfiledCodeHeapSize = 0;
-
-      ArgsRange errcode = parse_memory_size(tail, &long_NonProfiledCodeHeapSize, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid maximum non-profiled code heap size: %s.\n", option->optionString);
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(uintx, NonProfiledCodeHeapSize, (uintx)long_NonProfiledCodeHeapSize) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
     // -green

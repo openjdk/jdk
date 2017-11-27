@@ -27,6 +27,7 @@
 
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
+#include "memory/allocation.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"

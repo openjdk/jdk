@@ -278,7 +278,7 @@
       <arg value="${javadoc.option}"/>
       <fileset dir="${nashorn.module.src.dir}" includes="**/*.java"/>
       <fileset dir="${dynalink.module.src.dir}" includes="**/*.java"/>
-      <link href="http://docs.oracle.com/javase/8/docs/api/"/>
+      <link offline="true" href="${javadoc.base.url}" packagelistLoc="${javadoc.pkg.list}"/>
     </javadoc>
   </target>
 
@@ -296,7 +296,7 @@
       <arg value="."/>
       <arg value="${javadoc.option}"/>
       <fileset dir="${nashorn.module.src.dir}" includes="jdk/nashorn/api/**/*.java"/>
-      <link href="http://docs.oracle.com/javase/8/docs/api/"/>
+      <link offline="true" href="${javadoc.base.url}" packagelistLoc="${javadoc.pkg.list}"/>
     </javadoc>
   </target>
 
@@ -314,7 +314,7 @@
       <arg value="."/>
       <arg value="${javadoc.option}"/>
       <fileset dir="${dynalink.module.src.dir}" includes="**/*.java"/>
-      <link href="http://docs.oracle.com/javase/8/docs/api/"/>
+      <link offline="true" href="${javadoc.base.url}" packagelistLoc="${javadoc.pkg.list}"/>
     </javadoc>
   </target>
 

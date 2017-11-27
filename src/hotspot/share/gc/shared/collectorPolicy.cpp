@@ -911,7 +911,7 @@ void MarkSweepPolicy::initialize_generations() {
 }
 
 void MarkSweepPolicy::initialize_gc_policy_counters() {
-  // Initialize the policy counters - 2 collectors, 3 generations.
-  _gc_policy_counters = new GCPolicyCounters("Copy:MSC", 2, 3);
+  // Initialize the policy counters - 2 collectors, 2 generations.
+  _gc_policy_counters = new GCPolicyCounters("Copy:MSC", 2, 2);
 }
 

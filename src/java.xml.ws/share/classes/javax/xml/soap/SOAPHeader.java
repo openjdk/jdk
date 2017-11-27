@@ -188,11 +188,11 @@ public interface SOAPHeader extends SOAPElement {
 
     /**
      * Creates a new Upgrade {@code SOAPHeaderElement} object initialized
-     * with the specified String Iterator of supported SOAP URIs and adds
-     * it to this {@code SOAPHeader} object.
+     * with the specified List of supported SOAP URIs and adds it to this
+     * {@code SOAPHeader} object.
      * This operation is supported on both SOAP 1.1 and SOAP 1.2 header.
      *
-     * @param supportedSOAPURIs an URI Strings {@code Iterator} of SOAP
+     * @param supportedSOAPURIs an {@code Iterator} object with the URIs of SOAP
      *          versions supported.
      * @return the new {@code SOAPHeaderElement} object that was
      *          inserted into this {@code SOAPHeader} object

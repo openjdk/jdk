@@ -36,7 +36,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
-import jdk.javadoc.internal.doclets.toolkit.util.MethodTypes;
 
 /**
  * This abstract class exists to provide functionality needed in the
@@ -73,81 +72,13 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * Add the summary header.
      *
      * @param mw the writer for the member being documented
-     * @param typeElement the te to be documented
+     * @param typeElement the type element to be documented
      * @param memberTree the content tree to which the summary header will be added
      */
     public void addSummaryHeader(AbstractMemberWriter mw, TypeElement typeElement,
             Content memberTree) {
         mw.addSummaryAnchor(typeElement, memberTree);
         mw.addSummaryLabel(memberTree);
-    }
-
-    /**
-     * Get the summary table.
-     *
-     * @param mw the writer for the member being documented
-     * @param typeElement the te to be documented
-     * @param tableContents list of summary table contents
-     * @param showTabs true if the table needs to show tabs
-     * @return the content tree for the summary table
-     */
-    public Content getSummaryTableTree(AbstractMemberWriter mw, TypeElement typeElement,
-            List<Content> tableContents, boolean showTabs) {
-        Content caption;
-        if (showTabs) {
-            caption = getTableCaption(mw.methodTypes);
-            generateTableTabTypesScript(mw.typeMap, mw.methodTypes, "methods");
-        }
-        else {
-            caption = getTableCaption(mw.getCaption());
-        }
-        Content table = (configuration.isOutputHtml5())
-                ? HtmlTree.TABLE(HtmlStyle.memberSummary, caption)
-                : HtmlTree.TABLE(HtmlStyle.memberSummary, mw.getTableSummary(), caption);
-        table.addContent(mw.getSummaryTableHeader(typeElement).toContent());
-        for (Content tableContent : tableContents) {
-            table.addContent(tableContent);
-        }
-        return table;
-    }
-
-    /**
-     * Get the summary table caption.
-     *
-     * @param methodTypes set comprising of method types to show as table caption
-     * @return the caption for the summary table
-     */
-    public Content getTableCaption(Set<MethodTypes> methodTypes) {
-        Content tabbedCaption = new HtmlTree(HtmlTag.CAPTION);
-        for (MethodTypes type : methodTypes) {
-            Content captionSpan;
-            Content span;
-            if (type.tableTabs().isDefaultTab()) {
-                captionSpan = HtmlTree.SPAN(configuration.getContent(type.tableTabs().resourceKey()));
-                span = HtmlTree.SPAN(type.tableTabs().tabId(),
-                        HtmlStyle.activeTableTab, captionSpan);
-            } else {
-                captionSpan = HtmlTree.SPAN(getMethodTypeLinks(type));
-                span = HtmlTree.SPAN(type.tableTabs().tabId(),
-                        HtmlStyle.tableTab, captionSpan);
-            }
-            Content tabSpan = HtmlTree.SPAN(HtmlStyle.tabEnd, Contents.SPACE);
-            span.addContent(tabSpan);
-            tabbedCaption.addContent(span);
-        }
-        return tabbedCaption;
-    }
-
-    /**
-     * Get the method type links for the table caption.
-     *
-     * @param methodType the method type to be displayed as link
-     * @return the content tree for the method type link
-     */
-    public Content getMethodTypeLinks(MethodTypes methodType) {
-        String jsShow = "javascript:show(" + methodType.tableTabs().value() +");";
-        HtmlTree link = HtmlTree.A(jsShow, configuration.getContent(methodType.tableTabs().resourceKey()));
-        return link;
     }
 
     /**
@@ -205,17 +136,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Add the summary type for the member.
-     *
-     * @param mw the writer for the member being documented
-     * @param member the member to be documented
-     * @param tdSummaryType the content tree to which the type will be added
-     */
-    public void addSummaryType(AbstractMemberWriter mw, Element member, Content tdSummaryType) {
-        mw.addSummaryType(member, tdSummaryType);
-    }
-
-    /**
      * Add the summary link for the member.
      *
      * @param mw the writer for the member being documented
@@ -264,7 +184,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     public Content getContentHeader() {
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.contentContainer);
+        div.setStyle(HtmlStyle.contentContainer);
         return div;
     }
 
@@ -300,7 +220,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     public Content getMemberTreeHeader() {
         HtmlTree li = new HtmlTree(HtmlTag.LI);
-        li.addStyle(HtmlStyle.blockList);
+        li.setStyle(HtmlStyle.blockList);
         return li;
     }
 

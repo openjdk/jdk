@@ -25,6 +25,9 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,17 +39,17 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DeprecatedTaglet;
-import jdk.javadoc.internal.doclets.toolkit.util.MethodTypes;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
@@ -72,11 +75,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
     protected final SubWriterHolderWriter writer;
     protected final Contents contents;
     protected final Resources resources;
+    protected final Links links;
 
     protected final TypeElement typeElement;
-    protected Map<String, Integer> typeMap = new LinkedHashMap<>();
-    protected Set<MethodTypes> methodTypes = EnumSet.noneOf(MethodTypes.class);
-    private int methodTypesOr = 0;
     public final boolean nodepr;
 
     protected boolean printedSummaryHeader = false;
@@ -89,6 +90,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         this.utils = configuration.utils;
         this.contents = configuration.contents;
         this.resources = configuration.resources;
+        this.links = configuration.links;
     }
 
     public AbstractMemberWriter(SubWriterHolderWriter writer) {
@@ -109,14 +111,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      *
      * @return a string for the table summary
      */
-    public abstract String getTableSummary();
-
-    /**
-     * Get the caption for the member summary table.
-     *
-     * @return a string for the table caption
-     */
-    public abstract Content getCaption();
+    private String getTableSummaryX() { return null; }
 
     /**
      * Get the summary table header for the member.
@@ -125,6 +120,27 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      * @return the summary table header
      */
     public abstract TableHeader getSummaryTableHeader(Element member);
+
+    private Table summaryTable;
+
+    private Table getSummaryTable() {
+        if (summaryTable == null) {
+            summaryTable = createSummaryTable();
+        }
+        return summaryTable;
+    }
+
+    /**
+     * Create the summary table for this element.
+     * The table should be created and initialized if needed, and configured
+     * so that it is ready to add content with {@link Table#addRows(Content[])}
+     * and similar methods.
+     *
+     * @return the summary table
+     */
+    protected abstract Table createSummaryTable();
+
+
 
     /**
      * Add inherited summary label for the member.
@@ -229,7 +245,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      * Add the modifier for the member. The modifiers are ordered as specified
      * by <em>The Java Language Specification</em>.
      *
-     * @param member the member for which teh modifier will be added.
+     * @param member the member for which the modifier will be added.
      * @param htmltree the content tree to which the modifier information will be added.
      */
     protected void addModifiers(Element member, Content htmltree) {
@@ -420,51 +436,41 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         List<? extends Element> members = mems;
         boolean printedUseTableHeader = false;
         if (members.size() > 0) {
-            Content caption = writer.getTableCaption(heading);
-            Content table = (configuration.isOutputHtml5())
-                    ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
-                    : HtmlTree.TABLE(HtmlStyle.useSummary, tableSummary, caption);
-            Content tbody = new HtmlTree(HtmlTag.TBODY);
-            boolean altColor = true;
+            Table useTable = new Table(configuration.htmlVersion, HtmlStyle.useSummary)
+                    .setSummary(tableSummary)
+                    .setCaption(heading)
+                    .setRowScopeColumn(1)
+                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
             for (Element element : members) {
-                TypeElement te = utils.getEnclosingTypeElement(element);
+                TypeElement te = (typeElement == null)
+                        ? utils.getEnclosingTypeElement(element)
+                        : typeElement;
                 if (!printedUseTableHeader) {
-                    table.addContent(getSummaryTableHeader(element).toContent());
+                    useTable.setHeader(getSummaryTableHeader(element));
                     printedUseTableHeader = true;
                 }
-                HtmlTree tr = new HtmlTree(HtmlTag.TR);
-                tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-                altColor = !altColor;
-                HtmlTree tdFirst = new HtmlTree(HtmlTag.TD);
-                tdFirst.addStyle(HtmlStyle.colFirst);
-                writer.addSummaryType(this, element, tdFirst);
-                tr.addContent(tdFirst);
-                HtmlTree thType = new HtmlTree(HtmlTag.TH);
-                thType.addStyle(HtmlStyle.colSecond);
-                thType.addAttr(HtmlAttr.SCOPE, "row");
+                Content summaryType = new ContentBuilder();
+                addSummaryType(element, summaryType);
+                Content typeContent = new ContentBuilder();
                 if (te != null
                         && !utils.isConstructor(element)
                         && !utils.isClass(element)
                         && !utils.isInterface(element)
                         && !utils.isAnnotationType(element)) {
                     HtmlTree name = new HtmlTree(HtmlTag.SPAN);
-                    name.addStyle(HtmlStyle.typeNameLabel);
+                    name.setStyle(HtmlStyle.typeNameLabel);
                     name.addContent(name(te) + ".");
-                    thType.addContent(name);
+                    typeContent.addContent(name);
                 }
                 addSummaryLink(utils.isClass(element) || utils.isInterface(element)
                         ? LinkInfoImpl.Kind.CLASS_USE
                         : LinkInfoImpl.Kind.MEMBER,
-                        te, element, thType);
-                tr.addContent(thType);
-                HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
-                tdDesc.addStyle(HtmlStyle.colLast);
-                writer.addSummaryLinkComment(this, element, tdDesc);
-                tr.addContent(tdDesc);
-                tbody.addContent(tr);
+                        te, element, typeContent);
+                Content desc = new ContentBuilder();
+                writer.addSummaryLinkComment(this, element, desc);
+                useTable.addRow(summaryType, typeContent, desc);
             }
-            table.addContent(tbody);
-            contentTree.addContent(table);
+            contentTree.addContent(useTable.toContent());
         }
     }
 
@@ -515,81 +521,26 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      * @param tElement the class that is being documented
      * @param member the member being documented
      * @param firstSentenceTags the first sentence tags to be added to the summary
-     * @param tableContents the list of contents to which the documentation will be added
-     * @param counter the counter for determining id and style for the table row
      */
+    @Override
     public void addMemberSummary(TypeElement tElement, Element member,
-            List<? extends DocTree> firstSentenceTags, List<Content> tableContents, int counter,
-            VisibleMemberMap.Kind vmmKind) {
-        HtmlTree tdSummaryType = new HtmlTree(HtmlTag.TD);
-        tdSummaryType.addStyle(HtmlStyle.colFirst);
-        writer.addSummaryType(this, member, tdSummaryType);
-        HtmlTree tr = HtmlTree.TR(tdSummaryType);
-        HtmlTree thSummaryLink = new HtmlTree(HtmlTag.TH);
-        setSummaryColumnStyleAndScope(thSummaryLink);
-        addSummaryLink(tElement, member, thSummaryLink);
-        tr.addContent(thSummaryLink);
-        HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
-        tdDesc.addStyle(HtmlStyle.colLast);
-        writer.addSummaryLinkComment(this, member, firstSentenceTags, tdDesc);
-        tr.addContent(tdDesc);
-        if (utils.isMethod(member) && !utils.isAnnotationType(member)
-                && vmmKind != VisibleMemberMap.Kind.PROPERTIES) {
-            int methodType = utils.isStatic(member) ? MethodTypes.STATIC.tableTabs().value() :
-                    MethodTypes.INSTANCE.tableTabs().value();
-            if (utils.isInterface(member.getEnclosingElement())) {
-                methodType = utils.isAbstract(member)
-                        ? methodType | MethodTypes.ABSTRACT.tableTabs().value()
-                        : methodType | MethodTypes.DEFAULT.tableTabs().value();
-            } else {
-                methodType = utils.isAbstract(member)
-                        ? methodType | MethodTypes.ABSTRACT.tableTabs().value()
-                        : methodType | MethodTypes.CONCRETE.tableTabs().value();
-            }
-            if (utils.isDeprecated(member) || utils.isDeprecated(typeElement)) {
-                methodType = methodType | MethodTypes.DEPRECATED.tableTabs().value();
-            }
-            methodTypesOr = methodTypesOr | methodType;
-            String tableId = "i" + counter;
-            typeMap.put(tableId, methodType);
-            tr.addAttr(HtmlAttr.ID, tableId);
+            List<? extends DocTree> firstSentenceTags) {
+        if (tElement != typeElement) {
+            throw new IllegalStateException();
         }
-        if (counter%2 == 0)
-            tr.addStyle(HtmlStyle.altColor);
-        else
-            tr.addStyle(HtmlStyle.rowColor);
-        tableContents.add(tr);
-    }
-
-    /**
-     * Generate the method types set and return true if the method summary table
-     * needs to show tabs.
-     *
-     * @return true if the table should show tabs
-     */
-    public boolean showTabs() {
-        int value;
-        for (MethodTypes type : EnumSet.allOf(MethodTypes.class)) {
-            value = type.tableTabs().value();
-            if ((value & methodTypesOr) == value) {
-                methodTypes.add(type);
-            }
-        }
-        boolean showTabs = methodTypes.size() > 1;
-        if (showTabs) {
-            methodTypes.add(MethodTypes.ALL);
-        }
-        return showTabs;
-    }
-
-    /**
-     * Set the style and scope attribute for the summary column.
-     *
-     * @param thTree the column for which the style and scope attribute will be set
-     */
-    public void setSummaryColumnStyleAndScope(HtmlTree thTree) {
-        thTree.addStyle(HtmlStyle.colSecond);
-        thTree.addAttr(HtmlAttr.SCOPE, "row");
+        Table table = getSummaryTable();
+        List<Content> rowContents = new ArrayList<>();
+        Content summaryType = new ContentBuilder();
+        addSummaryType(member, summaryType);
+        if (!summaryType.isEmpty())
+            rowContents.add(summaryType);
+        Content summaryLink = new ContentBuilder();
+        addSummaryLink(tElement, member, summaryLink);
+        rowContents.add(summaryLink);
+        Content desc = new ContentBuilder();
+        writer.addSummaryLinkComment(this, member, firstSentenceTags, desc);
+        rowContents.add(desc);
+        table.addRow(member, rowContents);
     }
 
     /**
@@ -601,6 +552,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      * @param isLast true if this is the last member in the list
      * @param linksTree the content tree to which the summary will be added
      */
+    @Override
     public void addInheritedMemberSummary(TypeElement tElement,
             Element nestedClass, boolean isFirst, boolean isLast,
             Content linksTree) {
@@ -614,6 +566,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      * @param tElement the class the inherited member belongs to
      * @return a content tree for the inherited summary header
      */
+    @Override
     public Content getInheritedSummaryHeader(TypeElement tElement) {
         Content inheritedTree = writer.getMemberTreeHeader();
         writer.addInheritedSummaryHeader(this, tElement, inheritedTree);
@@ -625,6 +578,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      *
      * @return a content tree for the inherited summary links
      */
+    @Override
     public Content getInheritedSummaryLinksTree() {
         return new HtmlTree(HtmlTag.CODE);
     }
@@ -633,11 +587,18 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      * Get the summary table tree for the given class.
      *
      * @param tElement the class for which the summary table is generated
-     * @param tableContents list of contents to be displayed in the summary table
      * @return a content tree for the summary table
      */
-    public Content getSummaryTableTree(TypeElement tElement, List<Content> tableContents) {
-        return writer.getSummaryTableTree(this, tElement, tableContents, showTabs());
+    @Override
+    public Content getSummaryTableTree(TypeElement tElement) {
+        if (tElement != typeElement) {
+            throw new IllegalStateException();
+        }
+        Table table = getSummaryTable();
+        if (table.needsScript()) {
+            writer.getMainBodyScript().append(table.getScript());
+        }
+        return table.toContent();
     }
 
     /**
@@ -646,6 +607,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      * @param memberTree the content tree of member to be documented
      * @return a content tree that will be added to the class documentation
      */
+    @Override
     public Content getMemberTree(Content memberTree) {
         return writer.getMemberTree(memberTree);
     }

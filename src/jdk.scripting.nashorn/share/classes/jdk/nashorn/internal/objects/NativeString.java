@@ -689,19 +689,17 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
 
         nativeRegExp.setLastIndex(0);
 
-        int previousLastIndex = 0;
         final List<Object> matches = new ArrayList<>();
 
         Object result;
+        // We follow ECMAScript 6 spec here (checking for empty string instead of previous index)
+        // as the ES5 specification is buggy and causes empty strings to be matched twice.
         while ((result = nativeRegExp.exec(str)) != null) {
-            final int thisIndex = nativeRegExp.getLastIndex();
-            if (thisIndex == previousLastIndex) {
-                nativeRegExp.setLastIndex(thisIndex + 1);
-                previousLastIndex = thisIndex + 1;
-            } else {
-                previousLastIndex = thisIndex;
+            final String matchStr = JSType.toString(((ScriptObject)result).get(0));
+            if (matchStr.isEmpty()) {
+                nativeRegExp.setLastIndex(nativeRegExp.getLastIndex() + 1);
             }
-            matches.add(((ScriptObject)result).get(0));
+            matches.add(matchStr);
         }
 
         if (matches.isEmpty()) {

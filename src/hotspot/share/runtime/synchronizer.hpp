@@ -32,6 +32,7 @@
 #include "runtime/perfData.hpp"
 
 class ObjectMonitor;
+class ThreadsList;
 
 struct DeflateMonitorCounters {
   int nInuse;          // currently associated with objects
@@ -125,7 +126,7 @@ class ObjectSynchronizer : AllStatic {
   static bool current_thread_holds_lock(JavaThread* thread, Handle h_obj);
   static LockOwnership query_lock_ownership(JavaThread * self, Handle h_obj);
 
-  static JavaThread* get_lock_owner(Handle h_obj, bool doLock);
+  static JavaThread* get_lock_owner(ThreadsList * t_list, Handle h_obj);
 
   // JNI detach support
   static void release_monitors_owned_by_thread(TRAPS);

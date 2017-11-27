@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,12 @@ public class CheckAttributedTree {
             else
                 System.exit(1);
         }
+        System.err.println("total number of compilations " + totalNumberOfCompilations);
+        System.err.println("number of failed compilations " + numberOfFailedCompilations);
     }
+
+    static private int totalNumberOfCompilations = 0;
+    static private int numberOfFailedCompilations = 0;
 
     /**
      * Run the program. A base directory can be provided for file arguments.
@@ -307,10 +312,12 @@ public class CheckAttributedTree {
             Iterable<? extends JavaFileObject> files = fileManager().getJavaFileObjects(file);
             final List<Element> analyzedElems = new ArrayList<>();
             final List<CompilationUnitTree> trees = new ArrayList<>();
+            totalNumberOfCompilations++;
             newCompilationTask()
                 .withWriter(pw)
                     .withOption("--should-stop:at=ATTR")
                     .withOption("-XDverboseCompilePolicy")
+                    .withOption("-Xdoclint:none")
                     .withSource(files.iterator().next())
                     .withListener(new TaskListener() {
                         public void started(TaskEvent e) {
@@ -324,16 +331,18 @@ public class CheckAttributedTree {
                     }
                 }).analyze(res -> {
                 Iterable<? extends Element> elems = res.get();
-                if (!elems.iterator().hasNext())
-                    throw new AssertionError("No results from analyze");
-                for (CompilationUnitTree t : trees) {
-                   JCCompilationUnit cu = (JCCompilationUnit)t;
-                   for (JCTree def : cu.defs) {
-                       if (def.hasTag(CLASSDEF) &&
-                               analyzedElems.contains(((JCTree.JCClassDecl)def).sym)) {
-                           c.accept(cu, def);
+                if (elems.iterator().hasNext()) {
+                    for (CompilationUnitTree t : trees) {
+                       JCCompilationUnit cu = (JCCompilationUnit)t;
+                       for (JCTree def : cu.defs) {
+                           if (def.hasTag(CLASSDEF) &&
+                                   analyzedElems.contains(((JCTree.JCClassDecl)def).sym)) {
+                               c.accept(cu, def);
+                           }
                        }
-                   }
+                    }
+                } else {
+                    numberOfFailedCompilations++;
                 }
             });
         }

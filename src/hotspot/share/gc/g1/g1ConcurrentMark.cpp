@@ -1756,28 +1756,24 @@ private:
   G1ConcurrentMark* _cm;
 public:
   void work(uint worker_id) {
-    // Since all available tasks are actually started, we should
-    // only proceed if we're supposed to be active.
-    if (worker_id < _cm->active_tasks()) {
-      G1CMTask* task = _cm->task(worker_id);
-      task->record_start_time();
-      {
-        ResourceMark rm;
-        HandleMark hm;
+    G1CMTask* task = _cm->task(worker_id);
+    task->record_start_time();
+    {
+      ResourceMark rm;
+      HandleMark hm;
 
-        G1RemarkThreadsClosure threads_f(G1CollectedHeap::heap(), task);
-        Threads::threads_do(&threads_f);
-      }
-
-      do {
-        task->do_marking_step(1000000000.0 /* something very large */,
-                              true         /* do_termination       */,
-                              false        /* is_serial            */);
-      } while (task->has_aborted() && !_cm->has_overflown());
-      // If we overflow, then we do not want to restart. We instead
-      // want to abort remark and do concurrent marking again.
-      task->record_end_time();
+      G1RemarkThreadsClosure threads_f(G1CollectedHeap::heap(), task);
+      Threads::threads_do(&threads_f);
     }
+
+    do {
+      task->do_marking_step(1000000000.0 /* something very large */,
+                            true         /* do_termination       */,
+                            false        /* is_serial            */);
+    } while (task->has_aborted() && !_cm->has_overflown());
+    // If we overflow, then we do not want to restart. We instead
+    // want to abort remark and do concurrent marking again.
+    task->record_end_time();
   }
 
   G1CMRemarkTask(G1ConcurrentMark* cm, uint active_workers) :
