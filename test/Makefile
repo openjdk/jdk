@@ -48,12 +48,7 @@ default: jdk_core langtools_jtreg jaxp_all
 all: jdk_all langtools_all jaxp_all
 
 ifeq ($(TEST_JOBS), 0)
-  ifeq ($(shell $(EXPR) $(JOBS) \> 50), 1)
-    # JTReg cannot handle more than 50 in concurrency
-    JDK_TEST_JOBS=50
-  else
-    JDK_TEST_JOBS=$(JOBS)
-  endif
+  JDK_TEST_JOBS=$(JOBS)
 else
   JDK_TEST_JOBS=$(TEST_JOBS)
 endif
