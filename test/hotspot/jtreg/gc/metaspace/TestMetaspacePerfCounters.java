@@ -32,11 +32,13 @@ import jdk.test.lib.Platform;
 import sun.management.ManagementFactoryHelper;
 
 import static jdk.test.lib.Asserts.*;
+import gc.testlibrary.PerfCounter;
+import gc.testlibrary.PerfCounters;
 
 /* @test TestMetaspacePerfCounters
  * @bug 8014659
  * @requires vm.gc=="null"
- * @library /test/lib
+ * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
  * @modules java.base/jdk.internal.misc

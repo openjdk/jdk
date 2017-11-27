@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.testlibrary;
+
 import sun.jvmstat.monitor.Monitor;
 
 /**
