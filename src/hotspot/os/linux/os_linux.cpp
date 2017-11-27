@@ -4948,25 +4948,20 @@ jint os::init_2(void) {
         UseNUMA = false;
       }
     }
-    // With SHM and HugeTLBFS large pages we cannot uncommit a page, so there's no way
-    // we can make the adaptive lgrp chunk resizing work. If the user specified
-    // both UseNUMA and UseLargePages (or UseSHM/UseHugeTLBFS) on the command line - warn and
-    // disable adaptive resizing.
-    if (UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
-      if (FLAG_IS_DEFAULT(UseNUMA)) {
-        UseNUMA = false;
-      } else {
-        if (FLAG_IS_DEFAULT(UseLargePages) &&
-            FLAG_IS_DEFAULT(UseSHM) &&
-            FLAG_IS_DEFAULT(UseHugeTLBFS)) {
-          UseLargePages = false;
-        } else if (UseAdaptiveSizePolicy || UseAdaptiveNUMAChunkSizing) {
-          warning("UseNUMA is not fully compatible with SHM/HugeTLBFS large pages, disabling adaptive resizing (-XX:-UseAdaptiveSizePolicy -XX:-UseAdaptiveNUMAChunkSizing)");
-          UseAdaptiveSizePolicy = false;
-          UseAdaptiveNUMAChunkSizing = false;
-        }
+
+    if (UseParallelGC && UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
+      // With SHM and HugeTLBFS large pages we cannot uncommit a page, so there's no way
+      // we can make the adaptive lgrp chunk resizing work. If the user specified both
+      // UseNUMA and UseLargePages (or UseSHM/UseHugeTLBFS) on the command line - warn
+      // and disable adaptive resizing.
+      if (UseAdaptiveSizePolicy || UseAdaptiveNUMAChunkSizing) {
+        warning("UseNUMA is not fully compatible with SHM/HugeTLBFS large pages, "
+                "disabling adaptive resizing (-XX:-UseAdaptiveSizePolicy -XX:-UseAdaptiveNUMAChunkSizing)");
+        UseAdaptiveSizePolicy = false;
+        UseAdaptiveNUMAChunkSizing = false;
       }
     }
+
     if (!UseNUMA && ForceNUMA) {
       UseNUMA = true;
     }
