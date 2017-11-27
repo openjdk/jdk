@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.testlibrary;
+
 import sun.jvmstat.monitor.Monitor;
 import sun.jvmstat.monitor.MonitorException;
 import sun.jvmstat.monitor.MonitoredHost;

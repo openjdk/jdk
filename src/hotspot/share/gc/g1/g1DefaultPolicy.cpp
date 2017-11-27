@@ -52,7 +52,7 @@ G1DefaultPolicy::G1DefaultPolicy(STWGCTimer* gc_timer) :
   _analytics(new G1Analytics(&_predictor)),
   _mmu_tracker(new G1MMUTrackerQueue(GCPauseIntervalMillis / 1000.0, MaxGCPauseMillis / 1000.0)),
   _ihop_control(create_ihop_control(&_predictor)),
-  _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 3)),
+  _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 2)),
   _young_list_fixed_length(0),
   _short_lived_surv_rate_group(new SurvRateGroup()),
   _survivor_surv_rate_group(new SurvRateGroup()),

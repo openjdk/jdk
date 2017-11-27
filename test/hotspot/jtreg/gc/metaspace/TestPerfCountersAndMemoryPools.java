@@ -26,10 +26,12 @@ import java.lang.management.*;
 
 import jdk.test.lib.Platform;
 import static jdk.test.lib.Asserts.*;
+import gc.testlibrary.PerfCounter;
+import gc.testlibrary.PerfCounters;
 
 /* @test TestPerfCountersAndMemoryPools
  * @bug 8023476
- * @library /test/lib
+ * @library /test/lib /
  * @requires vm.gc.Serial
  * @summary Tests that a MemoryPoolMXBeans and PerfCounters for metaspace
  *          report the same data.
