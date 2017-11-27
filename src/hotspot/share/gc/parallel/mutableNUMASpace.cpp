@@ -91,14 +91,14 @@ void MutableNUMASpace::ensure_parsability() {
     MutableSpace *s = ls->space();
     if (s->top() < top()) { // For all spaces preceding the one containing top()
       if (s->free_in_words() > 0) {
-        intptr_t cur_top = (intptr_t)s->top();
+        HeapWord* cur_top = s->top();
         size_t words_left_to_fill = pointer_delta(s->end(), s->top());;
         while (words_left_to_fill > 0) {
           size_t words_to_fill = MIN2(words_left_to_fill, CollectedHeap::filler_array_max_size());
           assert(words_to_fill >= CollectedHeap::min_fill_size(),
                  "Remaining size (" SIZE_FORMAT ") is too small to fill (based on " SIZE_FORMAT " and " SIZE_FORMAT ")",
                  words_to_fill, words_left_to_fill, CollectedHeap::filler_array_max_size());
-          CollectedHeap::fill_with_object((HeapWord*)cur_top, words_to_fill);
+          CollectedHeap::fill_with_object(cur_top, words_to_fill);
           if (!os::numa_has_static_binding()) {
             size_t touched_words = words_to_fill;
 #ifndef ASSERT
@@ -108,19 +108,19 @@ void MutableNUMASpace::ensure_parsability() {
             }
 #endif
             MemRegion invalid;
-            HeapWord *crossing_start = align_up((HeapWord*)cur_top, os::vm_page_size());
-            HeapWord *crossing_end = align_down((HeapWord*)(cur_top + touched_words), os::vm_page_size());
+            HeapWord *crossing_start = align_up(cur_top, os::vm_page_size());
+            HeapWord *crossing_end = align_down(cur_top + touched_words, os::vm_page_size());
             if (crossing_start != crossing_end) {
               // If object header crossed a small page boundary we mark the area
               // as invalid rounding it to a page_size().
-              HeapWord *start = MAX2(align_down((HeapWord*)cur_top, page_size()), s->bottom());
-              HeapWord *end = MIN2(align_up((HeapWord*)(cur_top + touched_words), page_size()), s->end());
+              HeapWord *start = MAX2(align_down(cur_top, page_size()), s->bottom());
+              HeapWord *end = MIN2(align_up(cur_top + touched_words, page_size()), s->end());
               invalid = MemRegion(start, end);
             }
 
             ls->add_invalid_region(invalid);
           }
-          cur_top = cur_top + (words_to_fill * HeapWordSize);
+          cur_top += words_to_fill;
           words_left_to_fill -= words_to_fill;
         }
       }
