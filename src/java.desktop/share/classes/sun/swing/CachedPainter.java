@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,21 @@
  */
 package sun.swing;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.util.*;
+import sun.awt.image.SurfaceManager;
+import sun.java2d.SurfaceData;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.Image;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AbstractMultiResolutionImage;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
+import java.awt.image.VolatileImage;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A base class used for icons or images that are expensive to paint.
@@ -129,6 +141,22 @@ public abstract class CachedPainter {
             }
             if (image == null) {
                 // Recreate the image
+                if( config != null && (w != baseHeight || h != baseWidth)) {
+                    AffineTransform tx = config.getDefaultTransform();
+                    double sx = tx.getScaleX();
+                    double sy = tx.getScaleY();
+                    if ( Double.compare(sx, 1) != 0 ||
+                                                   Double.compare(sy, 1) != 0) {
+                        if (Math.abs(sx * baseWidth - w) < 1 &&
+                            Math.abs(sy * baseHeight - h) < 1) {
+                            w = baseWidth;
+                            h = baseHeight;
+                        } else {
+                            w = (int)Math.ceil(w / sx);
+                            h = (int)Math.ceil(w / sy);
+                        }
+                    }
+                }
                 image = createImage(c, w, h, config, args);
                 cache.setImage(key, config, w, h, args, image);
                 draw = true;
@@ -139,10 +167,24 @@ public abstract class CachedPainter {
             if (draw) {
                 // Render to the Image
                 Graphics2D g2 = (Graphics2D) image.getGraphics();
-                if (volatileImage == null && (w != baseWidth || h != baseHeight)) {
-                    g2.scale((double) w / baseWidth, (double) h / baseHeight);
+                if (volatileImage == null) {
+                    if ((w != baseWidth || h != baseHeight)) {
+                        g2.scale((double) w / baseWidth,
+                                (double) h / baseHeight);
+                    }
+                    paintToImage(c, image, g2, baseWidth, baseHeight, args);
+                } else {
+                    SurfaceData sd = SurfaceManager.getManager(volatileImage)
+                            .getPrimarySurfaceData();
+                    double sx = sd.getDefaultScaleX();
+                    double sy = sd.getDefaultScaleY();
+                    if ( Double.compare(sx, 1) != 0 ||
+                                                   Double.compare(sy, 1) != 0) {
+                        g2.scale(1 / sx, 1 / sy);
+                    }
+                    paintToImage(c, image, g2, (int)Math.ceil(w * sx),
+                                               (int)Math.ceil(h * sy), args);
                 }
-                paintToImage(c, image, g2, baseWidth, baseHeight, args);
                 g2.dispose();
             }
 
