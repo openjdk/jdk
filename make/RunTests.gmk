@@ -411,7 +411,10 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += -cpa:$$(JIB_JAR)
   endif
 
-  run-test-$1:
+  clean-workdir-$1:
+	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
+
+  run-test-$1: clean-workdir-$1
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
