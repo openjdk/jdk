@@ -188,7 +188,7 @@ public class ForwardReferenceImportTest extends KullaTesting {
                 DiagCheck.DIAG_ERROR,
                 added(VALID),
                 ste(a, VALID, RECOVERABLE_NOT_DEFINED, true, null)));
-        assertDeclareFail("A.list = Arrays.asList(1, 2, 3);", "compiler.err.already.defined.static.single.import");
+        assertDeclareFail("A.list = Arrays.asList(1, 2, 3);", "compiler.err.already.defined.single.import");
         assertActiveKeys();
         assertDrop(list,
                 ste(list, VALID, DROPPED, true, null),
