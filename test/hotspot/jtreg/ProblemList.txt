@@ -90,6 +90,7 @@ serviceability/sa/TestInstanceKlassSizeForInterface.java 8184042 macosx-all
 serviceability/sa/TestPrintMdo.java 8184042 macosx-all
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8191270 generic-all
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java 8184042 macosx-all
+serviceability/sa/TestJhsdbJstackLock.java 8191914 windows-all
 #############################################################################
 
 # :hotspot_misc
