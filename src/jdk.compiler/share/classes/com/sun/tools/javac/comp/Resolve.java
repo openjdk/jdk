@@ -1548,7 +1548,8 @@ public class Resolve {
                       boolean allowBoxing,
                       boolean useVarargs) {
         if (sym.kind == ERR ||
-                !sym.isInheritedIn(site.tsym, types)) {
+                (site.tsym != sym.owner && !sym.isInheritedIn(site.tsym, types)) ||
+                !notOverriddenIn(site, sym)) {
             return bestSoFar;
         } else if (useVarargs && (sym.flags() & VARARGS) == 0) {
             return bestSoFar.kind.isResolutionError() ?
