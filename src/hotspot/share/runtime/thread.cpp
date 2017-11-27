@@ -65,6 +65,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
@@ -77,6 +78,7 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -1494,6 +1496,10 @@ void JavaThread::initialize() {
   _popframe_preserved_args_size = 0;
   _frames_to_pop_failed_realloc = 0;
 
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    SafepointMechanism::initialize_header(this);
+  }
+
   pd_initialize();
 }
 
@@ -1910,6 +1916,11 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
 
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread
   Threads::remove(this);
+
+  // If someone set a handshake on us just as we entered exit path, we simple cancel it.
+  if (ThreadLocalHandshakes) {
+    cancel_handshake();
+  }
 }
 
 #if INCLUDE_ALL_GCS
@@ -2372,11 +2383,7 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
     InterfaceSupport::serialize_thread_state_with_handler(thread);
   }
 
-  if (SafepointSynchronize::do_call_back()) {
-    // If we are safepointing, then block the caller which may not be
-    // the same as the target thread (see above).
-    SafepointSynchronize::block(curJT);
-  }
+  SafepointMechanism::block_if_requested(curJT);
 
   if (thread->is_deopt_suspend()) {
     thread->clear_deopt_suspend();
@@ -3521,6 +3528,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   LogConfiguration::initialize(create_vm_timer.begin_time());
 
   // Parse arguments
+  // Note: this internally calls os::init_container_support()
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
 
@@ -3554,6 +3562,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module after parsing the args
   jint os_init_2_result = os::init_2();
   if (os_init_2_result != JNI_OK) return os_init_2_result;
+
+  SafepointMechanism::initialize();
 
   jint adjust_after_os_result = Arguments::adjust_after_os();
   if (adjust_after_os_result != JNI_OK) return adjust_after_os_result;

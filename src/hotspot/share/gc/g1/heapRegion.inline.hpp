@@ -27,10 +27,12 @@
 
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/space.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/prefetch.inline.hpp"
 #include "utilities/align.hpp"
 
 inline HeapWord* G1ContiguousSpace::allocate_impl(size_t min_word_size,
@@ -178,6 +180,45 @@ inline size_t HeapRegion::block_size(const HeapWord *addr) const {
   }
 
   return block_size_using_bitmap(addr, G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap());
+}
+
+inline void HeapRegion::complete_compaction() {
+  // Reset space and bot after compaction is complete if needed.
+  reset_after_compaction();
+  if (used_region().is_empty()) {
+    reset_bot();
+  }
+
+  // After a compaction the mark bitmap is invalid, so we must
+  // treat all objects as being inside the unmarked area.
+  zero_marked_bytes();
+  init_top_at_mark_start();
+
+  // Clear unused heap memory in debug builds.
+  if (ZapUnusedHeapArea) {
+    mangle_unused_area();
+  }
+}
+
+template<typename ApplyToMarkedClosure>
+inline void HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure) {
+  HeapWord* limit = scan_limit();
+  HeapWord* next_addr = bottom();
+
+  while (next_addr < limit) {
+    Prefetch::write(next_addr, PrefetchScanIntervalInBytes);
+    // This explicit is_marked check is a way to avoid
+    // some extra work done by get_next_marked_addr for
+    // the case where next_addr is marked.
+    if (bitmap->is_marked(next_addr)) {
+      oop current = oop(next_addr);
+      next_addr += closure->apply(current);
+    } else {
+      next_addr = bitmap->get_next_marked_addr(next_addr, limit);
+    }
+  }
+
+  assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
 inline HeapWord* HeapRegion::par_allocate_no_bot_updates(size_t min_word_size,

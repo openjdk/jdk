@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+           elementFormDefault="qualified"
+           targetNamespace="http://java.sun.com/xml/ns/jaxws"
+           attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>
+
+      DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+      
+      Copyright (c) 2006-2017 Oracle and/or its affiliates. All rights reserved.
+      
+      The contents of this file are subject to the terms of either the GNU
+      General Public License Version 2 only ("GPL") or the Common Development
+      and Distribution License("CDDL") (collectively, the "License").  You
+      may not use this file except in compliance with the License.  You can
+      obtain a copy of the License at
+      https://glassfish.dev.java.net/public/CDDL+GPL_1_1.html
+      or packager/legal/LICENSE.txt.  See the License for the specific
+      language governing permissions and limitations under the License.
+      
+      When distributing the software, include this License Header Notice in each
+      file and include the License file at packager/legal/LICENSE.txt.
+      
+      GPL Classpath Exception:
+      Oracle designates this particular file as subject to the "Classpath"
+      exception as provided by Oracle in the GPL Version 2 section of the License
+      file that accompanied this code.
+      
+      Modifications:
+      If applicable, add the following below the License Header, with the fields
+      enclosed by brackets [] replaced by your own identifying information:
+      "Portions Copyright [year] [name of copyright owner]"
+      
+      Contributor(s):
+      If you wish your version of this file to be governed by only the CDDL or
+      only the GPL Version 2, indicate your decision by adding "[Contributor]
+      elects to include this software in this distribution under the [CDDL or GPL
+      Version 2] license."  If you don't indicate a single choice of license, a
+      recipient has the option to distribute your version of this file under
+      either the CDDL, the GPL Version 2 or to extend the choice of license to
+      its licensees as provided above.  However, if you add GPL Version 2 code
+      and therefore, elected the GPL Version 2 license, then the option applies
+      only if the new code is made subject to such option by the copyright
+      holder.
+      
+    </xsd:documentation>
+  </xsd:annotation>
+
+    <xs:annotation>
+        <xs:documentation>
+            Schema for JAX-WS 2.0 WSDL customization.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:group name="declaration">
+        <xs:annotation>
+            <xs:documentation>
+                TODO
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice>
+            <xs:element ref="jaxws:package"/>
+            <xs:element ref="jaxws:enableWrapperStyle"/>
+            <xs:element ref="jaxws:enableAsyncMapping"/>
+            <xs:element ref="jaxws:enableMIMEContent"/>
+            <xs:element ref="jaxws:class"/>
+            <xs:element ref="jaxws:method"/>
+            <xs:element ref="jaxws:parameter"/>
+            <xs:element ref="jaxws:provider"/>
+            <xs:any namespace="##other" processContents="lax" />
+        </xs:choice>
+    </xs:group>
+    
+    <xs:element name="bindings">
+        <xs:annotation>
+            <xs:documentation>
+                WSDL customization binding declaration.
+
+                There are two ways to specify binding declarations.
+
+                1. All binding declarations pertainingto a given WSDL document are grouped together in a standalone
+                document, called an external binding file.
+
+                2. The second approach consists in embeddeding binding declarations directly inside a WSDL document. In
+                either case, the jaxws:bindings element is used as a container for JAX-WS binding declarations. It
+                contains a (possibly empty) list of binding declarations, in any order.
+
+                A binding declaration embedded in a WSDL document can only affect the WSDL element it extends. When a
+                jaxws:bindings element is used as a WSDL extension, it MUST NOT have a node attribute. Moreover, it MUST
+                NOT have an element whose qualified name is jaxws:bindings amongs its children.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <xs:group ref="jaxws:declaration"/>
+                    <xs:element ref="jaxws:bindings"/>
+                </xs:choice>               
+            </xs:sequence>
+
+            <xs:attribute name="wsdlLocation" type="xs:anyURI">
+                <xs:annotation>
+                    <xs:documentation>
+                        Location of the remote WSDL to associate binding declarations with. It MUST NOT be present if
+                        the jaxws:bindings element is used as an extension inside a WSDL document or one of its ancestor
+                        jaxws:bindings elements already contains this attribute.
+                    </xs:documentation>
+                </xs:annotation>
+
+            </xs:attribute>
+
+            <xs:attribute name="node" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The value of the string is an XPATH 1.0 compliant string that resolves to a node in a remote
+                        WSDL to associate binding declarations with. The remote WSDL is specified by the
+                        wsdlLocation attribute occuring in the current element or in a parent of this element.
+
+                        The node attribute can be used to customize the inlined schema inside the WSDL, in this case the
+                        node attribute must point to the xs:schema node inside the WSDL. Further jaxb:bindings should be
+                        used as the child of jaxws:bindings.
+
+                        Example:
+                        <!--
+                        <jaxws:bindings wsdlLocation="..."
+                                        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                        xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                                        xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+                                        xmlns:jaxb="http://java.sun.com/xml/ns/jaxb">
+                            <jaxws:bindings
+                                    node="wsdl:definitions/wsdl:types/xs:schema[@targetNamespace='urn:test:types']">
+                                <jaxb:schemaBindings>
+                                    <jaxb:package name="client.types"/>
+                                </jaxb:schemaBindings>
+                                <jaxb:bindings node="//xs:complexType[@name='class']">
+                                    <jaxb:class name="Clazz"/>
+                                </jaxb:bindings>
+                            </jaxws:bindings>
+                        </jaxws:bindings>
+                        -->
+                        NOTE: It MUST NOT be present if the jaxws:bindings appears inside a WSDL document.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+
+            <xs:attribute name="version" type="xs:token" default="2.0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Used to indicate the version of WSDL customization declarations. Only valid on root level
+                        bindings element.
+                        If this is absent, it will implicitly be assumed to be 2.0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+
+    </xs:element>
+
+    <xs:complexType name="tJavaDoc">
+        <xs:annotation></xs:annotation>
+        <xs:sequence>
+            <xs:element name="javadoc" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="package">
+        <xs:annotation>
+            <xs:documentation>
+                If absent, the default package name is computed from the targetNamespace of the WSDL in scope. The rules
+                of targetNamespace to Java package name is described in the JAXB specification.
+
+                Appears in the context of a WSDL document, either as an extension to the wsdl:definitions element or in
+                an external binding file at a place where there is a WSDL document in scope.
+
+                Scope:
+                wsd;definitions
+
+                Example:
+                <!--
+                <jaxws:bindings wsdlLocation="..."
+                                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                                xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+                                xmlns:jaxb="http://java.sun.com/xml/ns/jaxb">
+                    <jaxws:package></jaxws:package>
+                </jaxws:bindings>
+                -->
+            </xs:documentation>
+        </xs:annotation>
+
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="jaxws:tJavaDoc">
+                    <xs:attribute name="name" type="xs:string" use="required"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+
+    <xs:element name="enableWrapperStyle" type="xs:boolean">
+        <xs:annotation>
+            <xs:documentation>
+                enableWrapperStyle can be used to disable wrapper style Java method generation. If absent the default
+                value of enableWrapperStyle is true. Setting it to true may not result into wrapper style method
+                generation unless the wrapper style rules are satisfied as defined in JAX-WS 2.1 specification 2.3.1.2.
+
+                Scope:
+                wsd;definitions, wsdl:portType, wsdl:portType/wsdl:operation.
+
+                Example:
+                <jaxws:bindings wsdlLocation="..."
+                                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                                xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+                                xmlns:jaxb="http://java.sun.com/xml/ns/jaxb">
+                    <!-- Turn off wrapper style Java method signature generation -->
+                    <jaxws:enableWrapperStyle>false</jaxws:enableWrapperStyle>
+                </jaxws:bindings>
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="enableAsyncMapping" type="xs:boolean">
+        <xs:annotation>
+            <xs:documentation>
+                enableAsyncMapping can be used to enable async method generation in the entpoint interface generated
+                from a WSDL. If absent the default value of enableAsyncMapping is false. See JAX-WS 2.1 spec
+                section 2.3.4.2.
+
+                Scope:
+                wsd;definitions, wsdl:portType, wsdl:portType/wsdl:operation.
+
+                Note: These generated async methods can be used only on the client side.
+
+                Example:
+                <jaxws:bindings wsdlLocation="..."
+                                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                                xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+                                xmlns:jaxb="http://java.sun.com/xml/ns/jaxb">
+                    <!-- Generate async methods in the generated Java endpoint interface for all the portTypes and
+                    operations in the WSDL's scope.  -->
+                    <jaxws:enableAsyncMapping>false</jaxws:enableAsyncMapping>
+                </jaxws:bindings>
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="enableMIMEContent" type="xs:boolean">
+        <xs:annotation>
+            <xs:documentation>
+                If present the use of the mime:content information is enabled as defined in the JAX-WS 2.1 spec
+                section 2.6.3.1
+
+                Scope:
+                wsdl:definitions, wsdl:binding, wsdl:binding/wsdl:operation
+
+                Example:
+                <jaxws:bindings wsdlLocation="..."
+                                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                                xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+                                xmlns:jaxb="http://java.sun.com/xml/ns/jaxb">
+
+                    <!-- Enables MIME content for all the bindings in the WSDL's scope.  -->
+                    <jaxws:enableMIMEContent>false</jaxws:enableMIMEContent>
+                </jaxws:bindings>
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="class">
+        <xs:annotation>
+            <xs:documentation>
+                Customizes the name of generated classes for the SEI, service class or the fault class.
+
+                Scope:
+                wsd;portType - The name of generated SEI (Service Endpoint Interface)
+                wsdl:portType/wsdl:operation/wsdl:fault - The generated fault class name.
+                wsdl:service - Name of the generated Service class.
+
+                Example:
+
+                <jaxws:bindings wsdlLocation="..."
+                                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                                xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+                                xmlns:jaxb="http://java.sun.com/xml/ns/jaxb">
+
+                    <!-- Customize the generated SEI class name -->
+                    <jaxws:bindings node="wsdl:definitions/wsdl:portType[@name='Hello']">
+                        <jaxws:class name="HelloWorld"/>
+                    </jaxws:bindings>
+
+                    <!-- customize the generated Service class name -->
+                    <jaxws:bindings node="wsdl:definitions/wsdl:service[@name='Hello']">
+                        <jaxws:class name="CustomService"/>
+                    </jaxws:bindings>
+
+                    <!-- customize the generated fault class name -->
+                    <jaxws:bindings
+                            node="wsdl:definitions/wsdl:portType[@name='Hello']/wsdl:operation[@name='Foo']/wsdl:fault[@name='FooFault']">
+                        <jaxws:class name="FooException"/>
+                    </jaxws:bindings>
+                </jaxws:bindings>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="jaxws:tJavaDoc">
+                    <xs:attribute name="name" type="xs:string" use="required"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="method">
+        <xs:annotation>
+            <xs:documentation>
+                Customizes the name of Java method in the generated classes.
+
+                Scope:
+                wsd;portType/wsdl:operation - name of Java methods corresponding to wsdl:operation
+                wsdl:service/wsdl:port - Name of the port getter in the generated Service class
+
+                Example:
+
+                <jaxws:bindings wsdlLocation="..."
+                                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                                xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+                                xmlns:jaxb="http://java.sun.com/xml/ns/jaxb">
+
+                    <!-- Renames Java method from hello() to helloWorld() -->
+                    <jaxws:bindings node="wsdl:definitions/wsdl:portType[@name='Hello']/wsdl:operation[@name='Hello']">
+                        <jaxws:class name="helloWorld"/>
+                    </jaxws:bindings>
+
+                    <!-- Renames the generated port getter method form getHelloPort(), which is default for "HelloPort",
+                     to getCustomizedPort -->
+                    <jaxws:bindings node="wsdl:definitions/wsdl:service[@name='Hello']/wsdl:port[@name='HelloPort']">
+                        <jaxws:method name="getCustomizedPort"/>
+                    </jaxws:bindings>
+
+                </jaxws:bindings>
+            </xs:documentation>
+        </xs:annotation>
+
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="jaxws:tJavaDoc">
+                    <xs:attribute name="name" type="xs:string" use="required"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="parameter">
+        <xs:annotation>
+            <xs:documentation>
+                Customizes the name of the Java method parameters in the generated SEI.
+
+                Scope:
+                wsd;portType/wsdl:operation
+                wsdl:binding/wsdl:operation To rename wsdl:header (additional header parameters, this support is
+                optional as JAX-WS 2.1 spec makes additional header mapping optional.
+                Example:
+
+                <jaxws:bindings wsdlLocation="..."
+                                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                                xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+                                xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+                                xmlns:types1="urn:test:types">
+
+                    <!-- Rename a wrapper child parameter 'argument' to 'helloArgument'-->
+                    <jaxws:bindings node="wsdl:definitions/wsdl:portType[@name='Hello']/wsdl:operation[@name='Hello']">
+                        <jaxws:parameter
+                                part="wsdl:definitions/wsdl:message[@name='HelloRequest']/wsdl:part[@name='parameters']"
+                                childElementName="types1:argument" name="helloArgument"/>
+                    </jaxws:bindings>
+
+                    <!-- Rename a BARE parameter 'in' to 'fooRequest'-->
+                    <jaxws:bindings node="wsdl:definitions/wsdl:portType[@name='Hello']/wsdl:operation[@name='Foo']">
+                        <jaxws:enableWrapperStyle>false</jaxws:enableWrapperStyle>
+                        <jaxws:parameter part="wsdl:definitions/wsdl:message[@name='FooRequest']/wsdl:part[@name='in']"
+                                         name="fooRequest"/>
+                    </jaxws:bindings>
+                </jaxws:bindings>
+
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="part" type="xs:string" use="required">
+                <xs:annotation>
+                    <xs:documentation>
+                        A XPath expression identifying a wsdl:part child of a wsdl:message.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="childElementName" type="xs:QName" use="optional">
+                <xs:annotation>
+                    <xs:documentation>
+                        The qualified name of a child element information item of the global type definition or global
+                        element declaration referred to by the wsdl:part identified by the previous attribute. It is
+                        optional and you need it only to rename parameters corresponding to wrapper style operation.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="name" type="xs:string" use="required">
+                <xs:annotation>
+                    <xs:documentation>
+                        The name of the Java formal parameter corresponding to the parameter identified by the previous
+                        two attributes.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="provider">
+        <xs:annotation>
+            <xs:documentation>
+                This binding declaration specifies that the annotated port will be used with the
+                javax.xml.ws.Provider interface.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+</xs:schema>

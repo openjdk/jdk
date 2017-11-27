@@ -29,7 +29,6 @@
 
 class GenMarkSweep : public MarkSweep {
   friend class VM_MarkSweep;
-  friend class G1MarkSweep;
  public:
   static void invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_softrefs);
 

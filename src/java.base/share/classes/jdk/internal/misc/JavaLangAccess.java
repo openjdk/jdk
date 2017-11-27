@@ -58,7 +58,7 @@ public interface JavaLangAccess {
     ConstantPool getConstantPool(Class<?> klass);
 
     /**
-     * Compare-And-Swap the AnnotationType instance corresponding to this class.
+     * Compare-And-Set the AnnotationType instance corresponding to this class.
      * (This method only applies to annotation types.)
      */
     boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType);
@@ -254,7 +254,7 @@ public interface JavaLangAccess {
     ServicesCatalog getServicesCatalog(ModuleLayer layer);
 
     /**
-     * Returns an ordered stream of layers. The first element is is the
+     * Returns an ordered stream of layers. The first element is the
      * given layer, the remaining elements are its parents, in DFS order.
      */
     Stream<ModuleLayer> layers(ModuleLayer layer);

@@ -30,6 +30,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
+#include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
@@ -2474,15 +2475,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // check for safepoint operation in progress and/or pending suspend requests
   {
     Label Continue;
+    Label slow_path;
 
-    __ cmp32(ExternalAddress((address)SafepointSynchronize::address_of_state()),
-             SafepointSynchronize::_not_synchronized);
+    __ safepoint_poll(slow_path, r15_thread, rscratch1);
 
-    Label L;
-    __ jcc(Assembler::notEqual, L);
     __ cmpl(Address(r15_thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, Continue);
-    __ bind(L);
+    __ bind(slow_path);
 
     // Don't use call_VM as it will see a possible pending exception and forward it
     // and never return here preventing us from clearing _last_native_pc down below.
@@ -3355,9 +3354,11 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // sees an invalid pc.
 
   if (!cause_return) {
-    // overwrite the dummy value we pushed on entry
-    __ movptr(c_rarg0, Address(r15_thread, JavaThread::saved_exception_pc_offset()));
-    __ movptr(Address(rbp, wordSize), c_rarg0);
+    // Get the return pc saved by the signal handler and stash it in its appropriate place on the stack.
+    // Additionally, rbx is a callee saved register and we can look at it later to determine
+    // if someone changed the return address for us!
+    __ movptr(rbx, Address(r15_thread, JavaThread::saved_exception_pc_offset()));
+    __ movptr(Address(rbp, wordSize), rbx);
   }
 
   // Do the call
@@ -3387,10 +3388,37 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // No exception case
   __ bind(noException);
 
+  Label no_adjust, bail;
+  if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
+    // If our stashed return pc was modified by the runtime we avoid touching it
+    __ cmpptr(rbx, Address(rbp, wordSize));
+    __ jccb(Assembler::notEqual, no_adjust);
+
+#ifdef ASSERT
+    // Verify the correct encoding of the poll we're about to skip.
+    // See NativeInstruction::is_safepoint_poll()
+    __ cmpb(Address(rbx, 0), NativeTstRegMem::instruction_rex_b_prefix);
+    __ jcc(Assembler::notEqual, bail);
+    __ cmpb(Address(rbx, 1), NativeTstRegMem::instruction_code_memXregl);
+    __ jcc(Assembler::notEqual, bail);
+    // Mask out the modrm bits
+    __ testb(Address(rbx, 2), NativeTstRegMem::modrm_mask);
+    // rax encodes to 0, so if the bits are nonzero it's incorrect
+    __ jcc(Assembler::notZero, bail);
+#endif
+    // Adjust return pc forward to step over the safepoint poll instruction
+    __ addptr(Address(rbp, wordSize), 3);
+  }
+
+  __ bind(no_adjust);
   // Normal exit, restore registers and exit.
   RegisterSaver::restore_live_registers(masm, save_vectors);
-
   __ ret(0);
+
+#ifdef ASSERT
+  __ bind(bail);
+  __ stop("Attempting to adjust pc to skip safepoint poll but the return point is not what we expected");
+#endif
 
   // Make sure all code is generated
   masm->flush();

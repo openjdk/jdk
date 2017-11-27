@@ -164,7 +164,9 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the enclosed elements.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the enclosed elements.
      *
      * @param e  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -175,7 +177,9 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the enclosed elements.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the enclosed elements.
      *
      * @param e  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -188,7 +192,7 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     /**
      * {@inheritDoc}
      *
-     * This implementation scans the enclosed elements, unless the
+     * @implSpec This implementation scans the enclosed elements, unless the
      * element is a {@code RESOURCE_VARIABLE} in which case {@code
      * visitUnknown} is called.
      *
@@ -204,7 +208,9 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the parameters.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the parameters.
      *
      * @param e  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -215,7 +221,9 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the enclosed elements.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the enclosed elements.
      *
      * @param e  {@inheritDoc}
      * @param p  {@inheritDoc}

@@ -142,8 +142,16 @@ class os: AllStatic {
   static void  get_summary_os_info(char* buf, size_t buflen);
 
   static void initialize_initial_active_processor_count();
+
+  LINUX_ONLY(static void pd_init_container_support();)
+
  public:
   static void init(void);                      // Called before command line parsing
+
+  static void init_container_support() {       // Called during command line parsing.
+     LINUX_ONLY(pd_init_container_support();)
+  }
+
   static void init_before_ergo(void);          // Called after command line parsing
                                                // before VM ergonomics processing.
   static jint init_2(void);                    // Called after command line parsing

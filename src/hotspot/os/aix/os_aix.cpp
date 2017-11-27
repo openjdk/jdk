@@ -3477,75 +3477,6 @@ jint os::init_2(void) {
     LoadedLibraries::print(tty);
   }
 
-  const int page_size = Aix::page_size();
-  const int map_size = page_size;
-
-  address map_address = (address) MAP_FAILED;
-  const int prot  = PROT_READ;
-  const int flags = MAP_PRIVATE|MAP_ANONYMOUS;
-
-  // Use optimized addresses for the polling page,
-  // e.g. map it to a special 32-bit address.
-  if (OptimizePollingPageLocation) {
-    // architecture-specific list of address wishes:
-    address address_wishes[] = {
-      // AIX: addresses lower than 0x30000000 don't seem to work on AIX.
-      // PPC64: all address wishes are non-negative 32 bit values where
-      // the lower 16 bits are all zero. we can load these addresses
-      // with a single ppc_lis instruction.
-      (address) 0x30000000, (address) 0x31000000,
-      (address) 0x32000000, (address) 0x33000000,
-      (address) 0x40000000, (address) 0x41000000,
-      (address) 0x42000000, (address) 0x43000000,
-      (address) 0x50000000, (address) 0x51000000,
-      (address) 0x52000000, (address) 0x53000000,
-      (address) 0x60000000, (address) 0x61000000,
-      (address) 0x62000000, (address) 0x63000000
-    };
-    int address_wishes_length = sizeof(address_wishes)/sizeof(address);
-
-    // iterate over the list of address wishes:
-    for (int i=0; i<address_wishes_length; i++) {
-      // Try to map with current address wish.
-      // AIX: AIX needs MAP_FIXED if we provide an address and mmap will
-      // fail if the address is already mapped.
-      map_address = (address) ::mmap(address_wishes[i] - (ssize_t)page_size,
-                                     map_size, prot,
-                                     flags | MAP_FIXED,
-                                     -1, 0);
-      trcVerbose("SafePoint Polling  Page address: %p (wish) => %p",
-                   address_wishes[i], map_address + (ssize_t)page_size);
-
-      if (map_address + (ssize_t)page_size == address_wishes[i]) {
-        // Map succeeded and map_address is at wished address, exit loop.
-        break;
-      }
-
-      if (map_address != (address) MAP_FAILED) {
-        // Map succeeded, but polling_page is not at wished address, unmap and continue.
-        ::munmap(map_address, map_size);
-        map_address = (address) MAP_FAILED;
-      }
-      // Map failed, continue loop.
-    }
-  } // end OptimizePollingPageLocation
-
-  if (map_address == (address) MAP_FAILED) {
-    map_address = (address) ::mmap(NULL, map_size, prot, flags, -1, 0);
-  }
-  guarantee(map_address != MAP_FAILED, "os::init_2: failed to allocate polling page");
-  os::set_polling_page(map_address);
-
-  if (!UseMembar) {
-    address mem_serialize_page = (address) ::mmap(NULL, Aix::page_size(), PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-    guarantee(mem_serialize_page != NULL, "mmap Failed for memory serialize page");
-    os::set_memory_serialize_page(mem_serialize_page);
-
-    trcVerbose("Memory Serialize  Page address: %p - %p, size %IX (%IB)",
-        mem_serialize_page, mem_serialize_page + Aix::page_size(),
-        Aix::page_size(), Aix::page_size());
-  }
-
   // initialize suspend/resume support - must do this before signal_sets_init()
   if (SR_initialize() != 0) {
     perror("SR_initialize failed");
@@ -3614,6 +3545,14 @@ void os::make_polling_page_readable(void) {
 };
 
 int os::active_processor_count() {
+  // User has overridden the number of active processors
+  if (ActiveProcessorCount > 0) {
+    log_trace(os)("active_processor_count: "
+                  "active processor count set by user : %d",
+                  ActiveProcessorCount);
+    return ActiveProcessorCount;
+  }
+
   int online_cpus = ::sysconf(_SC_NPROCESSORS_ONLN);
   assert(online_cpus > 0 && online_cpus <= processor_count(), "sanity check");
   return online_cpus;

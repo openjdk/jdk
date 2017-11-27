@@ -136,62 +136,62 @@ public abstract class TextImpl<T extends CharacterData> implements Text, Charact
 
     @Override
     public Node getParentNode() {
-        return domNode.getParentNode();
+        return soapDocument.findIfPresent(domNode.getParentNode());
     }
 
     @Override
     public NodeList getChildNodes() {
-        return domNode.getChildNodes();
+        return new NodeListImpl(soapDocument, domNode.getChildNodes());
     }
 
     @Override
     public Node getFirstChild() {
-        return domNode.getFirstChild();
+        return soapDocument.findIfPresent(domNode.getFirstChild());
     }
 
     @Override
     public Node getLastChild() {
-        return domNode.getLastChild();
+        return soapDocument.findIfPresent(domNode.getLastChild());
     }
 
     @Override
     public Node getPreviousSibling() {
-        return domNode.getPreviousSibling();
+        return soapDocument.findIfPresent(domNode.getPreviousSibling());
     }
 
     @Override
     public Node getNextSibling() {
-        return domNode.getNextSibling();
+        return soapDocument.findIfPresent(domNode.getNextSibling());
     }
 
     @Override
     public NamedNodeMap getAttributes() {
-        return domNode.getAttributes();
+        return new NamedNodeMapImpl(domNode.getAttributes(), soapDocument);
     }
 
     @Override
     public Document getOwnerDocument() {
-        return domNode.getOwnerDocument();
+        return soapDocument;
     }
 
     @Override
     public Node insertBefore(Node newChild, Node refChild) throws DOMException {
-        return domNode.insertBefore(newChild, refChild);
+        return soapDocument.findIfPresent(domNode.insertBefore(newChild, refChild));
     }
 
     @Override
     public Node replaceChild(Node newChild, Node oldChild) throws DOMException {
-        return domNode.replaceChild(newChild, oldChild);
+        return soapDocument.findIfPresent(domNode.replaceChild(newChild, oldChild));
     }
 
     @Override
     public Node removeChild(Node oldChild) throws DOMException {
-        return domNode.removeChild(oldChild);
+        return soapDocument.findIfPresent(domNode.removeChild(oldChild));
     }
 
     @Override
     public Node appendChild(Node newChild) throws DOMException {
-        return domNode.appendChild(newChild);
+        return soapDocument.findIfPresent(domNode.appendChild(newChild));
     }
 
     @Override
@@ -339,4 +339,7 @@ public abstract class TextImpl<T extends CharacterData> implements Text, Charact
         domNode.replaceData(offset, count, arg);
     }
 
+    public SOAPDocumentImpl getSoapDocument() {
+        return soapDocument;
+    }
 }

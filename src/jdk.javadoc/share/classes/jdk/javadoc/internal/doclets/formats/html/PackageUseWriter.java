@@ -25,6 +25,9 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+
 import java.util.*;
 
 import javax.lang.model.element.PackageElement;
@@ -35,6 +38,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
@@ -121,7 +125,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected void generatePackageUseFile() throws DocFileIOException {
         HtmlTree body = getPackageUseHeader();
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.contentContainer);
+        div.setStyle(HtmlStyle.contentContainer);
         if (usingPackageToUsedClasses.isEmpty()) {
             div.addContent(contents.getContent("doclet.ClassUse_No.usage.of.0", utils.getPackageName(packageElement)));
         } else {
@@ -151,7 +155,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageUse(Content contentTree) {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addStyle(HtmlStyle.blockList);
+        ul.setStyle(HtmlStyle.blockList);
         if (configuration.packages.size() > 1) {
             addPackageList(ul);
         }
@@ -165,25 +169,27 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the package list will be added
      */
     protected void addPackageList(Content contentTree) {
-        Content caption = getTableCaption(configuration.getContent(
+        Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
-                getPackageLink(packageElement, utils.getPackageName(packageElement))));
-        Content table = (configuration.isOutputHtml5())
-                ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
-                : HtmlTree.TABLE(HtmlStyle.useSummary, packageUseTableSummary, caption);
-        table.addContent(getPackageTableHeader().toContent());
-        Content tbody = new HtmlTree(HtmlTag.TBODY);
-        boolean altColor = true;
+                getPackageLink(packageElement, utils.getPackageName(packageElement)));
+        Table table = new Table(configuration.htmlVersion, HtmlStyle.useSummary)
+                .setSummary(packageUseTableSummary)
+                .setCaption(caption)
+                .setHeader(getPackageTableHeader())
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
         for (String pkgname: usingPackageToUsedClasses.keySet()) {
             PackageElement pkg = utils.elementUtils.getPackageElement(pkgname);
-            HtmlTree tr = new HtmlTree(HtmlTag.TR);
-            tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-            altColor = !altColor;
-            addPackageUse(pkg, tr);
-            tbody.addContent(tr);
+            Content packageLink = links.createLink(utils.getPackageName(pkg),
+                    new StringContent(utils.getPackageName(pkg)));
+            Content summary = new ContentBuilder();
+            if (pkg != null && !pkg.isUnnamed()) {
+                addSummaryComment(pkg, summary);
+            } else {
+                summary.addContent(Contents.SPACE);
+            }
+            table.addRow(packageLink, summary);
         }
-        table.addContent(tbody);
-        Content li = HtmlTree.LI(HtmlStyle.blockList, table);
+        Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
         contentTree.addContent(li);
     }
 
@@ -198,75 +204,35 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         for (String packageName : usingPackageToUsedClasses.keySet()) {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
             HtmlTree li = new HtmlTree(HtmlTag.LI);
-            li.addStyle(HtmlStyle.blockList);
+            li.setStyle(HtmlStyle.blockList);
             if (usingPackage != null) {
-                li.addContent(getMarkerAnchor(utils.getPackageName(usingPackage)));
+                li.addContent(links.createAnchor(utils.getPackageName(usingPackage)));
             }
-            String tableSummary = configuration.getText("doclet.Use_Table_Summary",
-                                                        configuration.getText("doclet.classes"));
-            Content caption = getTableCaption(configuration.getContent(
+            String tableSummary = resources.getText("doclet.Use_Table_Summary",
+                                                        resources.getText("doclet.classes"));
+            Content caption = contents.getContent(
                     "doclet.ClassUse_Classes.in.0.used.by.1",
                     getPackageLink(packageElement, utils.getPackageName(packageElement)),
-                    getPackageLink(usingPackage, utils.getPackageName(usingPackage))));
-            Content table = (configuration.isOutputHtml5())
-                    ? HtmlTree.TABLE(HtmlStyle.useSummary, caption)
-                    : HtmlTree.TABLE(HtmlStyle.useSummary, tableSummary, caption);
-            table.addContent(classTableHeader.toContent());
-            Content tbody = new HtmlTree(HtmlTag.TBODY);
-            boolean altColor = true;
+                    getPackageLink(usingPackage, utils.getPackageName(usingPackage)));
+            Table table = new Table(configuration.htmlVersion, HtmlStyle.useSummary)
+                    .setSummary(tableSummary)
+                    .setCaption(caption)
+                    .setHeader(classTableHeader)
+                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
             for (TypeElement te : usingPackageToUsedClasses.get(packageName)) {
-                HtmlTree tr = new HtmlTree(HtmlTag.TR);
-                tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-                altColor = !altColor;
-                addClassRow(te, usingPackage, tr);
-                tbody.addContent(tr);
+                DocPath dp = pathString(te,
+                        DocPaths.CLASS_USE.resolve(DocPath.forName(utils, te)));
+                Content stringContent = new StringContent(utils.getSimpleName(te));
+                Content typeContent = Links.createLink(dp.fragment(getPackageAnchorName(usingPackage)),
+                        stringContent);
+                Content summary = new ContentBuilder();
+                addIndexComment(te, summary);
+
+                table.addRow(typeContent, summary);
             }
-            table.addContent(tbody);
-            li.addContent(table);
+            li.addContent(table.toContent());
             contentTree.addContent(li);
         }
-    }
-
-    /**
-     * Add a row for the class that uses the given package.
-     *
-     * @param usedClass the class that uses the given package
-     * @param pkg  the package to which the class belongs
-     * @param contentTree the content tree to which the row will be added
-     */
-    protected void addClassRow(TypeElement usedClass, PackageElement pkg,
-            Content contentTree) {
-        DocPath dp = pathString(usedClass,
-                DocPaths.CLASS_USE.resolve(DocPath.forName(utils, usedClass)));
-        StringContent stringContent = new StringContent(utils.getSimpleName(usedClass));
-        Content thType = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst,
-                getHyperLink(dp.fragment(getPackageAnchorName(pkg)), stringContent));
-        contentTree.addContent(thType);
-        HtmlTree tdDesc = new HtmlTree(HtmlTag.TD);
-        tdDesc.addStyle(HtmlStyle.colLast);
-        addIndexComment(usedClass, tdDesc);
-        contentTree.addContent(tdDesc);
-    }
-
-    /**
-     * Add the package use information.
-     *
-     * @param pkg the package that used the given package
-     * @param contentTree the content tree to which the information will be added
-     */
-    protected void addPackageUse(PackageElement pkg, Content contentTree) {
-        Content thFirst = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst,
-                getHyperLink(utils.getPackageName(pkg),
-                new StringContent(utils.getPackageName(pkg))));
-        contentTree.addContent(thFirst);
-        HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
-        tdLast.addStyle(HtmlStyle.colLast);
-        if (pkg != null && !pkg.isUnnamed()) {
-            addSummaryComment(pkg, tdLast);
-        } else {
-            tdLast.addContent(Contents.SPACE);
-        }
-        contentTree.addContent(tdLast);
     }
 
     /**
@@ -274,10 +240,10 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      *
      * @return a content tree representing the package use header
      */
-    protected HtmlTree getPackageUseHeader() {
-        String packageText = configuration.getText("doclet.Package");
+    private HtmlTree getPackageUseHeader() {
+        String packageText = resources.getText("doclet.Package");
         String name = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
-        String title = configuration.getText("doclet.Window_ClassUse_Header", packageText, name);
+        String title = resources.getText("doclet.Window_ClassUse_Header", packageText, name);
         HtmlTree bodyTree = getBody(true, getWindowTitle(title));
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.HEADER))
                 ? HtmlTree.HEADER()
@@ -322,7 +288,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     @Override
     protected Content getNavLinkPackage() {
-        Content linkContent = getHyperLink(DocPaths.PACKAGE_SUMMARY,
+        Content linkContent = Links.createLink(DocPaths.PACKAGE_SUMMARY,
                 contents.packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -346,7 +312,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     @Override
     protected Content getNavLinkTree() {
-        Content linkContent = getHyperLink(DocPaths.PACKAGE_TREE,
+        Content linkContent = Links.createLink(DocPaths.PACKAGE_TREE,
                 contents.treeLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;

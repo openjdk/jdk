@@ -33,6 +33,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
@@ -112,7 +113,7 @@ public class TreeWriter extends AbstractTreeWriter {
                 : body;
         htmlTree.addContent(div);
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
-        divTree.addStyle(HtmlStyle.contentContainer);
+        divTree.setStyle(HtmlStyle.contentContainer);
         addTree(classtree.baseClasses(), "doclet.Class_Hierarchy", divTree);
         addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", divTree);
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", divTree);
@@ -149,7 +150,7 @@ public class TreeWriter extends AbstractTreeWriter {
                     contents.packageHierarchies);
             contentTree.addContent(span);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
-            ul.addStyle(HtmlStyle.horizontal);
+            ul.setStyle(HtmlStyle.horizontal);
             int i = 0;
             for (PackageElement pkg : packages) {
                 // If the package name length is 0 or if -nodeprecated option
@@ -161,7 +162,7 @@ public class TreeWriter extends AbstractTreeWriter {
                     continue;
                 }
                 DocPath link = pathString(pkg, DocPaths.PACKAGE_TREE);
-                Content li = HtmlTree.LI(getHyperLink(link,
+                Content li = HtmlTree.LI(Links.createLink(link,
                         new StringContent(utils.getPackageName(pkg))));
                 if (i < packages.size() - 1) {
                     li.addContent(", ");

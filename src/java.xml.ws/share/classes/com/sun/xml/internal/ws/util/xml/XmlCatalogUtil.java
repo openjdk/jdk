@@ -27,7 +27,6 @@ package com.sun.xml.internal.ws.util.xml;
 
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.server.ServerRtException;
-import java.io.File;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;

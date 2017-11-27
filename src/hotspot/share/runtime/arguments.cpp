@@ -29,7 +29,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "gc/shared/cardTableRS.hpp"
+#include "gc/shared/gcArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -50,6 +50,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
@@ -60,11 +61,6 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciRuntime.hpp"
 #endif
-#if INCLUDE_ALL_GCS
-#include "gc/cms/compactibleFreeListSpace.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/parallel/parallelScavengeHeap.hpp"
-#endif // INCLUDE_ALL_GCS
 
 // Note: This is a special bug reporting site for the JVM
 #define DEFAULT_VENDOR_URL_BUG "http://bugreport.java.com/bugreport/crash.jsp"
@@ -383,6 +379,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "FastTLABRefill",               JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "UseCGroupMemoryLimitForHeap",  JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::jdk(11) },
   { "IgnoreUnverifiableClassesDuringDump", JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
@@ -1505,161 +1503,6 @@ void Arguments::set_tiered_flags() {
   }
 }
 
-#if INCLUDE_ALL_GCS
-static void disable_adaptive_size_policy(const char* collector_name) {
-  if (UseAdaptiveSizePolicy) {
-    if (FLAG_IS_CMDLINE(UseAdaptiveSizePolicy)) {
-      warning("Disabling UseAdaptiveSizePolicy; it is incompatible with %s.",
-              collector_name);
-    }
-    FLAG_SET_DEFAULT(UseAdaptiveSizePolicy, false);
-  }
-}
-
-void Arguments::set_parnew_gc_flags() {
-  assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC && !UseG1GC,
-         "control point invariant");
-  assert(UseConcMarkSweepGC, "CMS is expected to be on here");
-
-  if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
-    FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
-    assert(ParallelGCThreads > 0, "We should always have at least one thread by default");
-  } else if (ParallelGCThreads == 0) {
-    jio_fprintf(defaultStream::error_stream(),
-        "The ParNew GC can not be combined with -XX:ParallelGCThreads=0\n");
-    vm_exit(1);
-  }
-
-  // By default YoungPLABSize and OldPLABSize are set to 4096 and 1024 respectively,
-  // these settings are default for Parallel Scavenger. For ParNew+Tenured configuration
-  // we set them to 1024 and 1024.
-  // See CR 6362902.
-  if (FLAG_IS_DEFAULT(YoungPLABSize)) {
-    FLAG_SET_DEFAULT(YoungPLABSize, (intx)1024);
-  }
-  if (FLAG_IS_DEFAULT(OldPLABSize)) {
-    FLAG_SET_DEFAULT(OldPLABSize, (intx)1024);
-  }
-
-  // When using compressed oops, we use local overflow stacks,
-  // rather than using a global overflow list chained through
-  // the klass word of the object's pre-image.
-  if (UseCompressedOops && !ParGCUseLocalOverflow) {
-    if (!FLAG_IS_DEFAULT(ParGCUseLocalOverflow)) {
-      warning("Forcing +ParGCUseLocalOverflow: needed if using compressed references");
-    }
-    FLAG_SET_DEFAULT(ParGCUseLocalOverflow, true);
-  }
-  assert(ParGCUseLocalOverflow || !UseCompressedOops, "Error");
-}
-
-// Adjust some sizes to suit CMS and/or ParNew needs; these work well on
-// sparc/solaris for certain applications, but would gain from
-// further optimization and tuning efforts, and would almost
-// certainly gain from analysis of platform and environment.
-void Arguments::set_cms_and_parnew_gc_flags() {
-  assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC, "Error");
-  assert(UseConcMarkSweepGC, "CMS is expected to be on here");
-
-  // Turn off AdaptiveSizePolicy by default for cms until it is complete.
-  disable_adaptive_size_policy("UseConcMarkSweepGC");
-
-  set_parnew_gc_flags();
-
-  size_t max_heap = align_down(MaxHeapSize,
-                               CardTableRS::ct_max_alignment_constraint());
-
-  // Now make adjustments for CMS
-  intx   tenuring_default = (intx)6;
-  size_t young_gen_per_worker = CMSYoungGenPerWorker;
-
-  // Preferred young gen size for "short" pauses:
-  // upper bound depends on # of threads and NewRatio.
-  const size_t preferred_max_new_size_unaligned =
-    MIN2(max_heap/(NewRatio+1), ScaleForWordSize(young_gen_per_worker * ParallelGCThreads));
-  size_t preferred_max_new_size =
-    align_up(preferred_max_new_size_unaligned, os::vm_page_size());
-
-  // Unless explicitly requested otherwise, size young gen
-  // for "short" pauses ~ CMSYoungGenPerWorker*ParallelGCThreads
-
-  // If either MaxNewSize or NewRatio is set on the command line,
-  // assume the user is trying to set the size of the young gen.
-  if (FLAG_IS_DEFAULT(MaxNewSize) && FLAG_IS_DEFAULT(NewRatio)) {
-
-    // Set MaxNewSize to our calculated preferred_max_new_size unless
-    // NewSize was set on the command line and it is larger than
-    // preferred_max_new_size.
-    if (!FLAG_IS_DEFAULT(NewSize)) {   // NewSize explicitly set at command-line
-      FLAG_SET_ERGO(size_t, MaxNewSize, MAX2(NewSize, preferred_max_new_size));
-    } else {
-      FLAG_SET_ERGO(size_t, MaxNewSize, preferred_max_new_size);
-    }
-    log_trace(gc, heap)("CMS ergo set MaxNewSize: " SIZE_FORMAT, MaxNewSize);
-
-    // Code along this path potentially sets NewSize and OldSize
-    log_trace(gc, heap)("CMS set min_heap_size: " SIZE_FORMAT " initial_heap_size:  " SIZE_FORMAT " max_heap: " SIZE_FORMAT,
-                        min_heap_size(), InitialHeapSize, max_heap);
-    size_t min_new = preferred_max_new_size;
-    if (FLAG_IS_CMDLINE(NewSize)) {
-      min_new = NewSize;
-    }
-    if (max_heap > min_new && min_heap_size() > min_new) {
-      // Unless explicitly requested otherwise, make young gen
-      // at least min_new, and at most preferred_max_new_size.
-      if (FLAG_IS_DEFAULT(NewSize)) {
-        FLAG_SET_ERGO(size_t, NewSize, MAX2(NewSize, min_new));
-        FLAG_SET_ERGO(size_t, NewSize, MIN2(preferred_max_new_size, NewSize));
-        log_trace(gc, heap)("CMS ergo set NewSize: " SIZE_FORMAT, NewSize);
-      }
-      // Unless explicitly requested otherwise, size old gen
-      // so it's NewRatio x of NewSize.
-      if (FLAG_IS_DEFAULT(OldSize)) {
-        if (max_heap > NewSize) {
-          FLAG_SET_ERGO(size_t, OldSize, MIN2(NewRatio*NewSize, max_heap - NewSize));
-          log_trace(gc, heap)("CMS ergo set OldSize: " SIZE_FORMAT, OldSize);
-        }
-      }
-    }
-  }
-  // Unless explicitly requested otherwise, definitely
-  // promote all objects surviving "tenuring_default" scavenges.
-  if (FLAG_IS_DEFAULT(MaxTenuringThreshold) &&
-      FLAG_IS_DEFAULT(SurvivorRatio)) {
-    FLAG_SET_ERGO(uintx, MaxTenuringThreshold, tenuring_default);
-  }
-  // If we decided above (or user explicitly requested)
-  // `promote all' (via MaxTenuringThreshold := 0),
-  // prefer minuscule survivor spaces so as not to waste
-  // space for (non-existent) survivors
-  if (FLAG_IS_DEFAULT(SurvivorRatio) && MaxTenuringThreshold == 0) {
-    FLAG_SET_ERGO(uintx, SurvivorRatio, MAX2((uintx)1024, SurvivorRatio));
-  }
-
-  // OldPLABSize is interpreted in CMS as not the size of the PLAB in words,
-  // but rather the number of free blocks of a given size that are used when
-  // replenishing the local per-worker free list caches.
-  if (FLAG_IS_DEFAULT(OldPLABSize)) {
-    if (!FLAG_IS_DEFAULT(ResizeOldPLAB) && !ResizeOldPLAB) {
-      // OldPLAB sizing manually turned off: Use a larger default setting,
-      // unless it was manually specified. This is because a too-low value
-      // will slow down scavenges.
-      FLAG_SET_ERGO(size_t, OldPLABSize, CompactibleFreeListSpaceLAB::_default_static_old_plab_size); // default value before 6631166
-    } else {
-      FLAG_SET_DEFAULT(OldPLABSize, CompactibleFreeListSpaceLAB::_default_dynamic_old_plab_size); // old CMSParPromoteBlocksToClaim default
-    }
-  }
-
-  // If either of the static initialization defaults have changed, note this
-  // modification.
-  if (!FLAG_IS_DEFAULT(OldPLABSize) || !FLAG_IS_DEFAULT(OldPLABWeight)) {
-    CompactibleFreeListSpaceLAB::modify_initialization(OldPLABSize, OldPLABWeight);
-  }
-
-  log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
-}
-#endif // INCLUDE_ALL_GCS
-
 void set_object_alignment() {
   // Object alignment.
   assert(is_power_of_2(ObjectAlignmentInBytes), "ObjectAlignmentInBytes must be power of 2");
@@ -1678,11 +1521,6 @@ void set_object_alignment() {
   if (SurvivorAlignmentInBytes == 0) {
     SurvivorAlignmentInBytes = ObjectAlignmentInBytes;
   }
-
-#if INCLUDE_ALL_GCS
-  // Set CMS global values
-  CompactibleFreeListSpace::set_cms_values();
-#endif // INCLUDE_ALL_GCS
 }
 
 size_t Arguments::max_heap_for_compressed_oops() {
@@ -1758,26 +1596,11 @@ void Arguments::set_conservative_max_heap_alignment() {
   // the alignments imposed by several sources: any requirements from the heap
   // itself, the collector policy and the maximum page size we may run the VM
   // with.
-  size_t heap_alignment = GenCollectedHeap::conservative_max_heap_alignment();
-#if INCLUDE_ALL_GCS
-  if (UseParallelGC) {
-    heap_alignment = ParallelScavengeHeap::conservative_max_heap_alignment();
-  } else if (UseG1GC) {
-    heap_alignment = G1CollectedHeap::conservative_max_heap_alignment();
-  }
-#endif // INCLUDE_ALL_GCS
+  size_t heap_alignment = GCArguments::arguments()->conservative_max_heap_alignment();
   _conservative_max_heap_alignment = MAX4(heap_alignment,
                                           (size_t)os::vm_allocation_granularity(),
                                           os::max_page_size(),
                                           CollectorPolicy::compute_heap_alignment());
-}
-
-bool Arguments::gc_selected() {
-#if INCLUDE_ALL_GCS
-  return UseSerialGC || UseParallelGC || UseParallelOldGC || UseConcMarkSweepGC || UseG1GC;
-#else
-  return UseSerialGC;
-#endif // INCLUDE_ALL_GCS
 }
 
 #ifdef TIERED
@@ -1798,31 +1621,6 @@ void Arguments::select_compilation_mode_ergonomically() {
   }
 }
 #endif //TIERED
-
-void Arguments::select_gc_ergonomically() {
-#if INCLUDE_ALL_GCS
-  if (os::is_server_class_machine()) {
-    FLAG_SET_ERGO_IF_DEFAULT(bool, UseG1GC, true);
-  } else {
-    FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
-  }
-#else
-  UNSUPPORTED_OPTION(UseG1GC);
-  UNSUPPORTED_OPTION(UseParallelGC);
-  UNSUPPORTED_OPTION(UseParallelOldGC);
-  UNSUPPORTED_OPTION(UseConcMarkSweepGC);
-  FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
-#endif // INCLUDE_ALL_GCS
-}
-
-void Arguments::select_gc() {
-  if (!gc_selected()) {
-    select_gc_ergonomically();
-    if (!gc_selected()) {
-      vm_exit_during_initialization("Garbage collector not selected (default collector explicitly disabled)", NULL);
-    }
-  }
-}
 
 #if INCLUDE_JVMCI
 void Arguments::set_jvmci_specific_flags() {
@@ -1857,13 +1655,17 @@ void Arguments::set_jvmci_specific_flags() {
 }
 #endif
 
-void Arguments::set_ergonomics_flags() {
+jint Arguments::set_ergonomics_flags() {
 #ifdef TIERED
   if (!compilation_mode_selected()) {
     select_compilation_mode_ergonomically();
   }
 #endif
-  select_gc();
+
+  jint gc_result = GCArguments::initialize();
+  if (gc_result != JNI_OK) {
+    return gc_result;
+  }
 
 #if COMPILER2_OR_JVMCI
   // Shared spaces work fine with other GCs but causes bytecode rewriting
@@ -1892,145 +1694,12 @@ void Arguments::set_ergonomics_flags() {
 #endif // _LP64
 #endif // !ZERO
 
-}
-
-void Arguments::set_parallel_gc_flags() {
-  assert(UseParallelGC || UseParallelOldGC, "Error");
-  // Enable ParallelOld unless it was explicitly disabled (cmd line or rc file).
-  if (FLAG_IS_DEFAULT(UseParallelOldGC)) {
-    FLAG_SET_DEFAULT(UseParallelOldGC, true);
-  }
-  FLAG_SET_DEFAULT(UseParallelGC, true);
-
-  // If no heap maximum was requested explicitly, use some reasonable fraction
-  // of the physical memory, up to a maximum of 1GB.
-  FLAG_SET_DEFAULT(ParallelGCThreads,
-                   Abstract_VM_Version::parallel_worker_threads());
-  if (ParallelGCThreads == 0) {
-    jio_fprintf(defaultStream::error_stream(),
-        "The Parallel GC can not be combined with -XX:ParallelGCThreads=0\n");
-    vm_exit(1);
-  }
-
-  if (UseAdaptiveSizePolicy) {
-    // We don't want to limit adaptive heap sizing's freedom to adjust the heap
-    // unless the user actually sets these flags.
-    if (FLAG_IS_DEFAULT(MinHeapFreeRatio)) {
-      FLAG_SET_DEFAULT(MinHeapFreeRatio, 0);
-    }
-    if (FLAG_IS_DEFAULT(MaxHeapFreeRatio)) {
-      FLAG_SET_DEFAULT(MaxHeapFreeRatio, 100);
-    }
-  }
-
-  // If InitialSurvivorRatio or MinSurvivorRatio were not specified, but the
-  // SurvivorRatio has been set, reset their default values to SurvivorRatio +
-  // 2.  By doing this we make SurvivorRatio also work for Parallel Scavenger.
-  // See CR 6362902 for details.
-  if (!FLAG_IS_DEFAULT(SurvivorRatio)) {
-    if (FLAG_IS_DEFAULT(InitialSurvivorRatio)) {
-       FLAG_SET_DEFAULT(InitialSurvivorRatio, SurvivorRatio + 2);
-    }
-    if (FLAG_IS_DEFAULT(MinSurvivorRatio)) {
-      FLAG_SET_DEFAULT(MinSurvivorRatio, SurvivorRatio + 2);
-    }
-  }
-
-  if (UseParallelOldGC) {
-    // Par compact uses lower default values since they are treated as
-    // minimums.  These are different defaults because of the different
-    // interpretation and are not ergonomically set.
-    if (FLAG_IS_DEFAULT(MarkSweepDeadRatio)) {
-      FLAG_SET_DEFAULT(MarkSweepDeadRatio, 1);
-    }
-  }
-}
-
-void Arguments::set_g1_gc_flags() {
-  assert(UseG1GC, "Error");
-#if defined(COMPILER1) || INCLUDE_JVMCI
-  FastTLABRefill = false;
-#endif
-  FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
-  if (ParallelGCThreads == 0) {
-    assert(!FLAG_IS_DEFAULT(ParallelGCThreads), "The default value for ParallelGCThreads should not be 0.");
-    vm_exit_during_initialization("The flag -XX:+UseG1GC can not be combined with -XX:ParallelGCThreads=0", NULL);
-  }
-
-#if INCLUDE_ALL_GCS
-  if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
-    FLAG_SET_ERGO(uint, G1ConcRefinementThreads, ParallelGCThreads);
-  }
-#endif
-
-  // MarkStackSize will be set (if it hasn't been set by the user)
-  // when concurrent marking is initialized.
-  // Its value will be based upon the number of parallel marking threads.
-  // But we do set the maximum mark stack size here.
-  if (FLAG_IS_DEFAULT(MarkStackSizeMax)) {
-    FLAG_SET_DEFAULT(MarkStackSizeMax, 128 * TASKQUEUE_SIZE);
-  }
-
-  if (FLAG_IS_DEFAULT(GCTimeRatio) || GCTimeRatio == 0) {
-    // In G1, we want the default GC overhead goal to be higher than
-    // it is for PS, or the heap might be expanded too aggressively.
-    // We set it here to ~8%.
-    FLAG_SET_DEFAULT(GCTimeRatio, 12);
-  }
-
-  // Below, we might need to calculate the pause time interval based on
-  // the pause target. When we do so we are going to give G1 maximum
-  // flexibility and allow it to do pauses when it needs to. So, we'll
-  // arrange that the pause interval to be pause time target + 1 to
-  // ensure that a) the pause time target is maximized with respect to
-  // the pause interval and b) we maintain the invariant that pause
-  // time target < pause interval. If the user does not want this
-  // maximum flexibility, they will have to set the pause interval
-  // explicitly.
-
-  if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
-    // The default pause time target in G1 is 200ms
-    FLAG_SET_DEFAULT(MaxGCPauseMillis, 200);
-  }
-
-  // Then, if the interval parameter was not set, set it according to
-  // the pause time target (this will also deal with the case when the
-  // pause time target is the default value).
-  if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
-    FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
-  }
-
-  log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
+  return JNI_OK;
 }
 
 void Arguments::set_gc_specific_flags() {
-#if INCLUDE_ALL_GCS
-  // Set per-collector flags
-  if (UseParallelGC || UseParallelOldGC) {
-    set_parallel_gc_flags();
-  } else if (UseConcMarkSweepGC) {
-    set_cms_and_parnew_gc_flags();
-  } else if (UseG1GC) {
-    set_g1_gc_flags();
-  }
-  if (AssumeMP && !UseSerialGC) {
-    if (FLAG_IS_DEFAULT(ParallelGCThreads) && ParallelGCThreads == 1) {
-      warning("If the number of processors is expected to increase from one, then"
-              " you should configure the number of parallel GC threads appropriately"
-              " using -XX:ParallelGCThreads=N");
-    }
-  }
-  if (MinHeapFreeRatio == 100) {
-    // Keeping the heap 100% free is hard ;-) so limit it to 99%.
-    FLAG_SET_ERGO(uintx, MinHeapFreeRatio, 99);
-  }
-
-  // If class unloading is disabled, also disable concurrent class unloading.
-  if (!ClassUnloading) {
-    FLAG_SET_CMDLINE(bool, CMSClassUnloadingEnabled, false);
-    FLAG_SET_CMDLINE(bool, ClassUnloadingWithConcurrentMark, false);
-  }
-#endif // INCLUDE_ALL_GCS
+  // Set GC flags
+  GCArguments::arguments()->initialize_flags();
 }
 
 julong Arguments::limit_by_allocatable_memory(julong limit) {
@@ -2686,6 +2355,14 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
   if (result != JNI_OK) {
     return result;
   }
+
+  // We need to ensure processor and memory resources have been properly
+  // configured - which may rely on arguments we just processed - before
+  // doing the final argument processing. Any argument processing that
+  // needs to know about processor and memory resources must occur after
+  // this point.
+
+  os::init_container_support();
 
   // Do final processing now that all arguments have been parsed
   result = finalize_vm_init_args(patch_mod_javabase);
@@ -3362,12 +3039,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       _exit_hook = CAST_TO_FN_PTR(exit_hook_t, option->extraInfo);
     } else if (match_option(option, "abort")) {
       _abort_hook = CAST_TO_FN_PTR(abort_hook_t, option->extraInfo);
-    // -XX:+AggressiveHeap
-    } else if (match_option(option, "-XX:+AggressiveHeap")) {
-      jint result = set_aggressive_heap_flags();
-      if (result != JNI_OK) {
-          return result;
-      }
     // Need to keep consistency of MaxTenuringThreshold and AlwaysTenure/NeverTenure;
     // and the last option wins.
     } else if (match_option(option, "-XX:+NeverTenure")) {
@@ -3647,6 +3318,16 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
       "Use -classpath instead.\n.");
     os::closedir(dir);
     return JNI_ERR;
+  }
+
+  // This must be done after all arguments have been processed
+  // and the container support has been initialized since AggressiveHeap
+  // relies on the amount of total memory available.
+  if (AggressiveHeap) {
+    jint result = set_aggressive_heap_flags();
+    if (result != JNI_OK) {
+      return result;
+    }
   }
 
   // This must be done after all arguments have been processed.
@@ -4476,7 +4157,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
-  set_ergonomics_flags();
+  jint result = set_ergonomics_flags();
+  if (result != JNI_OK) return result;
 
 #if INCLUDE_JVMCI
   set_jvmci_specific_flags();
@@ -4619,6 +4301,32 @@ jint Arguments::apply_ergo() {
     UseOptoBiasInlining = false;
   }
 #endif
+
+  bool aot_enabled = UseAOT && AOTLibrary != NULL;
+  bool jvmci_enabled = NOT_JVMCI(false) JVMCI_ONLY(EnableJVMCI || UseJVMCICompiler);
+  bool handshakes_supported = SafepointMechanism::supports_thread_local_poll() && !aot_enabled && !jvmci_enabled && ThreadLocalHandshakes;
+  // ThreadLocalHandshakesConstraintFunc handles the constraints.
+  // Here we try to figure out if a mutual exclusive option have been set that conflict with a default.
+  if (handshakes_supported) {
+    FLAG_SET_DEFAULT(UseAOT, false); // Clear the AOT flag to make sure it doesn't try to initialize.
+  } else {
+    if (FLAG_IS_DEFAULT(ThreadLocalHandshakes) && ThreadLocalHandshakes) {
+      if (aot_enabled) {
+        // If user enabled AOT but ThreadLocalHandshakes is at default set it to false.
+        log_debug(ergo)("Disabling ThreadLocalHandshakes for UseAOT.");
+        FLAG_SET_DEFAULT(ThreadLocalHandshakes, false);
+      } else if (jvmci_enabled){
+        // If user enabled JVMCI but ThreadLocalHandshakes is at default set it to false.
+        log_debug(ergo)("Disabling ThreadLocalHandshakes for EnableJVMCI/UseJVMCICompiler.");
+        FLAG_SET_DEFAULT(ThreadLocalHandshakes, false);
+      }
+    }
+  }
+  if (FLAG_IS_DEFAULT(ThreadLocalHandshakes) || !SafepointMechanism::supports_thread_local_poll()) {
+    log_debug(ergo)("ThreadLocalHandshakes %s", ThreadLocalHandshakes ? "enabled." : "disabled.");
+  } else {
+    log_info(ergo)("ThreadLocalHandshakes %s", ThreadLocalHandshakes ? "enabled." : "disabled.");
+  }
 
   return JNI_OK;
 }

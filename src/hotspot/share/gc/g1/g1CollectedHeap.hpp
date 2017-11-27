@@ -1046,6 +1046,7 @@ public:
   // The Concurrent Marking reference processor...
   ReferenceProcessor* ref_processor_cm() const { return _ref_processor_cm; }
 
+  size_t unused_committed_regions_in_bytes() const;
   virtual size_t capacity() const;
   virtual size_t used() const;
   // This should be called when we're not holding the heap lock. The
@@ -1181,6 +1182,8 @@ public:
     return barrier_set_cast<G1SATBCardTableLoggingModRefBS>(barrier_set());
   }
 
+  G1HotCardCache* g1_hot_card_cache() const { return _hot_card_cache; }
+
   // Iteration functions.
 
   // Iterate over all objects, calling "cl.do_object" on each.
@@ -1207,15 +1210,18 @@ public:
 
   inline HeapWord* bottom_addr_for_region(uint index) const;
 
-  // Iterate over the heap regions in parallel. Assumes that this will be called
-  // in parallel by a number of worker threads with distinct worker ids
-  // in the range passed to the HeapRegionClaimer. Applies "blk->doHeapRegion"
-  // to each of the regions, by attempting to claim the region using the
-  // HeapRegionClaimer and, if successful, applying the closure to the claimed
-  // region.
-  void heap_region_par_iterate(HeapRegionClosure* cl,
-                               uint worker_id,
-                               HeapRegionClaimer* hrclaimer) const;
+  // Two functions to iterate over the heap regions in parallel. Threads
+  // compete using the HeapRegionClaimer to claim the regions before
+  // applying the closure on them.
+  // The _from_worker_offset version uses the HeapRegionClaimer and
+  // the worker id to calculate a start offset to prevent all workers to
+  // start from the point.
+  void heap_region_par_iterate_from_worker_offset(HeapRegionClosure* cl,
+                                                  HeapRegionClaimer* hrclaimer,
+                                                  uint worker_id) const;
+
+  void heap_region_par_iterate_from_start(HeapRegionClosure* cl,
+                                          HeapRegionClaimer* hrclaimer) const;
 
   // Iterate over the regions (if any) in the current collection set.
   void collection_set_iterate(HeapRegionClosure* blk);
@@ -1225,8 +1231,6 @@ public:
   // worker id over the set active_workers are evenly spread across the set of
   // collection set regions.
   void collection_set_iterate_from(HeapRegionClosure *blk, uint worker_id);
-
-  HeapRegion* next_compaction_region(const HeapRegion* from) const;
 
   // Returns the HeapRegion that contains addr. addr must not be NULL.
   template <class T>
@@ -1391,6 +1395,9 @@ public:
 
   inline bool is_obj_ill(const oop obj) const;
 
+  inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;
+  inline bool is_obj_dead_full(const oop obj) const;
+
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 
   // Refinement
@@ -1435,9 +1442,9 @@ public:
 
   // Perform verification.
 
-  // vo == UsePrevMarking  -> use "prev" marking information,
+  // vo == UsePrevMarking -> use "prev" marking information,
   // vo == UseNextMarking -> use "next" marking information
-  // vo == UseMarkWord    -> use the mark word in the object header
+  // vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   //
   // NOTE: Only the "prev" marking information is guaranteed to be
   // consistent most of the time, so most calls to this should use
@@ -1446,7 +1453,7 @@ public:
   // vo == UseNextMarking, which is to verify the "next" marking
   // information at the end of remark.
   // Currently there is only one place where this is called with
-  // vo == UseMarkWord, which is to verify the marking during a
+  // vo == UseFullMarking, which is to verify the marking during a
   // full GC.
   void verify(VerifyOption vo);
 

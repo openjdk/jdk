@@ -253,8 +253,7 @@ public class TransTypes extends TreeTranslator {
                    boolean hypothetical,
                    ListBuffer<JCTree> bridges) {
         make.at(pos);
-        Type origType = types.memberType(origin.type, meth);
-        Type origErasure = erasure(origType);
+        Type implTypeErasure = erasure(impl.type);
 
         // Create a bridge method symbol and a bridge definition without a body.
         Type bridgeType = meth.erasure(types);
@@ -281,7 +280,7 @@ public class TransTypes extends TreeTranslator {
                 : make.Super(types.supertype(origin.type).tsym.erasure(types), origin);
 
             // The type returned from the original method.
-            Type calltype = erasure(impl.type.getReturnType());
+            Type calltype = implTypeErasure.getReturnType();
 
             // Construct a call of  this.impl(params), or super.impl(params),
             // casting params and possibly results as needed.
@@ -289,9 +288,9 @@ public class TransTypes extends TreeTranslator {
                 make.Apply(
                            null,
                            make.Select(receiver, impl).setType(calltype),
-                           translateArgs(make.Idents(md.params), origErasure.getParameterTypes(), null))
+                           translateArgs(make.Idents(md.params), implTypeErasure.getParameterTypes(), null))
                 .setType(calltype);
-            JCStatement stat = (origErasure.getReturnType().hasTag(VOID))
+            JCStatement stat = (implTypeErasure.getReturnType().hasTag(VOID))
                 ? make.Exec(call)
                 : make.Return(coerce(call, bridgeType.getReturnType()));
             md.body = make.Block(0, List.of(stat));

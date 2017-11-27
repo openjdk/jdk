@@ -33,6 +33,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -92,11 +93,12 @@ public class LinkFactoryImpl extends LinkFactory {
                 DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf ||
                                 !(DocPath.forName(utils, typeElement)).equals(m_writer.filename)) {
-                        link.addContent(m_writer.getHyperLink(
+                        link.addContent(Links.createLink(
                                 filename.fragment(classLinkInfo.where),
-                            label,
-                            classLinkInfo.isStrong, classLinkInfo.styleName,
-                            title, classLinkInfo.target));
+                                label,
+                                classLinkInfo.isStrong,
+                                title,
+                                classLinkInfo.target));
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
                             link.addContent(getTypeParameterLinks(linkInfo));
                         }
@@ -106,8 +108,7 @@ public class LinkFactoryImpl extends LinkFactory {
         } else {
             Content crossLink = m_writer.getCrossClassLink(
                 typeElement.getQualifiedName().toString(), classLinkInfo.where,
-                label, classLinkInfo.isStrong, classLinkInfo.styleName,
-                true);
+                label, classLinkInfo.isStrong, true);
             if (crossLink != null) {
                 link.addContent(crossLink);
                 if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {

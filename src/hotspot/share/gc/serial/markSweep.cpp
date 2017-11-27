@@ -40,9 +40,6 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1StringDedup.hpp"
-#endif // INCLUDE_ALL_GCS
 
 uint                    MarkSweep::_total_invocations = 0;
 
@@ -65,13 +62,6 @@ CLDToOopClosure               MarkSweep::follow_cld_closure(&mark_and_push_closu
 CLDToOopClosure               MarkSweep::adjust_cld_closure(&adjust_pointer_closure);
 
 inline void MarkSweep::mark_object(oop obj) {
-#if INCLUDE_ALL_GCS
-  if (G1StringDedup::is_enabled()) {
-    // We must enqueue the object before it is marked
-    // as we otherwise can't read the object's age.
-    G1StringDedup::enqueue_from_mark(obj);
-  }
-#endif
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of markSweep.
   markOop mark = obj->mark();
@@ -86,8 +76,7 @@ template <class T> inline void MarkSweep::mark_and_push(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (!obj->mark()->is_marked() &&
-        !is_closed_archive_object(obj)) {
+    if (!obj->mark()->is_marked()) {
       mark_object(obj);
       _marking_stack.push(obj);
     }
@@ -183,8 +172,7 @@ template <class T> inline void MarkSweep::follow_root(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (!obj->mark()->is_marked() &&
-        !is_closed_archive_object(obj)) {
+    if (!obj->mark()->is_marked()) {
       mark_object(obj);
       follow_object(obj);
     }
@@ -268,7 +256,7 @@ void MarkSweep::restore_marks() {
 
 MarkSweep::IsAliveClosure   MarkSweep::is_alive;
 
-bool MarkSweep::IsAliveClosure::do_object_b(oop p) { return p->is_gc_marked() || is_closed_archive_object(p); }
+bool MarkSweep::IsAliveClosure::do_object_b(oop p) { return p->is_gc_marked(); }
 
 MarkSweep::KeepAliveClosure MarkSweep::keep_alive;
 

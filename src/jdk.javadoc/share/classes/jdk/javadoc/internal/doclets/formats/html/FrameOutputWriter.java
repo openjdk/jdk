@@ -25,20 +25,19 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
+import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 
 /**
@@ -99,12 +98,12 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         HtmlTree body = new HtmlTree(HtmlTag.BODY);
         body.addAttr(HtmlAttr.ONLOAD, "loadFrames()");
         String topFilePath = configuration.topFile.getPath();
-        String javaScriptRefresh = "\nif (targetPage == \"\" || targetPage == \"undefined\")\n" +
-                "     window.location.replace('" + topFilePath + "');\n";
-        RawHtml scriptContent = new RawHtml(javaScriptRefresh.replace("\n", DocletConstants.NL));
-        HtmlTree scriptTree = HtmlTree.SCRIPT();
-        scriptTree.addContent(scriptContent);
-        body.addContent(scriptTree);
+        Script script = new Script(
+                "\nif (targetPage == \"\" || targetPage == \"undefined\")\n" +
+                "     window.location.replace(")
+                .appendStringLiteral(topFilePath, '\'')
+                .append(");\n");
+        body.addContent(script.asContent());
         Content noScript = HtmlTree.NOSCRIPT(contents.noScriptMessage);
         body.addContent(noScript);
         if (configuration.allowTag(HtmlTag.MAIN)) {
@@ -129,24 +128,20 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is an error writing the frames document
      */
     private void printFramesDocument(String title, HtmlTree body) throws DocFileIOException {
-        Content htmlDocType = configuration.isOutputHtml5()
-                ? DocType.HTML5
-                : DocType.TRANSITIONAL;
-        Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
-        Content head = new HtmlTree(HtmlTag.HEAD);
-        head.addContent(getGeneratedBy(!configuration.notimestamp));
-        Content windowTitle = HtmlTree.TITLE(new StringContent(title));
-        head.addContent(windowTitle);
-        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE, configuration.charset);
-        head.addContent(meta);
-        addStyleSheetProperties(configuration, head);
-        head.addContent(getFramesJavaScript());
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
-                head, body);
-        Content htmlDocument = new HtmlDocument(htmlDocType,
-                htmlComment, htmlTree);
-        write(htmlDocument);
-    }
+        DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
+        Content htmlComment = contents.newPage;
+        Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
+                .setTimestamp(!configuration.notimestamp, false)
+                .setTitle(title)
+                .setCharset(configuration.charset)
+                .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())
+                .addDefaultScript(false)
+                .addScript(getFramesScript());
+
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
+        HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlComment, htmlTree);
+        htmlDocument.write(DocFile.createFileForOutput(configuration, path));
+   }
 
     /**
      * Get the frame sizes and their contents.
@@ -156,8 +151,8 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     protected Content getFrameDetails() {
         HtmlTree leftContainerDiv = new HtmlTree(HtmlTag.DIV);
         HtmlTree rightContainerDiv = new HtmlTree(HtmlTag.DIV);
-        leftContainerDiv.addStyle(HtmlStyle.leftContainer);
-        rightContainerDiv.addStyle(HtmlStyle.rightContainer);
+        leftContainerDiv.setStyle(HtmlStyle.leftContainer);
+        rightContainerDiv.setStyle(HtmlStyle.rightContainer);
         if (configuration.showModules && configuration.modules.size() > 1) {
             addAllModulesFrameTag(leftContainerDiv);
         } else if (noOfPackages > 1) {
@@ -214,7 +209,67 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     private void addClassFrameTag(Content contentTree) {
         HtmlTree frame = HtmlTree.IFRAME(configuration.topFile.getPath(), "classFrame",
                 configuration.getText("doclet.Package_class_and_interface_descriptions"));
-        frame.addStyle(HtmlStyle.rightIframe);
+        frame.setStyle(HtmlStyle.rightIframe);
         contentTree.addContent(frame);
+    }
+
+    /**
+     * Returns a content tree for the SCRIPT tag for the main page(index.html).
+     *
+     * @return a content for the SCRIPT tag
+     */
+    protected Script getFramesScript() {
+        return new Script("\n" +
+                "    tmpTargetPage = \"\" + window.location.search;\n" +
+                "    if (tmpTargetPage != \"\" && tmpTargetPage != \"undefined\")\n" +
+                "        tmpTargetPage = tmpTargetPage.substring(1);\n" +
+                "    if (tmpTargetPage.indexOf(\":\") != -1 || (tmpTargetPage != \"\" && !validURL(tmpTargetPage)))\n" +
+                "        tmpTargetPage = \"undefined\";\n" +
+                "    targetPage = tmpTargetPage;\n" +
+                "    function validURL(url) {\n" +
+                "        try {\n" +
+                "            url = decodeURIComponent(url);\n" +
+                "        }\n" +
+                "        catch (error) {\n" +
+                "            return false;\n" +
+                "        }\n" +
+                "        var pos = url.indexOf(\".html\");\n" +
+                "        if (pos == -1 || pos != url.length - 5)\n" +
+                "            return false;\n" +
+                "        var allowNumber = false;\n" +
+                "        var allowSep = false;\n" +
+                "        var seenDot = false;\n" +
+                "        for (var i = 0; i < url.length - 5; i++) {\n" +
+                "            var ch = url.charAt(i);\n" +
+                "            if ('a' <= ch && ch <= 'z' ||\n" +
+                "                    'A' <= ch && ch <= 'Z' ||\n" +
+                "                    ch == '$' ||\n" +
+                "                    ch == '_' ||\n" +
+                "                    ch.charCodeAt(0) > 127) {\n" +
+                "                allowNumber = true;\n" +
+                "                allowSep = true;\n" +
+                "            } else if ('0' <= ch && ch <= '9'\n" +
+                "                    || ch == '-') {\n" +
+                "                if (!allowNumber)\n" +
+                "                     return false;\n" +
+                "            } else if (ch == '/' || ch == '.') {\n" +
+                "                if (!allowSep)\n" +
+                "                    return false;\n" +
+                "                allowNumber = false;\n" +
+                "                allowSep = false;\n" +
+                "                if (ch == '.')\n" +
+                "                     seenDot = true;\n" +
+                "                if (ch == '/' && seenDot)\n" +
+                "                     return false;\n" +
+                "            } else {\n" +
+                "                return false;\n" +
+                "            }\n" +
+                "        }\n" +
+                "        return true;\n" +
+                "    }\n" +
+                "    function loadFrames() {\n" +
+                "        if (targetPage != \"\" && targetPage != \"undefined\")\n" +
+                "             top.classFrame.location = top.targetPage;\n" +
+                "    }\n");
     }
 }

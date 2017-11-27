@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP
 
 #include "gc/g1/g1ParScanThreadState.hpp"
-#include "gc/g1/g1RemSet.inline.hpp"
+#include "gc/g1/g1RemSet.hpp"
 #include "oops/oop.inline.hpp"
 
 template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from) {

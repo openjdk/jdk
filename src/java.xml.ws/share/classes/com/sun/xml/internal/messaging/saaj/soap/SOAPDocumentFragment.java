@@ -43,6 +43,11 @@ public class SOAPDocumentFragment implements DocumentFragment {
         this.documentFragment = soapDocument.getDomDocument().createDocumentFragment();
     }
 
+    public SOAPDocumentFragment(SOAPDocumentImpl soapDocument, DocumentFragment documentFragment) {
+        this.soapDocument = soapDocument;
+        this.documentFragment = documentFragment;
+    }
+
     public SOAPDocumentFragment() {}
 
     @Override
@@ -192,7 +197,7 @@ public class SOAPDocumentFragment implements DocumentFragment {
     }
     @Override
     public Document getOwnerDocument() {
-        return documentFragment.getOwnerDocument();
+        return soapDocument;
     }
     @Override
     public Object getFeature(String feature, String version) {
@@ -230,5 +235,9 @@ public class SOAPDocumentFragment implements DocumentFragment {
     }
     public Document getSoapDocument() {
         return soapDocument;
+    }
+
+    public Node getDomNode() {
+        return documentFragment;
     }
 }

@@ -88,7 +88,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
             Content ul = new HtmlTree(HtmlTag.UL);
             for (TypeElement local : collection) {
                 HtmlTree li = new HtmlTree(HtmlTag.LI);
-                li.addStyle(HtmlStyle.circle);
+                li.setStyle(HtmlStyle.circle);
                 addPartialInfo(local, li);
                 addExtendsImplements(parent, local, li);
                 addLevelInfo(local, classtree.directSubClasses(local, isEnum),

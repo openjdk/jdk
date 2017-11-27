@@ -63,7 +63,7 @@ public:
 
   static int o_reg_temps_offset_in_bytes() { return offset_of(JavaThread, _o_reg_temps); }
 
-  static int saved_exception_npc_offset_in_bytes() { return offset_of(JavaThread,_saved_exception_npc); }
+  static ByteSize saved_exception_npc_offset() { return byte_offset_of(JavaThread,_saved_exception_npc); }
 
   address  saved_exception_npc()             { return _saved_exception_npc; }
   void set_saved_exception_npc(address a)    { _saved_exception_npc = a; }

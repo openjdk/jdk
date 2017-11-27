@@ -68,11 +68,8 @@ $(LIBDIR)/Launcher.o : Launcher.c \
 	$(CC) -c $(CFLAGS) -o $(LIBDIR)/Launcher.o \
 	    -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/$(PLATFORM) Launcher.c
 	
-Launcher.h : Launcher.class
-	$(JAVA_HOME)/bin/javah -force Launcher
-
-Launcher.class : Launcher.java
-	$(JAVA_HOME)/bin/javac Launcher.java
+Launcher.class Launcher.h : Launcher.java
+	$(JAVA_HOME)/bin/javac -h . Launcher.java
 
 java_home:
 ifndef JAVA_HOME

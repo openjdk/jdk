@@ -44,7 +44,7 @@ public class TestNewLineInLink extends JavadocTester {
     void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
-                "-linkoffline", "http://www.java.sun.com/j2se/1.4/docs/api", testSrc,
+                "-linkoffline", "http://www.java.sun.com/j2se/1.4/docs/api", testSrc("jdk"),
                 "testNewLineInLink");
         checkExit(Exit.OK);
 

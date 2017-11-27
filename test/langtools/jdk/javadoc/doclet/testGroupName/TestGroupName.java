@@ -64,10 +64,8 @@ public class TestGroupName extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("overview-summary.html", true,
-                "<span><a href=\"javascript:showGroups(1);\">abc &lt; &amp; &gt; def</a></span>");
-
-        checkOutput("overview-summary.html", false,
-                "abc < & > def");
+                "<span><a href=\"javascript:showGroups(1);\">abc &lt; &amp; &gt; def</a></span>",
+                ",\"abc < & > def\"],");
     }
 
     @Test
@@ -99,10 +97,8 @@ public class TestGroupName extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("overview-summary.html", true,
-                "<span><a href=\"javascript:showGroups(1);\">abc &lt; &amp; &gt; def</a></span>");
-
-        checkOutput("overview-summary.html", false,
-                "abc < & > def");
+                "<span><a href=\"javascript:showGroups(1);\">abc &lt; &amp; &gt; def</a></span>",
+                ",\"abc < & > def\"],");
     }
 }
 

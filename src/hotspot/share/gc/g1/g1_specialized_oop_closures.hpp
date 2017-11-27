@@ -41,6 +41,9 @@ class G1ConcurrentRefineOopClosure;
 class G1CMOopClosure;
 class G1RootRegionScanClosure;
 
+class G1MarkAndPushClosure;
+class G1AdjustAndRebuildClosure;
+
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f) \
       f(G1ScanEvacuatedObjClosure,_nv)             \
       f(G1ScanObjsDuringUpdateRSClosure,_nv)       \
@@ -48,5 +51,9 @@ class G1RootRegionScanClosure;
       f(G1ConcurrentRefineOopClosure,_nv)          \
       f(G1CMOopClosure,_nv)                        \
       f(G1RootRegionScanClosure,_nv)
+
+#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1FULL(f) \
+      f(G1MarkAndPushClosure,_nv)                      \
+      f(G1AdjustAndRebuildClosure,_nv)
 
 #endif // SHARE_VM_GC_G1_G1_SPECIALIZED_OOP_CLOSURES_HPP

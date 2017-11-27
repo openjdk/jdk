@@ -952,6 +952,9 @@ public class Check {
         if (t.hasTag(BOT)) {
             log.error(pos, Errors.CantInferLocalVarType(name, Fragments.LocalCantInferNull));
             return types.createErrorType(t);
+        } else if (t.hasTag(VOID)) {
+            log.error(pos, Errors.CantInferLocalVarType(name, Fragments.LocalCantInferVoid));
+            return types.createErrorType(t);
         }
         return t;
     }
@@ -3918,6 +3921,8 @@ public class Check {
                     todo = todo.tail;
                     if (current == whatPackage.modle)
                         return ; //OK
+                    if ((current.flags() & Flags.AUTOMATIC_MODULE) != 0)
+                        continue; //for automatic modules, don't look into their dependencies
                     for (RequiresDirective req : current.requires) {
                         if (req.isTransitive()) {
                             todo = todo.prepend(req.module);

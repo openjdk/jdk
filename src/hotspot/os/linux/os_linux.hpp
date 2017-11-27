@@ -32,6 +32,7 @@ static bool zero_page_read_protected() { return true; }
 
 class Linux {
   friend class os;
+  friend class OSContainer;
   friend class TestReserveMemorySpecial;
 
   static bool libjsig_is_loaded;        // libjsig that interposes sigaction(),
@@ -75,6 +76,9 @@ class Linux {
 
   static julong available_memory();
   static julong physical_memory() { return _physical_memory; }
+  static void set_physical_memory(julong phys_mem) { _physical_memory = phys_mem; }
+  static int active_processor_count();
+
   static void initialize_system_info();
 
   static int commit_memory_impl(char* addr, size_t bytes, bool exec);
@@ -106,6 +110,7 @@ class Linux {
   static bool release_memory_special_huge_tlbfs(char* base, size_t bytes);
 
   static void print_full_memory_info(outputStream* st);
+  static void print_container_info(outputStream* st);
   static void print_distro_info(outputStream* st);
   static void print_libversion_info(outputStream* st);
 

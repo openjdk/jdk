@@ -35,6 +35,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -809,7 +810,8 @@ void InterpreterMacroAssembler::dispatch_epilog(TosState state, int step) {
 
 void InterpreterMacroAssembler::dispatch_base(TosState state,
                                               address* table,
-                                              bool verifyoop) {
+                                              bool verifyoop,
+                                              bool generate_poll) {
   verify_FPU(1, state);
   if (VerifyActivationFrameSize) {
     Label L;
@@ -827,8 +829,24 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     verify_oop(rax, state);
   }
 #ifdef _LP64
+
+  Label no_safepoint, dispatch;
+  address* const safepoint_table = Interpreter::safept_table(state);
+  if (SafepointMechanism::uses_thread_local_poll() && table != safepoint_table && generate_poll) {
+    NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
+
+    testb(Address(r15_thread, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
+
+    jccb(Assembler::zero, no_safepoint);
+    lea(rscratch1, ExternalAddress((address)safepoint_table));
+    jmpb(dispatch);
+  }
+
+  bind(no_safepoint);
   lea(rscratch1, ExternalAddress((address)table));
+  bind(dispatch);
   jmp(Address(rscratch1, rbx, Address::times_8));
+
 #else
   Address index(noreg, rbx, Address::times_ptr);
   ExternalAddress tbl((address)table);
@@ -837,8 +855,8 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 #endif // _LP64
 }
 
-void InterpreterMacroAssembler::dispatch_only(TosState state) {
-  dispatch_base(state, Interpreter::dispatch_table(state));
+void InterpreterMacroAssembler::dispatch_only(TosState state, bool generate_poll) {
+  dispatch_base(state, Interpreter::dispatch_table(state), true, generate_poll);
 }
 
 void InterpreterMacroAssembler::dispatch_only_normal(TosState state) {
@@ -850,12 +868,12 @@ void InterpreterMacroAssembler::dispatch_only_noverify(TosState state) {
 }
 
 
-void InterpreterMacroAssembler::dispatch_next(TosState state, int step) {
+void InterpreterMacroAssembler::dispatch_next(TosState state, int step, bool generate_poll) {
   // load next bytecode (load before advancing _bcp_register to prevent AGI)
   load_unsigned_byte(rbx, Address(_bcp_register, step));
   // advance _bcp_register
   increment(_bcp_register, step);
-  dispatch_base(state, Interpreter::dispatch_table(state));
+  dispatch_base(state, Interpreter::dispatch_table(state), true, generate_poll);
 }
 
 void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {

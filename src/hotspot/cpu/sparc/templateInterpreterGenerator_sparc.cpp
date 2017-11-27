@@ -313,7 +313,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 }
 
 
-address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step) {
+address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step, address continuation) {
   address entry = __ pc();
   __ get_constant_pool_cache(LcpoolCache); // load LcpoolCache
 #if INCLUDE_JVMCI
@@ -350,7 +350,11 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
     __ should_not_reach_here();
     __ bind(L);
   }
-  __ dispatch_next(state, step);
+  if (continuation == NULL) {
+    __ dispatch_next(state, step);
+  } else {
+    __ jump_to_entry(continuation);
+  }
   return entry;
 }
 
@@ -912,10 +916,8 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
     Label L_slow_path;
     // If we need a safepoint check, generate full interpreter entry.
-    ExternalAddress state(SafepointSynchronize::address_of_state());
-    __ set(ExternalAddress(SafepointSynchronize::address_of_state()), O2);
-    __ set(SafepointSynchronize::_not_synchronized, O3);
-    __ cmp_and_br_short(O2, O3, Assembler::notEqual, Assembler::pt, L_slow_path);
+    __ safepoint_poll(L_slow_path, false, G2_thread, O2);
+    __ delayed()->nop();
 
     // Load parameters
     const Register crc   = O0; // initial crc
@@ -956,10 +958,9 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 
     Label L_slow_path;
     // If we need a safepoint check, generate full interpreter entry.
-    ExternalAddress state(SafepointSynchronize::address_of_state());
-    __ set(ExternalAddress(SafepointSynchronize::address_of_state()), O2);
-    __ set(SafepointSynchronize::_not_synchronized, O3);
-    __ cmp_and_br_short(O2, O3, Assembler::notEqual, Assembler::pt, L_slow_path);
+
+    __ safepoint_poll(L_slow_path, false, G2_thread, O2);
+    __ delayed()->nop();
 
     // Load parameters from the stack
     const Register crc    = O0; // initial crc
@@ -1397,7 +1398,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Block, if necessary, before resuming in _thread_in_Java state.
   // In order for GC to work, don't clear the last_Java_sp until after blocking.
   { Label no_block;
-    AddressLiteral sync_state(SafepointSynchronize::address_of_state());
 
     // Switch thread to "native transition" state before reading the synchronization state.
     // This additional state is necessary because reading and testing the synchronization
@@ -1420,11 +1420,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
         __ serialize_memory(G2_thread, G1_scratch, G3_scratch);
       }
     }
-    __ load_contents(sync_state, G3_scratch);
-    __ cmp(G3_scratch, SafepointSynchronize::_not_synchronized);
 
     Label L;
-    __ br(Assembler::notEqual, false, Assembler::pn, L);
+    __ safepoint_poll(L, false, G2_thread, G3_scratch);
     __ delayed()->ld(G2_thread, JavaThread::suspend_flags_offset(), G3_scratch);
     __ cmp_and_br_short(G3_scratch, 0, Assembler::equal, Assembler::pt, no_block);
     __ bind(L);

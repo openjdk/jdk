@@ -85,11 +85,8 @@ public class XmlUtil {
         "http://xml.org/sax/properties/lexical-handler";
 
     private static final String DISALLOW_DOCTYPE_DECL = "http://apache.org/xml/features/disallow-doctype-decl";
-
     private static final String EXTERNAL_GE = "http://xml.org/sax/features/external-general-entities";
-
     private static final String EXTERNAL_PE = "http://xml.org/sax/features/external-parameter-entities";
-
     private static final String LOAD_EXTERNAL_DTD = "http://apache.org/xml/features/nonvalidating/load-external-dtd";
 
     private static final Logger LOGGER = Logger.getLogger(XmlUtil.class.getName());
@@ -341,15 +338,15 @@ public class XmlUtil {
             factory.setFeature(featureToSet, securityOn);
             factory.setNamespaceAware(true);
             if (securityOn) {
-                factory.setExpandEntityReferences(false);
-                featureToSet = DISALLOW_DOCTYPE_DECL;
-                factory.setFeature(featureToSet, true);
-                featureToSet = EXTERNAL_GE;
-                factory.setFeature(featureToSet, false);
-                featureToSet = EXTERNAL_PE;
-                factory.setFeature(featureToSet, false);
-                featureToSet = LOAD_EXTERNAL_DTD;
-                factory.setFeature(featureToSet, false);
+               factory.setExpandEntityReferences(false);
+               featureToSet = DISALLOW_DOCTYPE_DECL;
+               factory.setFeature(featureToSet, true);
+               featureToSet = EXTERNAL_GE;
+               factory.setFeature(featureToSet, false);
+               featureToSet = EXTERNAL_PE;
+               factory.setFeature(featureToSet, false);
+               featureToSet = LOAD_EXTERNAL_DTD;
+               factory.setFeature(featureToSet, false);
             }
         } catch (ParserConfigurationException e) {
             LOGGER.log(Level.WARNING, "Factory [{0}] doesn't support "+featureToSet+" feature!", new Object[] {factory.getClass().getName()} );
