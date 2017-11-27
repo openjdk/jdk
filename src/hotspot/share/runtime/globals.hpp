@@ -2484,6 +2484,12 @@ public:
   LP64_ONLY(range(-1, max_intx/MICROUNITS))                                 \
   NOT_LP64(range(-1, max_intx))                                             \
                                                                             \
+  diagnostic(bool, EnableThreadSMRExtraValidityChecks, true,                \
+             "Enable Thread SMR extra validity checks")                     \
+                                                                            \
+  diagnostic(bool, EnableThreadSMRStatistics, true,                         \
+             "Enable Thread SMR Statistics")                                \
+                                                                            \
   product(bool, Inline, true,                                               \
           "Enable inlining")                                                \
                                                                             \
@@ -3359,7 +3365,7 @@ public:
                                                                             \
   product_pd(uintx, InitialCodeCacheSize,                                   \
           "Initial code cache size (in bytes)")                             \
-          range(0, max_uintx)                                               \
+          range(os::vm_page_size(), max_uintx)                              \
                                                                             \
   develop_pd(uintx, CodeCacheMinimumUseSpace,                               \
           "Minimum code cache size (in bytes) required to start VM.")       \
@@ -3370,7 +3376,7 @@ public:
                                                                             \
   product_pd(uintx, ReservedCodeCacheSize,                                  \
           "Reserved code cache size (in bytes) - maximum code cache size")  \
-          range(0, max_uintx)                                               \
+          range(os::vm_page_size(), max_uintx)                              \
                                                                             \
   product_pd(uintx, NonProfiledCodeHeapSize,                                \
           "Size of code heap with non-profiled methods (in bytes)")         \
@@ -3382,11 +3388,11 @@ public:
                                                                             \
   product_pd(uintx, NonNMethodCodeHeapSize,                                 \
           "Size of code heap with non-nmethods (in bytes)")                 \
-          range(0, max_uintx)                                               \
+          range(os::vm_page_size(), max_uintx)                              \
                                                                             \
   product_pd(uintx, CodeCacheExpansionSize,                                 \
           "Code cache expansion size (in bytes)")                           \
-          range(0, max_uintx)                                               \
+          range(os::vm_page_size(), max_uintx)                              \
                                                                             \
   diagnostic_pd(uintx, CodeCacheMinBlockLength,                             \
           "Minimum number of segments in a code cache block")               \

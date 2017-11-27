@@ -130,9 +130,6 @@ class ModuleUtil {
      */
     static void delegateAddOpensToImplModule(Class[] classes, Class<?> factorySPI) throws JAXBException {
         final Module implModule = factorySPI.getModule();
-        if (!implModule.isNamed()) {
-            return;
-        }
 
         Module jaxbModule = JAXBContext.class.getModule();
 

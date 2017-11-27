@@ -28,7 +28,7 @@ package javax.xml.soap;
 /**
 * The access point for the implementation classes of the factories defined in the
 * SAAJ API. The {@code newInstance} methods defined on factories {@link SOAPFactory} and
-* {@link MessageFactory} in SAAJ 1.3 defer to instances of this class to do the actual object creation.
+* {@link MessageFactory} in SAAJ 1.4 defer to instances of this class to do the actual object creation.
 * The implementations of {@code newInstance()} methods (in {@link SOAPFactory} and {@link MessageFactory})
 * that existed in SAAJ 1.2 have been updated to also delegate to the SAAJMetaFactory when the SAAJ 1.2
 * defined lookup fails to locate the Factory implementation class name.

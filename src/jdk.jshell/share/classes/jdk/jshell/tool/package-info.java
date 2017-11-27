@@ -28,23 +28,23 @@
  * Allows configuration of the tool before launching. A builder is used
  * to configure and launch the tool.
  * <p>
- * At the simplest, a builder is retrieved, and the builder is used to run the
+ * At the simplest, a builder is retrieved, and the builder is used to start the
  * tool:
  * <pre>
  * {@code
  *       JavaShellToolBuilder
  *             .builder()
- *             .run();
+ *             .start();
  * }
  * </pre>
- * The builder can be configured and the run can have arguments:
+ * The builder can be configured and the start can have arguments:
  * <pre>
  * {@code
  *       JavaShellToolBuilder
  *             .builder()
  *             .out(myCommandPrintStream, myOutputPrintStream)
  *             .locale(Locale.CANADA)
- *             .run("--feedback", "silent", "MyStart");
+ *             .start("--feedback", "silent", "MyStart");
  * }
  * </pre>
  *

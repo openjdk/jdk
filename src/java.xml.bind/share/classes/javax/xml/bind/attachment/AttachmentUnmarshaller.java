@@ -78,7 +78,7 @@ public abstract class AttachmentUnmarshaller {
     *     <tr>
     *       <th scope="col">MIME Type</th>
     *       <th scope="col">Java Type</th>
-    *     </tr>
+    *       </tr>
     *     <tr>
     *       <th scope="col">{@code DataHandler.getContentType()}</th>
     *       <th scope="col">{@code instanceof DataHandler.getContent()}</th>

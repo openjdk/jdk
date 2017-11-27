@@ -177,7 +177,6 @@ SUNWprivate_1.1 {
         Java_sun_java2d_xr_XRBackendNative_setGCMode;
         Java_sun_java2d_xr_XRBackendNative_GCRectanglesNative;
         Java_sun_java2d_xr_XRUtils_initFormatPtrs;
-        Java_sun_java2d_xr_XRBackendNative_renderCompositeTrapezoidsNative;
         XRT_DrawGlyphList;
 
         Java_sun_java2d_opengl_OGLContext_getOGLIdString;

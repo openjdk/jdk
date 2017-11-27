@@ -1695,6 +1695,14 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             tpw = XlibUtil.getParentWindow(tpw);
             parent = XToolkit.windowToXWindow(tpw);
         }
+
+        if (parent instanceof XLightweightFramePeer) {
+            XLightweightFramePeer peer = (XLightweightFramePeer) parent;
+            long ownerWindowPtr = peer.getOverriddenWindowHandle();
+            if (ownerWindowPtr != 0) {
+                tpw = ownerWindowPtr;
+            }
+        }
         XlibWrapper.XSetTransientFor(XToolkit.getDisplay(), bpw, tpw);
         window.curRealTransientFor = parent;
     }

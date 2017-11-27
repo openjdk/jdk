@@ -150,6 +150,7 @@ public enum ToolOption {
         @Override
         public void process(Helper helper, String arg) throws InvalidValueException {
             Option.SOURCE.process(helper.getOptionHelper(), primaryName, arg);
+            Option.TARGET.process(helper.getOptionHelper(), Option.TARGET.primaryName, arg);
         }
     },
 

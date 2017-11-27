@@ -890,7 +890,7 @@ public abstract class MessageImpl
         needsSave();
     }
 
-    static private final Iterator<AttachmentPart> nullIter = Collections.<AttachmentPart>EMPTY_LIST.iterator();
+    static private final Iterator<AttachmentPart> nullIter = Collections.EMPTY_LIST.<AttachmentPart>iterator();
 
     @Override
     public Iterator<AttachmentPart> getAttachments() {

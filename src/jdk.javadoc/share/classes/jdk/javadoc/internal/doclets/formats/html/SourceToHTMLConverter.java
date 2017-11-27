@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Head;
+
 import java.io.*;
 import java.util.List;
 
@@ -42,6 +44,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -77,6 +80,7 @@ public class SourceToHTMLConverter {
 
     private final HtmlConfiguration configuration;
     private final Messages messages;
+    private final Resources resources;
     private final Utils utils;
 
     private final DocletEnvironment docEnv;
@@ -93,6 +97,7 @@ public class SourceToHTMLConverter {
                                   DocPath outputdir) {
         this.configuration  = configuration;
         this.messages = configuration.getMessages();
+        this.resources = configuration.resources;
         this.utils = configuration.utils;
         this.docEnv = rd;
         this.outputdir = outputdir;
@@ -193,7 +198,7 @@ public class SourceToHTMLConverter {
             body.addContent((configuration.allowTag(HtmlTag.MAIN)) ? HtmlTree.MAIN(div) : div);
             writeToFile(body, outputdir.resolve(DocPath.forClass(utils, te)));
         } catch (IOException e) {
-            String message = configuration.resources.getText("doclet.exception.read.file", fo.getName());
+            String message = resources.getText("doclet.exception.read.file", fo.getName());
             throw new SimpleDocletException(message, e);
         }
     }
@@ -205,24 +210,18 @@ public class SourceToHTMLConverter {
      * @param path the path for the file.
      */
     private void writeToFile(Content body, DocPath path) throws DocFileIOException {
-        Content htmlDocType = configuration.isOutputHtml5()
-                ? DocType.HTML5
-                : DocType.TRANSITIONAL;
-        Content head = new HtmlTree(HtmlTag.HEAD);
-        head.addContent(HtmlTree.TITLE(new StringContent(
-                configuration.getText("doclet.Window_Source_title"))));
-        addStyleSheetProperties(head);
+        DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
+        Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
+//                .setTimestamp(!configuration.notimestamp) // temporary: compatibility!
+                .setTitle(resources.getText("doclet.Window_Source_title"))
+//                .setCharset(configuration.charset) // temporary: compatibility!
+                .addDefaultScript(false)
+                .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets());
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
-                head, body);
-        Content htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
+                head.toContent(), body);
+        HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlTree);
         messages.notice("doclet.Generating_0", path.getPath());
-        DocFile df = DocFile.createFileForOutput(configuration, path);
-        try (Writer w = df.openWriter()) {
-            htmlDocument.write(w, true);
-        } catch (IOException e) {
-            throw new DocFileIOException(df, DocFileIOException.Mode.WRITE, e);
-        }
-
+        htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
 
     /**
@@ -275,7 +274,7 @@ public class SourceToHTMLConverter {
      */
     private static void addLineNo(Content pre, int lineno) {
         HtmlTree span = new HtmlTree(HtmlTag.SPAN);
-        span.addStyle(HtmlStyle.sourceLineNo);
+        span.setStyle(HtmlStyle.sourceLineNo);
         if (lineno < 10) {
             span.addContent("00" + Integer.toString(lineno));
         } else if (lineno < 100) {

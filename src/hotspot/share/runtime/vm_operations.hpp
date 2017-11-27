@@ -392,12 +392,14 @@ class VM_PrintMetadata : public VM_Operation {
 class DeadlockCycle;
 class VM_FindDeadlocks: public VM_Operation {
  private:
-  bool           _concurrent_locks;
-  DeadlockCycle* _deadlocks;
-  outputStream*  _out;
+  bool              _concurrent_locks;
+  DeadlockCycle*    _deadlocks;
+  outputStream*     _out;
+  ThreadsListSetter _setter;  // Helper to set hazard ptr in the originating thread
+                              // which protects the JavaThreads in _deadlocks.
 
  public:
-  VM_FindDeadlocks(bool concurrent_locks) :  _concurrent_locks(concurrent_locks), _out(NULL), _deadlocks(NULL) {};
+  VM_FindDeadlocks(bool concurrent_locks) :  _concurrent_locks(concurrent_locks), _out(NULL), _deadlocks(NULL), _setter() {};
   VM_FindDeadlocks(outputStream* st) : _concurrent_locks(true), _out(st), _deadlocks(NULL) {};
   ~VM_FindDeadlocks();
 

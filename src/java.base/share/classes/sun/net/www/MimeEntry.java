@@ -252,7 +252,7 @@ public class MimeEntry implements Cloneable {
             }
 
         case UNKNOWN:
-            // REMIND: What do do here?
+            // REMIND: What to do here?
             return null;
         }
 

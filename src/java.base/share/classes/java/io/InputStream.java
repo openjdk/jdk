@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,11 +164,9 @@ public abstract class InputStream implements Closeable {
      * @see        java.io.InputStream#read()
      */
     public int read(byte b[], int off, int len) throws IOException {
-        if (b == null) {
-            throw new NullPointerException();
-        } else if (off < 0 || len < 0 || len > b.length - off) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        Objects.requireNonNull(b);
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0) {
             return 0;
         }
 
@@ -302,8 +300,8 @@ public abstract class InputStream implements Closeable {
      */
     public int readNBytes(byte[] b, int off, int len) throws IOException {
         Objects.requireNonNull(b);
-        if (off < 0 || len < 0 || len > b.length - off)
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromIndexSize(off, len, b.length);
+
         int n = 0;
         while (n < len) {
             int count = read(b, off + n, len - n);

@@ -55,6 +55,7 @@
 #include "runtime/os.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -665,7 +666,7 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
   int  result() const { return _result; }
 
   void doit() {
-    for (JavaThread* t = Threads::first(); t != NULL; t = t->next()) {
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
       if (t->has_last_Java_frame()) {
         for (StackFrameStream fst(t, UseBiasedLocking); !fst.is_done(); fst.next()) {
           frame* f = fst.current();

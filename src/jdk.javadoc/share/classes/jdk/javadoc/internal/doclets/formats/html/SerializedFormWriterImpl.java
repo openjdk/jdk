@@ -102,7 +102,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     public Content getSerializedSummariesHeader() {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addStyle(HtmlStyle.blockList);
+        ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
 
@@ -117,7 +117,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
             htmlTree = HtmlTree.SECTION();
         } else {
             htmlTree = new HtmlTree(HtmlTag.LI);
-            htmlTree.addStyle(HtmlStyle.blockList);
+            htmlTree.setStyle(HtmlStyle.blockList);
         }
         return htmlTree;
     }
@@ -143,7 +143,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     public Content getClassSerializedHeader() {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addStyle(HtmlStyle.blockList);
+        ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
 
@@ -168,7 +168,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
                 ? getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.DEFAULT, typeElement)
                         .label(configuration.getClassName(typeElement)))
                 : new StringContent(utils.getFullyQualifiedName(typeElement));
-        Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(
+        Content li = HtmlTree.LI(HtmlStyle.blockList, links.createAnchor(
                 utils.getFullyQualifiedName(typeElement)));
         Content superClassLink = typeElement.getSuperclass() != null
                 ? getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.SERIALIZED_FORM,
@@ -194,7 +194,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     public Content getSerialUIDInfoHeader() {
         HtmlTree dl = new HtmlTree(HtmlTag.DL);
-        dl.addStyle(HtmlStyle.nameValue);
+        dl.setStyle(HtmlStyle.nameValue);
         return dl;
     }
 
@@ -221,7 +221,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     public Content getClassContentHeader() {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addStyle(HtmlStyle.blockList);
+        ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
 

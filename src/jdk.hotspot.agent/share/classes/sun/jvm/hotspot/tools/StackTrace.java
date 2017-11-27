@@ -76,6 +76,8 @@ public class StackTrace extends Tool {
                 if (cur.isJavaThread()) {
                     cur.printThreadInfoOn(tty);
                     try {
+                        int count = 0;
+
                         for (JavaVFrame vf = cur.getLastJavaVFrameDbg(); vf != null; vf = vf.javaSender()) {
                             Method method = vf.getMethod();
                             tty.print(" - " + method.externalNameAndSignature() +
@@ -109,6 +111,7 @@ public class StackTrace extends Tool {
                             }
 
                             tty.println(")");
+                            vf.printLockInfo(tty, count++);
                         }
                     } catch (Exception e) {
                         tty.println("Error occurred during stack walking:");

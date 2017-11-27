@@ -261,6 +261,10 @@ WorkGang::WorkGang(const char* name,
     _dispatcher(create_dispatcher())
 { }
 
+WorkGang::~WorkGang() {
+  delete _dispatcher;
+}
+
 AbstractGangWorker* WorkGang::allocate_worker(uint worker_id) {
   return new GangWorker(this, worker_id);
 }

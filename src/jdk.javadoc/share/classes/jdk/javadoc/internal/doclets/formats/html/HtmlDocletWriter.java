@@ -25,7 +25,9 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.text.SimpleDateFormat;
+import jdk.javadoc.internal.doclets.formats.html.markup.Head;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,17 +67,17 @@ import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocWriter;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
+import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
@@ -92,9 +94,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclets.toolkit.util.GroupTypes;
 import jdk.javadoc.internal.doclets.toolkit.util.ImplementedMethods;
-import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes.TableTabs;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
@@ -116,7 +116,7 @@ import static jdk.javadoc.internal.doclets.toolkit.util.CommentHelper.SPACER;
  * @author Robert Field
  * @author Bhavesh Patel (Modified)
  */
-public class HtmlDocletWriter extends HtmlDocWriter {
+public class HtmlDocletWriter {
 
     /**
      * Relative path from the file getting generated to the destination
@@ -153,6 +153,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
 
     protected final Resources resources;
 
+    protected final Links links;
+
     /**
      * To check whether annotation heading is printed or not.
      */
@@ -178,20 +180,31 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     final static Pattern IMPROPER_HTML_CHARS = Pattern.compile(".*[&<>].*");
 
     /**
+     * The window title of this file.
+     */
+    protected String winTitle;
+
+    protected Script mainBodyScript;
+
+    /**
      * Constructor to construct the HtmlStandardWriter object.
      *
-     * @param path File to be generated.
+     * @param configuration the configuration for this doclet
+     * @param path the file to be generated.
      */
     public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
-        super(configuration, path);
         this.configuration = configuration;
         this.contents = configuration.contents;
         this.messages = configuration.messages;
         this.resources = configuration.resources;
+        this.links = configuration.links;
         this.utils = configuration.utils;
         this.path = path;
         this.pathToRoot = path.parent().invert();
         this.filename = path.basename();
+
+        messages.notice("doclet.Generating_0",
+            DocFile.createFileForOutput(configuration, path).getPath());
     }
 
     /**
@@ -258,19 +271,18 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the script
      */
     public Content getAllClassesLinkScript(String id) {
-        HtmlTree script = HtmlTree.SCRIPT();
-        String scriptCode = "<!--\n" +
-                "  allClassesLink = document.getElementById(\"" + id + "\");\n" +
+        Script script = new Script("<!--\n" +
+                "  allClassesLink = document.getElementById(")
+                .appendStringLiteral(id)
+                .append(");\n" +
                 "  if(window==top) {\n" +
                 "    allClassesLink.style.display = \"block\";\n" +
                 "  }\n" +
                 "  else {\n" +
                 "    allClassesLink.style.display = \"none\";\n" +
                 "  }\n" +
-                "  //-->\n";
-        Content scriptContent = new RawHtml(scriptCode.replace("\n", DocletConstants.NL));
-        script.addContent(scriptContent);
-        Content div = HtmlTree.DIV(script);
+                "  //-->\n");
+        Content div = HtmlTree.DIV(script.asContent());
         Content div_noscript = HtmlTree.DIV(contents.noScriptMessage);
         Content noScript = HtmlTree.NOSCRIPT(div_noscript);
         div.addContent(noScript);
@@ -359,7 +371,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public Content getTargetPackageLink(PackageElement pkg, String target,
             Content label) {
-        return getHyperLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY), label, "", target);
+        return Links.createLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY), label, "", target);
     }
 
     /**
@@ -373,7 +385,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public Content getTargetModulePackageLink(PackageElement pkg, String target,
             Content label, ModuleElement mdle) {
-        return getHyperLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
+        return Links.createLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
                 label, "", target);
     }
 
@@ -386,7 +398,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content for the target module link
      */
     public Content getTargetModuleLink(String target, Content label, ModuleElement mdle) {
-        return getHyperLink(pathToRoot.resolve(
+        return Links.createLink(pathToRoot.resolve(
                 DocPaths.moduleSummary(mdle)), label, "", target);
     }
 
@@ -403,35 +415,19 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public void printHtmlDocument(List<String> metakeywords, boolean includeScript,
             Content body) throws DocFileIOException {
-        Content htmlDocType = configuration.isOutputHtml5()
-                ? DocType.HTML5
-                : DocType.TRANSITIONAL;
-        Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
-        Content head = new HtmlTree(HtmlTag.HEAD);
-        head.addContent(getGeneratedBy(!configuration.notimestamp));
-        head.addContent(getTitle());
-        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE, configuration.charset);
-        head.addContent(meta);
-        if (!configuration.notimestamp) {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            meta = HtmlTree.META(configuration.isOutputHtml5()
-                    ? "dc.created"
-                    : "date", dateFormat.format(new Date()));
-            head.addContent(meta);
-        }
-        if (metakeywords != null) {
-            for (String metakeyword : metakeywords) {
-                meta = HtmlTree.META("keywords", metakeyword);
-                head.addContent(meta);
-            }
-        }
-        addStyleSheetProperties(head);
-        addScriptProperties(head);
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
-                head, body);
-        Content htmlDocument = new HtmlDocument(htmlDocType,
-                htmlComment, htmlTree);
-        write(htmlDocument);
+        DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
+        Content htmlComment = contents.newPage;
+        Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
+                .setTimestamp(!configuration.notimestamp)
+                .setTitle(winTitle)
+                .setCharset(configuration.charset)
+                .addKeywords(metakeywords)
+                .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())
+                .setIndex(configuration.createindex, mainBodyScript);
+
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
+        HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlComment, htmlTree);
+        htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
 
     /**
@@ -503,37 +499,37 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     : htmlTree;
             String allClassesId = "allclasses_";
             HtmlTree navDiv = new HtmlTree(HtmlTag.DIV);
-            fixedNavDiv.addStyle(HtmlStyle.fixedNav);
+            fixedNavDiv.setStyle(HtmlStyle.fixedNav);
             Content skipNavLinks = configuration.getContent("doclet.Skip_navigation_links");
             if (header) {
                 fixedNavDiv.addContent(HtmlConstants.START_OF_TOP_NAVBAR);
-                navDiv.addStyle(HtmlStyle.topNav);
+                navDiv.setStyle(HtmlStyle.topNav);
                 allClassesId += "navbar_top";
-                Content a = getMarkerAnchor(SectionName.NAVBAR_TOP);
+                Content a = links.createAnchor(SectionName.NAVBAR_TOP);
                 //WCAG - Hyperlinks should contain text or an image with alt text - for AT tools
                 navDiv.addContent(a);
-                Content skipLinkContent = HtmlTree.DIV(HtmlStyle.skipNav, getHyperLink(
-                    getDocLink(SectionName.SKIP_NAVBAR_TOP), skipNavLinks,
-                    skipNavLinks.toString(), ""));
+                Content skipLinkContent = HtmlTree.DIV(HtmlStyle.skipNav,
+                        Links.createLink(SectionName.SKIP_NAVBAR_TOP, skipNavLinks,
+                        skipNavLinks.toString(), ""));
                 navDiv.addContent(skipLinkContent);
             } else {
                 tree.addContent(HtmlConstants.START_OF_BOTTOM_NAVBAR);
-                navDiv.addStyle(HtmlStyle.bottomNav);
+                navDiv.setStyle(HtmlStyle.bottomNav);
                 allClassesId += "navbar_bottom";
-                Content a = getMarkerAnchor(SectionName.NAVBAR_BOTTOM);
+                Content a = links.createAnchor(SectionName.NAVBAR_BOTTOM);
                 navDiv.addContent(a);
-                Content skipLinkContent = HtmlTree.DIV(HtmlStyle.skipNav, getHyperLink(
-                    getDocLink(SectionName.SKIP_NAVBAR_BOTTOM), skipNavLinks,
-                    skipNavLinks.toString(), ""));
+                Content skipLinkContent = HtmlTree.DIV(HtmlStyle.skipNav,
+                        Links.createLink(SectionName.SKIP_NAVBAR_BOTTOM, skipNavLinks,
+                        skipNavLinks.toString(), ""));
                 navDiv.addContent(skipLinkContent);
             }
             if (header) {
-                navDiv.addContent(getMarkerAnchor(SectionName.NAVBAR_TOP_FIRSTROW));
+                navDiv.addContent(links.createAnchor(SectionName.NAVBAR_TOP_FIRSTROW));
             } else {
-                navDiv.addContent(getMarkerAnchor(SectionName.NAVBAR_BOTTOM_FIRSTROW));
+                navDiv.addContent(links.createAnchor(SectionName.NAVBAR_BOTTOM_FIRSTROW));
             }
             HtmlTree navList = new HtmlTree(HtmlTag.UL);
-            navList.addStyle(HtmlStyle.navList);
+            navList.setStyle(HtmlStyle.navList);
             navList.addAttr(HtmlAttr.TITLE,
                             configuration.getText("doclet.Navigation"));
             if (configuration.createoverview) {
@@ -601,21 +597,19 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             subDiv.addContent(getAllClassesLinkScript(allClassesId));
             addSummaryDetailLinks(subDiv);
             if (header) {
-                subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_TOP));
+                subDiv.addContent(links.createAnchor(SectionName.SKIP_NAVBAR_TOP));
                 fixedNavDiv.addContent(subDiv);
                 fixedNavDiv.addContent(HtmlConstants.END_OF_TOP_NAVBAR);
                 tree.addContent(fixedNavDiv);
                 HtmlTree paddingDiv = HtmlTree.DIV(HtmlStyle.navPadding, Contents.SPACE);
                 tree.addContent(paddingDiv);
-                HtmlTree scriptTree = HtmlTree.SCRIPT();
-                String scriptCode = "<!--\n"
+                Script script = new Script(
+                        "<!--\n"
                         + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
-                        + "//-->\n";
-                RawHtml scriptContent = new RawHtml(scriptCode.replace("\n", DocletConstants.NL));
-                scriptTree.addContent(scriptContent);
-                tree.addContent(scriptTree);
+                        + "//-->\n");
+                tree.addContent(script.asContent());
             } else {
-                subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_BOTTOM));
+                subDiv.addContent(links.createAnchor(SectionName.SKIP_NAVBAR_BOTTOM));
                 tree.addContent(subDiv);
                 tree.addContent(HtmlConstants.END_OF_BOTTOM_NAVBAR);
             }
@@ -657,7 +651,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkContents() {
-        Content linkContent = getHyperLink(pathToRoot.resolve(DocPaths.overviewSummary(configuration.frames)),
+        Content linkContent = Links.createLink(pathToRoot.resolve(DocPaths.overviewSummary(configuration.frames)),
                 contents.overviewLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -726,7 +720,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getNavLinkPrevious(DocPath prev) {
         Content li;
         if (prev != null) {
-            li = HtmlTree.LI(getHyperLink(prev, contents.prevLabel, "", ""));
+            li = HtmlTree.LI(Links.createLink(prev, contents.prevLabel, "", ""));
         }
         else
             li = HtmlTree.LI(contents.prevLabel);
@@ -743,7 +737,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getNavLinkNext(DocPath next) {
         Content li;
         if (next != null) {
-            li = HtmlTree.LI(getHyperLink(next, contents.nextLabel, "", ""));
+            li = HtmlTree.LI(Links.createLink(next, contents.nextLabel, "", ""));
         }
         else
             li = HtmlTree.LI(contents.nextLabel);
@@ -758,7 +752,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     protected Content getNavShowLists(DocPath link) {
         DocLink dl = new DocLink(link, path.getPath(), null);
-        Content framesContent = getHyperLink(dl, contents.framesLabel, "", "_top");
+        Content framesContent = Links.createLink(dl, contents.framesLabel, "", "_top");
         Content li = HtmlTree.LI(framesContent);
         return li;
     }
@@ -779,7 +773,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavHideLists(DocPath link) {
-        Content noFramesContent = getHyperLink(link, contents.noFramesLabel, "", "_top");
+        Content noFramesContent = Links.createLink(link, contents.noFramesLabel, "", "_top");
         Content li = HtmlTree.LI(noFramesContent);
         return li;
     }
@@ -797,7 +791,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         DocPath docPath = packages.size() == 1 && configuration.getSpecifiedTypeElements().isEmpty()
                 ? pathString(packages.get(0), DocPaths.PACKAGE_TREE)
                 : pathToRoot.resolve(DocPaths.OVERVIEW_TREE);
-        return HtmlTree.LI(getHyperLink(docPath, contents.treeLabel, "", ""));
+        return HtmlTree.LI(Links.createLink(docPath, contents.treeLabel, "", ""));
     }
 
     /**
@@ -807,7 +801,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkMainTree(String label) {
-        Content mainTreeContent = getHyperLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE),
+        Content mainTreeContent = Links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE),
                 new StringContent(label));
         Content li = HtmlTree.LI(mainTreeContent);
         return li;
@@ -829,7 +823,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkDeprecated() {
-        Content linkContent = getHyperLink(pathToRoot.resolve(DocPaths.DEPRECATED_LIST),
+        Content linkContent = Links.createLink(pathToRoot.resolve(DocPaths.DEPRECATED_LIST),
                 contents.deprecatedLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -843,7 +837,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkClassIndex() {
-        Content allClassesContent = getHyperLink(pathToRoot.resolve(
+        Content allClassesContent = Links.createLink(pathToRoot.resolve(
                 DocPaths.AllClasses(configuration.frames)),
                 contents.allClassesLabel, "", "");
         Content li = HtmlTree.LI(allClassesContent);
@@ -856,7 +850,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return a content tree for the link
      */
     protected Content getNavLinkIndex() {
-        Content linkContent = getHyperLink(pathToRoot.resolve(
+        Content linkContent = Links.createLink(pathToRoot.resolve(
                 (configuration.splitindex
                     ? DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1))
                     : DocPaths.INDEX_ALL)),
@@ -881,7 +875,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             DocFile file = DocFile.createFileForInput(configuration, helpfile);
             helpfilenm = DocPath.create(file.getName());
         }
-        Content linkContent = getHyperLink(pathToRoot.resolve(helpfilenm),
+        Content linkContent = Links.createLink(pathToRoot.resolve(helpfilenm),
                 contents.helpLabel, "", "");
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -911,118 +905,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content caption = HtmlTree.CAPTION(captionSpan);
         caption.addContent(tabSpan);
         return caption;
-    }
-
-    /**
-     * Get table header.
-     *
-     * @param caption the table caption
-     * @param tableSummary the summary for the table
-     * @param tableStyle the table style
-     * @return a content object
-     */
-    public Content getTableHeader(Content caption, String tableSummary, HtmlStyle tableStyle) {
-        Content table = (configuration.isOutputHtml5())
-                ? HtmlTree.TABLE(tableStyle, caption)
-                : HtmlTree.TABLE(tableStyle, tableSummary, caption);
-        return table;
-    }
-
-    /**
-     * Get the summary table caption.
-     *
-     * @param groupTypes the group types for table tabs
-     * @return the caption for the summary table
-     */
-    public Content getTableCaption(GroupTypes groupTypes) {
-        Content tabbedCaption = new HtmlTree(HtmlTag.CAPTION);
-        Map<String, TableTabs> groups = groupTypes.getGroupTypes();
-        for (String group : groups.keySet()) {
-            Content captionSpan;
-            Content span;
-            TableTabs tab = groups.get(group);
-            if (tab.isDefaultTab()) {
-                captionSpan = HtmlTree.SPAN(new StringContent(tab.resourceKey()));
-                span = HtmlTree.SPAN(tab.tabId(),
-                        HtmlStyle.activeTableTab, captionSpan);
-            } else {
-                captionSpan = HtmlTree.SPAN(getGroupTypeLinks(groupTypes, group));
-                span = HtmlTree.SPAN(tab.tabId(),
-                        HtmlStyle.tableTab, captionSpan);
-            }
-            Content tabSpan = HtmlTree.SPAN(HtmlStyle.tabEnd, Contents.SPACE);
-            span.addContent(tabSpan);
-            tabbedCaption.addContent(span);
-        }
-        return tabbedCaption;
-    }
-
-    /**
-     * Get the group type links for the table caption.
-     *
-     * @param groupTypes the group types for table tabs
-     * @param groupName the group name to be displayed as link
-     * @return the content tree for the group type link
-     */
-    public Content getGroupTypeLinks(GroupTypes groupTypes, String groupName) {
-        String jsShow = "javascript:showGroups(" + groupTypes.getTableTab(groupName).value() + ");";
-        HtmlTree link = HtmlTree.A(jsShow, new StringContent(groupTypes.getTableTab(groupName).resourceKey()));
-        return link;
-    }
-
-    /**
-     * Returns true if the table tabs needs to be displayed.
-     *
-     * @param groupTypes the group types for table tabs
-     * @return true if the tabs should be displayed
-     */
-    public boolean showTabs(GroupTypes groupTypes) {
-        return groupTypes.getGroupTypes().size() > 1;
-    }
-
-    /**
-     * Get the marker anchor which will be added to the documentation tree.
-     *
-     * @param anchorName the anchor name attribute
-     * @return a content tree for the marker anchor
-     */
-    public Content getMarkerAnchor(String anchorName) {
-        return getMarkerAnchor(getName(anchorName), null);
-    }
-
-    /**
-     * Get the marker anchor which will be added to the documentation tree.
-     *
-     * @param sectionName the section name anchor attribute for page
-     * @return a content tree for the marker anchor
-     */
-    public Content getMarkerAnchor(SectionName sectionName) {
-        return getMarkerAnchor(sectionName.getName(), null);
-    }
-
-    /**
-     * Get the marker anchor which will be added to the documentation tree.
-     *
-     * @param sectionName the section name anchor attribute for page
-     * @param anchorName the anchor name combined with section name attribute for the page
-     * @return a content tree for the marker anchor
-     */
-    public Content getMarkerAnchor(SectionName sectionName, String anchorName) {
-        return getMarkerAnchor(sectionName.getName() + getName(anchorName), null);
-    }
-
-    /**
-     * Get the marker anchor which will be added to the documentation tree.
-     *
-     * @param anchorName the anchor name or id attribute
-     * @param anchorContent the content that should be added to the anchor
-     * @return a content tree for the marker anchor
-     */
-    public Content getMarkerAnchor(String anchorName, Content anchorContent) {
-        if (anchorContent == null)
-            anchorContent = new Comment(" ");
-        Content markerAnchor = HtmlTree.A(configuration.htmlVersion, anchorName, anchorContent);
-        return markerAnchor;
     }
 
     /**
@@ -1117,12 +999,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             }
         }
         if (included || packageElement == null) {
-            return getHyperLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY),
+            return Links.createLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY),
                     label);
         } else {
             DocLink crossPkgLink = getCrossPackageLink(utils.getPackageName(packageElement));
             if (crossPkgLink != null) {
-                return getHyperLink(crossPkgLink, label);
+                return Links.createLink(crossPkgLink, label);
             } else {
                 return label;
             }
@@ -1139,7 +1021,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getModuleLink(ModuleElement mdle, Content label) {
         boolean included = utils.isIncluded(mdle);
         return (included)
-                ? getHyperLink(pathToRoot.resolve(DocPaths.moduleSummary(mdle)), label, "", "")
+                ? Links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(mdle)), label, "", "")
                 : label;
     }
 
@@ -1169,7 +1051,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         DocPath href = pathToRoot
                 .resolve(DocPaths.SOURCE_OUTPUT)
                 .resolve(DocPath.forClass(utils, te));
-        Content linkContent = getHyperLink(href
+        Content linkContent = Links.createLink(href
                 .fragment(SourceToHTMLConverter.getAnchorName(utils, typeElement)), label, "", "");
         htmltree.addContent(linkContent);
     }
@@ -1208,12 +1090,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * be null or empty string if no member is being referenced.
      * @param label the label for the external link.
      * @param strong true if the link should be strong.
-     * @param style the style of the link.
      * @param code true if the label should be code font.
+     * @return the link
      */
     public Content getCrossClassLink(String qualifiedClassName, String refMemName,
-                                    Content label, boolean strong, String style,
-                                    boolean code) {
+                                    Content label, boolean strong, boolean code) {
         String className = "";
         String packageName = qualifiedClassName == null ? "" : qualifiedClassName;
         int periodIndex;
@@ -1234,10 +1115,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 */
                 DocLink link = configuration.extern.getExternalLink(packageName, pathToRoot,
                                 className + ".html", refMemName);
-                return getHyperLink(link,
+                return Links.createLink(link,
                     (label == null) || label.isEmpty() ? defaultLabel : label,
-                    strong, style,
-                    configuration.getText("doclet.Href_Class_Or_Interface_Title", packageName),
+                    strong,
+                    resources.getText("doclet.Href_Class_Or_Interface_Title", packageName),
                     "");
             }
         }
@@ -1321,6 +1202,18 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 .strong(isStrong);
         Content link = getLink(linkinfo);
         contentTree.addContent(link);
+    }
+
+    /**
+     * Get the enclosed name of the package
+     *
+     * @param te  TypeElement
+     * @return the name
+     */
+    public String getEnclosingPackageName(TypeElement te) {
+
+        PackageElement encl = configuration.utils.containingPackage(te);
+        return (encl.isUnnamed()) ? "" : (encl.getQualifiedName() + ".");
     }
 
     /**
@@ -1418,12 +1311,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             ExecutableElement ee = (ExecutableElement)element;
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(getName(getAnchor(ee, isProperty)))
+                .where(links.getName(getAnchor(ee, isProperty)))
                 .strong(strong));
         } else if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(getName(element.getSimpleName().toString()))
+                .where(links.getName(element.getSimpleName().toString()))
                 .strong(strong));
         } else {
             return label;
@@ -1449,10 +1342,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             ExecutableElement emd = (ExecutableElement) element;
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
-                .where(getName(getAnchor(emd))));
+                .where(links.getName(getAnchor(emd))));
         } else if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
-                .label(label).where(getName(element.getSimpleName().toString())));
+                .label(label).where(links.getName(element.getSimpleName().toString())));
         } else {
             return label;
         }
@@ -1523,10 +1416,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 DocLink packageCrossLink = getCrossPackageLink(refClassName);
                 if (packageCrossLink != null) {
                     // Package cross link found
-                    return getHyperLink(packageCrossLink,
+                    return Links.createLink(packageCrossLink,
                         (label.isEmpty() ? text : label));
                 } else if ((classCrossLink = getCrossClassLink(refClassName,
-                        refMemName, label, false, "", !isLinkPlain)) != null) {
+                        refMemName, label, false, !isLinkPlain)) != null) {
                     // Class cross link found (possibly to a member in the class)
                     return classCrossLink;
                 } else {
@@ -2136,76 +2029,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return text;
     }
 
-    static final Set<String> blockTags = new HashSet<>();
-    static {
-        for (HtmlTag t: HtmlTag.values()) {
-            if (t.blockType == HtmlTag.BlockType.BLOCK)
-                blockTags.add(t.value);
-        }
-    }
-
-    /**
-     * Add a link to the stylesheet file.
-     *
-     * @param head the content tree to which the files will be added
-     */
-    public void addStyleSheetProperties(Content head) {
-        String stylesheetfile = configuration.stylesheetfile;
-        DocPath stylesheet;
-        if (stylesheetfile.isEmpty()) {
-            stylesheet = DocPaths.STYLESHEET;
-        } else {
-            DocFile file = DocFile.createFileForInput(configuration, stylesheetfile);
-            stylesheet = DocPath.create(file.getName());
-        }
-        HtmlTree link = HtmlTree.LINK("stylesheet", "text/css",
-                pathToRoot.resolve(stylesheet).getPath(),
-                "Style");
-        head.addContent(link);
-        addStylesheets(configuration, head);
-        if (configuration.createindex) {
-            HtmlTree jq_link = HtmlTree.LINK("stylesheet", "text/css",
-                    pathToRoot.resolve(DocPaths.JQUERY_FILES.resolve(DocPaths.JQUERY_STYLESHEET_FILE)).getPath(),
-                    "Style");
-            head.addContent(jq_link);
-        }
-    }
-
-    /**
-     * Add a link to the JavaScript file.
-     *
-     * @param head the content tree to which the files will be added
-     */
-    public void addScriptProperties(Content head) {
-        HtmlTree javascript = HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath());
-        head.addContent(javascript);
-        if (configuration.createindex) {
-            if (pathToRoot != null && script != null) {
-                String ptrPath = pathToRoot.isEmpty() ? "." : pathToRoot.getPath();
-                script.addContent(new RawHtml("var pathtoroot = \"" + ptrPath + "/\";loadScripts(document, \'script\');"));
-            }
-            addJQueryFile(head, DocPaths.JSZIP_MIN);
-            addJQueryFile(head, DocPaths.JSZIPUTILS_MIN);
-            head.addContent(new RawHtml("<!--[if IE]>"));
-            addJQueryFile(head, DocPaths.JSZIPUTILS_IE_MIN);
-            head.addContent(new RawHtml("<![endif]-->"));
-            addJQueryFile(head, DocPaths.JQUERY_JS_1_10);
-            addJQueryFile(head, DocPaths.JQUERY_JS);
-        }
-    }
-
-    /**
-     * Add a link to the JQuery javascript file.
-     *
-     * @param head the content tree to which the files will be added
-     * @param filePath the DocPath of the file that needs to be added
-     */
-    private void addJQueryFile(Content head, DocPath filePath) {
-        HtmlTree jqyeryScriptFile = HtmlTree.SCRIPT(
-                pathToRoot.resolve(DocPaths.JQUERY_FILES.resolve(filePath)).getPath());
-        head.addContent(jqyeryScriptFile);
-    }
-
     /**
      * According to
      * <cite>The Java&trade; Language Specification</cite>,
@@ -2251,7 +2074,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Adds the annotatation types for the given element.
+     * Adds the annotation types for the given element.
      *
      * @param element the package to write annotations for
      * @param htmltree the content tree to which the annotation types will be added
@@ -2613,5 +2436,54 @@ public class HtmlDocletWriter extends HtmlDocWriter {
 
     protected TableHeader getPackageTableHeader() {
         return new TableHeader(contents.packageLabel, contents.descriptionLabel);
+    }
+
+    /**
+     * Returns an HtmlTree for the SCRIPT tag.
+     *
+     * @return an HtmlTree for the SCRIPT tag
+     */
+    protected Script getWinTitleScript() {
+        Script script = new Script();
+        if (winTitle != null && winTitle.length() > 0) {
+            script.append("<!--\n" +
+                    "    try {\n" +
+                    "        if (location.href.indexOf('is-external=true') == -1) {\n" +
+                    "            parent.document.title=")
+                    .appendStringLiteral(winTitle)
+                    .append(";\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "    catch(err) {\n" +
+                    "    }\n" +
+                    "//-->\n");
+        }
+        return script;
+    }
+
+    /**
+     * Returns an HtmlTree for the BODY tag.
+     *
+     * @param includeScript  set true if printing windowtitle script
+     * @param title title for the window
+     * @return an HtmlTree for the BODY tag
+     */
+    public HtmlTree getBody(boolean includeScript, String title) {
+        HtmlTree body = new HtmlTree(HtmlTag.BODY);
+        // Set window title string which is later printed
+        this.winTitle = title;
+        // Don't print windowtitle script for overview-frame, allclasses-frame
+        // and package-frame
+        if (includeScript) {
+            this.mainBodyScript = getWinTitleScript();
+            body.addContent(mainBodyScript.asContent());
+            Content noScript = HtmlTree.NOSCRIPT(HtmlTree.DIV(contents.noScriptMessage));
+            body.addContent(noScript);
+        }
+        return body;
+    }
+
+    Script getMainBodyScript() {
+        return mainBodyScript;
     }
 }

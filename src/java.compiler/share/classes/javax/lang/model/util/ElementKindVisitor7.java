@@ -99,8 +99,9 @@ public class ElementKindVisitor7<R, P> extends ElementKindVisitor6<R, P> {
     }
 
     /**
-     * Visits a {@code RESOURCE_VARIABLE} variable element by calling
-     * {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e {@inheritDoc}
      * @param p {@inheritDoc}

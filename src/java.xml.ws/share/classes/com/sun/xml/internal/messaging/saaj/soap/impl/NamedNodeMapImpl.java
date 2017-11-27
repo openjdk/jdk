@@ -30,6 +30,8 @@ import org.w3c.dom.DOMException;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.util.Objects;
+
 /**
  * {@link NamedNodeMap} wrapper, finding SOAP elements automatically when possible.
  *
@@ -48,6 +50,8 @@ public class NamedNodeMapImpl implements NamedNodeMap {
      * @param soapDocument soap document to find soap elements
      */
     public NamedNodeMapImpl(NamedNodeMap namedNodeMap, SOAPDocumentImpl soapDocument) {
+        Objects.requireNonNull(namedNodeMap);
+        Objects.requireNonNull(soapDocument);
         this.namedNodeMap = namedNodeMap;
         this.soapDocument = soapDocument;
     }

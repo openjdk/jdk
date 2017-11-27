@@ -39,7 +39,6 @@
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
-#include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
@@ -81,6 +80,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -1217,34 +1217,6 @@ void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_tr
 #endif
 }
 
-void G1CollectedHeap::do_full_collection_inner(G1FullGCScope* scope) {
-  GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
-  g1_policy()->record_full_collection_start();
-
-  print_heap_before_gc();
-  print_heap_regions();
-
-  abort_concurrent_cycle();
-  verify_before_full_collection(scope->is_explicit_gc());
-
-  gc_prologue(true);
-  prepare_heap_for_full_collection();
-
-  G1FullCollector collector(scope, ref_processor_stw(), concurrent_mark()->next_mark_bitmap(), workers()->active_workers());
-  collector.prepare_collection();
-  collector.collect();
-  collector.complete_collection();
-
-  prepare_heap_for_mutators();
-
-  g1_policy()->record_full_collection_end();
-  gc_epilogue(true);
-
-  verify_after_full_collection();
-
-  print_heap_after_full_collection(scope->heap_transition());
-}
-
 bool G1CollectedHeap::do_full_collection(bool explicit_gc,
                                          bool clear_all_soft_refs) {
   assert_at_safepoint(true /* should_be_vm_thread */);
@@ -1257,8 +1229,12 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       collector_policy()->should_clear_all_soft_refs();
 
-  G1FullGCScope scope(explicit_gc, do_clear_all_soft_refs);
-  do_full_collection_inner(&scope);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs);
+  GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
+
+  collector.prepare_collection();
+  collector.collect();
+  collector.complete_collection();
 
   // Full collection was successfully completed.
   return true;
@@ -2653,11 +2629,9 @@ G1CollectedHeap::doConcurrentMark() {
 
 size_t G1CollectedHeap::pending_card_num() {
   size_t extra_cards = 0;
-  JavaThread *curr = Threads::first();
-  while (curr != NULL) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *curr = jtiwh.next(); ) {
     DirtyCardQueue& dcq = curr->dirty_card_queue();
     extra_cards += dcq.size();
-    curr = curr->next();
   }
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   size_t buffer_size = dcqs.buffer_size();

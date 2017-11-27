@@ -29,6 +29,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/align.hpp"
 
 MutableNUMASpace::MutableNUMASpace(size_t alignment) : MutableSpace(alignment), _must_use_large_pages(false) {
@@ -287,7 +288,7 @@ bool MutableNUMASpace::update_layout(bool force) {
     FREE_C_HEAP_ARRAY(int, lgrp_ids);
 
     if (changed) {
-      for (JavaThread *thread = Threads::first(); thread; thread = thread->next()) {
+      for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
         thread->set_lgrp_id(-1);
       }
     }

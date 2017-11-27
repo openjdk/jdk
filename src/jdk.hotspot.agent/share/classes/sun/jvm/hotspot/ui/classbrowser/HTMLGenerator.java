@@ -1910,6 +1910,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       buf.append(thread.getThreadState().toString());
       buf.br();
       buf.beginTag("pre");
+      int count = 0;
       for (JavaVFrame vf = thread.getLastJavaVFrameDbg(); vf != null; vf = vf.javaSender()) {
          Method method = vf.getMethod();
          buf.append(" - ");
@@ -1954,6 +1955,19 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          }
          buf.append(")");
          buf.br();
+
+         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+         PrintStream printStream = new PrintStream(bytes);
+         try (printStream) {
+             vf.printLockInfo(printStream, count++);
+             for (String line : bytes.toString().split("\n")) {
+                 if (genHTML) {
+                     line = line.replace("<", "&lt;").replace(">", "&gt;");
+                 }
+                 buf.append(line);
+                 buf.br();
+             }
+         }
       }
 
       buf.endTag("pre");

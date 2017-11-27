@@ -112,9 +112,10 @@ public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
         DEFAULT_VALUE = defaultValue;
     }
     /**
-     * The default action for visit methods.  The implementation in
-     * this class just returns {@link #DEFAULT_VALUE}; subclasses will
-     * commonly override this method.
+     * The default action for visit methods.
+     *
+     * @implSpec The implementation in this class just returns {@link
+     * #DEFAULT_VALUE}; subclasses will commonly override this method.
      *
      * @param e the element to process
      * @param p a visitor-specified parameter
@@ -125,22 +126,26 @@ public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e {@inheritDoc}
      * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
+     * @return  {@inheritDoc}
      */
     public R visitPackage(PackageElement e, P p) {
         return defaultAction(e, p);
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e {@inheritDoc}
      * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
+     * @return  {@inheritDoc}
      */
     public R visitType(TypeElement e, P p) {
         return defaultAction(e, p);
@@ -149,13 +154,13 @@ public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
     /**
      * {@inheritDoc}
      *
-     * This implementation calls {@code defaultAction}, unless the
+     * @implSpec This implementation calls {@code defaultAction}, unless the
      * element is a {@code RESOURCE_VARIABLE} in which case {@code
      * visitUnknown} is called.
      *
      * @param e {@inheritDoc}
      * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction} or {@code visitUnknown}
+     * @return  {@inheritDoc}
      */
     public R visitVariable(VariableElement e, P p) {
         if (e.getKind() != ElementKind.RESOURCE_VARIABLE)
@@ -165,22 +170,26 @@ public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e {@inheritDoc}
      * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
+     * @return  {@inheritDoc}
      */
     public R visitExecutable(ExecutableElement e, P p) {
         return defaultAction(e, p);
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
      *
      * @param e {@inheritDoc}
      * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
+     * @return  {@inheritDoc}
      */
     public R visitTypeParameter(TypeParameterElement e, P p) {
         return defaultAction(e, p);

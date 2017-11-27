@@ -229,7 +229,8 @@ public class JShellToolBuilder implements JavaShellToolBuilder {
     /**
      * Run an instance of the Java shell tool as configured by the other methods
      * in this interface.  This call is not destructive, more than one call of
-     * this method may be made from a configured builder.
+     * this method may be made from a configured builder. The  exit code from
+     * the Java shell tool is ignored.
      *
      * @param arguments the command-line arguments (including options), if any
      * @throws Exception an unexpected fatal exception
@@ -237,6 +238,20 @@ public class JShellToolBuilder implements JavaShellToolBuilder {
     @Override
     public void run(String... arguments) throws Exception {
         rawTool().start(arguments);
+    }
+
+    /**
+     * Run an instance of the Java shell tool as configured by the other methods
+     * in this interface.  This call is not destructive, more than one call of
+     * this method may be made from a configured builder.
+     *
+     * @param arguments the command-line arguments (including options), if any
+     * @throws Exception an unexpected fatal exception
+     * @return the exit code
+     */
+    @Override
+    public int start(String... arguments) throws Exception {
+        return rawTool().start(arguments);
     }
 
     /**

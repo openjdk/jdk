@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/os.hpp"
 
 CollectorCounters::CollectorCounters(const char* name, int ordinal) {
 
@@ -57,5 +58,26 @@ CollectorCounters::CollectorCounters(const char* name, int ordinal) {
     _last_exit_time = PerfDataManager::create_variable(SUN_GC, cname,
                                                        PerfData::U_Ticks,
                                                        CHECK);
+  }
+}
+
+CollectorCounters::~CollectorCounters() {
+  if (_name_space != NULL) {
+    FREE_C_HEAP_ARRAY(char, _name_space);
+  }
+}
+
+TraceCollectorStats::TraceCollectorStats(CollectorCounters* c) :
+    PerfTraceTimedEvent(c->time_counter(), c->invocation_counter()),
+    _c(c) {
+
+  if (UsePerfData) {
+     _c->last_entry_counter()->set_value(os::elapsed_counter());
+  }
+}
+
+TraceCollectorStats::~TraceCollectorStats() {
+  if (UsePerfData) {
+    _c->last_exit_counter()->set_value(os::elapsed_counter());
   }
 }

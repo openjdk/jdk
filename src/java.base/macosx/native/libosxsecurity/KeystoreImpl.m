@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #import "apple_security_KeychainStore.h"
+#import "jni_util.h"
 
 #import <Security/Security.h>
 #import <Security/SecImportExport.h>
@@ -52,6 +53,11 @@ static jstring getLabelFromItem(JNIEnv *env, SecKeychainItemRef inItem)
     }
 
     attribCString = malloc(itemAttrs[0].length + 1);
+    if (attribCString == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "native heap");
+        goto errOut;
+    }
+
     strncpy(attribCString, itemAttrs[0].data, itemAttrs[0].length);
     attribCString[itemAttrs[0].length] = '\0';
     returnValue = (*env)->NewStringUTF(env, attribCString);
@@ -477,6 +483,8 @@ JNIEXPORT void JNICALL Java_apple_security_KeychainStore__1scanKeychain
     // Search for these first, because a certificate that's found here as part of an identity will show up
     // again later as a certificate.
     addIdentitiesToKeystore(env, this);
+
+    JNU_CHECK_EXCEPTION(env);
 
     // Scan current keychain for trusted certificates.
     addCertificatesToKeystore(env, this);

@@ -54,7 +54,7 @@ import javax.xml.namespace.QName;
  *    Name name = se.createName("GetLastTradePrice", "WOMBAT",
  *                                "http://www.wombat.org/trader");
  *    d.addDetailEntry(name);
- *    Iterator it = d.getDetailEntries();
+ *    Iterator<DetailEntry> it = d.getDetailEntries();
  * }</pre>
  *
  * @since 1.6

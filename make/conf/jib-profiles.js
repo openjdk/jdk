@@ -203,7 +203,7 @@ var getJibProfiles = function (input) {
     data.src_bundle_excludes = "./build webrev* */webrev* */*/webrev* */*/*/webrev* .hg */.hg */*/.hg */*/*/.hg";
     // Include list to use when creating a minimal jib source bundle which
     // contains just the jib configuration files.
-    data.conf_bundle_includes = "*/conf/jib-profiles.* common/autoconf/version-numbers"
+    data.conf_bundle_includes = "*/conf/jib-profiles.* make/autoconf/version-numbers"
 
     // Define some common values
     var common = getJibProfilesCommon(input, data);
@@ -1043,7 +1043,7 @@ var concatObjects = function (o1, o2) {
 
 /**
  * Constructs the numeric version string from reading the
- * common/autoconf/version-numbers file and removing all trailing ".0".
+ * make/autoconf/version-numbers file and removing all trailing ".0".
  *
  * @param major Override major version
  * @param minor Override minor version
@@ -1080,17 +1080,17 @@ var versionArgs = function(input, common) {
     return args;
 }
 
-// Properties representation of the common/autoconf/version-numbers file. Lazily
+// Properties representation of the make/autoconf/version-numbers file. Lazily
 // initiated by the function below.
 var version_numbers;
 
 /**
- * Read the common/autoconf/version-numbers file into a Properties object.
+ * Read the make/autoconf/version-numbers file into a Properties object.
  *
  * @returns {java.utilProperties}
  */
 var getVersionNumbers = function () {
-    // Read version information from common/autoconf/version-numbers
+    // Read version information from make/autoconf/version-numbers
     if (version_numbers == null) {
         version_numbers = new java.util.Properties();
         var stream = new java.io.FileInputStream(__DIR__ + "/../autoconf/version-numbers");

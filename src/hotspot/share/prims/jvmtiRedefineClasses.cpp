@@ -43,6 +43,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "prims/jvmtiThreadState.inline.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/deoptimization.hpp"

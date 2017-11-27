@@ -25,15 +25,17 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
+import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -64,41 +66,33 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem generating the file
      */
     void generateIndexFile() throws DocFileIOException {
-        Content htmlDocType = configuration.isOutputHtml5()
-                ? DocType.HTML5
-                : DocType.TRANSITIONAL;
-        Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
-        Content head = new HtmlTree(HtmlTag.HEAD);
-        head.addContent(getGeneratedBy(!configuration.notimestamp));
+        DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
+        Content htmlComment = contents.newPage;
+        Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
+                .setTimestamp(true, false)
+                .addDefaultScript(false);
 
         String title = (configuration.windowtitle.length() > 0)
                 ? configuration.windowtitle
-                : configuration.getText("doclet.Generated_Docs_Untitled");
+                : resources.getText("doclet.Generated_Docs_Untitled");
 
-        Content windowTitle = HtmlTree.TITLE(new StringContent(title));
-        head.addContent(windowTitle);
-        Content metaContentType = HtmlTree.META("Content", CONTENT_TYPE, configuration.charset);
-        head.addContent(metaContentType);
+        head.setTitle(title)
+                .setCharset(configuration.charset);
 
         String topFilePath = configuration.topFile.getPath();
-        String javaScriptRefresh = "window.location.replace('" + topFilePath + "')";
-        HtmlTree scriptTree = HtmlTree.SCRIPT();
-        scriptTree.addContent(javaScriptRefresh);
-        head.addContent(scriptTree);
-        HtmlTree metaRefresh = new HtmlTree(HtmlTag.META);
-        metaRefresh.addAttr(HtmlAttr.HTTP_EQUIV, "Refresh");
-        metaRefresh.addAttr(HtmlAttr.CONTENT, "0;" + topFilePath);
-        if (configuration.isOutputHtml5()) {
-            head.addContent(HtmlTree.NOSCRIPT(metaRefresh));
-        } else {
-            head.addContent(metaRefresh);
-        }
-
-        addStyleSheetProperties(configuration, head);
+        Script script = new Script("window.location.replace(")
+                .appendStringLiteral(topFilePath, '\'')
+                .append(")");
+        HtmlTree metaRefresh = new HtmlTree(HtmlTag.META)
+                .addAttr(HtmlAttr.HTTP_EQUIV, "Refresh")
+                .addAttr(HtmlAttr.CONTENT, "0;" + topFilePath);
+        head.addContent(
+                script.asContent(),
+                configuration.isOutputHtml5() ? HtmlTree.NOSCRIPT(metaRefresh) : metaRefresh);
 
         ContentBuilder bodyContent = new ContentBuilder();
         bodyContent.addContent(HtmlTree.NOSCRIPT(
-                HtmlTree.P(configuration.getContent("doclet.No_Script_Message"))));
+                HtmlTree.P(contents.getContent("doclet.No_Script_Message"))));
 
         bodyContent.addContent(HtmlTree.P(HtmlTree.A(topFilePath, new StringContent(topFilePath))));
 
@@ -110,11 +104,8 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
             body.addContent(bodyContent);
         }
 
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
-                head, body);
-        Content htmlDocument = new HtmlDocument(htmlDocType,
-                htmlComment, htmlTree);
-        write(htmlDocument);
-
+        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
+        HtmlDocument htmlDocument = new HtmlDocument(htmlDocType, htmlComment, htmlTree);
+        htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
 }

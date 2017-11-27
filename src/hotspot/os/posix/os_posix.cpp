@@ -478,8 +478,7 @@ int os::sleep(Thread* thread, jlong millis, bool interruptible) {
 // interrupt support
 
 void os::interrupt(Thread* thread) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(),
-    "possibility of dangling Thread pointer");
+  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   OSThread* osthread = thread->osthread();
 
@@ -499,12 +498,10 @@ void os::interrupt(Thread* thread) {
 
   ParkEvent * ev = thread->_ParkEvent ;
   if (ev != NULL) ev->unpark() ;
-
 }
 
 bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(),
-    "possibility of dangling Thread pointer");
+  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   OSThread* osthread = thread->osthread();
 
