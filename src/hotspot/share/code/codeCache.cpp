@@ -259,12 +259,12 @@ void CodeCache::initialize_heaps() {
   }
 
   // We do not need the profiled CodeHeap, use all space for the non-profiled CodeHeap
-  if(!heap_available(CodeBlobType::MethodProfiled)) {
+  if (!heap_available(CodeBlobType::MethodProfiled)) {
     non_profiled_size += profiled_size;
     profiled_size = 0;
   }
   // We do not need the non-profiled CodeHeap, use all space for the non-nmethod CodeHeap
-  if(!heap_available(CodeBlobType::MethodNonProfiled)) {
+  if (!heap_available(CodeBlobType::MethodNonProfiled)) {
     non_nmethod_size += non_profiled_size;
     non_profiled_size = 0;
   }
@@ -332,7 +332,8 @@ ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
   ReservedCodeSpace rs(r_size, rs_align, rs_align > 0);
 
   if (!rs.is_reserved()) {
-    vm_exit_during_initialization("Could not reserve enough space for code cache");
+    vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
+                                          r_size/K));
   }
 
   // Initialize bounds
@@ -415,7 +416,8 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, int code_blob_type)
   size_t size_initial = MIN2(InitialCodeCacheSize, rs.size());
   size_initial = align_up(size_initial, os::vm_page_size());
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
-    vm_exit_during_initialization("Could not reserve enough space for code cache");
+    vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (" SIZE_FORMAT "K)",
+                                          heap->name(), size_initial/K));
   }
 
   // Register the CodeHeap
