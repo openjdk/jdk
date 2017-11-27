@@ -122,6 +122,8 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   // Printing support.
   const char* _name;
 
+  ~AbstractWorkGang() {}
+
  private:
   // Initialize only instance data.
   const bool _are_GC_task_threads;
@@ -206,9 +208,6 @@ class WorkGang: public AbstractWorkGang {
   // To get access to the GangTaskDispatcher instance.
   friend class GangWorker;
 
-  // Never deleted.
-  ~WorkGang();
-
   GangTaskDispatcher* const _dispatcher;
   GangTaskDispatcher* dispatcher() const {
     return _dispatcher;
@@ -219,6 +218,8 @@ public:
            uint workers,
            bool are_GC_task_threads,
            bool are_ConcurrentGC_threads);
+
+  ~WorkGang();
 
   // Run a task using the current active number of workers, returns when the task is done.
   virtual void run_task(AbstractGangTask* task);
