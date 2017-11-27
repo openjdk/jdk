@@ -3146,6 +3146,14 @@ public final class SunGraphics2D
                     double widthScale = ((double) rvWidth) / width;
                     double heightScale = ((double) rvHeight) / height;
 
+                    if (resolutionVariant instanceof VolatileImage) {
+                        SurfaceData sd = SurfaceManager
+                                .getManager(resolutionVariant)
+                                .getPrimarySurfaceData();
+                        widthScale *= sd.getDefaultScaleX();
+                        heightScale *= sd.getDefaultScaleY();
+                    }
+
                     sx1 = Region.clipScale(sx1, widthScale);
                     sy1 = Region.clipScale(sy1, heightScale);
                     sx2 = Region.clipScale(sx2, widthScale);
