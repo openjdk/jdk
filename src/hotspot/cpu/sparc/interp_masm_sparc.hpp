@@ -98,7 +98,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void dispatch_epilog(TosState state, int step = 0);
   void dispatch_only(TosState state);
   void dispatch_normal(TosState state);
-  void dispatch_next(TosState state, int step = 0);
+  void dispatch_next(TosState state, int step = 0, bool generate_poll = false);
   void dispatch_next_noverify_oop(TosState state, int step = 0);
   void dispatch_via (TosState state, address* table);
 
@@ -113,7 +113,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
                          bool install_monitor_exception = true);
 
  protected:
-  void dispatch_Lbyte_code(TosState state, address* table, int bcp_incr = 0, bool verify = true);
+  void dispatch_Lbyte_code(TosState state, address* table, int bcp_incr = 0, bool verify = true, bool generate_poll = false);
 
  public:
   // Super call_VM calls - correspond to MacroAssembler::call_VM(_leaf) calls

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8191112
  * @summary tests for module declarations
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -31,12 +32,15 @@
  * @run main ExportsUnexported
  */
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.Task;
 
@@ -372,6 +376,100 @@ public class ExportsUnexported extends ModuleTestBase {
 
         if (!log.equals(expected))
             throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testTransitiveAndAutomaticModules(Path base) throws Exception {
+        Path modulePath = base.resolve("module-path");
+
+        Files.createDirectories(modulePath);
+
+        createAutomaticModule(base,
+                              modulePath.resolve("api-one-1.0.jar"),
+                              "package api1; public interface Api1 {}");
+        createAutomaticModule(base,
+                              modulePath.resolve("api-two-1.0.jar"),
+                              "package api2; public interface Api2 {}");
+        createAutomaticModule(base,
+                              modulePath.resolve("api-three-1.0.jar"),
+                              "package api3; public interface Api3 {}");
+
+        Path src = base.resolve("src");
+        Path src_api = src.resolve("api");
+        tb.writeJavaFiles(src_api,
+                          "module api {\n" +
+                          "    requires transitive dep;\n" +
+                          "    requires transitive api.one;\n" +
+                          "    exports api;\n" +
+                          "}\n",
+                          "package api;\n" +
+                          "public class Api extends dep.Dep implements api2.Api2 {}\n");
+        Path src_dep = src.resolve("dep");
+        tb.writeJavaFiles(src_dep,
+                          "module dep {\n" +
+                          "    requires transitive api.one;\n" +
+                          "    exports dep;\n" +
+                          "}\n",
+                          "package dep;\n" +
+                          "public class Dep {}\n");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "-Werror",
+                         "--module-source-path", src.toString(),
+                         "--module-path", modulePath.toString(),
+                         "-Xlint:exports,-requires-transitive-automatic")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+            "Api.java:2:49: compiler.warn.leaks.not.accessible.not.required.transitive: kindname.interface, api2.Api2, api.two",
+            "- compiler.err.warnings.and.werror",
+            "1 error",
+            "1 warning"
+        );
+
+        if (!log.equals(expected))
+            throw new Exception("expected output not found");
+    }
+
+    private void createAutomaticModule(Path base, Path jar, String content) throws Exception {
+        Path scratch = base.resolve("scratch");
+        Files.createDirectories(scratch);
+        tb.cleanDirectory(scratch);
+        tb.writeJavaFiles(scratch,
+                          content);
+        Path scratchClasses = base.resolve("scratch-classes");
+        Files.createDirectories(scratchClasses);
+        tb.cleanDirectory(scratchClasses);
+
+        String log = new JavacTask(tb)
+                .options()
+                .outdir(scratchClasses)
+                .files(findJavaFiles(scratch))
+                .run()
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.isEmpty()) {
+            throw new Exception("unexpected output: " + log);
+        }
+
+        Files.createDirectories(scratchClasses.getParent());
+        Files.deleteIfExists(jar);
+
+        new JarTask(tb, jar)
+          .baseDir(scratchClasses)
+          .files(Arrays.stream(tb.findFiles(".class", scratchClasses))
+                       .map(p -> scratchClasses.relativize(p).toString())
+                       .collect(Collectors.toList())
+                       .toArray(new String[0]))
+          .run();
     }
 
 }

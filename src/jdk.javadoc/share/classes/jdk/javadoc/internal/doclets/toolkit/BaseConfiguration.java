@@ -307,11 +307,11 @@ public abstract class BaseConfiguration {
     public abstract Resources getResources();
 
     /**
-     * Return the build date for the doclet.
+     * Returns a string identifying the version of the doclet.
      *
-     * @return the build date
+     * @return a version string
      */
-    public abstract String getDocletSpecificBuildDate();
+    public abstract String getDocletVersion();
 
     /**
      * This method should be defined in all those doclets (configurations),

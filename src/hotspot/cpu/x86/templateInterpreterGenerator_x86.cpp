@@ -237,7 +237,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 }
 
 
-address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step) {
+address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step, address continuation) {
   address entry = __ pc();
 
 #ifndef _LP64
@@ -291,7 +291,11 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
     __ should_not_reach_here();
     __ bind(L);
   }
-  __ dispatch_next(state, step);
+  if (continuation == NULL) {
+    __ dispatch_next(state, step);
+  } else {
+    __ jump_to_entry(continuation);
+  }
   return entry;
 }
 
@@ -1141,14 +1145,17 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // check for safepoint operation in progress and/or pending suspend requests
   {
     Label Continue;
-    __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-             SafepointSynchronize::_not_synchronized);
+    Label slow_path;
 
-    Label L;
-    __ jcc(Assembler::notEqual, L);
+#ifndef _LP64
+    __ safepoint_poll(slow_path);
+#else
+    __ safepoint_poll(slow_path, r15_thread, rscratch1);
+#endif
+
     __ cmpl(Address(thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, Continue);
-    __ bind(L);
+    __ bind(slow_path);
 
     // Don't use call_VM as it will see a possible pending exception
     // and forward it and never return here preventing us from

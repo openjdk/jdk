@@ -251,7 +251,7 @@ import java.io.Reader;
  *     <tr>
  *       <th scope="col">JAXBElement Property</th>
  *       <th scope="col">Value</th>
- *     </tr>
+ *       </tr>
  *     <tr>
  *       <th scope="col">name</th>
  *       <th scope="col">{@code xml element name}</th>

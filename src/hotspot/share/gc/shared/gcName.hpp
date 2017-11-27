@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ enum GCName {
   G1New,
   ConcurrentMarkSweep,
   G1Old,
+  G1Full,
   GCNameEndSentinel
 };
 
@@ -53,6 +54,7 @@ class GCNameHelper {
       case G1New: return "G1New";
       case ConcurrentMarkSweep: return "ConcurrentMarkSweep";
       case G1Old: return "G1Old";
+      case G1Full: return "G1Full";
       default: ShouldNotReachHere(); return NULL;
     }
   }

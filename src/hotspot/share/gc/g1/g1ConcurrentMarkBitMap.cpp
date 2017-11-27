@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
+#include "gc/g1/heapRegion.hpp"
 #include "memory/virtualspace.hpp"
 
 void G1CMBitMap::print_on_error(outputStream* st, const char* prefix) const {
@@ -64,4 +65,11 @@ void G1CMBitMap::clear_range(MemRegion mr) {
   // convert address range into offset range
   _bm.at_put_range(addr_to_offset(intersection.start()),
                    addr_to_offset(intersection.end()), false);
+}
+
+void G1CMBitMap::clear_region(HeapRegion* region) {
+ if (!region->is_empty()) {
+   MemRegion mr(region->bottom(), region->top());
+   clear_range(mr);
+ }
 }

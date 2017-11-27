@@ -2514,14 +2514,20 @@ return mh1;
     }
 
     /**
-     * Produces a method handle constructing arrays of a desired type.
+     * Produces a method handle constructing arrays of a desired type,
+     * as if by the {@code anewarray} bytecode.
      * The return type of the method handle will be the array type.
      * The type of its sole argument will be {@code int}, which specifies the size of the array.
+     *
+     * <p> If the returned method handle is invoked with a negative
+     * array size, a {@code NegativeArraySizeException} will be thrown.
+     *
      * @param arrayClass an array type
      * @return a method handle which can create arrays of the given type
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if {@code arrayClass} is not an array type
      * @see java.lang.reflect.Array#newInstance(Class, int)
+     * @jvms 6.5 {@code anewarray} Instruction
      * @since 9
      */
     public static
@@ -2535,13 +2541,19 @@ return mh1;
     }
 
     /**
-     * Produces a method handle returning the length of an array.
+     * Produces a method handle returning the length of an array,
+     * as if by the {@code arraylength} bytecode.
      * The type of the method handle will have {@code int} as return type,
      * and its sole argument will be the array type.
+     *
+     * <p> If the returned method handle is invoked with a {@code null}
+     * array reference, a {@code NullPointerException} will be thrown.
+     *
      * @param arrayClass an array type
      * @return a method handle which can retrieve the length of an array of the given array type
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if arrayClass is not an array type
+     * @jvms 6.5 {@code arraylength} Instruction
      * @since 9
      */
     public static
@@ -2550,14 +2562,24 @@ return mh1;
     }
 
     /**
-     * Produces a method handle giving read access to elements of an array.
+     * Produces a method handle giving read access to elements of an array,
+     * as if by the {@code aaload} bytecode.
      * The type of the method handle will have a return type of the array's
      * element type.  Its first argument will be the array type,
      * and the second will be {@code int}.
+     *
+     * <p> When the returned method handle is invoked,
+     * the array reference and array index are checked.
+     * A {@code NullPointerException} will be thrown if the array reference
+     * is {@code null} and an {@code ArrayIndexOutOfBoundsException} will be
+     * thrown if the index is negative or if it is greater than or equal to
+     * the length of the array.
+     *
      * @param arrayClass an array type
      * @return a method handle which can load values from the given array type
      * @throws NullPointerException if the argument is null
      * @throws  IllegalArgumentException if arrayClass is not an array type
+     * @jvms 6.5 {@code aaload} Instruction
      */
     public static
     MethodHandle arrayElementGetter(Class<?> arrayClass) throws IllegalArgumentException {
@@ -2565,14 +2587,24 @@ return mh1;
     }
 
     /**
-     * Produces a method handle giving write access to elements of an array.
+     * Produces a method handle giving write access to elements of an array,
+     * as if by the {@code astore} bytecode.
      * The type of the method handle will have a void return type.
      * Its last argument will be the array's element type.
      * The first and second arguments will be the array type and int.
+     *
+     * <p> When the returned method handle is invoked,
+     * the array reference and array index are checked.
+     * A {@code NullPointerException} will be thrown if the array reference
+     * is {@code null} and an {@code ArrayIndexOutOfBoundsException} will be
+     * thrown if the index is negative or if it is greater than or equal to
+     * the length of the array.
+     *
      * @param arrayClass the class of an array
      * @return a method handle which can store values into the array type
      * @throws NullPointerException if the argument is null
      * @throws IllegalArgumentException if arrayClass is not an array type
+     * @jvms 6.5 {@code aastore} Instruction
      */
     public static
     MethodHandle arrayElementSetter(Class<?> arrayClass) throws IllegalArgumentException {
@@ -2603,6 +2635,14 @@ return mh1;
      * and atomic update access modes compare values using their bitwise
      * representation (see {@link Float#floatToRawIntBits} and
      * {@link Double#doubleToRawLongBits}, respectively).
+     *
+     * <p> When the returned {@code VarHandle} is invoked,
+     * the array reference and array index are checked.
+     * A {@code NullPointerException} will be thrown if the array reference
+     * is {@code null} and an {@code ArrayIndexOutOfBoundsException} will be
+     * thrown if the index is negative or if it is greater than or equal to
+     * the length of the array.
+     *
      * @apiNote
      * Bitwise comparison of {@code float} values or {@code double} values,
      * as performed by the numeric and atomic update access modes, differ

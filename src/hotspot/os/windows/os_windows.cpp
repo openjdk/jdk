@@ -723,6 +723,14 @@ bool os::has_allocatable_memory_limit(julong* limit) {
 }
 
 int os::active_processor_count() {
+  // User has overridden the number of active processors
+  if (ActiveProcessorCount > 0) {
+    log_trace(os)("active_processor_count: "
+                  "active processor count set by user : %d",
+                  ActiveProcessorCount);
+    return ActiveProcessorCount;
+  }
+
   DWORD_PTR lpProcessAffinityMask = 0;
   DWORD_PTR lpSystemAffinityMask = 0;
   int proc_count = processor_count();
@@ -2487,6 +2495,20 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
+      CompiledMethod* nm = NULL;
+      JavaThread* thread = (JavaThread*)t;
+      if (in_java) {
+        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
+      }
+      if ((thread->thread_state() == _thread_in_vm &&
+          thread->doing_unsafe_access()) ||
+          (nm != NULL && nm->has_unsafe_access())) {
+        return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, (address)Assembler::locate_next_instruction(pc)));
+      }
+    }
+
     if (in_java) {
       switch (exception_code) {
       case EXCEPTION_INT_DIVIDE_BY_ZERO:
@@ -3911,27 +3933,6 @@ static jint initSock();
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
-  // Allocate a single page and mark it as readable for safepoint polling
-  address polling_page = (address)VirtualAlloc(NULL, os::vm_page_size(), MEM_RESERVE, PAGE_READONLY);
-  guarantee(polling_page != NULL, "Reserve Failed for polling page");
-
-  address return_page  = (address)VirtualAlloc(polling_page, os::vm_page_size(), MEM_COMMIT, PAGE_READONLY);
-  guarantee(return_page != NULL, "Commit Failed for polling page");
-
-  os::set_polling_page(polling_page);
-  log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(polling_page));
-
-  if (!UseMembar) {
-    address mem_serialize_page = (address)VirtualAlloc(NULL, os::vm_page_size(), MEM_RESERVE, PAGE_READWRITE);
-    guarantee(mem_serialize_page != NULL, "Reserve Failed for memory serialize page");
-
-    return_page  = (address)VirtualAlloc(mem_serialize_page, os::vm_page_size(), MEM_COMMIT, PAGE_READWRITE);
-    guarantee(return_page != NULL, "Commit Failed for memory serialize page");
-
-    os::set_memory_serialize_page(mem_serialize_page);
-    log_info(os)("Memory Serialize Page address: " INTPTR_FORMAT, p2i(mem_serialize_page));
-  }
-
   // Setup Windows Exceptions
 
   // for debugging float code generation bugs

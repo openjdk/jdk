@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public:
   address o_reg_temps(int i) { return (address)&_o_reg_temps[i]; }
 #endif
 
-  static int saved_exception_npc_offset_in_bytes() { return offset_of(JavaThread,_saved_exception_npc); }
+  static ByteSize saved_exception_npc_offset() { return byte_offset_of(JavaThread,_saved_exception_npc); }
 
   address  saved_exception_npc()             { return _saved_exception_npc; }
   void set_saved_exception_npc(address a)    { _saved_exception_npc = a; }

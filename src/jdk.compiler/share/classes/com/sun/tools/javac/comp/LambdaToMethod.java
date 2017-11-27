@@ -2269,17 +2269,22 @@ public class LambdaToMethod extends TreeTranslator {
 
             /**
              * Erasure destroys the implementation parameter subtype
-             * relationship for intersection types
+             * relationship for intersection types.
+             * Have similar problems for union types too.
              */
-            boolean interfaceParameterIsIntersectionType() {
+            boolean interfaceParameterIsIntersectionOrUnionType() {
                 List<Type> tl = tree.getDescriptorType(types).getParameterTypes();
                 for (; tl.nonEmpty(); tl = tl.tail) {
                     Type pt = tl.head;
-                    if (pt.getKind() == TypeKind.TYPEVAR) {
-                        TypeVar tv = (TypeVar) pt;
-                        if (tv.bound.getKind() == TypeKind.INTERSECTION) {
+                    switch (pt.getKind()) {
+                        case INTERSECTION:
+                        case UNION:
                             return true;
-                        }
+                        case TYPEVAR:
+                            TypeVar tv = (TypeVar) pt;
+                            if (tv.bound.getKind() == TypeKind.INTERSECTION) {
+                                return true;
+                            }
                     }
                 }
                 return false;
@@ -2290,7 +2295,7 @@ public class LambdaToMethod extends TreeTranslator {
              * (i.e. var args need to be expanded or "super" is used)
              */
             final boolean needsConversionToLambda() {
-                return interfaceParameterIsIntersectionType() ||
+                return interfaceParameterIsIntersectionOrUnionType() ||
                         isSuper ||
                         needsVarArgsConversion() ||
                         isArrayOp() ||

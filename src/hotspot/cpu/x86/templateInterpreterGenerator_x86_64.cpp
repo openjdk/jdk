@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,11 +190,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     // c_rarg1: scratch (rsi on non-Win64, rdx on Win64)
 
     Label slow_path;
-    // If we need a safepoint check, generate full interpreter entry.
-    ExternalAddress state(SafepointSynchronize::address_of_state());
-    __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-             SafepointSynchronize::_not_synchronized);
-    __ jcc(Assembler::notEqual, slow_path);
+    __ safepoint_poll(slow_path, r15_thread, rscratch1);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.
@@ -240,11 +236,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
     // r13: senderSP must preserved for slow path, set SP to it on fast path
 
     Label slow_path;
-    // If we need a safepoint check, generate full interpreter entry.
-    ExternalAddress state(SafepointSynchronize::address_of_state());
-    __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-             SafepointSynchronize::_not_synchronized);
-    __ jcc(Assembler::notEqual, slow_path);
+    __ safepoint_poll(slow_path, r15_thread, rscratch1);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.

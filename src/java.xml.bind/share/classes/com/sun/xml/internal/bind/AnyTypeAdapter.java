@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
 /**
  * {@link XmlAdapter} useful for mapping interfaces.
  *
- * See <a href="https://jaxb.dev.java.net/guide/Mapping_interfaces.html">The JAXB user's guide</a>
+ * See <a href="https://javaee.github.io/jaxb-v2/doc/user-guide/ch03.html#annotating-your-classes-mapping-interfaces">The JAXB user's guide</a>
  * for more about this adapter class.
  *
  * @author Kohsuke Kawaguchi

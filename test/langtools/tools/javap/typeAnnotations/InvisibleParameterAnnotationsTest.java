@@ -65,9 +65,11 @@ public class InvisibleParameterAnnotationsTest {
             "      parameter 0:\n" +
             "      parameter 1:\n" +
             "        0: #16()\n" +
+            "          Sample$VisAnno\n" +
             "    RuntimeInvisibleParameterAnnotations:\n" +
             "      parameter 0:\n" +
             "        0: #18()\n" +
+            "          Sample$InvisAnno\n" +
             "      parameter 1:";
 
     public static void main(String[] args) throws Exception {
@@ -78,6 +80,7 @@ public class InvisibleParameterAnnotationsTest {
                 .options("-v")
                 .classes("Sample.class")
                 .run()
+                .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expectedList = tb.split(ExpectedSubstring, "\n");

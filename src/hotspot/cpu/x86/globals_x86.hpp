@@ -97,6 +97,12 @@ define_pd_global(bool, PreserveFramePointer, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
+#ifdef _LP64
+define_pd_global(bool, ThreadLocalHandshakes, true);
+#else
+define_pd_global(bool, ThreadLocalHandshakes, false);
+#endif
+
 #define ARCH_FLAGS(develop, \
                    product, \
                    diagnostic, \

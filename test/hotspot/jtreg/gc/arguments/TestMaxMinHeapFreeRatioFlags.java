@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,8 +156,9 @@ public class TestMaxMinHeapFreeRatioFlags {
             if (args.length != 3) {
                 throw new IllegalArgumentException("Expected 3 args: <minRatio> <maxRatio> <shrinkHeapInSteps>");
             }
-            if (GCTypes.OldGCType.getOldGCType() == GCTypes.OldGCType.PSOld) {
-                System.out.println("Test is not applicable to parallel GC");
+            if (GCTypes.OldGCType.getOldGCType() == GCTypes.OldGCType.PSOld ||
+                GCTypes.OldGCType.getOldGCType() == GCTypes.OldGCType.G1) {
+                System.out.println("Test is not applicable to parallel full GCs");
                 return;
             }
 

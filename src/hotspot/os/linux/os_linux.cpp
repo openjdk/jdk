@@ -38,6 +38,7 @@
 #include "oops/oop.inline.hpp"
 #include "os_linux.inline.hpp"
 #include "os_share_linux.hpp"
+#include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -171,13 +172,52 @@ julong os::available_memory() {
 julong os::Linux::available_memory() {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
-  sysinfo(&si);
+  julong avail_mem;
 
-  return (julong)si.freeram * si.mem_unit;
+  if (OSContainer::is_containerized()) {
+    jlong mem_limit, mem_usage;
+    if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
+      if ((mem_usage = OSContainer::memory_usage_in_bytes()) > 0) {
+        if (mem_limit > mem_usage) {
+          avail_mem = (julong)mem_limit - (julong)mem_usage;
+        } else {
+          avail_mem = 0;
+        }
+        log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
+        return avail_mem;
+      } else {
+        log_debug(os,container)("container memory usage call failed: " JLONG_FORMAT, mem_usage);
+      }
+    } else {
+      log_debug(os,container)("container memory unlimited or failed: " JLONG_FORMAT, mem_limit);
+    }
+  }
+
+  sysinfo(&si);
+  avail_mem = (julong)si.freeram * si.mem_unit;
+  log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
+  return avail_mem;
 }
 
 julong os::physical_memory() {
-  return Linux::physical_memory();
+  if (OSContainer::is_containerized()) {
+    jlong mem_limit;
+    if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
+      log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
+      return (julong)mem_limit;
+    } else {
+      if (mem_limit == OSCONTAINER_ERROR) {
+        log_debug(os,container)("container memory limit call failed");
+      }
+      if (mem_limit == -1) {
+        log_debug(os,container)("container memory unlimited, using host value");
+      }
+    }
+  }
+
+  jlong phys_mem = Linux::physical_memory();
+  log_trace(os)("total system memory: " JLONG_FORMAT, phys_mem);
+  return phys_mem;
 }
 
 // Return true if user is running as root.
@@ -1950,6 +1990,8 @@ void os::print_os_info(outputStream* st) {
   os::Posix::print_load_average(st);
 
   os::Linux::print_full_memory_info(st);
+
+  os::Linux::print_container_info(st);
 }
 
 // Try to identify popular distros.
@@ -2085,6 +2127,66 @@ void os::Linux::print_full_memory_info(outputStream* st) {
   st->print("\n/proc/meminfo:\n");
   _print_ascii_file("/proc/meminfo", st);
   st->cr();
+}
+
+void os::Linux::print_container_info(outputStream* st) {
+  if (OSContainer::is_containerized()) {
+    st->print("container (cgroup) information:\n");
+
+    char *p = OSContainer::container_type();
+    if (p == NULL)
+      st->print("container_type() failed\n");
+    else {
+      st->print("container_type: %s\n", p);
+    }
+
+    p = OSContainer::cpu_cpuset_cpus();
+    if (p == NULL)
+      st->print("cpu_cpuset_cpus() failed\n");
+    else {
+      st->print("cpu_cpuset_cpus: %s\n", p);
+      free(p);
+    }
+
+    p = OSContainer::cpu_cpuset_memory_nodes();
+    if (p < 0)
+      st->print("cpu_memory_nodes() failed\n");
+    else {
+      st->print("cpu_memory_nodes: %s\n", p);
+      free(p);
+    }
+
+    int i = OSContainer::active_processor_count();
+    if (i < 0)
+      st->print("active_processor_count() failed\n");
+    else
+      st->print("active_processor_count: %d\n", i);
+
+    i = OSContainer::cpu_quota();
+    st->print("cpu_quota: %d\n", i);
+
+    i = OSContainer::cpu_period();
+    st->print("cpu_period: %d\n", i);
+
+    i = OSContainer::cpu_shares();
+    st->print("cpu_shares: %d\n", i);
+
+    jlong j = OSContainer::memory_limit_in_bytes();
+    st->print("memory_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+    j = OSContainer::memory_and_swap_limit_in_bytes();
+    st->print("memory_and_swap_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+    j = OSContainer::memory_soft_limit_in_bytes();
+    st->print("memory_soft_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+    j = OSContainer::OSContainer::memory_usage_in_bytes();
+    st->print("memory_usage_in_bytes: " JLONG_FORMAT "\n", j);
+
+    j = OSContainer::OSContainer::memory_max_usage_in_bytes();
+    st->print("memory_max_usage_in_bytes: " JLONG_FORMAT "\n", j);
+    st->cr();
+  }
 }
 
 void os::print_memory_info(outputStream* st) {
@@ -4798,26 +4900,16 @@ extern "C" {
   }
 }
 
+void os::pd_init_container_support() {
+  OSContainer::init();
+}
+
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
 
   os::Posix::init_2();
 
   Linux::fast_thread_clock_init();
-
-  // Allocate a single page and mark it as readable for safepoint polling
-  address polling_page = (address) ::mmap(NULL, Linux::page_size(), PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-  guarantee(polling_page != MAP_FAILED, "os::init_2: failed to allocate polling page");
-
-  os::set_polling_page(polling_page);
-  log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(polling_page));
-
-  if (!UseMembar) {
-    address mem_serialize_page = (address) ::mmap(NULL, Linux::page_size(), PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-    guarantee(mem_serialize_page != MAP_FAILED, "mmap Failed for memory serialize page");
-    os::set_memory_serialize_page(mem_serialize_page);
-    log_info(os)("Memory Serialize Page address: " INTPTR_FORMAT, p2i(mem_serialize_page));
-  }
 
   // initialize suspend/resume support - must do this before signal_sets_init()
   if (SR_initialize() != 0) {
@@ -4960,12 +5052,12 @@ static int _cpu_count(const cpu_set_t* cpus) {
 // dynamic check - see 6515172 for details.
 // If anything goes wrong we fallback to returning the number of online
 // processors - which can be greater than the number available to the process.
-int os::active_processor_count() {
+int os::Linux::active_processor_count() {
   cpu_set_t cpus;  // can represent at most 1024 (CPU_SETSIZE) processors
   cpu_set_t* cpus_p = &cpus;
   int cpus_size = sizeof(cpu_set_t);
 
-  int configured_cpus = processor_count();  // upper bound on available cpus
+  int configured_cpus = os::processor_count();  // upper bound on available cpus
   int cpu_count = 0;
 
 // old build platforms may not support dynamic cpu sets
@@ -5028,8 +5120,42 @@ int os::active_processor_count() {
     CPU_FREE(cpus_p);
   }
 
-  assert(cpu_count > 0 && cpu_count <= processor_count(), "sanity check");
+  assert(cpu_count > 0 && cpu_count <= os::processor_count(), "sanity check");
   return cpu_count;
+}
+
+// Determine the active processor count from one of
+// three different sources:
+//
+// 1. User option -XX:ActiveProcessorCount
+// 2. kernel os calls (sched_getaffinity or sysconf(_SC_NPROCESSORS_ONLN)
+// 3. extracted from cgroup cpu subsystem (shares and quotas)
+//
+// Option 1, if specified, will always override.
+// If the cgroup subsystem is active and configured, we
+// will return the min of the cgroup and option 2 results.
+// This is required since tools, such as numactl, that
+// alter cpu affinity do not update cgroup subsystem
+// cpuset configuration files.
+int os::active_processor_count() {
+  // User has overridden the number of active processors
+  if (ActiveProcessorCount > 0) {
+    log_trace(os)("active_processor_count: "
+                  "active processor count set by user : %d",
+                  ActiveProcessorCount);
+    return ActiveProcessorCount;
+  }
+
+  int active_cpus;
+  if (OSContainer::is_containerized()) {
+    active_cpus = OSContainer::active_processor_count();
+    log_trace(os)("active_processor_count: determined by OSContainer: %d",
+                   active_cpus);
+  } else {
+    active_cpus = os::Linux::active_processor_count();
+  }
+
+  return active_cpus;
 }
 
 void os::set_native_thread_name(const char *name) {

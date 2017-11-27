@@ -65,7 +65,7 @@ public class Modules {
      * Creates a new Module. The module has the given ModuleDescriptor and
      * is defined to the given class loader.
      *
-     * The resulting Module is in a larval state in that it does not not read
+     * The resulting Module is in a larval state in that it does not read
      * any other module and does not have any exports.
      *
      * The URI is for information purposes only.

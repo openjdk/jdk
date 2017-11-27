@@ -42,6 +42,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"
+#include "utilities/growableArray.hpp"
 
 int    HeapRegion::LogOfHRGrainBytes = 0;
 int    HeapRegion::LogOfHRGrainWords = 0;
@@ -104,14 +105,6 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
   if (G1HeapRegionSize != GrainBytes) {
     FLAG_SET_ERGO(size_t, G1HeapRegionSize, GrainBytes);
   }
-}
-
-void HeapRegion::reset_after_compaction() {
-  G1ContiguousSpace::reset_after_compaction();
-  // After a compaction the mark bitmap is invalid, so we must
-  // treat all objects as being inside the unmarked area.
-  zero_marked_bytes();
-  init_top_at_mark_start();
 }
 
 void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
@@ -278,10 +271,6 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             (uint)allocation_context());
 }
 
-CompactibleSpace* HeapRegion::next_compaction_space() const {
-  return G1CollectedHeap::heap()->next_compaction_region(this);
-}
-
 void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,
                                                     bool during_conc_mark) {
   // We always recreate the prev marking info and we'll explicitly
@@ -411,7 +400,7 @@ void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const
     // We're not verifying code roots.
     return;
   }
-  if (vo == VerifyOption_G1UseMarkWord) {
+  if (vo == VerifyOption_G1UseFullMarking) {
     // Marking verification during a full GC is performed after class
     // unloading, code cache unloading, etc so the strong code roots
     // attached to each heap region are in an inconsistent state. They won't
@@ -482,7 +471,7 @@ protected:
 public:
   // _vo == UsePrevMarking -> use "prev" marking information,
   // _vo == UseNextMarking -> use "next" marking information,
-  // _vo == UseMarkWord    -> use mark word from object header.
+  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
   G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
     _g1h(g1h), _bs(barrier_set_cast<CardTableModRefBS>(g1h->barrier_set())),
     _containing_obj(NULL), _failures(false), _n_failures(0), _vo(vo) {
@@ -833,7 +822,8 @@ void HeapRegion::verify_rem_set() const {
 }
 
 void HeapRegion::prepare_for_compaction(CompactPoint* cp) {
-  scan_and_forward(this, cp);
+  // Not used for G1 anymore, but pure virtual in Space.
+  ShouldNotReachHere();
 }
 
 // G1OffsetTableContigSpace code; copied from space.cpp.  Hope this can go

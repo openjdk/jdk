@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "runtime/commandLineFlagConstraintsRuntime.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/task.hpp"
 #include "utilities/defaultStream.hpp"
 
@@ -129,4 +130,18 @@ Flag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose) {
   } else {
     return Flag::SUCCESS;
   }
+}
+
+Flag::Error ThreadLocalHandshakesConstraintFunc(bool value, bool verbose) {
+  if (value) {
+    if (!SafepointMechanism::supports_thread_local_poll()) {
+      CommandLineError::print(verbose, "ThreadLocalHandshakes not yet supported on this platform\n");
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+    if (UseAOT JVMCI_ONLY(|| EnableJVMCI || UseJVMCICompiler)) {
+      CommandLineError::print(verbose, "ThreadLocalHandshakes not yet supported in combination with AOT or JVMCI\n");
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+  }
+  return Flag::SUCCESS;
 }

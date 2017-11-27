@@ -2195,13 +2195,6 @@ void TemplateTable::_return(TosState state)
     __ bind(skip_register_finalizer);
   }
 
-  // Explicitly reset last_sp, for handling special case in TemplateInterpreter::deopt_reexecute_entry
-#ifdef ASSERT
-  if (state == vtos) {
-    __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
-  }
-#endif
-
   // Issue a StoreStore barrier after all stores but before return
   // from any constructor for any class with a final field.  We don't
   // know if this is a finalizer, so we always do so.

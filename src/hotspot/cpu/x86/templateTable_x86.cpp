@@ -2084,7 +2084,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ addptr(rbcp, rdx);
     // jsr returns atos that is not an oop
     __ push_i(rax);
-    __ dispatch_only(vtos);
+    __ dispatch_only(vtos, true);
     return;
   }
 
@@ -2203,7 +2203,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   // rax: return bci for jsr's, unused otherwise
   // rbx: target bytecode
   // r13: target bcp
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 
   if (UseLoopCounter) {
     if (ProfileInterpreter) {
@@ -2332,7 +2332,7 @@ void TemplateTable::ret() {
   __ movptr(rbcp, Address(rax, Method::const_offset()));
   __ lea(rbcp, Address(rbcp, rbx, Address::times_1,
                       ConstMethod::codes_offset()));
-  __ dispatch_next(vtos);
+  __ dispatch_next(vtos, 0, true);
 }
 
 void TemplateTable::wide_ret() {
@@ -2343,7 +2343,7 @@ void TemplateTable::wide_ret() {
   __ get_method(rax);
   __ movptr(rbcp, Address(rax, Method::const_offset()));
   __ lea(rbcp, Address(rbcp, rbx, Address::times_1, ConstMethod::codes_offset()));
-  __ dispatch_next(vtos);
+  __ dispatch_next(vtos, 0, true);
 }
 
 void TemplateTable::tableswitch() {
@@ -2373,7 +2373,7 @@ void TemplateTable::tableswitch() {
   LP64_ONLY(__ movl2ptr(rdx, rdx));
   __ load_unsigned_byte(rbx, Address(rbcp, rdx, Address::times_1));
   __ addptr(rbcp, rdx);
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
   // handle default
   __ bind(default_case);
   __ profile_switch_default(rax);
@@ -2421,7 +2421,7 @@ void TemplateTable::fast_linearswitch() {
   __ movl2ptr(rdx, rdx);
   __ load_unsigned_byte(rbx, Address(rbcp, rdx, Address::times_1));
   __ addptr(rbcp, rdx);
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 }
 
 void TemplateTable::fast_binaryswitch() {
@@ -2525,7 +2525,7 @@ void TemplateTable::fast_binaryswitch() {
 
   __ load_unsigned_byte(rbx, Address(rbcp, j, Address::times_1));
   __ addptr(rbcp, j);
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 
   // default case -> j = default offset
   __ bind(default_case);
@@ -2539,7 +2539,7 @@ void TemplateTable::fast_binaryswitch() {
 
   __ load_unsigned_byte(rbx, Address(rbcp, j, Address::times_1));
   __ addptr(rbcp, j);
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 }
 
 void TemplateTable::_return(TosState state) {
@@ -2563,10 +2563,17 @@ void TemplateTable::_return(TosState state) {
     __ bind(skip_register_finalizer);
   }
 
-  // Explicitly reset last_sp, for handling special case in TemplateInterpreter::deopt_reexecute_entry
-#ifdef ASSERT
-  if (state == vtos) {
-    __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+#ifdef _LP64
+  if (SafepointMechanism::uses_thread_local_poll() && _desc->bytecode() != Bytecodes::_return_register_finalizer) {
+    Label no_safepoint;
+    NOT_PRODUCT(__ block_comment("Thread-local Safepoint poll"));
+    __ testb(Address(r15_thread, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
+    __ jcc(Assembler::zero, no_safepoint);
+    __ push(state);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                                    InterpreterRuntime::at_safepoint));
+    __ pop(state);
+    __ bind(no_safepoint);
   }
 #endif
 

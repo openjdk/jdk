@@ -314,7 +314,7 @@ public:
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1ConcurrentMark* cm = g1h->concurrent_mark();
     G1CreateLiveDataClosure cl(g1h, cm, cm->next_mark_bitmap(), _live_data);
-    g1h->heap_region_par_iterate(&cl, worker_id, &_hr_claimer);
+    g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hr_claimer, worker_id);
   }
 };
 
@@ -381,7 +381,7 @@ public:
   void work(uint worker_id) {
     G1FinalizeCardLiveDataClosure cl(G1CollectedHeap::heap(), _bitmap, _live_data);
 
-    G1CollectedHeap::heap()->heap_region_par_iterate(&cl, worker_id, &_hr_claimer);
+    G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&cl, &_hr_claimer, worker_id);
   }
 };
 
@@ -560,7 +560,7 @@ public:
                                    _mark_bitmap,
                                    _act_live_data,
                                    &_exp_live_data);
-    _g1h->heap_region_par_iterate(&cl, worker_id, &_hr_claimer);
+    _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hr_claimer, worker_id);
 
     Atomic::add(cl.failures(), &_failures);
   }

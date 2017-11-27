@@ -25,13 +25,15 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+
 import java.util.*;
 
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
-
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -40,8 +42,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.Group;
-import jdk.javadoc.internal.doclets.toolkit.util.GroupTypes;
 
 /**
  * Generate the module index page "overview-summary.html" for the right-hand
@@ -57,28 +57,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.GroupTypes;
 public class ModuleIndexWriter extends AbstractModuleIndexWriter {
 
     /**
-     * Map representing the group of modules as specified on the command line.
-     *
-     * @see Group
-     */
-    private final Map<String, SortedSet<ModuleElement>> groupModuleMap;
-
-    /**
-     * List to store the order groups, which has elements to be displayed, as specified on the command line.
-     */
-    private final List<String> groupList = new ArrayList<>();
-
-    private final GroupTypes groupTypes;
-
-    private int groupTypesOr = 0;
-
-    protected Map<String, Integer> groupTypeMap = new LinkedHashMap<>();
-
-    boolean altColor = true;
-
-    int counter = 0;
-
-    /**
      * HTML tree for main tag.
      */
     private final HtmlTree htmlTree = HtmlTree.MAIN();
@@ -90,11 +68,6 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      */
     public ModuleIndexWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
-        groupModuleMap = configuration.group.groupModules(configuration.modules);
-        configuration.group.getGroupList().stream()
-                .filter(groupModuleMap::containsKey)
-                .forEach(groupList::add);
-        groupTypes = new GroupTypes(groupList, resources.getText("doclet.All_Modules"));
     }
 
     /**
@@ -128,7 +101,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
         HtmlTree htmltree = (configuration.allowTag(HtmlTag.NAV))
                 ? HtmlTree.NAV()
                 : new HtmlTree(HtmlTag.DIV);
-        htmltree.addStyle(HtmlStyle.indexNav);
+        htmltree.setStyle(HtmlStyle.indexNav);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         addAllClassesLink(ul);
         if (configuration.showModules) {
@@ -144,68 +117,53 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      *
      * @param body the content tree to which the module list will be added
      */
+    @Override
     protected void addModulesList(Content body) {
-        if (!groupList.isEmpty()) {
-            Content caption;
-            TreeMap<ModuleElement, String> groupMap = new TreeMap<>(utils.makeModuleComparator());
-            Content tbody = new HtmlTree(HtmlTag.TBODY);
+        Map<String, SortedSet<ModuleElement>> groupModuleMap
+                = configuration.group.groupModules(configuration.modules);
+
+        if (!groupModuleMap.keySet().isEmpty()) {
             String tableSummary = configuration.getText("doclet.Member_Table_Summary",
                     configuration.getText("doclet.Module_Summary"), configuration.getText("doclet.modules"));
-            for (String groupname : groupList) {
-                for (ModuleElement mdle : groupModuleMap.get(groupname)) {
-                    groupMap.put(mdle, groupname);
+            TableHeader header = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
+            Table table =  new Table(configuration.htmlVersion, HtmlStyle.overviewSummary)
+                    .setSummary(tableSummary)
+                    .setHeader(header)
+                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                    .setDefaultTab(resources.getText("doclet.All_Modules"))
+                    .setTabScriptVariable("groups")
+                    .setTabScript(i -> "showGroups(" + i + ");")
+                    .setTabId(i -> (i == 0) ? "t0" : ("t" + (1 << (i - 1))));
+
+            // add the tabs in command-line order
+            for (String groupName : configuration.group.getGroupList()) {
+                Set<ModuleElement> groupModules = groupModuleMap.get(groupName);
+                if (groupModules != null) {
+                    table.addTab(groupName, groupModules::contains);
                 }
             }
-            if (!groupMap.isEmpty()) {
-                addModulesList(groupMap, tbody);
+
+            for (ModuleElement mdle : configuration.modules) {
+                if (!mdle.isUnnamed()) {
+                    if (!(configuration.nodeprecated && utils.isDeprecated(mdle))) {
+                        Content moduleLinkContent = getModuleLink(mdle, new StringContent(mdle.getQualifiedName().toString()));
+                        Content summaryContent = new ContentBuilder();
+                        addSummaryComment(mdle, summaryContent);
+                        table.addRow(mdle, moduleLinkContent, summaryContent);
+                    }
+                }
             }
-            if (showTabs(groupTypes)) {
-                caption = getTableCaption(groupTypes);
-                generateGroupTypesScript(groupTypeMap, groupTypes.getGroupTypes());
-            } else {
-                caption = getTableCaption((groupList.size() == 1) ? new StringContent(groupList.get(0)) : contents.modulesLabel);
-            }
-            Content table = getTableHeader(caption, tableSummary, HtmlStyle.overviewSummary);
-            Content header = new TableHeader(contents.moduleLabel, contents.descriptionLabel).toContent();
-            table.addContent(header);
-            table.addContent(tbody);
-            Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
+
+            Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table.toContent());
             if (configuration.allowTag(HtmlTag.MAIN)) {
                 htmlTree.addContent(div);
             } else {
                 body.addContent(div);
             }
-        }
-    }
 
-    /**
-     * Adds list of modules in the index table. Generate link to each module.
-     *
-     * @param map map of module elements and group names
-     * @param tbody the documentation tree to which the list will be added
-     */
-    protected void addModulesList(TreeMap<ModuleElement, String> map, Content tbody) {
-        String groupname;
-        for (ModuleElement mdle : map.keySet()) {
-            if (!mdle.isUnnamed()) {
-                groupname = map.get(mdle);
-                Content moduleLinkContent = getModuleLink(mdle, new StringContent(mdle.getQualifiedName().toString()));
-                Content thModule = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, moduleLinkContent);
-                HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);
-                tdSummary.addStyle(HtmlStyle.colLast);
-                addSummaryComment(mdle, tdSummary);
-                HtmlTree tr = HtmlTree.TR(thModule);
-                tr.addContent(tdSummary);
-                tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-                int groupType = groupTypes.getTableTab(groupname).value();
-                groupTypesOr = groupTypesOr | groupType;
-                String tableId = "i" + counter;
-                counter++;
-                groupTypeMap.put(tableId, groupType);
-                tr.addAttr(HtmlAttr.ID, tableId);
-                tbody.addContent(tr);
+            if (table.needsScript()) {
+                mainBodyScript.append(table.getScript());
             }
-            altColor = !altColor;
         }
     }
 
@@ -221,7 +179,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
         addConfigurationTitle(body);
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
             HtmlTree div = new HtmlTree(HtmlTag.DIV);
-            div.addStyle(HtmlStyle.contentContainer);
+            div.setStyle(HtmlStyle.contentContainer);
             addOverviewComment(div);
             if (configuration.allowTag(HtmlTag.MAIN)) {
                 htmlTree.addContent(div);
@@ -265,13 +223,13 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      */
     @Override
     protected void addNavigationBarHeader(Content body) {
-        Content htmlTree = (configuration.allowTag(HtmlTag.HEADER))
+        Content tree = (configuration.allowTag(HtmlTag.HEADER))
                 ? HtmlTree.HEADER()
                 : body;
-        addTop(htmlTree);
-        addNavLinks(true, htmlTree);
+        addTop(tree);
+        addNavLinks(true, tree);
         if (configuration.allowTag(HtmlTag.HEADER)) {
-            body.addContent(htmlTree);
+            body.addContent(tree);
         }
     }
 

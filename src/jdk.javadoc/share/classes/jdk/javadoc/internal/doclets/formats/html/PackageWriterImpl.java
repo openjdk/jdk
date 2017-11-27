@@ -25,6 +25,9 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.Table;
+import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
+
 import java.util.*;
 
 import javax.lang.model.element.ModuleElement;
@@ -32,11 +35,12 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
+import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
@@ -124,7 +128,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             bodyTree.addContent(htmlTree);
         }
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.header);
+        div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
             Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInPackage, contents.moduleLabel);
@@ -157,7 +161,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public Content getContentHeader() {
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.contentContainer);
+        div.setStyle(HtmlStyle.contentContainer);
         return div;
     }
 
@@ -171,7 +175,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         if (utils.isDeprecated(packageElement)) {
             CommentHelper ch = utils.getCommentHelper(packageElement);
             HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
-            deprDiv.addStyle(HtmlStyle.deprecationBlock);
+            deprDiv.setStyle(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
             deprDiv.addContent(deprPhrase);
             if (!deprs.isEmpty()) {
@@ -190,7 +194,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public Content getSummaryHeader() {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
-        ul.addStyle(HtmlStyle.blockList);
+        ul.setStyle(HtmlStyle.blockList);
         return ul;
     }
 
@@ -278,47 +282,34 @@ public class PackageWriterImpl extends HtmlDocletWriter
         addClassesSummary(annoTypes, label, tableSummary, tableHeader, summaryContentTree);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public void addClassesSummary(SortedSet<TypeElement> classes, String label,
             String tableSummary, TableHeader tableHeader, Content summaryContentTree) {
         if(!classes.isEmpty()) {
-            Content caption = getTableCaption(new RawHtml(label));
-            Content table = (configuration.isOutputHtml5())
-                    ? HtmlTree.TABLE(HtmlStyle.typeSummary, caption)
-                    : HtmlTree.TABLE(HtmlStyle.typeSummary, tableSummary, caption);
-            table.addContent(tableHeader.toContent());
-            Content tbody = new HtmlTree(HtmlTag.TBODY);
-            boolean altColor = false;
+            Table table = new Table(configuration.htmlVersion, HtmlStyle.typeSummary)
+                    .setSummary(tableSummary)
+                    .setCaption(getTableCaption(new StringContent(label)))
+                    .setHeader(tableHeader)
+                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+
             for (TypeElement klass : classes) {
-                if (!utils.isCoreClass(klass) ||
-                    !configuration.isGeneratedDoc(klass)) {
+                if (!utils.isCoreClass(klass) || !configuration.isGeneratedDoc(klass)) {
                     continue;
                 }
-                altColor = !altColor;
-                Content classContent = getLink(new LinkInfoImpl(
+                Content classLink = getLink(new LinkInfoImpl(
                         configuration, LinkInfoImpl.Kind.PACKAGE, klass));
-                Content thClass = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, classContent);
-                HtmlTree tr = HtmlTree.TR(thClass);
-                tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-
-                HtmlTree tdClassDescription = new HtmlTree(HtmlTag.TD);
-                tdClassDescription.addStyle(HtmlStyle.colLast);
+                ContentBuilder description = new ContentBuilder();
                 if (utils.isDeprecated(klass)) {
-                    tdClassDescription.addContent(getDeprecatedPhrase(klass));
+                    description.addContent(getDeprecatedPhrase(klass));
                     List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
                     if (!tags.isEmpty()) {
-                        addSummaryDeprecatedComment(klass, tags.get(0), tdClassDescription);
+                        addSummaryDeprecatedComment(klass, tags.get(0), description);
                     }
                 } else {
-                    addSummaryComment(klass, tdClassDescription);
+                    addSummaryComment(klass, description);
                 }
-                tr.addContent(tdClassDescription);
-                tbody.addContent(tr);
+                table.addRow(classLink, description);
             }
-            table.addContent(tbody);
-            Content li = HtmlTree.LI(HtmlStyle.blockList, table);
+            Content li = HtmlTree.LI(HtmlStyle.blockList, table.toContent());
             summaryContentTree.addContent(li);
         }
     }
@@ -330,7 +321,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void addPackageDescription(Content packageContentTree) {
         if (!utils.getBody(packageElement).isEmpty()) {
             Content tree = configuration.allowTag(HtmlTag.SECTION) ? sectionTree : packageContentTree;
-            tree.addContent(getMarkerAnchor(SectionName.PACKAGE_DESCRIPTION));
+            tree.addContent(links.createAnchor(SectionName.PACKAGE_DESCRIPTION));
             addDeprecationInfo(tree);
             addInlineComment(packageElement, tree);
         }
@@ -394,7 +385,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     @Override
     protected Content getNavLinkClassUse() {
-        Content useLink = getHyperLink(DocPaths.PACKAGE_USE,
+        Content useLink = Links.createLink(DocPaths.PACKAGE_USE,
                 contents.useLabel, "", "");
         Content li = HtmlTree.LI(useLink);
         return li;
@@ -411,8 +402,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
         if (prev == null) {
             li = HtmlTree.LI(contents.prevPackageLabel);
         } else {
-            DocPath path = DocPath.relativePath(packageElement, prev);
-            li = HtmlTree.LI(getHyperLink(path.resolve(DocPaths.PACKAGE_SUMMARY),
+            DocPath p = DocPath.relativePath(packageElement, prev);
+            li = HtmlTree.LI(Links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
                 contents.prevPackageLabel, "", ""));
         }
         return li;
@@ -429,8 +420,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
         if (next == null) {
             li = HtmlTree.LI(contents.nextPackageLabel);
         } else {
-            DocPath path = DocPath.relativePath(packageElement, next);
-            li = HtmlTree.LI(getHyperLink(path.resolve(DocPaths.PACKAGE_SUMMARY),
+            DocPath p = DocPath.relativePath(packageElement, next);
+            li = HtmlTree.LI(Links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
                 contents.nextPackageLabel, "", ""));
         }
         return li;
@@ -444,7 +435,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     @Override
     protected Content getNavLinkTree() {
-        Content useLink = getHyperLink(DocPaths.PACKAGE_TREE,
+        Content useLink = Links.createLink(DocPaths.PACKAGE_TREE,
                 contents.treeLabel, "", "");
         Content li = HtmlTree.LI(useLink);
         return li;

@@ -88,8 +88,8 @@ serviceability/sa/JhsdbThreadInfoTest.java 8184042 macosx-all
 serviceability/sa/TestInstanceKlassSize.java 8184042 macosx-all
 serviceability/sa/TestInstanceKlassSizeForInterface.java 8184042 macosx-all
 serviceability/sa/TestPrintMdo.java 8184042 macosx-all
+serviceability/sa/TestRevPtrsForInvokeDynamic.java 8191270 generic-all
 serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java 8184042 macosx-all
-serviceability/dcmd/jvmti/LoadAgentDcmdTest.java 8186540 windows-all
 #############################################################################
 
 # :hotspot_misc

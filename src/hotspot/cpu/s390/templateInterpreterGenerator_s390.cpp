@@ -687,7 +687,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
 }
 
 address TemplateInterpreterGenerator::generate_deopt_entry_for (TosState state,
-                                                               int step) {
+                                                               int step,
+                                                               address continuation) {
   address entry = __ pc();
 
   BLOCK_COMMENT("deopt_entry {");
@@ -710,7 +711,11 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for (TosState state,
     __ should_not_reach_here();
     __ bind(L);
   }
-  __ dispatch_next(state, step);
+  if (continuation == NULL) {
+    __ dispatch_next(state, step);
+  } else {
+    __ jump_to_entry(continuation, Z_R1_scratch);
+  }
 
   BLOCK_COMMENT("} deopt_entry");
 

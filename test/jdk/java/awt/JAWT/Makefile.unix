@@ -27,7 +27,6 @@ CLASSES =	MyCanvas.class
 ENV =		/usr/bin/env
 JAVA =		$(TESTJAVA)/bin/java -classpath .
 JAVAC =		$(TESTJAVA)/bin/javac
-JAVAH =		$(TESTJAVA)/bin/javah
 LINK =		ld
 
 J_INC =		$(TESTJAVA)/include

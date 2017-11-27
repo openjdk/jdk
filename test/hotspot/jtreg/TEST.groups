@@ -24,6 +24,10 @@
 hotspot_all = \
   /
 
+hotspot_all_no_apps = \
+  / \
+  -applications
+
 hotspot_compiler = \
   compiler
 
@@ -32,6 +36,9 @@ hotspot_gc = \
 
 hotspot_runtime = \
   runtime
+
+hotspot_handshake = \
+  runtime/handshake
 
 hotspot_serviceability = \
   serviceability
@@ -180,6 +187,7 @@ hotspot_tier1_runtime = \
  -runtime/Thread/CancellableThreadTest.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
  -runtime/Unsafe/RangeCheck.java \
+ -runtime/containers/ \
   sanity/ \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java
 
@@ -190,7 +198,8 @@ hotspot_cds = \
 
 hotspot_tier1_serviceability = \
   serviceability/dcmd/compiler \
-  serviceability/logging
+  serviceability/logging \
+  serviceability/sa
 
 hotspot_tier1 = \
   :hotspot_tier1_common \
@@ -208,6 +217,7 @@ hotspot_tier2_runtime = \
   serviceability/ \
  -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
+ -runtime/containers/ \
  -:hotspot_tier1_runtime \
  -:hotspot_tier1_serviceability \
  -:hotspot_tier2_runtime_platform_agnostic
@@ -219,6 +229,7 @@ hotspot_tier2_runtime_platform_agnostic = \
 hotspot_tier3_runtime = \
   runtime/ \
   serviceability/ \
+ -runtime/containers/ \
  -:hotspot_tier1_runtime \
  -:hotspot_tier1_serviceability \
  -:hotspot_tier2_runtime_platform_agnostic \

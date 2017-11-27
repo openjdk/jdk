@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8040211
+ * @bug 8040211 8191404
  * @summary Checks the IANA language subtag registry data updation
- *          (LSR Revision: 2016-02-10) with Locale and Locale.LanguageRange
+ *          (LSR Revision: 2017-08-15) with Locale and Locale.LanguageRange
  *          class methods.
  * @run main Bug8040211
  */
@@ -66,9 +66,9 @@ public class Bug8040211 {
 
     private static void test_parse() {
         boolean error = false;
-        String str = "Accept-Language: aam, adp, aue, ema, en-gb-oed,"
-                + " gti, koj, kwq, kxe, lii, lmm, mtm, ngv, oyb, phr, pub,"
-                + " suj, taj;q=0.9, yug;q=0.5, gfx;q=0.4";
+        String str = "Accept-Language: aam, adp, aue, bcg, cqu, ema,"
+                + " en-gb-oed, gti, koj, kwq, kxe, lii, lmm, mtm, ngv,"
+                + " oyb, phr, pub, suj, taj;q=0.9, yug;q=0.5, gfx;q=0.4";
         ArrayList<LanguageRange> expected = new ArrayList<>();
         expected.add(new LanguageRange("aam", 1.0));
         expected.add(new LanguageRange("aas", 1.0));
@@ -76,6 +76,10 @@ public class Bug8040211 {
         expected.add(new LanguageRange("dz", 1.0));
         expected.add(new LanguageRange("aue", 1.0));
         expected.add(new LanguageRange("ktz", 1.0));
+        expected.add(new LanguageRange("bcg", 1.0));
+        expected.add(new LanguageRange("bgm", 1.0));
+        expected.add(new LanguageRange("cqu", 1.0));
+        expected.add(new LanguageRange("quh", 1.0));
         expected.add(new LanguageRange("ema", 1.0));
         expected.add(new LanguageRange("uok", 1.0));
         expected.add(new LanguageRange("en-gb-oed", 1.0));
@@ -98,6 +102,8 @@ public class Bug8040211 {
         expected.add(new LanguageRange("nnx", 1.0));
         expected.add(new LanguageRange("oyb", 1.0));
         expected.add(new LanguageRange("thx", 1.0));
+        expected.add(new LanguageRange("skk", 1.0));
+        expected.add(new LanguageRange("jeg", 1.0));
         expected.add(new LanguageRange("phr", 1.0));
         expected.add(new LanguageRange("pmu", 1.0));
         expected.add(new LanguageRange("pub", 1.0));
@@ -170,15 +176,15 @@ public class Bug8040211 {
     private static void test_filter() {
         boolean error = false;
 
-        String ranges = "mtm-RU, en-gb-oed";
-        String tags = "de-DE, en, mtm-RU, ymt-RU, en-gb-oxendict, ja-JP";
+        String ranges = "mtm-RU, en-gb-oed, coy";
+        String tags = "de-DE, en, mtm-RU, ymt-RU, en-gb-oxendict, ja-JP, pij, nts";
         FilteringMode mode = EXTENDED_FILTERING;
 
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         List<Locale> tagList = generateLocales(tags);
         String actualLocales
                 = showLocales(Locale.filter(priorityList, tagList, mode));
-        String expectedLocales = "mtm-RU, ymt-RU, en-GB-oxendict";
+        String expectedLocales = "mtm-RU, ymt-RU, en-GB-oxendict, nts, pij";
 
         if (!expectedLocales.equals(actualLocales)) {
             error = true;
@@ -212,14 +218,14 @@ public class Bug8040211 {
     private static void test_filterTags() {
         boolean error = false;
 
-        String ranges = "gti;q=0.2, gfx";
-        String tags = "de-DE, gti, he, nyc, mwj, vaj";
+        String ranges = "gti;q=0.2, gfx, kzj";
+        String tags = "de-DE, gti, he, nyc, mwj, vaj, ktr, dtp";
 
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         List<String> tagList = generateLanguageTags(tags);
         String actualTags
                 = showLanguageTags(Locale.filterTags(priorityList, tagList));
-        String expectedTags = "mwj, vaj, gti, nyc";
+        String expectedTags = "mwj, vaj, ktr, dtp, gti, nyc";
 
         if (!expectedTags.equals(actualTags)) {
             error = true;

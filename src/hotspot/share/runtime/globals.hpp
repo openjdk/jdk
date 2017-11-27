@@ -598,6 +598,13 @@ public:
   develop(bool, CleanChunkPoolAsync, true,                                  \
           "Clean the chunk pool asynchronously")                            \
                                                                             \
+  product_pd(bool, ThreadLocalHandshakes,                                   \
+          "Use thread-local polls instead of global poll for safepoints.")  \
+          constraint(ThreadLocalHandshakesConstraintFunc,AfterErgo)         \
+                                                                            \
+  diagnostic(uint, HandshakeTimeout, 0,                                     \
+          "If nonzero set a timeout in milliseconds for handshakes")        \
+                                                                            \
   experimental(bool, AlwaysSafeConstructors, false,                         \
           "Force safe construction, as if all fields are final.")           \
                                                                             \
@@ -2013,8 +2020,8 @@ public:
   product(bool, ZeroTLAB, false,                                            \
           "Zero out the newly created TLAB")                                \
                                                                             \
-  product(bool, FastTLABRefill, true,                                       \
-          "Use fast TLAB refill code")                                      \
+  product(bool, FastTLABRefill, false,                                      \
+          "(Deprecated) Use fast TLAB refill code")                         \
                                                                             \
   product(bool, TLABStats, true,                                            \
           "Provide more detailed and expensive TLAB statistics.")           \
@@ -2029,6 +2036,9 @@ public:
           "Real memory size (in bytes) used to set maximum heap size")      \
           range(0, 0XFFFFFFFFFFFFFFFF)                                      \
                                                                             \
+  product(bool, AggressiveHeap, false,                                      \
+          "Optimize heap options for long-running memory intensive apps")   \
+                                                                            \
   product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
           "MaxRAM * MaxRAMPercentage / 100")                                \
@@ -2036,7 +2046,8 @@ public:
                                                                             \
   experimental(bool, UseCGroupMemoryLimitForHeap, false,                    \
           "Use CGroup memory limit as physical memory limit for heap "      \
-          "sizing")                                                         \
+          "sizing"                                                          \
+          "Deprecated, replaced by container support")                      \
                                                                             \
   product(uintx, MaxRAMFraction, 4,                                         \
           "Maximum fraction (1/n) of real memory used for maximum heap "    \
@@ -2067,6 +2078,9 @@ public:
   product(double, InitialRAMPercentage, 1.5625,                             \
           "Percentage of real memory used for initial heap size")           \
           range(0.0, 100.0)                                                 \
+                                                                            \
+  product(int, ActiveProcessorCount, -1,                                    \
+          "Specify the CPU count the VM should use and report as active")   \
                                                                             \
   develop(uintx, MaxVirtMemFraction, 2,                                     \
           "Maximum fraction (1/n) of virtual memory used for ergonomically "\

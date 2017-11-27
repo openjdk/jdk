@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @requires vm.simpleArch == "x64" & vm.debug
+ * @requires vm.debug
  * @bug 8168712
  *
  * @run main/othervm -XX:CompileCommand=compileonly,Test8168712.* -XX:CompileCommand=compileonly,*Object.* -XX:+DTraceMethodProbes -XX:-UseOnStackReplacement -XX:+DeoptimizeRandom compiler.runtime.Test8168712

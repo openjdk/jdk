@@ -369,6 +369,7 @@ public:
   typedef typename T::element_type E;
 
   GenericTaskQueueSet(int n);
+  ~GenericTaskQueueSet();
 
   bool steal_best_of_2(uint queue_num, int* seed, E& t);
 
