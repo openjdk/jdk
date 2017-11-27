@@ -45,7 +45,7 @@ Object.defineProperty(this, "JavaAdapter", {
 // importPackage
 // avoid unnecessary chaining of __noSuchProperty__ again
 // in case user loads this script more than once.
-if (typeof importPackage == 'undefined') {
+if (typeof importPackage == 'undefined' || !(importPackage instanceof Function)) {
 
 Object.defineProperty(this, "importPackage", {
     configurable: true, enumerable: false, writable: true,
