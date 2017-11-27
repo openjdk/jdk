@@ -240,17 +240,26 @@ public class MultiReleaseJar {
         cmds[0] = cmdPath.resolve(cmds[0]).toString();
         ProcessBuilder pb = new ProcessBuilder(cmds);
         pb.directory(mrjar.toFile());
-        Process p = pb.start();
-        p.waitFor(10, TimeUnit.SECONDS);
-        String out;
-        try (InputStream is = p.getInputStream()) {
-            out = new String(is.readAllBytes());
+        Process p = null;
+        try {
+            p = pb.start();
+            p.waitFor();
+
+            String out;
+            try (InputStream is = p.getInputStream()) {
+                out = new String(is.readAllBytes());
+            }
+            String err;
+            try (InputStream is = p.getErrorStream()) {
+                err = new String(is.readAllBytes());
+            }
+            return new Result(cmd, p.exitValue(), out, err);
+        } catch (Throwable t) {
+            if (p != null) {
+                p.destroyForcibly().waitFor();
+            }
+            throw t;
         }
-        String err;
-        try (InputStream is = p.getErrorStream()) {
-            err = new String(is.readAllBytes());
-        }
-        return new Result(cmd, p.exitValue(), out, err);
     }
 
     void checkResult(Result r) throws Exception {
