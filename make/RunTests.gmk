@@ -37,6 +37,7 @@ $(eval $(call IncludeCustomExtension, RunTests.gmk))
 
 TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
 TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
+TEST_SUMMARY := $(TEST_RESULTS_DIR)/test-summary.txt
 
 ifeq ($(CUSTOM_ROOT), )
   JTREG_TOPDIR := $(TOPDIR)
@@ -521,41 +522,45 @@ endif
 TEST_FAILURE := false
 
 run-test: $(TARGETS)
-        # Print a table of the result of all tests run and their result
-	$(ECHO)
-	$(ECHO) ==============================
-	$(ECHO) Test summary
-	$(ECHO) ==============================
-	$(PRINTF) "%2s %-49s %5s %5s %5s %5s %2s\n" "  " TEST \
-	    TOTAL PASS FAIL ERROR " "
+        # Create and print a table of the result of all tests run
+	$(RM) $(TEST_SUMMARY).old 2> /dev/null
+	$(MV) $(TEST_SUMMARY) $(TEST_SUMMARY).old 2> /dev/null || true
+	$(ECHO) >> $(TEST_SUMMARY) ==============================
+	$(ECHO) >> $(TEST_SUMMARY) Test summary
+	$(ECHO) >> $(TEST_SUMMARY) ==============================
+	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %2s\n" "  " \
+	    TEST TOTAL PASS FAIL ERROR " "
 	$(foreach test, $(TESTS_TO_RUN), \
 	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
 	      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
 	  $(eval NAME_PATTERN := $(shell $(ECHO) $(test) | $(TR) -c \\n _)) \
 	  $(if $(filter __________________________________________________%, $(NAME_PATTERN)), \
 	    $(eval TEST_NAME := ) \
-	    $(PRINTF) "%2s %-49s\n" "  " "$(test)"  $(NEWLINE) \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s\n" "  " "$(test)"  $(NEWLINE) \
 	  , \
 	    $(eval TEST_NAME := $(test)) \
 	  ) \
 	  $(if $(filter $($(TEST_ID)_PASSED), $($(TEST_ID)_TOTAL)), \
-	    $(PRINTF) "%2s %-49s %5d %5d %5d %5d %2s\n" "  " "$(TEST_NAME)" \
-	        $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) $($(TEST_ID)_FAILED) \
-	        $($(TEST_ID)_ERROR) "  " $(NEWLINE) \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
+	        "  " "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "  " $(NEWLINE) \
 	  , \
-	    $(PRINTF) "%2s %-49s %5d %5d %5d %5d %2s\n" ">>" "$(TEST_NAME)" \
-	        $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) $($(TEST_ID)_FAILED) \
-	        $($(TEST_ID)_ERROR) "<<" $(NEWLINE) \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
+	         ">>" "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "<<" $(NEWLINE) \
 	    $(eval TEST_FAILURE := true) \
 	  ) \
 	)
-	$(ECHO) ==============================
+	$(ECHO) >> $(TEST_SUMMARY) ==============================
 	$(if $(filter true, $(TEST_FAILURE)), \
-	  $(ECHO) TEST FAILURE $(NEWLINE) \
+	  $(ECHO) >> $(TEST_SUMMARY) TEST FAILURE $(NEWLINE) \
+	  $(MKDIR) -p $(MAKESUPPORT_OUTPUTDIR) $(NEWLINE) \
 	  $(TOUCH) $(MAKESUPPORT_OUTPUTDIR)/exit-with-error \
 	, \
-	  $(ECHO) TEST SUCCESS \
+	  $(ECHO) >> $(TEST_SUMMARY) TEST SUCCESS \
 	)
+	$(ECHO)
+	$(CAT) $(TEST_SUMMARY)
 	$(ECHO)
 
 ################################################################################
