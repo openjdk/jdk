@@ -282,10 +282,11 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, profiled_size);
   FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, non_profiled_size);
 
-  // Align CodeHeaps
-  size_t alignment = heap_alignment();
+  // If large page support is enabled, align code heaps according to large
+  // page size to make sure that code cache is covered by large pages.
+  const size_t alignment = MAX2(page_size(false), (size_t) os::vm_allocation_granularity());
   non_nmethod_size = align_up(non_nmethod_size, alignment);
-  profiled_size   = align_down(profiled_size, alignment);
+  profiled_size    = align_down(profiled_size, alignment);
 
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
@@ -308,38 +309,29 @@ void CodeCache::initialize_heaps() {
   add_heap(non_profiled_space, "CodeHeap 'non-profiled nmethods'", CodeBlobType::MethodNonProfiled);
 }
 
-size_t CodeCache::heap_alignment() {
-  // If large page support is enabled, align code heaps according to large
-  // page size to make sure that code cache is covered by large pages.
-  const size_t page_size = os::can_execute_large_page_memory() ?
-             os::page_size_for_region_unaligned(ReservedCodeCacheSize, 8) :
-             os::vm_page_size();
-  return MAX2(page_size, (size_t) os::vm_allocation_granularity());
+size_t CodeCache::page_size(bool aligned) {
+  if (os::can_execute_large_page_memory()) {
+    return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, 8) :
+                     os::page_size_for_region_unaligned(ReservedCodeCacheSize, 8);
+  } else {
+    return os::vm_page_size();
+  }
 }
 
 ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
-  // Determine alignment
-  const size_t page_size = os::can_execute_large_page_memory() ?
-          MIN2(os::page_size_for_region_aligned(InitialCodeCacheSize, 8),
-               os::page_size_for_region_aligned(size, 8)) :
-          os::vm_page_size();
-  const size_t granularity = os::vm_allocation_granularity();
-  const size_t r_align = MAX2(page_size, granularity);
-  const size_t r_size = align_up(size, r_align);
-  const size_t rs_align = page_size == (size_t) os::vm_page_size() ? 0 :
-    MAX2(page_size, granularity);
-
-  ReservedCodeSpace rs(r_size, rs_align, rs_align > 0);
-
+  // Align and reserve space for code cache
+  const size_t rs_ps = page_size();
+  const size_t rs_align = MAX2(rs_ps, (size_t) os::vm_allocation_granularity());
+  const size_t rs_size = align_up(size, rs_align);
+  ReservedCodeSpace rs(rs_size, rs_align, rs_ps > (size_t) os::vm_page_size());
   if (!rs.is_reserved()) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
-                                          r_size/K));
+                                          rs_size/K));
   }
 
   // Initialize bounds
   _low_bound = (address)rs.base();
   _high_bound = _low_bound + rs.size();
-
   return rs;
 }
 
