@@ -38,6 +38,11 @@ $(eval $(call IncludeCustomExtension, RunTests.gmk))
 TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
 TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
 
+ifeq ($(CUSTOM_ROOT), )
+  JTREG_TOPDIR := $(TOPDIR)
+else
+  JTREG_TOPDIR := $(CUSTOM_ROOT)
+endif
 
 ################################################################################
 # Parse control variables
@@ -116,17 +121,23 @@ define ParseGtestTestSelection
   )
 endef
 
+# Helper function that removes the TOPDIR part
+CleanupJtregPath = \
+  $(strip $(patsubst %/, %, $(subst $(JTREG_TOPDIR)/,, $1)))
+
 # Take a partial Jtreg root path and return a full, absolute path to that Jtreg
 # root. Also support having "hotspot" as an alias for "hotspot/jtreg".
 ExpandJtregRoot = \
-  $(strip $(wildcard $(patsubst %/, %, \
+  $(call CleanupJtregPath, $(wildcard \
     $(if $(filter /%, $1), \
-      $1 \
+      $(if $(wildcard $(strip $1)/TEST.ROOT), \
+        $1 \
+      ) \
     , \
       $(filter $(addprefix %, $1), $(JTREG_TESTROOTS) $(addsuffix /, $(JTREG_TESTROOTS))) \
       $(filter $(addprefix %, $(strip $1)/jtreg), $(JTREG_TESTROOTS) $(addsuffix /, $(JTREG_TESTROOTS))) \
     ) \
-  )))
+  ))
 
 # Take a partial Jtreg test path and return a full, absolute path to that Jtreg
 # test. Also support having "hotspot" as an alias for "hotspot/jtreg".
@@ -134,14 +145,14 @@ ExpandJtregPath = \
   $(if $(call ExpandJtregRoot, $1), \
     $(call ExpandJtregRoot, $1) \
   , \
-    $(strip $(wildcard $(patsubst %/, %, \
+    $(call CleanupJtregPath, $(wildcard \
       $(if $(filter /%, $1), \
         $1 \
       , \
         $(addsuffix /$(strip $1), $(JTREG_TESTROOTS) $(TEST_BASEDIRS)) \
         $(addsuffix $(strip $(patsubst hotspot/%, /hotspot/jtreg/%, $1)), $(JTREG_TESTROOTS) $(TEST_BASEDIRS)) \
       ) \
-    ))) \
+    )) \
   )
 
 # Helper function to determine if a test specification is a Jtreg test
@@ -165,20 +176,18 @@ define ParseJtregTestSelection
       $(eval TEST_ROOTS := $(call ExpandJtregRoot, $(TEST_PATH))) \
     ) \
     $(foreach test_root, $(TEST_ROOTS), \
-      $(if $(filter $(TEST_GROUP), $($(test_root)_JTREG_TEST_GROUPS)), \
+      $(if $(filter /%, $(test_root)), \
         jtreg:$(test_root):$(TEST_GROUP) \
+      , \
+        $(if $(filter $(TEST_GROUP), $($(JTREG_TOPDIR)/$(test_root)_JTREG_TEST_GROUPS)), \
+          jtreg:$(test_root):$(TEST_GROUP) \
+        ) \
       ) \
     ) \
   , \
-    $(if $(filter /%, $(TEST_NAME)), \
-      $(if $(wildcard $(TEST_NAME)), \
-        jtreg:$(TEST_NAME) \
-      ) \
-    , \
-      $(eval TEST_PATHS := $(call ExpandJtregPath, $(TEST_NAME))) \
-      $(foreach test_path, $(TEST_PATHS), \
-        jtreg:$(test_path) \
-      ) \
+    $(eval TEST_PATHS := $(call ExpandJtregPath, $(TEST_NAME))) \
+    $(foreach test_path, $(TEST_PATHS), \
+      jtreg:$(test_path) \
     ) \
   )
 endef
@@ -326,7 +335,7 @@ define SetupRunJtregTestBody
 
   $1_COMPONENT := \
       $$(strip $$(foreach root, $$(JTREG_TESTROOTS), \
-        $$(if $$(filter $$(root)%, $$($1_TEST_NAME)), \
+        $$(if $$(filter $$(root)%, $$(JTREG_TOPDIR)/$$($1_TEST_NAME)), \
           $$(lastword $$(subst /, $$(SPACE), $$(root))) \
         ) \
       ))
@@ -416,7 +425,7 @@ define SetupRunJtregTestBody
 	        -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
 	        $$($1_JTREG_BASIC_OPTIONS) \
 	        -testjdk:$$(JDK_IMAGE_DIR) \
-	        -dir:$$(TOPDIR) \
+	        -dir:$$(JTREG_TOPDIR) \
 	        -reportDir:$$($1_TEST_RESULTS_DIR) \
 	        -workDir:$$($1_TEST_SUPPORT_DIR) \
 	        $$(JTREG_OPTIONS) \
@@ -514,12 +523,19 @@ run-test: $(TARGETS)
 	$(foreach test, $(TESTS_TO_RUN), \
 	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
 	      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
+	  $(eval NAME_PATTERN := $(shell $(ECHO) $(test) | $(TR) -c \\n _)) \
+	  $(if $(filter __________________________________________________%, $(NAME_PATTERN)), \
+	    $(eval TEST_NAME := ) \
+	    $(PRINTF) "%2s %-49s\n" "  " "$(test)"  $(NEWLINE) \
+	  , \
+	    $(eval TEST_NAME := $(test)) \
+	  ) \
 	  $(if $(filter $($(TEST_ID)_PASSED), $($(TEST_ID)_TOTAL)), \
-	    $(PRINTF) "%2s %-49s %5d %5d %5d %5d %2s\n" "  " "$(test)" \
+	    $(PRINTF) "%2s %-49s %5d %5d %5d %5d %2s\n" "  " "$(TEST_NAME)" \
 	        $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) $($(TEST_ID)_FAILED) \
 	        $($(TEST_ID)_ERROR) "  " $(NEWLINE) \
 	  , \
-	    $(PRINTF) "%2s %-49s %5d %5d %5d %5d %2s\n" ">>" "$(test)" \
+	    $(PRINTF) "%2s %-49s %5d %5d %5d %5d %2s\n" ">>" "$(TEST_NAME)" \
 	        $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) $($(TEST_ID)_FAILED) \
 	        $($(TEST_ID)_ERROR) "<<" $(NEWLINE) \
 	    $(eval TEST_FAILURE := true) \
