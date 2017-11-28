@@ -1407,47 +1407,56 @@ void PhaseIdealLoop::split_if_with_blocks( VectorSet &visited, Node_Stack &nstac
 // "Nearly" because all Nodes have been cloned from the original in the loop,
 // but the fall-in edges to the Cmp are different.  Clone bool/Cmp pairs
 // through the Phi recursively, and return a Bool.
-BoolNode *PhaseIdealLoop::clone_iff( PhiNode *phi, IdealLoopTree *loop ) {
+Node* PhaseIdealLoop::clone_iff(PhiNode *phi, IdealLoopTree *loop) {
 
   // Convert this Phi into a Phi merging Bools
   uint i;
-  for( i = 1; i < phi->req(); i++ ) {
+  for (i = 1; i < phi->req(); i++) {
     Node *b = phi->in(i);
-    if( b->is_Phi() ) {
-      _igvn.replace_input_of(phi, i, clone_iff( b->as_Phi(), loop ));
+    if (b->is_Phi()) {
+      _igvn.replace_input_of(phi, i, clone_iff(b->as_Phi(), loop));
     } else {
-      assert( b->is_Bool(), "" );
+      assert(b->is_Bool() || b->Opcode() == Op_Opaque4, "");
     }
   }
 
-  Node *sample_bool = phi->in(1);
-  Node *sample_cmp  = sample_bool->in(1);
+  Node* n = phi->in(1);
+  Node* sample_opaque = NULL;
+  Node *sample_bool = NULL;
+  if (n->Opcode() == Op_Opaque4) {
+    sample_opaque = n;
+    sample_bool = n->in(1);
+    assert(sample_bool->is_Bool(), "wrong type");
+  } else {
+    sample_bool = n;
+  }
+  Node *sample_cmp = sample_bool->in(1);
 
   // Make Phis to merge the Cmp's inputs.
-  PhiNode *phi1 = new PhiNode( phi->in(0), Type::TOP );
-  PhiNode *phi2 = new PhiNode( phi->in(0), Type::TOP );
-  for( i = 1; i < phi->req(); i++ ) {
-    Node *n1 = phi->in(i)->in(1)->in(1);
-    Node *n2 = phi->in(i)->in(1)->in(2);
-    phi1->set_req( i, n1 );
-    phi2->set_req( i, n2 );
-    phi1->set_type( phi1->type()->meet_speculative(n1->bottom_type()));
-    phi2->set_type( phi2->type()->meet_speculative(n2->bottom_type()));
+  PhiNode *phi1 = new PhiNode(phi->in(0), Type::TOP);
+  PhiNode *phi2 = new PhiNode(phi->in(0), Type::TOP);
+  for (i = 1; i < phi->req(); i++) {
+    Node *n1 = sample_opaque == NULL ? phi->in(i)->in(1)->in(1) : phi->in(i)->in(1)->in(1)->in(1);
+    Node *n2 = sample_opaque == NULL ? phi->in(i)->in(1)->in(2) : phi->in(i)->in(1)->in(1)->in(2);
+    phi1->set_req(i, n1);
+    phi2->set_req(i, n2);
+    phi1->set_type(phi1->type()->meet_speculative(n1->bottom_type()));
+    phi2->set_type(phi2->type()->meet_speculative(n2->bottom_type()));
   }
   // See if these Phis have been made before.
   // Register with optimizer
   Node *hit1 = _igvn.hash_find_insert(phi1);
-  if( hit1 ) {                  // Hit, toss just made Phi
+  if (hit1) {                   // Hit, toss just made Phi
     _igvn.remove_dead_node(phi1); // Remove new phi
-    assert( hit1->is_Phi(), "" );
+    assert(hit1->is_Phi(), "" );
     phi1 = (PhiNode*)hit1;      // Use existing phi
   } else {                      // Miss
     _igvn.register_new_node_with_optimizer(phi1);
   }
   Node *hit2 = _igvn.hash_find_insert(phi2);
-  if( hit2 ) {                  // Hit, toss just made Phi
+  if (hit2) {                   // Hit, toss just made Phi
     _igvn.remove_dead_node(phi2); // Remove new phi
-    assert( hit2->is_Phi(), "" );
+    assert(hit2->is_Phi(), "" );
     phi2 = (PhiNode*)hit2;      // Use existing phi
   } else {                      // Miss
     _igvn.register_new_node_with_optimizer(phi2);
@@ -1457,8 +1466,8 @@ BoolNode *PhaseIdealLoop::clone_iff( PhiNode *phi, IdealLoopTree *loop ) {
   set_ctrl(phi2, phi->in(0));
   // Make a new Cmp
   Node *cmp = sample_cmp->clone();
-  cmp->set_req( 1, phi1 );
-  cmp->set_req( 2, phi2 );
+  cmp->set_req(1, phi1);
+  cmp->set_req(2, phi2);
   _igvn.register_new_node_with_optimizer(cmp);
   set_ctrl(cmp, phi->in(0));
 
@@ -1468,8 +1477,16 @@ BoolNode *PhaseIdealLoop::clone_iff( PhiNode *phi, IdealLoopTree *loop ) {
   _igvn.register_new_node_with_optimizer(b);
   set_ctrl(b, phi->in(0));
 
-  assert( b->is_Bool(), "" );
-  return (BoolNode*)b;
+  if (sample_opaque != NULL) {
+    Node* opaque = sample_opaque->clone();
+    opaque->set_req(1, b);
+    _igvn.register_new_node_with_optimizer(opaque);
+    set_ctrl(opaque, phi->in(0));
+    return opaque;
+  }
+
+  assert(b->is_Bool(), "");
+  return b;
 }
 
 //------------------------------clone_bool-------------------------------------
@@ -1749,21 +1766,24 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
         // in the loop to break the loop, then test is again outside of the
         // loop to determine which way the loop exited.
         // Loop predicate If node connects to Bool node through Opaque1 node.
-        if (use->is_If() || use->is_CMove() || C->is_predicate_opaq(use)) {
+        if (use->is_If() || use->is_CMove() || C->is_predicate_opaq(use) || use->Opcode() == Op_Opaque4) {
           // Since this code is highly unlikely, we lazily build the worklist
           // of such Nodes to go split.
-          if( !split_if_set )
+          if (!split_if_set) {
             split_if_set = new Node_List(area);
+          }
           split_if_set->push(use);
         }
-        if( use->is_Bool() ) {
-          if( !split_bool_set )
+        if (use->is_Bool()) {
+          if (!split_bool_set) {
             split_bool_set = new Node_List(area);
+          }
           split_bool_set->push(use);
         }
-        if( use->Opcode() == Op_CreateEx ) {
-          if( !split_cex_set )
+        if (use->Opcode() == Op_CreateEx) {
+          if (!split_cex_set) {
             split_cex_set = new Node_List(area);
+          }
           split_cex_set->push(use);
         }
 
@@ -1852,31 +1872,31 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   // takes control from one or more OLD Regions (which in turn get from NEW
   // Regions).  In any case, there will be a set of Phis for each merge point
   // from the IF up to where the original BOOL def exists the loop.
-  if( split_if_set ) {
-    while( split_if_set->size() ) {
+  if (split_if_set) {
+    while (split_if_set->size()) {
       Node *iff = split_if_set->pop();
-      if( iff->in(1)->is_Phi() ) {
-        BoolNode *b = clone_iff( iff->in(1)->as_Phi(), loop );
+      if (iff->in(1)->is_Phi()) {
+        Node *b = clone_iff(iff->in(1)->as_Phi(), loop);
         _igvn.replace_input_of(iff, 1, b);
       }
     }
   }
-  if( split_bool_set ) {
-    while( split_bool_set->size() ) {
+  if (split_bool_set) {
+    while (split_bool_set->size()) {
       Node *b = split_bool_set->pop();
       Node *phi = b->in(1);
-      assert( phi->is_Phi(), "" );
-      CmpNode *cmp = clone_bool( (PhiNode*)phi, loop );
+      assert(phi->is_Phi(), "");
+      CmpNode *cmp = clone_bool((PhiNode*)phi, loop);
       _igvn.replace_input_of(b, 1, cmp);
     }
   }
-  if( split_cex_set ) {
-    while( split_cex_set->size() ) {
+  if (split_cex_set) {
+    while (split_cex_set->size()) {
       Node *b = split_cex_set->pop();
-      assert( b->in(0)->is_Region(), "" );
-      assert( b->in(1)->is_Phi(), "" );
-      assert( b->in(0)->in(0) == b->in(1)->in(0), "" );
-      split_up( b, b->in(0), NULL );
+      assert(b->in(0)->is_Region(), "");
+      assert(b->in(1)->is_Phi(), "");
+      assert(b->in(0)->in(0) == b->in(1)->in(0), "");
+      split_up(b, b->in(0), NULL);
     }
   }
 
