@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/resourceArea.hpp"
+#include "memory/resourceArea.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"

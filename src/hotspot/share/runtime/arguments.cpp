@@ -114,6 +114,108 @@ bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = NULL;
 
+bool PathString::set_value(const char *value) {
+  if (_value != NULL) {
+    FreeHeap(_value);
+  }
+  _value = AllocateHeap(strlen(value)+1, mtArguments);
+  assert(_value != NULL, "Unable to allocate space for new path value");
+  if (_value != NULL) {
+    strcpy(_value, value);
+  } else {
+    // not able to allocate
+    return false;
+  }
+  return true;
+}
+
+void PathString::append_value(const char *value) {
+  char *sp;
+  size_t len = 0;
+  if (value != NULL) {
+    len = strlen(value);
+    if (_value != NULL) {
+      len += strlen(_value);
+    }
+    sp = AllocateHeap(len+2, mtArguments);
+    assert(sp != NULL, "Unable to allocate space for new append path value");
+    if (sp != NULL) {
+      if (_value != NULL) {
+        strcpy(sp, _value);
+        strcat(sp, os::path_separator());
+        strcat(sp, value);
+        FreeHeap(_value);
+      } else {
+        strcpy(sp, value);
+      }
+      _value = sp;
+    }
+  }
+}
+
+PathString::PathString(const char* value) {
+  if (value == NULL) {
+    _value = NULL;
+  } else {
+    _value = AllocateHeap(strlen(value)+1, mtArguments);
+    strcpy(_value, value);
+  }
+}
+
+PathString::~PathString() {
+  if (_value != NULL) {
+    FreeHeap(_value);
+    _value = NULL;
+  }
+}
+
+ModulePatchPath::ModulePatchPath(const char* module_name, const char* path) {
+  assert(module_name != NULL && path != NULL, "Invalid module name or path value");
+  size_t len = strlen(module_name) + 1;
+  _module_name = AllocateHeap(len, mtInternal);
+  strncpy(_module_name, module_name, len); // copy the trailing null
+  _path =  new PathString(path);
+}
+
+ModulePatchPath::~ModulePatchPath() {
+  if (_module_name != NULL) {
+    FreeHeap(_module_name);
+    _module_name = NULL;
+  }
+  if (_path != NULL) {
+    delete _path;
+    _path = NULL;
+  }
+}
+
+SystemProperty::SystemProperty(const char* key, const char* value, bool writeable, bool internal) : PathString(value) {
+  if (key == NULL) {
+    _key = NULL;
+  } else {
+    _key = AllocateHeap(strlen(key)+1, mtArguments);
+    strcpy(_key, key);
+  }
+  _next = NULL;
+  _internal = internal;
+  _writeable = writeable;
+}
+
+AgentLibrary::AgentLibrary(const char* name, const char* options, bool is_absolute_path, void* os_lib) {
+  _name = AllocateHeap(strlen(name)+1, mtArguments);
+  strcpy(_name, name);
+  if (options == NULL) {
+    _options = NULL;
+  } else {
+    _options = AllocateHeap(strlen(options)+1, mtArguments);
+    strcpy(_options, options);
+  }
+  _is_absolute_path = is_absolute_path;
+  _os_lib = os_lib;
+  _next = NULL;
+  _state = agent_invalid;
+  _is_static_lib = false;
+}
+
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining
 // part of the option string.
 static bool match_option(const JavaVMOption *option, const char* name,
@@ -179,6 +281,23 @@ bool needs_module_property_warning = false;
 #define PATH_LEN 4
 #define UPGRADE_PATH "upgrade.path"
 #define UPGRADE_PATH_LEN 12
+
+void Arguments::add_init_library(const char* name, char* options) {
+  _libraryList.add(new AgentLibrary(name, options, false, NULL));
+}
+
+void Arguments::add_init_agent(const char* name, char* options, bool absolute_path) {
+  _agentList.add(new AgentLibrary(name, options, absolute_path, NULL));
+}
+
+// Late-binding agents not started via arguments
+void Arguments::add_loaded_agent(AgentLibrary *agentLib) {
+  _agentList.add(agentLib);
+}
+
+void Arguments::add_loaded_agent(const char* name, char* options, bool absolute_path, void* os_lib) {
+  _agentList.add(new AgentLibrary(name, options, absolute_path, os_lib));
+}
 
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {

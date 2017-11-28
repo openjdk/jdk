@@ -26,6 +26,7 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"

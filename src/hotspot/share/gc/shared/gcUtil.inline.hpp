@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/gcStats.hpp"
-#include "gc/shared/gcUtil.inline.hpp"
+#ifndef SHARE_VM_GC_SHARED_GCUTIL_INLINE_HPP
+#define SHARE_VM_GC_SHARED_GCUTIL_INLINE_HPP
 
-GCStats::GCStats() {
-    _avg_promoted       = new AdaptivePaddedNoZeroDevAverage(
-                                                  AdaptiveSizePolicyWeight,
-                                                  PromotedPadding);
+#include "gc/shared/gcUtil.hpp"
+#include "memory/allocation.inline.hpp"
+
+inline void* AdaptivePaddedAverage::operator new(size_t size) throw() {
+  return CHeapObj<mtGC>::operator new(size);
 }
 
-CMSGCStats::CMSGCStats() {
-    _avg_promoted       = new AdaptivePaddedNoZeroDevAverage(
-                                                  CMSExpAvgFactor,
-                                                  PromotedPadding);
-}
+#endif // SHARE_VM_GC_SHARED_GCUTIL_INLINE_HPP

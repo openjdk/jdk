@@ -29,6 +29,7 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/gcUtil.inline.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "logging/log.hpp"
 #include "runtime/timer.hpp"

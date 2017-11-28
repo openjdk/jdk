@@ -146,7 +146,7 @@ class AdaptivePaddedAverage : public AdaptiveWeightedAverage {
   // Placement support
   void* operator new(size_t ignored, void* p) throw() { return p; }
   // Allocator
-  void* operator new(size_t size) throw() { return CHeapObj<mtGC>::operator new(size); }
+  void* operator new(size_t size) throw();
 
   // Accessor
   float padded_average() const         { return _padded_avg; }

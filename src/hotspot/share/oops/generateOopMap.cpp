@@ -27,6 +27,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/allocation.inline.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
@@ -216,6 +217,12 @@ public:
 //
 int RetTable::_init_nof_entries = 10;
 int RetTableEntry::_init_nof_jsrs = 5;
+
+RetTableEntry::RetTableEntry(int target, RetTableEntry *next) {
+  _target_bci = target;
+  _jsrs = new GrowableArray<intptr_t>(_init_nof_jsrs);
+  _next = next;
+}
 
 void RetTableEntry::add_delta(int bci, int delta) {
   if (_target_bci > bci) _target_bci += delta;
