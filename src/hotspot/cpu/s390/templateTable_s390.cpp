@@ -2884,12 +2884,12 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   // ztos
   BTB_BEGIN(is_Bool, bsize, "putfield_or_static:is_Bool");
   __ pop(ztos);
-  if (do_rewrite) {
+  if (!is_static) {
     pop_and_check_object(obj);
   }
   __ z_nilf(Z_tos, 0x1);
   __ z_stc(Z_tos, field);
-  if (!is_static) {
+  if (do_rewrite) {
     patch_bytecode(Bytecodes::_fast_zputfield, bc, Z_ARG5, true, byte_no);
   }
   __ z_bru(Done);
