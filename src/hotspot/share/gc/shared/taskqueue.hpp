@@ -425,7 +425,7 @@ class ParallelTaskTerminator: public StackObj {
 private:
   uint _n_threads;
   TaskQueueSetSuper* _queue_set;
-  uint _offered_termination;
+  volatile uint _offered_termination;
 
 #ifdef TRACESPINNING
   static uint _total_yields;
