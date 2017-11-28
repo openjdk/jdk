@@ -26,8 +26,7 @@
  * @test
  * @summary Test resolved_references
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
- * @requires (sun.arch.data.model == "64")
- * @requires ((os.family == "linux") & (os.arch=="amd64")) | (os.family == "solaris")
+ * @requires vm.cds.custom.loaders
  * @requires (vm.gc=="null")
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
@@ -53,9 +52,9 @@ public class CheckCachedResolvedReferences {
         String helloJarPath = ClassFileInstaller.getJarPath("hello.jar");
 
         String classlist[] = new String[] {
-            "CheckCachedResolvedReferencesApp",
-            "java/lang/Object id: 1",
-            "Hello id: 2 super: 1 source: " + helloJarPath
+            "CheckCachedResolvedReferencesApp",            // built-in app loader
+            "java/lang/Object id: 1",                      // boot loader
+            "Hello id: 2 super: 1 source: " + helloJarPath // custom loader
         };
 
         TestCommon.testDump(appJar, classlist, use_whitebox_jar);
