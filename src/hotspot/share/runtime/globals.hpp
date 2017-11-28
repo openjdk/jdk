@@ -917,9 +917,6 @@ public:
   notproduct(bool, ZapVMHandleArea, trueInDebug,                            \
           "Zap freed VM handle space with 0xBCBCBCBC")                      \
                                                                             \
-  develop(bool, ZapJNIHandleArea, trueInDebug,                              \
-          "Zap freed JNI handle space with 0xFEFEFEFE")                     \
-                                                                            \
   notproduct(bool, ZapStackSegments, trueInDebug,                           \
           "Zap allocated/freed stack segments with 0xFADFADED")             \
                                                                             \

@@ -951,7 +951,6 @@ const int      badResourceValue = 0xAB;                     // value used to zap
 const int      freeBlockPad     = 0xBA;                     // value used to pad freed blocks.
 const int      uninitBlockPad   = 0xF1;                     // value used to zap newly malloc'd blocks.
 const juint    uninitMetaWordVal= 0xf7f7f7f7;               // value used to zap newly allocated metachunk
-const intptr_t badJNIHandleVal  = (intptr_t) UCONST64(0xFEFEFEFEFEFEFEFE); // value used to zap jni handle area
 const juint    badHeapWordVal   = 0xBAADBABE;               // value used to zap heap after GC
 const juint    badMetaWordVal   = 0xBAADFADE;               // value used to zap metadata heap after GC
 const int      badCodeHeapNewVal= 0xCC;                     // value used to zap Code heap at allocation
@@ -963,7 +962,6 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 #define       badAddress        ((address)::badAddressVal)
 #define       badOop            (cast_to_oop(::badOopVal))
 #define       badHeapWord       (::badHeapWordVal)
-#define       badJNIHandle      (cast_to_oop(::badJNIHandleVal))
 
 // Default TaskQueue size is 16K (32-bit) or 128K (64-bit)
 #define TASKQUEUE_SIZE (NOT_LP64(1<<14) LP64_ONLY(1<<17))
