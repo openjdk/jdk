@@ -28,6 +28,7 @@
 #include "code/compressedStream.hpp"
 #include "code/vmreg.hpp"
 #include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "utilities/growableArray.hpp"
 
 // Interface for generating the frame map for compiled code.  A frame map
@@ -42,6 +43,7 @@
 class frame;
 class RegisterMap;
 class DerivedPointerEntry;
+class OopClosure;
 
 class OopMapValue: public StackObj {
   friend class VMStructs;

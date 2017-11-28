@@ -27,7 +27,6 @@
 
 #include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"

@@ -1029,6 +1029,26 @@ void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
   }
 }
 
+void MethodHandles::trace_method_handle_interpreter_entry(MacroAssembler* _masm, vmIntrinsics::ID iid) {
+  if (TraceMethodHandles) {
+    const char* name = vmIntrinsics::name_at(iid);
+    if (*name == '_')  name += 1;
+    const size_t len = strlen(name) + 50;
+    char* qname = NEW_C_HEAP_ARRAY(char, len, mtInternal);
+    const char* suffix = "";
+    if (is_signature_polymorphic(iid)) {
+      if (is_signature_polymorphic_static(iid))
+        suffix = "/static";
+      else
+        suffix = "/private";
+    }
+    jio_snprintf(qname, len, "MethodHandle::interpreter_entry::%s%s", name, suffix);
+    trace_method_handle(_masm, qname);
+    // Note:  Don't free the allocated char array because it's used
+    // during runtime.
+  }
+}
+
 //
 // Here are the native methods in java.lang.invoke.MethodHandleNatives
 // They are the private interface between this JVM and the HotSpot-specific

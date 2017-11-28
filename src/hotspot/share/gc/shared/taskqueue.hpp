@@ -26,6 +26,8 @@
 #define SHARE_VM_GC_SHARED_TASKQUEUE_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/stack.hpp"
 
 // Simple TaskQueue stats that are collected by default in debug builds.

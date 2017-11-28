@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/spaceCounters.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/macros.hpp"
 
@@ -62,4 +63,8 @@ SpaceCounters::SpaceCounters(const char* name, int ordinal, size_t max_size,
     PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_Bytes,
                                      _object_space->capacity_in_bytes(), CHECK);
   }
+}
+
+SpaceCounters::~SpaceCounters() {
+  if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
 }
