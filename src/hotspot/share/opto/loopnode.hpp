@@ -1098,7 +1098,7 @@ public:
   // "Nearly" because all Nodes have been cloned from the original in the loop,
   // but the fall-in edges to the Cmp are different.  Clone bool/Cmp pairs
   // through the Phi recursively, and return a Bool.
-  BoolNode *clone_iff( PhiNode *phi, IdealLoopTree *loop );
+  Node *clone_iff( PhiNode *phi, IdealLoopTree *loop );
   CmpNode *clone_bool( PhiNode *phi, IdealLoopTree *loop );
 
 
