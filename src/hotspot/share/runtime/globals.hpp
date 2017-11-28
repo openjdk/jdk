@@ -3392,7 +3392,7 @@ public:
                                                                             \
   product_pd(uintx, CodeCacheExpansionSize,                                 \
           "Code cache expansion size (in bytes)")                           \
-          range(os::vm_page_size(), max_uintx)                              \
+          range(32*K, max_uintx)                                            \
                                                                             \
   diagnostic_pd(uintx, CodeCacheMinBlockLength,                             \
           "Minimum number of segments in a code cache block")               \
