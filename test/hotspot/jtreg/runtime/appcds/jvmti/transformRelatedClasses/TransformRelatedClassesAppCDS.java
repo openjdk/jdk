@@ -39,6 +39,7 @@
 
 import java.io.File;
 import java.util.ArrayList;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
 // This class is intended to test 2 parent-child relationships:
@@ -148,7 +149,7 @@ public class TransformRelatedClassesAppCDS extends TransformRelatedClasses {
 
 
     private void runWithCustomLoader(ArrayList<TestEntry> testTable) throws Exception {
-        if (!TestCommon.isCustomLoaderSupported()) {
+        if (!Platform.areCustomLoadersSupportedForCDS()) {
             log("custom loader not supported for this platform" +
                 " - skipping test case for custom loader");
             return;

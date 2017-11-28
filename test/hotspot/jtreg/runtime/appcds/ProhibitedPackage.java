@@ -27,6 +27,7 @@
  * @summary AppCDS handling of prohibited package.
  * AppCDS does not support uncompressed oops
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -45,10 +46,8 @@ public class ProhibitedPackage {
 
         String appJar = TestCommon.getTestJar("prohibited_pkg.jar");
 
-        // AppCDS for custom loader is only supported on linux-x64 and
-        // Solaris 64-bit platforms.
-        if ((Platform.isLinux() || Platform.isSolaris()) &&
-            Platform.is64bit()) {
+        // Test support for customer loaders
+        if (Platform.areCustomLoadersSupportedForCDS()) {
             String classlist[] = new String[] {
                 "java/lang/Object id: 1",
                 "java/lang/Prohibited id: 2 super: 1 source: " + appJar

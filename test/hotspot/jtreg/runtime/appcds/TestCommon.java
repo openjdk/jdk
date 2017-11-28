@@ -321,19 +321,4 @@ public class TestCommon extends CDSTestUtils {
         }
         return dirFile.getPath();
     }
-
-
-    // Returns true if custom loader is supported, based on a platform.
-    // Custom loader AppCDS is only supported for Linux-x64 and Solaris.
-    public static boolean isCustomLoaderSupported() {
-        boolean isLinux = Platform.isLinux();
-        boolean isX64 = Platform.isX64();
-        boolean isSolaris = Platform.isSolaris();
-
-        System.out.println("isCustomLoaderSupported: isX64 = " + isX64);
-        System.out.println("isCustomLoaderSupported: isLinux = " + isLinux);
-        System.out.println("isCustomLoaderSupported: isSolaris = " + isSolaris);
-
-        return ((isX64 && isLinux) || isSolaris);
-    }
 }
