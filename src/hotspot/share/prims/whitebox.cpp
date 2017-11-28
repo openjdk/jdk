@@ -61,6 +61,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_CDS
+#include "prims/cdsoffsets.hpp"
+#endif // INCLUDE_CDS
 #if INCLUDE_ALL_GCS
 #include "gc/g1/concurrentMarkThread.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -1730,6 +1733,18 @@ WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
 #endif
 WB_END
 
+
+#if INCLUDE_CDS
+
+WB_ENTRY(jint, WB_GetOffsetForName(JNIEnv* env, jobject o, jstring name))
+  ResourceMark rm;
+  char* c_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
+  int result = CDSOffsets::find_offset(c_name);
+  return (jint)result;
+WB_END
+
+#endif // INCLUDE_CDS
+
 WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle, jboolean all_threads))
   class TraceSelfClosure : public ThreadClosure {
     jint _num_threads_completed;
@@ -1918,6 +1933,9 @@ static JNINativeMethod methods[] = {
   {CC"runMemoryUnitTests", CC"()V",                   (void*)&WB_RunMemoryUnitTests},
   {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
   {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
+#if INCLUDE_CDS
+  {CC"getOffsetForName0", CC"(Ljava/lang/String;)I",  (void*)&WB_GetOffsetForName},
+#endif
 #if INCLUDE_ALL_GCS
   {CC"g1InConcurrentMark", CC"()Z",                   (void*)&WB_G1InConcurrentMark},
   {CC"g1IsHumongous0",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },

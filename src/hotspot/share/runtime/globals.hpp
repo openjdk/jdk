@@ -3932,6 +3932,13 @@ public:
           "Address to allocate shared memory region for class data")        \
           range(0, SIZE_MAX)                                                \
                                                                             \
+  product(bool, UseAppCDS, false,                                           \
+          "Enable Application Class Data Sharing when using shared spaces") \
+          writeable(CommandLineOnly)                                        \
+                                                                            \
+  product(ccstr, SharedArchiveConfigFile, NULL,                             \
+          "Data to add to the CDS archive file")                            \
+                                                                            \
   product(uintx, SharedSymbolTableBucketSize, 4,                            \
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
