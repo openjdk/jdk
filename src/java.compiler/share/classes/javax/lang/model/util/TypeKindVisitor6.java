@@ -257,7 +257,7 @@ public class TypeKindVisitor6<R, P> extends SimpleTypeVisitor6<R, P> {
      *
      * @implSpec This implementation dispatches to the visit method for
      * the specific {@linkplain TypeKind kind} of pseudo-type:
-     * {@code VOID}, {@code PACKAGE}, or {@code NONE}.
+     * {@code VOID}, {@code PACKAGE}, {@code MODULE}, or {@code NONE}.
      *
      * @param t {@inheritDoc}
      * @param p {@inheritDoc}
@@ -272,6 +272,9 @@ public class TypeKindVisitor6<R, P> extends SimpleTypeVisitor6<R, P> {
 
         case PACKAGE:
             return visitNoTypeAsPackage(t, p);
+
+        case MODULE:
+            return visitNoTypeAsModule(t, p);
 
         case NONE:
             return visitNoTypeAsNone(t, p);
@@ -305,6 +308,21 @@ public class TypeKindVisitor6<R, P> extends SimpleTypeVisitor6<R, P> {
      */
     public R visitNoTypeAsPackage(NoType t, P p) {
         return defaultAction(t, p);
+    }
+
+    /**
+     * Visits a {@link TypeKind#MODULE MODULE} pseudo-type.
+     *
+     * @implSpec This implementation calls {@code visitUnknown}.
+     *
+     * @param t the type to visit
+     * @param p a visitor-specified parameter
+     * @return  the result of {@code visitUnknown}
+     *
+     * @since 10
+     */
+    public R visitNoTypeAsModule(NoType t, P p) {
+        return visitUnknown(t, p);
     }
 
     /**
