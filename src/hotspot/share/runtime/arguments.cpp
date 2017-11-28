@@ -3880,6 +3880,14 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
       vm_exit(0);
     }
 #endif
+
+    if (match_option(option, "-XX:+UseAppCDS")) {
+      Flag* flag = Flag::find_flag("SharedArchiveFile", 17, true, true);
+      if (flag->is_diagnostic()) {
+        flag->clear_diagnostic();
+      }
+      continue;
+    }
   }
   return JNI_OK;
 }

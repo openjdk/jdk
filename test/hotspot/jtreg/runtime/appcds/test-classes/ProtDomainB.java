@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,32 @@
  *
  */
 
-#ifndef SHARE_VM_CLASSFILE_VMSYMBOLS_EXT_HPP
-#define SHARE_VM_CLASSFILE_VMSYMBOLS_EXT_HPP
+import java.security.ProtectionDomain;
 
-#define VM_SYMBOLS_DO_EXT(template, do_alias)
+// See ../AppCDSProtectionDomain.java
+//
+// ProtDomainB      is NOT stored in CDS archive.
+// ProtDomainBOther is     stored in CDS archive.
+//
+// However, they should have the same ProtectionDomain instance.
+public class ProtDomainB {
+  public static void main(String args[]) {
+    System.out.println("Testing ProtDomainB");
+    ProtectionDomain mine = ProtDomainB.class.getProtectionDomain();
+    ProtectionDomain his  = ProtDomainBOther.class.getProtectionDomain();
 
-#endif // SHARE_VM_CLASSFILE_VMSYMBOLS_EXT_HPP
+    System.out.println("mine = " + mine);
+    System.out.println("his  = " + his);
 
+    if (mine == his) {
+      System.out.println("Protection Domains match");
+    } else {
+      System.out.println("Protection Domains do not match!");
+      System.exit(1);
+    }
+  }
+}
+
+class ProtDomainBOther {
+
+}
