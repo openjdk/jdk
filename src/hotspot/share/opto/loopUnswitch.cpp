@@ -132,11 +132,11 @@ void PhaseIdealLoop::do_unswitching (IdealLoopTree *loop, Node_List &old_new) {
     head->as_CountedLoop()->set_normal_loop();
   }
 
-  ProjNode* proj_true = create_slow_version_of_loop(loop, old_new, unswitch_iff->Opcode());
+  ProjNode* proj_true = create_slow_version_of_loop(loop, old_new, unswitch_iff->Opcode(), CloneIncludesStripMined);
 
 #ifdef ASSERT
   Node* uniqc = proj_true->unique_ctrl_out();
-  Node* entry = head->in(LoopNode::EntryControl);
+  Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
   Node* predicate = find_predicate(entry);
   if (predicate != NULL && UseLoopPredicate) {
     // We may have two predicates, find first.
@@ -145,7 +145,8 @@ void PhaseIdealLoop::do_unswitching (IdealLoopTree *loop, Node_List &old_new) {
   }
   if (predicate != NULL) predicate = predicate->in(0);
   assert(proj_true->is_IfTrue() &&
-         (predicate == NULL && uniqc == head ||
+         (predicate == NULL && uniqc == head && !head->is_strip_mined() ||
+          predicate == NULL && uniqc == head->in(LoopNode::EntryControl) && head->is_strip_mined() ||
           predicate != NULL && uniqc == predicate), "by construction");
 #endif
   // Increment unswitch count
@@ -223,12 +224,15 @@ void PhaseIdealLoop::do_unswitching (IdealLoopTree *loop, Node_List &old_new) {
 // Return control projection of the entry to the fast version.
 ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
                                                       Node_List &old_new,
-                                                      int opcode) {
+                                                      int opcode,
+                                                      CloneLoopMode mode) {
   LoopNode* head  = loop->_head->as_Loop();
   bool counted_loop = head->is_CountedLoop();
-  Node*     entry = head->in(LoopNode::EntryControl);
+  Node*     entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
   _igvn.rehash_node_delayed(entry);
   IdealLoopTree* outer_loop = loop->_parent;
+
+  head->verify_strip_mined(1);
 
   Node *cont      = _igvn.intcon(1);
   set_ctrl(cont, C->root());
@@ -247,19 +251,21 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   // Clone the loop body.  The clone becomes the fast loop.  The
   // original pre-header will (illegally) have 3 control users
   // (old & new loops & new if).
-  clone_loop(loop, old_new, dom_depth(head), iff);
+  clone_loop(loop, old_new, dom_depth(head->skip_strip_mined()), mode, iff);
   assert(old_new[head->_idx]->is_Loop(), "" );
 
   // Fast (true) control
   Node* iffast_pred = clone_loop_predicates(entry, iffast, !counted_loop);
-  _igvn.replace_input_of(head, LoopNode::EntryControl, iffast_pred);
-  set_idom(head, iffast_pred, dom_depth(head));
 
   // Slow (false) control
   Node* ifslow_pred = clone_loop_predicates(entry, ifslow, !counted_loop);
-  LoopNode* slow_head = old_new[head->_idx]->as_Loop();
-  _igvn.replace_input_of(slow_head, LoopNode::EntryControl, ifslow_pred);
-  set_idom(slow_head, ifslow_pred, dom_depth(slow_head));
+
+  Node* l = head->skip_strip_mined();
+  _igvn.replace_input_of(l, LoopNode::EntryControl, iffast_pred);
+  set_idom(l, iffast_pred, dom_depth(l));
+  LoopNode* slow_l = old_new[head->_idx]->as_Loop()->skip_strip_mined();
+  _igvn.replace_input_of(slow_l, LoopNode::EntryControl, ifslow_pred);
+  set_idom(slow_l, ifslow_pred, dom_depth(l));
 
   recompute_dom_depth();
 
@@ -270,9 +276,9 @@ LoopNode* PhaseIdealLoop::create_reserve_version_of_loop(IdealLoopTree *loop, Co
   Node_List old_new;
   LoopNode* head  = loop->_head->as_Loop();
   bool counted_loop = head->is_CountedLoop();
-  Node*     entry = head->in(LoopNode::EntryControl);
+  Node*     entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
   _igvn.rehash_node_delayed(entry);
-  IdealLoopTree* outer_loop = loop->_parent;
+  IdealLoopTree* outer_loop = head->is_strip_mined() ? loop->_parent->_parent : loop->_parent;
 
   ConINode* const_1 = _igvn.intcon(1);
   set_ctrl(const_1, C->root());
@@ -286,7 +292,7 @@ LoopNode* PhaseIdealLoop::create_reserve_version_of_loop(IdealLoopTree *loop, Co
   // Clone the loop body.  The clone becomes the fast loop.  The
   // original pre-header will (illegally) have 3 control users
   // (old & new loops & new if).
-  clone_loop(loop, old_new, dom_depth(head), iff);
+  clone_loop(loop, old_new, dom_depth(head), CloneIncludesStripMined, iff);
   assert(old_new[head->_idx]->is_Loop(), "" );
 
   LoopNode* slow_head = old_new[head->_idx]->as_Loop();
@@ -303,9 +309,9 @@ LoopNode* PhaseIdealLoop::create_reserve_version_of_loop(IdealLoopTree *loop, Co
 #endif
 
   // Fast (true) control
-  _igvn.replace_input_of(head, LoopNode::EntryControl, iffast);
+  _igvn.replace_input_of(head->skip_strip_mined(), LoopNode::EntryControl, iffast);
   // Slow (false) control
-  _igvn.replace_input_of(slow_head, LoopNode::EntryControl, ifslow);
+  _igvn.replace_input_of(slow_head->skip_strip_mined(), LoopNode::EntryControl, ifslow);
 
   recompute_dom_depth();
 
@@ -394,7 +400,7 @@ bool CountedLoopReserveKit::create_reserve() {
     return false;
   }
 
-  Node* ifslow_pred = _lp_reserved->as_CountedLoop()->in(LoopNode::EntryControl);
+  Node* ifslow_pred = _lp_reserved->skip_strip_mined()->in(LoopNode::EntryControl);
 
   if (!ifslow_pred->is_IfFalse()) {
     return false;

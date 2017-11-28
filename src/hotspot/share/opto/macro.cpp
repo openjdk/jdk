@@ -282,7 +282,8 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
         if (!this_region->in(ind)->is_IfFalse()) {
           ind = 2;
         }
-        if (this_region->in(ind)->is_IfFalse()) {
+        if (this_region->in(ind)->is_IfFalse() &&
+            this_region->in(ind)->in(0)->Opcode() == Op_If) {
           Node* bol = this_region->in(ind)->in(0)->in(1);
           assert(bol->is_Bool(), "");
           cmpx = bol->in(1);
@@ -2660,6 +2661,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       case Node::Class_ArrayCopy:
         break;
+      case Node::Class_OuterStripMinedLoop:
+        break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_Opaque1   ||
@@ -2732,6 +2735,10 @@ bool PhaseMacroExpand::expand_macro_nodes() {
 #endif
       } else if (n->Opcode() == Op_Opaque4) {
         _igvn.replace_node(n, n->in(2));
+        success = true;
+      } else if (n->Opcode() == Op_OuterStripMinedLoop) {
+        n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
+        C->remove_macro_node(n);
         success = true;
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
