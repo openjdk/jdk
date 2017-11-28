@@ -279,13 +279,15 @@ JNIHandleBlock* JNIHandleBlock::_block_list           = NULL;
 #endif
 
 
+#ifdef ASSERT
 void JNIHandleBlock::zap() {
   // Zap block values
   _top = 0;
   for (int index = 0; index < block_size_in_oops; index++) {
-    _handles[index] = badJNIHandle;
+    _handles[index] = NULL;
   }
 }
+#endif // ASSERT
 
 JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread)  {
   assert(thread == NULL || thread == Thread::current(), "sanity check");
@@ -307,7 +309,7 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread)  {
       // Allocate new block
       block = new JNIHandleBlock();
       _blocks_allocated++;
-      if (ZapJNIHandleArea) block->zap();
+      block->zap();
       #ifndef PRODUCT
       // Link new block to list of all allocated blocks
       block->_block_list_link = _block_list;
@@ -339,7 +341,7 @@ void JNIHandleBlock::release_block(JNIHandleBlock* block, Thread* thread) {
   // we _don't_ want the block to be kept on the free_handle_block.
   // See for instance JavaThread::exit().
   if (thread != NULL ) {
-    if (ZapJNIHandleArea) block->zap();
+    block->zap();
     JNIHandleBlock* freelist = thread->free_handle_block();
     block->_pop_frame_link = NULL;
     thread->set_free_handle_block(block);
@@ -360,7 +362,7 @@ void JNIHandleBlock::release_block(JNIHandleBlock* block, Thread* thread) {
     MutexLockerEx ml(JNIHandleBlockFreeList_lock,
                      Mutex::_no_safepoint_check_flag);
     while (block != NULL) {
-      if (ZapJNIHandleArea) block->zap();
+      block->zap();
       JNIHandleBlock* next = block->_next;
       block->_next = _block_free_list;
       _block_free_list = block;
@@ -453,13 +455,13 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
         break;
       }
       current->_top = 0;
-      if (ZapJNIHandleArea) current->zap();
+      current->zap();
     }
     // Clear initial block
     _free_list = NULL;
     _allocate_before_rebuild = 0;
     _last = this;
-    if (ZapJNIHandleArea) zap();
+    zap();
   }
 
   // Try last block
