@@ -917,9 +917,6 @@ public:
   notproduct(bool, ZapVMHandleArea, trueInDebug,                            \
           "Zap freed VM handle space with 0xBCBCBCBC")                      \
                                                                             \
-  develop(bool, ZapJNIHandleArea, trueInDebug,                              \
-          "Zap freed JNI handle space with 0xFEFEFEFE")                     \
-                                                                            \
   notproduct(bool, ZapStackSegments, trueInDebug,                           \
           "Zap allocated/freed stack segments with 0xFADFADED")             \
                                                                             \
@@ -3392,7 +3389,7 @@ public:
                                                                             \
   product_pd(uintx, CodeCacheExpansionSize,                                 \
           "Code cache expansion size (in bytes)")                           \
-          range(os::vm_page_size(), max_uintx)                              \
+          range(32*K, max_uintx)                                            \
                                                                             \
   diagnostic_pd(uintx, CodeCacheMinBlockLength,                             \
           "Minimum number of segments in a code cache block")               \

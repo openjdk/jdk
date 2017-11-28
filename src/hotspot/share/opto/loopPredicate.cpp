@@ -515,8 +515,8 @@ class Invariance : public StackObj {
     _visited(area), _invariant(area), _stack(area, 10 /* guess */),
     _clone_visited(area), _old_new(area)
   {
-    Node* head = _lpt->_head;
-    Node* entry = head->in(LoopNode::EntryControl);
+    LoopNode* head = _lpt->_head->as_Loop();
+    Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
     if (entry->outcnt() != 1) {
       // If a node is pinned between the predicates and the loop
       // entry, we won't be able to move any node in the loop that
@@ -801,6 +801,10 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
     return false;
   }
 
+  if (head->is_OuterStripMinedLoop()) {
+    return false;
+  }
+
   CountedLoopNode *cl = NULL;
   if (head->is_valid_counted_loop()) {
     cl = head->as_CountedLoop();
@@ -812,7 +816,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       cl = NULL;
   }
 
-  Node* entry = head->in(LoopNode::EntryControl);
+  Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
   ProjNode *predicate_proj = NULL;
   // Loop limit check predicate should be near the loop.
   predicate_proj = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
@@ -1006,6 +1010,8 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
     loop->dump_head();
   }
 #endif
+
+  head->verify_strip_mined(1);
 
   return hoisted;
 }

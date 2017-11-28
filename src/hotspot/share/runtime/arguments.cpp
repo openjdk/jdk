@@ -2207,6 +2207,21 @@ bool Arguments::check_vm_args_consistency() {
     }
     FLAG_SET_CMDLINE(bool, PostLoopMultiversioning, false);
   }
+  if (UseCountedLoopSafepoints && LoopStripMiningIter == 0) {
+    if (!FLAG_IS_DEFAULT(UseCountedLoopSafepoints) || !FLAG_IS_DEFAULT(LoopStripMiningIter)) {
+      warning("When counted loop safepoints are enabled, LoopStripMiningIter must be at least 1 (a safepoint every 1 iteration): setting it to 1");
+    }
+    LoopStripMiningIter = 1;
+  } else if (!UseCountedLoopSafepoints && LoopStripMiningIter > 0) {
+    if (!FLAG_IS_DEFAULT(UseCountedLoopSafepoints) || !FLAG_IS_DEFAULT(LoopStripMiningIter)) {
+      warning("Disabling counted safepoints implies no loop strip mining: setting LoopStripMiningIter to 0");
+    }
+    LoopStripMiningIter = 0;
+  }
+  if (FLAG_IS_DEFAULT(LoopStripMiningIterShortLoop)) {
+    // blind guess
+    LoopStripMiningIterShortLoop = LoopStripMiningIter / 10;
+  }
 #endif
   return status;
 }
