@@ -1353,6 +1353,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
     for (DUIterator_Fast jmax, j = s2->fast_outs(jmax); j < jmax; j++) {
       Node* t2 = s2->fast_out(j);
       if (!in_bb(t2)) continue;
+      if (t2->Opcode() == Op_AddI && t2 == _lp->as_CountedLoop()->incr()) continue; // don't mess with the iv
       if (!opnd_positions_match(s1, t1, s2, t2))
         continue;
       if (stmts_can_pack(t1, t2, align)) {
@@ -3313,7 +3314,7 @@ CountedLoopEndNode* SuperWord::get_pre_loop_end(CountedLoopNode* cl) {
     return NULL;
   }
 
-  Node* p_f = cl->in(LoopNode::EntryControl)->in(0)->in(0);
+  Node* p_f = cl->skip_strip_mined()->in(LoopNode::EntryControl)->in(0)->in(0);
   if (!p_f->is_IfFalse()) return NULL;
   if (!p_f->in(0)->is_CountedLoopEnd()) return NULL;
   CountedLoopEndNode* pre_end = p_f->in(0)->as_CountedLoopEnd();

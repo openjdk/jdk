@@ -92,6 +92,16 @@ void G1Arguments::initialize_flags() {
   }
 
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
+
+#ifdef COMPILER2
+  // Enable loop strip mining to offer better pause time guarantees
+  if (FLAG_IS_DEFAULT(UseCountedLoopSafepoints)) {
+    FLAG_SET_DEFAULT(UseCountedLoopSafepoints, true);
+  }
+  if (UseCountedLoopSafepoints && FLAG_IS_DEFAULT(LoopStripMiningIter)) {
+    FLAG_SET_DEFAULT(LoopStripMiningIter, 1000);
+  }
+#endif
 }
 
 CollectedHeap* G1Arguments::create_heap() {
