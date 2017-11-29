@@ -41,6 +41,7 @@ import jdk.nashorn.internal.ir.PropertyNode;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Splittable;
 import jdk.nashorn.internal.ir.Statement;
+import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -201,8 +202,9 @@ final class Splitter extends SimpleNodeVisitor implements Loggable {
 
         for (final Statement statement : block.getStatements()) {
             final long weight = WeighNodes.weigh(statement, weightCache);
+            final boolean isBlockScopedVarNode = isBlockScopedVarNode(statement);
 
-            if (statementsWeight + weight >= SPLIT_THRESHOLD || statement.isTerminal()) {
+            if (statementsWeight + weight >= SPLIT_THRESHOLD || statement.isTerminal() || isBlockScopedVarNode) {
                 if (!statements.isEmpty()) {
                     splits.add(createBlockSplitNode(block, function, statements, statementsWeight));
                     statements = new ArrayList<>();
@@ -210,7 +212,7 @@ final class Splitter extends SimpleNodeVisitor implements Loggable {
                 }
             }
 
-            if (statement.isTerminal()) {
+            if (statement.isTerminal() || isBlockScopedVarNode) {
                 splits.add(statement);
             } else {
                 statements.add(statement);
@@ -241,6 +243,10 @@ final class Splitter extends SimpleNodeVisitor implements Loggable {
         final Block newBlock = new Block(token, finish, statements);
 
         return new SplitNode(name, newBlock, compiler.findUnit(weight + WeighNodes.FUNCTION_WEIGHT));
+    }
+
+    private boolean isBlockScopedVarNode(final Statement statement) {
+        return statement instanceof VarNode && ((VarNode) statement).isBlockScoped();
     }
 
     @Override

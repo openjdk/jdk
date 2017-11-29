@@ -3557,18 +3557,19 @@ public class Check {
                                       Scope staticallyImportedSoFar, Scope topLevelScope,
                                       Symbol sym, boolean staticImport) {
         Filter<Symbol> duplicates = candidate -> candidate != sym && !candidate.type.isErroneous();
-        Symbol clashing = ordinallyImportedSoFar.findFirst(sym.name, duplicates);
-        if (clashing == null && !staticImport) {
-            clashing = staticallyImportedSoFar.findFirst(sym.name, duplicates);
+        Symbol ordinaryClashing = ordinallyImportedSoFar.findFirst(sym.name, duplicates);
+        Symbol staticClashing = null;
+        if (ordinaryClashing == null && !staticImport) {
+            staticClashing = staticallyImportedSoFar.findFirst(sym.name, duplicates);
         }
-        if (clashing != null) {
-            if (staticImport)
-                log.error(pos, Errors.AlreadyDefinedStaticSingleImport(clashing));
+        if (ordinaryClashing != null || staticClashing != null) {
+            if (ordinaryClashing != null)
+                log.error(pos, Errors.AlreadyDefinedSingleImport(ordinaryClashing));
             else
-                log.error(pos, Errors.AlreadyDefinedSingleImport(clashing));
+                log.error(pos, Errors.AlreadyDefinedStaticSingleImport(staticClashing));
             return false;
         }
-        clashing = topLevelScope.findFirst(sym.name, duplicates);
+        Symbol clashing = topLevelScope.findFirst(sym.name, duplicates);
         if (clashing != null) {
             log.error(pos, Errors.AlreadyDefinedThisUnit(clashing));
             return false;

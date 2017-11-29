@@ -57,6 +57,7 @@ import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DiagnosticSource;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -98,6 +99,7 @@ public class ArgumentAttr extends JCTree.Visitor {
     protected static final Context.Key<ArgumentAttr> methodAttrKey = new Context.Key<>();
 
     private final DeferredAttr deferredAttr;
+    private final JCDiagnostic.Factory diags;
     private final Attr attr;
     private final Symtab syms;
     private final Log log;
@@ -121,6 +123,7 @@ public class ArgumentAttr extends JCTree.Visitor {
     protected ArgumentAttr(Context context) {
         context.put(methodAttrKey, this);
         deferredAttr = DeferredAttr.instance(context);
+        diags = JCDiagnostic.Factory.instance(context);
         attr = Attr.instance(context);
         syms = Symtab.instance(context);
         log = Log.instance(context);
@@ -482,18 +485,14 @@ public class ArgumentAttr extends JCTree.Visitor {
         List<JCReturn> returnExpressions() {
             return returnExpressions.orElseGet(() -> {
                 final List<JCReturn> res;
-                if (speculativeTree.getBodyKind() == BodyKind.EXPRESSION) {
-                    res = List.of(attr.make.Return((JCExpression)speculativeTree.body));
-                } else {
-                    ListBuffer<JCReturn> returnExpressions = new ListBuffer<>();
-                    new LambdaReturnScanner() {
-                        @Override
-                        public void visitReturn(JCReturn tree) {
-                            returnExpressions.add(tree);
-                        }
-                    }.scan(speculativeTree.body);
-                    res = returnExpressions.toList();
-                }
+                ListBuffer<JCReturn> buf = new ListBuffer<>();
+                new LambdaReturnScanner() {
+                    @Override
+                    public void visitReturn(JCReturn tree) {
+                        buf.add(tree);
+                    }
+                }.scan(speculativeTree.body);
+                res = buf.toList();
                 returnExpressions = Optional.of(res);
                 return res;
             });
@@ -519,14 +518,36 @@ public class ArgumentAttr extends JCTree.Visitor {
         private void checkLambdaCompatible(Type descriptor, ResultInfo resultInfo) {
             CheckContext checkContext = resultInfo.checkContext;
             ResultInfo bodyResultInfo = attr.lambdaBodyResult(speculativeTree, descriptor, resultInfo);
-            for (JCReturn ret : returnExpressions()) {
-                Type t = getReturnType(ret);
-                if (speculativeTree.getBodyKind() == BodyKind.EXPRESSION || !t.hasTag(VOID)) {
-                    checkSpeculative(ret.expr, t, bodyResultInfo);
-                }
+            switch (speculativeTree.getBodyKind()) {
+                case EXPRESSION:
+                    checkSpeculative(speculativeTree.body, speculativeTree.body.type, bodyResultInfo);
+                    break;
+                case STATEMENT:
+                    for (JCReturn ret : returnExpressions()) {
+                        checkReturnInStatementLambda(ret, bodyResultInfo);
+                    }
+                    break;
             }
 
             attr.checkLambdaCompatible(speculativeTree, descriptor, checkContext);
+        }
+
+        /**
+         * This is an inlined version of {@link Attr#visitReturn(JCReturn)}.
+         */
+        void checkReturnInStatementLambda(JCReturn ret, ResultInfo resultInfo) {
+            if (resultInfo.pt.hasTag(VOID) && ret.expr != null) {
+                //fail - if the function type's result is void, the lambda body must be a void-compatible block.
+                resultInfo.checkContext.report(speculativeTree.pos(),
+                        diags.fragment("unexpected.ret.val"));
+            } else if (!resultInfo.pt.hasTag(VOID)) {
+                if (ret.expr == null) {
+                    //fail - if the function type's result is non-void, the lambda body must be a value-compatible block.
+                    resultInfo.checkContext.report(speculativeTree.pos(),
+                            diags.fragment("missing.ret.val"));
+                }
+                checkSpeculative(ret.expr, ret.expr.type, resultInfo);
+            }
         }
 
         /** Get the type associated with given return expression. */
