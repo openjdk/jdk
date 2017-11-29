@@ -75,6 +75,18 @@ else
   JTREG_TOPDIR := $(CUSTOM_ROOT)
 endif
 
+JTREG_FAILURE_HANDLER_DIR := $(TEST_IMAGE_DIR)/failure_handler
+JTREG_FAILURE_HANDLER := $(JTREG_FAILURE_HANDLER_DIR)/jtregFailureHandler.jar
+
+ifneq ($(wildcard $(JTREG_FAILURE_HANDLER)), )
+  JTREG_FAILURE_HANDLER_OPTIONS := \
+      -timeoutHandlerDir:$(JTREG_FAILURE_HANDLER) \
+      -observerDir:$(JTREG_FAILURE_HANDLER) \
+      -timeoutHandler:jdk.test.failurehandler.jtreg.GatherProcessInfoTimeoutHandler \
+      -observer:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver \
+      -timeoutHandlerTimeout:0
+endif
+
 ################################################################################
 # Parse control variables
 ################################################################################
@@ -472,6 +484,10 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += -cpa:$$(JIB_JAR)
   endif
 
+  ifneq ($$(JTREG_FAILURE_HANDLER_OPTIONS), )
+    $1_JTREG_LAUNCHER_OPTIONS += -Djava.library.path="$(JTREG_FAILURE_HANDLER_DIR)"
+  endif
+
   clean-workdir-$1:
 	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
 
@@ -488,6 +504,7 @@ define SetupRunJtregTestBody
 	        -reportDir:$$($1_TEST_RESULTS_DIR) \
 	        -workDir:$$($1_TEST_SUPPORT_DIR) \
 	        $$(JTREG_OPTIONS) \
+	        $$(JTREG_FAILURE_HANDLER_OPTIONS) \
 	        $$($1_TEST_NAME) || true )
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/text/stats.txt
