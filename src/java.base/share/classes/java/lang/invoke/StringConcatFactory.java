@@ -385,9 +385,16 @@ public final class StringConcatFactory {
      * invoked, it returns the result of String concatenation, taking all
      * function arguments passed to the linkage method as inputs for
      * concatenation. The target signature is given by {@code concatType}.
-     * The arguments are concatenated as per requirements stated in JLS 15.18.1
-     * "String Concatenation Operator +". Notably, the inputs are converted as
-     * per JLS 5.1.11 "String Conversion", and combined from left to right.
+     * For a target accepting:
+     * <ul>
+     *     <li>zero inputs, concatenation results in an empty string;</li>
+     *     <li>one input, concatenation results in the single
+     *     input converted as per JLS 5.1.11 "String Conversion"; otherwise</li>
+     *     <li>two or more inputs, the inputs are concatenated as per
+     *     requirements stated in JLS 15.18.1 "String Concatenation Operator +".
+     *     The inputs are converted as per JLS 5.1.11 "String Conversion",
+     *     and combined from left to right.</li>
+     * </ul>
      *
      * <p>Assume the linkage arguments are as follows:
      *
@@ -404,8 +411,12 @@ public final class StringConcatFactory {
      * </ul>
      *
      * @param lookup   Represents a lookup context with the accessibility
-     *                 privileges of the caller.  When used with {@code
-     *                 invokedynamic}, this is stacked automatically by the VM.
+     *                 privileges of the caller. Specifically, the lookup
+     *                 context must have
+     *                 <a href="MethodHandles.Lookup.html#privacc">private access</a>
+     *                 privileges.
+     *                 When used with {@code invokedynamic}, this is stacked
+     *                 automatically by the VM.
      * @param name     The name of the method to implement. This name is
      *                 arbitrary, and has no meaning for this linkage method.
      *                 When used with {@code invokedynamic}, this is provided by
@@ -422,7 +433,8 @@ public final class StringConcatFactory {
      * concatenation, with dynamic concatenation arguments described by the given
      * {@code concatType}.
      * @throws StringConcatException If any of the linkage invariants described
-     *                               here are violated.
+     *                               here are violated, or the lookup context
+     *                               does not have private access privileges.
      * @throws NullPointerException If any of the incoming arguments is null.
      *                              This will never happen when a bootstrap method
      *                              is called with invokedynamic.
@@ -452,10 +464,17 @@ public final class StringConcatFactory {
      * invoked, it returns the result of String concatenation, taking all
      * function arguments and constants passed to the linkage method as inputs for
      * concatenation. The target signature is given by {@code concatType}, and
-     * does not include constants. The arguments are concatenated as per requirements
-     * stated in JLS 15.18.1 "String Concatenation Operator +". Notably, the inputs
-     * are converted as per JLS 5.1.11 "String Conversion", and combined from left
-     * to right.
+     * does not include constants.
+     * For a target accepting:
+     * <ul>
+     *     <li>zero inputs, concatenation results in an empty string;</li>
+     *     <li>one input, concatenation results in the single
+     *     input converted as per JLS 5.1.11 "String Conversion"; otherwise</li>
+     *     <li>two or more inputs, the inputs are concatenated as per
+     *     requirements stated in JLS 15.18.1 "String Concatenation Operator +".
+     *     The inputs are converted as per JLS 5.1.11 "String Conversion",
+     *     and combined from left to right.</li>
+     * </ul>
      *
      * <p>The concatenation <em>recipe</em> is a String description for the way to
      * construct a concatenated String from the arguments and constants. The
@@ -502,9 +521,12 @@ public final class StringConcatFactory {
      * </ul>
      *
      * @param lookup    Represents a lookup context with the accessibility
-     *                  privileges of the caller. When used with {@code
-     *                  invokedynamic}, this is stacked automatically by the
-     *                  VM.
+     *                  privileges of the caller. Specifically, the lookup
+     *                  context must have
+     *                  <a href="MethodHandles.Lookup.html#privacc">private access</a>
+     *                  privileges.
+     *                  When used with {@code invokedynamic}, this is stacked
+     *                  automatically by the VM.
      * @param name      The name of the method to implement. This name is
      *                  arbitrary, and has no meaning for this linkage method.
      *                  When used with {@code invokedynamic}, this is provided
@@ -524,7 +546,8 @@ public final class StringConcatFactory {
      * concatenation, with dynamic concatenation arguments described by the given
      * {@code concatType}.
      * @throws StringConcatException If any of the linkage invariants described
-     *                               here are violated.
+     *                               here are violated, or the lookup context
+     *                               does not have private access privileges.
      * @throws NullPointerException If any of the incoming arguments is null, or
      *                              any constant in {@code recipe} is null.
      *                              This will never happen when a bootstrap method
