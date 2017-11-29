@@ -71,7 +71,6 @@ import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static java.util.stream.Collectors.joining;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static sun.tools.jar.Validator.ENTRYNAME_COMPARATOR;
 
 /**
  * This class implements a simple utility for creating files in the JAR
@@ -444,8 +443,8 @@ public class Main {
 
     private void validateAndClose(File tmpfile) throws IOException {
         if (ok && isMultiRelease) {
-            try (JarFile jf = new JarFile(tmpfile)) {
-                ok = Validator.validate(this, jf);
+            try (ZipFile zf = new ZipFile(tmpfile)) {
+                ok = Validator.validate(this, zf);
                 if (!ok) {
                     error(formatMsg("error.validator.jarfile.invalid", fname));
                 }
@@ -1784,7 +1783,7 @@ public class Main {
     private boolean describeModule(ZipFile zipFile) throws IOException {
         ZipFileModuleInfoEntry[] infos = zipFile.stream()
                 .filter(e -> isModuleInfoEntry(e.getName()))
-                .sorted(Validator.ENTRY_COMPARATOR)
+                .sorted(ENTRY_COMPARATOR)
                 .map(e -> new ZipFileModuleInfoEntry(zipFile, e))
                 .toArray(ZipFileModuleInfoEntry[]::new);
 
@@ -2216,4 +2215,48 @@ public class Main {
             return hashesBuilder.computeHashes(Set.of(name)).get(name);
         }
     }
+
+    // sort base entries before versioned entries, and sort entry classes with
+    // nested classes so that the outter class appears before the associated
+    // nested class
+    static Comparator<String> ENTRYNAME_COMPARATOR = (s1, s2) ->  {
+
+        if (s1.equals(s2)) return 0;
+        boolean b1 = s1.startsWith(VERSIONS_DIR);
+        boolean b2 = s2.startsWith(VERSIONS_DIR);
+        if (b1 && !b2) return 1;
+        if (!b1 && b2) return -1;
+        int n = 0; // starting char for String compare
+        if (b1 && b2) {
+            // normally strings would be sorted so "10" goes before "9", but
+            // version number strings need to be sorted numerically
+            n = VERSIONS_DIR.length();   // skip the common prefix
+            int i1 = s1.indexOf('/', n);
+            int i2 = s2.indexOf('/', n);
+            if (i1 == -1) throw new Validator.InvalidJarException(s1);
+            if (i2 == -1) throw new Validator.InvalidJarException(s2);
+            // shorter version numbers go first
+            if (i1 != i2) return i1 - i2;
+            // otherwise, handle equal length numbers below
+        }
+        int l1 = s1.length();
+        int l2 = s2.length();
+        int lim = Math.min(l1, l2);
+        for (int k = n; k < lim; k++) {
+            char c1 = s1.charAt(k);
+            char c2 = s2.charAt(k);
+            if (c1 != c2) {
+                // change natural ordering so '.' comes before '$'
+                // i.e. outer classes come before nested classes
+                if (c1 == '$' && c2 == '.') return 1;
+                if (c1 == '.' && c2 == '$') return -1;
+                return c1 - c2;
+            }
+        }
+        return l1 - l2;
+    };
+
+    static Comparator<ZipEntry> ENTRY_COMPARATOR =
+        Comparator.comparing(ZipEntry::getName, ENTRYNAME_COMPARATOR);
+
 }

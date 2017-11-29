@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144903 8171981
+ * @bug 8144903 8171981 8191802
  * @summary Tests for determining the type from the expression
  * @build KullaTesting TestingInputStream
  * @run testng TypeNameTest
@@ -55,7 +55,7 @@ public class TypeNameTest extends KullaTesting {
 
         assertEval("class D<T extends CharSequence> { D<? super T> getS() { return null; } }");
         assertEval("D<?> d = new D<String>();");
-        assertType("d.getS()", "D<? extends CharSequence>");
+        assertType("d.getS()", "D<?>");
         assertType("null", "Object");
         assertType("Class.forName( \"java.util.ArrayList\" )", "Class<?>");
         assertType("new ArrayList<Boolean>() {}", "ArrayList<Boolean>");
@@ -68,7 +68,7 @@ public class TypeNameTest extends KullaTesting {
         assertEval("interface J extends A, I {}");
         assertEval("interface K extends A, I {}");
         assertEval("class P<T extends A & I> {}");
-        assertType("(P<?>) null", "P<? extends Object>");
+        assertType("(P<?>) null", "P<?>");
     }
 
     public void testConditionals() {
