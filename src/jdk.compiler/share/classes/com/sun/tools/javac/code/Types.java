@@ -237,7 +237,7 @@ public class Types {
      * {@code upwards(List<#CAP1>, [#CAP2]) = List<#CAP1> }
      * {@code downwards(List<#CAP1>, [#CAP1]) = not defined }
      */
-    class TypeProjection extends StructuralTypeMapping<ProjectionKind> {
+    class TypeProjection extends TypeMapping<ProjectionKind> {
 
         List<Type> vars;
         Set<Type> seen = new HashSet<>();
@@ -257,13 +257,21 @@ public class Types {
                 Type outer = t.getEnclosingType();
                 Type outer1 = visit(outer, pkind);
                 List<Type> typarams = t.getTypeArguments();
-                List<Type> typarams1 = typarams.map(ta -> mapTypeArgument(ta, pkind));
-                if (typarams1.stream().anyMatch(ta -> ta.hasTag(BOT))) {
-                    //not defined
-                    return syms.botType;
+                List<Type> formals = t.tsym.type.getTypeArguments();
+                ListBuffer<Type> typarams1 = new ListBuffer<>();
+                boolean changed = false;
+                for (Type actual : typarams) {
+                    Type t2 = mapTypeArgument(t, formals.head.getUpperBound(), actual, pkind);
+                    if (t2.hasTag(BOT)) {
+                        //not defined
+                        return syms.botType;
+                    }
+                    typarams1.add(t2);
+                    changed |= actual != t2;
+                    formals = formals.tail;
                 }
-                if (outer1 == outer && typarams1 == typarams) return t;
-                else return new ClassType(outer1, typarams1, t.tsym, t.getMetadata()) {
+                if (outer1 == outer && !changed) return t;
+                else return new ClassType(outer1, typarams1.toList(), t.tsym, t.getMetadata()) {
                     @Override
                     protected boolean needsStripping() {
                         return true;
@@ -272,21 +280,23 @@ public class Types {
             }
         }
 
-        protected Type makeWildcard(Type upper, Type lower) {
-            BoundKind bk;
-            Type bound;
-            if (upper.hasTag(BOT)) {
-                upper = syms.objectType;
-            }
-            boolean isUpperObject = isSameType(upper, syms.objectType);
-            if (!lower.hasTag(BOT) && isUpperObject) {
-                bound = lower;
-                bk = SUPER;
+        @Override
+        public Type visitArrayType(ArrayType t, ProjectionKind s) {
+            Type elemtype = t.elemtype;
+            Type elemtype1 = visit(elemtype, s);
+            if (elemtype1 == elemtype) {
+                return t;
+            } else if (elemtype1.hasTag(BOT)) {
+                //undefined
+                return syms.botType;
             } else {
-                bound = upper;
-                bk = isUpperObject ? UNBOUND : EXTENDS;
+                return new ArrayType(elemtype1, t.tsym, t.metadata) {
+                    @Override
+                    protected boolean needsStripping() {
+                        return true;
+                    }
+                };
             }
-            return new WildcardType(bound, bk, syms.boundClass);
         }
 
         @Override
@@ -322,33 +332,79 @@ public class Types {
             }
         }
 
-        @Override
-        public Type visitWildcardType(WildcardType wt, ProjectionKind pkind) {
-            switch (pkind) {
-                case UPWARDS:
-                    return wt.isExtendsBound() ?
-                            wt.type.map(this, pkind) :
-                            syms.objectType;
-                case DOWNWARDS:
-                    return wt.isSuperBound() ?
-                            wt.type.map(this, pkind) :
-                            syms.botType;
-                default:
-                    Assert.error();
-                    return null;
-            }
+        private Type mapTypeArgument(Type site, Type declaredBound, Type t, ProjectionKind pkind) {
+            return t.containsAny(vars) ?
+                    t.map(new TypeArgumentProjection(site, declaredBound), pkind) :
+                    t;
         }
 
-        private Type mapTypeArgument(Type t, ProjectionKind pkind) {
-            if (!t.containsAny(vars)) {
-                return t;
-            } else if (!t.hasTag(WILDCARD) && pkind == ProjectionKind.DOWNWARDS) {
-                //not defined
-                return syms.botType;
-            } else {
-                Type upper = t.map(this, pkind);
-                Type lower = t.map(this, pkind.complement());
-                return makeWildcard(upper, lower);
+        class TypeArgumentProjection extends TypeMapping<ProjectionKind> {
+
+            Type site;
+            Type declaredBound;
+
+            TypeArgumentProjection(Type site, Type declaredBound) {
+                this.site = site;
+                this.declaredBound = declaredBound;
+            }
+
+            @Override
+            public Type visitType(Type t, ProjectionKind pkind) {
+                //type argument is some type containing restricted vars
+                if (pkind == ProjectionKind.DOWNWARDS) {
+                    //not defined
+                    return syms.botType;
+                }
+                Type upper = t.map(TypeProjection.this, ProjectionKind.UPWARDS);
+                Type lower = t.map(TypeProjection.this, ProjectionKind.DOWNWARDS);
+                List<Type> formals = site.tsym.type.getTypeArguments();
+                BoundKind bk;
+                Type bound;
+                if (!isSameType(upper, syms.objectType) &&
+                        (declaredBound.containsAny(formals) ||
+                         !isSubtype(declaredBound, upper))) {
+                    bound = upper;
+                    bk = EXTENDS;
+                } else if (!lower.hasTag(BOT)) {
+                    bound = lower;
+                    bk = SUPER;
+                } else {
+                    bound = syms.objectType;
+                    bk = UNBOUND;
+                }
+                return makeWildcard(bound, bk);
+            }
+
+            @Override
+            public Type visitWildcardType(WildcardType wt, ProjectionKind pkind) {
+                //type argument is some wildcard whose bound contains restricted vars
+                Type bound = syms.botType;
+                BoundKind bk = wt.kind;
+                switch (wt.kind) {
+                    case EXTENDS:
+                        bound = wt.type.map(TypeProjection.this, pkind);
+                        if (bound.hasTag(BOT)) {
+                            return syms.botType;
+                        }
+                        break;
+                    case SUPER:
+                        bound = wt.type.map(TypeProjection.this, pkind.complement());
+                        if (bound.hasTag(BOT)) {
+                            bound = syms.objectType;
+                            bk = UNBOUND;
+                        }
+                        break;
+                }
+                return makeWildcard(bound, bk);
+            }
+
+            private Type makeWildcard(Type bound, BoundKind bk) {
+                return new WildcardType(bound, bk, syms.boundClass) {
+                    @Override
+                    protected boolean needsStripping() {
+                        return true;
+                    }
+                };
             }
         }
     }
