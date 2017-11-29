@@ -128,4 +128,25 @@ class JarEntry extends ZipEntry {
     public CodeSigner[] getCodeSigners() {
         return signers == null ? null : signers.clone();
     }
+
+    /**
+     * Returns the real name of this {@code JarEntry}.
+     *
+     * If this {@code JarEntry} is an entry of a
+     * <a href="JarFile.html#multirelease">multi-release jar file</a> and the
+     * {@code JarFile} is configured to be processed as such, the name returned
+     * by this method is the path name of the versioned entry that the
+     * {@code JarEntry} represents, rather than the path name of the base entry
+     * that {@link #getName()} returns. If the {@code JarEntry} does not represent
+     * a versioned entry of a multi-release {@code JarFile} or the {@code JarFile}
+     * is not configured for processing a multi-release jar file, this method
+     * returns the same name that {@link #getName()} returns.
+     *
+     * @return the real name of the JarEntry
+     *
+     * @since 10
+     */
+    public String getRealName() {
+        return super.getName();
+    }
 }

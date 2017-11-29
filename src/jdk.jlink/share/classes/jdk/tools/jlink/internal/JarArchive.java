@@ -34,7 +34,6 @@ import java.util.jar.JarFile;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import jdk.internal.util.jar.VersionedStream;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 
 /**
@@ -105,7 +104,7 @@ public abstract class JarArchive implements Archive {
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
-        return VersionedStream.stream(jarFile)
+        return jarFile.versionedStream()
                 .filter(je -> !je.isDirectory())
                 .map(this::toEntry);
     }

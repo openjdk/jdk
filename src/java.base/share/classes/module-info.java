@@ -211,8 +211,7 @@ module java.base {
         jdk.incubator.httpclient;
     exports jdk.internal.util.jar to
         jdk.jartool,
-        jdk.jdeps,
-        jdk.jlink;
+        jdk.jdeps;
     exports sun.net to
         jdk.incubator.httpclient;
     exports sun.net.ext to

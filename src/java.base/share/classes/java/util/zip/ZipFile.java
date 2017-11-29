@@ -50,11 +50,15 @@ import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.WeakHashMap;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.jar.JarEntry;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
-import jdk.internal.misc.JavaIORandomAccessFileAccess;
 import jdk.internal.misc.VM;
 import jdk.internal.perf.PerfCounter;
 
@@ -296,13 +300,27 @@ class ZipFile implements ZipConstants, Closeable {
      * @throws IllegalStateException if the zip file has been closed
      */
     public ZipEntry getEntry(String name) {
+        return getEntry(name, ZipEntry::new);
+    }
+
+    /*
+     * Returns the zip file entry for the specified name, or null
+     * if not found.
+     *
+     * @param name the name of the entry
+     * @param func the function that creates the returned entry
+     *
+     * @return the zip file entry, or null if not found
+     * @throws IllegalStateException if the zip file has been closed
+     */
+    private ZipEntry getEntry(String name, Function<String, ? extends ZipEntry> func) {
         Objects.requireNonNull(name, "name");
         synchronized (this) {
             ensureOpen();
             byte[] bname = zc.getBytes(name);
             int pos = zsrc.getEntryPos(bname, true);
             if (pos != -1) {
-                return getZipEntry(name, bname, pos);
+                return getZipEntry(name, bname, pos, func);
             }
         }
         return null;
@@ -374,12 +392,10 @@ class ZipFile implements ZipConstants, Closeable {
     private class ZipFileInflaterInputStream extends InflaterInputStream {
         private volatile boolean closeRequested;
         private boolean eof = false;
-        private final ZipFileInputStream zfin;
 
         ZipFileInflaterInputStream(ZipFileInputStream zfin, Inflater inf,
                 int size) {
             super(zfin, inf, size);
-            this.zfin = zfin;
         }
 
         public void close() throws IOException {
@@ -416,7 +432,7 @@ class ZipFile implements ZipConstants, Closeable {
         public int available() throws IOException {
             if (closeRequested)
                 return 0;
-            long avail = zfin.size() - inf.getBytesWritten();
+            long avail = ((ZipFileInputStream)in).size() - inf.getBytesWritten();
             return (avail > (long) Integer.MAX_VALUE ?
                     Integer.MAX_VALUE : (int) avail);
         }
@@ -466,41 +482,48 @@ class ZipFile implements ZipConstants, Closeable {
         return name;
     }
 
-    private class ZipEntryIterator implements Enumeration<ZipEntry>, Iterator<ZipEntry> {
+    private class ZipEntryIterator<T extends ZipEntry>
+            implements Enumeration<T>, Iterator<T> {
+
         private int i = 0;
         private final int entryCount;
+        private final Function<String, T> gen;
 
-        public ZipEntryIterator() {
-            synchronized (ZipFile.this) {
-                ensureOpen();
-                this.entryCount = zsrc.total;
-            }
+        public ZipEntryIterator(int entryCount, Function<String, T> gen) {
+            this.entryCount = entryCount;
+            this.gen = gen;
         }
 
+        @Override
         public boolean hasMoreElements() {
             return hasNext();
         }
 
+        @Override
         public boolean hasNext() {
             return i < entryCount;
         }
 
-        public ZipEntry nextElement() {
+        @Override
+        public T nextElement() {
             return next();
         }
 
-        public ZipEntry next() {
+        @Override
+        @SuppressWarnings("unchecked")
+        public T  next() {
             synchronized (ZipFile.this) {
                 ensureOpen();
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
                 // each "entry" has 3 ints in table entries
-                return getZipEntry(null, null, zsrc.getEntryPos(i++ * 3));
+                return (T)getZipEntry(null, null, zsrc.getEntryPos(i++ * 3), gen);
             }
         }
 
-        public Iterator<ZipEntry> asIterator() {
+        @Override
+        public Iterator<T> asIterator() {
             return this;
         }
     }
@@ -511,11 +534,51 @@ class ZipFile implements ZipConstants, Closeable {
      * @throws IllegalStateException if the zip file has been closed
      */
     public Enumeration<? extends ZipEntry> entries() {
-        return new ZipEntryIterator();
+        synchronized (this) {
+            ensureOpen();
+            return new ZipEntryIterator<ZipEntry>(zsrc.total, ZipEntry::new);
+        }
+    }
+
+    private Enumeration<JarEntry> entries(Function<String, JarEntry> func) {
+        synchronized (this) {
+            ensureOpen();
+            return new ZipEntryIterator<JarEntry>(zsrc.total, func);
+        }
+    }
+
+    private class EntrySpliterator<T> extends Spliterators.AbstractSpliterator<T> {
+        private int index;
+        private final int fence;
+        private final IntFunction<T> gen;
+
+        EntrySpliterator(int index, int fence, IntFunction<T> gen) {
+            super((long)fence,
+                  Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.IMMUTABLE |
+                  Spliterator.NONNULL);
+            this.index = index;
+            this.fence = fence;
+            this.gen = gen;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super T> action) {
+            if (action == null)
+                throw new NullPointerException();
+            if (index >= 0 && index < fence) {
+                synchronized (ZipFile.this) {
+                    ensureOpen();
+                    action.accept(gen.apply(zsrc.getEntryPos(index++ * 3)));
+                }
+                return true;
+            }
+            return false;
+        }
     }
 
     /**
      * Returns an ordered {@code Stream} over the ZIP file entries.
+     *
      * Entries appear in the {@code Stream} in the order they appear in
      * the central directory of the ZIP file.
      *
@@ -524,17 +587,68 @@ class ZipFile implements ZipConstants, Closeable {
      * @since 1.8
      */
     public Stream<? extends ZipEntry> stream() {
-        return StreamSupport.stream(Spliterators.spliterator(
-                new ZipEntryIterator(), size(),
-                Spliterator.ORDERED | Spliterator.DISTINCT |
-                        Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
+        synchronized (this) {
+            ensureOpen();
+            return StreamSupport.stream(new EntrySpliterator<>(0, zsrc.total,
+                pos -> getZipEntry(null, null, pos, ZipEntry::new)), false);
+       }
+    }
+
+    private String getEntryName(int pos) {
+        byte[] cen = zsrc.cen;
+        int nlen = CENNAM(cen, pos);
+        int clen = CENCOM(cen, pos);
+        int flag = CENFLG(cen, pos);
+        if (!zc.isUTF8() && (flag & EFS) != 0) {
+            return zc.toStringUTF8(cen, pos + CENHDR, nlen);
+        } else {
+            return zc.toString(cen, pos + CENHDR, nlen);
+        }
+    }
+
+    /*
+     * Returns an ordered {@code Stream} over the zip file entry names.
+     *
+     * Entry names appear in the {@code Stream} in the order they appear in
+     * the central directory of the ZIP file.
+     *
+     * @return an ordered {@code Stream} of entry names in this zip file
+     * @throws IllegalStateException if the zip file has been closed
+     * @since 10
+     */
+    private Stream<String> entryNameStream() {
+        synchronized (this) {
+            ensureOpen();
+            return StreamSupport.stream(
+                new EntrySpliterator<>(0, zsrc.total, this::getEntryName), false);
+        }
+    }
+
+    /*
+     * Returns an ordered {@code Stream} over the zip file entries.
+     *
+     * Entries appear in the {@code Stream} in the order they appear in
+     * the central directory of the jar file.
+     *
+     * @param func the function that creates the returned entry
+     * @return an ordered {@code Stream} of entries in this zip file
+     * @throws IllegalStateException if the zip file has been closed
+     * @since 10
+     */
+    private Stream<JarEntry> stream(Function<String, JarEntry> func) {
+        synchronized (this) {
+            ensureOpen();
+            return StreamSupport.stream(new EntrySpliterator<>(0, zsrc.total,
+                pos -> (JarEntry)getZipEntry(null, null, pos, func)), false);
+        }
     }
 
     private String lastEntryName;
     private int lastEntryPos;
 
     /* Checks ensureOpen() before invoke this method */
-    private ZipEntry getZipEntry(String name, byte[] bname, int pos) {
+    private ZipEntry getZipEntry(String name, byte[] bname, int pos,
+                                 Function<String, ? extends ZipEntry> func) {
         byte[] cen = zsrc.cen;
         int nlen = CENNAM(cen, pos);
         int elen = CENEXT(cen, pos);
@@ -551,7 +665,7 @@ class ZipFile implements ZipConstants, Closeable {
                 name = zc.toString(cen, pos + CENHDR, nlen);
             }
         }
-        ZipEntry e = new ZipEntry(name);
+        ZipEntry e = func.apply(name);    //ZipEntry e = new ZipEntry(name);
         e.flag = flag;
         e.xdostime = CENTIM(cen, pos);
         e.crc = CENCRC(cen, pos);
@@ -791,7 +905,6 @@ class ZipFile implements ZipConstants, Closeable {
 
         public long skip(long n) throws IOException {
             synchronized (ZipFile.this) {
-                ensureOpenOrZipException();
                 initDataOffset();
                 if (n > rem) {
                     n = rem;
@@ -857,11 +970,32 @@ class ZipFile implements ZipConstants, Closeable {
     static {
         SharedSecrets.setJavaUtilZipFileAccess(
             new JavaUtilZipFileAccess() {
+                @Override
                 public boolean startsWithLocHeader(ZipFile zip) {
                     return zip.zsrc.startsWithLoc;
                 }
+                @Override
                 public String[] getMetaInfEntryNames(ZipFile zip) {
                     return zip.getMetaInfEntryNames();
+                }
+                @Override
+                public JarEntry getEntry(ZipFile zip, String name,
+                    Function<String, JarEntry> func) {
+                    return (JarEntry)zip.getEntry(name, func);
+                }
+                @Override
+                public Enumeration<JarEntry> entries(ZipFile zip,
+                    Function<String, JarEntry> func) {
+                    return zip.entries(func);
+                }
+                @Override
+                public Stream<JarEntry> stream(ZipFile zip,
+                    Function<String, JarEntry> func) {
+                    return zip.stream(func);
+                }
+                @Override
+                public Stream<String> entryNameStream(ZipFile zip) {
+                    return zip.entryNameStream();
                 }
              }
         );
