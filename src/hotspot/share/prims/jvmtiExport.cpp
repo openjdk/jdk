@@ -2578,7 +2578,7 @@ extern "C" {
 
 jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
                                      const char *options, outputStream* st) {
-  char ebuf[1024];
+  char ebuf[1024] = {0};
   char buffer[JVM_MAXPATHLEN];
   void* library = NULL;
   jint result = JNI_ERR;
@@ -2628,6 +2628,8 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       if (!agent_lib->is_static_lib()) {
         os::dll_unload(library);
       }
+      st->print_cr("%s is not available in %s",
+                   on_attach_symbols[0], agent_lib->name());
       delete agent_lib;
     } else {
       // Invoke the Agent_OnAttach function
@@ -2654,8 +2656,13 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       }
 
       // Agent_OnAttach executed so completion status is JNI_OK
-      st->print_cr("%d", result);
+      st->print_cr("return code: %d", result);
       result = JNI_OK;
+    }
+  } else {
+    st->print_cr("%s was not loaded.", agent);
+    if (*ebuf != '\0') {
+      st->print_cr("%s", ebuf);
     }
   }
   return result;

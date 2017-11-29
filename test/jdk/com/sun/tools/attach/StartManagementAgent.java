@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public class StartManagementAgent {
         } catch(AttachOperationFailedException ex) {
             // We expect parsing of "apa" above to fail, but if the file path
             // can't be read we get a different exception message
-            if (!ex.getMessage().contains("Invalid com.sun.management.jmxremote.port number")) {
+            if (!ex.getMessage().contains("NumberFormatException: For input string: \"apa\"")) {
                 throw ex;
             }
             ex.printStackTrace(System.err);
