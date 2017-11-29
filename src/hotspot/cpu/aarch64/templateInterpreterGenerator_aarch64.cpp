@@ -414,6 +414,14 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ restore_constant_pool_cache();
   __ get_method(rmethod);
 
+  if (state == atos) {
+    Register obj = r0;
+    Register mdp = r1;
+    Register tmp = r2;
+    __ ldr(mdp, Address(rmethod, Method::method_data_offset()));
+    __ profile_return_type(mdp, obj, tmp);
+  }
+
   // Pop N words from the stack
   __ get_cache_and_index_at_bcp(r1, r2, 1, index_size);
   __ ldr(r1, Address(r1, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
