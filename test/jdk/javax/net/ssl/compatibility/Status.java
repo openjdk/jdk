@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,10 @@
  * questions.
  */
 
-// key: compiler.err.already.defined.static.single.import
+/*
+ * Test case result status.
+ */
+public enum Status {
 
-import static p.E1.A;
-import p.E2.A;
+    SUCCESS, UNEXPECTED_SUCCESS, FAIL, EXPECTED_FAIL, TIMEOUT;
+}

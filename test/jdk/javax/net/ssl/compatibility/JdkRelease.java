@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,38 @@
  * questions.
  */
 
-// key: compiler.err.already.defined.static.single.import
+/*
+ * JDK major versions.
+ */
+public enum JdkRelease {
 
-import static p.E1.A;
-import p.E2.A;
+    JDK6(6, "1.6"),
+    JDK7(7, "1.7"),
+    JDK8(8, "1.8"),
+    JDK9(9, "9"),
+    JDK10(10, "10");
+
+    public final int sequence;
+    public final String release;
+
+    private JdkRelease(int sequence, String release) {
+        this.sequence = sequence;
+        this.release = release;
+    }
+
+    public static JdkRelease getRelease(String jdkVersion) {
+        if (jdkVersion.startsWith(JDK6.release)) {
+            return JDK6;
+        } else if (jdkVersion.startsWith(JDK7.release)) {
+            return JDK7;
+        } else if (jdkVersion.startsWith(JDK8.release)) {
+            return JDK8;
+        } else if (jdkVersion.startsWith(JDK9.release)) {
+            return JDK9;
+        } else if (jdkVersion.startsWith(JDK10.release)) {
+            return JDK10;
+        }
+
+        return null;
+    }
+}
