@@ -1,8 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<html>
+<!doctype html>
+<html lang="en">
 <head>
+  <meta charset="utf-8"/>
+  <title>PNG Metadata Format Specification</title>
+</head>
 <!--
-Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -26,14 +29,9 @@ or visit www.oracle.com if you need additional information or have any
 questions.
 -->
 
-<title>PNG Metadata Format Specification</title>
-</head>
+<body>
 
-<body bgcolor="white">
-
-<center><h1>
-PNG Metadata Format Specification
-</h1></center>
+<h1>PNG Metadata Format Specification</h1>
 
 <p>
 
@@ -59,7 +57,7 @@ using as grayscale instead of palette color.  However, if the color
 type set in the metadata is "Palette", palette color will be used.
 
 <p>
- 
+
 If no metadata is supplied when encoding an image, the header is
 initialized from the image being encoded, and no optional chunks are
 included.
@@ -85,7 +83,7 @@ or <code>GrayAlpha</code> image
 The child nodes of the <code>bKGD</code>, <code>sBIT</code>, and
 <code>tRNS</code> chunks must match the image's color type.
 
-<p> 
+<p>
 
 Certain chunks may meaningfully appear multiple times in a PNG file,
 in particular the text-related chunks.  In order to simplify the
@@ -104,8 +102,8 @@ written, or to determine the order of the chunks in a file being read.
 <pre>
 &lt;!DOCTYPE "javax_imageio_png_1.0" [
 
-  &lt;!ELEMENT "javax_imageio_png_1.0" (IHDR?, PLTE?, bKGD?, cHRM?, 
-    gAMA?, hIST?, iCCP?, iTXt?, pHYS?, sBIT?, sPLT?, sRGB?, tEXt?, 
+  &lt;!ELEMENT "javax_imageio_png_1.0" (IHDR?, PLTE?, bKGD?, cHRM?,
+    gAMA?, hIST?, iCCP?, iTXt?, pHYS?, sBIT?, sPLT?, sRGB?, tEXt?,
     tIME?, tRNS?, zTXt?, UnknownChunks?)&gt;
 
     &lt;!ELEMENT "IHDR" EMPTY&gt;
@@ -123,7 +121,7 @@ written, or to determine the order of the chunks in a file being read.
       &lt;!ATTLIST "IHDR" "bitDepth" ("1" | "2" | "4" | "8" | "16")
          #REQUIRED&gt;
         &lt;!-- The bit depth of the image samples --&gt;
-      &lt;!ATTLIST "IHDR" "colorType" ("Grayscale" | "RGB" | "Palette" | 
+      &lt;!ATTLIST "IHDR" "colorType" ("Grayscale" | "RGB" | "Palette" |
         "GrayAlpha" | "RGBAlpha") #REQUIRED&gt;
         &lt;!-- The color type of the image --&gt;
       &lt;!ATTLIST "IHDR" "compressionMethod" ("deflate") #REQUIRED&gt;
@@ -318,7 +316,7 @@ written, or to determine the order of the chunks in a file being read.
       &lt;!ATTLIST "pHYS" "unitSpecifier" ("unknown" | "meter") #REQUIRED&gt;
         &lt;!-- The unit specifier for this chunk (i.e., meters) --&gt;
 
-    &lt;!ELEMENT "sBIT" (sBIT_Grayscale | sBIT_GrayAlpha | sBIT_RGB | 
+    &lt;!ELEMENT "sBIT" (sBIT_Grayscale | sBIT_GrayAlpha | sBIT_RGB |
       sBIT_RGBAlpha | sBIT_Palette)&gt;
       &lt;!-- The sBIT chunk, containing significant bit information --&gt;
 
@@ -437,8 +435,8 @@ written, or to determine the order of the chunks in a file being read.
 
     &lt;!ELEMENT "sRGB" EMPTY&gt;
       &lt;!-- The sRGB chunk, containing rendering intent information --&gt;
-      &lt;!ATTLIST "sRGB" "renderingIntent" ("Perceptual" | 
-        "Relative colorimetric" | "Saturation" | 
+      &lt;!ATTLIST "sRGB" "renderingIntent" ("Perceptual" |
+        "Relative colorimetric" | "Saturation" |
         "Absolute colorimetric") #REQUIRED&gt;
         &lt;!-- The rendering intent --&gt;
 

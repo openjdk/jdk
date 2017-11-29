@@ -1,8 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<html>
+<!doctype html>
+<html lang="en">
 <head>
+  <meta charset="utf-8"/>
+  <title>GIF Metadata Format Specification</title>
+</head>
 <!--
-Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -26,18 +29,11 @@ or visit www.oracle.com if you need additional information or have any
 questions.
 -->
 
-<title>GIF Metadata Format Specification</title>
-</head>
+<body>
 
-<body bgcolor="white">
-
-<center><h1>
-GIF Metadata Format Specification
-</h1></center>
-<a name="gif_stream_metadata_format"></a>
-<center><h2>
-GIF Stream Metadata Format Specification
-</h2></center>
+<h1>GIF Metadata Format Specification</h1>
+<a id="gif_stream_metadata_format"></a>
+<h2>GIF Stream Metadata Format Specification</h2>
 
 <p>
 
@@ -59,7 +55,7 @@ images that do not have their own local color table.
 <pre>
 &lt;!DOCTYPE "javax_imageio_gif_stream_1.0" [
 
-  &lt;!ELEMENT "javax_imageio_gif_stream_1.0" (Version?, 
+  &lt;!ELEMENT "javax_imageio_gif_stream_1.0" (Version?,
     LogicalScreenDescriptor?, GlobalColorTable?)&gt;
 
     &lt;!ELEMENT "Version" EMPTY&gt;
@@ -98,7 +94,7 @@ images that do not have their own local color table.
       &lt;!-- The global color table --&gt;
       &lt;!-- Min children: 2 --&gt;
       &lt;!-- Max children: 256 --&gt;
-      &lt;!ATTLIST "GlobalColorTable" "sizeOfGlobalColorTable" ("2" | 
+      &lt;!ATTLIST "GlobalColorTable" "sizeOfGlobalColorTable" ("2" |
         "4" | "8" | "16" | "32" | "64" | "128" | "256") #REQUIRED&gt;
         &lt;!-- The number of entries in the global color table --&gt;
       &lt;!ATTLIST "GlobalColorTable" "backgroundColorIndex" #CDATA
@@ -135,10 +131,8 @@ images that do not have their own local color table.
           &lt;!-- Max value: 255 (inclusive) --&gt;
 ]&gt;
 </pre>
-<a name="gif_image_metadata_format"></a>
-<center><h2>
-GIF Image Metadata Format Specification
-</h2></center>
+<a id="gif_image_metadata_format"></a>
+<h2>GIF Image Metadata Format Specification</h2>
 <p>
 
 The GIF image metadata format encodes the image descriptor, local
@@ -180,8 +174,8 @@ advanced only on user input.
 <pre>
 &lt;!DOCTYPE "javax_imageio_gif_image_1.0" [
 
-  &lt;!ELEMENT "javax_imageio_gif_image_1.0" (ImageDescriptor?, 
-    LocalColorTable?, GraphicControlExtension?, PlainTextExtension?, 
+  &lt;!ELEMENT "javax_imageio_gif_image_1.0" (ImageDescriptor?,
+    LocalColorTable?, GraphicControlExtension?, PlainTextExtension?,
     ApplicationExtensions?, CommentExtensions?)&gt;
 
     &lt;!ELEMENT "ImageDescriptor" EMPTY&gt;
@@ -214,7 +208,7 @@ advanced only on user input.
       &lt;!-- The local color table --&gt;
       &lt;!-- Min children: 2 --&gt;
       &lt;!-- Max children: 256 --&gt;
-      &lt;!ATTLIST "LocalColorTable" "sizeOfLocalColorTable" ("2" | 
+      &lt;!ATTLIST "LocalColorTable" "sizeOfLocalColorTable" ("2" |
         "4" | "8" | "16" | "32" | "64" | "128" | "256") #REQUIRED&gt;
         &lt;!-- The number of entries in the local color table --&gt;
       &lt;!ATTLIST "LocalColorTable" "sortFlag" ("TRUE" | "FALSE")
@@ -246,13 +240,13 @@ advanced only on user input.
 
     &lt;!ELEMENT "GraphicControlExtension" EMPTY&gt;
       &lt;!-- A graphic control extension --&gt;
-      &lt;!ATTLIST "GraphicControlExtension" "disposalMethod" ("none" | 
-        "doNotDispose" | "restoreToBackgroundColor" | 
-        "restoreToPrevious" | "undefinedDisposalMethod4" | 
-        "undefinedDisposalMethod5" | "undefinedDisposalMethod6" | 
+      &lt;!ATTLIST "GraphicControlExtension" "disposalMethod" ("none" |
+        "doNotDispose" | "restoreToBackgroundColor" |
+        "restoreToPrevious" | "undefinedDisposalMethod4" |
+        "undefinedDisposalMethod5" | "undefinedDisposalMethod6" |
         "undefinedDisposalMethod7") #REQUIRED&gt;
         &lt;!-- The disposal method for this frame --&gt;
-      &lt;!ATTLIST "GraphicControlExtension" "userInputFlag" ("TRUE" | 
+      &lt;!ATTLIST "GraphicControlExtension" "userInputFlag" ("TRUE" |
         "FALSE") #REQUIRED&gt;
         &lt;!-- True if the frame should be advanced based on user input --&gt;
       &lt;!ATTLIST "GraphicControlExtension" "transparentColorFlag" (
@@ -350,8 +344,7 @@ advanced only on user input.
 </pre>
 
 <p>
-<a name="mapping"></a>
-<center>
+<a id="mapping"></a>
 <table border=1>
 <caption><b>Mapping of Standard to GIF Native Stream Metadata</b></caption>
 <tr>
@@ -399,9 +392,7 @@ advanced only on user input.
 <td>/Version@value</td>
 </tr>
 </table>
-</center>
 
-<center>
 <table border=1>
 <caption><b>Mapping of Standard to GIF Native Image Metadata</b></caption>
 <tr>
@@ -443,7 +434,6 @@ advanced only on user input.
 "TRUE")</td>
 </tr>
 </table>
-</center>
 
 </body>
 </html>

@@ -32,7 +32,7 @@
  * <em>The Java Tutorial</em>. For other resources, see
  * <a href="#related">Related Documentation</a>.
  *
- * <h2><a name="threading">Swing's Threading Policy</a></h2>
+ * <h2><a id="threading">Swing's Threading Policy</a></h2>
  * In general Swing is not thread safe. All Swing components and related
  * classes, unless otherwise documented, must be accessed on the event
  * dispatching thread.
@@ -110,7 +110,7 @@
  * href="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
  * Concurrency in Swing</a>.
  *
- * <h2><a name="related">Related Documentation</a></h2>
+ * <h2><a id="related">Related Documentation</a></h2>
  * For overviews, tutorials, examples, guides, and other documentation,
  * please see:
  * <ul>

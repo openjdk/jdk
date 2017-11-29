@@ -1,7 +1,33 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-  <head>
-    <title>Synth File Format</title>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Synth File Format</title>
+<!--
+ Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
   <style type="text/css">
 div.dtd-fragment {
     width: 100%;
@@ -19,14 +45,17 @@ div.example {
   </head>
 
   <body>
-    <h2><a name="file">File Format</a></h2>
+    <h2><a id="file">File Format</a></h2>
     <p>
       Synth's file format (<a href="synth.dtd">dtd</a>)
       allows for specifying all the pieces
       necessary to create your own look and feel. A synth file is
-      loaded by way of the <A HREF="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.io.InputStream,%20java.lang.Class)">SynthLookAndFeel.load(InputStream, Class)</a> or
-      <a href="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.net.URL)">SynthLookAndFeel.load(URL)</a> methods.
-      The following example uses the <code>load</code> method to configure 
+      loaded by way of the <A
+        HREF="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.io.InputStream,%20java.lang.Class)">
+      SynthLookAndFeel.load(InputStream, Class)</a> or
+      <a href="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.net.URL)">
+        SynthLookAndFeel.load(URL)</a> methods.
+      The following example uses the <code>load</code> method to configure
       a <code>SynthLookAndFeel</code> and sets it as the current look
       and feel:
     </p>
@@ -51,8 +80,10 @@ div.example {
       </pre>
     </div>
     <p>
-      The method <a href="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.net.URL)">SynthLookAndFeel.load(URL)</a> can be
-      used, for instance, to load a look and feel from any of the following:
+      The method <a
+        href="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.net.URL)">
+      SynthLookAndFeel.load(URL)</a> can be used, for instance, to load a look
+      and feel from any of the following:
     </p>
     <ul>
       <li>File, e.g. <code>file:///C:/java/synth/laf/laf.xml</code></li>
@@ -70,7 +101,7 @@ div.example {
     <h3>The synth element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.synth">synth</a> ((<a href="#ee.beansPersistance">%beansPersistance;</a>) | <a href="#e.style">style</a> | <a href="#e.bind">bind</a> | <a href="#e.font">font</a> | <a href="#e.color">color</a> |
+&lt;!ELEMENT <a id="e.synth">synth</a> ((<a href="#ee.beansPersistance">%beansPersistance;</a>) | <a href="#e.style">style</a> | <a href="#e.bind">bind</a> | <a href="#e.font">font</a> | <a href="#e.color">color</a> |
                  <a href="#e.imagePainter">imagePainter</a> | <a href="#e.imageIcon">imageIcon</a> | <a href="#e.defaultsProperty">defaultsProperty</a>)*>
 &lt;!ATTLIST synth
           <a href="#synth.version">version</a>              CDATA          #IMPLIED
@@ -78,7 +109,7 @@ div.example {
 </pre>
 </div>
     <p><em>Attribute definitions</em></p>
-    <dl><dt><a name="synth.version"><samp>version</samp></a></dt>
+    <dl><dt><a id="synth.version"><samp>version</samp></a></dt>
 	<dd>File format version, should be 1</dd>
     </dl>
     <p>
@@ -86,11 +117,11 @@ div.example {
       elements that make up a SynthLookAndFeel definition.
     </p>
 
-      
+
     <h3>The style element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.style">style</a> (<a href="#e.property">property</a> | <a href="#e.defaultsProperty">defaultsProperty</a> | <a href="#e.state">state</a> | <a href="#e.font">font</a> | <a href="#e.graphicsUtils">graphicsUtils</a> |
+&lt;!ELEMENT <a id="e.style">style</a> (<a href="#e.property">property</a> | <a href="#e.defaultsProperty">defaultsProperty</a> | <a href="#e.state">state</a> | <a href="#e.font">font</a> | <a href="#e.graphicsUtils">graphicsUtils</a> |
                  <a href="#e.insets">insets</a> | <a href="#e.painter">painter</a> | <a href="#e.imagePainter">imagePainter</a> | <a href="#e.opaque">opaque</a> | (<a href="#ee.beansPersistance">%beansPersistance;</a>) |
                  <a href="#e.imageIcon">imageIcon</a>)*>
 &lt;!ATTLIST style
@@ -101,9 +132,9 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="style.id"><samp>id</samp></a></dt>
+      <dt><a id="style.id"><samp>id</samp></a></dt>
       <dd>Unique identifier for the style.</dd>
-      <dt><a name="style.clone"><samp>clone</samp></a></dt>
+      <dt><a id="style.clone"><samp>clone</samp></a></dt>
       <dd>Identifier of a previously defined style that is copied
 	    and used for the new style. This provides a convenient
 	    mechanism for overriding only a portion of an existing
@@ -144,7 +175,7 @@ div.example {
     <h3>The state element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.state">state</a> (<a href="#e.color">color</a> | <a href="#e.font">font</a> | <a href="#e.painter">painter</a> | <a href="#e.imagePainter">imagePainter</a> | (<a href="#ee.beansPersistance">%beansPersistance;</a>) |
+&lt;!ELEMENT <a id="e.state">state</a> (<a href="#e.color">color</a> | <a href="#e.font">font</a> | <a href="#e.painter">painter</a> | <a href="#e.imagePainter">imagePainter</a> | (<a href="#ee.beansPersistance">%beansPersistance;</a>) |
                  <a href="#e.property">property</a> |  <a href="#e.imageIcon">imageIcon</a>)*>
 &lt;!ATTLIST state
           <a href="#state.id">id</a>              ID             #IMPLIED
@@ -156,19 +187,19 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="state.id"><samp>id</samp></a></dt>
+      <dt><a id="state.id"><samp>id</samp></a></dt>
       <dd>Unique identifier for the state.</dd>
-      <dt><a name="state.clone"><samp>clone</samp></a></dt>
+      <dt><a id="state.clone"><samp>clone</samp></a></dt>
       <dd>Identifier of a previously defined state that is copied
 	and used for the new state.</dd>
-      <dt><a name="state.value"><samp>value</samp></a></dt>
+      <dt><a id="state.value"><samp>value</samp></a></dt>
       <dd>Identifies the state of the Component the properties are to apply
 	to. This is a list of: ENABLED,
 	MOUSE_OVER, PRESSED, DISABLED, FOCUSED, SELECTED or
 	DEFAULT. Multiple states should
 	be separated by 'and.' If you do not specify a value, the
 	contents apply to all states.
-      <dt><a name="state.idref"><samp>idref</samp></a></dt>
+      <dt><a id="state.idref"><samp>idref</samp></a></dt>
       <dd>Indicates this state should be the same as a previously
 	    defined state. This is useful for multiple styles that
 	    wish to share the same visual properties for a particular
@@ -212,7 +243,7 @@ div.example {
     <p>
       State <code>one</code> is used when the Component is SELECTED
       and PRESSED, and state <code>two</code> when the Component is
-      SELECTED. If the state of the Component 
+      SELECTED. If the state of the Component
       contains at least SELECTED and PRESSED, state <code>one</code> will be
       chosen, otherwise if the state is SELECTED, but not does not
       contain PRESSED, state <code>two</code> will be used.
@@ -220,7 +251,7 @@ div.example {
     <h3>The font element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.font">font</a> EMPTY>
+&lt;!ELEMENT <a id="e.font">font</a> EMPTY>
 &lt;!ATTLIST font
           <a href="#font.id">id</a>              ID             #IMPLIED
           <a href="#font.idref">clone</a>           IDREF          #IMPLIED
@@ -232,18 +263,18 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="font.id"><samp>id</samp></a></dt>
+      <dt><a id="font.id"><samp>id</samp></a></dt>
       <dd>Unique identifier for the Font.</dd>
-      <dt><a name="font.idref"><samp>idref</samp></a></dt>
+      <dt><a id="font.idref"><samp>idref</samp></a></dt>
       <dd>Identifier of a previously defined font.</dd>
-      <dt><a name="font.name"><samp>name</samp></a></dt>
+      <dt><a id="font.name"><samp>name</samp></a></dt>
       <dd>Name of the font.
-      <dt><a name="font.style"><samp>style</samp></a></dt>
+      <dt><a id="font.style"><samp>style</samp></a></dt>
       <dd>Style of the font. This is a list of the styles defined by
 	Font separated by spaces: PLAIN, BOLD or ITALIC. If
 	unspecified PLAIN is used.
       </dd>
-      <dt><a name="font.size"><samp>size</samp></a></dt>
+      <dt><a id="font.size"><samp>size</samp></a></dt>
       <dd>Size of the font, in pixels</dd>
     </dl>
     <p>
@@ -289,7 +320,7 @@ div.example {
     <h3>The color element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.color">color</a> EMPTY>
+&lt;!ELEMENT <a id="e.color">color</a> EMPTY>
 &lt;!ATTLIST color
           <a href="#color.id">id</a>              ID             #IMPLIED
           <a href="#color.idref">idref</a>           IDREF          #IMPLIED
@@ -300,11 +331,11 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="color.id"><samp>id</samp></a></dt>
+      <dt><a id="color.id"><samp>id</samp></a></dt>
       <dd>Unique identifier for the color.</dd>
-      <dt><a name="color.idref"><samp>idref</samp></a></dt>
+      <dt><a id="color.idref"><samp>idref</samp></a></dt>
       <dd>Identifier of a previously defined color.</dd>
-      <dt><a name="color.type"><samp>type</samp></a></dt>
+      <dt><a id="color.type"><samp>type</samp></a></dt>
       <dd>Describes where this color should be used. This is
 	    typically one of the constants defined by ColorType:
 	    FOREGROUND, BACKGROUND, TEXT_FOREGROUND, TEXT_BACKGROUND
@@ -314,12 +345,12 @@ div.example {
 	    is useful for subclasses of synth that define additional
 	    color types.
       </dd>
-      <dt><a name="color.value"><samp>value</samp></a></dt>
+      <dt><a id="color.value"><samp>value</samp></a></dt>
       <dd>
-        Value for the color. This accepts the following forms. 
+        Value for the color. This accepts the following forms.
         <ul>
           <li>The name of a constant in the <code>Color</code> class,
-            for example <code> RED</code>. 
+            for example <code> RED</code>.
           <li>A hex value of the form <code>#RRGGBB</code> where
             <code>RR</code> gives the red component, <code>GG</code>
             the green component and <code>BB</code> the blue
@@ -329,7 +360,7 @@ div.example {
             <code>#AARRGGBB</code>. This is useful for alpha values
             other than <code>0xFF</code>. The form
             <code>#ARRGGBB</code> is equivalent to
-            <code>#0ARRGGBB</code>. 
+            <code>#0ARRGGBB</code>.
         </ul>
       </dd>
     </dl>
@@ -366,7 +397,7 @@ div.example {
     <h3>The property element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.property">property</a> EMPTY>
+&lt;!ELEMENT <a id="e.property">property</a> EMPTY>
 &lt;!ATTLIST property
           <a href="#property.key">key</a>               CDATA                                             #REQUIRED
           <a href="#property.type">type</a>              (idref|boolean|dimension|insets|integer|string)          "idref"
@@ -376,11 +407,11 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="property.key"><samp>key</samp></a></dt>
+      <dt><a id="property.key"><samp>key</samp></a></dt>
       <dd>Name of the property.</dd>
-      <dt><a name="property.type"><samp>type</samp></a></dt>
+      <dt><a id="property.type"><samp>type</samp></a></dt>
       <dd>Indicates the type of the property.</dd>
-      <dt><a name="property.value"><samp>value</samp></a></dt>
+      <dt><a id="property.value"><samp>value</samp></a></dt>
       <dd>Value for the property. For boolean properties this will be
 	be true or false, for integer properties this will be a
 	valid integer, for dimensions this will be the width and
@@ -438,7 +469,7 @@ div.example {
 </div>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.defaultsProperty">defaultsProperty</a> EMPTY>
+&lt;!ELEMENT <a id="e.defaultsProperty">defaultsProperty</a> EMPTY>
 &lt;!ATTLIST defaultsProperty
           <a href="#defaultsProperty.key">key</a>               CDATA                                             #REQUIRED
           <a href="#defaultsProperty.type">type</a>              (idref|boolean|dimension|insets|integer|string)   "idref"
@@ -448,11 +479,11 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="defaultsProperty.key"><samp>key</samp></a></dt>
+      <dt><a id="defaultsProperty.key"><samp>key</samp></a></dt>
       <dd>Name of the property.</dd>
-      <dt><a name="defaultsProperty.type"><samp>type</samp></a></dt>
+      <dt><a id="defaultsProperty.type"><samp>type</samp></a></dt>
       <dd>Indicates the type of the property.</dd>
-      <dt><a name="defaultsProperty.value"><samp>value</samp></a></dt>
+      <dt><a id="defaultsProperty.value"><samp>value</samp></a></dt>
       <dd>Value for the property. For boolean properties this will be
 	true or false, for integer properties this will be a
 	valid integer, for dimensions this will be the width and
@@ -488,7 +519,7 @@ div.example {
     <h3>The graphicsUtils element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.graphicsUtils">graphicsUtils</a> EMPTY>
+&lt;!ELEMENT <a id="e.graphicsUtils">graphicsUtils</a> EMPTY>
 &lt;!ATTLIST graphicsUtils
           <a href="#graphicsUtils.idref">idref</a>           IDREF             #REQUIRED
 &gt;
@@ -496,7 +527,7 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="graphicsUtils.idref"><samp>idref</samp></a></dt>
+      <dt><a id="graphicsUtils.idref"><samp>idref</samp></a></dt>
       <dd>Identifer of a previously defined SynthGraphicsUtils object
 	that is to be used as the SynthGraphicsUtils for the current
 	<a href="#e.style">style</a>.</dd>
@@ -520,7 +551,7 @@ div.example {
     <h3>The insets element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.insets">insets</a> EMPTY>
+&lt;!ELEMENT <a id="e.insets">insets</a> EMPTY>
 &lt;!ATTLIST insets
           <a href="#insets.id">id</a>           ID             #IMPLIED
           <a href="#insets.idref">idref</a>        IDREF          #IMPLIED
@@ -533,17 +564,17 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="insets.id"><samp>id</samp></a></dt>
+      <dt><a id="insets.id"><samp>id</samp></a></dt>
       <dd>Unique identifier for the Insets.</dd>
-      <dt><a name="insets.idref"><samp>idref</samp></a></dt>
+      <dt><a id="insets.idref"><samp>idref</samp></a></dt>
       <dd>Identifier of a previously defined Insets.</dd>
-      <dt><a name="insets.top"><samp>top</samp></a></dt>
+      <dt><a id="insets.top"><samp>top</samp></a></dt>
       <dd>Top component of the Insets.</dd>
-      <dt><a name="insets.bottom"><samp>bottom</samp></a></dt>
+      <dt><a id="insets.bottom"><samp>bottom</samp></a></dt>
       <dd>Bottom component of the Insets.</dd>
-      <dt><a name="insets.left"><samp>left</samp></a></dt>
+      <dt><a id="insets.left"><samp>left</samp></a></dt>
       <dd>Left component of the Insets.</dd>
-      <dt><a name="insets.right"><samp>right</samp></a></dt>
+      <dt><a id="insets.right"><samp>right</samp></a></dt>
       <dd>Right component of the Insets.</dd>
     </dl>
     <p>
@@ -564,7 +595,7 @@ div.example {
     <h3>The bind element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.bind">bind</a> EMPTY>
+&lt;!ELEMENT <a id="e.bind">bind</a> EMPTY>
 &lt;!ATTLIST bind
           <a href="#bind.style">style</a>        IDREF             #REQUIRED
           <a href="#bind.type">type</a>         (name|region)     #REQUIRED
@@ -574,12 +605,12 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="bind.style"><samp>style</samp></a></dt>
+      <dt><a id="bind.style"><samp>style</samp></a></dt>
       <dd>Unique identifier of a previously defined style.</dd>
-      <dt><a name="bind.type"><samp>type</samp></a></dt>
+      <dt><a id="bind.type"><samp>type</samp></a></dt>
       <dd>One of name or region. For type name component.getName() is used,
 	otherwise the name of the Region is used.</dd>
-      <dt><a name="bind.key"><samp>key</samp></a></dt>
+      <dt><a id="bind.key"><samp>key</samp></a></dt>
       <dd>Regular expression applied to the name of the Component, or the
 	name of the Region, depending upon the value of
 	<a href="#bind.type">type</a>.</dd>
@@ -673,7 +704,7 @@ div.example {
     <h3>The painter element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.painter">painter</a> EMPTY>
+&lt;!ELEMENT <a id="e.painter">painter</a> EMPTY>
 &lt;!ATTLIST painter
           <a href="#painter.idref">idref</a>                 IDREF          #IMPLIED
           <a href="#painter.method">method</a>                CDATA          #IMPLIED
@@ -683,9 +714,9 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="painter.idref"><samp>idref</samp></a></dt>
+      <dt><a id="painter.idref"><samp>idref</samp></a></dt>
       <dd>Identifier of a previously defined SynthPainter.</dd>
-      <dt><a name="painter.method"><samp>method</samp></a></dt>
+      <dt><a id="painter.method"><samp>method</samp></a></dt>
       <dd>Identifies the SynthPainter method this is to be used for. The name
 	corresponds to the method name of a paint method in SynthPainter
 	with the paint prefix dropped, the remainder is case
@@ -694,7 +725,7 @@ div.example {
 	'buttonBackground' or 'buttonbackground'. If this is
 	not specified the painter is used for all methods that don't have a
 	a specific painter for them.</dd>
-      <dt><a name="painter.direction"><samp>direction</samp></a></dt>
+      <dt><a id="painter.direction"><samp>direction</samp></a></dt>
       <dd>Identifies the direction, or orientation, this painter is to be
 	used for. This is only useful for the SynthPainter methods that take
 	a direction or orientation. If this is not specified the painter is
@@ -787,7 +818,7 @@ div.example {
     <h3>The imagePainter element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.imagePainter">imagePainter</a> EMPTY>
+&lt;!ELEMENT <a id="e.imagePainter">imagePainter</a> EMPTY>
 &lt;!ATTLIST imagePainter
           <a href="#imagePainter.id">id</a>                    ID             #IMPLIED
           <a href="#imagePainter.method">method</a>                CDATA          #IMPLIED
@@ -803,9 +834,9 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="imagePainter.id"><samp>id</samp></a></dt>
+      <dt><a id="imagePainter.id"><samp>id</samp></a></dt>
       <dd>Unique identifier for the imagePainter.</dd>
-      <dt><a name="imagePainter.method"><samp>method</samp></a></dt>
+      <dt><a id="imagePainter.method"><samp>method</samp></a></dt>
       <dd>Identifies the SynthPainter method this is to be used for. The name
 	corresponds to the method name of a paint method in SynthPainter
 	with the paint prefix dropped, the remainder is case
@@ -814,29 +845,29 @@ div.example {
 	'buttonBackground' or 'buttonbackground'. If this is
 	not specified the painter is used for all methods that don't have a
 	a specific painter for them.</dd>
-      <dt><a name="imagePainter.direction"><samp>direction</samp></a></dt>
+      <dt><a id="imagePainter.direction"><samp>direction</samp></a></dt>
       <dd>Identifies the direction, or orientation, this image is to be
 	used for. This is only useful for the SynthPainter methods that take
 	a direction or orientation. If this is not specified the image is
 	used for all directions.</dd>
-      <dt><a name="imagePainter.path"><samp>path</samp></a></dt>
+      <dt><a id="imagePainter.path"><samp>path</samp></a></dt>
       <dd>Path to the image. Path to the image.  If SynthLookAndFeel.load is
     passed a Class this will use the Class method getResource (with with the
     Class suplied to the load method). If load is passed a URL this will use the
     URL constructor URL(context, path) to resolve the path.</dd>
-      <dt><a name="imagePainter.sourceInsets"><samp>sourceInsets</samp></a></dt>
+      <dt><a id="imagePainter.sourceInsets"><samp>sourceInsets</samp></a></dt>
       <dd>Insets on the source image. This is top, left, bottom, right with
 	each component separated by a space.</dd>
-      <dt><a name="imagePainter.destinationInsets"><samp>destinationInsets</samp></a></dt>
+      <dt><a id="imagePainter.destinationInsets"><samp>destinationInsets</samp></a></dt>
       <dd>Insets of the destination image. This is top, left, bottom, right with
 	each component separated by a space. If not specified the
 	<a href="#imagePainter.sourceInsets">sourceInsets</a> are used.</dd>
-      <dt><a name="imagePainter.painterCenter"><samp>paintCenter</samp></a></dt>
+      <dt><a id="imagePainter.painterCenter"><samp>paintCenter</samp></a></dt>
       <dd>Whether or not the center of the image should be drawn.</dd>
-      <dt><a name="imagePainter.stretch"><samp>stretch</samp></a></dt>
+      <dt><a id="imagePainter.stretch"><samp>stretch</samp></a></dt>
       <dd>Whether or not the north, south, east and west components of the
 	resulting image should be scaled or tiled.</dd>
-      <dt><a name="imagePainter.center"><samp>center</samp></a></dt>
+      <dt><a id="imagePainter.center"><samp>center</samp></a></dt>
       <dd>Whether or not the image is centered.</dd>
     </dl>
     <p>
@@ -844,7 +875,7 @@ div.example {
       painter for the current style or state that will render using
       the specified image.  ImagePainter offers two distinct rendering
       modes.  The first mode is used to center an image in the space
-      provided.  This is 
+      provided.  This is
       commonly used in rendering decorations on top of a widget, for
       example, to specify an arrow for a scroll button use the center
       mode. The following example illustrates this:
@@ -878,12 +909,12 @@ div.example {
       Refer to the description of the <a href="#e.painter">painter</a>
       element for details as to the precedence in choosing a painter and to
       understand how identical painters are handled.
-	
+
 
     <h3>The imageIcon element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.imageIcon">imageIcon</a> EMPTY>
+&lt;!ELEMENT <a id="e.imageIcon">imageIcon</a> EMPTY>
 &lt;!ATTLIST imageIcon
           <a href="#imageIcon.id">id</a>                    ID             #REQUIRED
           <a href="#imageIcon.path">path</a>                  CDATA          #REQUIRED
@@ -892,9 +923,9 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="imageIcon.id"><samp>id</samp></a></dt>
+      <dt><a id="imageIcon.id"><samp>id</samp></a></dt>
       <dd>Unique identifier for the imageIcon.</dd>
-      <dt><a name="imageIcon.path"><samp>path</samp></a></dt>
+      <dt><a id="imageIcon.path"><samp>path</samp></a></dt>
       <dd>Path to the image. This uses the Class method
 	getResource to resolve the path, with the Class supplied to
 	SynthLookAndFeel.load.</dd>
@@ -917,7 +948,7 @@ div.example {
    <h3>The opaque element</h3>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
-&lt;!ELEMENT <a name="e.opaque">opaque</a> EMPTY>
+&lt;!ELEMENT <a id="e.opaque">opaque</a> EMPTY>
 &lt;!ATTLIST opaque
           <a href="#opaque.value">value</a>              (true|false)   "true"
 &gt;
@@ -925,7 +956,7 @@ div.example {
 </div>
     <p><em>Attribute definitions</em></p>
     <dl>
-      <dt><a name="opaque.value"><samp>id</samp></a></dt>
+      <dt><a id="opaque.value"><samp>id</samp></a></dt>
       <dd>Whether or not the style should be opaque, if unspecified the style
 	is opaque.</dd>
     </dl>
@@ -945,12 +976,14 @@ div.example {
     </pre>
 </div>
 
-    <h3><a name="ee.beansPersistance">The beansPersistance entity</a></h3>
+    <h3><a id="ee.beansPersistance">The beansPersistance entity</a></h3>
     <p>
       Beans persistance can be used to embed any Object. This is
       typically used for embedding your own Painters, but can be used
       for other arbritrary objects as well. Refer to <a
-							href="http://www.oracle.com/technetwork/java/persistence3-139471.html">http://www.oracle.com/technetwork/java/persistence3-139471.html</a> for details on beans persistance.
+        href="http://www.oracle.com/technetwork/java/persistence3-139471.html">
+      http://www.oracle.com/technetwork/java/persistence3-139471.html</a>
+      for details on beans persistance.
 
 
     <h3>Backing Style</h3>
