@@ -946,8 +946,6 @@ public class Check {
         }
 
     Type checkLocalVarType(DiagnosticPosition pos, Type t, Name name) {
-        //upward project the initializer type
-        t = types.upward(t, types.captures(t));
         //check that resulting type is not the null type
         if (t.hasTag(BOT)) {
             log.error(pos, Errors.CantInferLocalVarType(name, Fragments.LocalCantInferNull));
@@ -956,7 +954,9 @@ public class Check {
             log.error(pos, Errors.CantInferLocalVarType(name, Fragments.LocalCantInferVoid));
             return types.createErrorType(t);
         }
-        return t;
+
+        //upward project the initializer type
+        return types.upward(t, types.captures(t));
     }
 
     Type checkMethod(final Type mtype,
