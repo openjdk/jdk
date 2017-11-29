@@ -1,8 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<html>
+<!doctype html>
+<html lang="en">
 <head>
+  <meta charset="utf-8"/>
+  <title>Component Specific Properties</title>
+</head>
 <!--
-Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -24,16 +27,17 @@ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 or visit www.oracle.com if you need additional information or have any
 questions.
-
 -->
-</head>
+
 <body bgcolor="white">
 <h3>Component Specific Properties</h3>
 <p> The look, and to some degree the feel of Synth
-can be customized by way of component specific properties.
-These properties are accessed from <a
-				    href="../SynthStyle.html">SynthStyle#get</a>. Refer to <a href="synthFileFormat.html#e.property">synth file format</a> for examples of how to specify these properties in a synth configuration file.</p>
-    <p>
+  can be customized by way of component specific properties.
+  These properties are accessed from <a
+      href="../SynthStyle.html">SynthStyle#get</a>. Refer to <a
+      href="synthFileFormat.html#e.property">synth file format</a> for examples
+  of how to specify these properties in a synth configuration file.</p>
+<p>
       This file specifies the expected class type each of the values
       are to take. The behavior of supplying the wrong type is
       unspecified: typically a <code>ClassCastException</code> is
@@ -66,7 +70,7 @@ the following properties: </p>
   </tbody>
 </table>
 <br>
-<h4><a name="JButton">JButton</a></h4>
+<h4><a id="JButton">JButton</a></h4>
 <p> JButton paints text using the TEXT_FOREGROUND ColorType. In addition
 to the <a href="#buttonProperties">Button 	properties</a>, JButton
 supports the following property: </p>
@@ -89,7 +93,7 @@ button that is 	    receiving focus. </td>
   </tbody>
 </table>
 <br>
-<h4><a name="JCheckBox">JCheckBox</a></h4>
+<h4><a id="JCheckBox">JCheckBox</a></h4>
 <p> JCheckBox paints text using the TEXT_FOREGROUND ColorType. In
 addition to the <a href="#buttonProperties">Button 	properties</a>,
 JCheckBox supports the following property: </p>
@@ -111,7 +115,7 @@ JCheckBox supports the following property: </p>
   </tbody>
 </table>
 <br>
-<h4><a name="JComboBox">JComboBox</a></h4>
+<h4><a id="JComboBox">JComboBox</a></h4>
 <p> JComboBox is a composite component that consists of the following
 child Components: </p>
 <table border="1" summary="JComboBox child components">
@@ -144,7 +148,7 @@ child Components: </p>
     <tr>
       <td>ComboBox.renderer</td>
       <td>Component 	 </td>
-      <td>The renderer used for the JComboBox. This is ONLY set if 	
+      <td>The renderer used for the JComboBox. This is ONLY set if
 the renderer is a UIResource. 	</td>
     </tr>
     <tr>
@@ -279,7 +283,7 @@ of the file chooser.<br>
       <td style="vertical-align: top;">Icon used by the button that creates a new
           folder.
       </td>
-    </tr>          
+    </tr>
     <tr>
       <td style="vertical-align: top;">FileChooser.upFolderIcon<br>
       </td>
@@ -301,7 +305,7 @@ of the file chooser.<br>
       <td style="vertical-align: top;">Icon used by the button that navigates to the
           current user's home directory.
       </td>
-    </tr>          
+    </tr>
     <tr>
       <td style="vertical-align: top;">FileChooser.detailsViewIcon<br>
       </td>
@@ -312,7 +316,7 @@ of the file chooser.<br>
       <td style="vertical-align: top;">Icon used by the button that toggles the
           detailed files list view.
       </td>
-    </tr>             
+    </tr>
     <tr>
       <td style="vertical-align: top;">FileChooser.listViewIcon<br>
       </td>
@@ -324,7 +328,7 @@ of the file chooser.<br>
           regular files list view, showing only an icon and the name of each
           file and directory.
       </td>
-    </tr>          
+    </tr>
     <tr>
       <td style="vertical-align: top;">FileChooser.viewMenuIcon<br>
       </td>
@@ -339,7 +343,7 @@ of the file chooser.<br>
   </tbody>
 </table>
 <br>
-<h4><a name="JInternalFrame"></a>JInternalFrame</h4>
+<h4><a id="JInternalFrame"></a>JInternalFrame</h4>
 <h5>JInternalFrame Specific Properties</h5>
 <table cellpadding="2" cellspacing="2" border="1" summary="JInternalFrame specific properties"
  style="text-align: left; width: 100%;">
@@ -369,7 +373,7 @@ the system menu will be shown.<br>
   </tbody>
 </table>
 <br>
-<h4><a name="JInternalFrameTitlePane"></a>JInternalFrameTitlePane</h4>
+<h4><a id="JInternalFrameTitlePane"></a>JInternalFrameTitlePane</h4>
 <p>JInternalFrameTitlePane is the control bar located at the top of the
 internal frame similar to that found in a frame.<br>
 </p>
@@ -469,7 +473,7 @@ abililty to close the internal frame.
   </tbody>
 </table>
 <br>
-<h4><a name="JList">JList</a></h4>
+<h4><a id="JList">JList</a></h4>
 <p> JList's sets the name of the renderer to List.renderer.       JList
 supports the following properties: </p>
 <h5>JList Specific Properties</h5>
@@ -486,7 +490,7 @@ supports the following properties: </p>
       <td>Boolean</td>
       <td>true 	 </td>
       <td>If true the renderers state is not updated, and the 	    text
-colors come from JList's getSelectionBackground and 	
+colors come from JList's getSelectionBackground and
 getSelectionForeground methods. If false, the renderer's 	    state is
 updated and the colors will instead come from the 	    Style. 	</td>
     </tr>
@@ -508,7 +512,7 @@ is not invoked. </td>
   </tbody>
 </table>
 <br>
-<h4><a name="menuProperties">Menu Properties</a></h4>
+<h4><a id="menuProperties">Menu Properties</a></h4>
 <p> The Menu classes (JCheckBoxMenuItem, JMenu, JMenuItem, and
 JRadioButtonMenuItem) all support the same set of properties and behave
 similarly.       Each component consists of two Regions: the region
@@ -536,7 +540,7 @@ and the key, for example <code>Ctrl 	 &lt;acceleratorDelimiter&gt; X</code>.
       <td>prefix.arrowIcon</td>
       <td>Icon</td>
       <td>null 	 </td>
-      <td>Icon drawn to the right of the text (or left when the 	
+      <td>Icon drawn to the right of the text (or left when the
 ComponentOrientation is right to left) of the text. This 	    is
 typically only defined for JMenu. 	</td>
     </tr>
@@ -544,7 +548,7 @@ typically only defined for JMenu. 	</td>
       <td>prefix.checkIcon</td>
       <td>Icon</td>
       <td>null 	 </td>
-      <td>Icon drawn to the left of the text (or right when the 	
+      <td>Icon drawn to the left of the text (or right when the
 ComponentOrientation is right to left) of the text. This 	    is
 typically only defined for JCheckBoxMenuItem and 	 JRadioButtonMenuItem
 to provide the check or radio button. 	</td>
@@ -561,7 +565,7 @@ of how the margin is used. 	</td>
       <td>prefix.textIconGap</td>
       <td>Integer</td>
       <td>4 	 </td>
-      <td>Padding between the icon and text. Refer to the javadoc for 
+      <td>Padding between the icon and text. Refer to the javadoc for
 <code>javax.swing.AbstractButton#setIconTextGap(int)</code> for details of how
 this is used. </td>
     </tr>
@@ -593,7 +597,7 @@ RadioButtonMenuItem. </p>
   </tbody>
 </table>
 <br>
-<h4><a name="JOptionPane">JOptionPane</a></h4>
+<h4><a id="JOptionPane">JOptionPane</a></h4>
 <p> JOptionPane is a composite component and may consist of numerous child
 components, they are: OptionPane.button, OptionPane.label,
 OptionPane.comboBox, OptionPane.scrollPane, OptionPane.list,
@@ -623,7 +627,7 @@ OptionPane.textField, OptionPane.iconLabel. </p>
       <td>OptionPane.buttonOrientation</td>
       <td>Integer 	 </td>
       <td>SwingConstants.CENTER 	 </td>
-      <td>How the buttons should be layed out, one of 	
+      <td>How the buttons should be layed out, one of
 SwingConstants.LEFT, SwingConstants.RIGHT or 	    SwingConstants.CENTER
 (this will be flipped when in a 	    right to left locale). 	</td>
     </tr>
@@ -709,7 +713,7 @@ it follows the other buttons. 	</td>
   </tbody>
 </table>
 <br>
-<h4><a name="JProgressBar"></a>JProgressBar<br>
+<h4><a id="JProgressBar"></a>JProgressBar<br>
 </h4>
 <h5>JProgressBar Specific Properties<br>
 </h5>
@@ -749,7 +753,7 @@ the bouncing box per frame when the progress bar is indeterminate.<br>
     </tr>
   </tbody>
 </table>
-<h4><a name="JRadioButton">JRadioButton</a></h4>
+<h4><a id="JRadioButton">JRadioButton</a></h4>
 <p> JRadioButton paints text using the TEXT_FOREGROUND ColorType. In
 addition to the <a href="#buttonProperties">Button 	properties</a>,
 JRadioButton supports the following property: </p>
@@ -771,7 +775,7 @@ JRadioButton supports the following property: </p>
   </tbody>
 </table>
 <br>
-<h4><a name="JScrollBar">JScrollBar</a></h4>
+<h4><a id="JScrollBar">JScrollBar</a></h4>
 <p> JScrollBar is a composite component that consists of the following
 child Components: </p>
 <table border="1" summary="JScrollBar child components">
@@ -841,7 +845,7 @@ will be made equal. 	</td>
   </tbody>
 </table>
 <br>
-<h4><a name="Separator">Separators</a></h4>
+<h4><a id="Separator">Separators</a></h4>
 <p> All of the separator classes, JSeparator, JPopupMenu.Separator and
 JToolBar.Separator use the same property: </p>
 <table border="1" summary="Separator classes common properties">
@@ -856,7 +860,7 @@ JToolBar.Separator use the same property: </p>
       <td>Separator.thickness</td>
       <td>Integer</td>
       <td>2 	 </td>
-      <td>Preferred width, for vertically aligned separators, or 	
+      <td>Preferred width, for vertically aligned separators, or
 preferred height for horizontally aligned separators. The 	 resulting
 preferred size will include the Insets. </td>
     </tr>
@@ -875,20 +879,21 @@ preferred size will include the Insets. </td>
       <td>ToolBar.separatorSize</td>
       <td>Dimension</td>
       <td>null 	 </td>
-      <td>The value of this is passed to the <code>javax.swing.JToolBar$Separator#setSeparatorSize(java.awt.Dimension)</code>
-method. If unspecified <code>setSeparatorSize</code> is 	    not
-invoked. </td>
-    </tr>
+    <td>The value of this is passed to the
+      <code>javax.swing.JToolBar$Separator#setSeparatorSize(java.awt.Dimension)</code>
+      method. If unspecified <code>setSeparatorSize</code> is not invoked.
+    </td>
+  </tr>
   </tbody>
 </table>
 <br>
-<h4><a name="JScrollPane">JScrollPane</a></h4>
-<p> 
+<h4><a id="JScrollPane">JScrollPane</a></h4>
+<p>
       JScrollPane is unique in that it provides a method for setting
       the Border around the JViewport with JViewport throwing an
       IllegalArgumentException from <code>setBorder</code>. To
       accommodate this a special border is installed on the
-      <code>JScrollPane</code> that uses the 
+      <code>JScrollPane</code> that uses the
       insets from the key
       <code>ScrollPane.viewportBorderInsets</code>. The
       <code>SynthPainter</code> method
@@ -913,7 +918,7 @@ invoked. </td>
   </tbody>
 </table>
 <br>
-<h4><a name="JSplitPane">JSplitPane</a></h4>
+<h4><a id="JSplitPane">JSplitPane</a></h4>
 <p> JSplitPane is a composite component that will contain a divider and
 potentially two buttons, if setOneTouchExpandable(true) has been
 invoked. The two buttons will be named:
@@ -950,7 +955,7 @@ SplitPaneDivider.rightOneTouchButton. </p>
       <td>SplitPane.oneTouchExpandable</td>
       <td>Boolean</td>
       <td>null 	 </td>
-      <td>If non null, the value of this is passed to 	
+      <td>If non null, the value of this is passed to
 setOneTouchExpandable. 	</td>
     </tr>
     <tr>
@@ -962,7 +967,7 @@ setOneTouchExpandable. 	</td>
   </tbody>
 </table>
 <br>
-<h4><a name="JSlider"></a>JSlider</h4>
+<h4><a id="JSlider"></a>JSlider</h4>
 <h5>JSlider Specific Properties</h5>
 <table cellpadding="2" cellspacing="2" border="1" summary="JSlider specific properties"
  style="text-align: left; width: 100%;">
@@ -1022,7 +1027,7 @@ of the slider.<br>
   </tbody>
 </table>
 <br>
-<h4><a name="JTabbedPane"></a>JTabbedPane</h4>
+<h4><a id="JTabbedPane"></a>JTabbedPane</h4>
 <h5>JTabbedPane Specific Properties</h5>
 <table cellpadding="2" cellspacing="2" border="1" summary="JTabbedPane specific properties"
  style="text-align: left; width: 100%;">
@@ -1084,8 +1089,8 @@ selected tab.<br>
   </tbody>
 </table>
 <br>
-<h4><a name="JTable">JTable</a></h4>
-<p> JTable sets the name of the renderer to Table.cellRenderer.      
+<h4><a id="JTable">JTable</a></h4>
+<p> JTable sets the name of the renderer to Table.cellRenderer.
 JTable supports the following properties: </p>
 <h5>JTable Specific Properties</h5>
 <table border="1" summary="JTable specific properties">
@@ -1108,7 +1113,7 @@ style is used. 	</td>
       <td>Boolean</td>
       <td>true 	 </td>
       <td>If true the renderers state is not updated, and the 	    text
-colors come from JTable's getSelectionBackground and 	   
+colors come from JTable's getSelectionBackground and
 getSelectionForeground methods. If false, the renderer's 	    state is
 updated and the colors will instead come from the 	    Style. 	</td>
     </tr>
@@ -1116,7 +1121,7 @@ updated and the colors will instead come from the 	    Style. 	</td>
       <td>Table.rendererUseUIBorder</td>
       <td>Boolean</td>
       <td>true 	 </td>
-      <td>If true setBorder on the renderer will succeed 	   
+      <td>If true setBorder on the renderer will succeed
 regardless of the border passed in, otherwise setBorder on 	    the
 renderer will only succeed if it is a Synth Border. 	</td>
     </tr>
@@ -1129,7 +1134,7 @@ renderer will only succeed if it is a Synth Border. 	</td>
   </tbody>
 </table>
 <br>
-<h4><a name="JTree">JTree</a></h4>
+<h4><a id="JTree">JTree</a></h4>
 <p> JTree sets the name of the renderer to Tree.renderer, the name of
 the editor is Tree.cellEditor.</p>
 <h5>JTree Specific Properties</h5>
@@ -1151,7 +1156,7 @@ the editor is Tree.cellEditor.</p>
       <td>Tree.drawHorizontalLines</td>
       <td>Boolean</td>
       <td>true 	 </td>
-      <td>If true nodes have a horizontal connecting them to the 	
+      <td>If true nodes have a horizontal connecting them to the
 leading edge of their parent. 	</td>
     </tr>
     <tr>
@@ -1198,7 +1203,7 @@ may happen along both the horizontal and 	    vertical axis. 	</td>
       <td>Tree.scrollsOnExpand</td>
       <td>Boolean</td>
       <td>true 	 </td>
-      <td>Whether or not the JTree should scroll when a node is 	
+      <td>Whether or not the JTree should scroll when a node is
 expanded. </td>
     </tr>
     <tr>
@@ -1212,7 +1217,7 @@ and <a href="synthFileFormat.html#e.graphicsUtils">binding it</a> to the tree.</
     </tr>
   </tbody>
 </table>
-<h4><a name="JToggleButton">JToggleButton</a></h4>
+<h4><a id="JToggleButton">JToggleButton</a></h4>
 <p> JToggleButton paints text using the TEXT_FOREGROUND ColorType. In
 addition to the <a href="#buttonProperties">Button 	properties</a>,
 JToggleButton supports the following property: </p>
@@ -1234,7 +1239,7 @@ JToggleButton supports the following property: </p>
   </tbody>
 </table>
 <br>
-<h4><a name="buttonProperties">Button Properties</a></h4>
+<h4><a id="buttonProperties">Button Properties</a></h4>
 <p> Each of the Button classes (JButton, JCheckBox, JRadioButton,
 JToggleButton and SynthArrowButton) support a similar set of properties.
 These properties are: </p>
@@ -1250,23 +1255,29 @@ These properties are: </p>
       <td>prefix.contentAreaFilled</td>
       <td>Integer</td>
       <td>true 	 </td>
-      <td>Refer to the javadoc of <code>javax.swing.AbstractButton#contentAreaFilled(boolean)</code> 	    for details
-of how this is used. It is up to the Painter 	    to properly honor this
-property. 	</td>
-    </tr>
+    <td>Refer to the javadoc of
+      <code>javax.swing.AbstractButton#contentAreaFilled(boolean)</code>
+      for details of how this is used. It is up to the Painter to properly honor
+      this property.
+    </td>
+  </tr>
     <tr>
       <td>prefix.iconTextGap</td>
       <td>Integer</td>
-      <td>If 	    unspecified, JButton.setIconTextGap is not invoked. 	</td>
-      <td>Padding between the icon and text. Refer to the javadoc of <code>javax.swing.AbstractButton#setIconTextGap(int)</code> 	    for details of how
-this is used. 	</td>
+      <td>If unspecified, JButton.setIconTextGap is not invoked.</td>
+      <td>Padding between the icon and text. Refer to the javadoc of
+        <code>javax.swing.AbstractButton#setIconTextGap(int)</code>
+        for details of how this is used.
+      </td>
     </tr>
     <tr>
       <td>prefix.margin</td>
       <td>Insets</td>
       <td>Empty Insets (0, 0, 0, 0) 	 </td>
-      <td>Margin for the JButton. Refer to the javadoc of <code>javax.swing.AbstractButton#setMargin(java.awt.Insets)</code> 	    for details
-of how the margin is used. 	</td>
+      <td>Margin for the JButton. Refer to the javadoc of
+        <code>javax.swing.AbstractButton#setMargin(java.awt.Insets)</code> for
+        details of how the margin is used.
+      </td>
     </tr>
     <tr>
       <td>prefix.textShiftOffset</td>
@@ -1281,7 +1292,7 @@ the button is in a pressed state and does 	    not have a pressed icon. </td>
 <p> <code>Prefix</code> is one of: Button, CheckBox, RadioButton or
 JToggleButton.<br>
 </p>
-<h4><a name="textProperties"></a>Text Properties<br>
+<h4><a id="textProperties"></a>Text Properties<br>
 </h4>
 <table cellpadding="2" cellspacing="2" border="1" summary="Text properties"
  style="text-align: left; width: 100%;">

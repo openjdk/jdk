@@ -1,5 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>The AWT Modality</title>
+</head>
 <!--
- Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -23,19 +29,9 @@
  questions.
 -->
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<body>
 
-<html>
-
-<head>
-
-    <title>The AWT Modality</title>
-
-</head>
-
-<body bgcolor="white">
-
-    <h1 align="center">The AWT Modality</h1>
+    <h1>The AWT Modality</h1>
 
     <p>
       This document, together with the API documentation for modality-related
@@ -53,7 +49,7 @@
       <li><a href="#Examples">Examples</a></li>
     </ul>
 
-    <a name="Definitions"></a>
+    <a id="Definitions"></a>
     <h3>Definitions</h3>
 
     <p>
@@ -63,7 +59,7 @@
       Every window belongs to some document &mdash; its root can be found as
       the closest ancestor window without an owner.
     </p><p>
-      <a name="ModalBlocked"></a>
+      <a id="ModalBlocked"></a>
       <u>Modal blocked window</u> - a window, that:
       </p><ul>
         <li>doesn't receive any user input events
@@ -73,7 +69,7 @@
       <blockquote>
         <hr>
           <b>Warning!</b> Some window managers allow users to change the window
-          Z-order in an arbitrary way &mdash; in that case the last requirement 
+          Z-order in an arbitrary way &mdash; in that case the last requirement
           may not be met.
         <hr>
       </blockquote>
@@ -87,7 +83,7 @@
       then all its owned windows and child components are also excluded.
     </p><p>
       <u>Scope of blocking (SB)</u> - the set of windows (instances of
-      <code>java.awt.Window</code> and all derived classes) that are blocked by 
+      <code>java.awt.Window</code> and all derived classes) that are blocked by
       the modal dialog while it is visible.
      <blockquote><hr>
       <b>Note</b>: Everywhere in this document the notion of "window" is equal
@@ -95,7 +91,7 @@
       an instance of <code>java.awt.Window</code> or any descendant class.
       <hr></blockquote>
 
-    <a name="ModalityTypes"></a>
+    <a id="ModalityTypes"></a>
     <h3>Modality types</h3>
 
     <p>
@@ -159,7 +155,7 @@
       dialog may have no effect until it is hidden and then shown again.
       <hr></blockquote>
 
-    <a name="ShowHideBlocking"></a>
+    <a id="ShowHideBlocking"></a>
     <h3>Show/hide blocking</h3>
 
     <p>
@@ -171,7 +167,7 @@
     </p><p>
       <u>Showing the modal dialog: "M"</u><br>
       When modal dialog M is shown, all the visible windows fall into one of
-      three distinct groups: 
+      three distinct groups:
       <ul>
       <li>Blockers of M (modal dialogs that block M and
       either are in M's child hierarchy, or are not blocked by M, or have
@@ -260,11 +256,11 @@
       If M was blocked by any other modal dialog, for example, "N",
       it becomes unblocked and
       is removed from N's blocked windows list. Then, all the windows and dialogs
-      blocked by M become unblocked, and after that the same checks 
+      blocked by M become unblocked, and after that the same checks
       (as in Showing the modal dialog: "M")
       are performed for each of them in the order they were initially shown.
 
-    <a name="ModalExclusion"></a>
+    <a id="ModalExclusion"></a>
     </p><h3>Modal exclusion</h3>
 
     <p>
@@ -290,7 +286,7 @@
         may have no effect until it is hidden and then shown again.
     </blockquote>
 
-    <a name="Related"></a>
+    <a id="Related"></a>
     <h3>Related AWT features</h3>
 
     <p>
@@ -333,21 +329,21 @@
       </li></ol>
       If the modal dialog to be hidden does not have focus, the active window remains
       unchanged.
-    
-    <a name="Security"></a>
+
+    <a id="Security"></a>
     <h3>Security</h3>
 
     <p>
       A special <code>AWTPermission</code>, <code>"toolkitModality"</code>,
       is required to show toolkit-modal
-      dialogs. This would prevent, for example, blocking a browser or 
+      dialogs. This would prevent, for example, blocking a browser or
       Java Web Start (JWS) by modal dialogs shown from applets.
     </p><p>
       The same permission is required to exclude a window from toolkit modality.
       This would prevent, for example, a dialog shown from an applet not to be
       blocked by a browser's or JWS's modal dialog.
 
-    <a name="PlatformSupport"></a>
+    <a id="PlatformSupport"></a>
     </p><h3>Platform support</h3>
 
     <p>
@@ -366,18 +362,18 @@
 	  and a window is marked as E-excluded, this has no effect.
       </li></ul>
 
-    <a name="Compatibility"></a>
+    <a id="Compatibility"></a>
     <h3>Compatibility</h3>
 
     <p>
       The default modality type is application-modal. It is used by the API
-      calls: <code>Dialog.setModal(true)</code>, 
+      calls: <code>Dialog.setModal(true)</code>,
       <code>Dialog(owner, true)</code>, etc. Prior to JDK 6
       the default type was toolkit-modal,
       but the only distinction between application- and toolkit-modality is for
       applets and applications launched from Java Web Start.
 
-    <a name="Examples"></a>
+    <a id="Examples"></a>
     </p><h3>Examples</h3>
 
     <table border="0">
@@ -429,7 +425,7 @@
 	      it's in the same application<br>
           <li>D<sub>i</sub> is shown<br>
           <li>D<sub>i</sub> becomes blocked by D<sub>ii</sub> &mdash; it's its owner<br>
-          <li>D<sub>iii</sub> remains unblocked &mdash; it blocks D<sub>ii</sub> and 
+          <li>D<sub>iii</sub> remains unblocked &mdash; it blocks D<sub>ii</sub> and
 	      D<sub>ii</sub> blocks D<sub>i</sub><br>
 	  </ol>
           <br>

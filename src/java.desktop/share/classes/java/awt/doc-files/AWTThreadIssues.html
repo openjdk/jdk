@@ -1,5 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>AWT Threading Issues</title>
+</head>
 <!--
- Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -23,16 +29,11 @@
  questions.
 -->
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-<head>
-<title></title>
-</head>
-<body bgcolor=white>
+<body>
 
-<h1 align=center>AWT Threading Issues</h1>
+<h1>AWT Threading Issues</h1>
 
-<a name="ListenersThreads"></a>
+<a id="ListenersThreads"></a>
 <h2>Listeners and threads</h2>
 
 Unless otherwise noted all AWT listeners are notified on the event
@@ -41,7 +42,7 @@ during dispatching, but the changes only effect subsequent notification.
 <br>For example, if a key listeners is added from another key listener, the
 newly added listener is only notified on subsequent key events.
 
-<a name="Autoshutdown"></a>
+<a id="Autoshutdown"></a>
 <h2>Auto-shutdown</h2>
 
 According to
@@ -53,7 +54,7 @@ The virtual machine terminates all its activity and exits when
 one of two things happens:
 <ul>
   <li> All the threads that are not daemon threads terminate.
-  <li> Some thread invokes the <code>exit</code> method of class 
+  <li> Some thread invokes the <code>exit</code> method of class
   <code>Runtime</code> or class <code>System</code>, and the exit
   operation is permitted by the security manager.
 </ul>
@@ -84,13 +85,15 @@ this machinery are as follows:
        posted to the <code>EventQueue</code> can be coalesced) are
        dispatched:
        <ul>
-           <li> Sequentially.
-           <dl><dd> That is, it is not permitted that several events from
+           <li>
+           <dl><dt>Sequentially.
+             <dd> That is, it is not permitted that several events from
 	        this queue are dispatched simultaneously. </dd></dl>
-           <li> In the same order as they are enqueued.
-           <dl><dd> That is, if <code>AWTEvent</code>&nbsp;A is enqueued
+           <li>
+           <dl><dt>In the same order as they are enqueued.
+             <dd> That is, if <code>AWTEvent</code>&nbsp;A is enqueued
 	        to the <code>EventQueue</code> before
-		<code>AWTEvent</code>&nbsp;B then event B will not be 
+		<code>AWTEvent</code>&nbsp;B then event B will not be
                 dispatched before event A.</dd></dl>
        </ul>
   <li> There is at least one alive non-daemon thread while there is at
@@ -98,7 +101,7 @@ this machinery are as follows:
        application (see
        <a href="../Component.html#isDisplayable()"><code>Component.isDisplayable</code></a>).
 </ul>
-The implications of the third restriction are as follows: 
+The implications of the third restriction are as follows:
 <ul>
   <li> The JVM will exit if some thread invokes the <code>exit</code>
   method of class <code>Runtime</code> or class <code>System</code>
@@ -108,8 +111,8 @@ The implications of the third restriction are as follows:
   displayable component.
 </ul>
 It depends on the implementation if and when the non-daemon helper
-threads are terminated once all components are made undisplayable. 
-The implementation-specific details are given below. 
+threads are terminated once all components are made undisplayable.
+The implementation-specific details are given below.
 
 <h3>
 Implementation-dependent behavior.
@@ -147,7 +150,7 @@ cleanly without calling <code>System.exit</code> must:
 </ul>
 Note, that while an application following these recommendations will
 exit cleanly under normal conditions, it is not guaranteed that it
-will exit cleanly in all cases. Two examples: 
+will exit cleanly in all cases. Two examples:
 <ul>
   <li> Other packages can create displayable components for internal
        needs and never make them undisplayable. See
@@ -156,7 +159,7 @@ will exit cleanly in all cases. Two examples:
 <a href="http://bugs.sun.com/view_bug.do?bug_id=4671025">
 4671025</a>, and
 <a href="http://bugs.sun.com/view_bug.do?bug_id=4465537">
-4465537</a>. 
+4465537</a>.
   <li> Both Microsoft Windows and X11 allow an application to send native
        events to windows that belong to another application. With this
        feature it is possible to write a malicious program that will
@@ -165,10 +168,10 @@ will exit cleanly in all cases. Two examples:
 </ul>
 On the other hand, if you require the JVM to continue running even after
 the application has made all components undisplayable you should start a
-non-daemon thread that blocks forever. 
+non-daemon thread that blocks forever.
 
 <pre>
-        <...>
+        &lt;...&gt;
         Runnable r = new Runnable() {
             public void run() {
                 Object o = new Object();
@@ -183,7 +186,7 @@ non-daemon thread that blocks forever.
         Thread t = new Thread(r);
         t.setDaemon(false);
         t.start();
-        <...>
+        &lt;...&gt;
 </pre>
 
 <cite>The Java&trade; Virtual Machine Specification</cite>

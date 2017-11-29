@@ -113,7 +113,7 @@
  *
  * <h2> Standard Plug-in Notes</h2>
  *
- * <h3><a name="gif_plugin_notes">Standard plug-in for GIF image format</a></h3>
+ * <h3><a id="gif_plugin_notes">Standard plug-in for GIF image format</a></h3>
  * ImageIO provides {@code ImageReader} and {@code ImageWriter}plug-ins for the
  * <a href="http://www.w3.org/Graphics/GIF/spec-gif89a.txt"> Graphics
  * Interchange Format (GIF)</a> image format. These are the "standard" GIF

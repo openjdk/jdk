@@ -1,5 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>The AWT Focus Subsystem</title>
+</head>
 <!--
- Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -23,15 +29,8 @@
  questions.
 -->
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-
-<html>
-    <head>
-       <title>The AWT Focus Subsystem</title>
-    </head>
-
-    <body bgcolor="white">
-      <h1 align=center>The AWT Focus Subsystem</h1>
+    <body>
+      <h1>The AWT Focus Subsystem</h1>
 
     <p>
       Prior to Java 2 Standard Edition, JDK 1.4, the AWT focus subsystem
@@ -57,8 +56,8 @@
       determining the "opposite" Component involved in the focus or
       activation change. For example, when a Component received a FOCUS_LOST
       event, it had no way of knowing which Component was gaining
-      focus. Since Microsoft Windows provides this functionality for free, 
-      developers migrating from Microsoft Windows C/C++ or Visual Basic to 
+      focus. Since Microsoft Windows provides this functionality for free,
+      developers migrating from Microsoft Windows C/C++ or Visual Basic to
       Java had been frustrated by the omission.
     <p>
       To address these and other deficiencies, we have designed a new focus
@@ -101,7 +100,7 @@
       <li><a href=#Incompatibilities>Incompatibilities with Previous Releases</a>
      </ul>
 
-      <a name="Overview"></a>
+      <a id="Overview"></a>
       <h3>Overview of KeyboardFocusManager</h3>
     <p>
       The focus model is centralized around a single class,
@@ -160,7 +159,7 @@
           define new focus cycle but only modifies the order by which its
           children are traversed "forward" and "backward". Focus traversal
           policy provider can be set using
-          <code>setFocusTraversalPolicyProvider</code> on the Container. 
+          <code>setFocusTraversalPolicyProvider</code> on the Container.
     </ol>
 
     <p>
@@ -180,7 +179,7 @@
       descendants.
 
      <p>
-     Here is an example:<br> <img src="FocusCycle.gif" align=middle 
+     Here is an example:<br> <img src="FocusCycle.gif"
      alt="Three groups as described below: ABCF BDE and DGH. "><br>
 
      <p>Assume the following:
@@ -193,7 +192,7 @@
         <li><b>G</b>, <b>H</b>, <b>E</b>, and <b>F</b> are all
             <code>Component</code>s.
       </ul>
-  
+
      There are a total of three focus cycle roots in this example:
 
       <ol>
@@ -213,7 +212,7 @@
 implementation in the <code>DefaultKeyboardFocusManager</code> class.
 
 
-<a name="BrowserContexts"></a>
+<a id="BrowserContexts"></a>
 <h3>KeyboardFocusManager and Browser Contexts</h3>
 <p>
 Some browsers partition applets in different code bases into separate
@@ -229,7 +228,7 @@ contexts there may be, however, there can never be more than one focus
 owner, focused Window, or active Window, per ClassLoader.
 
 
-<a name="KeyEventDispatcher"></a>
+<a id="KeyEventDispatcher"></a>
 <h3>KeyEventDispatcher and KeyEventPostProcessor</h3>
 <p>
 While the user's KeyEvents should generally be delivered to the focus
@@ -272,7 +271,7 @@ Like KeyEventDispatcher, KeyboardFocusManager also implements
 KeyEventPostProcessor, and similar restrictions apply to its use in
 that capacity.
 
-<a name="FocusEventAndWindowEvent"></a>
+<a id="FocusEventAndWindowEvent"></a>
 <h3>FocusEvent and WindowEvent</h3>
 <p>
 The AWT defines the following six event types central to the focus
@@ -296,7 +295,7 @@ model in two different <code>java.awt.event</code> classes:
         not a Frame or Dialog) when it is no longer the active Window.
   </ol>
 
-<a name="EventDelivery"></a>
+<a id="EventDelivery"></a>
 <h3>Event Delivery</h3>
 <p>
 If the focus is not in java application and the user clicks on a focusable
@@ -347,7 +346,7 @@ rejects the focus change. See <a href="#FocusAndVetoableChangeListener">Focus
 and VetoableChangeListener</a>.
 
 
-<a name="OppositeComponents"></a>
+<a id="OppositeComponents"></a>
 <h3>Opposite Components and Windows</h3>
 <p>
 Each event includes information about the "opposite" Component or
@@ -371,7 +370,7 @@ a pure Swing application can ignore this platform restriction when
 using the opposite Component of a focus change that occurred within a
 top-level Window.
 
-<a name="TemporaryFocusEvents"></a>
+<a id="TemporaryFocusEvents"></a>
 <h3>Temporary FocusEvents</h3>
 <p>
 <code>FOCUS_GAINED</code> and <code>FOCUS_LOST</code> events are
@@ -380,7 +379,7 @@ marked as either temporary or permanent.
 Temporary <code>FOCUS_LOST</code> events are sent when a Component is
 losing the focus, but will regain the focus shortly. These events
 can be useful when focus changes are used as triggers for validation
-of data. For instance, a text Component may want to commit its 
+of data. For instance, a text Component may want to commit its
 contents when the user begins interacting with another Component,
 and can accomplish this by responding to <code>FOCUS_LOST</code> events.
 However, if the <code>FocusEvent</code> received is temporary,
@@ -402,8 +401,8 @@ occur.
 When a Component receives a temporary <code>FOCUS_LOST</code> event,
 the event's opposite Component (if any) may receive a temporary
 <code>FOCUS_GAINED</code> event, but could also receive a permanent
-<code>FOCUS_GAINED</code> event. Showing a Menu or PopupMenu, or 
-clicking or dragging a Scrollbar, should generate a temporary 
+<code>FOCUS_GAINED</code> event. Showing a Menu or PopupMenu, or
+clicking or dragging a Scrollbar, should generate a temporary
 <code>FOCUS_GAINED</code> event. Changing the focused Window,
 however, will yield a permanent <code>FOCUS_GAINED</code> event
 for the new focus owner.
@@ -416,7 +415,7 @@ behavior for this method can be guaranteed only for lightweight
 Components. This method is not intended for general use, but exists
 instead as a hook for lightweight Component libraries, such as Swing.
 
-<a name="FocusTraversal"></a>
+<a id="FocusTraversal"></a>
 <h3>Focus Traversal</h3>
 <p>
 Each Component defines its own Set of focus traversal keys for a given
@@ -428,11 +427,11 @@ a Set is not explicitly defined for a Component, that Component
 recursively inherits a Set from its parent, and ultimately from a
 context-wide default set on the current <code>KeyboardFocusManager</code>.
 <p>
-Using the <code>AWTKeyStroke</code> API, client code can specify 
-on which of two specific KeyEvents, <code>KEY_PRESSED</code> or 
+Using the <code>AWTKeyStroke</code> API, client code can specify
+on which of two specific KeyEvents, <code>KEY_PRESSED</code> or
 <code>KEY_RELEASED</code>, the focus traversal operation will occur.
 Regardless of which KeyEvent is specified, however, all KeyEvents
-related to the focus traversal key, including the associated 
+related to the focus traversal key, including the associated
 <code>KEY_TYPED</code> event, will be consumed, and will not be
 dispatched to any Component. It is a runtime error to specify a
 <code>KEY_TYPED</code> event as mapping to a focus traversal operation,
@@ -475,7 +474,7 @@ Components represent the next and previous Components to focus during
 normal focus traversal. Thus, the current
 <code>KeyboardFocusManager</code> maintains a reference to the
 "current" focus cycle root, which is global across all contexts. The
-current focus cycle root is used to resolve the ambiguity.  
+current focus cycle root is used to resolve the ambiguity.
 <p>
 For up-cycle traversal, the focus owner is set to the current focus
 owner's focus cycle root, and the current focus cycle root is set to
@@ -491,10 +490,10 @@ current focus owner. If the current focus owner is not a focus cycle
 root, then no focus traversal operation occurs.
 
 
-<a name="FocusTraversalPolicy"></a>
+<a id="FocusTraversalPolicy"></a>
 <h3>FocusTraversalPolicy</h3>
 <p>
-  
+
 A <code>FocusTraversalPolicy</code> defines the order in which Components within
 a particular focus cycle root or focus traversal policy provider are
 traversed. Instances of <code>FocusTraversalPolicy</code> can be shared across
@@ -524,7 +523,7 @@ five algorithms:
   </ol>
 
 <p>
-A <code>FocusTraversalPolicy</code> may optionally provide an 
+A <code>FocusTraversalPolicy</code> may optionally provide an
 algorithm for the following:
   <blockquote>
   Given a Window, the "initial" Component in that Window. The initial
@@ -551,7 +550,7 @@ set, then a Container inherits its policy from its nearest focus-cycle-root
 ancestor. Top-levels initialize their focus traversal policies using the context
 default policy. The context default policy is established by using
 KeyboardFocusManager.  <code>setDefaultFocusTraversalPolicy</code>.
-  
+
 <p>
 AWT provides two standard <code>FocusTraversalPolicy</code>
 implementations for use by client code.
@@ -573,14 +572,14 @@ implementations for use by client code.
     <li><code>DefaultFocusTraversalPolicy</code>: A subclass of
         <code>ContainerOrderFocusTraversalPolicy</code> which redefines
         the fitness test.  If client code has explicitly set the
-        focusability of a Component by either overriding 
+        focusability of a Component by either overriding
         <code>Component.isFocusTraversable()</code> or
         <code>Component.isFocusable()</code>, or by calling
-        <code>Component.setFocusable(boolean)</code>, then a 
+        <code>Component.setFocusable(boolean)</code>, then a
         <code>DefaultFocusTraversalPolicy</code> behaves exactly
         like a <code>ContainerOrderFocusTraversalPolicy</code>. If,
         however, the Component is relying on default focusability, then a
-        <code>DefaultFocusTraversalPolicy</code> will reject all 
+        <code>DefaultFocusTraversalPolicy</code> will reject all
         Components with non-focusable peers.
         <br>
         The focusability of a peer is implementation-dependent. Sun
@@ -627,7 +626,7 @@ InternalFrameFocusTraversalPolicy.
   </ol>
 <p>
 The figure below shows an implicit focus transfer:
-<br><img src="ImplicitFocusTransfer.gif" align=middle alt="Implicit focus transfer."><br>
+<br><img src="ImplicitFocusTransfer.gif" alt="Implicit focus transfer."><br>
 
 Assume the following:
  <ul>
@@ -653,7 +652,7 @@ Containers by default.
 All other applications, including pure AWT applications, will use
 <code>DefaultFocusTraversalPolicy</code> by default.
 
-<a name="FocusTraversalPolicyProviders"></a>
+<a id="FocusTraversalPolicyProviders"></a>
 <h3>Focus Traversal Policy Providers</h3>
 <p>
   A Container that isn't a focus cycle root has an option to provide a
@@ -674,7 +673,7 @@ All other applications, including pure AWT applications, will use
   If focus traversal policy provider property is set on a focus cycle root, it
   isn't considered a focus traversal policy provider and behaves just like any
   other focus cycle root.
-  
+
 <p>
   The main difference between focus cycle roots and focus traversal policy
   providers is that the latter allow focus to enter and leave them just as all other
@@ -740,7 +739,7 @@ All other applications, including pure AWT applications, will use
         </ul>
   </ul>
 
-<a name="ProgrammaticTraversal"></a>
+<a id="ProgrammaticTraversal"></a>
 <h3>Programmatic Traversal</h3>
 <p>
 In addition to user-initiated focus traversal, client code can
@@ -811,7 +810,7 @@ and there is no other Component to focus, then the focus owner remains
 unchanged.
 
 
-<a name="Focusability"></a>
+<a id="Focusability"></a>
 <h3>Focusability</h3>
 <p>
 A focusable Component can become the focus owner ("focusability") and
@@ -825,7 +824,7 @@ default, all Components return true from this method. Client code can
 change this default by calling Component.setFocusable(boolean).
 
 
-<a name="FocusableWindows"></a>
+<a id="FocusableWindows"></a>
 <h3>Focusable Windows</h3>
 <p>
 To support palette windows and input methods, client code can prevent
@@ -877,7 +876,7 @@ Since not all platforms support cross-Window focus changes (see
 all such focus change requests will fail. In this case, the global
 focus owner will be cleared and the focused Window will remain unchanged.
 
-<a name="RequestingFocus"></a>
+<a id="RequestingFocus"></a>
 <h3>Requesting Focus</h3>
 
 <p>
@@ -949,7 +948,7 @@ The Component class also supports variants of <code>requestFocus</code> and
 a temporary state.
 See <a href="#TemporaryFocusEvents">Temporary FocusEvents</a>
 
-<a name="FocusAndPropertyChangeListener"></a>
+<a id="FocusAndPropertyChangeListener"></a>
 <h3>Focus and PropertyChangeListener</h3>
 <p>
 Client code can listen to changes in context-wide focus state, or to
@@ -957,7 +956,7 @@ changes in focus-related state in Components, via
 PropertyChangeListeners.
 <p>
 The <code>KeyboardFocusManager</code> supports the following properties:
-  
+
   <ol>
     <li><code>focusOwner</code>: the focus owner
     <li><code>focusedWindow</code>: the focused Window
@@ -977,7 +976,7 @@ The <code>KeyboardFocusManager</code> supports the following properties:
 <p>
 A <code>PropertyChangeListener</code> installed on the current
 <code>KeyboardFocusManager</code> will only see these changes within
-the <code>KeyboardFocusManager</code>'s context, even though the 
+the <code>KeyboardFocusManager</code>'s context, even though the
 focus owner, focused Window, active Window, and current focus cycle
 root comprise the global focus state shared by all contexts.
 We believe this is less intrusive than requiring client code to pass
@@ -1001,7 +1000,7 @@ In addition to the Component properties, Container supports the
 following focus-related properties:
 
   <ol>
-    <li><code>downCycleFocusTraversalKeys</code>: the Container's Set of 
+    <li><code>downCycleFocusTraversalKeys</code>: the Container's Set of
         <code>DOWN_CYCLE_TRAVERSAL_KEYS</code>
     <li><code>focusTraversalPolicy</code>: the Container's focus
         traversal policy
@@ -1020,10 +1019,10 @@ Window will never see a <code>PropertyChangeEvent</code> for the
 <code>focusCycleRoot</code> property.
 A Window is always a focus cycle root; this property cannot change.
 <p>
-<a name="FocusAndVetoableChangeListener"></a>
+<a id="FocusAndVetoableChangeListener"></a>
 <h3>Focus and VetoableChangeListener</h3>
 <p>
-The <code>KeyboardFocusManager</code> also supports 
+The <code>KeyboardFocusManager</code> also supports
 <code>VetoableChangeListener</code>s for the following properties:
 
   <ol>
@@ -1054,13 +1053,13 @@ event, a <code>KeyboardFocusManager</code> is not required to search the
 <code>KeyboardFocusManager</code> is free to attempt to
 dispatch this event and it is the responsibility of the
 <code>VetoableChangeListener</code> to veto it as well. In addition,
-during processing of the <code>FOCUS_GAINED</code> event, the 
+during processing of the <code>FOCUS_GAINED</code> event, the
 <code>KeyboardFocusManager</code> may attempt to resync the global
 focus state by synthesizing another <code>FOCUS_LOST</code> event.
 This event must be vetoed just as the first <code>FOCUS_LOST</code> event was.
 <p>
-A <code>KeyboardFocusManager</code> may not hold any locks while 
-notifying <code>PropertyChangeListener</code>s of a state change. 
+A <code>KeyboardFocusManager</code> may not hold any locks while
+notifying <code>PropertyChangeListener</code>s of a state change.
 This requirement is relaxed for <code>VetoableChangeListeners</code>,
 however. Therefore, client-definied <code>VetoableChangeListener</code>s
 should avoid acquiring additional locks inside
@@ -1089,13 +1088,13 @@ to anticipate this situation could lead to an infinite cycle of
 vetoed focus changes and recovery attempts.
 
 
-<a name="ZOrder"></a>
+<a id="ZOrder"></a>
 <h3>Z-Order</h3>
 <p>
 On some native windowing systems, the Z-order of a Window can affect
-its focused or active (if applicable) state. On Microsoft Windows, the 
-top-most Window is naturally the focused Window as well. However, on 
-Solaris, many window managers use a point-to-focus model that ignores 
+its focused or active (if applicable) state. On Microsoft Windows, the
+top-most Window is naturally the focused Window as well. However, on
+Solaris, many window managers use a point-to-focus model that ignores
 Z-order in determining the focused Window.
 
 When focusing or activating Windows, the AWT adheres to the UI
@@ -1114,8 +1113,8 @@ is platform-dependent. In JDK 1.4, the behavior of these methods on
 Microsoft Windows and Solaris is as follows:
   <ul>
      <li><code>Window.toFront()</code>:<br>
-        <b>Microsoft Windows</b>: The Window is moved to front, if possible. 
-        While we will always be able to move this Window in front of other 
+        <b>Microsoft Windows</b>: The Window is moved to front, if possible.
+        While we will always be able to move this Window in front of other
         Windows in the same VM, Windows 98 and Windows 2000 do not allow an
         application to bring any of its windows to the front unless one
         of that application's windows is already in the foreground. In
@@ -1129,15 +1128,15 @@ Microsoft Windows and Solaris is as follows:
         window manager, the focused Window will remain unchanged.
 
      <li><code>Window.toBack()</code>:<br>
-        <b>Microsoft Windows</b>: The Window is moved to back. Note however 
-        that Microsoft Windows insists that an owned Window always be in 
-        front of all of its recursive owners. Thus, after the completion of 
-        this operation, the Window may not be the lowest Java Window in the 
-        Z-order. If the Window, or any of its owners, was the focused Window, 
+        <b>Microsoft Windows</b>: The Window is moved to back. Note however
+        that Microsoft Windows insists that an owned Window always be in
+        front of all of its recursive owners. Thus, after the completion of
+        this operation, the Window may not be the lowest Java Window in the
+        Z-order. If the Window, or any of its owners, was the focused Window,
         then the focused Window is reset to the top-most Window in the VM.
       <br>
-        <b>Solaris</b>: The Window is moved to back. Like Microsoft Windows, 
-        some window managers insist than an owned Window always be in front 
+        <b>Solaris</b>: The Window is moved to back. Like Microsoft Windows,
+        some window managers insist than an owned Window always be in front
         of all of its recursive owners. Thus, after the completion of this
         operation, the Window may not be the lowest Java Window in the
         Z-order. If the Window was the focused Window, it will lose
@@ -1156,7 +1155,7 @@ Microsoft Windows and Solaris is as follows:
 
      <li><code>Window.hide()/Window.setVisible(false)/Window.dispose()/
     Frame.setState(ICONIFIED)</code>:<br>
-        <b>Microsoft Windows</b>: If the Window was the focused Window, the focused 
+        <b>Microsoft Windows</b>: If the Window was the focused Window, the focused
         Window is reset to a window chosen by the OS, or to no window. The
         window may be in a native application, or a Java application in
         another VM.
@@ -1169,7 +1168,7 @@ Microsoft Windows and Solaris is as follows:
         application in another VM.
   </ul>
 
-<a name="ReplacingDefaultKeyboardFocusManager"></a>
+<a id="ReplacingDefaultKeyboardFocusManager"></a>
 <h3>Replacing DefaultKeyboardFocusManager</h3>
 <p>
 <code>KeyboardFocusManager</code>s are pluggable at the browser context
@@ -1238,7 +1237,7 @@ focused Window:
           heavyweight Container, not the focus owner.
       <li>A <code>FOCUS_LOST</code> event must be retargeted to the focus
           owner. Again, this is necessary because the peer layer is
-          unaware of lightweight Components. 
+          unaware of lightweight Components.
       <li>A <code>WINDOW_LOST_FOCUS</code> event must be retargeted to
           the focused Window. The implementation of the Window class
           may cause the native focused Window to differ from the Java
@@ -1269,7 +1268,7 @@ value just set. Rejections occur in three standard cases:
           to set the global focus owner to a non-focusable Component.
       <li>If the <code>KeyboardFocusManager</code> attempts
           to set the global focused Window to a non-focusable Window.
-      <li>If the change is rejected by an installed 
+      <li>If the change is rejected by an installed
           <code>VetoableChangeListener</code>.
     </ul>
 <p>
@@ -1302,13 +1301,13 @@ and VetoableChangeListener</a>.
           recent focus owner.
       <li>The <code>KeyboardFocusManager</code> must ensure that the
           opposite Component or Window are as accurate as the native
-          windowing platform permits. For example, the 
+          windowing platform permits. For example, the
           <code>KeyboardFocusManager</code> may need to
           retarget the opposite Component to a lightweight child of the
           heavyweight initially specified by the peer layer.
           <br>
           If the peer layer states that the opposite Component or Window is
-          <code>null</code>, it is acceptable for the 
+          <code>null</code>, it is acceptable for the
           <code>KeyboardFocusManager</code> to propagate
           this value. <code>null</code> indicates that it is highly
           probably that no other Component or Window was involved
@@ -1325,7 +1324,7 @@ and VetoableChangeListener</a>.
           events.
     </ul>
 
-<a name="Incompatibilities"></a>
+<a id="Incompatibilities"></a>
 <h3>Incompatibilities with Previous Releases</h3>
   <p><b>Cross-platform changes:</b>
     <ol>
@@ -1343,7 +1342,7 @@ and VetoableChangeListener</a>.
       <li>KeyListeners installed on <code>Component</code>s
           will no longer see <code>KeyEvent</code>s that map to focus
           traversal operations, and
-          <code>Component.handleEvent()</code> will no longer be invoked 
+          <code>Component.handleEvent()</code> will no longer be invoked
           for such events. Previously, AWT Components saw these events
           and had an opportunity to consume them before AWT
           initiated focus traversal. Code that requires this
@@ -1352,7 +1351,7 @@ and VetoableChangeListener</a>.
           itself. Alternately, the code can use an
           <code>AWTEventListener</code> or
           <code>KeyEventDispatcher</code> to pre-listen to all
-          <code>KeyEvent</code>s. 
+          <code>KeyEvent</code>s.
     </ol>
   <p><b>Changes specific to Microsoft Windows:</b>
     <ol>

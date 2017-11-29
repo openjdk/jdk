@@ -1,5 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>AWT Desktop Properties</title>
+</head>
 <!--
- Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -23,14 +29,9 @@
  questions.
 -->
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-<head>
-<title></title>
-</head>
-<body bgcolor=white>
+<body>
 
-<h1 align=center>AWT Desktop Properties</h1>
+<h1>AWT Desktop Properties</h1>
 
 The following refers to standard AWT desktop properties that
 may be obtained via the
@@ -76,7 +77,7 @@ here, and their value types.
 </table>
 
 <h2>Desktop Font Rendering Hints</h2>
-<b>Desktop Property: <A name="awt.font.desktophints">"awt.font.desktophints"</A></b>
+<b>Desktop Property: <a id="awt.font.desktophints">"awt.font.desktophints"</A></b>
 <p>
 Modern desktops support various forms of text antialiasing (font smoothing).
 <p>
@@ -116,7 +117,7 @@ An application can listen for changes in the property
 using a <a href="../../beans/PropertyChangeListener.html">
 <code>PropertyChangeListener</code></a> :
 <pre><code>
-tk.addPropertyChangeListener("awt.font.desktophints", pcl); 
+tk.addPropertyChangeListener("awt.font.desktophints", pcl);
 </code></pre>
 Listening for changes is recommended as users can, on rare occasions,
 reconfigure a desktop environment whilst applications are running
@@ -194,7 +195,7 @@ if (map != null) {
 and dynamic updates will not be available. This is a typical behaviour if
 the JDK does not recognise the desktop environment, or it is one which
 has no such settings. The <b>Headless</b> toolkit is one such example.
-Therefore it is important to test against null before using the map. 
+Therefore it is important to test against null before using the map.
 <br><br>
 <li>If non-null the value will be a <code>Map</code> of
 <code>RenderingHints</code> such that every key is an instance of
@@ -229,7 +230,7 @@ determine that there is a non-null return for any screen device using
 the per-device property name.
 </ul>
 <h2>Mouse Functionality</h2>
-<b>Desktop Property: <A name="sun.awt.enableExtraMouseButtons">"sun.awt.enableExtraMouseButtons"</A></b>
+<b>Desktop Property: <a id="sun.awt.enableExtraMouseButtons">"sun.awt.enableExtraMouseButtons"</A></b>
 <p>
 This property determines if events from extra mouse buttons (if they are exist and are
 enabled by the underlying operating system) are allowed to be processed and posted into
@@ -245,7 +246,7 @@ Once set on application startup, it is impossible to change this value after.
 Current value could also be queried using getDesktopProperty("sun.awt.enableExtraMouseButtons")
 method.
 <br>
-If the property is set to {@code true} then 
+If the property is set to {@code true} then
 <ul>
 <li> it is still legal to create {@code MouseEvent} objects with
 standard buttons and, if the mouse has more
@@ -256,13 +257,13 @@ from 0 up to {@link java.awt.MouseInfo#getNumberOfButtons() getNumberOfButtons()
 and {@code Robot.mouseRelease()} methods and, if the mouse has more then three buttons,
 it is also legal to use masks for existing extended mouse buttons.
 That way, if there are more then three buttons on the mouse then it is allowed to
-use button masks corresponding to the buttons 
+use button masks corresponding to the buttons
 in the range from 1 up to {@link java.awt.MouseInfo#getNumberOfButtons() getNumberOfButtons()}
 </ul>
 <br>
-If the property is set to {@code false} then 
+If the property is set to {@code false} then
 <ul>
-<li> it is legal to create {@code MouseEvent} objects with standard buttons 
+<li> it is legal to create {@code MouseEvent} objects with standard buttons
 only: {@code NOBUTTON}, {@code BUTTON1}, {@code BUTTON2} and
 {@code BUTTON3}
 <li> it is legal to use standard button masks only:

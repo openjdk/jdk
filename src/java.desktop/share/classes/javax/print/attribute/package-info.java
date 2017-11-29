@@ -80,7 +80,7 @@
  * attribute category, and the {@code Copies} instance represents the attribute
  * value.
  *
- * <h4><a name="role"></a>Attribute Roles</h4>
+ * <h4><a id="role"></a>Attribute Roles</h4>
  * When submitting a print job to a printer, the client provides the attributes
  * describing the characteristics of the print data, such as the document name,
  * and how the print data should be printed, such as double-sided, five copies.
