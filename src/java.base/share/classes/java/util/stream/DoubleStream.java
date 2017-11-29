@@ -1089,10 +1089,26 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * streams is parallel.  When the resulting stream is closed, the close
      * handlers for both input streams are invoked.
      *
+     * <p>This method operates on the two input streams and binds each stream
+     * to its source.  As a result subsequent modifications to an input stream
+     * source may not be reflected in the concatenated stream result.
+     *
      * @implNote
      * Use caution when constructing streams from repeated concatenation.
      * Accessing an element of a deeply concatenated stream can result in deep
      * call chains, or even {@code StackOverflowError}.
+     *
+     * @apiNote
+     * To preserve optimization opportunities this method binds each stream to
+     * its source and accepts only two streams as parameters.  For example, the
+     * exact size of the concatenated stream source can be computed if the exact
+     * size of each input stream source is known.
+     * To concatenate more streams without binding, or without nested calls to
+     * this method, try creating a stream of streams and flat-mapping with the
+     * identity function, for example:
+     * <pre>{@code
+     *     DoubleStream concat = Stream.of(s1, s2, s3, s4).flatMapToDouble(s -> s);
+     * }</pre>
      *
      * @param a the first stream
      * @param b the second stream
