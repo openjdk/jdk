@@ -43,7 +43,7 @@ import java.util.Set;
  * a class, it also contains information to (1) describe the public API;
  * (2) compare the public API of this class with another class;  (3) determine
  * whether or not it's a nested class and, if so, the name of the associated
- * top level class; and (4) for an canonically ordered set of classes determine
+ * outer class; and (4) for an canonically ordered set of classes determine
  * if the class versions are compatible.  A set of classes is canonically
  * ordered if the classes in the set have the same name, and the base class
  * precedes the versioned classes and if each versioned class with version
@@ -53,10 +53,13 @@ import java.util.Set;
 final class FingerPrint {
     private static final MessageDigest MD;
 
+    private final String basename;
+    private final String entryName;
+    private final int mrversion;
+
     private final byte[] sha1;
     private final ClassAttributes attrs;
     private final boolean isClassEntry;
-    private final String entryName;
 
     static {
         try {
@@ -67,16 +70,19 @@ final class FingerPrint {
         }
     }
 
-    public FingerPrint(String entryName,byte[] bytes) throws IOException {
+    public FingerPrint(String basename, String entryName, int mrversion, byte[] bytes)
+            throws IOException {
+        this.basename = basename;
         this.entryName = entryName;
-        if (entryName.endsWith(".class") && isCafeBabe(bytes)) {
+        this.mrversion = mrversion;
+        if (isCafeBabe(bytes)) {
             isClassEntry = true;
             sha1 = sha1(bytes, 8);  // skip magic number and major/minor version
             attrs = getClassAttributes(bytes);
         } else {
             isClassEntry = false;
-            sha1 = sha1(bytes);
-            attrs = new ClassAttributes();   // empty class
+            sha1 = null;
+            attrs = null;
         }
     }
 
@@ -107,14 +113,24 @@ final class FingerPrint {
         return attrs.equals(that.attrs);
     }
 
-    public String name() {
-        String name = attrs.name;
-        return name == null ? entryName : name;
+    public String basename() {
+        return basename;
     }
 
-    public String topLevelName() {
-        String name = attrs.topLevelName;
-        return name == null ? name() : name;
+    public String entryName() {
+        return entryName;
+    }
+
+    public String className() {
+        return attrs.name;
+    }
+
+    public int mrversion() {
+        return mrversion;
+    }
+
+    public String outerClassName() {
+        return attrs.outerClassName;
     }
 
     private byte[] sha1(byte[] entry) {
@@ -218,7 +234,7 @@ final class FingerPrint {
 
     private static final class ClassAttributes extends ClassVisitor {
         private String name;
-        private String topLevelName;
+        private String outerClassName;
         private String superName;
         private int version;
         private int access;
@@ -228,7 +244,7 @@ final class FingerPrint {
         private final Set<Method> methods = new HashSet<>();
 
         public ClassAttributes() {
-            super(Opcodes.ASM5);
+            super(Opcodes.ASM6);
         }
 
         private boolean isPublic(int access) {
@@ -250,7 +266,7 @@ final class FingerPrint {
         @Override
         public void visitOuterClass(String owner, String name, String desc) {
             if (!this.nestedClass) return;
-            this.topLevelName = owner;
+            this.outerClassName = owner;
         }
 
         @Override
@@ -259,7 +275,7 @@ final class FingerPrint {
             if (!this.nestedClass) return;
             if (outerName == null) return;
             if (!this.name.equals(name)) return;
-            if (this.topLevelName == null) this.topLevelName = outerName;
+            if (this.outerClassName == null) this.outerClassName = outerName;
         }
 
         @Override
@@ -294,7 +310,7 @@ final class FingerPrint {
 
         @Override
         public void visitEnd() {
-            this.nestedClass = this.topLevelName != null;
+            this.nestedClass = this.outerClassName != null;
         }
 
         @Override

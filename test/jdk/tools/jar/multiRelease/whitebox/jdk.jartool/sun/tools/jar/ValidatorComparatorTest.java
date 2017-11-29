@@ -29,7 +29,7 @@ package sun.tools.jar;
 
 import java.util.List;
 import static java.util.stream.Collectors.toList;
-import static sun.tools.jar.Validator.ENTRYNAME_COMPARATOR;
+import static sun.tools.jar.Main.ENTRYNAME_COMPARATOR;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
