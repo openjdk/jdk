@@ -282,6 +282,30 @@ public class StringConcatFactoryInvariants {
         // Advanced factory: public Lookup is rejected
         fail("Passing public Lookup",
                 () -> StringConcatFactory.makeConcatWithConstants(MethodHandles.publicLookup(), methodName, mtEmpty, recipeEmpty));
+
+        // Zero inputs
+        {
+            MethodType zero = MethodType.methodType(String.class);
+            CallSite cs = StringConcatFactory.makeConcat(lookup, methodName, zero);
+            test("", (String) cs.getTarget().invokeExact());
+
+            cs = StringConcatFactory.makeConcatWithConstants(lookup, methodName, zero, "");
+            test("", (String) cs.getTarget().invokeExact());
+        }
+
+        // One input
+        {
+            MethodType zero = MethodType.methodType(String.class);
+            MethodType one = MethodType.methodType(String.class, String.class);
+            CallSite cs = StringConcatFactory.makeConcat(lookup, methodName, one);
+            test("A", (String) cs.getTarget().invokeExact("A"));
+
+            cs = StringConcatFactory.makeConcatWithConstants(lookup, methodName, one, "\1");
+            test("A", (String) cs.getTarget().invokeExact("A"));
+
+            cs = StringConcatFactory.makeConcatWithConstants(lookup, methodName, zero, "\2", "A");
+            test("A", (String) cs.getTarget().invokeExact());
+        }
     }
 
     public static void ok(String msg, Callable runnable) {
