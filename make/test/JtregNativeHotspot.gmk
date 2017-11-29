@@ -79,6 +79,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/ModuleAwareAgents/ClassLoadPrepare \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/ModuleAwareAgents/ThreadStart \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/StartPhase/AllowedFunctions \
+    $(TOPDIR)/test/hotspot/jtreg/serviceability/dcmd/jvmti/AttachFailed \
     #
 
 # Add conditional directories here when needed.
@@ -110,6 +111,8 @@ ifeq ($(TOOLCHAIN_TYPE), solstudio)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAllowedFunctions := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libRedefineDoubleDelete := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libHandshakeTransitionTest := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libHasNoEntryPoint := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libReturnError := -lc
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
