@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
- *           8175218 8176452 8181215 8182263 8183511 8169819 8183037
+ *           8175218 8176452 8181215 8182263 8183511 8169819 8183037 8185369
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib
@@ -50,16 +50,6 @@ public class TestStylesheet extends JavadocTester {
         // TODO: most of this test seems a bit silly, since javadoc is simply
         // copying in the stylesheet from the source directory
         checkOutput("stylesheet.css", true,
-                "/* Javadoc style sheet */",
-                "/*\n"
-                + "Overall document style\n"
-                + "*/",
-                "/*\n"
-                + "Heading styles\n"
-                + "*/",
-                "/*\n"
-                + "Navigation bar styles\n"
-                + "*/",
                 "body {\n"
                 + "    background-color:#ffffff;\n"
                 + "    color:#353833;\n"
@@ -173,8 +163,8 @@ public class TestStylesheet extends JavadocTester {
                 + "    position:relative;\n"
                 + "    padding-top:129px;\n"
                 + "    margin-top:-129px;\n"
-                + "}\n"
-                + ".searchTagResult:before, .searchTagResult:target {\n"
+                + "}",
+                ".searchTagResult:before, .searchTagResult:target {\n"
                 + "    color:red;\n"
                 + "}",
                 "a[href]:hover, a[href]:focus {\n"
