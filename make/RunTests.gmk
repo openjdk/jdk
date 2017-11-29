@@ -32,8 +32,38 @@ include FindTests.gmk
 # We will always run multiple tests serially
 .NOTPARALLEL:
 
+################################################################################
+# Parse global control variables
+################################################################################
+
+ifneq ($(TEST_VM_OPTS), )
+  ifneq ($(TEST_OPTS), )
+    TEST_OPTS := $(TEST_OPTS);VM_OPTIONS=$(TEST_VM_OPTS)
+  else
+    TEST_OPTS := VM_OPTIONS=$(TEST_VM_OPTS)
+  endif
+endif
+
+$(eval $(call ParseKeywordVariable, TEST_OPTS, \
+    KEYWORDS := JOBS TIMEOUT, \
+    STRING_KEYWORDS := VM_OPTIONS, \
+))
+
+# Helper function to propagate TEST_OPTS values.
+#
+# Note: No spaces are allowed around the arguments.
+# Arg $1 The variable in TEST_OPTS to propagate
+# Arg $2 The control variable to propagate it to
+define SetTestOpt
+  ifneq ($$(TEST_OPTS_$1), )
+    $2_$1 := $$(TEST_OPTS_$1)
+  endif
+endef
+
+################################################################################
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, RunTests.gmk))
+################################################################################
 
 TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
 TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
@@ -49,6 +79,17 @@ endif
 # Parse control variables
 ################################################################################
 
+ifneq ($(TEST_OPTS), )
+  # Inform the user
+  $(info Running tests using TEST_OPTS control variable '$(TEST_OPTS)')
+
+  $(eval $(call SetTestOpt,VM_OPTIONS,JTREG))
+  $(eval $(call SetTestOpt,VM_OPTIONS,GTEST))
+
+  $(eval $(call SetTestOpt,JOBS,JTREG))
+  $(eval $(call SetTestOpt,TIMEOUT,JTREG))
+endif
+
 $(eval $(call ParseKeywordVariable, JTREG, \
     KEYWORDS := JOBS TIMEOUT TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM, \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS, \
@@ -61,7 +102,7 @@ endif
 
 $(eval $(call ParseKeywordVariable, GTEST, \
     KEYWORDS := REPEAT, \
-    STRING_KEYWORDS := OPTIONS, \
+    STRING_KEYWORDS := OPTIONS VM_OPTIONS, \
 ))
 
 ifneq ($(GTEST), )
@@ -281,7 +322,7 @@ define SetupRunGtestTestBody
 	    $$(FIXPATH) $$(TEST_IMAGE_DIR)/hotspot/gtest/server/gtestLauncher \
 	    -jdk $(JDK_IMAGE_DIR) $$($1_GTEST_FILTER) \
 	    --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \
-	    $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) \
+	    $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) $$(GTEST_VM_OPTIONS) \
 	    > >($(TEE) $$($1_TEST_RESULTS_DIR)/gtest.txt) || true )
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/gtest.txt
@@ -290,15 +331,24 @@ define SetupRunGtestTestBody
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
-	$$(eval $1_TOTAL := $$(shell $$(AWK) '/==========.* tests? from .* \
-	    test cases? ran/ { print $$$$2 }' $$($1_RESULT_FILE)))
-	$$(eval $1_PASSED := $$(shell $$(AWK) '/\[  PASSED  \] .* tests?./ \
-	    { print $$$$4 }' $$($1_RESULT_FILE)))
-	$$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
-	    listed below/ { print $$$$4 }' $$($1_RESULT_FILE)))
-	$$(if $$($1_FAILED), , $$(eval $1_FAILED := 0))
-	$$(eval $1_ERROR := $$(shell \
-	    $$(EXPR) $$($1_TOTAL) - $$($1_PASSED) - $$($1_FAILED)))
+	$$(if  $$(wildcard $$($1_RESULT_FILE)), \
+	  $$(eval $1_TOTAL := $$(shell $$(AWK) '/==========.* tests? from .* \
+	      test cases? ran/ { print $$$$2 }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_TOTAL), , $$(eval $1_TOTAL := 0)) \
+	  $$(eval $1_PASSED := $$(shell $$(AWK) '/\[  PASSED  \] .* tests?./ \
+	      { print $$$$4 }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
+	  $$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
+	      listed below/ { print $$$$4 }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
+	  $$(eval $1_ERROR := $$(shell \
+	      $$(EXPR) $$($1_TOTAL) - $$($1_PASSED) - $$($1_FAILED))) \
+	, \
+	  $$(eval $1_PASSED := 0) \
+	  $$(eval $1_FAILED := 0) \
+	  $$(eval $1_ERROR := 1) \
+	  $$(eval $1_TOTAL := 1) \
+	)
 
   $1: run-test-$1 parse-test-$1
 
