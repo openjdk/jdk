@@ -112,6 +112,9 @@ protected:
   // (gen-specific) roots processing.
   SubTasksDone* _process_strong_tasks;
 
+  GCMemoryManager* _young_manager;
+  GCMemoryManager* _old_manager;
+
   // Helper functions for allocation
   HeapWord* attempt_allocation(size_t size,
                                bool   is_tlab,

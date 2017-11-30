@@ -611,3 +611,7 @@ void CollectedHeap::initialize_reserved_region(HeapWord *start, HeapWord *end) {
   _reserved.set_start(start);
   _reserved.set_end(end);
 }
+
+void CollectedHeap::post_initialize() {
+  initialize_serviceability();
+}

@@ -143,6 +143,7 @@ char* GenCollectedHeap::allocate(size_t alignment,
 }
 
 void GenCollectedHeap::post_initialize() {
+  CollectedHeap::post_initialize();
   ref_processing_init();
   check_gen_kinds();
   DefNewGeneration* def_new_gen = (DefNewGeneration*)_young_gen;
@@ -270,7 +271,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   FormatBuffer<> title("Collect gen: %s", gen->short_name());
   GCTraceTime(Trace, gc, phases) t1(title);
   TraceCollectorStats tcs(gen->counters());
-  TraceMemoryManagerStats tmms(gen->kind(),gc_cause());
+  TraceMemoryManagerStats tmms(gen->gc_manager(), gc_cause());
 
   gen->stat_record()->invocations++;
   gen->stat_record()->accumulated_time.start();

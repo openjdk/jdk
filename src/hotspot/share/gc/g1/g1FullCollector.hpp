@@ -39,6 +39,7 @@ class G1CMBitMap;
 class G1FullGCMarker;
 class G1FullGCScope;
 class G1FullGCCompactionPoint;
+class GCMemoryManager;
 class ReferenceProcessor;
 
 // The G1FullCollector holds data associated with the current Full GC.
@@ -56,7 +57,7 @@ class G1FullCollector : StackObj {
   ReferenceProcessorIsAliveMutator _is_alive_mutator;
 
 public:
-  G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs);
+  G1FullCollector(G1CollectedHeap* heap, GCMemoryManager* memory_manager, bool explicit_gc, bool clear_soft_refs);
   ~G1FullCollector();
 
   void prepare_collection();

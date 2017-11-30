@@ -50,6 +50,7 @@
 #include "gc/shared/plab.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "memory/memRegion.hpp"
+#include "services/memoryManager.hpp"
 #include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -64,6 +65,7 @@ class GenerationSpec;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
 class G1ParScanThreadState;
+class MemoryPool;
 class ObjectClosure;
 class SpaceClosure;
 class CompactibleSpaceClosure;
@@ -149,6 +151,13 @@ private:
   WorkGang* _workers;
   G1CollectorPolicy* _collector_policy;
 
+  GCMemoryManager _memory_manager;
+  GCMemoryManager _full_gc_memory_manager;
+
+  MemoryPool* _eden_pool;
+  MemoryPool* _survivor_pool;
+  MemoryPool* _old_pool;
+
   static size_t _humongous_object_threshold_in_words;
 
   // The secondary free list which contains regions that have been
@@ -161,6 +170,8 @@ private:
 
   // It keeps track of the humongous regions.
   HeapRegionSet _humongous_set;
+
+  virtual void initialize_serviceability();
 
   void eagerly_reclaim_humongous_regions();
   // Start a new incremental collection set for the next pause.
@@ -1005,6 +1016,9 @@ public:
 
   // Adaptive size policy.  No such thing for g1.
   virtual AdaptiveSizePolicy* size_policy() { return NULL; }
+
+  virtual GrowableArray<GCMemoryManager*> memory_managers();
+  virtual GrowableArray<MemoryPool*> memory_pools();
 
   // The rem set and barrier set.
   G1RemSet* g1_rem_set() const { return _g1_rem_set; }

@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 
-G1FullGCScope::G1FullGCScope(bool explicit_gc, bool clear_soft) :
+G1FullGCScope::G1FullGCScope(GCMemoryManager* memory_manager, bool explicit_gc, bool clear_soft) :
     _rm(),
     _explicit_gc(explicit_gc),
     _g1h(G1CollectedHeap::heap()),
@@ -36,7 +36,7 @@ G1FullGCScope::G1FullGCScope(bool explicit_gc, bool clear_soft) :
     _active(),
     _cpu_time(),
     _soft_refs(clear_soft, _g1h->collector_policy()),
-    _memory_stats(true, _g1h->gc_cause()),
+    _memory_stats(memory_manager, _g1h->gc_cause()),
     _collector_stats(_g1h->g1mm()->full_collection_counters()),
     _heap_transition(_g1h) {
   _timer.register_gc_start();

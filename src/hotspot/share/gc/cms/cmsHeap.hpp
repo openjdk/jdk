@@ -29,9 +29,12 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
+#include "utilities/growableArray.hpp"
 
 class CLDClosure;
 class GenCollectorPolicy;
+class GCMemoryManager;
+class MemoryPool;
 class OopsInGenClosure;
 class outputStream;
 class StrongRootsScope;
@@ -80,6 +83,9 @@ public:
   void safepoint_synchronize_begin();
   void safepoint_synchronize_end();
 
+  virtual GrowableArray<GCMemoryManager*> memory_managers();
+  virtual GrowableArray<MemoryPool*> memory_pools();
+
   // If "young_gen_as_roots" is false, younger generations are
   // not scanned as roots; in this case, the caller must be arranging to
   // scan the younger generations itself.  (For example, a generation might
@@ -92,11 +98,18 @@ public:
                          OopsInGenClosure* root_closure,
                          CLDClosure* cld_closure);
 
+  GCMemoryManager* old_manager() const { return _old_manager; }
+
 private:
   WorkGang* _workers;
+  MemoryPool* _eden_pool;
+  MemoryPool* _survivor_pool;
+  MemoryPool* _old_pool;
 
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
+
+  virtual void initialize_serviceability();
 
   // Accessor for memory state verification support
   NOT_PRODUCT(
