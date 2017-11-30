@@ -1025,13 +1025,20 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                     return;
                 }
                 try {
+                    UncommonTrap unc = new UncommonTrap(Integer.parseInt(search(atts, "bci")),
+                            search(atts, "reason"),
+                            search(atts, "action"),
+                            bytecodes[current_bytecode]);
                     if (scopes.size() == 0) {
-                        reportInternalError("scope underflow");
+                        // There may be a dangling site not yet in scopes after a late_inline
+                        if (site != null) {
+                            site.add(unc);
+                        } else {
+                            reportInternalError("scope underflow");
+                        }
+                    } else {
+                        scopes.peek().add(unc);
                     }
-                    scopes.peek().add(new UncommonTrap(Integer.parseInt(search(atts, "bci")),
-                                                       search(atts, "reason"),
-                                                       search(atts, "action"),
-                                                       bytecodes[current_bytecode]));
                 } catch (Error e) {
                     e.printStackTrace();
                 }
