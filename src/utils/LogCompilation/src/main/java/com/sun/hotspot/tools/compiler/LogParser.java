@@ -632,7 +632,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
 
     /**
      * Entry point for log file parsing with a file reader.
-     * {@see #parse(String,boolean)}
+     * {@link #parse(String,boolean)}
      */
     public static ArrayList<LogEvent> parse(Reader reader, boolean cleanup) throws Exception {
         // Create the XML input factory
@@ -825,7 +825,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
      * an {@linkplain #site initial scope} with a bogus bytecode index and the
      * right inline ID, and push the scope with the inline ID attached. Note
      * that most of late inlining processing happens in
-     * {@link #endElement()}.</li>
+     * {@link #endElement(String,String,String)}.</li>
      * <li><b>jvms:</b> record a {@linkplain Jvms JVMState}. Depending on the
      * context in which this event is encountered, this can mean adding
      * information to the currently being processed trap, lock elimination, or
@@ -1182,11 +1182,11 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
      * {@code true} here. (It will be reset when parsing the inlined methods is
      * done; this happens for the successful case in this method as well, when
      * {@code parse} elements are processed; and for inlining failures, in
-     * {@link #startElement()}, when {@code inline_fail} elements are
+     * {@link #startElement(String,String,String,Attributes)}, when {@code inline_fail} elements are
      * processed.)</li>
      * <li><b>task:</b> perform cleanup at the end of a compilation. Note that
      * the explicit {@code task_done} event is handled in
-     * {@link #startElement()}.</li>
+     * {@link #startElement(String,String,String,Attributes)}.</li>
      * </ul>
      */
     @Override
