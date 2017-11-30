@@ -152,13 +152,10 @@ final class Validator {
     public void validateBase(Map<String, FingerPrint> fps) {
         fps.values().forEach( fp -> {
             if (!checkClassName(fp)) {
-                isValid = false;
                 return;
             }
             if (fp.isNestedClass()) {
-                if (!checkNestedClass(fp, fps)) {
-                    isValid = false;
-                }
+                checkNestedClass(fp, fps);
             }
             classes.put(fp.className(), fp);
         });
@@ -178,9 +175,7 @@ final class Validator {
             if (matchFp == null) {
                 // no match found
                 if (fp.isNestedClass()) {
-                    if (!checkNestedClass(fp, fps)) {
-                        isValid = false;
-                    }
+                    checkNestedClass(fp, fps);
                     return;
                 }
                 if (fp.isPublicClass()) {
@@ -205,9 +200,7 @@ final class Validator {
 
             // ok, not identical, check for compatible class version and api
             if (fp.isNestedClass()) {
-                if (!checkNestedClass(fp, fps)) {
-                    isValid = false;
-                }
+                checkNestedClass(fp, fps);
                 return;    // fall through, need check nested public class??
             }
             if (!fp.isCompatibleVersion(matchFp)) {
@@ -221,7 +214,6 @@ final class Validator {
                 return;
             }
             if (!checkClassName(fp)) {
-                isValid = false;
                 return;
             }
             classes.put(fp.className(), fp);
@@ -320,7 +312,7 @@ final class Validator {
         }
         error(formatMsg2("error.validator.names.mismatch",
                          fp.entryName(), fp.className().replace("/", ".")));
-        return false;
+        return isValid = false;
     }
 
     private boolean checkNestedClass(FingerPrint fp, Map<String, FingerPrint> outerClasses) {
@@ -328,8 +320,9 @@ final class Validator {
             return true;
         }
         // outer class was not available
+
         error(formatMsg("error.validator.isolated.nested.class", fp.entryName()));
-        return false;
+        return isValid = false;
     }
 
     private boolean isConcealed(String className) {
