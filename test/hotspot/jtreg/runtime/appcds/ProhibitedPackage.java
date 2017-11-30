@@ -55,11 +55,9 @@ public class ProhibitedPackage {
 
             // Make sure a class in a prohibited package for a custom loader
             // will be ignored during dumping.
-            TestCommon.dump(appJar,
-                            classlist,
-                            "-XX:+PrintSystemDictionaryAtExit")
+            TestCommon.dump(appJar,  classlist, "-Xlog:cds")
                 .shouldContain("Dumping")
-                .shouldNotContain("java.lang.Prohibited")
+                .shouldContain("[cds] Prohibited package for non-bootstrap classes: java/lang/Prohibited.class")
                 .shouldHaveExitValue(0);
         }
 
@@ -68,9 +66,9 @@ public class ProhibitedPackage {
         // will be ignored during dumping.
         TestCommon.dump(appJar,
                         TestCommon.list("java/lang/Prohibited", "ProhibitedHelper"),
-                        "-XX:+PrintSystemDictionaryAtExit")
+                        "-Xlog:class+load")
             .shouldContain("Dumping")
-            .shouldNotContain("java.lang.Prohibited")
+            .shouldNotContain("[info][class,load] java.lang.Prohibited source: ")
             .shouldHaveExitValue(0);
 
         // Try loading the class in a prohibited package with various -Xshare

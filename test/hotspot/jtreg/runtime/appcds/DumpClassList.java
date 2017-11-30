@@ -93,11 +93,11 @@ public class DumpClassList {
         output = TestCommon.createArchive(appJar, appClass,
                                           "-Xbootclasspath/a:" + appendJar,
                                           "-XX:+UnlockDiagnosticVMOptions",
-                                          "-XX:+PrintSystemDictionaryAtExit",
+                                          "-Xlog:class+load",
                                           "-XX:SharedClassListFile=" + classList);
         TestCommon.checkDump(output)
             .shouldNotContain("Preload Warning: Cannot find java/lang/invoke/LambdaForm")
             .shouldNotContain("Preload Warning: Cannot find boot/append/Foo")
-            .shouldContain("boot.append.Foo, loader <shared, not restored>");
+            .shouldContain("[info][class,load] boot.append.Foo");
     }
 }
