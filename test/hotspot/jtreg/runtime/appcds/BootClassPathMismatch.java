@@ -52,6 +52,7 @@ public class BootClassPathMismatch {
 
         BootClassPathMismatch test = new BootClassPathMismatch();
         test.testBootClassPathMismatch();
+        test.testBootClassPathMismatch2();
         test.testBootClassPathMatch();
     }
 
@@ -68,6 +69,26 @@ public class BootClassPathMismatch {
         String otherJar = testDir + File.separator + "hello.jar";
         OutputAnalyzer execOutput = TestCommon.exec(
             appJar, "-verbose:class", "-Xbootclasspath/a:" + otherJar, "Hello");
+        try {
+            TestCommon.checkExec(execOutput, mismatchMessage);
+        } catch (java.lang.RuntimeException re) {
+          String cause = re.getMessage();
+          if (!mismatchMessage.equals(cause)) {
+              throw re;
+          }
+        }
+    }
+
+    /* Error should be detected if:
+     * dump time: <no bootclasspath specified>
+     * run-time : -Xbootclasspath/a:${testdir}/hello.jar
+     */
+    public void testBootClassPathMismatch2() throws Exception {
+        String appJar = JarBuilder.getOrCreateHelloJar();
+        String appClasses[] = {"Hello"};
+        OutputAnalyzer dumpOutput = TestCommon.dump(appJar, appClasses);
+        OutputAnalyzer execOutput = TestCommon.exec(
+            appJar, "-verbose:class", "-Xbootclasspath/a:" + appJar, "Hello");
         try {
             TestCommon.checkExec(execOutput, mismatchMessage);
         } catch (java.lang.RuntimeException re) {
