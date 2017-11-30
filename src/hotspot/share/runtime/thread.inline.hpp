@@ -212,34 +212,8 @@ inline void JavaThread::set_terminated_value() {
   OrderAccess::release_store((volatile jint *) &_terminated, (jint) _thread_terminated);
 }
 
-inline ThreadsList* Threads::get_smr_java_thread_list() {
-  return (ThreadsList*)OrderAccess::load_acquire(&_smr_java_thread_list);
-}
-
-inline ThreadsList* Threads::xchg_smr_java_thread_list(ThreadsList* new_list) {
-  return (ThreadsList*)Atomic::xchg(new_list, &_smr_java_thread_list);
-}
-
-inline void Threads::inc_smr_deleted_thread_cnt() {
-  Atomic::inc(&_smr_deleted_thread_cnt);
-}
-
-inline void Threads::update_smr_deleted_thread_time_max(uint new_value) {
-  while (true) {
-    uint cur_value = _smr_deleted_thread_time_max;
-    if (new_value <= cur_value) {
-      // No need to update max value so we're done.
-      break;
-    }
-    if (Atomic::cmpxchg(new_value, &_smr_deleted_thread_time_max, cur_value) == cur_value) {
-      // Updated max value so we're done. Otherwise try it all again.
-      break;
-    }
-  }
-}
-
-inline void Threads::add_smr_deleted_thread_times(uint add_value) {
-  Atomic::add(add_value, &_smr_deleted_thread_times);
+inline void Threads::add_smr_tlh_times(uint add_value) {
+  Atomic::add(add_value, &_smr_tlh_times);
 }
 
 inline void Threads::inc_smr_tlh_cnt() {
@@ -258,10 +232,6 @@ inline void Threads::update_smr_tlh_time_max(uint new_value) {
       break;
     }
   }
-}
-
-inline void Threads::add_smr_tlh_times(uint add_value) {
-  Atomic::add(add_value, &_smr_tlh_times);
 }
 
 #endif // SHARE_VM_RUNTIME_THREAD_INLINE_HPP
