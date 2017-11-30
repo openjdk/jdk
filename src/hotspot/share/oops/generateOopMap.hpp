@@ -26,7 +26,7 @@
 #define SHARE_VM_OOPS_GENERATEOOPMAP_HPP
 
 #include "interpreter/bytecodeStream.hpp"
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -57,7 +57,7 @@ class RetTableEntry : public ResourceObj {
   GrowableArray<intptr_t> * _jsrs;                     // List of return addresses  (bytecode index)
   RetTableEntry *_next;                           // Link to next entry
  public:
-   RetTableEntry(int target, RetTableEntry *next)  { _target_bci=target; _jsrs = new GrowableArray<intptr_t>(_init_nof_jsrs); _next = next;  }
+   RetTableEntry(int target, RetTableEntry *next);
 
   // Query
   int target_bci() const                      { return _target_bci; }

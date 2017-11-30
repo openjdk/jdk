@@ -272,9 +272,11 @@ void ClassListParser::error(const char *msg, ...) {
 // This function is used for loading classes for customized class loaders
 // during archive dumping.
 InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS) {
-#if !((defined(LINUX) && defined(X86) && defined(_LP64)) || \
-      (defined(SOLARIS) && defined(_LP64)))
-  // The only supported platforms are: (1) Linux/AMD64; (2) Solaris/64-bit
+#if !(defined(_LP64) && (defined(LINUX)|| defined(SOLARIS) || defined(AIX)))
+  // The only supported platforms are: (1) Linux/64-bit; (2) Solaris/64-bit; (3) AIX/64-bit
+  //
+  // This #if condition should be in sync with the areCustomLoadersSupportedForCDS
+  // method in test/lib/jdk/test/lib/Platform.java.
   error("AppCDS custom class loaders not supported on this platform");
 #endif
 

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/cms/gSpaceCounters.hpp"
 #include "gc/shared/generation.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/macros.hpp"
 
@@ -70,4 +71,8 @@ GSpaceCounters::GSpaceCounters(const char* name, int ordinal, size_t max_size,
     PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_Bytes,
                                      _gen->capacity(), CHECK);
   }
+}
+
+GSpaceCounters::~GSpaceCounters() {
+  if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
 }

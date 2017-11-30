@@ -4083,7 +4083,11 @@ public:
   diagnostic(bool, CompilerDirectivesPrint, false,                          \
              "Print compiler directives on installation.")                  \
   diagnostic(int,  CompilerDirectivesLimit, 50,                             \
-             "Limit on number of compiler directives.")
+             "Limit on number of compiler directives.")                     \
+                                                                            \
+  product(ccstr, AllocateHeapAt, NULL,                                      \
+          "Path to the directoy where a temporary file will be created "    \
+          "to use as the backing store for Java Heap.")
 
 
 /*

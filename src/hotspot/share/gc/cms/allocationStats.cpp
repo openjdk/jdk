@@ -30,3 +30,20 @@
 // Technically this should be derived from machine speed, and
 // ideally it would be dynamically adjusted.
 float AllocationStats::_threshold = ((float)CMS_SweepTimerThresholdMillis)/1000;
+
+void AllocationStats::initialize(bool split_birth)   {
+  AdaptivePaddedAverage* dummy =
+    new (&_demand_rate_estimate) AdaptivePaddedAverage(CMS_FLSWeight,
+                                                       CMS_FLSPadding);
+  _desired = 0;
+  _coal_desired = 0;
+  _surplus = 0;
+  _bfr_surp = 0;
+  _prev_sweep = 0;
+  _before_sweep = 0;
+  _coal_births = 0;
+  _coal_deaths = 0;
+  _split_births = (split_birth ? 1 : 0);
+  _split_deaths = 0;
+  _returned_bytes = 0;
+}

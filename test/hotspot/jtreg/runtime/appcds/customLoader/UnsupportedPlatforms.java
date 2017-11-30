@@ -25,9 +25,9 @@
 /*
  * @test
  * @summary Ensure that support for AppCDS custom class loaders are not enabled on unsupported platforms.
- * The only supported platforms are Linux/AMD64 and 64-bit Solaris.
  * (NOTE: AppCDS does not support uncompressed oops)
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -55,8 +55,7 @@ public class UnsupportedPlatforms {
 
         OutputAnalyzer out = TestCommon.dump(appJar, classlist);
 
-        if ((Platform.isSolaris() && Platform.is64bit()) ||
-            (Platform.isLinux() && Platform.isX64())) {
+        if (Platform.areCustomLoadersSupportedForCDS()) {
             out.shouldNotContain(PLATFORM_NOT_SUPPORTED_WARNING);
             out.shouldHaveExitValue(0);
         } else {

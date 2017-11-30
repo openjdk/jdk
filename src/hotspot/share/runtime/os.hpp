@@ -108,8 +108,9 @@ class os: AllStatic {
   }
 
   static char*  pd_reserve_memory(size_t bytes, char* addr = 0,
-                               size_t alignment_hint = 0);
+                                  size_t alignment_hint = 0);
   static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr);
+  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc);
   static void   pd_split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
@@ -310,11 +311,11 @@ class os: AllStatic {
 
   static int    vm_allocation_granularity();
   static char*  reserve_memory(size_t bytes, char* addr = 0,
-                               size_t alignment_hint = 0);
+                               size_t alignment_hint = 0, int file_desc = -1);
   static char*  reserve_memory(size_t bytes, char* addr,
                                size_t alignment_hint, MEMFLAGS flags);
-  static char*  reserve_memory_aligned(size_t size, size_t alignment);
-  static char*  attempt_reserve_memory_at(size_t bytes, char* addr);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment, int file_desc = -1);
+  static char*  attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc = -1);
   static void   split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
@@ -345,6 +346,14 @@ class os: AllStatic {
   static bool   create_stack_guard_pages(char* addr, size_t bytes);
   static bool   pd_create_stack_guard_pages(char* addr, size_t bytes);
   static bool   remove_stack_guard_pages(char* addr, size_t bytes);
+  // Helper function to create a new file with template jvmheap.XXXXXX.
+  // Returns a valid fd on success or else returns -1
+  static int create_file_for_heap(const char* dir);
+  // Map memory to the file referred by fd. This function is slightly different from map_memory()
+  // and is added to be used for implementation of -XX:AllocateHeapAt
+  static char* map_memory_to_file(char* base, size_t size, int fd);
+  // Replace existing reserved memory with file mapping
+  static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,

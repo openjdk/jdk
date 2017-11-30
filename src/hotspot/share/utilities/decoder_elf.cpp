@@ -26,6 +26,7 @@
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 #include "decoder_elf.hpp"
+#include "memory/allocation.inline.hpp"
 
 ElfDecoder::~ElfDecoder() {
   if (_opened_elf_files != NULL) {

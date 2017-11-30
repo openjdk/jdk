@@ -53,6 +53,7 @@ requires.properties= \
     vm.rtm.os \
     vm.aot \
     vm.cds \
+    vm.cds.custom.loaders \
     vm.graal.enabled \
     docker.support
 
