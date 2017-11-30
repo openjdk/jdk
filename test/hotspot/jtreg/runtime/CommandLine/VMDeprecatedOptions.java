@@ -50,7 +50,7 @@ public class VMDeprecatedOptions {
         {"FastTLABRefill",            "false"},
         {"DeferPollingPageLoopCount", "-1"},
         {"SafepointSpinBeforeYield",  "2000"},
-        {"DeferPollingPageLoopCount", "4000"},
+        {"DeferThrSuspendLoopCount",  "4000"},
 
         // deprecated alias flags (see also aliased_jvm_flags):
         {"DefaultMaxRAMFraction", "4"},
