@@ -5157,8 +5157,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register gxp  = G1;   // Need to use global registers across RWs.
     const Register gyp  = G2;
     const Register gzp  = G3;
-    const Register offs = G4;
-    const Register disp = G5;
+    const Register disp = G4;
+    const Register offs = G5;
 
     __ mov(xptr, gxp);
     __ mov(yptr, gyp);
@@ -5569,8 +5569,8 @@ class StubGenerator: public StubCodeGenerator {
     // for (int i = xn; i >= 0; i--)
     __ bind(L_loop_i);
 
-    __ cmp_and_br_short(xpc, xp,// i >= 0
-                        Assembler::less, Assembler::pn, L_exit_loop_i);
+    __ cmp_and_brx_short(xpc, xp,// i >= 0
+                         Assembler::lessUnsigned, Assembler::pn, L_exit_loop_i);
     __ lduw(xpc, 0, rt);        // u64 x = xp[i]
     __ lduw(xpc, 4, rx);        //   ...
     __ sllx(rt, 32, rt);
@@ -5598,8 +5598,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(L_loop_j);
 
-    __ cmp_and_br_short(ypc, yp,// j >= 0
-                        Assembler::less, Assembler::pn, L_exit);
+    __ cmp_and_brx_short(ypc, yp,// j >= 0
+                         Assembler::lessUnsigned, Assembler::pn, L_exit);
     __ clr(rc);                 // u64 c = 0
     __ lduw(ypc, 0, rt);        // u64 y = yp[j] (= *ypc)
     __ lduw(ypc, 4, ry);        //   ...
@@ -5615,8 +5615,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(L_loop_i2);
 
-    __ cmp_and_br_short(xpc, xp,// i >= 0
-                        Assembler::less, Assembler::pn, L_exit_loop_i2);
+    __ cmp_and_brx_short(xpc, xp,// i >= 0
+                         Assembler::lessUnsigned, Assembler::pn, L_exit_loop_i2);
     __ lduw(xpc, 0, rt);        // u64 x = xp[i] (= *xpc)
     __ lduw(xpc, 4, rx);        //   ...
     __ sllx(rt, 32, rt);
