@@ -438,14 +438,14 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
                                             basic_lock_sp_offset, oop_maps);
     NOT_PRODUCT(if (nm != NULL)  native_nmethod_stats.note_native_nmethod(nm));
   }
-  // verify nmethod
-  debug_only(if (nm) nm->verify();) // might block
 
   if (nm != NULL) {
-    nm->log_new_nmethod();
-  }
+    // verify nmethod
+    debug_only(nm->verify();) // might block
 
-  nm->make_in_use();
+    nm->log_new_nmethod();
+    nm->make_in_use();
+  }
   return nm;
 }
 
