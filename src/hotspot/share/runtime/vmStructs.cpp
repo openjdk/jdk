@@ -1534,6 +1534,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(PerfDataPrologue*)                                \
   declare_toplevel_type(PerfDataEntry)                                    \
   declare_toplevel_type(PerfMemory)                                       \
+  declare_type(PerfData, CHeapObj<mtInternal>)                            \
                                                                           \
   /*********************************/                                     \
   /* SymbolTable, SystemDictionary */                                     \
@@ -2481,6 +2482,12 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_constant(InstanceKlass::inner_class_access_flags_offset)        \
   declare_constant(InstanceKlass::inner_class_next_offset)                \
                                                                           \
+  /*****************************************************/                 \
+  /* InstanceKlass EnclosingMethodAttributeOffset enum */                 \
+  /*****************************************************/                 \
+                                                                          \
+  declare_constant(InstanceKlass::enclosing_method_attribute_size)        \
+                                                                          \
   /*********************************/                                     \
   /* InstanceKlass ClassState enum */                                     \
   /*********************************/                                     \
@@ -2733,6 +2740,21 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_preprocessor_constant("REG_COUNT", REG_COUNT)                \
   declare_c2_preprocessor_constant("SAVED_ON_ENTRY_REG_COUNT", SAVED_ON_ENTRY_REG_COUNT) \
   declare_c2_preprocessor_constant("C_SAVED_ON_ENTRY_REG_COUNT", C_SAVED_ON_ENTRY_REG_COUNT) \
+                                                                          \
+  /************/                                                          \
+  /* PerfData */                                                          \
+  /************/                                                          \
+                                                                          \
+  /***********************/                                               \
+  /* PerfData Units enum */                                               \
+  /***********************/                                               \
+                                                                          \
+  declare_constant(PerfData::U_None)                                      \
+  declare_constant(PerfData::U_Bytes)                                     \
+  declare_constant(PerfData::U_Ticks)                                     \
+  declare_constant(PerfData::U_Events)                                    \
+  declare_constant(PerfData::U_String)                                    \
+  declare_constant(PerfData::U_Hertz)                                     \
                                                                           \
   /****************/                                                      \
   /* JVMCI */                                                             \

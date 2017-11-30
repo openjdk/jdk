@@ -245,6 +245,7 @@ class PerfData : public CHeapObj<mtInternal> {
 
   friend class StatSampler;      // for access to protected void sample()
   friend class PerfDataManager;  // for access to protected destructor
+  friend class VMStructs;
 
   public:
 
