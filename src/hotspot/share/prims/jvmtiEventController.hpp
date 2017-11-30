@@ -27,7 +27,6 @@
 
 #include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // forward declaration

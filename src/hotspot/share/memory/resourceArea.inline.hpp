@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,22 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/gcStats.hpp"
-#include "gc/shared/gcUtil.inline.hpp"
+#ifndef SHARE_VM_MEMORY_RESOURCEAREA_INLINE_HPP
+#define SHARE_VM_MEMORY_RESOURCEAREA_INLINE_HPP
 
-GCStats::GCStats() {
-    _avg_promoted       = new AdaptivePaddedNoZeroDevAverage(
-                                                  AdaptiveSizePolicyWeight,
-                                                  PromotedPadding);
+#include "memory/resourceArea.hpp"
+
+inline char* ResourceArea::allocate_bytes(size_t size, AllocFailType alloc_failmode) {
+#ifdef ASSERT
+  if (_nesting < 1 && !_warned++)
+    fatal("memory leak: allocating without ResourceMark");
+  if (UseMallocOnly) {
+    // use malloc, but save pointer in res. area for later freeing
+    char** save = (char**)internal_malloc_4(sizeof(char*));
+    return (*save = (char*)os::malloc(size, mtThread, CURRENT_PC));
+  }
+#endif
+  return (char*)Amalloc(size, alloc_failmode);
 }
 
-CMSGCStats::CMSGCStats() {
-    _avg_promoted       = new AdaptivePaddedNoZeroDevAverage(
-                                                  CMSExpAvgFactor,
-                                                  PromotedPadding);
-}
+#endif // SHARE_VM_MEMORY_RESOURCEAREA_INLINE_HPP

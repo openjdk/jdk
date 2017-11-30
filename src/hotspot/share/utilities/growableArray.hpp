@@ -26,9 +26,9 @@
 #define SHARE_VM_UTILITIES_GROWABLEARRAY_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 // A growable array.
 
@@ -144,6 +144,8 @@ class GenericGrowableArray : public ResourceObj {
     assert(on_stack(), "fast ResourceObj path only");
     return (void*)resource_allocate_bytes(thread, elementSize * _max);
   }
+
+  void free_C_heap(void* elements);
 };
 
 template<class E> class GrowableArrayIterator;
@@ -451,7 +453,7 @@ template<class E> void GrowableArray<E>::grow(int j) {
     for (     ; i < _max; i++) ::new ((void*)&newData[i]) E();
     for (i = 0; i < old_max; i++) _data[i].~E();
     if (on_C_heap() && _data != NULL) {
-      FreeHeap(_data);
+      free_C_heap(_data);
     }
     _data = newData;
 }
@@ -475,7 +477,7 @@ template<class E> void GrowableArray<E>::clear_and_deallocate() {
     clear();
     if (_data != NULL) {
       for (int i = 0; i < _max; i++) _data[i].~E();
-      FreeHeap(_data);
+      free_C_heap(_data);
       _data = NULL;
     }
 }

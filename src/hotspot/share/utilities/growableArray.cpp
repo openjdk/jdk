@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/growableArray.hpp"
@@ -55,4 +56,8 @@ void* GenericGrowableArray::raw_allocate(int elementSize) {
   } else {
     return _arena->Amalloc(byte_size);
   }
+}
+
+void GenericGrowableArray::free_C_heap(void* elements) {
+  FreeHeap(elements);
 }

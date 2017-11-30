@@ -34,6 +34,18 @@
 #include "runtime/arguments.hpp"
 #include "utilities/ostream.hpp"
 
+SharedPathsMiscInfo::SharedPathsMiscInfo() {
+  _buf_size = INITIAL_BUF_SIZE;
+  _cur_ptr = _buf_start = NEW_C_HEAP_ARRAY(char, _buf_size, mtClass);
+  _allocated = true;
+}
+
+SharedPathsMiscInfo::~SharedPathsMiscInfo() {
+  if (_allocated) {
+    FREE_C_HEAP_ARRAY(char, _buf_start);
+  }
+}
+
 void SharedPathsMiscInfo::add_path(const char* path, int type) {
   log_info(class, path)("type=%s ", type_name(type));
   ClassLoader::trace_class_path("add misc shared path ", path);
