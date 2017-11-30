@@ -43,6 +43,7 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 
@@ -571,6 +572,7 @@ public class TagletManager {
         return serializedFormTags;
     }
 
+    @SuppressWarnings("fallthrough")
     /**
      * Returns the custom tags for a given element.
      *
@@ -597,7 +599,17 @@ public class TagletManager {
             case PACKAGE:
                 return getPackageCustomTaglets();
             case OTHER:
-                return getOverviewCustomTaglets();
+                if (e instanceof DocletElement) {
+                    DocletElement de = (DocletElement)e;
+                    switch (de.getSubKind()) {
+                        case DOCFILE:
+                            return getPackageCustomTaglets();
+                        case OVERVIEW:
+                            return getOverviewCustomTaglets();
+                        default:
+                            // fall through
+                    }
+                }
             default:
                 throw new AssertionError("unknown element: " + e + " ,kind: " + e.getKind());
         }

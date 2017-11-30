@@ -151,6 +151,11 @@ class StandardDocFileFactory extends DocFileFactory {
             this.file = newFile(getDestDir(), path.getPath());
         }
 
+        @Override
+        public FileObject getFileObject()  {
+            return getJavaFileObjectForInput(file);
+        }
+
         /**
          * Open an input stream for the file.
          *

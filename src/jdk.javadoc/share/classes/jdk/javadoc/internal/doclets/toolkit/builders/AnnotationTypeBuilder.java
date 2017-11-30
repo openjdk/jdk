@@ -30,6 +30,7 @@ import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 
 
@@ -132,7 +133,10 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
             //Only copy doc files dir if the containing package is not
             //documented AND if we have not documented a class from the same
             //package already. Otherwise, we are making duplicate copies.
-            utils.copyDocFiles(containingPackage);
+            DocFilesHandler docFilesHandler = configuration
+                    .getWriterFactory()
+                    .getDocFilesHandler(containingPackage);
+            docFilesHandler.copyDocFiles();
             containingPackagesSeen.add(containingPackage);
         }
     }

@@ -32,6 +32,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 
@@ -122,7 +123,10 @@ public class PackageSummaryBuilder extends AbstractBuilder {
 
         packageWriter.addPackageFooter(contentTree);
         packageWriter.printDocument(contentTree);
-        utils.copyDocFiles(packageElement);
+        DocFilesHandler docFilesHandler = configuration
+                .getWriterFactory()
+                .getDocFilesHandler(packageElement);
+        docFilesHandler.copyDocFiles();
     }
 
     /**
