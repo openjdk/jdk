@@ -51,7 +51,7 @@ public class TestMutuallyExclusivePlatformPredicates {
         VM_TYPE("isClient", "isServer", "isGraal", "isMinimal", "isZero", "isEmbedded"),
         MODE("isInt", "isMixed", "isComp"),
         IGNORED("isEmulatedClient", "isDebugBuild", "isFastDebugBuild", "isSlowDebugBuild",
-                "shouldSAAttach", "isTieredSupported");
+                "shouldSAAttach", "isTieredSupported", "areCustomLoadersSupportedForCDS");
 
         public final List<String> methodNames;
 
@@ -106,7 +106,7 @@ public class TestMutuallyExclusivePlatformPredicates {
                     && m.getReturnType() == boolean.class) {
                 Asserts.assertTrue(allMethods.contains(m.getName()),
                         "All Platform's methods with signature '():Z' should "
-                                + "be tested ");
+                                + "be tested. Missing: " + m.getName());
             }
         }
     }
