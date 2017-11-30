@@ -74,10 +74,12 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.SerialFieldTree;
+import com.sun.source.doctree.StartElementTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
+import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
@@ -265,97 +267,7 @@ public class Utils {
         return getEnclosingTypeElement(e) == null || isStatic(e);
     }
 
-    /**
-     * Copy doc-files directory and its contents from the source
-     * package directory to the generated documentation directory.
-     * For example, given a package java.lang, this method will copy
-     * the doc-files directory, found in the package directory to the
-     * generated documentation hierarchy.
-     *
-     * @param pe the package containing the doc files to be copied
-     * @throws DocFileIOException if there is a problem while copying
-     *         the documentation files
-     */
-    public void copyDocFiles(PackageElement pe) throws DocFileIOException {
-        Location sourceLoc = getLocationForPackage(pe);
-        copyDirectory(sourceLoc, DocPath.forPackage(pe).resolve(DocPaths.DOC_FILES));
-    }
-
-    /**
-     * Copy the given directory contents from the source package directory
-     * to the generated documentation directory. For example, given a package
-     * java.lang, this method will copy the entire directory, to the generated
-     * documentation hierarchy.
-     *
-     * @param pe the package containing the directory to be copied
-     * @param dir the directory to be copied
-     * @throws DocFileIOException if there is a problem while copying
-     *         the documentation files
-     */
-    public void copyDirectory(PackageElement pe, DocPath dir) throws DocFileIOException {
-        copyDirectory(getLocationForPackage(pe), dir);
-    }
-
-    /**
-     * Copy the given directory and its contents from the source
-     * module directory to the generated documentation directory.
-     * For example, given a package java.lang, this method will
-     * copy the entire directory, to the generated documentation
-     * hierarchy.
-     *
-     * @param mdle the module containing the directory to be copied
-     * @param dir the directory to be copied
-     * @throws DocFileIOException if there is a problem while copying
-     *         the documentation files
-     */
-    public void copyDirectory(ModuleElement mdle, DocPath dir) throws DocFileIOException  {
-        copyDirectory(getLocationForModule(mdle), dir);
-    }
-
-    /**
-     * Copy files from a doc path location to the output.
-     *
-     * @param locn the location from which to read files
-     * @param dir the directory to be copied
-     * @throws DocFileIOException if there is a problem
-     *         copying the files
-     */
-    public void copyDirectory(Location locn, DocPath dir)  throws DocFileIOException {
-        boolean first = true;
-        for (DocFile f : DocFile.list(configuration, locn, dir)) {
-            if (!f.isDirectory()) {
-                continue;
-            }
-            DocFile srcdir = f;
-            DocFile destdir = DocFile.createFileForOutput(configuration, dir);
-            if (srcdir.isSameFile(destdir)) {
-                continue;
-            }
-
-            for (DocFile srcfile: srcdir.list()) {
-                DocFile destfile = destdir.resolve(srcfile.getName());
-                if (srcfile.isFile()) {
-                    if (destfile.exists() && !first) {
-                        messages.warning("doclet.Copy_Overwrite_warning",
-                                srcfile.getPath(), destdir.getPath());
-                    } else {
-                        messages.notice("doclet.Copying_File_0_To_Dir_1",
-                                srcfile.getPath(), destdir.getPath());
-                        destfile.copyFile(srcfile);
-                    }
-                } else if (srcfile.isDirectory()) {
-                    if (configuration.copydocfilesubdirs
-                            && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
-                        copyDirectory(locn, dir.resolve(srcfile.getName()));
-                    }
-                }
-            }
-
-            first = false;
-        }
-    }
-
-    protected Location getLocationForPackage(PackageElement pd) {
+    public Location getLocationForPackage(PackageElement pd) {
         ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(pd);
 
         if (mdle == null)
@@ -364,7 +276,7 @@ public class Utils {
         return getLocationForModule(mdle);
     }
 
-    protected Location getLocationForModule(ModuleElement mdle) {
+    public Location getLocationForModule(ModuleElement mdle) {
         Location loc = configuration.workArounds.getLocationForModule(mdle);
         if (loc != null)
             return loc;
@@ -3125,6 +3037,13 @@ public class Utils {
             wksMap.put(element, new CommentHelper(configuration, element, getTreePath(element), dcTree));
         }
         return dcTree;
+    }
+
+    public List<? extends DocTree> getPreamble(Element element) {
+        DocCommentTree docCommentTree = getDocCommentTree(element);
+        return docCommentTree == null
+                ? Collections.emptyList()
+                : docCommentTree.getPreamble();
     }
 
     public List<? extends DocTree> getFullBody(Element element) {

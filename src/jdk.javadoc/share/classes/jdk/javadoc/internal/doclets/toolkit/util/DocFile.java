@@ -33,6 +33,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 
+import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
@@ -100,6 +101,12 @@ public abstract class DocFile {
         this.location = location;
         this.path = path;
     }
+
+    /**
+     * Returns a file object for the file.
+     * @return a file object
+     */
+    public abstract FileObject getFileObject();
 
     /**
      * Open an input stream for the file.

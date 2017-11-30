@@ -170,6 +170,11 @@ public class DocPaths {
     /** The name of the file for the package usage info. */
     public static final DocPath PACKAGE_USE = DocPath.create("package-use.html");
 
+    /** The name of the output directory for module documentation files. */
+    public static DocPath moduleDocFiles(ModuleElement mdle) {
+        return DocPath.create(mdle.getQualifiedName() + "-doc-files");
+    }
+
     /** The name of the file for the module frame. */
     public static DocPath moduleFrame(ModuleElement mdle) {
         return DocPath.create(mdle.getQualifiedName() + "-frame.html");

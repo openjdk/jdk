@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -37,6 +38,7 @@ import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
+import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
@@ -234,5 +236,13 @@ public class WriterFactoryImpl implements WriterFactory {
     @Override
     public SerializedFormWriter getSerializedFormWriter() {
         return new SerializedFormWriterImpl(configuration);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public DocFilesHandler getDocFilesHandler(Element element) {
+        return new DocFilesHandlerImpl(configuration, element);
     }
 }

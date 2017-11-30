@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -222,4 +223,11 @@ public interface WriterFactory {
      * @return the writer for the serialized form.
      */
     public SerializedFormWriter getSerializedFormWriter();
+
+    /**
+     * Return the handler for doc files.
+     *
+     * @return the handler for the doc files.
+     */
+    DocFilesHandler getDocFilesHandler(Element pkg);
 }
