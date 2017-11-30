@@ -480,8 +480,14 @@ public class DecimalFormat extends NumberFormat {
      * @param number     the number to format
      * @param toAppendTo the <code>StringBuffer</code> to which the formatted
      *                   text is to be appended
-     * @param pos        On input: an alignment field, if desired.
-     *                   On output: the offsets of the alignment field.
+     * @param pos        keeps track on the position of the field within the
+     *                   returned string. For example, for formatting a number
+     *                   {@code 1234567.89} in {@code Locale.US} locale,
+     *                   if the given {@code fieldPosition} is
+     *                   {@link NumberFormat#INTEGER_FIELD}, the begin index
+     *                   and end index of {@code fieldPosition} will be set
+     *                   to 0 and 9, respectively for the output string
+     *                   {@code 1,234,567.89}.
      * @return           the value passed in as <code>toAppendTo</code>
      * @exception        IllegalArgumentException if <code>number</code> is
      *                   null or not an instance of <code>Number</code>.
@@ -517,8 +523,14 @@ public class DecimalFormat extends NumberFormat {
      * Formats a double to produce a string.
      * @param number    The double to format
      * @param result    where the text is to be appended
-     * @param fieldPosition    On input: an alignment field, if desired.
-     * On output: the offsets of the alignment field.
+     * @param fieldPosition    keeps track on the position of the field within
+     *                         the returned string. For example, for formatting
+     *                         a number {@code 1234567.89} in {@code Locale.US}
+     *                         locale, if the given {@code fieldPosition} is
+     *                         {@link NumberFormat#INTEGER_FIELD}, the begin index
+     *                         and end index of {@code fieldPosition} will be set
+     *                         to 0 and 9, respectively for the output string
+     *                         {@code 1,234,567.89}.
      * @exception NullPointerException if {@code result} or
      *            {@code fieldPosition} is {@code null}
      * @exception ArithmeticException if rounding is needed with rounding
@@ -637,8 +649,14 @@ public class DecimalFormat extends NumberFormat {
      * Format a long to produce a string.
      * @param number    The long to format
      * @param result    where the text is to be appended
-     * @param fieldPosition    On input: an alignment field, if desired.
-     * On output: the offsets of the alignment field.
+     * @param fieldPosition    keeps track on the position of the field within
+     *                         the returned string. For example, for formatting
+     *                         a number {@code 123456789} in {@code Locale.US}
+     *                         locale, if the given {@code fieldPosition} is
+     *                         {@link NumberFormat#INTEGER_FIELD}, the begin index
+     *                         and end index of {@code fieldPosition} will be set
+     *                         to 0 and 11, respectively for the output string
+     *                         {@code 123,456,789}.
      * @exception       NullPointerException if {@code result} or
      *                  {@code fieldPosition} is {@code null}
      * @exception       ArithmeticException if rounding is needed with rounding
@@ -727,8 +745,14 @@ public class DecimalFormat extends NumberFormat {
      * Formats a BigDecimal to produce a string.
      * @param number    The BigDecimal to format
      * @param result    where the text is to be appended
-     * @param fieldPosition    On input: an alignment field, if desired.
-     * On output: the offsets of the alignment field.
+     * @param fieldPosition    keeps track on the position of the field within
+     *                         the returned string. For example, for formatting
+     *                         a number {@code 1234567.89} in {@code Locale.US}
+     *                         locale, if the given {@code fieldPosition} is
+     *                         {@link NumberFormat#INTEGER_FIELD}, the begin index
+     *                         and end index of {@code fieldPosition} will be set
+     *                         to 0 and 9, respectively for the output string
+     *                         {@code 1,234,567.89}.
      * @return The formatted number string
      * @exception        ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
@@ -780,8 +804,14 @@ public class DecimalFormat extends NumberFormat {
      * Format a BigInteger to produce a string.
      * @param number    The BigInteger to format
      * @param result    where the text is to be appended
-     * @param fieldPosition    On input: an alignment field, if desired.
-     * On output: the offsets of the alignment field.
+     * @param fieldPosition    keeps track on the position of the field within
+     *                         the returned string. For example, for formatting
+     *                         a number {@code 123456789} in {@code Locale.US}
+     *                         locale, if the given {@code fieldPosition} is
+     *                         {@link NumberFormat#INTEGER_FIELD}, the begin index
+     *                         and end index of {@code fieldPosition} will be set
+     *                         to 0 and 11, respectively for the output string
+     *                         {@code 123,456,789}.
      * @return The formatted number string
      * @exception        ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
