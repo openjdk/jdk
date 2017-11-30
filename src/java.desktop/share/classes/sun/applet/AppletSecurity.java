@@ -48,6 +48,8 @@ import sun.awt.AppContext;
 import sun.awt.AWTPermissions;
 import sun.security.util.SecurityConstants;
 
+import static java.lang.StackWalker.*;
+import static java.lang.StackWalker.Option.*;
 
 
 /**
@@ -106,11 +108,90 @@ class AppletSecurity extends AWTSecurityManager {
         });
     }
 
+    private static final StackWalker walker =
+        AccessController.doPrivileged(
+            (PrivilegedAction<StackWalker>) () ->
+                StackWalker.getInstance(RETAIN_CLASS_REFERENCE));
+    /**
+     * Returns the class loader of the most recently executing method from
+     * a class defined using a non-system class loader. A non-system
+     * class loader is defined as being a class loader that is not equal to
+     * the system class loader (as returned
+     * by {@link ClassLoader#getSystemClassLoader}) or one of its ancestors.
+     * <p>
+     * This method will return
+     * <code>null</code> in the following three cases:
+     * <ol>
+     *   <li>All methods on the execution stack are from classes
+     *   defined using the system class loader or one of its ancestors.
+     *
+     *   <li>All methods on the execution stack up to the first
+     *   "privileged" caller
+     *   (see {@link java.security.AccessController#doPrivileged})
+     *   are from classes
+     *   defined using the system class loader or one of its ancestors.
+     *
+     *   <li> A call to <code>checkPermission</code> with
+     *   <code>java.security.AllPermission</code> does not
+     *   result in a SecurityException.
+     * </ol>
+     *
+     * NOTE: This is an implementation of the SecurityManager.currentClassLoader
+     * method that uses StackWalker. SecurityManager.currentClassLoader
+     * has been removed from SE. This is a temporary workaround which is
+     * only needed while applets are still supported.
+     *
+     * @return  the class loader of the most recent occurrence on the stack
+     *          of a method from a class defined using a non-system class
+     *          loader.
+     */
+    private static ClassLoader currentClassLoader() {
+        StackFrame f =
+            walker.walk(s -> s.takeWhile(AppletSecurity::isNonPrivileged)
+                              .filter(AppletSecurity::isNonSystemFrame)
+                              .findFirst())
+                  .orElse(null);
+
+        SecurityManager sm = System.getSecurityManager();
+        if (f != null && sm != null) {
+            try {
+                sm.checkPermission(new AllPermission());
+            } catch (SecurityException se) {
+                return f.getDeclaringClass().getClassLoader();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns true if the StackFrame is not AccessController.doPrivileged.
+     */
+    private static boolean isNonPrivileged(StackFrame f) {
+        // possibly other doPrivileged variants
+        Class<?> c = f.getDeclaringClass();
+        return c == AccessController.class &&
+               f.getMethodName().equals("doPrivileged");
+    }
+
+    /**
+     * Returns true if the StackFrame is not from a class defined by the
+     * system class loader or one of its ancestors.
+     */
+    private static boolean isNonSystemFrame(StackFrame f) {
+        ClassLoader loader = ClassLoader.getSystemClassLoader();
+        ClassLoader ld = f.getDeclaringClass().getClassLoader();
+        if (ld == null || ld == loader) return false;
+
+        while ((loader = loader.getParent()) != null) {
+            if (ld == loader)
+                return false;
+        }
+        return true;
+    }
+
     /**
      * get the current (first) instance of an AppletClassLoader on the stack.
      */
-    @SuppressWarnings({"deprecation",
-                       "removal"}) // SecurityManager.currentClassLoader()
     private AppletClassLoader currentAppletClassLoader()
     {
         // try currentClassLoader first

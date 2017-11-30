@@ -101,7 +101,7 @@ import sun.security.util.SecurityConstants;
  * <code>checkPermission</code> returns quietly. If denied, a
  * <code>SecurityException</code> is thrown.
  * <p>
- * As of Java 2 SDK v1.2, the default implementation of each of the other
+ * The default implementation of each of the other
  * <code>check</code> methods in <code>SecurityManager</code> is to
  * call the <code>SecurityManager checkPermission</code> method
  * to determine if the calling thread has permission to perform the requested
@@ -197,10 +197,10 @@ import sun.security.util.SecurityConstants;
  * See {@extLink security_guide_permissions
  * Permissions in the Java Development Kit (JDK)}
  * for permission-related information.
- * This document includes, for example, a table listing the various SecurityManager
+ * This document includes a table listing the various SecurityManager
  * <code>check</code> methods and the permission(s) the default
  * implementation of each such method requires.
- * It also contains a table of all the version 1.2 methods
+ * It also contains a table of the methods
  * that require permissions, and for each such method tells
  * which permission it requires.
  *
@@ -228,20 +228,7 @@ import sun.security.util.SecurityConstants;
  *
  * @since   1.0
  */
-public
-class SecurityManager {
-
-    /**
-     * This field is <code>true</code> if there is a security check in
-     * progress; <code>false</code> otherwise.
-     *
-     * @deprecated This type of security checking is not recommended.
-     *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead. This field is subject to removal in a
-     *  future version of Java SE.
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    protected boolean inCheck;
+public class SecurityManager {
 
     /*
      * Have we been initialized. Effective against finalizer attacks.
@@ -259,24 +246,6 @@ class SecurityManager {
         } catch (SecurityException se) {
             return false;
         }
-    }
-
-    /**
-     * Tests if there is a security check in progress.
-     *
-     * @return the value of the <code>inCheck</code> field. This field
-     *          should contain <code>true</code> if a security check is
-     *          in progress,
-     *          <code>false</code> otherwise.
-     * @see     java.lang.SecurityManager#inCheck
-     * @deprecated This type of security checking is not recommended.
-     *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead. This method is subject to removal in a
-     *  future version of Java SE.
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public boolean getInCheck() {
-        return inCheck;
     }
 
     /**
@@ -320,198 +289,6 @@ class SecurityManager {
      * @return  the execution stack.
      */
     protected native Class<?>[] getClassContext();
-
-    /**
-     * Returns the class loader of the most recently executing method from
-     * a class defined using a non-system class loader. A non-system
-     * class loader is defined as being a class loader that is not equal to
-     * the system class loader (as returned
-     * by {@link ClassLoader#getSystemClassLoader}) or one of its ancestors.
-     * <p>
-     * This method will return
-     * <code>null</code> in the following three cases:
-     * <ol>
-     *   <li>All methods on the execution stack are from classes
-     *   defined using the system class loader or one of its ancestors.
-     *
-     *   <li>All methods on the execution stack up to the first
-     *   "privileged" caller
-     *   (see {@link java.security.AccessController#doPrivileged})
-     *   are from classes
-     *   defined using the system class loader or one of its ancestors.
-     *
-     *   <li> A call to <code>checkPermission</code> with
-     *   <code>java.security.AllPermission</code> does not
-     *   result in a SecurityException.
-     *
-     * </ol>
-     *
-     * @return  the class loader of the most recent occurrence on the stack
-     *          of a method from a class defined using a non-system class
-     *          loader.
-     *
-     * @deprecated This type of security checking is not recommended.
-     *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead. This method is subject to removal in a
-     *  future version of Java SE.
-     *
-     * @see  java.lang.ClassLoader#getSystemClassLoader() getSystemClassLoader
-     * @see  #checkPermission(java.security.Permission) checkPermission
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    protected ClassLoader currentClassLoader() {
-        ClassLoader cl = currentClassLoader0();
-        if ((cl != null) && hasAllPermission())
-            cl = null;
-        return cl;
-    }
-
-    private native ClassLoader currentClassLoader0();
-
-    /**
-     * Returns the class of the most recently executing method from
-     * a class defined using a non-system class loader. A non-system
-     * class loader is defined as being a class loader that is not equal to
-     * the system class loader (as returned
-     * by {@link ClassLoader#getSystemClassLoader}) or one of its ancestors.
-     * <p>
-     * This method will return
-     * <code>null</code> in the following three cases:
-     * <ol>
-     *   <li>All methods on the execution stack are from classes
-     *   defined using the system class loader or one of its ancestors.
-     *
-     *   <li>All methods on the execution stack up to the first
-     *   "privileged" caller
-     *   (see {@link java.security.AccessController#doPrivileged})
-     *   are from classes
-     *   defined using the system class loader or one of its ancestors.
-     *
-     *   <li> A call to <code>checkPermission</code> with
-     *   <code>java.security.AllPermission</code> does not
-     *   result in a SecurityException.
-     *
-     * </ol>
-     *
-     * @return  the class  of the most recent occurrence on the stack
-     *          of a method from a class defined using a non-system class
-     *          loader.
-     *
-     * @deprecated This type of security checking is not recommended.
-     *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead. This method is subject to removal in a
-     *  future version of Java SE.
-     *
-     * @see  java.lang.ClassLoader#getSystemClassLoader() getSystemClassLoader
-     * @see  #checkPermission(java.security.Permission) checkPermission
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    protected Class<?> currentLoadedClass() {
-        Class<?> c = currentLoadedClass0();
-        if ((c != null) && hasAllPermission())
-            c = null;
-        return c;
-    }
-
-    /**
-     * Returns the stack depth of the specified class.
-     *
-     * @param   name   the fully qualified name of the class to search for.
-     * @return  the depth on the stack frame of the first occurrence of a
-     *          method from a class with the specified name;
-     *          <code>-1</code> if such a frame cannot be found.
-     * @deprecated This type of security checking is not recommended.
-     *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead. This method is subject to removal in a
-     *  future version of Java SE.
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    protected native int classDepth(String name);
-
-    /**
-     * Returns the stack depth of the most recently executing method
-     * from a class defined using a non-system class loader.  A non-system
-     * class loader is defined as being a class loader that is not equal to
-     * the system class loader (as returned
-     * by {@link ClassLoader#getSystemClassLoader}) or one of its ancestors.
-     * <p>
-     * This method will return
-     * -1 in the following three cases:
-     * <ol>
-     *   <li>All methods on the execution stack are from classes
-     *   defined using the system class loader or one of its ancestors.
-     *
-     *   <li>All methods on the execution stack up to the first
-     *   "privileged" caller
-     *   (see {@link java.security.AccessController#doPrivileged})
-     *   are from classes
-     *   defined using the system class loader or one of its ancestors.
-     *
-     *   <li> A call to <code>checkPermission</code> with
-     *   <code>java.security.AllPermission</code> does not
-     *   result in a SecurityException.
-     *
-     * </ol>
-     *
-     * @return the depth on the stack frame of the most recent occurrence of
-     *          a method from a class defined using a non-system class loader.
-     *
-     * @deprecated This type of security checking is not recommended.
-     *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead. This method is subject to removal in a
-     *  future version of Java SE.
-     *
-     * @see   java.lang.ClassLoader#getSystemClassLoader() getSystemClassLoader
-     * @see   #checkPermission(java.security.Permission) checkPermission
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    protected int classLoaderDepth() {
-        int depth = classLoaderDepth0();
-        if (depth != -1) {
-            if (hasAllPermission())
-                depth = -1;
-            else
-                depth--; // make sure we don't include ourself
-        }
-        return depth;
-    }
-
-    private native int classLoaderDepth0();
-
-    /**
-     * Tests if a method from a class with the specified
-     *         name is on the execution stack.
-     *
-     * @param  name   the fully qualified name of the class.
-     * @return <code>true</code> if a method from a class with the specified
-     *         name is on the execution stack; <code>false</code> otherwise.
-     * @deprecated This type of security checking is not recommended.
-     *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead. This method is subject to removal in a
-     *  future version of Java SE.
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    protected boolean inClass(String name) {
-        return classDepth(name) >= 0;
-    }
-
-    /**
-     * Basically, tests if a method from a class defined using a
-     *          class loader is on the execution stack.
-     *
-     * @return  <code>true</code> if a call to <code>currentClassLoader</code>
-     *          has a non-null return value.
-     *
-     * @deprecated This type of security checking is not recommended.
-     *  It is recommended that the <code>checkPermission</code>
-     *  call be used instead. This method is subject to removal in a
-     *  future version of Java SE.
-     * @see        #currentClassLoader() currentClassLoader
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    protected boolean inClassLoader() {
-        return currentClassLoader() != null;
-    }
 
     /**
      * Creates an object that encapsulates the current execution
@@ -1698,64 +1475,32 @@ class SecurityManager {
     }
 
     /**
-     * Throws a <code>SecurityException</code> if the
-     * calling thread is not allowed to access members.
-     * <p>
-     * The default policy is to allow access to PUBLIC members, as well
-     * as access to classes that have the same class loader as the caller.
-     * In all other cases, this method calls <code>checkPermission</code>
-     * with the <code>RuntimePermission("accessDeclaredMembers")
-     * </code> permission.
-     * <p>
-     * If this method is overridden, then a call to
-     * <code>super.checkMemberAccess</code> cannot be made,
-     * as the default implementation of <code>checkMemberAccess</code>
-     * relies on the code being checked being at a stack depth of
-     * 4.
+     * Throws a {@code SecurityException} if the calling thread does
+     * not have {@code AllPermission}.
      *
      * @param clazz the class that reflection is to be performed on.
-     *
      * @param which type of access, PUBLIC or DECLARED.
-     *
-     * @exception  SecurityException if the caller does not have
-     *             permission to access members.
-     * @exception  NullPointerException if the <code>clazz</code> argument is
-     *             <code>null</code>.
-     *
-     * @deprecated This method relies on the caller being at a stack depth
-     *             of 4 which is error-prone and cannot be enforced by the runtime.
-     *             Users of this method should instead invoke {@link #checkPermission}
-     *             directly.
-     *             This method is subject to removal in a future version of Java SE.
-     *
-     * @see java.lang.reflect.Member
+     * @throws  SecurityException if the caller does not have
+     *          {@code AllPermission}
+     * @throws  NullPointerException if the {@code clazz} argument is
+     *          {@code null}
+     * @deprecated This method was originally used to check if the calling
+     *             thread was allowed to access members. It relied on the
+     *             caller being at a stack depth of 4 which is error-prone and
+     *             cannot be enforced by the runtime. The method has been
+     *             obsoleted and code should instead use
+     *             {@link #checkPermission} to check
+     *             {@code RuntimePermission("accessDeclaredMembers")}. This
+     *             method is subject to removal in a future version of Java SE.
      * @since 1.1
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     @Deprecated(since="1.8", forRemoval=true)
-    @CallerSensitive
     public void checkMemberAccess(Class<?> clazz, int which) {
         if (clazz == null) {
             throw new NullPointerException("class can't be null");
         }
-        if (which != Member.PUBLIC) {
-            Class<?> stack[] = getClassContext();
-            /*
-             * stack depth of 4 should be the caller of one of the
-             * methods in java.lang.Class that invoke checkMember
-             * access. The stack should look like:
-             *
-             * someCaller                        [3]
-             * java.lang.Class.someReflectionAPI [2]
-             * java.lang.Class.checkMemberAccess [1]
-             * SecurityManager.checkMemberAccess [0]
-             *
-             */
-            if ((stack.length<4) ||
-                (stack[3].getClassLoader() != clazz.getClassLoader())) {
-                checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
-            }
-        }
+        checkPermission(SecurityConstants.ALL_PERMISSION);
     }
 
     /**
@@ -1791,8 +1536,6 @@ class SecurityManager {
     public void checkSecurityAccess(String target) {
         checkPermission(new SecurityPermission(target));
     }
-
-    private native Class<?> currentLoadedClass0();
 
     /**
      * Returns the thread group into which to instantiate any new

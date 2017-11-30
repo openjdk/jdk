@@ -3137,64 +3137,6 @@ JVM_END
 
 // java.lang.SecurityManager ///////////////////////////////////////////////////////////////////////
 
-static bool is_trusted_frame(JavaThread* jthread, vframeStream* vfst) {
-  assert(jthread->is_Java_thread(), "must be a Java thread");
-  if (jthread->privileged_stack_top() == NULL) return false;
-  if (jthread->privileged_stack_top()->frame_id() == vfst->frame_id()) {
-    oop loader = jthread->privileged_stack_top()->class_loader();
-    if (loader == NULL) return true;
-    bool trusted = java_lang_ClassLoader::is_trusted_loader(loader);
-    if (trusted) return true;
-  }
-  return false;
-}
-
-JVM_ENTRY(jclass, JVM_CurrentLoadedClass(JNIEnv *env))
-  JVMWrapper("JVM_CurrentLoadedClass");
-  ResourceMark rm(THREAD);
-
-  for (vframeStream vfst(thread); !vfst.at_end(); vfst.next()) {
-    // if a method in a class in a trusted loader is in a doPrivileged, return NULL
-    bool trusted = is_trusted_frame(thread, &vfst);
-    if (trusted) return NULL;
-
-    Method* m = vfst.method();
-    if (!m->is_native()) {
-      InstanceKlass* holder = m->method_holder();
-      oop loader = holder->class_loader();
-      if (loader != NULL && !java_lang_ClassLoader::is_trusted_loader(loader)) {
-        return (jclass) JNIHandles::make_local(env, holder->java_mirror());
-      }
-    }
-  }
-  return NULL;
-JVM_END
-
-
-JVM_ENTRY(jobject, JVM_CurrentClassLoader(JNIEnv *env))
-  JVMWrapper("JVM_CurrentClassLoader");
-  ResourceMark rm(THREAD);
-
-  for (vframeStream vfst(thread); !vfst.at_end(); vfst.next()) {
-
-    // if a method in a class in a trusted loader is in a doPrivileged, return NULL
-    bool trusted = is_trusted_frame(thread, &vfst);
-    if (trusted) return NULL;
-
-    Method* m = vfst.method();
-    if (!m->is_native()) {
-      InstanceKlass* holder = m->method_holder();
-      assert(holder->is_klass(), "just checking");
-      oop loader = holder->class_loader();
-      if (loader != NULL && !java_lang_ClassLoader::is_trusted_loader(loader)) {
-        return JNIHandles::make_local(env, loader);
-      }
-    }
-  }
-  return NULL;
-JVM_END
-
-
 JVM_ENTRY(jobjectArray, JVM_GetClassContext(JNIEnv *env))
   JVMWrapper("JVM_GetClassContext");
   ResourceMark rm(THREAD);
@@ -3231,58 +3173,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassContext(JNIEnv *env))
   }
 
   return (jobjectArray) JNIHandles::make_local(env, result);
-JVM_END
-
-
-JVM_ENTRY(jint, JVM_ClassDepth(JNIEnv *env, jstring name))
-  JVMWrapper("JVM_ClassDepth");
-  ResourceMark rm(THREAD);
-  Handle h_name (THREAD, JNIHandles::resolve_non_null(name));
-  Handle class_name_str = java_lang_String::internalize_classname(h_name, CHECK_0);
-
-  const char* str = java_lang_String::as_utf8_string(class_name_str());
-  TempNewSymbol class_name_sym = SymbolTable::probe(str, (int)strlen(str));
-  if (class_name_sym == NULL) {
-    return -1;
-  }
-
-  int depth = 0;
-
-  for(vframeStream vfst(thread); !vfst.at_end(); vfst.next()) {
-    if (!vfst.method()->is_native()) {
-      InstanceKlass* holder = vfst.method()->method_holder();
-      assert(holder->is_klass(), "just checking");
-      if (holder->name() == class_name_sym) {
-        return depth;
-      }
-      depth++;
-    }
-  }
-  return -1;
-JVM_END
-
-
-JVM_ENTRY(jint, JVM_ClassLoaderDepth(JNIEnv *env))
-  JVMWrapper("JVM_ClassLoaderDepth");
-  ResourceMark rm(THREAD);
-  int depth = 0;
-  for (vframeStream vfst(thread); !vfst.at_end(); vfst.next()) {
-    // if a method in a class in a trusted loader is in a doPrivileged, return -1
-    bool trusted = is_trusted_frame(thread, &vfst);
-    if (trusted) return -1;
-
-    Method* m = vfst.method();
-    if (!m->is_native()) {
-      InstanceKlass* holder = m->method_holder();
-      assert(holder->is_klass(), "just checking");
-      oop loader = holder->class_loader();
-      if (loader != NULL && !java_lang_ClassLoader::is_trusted_loader(loader)) {
-        return depth;
-      }
-      depth++;
-    }
-  }
-  return -1;
 JVM_END
 
 
