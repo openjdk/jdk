@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,26 +92,34 @@ public class PerfDataEntry extends VMObject {
         return (flags() & 0x1) != 0;
     }
 
-    // NOTE: Keep this in sync with PerfData::Units enum in VM code
-    public interface PerfDataUnits {
-        public static final int U_None   = 1;
-        public static final int U_Bytes  = 2;
-        public static final int U_Ticks  = 3;
-        public static final int U_Events = 4;
-        public static final int U_String = 5;
-        public static final int U_Hertz  = 6;
+    private static class PerfDataUnits {
+        public static int U_None;
+        public static int U_Bytes;
+        public static int U_Ticks;
+        public static int U_Events;
+        public static int U_String;
+        public static int U_Hertz;
+
+        static {
+            VM.registerVMInitializedObserver(new Observer() {
+                public void update(Observable o, Object data) {
+                    initialize(VM.getVM().getTypeDataBase());
+                }
+            });
+        }
+        private static synchronized void initialize(TypeDataBase db) {
+            U_None = db.lookupIntConstant("PerfData::U_None");
+            U_Bytes = db.lookupIntConstant("PerfData::U_Bytes");
+            U_Ticks = db.lookupIntConstant("PerfData::U_Ticks");
+            U_Events = db.lookupIntConstant("PerfData::U_Events");
+            U_String = db.lookupIntConstant("PerfData::U_String");
+            U_Hertz = db.lookupIntConstant("PerfData::U_Hertz");
+        }
     }
 
     // returns one of the constants in PerfDataUnits
     public int dataUnits() {
         return (int) dataUnitsField.getValue(addr);
-    }
-
-    // NOTE: Keep this in sync with PerfData::Variability enum in VM code
-    public interface PerfDataVariability {
-        public static final int V_Constant  = 1;
-        public static final int V_Monotonic = 2;
-        public static final int V_Variable  = 3;
     }
 
     // returns one of the constants in PerfDataVariability
@@ -451,23 +459,16 @@ public class PerfDataEntry extends VMObject {
         }
 
         // add units
-        switch (dataUnits()) {
-        case PerfDataUnits.U_None:
-            break;
-        case PerfDataUnits.U_Bytes:
+        int dataUnitsValue = dataUnits();
+
+        if (dataUnitsValue == PerfDataUnits.U_Bytes) {
             str += " byte(s)";
-            break;
-        case PerfDataUnits.U_Ticks:
+        } else if (dataUnitsValue == PerfDataUnits.U_Ticks) {
             str += " tick(s)";
-            break;
-        case PerfDataUnits.U_Events:
+        } else if (dataUnitsValue == PerfDataUnits.U_Events) {
             str += " event(s)";
-            break;
-        case PerfDataUnits.U_String:
-            break;
-        case PerfDataUnits.U_Hertz:
+        } else if (dataUnitsValue == PerfDataUnits.U_Hertz) {
             str += " Hz";
-            break;
         }
 
         return str;
