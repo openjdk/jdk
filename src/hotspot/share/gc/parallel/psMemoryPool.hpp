@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,22 @@
 #ifndef SHARE_VM_SERVICES_PSMEMORYPOOL_HPP
 #define SHARE_VM_SERVICES_PSMEMORYPOOL_HPP
 
-#include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psYoungGen.hpp"
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/shared/space.hpp"
-#include "memory/heap.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryUsage.hpp"
-#endif // INCLUDE_ALL_GCS
 
 class PSGenerationPool : public CollectedMemoryPool {
 private:
   PSOldGen* _old_gen;
 
 public:
-  PSGenerationPool(PSOldGen* pool, const char* name, PoolType type, bool support_usage_threshold);
+  PSGenerationPool(PSOldGen* pool, const char* name, bool support_usage_threshold);
 
   MemoryUsage get_memory_usage();
-  size_t used_in_bytes()              { return _old_gen->used_in_bytes(); }
-  size_t max_size() const             { return _old_gen->reserved().byte_size(); }
+  size_t used_in_bytes() { return _old_gen->used_in_bytes(); }
+  size_t max_size() const { return _old_gen->reserved().byte_size(); }
 };
 
 class EdenMutableSpacePool : public CollectedMemoryPool {
@@ -58,7 +52,6 @@ public:
   EdenMutableSpacePool(PSYoungGen* young_gen,
                        MutableSpace* space,
                        const char* name,
-                       PoolType type,
                        bool support_usage_threshold);
 
   MutableSpace* space()                     { return _space; }
@@ -77,7 +70,6 @@ private:
 public:
   SurvivorMutableSpacePool(PSYoungGen* young_gen,
                            const char* name,
-                           PoolType type,
                            bool support_usage_threshold);
 
   MemoryUsage get_memory_usage();

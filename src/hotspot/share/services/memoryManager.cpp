@@ -37,7 +37,7 @@
 #include "services/gcNotifier.hpp"
 #include "utilities/dtrace.hpp"
 
-MemoryManager::MemoryManager() {
+MemoryManager::MemoryManager(const char* name) : _name(name) {
   _num_pools = 0;
   (void)const_cast<instanceOop&>(_memory_mgr_obj = instanceOop(NULL));
 }
@@ -52,43 +52,11 @@ void MemoryManager::add_pool(MemoryPool* pool) {
 }
 
 MemoryManager* MemoryManager::get_code_cache_memory_manager() {
-  return (MemoryManager*) new CodeCacheMemoryManager();
+  return new MemoryManager("CodeCacheManager");
 }
 
 MemoryManager* MemoryManager::get_metaspace_memory_manager() {
-  return (MemoryManager*) new MetaspaceMemoryManager();
-}
-
-GCMemoryManager* MemoryManager::get_copy_memory_manager() {
-  return (GCMemoryManager*) new CopyMemoryManager();
-}
-
-GCMemoryManager* MemoryManager::get_msc_memory_manager() {
-  return (GCMemoryManager*) new MSCMemoryManager();
-}
-
-GCMemoryManager* MemoryManager::get_parnew_memory_manager() {
-  return (GCMemoryManager*) new ParNewMemoryManager();
-}
-
-GCMemoryManager* MemoryManager::get_cms_memory_manager() {
-  return (GCMemoryManager*) new CMSMemoryManager();
-}
-
-GCMemoryManager* MemoryManager::get_psScavenge_memory_manager() {
-  return (GCMemoryManager*) new PSScavengeMemoryManager();
-}
-
-GCMemoryManager* MemoryManager::get_psMarkSweep_memory_manager() {
-  return (GCMemoryManager*) new PSMarkSweepMemoryManager();
-}
-
-GCMemoryManager* MemoryManager::get_g1YoungGen_memory_manager() {
-  return (GCMemoryManager*) new G1YoungGenMemoryManager();
-}
-
-GCMemoryManager* MemoryManager::get_g1OldGen_memory_manager() {
-  return (GCMemoryManager*) new G1OldGenMemoryManager();
+  return new MemoryManager("Metaspace Manager");
 }
 
 instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
@@ -203,7 +171,8 @@ void GCStatInfo::clear() {
 }
 
 
-GCMemoryManager::GCMemoryManager() : MemoryManager() {
+GCMemoryManager::GCMemoryManager(const char* name, const char* gc_end_message) :
+  MemoryManager(name), _gc_end_message(gc_end_message) {
   _num_collections = 0;
   _last_gc_stat = NULL;
   _last_gc_lock = new Mutex(Mutex::leaf, "_last_gc_lock", true,
@@ -308,9 +277,7 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
     }
 
     if (is_notification_enabled()) {
-      bool isMajorGC = this == MemoryService::get_major_gc_manager();
-      GCNotifier::pushNotification(this, isMajorGC ? "end of major GC" : "end of minor GC",
-                                   GCCause::to_string(cause));
+      GCNotifier::pushNotification(this, _gc_end_message, GCCause::to_string(cause));
     }
   }
 }

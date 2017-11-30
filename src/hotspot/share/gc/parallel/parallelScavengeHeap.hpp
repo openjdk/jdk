@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,14 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "memory/metaspace.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
 class AdjoiningGenerations;
 class GCHeapSummary;
 class GCTaskManager;
+class MemoryManager;
+class MemoryPool;
 class PSAdaptiveSizePolicy;
 class PSHeapSummary;
 
@@ -63,6 +66,15 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // The task manager
   static GCTaskManager* _gc_task_manager;
+
+  GCMemoryManager* _young_manager;
+  GCMemoryManager* _old_manager;
+
+  MemoryPool* _eden_pool;
+  MemoryPool* _survivor_pool;
+  MemoryPool* _old_pool;
+
+  virtual void initialize_serviceability();
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
@@ -93,6 +105,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   }
 
   virtual CollectorPolicy* collector_policy() const { return _collector_policy; }
+
+  virtual GrowableArray<GCMemoryManager*> memory_managers();
+  virtual GrowableArray<MemoryPool*> memory_pools();
 
   static PSYoungGen* young_gen() { return _young_gen; }
   static PSOldGen* old_gen()     { return _old_gen; }
@@ -244,6 +259,9 @@ class ParallelScavengeHeap : public CollectedHeap {
     ParStrongRootsScope();
     ~ParStrongRootsScope();
   };
+
+  GCMemoryManager* old_gc_manager() const { return _old_manager; }
+  GCMemoryManager* young_gc_manager() const { return _young_manager; }
 };
 
 // Simple class for storing info about the heap at the start of GC, to be used

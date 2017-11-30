@@ -44,6 +44,7 @@
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
+#include "gc/g1/g1MemoryPool.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -1229,7 +1230,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       collector_policy()->should_clear_all_soft_refs();
 
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs);
+  G1FullCollector collector(this, &_full_gc_memory_manager, explicit_gc, do_clear_all_soft_refs);
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
 
   collector.prepare_collection();
@@ -1526,6 +1527,11 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   CollectedHeap(),
   _young_gen_sampling_thread(NULL),
   _collector_policy(collector_policy),
+  _memory_manager("G1 Young Generation", "end of minor GC"),
+  _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
+  _eden_pool(NULL),
+  _survivor_pool(NULL),
+  _old_pool(NULL),
   _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
   _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
   _g1_policy(create_g1_policy(_gc_timer_stw)),
@@ -1830,6 +1836,20 @@ jint G1CollectedHeap::initialize() {
   return JNI_OK;
 }
 
+void G1CollectedHeap::initialize_serviceability() {
+  _eden_pool = new G1EdenPool(this);
+  _survivor_pool = new G1SurvivorPool(this);
+  _old_pool = new G1OldGenPool(this);
+
+  _full_gc_memory_manager.add_pool(_eden_pool);
+  _full_gc_memory_manager.add_pool(_survivor_pool);
+  _full_gc_memory_manager.add_pool(_old_pool);
+
+  _memory_manager.add_pool(_eden_pool);
+  _memory_manager.add_pool(_survivor_pool);
+
+}
+
 void G1CollectedHeap::stop() {
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
@@ -1855,6 +1875,7 @@ size_t G1CollectedHeap::conservative_max_heap_alignment() {
 }
 
 void G1CollectedHeap::post_initialize() {
+  CollectedHeap::post_initialize();
   ref_processing_init();
 }
 
@@ -2954,7 +2975,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
-    TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
+    TraceMemoryManagerStats tms(&_memory_manager, gc_cause());
 
     // If the secondary_free_list is not empty, append it to the
     // free_list. No need to wait for the cleanup operation to finish;
@@ -5367,4 +5388,19 @@ public:
 void G1CollectedHeap::rebuild_strong_code_roots() {
   RebuildStrongCodeRootClosure blob_cl(this);
   CodeCache::blobs_do(&blob_cl);
+}
+
+GrowableArray<GCMemoryManager*> G1CollectedHeap::memory_managers() {
+  GrowableArray<GCMemoryManager*> memory_managers(2);
+  memory_managers.append(&_memory_manager);
+  memory_managers.append(&_full_gc_memory_manager);
+  return memory_managers;
+}
+
+GrowableArray<MemoryPool*> G1CollectedHeap::memory_pools() {
+  GrowableArray<MemoryPool*> memory_pools(3);
+  memory_pools.append(_eden_pool);
+  memory_pools.append(_survivor_pool);
+  memory_pools.append(_old_pool);
+  return memory_pools;
 }

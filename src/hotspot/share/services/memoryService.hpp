@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_VM_SERVICES_MEMORYSERVICE_HPP
 
 #include "gc/shared/gcCause.hpp"
-#include "gc/shared/generation.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
@@ -37,16 +36,7 @@ class MemoryPool;
 class MemoryManager;
 class GCMemoryManager;
 class CollectedHeap;
-class Generation;
-class DefNewGeneration;
-class PSYoungGen;
-class PSOldGen;
 class CodeHeap;
-class ContiguousSpace;
-class CompactibleFreeListSpace;
-class GenCollectedHeap;
-class ParallelScavengeHeap;
-class G1CollectedHeap;
 
 // VM Monitoring and Management Support
 
@@ -61,61 +51,12 @@ private:
   static GrowableArray<MemoryPool*>*    _pools_list;
   static GrowableArray<MemoryManager*>* _managers_list;
 
-  // memory managers for minor and major GC statistics
-  static GCMemoryManager*               _major_gc_manager;
-  static GCMemoryManager*               _minor_gc_manager;
-
   // memory manager and code heap pools for the CodeCache
   static MemoryManager*                 _code_cache_manager;
   static GrowableArray<MemoryPool*>*    _code_heap_pools;
 
   static MemoryPool*                    _metaspace_pool;
   static MemoryPool*                    _compressed_class_pool;
-
-  static void add_generation_memory_pool(Generation* gen,
-                                         MemoryManager* major_mgr,
-                                         MemoryManager* minor_mgr);
-  static void add_generation_memory_pool(Generation* gen,
-                                         MemoryManager* major_mgr) {
-    add_generation_memory_pool(gen, major_mgr, NULL);
-  }
-
-
-  static void add_psYoung_memory_pool(PSYoungGen* young_gen,
-                                      MemoryManager* major_mgr,
-                                      MemoryManager* minor_mgr);
-  static void add_psOld_memory_pool(PSOldGen* old_gen,
-                                    MemoryManager* mgr);
-
-  static void add_g1YoungGen_memory_pool(G1CollectedHeap* g1h,
-                                         MemoryManager* major_mgr,
-                                         MemoryManager* minor_mgr);
-  static void add_g1OldGen_memory_pool(G1CollectedHeap* g1h,
-                                       MemoryManager* mgr);
-
-  static MemoryPool* add_space(ContiguousSpace* space,
-                               const char* name,
-                               bool is_heap,
-                               size_t max_size,
-                               bool support_usage_threshold);
-  static MemoryPool* add_survivor_spaces(DefNewGeneration* young_gen,
-                                         const char* name,
-                                         bool is_heap,
-                                         size_t max_size,
-                                         bool support_usage_threshold);
-  static MemoryPool* add_gen(Generation* gen,
-                             const char* name,
-                             bool is_heap,
-                             bool support_usage_threshold);
-  static MemoryPool* add_cms_space(CompactibleFreeListSpace* space,
-                                   const char* name,
-                                   bool is_heap,
-                                   size_t max_size,
-                                   bool support_usage_threshold);
-
-  static void add_gen_collected_heap_info(GenCollectedHeap* heap);
-  static void add_parallel_scavenge_heap_info(ParallelScavengeHeap* heap);
-  static void add_g1_heap_info(G1CollectedHeap* g1h);
 
 public:
   static void set_universe_heap(CollectedHeap* heap);
@@ -155,10 +96,10 @@ public:
   }
   static void track_memory_pool_usage(MemoryPool* pool);
 
-  static void gc_begin(bool fullGC, bool recordGCBeginTime,
+  static void gc_begin(GCMemoryManager* manager, bool recordGCBeginTime,
                        bool recordAccumulatedGCTime,
                        bool recordPreGCUsage, bool recordPeakUsage);
-  static void gc_end(bool fullGC, bool recordPostGCUsage,
+  static void gc_end(GCMemoryManager* manager, bool recordPostGCUsage,
                      bool recordAccumulatedGCTime,
                      bool recordGCEndTime, bool countCollection,
                      GCCause::Cause cause);
@@ -170,19 +111,11 @@ public:
 
   // Create an instance of java/lang/management/MemoryUsage
   static Handle create_MemoryUsage_obj(MemoryUsage usage, TRAPS);
-
-  static const GCMemoryManager* get_minor_gc_manager() {
-      return _minor_gc_manager;
-  }
-
-  static const GCMemoryManager* get_major_gc_manager() {
-      return _major_gc_manager;
-  }
 };
 
 class TraceMemoryManagerStats : public StackObj {
 private:
-  bool         _fullGC;
+  GCMemoryManager* _gc_memory_manager;
   bool         _recordGCBeginTime;
   bool         _recordPreGCUsage;
   bool         _recordPeakUsage;
@@ -193,7 +126,7 @@ private:
   GCCause::Cause _cause;
 public:
   TraceMemoryManagerStats() {}
-  TraceMemoryManagerStats(bool fullGC,
+  TraceMemoryManagerStats(GCMemoryManager* gc_memory_manager,
                           GCCause::Cause cause,
                           bool recordGCBeginTime = true,
                           bool recordPreGCUsage = true,
@@ -203,7 +136,7 @@ public:
                           bool recordGCEndTime = true,
                           bool countCollection = true);
 
-  void initialize(bool fullGC,
+  void initialize(GCMemoryManager* gc_memory_manager,
                   GCCause::Cause cause,
                   bool recordGCBeginTime,
                   bool recordPreGCUsage,
@@ -213,7 +146,6 @@ public:
                   bool recordGCEndTime,
                   bool countCollection);
 
-  TraceMemoryManagerStats(Generation::Name kind, GCCause::Cause cause);
   ~TraceMemoryManagerStats();
 };
 

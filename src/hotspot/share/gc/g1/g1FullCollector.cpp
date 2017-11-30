@@ -71,9 +71,9 @@ ReferenceProcessor* G1FullCollector::reference_processor() {
   return _heap->ref_processor_stw();
 }
 
-G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs) :
+G1FullCollector::G1FullCollector(G1CollectedHeap* heap, GCMemoryManager* memory_manager, bool explicit_gc, bool clear_soft_refs) :
     _heap(heap),
-    _scope(explicit_gc, clear_soft_refs),
+    _scope(memory_manager, explicit_gc, clear_soft_refs),
     _num_workers(heap->workers()->active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),

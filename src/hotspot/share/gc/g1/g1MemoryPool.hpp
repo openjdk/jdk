@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,12 @@
  *
  */
 
-#ifndef SHARE_VM_SERVICES_G1MEMORYPOOL_HPP
-#define SHARE_VM_SERVICES_G1MEMORYPOOL_HPP
+#ifndef SHARE_VM_GC_G1_G1MEMORYPOOL_HPP
+#define SHARE_VM_GC_G1_G1MEMORYPOOL_HPP
 
-#include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryUsage.hpp"
-#endif // INCLUDE_ALL_GCS
 
 // This file contains the three classes that represent the memory
 // pools of the G1 spaces: G1EdenPool, G1SurvivorPool, and
@@ -49,6 +46,8 @@
 // See comments in g1MonitoringSupport.hpp for additional details
 // on this model.
 //
+
+class G1CollectedHeap;
 
 // This class is shared by the three G1 memory pool classes
 // (G1EdenPool, G1SurvivorPool, G1OldGenPool).
@@ -107,4 +106,4 @@ public:
   MemoryUsage get_memory_usage();
 };
 
-#endif // SHARE_VM_SERVICES_G1MEMORYPOOL_HPP
+#endif // SHARE_VM_GC_G1_G1MEMORYPOOL_HPP

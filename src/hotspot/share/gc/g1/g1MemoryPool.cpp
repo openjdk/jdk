@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1MemoryPool.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "services/g1MemoryPool.hpp"
 
 G1MemoryPoolSuper::G1MemoryPoolSuper(G1CollectedHeap* g1h,
                                      const char* name,
@@ -33,7 +33,6 @@ G1MemoryPoolSuper::G1MemoryPoolSuper(G1CollectedHeap* g1h,
                                      size_t max_size,
                                      bool support_usage_threshold) :
   _g1mm(g1h->g1mm()), CollectedMemoryPool(name,
-                                          MemoryPool::Heap,
                                           init_size,
                                           max_size,
                                           support_usage_threshold) {

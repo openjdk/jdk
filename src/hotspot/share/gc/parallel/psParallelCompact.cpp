@@ -1772,7 +1772,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     heap->pre_full_gc_dump(&_gc_timer);
 
     TraceCollectorStats tcs(counters());
-    TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
+    TraceMemoryManagerStats tms(heap->old_gc_manager(), gc_cause);
 
     if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->start();

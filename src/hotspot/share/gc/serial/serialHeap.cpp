@@ -23,13 +23,63 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/serialHeap.hpp"
+#include "gc/shared/genMemoryPools.hpp"
+#include "services/memoryManager.hpp"
 
-SerialHeap::SerialHeap(GenCollectorPolicy* policy) : GenCollectedHeap(policy) {}
+SerialHeap::SerialHeap(GenCollectorPolicy* policy) :
+  GenCollectedHeap(policy), _eden_pool(NULL), _survivor_pool(NULL), _old_pool(NULL) {
+  _young_manager = new GCMemoryManager("Copy", "end of minor GC");
+  _old_manager = new GCMemoryManager("MarkSweepCompact", "end of major GC");
+}
+
+void SerialHeap::initialize_serviceability() {
+
+  DefNewGeneration* young = (DefNewGeneration*) young_gen();
+
+  // Add a memory pool for each space and young gen doesn't
+  // support low memory detection as it is expected to get filled up.
+  _eden_pool = new ContiguousSpacePool(young->eden(),
+                                       "Eden Space",
+                                       young->max_eden_size(),
+                                       false /* support_usage_threshold */);
+  _survivor_pool = new SurvivorContiguousSpacePool(young,
+                                                   "Survivor Space",
+                                                   young->max_survivor_size(),
+                                                   false /* support_usage_threshold */);
+  Generation* old = old_gen();
+  _old_pool = new GenerationPool(old, "Tenured Gen", true);
+
+  _young_manager->add_pool(_eden_pool);
+  _young_manager->add_pool(_survivor_pool);
+  young->set_gc_manager(_young_manager);
+
+  _old_manager->add_pool(_eden_pool);
+  _old_manager->add_pool(_survivor_pool);
+  _old_manager->add_pool(_old_pool);
+  old->set_gc_manager(_old_manager);
+
+}
 
 void SerialHeap::check_gen_kinds() {
   assert(young_gen()->kind() == Generation::DefNew,
          "Wrong youngest generation type");
   assert(old_gen()->kind() == Generation::MarkSweepCompact,
          "Wrong generation kind");
+}
+
+GrowableArray<GCMemoryManager*> SerialHeap::memory_managers() {
+  GrowableArray<GCMemoryManager*> memory_managers(2);
+  memory_managers.append(_young_manager);
+  memory_managers.append(_old_manager);
+  return memory_managers;
+}
+
+GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
+  GrowableArray<MemoryPool*> memory_pools(3);
+  memory_pools.append(_eden_pool);
+  memory_pools.append(_survivor_pool);
+  memory_pools.append(_old_pool);
+  return memory_pools;
 }
