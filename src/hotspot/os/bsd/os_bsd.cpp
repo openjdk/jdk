@@ -2350,6 +2350,17 @@ bool os::can_execute_large_page_memory() {
   return UseHugeTLBFS;
 }
 
+char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int file_desc) {
+  assert(file_desc >= 0, "file_desc is not valid");
+  char* result = pd_attempt_reserve_memory_at(bytes, requested_addr);
+  if (result != NULL) {
+    if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == NULL) {
+      vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
+    }
+  }
+  return result;
+}
+
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 

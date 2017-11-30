@@ -1665,10 +1665,21 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
-  char* result = pd_reserve_memory(bytes, addr, alignment_hint);
-  if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint, int file_desc) {
+  char* result = NULL;
+
+  if (file_desc != -1) {
+    // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
+    // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
+    result = os::map_memory_to_file(addr, bytes, file_desc);
+    if (result != NULL) {
+      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+    }
+  } else {
+    result = pd_reserve_memory(bytes, addr, alignment_hint);
+    if (result != NULL) {
+      MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    }
   }
 
   return result;
@@ -1685,10 +1696,18 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint,
   return result;
 }
 
-char* os::attempt_reserve_memory_at(size_t bytes, char* addr) {
-  char* result = pd_attempt_reserve_memory_at(bytes, addr);
-  if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+char* os::attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc) {
+  char* result = NULL;
+  if (file_desc != -1) {
+    result = pd_attempt_reserve_memory_at(bytes, addr, file_desc);
+    if (result != NULL) {
+      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+    }
+  } else {
+    result = pd_attempt_reserve_memory_at(bytes, addr);
+    if (result != NULL) {
+      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+    }
   }
   return result;
 }
