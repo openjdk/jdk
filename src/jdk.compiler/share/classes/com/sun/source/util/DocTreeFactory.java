@@ -39,6 +39,7 @@ import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocRootTree;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.DocTypeTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
@@ -121,11 +122,33 @@ public interface DocTreeFactory {
      */
     DocCommentTree newDocCommentTree(List<? extends DocTree> fullBody, List<? extends DocTree> tags);
 
+
+    /**
+     * Create a new {@code DocCommentTree} object, to represent the enitire doc comment.
+     * @param fullBody the entire body of the doc comment
+     * @param tags the block tags in the doc comment
+     * @param preamble the meta content of an html file including the body tag
+     * @param postamble the meta content of an html including the closing body tag
+     * @return a {@code DocCommentTree} object
+     * @since 10
+     */
+    DocCommentTree newDocCommentTree(List<? extends DocTree> fullBody,
+                                     List<? extends DocTree> tags,
+                                     List<? extends DocTree> preamble,
+                                     List<? extends DocTree> postamble);
     /**
      * Create a new {@code DocRootTree} object, to represent an {@code {@docroot} } tag.
      * @return a {@code DocRootTree} object
      */
     DocRootTree newDocRootTree();
+
+    /**
+     * Create a new {@code DocTypeTree}, to represent a {@code DOCTYPE} HTML declaration.
+     * @param text the content of the declaration
+     * @return a {@code CommentTree} object
+     * @since 10
+     */
+    DocTypeTree newDocTypeTree(String text);
 
     /**
      * Create a new {@code EndElement} object, to represent the end of an HTML element.

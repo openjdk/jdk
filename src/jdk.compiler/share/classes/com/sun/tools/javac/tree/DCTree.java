@@ -109,17 +109,23 @@ public abstract class DCTree implements DocTree {
         public final List<DCTree> firstSentence;
         public final List<DCTree> body;
         public final List<DCTree> tags;
+        public final List<DCTree> preamble;
+        public final List<DCTree> postamble;
 
         public DCDocComment(Comment comment,
                             List<DCTree> fullBody,
                             List<DCTree> firstSentence,
                             List<DCTree> body,
-                            List<DCTree> tags) {
+                            List<DCTree> tags,
+                            List<DCTree> preamble,
+                            List<DCTree> postamble) {
             this.comment = comment;
             this.firstSentence = firstSentence;
             this.fullBody = fullBody;
             this.body = body;
             this.tags = tags;
+            this.preamble = preamble;
+            this.postamble = postamble;
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -152,6 +158,15 @@ public abstract class DCTree implements DocTree {
             return tags;
         }
 
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getPreamble() {
+            return preamble;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getPostamble() {
+            return postamble;
+        }
     }
 
     public static abstract class DCBlockTag extends DCTree implements BlockTagTree {
@@ -285,6 +300,29 @@ public abstract class DCTree implements DocTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitDocRoot(this, d);
+        }
+    }
+
+    public static class DCDocType extends DCTree implements DocTypeTree {
+        public final String text;
+
+        DCDocType(String text) {
+            this.text = text;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.DOC_TYPE;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitDocType(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public String getText() {
+            return text;
         }
     }
 

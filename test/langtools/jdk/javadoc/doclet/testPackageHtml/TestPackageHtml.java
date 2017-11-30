@@ -44,7 +44,7 @@ public class TestPackageHtml extends JavadocTester {
                 "-sourcepath", testSrc,
                 "pkg1");
         checkExit(Exit.ERROR);
-        checkOutput(Output.OUT, true, "package.html:10: error: bad use of '>'");
+        checkOutput(Output.OUT, true, "package.html:5: error: bad use of '>'");
     }
 
     // Doclet must handle empty body in package.html, must

@@ -3096,6 +3096,10 @@ public class Utils {
         if (!configuration.isAllowScriptInComments()) {
             DocCommentTree dct = configuration.cmtUtils.parse(
                     URI.create("option://" + name.replace("-", "")), "<body>" + value + "</body>");
+
+            if (dct == null)
+                return;
+
             try {
                 javaScriptScanner.scan(dct, null, p -> {
                     throw new JavaScriptScanner.Fault();

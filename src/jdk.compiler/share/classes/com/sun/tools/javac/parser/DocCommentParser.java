@@ -36,10 +36,12 @@ import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCAttribute;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
+import com.sun.tools.javac.tree.DCTree.DCEndElement;
 import com.sun.tools.javac.tree.DCTree.DCEndPosTree;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
 import com.sun.tools.javac.tree.DCTree.DCIdentifier;
 import com.sun.tools.javac.tree.DCTree.DCReference;
+import com.sun.tools.javac.tree.DCTree.DCStartElement;
 import com.sun.tools.javac.tree.DCTree.DCText;
 import com.sun.tools.javac.tree.DocTreeMaker;
 import com.sun.tools.javac.tree.JCTree;
@@ -50,6 +52,7 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Position;
+import com.sun.tools.javac.util.StringUtils;
 
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 
@@ -68,11 +71,14 @@ public class DocCommentParser {
         }
     }
 
+    private enum Phase {PREAMBLE, BODY, POSTAMBLE};
+
     final ParserFactory fac;
     final DiagnosticSource diagSource;
     final Comment comment;
     final DocTreeMaker m;
     final Names names;
+    final boolean isFileContent;
 
     BreakIterator sentenceBreaker;
 
@@ -93,17 +99,23 @@ public class DocCommentParser {
 
     Map<Name, TagParser> tagParsers;
 
-    public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource, Comment comment) {
+    public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource,
+                            Comment comment, boolean isFileContent) {
         this.fac = fac;
         this.diagSource = diagSource;
         this.comment = comment;
         names = fac.names;
+        this.isFileContent = isFileContent;
         m = fac.docTreeMaker;
         initTagParsers();
     }
 
+    public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource, Comment comment) {
+        this(fac, diagSource, comment, false);
+    }
+
     public DocCommentParser(ParserFactory fac) {
-        this(fac, null, null);
+        this(fac, null, null, false);
     }
 
     public DCDocComment parse() {
@@ -115,13 +127,22 @@ public class DocCommentParser {
         bp = -1;
         nextChar();
 
-        List<DCTree> body = blockContent();
+        List<DCTree> preamble = isFileContent ? blockContent(Phase.PREAMBLE) : List.nil();
+        List<DCTree> body = blockContent(Phase.BODY);
         List<DCTree> tags = blockTags();
-        int pos = !body.isEmpty()
-                ? body.head.pos
-                : !tags.isEmpty() ? tags.head.pos : Position.NOPOS;
+        List<DCTree> postamble = isFileContent ? blockContent(Phase.POSTAMBLE) : List.nil();
 
-        DCDocComment dc = m.at(pos).newDocCommentTree(comment, body, tags);
+        int pos = Position.NOPOS;
+        if (!preamble.isEmpty())
+            pos = preamble.head.pos;
+        else if (!body.isEmpty())
+            pos = body.head.pos;
+        else if (!tags.isEmpty())
+            pos = tags.head.pos;
+        else if (!postamble.isEmpty())
+            pos = postamble.head.pos;
+
+        DCDocComment dc = m.at(pos).newDocCommentTree(comment, body, tags, preamble, postamble);
         return dc;
     }
 
@@ -133,13 +154,17 @@ public class DocCommentParser {
         }
     }
 
+    protected List<DCTree> blockContent() {
+        return blockContent(Phase.BODY);
+    }
+
     /**
      * Read block content, consisting of text, html and inline tags.
      * Terminated by the end of input, or the beginning of the next block tag:
      * i.e. @ as the first non-whitespace character on a line.
      */
     @SuppressWarnings("fallthrough")
-    protected List<DCTree> blockContent() {
+    protected List<DCTree> blockContent(Phase phase) {
         ListBuffer<DCTree> trees = new ListBuffer<>();
         textStart = -1;
 
@@ -160,8 +185,36 @@ public class DocCommentParser {
 
                 case '<':
                     newline = false;
+                    if (isFileContent) {
+                        switch (phase) {
+                            case PREAMBLE:
+                                if (peek("body")) {
+                                    trees.add(html());
+                                    if (textStart == -1) {
+                                        textStart = bp;
+                                        lastNonWhite = -1;
+                                    }
+                                    // mark this as the start, for processing purposes
+                                    newline = true;
+                                    break loop;
+                                }
+                                break;
+                            case BODY:
+                                if (peek("/body")) {
+                                    addPendingText(trees, lastNonWhite);
+                                    break loop;
+                                }
+                                break;
+                            default:
+                                // fallthrough
+                        }
+                    }
                     addPendingText(trees, bp - 1);
                     trees.add(html());
+
+                    if (phase == Phase.PREAMBLE || phase == Phase.POSTAMBLE) {
+                        break; // Ignore newlines after html tags, in the meta content
+                    }
                     if (textStart == -1) {
                         textStart = bp;
                         lastNonWhite = -1;
@@ -734,11 +787,37 @@ public class DocCommentParser {
         }
     }
 
+    boolean peek(String s) {
+        final int savedpos = bp;
+        try {
+            if (ch == '<')
+                nextChar();
+
+            if (ch == '/') {
+                if (s.charAt(0) != ch) {
+                    return false;
+                } else {
+                    s = s.substring(1, s.length());
+                    nextChar();
+                }
+            }
+
+            if (isIdentifierStart(ch)) {
+                Name name = readIdentifier();
+                return StringUtils.toLowerCase(name.toString()).equals(s);
+            }
+            return false;
+        } finally {
+            bp = savedpos;
+            ch = buf[bp];
+        }
+    }
+
     /**
      * Read the start or end of an HTML tag, or an HTML comment
      * {@literal <identifier attrs> } or {@literal </identifier> }
      */
-    protected DCTree html() {
+    private DCTree html() {
         int p = bp;
         nextChar();
         if (isIdentifierStart(ch)) {
@@ -789,6 +868,19 @@ public class DocCommentParser {
 
                         nextChar();
                     }
+                }
+            } else if (isIdentifierStart(ch) && peek("doctype")) {
+                readIdentifier();
+                nextChar();
+                skipWhitespace();
+                int d = bp;
+                while (bp < buflen) {
+                    if (ch == '>') {
+                        int mark = bp;
+                        nextChar();
+                        return m.at(d).newDocTypeTree(newString(d, mark));
+                    }
+                    nextChar();
                 }
             }
         }
@@ -1316,4 +1408,5 @@ public class DocCommentParser {
             tagParsers.put(names.fromString(p.getTreeKind().tagName), p);
 
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.DocTreeVisitor;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -84,7 +85,7 @@ public class SimpleDocTreeVisitorTest {
             }
 
             for (DocTree.Kind k: DocTree.Kind.values()) {
-                if (!found.contains(k) && k != DocTree.Kind.OTHER)
+                if (!found.contains(k) && k != DocTree.Kind.OTHER && k != DocTree.Kind.DOC_TYPE)
                     error("not found: " + k);
             }
 

@@ -78,6 +78,12 @@ public interface DocTree {
         DOC_ROOT("docRoot"),
 
         /**
+         * Used for instances of {@link DocTypeTree}
+         * representing an HTML DocType declaration.
+         */
+        DOC_TYPE,
+
+        /**
          * Used for instances of {@link EndElementTree}
          * representing the end of an HTML element.
          */

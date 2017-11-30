@@ -28,6 +28,7 @@ package com.sun.tools.javac.tree;
 import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -37,6 +38,7 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
 import com.sun.source.doctree.AttributeTree.ValueKind;
+import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
@@ -59,6 +61,7 @@ import com.sun.tools.javac.tree.DCTree.DCComment;
 import com.sun.tools.javac.tree.DCTree.DCDeprecated;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DCTree.DCDocRoot;
+import com.sun.tools.javac.tree.DCTree.DCDocType;
 import com.sun.tools.javac.tree.DCTree.DCEndElement;
 import com.sun.tools.javac.tree.DCTree.DCEntity;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
@@ -195,9 +198,23 @@ public class DocTreeMaker implements DocTreeFactory {
         return tree;
     }
 
-    public DCDocComment newDocCommentTree(Comment comment, List<? extends DocTree> fullBody, List<? extends DocTree> tags) {
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCDocComment newDocCommentTree(List<? extends DocTree> fullBody, List<? extends DocTree> tags) {
         Pair<List<DCTree>, List<DCTree>> pair = splitBody(fullBody);
-        DCDocComment tree = new DCDocComment(comment, cast(fullBody), pair.fst, pair.snd, cast(tags));
+        List<DCTree> preamble = Collections.emptyList();
+        List<DCTree> postamble = Collections.emptyList();
+
+        return newDocCommentTree(fullBody, tags, preamble, postamble);
+    }
+
+    public DCDocComment newDocCommentTree(Comment comment,
+                                          List<? extends DocTree> fullBody,
+                                          List<? extends DocTree> tags,
+                                          List<? extends DocTree> preamble,
+                                          List<? extends DocTree> postamble) {
+        Pair<List<DCTree>, List<DCTree>> pair = splitBody(fullBody);
+        DCDocComment tree = new DCDocComment(comment, cast(fullBody), pair.fst, pair.snd,
+                cast(tags), cast(preamble), cast(postamble));
         tree.pos = pos;
         return tree;
     }
@@ -208,7 +225,10 @@ public class DocTreeMaker implements DocTreeFactory {
      * where the trees are being synthesized by a tool.
      */
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public DCDocComment newDocCommentTree(List<? extends DocTree> fullBody, List<? extends DocTree> tags) {
+    public DCDocComment newDocCommentTree(List<? extends DocTree> fullBody,
+                                          List<? extends DocTree> tags,
+                                          List<? extends DocTree> preamble,
+                                          List<? extends DocTree> postamble) {
         ListBuffer<DCTree> lb = new ListBuffer<>();
         lb.addAll(cast(fullBody));
         List<DCTree> fBody = lb.toList();
@@ -236,13 +256,21 @@ public class DocTreeMaker implements DocTreeFactory {
             }
         };
         Pair<List<DCTree>, List<DCTree>> pair = splitBody(fullBody);
-        DCDocComment tree = new DCDocComment(c, fBody, pair.fst, pair.snd, cast(tags));
+        DCDocComment tree = new DCDocComment(c, fBody, pair.fst, pair.snd, cast(tags),
+                                             cast(preamble), cast(postamble));
         return tree;
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCDocRoot newDocRootTree() {
         DCDocRoot tree = new DCDocRoot();
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCDocType newDocTypeTree(String text) {
+        DCDocType tree = new DCDocType(text);
         tree.pos = pos;
         return tree;
     }
