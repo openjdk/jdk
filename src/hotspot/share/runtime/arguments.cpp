@@ -4397,26 +4397,7 @@ jint Arguments::apply_ergo() {
   }
 #endif
 
-  bool aot_enabled = UseAOT && AOTLibrary != NULL;
-  bool jvmci_enabled = NOT_JVMCI(false) JVMCI_ONLY(EnableJVMCI || UseJVMCICompiler);
-  bool handshakes_supported = SafepointMechanism::supports_thread_local_poll() && !aot_enabled && !jvmci_enabled && ThreadLocalHandshakes;
   // ThreadLocalHandshakesConstraintFunc handles the constraints.
-  // Here we try to figure out if a mutual exclusive option have been set that conflict with a default.
-  if (handshakes_supported) {
-    FLAG_SET_DEFAULT(UseAOT, false); // Clear the AOT flag to make sure it doesn't try to initialize.
-  } else {
-    if (FLAG_IS_DEFAULT(ThreadLocalHandshakes) && ThreadLocalHandshakes) {
-      if (aot_enabled) {
-        // If user enabled AOT but ThreadLocalHandshakes is at default set it to false.
-        log_debug(ergo)("Disabling ThreadLocalHandshakes for UseAOT.");
-        FLAG_SET_DEFAULT(ThreadLocalHandshakes, false);
-      } else if (jvmci_enabled){
-        // If user enabled JVMCI but ThreadLocalHandshakes is at default set it to false.
-        log_debug(ergo)("Disabling ThreadLocalHandshakes for EnableJVMCI/UseJVMCICompiler.");
-        FLAG_SET_DEFAULT(ThreadLocalHandshakes, false);
-      }
-    }
-  }
   if (FLAG_IS_DEFAULT(ThreadLocalHandshakes) || !SafepointMechanism::supports_thread_local_poll()) {
     log_debug(ergo)("ThreadLocalHandshakes %s", ThreadLocalHandshakes ? "enabled." : "disabled.");
   } else {

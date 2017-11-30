@@ -29,13 +29,17 @@ import java.time.Duration;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import sun.hotspot.WhiteBox;
+
 /*
  * @test HandshakeTransitionTest
  * @summary This does a sanity test of the poll in the native wrapper.
  * @requires vm.debug
  * @library /testlibrary /test/lib
  * @build HandshakeTransitionTest
- * @run main/native HandshakeTransitionTest
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI HandshakeTransitionTest
  */
 
 public class HandshakeTransitionTest {
@@ -44,6 +48,7 @@ public class HandshakeTransitionTest {
 
     public static void main(String[] args) throws Exception {
         String lib = System.getProperty("test.nativepath");
+        WhiteBox wb = WhiteBox.getWhiteBox();
         ProcessBuilder pb =
             ProcessTools.createJavaProcessBuilder(
                     true,
@@ -54,6 +59,8 @@ public class HandshakeTransitionTest {
                     "-XX:ParallelGCThreads=1",
                     "-XX:ConcGCThreads=1",
                     "-XX:CICompilerCount=2",
+                    "-XX:+UnlockExperimentalVMOptions",
+                    (wb.getBooleanVMFlag("UseJVMCICompiler") ?  "-XX:+UseJVMCICompiler" : "-XX:-UseJVMCICompiler"),
                     "HandshakeTransitionTest$Test");
 
 
