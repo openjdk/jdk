@@ -2127,19 +2127,22 @@ class Threads: AllStatic {
   friend class VMStructs;
  private:
   // Safe Memory Reclamation (SMR) support:
+  // The coordination between Threads::release_stable_list() and
+  // Threads::smr_delete() uses the smr_delete_lock in order to
+  // reduce the traffic on the Threads_lock.
   static Monitor*              _smr_delete_lock;
   // The '_cnt', '_max' and '_times" fields are enabled via
   // -XX:+EnableThreadSMRStatistics (see thread.cpp for a
   // description about each field):
   static uint                  _smr_delete_lock_wait_cnt;
   static uint                  _smr_delete_lock_wait_max;
+  // The smr_delete_notify flag is used for proper double-check
+  // locking in order to reduce the traffic on the smr_delete_lock.
   static volatile uint         _smr_delete_notify;
   static volatile uint         _smr_deleted_thread_cnt;
   static volatile uint         _smr_deleted_thread_time_max;
   static volatile uint         _smr_deleted_thread_times;
   static ThreadsList* volatile _smr_java_thread_list;
-  static ThreadsList*          get_smr_java_thread_list();
-  static ThreadsList*          xchg_smr_java_thread_list(ThreadsList* new_list);
   static uint64_t              _smr_java_thread_list_alloc_cnt;
   static uint64_t              _smr_java_thread_list_free_cnt;
   static uint                  _smr_java_thread_list_max;
@@ -2163,7 +2166,21 @@ class Threads: AllStatic {
   static void initialize_java_lang_classes(JavaThread* main_thread, TRAPS);
   static void initialize_jsr292_core_classes(TRAPS);
 
+  static ThreadsList *acquire_stable_list_fast_path(Thread *self);
+  static ThreadsList *acquire_stable_list_nested_path(Thread *self);
+  static void add_smr_deleted_thread_times(uint add_value);
+  static void clear_smr_delete_notify();
+  static ThreadsList* get_smr_java_thread_list();
+  static void inc_smr_deleted_thread_cnt();
+  static void release_stable_list_fast_path(Thread *self);
+  static void release_stable_list_nested_path(Thread *self);
+  static void release_stable_list_wake_up(char *log_str);
+  static void set_smr_delete_notify();
+  static Monitor* smr_delete_lock() { return _smr_delete_lock; }
+  static bool smr_delete_notify();
   static void smr_free_list(ThreadsList* threads);
+  static void update_smr_deleted_thread_time_max(uint new_value);
+  static ThreadsList* xchg_smr_java_thread_list(ThreadsList* new_list);
 
  public:
   // Thread management
@@ -2176,30 +2193,13 @@ class Threads: AllStatic {
 
   // SMR support:
   static ThreadsList *acquire_stable_list(Thread *self, bool is_ThreadsListSetter);
-  static ThreadsList *acquire_stable_list_fast_path(Thread *self);
-  static ThreadsList *acquire_stable_list_nested_path(Thread *self);
   static void release_stable_list(Thread *self);
-  static void release_stable_list_fast_path(Thread *self);
-  static void release_stable_list_nested_path(Thread *self);
-  static void release_stable_list_wake_up(char *log_str);
   static bool is_a_protected_JavaThread(JavaThread *thread);
   static bool is_a_protected_JavaThread_with_lock(JavaThread *thread) {
     MutexLockerEx ml(Threads_lock->owned_by_self() ? NULL : Threads_lock);
     return is_a_protected_JavaThread(thread);
   }
   static void smr_delete(JavaThread *thread);
-  // The coordination between Threads::release_stable_list() and
-  // Threads::smr_delete() uses the smr_delete_lock in order to
-  // reduce the traffic on the Threads_lock.
-  static Monitor* smr_delete_lock() { return _smr_delete_lock; }
-  // The smr_delete_notify flag is used for proper double-check
-  // locking in order to reduce the traffic on the smr_delete_lock.
-  static bool smr_delete_notify();
-  static void set_smr_delete_notify();
-  static void clear_smr_delete_notify();
-  static void inc_smr_deleted_thread_cnt();
-  static void update_smr_deleted_thread_time_max(uint new_value);
-  static void add_smr_deleted_thread_times(uint add_value);
   static void inc_smr_tlh_cnt();
   static void update_smr_tlh_time_max(uint new_value);
   static void add_smr_tlh_times(uint add_value);

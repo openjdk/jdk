@@ -3561,6 +3561,10 @@ static inline void *prefetch_and_load_ptr(void **addr, intx prefetch_interval) {
          MACRO_current_p++,                                                                                               \
              X = (JavaThread*)prefetch_and_load_ptr((void**)MACRO_current_p, (intx)MACRO_scan_interval))
 
+inline ThreadsList* Threads::get_smr_java_thread_list() {
+  return (ThreadsList*)OrderAccess::load_acquire(&_smr_java_thread_list);
+}
+
 // All JavaThreads
 #define ALL_JAVA_THREADS(X) DO_JAVA_THREADS(get_smr_java_thread_list(), X)
 
@@ -3772,6 +3776,14 @@ ThreadsList *Threads::acquire_stable_list_nested_path(Thread *self) {
   return node->t_list();
 }
 
+inline void Threads::add_smr_deleted_thread_times(uint add_value) {
+  Atomic::add(add_value, &_smr_deleted_thread_times);
+}
+
+inline void Threads::inc_smr_deleted_thread_cnt() {
+  Atomic::inc(&_smr_deleted_thread_cnt);
+}
+
 // Release a stable ThreadsList.
 //
 void Threads::release_stable_list(Thread *self) {
@@ -3869,6 +3881,24 @@ void Threads::release_stable_list_wake_up(char *log_str) {
     ml.notify_all();
     log_debug(thread, smr)("tid=" UINTX_FORMAT ": Threads::release_stable_list notified %s", os::current_thread_id(), log_str);
   }
+}
+
+inline void Threads::update_smr_deleted_thread_time_max(uint new_value) {
+  while (true) {
+    uint cur_value = _smr_deleted_thread_time_max;
+    if (new_value <= cur_value) {
+      // No need to update max value so we're done.
+      break;
+    }
+    if (Atomic::cmpxchg(new_value, &_smr_deleted_thread_time_max, cur_value) == cur_value) {
+      // Updated max value so we're done. Otherwise try it all again.
+      break;
+    }
+  }
+}
+
+inline ThreadsList* Threads::xchg_smr_java_thread_list(ThreadsList* new_list) {
+  return (ThreadsList*)Atomic::xchg(new_list, &_smr_java_thread_list);
 }
 
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
