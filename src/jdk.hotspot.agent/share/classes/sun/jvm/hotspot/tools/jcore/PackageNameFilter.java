@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,14 @@ public class PackageNameFilter implements ClassFilter
     }
 
     public boolean canInclude(InstanceKlass kls) {
-        String klassName = kls.getName().asString().replace('/', '.');
+        if (pkgList == null) {
+            // Dump everything
+            return true;
+        }
         final int len = pkgList.length;
         if (len == 0)
             return true;
+        String klassName = kls.getName().asString().replace('/', '.');
         for (int i=0; i < len; i++)
             if (klassName.startsWith((String) pkgList[i] )) return true;
         return false;
