@@ -192,7 +192,8 @@ public interface Collection<E> extends Iterable<E> {
      * Returns an array containing all of the elements in this collection.
      * If this collection makes any guarantees as to what order its elements
      * are returned by its iterator, this method must return the elements in
-     * the same order.
+     * the same order. The returned array's {@linkplain Class#getComponentType
+     * runtime component type} is {@code Object}.
      *
      * <p>The returned array will be "safe" in that no references to it are
      * maintained by this collection.  (In other words, this method must
@@ -202,7 +203,8 @@ public interface Collection<E> extends Iterable<E> {
      * <p>This method acts as bridge between array-based and collection-based
      * APIs.
      *
-     * @return an array containing all of the elements in this collection
+     * @return an array, whose {@linkplain Class#getComponentType runtime component
+     * type} is {@code Object}, containing all of the elements in this collection
      */
     Object[] toArray();
 
@@ -239,14 +241,14 @@ public interface Collection<E> extends Iterable<E> {
      * Note that {@code toArray(new Object[0])} is identical in function to
      * {@code toArray()}.
      *
-     * @param <T> the runtime type of the array to contain the collection
+     * @param <T> the component type of the array to contain the collection
      * @param a the array into which the elements of this collection are to be
      *        stored, if it is big enough; otherwise, a new array of the same
      *        runtime type is allocated for this purpose.
      * @return an array containing all of the elements in this collection
-     * @throws ArrayStoreException if the runtime type of the specified array
-     *         is not a supertype of the runtime type of every element in
-     *         this collection
+     * @throws ArrayStoreException if the runtime type of any element in this
+     *         collection is not assignable to the {@linkplain Class#getComponentType
+     *         runtime component type} of the specified array
      * @throws NullPointerException if the specified array is null
      */
     <T> T[] toArray(T[] a);
