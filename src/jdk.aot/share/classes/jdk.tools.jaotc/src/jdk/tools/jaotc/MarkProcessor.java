@@ -45,6 +45,7 @@ final class MarkProcessor {
      * @param methodInfo compiled method info
      * @param mark mark being processed
      */
+    @SuppressWarnings("fallthrough")
     void process(CompiledMethodInfo methodInfo, Mark mark) {
         MarkId markId = MarkId.getEnum((int) mark.id);
         switch (markId) {
@@ -53,6 +54,11 @@ final class MarkProcessor {
                 break;
             case POLL_FAR:
             case POLL_RETURN_FAR:
+                if (binaryContainer.getThreadLocalHandshakes()) {
+                    // skip relocation
+                    break;
+                }
+                // fallthrough
             case CARD_TABLE_ADDRESS:
             case HEAP_TOP_ADDRESS:
             case HEAP_END_ADDRESS:
