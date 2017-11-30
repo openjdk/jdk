@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8159058
+ * @bug 8159058 8186441
  * @summary Test that empty default namespace declaration clears the
  *          default namespace value
  * @modules java.xml.ws/com.sun.xml.internal.ws.api
@@ -59,6 +59,26 @@ import org.testng.annotations.Test;
 import org.w3c.dom.Node;
 
 public class SaajEmptyNamespaceTest {
+
+    /*
+     * Test that SOAP reader doesn't move namespaces declarations to SOAP body element
+     *  as reported in JDK-8186441
+     */
+    @Test
+    public void testPreserveNamespacesPosition() throws Exception {
+        // Create SOAP message from XML string and process it with SAAJ reader
+        XMLStreamReader envelope = XMLInputFactory.newFactory().createXMLStreamReader(
+                new StringReader(INPUT_SOAP_MESSAGE_2));
+        StreamMessage streamMessage = new StreamMessage(SOAPVersion.SOAP_11,
+                envelope, null);
+        SAAJFactory saajFact = new SAAJFactory();
+        SOAPMessage soapMessage = saajFact.readAsSOAPMessage(SOAPVersion.SOAP_11, streamMessage);
+
+        //Get SOAP body and convert it to string representation
+        SOAPBody body = soapMessage.getSOAPBody();
+        String bodyAsString = nodeToText(body);
+        Assert.assertEquals(bodyAsString, PRESERVE_NAMESPACES_EXPECTED_RESULT);
+    }
 
     /*
      * Test that SOAP message with default namespace declaration that contains empty
@@ -275,10 +295,28 @@ public class SaajEmptyNamespaceTest {
 
     // Expected body content after SAAJ processing
     private static String EXPECTED_RESULT = "<SampleServiceRequest"
-            +" xmlns=\"http://example.org/test\">"
+            + " xmlns=\"http://example.org/test\""
+            + " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
             + "<RequestParams xmlns=\"\">"
             + "<Param1>hogehoge</Param1>"
             + "<Param2>fugafuga</Param2>"
             + "</RequestParams>"
             + "</SampleServiceRequest>";
+
+    private static String PRESERVE_NAMESPACES_EXPECTED_RESULT =
+            "<s:Body xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">"
+            +"<Request xmlns=\"http://example.org/NS_1\">"
+            +"<Item><Contact xmlns=\"http://example.org/NS_2\">Test_Contact</Contact>"
+            +"</Item></Request></s:Body>";
+
+    private static String INPUT_SOAP_MESSAGE_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            + "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">"
+            + "<s:Body>"
+            + "<Request xmlns=\"http://example.org/NS_1\">"
+            + "<Item>"
+            + "<Contact xmlns=\"http://example.org/NS_2\">Test_Contact</Contact>"
+            + "</Item>"
+            + "</Request>"
+            + "</s:Body>"
+            + "</s:Envelope>";
 }
