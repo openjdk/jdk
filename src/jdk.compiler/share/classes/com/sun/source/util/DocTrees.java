@@ -98,13 +98,12 @@ public abstract class DocTrees extends Trees {
     /**
      * Returns the doc comment tree of the given file. The file must be
      * an HTML file, in which case the doc comment tree represents the
-     * contents of the &lt;body&gt; tag, and any enclosing tags are ignored.
+     * entire contents of the file.
      * Returns {@code null} if no doc comment was found.
      * Future releases may support additional file types.
      *
      * @param fileObject the content container
      * @return the doc comment tree
-     *
      * @since 9
      */
     public abstract DocCommentTree getDocCommentTree(FileObject fileObject);

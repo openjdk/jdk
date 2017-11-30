@@ -404,9 +404,18 @@ public class DocCommentTester {
             public Void visitDocComment(DocCommentTree node, Void p) {
                 header(node);
                 indent(+1);
+                // Applicable only to html files, print iff non-empty
+                if (!node.getPreamble().isEmpty())
+                    print("preamble", node.getPreamble());
+
                 print("firstSentence", node.getFirstSentence());
                 print("body", node.getBody());
                 print("block tags", node.getBlockTags());
+
+                // Applicable only to html files, print iff non-empty
+                if (!node.getPostamble().isEmpty())
+                    print("postamble", node.getPostamble());
+
                 indent(-1);
                 indent();
                 out.println("]");
@@ -415,6 +424,11 @@ public class DocCommentTester {
 
             public Void visitDocRoot(DocRootTree node, Void p) {
                 header(node, "");
+                return null;
+            }
+
+            public Void visitDocType(DocTypeTree node, Void p) {
+                header(node, compress(node.getText()));
                 return null;
             }
 
