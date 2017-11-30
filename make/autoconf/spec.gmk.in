@@ -565,12 +565,10 @@ BUILD_JAVA_FLAGS := @BOOTCYCLE_JVM_ARGS_BIG@
 BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
 
 # Interim langtools and rmic modules and arguments
-INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.jdeps jdk.javadoc
+INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
 INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
 INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim \
-    --add-exports java.base/jdk.internal.util.jar=jdk.jdeps.interim \
-    --add-exports java.base/jdk.internal.misc=jdk.jdeps.interim \
     #
 INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
     $(INTERIM_LANGTOOLS_MODULES))))
