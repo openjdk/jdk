@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@ JVM_ActiveProcessorCount
 JVM_ArrayCopy
 JVM_AssertionStatusDirectives
 JVM_CallStackWalk
-JVM_ClassDepth
-JVM_ClassLoaderDepth
 JVM_Clone
 JVM_ConstantPoolGetClassAt
 JVM_ConstantPoolGetClassAtIfLoaded
@@ -47,8 +45,6 @@ JVM_ConstantPoolGetStringAt
 JVM_ConstantPoolGetTagAt
 JVM_ConstantPoolGetUTF8At
 JVM_CountStackFrames
-JVM_CurrentClassLoader
-JVM_CurrentLoadedClass
 JVM_CurrentThread
 JVM_CurrentTimeMillis
 JVM_DefineClass
