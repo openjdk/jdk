@@ -139,7 +139,8 @@ bool SharedPathsMiscInfo::check() {
 bool SharedPathsMiscInfo::check(jint type, const char* path) {
   switch (type) {
   case BOOT:
-    if (os::file_name_strcmp(path, Arguments::get_sysclasspath()) != 0) {
+    // In the future we should perform the check based on the content of the mapped archive.
+    if (UseAppCDS && os::file_name_strcmp(path, Arguments::get_sysclasspath()) != 0) {
       return fail("[BOOT classpath mismatch, actual =", Arguments::get_sysclasspath());
     }
     break;
