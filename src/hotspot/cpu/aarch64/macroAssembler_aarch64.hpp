@@ -998,12 +998,12 @@ public:
   void atomic_xchgalw(Register prev, Register newv, Register addr);
 
   void orptr(Address adr, RegisterOrConstant src) {
-    ldr(rscratch2, adr);
+    ldr(rscratch1, adr);
     if (src.is_register())
-      orr(rscratch2, rscratch2, src.as_register());
+      orr(rscratch1, rscratch1, src.as_register());
     else
-      orr(rscratch2, rscratch2, src.as_constant());
-    str(rscratch2, adr);
+      orr(rscratch1, rscratch1, src.as_constant());
+    str(rscratch1, adr);
   }
 
   // A generic CAS; success or failure is in the EQ flag.

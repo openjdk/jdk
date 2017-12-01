@@ -1662,6 +1662,14 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   __ mov(rscratch2, true);
   __ strb(rscratch2, do_not_unlock_if_synchronized);
 
+  Label no_mdp;
+  Register mdp = r3;
+  __ ldr(mdp, Address(rmethod, Method::method_data_offset()));
+  __ cbz(mdp, no_mdp);
+  __ add(mdp, mdp, in_bytes(MethodData::data_offset()));
+  __ profile_parameters_type(mdp, r1, r2);
+  __ bind(no_mdp);
+
   // increment invocation count & check for overflow
   Label invocation_counter_overflow;
   Label profile_method;
