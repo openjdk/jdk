@@ -33,28 +33,28 @@
  * @build Common
  * @run driver TestCPUAwareness
  */
+import java.util.List;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 
 
 public class TestCPUAwareness {
     private static final String imageName = Common.imageName("cpu");
+    private static final int availableCPUs = Runtime.getRuntime().availableProcessors();
 
     public static void main(String[] args) throws Exception {
         if (!DockerTestUtils.canTestDocker()) {
             return;
         }
 
-        int availableCPUs = Runtime.getRuntime().availableProcessors();
         System.out.println("Test Environment: detected availableCPUs = " + availableCPUs);
         DockerTestUtils.buildJdkDockerImage(imageName, "Dockerfile-BasicTest", "jdk-docker");
 
         try {
             // cpuset, period, shares, expected Active Processor Count
-            testAPCCombo("0", 200*1000, 100*1000,   4*1024, 1);
-            testAPCCombo("0,1", 200*1000, 100*1000, 4*1024, 2);
-            testAPCCombo("0,1", 200*1000, 100*1000, 1*1024, 2);
+            testComboWithCpuSets();
 
+            // cpu shares - it should be safe to use CPU shares exceeding available CPUs
             testCpuShares(256, 1);
             testCpuShares(2048, 2);
             testCpuShares(4096, 4);
@@ -70,12 +70,39 @@ public class TestCPUAwareness {
             testActiveProcessorCount(1, 1);
             testActiveProcessorCount(2, 2);
 
+            // cpu quota and period
             testCpuQuotaAndPeriod(50*1000, 100*1000);
             testCpuQuotaAndPeriod(100*1000, 100*1000);
             testCpuQuotaAndPeriod(150*1000, 100*1000);
+            testCpuQuotaAndPeriod(400*1000, 100*1000);
 
         } finally {
             DockerTestUtils.removeDockerImage(imageName);
+        }
+    }
+
+
+    private static void testComboWithCpuSets() throws Exception {
+        String cpuSetStr = CPUSetsReader.readFromProcStatus("Cpus_allowed_list");
+        System.out.println("cpuSetStr = " + cpuSetStr);
+
+        if (cpuSetStr == null) {
+            System.out.printf("The cpuset test cases are skipped");
+        } else {
+            List<Integer> cpuSet = CPUSetsReader.parseCpuSet(cpuSetStr);
+
+            // Test subset of cpuset with one element
+            if (cpuSet.size() >= 1) {
+                String testCpuSet = CPUSetsReader.listToString(cpuSet, 1);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000,   4*1024, 1);
+            }
+
+            // Test subset of cpuset with two elements
+            if (cpuSet.size() >= 2) {
+                String testCpuSet = CPUSetsReader.listToString(cpuSet, 2);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000, 4*1024, 2);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1*1024, 2);
+            }
         }
     }
 
@@ -99,6 +126,16 @@ public class TestCPUAwareness {
     }
 
 
+    // Expected active processor count can not exceed available CPU count
+    private static int adjustExpectedAPCForAvailableCPUs(int expectedAPC) {
+        if (expectedAPC > availableCPUs) {
+            expectedAPC = availableCPUs;
+            System.out.println("Adjusted expectedAPC = " + expectedAPC);
+        }
+        return expectedAPC;
+    }
+
+
     private static void testCpuQuotaAndPeriod(int quota, int period)
         throws Exception {
         Common.logNewTestCase("test cpu quota and period: ");
@@ -107,6 +144,7 @@ public class TestCPUAwareness {
 
         int expectedAPC = (int) Math.ceil((float) quota / (float) period);
         System.out.println("expectedAPC = " + expectedAPC);
+        expectedAPC = adjustExpectedAPCForAvailableCPUs(expectedAPC);
 
         DockerRunOptions opts = Common.newOpts(imageName)
             .addDockerOpts("--cpu-period=" + period)
@@ -129,6 +167,8 @@ public class TestCPUAwareness {
         System.out.println("shares = " + period);
         System.out.println("expectedAPC = " + expectedAPC);
 
+        expectedAPC = adjustExpectedAPCForAvailableCPUs(expectedAPC);
+
         DockerRunOptions opts = Common.newOpts(imageName)
             .addDockerOpts("--cpuset-cpus", "" + cpuset)
             .addDockerOpts("--cpu-period=" + period)
@@ -141,6 +181,10 @@ public class TestCPUAwareness {
 
     private static void testCpuShares(int shares, int expectedAPC) throws Exception {
         Common.logNewTestCase("test cpu shares, shares = " + shares);
+        System.out.println("expectedAPC = " + expectedAPC);
+
+        expectedAPC = adjustExpectedAPCForAvailableCPUs(expectedAPC);
+
         DockerRunOptions opts = Common.newOpts(imageName)
             .addDockerOpts("--cpu-shares=" + shares);
         Common.run(opts)
