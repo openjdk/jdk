@@ -35,6 +35,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.meta.ConstantReflectionProvider;
@@ -86,7 +87,8 @@ public final class NormalizeCompareNode extends BinaryNode implements IterableNo
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        ValueNode result = tryConstantFold(x, y, isUnorderedLess, stamp().getStackKind(), tool.getConstantReflection());
+        NodeView view = NodeView.from(tool);
+        ValueNode result = tryConstantFold(x, y, isUnorderedLess, stamp(view).getStackKind(), tool.getConstantReflection());
         if (result != null) {
             return result;
         }
@@ -100,7 +102,7 @@ public final class NormalizeCompareNode extends BinaryNode implements IterableNo
 
     @Override
     public Stamp foldStamp(Stamp stampX, Stamp stampY) {
-        return stamp();
+        return stamp(NodeView.DEFAULT);
     }
 
     public boolean isUnorderedLess() {

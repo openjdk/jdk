@@ -48,6 +48,7 @@ import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.SafepointNode;
@@ -213,11 +214,11 @@ public class LoopFragmentInside extends LoopFragment {
             }
             long originalStride = unrollFactor == 1 ? iv.constantStride() : iv.constantStride() / unrollFactor;
             if (iv.direction() == InductionVariable.Direction.Up) {
-                ConstantNode aboveVal = graph.unique(ConstantNode.forIntegerStamp(iv.initNode().stamp(), unrollFactor * originalStride));
+                ConstantNode aboveVal = graph.unique(ConstantNode.forIntegerStamp(iv.initNode().stamp(NodeView.DEFAULT), unrollFactor * originalStride));
                 ValueNode newLimit = graph.addWithoutUnique(new SubNode(compareBound, aboveVal));
                 compareNode.replaceFirstInput(compareBound, newLimit);
             } else if (iv.direction() == InductionVariable.Direction.Down) {
-                ConstantNode aboveVal = graph.unique(ConstantNode.forIntegerStamp(iv.initNode().stamp(), unrollFactor * -originalStride));
+                ConstantNode aboveVal = graph.unique(ConstantNode.forIntegerStamp(iv.initNode().stamp(NodeView.DEFAULT), unrollFactor * -originalStride));
                 ValueNode newLimit = graph.addWithoutUnique(new AddNode(compareBound, aboveVal));
                 compareNode.replaceFirstInput(compareBound, newLimit);
             }
@@ -391,7 +392,7 @@ public class LoopFragmentInside extends LoopFragment {
     private static PhiNode patchPhi(StructuredGraph graph, PhiNode phi, AbstractMergeNode merge) {
         PhiNode ret;
         if (phi instanceof ValuePhiNode) {
-            ret = new ValuePhiNode(phi.stamp(), merge);
+            ret = new ValuePhiNode(phi.stamp(NodeView.DEFAULT), merge);
         } else if (phi instanceof GuardPhiNode) {
             ret = new GuardPhiNode(merge);
         } else if (phi instanceof MemoryPhiNode) {

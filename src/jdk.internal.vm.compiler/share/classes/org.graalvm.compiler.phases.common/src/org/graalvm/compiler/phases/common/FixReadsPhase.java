@@ -42,6 +42,7 @@ import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.MergeNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -115,7 +116,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
                 replaceCurrent(fixedAccess);
             } else if (node instanceof PiNode) {
                 PiNode piNode = (PiNode) node;
-                if (piNode.stamp().isCompatible(piNode.getOriginalNode().stamp())) {
+                if (piNode.stamp(NodeView.DEFAULT).isCompatible(piNode.getOriginalNode().stamp(NodeView.DEFAULT))) {
                     // Pi nodes are no longer necessary at this point.
                     piNode.replaceAndDelete(piNode.getOriginalNode());
                 }
@@ -178,7 +179,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
                                 }
                                 counterConstantInputReplacements.increment(node.getDebug());
                                 ConstantNode stampConstant = ConstantNode.forConstant(bestStamp, constant, metaAccess, graph);
-                                assert stampConstant.stamp().isCompatible(valueNode.stamp());
+                                assert stampConstant.stamp(NodeView.DEFAULT).isCompatible(valueNode.stamp(NodeView.DEFAULT));
                                 replaceInput(p, node, stampConstant);
                                 replacements++;
                             }
@@ -258,7 +259,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
                                 bestStamp = bestStamp.meet(currentEndMap.get(phi));
                             }
 
-                            if (!bestStamp.equals(phi.stamp())) {
+                            if (!bestStamp.equals(phi.stamp(NodeView.DEFAULT))) {
                                 endMap.put(phi, bestStamp);
                             }
                         }
@@ -293,7 +294,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
                                     bestStamp = bestStamp.meet(otherEndsStamp);
                                 }
 
-                                if (nodeWithNewStamp.stamp().tryImproveWith(bestStamp) == null) {
+                                if (nodeWithNewStamp.stamp(NodeView.DEFAULT).tryImproveWith(bestStamp) == null) {
                                     // No point in registering the stamp.
                                 } else {
                                     endMap.put(nodeWithNewStamp, bestStamp);
@@ -462,7 +463,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             ValueNode originalNode = value;
             StampElement currentStamp = stampMap.getAndGrow(originalNode);
             if (currentStamp == null) {
-                return value.stamp();
+                return value.stamp(NodeView.DEFAULT);
             }
             return currentStamp.getStamp();
         }

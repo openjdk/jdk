@@ -35,6 +35,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.FieldLocationIdentity;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -97,7 +98,7 @@ public final class ReadEliminationClosure extends EffectsClosure<ReadElimination
                 LoadCacheEntry identifier = new LoadCacheEntry(object, new FieldLocationIdentity(access.field()));
                 ValueNode cachedValue = state.getCacheEntry(identifier);
                 if (node instanceof LoadFieldNode) {
-                    if (cachedValue != null && access.stamp().isCompatible(cachedValue.stamp())) {
+                    if (cachedValue != null && access.stamp(NodeView.DEFAULT).isCompatible(cachedValue.stamp(NodeView.DEFAULT))) {
                         effects.replaceAtUsages(access, cachedValue, access);
                         addScalarAlias(access, cachedValue);
                         deleted = true;
@@ -196,7 +197,7 @@ public final class ReadEliminationClosure extends EffectsClosure<ReadElimination
     }
 
     private static boolean areValuesReplaceable(ValueNode originalValue, ValueNode replacementValue, boolean considerGuards) {
-        return originalValue.stamp().isCompatible(replacementValue.stamp()) &&
+        return originalValue.stamp(NodeView.DEFAULT).isCompatible(replacementValue.stamp(NodeView.DEFAULT)) &&
                         (!considerGuards || (getGuard(originalValue) == null || getGuard(originalValue) == getGuard(replacementValue)));
     }
 
@@ -269,7 +270,7 @@ public final class ReadEliminationClosure extends EffectsClosure<ReadElimination
                     // E.g. unsafe loads / stores with different access kinds have different stamps
                     // although location, object and offset are the same. In this case we cannot
                     // create a phi nor can we set a common value.
-                    if (otherValue == null || !value.stamp().isCompatible(otherValue.stamp())) {
+                    if (otherValue == null || !value.stamp(NodeView.DEFAULT).isCompatible(otherValue.stamp(NodeView.DEFAULT))) {
                         value = null;
                         phi = false;
                         break;
@@ -279,11 +280,11 @@ public final class ReadEliminationClosure extends EffectsClosure<ReadElimination
                     }
                 }
                 if (phi) {
-                    PhiNode phiNode = getCachedPhi(key, value.stamp().unrestricted());
+                    PhiNode phiNode = getCachedPhi(key, value.stamp(NodeView.DEFAULT).unrestricted());
                     mergeEffects.addFloatingNode(phiNode, "mergeReadCache");
                     for (int i = 0; i < states.size(); i++) {
                         ValueNode v = states.get(i).getCacheEntry(key);
-                        assert phiNode.stamp().isCompatible(v.stamp()) : "Cannot create read elimination phi for inputs with incompatible stamps.";
+                        assert phiNode.stamp(NodeView.DEFAULT).isCompatible(v.stamp(NodeView.DEFAULT)) : "Cannot create read elimination phi for inputs with incompatible stamps.";
                         setPhiInput(phiNode, i, v);
                     }
                     newState.addCacheEntry(key, phiNode);
@@ -315,14 +316,14 @@ public final class ReadEliminationClosure extends EffectsClosure<ReadElimination
                     ValueNode value = states.get(i).getCacheEntry(identifier.duplicateWithObject(getPhiValueAt(phi, i)));
                     // e.g. unsafe loads / stores with same identity and different access kinds see
                     // mergeReadCache(states)
-                    if (value == null || !values[i - 1].stamp().isCompatible(value.stamp())) {
+                    if (value == null || !values[i - 1].stamp(NodeView.DEFAULT).isCompatible(value.stamp(NodeView.DEFAULT))) {
                         return;
                     }
                     values[i] = value;
                 }
 
                 CacheEntry<?> newIdentifier = identifier.duplicateWithObject(phi);
-                PhiNode phiNode = getCachedPhi(newIdentifier, values[0].stamp().unrestricted());
+                PhiNode phiNode = getCachedPhi(newIdentifier, values[0].stamp(NodeView.DEFAULT).unrestricted());
                 mergeEffects.addFloatingNode(phiNode, "mergeReadCachePhi");
                 for (int i = 0; i < values.length; i++) {
                     setPhiInput(phiNode, i, values[i]);

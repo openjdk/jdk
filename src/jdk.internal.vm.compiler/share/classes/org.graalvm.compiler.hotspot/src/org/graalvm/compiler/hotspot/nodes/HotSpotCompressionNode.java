@@ -32,6 +32,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.hotspot.nodes.type.HotSpotNarrowOopStamp;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.CompressionNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.hotspot.HotSpotCompressedNullConstant;
@@ -45,7 +46,7 @@ public final class HotSpotCompressionNode extends CompressionNode {
     public static final NodeClass<HotSpotCompressionNode> TYPE = NodeClass.create(HotSpotCompressionNode.class);
 
     public HotSpotCompressionNode(CompressionOp op, ValueNode input, CompressEncoding encoding) {
-        super(TYPE, op, input, HotSpotNarrowOopStamp.mkStamp(op, input.stamp(), encoding), encoding);
+        super(TYPE, op, input, HotSpotNarrowOopStamp.mkStamp(op, input.stamp(NodeView.DEFAULT), encoding), encoding);
     }
 
     public static HotSpotCompressionNode compress(ValueNode input, CompressEncoding encoding) {

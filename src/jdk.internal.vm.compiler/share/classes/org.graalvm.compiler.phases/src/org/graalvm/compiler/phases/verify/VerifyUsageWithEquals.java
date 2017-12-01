@@ -24,6 +24,7 @@ package org.graalvm.compiler.phases.verify;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -80,7 +81,7 @@ public class VerifyUsageWithEquals extends VerifyPhase<PhaseContext> {
      * Determines whether the type of {@code node} is assignable to the {@link #restrictedClass}.
      */
     private boolean isAssignableToRestrictedType(ValueNode node, MetaAccessProvider metaAccess) {
-        if (node.stamp() instanceof ObjectStamp) {
+        if (node.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
             ResolvedJavaType restrictedType = metaAccess.lookupJavaType(restrictedClass);
             ResolvedJavaType nodeType = StampTool.typeOrNull(node);
             if (nodeType == null && node instanceof LoadFieldNode) {

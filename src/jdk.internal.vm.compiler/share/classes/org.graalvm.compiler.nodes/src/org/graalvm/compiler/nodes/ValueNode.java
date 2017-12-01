@@ -56,8 +56,8 @@ public abstract class ValueNode extends org.graalvm.compiler.graph.Node implemen
         this.stamp = stamp;
     }
 
-    public final Stamp stamp() {
-        return stamp;
+    public final Stamp stamp(NodeView view) {
+        return view.stamp(this);
     }
 
     public final void setStamp(Stamp stamp) {
@@ -99,7 +99,7 @@ public abstract class ValueNode extends org.graalvm.compiler.graph.Node implemen
     }
 
     public final JavaKind getStackKind() {
-        return stamp().getStackKind();
+        return stamp(NodeView.DEFAULT).getStackKind();
     }
 
     /**
@@ -197,9 +197,9 @@ public abstract class ValueNode extends org.graalvm.compiler.graph.Node implemen
 
     private boolean checkReplaceAtUsagesInvariants(Node other) {
         assert other == null || other instanceof ValueNode;
-        if (this.hasUsages() && !this.stamp().isEmpty() && !(other instanceof PhiNode) && other != null) {
-            assert ((ValueNode) other).stamp().getClass() == stamp().getClass() : "stamp have to be of same class";
-            boolean morePrecise = ((ValueNode) other).stamp().join(stamp()).equals(((ValueNode) other).stamp());
+        if (this.hasUsages() && !this.stamp(NodeView.DEFAULT).isEmpty() && !(other instanceof PhiNode) && other != null) {
+            assert ((ValueNode) other).stamp(NodeView.DEFAULT).getClass() == stamp(NodeView.DEFAULT).getClass() : "stamp have to be of same class";
+            boolean morePrecise = ((ValueNode) other).stamp(NodeView.DEFAULT).join(stamp(NodeView.DEFAULT)).equals(((ValueNode) other).stamp(NodeView.DEFAULT));
             assert morePrecise : "stamp can only get more precise " + toString(Verbosity.All) + " " +
                             other.toString(Verbosity.All);
         }

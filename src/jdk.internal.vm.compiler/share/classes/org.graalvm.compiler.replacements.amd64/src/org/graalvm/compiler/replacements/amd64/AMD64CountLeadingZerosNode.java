@@ -33,6 +33,7 @@ import org.graalvm.compiler.lir.amd64.AMD64ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
@@ -50,7 +51,7 @@ public final class AMD64CountLeadingZerosNode extends UnaryNode implements Arith
     public static final NodeClass<AMD64CountLeadingZerosNode> TYPE = NodeClass.create(AMD64CountLeadingZerosNode.class);
 
     public AMD64CountLeadingZerosNode(ValueNode value) {
-        super(TYPE, computeStamp(value.stamp(), value), value);
+        super(TYPE, computeStamp(value.stamp(NodeView.DEFAULT), value), value);
         assert value.getStackKind() == JavaKind.Int || value.getStackKind() == JavaKind.Long;
     }
 
@@ -60,7 +61,7 @@ public final class AMD64CountLeadingZerosNode extends UnaryNode implements Arith
     }
 
     private static Stamp computeStamp(Stamp newStamp, ValueNode theValue) {
-        assert newStamp.isCompatible(theValue.stamp());
+        assert newStamp.isCompatible(theValue.stamp(NodeView.DEFAULT));
         assert theValue.getStackKind() == JavaKind.Int || theValue.getStackKind() == JavaKind.Long;
         return StampTool.stampForLeadingZeros((IntegerStamp) newStamp);
     }

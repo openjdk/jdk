@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.hotspot.test;
 
+import org.graalvm.compiler.hotspot.meta.HotSpotUnsafeSubstitutions;
 import org.graalvm.compiler.replacements.test.MethodSubstitutionTest;
 import org.junit.Test;
 
@@ -56,7 +57,7 @@ public class HotSpotUnsafeSubstitutionTest extends MethodSubstitutionTest {
 
     @Test
     public void testUnsafeSubstitutions() throws Exception {
-        testGraph("unsafeCopyMemory");
+        testGraph("unsafeCopyMemory", HotSpotUnsafeSubstitutions.copyMemoryName);
     }
 
     public void unsafeCopyMemory(Object srcBase, long srcOffset, Object dstBase, long dstOffset, long bytes) {

@@ -27,6 +27,7 @@ import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.memory.Access;
 
 import jdk.vm.ci.aarch64.AArch64Kind;
@@ -45,7 +46,7 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
     }
 
     protected AArch64Kind getMemoryKind(Access access) {
-        return (AArch64Kind) gen.getLIRKind(access.asNode().stamp()).getPlatformKind();
+        return (AArch64Kind) gen.getLIRKind(access.asNode().stamp(NodeView.DEFAULT)).getPlatformKind();
     }
 
     @Override

@@ -30,6 +30,8 @@ public interface Access extends GuardedNode, HeapAccess {
 
     AddressNode getAddress();
 
+    void setAddress(AddressNode address);
+
     LocationIdentity getLocationIdentity();
 
     boolean canNullCheck();

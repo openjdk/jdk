@@ -31,6 +31,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
@@ -50,8 +51,12 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
  */
 public abstract class MethodSubstitutionTest extends GraalCompilerTest {
 
-    @SuppressWarnings("try")
     protected StructuredGraph testGraph(final String snippet) {
+        return testGraph(snippet, null);
+    }
+
+    @SuppressWarnings("try")
+    protected StructuredGraph testGraph(final String snippet, String name) {
         DebugContext debug = getDebugContext();
         try (DebugContext.Scope s = debug.scope("MethodSubstitutionTest", getResolvedJavaMethod(snippet))) {
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES, debug);
@@ -69,7 +74,20 @@ public abstract class MethodSubstitutionTest extends GraalCompilerTest {
                 new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, context);
             }
             assertNotInGraph(graph, MacroNode.class);
-            assertNotInGraph(graph, Invoke.class);
+            if (name != null) {
+                for (Node node : graph.getNodes()) {
+                    if (node instanceof Invoke) {
+                        Invoke invoke = (Invoke) node;
+                        if (invoke.callTarget() instanceof MethodCallTargetNode) {
+                            MethodCallTargetNode call = (MethodCallTargetNode) invoke.callTarget();
+                            assertTrue(!call.targetMethod().getName().equals(name), "Unexpected invoke of intrinsic %s", call.targetMethod());
+                        }
+                    }
+
+                }
+            } else {
+                assertNotInGraph(graph, Invoke.class);
+            }
             return graph;
         } catch (Throwable e) {
             throw debug.handle(e);

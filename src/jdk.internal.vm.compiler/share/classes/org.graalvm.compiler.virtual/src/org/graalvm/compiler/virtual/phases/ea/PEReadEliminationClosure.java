@@ -39,6 +39,7 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
@@ -189,7 +190,7 @@ public final class PEReadEliminationClosure extends PartialEscapeClosure<PEReadE
                 ValueNode object = GraphUtil.unproxify(load.object());
                 LocationIdentity location = NamedLocationIdentity.getArrayLocation(componentKind);
                 ValueNode cachedValue = state.getReadCache(object, location, index, accessKind, this);
-                assert cachedValue == null || load.stamp().isCompatible(cachedValue.stamp()) : "The RawLoadNode's stamp is not compatible with the cached value.";
+                assert cachedValue == null || load.stamp(NodeView.DEFAULT).isCompatible(cachedValue.stamp(NodeView.DEFAULT)) : "The RawLoadNode's stamp is not compatible with the cached value.";
                 if (cachedValue != null) {
                     effects.replaceAtUsages(load, cachedValue, load);
                     addScalarAlias(load, cachedValue);
@@ -399,7 +400,7 @@ public final class PEReadEliminationClosure extends PartialEscapeClosure<PEReadE
                     // e.g. unsafe loads / stores with different access kinds have different stamps
                     // although location, object and offset are the same, in this case we cannot
                     // create a phi nor can we set a common value
-                    if (otherValue == null || !value.stamp().isCompatible(otherValue.stamp())) {
+                    if (otherValue == null || !value.stamp(NodeView.DEFAULT).isCompatible(otherValue.stamp(NodeView.DEFAULT))) {
                         value = null;
                         phi = false;
                         break;
@@ -409,11 +410,11 @@ public final class PEReadEliminationClosure extends PartialEscapeClosure<PEReadE
                     }
                 }
                 if (phi) {
-                    PhiNode phiNode = getPhi(key, value.stamp().unrestricted());
+                    PhiNode phiNode = getPhi(key, value.stamp(NodeView.DEFAULT).unrestricted());
                     mergeEffects.addFloatingNode(phiNode, "mergeReadCache");
                     for (int i = 0; i < states.size(); i++) {
                         ValueNode v = states.get(i).getReadCache(key.object, key.identity, key.index, key.kind, PEReadEliminationClosure.this);
-                        assert phiNode.stamp().isCompatible(v.stamp()) : "Cannot create read elimination phi for inputs with incompatible stamps.";
+                        assert phiNode.stamp(NodeView.DEFAULT).isCompatible(v.stamp(NodeView.DEFAULT)) : "Cannot create read elimination phi for inputs with incompatible stamps.";
                         setPhiInput(phiNode, i, v);
                     }
                     newState.readCache.put(key, phiNode);
@@ -444,13 +445,13 @@ public final class PEReadEliminationClosure extends PartialEscapeClosure<PEReadE
                     ValueNode value = states.get(i).getReadCache(getPhiValueAt(phi, i), identity, index, kind, PEReadEliminationClosure.this);
                     // e.g. unsafe loads / stores with same identity and different access kinds see
                     // mergeReadCache(states)
-                    if (value == null || !values[i - 1].stamp().isCompatible(value.stamp())) {
+                    if (value == null || !values[i - 1].stamp(NodeView.DEFAULT).isCompatible(value.stamp(NodeView.DEFAULT))) {
                         return;
                     }
                     values[i] = value;
                 }
 
-                PhiNode phiNode = getPhi(new ReadCacheEntry(identity, phi, index, kind, overflowAccess), values[0].stamp().unrestricted());
+                PhiNode phiNode = getPhi(new ReadCacheEntry(identity, phi, index, kind, overflowAccess), values[0].stamp(NodeView.DEFAULT).unrestricted());
                 mergeEffects.addFloatingNode(phiNode, "mergeReadCachePhi");
                 for (int i = 0; i < values.length; i++) {
                     setPhiInput(phiNode, i, values[i]);

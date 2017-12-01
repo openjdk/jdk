@@ -41,7 +41,7 @@ public final class ValueProxyNode extends ProxyNode implements Canonicalizable, 
     private final boolean loopPhiProxy;
 
     public ValueProxyNode(ValueNode value, LoopExitNode loopExit) {
-        super(TYPE, value.stamp(), loopExit);
+        super(TYPE, value.stamp(NodeView.DEFAULT), loopExit);
         this.value = value;
         loopPhiProxy = loopExit.loopBegin().isPhiAtMerge(value);
     }
@@ -53,7 +53,7 @@ public final class ValueProxyNode extends ProxyNode implements Canonicalizable, 
 
     @Override
     public boolean inferStamp() {
-        return updateStamp(value.stamp());
+        return updateStamp(value.stamp(NodeView.DEFAULT));
     }
 
     @Override

@@ -45,8 +45,12 @@ public final class NotNode extends UnaryArithmeticNode<Not> implements Arithmeti
 
     public static final NodeClass<NotNode> TYPE = NodeClass.create(NotNode.class);
 
-    public NotNode(ValueNode x) {
+    protected NotNode(ValueNode x) {
         super(TYPE, ArithmeticOpTable::getNot, x);
+    }
+
+    public static ValueNode create(ValueNode x) {
+        return canonicalize(null, x);
     }
 
     @Override
@@ -55,10 +59,17 @@ public final class NotNode extends UnaryArithmeticNode<Not> implements Arithmeti
         if (ret != this) {
             return ret;
         }
-        if (forValue instanceof NotNode) {
-            return ((NotNode) forValue).getValue();
+        return canonicalize(this, forValue);
+    }
+
+    private static ValueNode canonicalize(NotNode node, ValueNode x) {
+        if (x instanceof NotNode) {
+            return ((NotNode) x).getValue();
         }
-        return this;
+        if (node != null) {
+            return node;
+        }
+        return new NotNode(x);
     }
 
     @Override

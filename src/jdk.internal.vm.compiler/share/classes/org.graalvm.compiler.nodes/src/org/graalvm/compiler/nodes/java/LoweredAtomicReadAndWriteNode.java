@@ -31,6 +31,7 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
@@ -55,7 +56,7 @@ public final class LoweredAtomicReadAndWriteNode extends FixedAccessNode impleme
     @OptionalInput(State) FrameState stateAfter;
 
     public LoweredAtomicReadAndWriteNode(AddressNode address, LocationIdentity location, ValueNode newValue, BarrierType barrierType) {
-        super(TYPE, address, location, newValue.stamp().unrestricted(), barrierType);
+        super(TYPE, address, location, newValue.stamp(NodeView.DEFAULT).unrestricted(), barrierType);
         this.newValue = newValue;
     }
 
@@ -93,6 +94,6 @@ public final class LoweredAtomicReadAndWriteNode extends FixedAccessNode impleme
 
     @Override
     public Stamp getAccessStamp() {
-        return stamp();
+        return stamp(NodeView.DEFAULT);
     }
 }

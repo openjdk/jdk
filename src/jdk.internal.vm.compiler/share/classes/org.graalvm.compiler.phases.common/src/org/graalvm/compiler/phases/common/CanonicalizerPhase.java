@@ -23,6 +23,7 @@
 package org.graalvm.compiler.phases.common;
 
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
@@ -44,6 +45,7 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ControlSinkNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -153,6 +155,10 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
         new Instance(context, workingSet, newNodesMark).apply(graph, dumpGraph);
     }
 
+    public NodeView getNodeView() {
+        return NodeView.DEFAULT;
+    }
+
     private final class Instance extends Phase {
 
         private final Mark newNodesMark;
@@ -260,9 +266,9 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
             if (node instanceof ValueNode) {
                 ValueNode valueNode = (ValueNode) node;
                 boolean improvedStamp = tryInferStamp(valueNode);
-                Constant constant = valueNode.stamp().asConstant();
+                Constant constant = valueNode.stamp(NodeView.DEFAULT).asConstant();
                 if (constant != null && !(node instanceof ConstantNode)) {
-                    ConstantNode stampConstant = ConstantNode.forConstant(valueNode.stamp(), constant, context.getMetaAccess(), graph);
+                    ConstantNode stampConstant = ConstantNode.forConstant(valueNode.stamp(NodeView.DEFAULT), constant, context.getMetaAccess(), graph);
                     debug.log("Canonicalizer: constant stamp replaces %1s with %1s", valueNode, stampConstant);
                     valueNode.replaceAtUsages(InputType.Value, stampConstant);
                     GraphUtil.tryKillUnused(valueNode);
@@ -442,14 +448,16 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
             return false;
         }
 
-        private final class Tool implements SimplifierTool {
+        private final class Tool implements SimplifierTool, NodeView {
 
             private final Assumptions assumptions;
             private final OptionValues options;
+            private NodeView nodeView;
 
             Tool(Assumptions assumptions, OptionValues options) {
                 this.assumptions = assumptions;
                 this.options = options;
+                this.nodeView = getNodeView();
             }
 
             @Override
@@ -512,6 +520,11 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
             @Override
             public OptionValues getOptions() {
                 return options;
+            }
+
+            @Override
+            public Stamp stamp(ValueNode node) {
+                return nodeView.stamp(node);
             }
         }
     }

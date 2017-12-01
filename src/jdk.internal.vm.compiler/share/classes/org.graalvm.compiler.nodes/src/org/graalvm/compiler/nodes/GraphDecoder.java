@@ -310,7 +310,7 @@ public class GraphDecoder {
         @Input(InputType.Unchecked) Node proxyPoint;
 
         public ProxyPlaceholder(ValueNode value, MergeNode proxyPoint) {
-            super(TYPE, value.stamp());
+            super(TYPE, value.stamp(NodeView.DEFAULT));
             this.value = value;
             this.proxyPoint = proxyPoint;
         }
@@ -868,7 +868,7 @@ public class GraphDecoder {
                 /* Now we have two different values, so we need to create a phi node. */
                 PhiNode phi;
                 if (proxy instanceof ValueProxyNode) {
-                    phi = graph.addWithoutUnique(new ValuePhiNode(proxy.stamp(), merge));
+                    phi = graph.addWithoutUnique(new ValuePhiNode(proxy.stamp(NodeView.DEFAULT), merge));
                 } else if (proxy instanceof GuardProxyNode) {
                     phi = graph.addWithoutUnique(new GuardPhiNode(merge));
                 } else {
@@ -1630,7 +1630,7 @@ class LoopDetector implements Runnable {
         List<PhiNode> loopBeginPhis = new ArrayList<>(mergePhis.size());
         for (int i = 0; i < mergePhis.size(); i++) {
             PhiNode mergePhi = mergePhis.get(i);
-            PhiNode loopBeginPhi = graph.addWithoutUnique(new ValuePhiNode(mergePhi.stamp(), loopBegin));
+            PhiNode loopBeginPhi = graph.addWithoutUnique(new ValuePhiNode(mergePhi.stamp(NodeView.DEFAULT), loopBegin));
             mergePhi.replaceAtUsages(loopBeginPhi);
             /*
              * The first input of the new phi function is the original phi function, for the one
@@ -1793,7 +1793,7 @@ class LoopDetector implements Runnable {
             assert irreducibleLoopHandler.header.phis().isEmpty();
 
             /* The new phi function for the loop variable. */
-            loopVariablePhi = graph.addWithoutUnique(new ValuePhiNode(explosionHeadValue.stamp().unrestricted(), irreducibleLoopHandler.header));
+            loopVariablePhi = graph.addWithoutUnique(new ValuePhiNode(explosionHeadValue.stamp(NodeView.DEFAULT).unrestricted(), irreducibleLoopHandler.header));
             for (int i = 0; i < irreducibleLoopHandler.header.phiPredecessorCount(); i++) {
                 loopVariablePhi.addInput(explosionHeadValue);
             }

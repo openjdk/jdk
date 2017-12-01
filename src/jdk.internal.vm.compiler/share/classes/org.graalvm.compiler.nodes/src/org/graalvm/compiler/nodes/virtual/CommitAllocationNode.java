@@ -44,6 +44,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.AbstractNewObjectNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
@@ -111,7 +112,7 @@ public final class CommitAllocationNode extends FixedWithNextNode implements Vir
     public void lower(LoweringTool tool) {
         for (int i = 0; i < virtualObjects.size(); i++) {
             if (ensureVirtual.get(i)) {
-                EnsureVirtualizedNode.ensureVirtualFailure(this, virtualObjects.get(i).stamp());
+                EnsureVirtualizedNode.ensureVirtualFailure(this, virtualObjects.get(i).stamp(NodeView.DEFAULT));
             }
         }
         tool.getLowerer().lower(this, tool);

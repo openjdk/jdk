@@ -38,6 +38,7 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -73,17 +74,17 @@ public final class WordCastNode extends FixedWithNextNode implements LIRLowerabl
     }
 
     public static WordCastNode addressToWord(ValueNode input, JavaKind wordKind) {
-        assert input.stamp() instanceof AbstractPointerStamp;
+        assert input.stamp(NodeView.DEFAULT) instanceof AbstractPointerStamp;
         return new WordCastNode(StampFactory.forKind(wordKind), input);
     }
 
     public static WordCastNode objectToTrackedPointer(ValueNode input, JavaKind wordKind) {
-        assert input.stamp() instanceof ObjectStamp;
+        assert input.stamp(NodeView.DEFAULT) instanceof ObjectStamp;
         return new WordCastNode(StampFactory.forKind(wordKind), input, true);
     }
 
     public static WordCastNode objectToUntrackedPointer(ValueNode input, JavaKind wordKind) {
-        assert input.stamp() instanceof ObjectStamp;
+        assert input.stamp(NodeView.DEFAULT) instanceof ObjectStamp;
         return new WordCastNode(StampFactory.forKind(wordKind), input, false);
     }
 
@@ -108,13 +109,13 @@ public final class WordCastNode extends FixedWithNextNode implements LIRLowerabl
             return input;
         }
 
-        assert !stamp().isCompatible(input.stamp());
+        assert !stamp(NodeView.DEFAULT).isCompatible(input.stamp(NodeView.DEFAULT));
         if (input.isConstant()) {
             /* Null pointers are uncritical for GC, so they can be constant folded. */
             if (input.asJavaConstant().isNull()) {
-                return ConstantNode.forIntegerStamp(stamp(), 0);
+                return ConstantNode.forIntegerStamp(stamp(NodeView.DEFAULT), 0);
             } else if (input.asJavaConstant().getJavaKind().isNumericInteger() && input.asJavaConstant().asLong() == 0) {
-                return ConstantNode.forConstant(stamp(), JavaConstant.NULL_POINTER, tool.getMetaAccess());
+                return ConstantNode.forConstant(stamp(NodeView.DEFAULT), JavaConstant.NULL_POINTER, tool.getMetaAccess());
             }
         }
 
@@ -124,7 +125,7 @@ public final class WordCastNode extends FixedWithNextNode implements LIRLowerabl
     @Override
     public void generate(NodeLIRBuilderTool generator) {
         Value value = generator.operand(input);
-        ValueKind<?> kind = generator.getLIRGeneratorTool().getLIRKind(stamp());
+        ValueKind<?> kind = generator.getLIRGeneratorTool().getLIRKind(stamp(NodeView.DEFAULT));
         assert kind.getPlatformKind().getSizeInBytes() == value.getPlatformKind().getSizeInBytes();
 
         if (trackedPointer && LIRKind.isValue(kind) && !LIRKind.isValue(value)) {

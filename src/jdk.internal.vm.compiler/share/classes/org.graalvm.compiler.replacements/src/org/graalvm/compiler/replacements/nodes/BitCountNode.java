@@ -33,6 +33,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
@@ -48,7 +49,7 @@ public final class BitCountNode extends UnaryNode implements ArithmeticLIRLowera
     public static final NodeClass<BitCountNode> TYPE = NodeClass.create(BitCountNode.class);
 
     public BitCountNode(ValueNode value) {
-        super(TYPE, computeStamp(value.stamp(), value), value);
+        super(TYPE, computeStamp(value.stamp(NodeView.DEFAULT), value), value);
         assert value.getStackKind() == JavaKind.Int || value.getStackKind() == JavaKind.Long;
     }
 
@@ -59,7 +60,7 @@ public final class BitCountNode extends UnaryNode implements ArithmeticLIRLowera
     }
 
     static Stamp computeStamp(Stamp newStamp, ValueNode theValue) {
-        assert newStamp.isCompatible(theValue.stamp());
+        assert newStamp.isCompatible(theValue.stamp(NodeView.DEFAULT));
         IntegerStamp valueStamp = (IntegerStamp) newStamp;
         assert (valueStamp.downMask() & CodeUtil.mask(valueStamp.getBits())) == valueStamp.downMask();
         assert (valueStamp.upMask() & CodeUtil.mask(valueStamp.getBits())) == valueStamp.upMask();

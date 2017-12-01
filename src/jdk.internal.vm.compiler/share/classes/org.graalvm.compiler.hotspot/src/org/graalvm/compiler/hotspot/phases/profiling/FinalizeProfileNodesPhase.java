@@ -35,6 +35,7 @@ import org.graalvm.compiler.hotspot.nodes.profiling.RandomSeedNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -130,7 +131,7 @@ public class FinalizeProfileNodesPhase extends BasePhase<PhaseContext> {
                 LoopBeginNode loopBegin = (LoopBeginNode) loop.getHeader().getBeginNode();
                 random = loopRandomValueCache.get(loopBegin);
                 if (random == null) {
-                    PhiNode phi = graph.addWithoutUnique(new ValuePhiNode(seed.stamp(), loopBegin));
+                    PhiNode phi = graph.addWithoutUnique(new ValuePhiNode(seed.stamp(NodeView.DEFAULT), loopBegin));
                     phi.addInput(seed);
                     // X_{n+1} = a*X_n + c, using glibc-like constants
                     ValueNode a = ConstantNode.forInt(1103515245, graph);
