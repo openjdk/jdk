@@ -65,10 +65,10 @@ public class TestJhsdbJstackLock {
             ProcessBuilder pb = new ProcessBuilder();
             pb.command(launcher.getCommand());
             Process jhsdb = pb.start();
+            OutputAnalyzer out = new OutputAnalyzer(jhsdb);
 
             jhsdb.waitFor();
 
-            OutputAnalyzer out = new OutputAnalyzer(jhsdb);
             System.out.println(out.getStdout());
             System.err.println(out.getStderr());
 
