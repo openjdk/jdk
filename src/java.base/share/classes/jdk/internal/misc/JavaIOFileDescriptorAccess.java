@@ -25,6 +25,7 @@
 package jdk.internal.misc;
 
 import java.io.FileDescriptor;
+import java.io.IOException;
 
 /*
  * @author Chris Hegarty
@@ -35,7 +36,8 @@ public interface JavaIOFileDescriptorAccess {
     public int get(FileDescriptor fdo);
     public void setAppend(FileDescriptor fdo, boolean append);
     public boolean getAppend(FileDescriptor fdo);
-    public void close(FileDescriptor fdo);
+    public void close(FileDescriptor fdo) throws IOException;
+    public void registerCleanup(FileDescriptor fdo);
 
     // Only valid on Windows
     public void setHandle(FileDescriptor fdo, long handle);

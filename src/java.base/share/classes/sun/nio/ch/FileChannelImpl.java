@@ -27,6 +27,7 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.ref.Cleaner.Cleanable;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -109,7 +110,12 @@ public class FileChannelImpl
         }
 
         public void run() {
-            fdAccess.close(fd);
+            try {
+                fdAccess.close(fd);
+            } catch (IOException ioe) {
+                // Rethrow as unchecked so the exception can be propagated as needed
+                throw new UncheckedIOException("close", ioe);
+            }
         }
     }
 
@@ -188,7 +194,11 @@ public class FileChannelImpl
         } else if (closer != null) {
             // Perform the cleaning action so it is not redone when
             // this channel becomes phantom reachable.
-            closer.clean();
+            try {
+                closer.clean();
+            } catch (UncheckedIOException uioe) {
+                throw uioe.getCause();
+            }
         } else {
             fdAccess.close(fd);
         }

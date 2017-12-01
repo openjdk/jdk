@@ -57,7 +57,7 @@ Java_java_io_FileDescriptor_initIDs(JNIEnv *env, jclass fdClass) {
 }
 
 JNIEXPORT jlong JNICALL
-Java_java_io_FileDescriptor_set(JNIEnv *env, jclass fdClass, jint fd) {
+Java_java_io_FileDescriptor_getHandle(JNIEnv *env, jclass fdClass, jint fd) {
     SET_HANDLE(fd);
 }
 
@@ -73,8 +73,17 @@ Java_java_io_FileDescriptor_sync(JNIEnv *env, jobject this) {
     }
 }
 
+JNIEXPORT void JNICALL
+Java_java_io_FileDescriptor_cleanupClose0(JNIEnv *env, jclass fdClass, jlong handle) {
+    if (handle != -1) {
+        if (CloseHandle((HANDLE)handle) == -1) {
+            JNU_ThrowIOExceptionWithLastError(env, "close failed");
+        }
+    }
+}
+
 // instance method close0 for FileDescriptor
 JNIEXPORT void JNICALL
-Java_java_io_FileDescriptor_close(JNIEnv *env, jobject this) {
+Java_java_io_FileDescriptor_close0(JNIEnv *env, jobject this) {
     fileDescriptorClose(env, this);
 }

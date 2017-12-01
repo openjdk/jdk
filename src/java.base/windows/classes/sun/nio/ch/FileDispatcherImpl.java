@@ -114,6 +114,7 @@ class FileDispatcherImpl extends FileDispatcher {
         FileDescriptor result = new FileDescriptor();
         long handle = duplicateHandle(fdAccess.getHandle(fd));
         fdAccess.setHandle(result, handle);
+        fdAccess.registerCleanup(result);
         return result;
     }
 

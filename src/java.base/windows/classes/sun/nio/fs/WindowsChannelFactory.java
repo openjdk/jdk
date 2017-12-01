@@ -216,8 +216,7 @@ class WindowsChannelFactory {
         } catch (IOException x) {
             // IOException is thrown if the file handle cannot be associated
             // with the completion port. All we can do is close the file.
-            long handle = fdAccess.getHandle(fdObj);
-            CloseHandle(handle);
+            fdAccess.close(fdObj);
             throw x;
         }
     }
@@ -347,6 +346,7 @@ class WindowsChannelFactory {
         FileDescriptor fdObj = new FileDescriptor();
         fdAccess.setHandle(fdObj, handle);
         fdAccess.setAppend(fdObj, flags.append);
+        fdAccess.registerCleanup(fdObj);
         return fdObj;
     }
 }
