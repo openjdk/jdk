@@ -768,6 +768,7 @@ jint Universe::initialize_heap() {
   }
   log_info(gc)("Using %s", _collectedHeap->name());
 
+  GCArguments::arguments()->post_heap_initialize();
   ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
 
 #ifdef _LP64

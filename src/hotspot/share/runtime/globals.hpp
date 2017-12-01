@@ -2268,6 +2268,10 @@ public:
   diagnostic(bool, VerifyDuringGC, false,                                   \
           "Verify memory system during GC (between phases)")                \
                                                                             \
+  diagnostic(ccstrlist, VerifyGCType, "",                                   \
+             "GC type(s) to verify when Verify*GC is enabled."              \
+             "Available types are collector specific.")                     \
+                                                                            \
   diagnostic(ccstrlist, VerifySubSet, "",                                   \
           "Memory sub-systems to verify when Verify*GC flag(s) "            \
           "are enabled. One or more sub-systems can be specified "          \

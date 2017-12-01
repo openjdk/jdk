@@ -1015,9 +1015,7 @@ void G1ConcurrentMark::checkpoint_roots_final(bool clear_all_soft_refs) {
   SvcGCMarker sgcm(SvcGCMarker::OTHER);
 
   if (VerifyDuringGC) {
-    HandleMark hm;  // handle scope
-    g1h->prepare_for_verify();
-    Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (before)");
+    g1h->verifier()->verify(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "During GC (before)");
   }
   g1h->verifier()->check_bitmaps("Remark Start");
 
@@ -1038,9 +1036,7 @@ void G1ConcurrentMark::checkpoint_roots_final(bool clear_all_soft_refs) {
 
     // Verify the heap w.r.t. the previous marking bitmap.
     if (VerifyDuringGC) {
-      HandleMark hm;  // handle scope
-      g1h->prepare_for_verify();
-      Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (overflow)");
+      g1h->verifier()->verify(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "During GC (overflow)");
     }
 
     // Clear the marking state because we will be restarting
@@ -1055,9 +1051,7 @@ void G1ConcurrentMark::checkpoint_roots_final(bool clear_all_soft_refs) {
                                        true /* expected_active */);
 
     if (VerifyDuringGC) {
-      HandleMark hm;  // handle scope
-      g1h->prepare_for_verify();
-      Universe::verify(VerifyOption_G1UseNextMarking, "During GC (after)");
+      g1h->verifier()->verify(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UseNextMarking, "During GC (after)");
     }
     g1h->verifier()->check_bitmaps("Remark End");
     assert(!restart_for_overflow(), "sanity");
@@ -1189,9 +1183,7 @@ void G1ConcurrentMark::cleanup() {
   g1h->verifier()->verify_region_sets_optional();
 
   if (VerifyDuringGC) {
-    HandleMark hm;  // handle scope
-    g1h->prepare_for_verify();
-    Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (before)");
+    g1h->verifier()->verify(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "During GC (before)");
   }
   g1h->verifier()->check_bitmaps("Cleanup Start");
 
@@ -1263,9 +1255,7 @@ void G1ConcurrentMark::cleanup() {
   Universe::update_heap_info_at_gc();
 
   if (VerifyDuringGC) {
-    HandleMark hm;  // handle scope
-    g1h->prepare_for_verify();
-    Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (after)");
+    g1h->verifier()->verify(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "During GC (after)");
   }
 
   g1h->verifier()->check_bitmaps("Cleanup End");

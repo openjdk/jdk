@@ -32,6 +32,7 @@ class CollectedHeap;
 class G1Arguments : public GCArguments {
 public:
   virtual void initialize_flags();
+  virtual bool parse_verification_type(const char* type);
   virtual size_t conservative_max_heap_alignment();
   virtual CollectedHeap* create_heap();
 };
