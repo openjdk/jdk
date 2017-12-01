@@ -121,13 +121,3 @@ Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_lockFile(JNIEnv *env, jobject
     return 0;
 }
 
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_close0(JNIEnv* env, jclass this,
-    jlong handle)
-{
-    HANDLE h = (HANDLE)jlong_to_ptr(handle);
-    BOOL result = CloseHandle(h);
-    if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Close failed");
-    }
-}
