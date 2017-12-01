@@ -2152,6 +2152,7 @@ ObjectWaiter::ObjectWaiter(Thread* thread) {
   _next     = NULL;
   _prev     = NULL;
   _notified = 0;
+  _notifier_tid = 0;
   TState    = TS_RUN;
   _thread   = thread;
   _event    = thread->_ParkEvent;

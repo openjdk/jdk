@@ -5041,6 +5041,7 @@ unsigned int MacroAssembler::string_compress(Register result, Register src, Regi
     z_bru(VectorDone);
 
     bind(VectorBreak);
+      add2reg(Rsrc, -min_vcnt*2);          // Fix Rsrc. Rsrc was already updated, but Rdst and Rix are not.
       z_sll(Rix, log_min_vcnt);            // # chars processed so far in VectorLoop, excl. current iteration.
       z_sr(Z_R0, Rix);                     // correct # chars processed in total.
 
