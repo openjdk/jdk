@@ -168,6 +168,19 @@ public class SimpleDocTreeVisitor<R,P> implements DocTreeVisitor<R, P> {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
+     * @param node {@inheritDoc}
+     * @param p {@inheritDoc}
+     * @return  the result of {@code defaultAction}
+     * @since 10
+     */
+    @Override
+    public R visitDocType(DocTypeTree node, P p) { return defaultAction(node, p); }
+
+    /**
      * {@inheritDoc} This implementation calls {@code defaultAction}.
      *
      * @param node {@inheritDoc}
@@ -175,9 +188,7 @@ public class SimpleDocTreeVisitor<R,P> implements DocTreeVisitor<R, P> {
      * @return  the result of {@code defaultAction}
      */
     @Override
-    public R visitEndElement(EndElementTree node, P p) {
-        return defaultAction(node, p);
-    }
+    public R visitEndElement(EndElementTree node, P p) { return defaultAction(node, p);}
 
     /**
      * {@inheritDoc} This implementation calls {@code defaultAction}.

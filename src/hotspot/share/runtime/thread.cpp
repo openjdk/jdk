@@ -2471,7 +2471,13 @@ size_t JavaThread::_stack_reserved_zone_size = 0;
 size_t JavaThread::_stack_shadow_zone_size = 0;
 
 void JavaThread::create_stack_guard_pages() {
-  if (!os::uses_stack_guard_pages() || _stack_guard_state != stack_guard_unused) { return; }
+  if (!os::uses_stack_guard_pages() ||
+      _stack_guard_state != stack_guard_unused ||
+      (DisablePrimordialThreadGuardPages && os::is_primordial_thread())) {
+      log_info(os, thread)("Stack guard page creation for thread "
+                           UINTX_FORMAT " disabled", os::current_thread_id());
+    return;
+  }
   address low_addr = stack_end();
   size_t len = stack_guard_zone_size();
 

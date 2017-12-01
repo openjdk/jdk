@@ -59,6 +59,7 @@ JVM_CFLAGS_INCLUDES += \
     -I$(TOPDIR)/src/hotspot/share/precompiled \
     -I$(TOPDIR)/src/java.base/share/native/include \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include \
+    -I$(TOPDIR)/src/java.base/share/native/libjimage \
     #
 
 # INCLUDE_SUFFIX_* is only meant for including the proper
@@ -112,7 +113,7 @@ JVM_LIBS += \
     #
 
 # These files and directories are always excluded
-JVM_EXCLUDE_FILES += jvmtiEnvRecommended.cpp jvmtiEnvStub.cpp args.cc
+JVM_EXCLUDE_FILES += args.cc
 JVM_EXCLUDES += adlc
 
 # Needed by vm_version.cpp

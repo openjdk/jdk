@@ -34,11 +34,14 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
-import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.PropertyWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
+
+
+
 
 /**
  * The factory for constructing builders.
@@ -87,7 +90,7 @@ public class BuilderFactory {
      * @param pkg the package being documented.
      * @param prevPkg the previous package being documented.
      * @param nextPkg the next package being documented.
-     * @return the builder that builds the constant summary.
+     * @return the builder that builds the package summary.
      */
     public AbstractBuilder getPackageSummaryBuilder(PackageElement pkg, PackageElement prevPkg,
             PackageElement nextPkg) {

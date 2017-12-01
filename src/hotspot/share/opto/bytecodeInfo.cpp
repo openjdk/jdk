@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,9 +478,9 @@ const char* InlineTree::check_can_parse(ciMethod* callee) {
   // Certain methods cannot be parsed at all:
   if ( callee->is_native())                     return "native method";
   if ( callee->is_abstract())                   return "abstract method";
-  if (!callee->can_be_compiled())               return "not compilable (disabled)";
   if (!callee->has_balanced_monitors())         return "not compilable (unbalanced monitors)";
   if ( callee->get_flow_analysis()->failing())  return "not compilable (flow analysis failed)";
+  if (!callee->can_be_parsed())                 return "cannot be parsed";
   return NULL;
 }
 

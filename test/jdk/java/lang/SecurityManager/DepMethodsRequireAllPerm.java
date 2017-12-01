@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,15 @@
  */
 
 /* @test
- * @bug 8004502 8008793 8029886
- * @summary Sanity check that SecurityManager methods that used to check
- *          AWTPermission now check for AllPermission
+ * @bug 8004502 8008793 8029886 8186535
+ * @summary Sanity check that the SecurityManager checkMemberAccess method and
+ *          methods that used to check AWTPermission now check for AllPermission
  */
 
 import java.security.AllPermission;
 import java.security.Permission;
 
-public class NoAWT {
+public class DepMethodsRequireAllPerm {
 
     static class MySecurityManager extends SecurityManager {
         final Class<?> expectedClass;
@@ -68,5 +68,15 @@ public class NoAWT {
         if (sm.checkTopLevelWindow(new Object())) {
             throw new RuntimeException("checkTopLevelWindow expected to return false");
         }
+
+        try {
+            sm.checkMemberAccess(Object.class, java.lang.reflect.Member.DECLARED);
+            throw new RuntimeException("SecurityException expected");
+        } catch (SecurityException expected) { }
+
+        try {
+            sm.checkMemberAccess(null, java.lang.reflect.Member.DECLARED);
+            throw new RuntimeException("NullPointerException expected");
+        } catch (NullPointerException expected) { }
     }
 }

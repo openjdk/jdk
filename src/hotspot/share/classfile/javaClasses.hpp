@@ -893,6 +893,8 @@ class java_lang_ref_Reference: AllStatic {
   static inline void set_discovered(oop ref, oop value);
   static inline void set_discovered_raw(oop ref, oop value);
   static inline HeapWord* discovered_addr(oop ref);
+  static bool is_referent_field(oop obj, ptrdiff_t offset);
+  static inline bool is_phantom(oop ref);
 };
 
 

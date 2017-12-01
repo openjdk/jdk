@@ -288,7 +288,7 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
       line++;
       sig[0] = '(';
       // scan the rest
-      if (1 == sscanf(line, "%254[[);/" RANGEBASE "]%n", sig+1, &bytes_read)) {
+      if (1 == sscanf(line, "%1022[[);/" RANGEBASE "]%n", sig+1, &bytes_read)) {
         if (strchr(sig, '*') != NULL) {
           error_msg = " Wildcard * not allowed in signature";
           return;

@@ -151,21 +151,6 @@ public class WorkArounds {
         return (doclint == null);
     }
 
-    // TODO: jx.l.m directSuperTypes don't work for things like Enum,
-    // so we use javac directly, investigate why jx.l.m is not cutting it.
-    public List<TypeMirror> interfaceTypesOf(TypeMirror type) {
-        com.sun.tools.javac.util.List<com.sun.tools.javac.code.Type> interfaces =
-                ((DocEnvImpl)configuration.docEnv).toolEnv.getTypes().interfaces((com.sun.tools.javac.code.Type)type);
-        if (interfaces.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<TypeMirror> list = new ArrayList<>(interfaces.size());
-        for (com.sun.tools.javac.code.Type t : interfaces) {
-            list.add((TypeMirror)t);
-        }
-        return list;
-    }
-
     /*
      * TODO: This method exists because of a bug in javac which does not
      * handle "@deprecated tag in package-info.java", when this issue

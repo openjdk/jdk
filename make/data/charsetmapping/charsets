@@ -492,7 +492,7 @@ charset x-MS950-HKSCS-XP MS950_HKSCS_XP
 
 charset x-MS950-HKSCS MS950_HKSCS
     package sun.nio.cs.ext
-    type    source
+    type    template
     hisname MS950_HKSCS
     ascii   true
     alias   MS950_HKSCS          # JDK historical;

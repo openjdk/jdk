@@ -13,4 +13,5 @@ SJIS       # SJIS must go together with MS932 to support sun.nio.cs.map
 MS936
 MS949
 MS950
+MS950_HKSCS
 MS950_HKSCS_XP

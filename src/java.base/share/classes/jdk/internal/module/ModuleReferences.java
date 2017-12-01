@@ -50,9 +50,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import jdk.internal.jmod.JmodFile;
-import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.ModuleHashes.HashSupplier;
-import jdk.internal.util.jar.VersionedStream;
 import sun.net.www.ParseUtil;
 
 
@@ -250,7 +248,7 @@ class ModuleReferences {
             JarEntry je = getEntry(name);
             if (je != null) {
                 if (jf.isMultiRelease())
-                    name = SharedSecrets.javaUtilJarAccess().getRealName(jf, je);
+                    name = je.getRealName();
                 if (je.isDirectory() && !name.endsWith("/"))
                     name += "/";
                 String encodedPath = ParseUtil.encodePath(name, false);
@@ -274,7 +272,7 @@ class ModuleReferences {
         @Override
         Stream<String> implList() throws IOException {
             // take snapshot to avoid async close
-            List<String> names = VersionedStream.stream(jf)
+            List<String> names = jf.versionedStream()
                     .map(JarEntry::getName)
                     .collect(Collectors.toList());
             return names.stream();

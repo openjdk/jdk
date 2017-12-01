@@ -1101,6 +1101,7 @@ void ciEnv::register_method(ciMethod* target,
         }
         method->method_holder()->add_osr_nmethod(nm);
       }
+      nm->make_in_use();
     }
   }  // safepoints are allowed again
 

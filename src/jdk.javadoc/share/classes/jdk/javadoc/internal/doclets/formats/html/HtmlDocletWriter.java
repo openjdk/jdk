@@ -2268,13 +2268,14 @@ public class HtmlDocletWriter {
      * @param annotationDoc the annotation being documented
      * @param linkInfo the information about the link
      * @param annotation the annotation string to which the annotation will be added
-     * @param pairs annotation type element and value pairs
+     * @param map annotation type element to annotation value pairs
      * @param indent the number of extra spaces to indent the annotations.
      * @param linkBreak if true, add new line between each member value
      */
     private void addAnnotations(TypeElement annotationDoc, LinkInfoImpl linkInfo,
-        ContentBuilder annotation, Map<? extends ExecutableElement,? extends AnnotationValue>map,
-        int indent, boolean linkBreak) {
+                                ContentBuilder annotation,
+                                Map<? extends ExecutableElement, ? extends AnnotationValue> map,
+                                int indent, boolean linkBreak) {
         linkInfo.label = new StringContent("@");
         linkInfo.label.addContent(annotationDoc.getSimpleName());
         annotation.addContent(getLink(linkInfo));

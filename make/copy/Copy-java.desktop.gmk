@@ -44,7 +44,8 @@ $(INCLUDE_DST_OS_DIR)/%.h: \
 ################################################################################
 
 ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
-  # We need to bundle the freetype library, so it will be available at runtime as well as link time.
+  # We need to bundle the freetype library, so it will be available at runtime
+  # as well as link time.
   #
   # NB: Default freetype build system uses -h linker option and
   # result .so contains hardcoded library name that is later
@@ -61,10 +62,10 @@ ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
   #
   #TODO: rework this to avoid hardcoding library name in the makefile
   #
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-    FREETYPE_TARGET_LIB := $(LIB_DST_DIR)/$(call SHARED_LIBRARY,freetype)
-  else
+  ifneq ($(filter $(OPENJDK_TARGET_OS), linux solaris), )
     FREETYPE_TARGET_LIB := $(LIB_DST_DIR)/$(call SHARED_LIBRARY,freetype).6
+  else
+    FREETYPE_TARGET_LIB := $(LIB_DST_DIR)/$(call SHARED_LIBRARY,freetype)
   endif
 
   # We can't use $(install-file) in this rule because it preserves symbolic links and

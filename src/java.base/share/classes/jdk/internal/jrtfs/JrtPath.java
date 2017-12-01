@@ -274,7 +274,7 @@ final class JrtPath implements Path {
         if (o.path.length() == 0) {
             return this;
         }
-        StringBuilder sb = new StringBuilder(path.length() + o.path.length());
+        StringBuilder sb = new StringBuilder(path.length() + o.path.length() + 1);
         sb.append(path);
         if (path.charAt(path.length() - 1) != '/')
             sb.append('/');
@@ -478,12 +478,15 @@ final class JrtPath implements Path {
 
     // Remove DotSlash(./) and resolve DotDot (..) components
     private String getResolved() {
-        if (path.length() == 0) {
+        int length = path.length();
+        if (length == 0 || (path.indexOf("./") == -1 && path.charAt(length - 1) != '.')) {
             return path;
+        } else {
+            return resolvePath();
         }
-        if (path.indexOf('.') == -1) {
-            return path;
-        }
+    }
+
+    private String resolvePath() {
         int length = path.length();
         char[] to = new char[length];
         int nc = getNameCount();
