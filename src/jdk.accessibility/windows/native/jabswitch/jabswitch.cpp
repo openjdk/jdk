@@ -206,6 +206,7 @@ int modify(bool enable) {
          len - 1 > sizeof(tempPath) - sizeof(acc_props2) ) {
         printf("The USERPROFILE environment variable is too long.\n");
         printf("It must be no longer than 233 characters.\n");
+        free(profilePath);
         return 123;
      }
     path[0] = 0;
