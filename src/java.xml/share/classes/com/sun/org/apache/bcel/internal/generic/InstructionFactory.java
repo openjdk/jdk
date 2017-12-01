@@ -32,6 +32,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * @version $Id: InstructionFactory.java 1749603 2016-06-21 20:50:19Z ggregory $
  * @see Const
  * @see InstructionConst
+ * @LastModified: Nov 2017
  */
 public class InstructionFactory {
 
@@ -573,7 +574,7 @@ public class InstructionFactory {
                     + short_names[dest - Const.T_CHAR];
             Instruction i = null;
             try {
-                i = (Instruction) java.lang.Class.forName(name).newInstance();
+                i = (Instruction) java.lang.Class.forName(name).getDeclaredConstructor().newInstance();
             } catch (final Exception e) {
                 throw new RuntimeException("Could not find instruction: " + name, e);
             }

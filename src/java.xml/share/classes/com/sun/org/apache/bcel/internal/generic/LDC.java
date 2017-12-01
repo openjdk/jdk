@@ -32,6 +32,7 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * <PRE>Stack: ... -&gt; ..., item</PRE>
  *
  * @version $Id: LDC.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @LastModified: Nov 2017
  */
 public class LDC extends CPInstruction implements PushInstruction, ExceptionThrower {
 
@@ -104,9 +105,9 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
                 c = cpg.getConstantPool().getConstant(i);
                 return ((com.sun.org.apache.bcel.internal.classfile.ConstantUtf8) c).getBytes();
             case com.sun.org.apache.bcel.internal.Const.CONSTANT_Float:
-                return new Float(((com.sun.org.apache.bcel.internal.classfile.ConstantFloat) c).getBytes());
+                return ((com.sun.org.apache.bcel.internal.classfile.ConstantFloat) c).getBytes();
             case com.sun.org.apache.bcel.internal.Const.CONSTANT_Integer:
-                return Integer.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantInteger) c).getBytes());
+                return ((com.sun.org.apache.bcel.internal.classfile.ConstantInteger) c).getBytes();
             case com.sun.org.apache.bcel.internal.Const.CONSTANT_Class:
                 final int nameIndex = ((com.sun.org.apache.bcel.internal.classfile.ConstantClass) c).getNameIndex();
                 c = cpg.getConstantPool().getConstant(nameIndex);
