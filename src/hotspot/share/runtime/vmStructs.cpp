@@ -2643,6 +2643,46 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_constant(Deoptimization::_reason_shift)                         \
   declare_constant(Deoptimization::_debug_id_shift)                       \
                                                                           \
+  /******************************************/                            \
+  /* BasicType enum (globalDefinitions.hpp) */                            \
+  /******************************************/                            \
+                                                                          \
+  declare_constant(T_BOOLEAN)                                             \
+  declare_constant(T_CHAR)                                                \
+  declare_constant(T_FLOAT)                                               \
+  declare_constant(T_DOUBLE)                                              \
+  declare_constant(T_BYTE)                                                \
+  declare_constant(T_SHORT)                                               \
+  declare_constant(T_INT)                                                 \
+  declare_constant(T_LONG)                                                \
+  declare_constant(T_OBJECT)                                              \
+  declare_constant(T_ARRAY)                                               \
+  declare_constant(T_VOID)                                                \
+  declare_constant(T_ADDRESS)                                             \
+  declare_constant(T_NARROWOOP)                                           \
+  declare_constant(T_METADATA)                                            \
+  declare_constant(T_NARROWKLASS)                                         \
+  declare_constant(T_CONFLICT)                                            \
+  declare_constant(T_ILLEGAL)                                             \
+                                                                          \
+  /**********************************************/                        \
+  /* BasicTypeSize enum (globalDefinitions.hpp) */                        \
+  /**********************************************/                        \
+                                                                          \
+  declare_constant(T_BOOLEAN_size)                                        \
+  declare_constant(T_CHAR_size)                                           \
+  declare_constant(T_FLOAT_size)                                          \
+  declare_constant(T_DOUBLE_size)                                         \
+  declare_constant(T_BYTE_size)                                           \
+  declare_constant(T_SHORT_size)                                          \
+  declare_constant(T_INT_size)                                            \
+  declare_constant(T_LONG_size)                                           \
+  declare_constant(T_OBJECT_size)                                         \
+  declare_constant(T_ARRAY_size)                                          \
+  declare_constant(T_NARROWOOP_size)                                      \
+  declare_constant(T_NARROWKLASS_size)                                    \
+  declare_constant(T_VOID_size)                                           \
+                                                                          \
   /*********************/                                                 \
   /* Matcher (C2 only) */                                                 \
   /*********************/                                                 \
