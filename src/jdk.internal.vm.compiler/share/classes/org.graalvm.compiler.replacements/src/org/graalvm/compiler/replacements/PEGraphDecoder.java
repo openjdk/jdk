@@ -63,6 +63,7 @@ import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.MergeNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.SimplifyingGraphDecoder;
@@ -583,7 +584,7 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
             return callTarget.targetMethod();
         }
 
-        SpecialCallTargetCacheKey key = new SpecialCallTargetCacheKey(callTarget.invokeKind(), callTarget.targetMethod(), invokeData.contextType, callTarget.receiver().stamp());
+        SpecialCallTargetCacheKey key = new SpecialCallTargetCacheKey(callTarget.invokeKind(), callTarget.targetMethod(), invokeData.contextType, callTarget.receiver().stamp(NodeView.DEFAULT));
         Object specialCallTarget = specialCallTargetCache.get(key);
         if (specialCallTarget == null) {
             specialCallTarget = MethodCallTargetNode.devirtualizeCall(key.invokeKind, key.targetMethod, key.contextType, graph.getAssumptions(),
@@ -1066,7 +1067,7 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
                 assert !methodScope.isInlinedMethod();
                 GraphBuilderContext graphBuilderContext = new PENonAppendGraphBuilderContext(methodScope, null);
                 Node result = parameterPlugin.interceptParameter(graphBuilderContext, param.index(),
-                                StampPair.create(param.stamp(), param.uncheckedStamp()));
+                                StampPair.create(param.stamp(NodeView.DEFAULT), param.uncheckedStamp()));
                 if (result != null) {
                     return result;
                 }

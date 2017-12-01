@@ -32,6 +32,7 @@ import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
@@ -63,7 +64,7 @@ public class AArch64FloatArithmeticSnippets extends SnippetTemplate.AbstractTemp
     }
 
     public void lower(RemNode node, LoweringTool tool) {
-        JavaKind kind = node.stamp().getStackKind();
+        JavaKind kind = node.stamp(NodeView.DEFAULT).getStackKind();
         assert kind == JavaKind.Float || kind == JavaKind.Double;
         if (node instanceof SafeNode) {
             // We already introduced the necessary checks, nothing to do.

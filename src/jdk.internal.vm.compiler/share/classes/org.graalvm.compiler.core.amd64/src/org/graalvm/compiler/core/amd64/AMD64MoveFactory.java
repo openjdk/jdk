@@ -28,6 +28,7 @@ import static org.graalvm.compiler.lir.LIRValueUtil.asConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 
+import org.graalvm.compiler.asm.amd64.AMD64Assembler;
 import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.type.DataPointerConstant;
 import org.graalvm.compiler.debug.GraalError;
@@ -85,7 +86,7 @@ public abstract class AMD64MoveFactory extends AMD64MoveFactoryBase {
     @Override
     public AMD64LIRInstruction createMove(AllocatableValue dst, Value src) {
         if (src instanceof AMD64AddressValue) {
-            return new LeaOp(dst, (AMD64AddressValue) src);
+            return new LeaOp(dst, (AMD64AddressValue) src, AMD64Assembler.OperandSize.QWORD);
         } else if (isConstantValue(src)) {
             return createLoad(dst, asConstant(src));
         } else if (isRegister(src) || isStackSlotValue(dst)) {

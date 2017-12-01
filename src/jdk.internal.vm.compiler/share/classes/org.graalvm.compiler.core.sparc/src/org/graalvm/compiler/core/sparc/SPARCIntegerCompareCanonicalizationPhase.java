@@ -27,6 +27,7 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
@@ -59,7 +60,7 @@ public class SPARCIntegerCompareCanonicalizationPhase extends Phase {
     }
 
     private static void min32(CompareNode enode, ValueNode v) {
-        Stamp s = v.stamp();
+        Stamp s = v.stamp(NodeView.DEFAULT);
         if (s instanceof IntegerStamp) {
             int bits = ((IntegerStamp) s).getBits();
             if (bits != 32 && bits != 64) {

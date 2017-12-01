@@ -342,7 +342,7 @@ public final class LoopBeginNode extends AbstractMergeNode implements IterableNo
         for (int i = 0; i < phi.valueCount(); i++) {
             ValueNode input = phi.valueAt(i);
             long increment = NO_INCREMENT;
-            if (input != null && input instanceof AddNode && input.stamp() instanceof IntegerStamp) {
+            if (input != null && input instanceof AddNode && input.stamp(NodeView.DEFAULT) instanceof IntegerStamp) {
                 AddNode add = (AddNode) input;
                 if (add.getX() == phi && add.getY().isConstant()) {
                     increment = add.getY().asJavaConstant().asLong();

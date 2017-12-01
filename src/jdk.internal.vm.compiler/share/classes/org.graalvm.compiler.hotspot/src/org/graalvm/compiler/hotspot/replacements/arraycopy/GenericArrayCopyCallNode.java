@@ -33,6 +33,7 @@ import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.nodes.GetObjectAddressNode;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.IntegerConvertNode;
@@ -106,8 +107,8 @@ public final class GenericArrayCopyCallNode extends AbstractMemoryCheckpoint imp
     }
 
     private ValueNode wordValue(ValueNode value) {
-        if (value.stamp().getStackKind() != runtime.getTarget().wordJavaKind) {
-            return IntegerConvertNode.convert(value, StampFactory.forKind(runtime.getTarget().wordJavaKind), graph());
+        if (value.stamp(NodeView.DEFAULT).getStackKind() != runtime.getTarget().wordJavaKind) {
+            return IntegerConvertNode.convert(value, StampFactory.forKind(runtime.getTarget().wordJavaKind), graph(), NodeView.DEFAULT);
         }
         return value;
     }

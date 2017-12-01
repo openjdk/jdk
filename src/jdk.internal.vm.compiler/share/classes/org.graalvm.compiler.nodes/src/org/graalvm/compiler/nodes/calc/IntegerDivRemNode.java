@@ -29,6 +29,7 @@ import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -59,7 +60,7 @@ public abstract class IntegerDivRemNode extends FixedBinaryNode implements Lower
 
         // Assigning canDeopt during constructor, because it must never change during lifetime of
         // the node.
-        this.canDeopt = ((IntegerStamp) getY().stamp()).contains(0);
+        this.canDeopt = ((IntegerStamp) getY().stamp(NodeView.DEFAULT)).contains(0);
     }
 
     public final Op getOp() {

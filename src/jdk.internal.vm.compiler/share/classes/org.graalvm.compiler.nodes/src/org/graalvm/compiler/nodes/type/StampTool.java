@@ -30,6 +30,7 @@ import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.code.CodeUtil;
@@ -61,9 +62,9 @@ public class StampTool {
             ValueNode nextValue = iterator.next();
             if (nextValue != selfValue) {
                 if (stamp == null) {
-                    stamp = nextValue.stamp();
+                    stamp = nextValue.stamp(NodeView.DEFAULT);
                 } else {
-                    stamp = stamp.meet(nextValue.stamp());
+                    stamp = stamp.meet(nextValue.stamp(NodeView.DEFAULT));
                 }
             }
         }
@@ -132,7 +133,7 @@ public class StampTool {
      * @return true if this node represents a legal object value which is known to be always null
      */
     public static boolean isPointerAlwaysNull(ValueNode node) {
-        return isPointerAlwaysNull(node.stamp());
+        return isPointerAlwaysNull(node.stamp(NodeView.DEFAULT));
     }
 
     /**
@@ -158,7 +159,7 @@ public class StampTool {
      * @return true if this node represents a legal object value which is known to never be null
      */
     public static boolean isPointerNonNull(ValueNode node) {
-        return isPointerNonNull(node.stamp());
+        return isPointerNonNull(node.stamp(NodeView.DEFAULT));
     }
 
     /**
@@ -184,11 +185,11 @@ public class StampTool {
      * @return the Java type this value has if it is a legal Object type, null otherwise
      */
     public static TypeReference typeReferenceOrNull(ValueNode node) {
-        return typeReferenceOrNull(node.stamp());
+        return typeReferenceOrNull(node.stamp(NodeView.DEFAULT));
     }
 
     public static ResolvedJavaType typeOrNull(ValueNode node) {
-        return typeOrNull(node.stamp());
+        return typeOrNull(node.stamp(NodeView.DEFAULT));
     }
 
     public static ResolvedJavaType typeOrNull(Stamp stamp) {
@@ -210,7 +211,7 @@ public class StampTool {
     }
 
     public static ResolvedJavaType typeOrNull(ValueNode node, MetaAccessProvider metaAccess) {
-        return typeOrNull(node.stamp(), metaAccess);
+        return typeOrNull(node.stamp(NodeView.DEFAULT), metaAccess);
     }
 
     /**
@@ -242,7 +243,7 @@ public class StampTool {
      * @return true if this node represents a legal object value whose Java type is known exactly
      */
     public static boolean isExactType(ValueNode node) {
-        return isExactType(node.stamp());
+        return isExactType(node.stamp(NodeView.DEFAULT));
     }
 
     /**

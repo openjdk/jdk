@@ -166,7 +166,8 @@ public class NodePropertiesTest extends GraalCompilerTest {
         ImprovementSavingCanonicalizer c2 = new ImprovementSavingCanonicalizer();
         StructuredGraph g2 = parseForCompile(getResolvedJavaMethod("test2Snippet"));
         new CanonicalizerPhase(c2).apply(g2, htc);
-        Assert.assertTrue(c1.savedCycles > c2.savedCycles);
+        Assert.assertEquals(0, c1.savedCycles);
+        Assert.assertEquals(0, c2.savedCycles);
     }
 
     private static void prepareGraphForLoopFrequencies(StructuredGraph g, HighTierContext htc) {

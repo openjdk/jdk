@@ -22,14 +22,7 @@
  */
 package org.graalvm.compiler.core.test.deopt;
 
-import jdk.vm.ci.code.InstalledCode;
-import jdk.vm.ci.code.InvalidInstalledCodeException;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-
-import org.junit.Assert;
-import org.junit.Test;
-
+import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -37,16 +30,19 @@ import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * In the following tests, the usages of local variable "a" are replaced with the integer constant
- * 0. Then canonicalization is applied and it is verified that the resulting graph is equal to the
- * graph of the method that just has a "return 1" statement in it.
- */
+import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.code.InvalidInstalledCodeException;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+
 public class CompiledMethodTest extends GraalCompilerTest {
 
     public static Object testMethod(Object arg1, Object arg2, Object arg3) {
-        return arg1 + " " + arg2 + " " + arg3;
+        String res = arg1 + " " + arg2 + " " + arg3;
+        return GraalDirectives.inCompiledCode() ? res : "interpreter";
     }
 
     Object f1;
@@ -55,6 +51,12 @@ public class CompiledMethodTest extends GraalCompilerTest {
         return f1 + " " + arg1 + " " + arg2 + " " + arg3;
     }
 
+    /**
+     * Usages of the constant {@code " "} are replaced with the constant {@code "-"} and it is
+     * verified that executing the compiled code produces a result that the preserves the node
+     * replacement unless deoptimization occurs (e.g., due to -Xcomp causing profiles to be
+     * missing).
+     */
     @Test
     public void test1() {
         final ResolvedJavaMethod javaMethod = getResolvedJavaMethod("testMethod");
@@ -71,7 +73,10 @@ public class CompiledMethodTest extends GraalCompilerTest {
         InstalledCode compiledMethod = getCode(javaMethod, graph);
         try {
             Object result = compiledMethod.executeVarargs("1", "2", "3");
-            Assert.assertEquals("1-2-3", result);
+            if (!"1-2-3".equals(result)) {
+                // Deoptimization probably occurred
+                Assert.assertEquals("interpreter", result);
+            }
         } catch (InvalidInstalledCodeException t) {
             Assert.fail("method invalidated");
         }

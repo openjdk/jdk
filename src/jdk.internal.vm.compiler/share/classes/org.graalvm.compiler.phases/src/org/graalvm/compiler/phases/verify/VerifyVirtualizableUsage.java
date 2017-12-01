@@ -28,6 +28,7 @@ import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
@@ -81,7 +82,7 @@ public class VerifyVirtualizableUsage extends VerifyPhase<PhaseContext> {
         int i = 0;
         for (Node arg : arguments) {
             if (i >= startIdx) {
-                Stamp argStamp = ((ValueNode) arg).stamp();
+                Stamp argStamp = ((ValueNode) arg).stamp(NodeView.DEFAULT);
                 if (argStamp instanceof ObjectStamp) {
                     ObjectStamp objectStamp = (ObjectStamp) argStamp;
                     ResolvedJavaType argStampType = objectStamp.type();

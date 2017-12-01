@@ -68,7 +68,7 @@ public abstract class CompressionNode extends UnaryNode implements ConvertNode, 
 
     @Override
     public Stamp foldStamp(Stamp newStamp) {
-        assert newStamp.isCompatible(getValue().stamp());
+        assert newStamp.isCompatible(getValue().stamp(NodeView.DEFAULT));
         return mkStamp(newStamp);
     }
 
@@ -124,7 +124,8 @@ public abstract class CompressionNode extends UnaryNode implements ConvertNode, 
             }
 
             ConstantNode constant = (ConstantNode) forValue;
-            return ConstantNode.forConstant(stamp(), convert(constant.getValue(), tool.getConstantReflection()), constant.getStableDimension(), constant.isDefaultStable(), tool.getMetaAccess());
+            return ConstantNode.forConstant(stamp(NodeView.DEFAULT), convert(constant.getValue(), tool.getConstantReflection()), constant.getStableDimension(), constant.isDefaultStable(),
+                            tool.getMetaAccess());
         } else if (forValue instanceof CompressionNode) {
             CompressionNode other = (CompressionNode) forValue;
             if (op != other.op && encoding.equals(other.encoding)) {
@@ -137,8 +138,8 @@ public abstract class CompressionNode extends UnaryNode implements ConvertNode, 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         boolean nonNull;
-        if (value.stamp() instanceof AbstractObjectStamp) {
-            nonNull = StampTool.isPointerNonNull(value.stamp());
+        if (value.stamp(NodeView.DEFAULT) instanceof AbstractObjectStamp) {
+            nonNull = StampTool.isPointerNonNull(value.stamp(NodeView.DEFAULT));
         } else {
             // metaspace pointers are never null
             nonNull = true;

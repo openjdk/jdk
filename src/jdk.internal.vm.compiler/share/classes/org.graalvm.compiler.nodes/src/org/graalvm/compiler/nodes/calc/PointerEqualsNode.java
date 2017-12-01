@@ -35,6 +35,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
 import org.graalvm.compiler.nodes.extended.LoadMethodNode;
@@ -56,8 +57,8 @@ public class PointerEqualsNode extends CompareNode implements BinaryCommutative<
         this(TYPE, x, y);
     }
 
-    public static LogicNode create(ValueNode x, ValueNode y) {
-        LogicNode result = findSynonym(x, y);
+    public static LogicNode create(ValueNode x, ValueNode y, NodeView view) {
+        LogicNode result = findSynonym(x, y, view);
         if (result != null) {
             return result;
         }
@@ -66,13 +67,14 @@ public class PointerEqualsNode extends CompareNode implements BinaryCommutative<
 
     protected PointerEqualsNode(NodeClass<? extends PointerEqualsNode> c, ValueNode x, ValueNode y) {
         super(c, Condition.EQ, false, x, y);
-        assert x.stamp() instanceof AbstractPointerStamp;
-        assert y.stamp() instanceof AbstractPointerStamp;
+        assert x.stamp(NodeView.DEFAULT) instanceof AbstractPointerStamp;
+        assert y.stamp(NodeView.DEFAULT) instanceof AbstractPointerStamp;
     }
 
     @Override
     public Node canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), Condition.EQ, false, forX, forY);
+        NodeView view = NodeView.from(tool);
+        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), Condition.EQ, false, forX, forY, view);
         if (value != null) {
             return value;
         }
@@ -111,31 +113,31 @@ public class PointerEqualsNode extends CompareNode implements BinaryCommutative<
 
         @Override
         public LogicNode canonical(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, Condition condition,
-                        boolean unorderedIsTrue, ValueNode forX, ValueNode forY) {
-            LogicNode result = findSynonym(forX, forY);
+                        boolean unorderedIsTrue, ValueNode forX, ValueNode forY, NodeView view) {
+            LogicNode result = findSynonym(forX, forY, view);
             if (result != null) {
                 return result;
             }
             if (isAlwaysFailingVirtualDispatchTest(condition, forX, forY)) {
                 return LogicConstantNode.contradiction();
             }
-            return super.canonical(constantReflection, metaAccess, options, smallestCompareWidth, condition, unorderedIsTrue, forX, forY);
+            return super.canonical(constantReflection, metaAccess, options, smallestCompareWidth, condition, unorderedIsTrue, forX, forY, view);
         }
 
         @Override
-        protected CompareNode duplicateModified(ValueNode newX, ValueNode newY, boolean unorderedIsTrue) {
+        protected CompareNode duplicateModified(ValueNode newX, ValueNode newY, boolean unorderedIsTrue, NodeView view) {
             return new PointerEqualsNode(newX, newY);
         }
     }
 
-    public static LogicNode findSynonym(ValueNode forX, ValueNode forY) {
+    public static LogicNode findSynonym(ValueNode forX, ValueNode forY, NodeView view) {
         if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
             return LogicConstantNode.tautology();
-        } else if (forX.stamp().alwaysDistinct(forY.stamp())) {
+        } else if (forX.stamp(view).alwaysDistinct(forY.stamp(view))) {
             return LogicConstantNode.contradiction();
-        } else if (((AbstractPointerStamp) forX.stamp()).alwaysNull()) {
+        } else if (((AbstractPointerStamp) forX.stamp(view)).alwaysNull()) {
             return IsNullNode.create(forY);
-        } else if (((AbstractPointerStamp) forY.stamp()).alwaysNull()) {
+        } else if (((AbstractPointerStamp) forY.stamp(view)).alwaysNull()) {
             return IsNullNode.create(forX);
         } else {
             return null;

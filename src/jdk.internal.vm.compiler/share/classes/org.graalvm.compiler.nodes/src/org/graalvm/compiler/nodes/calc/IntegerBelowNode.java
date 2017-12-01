@@ -33,6 +33,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.code.CodeUtil;
@@ -45,25 +46,27 @@ public final class IntegerBelowNode extends IntegerLowerThanNode {
 
     public IntegerBelowNode(ValueNode x, ValueNode y) {
         super(TYPE, x, y, OP);
-        assert x.stamp() instanceof IntegerStamp;
-        assert y.stamp() instanceof IntegerStamp;
+        assert x.stamp(NodeView.DEFAULT) instanceof IntegerStamp;
+        assert y.stamp(NodeView.DEFAULT) instanceof IntegerStamp;
     }
 
-    public static LogicNode create(ValueNode x, ValueNode y) {
-        return OP.create(x, y);
+    public static LogicNode create(ValueNode x, ValueNode y, NodeView view) {
+        return OP.create(x, y, view);
     }
 
-    public static LogicNode create(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, ValueNode x, ValueNode y) {
-        LogicNode value = OP.canonical(constantReflection, metaAccess, options, smallestCompareWidth, OP.getCondition(), false, x, y);
+    public static LogicNode create(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, ValueNode x, ValueNode y,
+                    NodeView view) {
+        LogicNode value = OP.canonical(constantReflection, metaAccess, options, smallestCompareWidth, OP.getCondition(), false, x, y, view);
         if (value != null) {
             return value;
         }
-        return create(x, y);
+        return create(x, y, view);
     }
 
     @Override
     public Node canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), OP.getCondition(), false, forX, forY);
+        NodeView view = NodeView.from(tool);
+        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), OP.getCondition(), false, forX, forY, view);
         if (value != null) {
             return value;
         }
@@ -72,8 +75,8 @@ public final class IntegerBelowNode extends IntegerLowerThanNode {
 
     public static class BelowOp extends LowerOp {
         @Override
-        protected CompareNode duplicateModified(ValueNode newX, ValueNode newY, boolean unorderedIsTrue) {
-            assert newX.stamp() instanceof IntegerStamp && newY.stamp() instanceof IntegerStamp;
+        protected CompareNode duplicateModified(ValueNode newX, ValueNode newY, boolean unorderedIsTrue, NodeView view) {
+            assert newX.stamp(NodeView.DEFAULT) instanceof IntegerStamp && newY.stamp(NodeView.DEFAULT) instanceof IntegerStamp;
             return new IntegerBelowNode(newX, newY);
         }
 

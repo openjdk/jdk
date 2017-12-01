@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.graalvm.compiler.nodes.NodeView;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -77,10 +79,10 @@ public class ReinterpretStampFloatToIntTest extends ReinterpretStampTest {
     @Test
     public void run() {
         ParameterNode param = new ParameterNode(0, StampPair.createSingle(inputStamp));
-        ReinterpretNode reinterpret = new ReinterpretNode(JavaKind.Int, param);
+        ValueNode reinterpret = ReinterpretNode.create(JavaKind.Int, param, NodeView.DEFAULT);
         reinterpret.inferStamp();
 
-        IntegerStamp resultStamp = (IntegerStamp) reinterpret.stamp();
+        IntegerStamp resultStamp = (IntegerStamp) reinterpret.stamp(NodeView.DEFAULT);
         Assert.assertEquals(Integer.SIZE, resultStamp.getBits());
 
         for (int result : interestingInts) {

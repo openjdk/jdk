@@ -29,6 +29,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -52,7 +53,7 @@ public class WriteNode extends AbstractWriteNode implements LIRLowerableAccess, 
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        LIRKind writeKind = gen.getLIRGeneratorTool().getLIRKind(value().stamp());
+        LIRKind writeKind = gen.getLIRGeneratorTool().getLIRKind(value().stamp(NodeView.DEFAULT));
         gen.getLIRGeneratorTool().getArithmetic().emitStore(writeKind, gen.operand(address), gen.operand(value()), gen.state(this));
     }
 
@@ -63,7 +64,7 @@ public class WriteNode extends AbstractWriteNode implements LIRLowerableAccess, 
 
     @Override
     public Stamp getAccessStamp() {
-        return value().stamp();
+        return value().stamp(NodeView.DEFAULT);
     }
 
     @Override

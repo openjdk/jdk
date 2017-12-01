@@ -221,7 +221,8 @@ public class MonitorTest extends GraalCompilerTest {
      * Reproduces issue reported in https://github.com/graalvm/graal-core/issues/201. The stamp in
      * the PiNode returned by {@link BoxingSnippets#longValueOf} was overwritten when the node was
      * subsequently canonicalized because {@code PiNode.computeValue()} ignored the
-     * {@link ValueNode#stamp()} field and used the {@code PiNode.piStamp} field.
+     * {@link ValueNode#stamp(org.graalvm.compiler.nodes.NodeView)} field and used the
+     * {@code PiNode.piStamp} field.
      */
     @Test
     public void test8() {

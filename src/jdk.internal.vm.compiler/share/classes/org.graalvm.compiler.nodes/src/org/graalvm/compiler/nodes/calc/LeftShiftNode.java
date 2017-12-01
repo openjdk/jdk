@@ -31,6 +31,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -45,10 +46,10 @@ public final class LeftShiftNode extends ShiftNode<Shl> {
         super(TYPE, ArithmeticOpTable::getShl, x, y);
     }
 
-    public static ValueNode create(ValueNode x, ValueNode y) {
-        ArithmeticOpTable.ShiftOp<Shl> op = ArithmeticOpTable.forStamp(x.stamp()).getShl();
-        Stamp stamp = op.foldStamp(x.stamp(), (IntegerStamp) y.stamp());
-        ValueNode value = ShiftNode.canonical(op, stamp, x, y);
+    public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
+        ArithmeticOpTable.ShiftOp<Shl> op = ArithmeticOpTable.forStamp(x.stamp(view)).getShl();
+        Stamp stamp = op.foldStamp(x.stamp(view), (IntegerStamp) y.stamp(view));
+        ValueNode value = ShiftNode.canonical(op, stamp, x, y, view);
         if (value != null) {
             return value;
         }
@@ -63,7 +64,7 @@ public final class LeftShiftNode extends ShiftNode<Shl> {
             return ret;
         }
 
-        return canonical(this, getArithmeticOp(), stamp(), forX, forY);
+        return canonical(this, getArithmeticOp(), stamp(NodeView.DEFAULT), forX, forY);
     }
 
     private static ValueNode canonical(LeftShiftNode leftShiftNode, ArithmeticOpTable.ShiftOp<Shl> op, Stamp stamp, ValueNode forX, ValueNode forY) {

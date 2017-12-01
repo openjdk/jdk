@@ -42,6 +42,7 @@ import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -192,10 +193,10 @@ public class InliningData {
         assert callTarget.invokeKind().isIndirect();
 
         ResolvedJavaType holder = targetMethod.getDeclaringClass();
-        if (!(callTarget.receiver().stamp() instanceof ObjectStamp)) {
+        if (!(callTarget.receiver().stamp(NodeView.DEFAULT) instanceof ObjectStamp)) {
             return null;
         }
-        ObjectStamp receiverStamp = (ObjectStamp) callTarget.receiver().stamp();
+        ObjectStamp receiverStamp = (ObjectStamp) callTarget.receiver().stamp(NodeView.DEFAULT);
         if (receiverStamp.alwaysNull()) {
             // Don't inline if receiver is known to be null
             return null;

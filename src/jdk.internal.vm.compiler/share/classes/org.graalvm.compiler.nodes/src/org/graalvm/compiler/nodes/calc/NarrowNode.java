@@ -34,6 +34,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -48,21 +49,21 @@ public final class NarrowNode extends IntegerConvertNode<Narrow, SignExtend> {
     public static final NodeClass<NarrowNode> TYPE = NodeClass.create(NarrowNode.class);
 
     public NarrowNode(ValueNode input, int resultBits) {
-        this(input, PrimitiveStamp.getBits(input.stamp()), resultBits);
-        assert 0 < resultBits && resultBits <= PrimitiveStamp.getBits(input.stamp());
+        this(input, PrimitiveStamp.getBits(input.stamp(NodeView.DEFAULT)), resultBits);
+        assert 0 < resultBits && resultBits <= PrimitiveStamp.getBits(input.stamp(NodeView.DEFAULT));
     }
 
     public NarrowNode(ValueNode input, int inputBits, int resultBits) {
         super(TYPE, ArithmeticOpTable::getNarrow, ArithmeticOpTable::getSignExtend, inputBits, resultBits, input);
     }
 
-    public static ValueNode create(ValueNode input, int resultBits) {
-        return create(input, PrimitiveStamp.getBits(input.stamp()), resultBits);
+    public static ValueNode create(ValueNode input, int resultBits, NodeView view) {
+        return create(input, PrimitiveStamp.getBits(input.stamp(view)), resultBits, view);
     }
 
-    public static ValueNode create(ValueNode input, int inputBits, int resultBits) {
-        IntegerConvertOp<Narrow> signExtend = ArithmeticOpTable.forStamp(input.stamp()).getNarrow();
-        ValueNode synonym = findSynonym(signExtend, input, inputBits, resultBits, signExtend.foldStamp(inputBits, resultBits, input.stamp()));
+    public static ValueNode create(ValueNode input, int inputBits, int resultBits, NodeView view) {
+        IntegerConvertOp<Narrow> signExtend = ArithmeticOpTable.forStamp(input.stamp(view)).getNarrow();
+        ValueNode synonym = findSynonym(signExtend, input, inputBits, resultBits, signExtend.foldStamp(inputBits, resultBits, input.stamp(view)));
         if (synonym != null) {
             return synonym;
         } else {
@@ -77,6 +78,7 @@ public final class NarrowNode extends IntegerConvertNode<Narrow, SignExtend> {
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forValue) {
+        NodeView view = NodeView.from(tool);
         ValueNode ret = super.canonical(tool, forValue);
         if (ret != this) {
             return ret;
@@ -108,7 +110,7 @@ public final class NarrowNode extends IntegerConvertNode<Narrow, SignExtend> {
                 if (other instanceof SignExtendNode) {
                     // sxxx -(sign-extend)-> ssssssss sssssxxx -(narrow)-> sssssxxx
                     // ==> sxxx -(sign-extend)-> sssssxxx
-                    return SignExtendNode.create(other.getValue(), other.getInputBits(), getResultBits());
+                    return SignExtendNode.create(other.getValue(), other.getInputBits(), getResultBits(), view);
                 } else if (other instanceof ZeroExtendNode) {
                     // xxxx -(zero-extend)-> 00000000 00000xxx -(narrow)-> 0000xxxx
                     // ==> xxxx -(zero-extend)-> 0000xxxx
@@ -117,13 +119,13 @@ public final class NarrowNode extends IntegerConvertNode<Narrow, SignExtend> {
             }
         } else if (forValue instanceof AndNode) {
             AndNode andNode = (AndNode) forValue;
-            IntegerStamp yStamp = (IntegerStamp) andNode.getY().stamp();
-            IntegerStamp xStamp = (IntegerStamp) andNode.getX().stamp();
+            IntegerStamp yStamp = (IntegerStamp) andNode.getY().stamp(view);
+            IntegerStamp xStamp = (IntegerStamp) andNode.getX().stamp(view);
             long relevantMask = CodeUtil.mask(this.getResultBits());
             if ((relevantMask & yStamp.downMask()) == relevantMask) {
-                return create(andNode.getX(), this.getResultBits());
+                return create(andNode.getX(), this.getResultBits(), view);
             } else if ((relevantMask & xStamp.downMask()) == relevantMask) {
-                return create(andNode.getY(), this.getResultBits());
+                return create(andNode.getY(), this.getResultBits(), view);
             }
         }
 

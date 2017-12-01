@@ -55,6 +55,7 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
@@ -460,7 +461,7 @@ public final class FrameStateBuilder implements SideEffectsState {
     }
 
     private ValuePhiNode createValuePhi(ValueNode currentValue, ValueNode otherValue, AbstractMergeNode block) {
-        ValuePhiNode phi = graph.addWithoutUnique(new ValuePhiNode(currentValue.stamp().unrestricted(), block));
+        ValuePhiNode phi = graph.addWithoutUnique(new ValuePhiNode(currentValue.stamp(NodeView.DEFAULT).unrestricted(), block));
         for (int i = 0; i < block.phiPredecessorCount(); i++) {
             phi.addInput(currentValue);
         }
@@ -558,7 +559,7 @@ public final class FrameStateBuilder implements SideEffectsState {
         }
         assert !block.isPhiAtMerge(value) : "phi function for this block already created";
 
-        ValuePhiNode phi = graph.addWithoutUnique(new ValuePhiNode(stampFromValue ? value.stamp() : value.stamp().unrestricted(), block));
+        ValuePhiNode phi = graph.addWithoutUnique(new ValuePhiNode(stampFromValue ? value.stamp(NodeView.DEFAULT) : value.stamp(NodeView.DEFAULT).unrestricted(), block));
         phi.addInput(value);
         return phi;
     }
