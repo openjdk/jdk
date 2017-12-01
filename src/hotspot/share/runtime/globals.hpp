@@ -2488,7 +2488,7 @@ public:
   diagnostic(bool, EnableThreadSMRExtraValidityChecks, true,                \
              "Enable Thread SMR extra validity checks")                     \
                                                                             \
-  diagnostic(bool, EnableThreadSMRStatistics, true,                         \
+  diagnostic(bool, EnableThreadSMRStatistics, trueInDebug,                  \
              "Enable Thread SMR Statistics")                                \
                                                                             \
   product(bool, Inline, true,                                               \
