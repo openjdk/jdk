@@ -102,7 +102,7 @@ public class TestSummaryTag extends JavadocTester {
                 "p2");
         checkExit(Exit.OK);
 
-        checkOutput(Output.OUT, true, "package.html:5: warning: invalid use of @summary");
+        checkOutput(Output.OUT, true, "package.html:3: warning: invalid use of @summary");
 
         checkOutput("index-all.html", true, "<div class=\"block\">foo bar</div>\n");
 

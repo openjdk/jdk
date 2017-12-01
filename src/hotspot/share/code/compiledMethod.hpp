@@ -183,12 +183,14 @@ public:
   bool  has_wide_vectors() const                  { return _has_wide_vectors; }
   void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
 
-  enum { in_use       = 0,   // executable nmethod
-         not_used     = 1,   // not entrant, but revivable
-         not_entrant  = 2,   // marked for deoptimization but activations may still exist,
+  enum { not_installed = -1, // in construction, only the owner doing the construction is
+                             // allowed to advance state
+         in_use        = 0,  // executable nmethod
+         not_used      = 1,  // not entrant, but revivable
+         not_entrant   = 2,  // marked for deoptimization but activations may still exist,
                              // will be transformed to zombie when all activations are gone
-         zombie       = 3,   // no activations exist, nmethod is ready for purge
-         unloaded     = 4    // there should be no activations, should not be called,
+         zombie        = 3,  // no activations exist, nmethod is ready for purge
+         unloaded      = 4   // there should be no activations, should not be called,
                              // will be transformed to zombie immediately
   };
 

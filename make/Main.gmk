@@ -480,8 +480,7 @@ ALL_TARGETS += $(ALL_TEST_TARGETS) $(ALL_EXPLODED_TEST_TARGETS)
 #
 
 prepare-test-image:
-	$(MKDIR) -p $(TEST_IMAGE_DIR)
-	$(ECHO) > $(TEST_IMAGE_DIR)/Readme.txt 'JDK test image'
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f TestImage.gmk prepare-test-image)
 
 build-test-hotspot-jtreg-native:
 	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregNativeHotspot.gmk \

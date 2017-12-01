@@ -206,6 +206,18 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      * @return the result of scanning
      */
     @Override
+    public R visitDocType(DocTypeTree node, P p) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
+    @Override
     public R visitEndElement(EndElementTree node, P p) {
         return null;
     }

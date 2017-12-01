@@ -820,8 +820,8 @@ public class MessageFormat extends Format {
      *
      * @param arguments an array of objects to be formatted and substituted.
      * @param result where text is appended.
-     * @param pos On input: an alignment field, if desired.
-     *            On output: the offsets of the alignment field.
+     * @param pos keeps track on the position of the first replaced argument
+                  in the output string.
      * @return the string buffer passed in as {@code result}, with formatted
      * text appended
      * @exception IllegalArgumentException if an argument in the
@@ -868,8 +868,8 @@ public class MessageFormat extends Format {
      *
      * @param arguments an array of objects to be formatted and substituted.
      * @param result where text is appended.
-     * @param pos On input: an alignment field, if desired.
-     *            On output: the offsets of the alignment field.
+     * @param pos keeps track on the position of the first replaced argument
+     *            in the output string.
      * @exception IllegalArgumentException if an argument in the
      *            <code>arguments</code> array is not of the type
      *            expected by the format element(s) that use it.
@@ -1239,11 +1239,11 @@ public class MessageFormat extends Format {
     private int maxOffset = -1;
 
     /**
-     * Internal routine used by format. If <code>characterIterators</code> is
-     * non-null, AttributedCharacterIterator will be created from the
-     * subformats as necessary. If <code>characterIterators</code> is null
-     * and <code>fp</code> is non-null and identifies
-     * <code>Field.MESSAGE_ARGUMENT</code>, the location of
+     * Internal routine used by format. If {@code characterIterators} is
+     * {@code non-null}, AttributedCharacterIterator will be created from the
+     * subformats as necessary. If {@code characterIterators} is {@code null}
+     * and {@code fp} is {@code non-null} and identifies
+     * {@code Field.ARGUMENT} as the field attribute, the location of
      * the first replaced argument will be set in it.
      *
      * @exception IllegalArgumentException if an argument in the

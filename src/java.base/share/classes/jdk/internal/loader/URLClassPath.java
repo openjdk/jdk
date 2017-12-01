@@ -834,7 +834,7 @@ public class URLClassPath {
             try {
                 String nm;
                 if (jar.isMultiRelease()) {
-                    nm = SharedSecrets.javaUtilJarAccess().getRealName(jar, entry);
+                    nm = entry.getRealName();
                 } else {
                     nm = name;
                 }

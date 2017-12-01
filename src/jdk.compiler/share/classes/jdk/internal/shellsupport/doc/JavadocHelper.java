@@ -61,6 +61,7 @@ import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
@@ -214,7 +215,9 @@ public abstract class JavadocHelper implements AutoCloseable {
                 }
             }
 
-            DocCommentTree docCommentTree = parseDocComment(task, docComment);
+            Pair<DocCommentTree, Integer> parsed = parseDocComment(task, docComment);
+            DocCommentTree docCommentTree = parsed.fst;
+            int offset = parsed.snd;
             IOException[] exception = new IOException[1];
             Map<int[], String> replace = new TreeMap<>((span1, span2) -> span2[0] - span1[0]);
 
@@ -349,7 +352,10 @@ public abstract class JavadocHelper implements AutoCloseable {
                     if (inherited == null) {
                         return null;
                     }
-                    DocCommentTree inheritedDocTree = parseDocComment(inheritedJavacTask, inherited);
+                    Pair<DocCommentTree, Integer> parsed =
+                            parseDocComment(inheritedJavacTask, inherited);
+                    DocCommentTree inheritedDocTree = parsed.fst;
+                    int offset = parsed.snd;
                     List<List<? extends DocTree>> inheritedText = new ArrayList<>();
                     DocTree parent = interestingParent.peek();
                     switch (parent.getKind()) {
@@ -391,7 +397,6 @@ public abstract class JavadocHelper implements AutoCloseable {
                             break;
                     }
                     if (!inheritedText.isEmpty()) {
-                        long offset = trees.getSourcePositions().getStartPosition(null, inheritedDocTree, inheritedDocTree);
                         long start = Long.MAX_VALUE;
                         long end = Long.MIN_VALUE;
 
@@ -475,7 +480,6 @@ public abstract class JavadocHelper implements AutoCloseable {
                 return docComment;
 
             StringBuilder replacedInheritDoc = new StringBuilder(docComment);
-            int offset = (int) trees.getSourcePositions().getStartPosition(null, docCommentTree, docCommentTree);
 
             for (Entry<int[], String> e : replace.entrySet()) {
                 replacedInheritDoc.delete(e.getKey()[0] - offset, e.getKey()[1] - offset + 1);
@@ -507,22 +511,28 @@ public abstract class JavadocHelper implements AutoCloseable {
             }
 
          private DocTree parseBlockTag(JavacTask task, String blockTag) {
-            DocCommentTree dc = parseDocComment(task, blockTag);
+            DocCommentTree dc = parseDocComment(task, blockTag).fst;
 
             return dc.getBlockTags().get(0);
         }
 
-        private DocCommentTree parseDocComment(JavacTask task, String javadoc) {
+        private Pair<DocCommentTree, Integer> parseDocComment(JavacTask task, String javadoc) {
             DocTrees trees = DocTrees.instance(task);
             try {
-                return trees.getDocCommentTree(new SimpleJavaFileObject(new URI("mem://doc.html"), javax.tools.JavaFileObject.Kind.HTML) {
+                SimpleJavaFileObject fo =
+                        new SimpleJavaFileObject(new URI("mem://doc.html"), Kind.HTML) {
                     @Override @DefinedBy(Api.COMPILER)
-                    public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+                    public CharSequence getCharContent(boolean ignoreEncodingErrors)
+                            throws IOException {
                         return "<body>" + javadoc + "</body>";
                     }
-                });
+                };
+                DocCommentTree tree = trees.getDocCommentTree(fo);
+                int offset = (int) trees.getSourcePositions().getStartPosition(null, tree, tree);
+                offset += "<body>".length() + 1;
+                return Pair.of(tree, offset);
             } catch (URISyntaxException ex) {
-                return null;
+                throw new IllegalStateException(ex);
             }
         }
 

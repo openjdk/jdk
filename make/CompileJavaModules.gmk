@@ -300,7 +300,9 @@ java.corba_EXCLUDE_FILES += \
 
 ################################################################################
 
-java.xml_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+java.xml_ADD_JAVAC_FLAGS += -Xdoclint:all/protected \
+    '-Xdoclint/package:$(call CommaList, javax.xml.catalog javax.xml.datatype \
+    javax.xml.transform javax.xml.validation javax.xml.xpath)'
 java.xml_CLEAN += .properties
 
 ################################################################################

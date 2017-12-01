@@ -263,8 +263,12 @@ public final class LambdaMetafactory {
      * methods from {@code Object}.
      *
      * @param caller Represents a lookup context with the accessibility
-     *               privileges of the caller.  When used with {@code invokedynamic},
-     *               this is stacked automatically by the VM.
+     *               privileges of the caller.  Specifically, the lookup context
+     *               must have
+     *               <a href="MethodHandles.Lookup.html#privacc">private access</a>
+     *               privileges.
+     *               When used with {@code invokedynamic}, this is stacked
+     *               automatically by the VM.
      * @param invokedName The name of the method to implement.  When used with
      *                    {@code invokedynamic}, this is provided by the
      *                    {@code NameAndType} of the {@code InvokeDynamic}
@@ -294,7 +298,8 @@ public final class LambdaMetafactory {
      *         instances of the interface named by {@code invokedType}
      * @throws LambdaConversionException If any of the linkage invariants
      *                                   described {@link LambdaMetafactory above}
-     *                                   are violated
+     *                                   are violated, or the lookup context
+     *                                   does not have private access privileges.
      */
     public static CallSite metafactory(MethodHandles.Lookup caller,
                                        String invokedName,
@@ -404,8 +409,12 @@ public final class LambdaMetafactory {
      * </ul>
      *
      * @param caller Represents a lookup context with the accessibility
-     *               privileges of the caller.  When used with {@code invokedynamic},
-     *               this is stacked automatically by the VM.
+     *               privileges of the caller.  Specifically, the lookup context
+     *               must have
+     *               <a href="MethodHandles.Lookup.html#privacc">private access</a>
+     *               privileges.
+     *               When used with {@code invokedynamic}, this is stacked
+     *               automatically by the VM.
      * @param invokedName The name of the method to implement.  When used with
      *                    {@code invokedynamic}, this is provided by the
      *                    {@code NameAndType} of the {@code InvokeDynamic}
@@ -429,7 +438,8 @@ public final class LambdaMetafactory {
      *         instances of the interface named by {@code invokedType}
      * @throws LambdaConversionException If any of the linkage invariants
      *                                   described {@link LambdaMetafactory above}
-     *                                   are violated
+     *                                   are violated, or the lookup context
+     *                                   does not have private access privileges.
      */
     public static CallSite altMetafactory(MethodHandles.Lookup caller,
                                           String invokedName,

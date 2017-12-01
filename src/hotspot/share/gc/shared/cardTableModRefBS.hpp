@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_HPP
 
 #include "gc/shared/modRefBarrierSet.hpp"
-#include "oops/oop.hpp"
 #include "utilities/align.hpp"
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
@@ -181,14 +180,6 @@ class CardTableModRefBS: public ModRefBarrierSet {
   CardTableModRefBS(MemRegion whole_heap, const BarrierSet::FakeRtti& fake_rtti);
   ~CardTableModRefBS();
 
-  // Record a reference update. Note that these versions are precise!
-  // The scanning code has to handle the fact that the write barrier may be
-  // either precise or imprecise. We make non-virtual inline variants of
-  // these functions here for performance.
-
-  void write_ref_field_work(oop obj, size_t offset, oop newVal);
-  virtual void write_ref_field_work(void* field, oop newVal, bool release);
-
  protected:
   void write_region_work(MemRegion mr) {
     dirty_MemRegion(mr);
@@ -206,9 +197,12 @@ class CardTableModRefBS: public ModRefBarrierSet {
 
   // *** Card-table-barrier-specific things.
 
-  template <class T> inline void inline_write_ref_field_pre(T* field, oop newVal) {}
-
-  template <class T> inline void inline_write_ref_field(T* field, oop newVal, bool release);
+  // Record a reference update. Note that these versions are precise!
+  // The scanning code has to handle the fact that the write barrier may be
+  // either precise or imprecise. We make non-virtual inline variants of
+  // these functions here for performance.
+  template <DecoratorSet decorators, typename T>
+  void write_ref_field_post(T* field, oop newVal);
 
   // These are used by G1, when it uses the card table as a temporary data
   // structure for card claiming.
@@ -319,6 +313,9 @@ class CardTableModRefBS: public ModRefBarrierSet {
   void verify_region(MemRegion mr, jbyte val, bool val_equals) PRODUCT_RETURN;
   void verify_not_dirty_region(MemRegion mr) PRODUCT_RETURN;
   void verify_dirty_region(MemRegion mr) PRODUCT_RETURN;
+
+  template <DecoratorSet decorators, typename BarrierSetT = CardTableModRefBS>
+  class AccessBarrier: public ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> {};
 };
 
 template<>
@@ -326,5 +323,9 @@ struct BarrierSet::GetName<CardTableModRefBS> {
   static const BarrierSet::Name value = BarrierSet::CardTableModRef;
 };
 
+template<>
+struct BarrierSet::GetType<BarrierSet::CardTableModRef> {
+  typedef CardTableModRefBS type;
+};
 
 #endif // SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_HPP

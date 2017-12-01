@@ -1092,10 +1092,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
     # We can build without it.
     LDD="true"
   fi
-  BASIC_PATH_PROGS(OTOOL, otool)
-  if test "x$OTOOL" = "x"; then
-    OTOOL="true"
-  fi
   BASIC_PATH_PROGS(READELF, [greadelf readelf])
   BASIC_PATH_PROGS(DOT, dot)
   BASIC_PATH_PROGS(HG, hg)

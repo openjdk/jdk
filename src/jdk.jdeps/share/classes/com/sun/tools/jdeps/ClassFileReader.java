@@ -30,8 +30,6 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
 
-import jdk.internal.util.jar.VersionedStream;
-
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -336,7 +334,7 @@ public class ClassFileReader implements Closeable {
 
         protected Set<String> scan() {
             try (JarFile jf = openJarFile(path.toFile(), version)) {
-                return VersionedStream.stream(jf).map(JarEntry::getName)
+                return jf.versionedStream().map(JarEntry::getName)
                          .filter(n -> n.endsWith(".class"))
                          .collect(Collectors.toSet());
             } catch (IOException e) {
@@ -383,24 +381,9 @@ public class ClassFileReader implements Closeable {
         }
     }
 
-    Enumeration<JarEntry> versionedEntries(JarFile jf) {
-        Iterator<JarEntry> it = VersionedStream.stream(jf).iterator();
-        return new Enumeration<>() {
-            @Override
-            public boolean hasMoreElements() {
-                return it.hasNext();
-            }
-
-            @Override
-            public JarEntry nextElement() {
-                return it.next();
-            }
-        };
-    }
-
     class JarFileIterator implements Iterator<ClassFile> {
         protected final JarFileReader reader;
-        protected Enumeration<JarEntry> entries;
+        protected Iterator<JarEntry> entries;
         protected JarFile jf;
         protected JarEntry nextEntry;
         protected ClassFile cf;
@@ -416,7 +399,7 @@ public class ClassFileReader implements Closeable {
             if (jarfile == null) return;
 
             this.jf = jarfile;
-            this.entries = versionedEntries(jf);
+            this.entries = jarfile.versionedStream().iterator();
             this.nextEntry = nextEntry();
         }
 
@@ -450,8 +433,8 @@ public class ClassFileReader implements Closeable {
         }
 
         protected JarEntry nextEntry() {
-            while (entries.hasMoreElements()) {
-                JarEntry e = entries.nextElement();
+            while (entries.hasNext()) {
+                JarEntry e = entries.next();
                 String name = e.getName();
                 if (name.endsWith(".class")) {
                     return e;

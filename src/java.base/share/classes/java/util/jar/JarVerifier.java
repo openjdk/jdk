@@ -724,10 +724,10 @@ class JarVerifier {
      * Like entries() but screens out internal JAR mechanism entries
      * and includes signed entries with no ZIP data.
      */
-    public Enumeration<JarEntry> entries2(final JarFile jar, Enumeration<? extends ZipEntry> e) {
+    public Enumeration<JarEntry> entries2(final JarFile jar, Enumeration<JarEntry> e) {
         final Map<String, CodeSigner[]> map = new HashMap<>();
         map.putAll(signerMap());
-        final Enumeration<? extends ZipEntry> enum_ = e;
+        final Enumeration<JarEntry> enum_ = e;
         return new Enumeration<>() {
 
             Enumeration<String> signers = null;
@@ -738,11 +738,11 @@ class JarVerifier {
                     return true;
                 }
                 while (enum_.hasMoreElements()) {
-                    ZipEntry ze = enum_.nextElement();
-                    if (JarVerifier.isSigningRelated(ze.getName())) {
+                    JarEntry je = enum_.nextElement();
+                    if (JarVerifier.isSigningRelated(je.getName())) {
                         continue;
                     }
-                    entry = jar.newEntry(ze);
+                    entry = jar.newEntry(je);
                     return true;
                 }
                 if (signers == null) {
@@ -750,7 +750,7 @@ class JarVerifier {
                 }
                 while (signers.hasMoreElements()) {
                     String name = signers.nextElement();
-                    entry = jar.newEntry(new ZipEntry(name));
+                    entry = jar.newEntry(name);
                     return true;
                 }
 

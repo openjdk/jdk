@@ -105,6 +105,21 @@ public interface DocTreeVisitor<R,P> {
     R visitDocRoot(DocRootTree node, P p);
 
     /**
+     * Visits a DocTypeTree node.
+     *
+     * @implSpec Visits a {@code DocTypeTree} node
+     * by calling {@code visitOther(node, p)}.
+     *
+     * @param node the node being visited
+     * @param p    a parameter value
+     * @return a result value
+     * @since 10
+     */
+    default R visitDocType(DocTypeTree node, P p) {
+        return visitOther(node, p);
+    }
+
+    /**
      * Visits an EndElementTree node.
      * @param node the node being visited
      * @param p a parameter value
@@ -267,7 +282,9 @@ public interface DocTreeVisitor<R,P> {
      * @return a result value
      * @since 10
      */
-    default R visitSummary(SummaryTree node, P p) { return visitOther(node, p);}
+    default R visitSummary(SummaryTree node, P p) {
+        return visitOther(node, p);
+    }
 
     /**
      * Visits a TextTree node.

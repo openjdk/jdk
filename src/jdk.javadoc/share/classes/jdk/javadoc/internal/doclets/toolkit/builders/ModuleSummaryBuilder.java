@@ -30,7 +30,6 @@ import javax.lang.model.element.ModuleElement;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 
 /**
@@ -117,7 +116,9 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
 
         moduleWriter.addModuleFooter(contentTree);
         moduleWriter.printDocument(contentTree);
-        utils.copyDirectory(mdle, DocPaths.moduleSummary(mdle));
+        // uncomment to support doc-files in modules
+        // DocFilesHandler docFilesHandler = configuration.getWriterFactory().getDocFilesWriter(mdle);
+        // docFilesHandler.copyDocFiles();
     }
 
     /**

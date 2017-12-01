@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,9 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
-import java.lang.annotation.Annotation;
-import java.util.Set;
-
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ElementVisitor;
-import javax.lang.model.element.Name;
-import javax.lang.model.type.TypeMirror;
-
-import jdk.javadoc.doclet.DocletEnvironment;
+import javax.lang.model.element.PackageElement;
+import javax.tools.FileObject;
 
 /**
  * This is a pseudo element wrapper for the overview element, essentially to
@@ -46,62 +38,28 @@ import jdk.javadoc.doclet.DocletEnvironment;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class OverviewElement implements Element {
+public class OverviewElement implements DocletElement {
 
-    public final DocletEnvironment docEnv;
+    private final PackageElement pkg;
+    private final FileObject fo;
 
-    OverviewElement(DocletEnvironment docEnv) {
-        this.docEnv = docEnv;
+    public OverviewElement(PackageElement pkg, FileObject fo) {
+        this.pkg = pkg;
+        this.fo = fo;
     }
 
     @Override
-    public TypeMirror asType() {
-        throw new UnsupportedOperationException("Unsupported method");
+    public PackageElement getPackageElement() {
+        return pkg;
+    }
+
+    public FileObject getFileObject() {
+        return fo;
     }
 
     @Override
-    public ElementKind getKind() {
-        return ElementKind.OTHER;
-    }
-
-    @Override
-    public Set<javax.lang.model.element.Modifier> getModifiers() {
-        throw new UnsupportedOperationException("Unsupported method");
-    }
-
-    @Override
-    public Name getSimpleName() {
-        throw new UnsupportedOperationException("Unsupported method");
-    }
-
-    @Override
-    public Element getEnclosingElement() {
-        throw new UnsupportedOperationException("Unsupported method");
-    }
-
-    @Override
-    public java.util.List<? extends Element> getEnclosedElements() {
-        throw new UnsupportedOperationException("Unsupported method");
-    }
-
-    @Override
-    public java.util.List<? extends AnnotationMirror> getAnnotationMirrors() {
-        throw new UnsupportedOperationException("Unsupported method");
-    }
-
-    @Override
-    public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-        throw new UnsupportedOperationException("Unsupported method");
-    }
-
-    @Override
-    public <R, P> R accept(ElementVisitor<R, P> v, P p) {
-        return v.visitUnknown(this, p);
-    }
-
-    @Override
-    public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
-        throw new UnsupportedOperationException("Unsupported method");
+    public Kind getSubKind() {
+        return Kind.OVERVIEW;
     }
 }
 

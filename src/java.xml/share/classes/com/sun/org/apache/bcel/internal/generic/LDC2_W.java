@@ -26,6 +26,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * <PRE>Stack: ... -&gt; ..., item.word1, item.word2</PRE>
  *
  * @version $Id: LDC2_W.java 1749603 2016-06-21 20:50:19Z ggregory $
+ * @LastModified: Nov 2017
  */
 public class LDC2_W extends CPInstruction implements PushInstruction {
 
@@ -59,9 +60,9 @@ public class LDC2_W extends CPInstruction implements PushInstruction {
         final com.sun.org.apache.bcel.internal.classfile.Constant c = cpg.getConstantPool().getConstant(super.getIndex());
         switch (c.getTag()) {
             case com.sun.org.apache.bcel.internal.Const.CONSTANT_Long:
-                return Long.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantLong) c).getBytes());
+                return ((com.sun.org.apache.bcel.internal.classfile.ConstantLong) c).getBytes();
             case com.sun.org.apache.bcel.internal.Const.CONSTANT_Double:
-                return new Double(((com.sun.org.apache.bcel.internal.classfile.ConstantDouble) c).getBytes());
+                return ((com.sun.org.apache.bcel.internal.classfile.ConstantDouble) c).getBytes();
             default: // Never reached
                 throw new RuntimeException("Unknown or invalid constant type at " + super.getIndex());
         }
