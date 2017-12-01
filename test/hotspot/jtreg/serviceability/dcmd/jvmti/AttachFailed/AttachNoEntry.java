@@ -37,7 +37,8 @@ public class AttachNoEntry extends AttachFailedTestBase {
             OutputAnalyzer output = null;
 
             output = executor.execute("JVMTI.agent_load " + libpath);
-            output.shouldContain("Agent_OnAttach is not available");
+            output.shouldContain("Agent_OnAttach");
+            output.shouldContain("is not available");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
