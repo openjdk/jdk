@@ -200,7 +200,7 @@ int os::create_file_for_heap(const char* dir) {
 
 static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
   char * addr;
-  int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS;
+  int flags = MAP_PRIVATE NOT_AIX( | MAP_NORESERVE ) | MAP_ANONYMOUS;
   if (requested_addr != NULL) {
     assert((uintptr_t)requested_addr % os::vm_page_size() == 0, "Requested address should be aligned to OS page size");
     flags |= MAP_FIXED;
