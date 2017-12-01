@@ -141,23 +141,26 @@ void SharedClassUtil::update_shared_classpath(ClassPathEntry *cpe, SharedClassPa
   ResourceMark rm(THREAD);
   jint manifest_size;
   bool isSigned;
-  char* manifest = ClassLoaderExt::read_manifest(cpe, &manifest_size, CHECK);
-  if (manifest != NULL) {
-    ManifestStream* stream = new ManifestStream((u1*)manifest,
-                                                manifest_size);
-    isSigned = stream->check_is_signed();
-    if (isSigned) {
-      ent->_is_signed = true;
-    } else {
-      // Copy the manifest into the shared archive
-      manifest = ClassLoaderExt::read_raw_manifest(cpe, &manifest_size, CHECK);
-      Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
-                                                      manifest_size,
-                                                      THREAD);
-      char* p = (char*)(buf->data());
-      memcpy(p, manifest, manifest_size);
-      ent->set_manifest(buf);
-      ent->_is_signed = false;
+
+  if (cpe->is_jar_file()) {
+    char* manifest = ClassLoaderExt::read_manifest(cpe, &manifest_size, CHECK);
+    if (manifest != NULL) {
+      ManifestStream* stream = new ManifestStream((u1*)manifest,
+                                                  manifest_size);
+      isSigned = stream->check_is_signed();
+      if (isSigned) {
+        ent->_is_signed = true;
+      } else {
+        // Copy the manifest into the shared archive
+        manifest = ClassLoaderExt::read_raw_manifest(cpe, &manifest_size, CHECK);
+        Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
+                                                        manifest_size,
+                                                        THREAD);
+        char* p = (char*)(buf->data());
+        memcpy(p, manifest, manifest_size);
+        ent->set_manifest(buf);
+        ent->_is_signed = false;
+      }
     }
   }
 }
