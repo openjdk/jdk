@@ -245,8 +245,8 @@ void G1FullCollector::run_task(AbstractGangTask* task) {
 }
 
 void G1FullCollector::verify_after_marking() {
-  if (!VerifyDuringGC) {
-    //Only do verification if VerifyDuringGC is set.
+  if (!VerifyDuringGC || !_heap->verifier()->should_verify(G1HeapVerifier::G1VerifyFull)) {
+    // Only do verification if VerifyDuringGC and G1VerifyFull is set.
     return;
   }
 
@@ -265,6 +265,6 @@ void G1FullCollector::verify_after_marking() {
   // fail. At the end of the GC, the original mark word values
   // (including hash values) are restored to the appropriate
   // objects.
-  GCTraceTime(Info, gc, verify)("During GC (full)");
+  GCTraceTime(Info, gc, verify)("Verifying During GC (full)");
   _heap->verify(VerifyOption_G1UseFullMarking);
 }

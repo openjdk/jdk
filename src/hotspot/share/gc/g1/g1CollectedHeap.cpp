@@ -1084,7 +1084,6 @@ void G1CollectedHeap::print_hrm_post_compaction() {
     PostCompactionPrinterClosure cl(hr_printer());
     heap_region_iterate(&cl);
   }
-
 }
 
 void G1CollectedHeap::abort_concurrent_cycle() {
@@ -1133,7 +1132,7 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   assert(!GCCause::is_user_requested_gc(gc_cause()) || explicit_gc, "invariant");
   assert(used() == recalculate_used(), "Should be equal");
   _verifier->verify_region_sets_optional();
-  _verifier->verify_before_gc();
+  _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
   _verifier->check_bitmaps("Full GC Start");
 }
 
@@ -1174,7 +1173,7 @@ void G1CollectedHeap::verify_after_full_collection() {
   check_gc_time_stamps();
   _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
-  _verifier->verify_after_gc();
+  _verifier->verify_after_gc(G1HeapVerifier::G1VerifyFull);
   // Clear the previous marking bitmap, if needed for bitmap verification.
   // Note we cannot do this when we clear the next marking bitmap in
   // G1ConcurrentMark::abort() above since VerifyDuringGC verifies the
@@ -2958,13 +2957,17 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     GCTraceCPUTime tcpu;
 
+    G1HeapVerifier::G1VerifyType verify_type;
     FormatBuffer<> gc_string("Pause ");
     if (collector_state()->during_initial_mark_pause()) {
       gc_string.append("Initial Mark");
+      verify_type = G1HeapVerifier::G1VerifyInitialMark;
     } else if (collector_state()->gcs_are_young()) {
       gc_string.append("Young");
+      verify_type = G1HeapVerifier::G1VerifyYoungOnly;
     } else {
       gc_string.append("Mixed");
+      verify_type = G1HeapVerifier::G1VerifyMixed;
     }
     GCTraceTime(Info, gc) tm(gc_string, NULL, gc_cause(), true);
 
@@ -3005,7 +3008,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         heap_region_iterate(&v_cl);
       }
 
-      _verifier->verify_before_gc();
+      _verifier->verify_before_gc(verify_type);
 
       _verifier->check_bitmaps("GC Start");
 
@@ -3165,7 +3168,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           heap_region_iterate(&v_cl);
         }
 
-        _verifier->verify_after_gc();
+        _verifier->verify_after_gc(verify_type);
         _verifier->check_bitmaps("GC End");
 
         assert(!ref_processor_stw()->discovery_enabled(), "Postcondition");
