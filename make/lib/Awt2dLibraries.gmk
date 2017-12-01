@@ -702,12 +702,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfontmanager, \
 ))
 
-$(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
-
-ifneq (, $(findstring $(OPENJDK_TARGET_OS), solaris aix))
-  $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_HEADLESS)
-endif
-
 $(INSTALL_LIBRARIES_HERE)/$(call SHARED_LIBRARY,fontmanager): $(BUILD_LIBFONTMANAGER_TARGET)
 	$(install-file)
         ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
@@ -721,7 +715,15 @@ $(INSTALL_LIBRARIES_HERE)/$(call SHARED_LIBRARY,fontmanager): $(BUILD_LIBFONTMAN
           endif
         endif
 
-TARGETS += $(INSTALL_LIBRARIES_HERE)/$(call SHARED_LIBRARY,fontmanager)
+BUILD_LIBFONTMANAGER += $(INSTALL_LIBRARIES_HERE)/$(call SHARED_LIBRARY,fontmanager)
+
+$(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
+
+ifneq (, $(findstring $(OPENJDK_TARGET_OS), solaris aix))
+  $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_HEADLESS)
+endif
+
+TARGETS += $(BUILD_LIBFONTMANAGER)
 
 ################################################################################
 
