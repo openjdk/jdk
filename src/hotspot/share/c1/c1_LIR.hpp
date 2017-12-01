@@ -196,8 +196,8 @@ class LIR_OprDesc: public CompilationResourceObj {
   //     data       opr-type opr-kind
   // +--------------+-------+-------+
   // [max...........|7 6 5 4|3 2 1 0]
-  //                             ^
-  //                    is_pointer bit
+  //                               ^
+  //                         is_pointer bit
   //
   // lowest bit cleared, means it is a structure pointer
   // we need  4 bits to represent types
