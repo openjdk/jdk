@@ -24,6 +24,7 @@
  */
 package java.awt;
 
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 /**
@@ -51,7 +52,7 @@ import java.awt.event.KeyEvent;
  * only work if the current keyboard layout produces a corresponding letter.
  * <p>
  * The accelerator key is platform-dependent and may be obtained
- * via {@link Toolkit#getMenuShortcutKeyMask}.
+ * via {@link Toolkit#getMenuShortcutKeyMaskEx()}.
  *
  * @author Thomas Ball
  * @since 1.1
@@ -180,16 +181,15 @@ public class MenuShortcut implements java.io.Serializable
      * @return a string representation of this MenuShortcut.
      * @since 1.1
      */
-    @SuppressWarnings("deprecation")
     public String toString() {
         int modifiers = 0;
         if (!GraphicsEnvironment.isHeadless()) {
-            modifiers = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+            modifiers = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
         }
         if (usesShiftModifier()) {
-            modifiers |= Event.SHIFT_MASK;
+            modifiers |= InputEvent.SHIFT_DOWN_MASK;
         }
-        return KeyEvent.getKeyModifiersText(modifiers) + "+" +
+        return InputEvent.getModifiersExText(modifiers) + "+" +
                KeyEvent.getKeyText(key);
     }
 

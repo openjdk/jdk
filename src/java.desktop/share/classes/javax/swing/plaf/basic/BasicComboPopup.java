@@ -530,7 +530,6 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     protected JList<Object> createList() {
         return new JList<Object>( comboBox.getModel() ) {
-            @SuppressWarnings("deprecation")
             public void processMouseEvent(MouseEvent e)  {
                 if (BasicGraphicsUtils.isMenuShortcutKeyDown(e))  {
                     // Fix for 4234053. Filter out the Control Key from the list.
@@ -538,7 +537,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
                     Toolkit toolkit = Toolkit.getDefaultToolkit();
                     MouseEvent newEvent = new MouseEvent(
                                        (Component)e.getSource(), e.getID(), e.getWhen(),
-                                       e.getModifiers() ^ toolkit.getMenuShortcutKeyMask(),
+                                       e.getModifiersEx() ^ toolkit.getMenuShortcutKeyMaskEx(),
                                        e.getX(), e.getY(),
                                        e.getXOnScreen(), e.getYOnScreen(),
                                        e.getClickCount(),

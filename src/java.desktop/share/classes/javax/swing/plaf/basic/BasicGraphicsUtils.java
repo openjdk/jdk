@@ -382,10 +382,9 @@ public class BasicGraphicsUtils
         return c.getComponentOrientation().isLeftToRight();
     }
 
-    @SuppressWarnings("deprecation")
     static boolean isMenuShortcutKeyDown(InputEvent event) {
-        return (event.getModifiers() &
-                Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()) != 0;
+        return (event.getModifiersEx() &
+                Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()) != 0;
     }
 
     /**
