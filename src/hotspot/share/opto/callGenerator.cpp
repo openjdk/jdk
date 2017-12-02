@@ -362,6 +362,20 @@ void LateInlineCallGenerator::do_late_inline() {
     return;
   }
 
+  // check for unreachable loop
+  CallProjections callprojs;
+  call->extract_projections(&callprojs, true);
+  if (callprojs.fallthrough_catchproj == call->in(0) ||
+      callprojs.catchall_catchproj == call->in(0) ||
+      callprojs.fallthrough_memproj == call->in(TypeFunc::Memory) ||
+      callprojs.catchall_memproj == call->in(TypeFunc::Memory) ||
+      callprojs.fallthrough_ioproj == call->in(TypeFunc::I_O) ||
+      callprojs.catchall_ioproj == call->in(TypeFunc::I_O) ||
+      (callprojs.resproj != NULL && call->find_edge(callprojs.resproj) != -1) ||
+      (callprojs.exobj != NULL && call->find_edge(callprojs.exobj) != -1)) {
+    return;
+  }
+
   Compile* C = Compile::current();
   // Remove inlined methods from Compiler's lists.
   if (call->is_macro()) {
