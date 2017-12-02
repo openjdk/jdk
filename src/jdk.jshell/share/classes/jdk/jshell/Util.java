@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -80,6 +81,17 @@ class Util {
             sb.append(comp);
         }
         return sb.toString();
+    }
+
+    /**
+     * Check if this is the name of something in JShell.
+     *
+     * @param s the name of the class, method, variable, ...
+     * @return true if it is, or is within a JShell defined wrapper class
+     */
+    static boolean isInJShellClass(String s) {
+        Matcher m = PREFIX_PATTERN.matcher(s);
+        return m.find() && m.start() == 0;
     }
 
     static String asLetters(int i) {

@@ -1813,7 +1813,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Returns the platform class loader for delegation.  All
+     * Returns the platform class loader.  All
      * <a href="#builtinLoaders">platform classes</a> are visible to
      * the platform class loader.
      *
@@ -1843,7 +1843,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Returns the system class loader for delegation.  This is the default
+     * Returns the system class loader.  This is the default
      * delegation parent for new {@code ClassLoader} instances, and is
      * typically the class loader used to start the application.
      *
@@ -1884,7 +1884,7 @@ public abstract class ClassLoader {
      * the application module path then the class path defaults to
      * the current working directory.
      *
-     * @return  The system {@code ClassLoader} for delegation
+     * @return  The system {@code ClassLoader}
      *
      * @throws  SecurityException
      *          If a security manager is present, and the caller's class loader

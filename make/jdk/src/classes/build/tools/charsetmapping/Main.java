@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public class Main {
                 new File(args[SRC_DIR], args[CHARSETS]));
             String[] osStdcs = getOSStdCSList(new File(args[SRC_DIR], args[OS]));
             boolean hasBig5_HKSCS = false;
+            boolean hasMS950_HKSCS = false;
             boolean hasMS950_HKSCS_XP = false;
             boolean hasEUC_TW = false;
             for (String name : osStdcs) {
@@ -63,6 +64,8 @@ public class Main {
                 }
                 if (name.equals("Big5_HKSCS")) {
                     hasBig5_HKSCS = true;
+                } else if (name.equals("MS950_HKSCS")) {
+                    hasMS950_HKSCS = true;
                 } else if (name.equals("MS950_HKSCS_XP")) {
                     hasMS950_HKSCS_XP = true;
                 } else if (name.equals("EUC_TW")) {
@@ -98,12 +101,15 @@ public class Main {
                          args[TEMPLATE],
                          args[OS].endsWith("windows") ? "windows" : "unix");
 
-            // HKSCSMapping2008/XP.java goes together with Big5/MS950XP_HKSCS
-            if (isStandard && hasBig5_HKSCS || isExtended && !hasBig5_HKSCS) {
+            // HKSCSMapping(2008).java goes std if one of Big5_HKSCS MS950_HKSCS
+            // is in std
+            if (isStandard && (hasBig5_HKSCS || hasMS950_HKSCS) ||
+                isExtended && !(hasBig5_HKSCS  || hasMS950_HKSCS)) {
                 HKSCS.genClass2008(args[SRC_DIR], args[DST_DIR],
                                    isStandard ? "sun.nio.cs" : "sun.nio.cs.ext",
                                    new File(args[COPYRIGHT_SRC], "HKSCS.java"));
             }
+            // HKSCS_XPMapping.java goes together with MS950XP_HKSCS
             if (isStandard && hasMS950_HKSCS_XP || isExtended && !hasMS950_HKSCS_XP) {
                 HKSCS.genClassXP(args[SRC_DIR], args[DST_DIR],
                                  isStandard ? "sun.nio.cs" : "sun.nio.cs.ext",

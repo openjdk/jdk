@@ -75,7 +75,8 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
             checkOpacity((AbstractButton) e.getSource() );
         }
         else if(prop == AbstractButton.TEXT_CHANGED_PROPERTY ||
-                "font" == prop || "foreground" == prop) {
+                "font" == prop || "foreground" == prop ||
+                "ancestor" == prop || "graphicsConfiguration" == prop) {
             AbstractButton b = (AbstractButton) e.getSource();
             BasicHTML.updateRenderer(b, b.getText());
         }

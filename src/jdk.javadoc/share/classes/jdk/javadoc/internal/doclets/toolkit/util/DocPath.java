@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
@@ -71,6 +72,12 @@ public class DocPath {
      */
     public static DocPath forName(Utils utils, TypeElement typeElement) {
         return (typeElement == null) ? empty : new DocPath(utils.getSimpleName(typeElement) + ".html");
+    }
+
+    public static DocPath forModule(ModuleElement mdle) {
+        return mdle == null || mdle.isUnnamed()
+                ? empty
+                : DocPath.create(mdle.getQualifiedName().toString());
     }
 
     /**

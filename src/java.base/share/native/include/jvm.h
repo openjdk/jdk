@@ -262,20 +262,8 @@ JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobjectArray threads);
 /*
  * java.lang.SecurityManager
  */
-JNIEXPORT jclass JNICALL
-JVM_CurrentLoadedClass(JNIEnv *env);
-
-JNIEXPORT jobject JNICALL
-JVM_CurrentClassLoader(JNIEnv *env);
-
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassContext(JNIEnv *env);
-
-JNIEXPORT jint JNICALL
-JVM_ClassDepth(JNIEnv *env, jstring name);
-
-JNIEXPORT jint JNICALL
-JVM_ClassLoaderDepth(JNIEnv *env);
 
 /*
  * java.lang.Package

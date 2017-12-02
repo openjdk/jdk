@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public final class RIFFReader extends InputStream {
     private final String fourcc;
     private String riff_type = null;
     private final long ckSize;
-    private InputStream stream;
+    private final InputStream stream;
     private long avail = 0xffffffffL; // MAX_UNSIGNED_INT
     private RIFFReader lastiterator = null;
 
@@ -338,8 +338,6 @@ public final class RIFFReader extends InputStream {
     @Override
     public void close() throws IOException {
         finish();
-        if (this == root)
-            stream.close();
-        stream = null;
+        stream.close();
     }
 }

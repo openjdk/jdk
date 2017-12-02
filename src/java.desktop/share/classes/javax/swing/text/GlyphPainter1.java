@@ -59,7 +59,8 @@ class GlyphPainter1 extends GlyphView.GlyphPainter {
         sync(v);
         Segment text = v.getText(p0, p1);
         int[] justificationData = getJustificationData(v);
-        int width = Utilities.getTabbedTextWidth(v, text, metrics, (int) x, e, p0,
+
+        int width = Utilities.getTabbedTextWidth(v, text, metrics, (int)x, e, p0,
                                                  justificationData);
         SegmentCache.releaseSharedSegment(text);
         return width;
@@ -222,10 +223,15 @@ class GlyphPainter1 extends GlyphView.GlyphPainter {
     @SuppressWarnings("deprecation")
     void sync(GlyphView v) {
         Font f = v.getFont();
-        if ((metrics == null) || (! f.equals(metrics.getFont()))) {
+        FontMetrics fm = null;
+        Container c = v.getContainer();
+        if (c != null) {
+            fm = c.getFontMetrics(f);
+        }
+        if ((metrics == null) || (! f.equals(metrics.getFont()))
+                || (! metrics.equals(fm))) {
             // fetch a new FontMetrics
-            Container c = v.getContainer();
-            metrics = (c != null) ? c.getFontMetrics(f) :
+            metrics = (c != null) ? fm :
                 Toolkit.getDefaultToolkit().getFontMetrics(f);
         }
     }

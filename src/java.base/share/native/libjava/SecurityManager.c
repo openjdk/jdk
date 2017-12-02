@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,54 +75,4 @@ Java_java_lang_SecurityManager_getClassContext(JNIEnv *env, jobject this)
     }
 
     return JVM_GetClassContext(env);
-}
-
-JNIEXPORT jclass JNICALL
-Java_java_lang_SecurityManager_currentLoadedClass0(JNIEnv *env, jobject this)
-{
-    /* Make sure the security manager instance is initialized */
-    if (!check(env, this)) {
-        return NULL;            /* exception */
-    }
-
-    return JVM_CurrentLoadedClass(env);
-}
-
-JNIEXPORT jobject JNICALL
-Java_java_lang_SecurityManager_currentClassLoader0(JNIEnv *env, jobject this)
-{
-    /* Make sure the security manager instance is initialized */
-    if (!check(env, this)) {
-        return NULL;            /* exception */
-    }
-
-    return JVM_CurrentClassLoader(env);
-}
-
-JNIEXPORT jint JNICALL
-Java_java_lang_SecurityManager_classDepth(JNIEnv *env, jobject this,
-                                          jstring name)
-{
-    /* Make sure the security manager instance is initialized */
-    if (!check(env, this)) {
-        return -1;              /* exception */
-    }
-
-    if (name == NULL) {
-      JNU_ThrowNullPointerException(env, 0);
-      return -1;
-    }
-
-    return JVM_ClassDepth(env, name);
-}
-
-JNIEXPORT jint JNICALL
-Java_java_lang_SecurityManager_classLoaderDepth0(JNIEnv *env, jobject this)
-{
-    /* Make sure the security manager instance is initialized */
-    if (!check(env, this)) {
-        return -1;              /* exception */
-    }
-
-    return JVM_ClassLoaderDepth(env);
 }

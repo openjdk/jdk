@@ -443,20 +443,31 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
     fi
     AC_MSG_RESULT([$BUNDLE_FREETYPE])
 
-  fi # end freetype needed
-
-  FREETYPE_LICENSE=""
-  if test "x$with_freetype_license" = "xyes"; then
-    AC_MSG_ERROR([--with-freetype-license must have a value])
-  elif test "x$with_freetype_license" != "x"; then
-    AC_MSG_CHECKING([for freetype license])
-    AC_MSG_RESULT([$with_freetype_license])
-    FREETYPE_LICENSE="$with_freetype_license"
-    BASIC_FIXUP_PATH(FREETYPE_LICENSE)
-    if test ! -f "$FREETYPE_LICENSE"; then
-      AC_MSG_ERROR([$FREETYPE_LICENSE cannot be found])
+    if test "x$BUNDLE_FREETYPE" = xyes; then
+      FREETYPE_LICENSE=""
+      AC_MSG_CHECKING([for freetype license])
+      if test "x$with_freetype_license" = "xyes"; then
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([--with-freetype-license must have a value])
+      elif test "x$with_freetype_license" != "x"; then
+        AC_MSG_RESULT([$with_freetype_license])
+        FREETYPE_LICENSE="$with_freetype_license"
+        BASIC_FIXUP_PATH(FREETYPE_LICENSE)
+        if test ! -f "$FREETYPE_LICENSE"; then
+          AC_MSG_ERROR([$FREETYPE_LICENSE cannot be found])
+        fi
+      else
+        if test "x$with_freetype" != "x" && test -f $with_freetype/freetype.md; then
+          FREETYPE_LICENSE="$with_freetype/freetype.md"
+          AC_MSG_RESULT([$FREETYPE_LICENSE])
+          BASIC_FIXUP_PATH(FREETYPE_LICENSE)
+        else
+          AC_MSG_RESULT([no])
+        fi
+      fi
     fi
-  fi
+
+  fi # end freetype needed
 
   AC_SUBST(FREETYPE_BUNDLE_LIB_PATH)
   AC_SUBST(FREETYPE_CFLAGS)

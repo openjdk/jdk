@@ -225,6 +225,16 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitDocType(DocTypeTree node, Void p) {
+        try {
+            print(node.getText());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitEndElement(EndElementTree node, Void p) {
         try {
             print("</");

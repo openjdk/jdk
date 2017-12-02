@@ -306,10 +306,10 @@ final class SplitIntoFunctions extends NodeVisitor<BlockLexicalContext> {
 
     @Override
     public boolean enterVarNode(final VarNode varNode) {
-        if (!inSplitNode()) {
+        // ES6 block scoped declarations are already placed at their proper position by splitter
+        if (!inSplitNode() || varNode.isBlockScoped()) {
             return super.enterVarNode(varNode);
         }
-        assert !varNode.isBlockScoped(); //TODO: we must handle these too, but we currently don't
 
         final Expression init = varNode.getInit();
 

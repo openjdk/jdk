@@ -302,8 +302,8 @@ public class GDIWindowSurfaceData extends SurfaceData {
     public Rectangle getBounds() {
         Rectangle r = peer.getBounds();
         r.x = r.y = 0;
-        r.width = (int) Math.ceil(r.width * scaleX);
-        r.height = (int) Math.ceil(r.height * scaleY);
+        r.width = Region.clipRound(r.width * scaleX);
+        r.height = Region.clipRound(r.height * scaleY);
         return r;
     }
 

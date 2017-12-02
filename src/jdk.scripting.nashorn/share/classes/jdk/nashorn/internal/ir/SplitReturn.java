@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
 /**
@@ -37,6 +38,7 @@ public final class SplitReturn extends Statement {
     private static final long serialVersionUID = 1L;
 
     /** The sole instance of this AST node. */
+    @Ignore
     public static final SplitReturn INSTANCE = new SplitReturn();
 
     private SplitReturn() {

@@ -28,24 +28,22 @@ package sun.tools.jar;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
-import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static sun.tools.jar.Main.VERSIONS_DIR;
@@ -55,269 +53,176 @@ import static sun.tools.jar.Main.getMsg;
 import static sun.tools.jar.Main.formatMsg;
 import static sun.tools.jar.Main.formatMsg2;
 import static sun.tools.jar.Main.toBinaryName;
-import static sun.tools.jar.Main.isModuleInfoEntry;
 
 final class Validator {
-    private final static boolean DEBUG = Boolean.getBoolean("jar.debug");
-    private final  Map<String,FingerPrint> fps = new HashMap<>();
+
+    private final Map<String,FingerPrint> classes = new HashMap<>();
     private final Main main;
-    private final JarFile jf;
-    private int oldVersion = -1;
-    private String currentTopLevelName;
+    private final ZipFile zf;
     private boolean isValid = true;
     private Set<String> concealedPkgs = Collections.emptySet();
     private ModuleDescriptor md;
     private String mdName;
 
-    private Validator(Main main, JarFile jf) {
+    private Validator(Main main, ZipFile zf) {
         this.main = main;
-        this.jf = jf;
+        this.zf = zf;
         checkModuleDescriptor(MODULE_INFO);
     }
 
-    static boolean validate(Main main, JarFile jf) throws IOException {
-        return new Validator(main, jf).validate();
+    static boolean validate(Main main, ZipFile zf) throws IOException {
+        return new Validator(main, zf).validate();
     }
 
     private boolean validate() {
         try {
-            jf.stream()
-              .filter(e -> !e.isDirectory() &&
-                      !e.getName().equals(MANIFEST_NAME))
-              .sorted(ENTRY_COMPARATOR)
-              .forEachOrdered(e -> validate(e));
-            return isValid;
+            zf.stream()
+              .filter(e -> e.getName().endsWith(".class"))
+              .map(this::getFingerPrint)
+              .filter(FingerPrint::isClass)    // skip any non-class entry
+              .collect(Collectors.groupingBy(
+                      FingerPrint::mrversion,
+                      TreeMap::new,
+                      Collectors.toMap(FingerPrint::className,
+                                       Function.identity(),
+                                       this::sameNameFingerPrint)))
+              .forEach((version, entries) -> {
+                      if (version == 0)
+                          validateBase(entries);
+                      else
+                          validateVersioned(entries);
+                  });
         } catch (InvalidJarException e) {
-            error(formatMsg("error.validator.bad.entry.name", e.getMessage()));
+            errorAndInvalid(e.getMessage());
         }
-        return false;
+        return isValid;
     }
 
-    private static class InvalidJarException extends RuntimeException {
+    static class InvalidJarException extends RuntimeException {
         private static final long serialVersionUID = -3642329147299217726L;
         InvalidJarException(String msg) {
             super(msg);
         }
     }
 
-    // sort base entries before versioned entries, and sort entry classes with
-    // nested classes so that the top level class appears before the associated
-    // nested class
-    static Comparator<String> ENTRYNAME_COMPARATOR = (s1, s2) ->  {
+    private FingerPrint sameNameFingerPrint(FingerPrint fp1, FingerPrint fp2) {
+        checkClassName(fp1);
+        checkClassName(fp2);
+        // entries/classes with same name, return fp2 for now ?
+        return fp2;
+    }
 
-        if (s1.equals(s2)) return 0;
-        boolean b1 = s1.startsWith(VERSIONS_DIR);
-        boolean b2 = s2.startsWith(VERSIONS_DIR);
-        if (b1 && !b2) return 1;
-        if (!b1 && b2) return -1;
-        int n = 0; // starting char for String compare
-        if (b1 && b2) {
-            // normally strings would be sorted so "10" goes before "9", but
-            // version number strings need to be sorted numerically
-            n = VERSIONS_DIR.length();   // skip the common prefix
-            int i1 = s1.indexOf('/', n);
-            int i2 = s2.indexOf('/', n);
-            if (i1 == -1) throw new InvalidJarException(s1);
-            if (i2 == -1) throw new InvalidJarException(s2);
-            // shorter version numbers go first
-            if (i1 != i2) return i1 - i2;
-            // otherwise, handle equal length numbers below
-        }
-        int l1 = s1.length();
-        int l2 = s2.length();
-        int lim = Math.min(l1, l2);
-        for (int k = n; k < lim; k++) {
-            char c1 = s1.charAt(k);
-            char c2 = s2.charAt(k);
-            if (c1 != c2) {
-                // change natural ordering so '.' comes before '$'
-                // i.e. top level classes come before nested classes
-                if (c1 == '$' && c2 == '.') return 1;
-                if (c1 == '.' && c2 == '$') return -1;
-                return c1 - c2;
+    private FingerPrint getFingerPrint(ZipEntry ze) {
+        // figure out the version and basename from the ZipEntry
+        String ename = ze.getName();
+        String bname = ename;
+        int version = 0;
+
+        if (ename.startsWith(VERSIONS_DIR)) {
+            int n = ename.indexOf("/", VERSIONS_DIR_LENGTH);
+            if (n == -1) {
+                throw new InvalidJarException(
+                    formatMsg("error.validator.version.notnumber", ename));
             }
+            try {
+                version = Integer.parseInt(ename, VERSIONS_DIR_LENGTH, n, 10);
+            } catch (NumberFormatException x) {
+                throw new InvalidJarException(
+                    formatMsg("error.validator.version.notnumber", ename));
+            }
+            if (n == ename.length()) {
+                throw new InvalidJarException(
+                    formatMsg("error.validator.entryname.tooshort", ename));
+            }
+            bname = ename.substring(n + 1);
         }
-        return l1 - l2;
-    };
 
-    static Comparator<ZipEntry> ENTRY_COMPARATOR =
-        Comparator.comparing(ZipEntry::getName, ENTRYNAME_COMPARATOR);
+        // return the cooresponding fingerprint entry
+        try (InputStream is = zf.getInputStream(ze)) {
+            return new FingerPrint(bname, ename, version, is.readAllBytes());
+        } catch (IOException x) {
+           throw new InvalidJarException(x.getMessage());
+        }
+    }
 
     /*
-     *  Validator has state and assumes entries provided to accept are ordered
-     *  from base entries first and then through the versioned entries in
-     *  ascending version order.  Also, to find isolated nested classes,
-     *  classes must be ordered so that the top level class is before the associated
-     *  nested class(es).
-    */
-    public void validate(JarEntry je) {
-        String entryName = je.getName();
-
-        // directories are always accepted
-        if (entryName.endsWith("/")) {
-            debug("%s is a directory", entryName);
-            return;
-        }
-
-        // validate the versioned module-info
-        if (isModuleInfoEntry(entryName)) {
-            if (!entryName.equals(mdName))
-                checkModuleDescriptor(entryName);
-            return;
-        }
-
-        // figure out the version and basename from the JarEntry
-        int version;
-        String basename;
-        String versionStr = null;;
-        if (entryName.startsWith(VERSIONS_DIR)) {
-            int n = entryName.indexOf("/", VERSIONS_DIR_LENGTH);
-            if (n == -1) {
-                error(formatMsg("error.validator.version.notnumber", entryName));
-                isValid = false;
+     *  Validates (a) if there is any isolated nested class, and (b) if the
+     *  class name in class file (by asm) matches the entry's basename.
+     */
+    public void validateBase(Map<String, FingerPrint> fps) {
+        fps.values().forEach( fp -> {
+            if (!checkClassName(fp)) {
                 return;
             }
-            versionStr = entryName.substring(VERSIONS_DIR_LENGTH, n);
-            try {
-                version = Integer.parseInt(versionStr);
-            } catch (NumberFormatException x) {
-                error(formatMsg("error.validator.version.notnumber", entryName));
-                isValid = false;
-                return;
-            }
-            if (n == entryName.length()) {
-                error(formatMsg("error.validator.entryname.tooshort", entryName));
-                isValid = false;
-                return;
-            }
-            basename = entryName.substring(n + 1);
-        } else {
-            version = 0;
-            basename = entryName;
-        }
-        debug("\n===================\nversion %d %s", version, entryName);
-
-        if (oldVersion != version) {
-            oldVersion = version;
-            currentTopLevelName = null;
-            if (md == null && versionStr != null) {
-                // don't have a base module-info.class yet, try to see if
-                // a versioned one exists
-                checkModuleDescriptor(VERSIONS_DIR + versionStr + "/" + MODULE_INFO);
-            }
-        }
-
-        // analyze the entry, keeping key attributes
-        FingerPrint fp;
-        try (InputStream is = jf.getInputStream(je)) {
-            fp = new FingerPrint(basename, is.readAllBytes());
-        } catch (IOException x) {
-            error(x.getMessage());
-            isValid = false;
-            return;
-        }
-        String internalName = fp.name();
-
-        // process a base entry paying attention to nested classes
-        if (version == 0) {
-            debug("base entry found");
             if (fp.isNestedClass()) {
-                debug("nested class found");
-                if (fp.topLevelName().equals(currentTopLevelName)) {
-                    fps.put(internalName, fp);
-                    return;
-                }
-                error(formatMsg("error.validator.isolated.nested.class", entryName));
-                isValid = false;
+                checkNestedClass(fp, fps);
+            }
+            classes.put(fp.className(), fp);
+        });
+    }
+
+    public void validateVersioned(Map<String, FingerPrint> fps) {
+
+        fps.values().forEach( fp -> {
+
+            // validate the versioned module-info
+            if (MODULE_INFO.equals(fp.basename())) {
+                checkModuleDescriptor(fp.entryName());
                 return;
             }
-            // top level class or resource entry
-            if (fp.isClass()) {
-                currentTopLevelName = fp.topLevelName();
-                if (!checkInternalName(entryName, basename, internalName)) {
-                    isValid = false;
-                    return;
-                }
-            }
-            fps.put(internalName, fp);
-            return;
-        }
-
-        // process a versioned entry, look for previous entry with same name
-        FingerPrint matchFp = fps.get(internalName);
-        debug("looking for match");
-        if (matchFp == null) {
-            debug("no match found");
-            if (fp.isClass()) {
+            // process a versioned entry, look for previous entry with same name
+            FingerPrint matchFp = classes.get(fp.className());
+            if (matchFp == null) {
+                // no match found
                 if (fp.isNestedClass()) {
-                    if (!checkNestedClass(version, entryName, internalName, fp)) {
-                        isValid = false;
-                    }
+                    checkNestedClass(fp, fps);
                     return;
                 }
                 if (fp.isPublicClass()) {
-                    if (!isConcealed(internalName)) {
-                        error(Main.formatMsg("error.validator.new.public.class", entryName));
-                        isValid = false;
+                    if (!isConcealed(fp.className())) {
+                        errorAndInvalid(formatMsg("error.validator.new.public.class",
+                                                  fp.entryName()));
                         return;
-                    }
-                    warn(formatMsg("warn.validator.concealed.public.class", entryName));
-                    debug("%s is a public class entry in a concealed package", entryName);
+                     }
+                     // entry is a public class entry in a concealed package
+                     warn(formatMsg("warn.validator.concealed.public.class",
+                                   fp.entryName()));
                 }
-                debug("%s is a non-public class entry", entryName);
-                fps.put(internalName, fp);
-                currentTopLevelName = fp.topLevelName();
+                classes.put(fp.className(), fp);
                 return;
             }
-            debug("%s is a resource entry");
-            fps.put(internalName, fp);
-            return;
-        }
-        debug("match found");
 
-        // are the two classes/resources identical?
-        if (fp.isIdentical(matchFp)) {
-            warn(formatMsg("warn.validator.identical.entry", entryName));
-            return;  // it's okay, just takes up room
-        }
-        debug("sha1 not equal -- different bytes");
+            // are the two classes/resources identical?
+            if (fp.isIdentical(matchFp)) {
+                warn(formatMsg("warn.validator.identical.entry", fp.entryName()));
+                return;    // it's okay, just takes up room
+            }
 
-        // ok, not identical, check for compatible class version and api
-        if (fp.isClass()) {
+            // ok, not identical, check for compatible class version and api
             if (fp.isNestedClass()) {
-                if (!checkNestedClass(version, entryName, internalName, fp)) {
-                    isValid = false;
-                }
-                return;
+                checkNestedClass(fp, fps);
+                return;    // fall through, need check nested public class??
             }
-            debug("%s is a class entry", entryName);
             if (!fp.isCompatibleVersion(matchFp)) {
-                error(formatMsg("error.validator.incompatible.class.version", entryName));
-                isValid = false;
+                errorAndInvalid(formatMsg("error.validator.incompatible.class.version",
+                                          fp.entryName()));
                 return;
             }
             if (!fp.isSameAPI(matchFp)) {
-                error(formatMsg("error.validator.different.api", entryName));
-                isValid = false;
+                errorAndInvalid(formatMsg("error.validator.different.api",
+                                          fp.entryName()));
                 return;
             }
-            if (!checkInternalName(entryName, basename, internalName)) {
-                isValid = false;
+            if (!checkClassName(fp)) {
                 return;
             }
-            debug("fingerprints same -- same api");
-            fps.put(internalName, fp);
-            currentTopLevelName = fp.topLevelName();
-            return;
-        }
-        debug("%s is a resource", entryName);
+            classes.put(fp.className(), fp);
 
-        warn(formatMsg("warn.validator.resources.with.same.name", entryName));
-        fps.put(internalName, fp);
-        return;
+            return;
+        });
     }
 
-    /**
+    /*
      * Checks whether or not the given versioned module descriptor's attributes
      * are valid when compared against the root/base module descriptor.
      *
@@ -326,12 +231,12 @@ final class Validator {
      *  - A versioned descriptor can have different non-public `requires`
      *    clauses of platform ( `java.*` and `jdk.*` ) modules, and
      *  - A versioned descriptor can have different `uses` clauses, even of
-     *    service types defined outside of the platform modules.
+    *    service types defined outside of the platform modules.
      */
     private void checkModuleDescriptor(String miName) {
-        ZipEntry je = jf.getEntry(miName);
-        if (je != null) {
-            try (InputStream jis = jf.getInputStream(je)) {
+        ZipEntry ze = zf.getEntry(miName);
+        if (ze != null) {
+            try (InputStream jis = zf.getInputStream(ze)) {
                 ModuleDescriptor md = ModuleDescriptor.read(jis);
                 // Initialize the base md if it's not yet. A "base" md can be either the
                 // root module-info.class or the first versioned module-info.class
@@ -344,7 +249,7 @@ final class Validator {
                     // must have the implementation class of the services it 'provides'.
                     if (md.provides().stream().map(Provides::providers)
                           .flatMap(List::stream)
-                          .filter(p -> jf.getEntry(toBinaryName(p)) == null)
+                          .filter(p -> zf.getEntry(toBinaryName(p)) == null)
                           .peek(p -> error(formatMsg("error.missing.provider", p)))
                           .count() != 0) {
                         isValid = false;
@@ -356,8 +261,7 @@ final class Validator {
                 }
 
                 if (!base.name().equals(md.name())) {
-                    error(getMsg("error.validator.info.name.notequal"));
-                    isValid = false;
+                    errorAndInvalid(getMsg("error.validator.info.name.notequal"));
                 }
                 if (!base.requires().equals(md.requires())) {
                     Set<Requires> baseRequires = base.requires();
@@ -365,11 +269,9 @@ final class Validator {
                         if (baseRequires.contains(r))
                             continue;
                         if (r.modifiers().contains(Requires.Modifier.TRANSITIVE)) {
-                            error(getMsg("error.validator.info.requires.transitive"));
-                            isValid = false;
+                            errorAndInvalid(getMsg("error.validator.info.requires.transitive"));
                         } else if (!isPlatformModule(r.name())) {
-                            error(getMsg("error.validator.info.requires.added"));
-                            isValid = false;
+                            errorAndInvalid(getMsg("error.validator.info.requires.added"));
                         }
                     }
                     for (Requires r : baseRequires) {
@@ -377,87 +279,79 @@ final class Validator {
                         if (mdRequires.contains(r))
                             continue;
                         if (!isPlatformModule(r.name())) {
-                            error(getMsg("error.validator.info.requires.dropped"));
-                            isValid = false;
+                            errorAndInvalid(getMsg("error.validator.info.requires.dropped"));
                         }
                     }
                 }
                 if (!base.exports().equals(md.exports())) {
-                    error(getMsg("error.validator.info.exports.notequal"));
-                    isValid = false;
+                    errorAndInvalid(getMsg("error.validator.info.exports.notequal"));
                 }
                 if (!base.opens().equals(md.opens())) {
-                    error(getMsg("error.validator.info.opens.notequal"));
-                    isValid = false;
+                    errorAndInvalid(getMsg("error.validator.info.opens.notequal"));
                 }
                 if (!base.provides().equals(md.provides())) {
-                    error(getMsg("error.validator.info.provides.notequal"));
-                    isValid = false;
+                    errorAndInvalid(getMsg("error.validator.info.provides.notequal"));
                 }
                 if (!base.mainClass().equals(md.mainClass())) {
-                    error(formatMsg("error.validator.info.manclass.notequal", je.getName()));
-                    isValid = false;
+                    errorAndInvalid(formatMsg("error.validator.info.manclass.notequal",
+                                              ze.getName()));
                 }
                 if (!base.version().equals(md.version())) {
-                    error(formatMsg("error.validator.info.version.notequal", je.getName()));
-                    isValid = false;
+                    errorAndInvalid(formatMsg("error.validator.info.version.notequal",
+                                              ze.getName()));
                 }
             } catch (Exception x) {
-                error(x.getMessage() + " : " + miName);
-                this.isValid = false;
+                errorAndInvalid(x.getMessage() + " : " + miName);
             }
         }
+    }
+
+    private boolean checkClassName(FingerPrint fp) {
+        if (fp.className().equals(className(fp.basename()))) {
+            return true;
+        }
+        error(formatMsg2("error.validator.names.mismatch",
+                         fp.entryName(), fp.className().replace("/", ".")));
+        return isValid = false;
+    }
+
+    private boolean checkNestedClass(FingerPrint fp, Map<String, FingerPrint> outerClasses) {
+        if (outerClasses.containsKey(fp.outerClassName())) {
+            return true;
+        }
+        // outer class was not available
+
+        error(formatMsg("error.validator.isolated.nested.class", fp.entryName()));
+        return isValid = false;
+    }
+
+    private boolean isConcealed(String className) {
+        if (concealedPkgs.isEmpty()) {
+            return false;
+        }
+        int idx = className.lastIndexOf('/');
+        String pkgName = idx != -1 ? className.substring(0, idx).replace('/', '.') : "";
+        return concealedPkgs.contains(pkgName);
     }
 
     private static boolean isPlatformModule(String name) {
         return name.startsWith("java.") || name.startsWith("jdk.");
     }
 
-    private boolean checkInternalName(String entryName, String basename, String internalName) {
-        String className = className(basename);
-        if (internalName.equals(className)) {
-            return true;
-        }
-        error(formatMsg2("error.validator.names.mismatch",
-                entryName, internalName.replace("/", ".")));
-        return false;
-    }
-
-    private boolean checkNestedClass(int version, String entryName, String internalName, FingerPrint fp) {
-        debug("%s is a nested class entry in top level class %s", entryName, fp.topLevelName());
-        if (fp.topLevelName().equals(currentTopLevelName)) {
-            debug("%s (top level class) was accepted", fp.topLevelName());
-            fps.put(internalName, fp);
-            return true;
-        }
-        debug("top level class was not accepted");
-        error(formatMsg("error.validator.isolated.nested.class", entryName));
-        return false;
-    }
-
-    private String className(String entryName) {
+    private static String className(String entryName) {
         return entryName.endsWith(".class") ? entryName.substring(0, entryName.length() - 6) : null;
-    }
-
-    private boolean isConcealed(String internalName) {
-        if (concealedPkgs.isEmpty()) {
-            return false;
-        }
-        int idx = internalName.lastIndexOf('/');
-        String pkgName = idx != -1 ? internalName.substring(0, idx).replace('/', '.') : "";
-        return concealedPkgs.contains(pkgName);
-    }
-
-    private void debug(String fmt, Object... args) {
-        if (DEBUG) System.err.format(fmt, args);
     }
 
     private void error(String msg) {
         main.error(msg);
     }
 
+    private void errorAndInvalid(String msg) {
+        main.error(msg);
+        isValid = false;
+    }
+
     private void warn(String msg) {
         main.warn(msg);
     }
-
 }

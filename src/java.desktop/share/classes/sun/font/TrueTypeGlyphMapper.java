@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,11 +106,11 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
         cmap = CMap.theNullCmap;
     }
 
-    private final char remapJAChar(char unicode) {
+    private char remapJAChar(char unicode) {
         return (unicode == REVERSE_SOLIDUS) ? JA_YEN : unicode;
     }
 
-    private final int remapJAIntChar(int unicode) {
+    private int remapJAIntChar(int unicode) {
         return (unicode == REVERSE_SOLIDUS) ? JA_YEN : unicode;
     }
 

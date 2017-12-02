@@ -91,6 +91,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.Namespace;
 import jdk.dynalink.Operation;
@@ -189,85 +190,126 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         assertParameterCount(callSiteDescriptor, isFixedKey ? 1 : 2);
         final LinkerServices linkerServices = req.linkerServices;
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
-        final Class<?> declaredType = callSiteType.parameterType(0);
         final GuardedInvocationComponent nextComponent = getNextComponent(req);
 
+        final GuardedInvocationComponentAndCollectionType gicact = guardedInvocationComponentAndCollectionType(
+                callSiteType, linkerServices, MethodHandles::arrayElementGetter, GET_LIST_ELEMENT, GET_MAP_ELEMENT);
+
+        if (gicact == null) {
+            // Can't retrieve elements for objects that are neither arrays, nor list, nor maps.
+            return nextComponent;
+        }
+
+        final Object typedName = getTypedName(name, gicact.collectionType == CollectionType.MAP, linkerServices);
+        if (typedName == INVALID_NAME) {
+            return nextComponent;
+        }
+
+        return guardComponentWithRangeCheck(gicact, linkerServices,
+                callSiteDescriptor, nextComponent, new Binder(linkerServices, callSiteType, typedName),
+                isFixedKey ? NULL_GETTER_1 : NULL_GETTER_2);
+    }
+
+    private static class GuardedInvocationComponentAndCollectionType {
+        final GuardedInvocationComponent gic;
+        final CollectionType collectionType;
+
+        GuardedInvocationComponentAndCollectionType(final GuardedInvocationComponent gic, final CollectionType collectionType) {
+            this.gic = gic;
+            this.collectionType = collectionType;
+        }
+    }
+
+    private GuardedInvocationComponentAndCollectionType guardedInvocationComponentAndCollectionType(
+            final MethodType callSiteType, final LinkerServices linkerServices,
+            final Function<Class<?>, MethodHandle> arrayMethod, final MethodHandle listMethod, final MethodHandle mapMethod) {
+        final Class<?> declaredType = callSiteType.parameterType(0);
         // If declared type of receiver at the call site is already an array, a list or map, bind without guard. Thing
         // is, it'd be quite stupid of a call site creator to go though invokedynamic when it knows in advance they're
         // dealing with an array, or a list or map, but hey...
         // Note that for arrays and lists, using LinkerServices.asType() will ensure that any language specific linkers
         // in use will get a chance to perform any (if there's any) implicit conversion to integer for the indices.
-        final GuardedInvocationComponent gic;
-        final CollectionType collectionType;
         if(declaredType.isArray()) {
-            gic = createInternalFilteredGuardedInvocationComponent(MethodHandles.arrayElementGetter(declaredType), linkerServices);
-            collectionType = CollectionType.ARRAY;
+            return new GuardedInvocationComponentAndCollectionType(
+                    createInternalFilteredGuardedInvocationComponent(arrayMethod.apply(declaredType), linkerServices),
+                    CollectionType.ARRAY);
         } else if(List.class.isAssignableFrom(declaredType)) {
-            gic = createInternalFilteredGuardedInvocationComponent(GET_LIST_ELEMENT, linkerServices);
-            collectionType = CollectionType.LIST;
+            return new GuardedInvocationComponentAndCollectionType(
+                    createInternalFilteredGuardedInvocationComponent(listMethod, linkerServices),
+                    CollectionType.LIST);
         } else if(Map.class.isAssignableFrom(declaredType)) {
-            gic = createInternalFilteredGuardedInvocationComponent(GET_MAP_ELEMENT, linkerServices);
-            collectionType = CollectionType.MAP;
+            return new GuardedInvocationComponentAndCollectionType(
+                    createInternalFilteredGuardedInvocationComponent(mapMethod, linkerServices),
+                    CollectionType.MAP);
         } else if(clazz.isArray()) {
-            gic = getClassGuardedInvocationComponent(linkerServices.filterInternalObjects(MethodHandles.arrayElementGetter(clazz)), callSiteType);
-            collectionType = CollectionType.ARRAY;
+            return new GuardedInvocationComponentAndCollectionType(
+                    getClassGuardedInvocationComponent(linkerServices.filterInternalObjects(arrayMethod.apply(clazz)), callSiteType),
+                    CollectionType.ARRAY);
         } else if(List.class.isAssignableFrom(clazz)) {
-            gic = createInternalFilteredGuardedInvocationComponent(GET_LIST_ELEMENT, Guards.asType(LIST_GUARD, callSiteType), List.class, ValidationType.INSTANCE_OF,
-                    linkerServices);
-            collectionType = CollectionType.LIST;
+            return new GuardedInvocationComponentAndCollectionType(
+                    createInternalFilteredGuardedInvocationComponent(listMethod, Guards.asType(LIST_GUARD, callSiteType),
+                            List.class, ValidationType.INSTANCE_OF, linkerServices),
+                    CollectionType.LIST);
         } else if(Map.class.isAssignableFrom(clazz)) {
-            gic = createInternalFilteredGuardedInvocationComponent(GET_MAP_ELEMENT, Guards.asType(MAP_GUARD, callSiteType), Map.class, ValidationType.INSTANCE_OF,
-                    linkerServices);
-            collectionType = CollectionType.MAP;
-        } else {
-            // Can't retrieve elements for objects that are neither arrays, nor list, nor maps.
-            return nextComponent;
+            return new GuardedInvocationComponentAndCollectionType(
+                    createInternalFilteredGuardedInvocationComponent(mapMethod, Guards.asType(MAP_GUARD, callSiteType),
+                            Map.class, ValidationType.INSTANCE_OF, linkerServices),
+                    CollectionType.MAP);
         }
+        return null;
+    }
 
+    private static final Object INVALID_NAME = new Object();
+
+    private static Object getTypedName(final Object name, final boolean isMap, final LinkerServices linkerServices) throws Exception {
         // Convert the key to a number if we're working with a list or array
-        final Object typedName;
-        if (collectionType != CollectionType.MAP && isFixedKey) {
+        if (!isMap && name != null) {
             final Integer integer = convertKeyToInteger(name, linkerServices);
             if (integer == null || integer.intValue() < 0) {
                 // key is not a non-negative integer, it can never address an
                 // array or list element
-                return nextComponent;
+                return INVALID_NAME;
             }
-            typedName = integer;
-        } else {
-            typedName = name;
+            return integer;
         }
+        return name;
+    }
 
-        final GuardedInvocation gi = gic.getGuardedInvocation();
-        final Binder binder = new Binder(linkerServices, callSiteType, typedName);
-        final MethodHandle invocation = gi.getInvocation();
+    private static GuardedInvocationComponent guardComponentWithRangeCheck(
+            final GuardedInvocationComponentAndCollectionType gicact, final LinkerServices linkerServices,
+            final CallSiteDescriptor callSiteDescriptor, final GuardedInvocationComponent nextComponent, final Binder binder,
+            final MethodHandle noOp) {
+        final MethodType callSiteType = callSiteDescriptor.getMethodType();
 
         final MethodHandle checkGuard;
-        switch(collectionType) {
-        case LIST:
-            checkGuard = convertArgToNumber(RANGE_CHECK_LIST, linkerServices, callSiteDescriptor);
-            break;
-        case MAP:
-            checkGuard = linkerServices.filterInternalObjects(CONTAINS_MAP);
-            break;
-        case ARRAY:
-            checkGuard = convertArgToNumber(RANGE_CHECK_ARRAY, linkerServices, callSiteDescriptor);
-            break;
-        default:
-            throw new AssertionError();
+        switch(gicact.collectionType) {
+            case LIST:
+                checkGuard = convertArgToNumber(RANGE_CHECK_LIST, linkerServices, callSiteDescriptor);
+                break;
+            case MAP:
+                checkGuard = linkerServices.filterInternalObjects(CONTAINS_MAP);
+                break;
+            case ARRAY:
+                checkGuard = convertArgToNumber(RANGE_CHECK_ARRAY, linkerServices, callSiteDescriptor);
+                break;
+            default:
+                throw new AssertionError();
         }
 
-        // If there's no next component, produce a fixed null-returning one
+        // If there's no next component, produce a fixed no-op one
         final GuardedInvocationComponent finalNextComponent;
         if (nextComponent != null) {
             finalNextComponent = nextComponent;
         } else {
-            final MethodHandle nullGetterHandle = isFixedKey ? NULL_GETTER_1 : NULL_GETTER_2;
-            finalNextComponent = createGuardedInvocationComponentAsType(nullGetterHandle, callSiteType, linkerServices);
+            finalNextComponent = createGuardedInvocationComponentAsType(noOp, callSiteType, linkerServices);
         }
 
-        final MethodPair matchedInvocations = matchReturnTypes(binder.bind(invocation),
+        final GuardedInvocationComponent gic = gicact.gic;
+        final GuardedInvocation gi = gic.getGuardedInvocation();
+
+        final MethodPair matchedInvocations = matchReturnTypes(binder.bind(gi.getInvocation()),
                 finalNextComponent.getGuardedInvocation().getInvocation());
+
         return finalNextComponent.compose(matchedInvocations.guardWithTest(binder.bindTest(checkGuard)), gi.getGuard(),
                 gic.getValidatorClass(), gic.getValidationType());
     }
@@ -435,90 +477,37 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         assertParameterCount(callSiteDescriptor, isFixedKey ? 2 : 3);
         final LinkerServices linkerServices = req.linkerServices;
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
-        final Class<?> declaredType = callSiteType.parameterType(0);
 
-        final GuardedInvocationComponent gic;
-        // If declared type of receiver at the call site is already an array, a list or map, bind without guard. Thing
-        // is, it'd be quite stupid of a call site creator to go though invokedynamic when it knows in advance they're
-        // dealing with an array, or a list or map, but hey...
-        // Note that for arrays and lists, using LinkerServices.asType() will ensure that any language specific linkers
-        // in use will get a chance to perform any (if there's any) implicit conversion to integer for the indices.
-        final CollectionType collectionType;
-        if(declaredType.isArray()) {
-            gic = createInternalFilteredGuardedInvocationComponent(MethodHandles.arrayElementSetter(declaredType), linkerServices);
-            collectionType = CollectionType.ARRAY;
-        } else if(List.class.isAssignableFrom(declaredType)) {
-            gic = createInternalFilteredGuardedInvocationComponent(SET_LIST_ELEMENT, linkerServices);
-            collectionType = CollectionType.LIST;
-        } else if(Map.class.isAssignableFrom(declaredType)) {
-            gic = createInternalFilteredGuardedInvocationComponent(PUT_MAP_ELEMENT, linkerServices);
-            collectionType = CollectionType.MAP;
-        } else if(clazz.isArray()) {
-            gic = getClassGuardedInvocationComponent(linkerServices.filterInternalObjects(
-                    MethodHandles.arrayElementSetter(clazz)), callSiteType);
-            collectionType = CollectionType.ARRAY;
-        } else if(List.class.isAssignableFrom(clazz)) {
-            gic = createInternalFilteredGuardedInvocationComponent(SET_LIST_ELEMENT, Guards.asType(LIST_GUARD, callSiteType), List.class, ValidationType.INSTANCE_OF,
-                    linkerServices);
-            collectionType = CollectionType.LIST;
-        } else if(Map.class.isAssignableFrom(clazz)) {
-            gic = createInternalFilteredGuardedInvocationComponent(PUT_MAP_ELEMENT, Guards.asType(MAP_GUARD, callSiteType),
-                    Map.class, ValidationType.INSTANCE_OF, linkerServices);
-            collectionType = CollectionType.MAP;
-        } else {
-            // Can't set elements for objects that are neither arrays, nor list, nor maps.
-            gic = null;
-            collectionType = null;
+        final GuardedInvocationComponentAndCollectionType gicact = guardedInvocationComponentAndCollectionType(
+                callSiteType, linkerServices, MethodHandles::arrayElementSetter, SET_LIST_ELEMENT, PUT_MAP_ELEMENT);
+
+        if(gicact == null) {
+            return getNextComponent(req);
         }
+
+        final boolean isMap = gicact.collectionType == CollectionType.MAP;
 
         // In contrast to, say, getElementGetter, we only compute the nextComponent if the target object is not a map,
         // as maps will always succeed in setting the element and will never need to fall back to the next component
         // operation.
-        final GuardedInvocationComponent nextComponent = collectionType == CollectionType.MAP ? null : getNextComponent(req);
-        if(gic == null) {
+        final GuardedInvocationComponent nextComponent = isMap ? null : getNextComponent(req);
+
+        final Object typedName = getTypedName(name, isMap, linkerServices);
+        if (typedName == INVALID_NAME) {
             return nextComponent;
         }
 
-        // Convert the key to a number if we're working with a list or array
-        final Object typedName;
-        if (collectionType != CollectionType.MAP && isFixedKey) {
-            final Integer integer = convertKeyToInteger(name, linkerServices);
-            if (integer == null || integer.intValue() < 0) {
-                // key is not a non-negative integer, it can never address an
-                // array or list element
-                return nextComponent;
-            }
-            typedName = integer;
-        } else {
-            typedName = name;
-        }
-
+        final GuardedInvocationComponent gic = gicact.gic;
         final GuardedInvocation gi = gic.getGuardedInvocation();
         final Binder binder = new Binder(linkerServices, callSiteType, typedName);
         final MethodHandle invocation = gi.getInvocation();
 
-        if (collectionType == CollectionType.MAP) {
-            assert nextComponent == null;
+        if (isMap) {
             return gic.replaceInvocation(binder.bind(invocation));
         }
 
-        assert collectionType == CollectionType.LIST || collectionType == CollectionType.ARRAY;
-        final MethodHandle checkGuard = convertArgToNumber(collectionType == CollectionType.LIST ? RANGE_CHECK_LIST :
-            RANGE_CHECK_ARRAY, linkerServices, callSiteDescriptor);
-
-        // If there's no next component, produce a no-op one.
-        final GuardedInvocationComponent finalNextComponent;
-        if (nextComponent != null) {
-            finalNextComponent = nextComponent;
-        } else {
-            final MethodHandle noOpSetterHandle = isFixedKey ? NO_OP_SETTER_2 : NO_OP_SETTER_3;
-            finalNextComponent = createGuardedInvocationComponentAsType(noOpSetterHandle, callSiteType, linkerServices);
-        }
-
-        final MethodPair matchedInvocations = matchReturnTypes(binder.bind(invocation),
-                finalNextComponent.getGuardedInvocation().getInvocation());
-        return finalNextComponent.compose(matchedInvocations.guardWithTest(binder.bindTest(checkGuard)), gi.getGuard(),
-                gic.getValidatorClass(), gic.getValidationType());
+        return guardComponentWithRangeCheck(gicact, linkerServices, callSiteDescriptor,
+                nextComponent, binder, isFixedKey ? NO_OP_SETTER_2 : NO_OP_SETTER_3);
     }
 
     private static final MethodHandle GET_COLLECTION_LENGTH = Lookup.PUBLIC.findVirtual(Collection.class, "size",
