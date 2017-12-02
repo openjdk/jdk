@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragGestureRecognizer;
 import java.awt.dnd.DragSource;
 import java.awt.event.AWTEventListener;
+import java.awt.event.InputEvent;
 import java.awt.font.TextAttribute;
 import java.awt.im.InputMethodHighlight;
 import java.awt.image.ColorModel;
@@ -128,7 +129,14 @@ public final class HeadlessToolkit extends Toolkit
     }
 
     @Override
+    @Deprecated(since = "10")
     public int getMenuShortcutKeyMask()
+        throws HeadlessException {
+        throw new HeadlessException();
+    }
+
+    @Override
+    public int getMenuShortcutKeyMaskEx()
         throws HeadlessException {
         throw new HeadlessException();
     }

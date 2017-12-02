@@ -1134,6 +1134,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                 boolean isTrav = (selectedFile != null && chooser.isTraversable(selectedFile));
                 boolean isDirSelEnabled = chooser.isDirectorySelectionEnabled();
                 boolean isFileSelEnabled = chooser.isFileSelectionEnabled();
+                @SuppressWarnings("deprecation")
                 boolean isCtrl = (e != null && (e.getModifiers() &
                             Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()) != 0);
 

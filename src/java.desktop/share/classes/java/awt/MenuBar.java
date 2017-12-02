@@ -377,7 +377,6 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
      * keydown).  Returns true if there is an associated
      * keyboard event.
      */
-    @SuppressWarnings("deprecation")
     boolean handleShortcut(KeyEvent e) {
         // Is it a key event?
         int id = e.getID();
@@ -386,8 +385,8 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
         }
 
         // Is the accelerator modifier key pressed?
-        int accelKey = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
-        if ((e.getModifiers() & accelKey) == 0) {
+        int accelKey = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+        if ((e.getModifiersEx() & accelKey) == 0) {
             return false;
         }
 

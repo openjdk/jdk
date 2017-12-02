@@ -29,7 +29,23 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragGestureRecognizer;
 import java.awt.dnd.DragSource;
-import java.awt.event.*;
+import java.awt.event.AWTEventListener;
+import java.awt.event.AWTEventListenerProxy;
+import java.awt.event.ActionEvent;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ContainerEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.InputMethodEvent;
+import java.awt.event.InvocationEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.PaintEvent;
+import java.awt.event.TextEvent;
+import java.awt.event.WindowEvent;
 import java.awt.im.InputMethodHighlight;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageObserver;
@@ -40,15 +56,22 @@ import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
+import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.stream.Collectors;
+
+import javax.accessibility.AccessibilityProvider;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTPermissions;
@@ -56,14 +79,6 @@ import sun.awt.AppContext;
 import sun.awt.HeadlessToolkit;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
-
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Arrays;
-import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.accessibility.AccessibilityProvider;
 
 /**
  * This class is the abstract superclass of all actual
@@ -1065,13 +1080,41 @@ public abstract class Toolkit {
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @see       java.awt.MenuBar
      * @see       java.awt.MenuShortcut
+     * @deprecated It is recommended that extended modifier keys and
+     *             {@link #getMenuShortcutKeyMaskEx()} be used instead
      * @since     1.1
      */
-    @SuppressWarnings("deprecation")
+    @Deprecated(since = "10")
     public int getMenuShortcutKeyMask() throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
 
         return Event.CTRL_MASK;
+    }
+
+    /**
+     * Determines which extended modifier key is the appropriate accelerator
+     * key for menu shortcuts.
+     * <p>
+     * Menu shortcuts, which are embodied in the {@code MenuShortcut} class, are
+     * handled by the {@code MenuBar} class.
+     * <p>
+     * By default, this method returns {@code InputEvent.CTRL_DOWN_MASK}.
+     * Toolkit implementations should override this method if the
+     * <b>Control</b> key isn't the correct key for accelerators.
+     *
+     * @return the modifier mask on the {@code InputEvent} class that is used
+     *         for menu shortcuts on this toolkit
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless() returns
+     *         true
+     * @see java.awt.GraphicsEnvironment#isHeadless
+     * @see java.awt.MenuBar
+     * @see java.awt.MenuShortcut
+     * @since 10
+     */
+    public int getMenuShortcutKeyMaskEx() throws HeadlessException {
+        GraphicsEnvironment.checkHeadless();
+
+        return InputEvent.CTRL_DOWN_MASK;
     }
 
     /**

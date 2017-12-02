@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,27 +502,15 @@ public final class LWCToolkit extends LWToolkit {
         }
     }
 
-    /**
-     * Determines which modifier key is the appropriate accelerator
-     * key for menu shortcuts.
-     * <p>
-     * Menu shortcuts, which are embodied in the
-     * {@code MenuShortcut} class, are handled by the
-     * {@code MenuBar} class.
-     * <p>
-     * By default, this method returns {@code Event.CTRL_MASK}.
-     * Toolkit implementations should override this method if the
-     * <b>Control</b> key isn't the correct key for accelerators.
-     * @return    the modifier mask on the {@code Event} class
-     *                 that is used for menu shortcuts on this toolkit.
-     * @see       java.awt.MenuBar
-     * @see       java.awt.MenuShortcut
-     * @since     1.1
-     */
     @Override
-    @SuppressWarnings("deprecation")
+    @Deprecated(since = "10")
     public int getMenuShortcutKeyMask() {
         return Event.META_MASK;
+    }
+
+    @Override
+    public int getMenuShortcutKeyMaskEx() {
+        return InputEvent.META_DOWN_MASK;
     }
 
     @Override
