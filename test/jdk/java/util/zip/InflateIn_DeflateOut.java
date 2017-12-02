@@ -23,8 +23,9 @@
 
 /**
  * @test
- * @bug 4206909 4813885
- * @summary Test basic functionality of DeflaterOutputStream/InflaterInputStream and GZIPOutputStream/GZIPInputStream, including flush
+ * @bug 4206909 4813885 8191918
+ * @summary Test basic functionality of DeflaterOutputStream/InflaterInputStream
+ *          and GZIPOutputStream/GZIPInputStream, including flush
  * @key randomness
  */
 
@@ -145,6 +146,36 @@ public class InflateIn_DeflateOut {
         }
         check(readFully(iis, buf, buf.length));
         check(Arrays.equals(data, buf));
+    }
+
+    private static void TestFlushableGZIPOutputStream() throws Throwable {
+        var random = new Random(new Date().getTime());
+
+        var byteOutStream = new ByteArrayOutputStream();
+        var output = new FlushableGZIPOutputStream(byteOutStream);
+
+        var data = new byte[random.nextInt(1024 * 1024)];
+        var buf = new byte[data.length];
+        random.nextBytes(data);
+
+        output.write(data);
+        for (int i=0; i<data.length; i++) {
+            output.write(data[i]);
+        }
+        output.flush();
+        for (int i=0; i<data.length; i++) {
+            output.write(data[i]);
+        }
+        output.write(data);
+        output.close();
+
+        var baos = new ByteArrayOutputStream();
+        try (var gzis = new GZIPInputStream(new
+                ByteArrayInputStream(byteOutStream.toByteArray()))) {
+            gzis.transferTo(baos);
+        }
+        var decompressedBytes = baos.toByteArray();
+        check(decompressedBytes.length == data.length * 4);
     }
 
     private static void check(InputStream is, OutputStream os)
@@ -268,6 +299,7 @@ public class InflateIn_DeflateOut {
         LineOrientedProtocol();
         GZWriteFlushRead();
         GZLineOrientedProtocol();
+        TestFlushableGZIPOutputStream();
     }
 
     //--------------------- Infrastructure ---------------------------
@@ -284,4 +316,81 @@ public class InflateIn_DeflateOut {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.println("\nPassed = " + passed + " failed = " + failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
+}
+
+class FlushableGZIPOutputStream extends GZIPOutputStream {
+    public FlushableGZIPOutputStream(OutputStream os) throws IOException {
+        super(os);
+    }
+
+    private static final byte[] EMPTYBYTEARRAY = new byte[0];
+    private boolean hasData = false;
+
+    /**
+     * Here we make sure we have received data, so that the header has been for
+     * sure written to the output stream already.
+     */
+    @Override
+    public synchronized void write(byte[] bytes, int i, int i1)
+            throws IOException {
+        super.write(bytes, i, i1);
+        hasData = true;
+    }
+
+    @Override
+    public synchronized void write(int i) throws IOException {
+        super.write(i);
+        hasData = true;
+    }
+
+    @Override
+    public synchronized void write(byte[] bytes) throws IOException {
+        super.write(bytes);
+        hasData = true;
+    }
+
+    @Override
+    public synchronized void flush() throws IOException {
+        if (!hasData) {
+            return; // do not allow the gzip header to be flushed on its own
+        }
+
+        // trick the deflater to flush
+        /**
+         * Now this is tricky: We force the Deflater to flush its data by
+         * switching compression level. As yet, a perplexingly simple workaround
+         * for
+         * http://developer.java.sun.com/developer/bugParade/bugs/4255743.html
+         */
+        if (!def.finished()) {
+            def.setInput(EMPTYBYTEARRAY, 0, 0);
+
+            def.setLevel(Deflater.NO_COMPRESSION);
+            deflate();
+
+            def.setLevel(Deflater.DEFAULT_COMPRESSION);
+            deflate();
+
+            out.flush();
+        }
+
+        hasData = false; // no more data to flush
+    }
+
+    /*
+     * Keep on calling deflate until it runs dry. The default implementation
+     * only does it once and can therefore hold onto data when they need to be
+     * flushed out.
+     */
+    @Override
+    protected void deflate() throws IOException {
+        int len;
+        do {
+            len = def.deflate(buf, 0, buf.length);
+            if (len > 0) {
+                out.write(buf, 0, len);
+            }
+        } while (len != 0);
+    }
+
 }
