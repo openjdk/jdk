@@ -6630,6 +6630,13 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
   }
   // Clear upper bits of YMM registers to avoid SSE <-> AVX transition penalty.
   vzeroupper();
+  // Reset k1 to 0xffff.
+  if (VM_Version::supports_evex()) {
+    push(rcx);
+    movl(rcx, 0xffff);
+    kmovwl(k1, rcx);
+    pop(rcx);
+  }
 
 #ifndef _LP64
   // Either restore the x87 floating pointer control word after returning
