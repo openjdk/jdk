@@ -93,4 +93,6 @@
       s->status =
   #ifdef GZIP
 
+(7) deflate.c undo (6), replaced withe the official zlib repo fix see#305/#f969409
+
   
