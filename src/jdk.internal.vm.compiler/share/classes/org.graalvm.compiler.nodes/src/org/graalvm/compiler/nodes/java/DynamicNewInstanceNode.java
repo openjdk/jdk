@@ -34,6 +34,7 @@ import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -59,7 +60,7 @@ public class DynamicNewInstanceNode extends AbstractNewObjectNode implements Can
     protected DynamicNewInstanceNode(NodeClass<? extends DynamicNewInstanceNode> c, ValueNode clazz, boolean fillContents, FrameState stateBefore) {
         super(c, StampFactory.objectNonNull(), fillContents, stateBefore);
         this.clazz = clazz;
-        assert ((ObjectStamp) clazz.stamp()).nonNull();
+        assert ((ObjectStamp) clazz.stamp(NodeView.DEFAULT)).nonNull();
     }
 
     public ValueNode getInstanceType() {

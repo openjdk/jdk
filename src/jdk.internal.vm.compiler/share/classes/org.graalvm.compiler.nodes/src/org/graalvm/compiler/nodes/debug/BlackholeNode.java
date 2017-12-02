@@ -44,6 +44,10 @@ public final class BlackholeNode extends FixedWithNextNode implements LIRLowerab
         this.value = value;
     }
 
+    public ValueNode getValue() {
+        return value;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         gen.getLIRGeneratorTool().emitBlackhole(gen.operand(value));

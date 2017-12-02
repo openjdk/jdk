@@ -45,6 +45,7 @@ import org.graalvm.compiler.nodes.CanonicalizableLocation;
 import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
@@ -124,7 +125,7 @@ public class HotSpotReplacementsUtil {
                     AddressNode address = access.getAddress();
                     if (address instanceof OffsetAddressNode) {
                         OffsetAddressNode offset = (OffsetAddressNode) address;
-                        assert offset.getBase().stamp().isCompatible(read.stamp());
+                        assert offset.getBase().stamp(NodeView.DEFAULT).isCompatible(read.stamp(NodeView.DEFAULT));
                         return offset.getBase();
                     }
                 }
@@ -370,8 +371,8 @@ public class HotSpotReplacementsUtil {
         public ValueNode canonicalizeRead(ValueNode read, AddressNode location, ValueNode object, CanonicalizerTool tool) {
             ValueNode javaObject = findReadHub(object);
             if (javaObject != null) {
-                if (javaObject.stamp() instanceof ObjectStamp) {
-                    ObjectStamp stamp = (ObjectStamp) javaObject.stamp();
+                if (javaObject.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
+                    ObjectStamp stamp = (ObjectStamp) javaObject.stamp(NodeView.DEFAULT);
                     HotSpotResolvedObjectType type = (HotSpotResolvedObjectType) stamp.javaType(tool.getMetaAccess());
                     if (type.isArray() && !type.getComponentType().isPrimitive()) {
                         int layout = type.layoutHelper();
@@ -437,7 +438,7 @@ public class HotSpotReplacementsUtil {
         public ValueNode canonicalizeRead(ValueNode read, AddressNode location, ValueNode object, CanonicalizerTool tool) {
             TypeReference constantType = StampTool.typeReferenceOrNull(object);
             if (constantType != null && constantType.isExact()) {
-                return ConstantNode.forConstant(read.stamp(), tool.getConstantReflection().asObjectHub(constantType.getType()), tool.getMetaAccess());
+                return ConstantNode.forConstant(read.stamp(NodeView.DEFAULT), tool.getConstantReflection().asObjectHub(constantType.getType()), tool.getMetaAccess());
             }
             return read;
         }
@@ -448,7 +449,8 @@ public class HotSpotReplacementsUtil {
         public ValueNode canonicalizeRead(ValueNode read, AddressNode location, ValueNode object, CanonicalizerTool tool) {
             TypeReference constantType = StampTool.typeReferenceOrNull(object);
             if (constantType != null && constantType.isExact()) {
-                return ConstantNode.forConstant(read.stamp(), ((HotSpotMetaspaceConstant) tool.getConstantReflection().asObjectHub(constantType.getType())).compress(), tool.getMetaAccess());
+                return ConstantNode.forConstant(read.stamp(NodeView.DEFAULT), ((HotSpotMetaspaceConstant) tool.getConstantReflection().asObjectHub(constantType.getType())).compress(),
+                                tool.getMetaAccess());
             }
             return read;
         }
@@ -962,7 +964,7 @@ public class HotSpotReplacementsUtil {
                         AssumptionResult<ResolvedJavaType> leafType = element.findLeafConcreteSubtype();
                         if (leafType != null && leafType.canRecordTo(assumptions)) {
                             leafType.recordTo(assumptions);
-                            return ConstantNode.forConstant(read.stamp(), tool.getConstantReflection().asObjectHub(leafType.getResult()), tool.getMetaAccess());
+                            return ConstantNode.forConstant(read.stamp(NodeView.DEFAULT), tool.getConstantReflection().asObjectHub(leafType.getResult()), tool.getMetaAccess());
                         }
                     }
                 }

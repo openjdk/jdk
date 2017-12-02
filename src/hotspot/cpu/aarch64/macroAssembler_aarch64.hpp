@@ -97,6 +97,9 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_popframe(Register java_thread);
  virtual void check_and_handle_earlyret(Register java_thread);
 
+  void safepoint_poll(Label& slow_path);
+  void safepoint_poll_acquire(Label& slow_path);
+
   // Biased locking support
   // lock_reg and obj_reg must be loaded up with the appropriate values.
   // swap_reg is killed.
@@ -995,12 +998,12 @@ public:
   void atomic_xchgalw(Register prev, Register newv, Register addr);
 
   void orptr(Address adr, RegisterOrConstant src) {
-    ldr(rscratch2, adr);
+    ldr(rscratch1, adr);
     if (src.is_register())
-      orr(rscratch2, rscratch2, src.as_register());
+      orr(rscratch1, rscratch1, src.as_register());
     else
-      orr(rscratch2, rscratch2, src.as_constant());
-    str(rscratch2, adr);
+      orr(rscratch1, rscratch1, src.as_constant());
+    str(rscratch1, adr);
   }
 
   // A generic CAS; success or failure is in the EQ flag.
@@ -1199,6 +1202,7 @@ public:
 
   address read_polling_page(Register r, address page, relocInfo::relocType rtype);
   address read_polling_page(Register r, relocInfo::relocType rtype);
+  void get_polling_page(Register dest, address page, relocInfo::relocType rtype);
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);

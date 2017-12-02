@@ -32,6 +32,7 @@ import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ReturnNode;
@@ -95,7 +96,7 @@ public class IntegerExactFoldTest extends GraalCompilerTest {
         ValueNode node = findNode(graph);
         boolean overflowExpected = node instanceof IntegerExactArithmeticNode;
 
-        IntegerStamp resultStamp = (IntegerStamp) node.stamp();
+        IntegerStamp resultStamp = (IntegerStamp) node.stamp(NodeView.DEFAULT);
         operation.verifyOverflow(lowerBoundA, upperBoundA, lowerBoundB, upperBoundB, bits, overflowExpected, resultStamp);
     }
 
@@ -120,7 +121,7 @@ public class IntegerExactFoldTest extends GraalCompilerTest {
         ValueNode node = findNode(graph);
         boolean overflowExpected = node instanceof IntegerExactArithmeticSplitNode;
 
-        IntegerStamp resultStamp = (IntegerStamp) node.stamp();
+        IntegerStamp resultStamp = (IntegerStamp) node.stamp(NodeView.DEFAULT);
         operation.verifyOverflow(lowerBoundA, upperBoundA, lowerBoundB, upperBoundB, bits, overflowExpected, resultStamp);
     }
 

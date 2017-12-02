@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.replacements.test;
 
+import org.graalvm.compiler.nodes.NodeView;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -83,7 +84,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
         boolean isSparc = arch instanceof SPARC;
         Assume.assumeTrue("Only works on hardware with popcnt at the moment", isAmd64WithPopCount || isSparc);
         ValueNode result = parseAndInline("bitCountIntSnippet");
-        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 8, 24), result.stamp());
+        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 8, 24), result.stamp(NodeView.DEFAULT));
     }
 
     public static int bitCountIntEmptySnippet(int v) {
@@ -97,7 +98,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
         boolean isSparc = arch instanceof SPARC;
         Assume.assumeTrue("Only works on hardware with popcnt at the moment", isAmd64WithPopCount || isSparc);
         ValueNode result = parseAndInline("bitCountIntEmptySnippet");
-        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 0, 24), result.stamp());
+        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 0, 24), result.stamp(NodeView.DEFAULT));
     }
 
     @Test
@@ -117,7 +118,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
         boolean isSparc = arch instanceof SPARC;
         Assume.assumeTrue("Only works on hardware with popcnt at the moment", isAmd64WithPopCount || isSparc);
         ValueNode result = parseAndInline("bitCountLongSnippet");
-        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 8, 40), result.stamp());
+        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 8, 40), result.stamp(NodeView.DEFAULT));
     }
 
     public static int bitCountLongEmptySnippet(long v) {
@@ -131,7 +132,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
         boolean isSparc = arch instanceof SPARC;
         Assume.assumeTrue("Only works on hardware with popcnt at the moment", isAmd64WithPopCount || isSparc);
         ValueNode result = parseAndInline("bitCountLongEmptySnippet");
-        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 0, 40), result.stamp());
+        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 0, 40), result.stamp(NodeView.DEFAULT));
     }
 
     /*
@@ -155,7 +156,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
     @Test
     public void testScanForwardInt() {
         ValueNode result = parseAndInline("scanForwardIntSnippet");
-        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 4, 8), result.stamp());
+        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 4, 8), result.stamp(NodeView.DEFAULT));
     }
 
     public static int scanForwardLongConstantSnippet() {
@@ -175,7 +176,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
     @Test
     public void testScanForwardLong() {
         ValueNode result = parseAndInline("scanForwardLongSnippet");
-        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 24, 32), result.stamp());
+        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 24, 32), result.stamp(NodeView.DEFAULT));
     }
 
     public static int scanForwardLongEmptySnippet(long v) {
@@ -187,7 +188,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
     @Test
     public void testScanForwardLongEmpty() {
         ValueNode result = parseAndInline("scanForwardLongEmptySnippet");
-        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 24, 64), result.stamp());
+        Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 24, 64), result.stamp(NodeView.DEFAULT));
     }
 
     /*
@@ -213,7 +214,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
         /* This test isn't valid unless the BitScanReverseNode intrinsic is used. */
         ValueNode result = parseAndInline("scanReverseIntSnippet", BitScanReverseNode.class);
         if (result != null) {
-            Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 16, 20), result.stamp());
+            Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 16, 20), result.stamp(NodeView.DEFAULT));
         }
     }
 
@@ -238,7 +239,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
         /* This test isn't valid unless the BitScanReverseNode intrinsic is used. */
         ValueNode result = parseAndInline("scanReverseLongSnippet", BitScanReverseNode.class);
         if (result != null) {
-            Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 48, 64), result.stamp());
+            Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 48, 64), result.stamp(NodeView.DEFAULT));
         }
     }
 
@@ -253,7 +254,7 @@ public class BitOpNodesTest extends GraalCompilerTest {
         /* This test isn't valid unless the BitScanReverseNode intrinsic is used. */
         ValueNode result = parseAndInline("scanReverseLongEmptySnippet", BitScanReverseNode.class);
         if (result != null) {
-            Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 24, 64), result.stamp());
+            Assert.assertEquals(StampFactory.forInteger(JavaKind.Int, 24, 64), result.stamp(NodeView.DEFAULT));
         }
     }
 

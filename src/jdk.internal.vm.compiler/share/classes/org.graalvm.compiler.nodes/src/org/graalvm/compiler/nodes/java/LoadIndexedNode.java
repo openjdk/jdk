@@ -35,6 +35,7 @@ import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
@@ -92,7 +93,7 @@ public class LoadIndexedNode extends AccessIndexedNode implements Virtualizable,
 
     private static JavaKind determinePreciseArrayElementType(ValueNode array, JavaKind kind) {
         if (kind == JavaKind.Byte) {
-            ResolvedJavaType javaType = ((ObjectStamp) array.stamp()).type();
+            ResolvedJavaType javaType = ((ObjectStamp) array.stamp(NodeView.DEFAULT)).type();
             if (javaType != null && javaType.isArray() && javaType.getComponentType() != null && javaType.getComponentType().getJavaKind() == JavaKind.Boolean) {
                 return JavaKind.Boolean;
             }
@@ -114,10 +115,10 @@ public class LoadIndexedNode extends AccessIndexedNode implements Virtualizable,
             int idx = indexValue.isConstant() ? indexValue.asJavaConstant().asInt() : -1;
             if (idx >= 0 && idx < virtual.entryCount()) {
                 ValueNode entry = tool.getEntry(virtual, idx);
-                if (stamp.isCompatible(entry.stamp())) {
+                if (stamp.isCompatible(entry.stamp(NodeView.DEFAULT))) {
                     tool.replaceWith(entry);
                 } else {
-                    assert stamp().getStackKind() == JavaKind.Int && (entry.stamp().getStackKind() == JavaKind.Long || entry.getStackKind() == JavaKind.Double ||
+                    assert stamp(NodeView.DEFAULT).getStackKind() == JavaKind.Int && (entry.stamp(NodeView.DEFAULT).getStackKind() == JavaKind.Long || entry.getStackKind() == JavaKind.Double ||
                                     entry.getStackKind() == JavaKind.Illegal) : "Can only allow different stack kind two slot marker writes on one stot fields.";
                 }
             }

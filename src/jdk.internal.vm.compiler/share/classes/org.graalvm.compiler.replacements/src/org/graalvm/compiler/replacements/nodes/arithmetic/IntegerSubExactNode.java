@@ -31,6 +31,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -49,8 +50,8 @@ public final class IntegerSubExactNode extends SubNode implements IntegerExactAr
 
     public IntegerSubExactNode(ValueNode x, ValueNode y) {
         super(TYPE, x, y);
-        setStamp(x.stamp().unrestricted());
-        assert x.stamp().isCompatible(y.stamp()) && x.stamp() instanceof IntegerStamp;
+        setStamp(x.stamp(NodeView.DEFAULT).unrestricted());
+        assert x.stamp(NodeView.DEFAULT).isCompatible(y.stamp(NodeView.DEFAULT)) && x.stamp(NodeView.DEFAULT) instanceof IntegerStamp;
     }
 
     @Override
@@ -67,7 +68,7 @@ public final class IntegerSubExactNode extends SubNode implements IntegerExactAr
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
         if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
-            return ConstantNode.forIntegerStamp(stamp(), 0);
+            return ConstantNode.forIntegerStamp(stamp(NodeView.DEFAULT), 0);
         }
         if (forX.isConstant() && forY.isConstant()) {
             return canonicalXYconstant(forX, forY);
@@ -77,7 +78,7 @@ public final class IntegerSubExactNode extends SubNode implements IntegerExactAr
                 return forX;
             }
         }
-        if (!IntegerStamp.subtractionCanOverflow((IntegerStamp) x.stamp(), (IntegerStamp) y.stamp())) {
+        if (!IntegerStamp.subtractionCanOverflow((IntegerStamp) x.stamp(NodeView.DEFAULT), (IntegerStamp) y.stamp(NodeView.DEFAULT))) {
             return new SubNode(x, y).canonical(tool);
         }
         return this;
@@ -102,7 +103,7 @@ public final class IntegerSubExactNode extends SubNode implements IntegerExactAr
 
     @Override
     public IntegerExactArithmeticSplitNode createSplit(AbstractBeginNode next, AbstractBeginNode deopt) {
-        return graph().add(new IntegerSubExactSplitNode(stamp(), getX(), getY(), next, deopt));
+        return graph().add(new IntegerSubExactSplitNode(stamp(NodeView.DEFAULT), getX(), getY(), next, deopt));
     }
 
     @Override

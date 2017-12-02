@@ -917,9 +917,6 @@ public:
   notproduct(bool, ZapVMHandleArea, trueInDebug,                            \
           "Zap freed VM handle space with 0xBCBCBCBC")                      \
                                                                             \
-  develop(bool, ZapJNIHandleArea, trueInDebug,                              \
-          "Zap freed JNI handle space with 0xFEFEFEFE")                     \
-                                                                            \
   notproduct(bool, ZapStackSegments, trueInDebug,                           \
           "Zap allocated/freed stack segments with 0xFADFADED")             \
                                                                             \
@@ -2271,6 +2268,10 @@ public:
   diagnostic(bool, VerifyDuringGC, false,                                   \
           "Verify memory system during GC (between phases)")                \
                                                                             \
+  diagnostic(ccstrlist, VerifyGCType, "",                                   \
+             "GC type(s) to verify when Verify*GC is enabled."              \
+             "Available types are collector specific.")                     \
+                                                                            \
   diagnostic(ccstrlist, VerifySubSet, "",                                   \
           "Memory sub-systems to verify when Verify*GC flag(s) "            \
           "are enabled. One or more sub-systems can be specified "          \
@@ -2483,6 +2484,12 @@ public:
           "more than PrintSafepointSatisticsTimeout in millis")             \
   LP64_ONLY(range(-1, max_intx/MICROUNITS))                                 \
   NOT_LP64(range(-1, max_intx))                                             \
+                                                                            \
+  diagnostic(bool, EnableThreadSMRExtraValidityChecks, true,                \
+             "Enable Thread SMR extra validity checks")                     \
+                                                                            \
+  diagnostic(bool, EnableThreadSMRStatistics, trueInDebug,                  \
+             "Enable Thread SMR Statistics")                                \
                                                                             \
   product(bool, Inline, true,                                               \
           "Enable inlining")                                                \
@@ -3359,7 +3366,7 @@ public:
                                                                             \
   product_pd(uintx, InitialCodeCacheSize,                                   \
           "Initial code cache size (in bytes)")                             \
-          range(0, max_uintx)                                               \
+          range(os::vm_page_size(), max_uintx)                              \
                                                                             \
   develop_pd(uintx, CodeCacheMinimumUseSpace,                               \
           "Minimum code cache size (in bytes) required to start VM.")       \
@@ -3370,7 +3377,7 @@ public:
                                                                             \
   product_pd(uintx, ReservedCodeCacheSize,                                  \
           "Reserved code cache size (in bytes) - maximum code cache size")  \
-          range(0, max_uintx)                                               \
+          range(os::vm_page_size(), max_uintx)                              \
                                                                             \
   product_pd(uintx, NonProfiledCodeHeapSize,                                \
           "Size of code heap with non-profiled methods (in bytes)")         \
@@ -3382,11 +3389,11 @@ public:
                                                                             \
   product_pd(uintx, NonNMethodCodeHeapSize,                                 \
           "Size of code heap with non-nmethods (in bytes)")                 \
-          range(0, max_uintx)                                               \
+          range(os::vm_page_size(), max_uintx)                              \
                                                                             \
   product_pd(uintx, CodeCacheExpansionSize,                                 \
           "Code cache expansion size (in bytes)")                           \
-          range(0, max_uintx)                                               \
+          range(32*K, max_uintx)                                            \
                                                                             \
   diagnostic_pd(uintx, CodeCacheMinBlockLength,                             \
           "Minimum number of segments in a code cache block")               \
@@ -3926,6 +3933,13 @@ public:
           "Address to allocate shared memory region for class data")        \
           range(0, SIZE_MAX)                                                \
                                                                             \
+  product(bool, UseAppCDS, false,                                           \
+          "Enable Application Class Data Sharing when using shared spaces") \
+          writeable(CommandLineOnly)                                        \
+                                                                            \
+  product(ccstr, SharedArchiveConfigFile, NULL,                             \
+          "Data to add to the CDS archive file")                            \
+                                                                            \
   product(uintx, SharedSymbolTableBucketSize, 4,                            \
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
@@ -4073,7 +4087,11 @@ public:
   diagnostic(bool, CompilerDirectivesPrint, false,                          \
              "Print compiler directives on installation.")                  \
   diagnostic(int,  CompilerDirectivesLimit, 50,                             \
-             "Limit on number of compiler directives.")
+             "Limit on number of compiler directives.")                     \
+                                                                            \
+  product(ccstr, AllocateHeapAt, NULL,                                      \
+          "Path to the directoy where a temporary file will be created "    \
+          "to use as the backing store for Java Heap.")
 
 
 /*

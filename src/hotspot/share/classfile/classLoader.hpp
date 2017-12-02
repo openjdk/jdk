@@ -26,6 +26,7 @@
 #define SHARE_VM_CLASSFILE_CLASSLOADER_HPP
 
 #include "jimage.hpp"
+#include "runtime/handles.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"
@@ -42,6 +43,7 @@
 class JImageFile;
 class ClassFileStream;
 class PackageEntry;
+template <typename T> class GrowableArray;
 
 class ClassPathEntry : public CHeapObj<mtClass> {
 private:

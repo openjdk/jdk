@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import sun.jvm.hotspot.debugger.MachineDescription;
 import sun.jvm.hotspot.debugger.MachineDescriptionAMD64;
 import sun.jvm.hotspot.debugger.MachineDescriptionPPC64;
 import sun.jvm.hotspot.debugger.MachineDescriptionAArch64;
-import sun.jvm.hotspot.debugger.MachineDescriptionIA64;
 import sun.jvm.hotspot.debugger.MachineDescriptionIntelX86;
 import sun.jvm.hotspot.debugger.MachineDescriptionSPARC32Bit;
 import sun.jvm.hotspot.debugger.MachineDescriptionSPARC64Bit;
@@ -556,10 +555,8 @@ public class HotSpotAgent {
             machDesc = new MachineDescriptionIntelX86();
         } else if (cpu.equals("amd64")) {
             machDesc = new MachineDescriptionAMD64();
-        } else if (cpu.equals("ia64")) {
-            machDesc = new MachineDescriptionIA64();
         } else {
-            throw new DebuggerException("Win32 supported under x86, amd64 and ia64 only");
+            throw new DebuggerException("Win32 supported under x86 and amd64 only");
         }
 
         // Note we do not use a cache for the local debugger in server
@@ -586,8 +583,6 @@ public class HotSpotAgent {
 
         if (cpu.equals("x86")) {
             machDesc = new MachineDescriptionIntelX86();
-        } else if (cpu.equals("ia64")) {
-            machDesc = new MachineDescriptionIA64();
         } else if (cpu.equals("amd64")) {
             machDesc = new MachineDescriptionAMD64();
         } else if (cpu.equals("ppc64")) {

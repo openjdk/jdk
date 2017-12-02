@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,8 @@ import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.x86.*;
-import sun.jvm.hotspot.debugger.ia64.*;
 import sun.jvm.hotspot.debugger.windbg.amd64.*;
 import sun.jvm.hotspot.debugger.windbg.x86.*;
-import sun.jvm.hotspot.debugger.windbg.ia64.*;
 import sun.jvm.hotspot.debugger.win32.coff.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.BasicDebugEvent;
@@ -115,8 +113,6 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
        threadFactory = new WindbgX86ThreadFactory(this);
     } else if (cpu.equals("amd64")) {
        threadFactory = new WindbgAMD64ThreadFactory(this);
-    } else if (cpu.equals("ia64")) {
-       threadFactory = new WindbgIA64ThreadFactory(this);
     }
 
     if (useCache) {
@@ -231,11 +227,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
 
   public CDebugger getCDebugger() throws DebuggerException {
     if (cdbg == null) {
-      // FIXME: CDebugger is not yet supported for IA64 because
-      // of native stack walking issues.
-      if (! getCPU().equals("ia64")) {
-         cdbg = new WindbgCDebugger(this);
-      }
+      cdbg = new WindbgCDebugger(this);
     }
     return cdbg;
   }

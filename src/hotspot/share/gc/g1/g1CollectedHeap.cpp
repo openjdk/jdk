@@ -39,12 +39,12 @@
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
-#include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
+#include "gc/g1/g1MemoryPool.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -81,6 +81,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -1083,7 +1084,6 @@ void G1CollectedHeap::print_hrm_post_compaction() {
     PostCompactionPrinterClosure cl(hr_printer());
     heap_region_iterate(&cl);
   }
-
 }
 
 void G1CollectedHeap::abort_concurrent_cycle() {
@@ -1132,7 +1132,7 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   assert(!GCCause::is_user_requested_gc(gc_cause()) || explicit_gc, "invariant");
   assert(used() == recalculate_used(), "Should be equal");
   _verifier->verify_region_sets_optional();
-  _verifier->verify_before_gc();
+  _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
   _verifier->check_bitmaps("Full GC Start");
 }
 
@@ -1173,7 +1173,7 @@ void G1CollectedHeap::verify_after_full_collection() {
   check_gc_time_stamps();
   _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
-  _verifier->verify_after_gc();
+  _verifier->verify_after_gc(G1HeapVerifier::G1VerifyFull);
   // Clear the previous marking bitmap, if needed for bitmap verification.
   // Note we cannot do this when we clear the next marking bitmap in
   // G1ConcurrentMark::abort() above since VerifyDuringGC verifies the
@@ -1217,34 +1217,6 @@ void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_tr
 #endif
 }
 
-void G1CollectedHeap::do_full_collection_inner(G1FullGCScope* scope) {
-  GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
-  g1_policy()->record_full_collection_start();
-
-  print_heap_before_gc();
-  print_heap_regions();
-
-  abort_concurrent_cycle();
-  verify_before_full_collection(scope->is_explicit_gc());
-
-  gc_prologue(true);
-  prepare_heap_for_full_collection();
-
-  G1FullCollector collector(scope, ref_processor_stw(), concurrent_mark()->next_mark_bitmap(), workers()->active_workers());
-  collector.prepare_collection();
-  collector.collect();
-  collector.complete_collection();
-
-  prepare_heap_for_mutators();
-
-  g1_policy()->record_full_collection_end();
-  gc_epilogue(true);
-
-  verify_after_full_collection();
-
-  print_heap_after_full_collection(scope->heap_transition());
-}
-
 bool G1CollectedHeap::do_full_collection(bool explicit_gc,
                                          bool clear_all_soft_refs) {
   assert_at_safepoint(true /* should_be_vm_thread */);
@@ -1257,8 +1229,12 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       collector_policy()->should_clear_all_soft_refs();
 
-  G1FullGCScope scope(explicit_gc, do_clear_all_soft_refs);
-  do_full_collection_inner(&scope);
+  G1FullCollector collector(this, &_full_gc_memory_manager, explicit_gc, do_clear_all_soft_refs);
+  GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
+
+  collector.prepare_collection();
+  collector.collect();
+  collector.complete_collection();
 
   // Full collection was successfully completed.
   return true;
@@ -1550,6 +1526,11 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   CollectedHeap(),
   _young_gen_sampling_thread(NULL),
   _collector_policy(collector_policy),
+  _memory_manager("G1 Young Generation", "end of minor GC"),
+  _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
+  _eden_pool(NULL),
+  _survivor_pool(NULL),
+  _old_pool(NULL),
   _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
   _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
   _g1_policy(create_g1_policy(_gc_timer_stw)),
@@ -1854,6 +1835,20 @@ jint G1CollectedHeap::initialize() {
   return JNI_OK;
 }
 
+void G1CollectedHeap::initialize_serviceability() {
+  _eden_pool = new G1EdenPool(this);
+  _survivor_pool = new G1SurvivorPool(this);
+  _old_pool = new G1OldGenPool(this);
+
+  _full_gc_memory_manager.add_pool(_eden_pool);
+  _full_gc_memory_manager.add_pool(_survivor_pool);
+  _full_gc_memory_manager.add_pool(_old_pool);
+
+  _memory_manager.add_pool(_eden_pool);
+  _memory_manager.add_pool(_survivor_pool);
+
+}
+
 void G1CollectedHeap::stop() {
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
@@ -1879,6 +1874,7 @@ size_t G1CollectedHeap::conservative_max_heap_alignment() {
 }
 
 void G1CollectedHeap::post_initialize() {
+  CollectedHeap::post_initialize();
   ref_processing_init();
 }
 
@@ -2653,11 +2649,9 @@ G1CollectedHeap::doConcurrentMark() {
 
 size_t G1CollectedHeap::pending_card_num() {
   size_t extra_cards = 0;
-  JavaThread *curr = Threads::first();
-  while (curr != NULL) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *curr = jtiwh.next(); ) {
     DirtyCardQueue& dcq = curr->dirty_card_queue();
     extra_cards += dcq.size();
-    curr = curr->next();
   }
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   size_t buffer_size = dcqs.buffer_size();
@@ -2963,13 +2957,17 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     GCTraceCPUTime tcpu;
 
+    G1HeapVerifier::G1VerifyType verify_type;
     FormatBuffer<> gc_string("Pause ");
     if (collector_state()->during_initial_mark_pause()) {
       gc_string.append("Initial Mark");
+      verify_type = G1HeapVerifier::G1VerifyInitialMark;
     } else if (collector_state()->gcs_are_young()) {
       gc_string.append("Young");
+      verify_type = G1HeapVerifier::G1VerifyYoungOnly;
     } else {
       gc_string.append("Mixed");
+      verify_type = G1HeapVerifier::G1VerifyMixed;
     }
     GCTraceTime(Info, gc) tm(gc_string, NULL, gc_cause(), true);
 
@@ -2980,7 +2978,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
-    TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
+    TraceMemoryManagerStats tms(&_memory_manager, gc_cause());
 
     // If the secondary_free_list is not empty, append it to the
     // free_list. No need to wait for the cleanup operation to finish;
@@ -3010,7 +3008,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         heap_region_iterate(&v_cl);
       }
 
-      _verifier->verify_before_gc();
+      _verifier->verify_before_gc(verify_type);
 
       _verifier->check_bitmaps("GC Start");
 
@@ -3170,7 +3168,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           heap_region_iterate(&v_cl);
         }
 
-        _verifier->verify_after_gc();
+        _verifier->verify_after_gc(verify_type);
         _verifier->check_bitmaps("GC End");
 
         assert(!ref_processor_stw()->discovery_enabled(), "Postcondition");
@@ -5393,4 +5391,19 @@ public:
 void G1CollectedHeap::rebuild_strong_code_roots() {
   RebuildStrongCodeRootClosure blob_cl(this);
   CodeCache::blobs_do(&blob_cl);
+}
+
+GrowableArray<GCMemoryManager*> G1CollectedHeap::memory_managers() {
+  GrowableArray<GCMemoryManager*> memory_managers(2);
+  memory_managers.append(&_memory_manager);
+  memory_managers.append(&_full_gc_memory_manager);
+  return memory_managers;
+}
+
+GrowableArray<MemoryPool*> G1CollectedHeap::memory_pools() {
+  GrowableArray<MemoryPool*> memory_pools(3);
+  memory_pools.append(_eden_pool);
+  memory_pools.append(_survivor_pool);
+  memory_pools.append(_old_pool);
+  return memory_pools;
 }

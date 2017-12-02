@@ -42,6 +42,7 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -598,12 +599,13 @@ JRT_ENTRY(jint, JVMCIRuntime::identity_hash_code(JavaThread* thread, oopDesc* ob
 JRT_END
 
 JRT_ENTRY(jboolean, JVMCIRuntime::thread_is_interrupted(JavaThread* thread, oopDesc* receiver, jboolean clear_interrupted))
-  // Ensure that the C++ Thread and OSThread structures aren't freed before we operate.
-  // This locking requires thread_in_vm which is why this method cannot be JRT_LEAF.
   Handle receiverHandle(thread, receiver);
-  MutexLockerEx ml(thread->threadObj() == (void*)receiver ? NULL : Threads_lock);
+  // A nested ThreadsListHandle may require the Threads_lock which
+  // requires thread_in_vm which is why this method cannot be JRT_LEAF.
+  ThreadsListHandle tlh;
+
   JavaThread* receiverThread = java_lang_Thread::thread(receiverHandle());
-  if (receiverThread == NULL) {
+  if (receiverThread == NULL || (EnableThreadSMRExtraValidityChecks && !tlh.includes(receiverThread))) {
     // The other thread may exit during this process, which is ok so return false.
     return JNI_FALSE;
   } else {

@@ -33,7 +33,8 @@
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmThread.hpp"
@@ -580,13 +581,10 @@ JvmtiEventControllerPrivate::recompute_enabled() {
   // filtered events and there weren't last time
   if (    (any_env_thread_enabled & THREAD_FILTERED_EVENT_BITS) != 0 &&
       (was_any_env_thread_enabled & THREAD_FILTERED_EVENT_BITS) == 0) {
-    {
-      MutexLocker mu(Threads_lock);   //hold the Threads_lock for the iteration
-      for (JavaThread *tp = Threads::first(); tp != NULL; tp = tp->next()) {
-        // state_for_while_locked() makes tp->is_exiting() check
-        JvmtiThreadState::state_for_while_locked(tp);  // create the thread state if missing
-      }
-    }// release Threads_lock
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *tp = jtiwh.next(); ) {
+      // state_for_while_locked() makes tp->is_exiting() check
+      JvmtiThreadState::state_for_while_locked(tp);  // create the thread state if missing
+    }
   }
 
   // compute and set thread-filtered events

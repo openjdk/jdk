@@ -33,6 +33,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -50,27 +51,28 @@ public final class OrNode extends BinaryArithmeticNode<Or> implements BinaryComm
         super(TYPE, ArithmeticOpTable::getOr, x, y);
     }
 
-    public static ValueNode create(ValueNode x, ValueNode y) {
-        BinaryOp<Or> op = ArithmeticOpTable.forStamp(x.stamp()).getOr();
-        Stamp stamp = op.foldStamp(x.stamp(), y.stamp());
-        ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp);
+    public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
+        BinaryOp<Or> op = ArithmeticOpTable.forStamp(x.stamp(view)).getOr();
+        Stamp stamp = op.foldStamp(x.stamp(view), y.stamp(view));
+        ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp, view);
         if (tryConstantFold != null) {
             return tryConstantFold;
         }
-        return canonical(null, op, stamp, x, y);
+        return canonical(null, op, stamp, x, y, view);
     }
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
+        NodeView view = NodeView.from(tool);
         ValueNode ret = super.canonical(tool, forX, forY);
         if (ret != this) {
             return ret;
         }
 
-        return canonical(this, getOp(forX, forY), stamp(), forX, forY);
+        return canonical(this, getOp(forX, forY), stamp(view), forX, forY, view);
     }
 
-    private static ValueNode canonical(OrNode self, BinaryOp<Or> op, Stamp stamp, ValueNode forX, ValueNode forY) {
+    private static ValueNode canonical(OrNode self, BinaryOp<Or> op, Stamp stamp, ValueNode forX, ValueNode forY, NodeView view) {
         if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
             return forX;
         }
@@ -90,10 +92,10 @@ public final class OrNode extends BinaryArithmeticNode<Or> implements BinaryComm
                     return ConstantNode.forIntegerStamp(stamp, mask);
                 }
             }
-            return reassociate(self != null ? self : (OrNode) new OrNode(forX, forY).maybeCommuteInputs(), ValueNode.isConstantPredicate(), forX, forY);
+            return reassociate(self != null ? self : (OrNode) new OrNode(forX, forY).maybeCommuteInputs(), ValueNode.isConstantPredicate(), forX, forY, view);
         }
         if (forX instanceof NotNode && forY instanceof NotNode) {
-            return new NotNode(AndNode.create(((NotNode) forX).getValue(), ((NotNode) forY).getValue()));
+            return new NotNode(AndNode.create(((NotNode) forX).getValue(), ((NotNode) forY).getValue(), view));
         }
         return self != null ? self : new OrNode(forX, forY).maybeCommuteInputs();
     }

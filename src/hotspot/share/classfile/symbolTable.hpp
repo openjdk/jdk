@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_SYMBOLTABLE_HPP
 #define SHARE_VM_CLASSFILE_SYMBOLTABLE_HPP
 
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "oops/symbol.hpp"
 #include "utilities/hashtable.hpp"
 

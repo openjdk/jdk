@@ -33,6 +33,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -53,20 +54,20 @@ public class SubNode extends BinaryArithmeticNode<Sub> implements NarrowableArit
         super(c, ArithmeticOpTable::getSub, x, y);
     }
 
-    public static ValueNode create(ValueNode x, ValueNode y) {
-        BinaryOp<Sub> op = ArithmeticOpTable.forStamp(x.stamp()).getSub();
-        Stamp stamp = op.foldStamp(x.stamp(), y.stamp());
-        ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp);
+    public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
+        BinaryOp<Sub> op = ArithmeticOpTable.forStamp(x.stamp(view)).getSub();
+        Stamp stamp = op.foldStamp(x.stamp(view), y.stamp(view));
+        ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp, view);
         if (tryConstantFold != null) {
             return tryConstantFold;
         }
-        return canonical(null, op, stamp, x, y);
+        return canonical(null, op, stamp, x, y, view);
     }
 
-    private static ValueNode canonical(SubNode subNode, BinaryOp<Sub> op, Stamp stamp, ValueNode forX, ValueNode forY) {
+    private static ValueNode canonical(SubNode subNode, BinaryOp<Sub> op, Stamp stamp, ValueNode forX, ValueNode forY, NodeView view) {
         SubNode self = subNode;
         if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
-            Constant zero = op.getZero(forX.stamp());
+            Constant zero = op.getZero(forX.stamp(view));
             if (zero != null) {
                 return ConstantNode.forPrimitive(stamp, zero);
             }
@@ -87,18 +88,18 @@ public class SubNode extends BinaryArithmeticNode<Sub> implements NarrowableArit
                 SubNode x = (SubNode) forX;
                 if (x.getX() == forY) {
                     // (a - b) - a
-                    return NegateNode.create(x.getY());
+                    return NegateNode.create(x.getY(), view);
                 }
             }
             if (forY instanceof AddNode) {
                 AddNode y = (AddNode) forY;
                 if (y.getX() == forX) {
                     // a - (a + b)
-                    return NegateNode.create(y.getY());
+                    return NegateNode.create(y.getY(), view);
                 }
                 if (y.getY() == forX) {
                     // b - (a + b)
-                    return NegateNode.create(y.getX());
+                    return NegateNode.create(y.getX(), view);
                 }
             } else if (forY instanceof SubNode) {
                 SubNode y = (SubNode) forY;
@@ -114,7 +115,7 @@ public class SubNode extends BinaryArithmeticNode<Sub> implements NarrowableArit
                 return forX;
             }
             if (associative && self != null) {
-                ValueNode reassociated = reassociate(self, ValueNode.isConstantPredicate(), forX, forY);
+                ValueNode reassociated = reassociate(self, ValueNode.isConstantPredicate(), forX, forY, view);
                 if (reassociated != self) {
                     return reassociated;
                 }
@@ -124,7 +125,7 @@ public class SubNode extends BinaryArithmeticNode<Sub> implements NarrowableArit
                 if (i < 0 || ((IntegerStamp) StampFactory.forKind(forY.getStackKind())).contains(-i)) {
                     // Adding a negative is more friendly to the backend since adds are
                     // commutative, so prefer add when it fits.
-                    return BinaryArithmeticNode.add(forX, ConstantNode.forIntegerStamp(stamp, -i));
+                    return BinaryArithmeticNode.add(forX, ConstantNode.forIntegerStamp(stamp, -i), view);
                 }
             }
         } else if (forX.isConstant()) {
@@ -135,30 +136,28 @@ public class SubNode extends BinaryArithmeticNode<Sub> implements NarrowableArit
                  * have to test for the neutral element of +, because we are doing this
                  * transformation: 0 - x == (-x) + 0 == -x.
                  */
-                return NegateNode.create(forY);
+                return NegateNode.create(forY, view);
             }
             if (associative && self != null) {
-                return reassociate(self, ValueNode.isConstantPredicate(), forX, forY);
+                return reassociate(self, ValueNode.isConstantPredicate(), forX, forY, view);
             }
         }
         if (forY instanceof NegateNode) {
-            return BinaryArithmeticNode.add(forX, ((NegateNode) forY).getValue());
+            return BinaryArithmeticNode.add(forX, ((NegateNode) forY).getValue(), view);
         }
-        if (self == null) {
-            self = new SubNode(forX, forY);
-        }
-        return self;
+        return self != null ? self : new SubNode(forX, forY);
     }
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
+        NodeView view = NodeView.from(tool);
         ValueNode ret = super.canonical(tool, forX, forY);
         if (ret != this) {
             return ret;
         }
 
         BinaryOp<Sub> op = getOp(forX, forY);
-        return canonical(this, op, stamp, forX, forY);
+        return canonical(this, op, stamp, forX, forY, view);
     }
 
     @Override

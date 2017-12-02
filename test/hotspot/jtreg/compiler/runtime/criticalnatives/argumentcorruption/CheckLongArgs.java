@@ -24,7 +24,8 @@
 
 /* @test
  * @bug 8167409
- * @run main/othervm/native -Xcomp compiler.runtime.criticalnatives.argumentcorruption.CheckLongArgs
+ * @requires os.arch != "aarch64"
+ * @run main/othervm/native -Xcomp -XX:+CriticalJNINatives compiler.runtime.criticalnatives.argumentcorruption.CheckLongArgs
  */
 package compiler.runtime.criticalnatives.argumentcorruption;
 public class CheckLongArgs {

@@ -27,6 +27,7 @@ import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.sparc.SPARCIndexedAddressValue;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -61,7 +62,7 @@ public class SPARCIndexedAddressNode extends AddressNode implements LIRLowerable
         AllocatableValue baseReference = LIRKind.derivedBaseFromValue(baseValue);
         AllocatableValue indexReference = LIRKind.derivedBaseFromValue(indexValue);
 
-        LIRKind kind = LIRKind.combineDerived(tool.getLIRKind(stamp()), baseReference, indexReference);
+        LIRKind kind = LIRKind.combineDerived(tool.getLIRKind(stamp(NodeView.DEFAULT)), baseReference, indexReference);
         gen.setResult(this, new SPARCIndexedAddressValue(kind, baseValue, indexValue));
     }
 

@@ -37,6 +37,8 @@
 #include "memory/allocation.hpp"
 #include "services/memoryService.hpp"
 
+class GCMemoryManager;
+
 // Class used to group scoped objects used in the Full GC together.
 class G1FullGCScope : public StackObj {
   ResourceMark            _rm;
@@ -54,7 +56,7 @@ class G1FullGCScope : public StackObj {
   G1HeapTransition        _heap_transition;
 
 public:
-  G1FullGCScope(bool explicit_gc, bool clear_soft);
+  G1FullGCScope(GCMemoryManager* memory_manager, bool explicit_gc, bool clear_soft);
   ~G1FullGCScope();
 
   bool is_explicit_gc();

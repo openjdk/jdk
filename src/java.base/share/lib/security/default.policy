@@ -155,7 +155,10 @@ grant codeBase "jrt:/jdk.internal.vm.compiler" {
 };
 
 grant codeBase "jrt:/jdk.internal.vm.compiler.management" {
-    permission java.security.AllPermission;
+    permission java.lang.RuntimePermission "accessClassInPackage.org.graalvm.compiler.hotspot";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.vm.ci.runtime";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.management.spi";
+    permission java.lang.RuntimePermission "sun.management.spi.PlatformMBeanProvider.subclass";
 };
 
 grant codeBase "jrt:/jdk.jsobject" {

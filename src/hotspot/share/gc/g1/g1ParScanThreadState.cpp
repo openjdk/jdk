@@ -32,6 +32,7 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 
@@ -390,3 +391,21 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {
   }
 }
 
+G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h, uint n_workers, size_t young_cset_length) :
+    _g1h(g1h),
+    _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, n_workers, mtGC)),
+    _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, young_cset_length, mtGC)),
+    _young_cset_length(young_cset_length),
+    _n_workers(n_workers),
+    _flushed(false) {
+  for (uint i = 0; i < n_workers; ++i) {
+    _states[i] = NULL;
+  }
+  memset(_surviving_young_words_total, 0, young_cset_length * sizeof(size_t));
+}
+
+G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
+  assert(_flushed, "thread local state from the per thread states should have been flushed");
+  FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
+  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
+}

@@ -106,7 +106,12 @@ public class CompilationWrapperTest extends GraalCompilerTest {
         final int maxProblems = 4;
         Probe[] probes = {
                         new Probe("To capture more information for diagnosing or reporting a compilation", maxProblems),
-                        new Probe("Retrying compilation of", maxProblems),
+                        new Probe("Retrying compilation of", maxProblems) {
+                            @Override
+                            String test() {
+                                return actualOccurrences > 0 && actualOccurrences <= maxProblems ? null : String.format("expected occurrences to be in [1 .. %d]", maxProblems);
+                            }
+                        },
                         new Probe("adjusting CompilationFailureAction from Diagnose to Print", 1),
                         new Probe("adjusting CompilationFailureAction from Print to Silent", 1),
         };

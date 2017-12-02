@@ -39,6 +39,7 @@ import org.graalvm.compiler.nodes.GuardProxyNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -460,7 +461,7 @@ public abstract class LoopFragment {
                 if (newVpn != null) {
                     PhiNode phi;
                     if (vpn instanceof ValueProxyNode) {
-                        phi = graph.addWithoutUnique(new ValuePhiNode(vpn.stamp(), merge));
+                        phi = graph.addWithoutUnique(new ValuePhiNode(vpn.stamp(NodeView.DEFAULT), merge));
                     } else if (vpn instanceof GuardProxyNode) {
                         phi = graph.addWithoutUnique(new GuardPhiNode(merge));
                     } else {

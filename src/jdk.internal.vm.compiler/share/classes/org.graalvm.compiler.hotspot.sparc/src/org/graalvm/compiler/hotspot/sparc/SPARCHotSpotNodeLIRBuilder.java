@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.FullInfopointNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.SafepointNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -84,7 +85,8 @@ public class SPARCHotSpotNodeLIRBuilder extends SPARCNodeLIRBuilder implements H
     @Override
     public void visitSafepointNode(SafepointNode i) {
         LIRFrameState info = state(i);
-        append(new SPARCHotSpotSafepointOp(info, getGen().config, gen));
+        Register thread = getGen().getProviders().getRegisters().getThreadRegister();
+        append(new SPARCHotSpotSafepointOp(info, getGen().config, thread, gen));
     }
 
     @Override
@@ -141,9 +143,7 @@ public class SPARCHotSpotNodeLIRBuilder extends SPARCNodeLIRBuilder implements H
     @Override
     protected void emitPrologue(StructuredGraph graph) {
         super.emitPrologue(graph);
-        AllocatableValue var = getGen().getSafepointAddressValue();
-        append(new SPARCHotSpotSafepointOp.SPARCLoadSafepointPollAddress(var, getGen().config));
-        getGen().append(((HotSpotDebugInfoBuilder) getDebugInfoBuilder()).lockStack());
+        SPARCHotSpotSafepointOp.emitPrologue(this, getGen());
     }
 
     @Override
@@ -159,7 +159,7 @@ public class SPARCHotSpotNodeLIRBuilder extends SPARCNodeLIRBuilder implements H
     public void visitBreakpointNode(BreakpointNode node) {
         JavaType[] sig = new JavaType[node.arguments().size()];
         for (int i = 0; i < sig.length; i++) {
-            sig[i] = node.arguments().get(i).stamp().javaType(gen.getMetaAccess());
+            sig[i] = node.arguments().get(i).stamp(NodeView.DEFAULT).javaType(gen.getMetaAccess());
         }
 
         Value[] parameters = visitInvokeArguments(gen.getRegisterConfig().getCallingConvention(HotSpotCallingConventionType.JavaCall, null, sig, gen), node.arguments());

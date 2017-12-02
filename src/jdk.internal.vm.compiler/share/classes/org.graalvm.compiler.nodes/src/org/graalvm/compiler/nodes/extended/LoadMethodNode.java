@@ -35,6 +35,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -96,8 +97,9 @@ public final class LoadMethodNode extends FixedWithNextNode implements Lowerable
                 Assumptions assumptions = graph().getAssumptions();
                 AssumptionResult<ResolvedJavaMethod> resolvedMethod = type.getType().findUniqueConcreteMethod(method);
                 if (resolvedMethod != null && resolvedMethod.canRecordTo(assumptions) && !type.getType().isInterface() && method.getDeclaringClass().isAssignableFrom(type.getType())) {
+                    NodeView view = NodeView.from(tool);
                     resolvedMethod.recordTo(assumptions);
-                    return ConstantNode.forConstant(stamp(), resolvedMethod.getResult().getEncoding(), tool.getMetaAccess());
+                    return ConstantNode.forConstant(stamp(view), resolvedMethod.getResult().getEncoding(), tool.getMetaAccess());
                 }
             }
         }
@@ -123,9 +125,9 @@ public final class LoadMethodNode extends FixedWithNextNode implements Lowerable
              * This really represent a misuse of LoadMethod since we're loading from a class which
              * isn't known to implement the original method but for now at least fold it away.
              */
-            return ConstantNode.forConstant(stamp(), JavaConstant.NULL_POINTER, null);
+            return ConstantNode.forConstant(stamp(NodeView.DEFAULT), JavaConstant.NULL_POINTER, null);
         } else {
-            return ConstantNode.forConstant(stamp(), newMethod.getEncoding(), tool.getMetaAccess());
+            return ConstantNode.forConstant(stamp(NodeView.DEFAULT), newMethod.getEncoding(), tool.getMetaAccess());
         }
     }
 

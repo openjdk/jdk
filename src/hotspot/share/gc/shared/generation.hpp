@@ -58,6 +58,7 @@
 //
 
 class DefNewGeneration;
+class GCMemoryManager;
 class GenerationSpec;
 class CompactibleSpace;
 class ContiguousSpace;
@@ -85,6 +86,8 @@ class Generation: public CHeapObj<mtGC> {
   jlong _time_of_last_gc; // time when last gc on this generation happened (ms)
   MemRegion _prev_used_region; // for collectors that want to "remember" a value for
                                // used region at some specific point during collection.
+
+  GCMemoryManager* _gc_manager;
 
  protected:
   // Minimum and maximum addresses for memory reserved (not necessarily
@@ -554,6 +557,16 @@ public:
   // Performance Counter support
   virtual void update_counters() = 0;
   virtual CollectorCounters* counters() { return _gc_counters; }
+
+  GCMemoryManager* gc_manager() const {
+    assert(_gc_manager != NULL, "not initialized yet");
+    return _gc_manager;
+  }
+
+  void set_gc_manager(GCMemoryManager* gc_manager) {
+    _gc_manager = gc_manager;
+  }
+
 };
 
 #endif // SHARE_VM_GC_SHARED_GENERATION_HPP

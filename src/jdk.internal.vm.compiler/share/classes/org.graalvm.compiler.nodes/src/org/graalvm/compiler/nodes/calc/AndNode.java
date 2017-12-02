@@ -34,6 +34,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -51,14 +52,14 @@ public final class AndNode extends BinaryArithmeticNode<And> implements Narrowab
         super(TYPE, ArithmeticOpTable::getAnd, x, y);
     }
 
-    public static ValueNode create(ValueNode x, ValueNode y) {
-        BinaryOp<And> op = ArithmeticOpTable.forStamp(x.stamp()).getAnd();
-        Stamp stamp = op.foldStamp(x.stamp(), y.stamp());
-        ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp);
+    public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
+        BinaryOp<And> op = ArithmeticOpTable.forStamp(x.stamp(view)).getAnd();
+        Stamp stamp = op.foldStamp(x.stamp(view), y.stamp(view));
+        ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp, view);
         if (tryConstantFold != null) {
             return tryConstantFold;
         }
-        return canonical(null, op, stamp, x, y);
+        return canonical(null, op, stamp, x, y, view);
     }
 
     @Override
@@ -68,10 +69,11 @@ public final class AndNode extends BinaryArithmeticNode<And> implements Narrowab
             return ret;
         }
 
-        return canonical(this, getOp(forX, forY), stamp(), forX, forY);
+        NodeView view = NodeView.from(tool);
+        return canonical(this, getOp(forX, forY), stamp(view), forX, forY, view);
     }
 
-    private static ValueNode canonical(AndNode self, BinaryOp<And> op, Stamp stamp, ValueNode forX, ValueNode forY) {
+    private static ValueNode canonical(AndNode self, BinaryOp<And> op, Stamp stamp, ValueNode forX, ValueNode forY, NodeView view) {
         if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
             return forX;
         }
@@ -96,17 +98,17 @@ public final class AndNode extends BinaryArithmeticNode<And> implements Narrowab
                         return new ZeroExtendNode(ext.getValue(), ext.getResultBits());
                     }
                 }
-                IntegerStamp xStamp = (IntegerStamp) forX.stamp();
+                IntegerStamp xStamp = (IntegerStamp) forX.stamp(view);
                 if (((xStamp.upMask() | xStamp.downMask()) & ~rawY) == 0) {
                     // No bits are set which are outside the mask, so the mask will have no effect.
                     return forX;
                 }
             }
 
-            return reassociate(self != null ? self : (AndNode) new AndNode(forX, forY).maybeCommuteInputs(), ValueNode.isConstantPredicate(), forX, forY);
+            return reassociate(self != null ? self : (AndNode) new AndNode(forX, forY).maybeCommuteInputs(), ValueNode.isConstantPredicate(), forX, forY, view);
         }
         if (forX instanceof NotNode && forY instanceof NotNode) {
-            return new NotNode(OrNode.create(((NotNode) forX).getValue(), ((NotNode) forY).getValue()));
+            return new NotNode(OrNode.create(((NotNode) forX).getValue(), ((NotNode) forY).getValue(), view));
         }
         return self != null ? self : new AndNode(forX, forY).maybeCommuteInputs();
     }

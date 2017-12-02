@@ -33,6 +33,7 @@ import org.graalvm.compiler.lir.amd64.AMD64ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
@@ -50,7 +51,7 @@ public final class AMD64CountTrailingZerosNode extends UnaryNode implements Arit
     public static final NodeClass<AMD64CountTrailingZerosNode> TYPE = NodeClass.create(AMD64CountTrailingZerosNode.class);
 
     public AMD64CountTrailingZerosNode(ValueNode value) {
-        super(TYPE, computeStamp(value.stamp(), value), value);
+        super(TYPE, computeStamp(value.stamp(NodeView.DEFAULT), value), value);
         assert value.getStackKind() == JavaKind.Int || value.getStackKind() == JavaKind.Long;
     }
 
@@ -60,7 +61,7 @@ public final class AMD64CountTrailingZerosNode extends UnaryNode implements Arit
     }
 
     static Stamp computeStamp(Stamp newStamp, ValueNode value) {
-        assert newStamp.isCompatible(value.stamp());
+        assert newStamp.isCompatible(value.stamp(NodeView.DEFAULT));
         IntegerStamp valueStamp = (IntegerStamp) newStamp;
         return StampTool.stampForTrailingZeros(valueStamp);
     }

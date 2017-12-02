@@ -111,6 +111,8 @@ class MulNode;
 class MultiNode;
 class MultiBranchNode;
 class NeverBranchNode;
+class OuterStripMinedLoopNode;
+class OuterStripMinedLoopEndNode;
 class Node;
 class Node_Array;
 class Node_List;
@@ -623,8 +625,9 @@ public:
           DEFINE_CLASS_ID(Catch,       PCTable, 0)
           DEFINE_CLASS_ID(Jump,        PCTable, 1)
         DEFINE_CLASS_ID(If,          MultiBranch, 1)
-          DEFINE_CLASS_ID(CountedLoopEnd, If, 0)
-          DEFINE_CLASS_ID(RangeCheck, If, 1)
+          DEFINE_CLASS_ID(CountedLoopEnd,         If, 0)
+          DEFINE_CLASS_ID(RangeCheck,             If, 1)
+          DEFINE_CLASS_ID(OuterStripMinedLoopEnd, If, 2)
         DEFINE_CLASS_ID(NeverBranch, MultiBranch, 2)
       DEFINE_CLASS_ID(Start,       Multi, 2)
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
@@ -684,8 +687,9 @@ public:
 
     DEFINE_CLASS_ID(Region, Node, 5)
       DEFINE_CLASS_ID(Loop, Region, 0)
-        DEFINE_CLASS_ID(Root,        Loop, 0)
-        DEFINE_CLASS_ID(CountedLoop, Loop, 1)
+        DEFINE_CLASS_ID(Root,                Loop, 0)
+        DEFINE_CLASS_ID(CountedLoop,         Loop, 1)
+        DEFINE_CLASS_ID(OuterStripMinedLoop, Loop, 2)
 
     DEFINE_CLASS_ID(Sub,   Node, 6)
       DEFINE_CLASS_ID(Cmp,   Sub, 0)
@@ -841,6 +845,8 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(OuterStripMinedLoop)
+  DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)
   DEFINE_CLASS_QUERY(PCTable)
   DEFINE_CLASS_QUERY(Phi)

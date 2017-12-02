@@ -27,6 +27,7 @@ import static org.graalvm.compiler.loop.MathUtil.mul;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.IntegerConvertNode;
 import org.graalvm.compiler.nodes.calc.NegateNode;
@@ -45,7 +46,7 @@ public class DerivedScaledInductionVariable extends DerivedInductionVariable {
 
     public DerivedScaledInductionVariable(LoopEx loop, InductionVariable base, NegateNode value) {
         super(loop, base);
-        this.scale = ConstantNode.forIntegerStamp(value.stamp(), -1, value.graph());
+        this.scale = ConstantNode.forIntegerStamp(value.stamp(NodeView.DEFAULT), -1, value.graph());
         this.value = value;
     }
 
@@ -60,7 +61,7 @@ public class DerivedScaledInductionVariable extends DerivedInductionVariable {
 
     @Override
     public Direction direction() {
-        Stamp stamp = scale.stamp();
+        Stamp stamp = scale.stamp(NodeView.DEFAULT);
         if (stamp instanceof IntegerStamp) {
             IntegerStamp integerStamp = (IntegerStamp) stamp;
             if (integerStamp.isStrictlyPositive()) {
@@ -104,7 +105,7 @@ public class DerivedScaledInductionVariable extends DerivedInductionVariable {
 
     @Override
     public ValueNode extremumNode(boolean assumePositiveTripCount, Stamp stamp) {
-        return mul(graph(), base.extremumNode(assumePositiveTripCount, stamp), IntegerConvertNode.convert(scale, stamp, graph()));
+        return mul(graph(), base.extremumNode(assumePositiveTripCount, stamp), IntegerConvertNode.convert(scale, stamp, graph(), NodeView.DEFAULT));
     }
 
     @Override

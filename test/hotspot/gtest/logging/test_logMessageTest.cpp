@@ -27,6 +27,7 @@
 #include "logTestUtils.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
+#include "memory/allocation.inline.hpp"
 #include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
 

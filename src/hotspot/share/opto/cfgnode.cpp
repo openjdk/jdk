@@ -571,6 +571,18 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return NULL;
     } else if (can_reshape) {   // Optimization phase - remove the node
       PhaseIterGVN *igvn = phase->is_IterGVN();
+      // Strip mined (inner) loop is going away, remove outer loop.
+      if (is_CountedLoop() &&
+          as_Loop()->is_strip_mined()) {
+        Node* outer_sfpt = as_CountedLoop()->outer_safepoint();
+        Node* outer_out = as_CountedLoop()->outer_loop_exit();
+        if (outer_sfpt != NULL && outer_out != NULL) {
+          Node* in = outer_sfpt->in(0);
+          igvn->replace_node(outer_out, in);
+          LoopNode* outer = as_CountedLoop()->outer_loop();
+          igvn->replace_input_of(outer, LoopNode::LoopBackControl, igvn->C->top());
+        }
+      }
       Node *parent_ctrl;
       if( cnt == 0 ) {
         assert( req() == 1, "no inputs expected" );

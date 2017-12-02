@@ -60,6 +60,7 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
 import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
@@ -478,7 +479,7 @@ public class AMD64NodeMatchRules extends NodeMatchRules {
     @MatchRule("(Write object Narrow=narrow)")
     public ComplexMatchResult writeNarrow(WriteNode root, NarrowNode narrow) {
         return builder -> {
-            LIRKind writeKind = getLIRGeneratorTool().getLIRKind(root.value().stamp());
+            LIRKind writeKind = getLIRGeneratorTool().getLIRKind(root.value().stamp(NodeView.DEFAULT));
             getArithmeticLIRGenerator().emitStore(writeKind, operand(root.getAddress()), operand(narrow.getValue()), state(root));
             return null;
         };
@@ -504,10 +505,10 @@ public class AMD64NodeMatchRules extends NodeMatchRules {
             @Override
             public Value evaluate(NodeLIRBuilder builder) {
                 AMD64AddressValue address = (AMD64AddressValue) operand(access.getAddress());
-                LIRKind addressKind = LIRKind.combineDerived(getLIRGeneratorTool().getLIRKind(root.asNode().stamp()),
+                LIRKind addressKind = LIRKind.combineDerived(getLIRGeneratorTool().getLIRKind(root.asNode().stamp(NodeView.DEFAULT)),
                                 address.getBase(), address.getIndex());
                 AMD64AddressValue newAddress = address.withKind(addressKind);
-                LIRKind readKind = getLIRGeneratorTool().getLIRKind(root.stamp());
+                LIRKind readKind = getLIRGeneratorTool().getLIRKind(root.stamp(NodeView.DEFAULT));
                 return getArithmeticLIRGenerator().emitZeroExtendMemory((AMD64Kind) readKind.getPlatformKind(),
                                 root.getResultBits(), newAddress, getState(access));
             }
@@ -517,7 +518,7 @@ public class AMD64NodeMatchRules extends NodeMatchRules {
     @MatchRule("(SignExtend (Narrow=narrow Read=access))")
     @MatchRule("(SignExtend (Narrow=narrow FloatingRead=access))")
     public ComplexMatchResult signExtendNarrowRead(SignExtendNode root, NarrowNode narrow, LIRLowerableAccess access) {
-        LIRKind kind = getLIRGeneratorTool().getLIRKind(narrow.stamp());
+        LIRKind kind = getLIRGeneratorTool().getLIRKind(narrow.stamp(NodeView.DEFAULT));
         return emitSignExtendMemory(access, narrow.getResultBits(), root.getResultBits(), kind);
     }
 
@@ -554,7 +555,7 @@ public class AMD64NodeMatchRules extends NodeMatchRules {
     @MatchRule("(Reinterpret FloatingRead=access)")
     public ComplexMatchResult reinterpret(ReinterpretNode root, LIRLowerableAccess access) {
         return builder -> {
-            LIRKind kind = getLIRGeneratorTool().getLIRKind(root.stamp());
+            LIRKind kind = getLIRGeneratorTool().getLIRKind(root.stamp(NodeView.DEFAULT));
             return emitReinterpretMemory(kind, access);
         };
 
@@ -563,7 +564,7 @@ public class AMD64NodeMatchRules extends NodeMatchRules {
     @MatchRule("(Write object Reinterpret=reinterpret)")
     public ComplexMatchResult writeReinterpret(WriteNode root, ReinterpretNode reinterpret) {
         return builder -> {
-            LIRKind kind = getLIRGeneratorTool().getLIRKind(reinterpret.getValue().stamp());
+            LIRKind kind = getLIRGeneratorTool().getLIRKind(reinterpret.getValue().stamp(NodeView.DEFAULT));
             AllocatableValue value = getLIRGeneratorTool().asAllocatable(operand(reinterpret.getValue()));
 
             AMD64AddressValue address = (AMD64AddressValue) operand(root.getAddress());

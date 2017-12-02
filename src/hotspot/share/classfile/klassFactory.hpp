@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_KLASSFACTORY_HPP
 #define SHARE_VM_CLASSFILE_KLASSFACTORY_HPP
 
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
 
 class ClassFileStream;

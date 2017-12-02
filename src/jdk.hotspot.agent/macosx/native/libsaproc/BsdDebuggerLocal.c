@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,9 +298,6 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_
 #ifdef i386
 #define NPRGREG sun_jvm_hotspot_debugger_x86_X86ThreadContext_NPRGREG
 #endif
-#ifdef ia64
-#define NPRGREG IA64_REG_COUNT
-#endif
 #ifdef amd64
 #define NPRGREG sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_NPRGREG
 #endif
@@ -334,14 +331,6 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_
   regs[REG_INDEX(SS)]  = (uintptr_t) gregs.r_ss;
 
 #endif /* i386 */
-
-#if ia64
-  regs = (*env)->GetLongArrayElements(env, array, &isCopy);
-  int i;
-  for (i = 0; i < NPRGREG; i++ ) {
-    regs[i] = 0xDEADDEAD;
-  }
-#endif /* ia64 */
 
 #ifdef amd64
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_##reg

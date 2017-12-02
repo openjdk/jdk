@@ -32,6 +32,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
+#include "runtime/perfData.inline.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/vm_version.hpp"
 

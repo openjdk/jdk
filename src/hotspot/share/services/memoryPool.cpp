@@ -25,8 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/shared/space.hpp"
 #include "memory/metaspace.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -38,9 +36,6 @@
 #include "services/memoryPool.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/cms/compactibleFreeListSpace.hpp"
-#endif
 
 MemoryPool::MemoryPool(const char* name,
                        PoolType type,
@@ -180,95 +175,6 @@ void MemoryPool::oops_do(OopClosure* f) {
   if (_gc_usage_sensor != NULL) {
     _gc_usage_sensor->oops_do(f);
   }
-}
-
-ContiguousSpacePool::ContiguousSpacePool(ContiguousSpace* space,
-                                         const char* name,
-                                         PoolType type,
-                                         size_t max_size,
-                                         bool support_usage_threshold) :
-  CollectedMemoryPool(name, type, space->capacity(), max_size,
-                      support_usage_threshold), _space(space) {
-}
-
-size_t ContiguousSpacePool::used_in_bytes() {
-  return space()->used();
-}
-
-MemoryUsage ContiguousSpacePool::get_memory_usage() {
-  size_t maxSize   = (available_for_allocation() ? max_size() : 0);
-  size_t used      = used_in_bytes();
-  size_t committed = _space->capacity();
-
-  return MemoryUsage(initial_size(), used, committed, maxSize);
-}
-
-SurvivorContiguousSpacePool::SurvivorContiguousSpacePool(DefNewGeneration* young_gen,
-                                                         const char* name,
-                                                         PoolType type,
-                                                         size_t max_size,
-                                                         bool support_usage_threshold) :
-  CollectedMemoryPool(name, type, young_gen->from()->capacity(), max_size,
-                      support_usage_threshold), _young_gen(young_gen) {
-}
-
-size_t SurvivorContiguousSpacePool::used_in_bytes() {
-  return _young_gen->from()->used();
-}
-
-size_t SurvivorContiguousSpacePool::committed_in_bytes() {
-  return _young_gen->from()->capacity();
-}
-
-MemoryUsage SurvivorContiguousSpacePool::get_memory_usage() {
-  size_t maxSize = (available_for_allocation() ? max_size() : 0);
-  size_t used    = used_in_bytes();
-  size_t committed = committed_in_bytes();
-
-  return MemoryUsage(initial_size(), used, committed, maxSize);
-}
-
-#if INCLUDE_ALL_GCS
-CompactibleFreeListSpacePool::CompactibleFreeListSpacePool(CompactibleFreeListSpace* space,
-                                                           const char* name,
-                                                           PoolType type,
-                                                           size_t max_size,
-                                                           bool support_usage_threshold) :
-  CollectedMemoryPool(name, type, space->capacity(), max_size,
-                      support_usage_threshold), _space(space) {
-}
-
-size_t CompactibleFreeListSpacePool::used_in_bytes() {
-  return _space->used();
-}
-
-MemoryUsage CompactibleFreeListSpacePool::get_memory_usage() {
-  size_t maxSize   = (available_for_allocation() ? max_size() : 0);
-  size_t used      = used_in_bytes();
-  size_t committed = _space->capacity();
-
-  return MemoryUsage(initial_size(), used, committed, maxSize);
-}
-#endif // INCLUDE_ALL_GCS
-
-GenerationPool::GenerationPool(Generation* gen,
-                               const char* name,
-                               PoolType type,
-                               bool support_usage_threshold) :
-  CollectedMemoryPool(name, type, gen->capacity(), gen->max_capacity(),
-                      support_usage_threshold), _gen(gen) {
-}
-
-size_t GenerationPool::used_in_bytes() {
-  return _gen->used();
-}
-
-MemoryUsage GenerationPool::get_memory_usage() {
-  size_t used      = used_in_bytes();
-  size_t committed = _gen->capacity();
-  size_t maxSize   = (available_for_allocation() ? max_size() : 0);
-
-  return MemoryUsage(initial_size(), used, committed, maxSize);
 }
 
 CodeHeapPool::CodeHeapPool(CodeHeap* codeHeap, const char* name, bool support_usage_threshold) :

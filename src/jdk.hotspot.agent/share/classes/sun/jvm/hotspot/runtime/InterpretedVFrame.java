@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,8 +108,8 @@ public class InterpretedVFrame extends JavaVFrame {
   }
 
   /** Returns List<MonitorInfo> */
-  public List   getMonitors() {
-    List result = new ArrayList(5);
+  public List<MonitorInfo> getMonitors() {
+    List<MonitorInfo> result = new ArrayList<>(5);
     for (BasicObjectLock current = getFrame().interpreterFrameMonitorEnd();
          current.address().lessThan(getFrame().interpreterFrameMonitorBegin().address());
          current = getFrame().nextMonitorInInterpreterFrame(current)) {

@@ -66,6 +66,7 @@ import org.graalvm.compiler.hotspot.nodes.SerialArrayRangeWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.SerialWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.VMErrorNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.FixedValueAnchorNode;
@@ -447,7 +448,7 @@ public class WriteBarrierSnippets implements Snippets {
             }
 
             ValueNode expected = writeBarrierPre.getExpectedObject();
-            if (expected != null && expected.stamp() instanceof NarrowOopStamp) {
+            if (expected != null && expected.stamp(NodeView.DEFAULT) instanceof NarrowOopStamp) {
                 assert oopEncoding != null;
                 expected = HotSpotCompressionNode.uncompress(expected, oopEncoding);
             }
@@ -472,7 +473,7 @@ public class WriteBarrierSnippets implements Snippets {
             }
 
             ValueNode expected = readBarrier.getExpectedObject();
-            if (expected != null && expected.stamp() instanceof NarrowOopStamp) {
+            if (expected != null && expected.stamp(NodeView.DEFAULT) instanceof NarrowOopStamp) {
                 assert oopEncoding != null;
                 expected = HotSpotCompressionNode.uncompress(expected, oopEncoding);
             }
@@ -503,7 +504,7 @@ public class WriteBarrierSnippets implements Snippets {
             }
 
             ValueNode value = writeBarrierPost.getValue();
-            if (value.stamp() instanceof NarrowOopStamp) {
+            if (value.stamp(NodeView.DEFAULT) instanceof NarrowOopStamp) {
                 assert oopEncoding != null;
                 value = HotSpotCompressionNode.uncompress(value, oopEncoding);
             }

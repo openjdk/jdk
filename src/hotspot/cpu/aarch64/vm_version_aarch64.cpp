@@ -394,4 +394,6 @@ void VM_Version::initialize() {
                                    g.generate_getPsrInfo());
 
   get_processor_features();
+
+  UNSUPPORTED_OPTION(CriticalJNINatives);
 }

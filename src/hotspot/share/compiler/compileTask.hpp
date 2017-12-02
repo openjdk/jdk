@@ -25,10 +25,10 @@
 #ifndef SHARE_VM_COMPILER_COMPILETASK_HPP
 #define SHARE_VM_COMPILER_COMPILETASK_HPP
 
-#include "code/nmethod.hpp"
 #include "ci/ciMethod.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/compileLog.hpp"
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "utilities/xmlstream.hpp"
 
 // CompileTask

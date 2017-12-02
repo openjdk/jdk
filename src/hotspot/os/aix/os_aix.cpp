@@ -2490,6 +2490,22 @@ bool os::can_execute_large_page_memory() {
   return false;
 }
 
+char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int file_desc) {
+  assert(file_desc >= 0, "file_desc is not valid");
+  char* result = NULL;
+
+  // Always round to os::vm_page_size(), which may be larger than 4K.
+  bytes = align_up(bytes, os::vm_page_size());
+  result = reserve_mmaped_memory(bytes, requested_addr, 0);
+
+  if (result != NULL) {
+    if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == NULL) {
+      vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
+    }
+  }
+  return result;
+}
+
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {

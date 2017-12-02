@@ -36,6 +36,7 @@ import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.AbstractMemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
@@ -61,7 +62,7 @@ public class InitializeKlassStubCall extends AbstractMemoryCheckpoint implements
     protected Constant constant;
 
     protected InitializeKlassStubCall(ValueNode value, ValueNode string) {
-        super(TYPE, value.stamp());
+        super(TYPE, value.stamp(NodeView.DEFAULT));
         this.value = value;
         this.string = string;
     }

@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_STRINGTABLE_HPP
 #define SHARE_VM_CLASSFILE_STRINGTABLE_HPP
 
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "utilities/hashtable.hpp"
 
 template <class T, class N> class CompactHashtable;

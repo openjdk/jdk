@@ -46,6 +46,7 @@
 #include "runtime/serviceThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vm_operations.hpp"
@@ -878,10 +879,9 @@ bool JvmtiSuspendControl::resume(JavaThread *java_thread) {
 
 void JvmtiSuspendControl::print() {
 #ifndef PRODUCT
-  MutexLocker mu(Threads_lock);
   LogStreamHandle(Trace, jvmti) log_stream;
   log_stream.print("Suspended Threads: [");
-  for (JavaThread *thread = Threads::first(); thread != NULL; thread = thread->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
 #ifdef JVMTI_TRACE
     const char *name   = JvmtiTrace::safe_get_thread_name(thread);
 #else

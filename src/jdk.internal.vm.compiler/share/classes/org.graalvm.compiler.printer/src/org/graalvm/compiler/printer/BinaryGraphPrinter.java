@@ -92,7 +92,7 @@ public class BinaryGraphPrinter implements
 
     @Override
     public void beginGroup(DebugContext debug, String name, String shortName, ResolvedJavaMethod method, int bci, Map<Object, Object> properties) throws IOException {
-        output.beginGroup(new GraphInfo(debug, null), name, shortName, method, bci, properties);
+        output.beginGroup(new GraphInfo(debug, null), name, shortName, method, bci, DebugContext.addVersionProperties(properties));
     }
 
     @Override

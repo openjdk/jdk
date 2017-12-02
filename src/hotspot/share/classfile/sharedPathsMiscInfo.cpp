@@ -34,6 +34,18 @@
 #include "runtime/arguments.hpp"
 #include "utilities/ostream.hpp"
 
+SharedPathsMiscInfo::SharedPathsMiscInfo() {
+  _buf_size = INITIAL_BUF_SIZE;
+  _cur_ptr = _buf_start = NEW_C_HEAP_ARRAY(char, _buf_size, mtClass);
+  _allocated = true;
+}
+
+SharedPathsMiscInfo::~SharedPathsMiscInfo() {
+  if (_allocated) {
+    FREE_C_HEAP_ARRAY(char, _buf_start);
+  }
+}
+
 void SharedPathsMiscInfo::add_path(const char* path, int type) {
   log_info(class, path)("type=%s ", type_name(type));
   ClassLoader::trace_class_path("add misc shared path ", path);
@@ -127,7 +139,8 @@ bool SharedPathsMiscInfo::check() {
 bool SharedPathsMiscInfo::check(jint type, const char* path) {
   switch (type) {
   case BOOT:
-    if (os::file_name_strcmp(path, Arguments::get_sysclasspath()) != 0) {
+    // In the future we should perform the check based on the content of the mapped archive.
+    if (UseAppCDS && os::file_name_strcmp(path, Arguments::get_sysclasspath()) != 0) {
       return fail("[BOOT classpath mismatch, actual =", Arguments::get_sysclasspath());
     }
     break;

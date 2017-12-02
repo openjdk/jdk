@@ -740,6 +740,14 @@
                                                                             \
   develop(bool, RenumberLiveNodes, true,                                    \
           "Renumber live nodes")                                            \
+                                                                            \
+  product(uintx, LoopStripMiningIter, 0,                                    \
+          "Number of iterations in strip mined loop")                       \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uintx, LoopStripMiningIterShortLoop, 0,                           \
+          "Loop with fewer iterations are not strip mined")                 \
+          range(0, max_juint)                                               \
 
 C2_FLAGS(DECLARE_DEVELOPER_FLAG, \
          DECLARE_PD_DEVELOPER_FLAG, \

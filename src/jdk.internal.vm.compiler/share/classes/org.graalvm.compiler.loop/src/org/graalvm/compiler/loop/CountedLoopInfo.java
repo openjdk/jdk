@@ -33,6 +33,7 @@ import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.GuardNode;
 import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
@@ -69,7 +70,7 @@ public class CountedLoopInfo {
 
     public ValueNode maxTripCountNode(boolean assumePositive) {
         StructuredGraph graph = iv.valueNode().graph();
-        Stamp stamp = iv.valueNode().stamp();
+        Stamp stamp = iv.valueNode().stamp(NodeView.DEFAULT);
         ValueNode range = sub(graph, end, iv.initNode());
 
         ValueNode oneDirection;
@@ -84,7 +85,7 @@ public class CountedLoopInfo {
         }
         // round-away-from-zero divison: (range + stride -/+ 1) / stride
         ValueNode denominator = range;
-        if (!oneDirection.stamp().equals(iv.strideNode().stamp())) {
+        if (!oneDirection.stamp(NodeView.DEFAULT).equals(iv.strideNode().stamp(NodeView.DEFAULT))) {
             ValueNode subedRanged = sub(graph, range, oneDirection);
             denominator = add(graph, subedRanged, iv.strideNode());
         }
@@ -204,7 +205,7 @@ public class CountedLoopInfo {
         if (overflowGuard != null) {
             return overflowGuard;
         }
-        IntegerStamp stamp = (IntegerStamp) iv.valueNode().stamp();
+        IntegerStamp stamp = (IntegerStamp) iv.valueNode().stamp(NodeView.DEFAULT);
         StructuredGraph graph = iv.valueNode().graph();
         CompareNode cond; // we use a negated guard with a < condition to achieve a >=
         ConstantNode one = ConstantNode.forIntegerStamp(stamp, 1, graph);
@@ -230,6 +231,6 @@ public class CountedLoopInfo {
     }
 
     public IntegerStamp getStamp() {
-        return (IntegerStamp) iv.valueNode().stamp();
+        return (IntegerStamp) iv.valueNode().stamp(NodeView.DEFAULT);
     }
 }

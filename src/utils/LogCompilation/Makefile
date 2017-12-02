@@ -25,7 +25,7 @@ PKGLIST = \
 com.sun.hotspot.tools.compiler
 #END PKGLIST
 
-FILELIST = com/sun/hotspot/tools/compiler/*.java
+FILELIST = main/java/com/sun/hotspot/tools/compiler/*.java
 
 ifneq "x$(ALT_BOOTDIR)" "x"
   BOOTDIR := $(ALT_BOOTDIR)

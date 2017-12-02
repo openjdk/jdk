@@ -1102,7 +1102,7 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   }
 
   if (isomorphic(s1, s2)) {
-    if (independent(s1, s2) || reduction(s1, s2)) {
+    if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
       if (!exists_at(s1, 0) && !exists_at(s2, 1)) {
         if (!s1->is_Mem() || are_adjacent_refs(s1, s2)) {
           int s1_align = alignment(s1);
@@ -1178,6 +1178,20 @@ bool SuperWord::independent(Node* s1, Node* s2) {
   visited_clear();
 
   return independent_path(shallow, deep);
+}
+
+//--------------------------have_similar_inputs-----------------------
+// For a node pair (s1, s2) which is isomorphic and independent,
+// do s1 and s2 have similar input edges?
+bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
+  // assert(isomorphic(s1, s2) == true, "check isomorphic");
+  // assert(independent(s1, s2) == true, "check independent");
+  if (s1->req() > 1 && !s1->is_Store() && !s1->is_Load()) {
+    for (uint i = 1; i < s1->req(); i++) {
+      if (s1->in(i)->Opcode() != s2->in(i)->Opcode()) return false;
+    }
+  }
+  return true;
 }
 
 //------------------------------reduction---------------------------
@@ -1339,6 +1353,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
     for (DUIterator_Fast jmax, j = s2->fast_outs(jmax); j < jmax; j++) {
       Node* t2 = s2->fast_out(j);
       if (!in_bb(t2)) continue;
+      if (t2->Opcode() == Op_AddI && t2 == _lp->as_CountedLoop()->incr()) continue; // don't mess with the iv
       if (!opnd_positions_match(s1, t1, s2, t2))
         continue;
       if (stmts_can_pack(t1, t2, align)) {
@@ -2307,7 +2322,7 @@ void SuperWord::output() {
           vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
           vlen_in_bytes = vn->as_Vector()->length_in_bytes();
         }
-      } else if (opc == Op_SqrtD || opc == Op_AbsF || opc == Op_AbsD || opc == Op_NegF || opc == Op_NegD) {
+      } else if (opc == Op_SqrtF || opc == Op_SqrtD || opc == Op_AbsF || opc == Op_AbsD || opc == Op_NegF || opc == Op_NegD) {
         // Promote operand to vector (Sqrt/Abs/Neg are 2 address instructions)
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
@@ -3299,7 +3314,7 @@ CountedLoopEndNode* SuperWord::get_pre_loop_end(CountedLoopNode* cl) {
     return NULL;
   }
 
-  Node* p_f = cl->in(LoopNode::EntryControl)->in(0)->in(0);
+  Node* p_f = cl->skip_strip_mined()->in(LoopNode::EntryControl)->in(0)->in(0);
   if (!p_f->is_IfFalse()) return NULL;
   if (!p_f->in(0)->is_CountedLoopEnd()) return NULL;
   CountedLoopEndNode* pre_end = p_f->in(0)->as_CountedLoopEnd();

@@ -3388,26 +3388,29 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // No exception case
   __ bind(noException);
 
-  Label no_adjust, bail;
+  Label no_adjust, bail, no_prefix;
   if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
     // If our stashed return pc was modified by the runtime we avoid touching it
     __ cmpptr(rbx, Address(rbp, wordSize));
     __ jccb(Assembler::notEqual, no_adjust);
 
-#ifdef ASSERT
     // Verify the correct encoding of the poll we're about to skip.
     // See NativeInstruction::is_safepoint_poll()
     __ cmpb(Address(rbx, 0), NativeTstRegMem::instruction_rex_b_prefix);
-    __ jcc(Assembler::notEqual, bail);
-    __ cmpb(Address(rbx, 1), NativeTstRegMem::instruction_code_memXregl);
+    __ jcc(Assembler::notEqual, no_prefix);
+    __ addptr(rbx, 1);
+    __ bind(no_prefix);
+#ifdef ASSERT
+    __ cmpb(Address(rbx, 0), NativeTstRegMem::instruction_code_memXregl);
     __ jcc(Assembler::notEqual, bail);
     // Mask out the modrm bits
-    __ testb(Address(rbx, 2), NativeTstRegMem::modrm_mask);
+    __ testb(Address(rbx, 1), NativeTstRegMem::modrm_mask);
     // rax encodes to 0, so if the bits are nonzero it's incorrect
     __ jcc(Assembler::notZero, bail);
 #endif
     // Adjust return pc forward to step over the safepoint poll instruction
-    __ addptr(Address(rbp, wordSize), 3);
+    __ addptr(rbx, 2);
+    __ movptr(Address(rbp, wordSize), rbx);
   }
 
   __ bind(no_adjust);
