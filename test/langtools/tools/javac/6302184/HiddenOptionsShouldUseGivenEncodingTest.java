@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,28 +29,62 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- * @build toolbox.ToolBox
- * @run compile -encoding iso-8859-1 -XD-printsource T6302184.java
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main HiddenOptionsShouldUseGivenEncodingTest
  */
 
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
+import toolbox.JavacTask;
 import toolbox.ToolBox;
 
 // Original test: test/tools/javac/6302184/T6302184.sh
 public class HiddenOptionsShouldUseGivenEncodingTest {
 
     public static void main(String[] args) throws Exception {
-        ToolBox tb = new ToolBox();
         String encoding = "iso-8859-1";
-        Path path1 = Paths.get(ToolBox.testClasses, "T6302184.java");
+        Path src = Paths.get("src");
+        Files.createDirectories(src);
+        Files.write(src.resolve("T6302184.java"), source, Charset.forName(encoding));
+        Files.write(src.resolve("T6302184.out"), expect, Charset.forName(encoding));
+
+        Path out = Paths.get("out");
+        Files.createDirectories(out);
+
+        ToolBox tb = new ToolBox();
+        new JavacTask(tb)
+                .outdir("out")
+                .options("-encoding", encoding, "-XD-printsource")
+                .files(src.resolve("T6302184.java"))
+                .run();
+
+        Path path1 = Paths.get("out").resolve("T6302184.java");
         List<String> file1 = tb.readAllLines(path1, encoding);
-        Path path2 = Paths.get(ToolBox.testSrc, "T6302184.out");
+        Path path2 = src.resolve("T6302184.out");
         List<String> file2 = tb.readAllLines(path2, encoding);
         tb.checkEqual(file1, file2);
     }
+
+    static List<String> source = Arrays.asList(
+        "class T6302184 {",
+        "    int \u00c0\u00c1\u00c2\u00c3\u00c4\u00c5 = 1;",
+        "}"
+    );
+
+    static List<String> expect = Arrays.asList(
+        "",
+        "class T6302184 {",
+        "    ",
+        "    T6302184() {",
+        "        super();",
+        "    }",
+        "    int \u00c0\u00c1\u00c2\u00c3\u00c4\u00c5 = 1;",
+        "}"
+    );
 
 }
