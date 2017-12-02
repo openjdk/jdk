@@ -629,18 +629,26 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_SSE;
 
   // first try initial setting and detect what we can support
+  int use_avx_limit = 0;
   if (UseAVX > 0) {
     if (UseAVX > 2 && supports_evex()) {
-      UseAVX = 3;
+      use_avx_limit = 3;
     } else if (UseAVX > 1 && supports_avx2()) {
-      UseAVX = 2;
+      use_avx_limit = 2;
     } else if (UseAVX > 0 && supports_avx()) {
-      UseAVX = 1;
+      use_avx_limit = 1;
     } else {
-      UseAVX = 0;
+      use_avx_limit = 0;
     }
+  }
+  if (FLAG_IS_DEFAULT(UseAVX)) {
+    FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
+  } else if (UseAVX > use_avx_limit) {
+    warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", (int) UseAVX, use_avx_limit);
+    FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
   } else if (UseAVX < 0) {
-    UseAVX = 0;
+    warning("UseAVX=%d is not valid, setting it to UseAVX=0", (int) UseAVX);
+    FLAG_SET_DEFAULT(UseAVX, 0);
   }
 
   if (UseAVX < 3) {
@@ -710,16 +718,29 @@ void VM_Version::get_processor_features() {
   // UseSSE is set to the smaller of what hardware supports and what
   // the command line requires.  I.e., you cannot set UseSSE to 2 on
   // older Pentiums which do not support it.
-  if (UseSSE > 4) UseSSE=4;
-  if (UseSSE < 0) UseSSE=0;
-  if (!supports_sse4_1()) // Drop to 3 if no SSE4 support
-    UseSSE = MIN2((intx)3,UseSSE);
-  if (!supports_sse3()) // Drop to 2 if no SSE3 support
-    UseSSE = MIN2((intx)2,UseSSE);
-  if (!supports_sse2()) // Drop to 1 if no SSE2 support
-    UseSSE = MIN2((intx)1,UseSSE);
-  if (!supports_sse ()) // Drop to 0 if no SSE  support
-    UseSSE = 0;
+  int use_sse_limit = 0;
+  if (UseSSE > 0) {
+    if (UseSSE > 3 && supports_sse4_1()) {
+      use_sse_limit = 4;
+    } else if (UseSSE > 2 && supports_sse3()) {
+      use_sse_limit = 3;
+    } else if (UseSSE > 1 && supports_sse2()) {
+      use_sse_limit = 2;
+    } else if (UseSSE > 0 && supports_sse()) {
+      use_sse_limit = 1;
+    } else {
+      use_sse_limit = 0;
+    }
+  }
+  if (FLAG_IS_DEFAULT(UseSSE)) {
+    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
+  } else if (UseSSE > use_sse_limit) {
+    warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", (int) UseSSE, use_sse_limit);
+    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
+  } else if (UseSSE < 0) {
+    warning("UseSSE=%d is not valid, setting it to UseSSE=0", (int) UseSSE);
+    FLAG_SET_DEFAULT(UseSSE, 0);
+  }
 
   // Use AES instructions if available.
   if (supports_aes()) {
