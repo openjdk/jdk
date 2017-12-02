@@ -93,4 +93,20 @@ public class TypeKindVisitor9<R, P> extends TypeKindVisitor8<R, P> {
     protected TypeKindVisitor9(R defaultValue) {
         super(defaultValue);
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
+     * @param t {@inheritDoc}
+     * @param p {@inheritDoc}
+     * @return  the result of {@code defaultAction}
+     *
+     * @since 10
+     */
+    @Override
+    public R visitNoTypeAsModule(NoType t, P p) {
+        return defaultAction(t, p);
+    }
 }

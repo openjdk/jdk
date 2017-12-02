@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class XBaseWindow {
 
     // internal lock for synchronizing state changes and paint calls, initialized in preInit.
     // the order with other locks: AWTLock -> stateLock
-    static class StateLock extends Object { }
+    static class StateLock { }
     protected StateLock state_lock;
 
     /**
@@ -315,7 +315,7 @@ public class XBaseWindow {
      * Creates window with parameters specified by {@code params}
      * @see #init
      */
-    private final void create(XCreateWindowParams params) {
+    private void create(XCreateWindowParams params) {
         XToolkit.awtLock();
         try {
             XSetWindowAttributes xattr = new XSetWindowAttributes();

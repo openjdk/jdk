@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8177466
+ * @bug 8177466 8191834
  * @summary Add compiler support for local variable type-inference
  * @compile/fail/ref=BadLocalVarInferenceTest.out -XDrawDiagnostics BadLocalVarInferenceTest.java
  */
@@ -27,7 +27,10 @@ class BadLocalVarInferenceTest {
             void m(String s) { }
         };
         var s = f(x -> { x.charAt(0); }); //LHS was String
+        var t = m(); //void
     }
 
     <Z> Z f(Supplier<Z> sz) { return null; }
+
+    void m() { }
 }

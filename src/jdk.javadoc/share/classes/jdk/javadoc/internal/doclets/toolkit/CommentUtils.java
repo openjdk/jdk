@@ -177,8 +177,11 @@ public class CommentUtils {
         PackageElement pe = null;
         switch (e.getKind()) {
             case OTHER:
-                fo = configuration.getOverviewPath();
-                pe = configuration.workArounds.getUnnamedPackage();
+                if (e instanceof DocletElement) {
+                    DocletElement de = (DocletElement)e;
+                    fo = de.getFileObject();
+                    pe = de.getPackageElement();
+                }
                 break;
             case PACKAGE:
                 fo = configuration.workArounds.getJavaFileObject((PackageElement)e);
@@ -209,13 +212,12 @@ public class CommentUtils {
         });
     }
 
-    public void setDocCommentTree(Element element, List<DocTree> fullBody,
-            List<DocTree> blockTags, Utils utils) {
+    public void setDocCommentTree(Element element, List<? extends DocTree> fullBody,
+                                  List<? extends DocTree> blockTags, Utils utils) {
         DocCommentTree docTree = treeFactory.newDocCommentTree(fullBody, blockTags);
         dcTreesMap.put(element, new DocCommentDuo(null, docTree));
-        // There maybe an entry with the original comments usually null,
-        // therefore remove that entry if it exists, and allow a new one
-        // to be reestablished.
+        // A method having null comment (no comment) that might need to be replaced
+        // with a synthetic comment, remove such a comment from the cache.
         utils.removeCommentHelper(element);
     }
 

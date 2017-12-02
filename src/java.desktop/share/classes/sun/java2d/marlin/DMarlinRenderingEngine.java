@@ -227,7 +227,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                  pc2d);
     }
 
-    private final double userSpaceLineWidth(AffineTransform at, double lw) {
+    private double userSpaceLineWidth(AffineTransform at, double lw) {
 
         double widthScale;
 

@@ -55,6 +55,8 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.NoType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementKindVisitor9;
 import javax.lang.model.util.Elements;
@@ -72,10 +74,12 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.SerialFieldTree;
+import com.sun.source.doctree.StartElementTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
+import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
@@ -263,97 +267,7 @@ public class Utils {
         return getEnclosingTypeElement(e) == null || isStatic(e);
     }
 
-    /**
-     * Copy doc-files directory and its contents from the source
-     * package directory to the generated documentation directory.
-     * For example, given a package java.lang, this method will copy
-     * the doc-files directory, found in the package directory to the
-     * generated documentation hierarchy.
-     *
-     * @param pe the package containing the doc files to be copied
-     * @throws DocFileIOException if there is a problem while copying
-     *         the documentation files
-     */
-    public void copyDocFiles(PackageElement pe) throws DocFileIOException {
-        Location sourceLoc = getLocationForPackage(pe);
-        copyDirectory(sourceLoc, DocPath.forPackage(pe).resolve(DocPaths.DOC_FILES));
-    }
-
-    /**
-     * Copy the given directory contents from the source package directory
-     * to the generated documentation directory. For example, given a package
-     * java.lang, this method will copy the entire directory, to the generated
-     * documentation hierarchy.
-     *
-     * @param pe the package containing the directory to be copied
-     * @param dir the directory to be copied
-     * @throws DocFileIOException if there is a problem while copying
-     *         the documentation files
-     */
-    public void copyDirectory(PackageElement pe, DocPath dir) throws DocFileIOException {
-        copyDirectory(getLocationForPackage(pe), dir);
-    }
-
-    /**
-     * Copy the given directory and its contents from the source
-     * module directory to the generated documentation directory.
-     * For example, given a package java.lang, this method will
-     * copy the entire directory, to the generated documentation
-     * hierarchy.
-     *
-     * @param mdle the module containing the directory to be copied
-     * @param dir the directory to be copied
-     * @throws DocFileIOException if there is a problem while copying
-     *         the documentation files
-     */
-    public void copyDirectory(ModuleElement mdle, DocPath dir) throws DocFileIOException  {
-        copyDirectory(getLocationForModule(mdle), dir);
-    }
-
-    /**
-     * Copy files from a doc path location to the output.
-     *
-     * @param locn the location from which to read files
-     * @param dir the directory to be copied
-     * @throws DocFileIOException if there is a problem
-     *         copying the files
-     */
-    public void copyDirectory(Location locn, DocPath dir)  throws DocFileIOException {
-        boolean first = true;
-        for (DocFile f : DocFile.list(configuration, locn, dir)) {
-            if (!f.isDirectory()) {
-                continue;
-            }
-            DocFile srcdir = f;
-            DocFile destdir = DocFile.createFileForOutput(configuration, dir);
-            if (srcdir.isSameFile(destdir)) {
-                continue;
-            }
-
-            for (DocFile srcfile: srcdir.list()) {
-                DocFile destfile = destdir.resolve(srcfile.getName());
-                if (srcfile.isFile()) {
-                    if (destfile.exists() && !first) {
-                        messages.warning("doclet.Copy_Overwrite_warning",
-                                srcfile.getPath(), destdir.getPath());
-                    } else {
-                        messages.notice("doclet.Copying_File_0_To_Dir_1",
-                                srcfile.getPath(), destdir.getPath());
-                        destfile.copyFile(srcfile);
-                    }
-                } else if (srcfile.isDirectory()) {
-                    if (configuration.copydocfilesubdirs
-                            && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
-                        copyDirectory(locn, dir.resolve(srcfile.getName()));
-                    }
-                }
-            }
-
-            first = false;
-        }
-    }
-
-    protected Location getLocationForPackage(PackageElement pd) {
+    public Location getLocationForPackage(PackageElement pd) {
         ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(pd);
 
         if (mdle == null)
@@ -362,7 +276,7 @@ public class Utils {
         return getLocationForModule(mdle);
     }
 
-    protected Location getLocationForModule(ModuleElement mdle) {
+    public Location getLocationForModule(ModuleElement mdle) {
         Location loc = configuration.workArounds.getLocationForModule(mdle);
         if (loc != null)
             return loc;
@@ -976,71 +890,40 @@ public class Utils {
     }
 
     /**
-     * For the class return all implemented interfaces including the
-     * superinterfaces of the implementing interfaces, also iterate over for
-     * all the superclasses. For interface return all the extended interfaces
-     * as well as superinterfaces for those extended interfaces.
+     * Returns all the implemented super-interfaces of a given type,
+     * in the case of classes, include all the super-interfaces of
+     * the supertype. The super-interfaces are collected before the
+     * super-interfaces of the supertype.
      *
-     * @param  te the class to get the interfaces for
-     * @return List of all the required interfaces.
+     * @param  te the type element to get the super-interfaces for.
+     * @return the list of super-interfaces.
      */
     public Set<TypeMirror> getAllInterfaces(TypeElement te) {
         Set<TypeMirror> results = new LinkedHashSet<>();
-
-        List<? extends TypeMirror> interfaceTypes = te.getInterfaces();
-
-        for (TypeMirror interfaceType : interfaceTypes) {
-            TypeElement intfc = asTypeElement(interfaceType);
-
-            if (isPublic(intfc) || isLinkable(intfc)) {
-                results.add(interfaceType);
-                TypeElement klass = asTypeElement(interfaceType);
-                for (TypeMirror t : getAllInterfaces(klass)) {
-                    t = getDeclaredType(results, te, t);
-                    results.add(t);
-                }
-            }
-        }
-        // TypeMirror contains the modified TypeParameterElement's types represented
-        // in the local Class'es elements types. ex: Foo<E> implements Bar<V> and the
-        // class being considered is Foo then TypeParameters will be represented as <E>
-        // note that any conversion might revert back to the old signature. For this
-        // very reason we get the superType, and find its interfaces.
-        TypeMirror superType = getSuperType(te);
-        if (superType == getObjectType())
-            return results;
-        // Try walking the tree
-        addAllInterfaceTypes(results, te, superType,
-                configuration.workArounds.interfaceTypesOf(superType));
+        getAllInterfaces(te.asType(), results);
         return results;
     }
 
-    private void findAllInterfaceTypes(Set<TypeMirror> results, final TypeElement baseClass,
-            TypeMirror p) {
-        TypeMirror superType = getSuperType(asTypeElement(p));
-        if (superType == p) {
-            return;
-        }
-        addAllInterfaceTypes(results, baseClass, superType,
-                configuration.workArounds.interfaceTypesOf(superType));
-    }
+    private void getAllInterfaces(TypeMirror type, Set<TypeMirror> results) {
+        List<? extends TypeMirror> intfacs = typeUtils.directSupertypes(type);
+        TypeMirror superType = null;
+        for (TypeMirror intfac : intfacs) {
+            if (intfac == getObjectType())
+                continue;
+            TypeElement e = asTypeElement(intfac);
+            if (isInterface(e)) {
+                if (isPublic(e) || isLinkable(e))
+                    results.add(intfac);
 
-    private void addAllInterfaceTypes(Set<TypeMirror> results,
-            final TypeElement baseClass, TypeMirror type,
-            List<TypeMirror> interfaceTypes) {
-        for (TypeMirror interfaceType : interfaceTypes) {
-            TypeElement iElement = asTypeElement(interfaceType);
-            if (isPublic(iElement) && isLinkable(iElement)) {
-                interfaceType = getDeclaredType(results, baseClass, interfaceType);
-                results.add(interfaceType);
-                Set<TypeMirror> superInterfaces = getAllInterfaces(iElement);
-                for (TypeMirror superInterface : superInterfaces) {
-                    superInterface = getDeclaredType(results, baseClass, superInterface);
-                    results.add(superInterface);
-                }
+                getAllInterfaces(intfac, results);
+            } else {
+                // Save the supertype for later.
+                superType = intfac;
             }
         }
-        findAllInterfaceTypes(results, baseClass, type);
+        // Collect the super-interfaces of the supertype.
+        if (superType != null)
+            getAllInterfaces(superType, results);
     }
 
     /**
@@ -1154,22 +1037,6 @@ public class Utils {
                 (isPublic(typeElem) || isProtected(typeElem)));
     }
 
-    List<TypeMirror> asErasureTypes(Collection<TypeElement> inList) {
-        List<TypeMirror> out = new ArrayList<>(inList.size());
-        inList.stream().forEach((te) -> {
-            out.add(typeUtils.erasure(te.asType()));
-        });
-        return out;
-    }
-
-    List<TypeMirror> asTypes(Collection<TypeElement> inList) {
-        List<TypeMirror> out = new ArrayList<>(inList.size());
-        inList.stream().forEach((te) -> {
-            out.add(te.asType());
-        });
-        return out;
-    }
-
     /**
      * Return this type as a {@code TypeElement} if it represents a class
      * interface or annotation.  Array dimensions are ignored.
@@ -1195,10 +1062,9 @@ public class Utils {
             }
 
             @Override
-            public TypeElement visitTypeVariable(javax.lang.model.type.TypeVariable t, Void p) {
-               /*
-                * TODO: Check with JJG.
-                * if we have an annotated type @A $B T, then erasure returns a
+            public TypeElement visitTypeVariable(TypeVariable t, Void p) {
+               /* TODO, this may not be an optimimal fix.
+                * if we have an annotated type @DA T, then erasure returns a
                 * none, in this case we use asElement instead.
                 */
                 if (isAnnotated(t)) {
@@ -1208,7 +1074,7 @@ public class Utils {
             }
 
             @Override
-            public TypeElement visitWildcard(javax.lang.model.type.WildcardType t, Void p) {
+            public TypeElement visitWildcard(WildcardType t, Void p) {
                 return visit(typeUtils.erasure(t));
             }
 
@@ -3142,6 +3008,10 @@ public class Utils {
         if (!configuration.isAllowScriptInComments()) {
             DocCommentTree dct = configuration.cmtUtils.parse(
                     URI.create("option://" + name.replace("-", "")), "<body>" + value + "</body>");
+
+            if (dct == null)
+                return;
+
             try {
                 javaScriptScanner.scan(dct, null, p -> {
                     throw new JavaScriptScanner.Fault();
@@ -3167,6 +3037,13 @@ public class Utils {
             wksMap.put(element, new CommentHelper(configuration, element, getTreePath(element), dcTree));
         }
         return dcTree;
+    }
+
+    public List<? extends DocTree> getPreamble(Element element) {
+        DocCommentTree docCommentTree = getDocCommentTree(element);
+        return docCommentTree == null
+                ? Collections.emptyList()
+                : docCommentTree.getPreamble();
     }
 
     public List<? extends DocTree> getFullBody(Element element) {

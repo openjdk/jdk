@@ -32,16 +32,76 @@ include FindTests.gmk
 # We will always run multiple tests serially
 .NOTPARALLEL:
 
+################################################################################
+# Parse global control variables
+################################################################################
+
+ifneq ($(TEST_VM_OPTS), )
+  ifneq ($(TEST_OPTS), )
+    TEST_OPTS := $(TEST_OPTS);VM_OPTIONS=$(TEST_VM_OPTS)
+  else
+    TEST_OPTS := VM_OPTIONS=$(TEST_VM_OPTS)
+  endif
+endif
+
+$(eval $(call ParseKeywordVariable, TEST_OPTS, \
+    KEYWORDS := JOBS TIMEOUT, \
+    STRING_KEYWORDS := VM_OPTIONS, \
+))
+
+# Helper function to propagate TEST_OPTS values.
+#
+# Note: No spaces are allowed around the arguments.
+# Arg $1 The variable in TEST_OPTS to propagate
+# Arg $2 The control variable to propagate it to
+define SetTestOpt
+  ifneq ($$(TEST_OPTS_$1), )
+    $2_$1 := $$(TEST_OPTS_$1)
+  endif
+endef
+
+################################################################################
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, RunTests.gmk))
+################################################################################
 
 TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
 TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
+TEST_SUMMARY := $(TEST_RESULTS_DIR)/test-summary.txt
+TEST_LAST_IDS := $(TEST_SUPPORT_DIR)/test-last-ids.txt
 
+ifeq ($(CUSTOM_ROOT), )
+  JTREG_TOPDIR := $(TOPDIR)
+else
+  JTREG_TOPDIR := $(CUSTOM_ROOT)
+endif
+
+JTREG_FAILURE_HANDLER_DIR := $(TEST_IMAGE_DIR)/failure_handler
+JTREG_FAILURE_HANDLER := $(JTREG_FAILURE_HANDLER_DIR)/jtregFailureHandler.jar
+
+ifneq ($(wildcard $(JTREG_FAILURE_HANDLER)), )
+  JTREG_FAILURE_HANDLER_OPTIONS := \
+      -timeoutHandlerDir:$(JTREG_FAILURE_HANDLER) \
+      -observerDir:$(JTREG_FAILURE_HANDLER) \
+      -timeoutHandler:jdk.test.failurehandler.jtreg.GatherProcessInfoTimeoutHandler \
+      -observer:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver \
+      -timeoutHandlerTimeout:0
+endif
 
 ################################################################################
 # Parse control variables
 ################################################################################
+
+ifneq ($(TEST_OPTS), )
+  # Inform the user
+  $(info Running tests using TEST_OPTS control variable '$(TEST_OPTS)')
+
+  $(eval $(call SetTestOpt,VM_OPTIONS,JTREG))
+  $(eval $(call SetTestOpt,VM_OPTIONS,GTEST))
+
+  $(eval $(call SetTestOpt,JOBS,JTREG))
+  $(eval $(call SetTestOpt,TIMEOUT,JTREG))
+endif
 
 $(eval $(call ParseKeywordVariable, JTREG, \
     KEYWORDS := JOBS TIMEOUT TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM, \
@@ -55,7 +115,7 @@ endif
 
 $(eval $(call ParseKeywordVariable, GTEST, \
     KEYWORDS := REPEAT, \
-    STRING_KEYWORDS := OPTIONS, \
+    STRING_KEYWORDS := OPTIONS VM_OPTIONS, \
 ))
 
 ifneq ($(GTEST), )
@@ -84,6 +144,11 @@ hotspot_JTREG_ASSERT := false
 hotspot_JTREG_NATIVEPATH := $(TEST_IMAGE_DIR)/hotspot/jtreg/native
 jdk_JTREG_NATIVEPATH := $(TEST_IMAGE_DIR)/jdk/jtreg/native
 
+jdk_JTREG_PROBLEM_LIST += $(TOPDIR)/test/jdk/ProblemList.txt
+jaxp_JTREG_PROBLEM_LIST += $(TOPDIR)/test/jaxp/ProblemList.txt
+langtools_JTREG_PROBLEM_LIST += $(TOPDIR)/test/langtools/ProblemList.txt
+nashorn_JTREG_PROBLEM_LIST += $(TOPDIR)/test/nashorn/ProblemList.txt
+hotspot_JTREG_PROBLEM_LIST += $(TOPDIR)/test/hotspot/jtreg/ProblemList.txt
 
 ################################################################################
 # Parse test selection
@@ -116,17 +181,23 @@ define ParseGtestTestSelection
   )
 endef
 
+# Helper function that removes the TOPDIR part
+CleanupJtregPath = \
+  $(strip $(patsubst %/, %, $(subst $(JTREG_TOPDIR)/,, $1)))
+
 # Take a partial Jtreg root path and return a full, absolute path to that Jtreg
 # root. Also support having "hotspot" as an alias for "hotspot/jtreg".
 ExpandJtregRoot = \
-  $(strip $(wildcard $(patsubst %/, %, \
+  $(call CleanupJtregPath, $(wildcard \
     $(if $(filter /%, $1), \
-      $1 \
+      $(if $(wildcard $(strip $1)/TEST.ROOT), \
+        $1 \
+      ) \
     , \
       $(filter $(addprefix %, $1), $(JTREG_TESTROOTS) $(addsuffix /, $(JTREG_TESTROOTS))) \
       $(filter $(addprefix %, $(strip $1)/jtreg), $(JTREG_TESTROOTS) $(addsuffix /, $(JTREG_TESTROOTS))) \
     ) \
-  )))
+  ))
 
 # Take a partial Jtreg test path and return a full, absolute path to that Jtreg
 # test. Also support having "hotspot" as an alias for "hotspot/jtreg".
@@ -134,14 +205,14 @@ ExpandJtregPath = \
   $(if $(call ExpandJtregRoot, $1), \
     $(call ExpandJtregRoot, $1) \
   , \
-    $(strip $(wildcard $(patsubst %/, %, \
+    $(call CleanupJtregPath, $(wildcard \
       $(if $(filter /%, $1), \
         $1 \
       , \
         $(addsuffix /$(strip $1), $(JTREG_TESTROOTS) $(TEST_BASEDIRS)) \
         $(addsuffix $(strip $(patsubst hotspot/%, /hotspot/jtreg/%, $1)), $(JTREG_TESTROOTS) $(TEST_BASEDIRS)) \
       ) \
-    ))) \
+    )) \
   )
 
 # Helper function to determine if a test specification is a Jtreg test
@@ -158,27 +229,26 @@ define ParseJtregTestSelection
   $(if $(findstring :, $(TEST_NAME)), \
     $(if $(filter :%, $(TEST_NAME)), \
       $(eval TEST_GROUP := $(patsubst :%, %, $(TEST_NAME))) \
-      $(eval TEST_ROOTS := $(JTREG_TESTROOTS)) \
+      $(eval TEST_ROOTS := $(foreach test_root, $(JTREG_TESTROOTS), \
+          $(call CleanupJtregPath, $(test_root)))) \
     , \
       $(eval TEST_PATH := $(word 1, $(subst :, $(SPACE), $(TEST_NAME)))) \
       $(eval TEST_GROUP := $(word 2, $(subst :, $(SPACE), $(TEST_NAME)))) \
       $(eval TEST_ROOTS := $(call ExpandJtregRoot, $(TEST_PATH))) \
     ) \
     $(foreach test_root, $(TEST_ROOTS), \
-      $(if $(filter $(TEST_GROUP), $($(test_root)_JTREG_TEST_GROUPS)), \
+      $(if $(filter /%, $(test_root)), \
         jtreg:$(test_root):$(TEST_GROUP) \
+      , \
+        $(if $(filter $(TEST_GROUP), $($(JTREG_TOPDIR)/$(test_root)_JTREG_TEST_GROUPS)), \
+          jtreg:$(test_root):$(TEST_GROUP) \
+        ) \
       ) \
     ) \
   , \
-    $(if $(filter /%, $(TEST_NAME)), \
-      $(if $(wildcard $(TEST_NAME)), \
-        jtreg:$(TEST_NAME) \
-      ) \
-    , \
-      $(eval TEST_PATHS := $(call ExpandJtregPath, $(TEST_NAME))) \
-      $(foreach test_path, $(TEST_PATHS), \
-        jtreg:$(test_path) \
-      ) \
+    $(eval TEST_PATHS := $(call ExpandJtregPath, $(TEST_NAME))) \
+    $(foreach test_path, $(TEST_PATHS), \
+      jtreg:$(test_path) \
     ) \
   )
 endef
@@ -248,6 +318,7 @@ SetupRunGtestTest = $(NamedParamsMacroTemplate)
 define SetupRunGtestTestBody
   $1_TEST_RESULTS_DIR := $$(TEST_RESULTS_DIR)/$1
   $1_TEST_SUPPORT_DIR := $$(TEST_SUPPORT_DIR)/$1
+  $1_EXITCODE := $$($1_TEST_RESULTS_DIR)/exitcode.txt
 
   $1_TEST_NAME := $$(strip $$(patsubst gtest:%, %, $$($1_TEST)))
   ifneq ($$($1_TEST_NAME), all)
@@ -264,10 +335,13 @@ define SetupRunGtestTestBody
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, \
 	    $$(FIXPATH) $$(TEST_IMAGE_DIR)/hotspot/gtest/server/gtestLauncher \
-	    -jdk $(JDK_IMAGE_DIR) $$($1_GTEST_FILTER) \
-	    --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \
-	    $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) \
-	    > >($(TEE) $$($1_TEST_RESULTS_DIR)/gtest.txt) || true )
+	         -jdk $(JDK_IMAGE_DIR) $$($1_GTEST_FILTER) \
+	         --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \
+	         $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) $$(GTEST_VM_OPTIONS) \
+	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/gtest.txt) \
+	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/gtest.txt
 
@@ -275,15 +349,24 @@ define SetupRunGtestTestBody
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
-	$$(eval $1_TOTAL := $$(shell $$(AWK) '/==========.* tests? from .* \
-	    test cases? ran/ { print $$$$2 }' $$($1_RESULT_FILE)))
-	$$(eval $1_PASSED := $$(shell $$(AWK) '/\[  PASSED  \] .* tests?./ \
-	    { print $$$$4 }' $$($1_RESULT_FILE)))
-	$$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
-	    listed below/ { print $$$$4 }' $$($1_RESULT_FILE)))
-	$$(if $$($1_FAILED), , $$(eval $1_FAILED := 0))
-	$$(eval $1_ERROR := $$(shell \
-	    $$(EXPR) $$($1_TOTAL) - $$($1_PASSED) - $$($1_FAILED)))
+	$$(if $$(wildcard $$($1_RESULT_FILE)), \
+	  $$(eval $1_TOTAL := $$(shell $$(AWK) '/==========.* tests? from .* \
+	      test cases? ran/ { print $$$$2 }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_TOTAL), , $$(eval $1_TOTAL := 0)) \
+	  $$(eval $1_PASSED := $$(shell $$(AWK) '/\[  PASSED  \] .* tests?./ \
+	      { print $$$$4 }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
+	  $$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
+	      listed below/ { print $$$$4 }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
+	  $$(eval $1_ERROR := $$(shell \
+	      $$(EXPR) $$($1_TOTAL) - $$($1_PASSED) - $$($1_FAILED))) \
+	, \
+	  $$(eval $1_PASSED := 0) \
+	  $$(eval $1_FAILED := 0) \
+	  $$(eval $1_ERROR := 1) \
+	  $$(eval $1_TOTAL := 1) \
+	)
 
   $1: run-test-$1 parse-test-$1
 
@@ -321,12 +404,13 @@ SetupRunJtregTest = $(NamedParamsMacroTemplate)
 define SetupRunJtregTestBody
   $1_TEST_RESULTS_DIR := $$(TEST_RESULTS_DIR)/$1
   $1_TEST_SUPPORT_DIR := $$(TEST_SUPPORT_DIR)/$1
+  $1_EXITCODE := $$($1_TEST_RESULTS_DIR)/exitcode.txt
 
   $1_TEST_NAME := $$(strip $$(patsubst jtreg:%, %, $$($1_TEST)))
 
   $1_COMPONENT := \
       $$(strip $$(foreach root, $$(JTREG_TESTROOTS), \
-        $$(if $$(filter $$(root)%, $$($1_TEST_NAME)), \
+        $$(if $$(filter $$(root)%, $$(JTREG_TOPDIR)/$$($1_TEST_NAME)), \
           $$(lastword $$(subst /, $$(SPACE), $$(root))) \
         ) \
       ))
@@ -350,6 +434,7 @@ define SetupRunJtregTestBody
   $$(eval $$(call SetJtregValue,$1,JTREG_MAX_MEM,512m))
   $$(eval $$(call SetJtregValue,$1,JTREG_NATIVEPATH))
   $$(eval $$(call SetJtregValue,$1,JTREG_BASIC_OPTIONS))
+  $$(eval $$(call SetJtregValue,$1,JTREG_PROBLEM_LIST))
 
   ifneq ($(TEST_JOBS), 0)
     # User has specified TEST_JOBS, use that as fallback default
@@ -357,11 +442,6 @@ define SetupRunJtregTestBody
   else
     # Use JOBS as default (except for hotspot)
     $$(eval $$(call SetJtregValue,$1,JTREG_JOBS,$$(JOBS)))
-  endif
-
-  ifeq ($$(shell $$(EXPR) $$($1_JTREG_JOBS) \> 50), 1)
-    # Until CODETOOLS-7901892 is fixed, JTreg cannot handle more than 50 jobs
-    $1_JTREG_JOBS := 50
   endif
 
   # Make sure MaxRAMPercentage is high enough to not cause OOM or swapping since
@@ -403,11 +483,22 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += -nativepath:$$($1_JTREG_NATIVEPATH)
   endif
 
+  ifneq ($$($1_JTREG_PROBLEM_LIST), )
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix -exclude:, $$($1_JTREG_PROBLEM_LIST))
+  endif
+
   ifneq ($$(JIB_JAR), )
     $1_JTREG_BASIC_OPTIONS += -cpa:$$(JIB_JAR)
   endif
 
-  run-test-$1:
+  ifneq ($$(JTREG_FAILURE_HANDLER_OPTIONS), )
+    $1_JTREG_LAUNCHER_OPTIONS += -Djava.library.path="$(JTREG_FAILURE_HANDLER_DIR)"
+  endif
+
+  clean-workdir-$1:
+	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
+
+  run-test-$1: clean-workdir-$1
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
@@ -416,11 +507,15 @@ define SetupRunJtregTestBody
 	        -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
 	        $$($1_JTREG_BASIC_OPTIONS) \
 	        -testjdk:$$(JDK_IMAGE_DIR) \
-	        -dir:$$(TOPDIR) \
+	        -dir:$$(JTREG_TOPDIR) \
 	        -reportDir:$$($1_TEST_RESULTS_DIR) \
 	        -workDir:$$($1_TEST_SUPPORT_DIR) \
 	        $$(JTREG_OPTIONS) \
-	        $$($1_TEST_NAME) || true )
+	        $$(JTREG_FAILURE_HANDLER_OPTIONS) \
+	        $$($1_TEST_NAME) \
+	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/text/stats.txt
 
@@ -428,7 +523,7 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
-	$$(if  $$(wildcard $$($1_RESULT_FILE)), \
+	$$(if $$(wildcard $$($1_RESULT_FILE)), \
 	  $$(eval $1_PASSED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "passed:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
@@ -470,7 +565,7 @@ UseJtregTestHandler = \
 # Now process each test to run and setup a proper make rule
 $(foreach test, $(TESTS_TO_RUN), \
   $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
-      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
+      $(TR) -cs '[a-z][A-Z][0-9]\n' '[_*1000]')) \
   $(eval ALL_TEST_IDS += $(TEST_ID)) \
   $(if $(call UseCustomTestHandler, $(test)), \
     $(eval $(call SetupRunCustomTest, $(TEST_ID), \
@@ -504,34 +599,48 @@ endif
 TEST_FAILURE := false
 
 run-test: $(TARGETS)
-        # Print a table of the result of all tests run and their result
-	$(ECHO)
-	$(ECHO) ==============================
-	$(ECHO) Test summary
-	$(ECHO) ==============================
-	$(PRINTF) "%2s %-49s %5s %5s %5s %5s %2s\n" "  " TEST \
-	    TOTAL PASS FAIL ERROR " "
+        # Create and print a table of the result of all tests run
+	$(RM) $(TEST_SUMMARY).old 2> /dev/null
+	$(MV) $(TEST_SUMMARY) $(TEST_SUMMARY).old 2> /dev/null || true
+	$(RM) $(TEST_LAST_IDS).old 2> /dev/null
+	$(MV) $(TEST_LAST_IDS) $(TEST_LAST_IDS).old 2> /dev/null || true
+	$(ECHO) >> $(TEST_SUMMARY) ==============================
+	$(ECHO) >> $(TEST_SUMMARY) Test summary
+	$(ECHO) >> $(TEST_SUMMARY) ==============================
+	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %2s\n" "  " \
+	    TEST TOTAL PASS FAIL ERROR " "
 	$(foreach test, $(TESTS_TO_RUN), \
 	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
-	      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
-	  $(if $(filter $($(TEST_ID)_PASSED), $($(TEST_ID)_TOTAL)), \
-	    $(PRINTF) "%2s %-49s %5d %5d %5d %5d %2s\n" "  " "$(test)" \
-	        $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) $($(TEST_ID)_FAILED) \
-	        $($(TEST_ID)_ERROR) "  " $(NEWLINE) \
+	      $(TR) -cs '[a-z][A-Z][0-9]\n' '[_*1000]')) \
+	    $(ECHO) >> $(TEST_LAST_IDS) $(TEST_ID) $(NEWLINE) \
+	  $(eval NAME_PATTERN := $(shell $(ECHO) $(test) | $(TR) -c '\n' '[_*1000]')) \
+	  $(if $(filter __________________________________________________%, $(NAME_PATTERN)), \
+	    $(eval TEST_NAME := ) \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s\n" "  " "$(test)"  $(NEWLINE) \
 	  , \
-	    $(PRINTF) "%2s %-49s %5d %5d %5d %5d %2s\n" ">>" "$(test)" \
-	        $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) $($(TEST_ID)_FAILED) \
-	        $($(TEST_ID)_ERROR) "<<" $(NEWLINE) \
+	    $(eval TEST_NAME := $(test)) \
+	  ) \
+	  $(if $(filter $($(TEST_ID)_PASSED), $($(TEST_ID)_TOTAL)), \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
+	        "  " "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "  " $(NEWLINE) \
+	  , \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
+	         ">>" "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "<<" $(NEWLINE) \
 	    $(eval TEST_FAILURE := true) \
 	  ) \
 	)
-	$(ECHO) ==============================
+	$(ECHO) >> $(TEST_SUMMARY) ==============================
 	$(if $(filter true, $(TEST_FAILURE)), \
-	  $(ECHO) TEST FAILURE $(NEWLINE) \
+	  $(ECHO) >> $(TEST_SUMMARY) TEST FAILURE $(NEWLINE) \
+	  $(MKDIR) -p $(MAKESUPPORT_OUTPUTDIR) $(NEWLINE) \
 	  $(TOUCH) $(MAKESUPPORT_OUTPUTDIR)/exit-with-error \
 	, \
-	  $(ECHO) TEST SUCCESS \
+	  $(ECHO) >> $(TEST_SUMMARY) TEST SUCCESS \
 	)
+	$(ECHO)
+	$(CAT) $(TEST_SUMMARY)
 	$(ECHO)
 
 ################################################################################

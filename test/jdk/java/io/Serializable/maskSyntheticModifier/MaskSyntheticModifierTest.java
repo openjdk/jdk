@@ -30,6 +30,7 @@
  *          serialVersionUID calculation.
  */
 
+import java.io.File;
 import java.io.ObjectStreamClass;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -46,7 +47,10 @@ public class MaskSyntheticModifierTest {
     }
 
     private static void setup() throws Exception {
+        // Copy the class file to the first component of the class path
+        String cp = System.getProperty("java.class.path");
+        String cp1 = cp.substring(0, cp.indexOf(File.pathSeparatorChar));
         Files.copy(Paths.get(System.getProperty("test.src"), "Foo.class"),
-                Paths.get("Foo.class"), StandardCopyOption.REPLACE_EXISTING);
+                Paths.get(cp1, "Foo.class"), StandardCopyOption.REPLACE_EXISTING);
     }
 }

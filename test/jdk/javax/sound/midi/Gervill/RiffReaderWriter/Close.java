@@ -22,6 +22,7 @@
  */
 
 /* @test
+   @bug 8191384
    @summary Test RiffReader close method
    @modules java.desktop/com.sun.media.sound
 */
@@ -53,6 +54,8 @@ public class Close {
             writer = null;
             FileInputStream fis = new FileInputStream(tempfile);
             reader = new RIFFReader(fis);
+            reader.close();
+            // second close should not throw any exceptions
             reader.close();
             reader = null;
         }

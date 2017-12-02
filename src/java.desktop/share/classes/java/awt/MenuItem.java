@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -410,7 +410,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      * Returns true if the item and all its ancestors are
      * enabled, false otherwise
      */
-    private final boolean isItemEnabled() {
+    private boolean isItemEnabled() {
         // Fix For 6185151: Menu shortcuts of all menuitems within a menu
         // should be disabled when the menu itself is disabled
         if (!isEnabled()) {

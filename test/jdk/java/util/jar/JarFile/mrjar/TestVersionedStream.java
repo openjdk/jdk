@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8163798
+ * @bug 8163798 8189611
  * @summary basic tests for multi-release jar versioned streams
  * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar java.base/jdk.internal.util.jar
@@ -133,7 +133,7 @@ public class TestVersionedStream {
     @Test(dataProvider="data")
     public void test(Runtime.Version version) throws Exception {
         try (JarFile jf = new JarFile(new File("mmr.jar"), false, ZipFile.OPEN_READ, version);
-             Stream<JarEntry> jes = jdk.internal.util.jar.VersionedStream.stream(jf))
+             Stream<JarEntry> jes = jf.versionedStream())
         {
             Assert.assertNotNull(jes);
 
@@ -166,38 +166,52 @@ public class TestVersionedStream {
                 Assert.fail("versioned entries not in same order as unversioned entries");
             }
 
-            // verify the contents
-            Map<String,String> contents = new HashMap<>();
-            contents.put("p/Bar.class", "base/p/Bar.class");
-            contents.put("p/Main.class", "base/p/Main.class");
+            // verify the contents:
+            // value.[0] end of the path
+            // value.[1] versioned path/real name
+            Map<String,String[]> expected = new HashMap<>();
+
+            expected.put("p/Bar.class", new String[] { "base/p/Bar.class", "p/Bar.class" });
+            expected.put("p/Main.class", new String[] { "base/p/Main.class", "p/Main.class" });
             switch (version.major()) {
                 case 8:
-                    contents.put("p/Foo.class", "base/p/Foo.class");
+                    expected.put("p/Foo.class", new String[]
+                        { "base/p/Foo.class", "p/Foo.class" });
                     break;
                 case 9:
-                    contents.put("p/Foo.class", "v9/p/Foo.class");
+                    expected.put("p/Foo.class", new String[]
+                        { "v9/p/Foo.class", "META-INF/versions/9/p/Foo.class" });
                     break;
                 case 10:
-                    contents.put("p/Foo.class", "v10/p/Foo.class");
-                    contents.put("q/Bar.class", "v10/q/Bar.class");
+                    expected.put("p/Foo.class", new String[]
+                        { "v10/p/Foo.class", "META-INF/versions/10/p/Foo.class" });
+
+                    expected.put("q/Bar.class", new String[]
+                        { "v10/q/Bar.class", "META-INF/versions/10/q/Bar.class" });
                     break;
                 case 11:
-                    contents.put("p/Bar.class", "v11/p/Bar.class");
-                    contents.put("p/Foo.class", "v11/p/Foo.class");
-                    contents.put("q/Bar.class", "v10/q/Bar.class");
+                    expected.put("p/Bar.class", new String[]
+                        { "v11/p/Bar.class", "META-INF/versions/11/p/Bar.class"});
+                    expected.put("p/Foo.class", new String[]
+                        { "v11/p/Foo.class", "META-INF/versions/11/p/Foo.class"});
+                    expected.put("q/Bar.class", new String[]
+                        { "q/Bar.class", "META-INF/versions/10/q/Bar.class"});
                     break;
                 default:
                     Assert.fail("Test out of date, please add more cases");
             }
 
-            contents.entrySet().stream().forEach(e -> {
+            expected.entrySet().stream().forEach(e -> {
                 String name = e.getKey();
                 int i = versionedNames.indexOf(name);
                 Assert.assertTrue(i != -1, name + " not in enames");
                 JarEntry je = versionedEntries.get(i);
                 try (InputStream is = jf.getInputStream(je)) {
                     String s = new String(is.readAllBytes()).replaceAll(System.lineSeparator(), "");
-                    Assert.assertTrue(s.endsWith(e.getValue()), s);
+                    // end of the path
+                    Assert.assertTrue(s.endsWith(e.getValue()[0]), s);
+                    // getRealName()
+                    Assert.assertTrue(je.getRealName().equals(e.getValue()[1]));
                 } catch (IOException x) {
                     throw new UncheckedIOException(x);
                 }

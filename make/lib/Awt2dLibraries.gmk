@@ -658,7 +658,7 @@ endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     LIBRARY := fontmanager, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfontmanager, \
     SRC := $(LIBFONTMANAGER_SRC), \
     EXCLUDE_FILES := $(LIBFONTMANAGER_EXCLUDE_FILES) \
         AccelGlyphCache.c, \
@@ -701,6 +701,21 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfontmanager, \
 ))
+
+$(INSTALL_LIBRARIES_HERE)/$(call SHARED_LIBRARY,fontmanager): $(BUILD_LIBFONTMANAGER_TARGET)
+	$(install-file)
+        ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
+          ifeq ($(OPENJDK_TARGET_OS), macosx)
+            # If bundling freetype on macosx, we need to rewrite the rpath location
+            # in the libfontmanager library to point to the bundled location
+	    $(INSTALL_NAME_TOOL) -change \
+	        `$(OTOOL) -D $(FREETYPE_BUNDLE_LIB_PATH)/$(call SHARED_LIBRARY,freetype) | $(TAIL) -n1` \
+	        '@rpath/$(call SHARED_LIBRARY,freetype)' \
+	        $@
+          endif
+        endif
+
+BUILD_LIBFONTMANAGER += $(INSTALL_LIBRARIES_HERE)/$(call SHARED_LIBRARY,fontmanager)
 
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
 

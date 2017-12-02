@@ -32,6 +32,7 @@ import com.sun.org.apache.bcel.internal.Const;
  *
  * @version $Id: ConstantFloat.java 1747278 2016-06-07 17:28:43Z britter $
  * @see     Constant
+ * @LastModified: Nov 2017
  */
 public final class ConstantFloat extends Constant implements ConstantObject {
 
@@ -122,6 +123,6 @@ public final class ConstantFloat extends Constant implements ConstantObject {
      */
     @Override
     public Object getConstantValue( final ConstantPool cp ) {
-        return new Float(bytes);
+        return bytes;
     }
 }

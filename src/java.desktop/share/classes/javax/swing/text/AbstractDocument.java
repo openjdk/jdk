@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1797,7 +1797,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             }
         }
 
-        private final void indent(PrintWriter out, int n) {
+        private void indent(PrintWriter out, int n) {
             for (int i = 0; i < n; i++) {
                 out.print("  ");
             }
@@ -2063,7 +2063,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             }
         }
 
-        private final void checkForIllegalCast() {
+        private void checkForIllegalCast() {
             Thread t = getCurrentWriter();
             if ((t == null) || (t != Thread.currentThread())) {
                 throw new StateInvariantError("Illegal cast to MutableAttributeSet");

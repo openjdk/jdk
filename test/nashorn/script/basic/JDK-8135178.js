@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,27 @@
  */
 
 /**
- * OverviewTest test.
+ * JDK-8135178: importPackage not working even with load "Mozilla compatibility script"
+ *
+ * @test
+ * @run
  */
-public class OverviewTest {}
+
+var ScriptContext = javax.script.ScriptContext;
+var manager = new javax.script.ScriptEngineManager();
+
+var engine1 = manager.getEngineByName("nashorn");
+engine1.eval("load('nashorn:mozilla_compat.js')");
+manager.setBindings(engine1.getBindings(ScriptContext.ENGINE_SCOPE));
+
+var engine2 = manager.getEngineByName("nashorn");
+engine2.eval("load('nashorn:mozilla_compat.js');");
+engine2.eval("importPackage(java.util);");
+
+engine2.eval("var al = new ArrayList()");
+Assert.assertTrue(engine2.eval("al instanceof java.util.ArrayList"));
+Assert.assertTrue(engine2.get("al") instanceof java.util.ArrayList);
+
+engine2.eval("var hm = new HashMap()");
+Assert.assertTrue(engine2.eval("hm instanceof java.util.HashMap"));
+Assert.assertTrue(engine2.get("hm") instanceof java.util.HashMap);

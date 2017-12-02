@@ -32,6 +32,7 @@ import com.sun.org.apache.bcel.internal.Const;
  *
  * @version $Id: ConstantDouble.java 1747278 2016-06-07 17:28:43Z britter $
  * @see     Constant
+ * @LastModified: Nov 2017
  */
 public final class ConstantDouble extends Constant implements ConstantObject {
 
@@ -121,6 +122,6 @@ public final class ConstantDouble extends Constant implements ConstantObject {
      */
     @Override
     public Object getConstantValue( final ConstantPool cp ) {
-        return new Double(bytes);
+        return bytes;
     }
 }

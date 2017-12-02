@@ -205,10 +205,6 @@ SUNWprivate_1.1 {
 		Java_java_lang_Runtime_runFinalization0;
 		Java_java_lang_Runtime_totalMemory;
 		Java_java_lang_Runtime_availableProcessors;
-		Java_java_lang_SecurityManager_classDepth;
-		Java_java_lang_SecurityManager_classLoaderDepth0;
-		Java_java_lang_SecurityManager_currentClassLoader0;
-		Java_java_lang_SecurityManager_currentLoadedClass0;
 		Java_java_lang_SecurityManager_getClassContext;
 		Java_java_lang_Shutdown_halt0;
                 Java_java_lang_StackTraceElement_initStackTraceElement;

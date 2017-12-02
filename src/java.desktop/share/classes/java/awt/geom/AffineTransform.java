@@ -1354,7 +1354,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         /* SH | SC => */         APPLY_SHEAR | APPLY_SCALE,
         /* SH | SC | TR => */    APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE,
     };
-    private final void rotate90() {
+    private void rotate90() {
         double M0 = m00;
         m00 = m01;
         m01 = -M0;
@@ -1370,7 +1370,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         this.state = state;
         type = TYPE_UNKNOWN;
     }
-    private final void rotate180() {
+    private void rotate180() {
         m00 = -m00;
         m11 = -m11;
         int state = this.state;
@@ -1390,7 +1390,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         }
         type = TYPE_UNKNOWN;
     }
-    private final void rotate270() {
+    private void rotate270() {
         double M0 = m00;
         m00 = -m01;
         m01 = M0;

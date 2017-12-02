@@ -480,8 +480,7 @@ ALL_TARGETS += $(ALL_TEST_TARGETS) $(ALL_EXPLODED_TEST_TARGETS)
 #
 
 prepare-test-image:
-	$(MKDIR) -p $(TEST_IMAGE_DIR)
-	$(ECHO) > $(TEST_IMAGE_DIR)/Readme.txt 'JDK test image'
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f TestImage.gmk prepare-test-image)
 
 build-test-hotspot-jtreg-native:
 	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregNativeHotspot.gmk \
@@ -1049,7 +1048,7 @@ ALL_TARGETS += default jdk images docs bundles all
 # file.
 
 CLEAN_DIRS += hotspot jdk bootcycle-build test buildtools support \
-    images make-support test-make bundles buildjdk
+    images make-support test-make bundles buildjdk test-results test-support
 CLEAN_DIR_TARGETS := $(addprefix clean-, $(CLEAN_DIRS))
 CLEAN_SUPPORT_DIRS += demos
 CLEAN_SUPPORT_DIR_TARGETS := $(addprefix clean-, $(CLEAN_SUPPORT_DIRS))
@@ -1093,6 +1092,8 @@ $(CLEAN_MODULE_PHASE_TARGETS):
 # the side effect of generating native headers. The headers end up in support
 # while classes and touch files end up in jdk.
 clean-support: clean-jdk
+
+clean-test: clean-test-results clean-test-support
 
 # Remove everything, including configure configuration. If the output
 # directory was created by configure and now becomes empty, remove it as well.

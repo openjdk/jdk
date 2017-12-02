@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,12 @@ import java.security.*;
  *
  * <p>The {@code initialize} methods may each be called any number
  * of times. If no {@code initialize} method is called on a
- * DSAKeyPairGenerator, the default is to generate 1024-bit keys, using
- * precomputed p, q and g parameters and an instance of SecureRandom as
- * the random bit source.
+ * DSAKeyPairGenerator, each provider that implements this interface
+ * should supply (and document) a default initialization. Note that
+ * defaults may vary across different providers. Additionally, the default
+ * value for a provider may change in a future version. Therefore, it is
+ * recommended to explicitly initialize the DSAKeyPairGenerator instead
+ * of relying on provider-specific defaults.
  *
  * <p>Users wishing to indicate DSA-specific parameters, and to generate a key
  * pair suitable for use with the DSA algorithm typically
@@ -45,12 +48,13 @@ import java.security.*;
  * KeyPairGenerator {@code getInstance} method with "DSA"
  * as its argument.
  *
- * <li>Initialize the generator by casting the result to a DSAKeyPairGenerator
- * and calling one of the
- * {@code initialize} methods from this DSAKeyPairGenerator interface.
+ * <li>Check if the returned key pair generator is an instance of
+ * DSAKeyPairGenerator before casting the result to a DSAKeyPairGenerator
+ * and calling one of the {@code initialize} methods from this
+ * DSAKeyPairGenerator interface.
  *
  * <li>Generate a key pair by calling the {@code generateKeyPair}
- * method from the KeyPairGenerator class.
+ * method of the KeyPairGenerator class.
  *
  * </ol>
  *
@@ -63,7 +67,7 @@ import java.security.*;
  * parameters.
  *
  * <p>Note: Some earlier implementations of this interface may not support
- * larger sizes of DSA parameters such as 2048 and 3072-bit.
+ * larger values of DSA parameters such as 3072-bit.
  *
  * @since 1.1
  * @see java.security.KeyPairGenerator
@@ -97,8 +101,7 @@ public interface DSAKeyPairGenerator {
      * p, q and g parameters. If it is false, the method uses precomputed
      * parameters for the modulus length requested. If there are no
      * precomputed parameters for that modulus length, an exception will be
-     * thrown. It is guaranteed that there will always be
-     * default parameters for modulus lengths of 512 and 1024 bits.
+     * thrown.
      *
      * @param modlen the modulus length in bits. Valid values are any
      * multiple of 64 between 512 and 1024, inclusive, 2048, and 3072.

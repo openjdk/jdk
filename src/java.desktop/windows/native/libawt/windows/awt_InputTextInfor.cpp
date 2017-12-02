@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,9 +202,15 @@ int AwtInputTextInfor::GetClauseInfor(int*& lpBndClauseW, jstring*& lpReadingCla
          m_lpClauseW == NULL || m_lpReadClauseW == NULL ||
          m_lpClauseW[0] != 0 || m_lpClauseW[m_cClauseW] != (DWORD)m_cStrW ||
          m_lpReadClauseW[0] != 0 || m_lpReadClauseW[m_cReadClauseW] != (DWORD)m_cReadStrW) {
-        lpBndClauseW = NULL;
-        lpReadingClauseW = NULL;
-        return 0;
+        // For cases where IMM sends WM_IME_COMPOSITION with both GCS_COMPSTR and GCS_RESULTSTR
+        // The GCS_RESULTSTR part may have Caluse and Reading information which should not be ignored
+        if (NULL == m_pResultTextInfor) {
+            lpBndClauseW = NULL;
+            lpReadingClauseW = NULL;
+            return 0;
+        } else {
+            return m_pResultTextInfor->GetClauseInfor(lpBndClauseW, lpReadingClauseW);
+        }
     }
 
     int*    bndClauseW = NULL;
@@ -346,10 +352,14 @@ int AwtInputTextInfor::GetClauseInfor(int*& lpBndClauseW, jstring*& lpReadingCla
 //
 int AwtInputTextInfor::GetAttributeInfor(int*& lpBndAttrW, BYTE*& lpValAttrW) {
     if (m_cStrW == 0 || m_cAttrW != m_cStrW) {
-        lpBndAttrW = NULL;
-        lpValAttrW = NULL;
+        if (NULL == m_pResultTextInfor) {
+            lpBndAttrW = NULL;
+            lpValAttrW = NULL;
 
-        return 0;
+            return 0;
+        } else {
+            return m_pResultTextInfor->GetAttributeInfor(lpBndAttrW, lpValAttrW);
+        }
     }
 
     int* bndAttrW = NULL;

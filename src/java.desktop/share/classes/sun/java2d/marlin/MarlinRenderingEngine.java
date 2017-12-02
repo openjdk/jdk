@@ -227,7 +227,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
                  pc2d);
     }
 
-    private final float userSpaceLineWidth(AffineTransform at, float lw) {
+    private float userSpaceLineWidth(AffineTransform at, float lw) {
 
         float widthScale;
 

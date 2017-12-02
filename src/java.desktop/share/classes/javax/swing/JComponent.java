@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -775,8 +775,7 @@ public abstract class JComponent extends Container implements Serializable,
      * transform. If you need to do these operations you may find it
      * easier to create a new <code>Graphics</code> from the passed in
      * <code>Graphics</code> and manipulate it. Further, if you do not
-     * invoker super's implementation you must honor the opaque property,
-     * that is
+     * invoke super's implementation you must honor the opaque property, that is
      * if this component is opaque, you must completely fill in the background
      * in an opaque color. If you do not honor the opaque property you
      * will likely see visual artifacts.

@@ -27,7 +27,6 @@ package com.sun.tools.jdeps;
 
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
-import jdk.internal.misc.SharedSecrets;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,7 +47,7 @@ public class VersionHelper {
     public static void add(JarFile jarfile, JarEntry e, ClassFile cf)
             throws ConstantPoolException
     {
-        String realName = SharedSecrets.javaUtilJarAccess().getRealName(jarfile, e);
+        String realName = e.getRealName();
         if (realName.startsWith(META_INF_VERSIONS)) {
             int len = META_INF_VERSIONS.length();
             int n = realName.indexOf('/', len);

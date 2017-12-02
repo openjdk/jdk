@@ -1319,6 +1319,9 @@ public class JavacParser implements Parser {
                         break loop;
                     case DOT:
                         nextToken();
+                        if (token.kind == TokenKind.IDENTIFIER && typeArgs != null) {
+                            return illegal();
+                        }
                         int oldmode = mode;
                         mode &= ~NOPARAMS;
                         typeArgs = typeArgumentsOpt(EXPR);

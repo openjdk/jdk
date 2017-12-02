@@ -177,7 +177,7 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
   # Create special filter rules when dealing with unzipped .dSYM directories on
   # macosx
   ifeq ($(OPENJDK_TARGET_OS), macosx)
-    ifeq ($(ZIP_DEBUGINFO_FILES), false)
+    ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), false)
       JDK_SYMBOLS_EXCLUDE_PATTERN := $(addprefix %, \
           $(call containing, .dSYM/, $(patsubst $(JDK_IMAGE_DIR)/%, %, $(ALL_JDK_FILES))))
     endif
@@ -212,7 +212,7 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
   # Create special filter rules when dealing with unzipped .dSYM directories on
   # macosx
   ifeq ($(OPENJDK_TARGET_OS), macosx)
-    ifeq ($(ZIP_DEBUGINFO_FILES), false)
+    ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), false)
       JRE_SYMBOLS_EXCLUDE_PATTERN := $(addprefix %, \
           $(call containing, .dSYM/, $(patsubst $(JRE_IMAGE_DIR)/%, %, $(ALL_JRE_FILES))))
     endif

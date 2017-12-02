@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,34 @@ import sun.nio.cs.ArrayEncoder;
 
 final class ZipCoder {
 
+    private static boolean isASCII(byte[] ba, int off, int len) {
+        for (int i = off; i < off + len; i++) {
+            if (ba[i] < 0)
+                return false;
+        }
+        return true;
+    }
+
+    private static boolean hasReplaceChar(byte[] ba) {
+        for (int i = 0; i < ba.length; i++) {
+            if (ba[i] == (byte)'?')
+                return true;
+        }
+        return false;
+    }
+
     String toString(byte[] ba, int off, int length) {
+
+        // fastpath for UTF-8 cs and ascii only name, leverage the
+        // compact string impl to avoid the unnecessary char[] copy/
+        // paste. A temporary workaround before we have better approach,
+        // such as a String constructor that throws exception for
+        // malformed and/or unmappable characters, instead of silently
+        // replacing with repl char
+        if (isUTF8 && isASCII(ba, off, length)) {
+            return new String(ba, off, length, cs);
+        }
+
         CharsetDecoder cd = decoder().reset();
         int len = (int)(length * cd.maxCharsPerByte());
         char[] ca = new char[len];
@@ -78,6 +105,15 @@ final class ZipCoder {
     }
 
     byte[] getBytes(String s) {
+        if (isUTF8) {
+            // fastpath for UTF8. should only occur when the string
+            // has malformed surrogates. A postscan should still be
+            // faster and use less memory.
+            byte[] ba = s.getBytes(cs);
+            if (!hasReplaceChar(ba)) {
+                return ba;
+            }
+        }
         CharsetEncoder ce = encoder().reset();
         char[] ca = s.toCharArray();
         int len = (int)(ca.length * ce.maxBytesPerChar());

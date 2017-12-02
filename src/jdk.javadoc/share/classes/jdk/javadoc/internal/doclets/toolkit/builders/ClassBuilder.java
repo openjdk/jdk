@@ -30,6 +30,7 @@ import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -269,7 +270,7 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @throws DocFileIOException if there is a problem while copying the files
      */
-     private void copyDocFiles() throws DocFileIOException {
+     private void copyDocFiles() throws DocletException {
         PackageElement containingPackage = utils.containingPackage(typeElement);
         if ((configuration.packages == null ||
             !configuration.packages.contains(containingPackage)) &&
@@ -277,7 +278,10 @@ public class ClassBuilder extends AbstractBuilder {
             //Only copy doc files dir if the containing package is not
             //documented AND if we have not documented a class from the same
             //package already. Otherwise, we are making duplicate copies.
-            utils.copyDocFiles(containingPackage);
+            DocFilesHandler docFilesHandler = configuration
+                    .getWriterFactory()
+                    .getDocFilesHandler(containingPackage);
+            docFilesHandler.copyDocFiles();
             containingPackagesSeen.add(containingPackage);
         }
      }

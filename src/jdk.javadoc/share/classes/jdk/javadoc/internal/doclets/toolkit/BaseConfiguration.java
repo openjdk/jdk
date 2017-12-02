@@ -375,7 +375,6 @@ public abstract class BaseConfiguration {
         }
         initialized = true;
         this.docEnv = docEnv;
-        overviewElement = new OverviewElement(docEnv);
         Splitter specifiedSplitter = new Splitter(docEnv, false);
         specifiedModuleElements = Collections.unmodifiableSet(specifiedSplitter.mset);
         specifiedPackageElements = Collections.unmodifiableSet(specifiedSplitter.pset);
@@ -715,6 +714,7 @@ public abstract class BaseConfiguration {
      * initializes certain components before anything else is started.
      */
     protected boolean finishOptionSettings0() throws DocletException {
+
         initDestDirectory();
         for (String link : linkList) {
             extern.link(link, reporter);
@@ -731,6 +731,7 @@ public abstract class BaseConfiguration {
                 group.checkPackageGroups(grp.first, grp.second);
             }
         });
+        overviewElement = new OverviewElement(workArounds.getUnnamedPackage(), getOverviewPath());
         return true;
     }
 

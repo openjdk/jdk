@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3490,7 +3490,7 @@ public class BasicTreeUI extends TreeUI
       * the destination it is constructed with. It is assumed all the
       * events are currently target at source.
       */
-    public class MouseInputHandler extends Object implements
+    public class MouseInputHandler implements
                      MouseInputListener
     {
         /** Source that events are coming from. */

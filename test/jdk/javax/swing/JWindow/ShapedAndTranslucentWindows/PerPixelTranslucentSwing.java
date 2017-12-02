@@ -90,7 +90,7 @@ public class PerPixelTranslucentSwing extends Common {
 
         Color color = robot.getPixelColor(loc.x + bounds.width / 2, loc.y + bounds.height + 3);
         System.out.println(color);
-        if (FG_COLOR.getRGB() == color.getRGB())
+        if (BG_COLOR.getRGB() != color.getRGB())
             throw new RuntimeException("Background is not translucent (" + color + ")");
 
         EventQueue.invokeAndWait(this::dispose);

@@ -294,28 +294,27 @@ public abstract class DateFormat extends Format {
     private static final long serialVersionUID = 7218322306649953788L;
 
     /**
-     * Overrides Format.
-     * Formats a time object into a time string. Examples of time objects
-     * are a time value expressed in milliseconds and a Date object.
-     * @param obj must be a Number or a Date.
-     * @param toAppendTo the string buffer for the returning time string.
-     * @return the string buffer passed in as toAppendTo, with formatted text appended.
-     * @param fieldPosition keeps track of the position of the field
-     * within the returned string.
-     * On input: an alignment field,
-     * if desired. On output: the offsets of the alignment field. For
-     * example, given a time text "1996.07.10 AD at 15:08:56 PDT",
-     * if the given fieldPosition is DateFormat.YEAR_FIELD, the
-     * begin index and end index of fieldPosition will be set to
-     * 0 and 4, respectively.
-     * Notice that if the same time field appears
-     * more than once in a pattern, the fieldPosition will be set for the first
-     * occurrence of that time field. For instance, formatting a Date to
-     * the time string "1 PM PDT (Pacific Daylight Time)" using the pattern
-     * "h a z (zzzz)" and the alignment field DateFormat.TIMEZONE_FIELD,
-     * the begin index and end index of fieldPosition will be set to
-     * 5 and 8, respectively, for the first occurrence of the timezone
-     * pattern character 'z'.
+     * Formats the given {@code Object} into a date-time string. The formatted
+     * string is appended to the given {@code StringBuffer}.
+     *
+     * @param obj Must be a {@code Date} or a {@code Number} representing a
+     * millisecond offset from the <a href="../util/Calendar.html#Epoch">Epoch</a>.
+     * @param toAppendTo The string buffer for the returning date-time string.
+     * @param fieldPosition keeps track on the position of the field within
+     * the returned string. For example, given a date-time text
+     * {@code "1996.07.10 AD at 15:08:56 PDT"}, if the given {@code fieldPosition}
+     * is {@link DateFormat#YEAR_FIELD}, the begin index and end index of
+     * {@code fieldPosition} will be set to 0 and 4, respectively.
+     * Notice that if the same date-time field appears more than once in a
+     * pattern, the {@code fieldPosition} will be set for the first occurrence
+     * of that date-time field. For instance, formatting a {@code Date} to the
+     * date-time string {@code "1 PM PDT (Pacific Daylight Time)"} using the
+     * pattern {@code "h a z (zzzz)"} and the alignment field
+     * {@link DateFormat#TIMEZONE_FIELD}, the begin index and end index of
+     * {@code fieldPosition} will be set to 5 and 8, respectively, for the
+     * first occurrence of the timezone pattern character {@code 'z'}.
+     * @return the string buffer passed in as {@code toAppendTo},
+     *         with formatted text appended.
      * @exception IllegalArgumentException if the {@code Format} cannot format
      *            the given {@code obj}.
      * @see java.text.Format
@@ -333,34 +332,35 @@ public abstract class DateFormat extends Format {
     }
 
     /**
-     * Formats a Date into a date/time string.
-     * @param date a Date to be formatted into a date/time string.
-     * @param toAppendTo the string buffer for the returning date/time string.
-     * @param fieldPosition keeps track of the position of the field
-     * within the returned string.
-     * On input: an alignment field,
-     * if desired. On output: the offsets of the alignment field. For
-     * example, given a time text "1996.07.10 AD at 15:08:56 PDT",
-     * if the given fieldPosition is DateFormat.YEAR_FIELD, the
-     * begin index and end index of fieldPosition will be set to
-     * 0 and 4, respectively.
-     * Notice that if the same time field appears
-     * more than once in a pattern, the fieldPosition will be set for the first
-     * occurrence of that time field. For instance, formatting a Date to
-     * the time string "1 PM PDT (Pacific Daylight Time)" using the pattern
-     * "h a z (zzzz)" and the alignment field DateFormat.TIMEZONE_FIELD,
-     * the begin index and end index of fieldPosition will be set to
-     * 5 and 8, respectively, for the first occurrence of the timezone
-     * pattern character 'z'.
-     * @return the string buffer passed in as toAppendTo, with formatted text appended.
+     * Formats a {@link Date} into a date-time string. The formatted
+     * string is appended to the given {@code StringBuffer}.
+     *
+     * @param date a Date to be formatted into a date-time string.
+     * @param toAppendTo the string buffer for the returning date-time string.
+     * @param fieldPosition keeps track on the position of the field within
+     * the returned string. For example, given a date-time text
+     * {@code "1996.07.10 AD at 15:08:56 PDT"}, if the given {@code fieldPosition}
+     * is {@link DateFormat#YEAR_FIELD}, the begin index and end index of
+     * {@code fieldPosition} will be set to 0 and 4, respectively.
+     * Notice that if the same date-time field appears more than once in a
+     * pattern, the {@code fieldPosition} will be set for the first occurrence
+     * of that date-time field. For instance, formatting a {@code Date} to the
+     * date-time string {@code "1 PM PDT (Pacific Daylight Time)"} using the
+     * pattern {@code "h a z (zzzz)"} and the alignment field
+     * {@link DateFormat#TIMEZONE_FIELD}, the begin index and end index of
+     * {@code fieldPosition} will be set to 5 and 8, respectively, for the
+     * first occurrence of the timezone pattern character {@code 'z'}.
+     * @return the string buffer passed in as {@code toAppendTo}, with formatted
+     * text appended.
      */
     public abstract StringBuffer format(Date date, StringBuffer toAppendTo,
                                         FieldPosition fieldPosition);
 
     /**
-     * Formats a Date into a date/time string.
-     * @param date the time value to be formatted into a time string.
-     * @return the formatted time string.
+      * Formats a {@link Date} into a date-time string.
+      *
+      * @param date the time value to be formatted into a date-time string.
+      * @return the formatted date-time string.
      */
     public final String format(Date date)
     {
