@@ -26,7 +26,6 @@
 #define SHARE_VM_OOPS_ARRAY_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"

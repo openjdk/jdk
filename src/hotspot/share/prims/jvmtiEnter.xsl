@@ -45,6 +45,7 @@
 # include "prims/jvmtiEnter.hpp"
 # include "prims/jvmtiRawMonitor.hpp"
 # include "prims/jvmtiUtil.hpp"
+# include "runtime/threadSMR.hpp"
 
 </xsl:text>
 
@@ -769,47 +770,27 @@ static jvmtiError JNICALL
 
 <xsl:template match="jthread" mode="dochecksbody">
   <xsl:param name="name"/>
-    <xsl:text>    oop thread_oop = JNIHandles::resolve_external_guard(</xsl:text>
+    <xsl:text>    err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), </xsl:text>
     <xsl:value-of select="$name"/>
-    <xsl:text>);
-    if (thread_oop == NULL) {
+    <xsl:text>, &amp;java_thread, NULL);
+    if (err != JVMTI_ERROR_NONE) {
 </xsl:text>
     <xsl:apply-templates select=".." mode="traceError">     
-      <xsl:with-param name="err">JVMTI_ERROR_INVALID_THREAD</xsl:with-param>
-      <xsl:with-param name="comment"> - jthread resolved to NULL - jthread = " PTR_FORMAT "</xsl:with-param>
+      <xsl:with-param name="err">err</xsl:with-param>
+      <xsl:with-param name="comment"> - jthread did not convert to a JavaThread - jthread = " PTR_FORMAT "</xsl:with-param>
       <xsl:with-param name="extraValue">, p2i(<xsl:value-of select="$name"/>)</xsl:with-param>
     </xsl:apply-templates>
     <xsl:text>
     }
-    if (!thread_oop-&gt;is_a(SystemDictionary::Thread_klass())) {
 </xsl:text>
-    <xsl:apply-templates select=".." mode="traceError">     
-      <xsl:with-param name="err">JVMTI_ERROR_INVALID_THREAD</xsl:with-param>
-      <xsl:with-param name="comment"> - oop is not a thread - jthread = " PTR_FORMAT "</xsl:with-param>
-      <xsl:with-param name="extraValue">, p2i(<xsl:value-of select="$name"/>)</xsl:with-param>
-    </xsl:apply-templates>
-    <xsl:text>
-    }
-    java_thread = java_lang_Thread::thread(thread_oop); 
-    if (java_thread == NULL) {
-</xsl:text>
-    <xsl:apply-templates select=".." mode="traceError">     
-      <xsl:with-param name="err">
-        <xsl:text>JVMTI_ERROR_THREAD_NOT_ALIVE</xsl:text>
-      </xsl:with-param>
-      <xsl:with-param name="comment"> - not a Java thread - jthread = " PTR_FORMAT "</xsl:with-param>
-      <xsl:with-param name="extraValue">, p2i(<xsl:value-of select="$name"/>)</xsl:with-param>
-    </xsl:apply-templates>
-    <xsl:text>
-    }
-</xsl:text>  
 </xsl:template>
 
 <xsl:template match="jthread" mode="dochecks">
   <xsl:param name="name"/>
   <!-- If we convert and test threads -->
   <xsl:if test="count(@impl)=0 or not(contains(@impl,'noconvert'))">
-    <xsl:text>  JavaThread* java_thread;
+    <xsl:text>  JavaThread* java_thread = NULL;
+  ThreadsListHandle tlh(this_thread);
 </xsl:text>
     <xsl:choose>
       <xsl:when test="count(@null)=0">

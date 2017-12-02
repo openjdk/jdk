@@ -36,6 +36,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -54,8 +55,8 @@ public final class IntegerAddExactNode extends AddNode implements IntegerExactAr
 
     public IntegerAddExactNode(ValueNode x, ValueNode y) {
         super(TYPE, x, y);
-        setStamp(x.stamp().unrestricted());
-        assert x.stamp().isCompatible(y.stamp()) && x.stamp() instanceof IntegerStamp;
+        setStamp(x.stamp(NodeView.DEFAULT).unrestricted());
+        assert x.stamp(NodeView.DEFAULT).isCompatible(y.stamp(NodeView.DEFAULT)) && x.stamp(NodeView.DEFAULT) instanceof IntegerStamp;
     }
 
     @Override
@@ -132,7 +133,7 @@ public final class IntegerAddExactNode extends AddNode implements IntegerExactAr
                 return forX;
             }
         }
-        if (!IntegerStamp.addCanOverflow((IntegerStamp) forX.stamp(), (IntegerStamp) forY.stamp())) {
+        if (!IntegerStamp.addCanOverflow((IntegerStamp) forX.stamp(NodeView.DEFAULT), (IntegerStamp) forY.stamp(NodeView.DEFAULT))) {
             return new AddNode(forX, forY).canonical(tool);
         }
         return this;
@@ -159,7 +160,7 @@ public final class IntegerAddExactNode extends AddNode implements IntegerExactAr
 
     @Override
     public IntegerExactArithmeticSplitNode createSplit(AbstractBeginNode next, AbstractBeginNode deopt) {
-        return graph().add(new IntegerAddExactSplitNode(stamp(), getX(), getY(), next, deopt));
+        return graph().add(new IntegerAddExactSplitNode(stamp(NodeView.DEFAULT), getX(), getY(), next, deopt));
     }
 
     @Override

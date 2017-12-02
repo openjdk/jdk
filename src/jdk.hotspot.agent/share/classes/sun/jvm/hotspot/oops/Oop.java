@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,8 +202,7 @@ public class Oop {
 
   public boolean verify() { return true;}
 
-  // Package-private routine to speed up ObjectHeap.newOop
-  static Klass getKlassForOopHandle(OopHandle handle) {
+  public static Klass getKlassForOopHandle(OopHandle handle) {
     if (handle == null) {
       return null;
     }

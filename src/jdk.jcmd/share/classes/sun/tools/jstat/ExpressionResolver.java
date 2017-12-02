@@ -69,8 +69,10 @@ public class ExpressionResolver implements ExpressionEvaluator {
             // look it up
             Monitor m = vm.findByName(id.getName());
             if (m == null) {
-                System.err.println("Warning: Unresolved Symbol: "
-                                   + id.getName() + " substituted NaN");
+                if (debug) {
+                    System.err.println("Warning: Unresolved Symbol: "
+                                       + id.getName() + " substituted NaN");
+                }
                 return new Literal(Double.valueOf(Double.NaN));
             }
             if (m.getVariability() == Variability.CONSTANT) {

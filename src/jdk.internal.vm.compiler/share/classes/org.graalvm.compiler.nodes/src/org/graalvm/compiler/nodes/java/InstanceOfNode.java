@@ -36,6 +36,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNegationNode;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.UnaryOpLogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
@@ -92,7 +93,7 @@ public class InstanceOfNode extends UnaryOpLogicNode implements Lowerable, Virtu
     }
 
     public static LogicNode createHelper(ObjectStamp checkedStamp, ValueNode object, JavaTypeProfile profile, AnchoringNode anchor) {
-        LogicNode synonym = findSynonym(checkedStamp, object);
+        LogicNode synonym = findSynonym(checkedStamp, object, NodeView.DEFAULT);
         if (synonym != null) {
             return synonym;
         } else {
@@ -107,7 +108,8 @@ public class InstanceOfNode extends UnaryOpLogicNode implements Lowerable, Virtu
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forValue) {
-        LogicNode synonym = findSynonym(checkedStamp, forValue);
+        NodeView view = NodeView.from(tool);
+        LogicNode synonym = findSynonym(checkedStamp, forValue, view);
         if (synonym != null) {
             return synonym;
         } else {
@@ -115,8 +117,8 @@ public class InstanceOfNode extends UnaryOpLogicNode implements Lowerable, Virtu
         }
     }
 
-    public static LogicNode findSynonym(ObjectStamp checkedStamp, ValueNode object) {
-        ObjectStamp inputStamp = (ObjectStamp) object.stamp();
+    public static LogicNode findSynonym(ObjectStamp checkedStamp, ValueNode object, NodeView view) {
+        ObjectStamp inputStamp = (ObjectStamp) object.stamp(view);
         ObjectStamp joinedStamp = (ObjectStamp) checkedStamp.join(inputStamp);
 
         if (joinedStamp.isEmpty()) {
@@ -158,7 +160,7 @@ public class InstanceOfNode extends UnaryOpLogicNode implements Lowerable, Virtu
     @Override
     public void virtualize(VirtualizerTool tool) {
         ValueNode alias = tool.getAlias(getValue());
-        TriState fold = tryFold(alias.stamp());
+        TriState fold = tryFold(alias.stamp(NodeView.DEFAULT));
         if (fold != TriState.UNKNOWN) {
             tool.replaceWithValue(LogicConstantNode.forBoolean(fold.isTrue(), graph()));
         }

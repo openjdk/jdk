@@ -34,6 +34,7 @@ import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.BeginStateSplitNode;
 import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.KillingBeginNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.Lowerable;
@@ -79,7 +80,7 @@ public final class ExceptionObjectNode extends BeginStateSplitNode implements Lo
              */
             LocationIdentity locationsKilledByInvoke = ((InvokeWithExceptionNode) predecessor()).getLocationIdentity();
             AbstractBeginNode entry = graph().add(KillingBeginNode.create(locationsKilledByInvoke));
-            LoadExceptionObjectNode loadException = graph().add(new LoadExceptionObjectNode(stamp()));
+            LoadExceptionObjectNode loadException = graph().add(new LoadExceptionObjectNode(stamp(NodeView.DEFAULT)));
 
             loadException.setStateAfter(stateAfter());
             replaceAtUsages(InputType.Value, loadException);
@@ -93,7 +94,7 @@ public final class ExceptionObjectNode extends BeginStateSplitNode implements Lo
     @Override
     public boolean verify() {
         assertTrue(stateAfter() != null, "an exception handler needs a frame state");
-        assertTrue(stateAfter().stackSize() == 1 && stateAfter().stackAt(0).stamp().getStackKind() == JavaKind.Object,
+        assertTrue(stateAfter().stackSize() == 1 && stateAfter().stackAt(0).stamp(NodeView.DEFAULT).getStackKind() == JavaKind.Object,
                         "an exception handler's frame state must have only the exception on the stack");
         return super.verify();
     }

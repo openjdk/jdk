@@ -103,7 +103,6 @@ public class GraphNodeProcessor extends AbstractProcessor {
     private void reportException(Kind kind, Element element, Throwable t) {
         StringWriter buf = new StringWriter();
         t.printStackTrace(new PrintWriter(buf));
-        buf.toString();
         message(kind, element, "Exception thrown during processing: %s", buf.toString());
     }
 

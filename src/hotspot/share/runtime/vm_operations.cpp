@@ -38,6 +38,7 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.inline.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/threadService.hpp"
 #include "trace/tracing.hpp"
@@ -96,11 +97,12 @@ void VM_Operation::print_on_error(outputStream* st) const {
 
 void VM_ThreadStop::doit() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
+  ThreadsListHandle tlh;
   JavaThread* target = java_lang_Thread::thread(target_thread());
   // Note that this now allows multiple ThreadDeath exceptions to be
   // thrown at a thread.
-  if (target != NULL) {
-    // the thread has run and is not already in the process of exiting
+  if (target != NULL && (!EnableThreadSMRExtraValidityChecks || tlh.includes(target))) {
+    // The target thread has run and has not exited yet.
     target->send_thread_stop(throwable());
   }
 }
@@ -146,9 +148,10 @@ void VM_DeoptimizeFrame::doit() {
 
 void VM_DeoptimizeAll::doit() {
   DeoptimizationMarker dm;
+  JavaThreadIteratorWithHandle jtiwh;
   // deoptimize all java threads in the system
   if (DeoptimizeALot) {
-    for (JavaThread* thread = Threads::first(); thread != NULL; thread = thread->next()) {
+    for (; JavaThread *thread = jtiwh.next(); ) {
       if (thread->has_last_Java_frame()) {
         thread->deoptimize();
       }
@@ -159,7 +162,7 @@ void VM_DeoptimizeAll::doit() {
     int tnum = os::random() & 0x3;
     int fnum =  os::random() & 0x3;
     int tcount = 0;
-    for (JavaThread* thread = Threads::first(); thread != NULL; thread = thread->next()) {
+    for (; JavaThread *thread = jtiwh.next(); ) {
       if (thread->has_last_Java_frame()) {
         if (tcount++ == tnum)  {
         tcount = 0;
@@ -259,12 +262,19 @@ bool VM_FindDeadlocks::doit_prologue() {
 }
 
 void VM_FindDeadlocks::doit() {
-  _deadlocks = ThreadService::find_deadlocks_at_safepoint(_concurrent_locks);
+  // Update the hazard ptr in the originating thread to the current
+  // list of threads. This VM operation needs the current list of
+  // threads for proper deadlock detection and those are the
+  // JavaThreads we need to be protected when we return info to the
+  // originating thread.
+  _setter.set();
+
+  _deadlocks = ThreadService::find_deadlocks_at_safepoint(_setter.list(), _concurrent_locks);
   if (_out != NULL) {
     int num_deadlocks = 0;
     for (DeadlockCycle* cycle = _deadlocks; cycle != NULL; cycle = cycle->next()) {
       num_deadlocks++;
-      cycle->print_on(_out);
+      cycle->print_on_with(_setter.list(), _out);
     }
 
     if (num_deadlocks == 1) {
@@ -331,6 +341,12 @@ void VM_ThreadDump::doit_epilogue() {
 void VM_ThreadDump::doit() {
   ResourceMark rm;
 
+  // Set the hazard ptr in the originating thread to protect the
+  // current list of threads. This VM operation needs the current list
+  // of threads for a proper dump and those are the JavaThreads we need
+  // to be protected when we return info to the originating thread.
+  _result->set_t_list();
+
   ConcurrentLocksDump concurrent_locks(true);
   if (_with_locked_synchronizers) {
     concurrent_locks.dump_at_safepoint();
@@ -338,7 +354,9 @@ void VM_ThreadDump::doit() {
 
   if (_num_threads == 0) {
     // Snapshot all live threads
-    for (JavaThread* jt = Threads::first(); jt != NULL; jt = jt->next()) {
+
+    for (uint i = 0; i < _result->t_list()->length(); i++) {
+      JavaThread* jt = _result->t_list()->thread_at(i);
       if (jt->is_exiting() ||
           jt->is_hidden_from_external_view())  {
         // skip terminating threads and hidden threads
@@ -354,6 +372,7 @@ void VM_ThreadDump::doit() {
   } else {
     // Snapshot threads in the given _threads array
     // A dummy snapshot is created if a thread doesn't exist
+
     for (int i = 0; i < _num_threads; i++) {
       instanceHandle th = _threads->at(i);
       if (th() == NULL) {
@@ -366,6 +385,12 @@ void VM_ThreadDump::doit() {
       // Dump thread stack only if the thread is alive and not exiting
       // and not VM internal thread.
       JavaThread* jt = java_lang_Thread::thread(th());
+      if (jt != NULL && !_result->t_list()->includes(jt)) {
+        // _threads[i] doesn't refer to a valid JavaThread; this check
+        // is primarily for JVM_DumpThreads() which doesn't have a good
+        // way to validate the _threads array.
+        jt = NULL;
+      }
       if (jt == NULL || /* thread not alive */
           jt->is_exiting() ||
           jt->is_hidden_from_external_view())  {
@@ -384,7 +409,7 @@ void VM_ThreadDump::doit() {
 }
 
 ThreadSnapshot* VM_ThreadDump::snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl) {
-  ThreadSnapshot* snapshot = new ThreadSnapshot(java_thread);
+  ThreadSnapshot* snapshot = new ThreadSnapshot(_result->t_list(), java_thread);
   snapshot->dump_stack_at_safepoint(_max_depth, _with_locked_monitors);
   snapshot->set_concurrent_locks(tcl);
   return snapshot;
@@ -403,11 +428,12 @@ int VM_Exit::set_vm_exited() {
 
   _shutdown_thread = thr_cur;
   _vm_exited = true;                                // global flag
-  for(JavaThread *thr = Threads::first(); thr != NULL; thr = thr->next())
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thr = jtiwh.next(); ) {
     if (thr!=thr_cur && thr->thread_state() == _thread_in_native) {
       ++num_active;
       thr->set_terminated(JavaThread::_vm_exited);  // per-thread flag
     }
+  }
 
   return num_active;
 }
@@ -435,11 +461,13 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   int max_wait = max_wait_compiler_thread;
 
   int attempts = 0;
+  JavaThreadIteratorWithHandle jtiwh;
   while (true) {
     int num_active = 0;
     int num_active_compiler_thread = 0;
 
-    for(JavaThread *thr = Threads::first(); thr != NULL; thr = thr->next()) {
+    jtiwh.rewind();
+    for (; JavaThread *thr = jtiwh.next(); ) {
       if (thr!=thr_cur && thr->thread_state() == _thread_in_native) {
         num_active++;
         if (thr->is_Compiler_thread()) {

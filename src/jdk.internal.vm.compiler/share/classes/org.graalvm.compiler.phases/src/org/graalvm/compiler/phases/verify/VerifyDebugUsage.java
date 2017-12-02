@@ -38,6 +38,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
@@ -234,7 +235,7 @@ public class VerifyDebugUsage extends VerifyPhase<PhaseContext> {
 
     protected void verifyDumpObjectParameter(StructuredGraph callerGraph, MethodCallTargetNode debugCallTarget, ValueNode arg, ResolvedJavaMethod verifiedCallee, Integer dumpLevel)
                     throws org.graalvm.compiler.phases.VerifyPhase.VerificationError {
-        ResolvedJavaType argType = ((ObjectStamp) arg.stamp()).type();
+        ResolvedJavaType argType = ((ObjectStamp) arg.stamp(NodeView.DEFAULT)).type();
         if (metaAccess.lookupJavaType(Graph.class).isAssignableFrom(argType)) {
             verifyStructuredGraphDumping(callerGraph, debugCallTarget, verifiedCallee, dumpLevel);
         }

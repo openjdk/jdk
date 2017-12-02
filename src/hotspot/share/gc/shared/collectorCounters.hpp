@@ -49,9 +49,7 @@ class CollectorCounters: public CHeapObj<mtGC> {
 
     CollectorCounters(const char* name, int ordinal);
 
-    ~CollectorCounters() {
-      if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
-    }
+    ~CollectorCounters();
 
     inline PerfCounter* invocation_counter() const  { return _invocations; }
 
@@ -70,18 +68,9 @@ class TraceCollectorStats: public PerfTraceTimedEvent {
     CollectorCounters* _c;
 
   public:
-    inline TraceCollectorStats(CollectorCounters* c) :
-           PerfTraceTimedEvent(c->time_counter(), c->invocation_counter()),
-           _c(c) {
+    TraceCollectorStats(CollectorCounters* c);
 
-      if (UsePerfData) {
-         _c->last_entry_counter()->set_value(os::elapsed_counter());
-      }
-    }
-
-    inline ~TraceCollectorStats() {
-      if (UsePerfData) _c->last_exit_counter()->set_value(os::elapsed_counter());
-    }
+    ~TraceCollectorStats();
 };
 
 #endif // SHARE_VM_GC_SHARED_COLLECTORCOUNTERS_HPP

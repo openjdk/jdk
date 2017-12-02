@@ -26,6 +26,8 @@
 #define SHARE_VM_GC_SHARED_TASKQUEUE_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/stack.hpp"
 
 // Simple TaskQueue stats that are collected by default in debug builds.
@@ -425,7 +427,7 @@ class ParallelTaskTerminator: public StackObj {
 private:
   uint _n_threads;
   TaskQueueSetSuper* _queue_set;
-  uint _offered_termination;
+  volatile uint _offered_termination;
 
 #ifdef TRACESPINNING
   static uint _total_yields;

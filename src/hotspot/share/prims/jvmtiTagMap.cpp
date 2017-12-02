@@ -45,6 +45,8 @@
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/reflectionUtils.hpp"
+#include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
@@ -3174,7 +3176,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
 // stack to find all references and local JNI refs.
 inline bool VM_HeapWalkOperation::collect_stack_roots() {
   JNILocalRootsClosure blk;
-  for (JavaThread* thread = Threads::first(); thread != NULL ; thread = thread->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
     oop threadObj = thread->threadObj();
     if (threadObj != NULL && !thread->is_exiting() && !thread->is_hidden_from_external_view()) {
       // Collect the simple root for this thread before we

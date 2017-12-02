@@ -24,6 +24,7 @@ package org.graalvm.compiler.phases.graph;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
@@ -50,9 +51,9 @@ public class InferStamps {
         for (Node n : graph.getNodes()) {
             if (n instanceof ValuePhiNode) {
                 ValueNode node = (ValueNode) n;
-                if (node.stamp() instanceof ObjectStamp) {
-                    assert node.stamp().hasValues() : "We assume all Phi and Proxy stamps are legal before the analysis";
-                    node.setStamp(node.stamp().empty());
+                if (node.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
+                    assert node.stamp(NodeView.DEFAULT).hasValues() : "We assume all Phi and Proxy stamps are legal before the analysis";
+                    node.setStamp(node.stamp(NodeView.DEFAULT).empty());
                 }
             }
         }
@@ -71,7 +72,7 @@ public class InferStamps {
             for (Node n : graph.getNodes()) {
                 if (n instanceof ValueNode) {
                     ValueNode node = (ValueNode) n;
-                    if (node.stamp() instanceof ObjectStamp) {
+                    if (node.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                         stampChanged |= node.inferStamp();
                     }
                 }
@@ -90,7 +91,8 @@ public class InferStamps {
         for (Node n : graph.getNodes()) {
             if (n instanceof ValuePhiNode) {
                 ValueNode node = (ValueNode) n;
-                assert node.stamp().hasValues() : "Stamp is empty after analysis. This is not necessarily an error, but a condition that we want to investigate (and then maybe relax or remove the assertion).";
+                assert node.stamp(
+                                NodeView.DEFAULT).hasValues() : "Stamp is empty after analysis. This is not necessarily an error, but a condition that we want to investigate (and then maybe relax or remove the assertion).";
             }
         }
         return true;

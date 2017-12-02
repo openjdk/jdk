@@ -117,6 +117,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   // No intervening control, like a simple Call
   Node *r = iff->in(0);
   if( !r->is_Region() ) return NULL;
+  if (r->is_Loop() && r->in(LoopNode::LoopBackControl)->is_top()) return NULL; // going away anyway
   if( phi->region() != r ) return NULL;
   // No other users of the cmp/bool
   if (b->outcnt() != 1 || cmp->outcnt() != 1) {

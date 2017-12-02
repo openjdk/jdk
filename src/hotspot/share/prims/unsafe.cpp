@@ -39,6 +39,8 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/reflection.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/threadService.hpp"
 #include "trace/tracing.hpp"
@@ -144,18 +146,25 @@ jlong Unsafe_field_offset_from_byte_offset(jlong byte_offset) {
  * Normalizes values and wraps accesses in
  * JavaThread::doing_unsafe_access() if needed.
  */
+template <typename T>
 class MemoryAccess : StackObj {
   JavaThread* _thread;
   oop _obj;
   ptrdiff_t _offset;
 
-  // Resolves and returns the address of the memory access
-  void* addr() {
-    return index_oop_from_field_offset_long(_obj, _offset);
+  // Resolves and returns the address of the memory access.
+  // This raw memory access may fault, so we make sure it happens within the
+  // guarded scope by making the access volatile at least. Since the store
+  // of Thread::set_doing_unsafe_access() is also volatile, these accesses
+  // can not be reordered by the compiler. Therefore, if the access triggers
+  // a fault, we will know that Thread::doing_unsafe_access() returns true.
+  volatile T* addr() {
+    void* addr = index_oop_from_field_offset_long(_obj, _offset);
+    return static_cast<volatile T*>(addr);
   }
 
-  template <typename T>
-  T normalize_for_write(T x) {
+  template <typename U>
+  U normalize_for_write(U x) {
     return x;
   }
 
@@ -163,8 +172,8 @@ class MemoryAccess : StackObj {
     return x & 1;
   }
 
-  template <typename T>
-  T normalize_for_read(T x) {
+  template <typename U>
+  U normalize_for_read(U x) {
     return x;
   }
 
@@ -197,11 +206,10 @@ public:
     assert_field_offset_sane(_obj, offset);
   }
 
-  template <typename T>
   T get() {
     if (oopDesc::is_null(_obj)) {
       GuardUnsafeAccess guard(_thread);
-      T ret = RawAccess<>::load((T*)addr());
+      T ret = RawAccess<>::load(addr());
       return normalize_for_read(ret);
     } else {
       T ret = HeapAccess<>::load_at(_obj, _offset);
@@ -209,22 +217,20 @@ public:
     }
   }
 
-  template <typename T>
   void put(T x) {
     if (oopDesc::is_null(_obj)) {
       GuardUnsafeAccess guard(_thread);
-      RawAccess<>::store((T*)addr(), normalize_for_write(x));
+      RawAccess<>::store(addr(), normalize_for_write(x));
     } else {
       HeapAccess<>::store_at(_obj, _offset, normalize_for_write(x));
     }
   }
 
 
-  template <typename T>
   T get_volatile() {
     if (oopDesc::is_null(_obj)) {
       GuardUnsafeAccess guard(_thread);
-      volatile T ret = RawAccess<MO_SEQ_CST>::load((volatile T*)addr());
+      volatile T ret = RawAccess<MO_SEQ_CST>::load(addr());
       return normalize_for_read(ret);
     } else {
       T ret = HeapAccess<MO_SEQ_CST>::load_at(_obj, _offset);
@@ -232,11 +238,10 @@ public:
     }
   }
 
-  template <typename T>
   void put_volatile(T x) {
     if (oopDesc::is_null(_obj)) {
       GuardUnsafeAccess guard(_thread);
-      RawAccess<MO_SEQ_CST>::store((volatile T*)addr(), normalize_for_write(x));
+      RawAccess<MO_SEQ_CST>::store(addr(), normalize_for_write(x));
     } else {
       HeapAccess<MO_SEQ_CST>::store_at(_obj, _offset, normalize_for_write(x));
     }
@@ -294,11 +299,11 @@ UNSAFE_LEAF(jint, Unsafe_unalignedAccess0(JNIEnv *env, jobject unsafe)) {
 #define DEFINE_GETSETOOP(java_type, Type) \
  \
 UNSAFE_ENTRY(java_type, Unsafe_Get##Type(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) { \
-  return MemoryAccess(thread, obj, offset).get<java_type>(); \
+  return MemoryAccess<java_type>(thread, obj, offset).get(); \
 } UNSAFE_END \
  \
 UNSAFE_ENTRY(void, Unsafe_Put##Type(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, java_type x)) { \
-  MemoryAccess(thread, obj, offset).put<java_type>(x); \
+  MemoryAccess<java_type>(thread, obj, offset).put(x); \
 } UNSAFE_END \
  \
 // END DEFINE_GETSETOOP.
@@ -317,11 +322,11 @@ DEFINE_GETSETOOP(jdouble, Double);
 #define DEFINE_GETSETOOP_VOLATILE(java_type, Type) \
  \
 UNSAFE_ENTRY(java_type, Unsafe_Get##Type##Volatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) { \
-  return MemoryAccess(thread, obj, offset).get_volatile<java_type>(); \
+  return MemoryAccess<java_type>(thread, obj, offset).get_volatile(); \
 } UNSAFE_END \
  \
 UNSAFE_ENTRY(void, Unsafe_Put##Type##Volatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, java_type x)) { \
-  MemoryAccess(thread, obj, offset).put_volatile<java_type>(x); \
+  MemoryAccess<java_type>(thread, obj, offset).put_volatile(x); \
 } UNSAFE_END \
  \
 // END DEFINE_GETSETOOP_VOLATILE.
@@ -937,8 +942,12 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) 
   Parker* p = NULL;
 
   if (jthread != NULL) {
-    oop java_thread = JNIHandles::resolve_non_null(jthread);
+    ThreadsListHandle tlh;
+    JavaThread* thr = NULL;
+    oop java_thread = NULL;
+    (void) tlh.cv_internal_thread_to_JavaThread(jthread, &thr, &java_thread);
     if (java_thread != NULL) {
+      // This is a valid oop.
       jlong lp = java_lang_Thread::park_event(java_thread);
       if (lp != 0) {
         // This cast is OK even though the jlong might have been read
@@ -946,22 +955,19 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) 
         // always be zero anyway and the value set is always the same
         p = (Parker*)addr_from_java(lp);
       } else {
-        // Grab lock if apparently null or using older version of library
-        MutexLocker mu(Threads_lock);
-        java_thread = JNIHandles::resolve_non_null(jthread);
-
-        if (java_thread != NULL) {
-          JavaThread* thr = java_lang_Thread::thread(java_thread);
-          if (thr != NULL) {
-            p = thr->parker();
-            if (p != NULL) { // Bind to Java thread for next time.
-              java_lang_Thread::set_park_event(java_thread, addr_to_java(p));
-            }
+        // Not cached in the java.lang.Thread oop yet (could be an
+        // older version of library).
+        if (thr != NULL) {
+          // The JavaThread is alive.
+          p = thr->parker();
+          if (p != NULL) {
+            // Cache the Parker in the java.lang.Thread oop for next time.
+            java_lang_Thread::set_park_event(java_thread, addr_to_java(p));
           }
         }
       }
     }
-  }
+  } // ThreadsListHandle is destroyed here.
 
   if (p != NULL) {
     HOTSPOT_THREAD_UNPARK((uintptr_t) p);

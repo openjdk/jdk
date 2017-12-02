@@ -74,11 +74,7 @@ public:
     INITIAL_BUF_SIZE = 128
   };
   // This constructor is used when creating the misc information (during dump)
-  SharedPathsMiscInfo() {
-    _buf_size = INITIAL_BUF_SIZE;
-    _cur_ptr = _buf_start = NEW_C_HEAP_ARRAY(char, _buf_size, mtClass);
-    _allocated = true;
-  }
+  SharedPathsMiscInfo();
   // This constructor is used when validating the misc info (during run time)
   SharedPathsMiscInfo(char *buff, int size) {
     _cur_ptr = _buf_start = buff;
@@ -86,11 +82,8 @@ public:
     _buf_size = size;
     _allocated = false;
   }
-  ~SharedPathsMiscInfo() {
-    if (_allocated) {
-      FREE_C_HEAP_ARRAY(char, _buf_start);
-    }
-  }
+  ~SharedPathsMiscInfo();
+
   int get_used_bytes() {
     return _cur_ptr - _buf_start;
   }

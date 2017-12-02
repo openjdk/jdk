@@ -54,6 +54,7 @@ import org.graalvm.compiler.nodes.DeoptimizeNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -90,11 +91,12 @@ public class ArrayCopySnippets implements Snippets {
 
     private enum ArrayCopyTypeCheck {
         UNDEFINED_ARRAY_TYPE_CHECK,
-        // we know that both objects are arrays and have the same type
+        // either we know that both objects are arrays and have the same type,
+        // or we apply generic array copy snippet, which enforces type check
         NO_ARRAY_TYPE_CHECK,
         // can be used when we know that one of the objects is a primitive array
         HUB_BASED_ARRAY_TYPE_CHECK,
-        // must be used when we don't have sufficient information to use one of the others
+        // can be used when we know that one of the objects is an object array
         LAYOUT_HELPER_BASED_ARRAY_TYPE_CHECK
     }
 
@@ -232,18 +234,18 @@ public class ArrayCopySnippets implements Snippets {
 
     @Snippet(allowPartialIntrinsicArgumentMismatch = true)
     public static void genericArraycopyWithSlowPathWork(Object src, int srcPos, Object dest, int destPos, int length, @ConstantParameter Counters counters) {
-        if (probability(FREQUENT_PROBABILITY, length > 0)) {
-            counters.genericArraycopyDifferentTypeCounter.inc();
-            counters.genericArraycopyDifferentTypeCopiedCounter.add(length);
-            int copiedElements = GenericArrayCopyCallNode.genericArraycopy(src, srcPos, dest, destPos, length);
-            if (probability(SLOW_PATH_PROBABILITY, copiedElements != 0)) {
-                /*
-                 * the stub doesn't throw the ArrayStoreException, but returns the number of copied
-                 * elements (xor'd with -1).
-                 */
-                copiedElements ^= -1;
-                System.arraycopy(src, srcPos + copiedElements, dest, destPos + copiedElements, length - copiedElements);
-            }
+        // The length > 0 check should not be placed here because generic array copy stub should
+        // enforce type check. This is fine performance-wise because this snippet is rarely used.
+        counters.genericArraycopyDifferentTypeCounter.inc();
+        counters.genericArraycopyDifferentTypeCopiedCounter.add(length);
+        int copiedElements = GenericArrayCopyCallNode.genericArraycopy(src, srcPos, dest, destPos, length);
+        if (probability(SLOW_PATH_PROBABILITY, copiedElements != 0)) {
+            /*
+             * the stub doesn't throw the ArrayStoreException, but returns the number of copied
+             * elements (xor'd with -1).
+             */
+            copiedElements ^= -1;
+            System.arraycopy(src, srcPos + copiedElements, dest, destPos + copiedElements, length - copiedElements);
         }
     }
 
@@ -275,19 +277,12 @@ public class ArrayCopySnippets implements Snippets {
         } else if (arrayTypeCheck == ArrayCopyTypeCheck.LAYOUT_HELPER_BASED_ARRAY_TYPE_CHECK) {
             KlassPointer srcHub = loadHub(nonNullSrc);
             KlassPointer destHub = loadHub(nonNullDest);
-            checkArrayType(srcHub);
-            checkArrayType(destHub);
+            if (probability(SLOW_PATH_PROBABILITY, readLayoutHelper(srcHub) != readLayoutHelper(destHub))) {
+                DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
+            }
         } else {
             ReplacementsUtil.staticAssert(false, "unknown array type check");
         }
-    }
-
-    private static int checkArrayType(KlassPointer nonNullHub) {
-        int layoutHelper = readLayoutHelper(nonNullHub);
-        if (probability(SLOW_PATH_PROBABILITY, layoutHelper >= 0)) {
-            DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
-        }
-        return layoutHelper;
     }
 
     static class Counters {
@@ -381,8 +376,8 @@ public class ArrayCopySnippets implements Snippets {
             SnippetInfo snippetInfo;
             ArrayCopyTypeCheck arrayTypeCheck;
 
-            ResolvedJavaType srcType = StampTool.typeOrNull(arraycopy.getSource().stamp());
-            ResolvedJavaType destType = StampTool.typeOrNull(arraycopy.getDestination().stamp());
+            ResolvedJavaType srcType = StampTool.typeOrNull(arraycopy.getSource().stamp(NodeView.DEFAULT));
+            ResolvedJavaType destType = StampTool.typeOrNull(arraycopy.getDestination().stamp(NodeView.DEFAULT));
             if (!canBeArray(srcType) || !canBeArray(destType)) {
                 // at least one of the objects is definitely not an array - use the native call
                 // right away as the copying will fail anyways
@@ -399,7 +394,8 @@ public class ArrayCopySnippets implements Snippets {
                 } else if (srcComponentType == null && destComponentType == null) {
                     // we don't know anything about the types - use the generic copying
                     snippetInfo = arraycopyGenericSnippet;
-                    arrayTypeCheck = ArrayCopyTypeCheck.LAYOUT_HELPER_BASED_ARRAY_TYPE_CHECK;
+                    // no need for additional type check to avoid duplicated work
+                    arrayTypeCheck = ArrayCopyTypeCheck.NO_ARRAY_TYPE_CHECK;
                 } else if (srcComponentType != null && destComponentType != null) {
                     if (!srcComponentType.isPrimitive() && !destComponentType.isPrimitive()) {
                         // it depends on the array content if the copy succeeds - we need
@@ -416,14 +412,14 @@ public class ArrayCopySnippets implements Snippets {
                 } else {
                     ResolvedJavaType nonNullComponentType = srcComponentType != null ? srcComponentType : destComponentType;
                     if (nonNullComponentType.isPrimitive()) {
-                        // one involved object is a primitive array - we can safely assume that we
-                        // are copying primitive arrays
+                        // one involved object is a primitive array - it is sufficient to directly
+                        // compare the hub.
                         snippetInfo = arraycopyExactSnippet;
                         arrayTypeCheck = ArrayCopyTypeCheck.HUB_BASED_ARRAY_TYPE_CHECK;
                         elementKind = nonNullComponentType.getJavaKind();
                     } else {
-                        // one involved object is an object array - we can safely assume that we are
-                        // copying object arrays that might require a store check
+                        // one involved object is an object array - the other array's element type
+                        // may be primitive or object, hence we compare the layout helper.
                         snippetInfo = arraycopyCheckcastSnippet;
                         arrayTypeCheck = ArrayCopyTypeCheck.LAYOUT_HELPER_BASED_ARRAY_TYPE_CHECK;
                     }
@@ -432,7 +428,12 @@ public class ArrayCopySnippets implements Snippets {
 
             // a few special cases that are easier to handle when all other variables already have a
             // value
-            if (arraycopy.getLength().isConstant() && arraycopy.getLength().asJavaConstant().asLong() == 0) {
+            if (snippetInfo != arraycopyNativeSnippet && snippetInfo != arraycopyGenericSnippet && arraycopy.getLength().isConstant() && arraycopy.getLength().asJavaConstant().asLong() == 0) {
+                // Copying 0 element between object arrays with conflicting types will not throw an
+                // exception - once we pass the preliminary element type checks that we are not
+                // mixing arrays of different basic types, ArrayStoreException is only thrown when
+                // an *astore would have thrown it. Therefore, copying null between object arrays
+                // with conflicting types will also succeed (we do not optimize for such case here).
                 snippetInfo = arraycopyZeroLengthSnippet;
             } else if (snippetInfo == arraycopyExactSnippet && shouldUnroll(arraycopy.getLength())) {
                 snippetInfo = arraycopyUnrolledSnippet;
@@ -495,8 +496,8 @@ public class ArrayCopySnippets implements Snippets {
         }
 
         public static JavaKind selectComponentKind(BasicArrayCopyNode arraycopy) {
-            ResolvedJavaType srcType = StampTool.typeOrNull(arraycopy.getSource().stamp());
-            ResolvedJavaType destType = StampTool.typeOrNull(arraycopy.getDestination().stamp());
+            ResolvedJavaType srcType = StampTool.typeOrNull(arraycopy.getSource().stamp(NodeView.DEFAULT));
+            ResolvedJavaType destType = StampTool.typeOrNull(arraycopy.getDestination().stamp(NodeView.DEFAULT));
 
             if (srcType == null || !srcType.isArray() || destType == null || !destType.isArray()) {
                 return null;

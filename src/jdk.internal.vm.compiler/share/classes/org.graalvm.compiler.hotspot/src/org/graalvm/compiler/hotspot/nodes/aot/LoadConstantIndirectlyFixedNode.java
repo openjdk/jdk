@@ -36,6 +36,7 @@ import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.hotspot.word.MethodPointer;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -56,14 +57,14 @@ public class LoadConstantIndirectlyFixedNode extends FixedWithNextNode implement
     protected HotSpotConstantLoadAction action;
 
     public LoadConstantIndirectlyFixedNode(ValueNode value) {
-        super(TYPE, value.stamp());
+        super(TYPE, value.stamp(NodeView.DEFAULT));
         this.value = value;
         this.constant = null;
         this.action = HotSpotConstantLoadAction.RESOLVE;
     }
 
     public LoadConstantIndirectlyFixedNode(ValueNode value, HotSpotConstantLoadAction action) {
-        super(TYPE, value.stamp());
+        super(TYPE, value.stamp(NodeView.DEFAULT));
         this.value = value;
         this.constant = null;
         this.action = action;

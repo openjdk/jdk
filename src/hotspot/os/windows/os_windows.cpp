@@ -2904,6 +2904,75 @@ void os::large_page_init() {
   UseLargePages = success;
 }
 
+int os::create_file_for_heap(const char* dir) {
+
+  const char name_template[] = "/jvmheap.XXXXXX";
+  char *fullname = (char*)os::malloc((strlen(dir) + strlen(name_template) + 1), mtInternal);
+  if (fullname == NULL) {
+    vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
+    return -1;
+  }
+
+  (void)strncpy(fullname, dir, strlen(dir)+1);
+  (void)strncat(fullname, name_template, strlen(name_template));
+
+  os::native_path(fullname);
+
+  char *path = _mktemp(fullname);
+  if (path == NULL) {
+    warning("_mktemp could not create file name from template %s (%s)", fullname, os::strerror(errno));
+    os::free(fullname);
+    return -1;
+  }
+
+  int fd = _open(path, O_RDWR | O_CREAT | O_TEMPORARY | O_EXCL, S_IWRITE | S_IREAD);
+
+  os::free(fullname);
+  if (fd < 0) {
+    warning("Problem opening file for heap (%s)", os::strerror(errno));
+    return -1;
+  }
+  return fd;
+}
+
+// If 'base' is not NULL, function will return NULL if it cannot get 'base'
+char* os::map_memory_to_file(char* base, size_t size, int fd) {
+  assert(fd != -1, "File descriptor is not valid");
+
+  HANDLE fh = (HANDLE)_get_osfhandle(fd);
+#ifdef _LP64
+  HANDLE fileMapping = CreateFileMapping(fh, NULL, PAGE_READWRITE,
+    (DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), NULL);
+#else
+  HANDLE fileMapping = CreateFileMapping(fh, NULL, PAGE_READWRITE,
+    0, (DWORD)size, NULL);
+#endif
+  if (fileMapping == NULL) {
+    if (GetLastError() == ERROR_DISK_FULL) {
+      vm_exit_during_initialization(err_msg("Could not allocate sufficient disk space for Java heap"));
+    }
+    else {
+      vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
+    }
+
+    return NULL;
+  }
+
+  LPVOID addr = MapViewOfFileEx(fileMapping, FILE_MAP_WRITE, 0, 0, size, base);
+
+  CloseHandle(fileMapping);
+
+  return (char*)addr;
+}
+
+char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd) {
+  assert(fd != -1, "File descriptor is not valid");
+  assert(base != NULL, "Base address cannot be NULL");
+
+  release_memory(base, size);
+  return map_memory_to_file(base, size, fd);
+}
+
 // On win32, one cannot release just a part of reserved memory, it's an
 // all or nothing deal.  When we split a reservation, we must break the
 // reservation into two reservations.
@@ -2923,7 +2992,7 @@ void os::pd_split_reserved_memory(char *base, size_t size, size_t split,
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
          "Alignment must be a multiple of allocation granularity (page size)");
   assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
@@ -2934,16 +3003,20 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment) {
   char* aligned_base = NULL;
 
   do {
-    char* extra_base = os::reserve_memory(extra_size, NULL, alignment);
+    char* extra_base = os::reserve_memory(extra_size, NULL, alignment, file_desc);
     if (extra_base == NULL) {
       return NULL;
     }
     // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
 
-    os::release_memory(extra_base, extra_size);
+    if (file_desc != -1) {
+      os::unmap_memory(extra_base, extra_size);
+    } else {
+      os::release_memory(extra_base, extra_size);
+    }
 
-    aligned_base = os::reserve_memory(size, aligned_base);
+    aligned_base = os::reserve_memory(size, aligned_base, 0, file_desc);
 
   } while (aligned_base == NULL);
 
@@ -2987,6 +3060,11 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   // Windows os::reserve_memory() fails of the requested address range is
   // not avilable.
   return reserve_memory(bytes, requested_addr);
+}
+
+char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int file_desc) {
+  assert(file_desc >= 0, "file_desc is not valid");
+  return map_memory_to_file(requested_addr, bytes, file_desc);
 }
 
 size_t os::large_page_size() {
@@ -3490,9 +3568,7 @@ OSReturn os::get_native_priority(const Thread* const thread,
 void os::hint_no_preempt() {}
 
 void os::interrupt(Thread* thread) {
-  assert(!thread->is_Java_thread() || Thread::current() == thread ||
-         Threads_lock->owned_by_self(),
-         "possibility of dangling Thread pointer");
+  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   OSThread* osthread = thread->osthread();
   osthread->set_interrupted(true);
@@ -3513,8 +3589,7 @@ void os::interrupt(Thread* thread) {
 
 
 bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
-  assert(!thread->is_Java_thread() || Thread::current() == thread || Threads_lock->owned_by_self(),
-         "possibility of dangling Thread pointer");
+  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   OSThread* osthread = thread->osthread();
   // There is no synchronization between the setting of the interrupt

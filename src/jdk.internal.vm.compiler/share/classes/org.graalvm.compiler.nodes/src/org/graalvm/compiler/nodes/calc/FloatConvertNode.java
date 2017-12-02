@@ -33,6 +33,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.Lowerable;
@@ -65,8 +66,8 @@ public final class FloatConvertNode extends UnaryArithmeticNode<FloatConvertOp> 
         this.op = op;
     }
 
-    public static ValueNode create(FloatConvert op, ValueNode input) {
-        ValueNode synonym = findSynonym(input, ArithmeticOpTable.forStamp(input.stamp()).getFloatConvert(op));
+    public static ValueNode create(FloatConvert op, ValueNode input, NodeView view) {
+        ValueNode synonym = findSynonym(input, ArithmeticOpTable.forStamp(input.stamp(view)).getFloatConvert(op));
         if (synonym != null) {
             return synonym;
         }
@@ -84,7 +85,7 @@ public final class FloatConvertNode extends UnaryArithmeticNode<FloatConvertOp> 
 
     @Override
     public Constant reverse(Constant c, ConstantReflectionProvider constantReflection) {
-        FloatConvertOp reverse = ArithmeticOpTable.forStamp(stamp()).getFloatConvert(op.reverse());
+        FloatConvertOp reverse = ArithmeticOpTable.forStamp(stamp(NodeView.DEFAULT)).getFloatConvert(op.reverse());
         return reverse.foldConstant(c);
     }
 

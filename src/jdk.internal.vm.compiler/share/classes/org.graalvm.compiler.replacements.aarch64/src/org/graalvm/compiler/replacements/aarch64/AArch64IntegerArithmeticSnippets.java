@@ -31,6 +31,7 @@ import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FixedBinaryNode;
@@ -84,7 +85,7 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
     }
 
     public void lower(FixedBinaryNode node, LoweringTool tool) {
-        JavaKind kind = node.stamp().getStackKind();
+        JavaKind kind = node.stamp(NodeView.DEFAULT).getStackKind();
         assert kind == JavaKind.Int || kind == JavaKind.Long;
         SnippetTemplate.SnippetInfo snippet;
         if (node instanceof SafeNode) {

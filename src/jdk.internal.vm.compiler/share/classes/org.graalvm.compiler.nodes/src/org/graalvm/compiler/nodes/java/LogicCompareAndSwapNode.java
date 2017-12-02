@@ -30,6 +30,7 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -58,11 +59,11 @@ public final class LogicCompareAndSwapNode extends AbstractCompareAndSwapNode {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        assert getNewValue().stamp().isCompatible(getExpectedValue().stamp());
+        assert getNewValue().stamp(NodeView.DEFAULT).isCompatible(getExpectedValue().stamp(NodeView.DEFAULT));
         assert !this.canDeoptimize();
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
 
-        LIRKind resultKind = tool.getLIRKind(stamp());
+        LIRKind resultKind = tool.getLIRKind(stamp(NodeView.DEFAULT));
         Value trueResult = tool.emitConstant(resultKind, JavaConstant.TRUE);
         Value falseResult = tool.emitConstant(resultKind, JavaConstant.FALSE);
         Value result = tool.emitLogicCompareAndSwap(gen.operand(getAddress()), gen.operand(getExpectedValue()), gen.operand(getNewValue()), trueResult, falseResult);

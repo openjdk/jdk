@@ -33,6 +33,7 @@ import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
@@ -48,7 +49,7 @@ public final class AArch64CountLeadingZerosNode extends UnaryNode implements Ari
     public static final NodeClass<AArch64CountLeadingZerosNode> TYPE = NodeClass.create(AArch64CountLeadingZerosNode.class);
 
     public AArch64CountLeadingZerosNode(ValueNode value) {
-        super(TYPE, computeStamp(value.stamp(), value), value);
+        super(TYPE, computeStamp(value.stamp(NodeView.DEFAULT), value), value);
     }
 
     @Override
@@ -57,7 +58,7 @@ public final class AArch64CountLeadingZerosNode extends UnaryNode implements Ari
     }
 
     private static Stamp computeStamp(Stamp newStamp, ValueNode theValue) {
-        assert newStamp.isCompatible(theValue.stamp());
+        assert newStamp.isCompatible(theValue.stamp(NodeView.DEFAULT));
         assert theValue.getStackKind() == JavaKind.Int || theValue.getStackKind() == JavaKind.Long;
         return StampTool.stampForLeadingZeros((IntegerStamp) newStamp);
     }

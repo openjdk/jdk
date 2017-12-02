@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,33 @@ JvmtiEnvThreadState* JvmtiThreadState::head_env_thread_state() {
 
 void JvmtiThreadState::set_head_env_thread_state(JvmtiEnvThreadState* ets) {
   _head_env_thread_state = ets;
+}
+
+inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *thread) {
+  assert(JvmtiThreadState_lock->is_locked(), "sanity check");
+
+  JvmtiThreadState *state = thread->jvmti_thread_state();
+  if (state == NULL) {
+    if (thread->is_exiting()) {
+      // don't add a JvmtiThreadState to a thread that is exiting
+      return NULL;
+    }
+
+    state = new JvmtiThreadState(thread);
+  }
+  return state;
+}
+
+inline JvmtiThreadState* JvmtiThreadState::state_for(JavaThread *thread) {
+  JvmtiThreadState *state = thread->jvmti_thread_state();
+  if (state == NULL) {
+    MutexLocker mu(JvmtiThreadState_lock);
+    // check again with the lock held
+    state = state_for_while_locked(thread);
+  } else {
+    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
+  }
+  return state;
 }
 
 #endif // SHARE_VM_PRIMS_JVMTITHREADSTATE_INLINE_HPP

@@ -23,17 +23,48 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/cms/compactibleFreeListSpace.hpp"
+#include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/cms/cmsHeap.hpp"
+#include "gc/cms/parNewGeneration.hpp"
 #include "gc/cms/vmCMSOperations.hpp"
+#include "gc/shared/genMemoryPools.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/vmThread.hpp"
+#include "services/memoryManager.hpp"
 #include "utilities/stack.inline.hpp"
 
-CMSHeap::CMSHeap(GenCollectorPolicy *policy) : GenCollectedHeap(policy) {
+class CompactibleFreeListSpacePool : public CollectedMemoryPool {
+private:
+  CompactibleFreeListSpace* _space;
+public:
+  CompactibleFreeListSpacePool(CompactibleFreeListSpace* space,
+                               const char* name,
+                               size_t max_size,
+                               bool support_usage_threshold) :
+    CollectedMemoryPool(name, space->capacity(), max_size, support_usage_threshold),
+    _space(space) {
+  }
+
+  MemoryUsage get_memory_usage() {
+    size_t max_heap_size   = (available_for_allocation() ? max_size() : 0);
+    size_t used      = used_in_bytes();
+    size_t committed = _space->capacity();
+
+    return MemoryUsage(initial_size(), used, committed, max_heap_size);
+  }
+
+  size_t used_in_bytes() {
+    return _space->used();
+  }
+};
+
+CMSHeap::CMSHeap(GenCollectorPolicy *policy) :
+  GenCollectedHeap(policy), _eden_pool(NULL), _survivor_pool(NULL), _old_pool(NULL) {
   _workers = new WorkGang("GC Thread", ParallelGCThreads,
                           /* are_GC_task_threads */true,
                           /* are_ConcurrentGC_threads */false);
@@ -52,6 +83,38 @@ jint CMSHeap::initialize() {
   }
 
   return JNI_OK;
+}
+
+void CMSHeap::initialize_serviceability() {
+  _young_manager = new GCMemoryManager("ParNew", "end of minor GC");
+  _old_manager = new GCMemoryManager("ConcurrentMarkSweep", "end of major GC");
+
+  ParNewGeneration* young = (ParNewGeneration*) young_gen();
+  _eden_pool = new ContiguousSpacePool(young->eden(),
+                                       "Par Eden Space",
+                                       young->max_eden_size(),
+                                       false);
+
+  _survivor_pool = new SurvivorContiguousSpacePool(young,
+                                                   "Par Survivor Space",
+                                                   young->max_survivor_size(),
+                                                   false);
+
+  ConcurrentMarkSweepGeneration* old = (ConcurrentMarkSweepGeneration*) old_gen();
+  _old_pool = new CompactibleFreeListSpacePool(old->cmsSpace(),
+                                               "CMS Old Gen",
+                                               old->reserved().byte_size(),
+                                               true);
+
+  _young_manager->add_pool(_eden_pool);
+  _young_manager->add_pool(_survivor_pool);
+  young->set_gc_manager(_young_manager);
+
+  _old_manager->add_pool(_eden_pool);
+  _old_manager->add_pool(_survivor_pool);
+  _old_manager->add_pool(_old_pool);
+  old ->set_gc_manager(_old_manager);
+
 }
 
 void CMSHeap::check_gen_kinds() {
@@ -183,3 +246,18 @@ void CMSHeap::gc_epilogue(bool full) {
   GenCollectedHeap::gc_epilogue(full);
   always_do_update_barrier = true;
 };
+
+GrowableArray<GCMemoryManager*> CMSHeap::memory_managers() {
+  GrowableArray<GCMemoryManager*> memory_managers(2);
+  memory_managers.append(_young_manager);
+  memory_managers.append(_old_manager);
+  return memory_managers;
+}
+
+GrowableArray<MemoryPool*> CMSHeap::memory_pools() {
+  GrowableArray<MemoryPool*> memory_pools(3);
+  memory_pools.append(_eden_pool);
+  memory_pools.append(_survivor_pool);
+  memory_pools.append(_old_pool);
+  return memory_pools;
+}

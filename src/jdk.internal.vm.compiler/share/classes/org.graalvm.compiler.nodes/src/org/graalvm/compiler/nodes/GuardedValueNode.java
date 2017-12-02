@@ -53,7 +53,7 @@ public final class GuardedValueNode extends FloatingGuardedNode implements LIRLo
     @Input ValueNode object;
 
     public GuardedValueNode(ValueNode object, GuardingNode guard) {
-        super(TYPE, object.stamp(), guard);
+        super(TYPE, object.stamp(NodeView.DEFAULT), guard);
         this.object = object;
     }
 
@@ -70,7 +70,7 @@ public final class GuardedValueNode extends FloatingGuardedNode implements LIRLo
 
     @Override
     public boolean inferStamp() {
-        return updateStamp(object().stamp());
+        return updateStamp(object().stamp(NodeView.DEFAULT));
     }
 
     @Override
@@ -84,10 +84,10 @@ public final class GuardedValueNode extends FloatingGuardedNode implements LIRLo
     @Override
     public Node canonical(CanonicalizerTool tool) {
         if (getGuard() == null) {
-            if (stamp().equals(object().stamp())) {
+            if (stamp(NodeView.DEFAULT).equals(object().stamp(NodeView.DEFAULT))) {
                 return object();
             } else {
-                return PiNode.create(object(), stamp());
+                return PiNode.create(object(), stamp(NodeView.DEFAULT));
             }
         }
         return this;

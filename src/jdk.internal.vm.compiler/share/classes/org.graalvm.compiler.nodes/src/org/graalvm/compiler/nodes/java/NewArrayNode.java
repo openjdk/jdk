@@ -37,6 +37,7 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.spi.VirtualizableAllocation;
@@ -119,7 +120,8 @@ public class NewArrayNode extends AbstractNewArrayNode implements VirtualizableA
     @Override
     public void simplify(SimplifierTool tool) {
         if (hasNoUsages()) {
-            Stamp lengthStamp = length().stamp();
+            NodeView view = NodeView.from(tool);
+            Stamp lengthStamp = length().stamp(view);
             if (lengthStamp instanceof IntegerStamp) {
                 IntegerStamp lengthIntegerStamp = (IntegerStamp) lengthStamp;
                 if (lengthIntegerStamp.isPositive()) {
@@ -130,7 +132,7 @@ public class NewArrayNode extends AbstractNewArrayNode implements VirtualizableA
             // Should be areFrameStatesAtSideEffects but currently SVM will complain about
             // RuntimeConstraint
             if (graph().getGuardsStage().allowsFloatingGuards()) {
-                LogicNode lengthNegativeCondition = CompareNode.createCompareNode(graph(), Condition.LT, length(), ConstantNode.forInt(0, graph()), tool.getConstantReflection());
+                LogicNode lengthNegativeCondition = CompareNode.createCompareNode(graph(), Condition.LT, length(), ConstantNode.forInt(0, graph()), tool.getConstantReflection(), view);
                 // we do not have a non-deopting path for that at the moment so action=None.
                 FixedGuardNode guard = graph().add(new FixedGuardNode(lengthNegativeCondition, DeoptimizationReason.RuntimeConstraint, DeoptimizationAction.None, true));
                 graph().replaceFixedWithFixed(this, guard);

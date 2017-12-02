@@ -92,7 +92,7 @@ typedef struct {
 } AOTHeader;
 
 typedef struct {
-  enum { CONFIG_SIZE = 7 * jintSize + 11 };
+  enum { CONFIG_SIZE = 7 * jintSize + 12 };
   // 7 int values
   int _config_size;
   int _narrowOopShift;
@@ -101,7 +101,7 @@ typedef struct {
   int _fieldsAllocationStyle;
   int _objectAlignment;
   int _codeSegmentSize;
-  // byte[11] array map to boolean values here
+  // byte[12] array map to boolean values here
   bool _debug_VM;
   bool _useCompressedOops;
   bool _useCompressedClassPointers;
@@ -113,6 +113,7 @@ typedef struct {
   bool _enableContended;
   bool _restrictContended;
   bool _omitAssertions;
+  bool _threadLocalHandshakes;
 } AOTConfiguration;
 
 class AOTLib : public CHeapObj<mtCode> {

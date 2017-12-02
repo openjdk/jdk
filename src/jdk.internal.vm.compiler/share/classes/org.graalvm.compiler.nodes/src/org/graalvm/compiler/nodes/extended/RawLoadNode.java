@@ -34,6 +34,7 @@ import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ReinterpretNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
@@ -103,14 +104,14 @@ public class RawLoadNode extends UnsafeAccessNode implements Lowerable, Virtuali
                     JavaKind entryKind = virtual.entryKind(entryIndex);
                     if (entry.getStackKind() == getStackKind() || entryKind == accessKind()) {
 
-                        if (!(entry.stamp().isCompatible(stamp()))) {
-                            if (entry.stamp() instanceof PrimitiveStamp && stamp instanceof PrimitiveStamp) {
+                        if (!(entry.stamp(NodeView.DEFAULT).isCompatible(stamp(NodeView.DEFAULT)))) {
+                            if (entry.stamp(NodeView.DEFAULT) instanceof PrimitiveStamp && stamp instanceof PrimitiveStamp) {
                                 PrimitiveStamp p1 = (PrimitiveStamp) stamp;
-                                PrimitiveStamp p2 = (PrimitiveStamp) entry.stamp();
+                                PrimitiveStamp p2 = (PrimitiveStamp) entry.stamp(NodeView.DEFAULT);
                                 int width1 = p1.getBits();
                                 int width2 = p2.getBits();
                                 if (width1 == width2) {
-                                    Node replacement = new ReinterpretNode(p2, entry);
+                                    Node replacement = ReinterpretNode.create(p2, entry, NodeView.DEFAULT);
                                     tool.replaceWith((ValueNode) replacement);
                                     return;
                                 } else {
@@ -141,11 +142,12 @@ public class RawLoadNode extends UnsafeAccessNode implements Lowerable, Virtuali
                     if (arrayConstant != null) {
                         int stableDimension = objectConstant.getStableDimension();
                         if (stableDimension > 0) {
+                            NodeView view = NodeView.from(tool);
                             long constantOffset = offset().asJavaConstant().asLong();
-                            Constant constant = stamp().readConstant(tool.getConstantReflection().getMemoryAccessProvider(), arrayConstant, constantOffset);
+                            Constant constant = stamp(view).readConstant(tool.getConstantReflection().getMemoryAccessProvider(), arrayConstant, constantOffset);
                             boolean isDefaultStable = objectConstant.isDefaultStable();
                             if (constant != null && (isDefaultStable || !constant.isDefaultForKind())) {
-                                return ConstantNode.forConstant(stamp(), constant, stableDimension - 1, isDefaultStable, tool.getMetaAccess());
+                                return ConstantNode.forConstant(stamp(view), constant, stableDimension - 1, isDefaultStable, tool.getMetaAccess());
                             }
                         }
                     }

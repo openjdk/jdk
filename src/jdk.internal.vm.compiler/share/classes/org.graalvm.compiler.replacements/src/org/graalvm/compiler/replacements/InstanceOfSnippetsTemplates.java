@@ -36,6 +36,7 @@ import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -183,7 +184,7 @@ public abstract class InstanceOfSnippetsTemplates extends AbstractTemplates {
             }
             if (condition == null || (!(condition instanceof CompareNode)) || ((CompareNode) condition).getY() != testValue) {
                 // Re-use previously generated condition if the trueValue for the test is the same
-                condition = createCompareNode(result.graph(), Condition.EQ, result, testValue, null);
+                condition = createCompareNode(result.graph(), Condition.EQ, result, testValue, null, NodeView.DEFAULT);
             }
             return condition;
         }

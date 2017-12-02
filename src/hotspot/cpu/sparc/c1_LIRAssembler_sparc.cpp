@@ -398,8 +398,13 @@ void LIR_Assembler::jobject2reg(jobject o, Register reg) {
   if (o == NULL) {
     __ set(NULL_WORD, reg);
   } else {
+#ifdef ASSERT
+    {
+      ThreadInVMfromNative tiv(JavaThread::current());
+      assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(o)), "should be real oop");
+    }
+#endif
     int oop_index = __ oop_recorder()->find_index(o);
-    assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(o)), "should be real oop");
     RelocationHolder rspec = oop_Relocation::spec(oop_index);
     __ set(NULL_WORD, reg, rspec); // Will be set when the nmethod is created
   }

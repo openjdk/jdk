@@ -1252,6 +1252,7 @@ const bool Matcher::match_rule_supported(int opcode) {
         ret_value = false;
       break;
     case Op_SqrtVD:
+    case Op_SqrtVF:
       if (UseAVX < 1) // enabled for AVX only
         ret_value = false;
       break;
@@ -2580,7 +2581,7 @@ instruct negD_reg_reg(regD dst, regD src) %{
 
 instruct sqrtF_reg(regF dst, regF src) %{
   predicate(UseSSE>=1);
-  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
+  match(Set dst (SqrtF src));
 
   format %{ "sqrtss  $dst, $src" %}
   ins_cost(150);
@@ -2592,7 +2593,7 @@ instruct sqrtF_reg(regF dst, regF src) %{
 
 instruct sqrtF_mem(regF dst, memory src) %{
   predicate(UseSSE>=1);
-  match(Set dst (ConvD2F (SqrtD (ConvF2D (LoadF src)))));
+  match(Set dst (SqrtF (LoadF src)));
 
   format %{ "sqrtss  $dst, $src" %}
   ins_cost(150);
@@ -2604,7 +2605,8 @@ instruct sqrtF_mem(regF dst, memory src) %{
 
 instruct sqrtF_imm(regF dst, immF con) %{
   predicate(UseSSE>=1);
-  match(Set dst (ConvD2F (SqrtD (ConvF2D con))));
+  match(Set dst (SqrtF con));
+
   format %{ "sqrtss  $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150);
   ins_encode %{
@@ -8388,7 +8390,7 @@ instruct vshiftcnt(vecS dst, rRegI cnt) %{
 
 // --------------------------------- Sqrt --------------------------------------
 
-// Floating point vector sqrt - double precision only
+// Floating point vector sqrt
 instruct vsqrt2D_reg(vecX dst, vecX src) %{
   predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
   match(Set dst (SqrtVD src));
@@ -8451,6 +8453,94 @@ instruct vsqrt8D_mem(vecZ dst, memory mem) %{
   ins_encode %{
     int vector_len = 2;
     __ vsqrtpd($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt2F_reg(vecD dst, vecD src) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SqrtVF src));
+  format %{ "vsqrtps  $dst,$src\t! sqrt packed2F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt2F_mem(vecD dst, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 2);
+  match(Set dst (SqrtVF (LoadVector mem)));
+  format %{ "vsqrtps  $dst,$mem\t! sqrt packed2F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt4F_reg(vecX dst, vecX src) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SqrtVF src));
+  format %{ "vsqrtps  $dst,$src\t! sqrt packed4F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt4F_mem(vecX dst, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 4);
+  match(Set dst (SqrtVF (LoadVector mem)));
+  format %{ "vsqrtps  $dst,$mem\t! sqrt packed4F" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt8F_reg(vecY dst, vecY src) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (SqrtVF src));
+  format %{ "vsqrtps  $dst,$src\t! sqrt packed8F" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt8F_mem(vecY dst, memory mem) %{
+  predicate(UseAVX > 0 && n->as_Vector()->length() == 8);
+  match(Set dst (SqrtVF (LoadVector mem)));
+  format %{ "vsqrtps  $dst,$mem\t! sqrt packed8F" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt16F_reg(vecZ dst, vecZ src) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 16);
+  match(Set dst (SqrtVF src));
+  format %{ "vsqrtps  $dst,$src\t! sqrt packed16F" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vsqrtps($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vsqrt16F_mem(vecZ dst, memory mem) %{
+  predicate(UseAVX > 2 && n->as_Vector()->length() == 16);
+  match(Set dst (SqrtVF (LoadVector mem)));
+  format %{ "vsqrtps  $dst,$mem\t! sqrt packed16F" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vsqrtps($dst$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

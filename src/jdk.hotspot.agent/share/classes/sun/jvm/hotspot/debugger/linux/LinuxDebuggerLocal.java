@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,11 +210,7 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
             // the UI. This is a cache of 4096 4K pages, or 16 MB. The page
             // size must be adjusted to be the hardware's page size.
             // (FIXME: should pick this up from the debugger.)
-            if (getCPU().equals("ia64")) {
-              initCache(16384, parseCacheNumPagesProperty(1024));
-            } else {
-              initCache(4096, parseCacheNumPagesProperty(4096));
-            }
+            initCache(4096, parseCacheNumPagesProperty(4096));
         }
 
         workerThread = new LinuxDebuggerLocalWorkerThread(this);
@@ -560,11 +556,6 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
 
     public CDebugger getCDebugger() {
       if (cdbg == null) {
-         String cpu = getCPU();
-         if (cpu.equals("ia64") ) {
-            // IA-64 is not supported because of stack-walking issues
-            return null;
-         }
          cdbg = new LinuxCDebugger(this);
       }
       return cdbg;

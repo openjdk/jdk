@@ -50,6 +50,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -1297,7 +1298,7 @@ void Deoptimization::revoke_biases_of_monitors(CodeBlob* cb) {
 
   assert(SafepointSynchronize::is_at_safepoint(), "must only be called from safepoint");
   GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
-  for (JavaThread* jt = Threads::first(); jt != NULL ; jt = jt->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     if (jt->has_last_Java_frame()) {
       StackFrameStream sfs(jt, true);
       while (!sfs.is_done()) {

@@ -36,6 +36,7 @@ import org.graalvm.compiler.hotspot.nodes.DeoptimizingStubCall;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -59,14 +60,14 @@ public class ResolveConstantStubCall extends DeoptimizingStubCall implements Can
     protected HotSpotConstantLoadAction action;
 
     public ResolveConstantStubCall(ValueNode value, ValueNode string) {
-        super(TYPE, value.stamp());
+        super(TYPE, value.stamp(NodeView.DEFAULT));
         this.value = value;
         this.string = string;
         this.action = HotSpotConstantLoadAction.RESOLVE;
     }
 
     public ResolveConstantStubCall(ValueNode value, ValueNode string, HotSpotConstantLoadAction action) {
-        super(TYPE, value.stamp());
+        super(TYPE, value.stamp(NodeView.DEFAULT));
         this.value = value;
         this.string = string;
         this.action = action;

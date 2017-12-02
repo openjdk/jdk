@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,14 +77,14 @@ extern  int     _libproc_debug; /* set non-zero to enable debugging fprintfs */
 typedef uint32_t syscall_t;     /* holds a syscall instruction */
 #endif  /* sparc */
 
-#if defined(__i386) || defined(__ia64)
+#if defined(__i386)
 #define R_PC    EIP
 #define R_SP    UESP
 #define R_RVAL1 EAX             /* register holding a function return value */
 #define R_RVAL2 EDX             /* 32 more bits for a 64-bit return value */
 #define SYSCALL 0x9a            /* syscall (lcall) instruction opcode */
 typedef uchar_t syscall_t[7];   /* holds a syscall instruction */
-#endif  /* __i386 || __ia64 */
+#endif  /* __i386 */
 
 #define R_RVAL  R_RVAL1         /* simple function return value register */
 

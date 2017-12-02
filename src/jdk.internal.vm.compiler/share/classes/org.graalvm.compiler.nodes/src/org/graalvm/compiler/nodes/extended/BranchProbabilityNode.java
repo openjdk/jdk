@@ -34,6 +34,7 @@ import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
@@ -67,7 +68,7 @@ public final class BranchProbabilityNode extends FloatingNode implements Simplif
     @Input ValueNode condition;
 
     public BranchProbabilityNode(ValueNode probability, ValueNode condition) {
-        super(TYPE, condition.stamp());
+        super(TYPE, condition.stamp(NodeView.DEFAULT));
         this.probability = probability;
         this.condition = condition;
     }

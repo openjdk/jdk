@@ -31,6 +31,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -2299,4 +2300,12 @@ SymbolHashMapEntry* SymbolHashMap::find_entry(Symbol* sym) {
     }
   }
   return NULL;
+}
+
+void SymbolHashMap::initialize_table(int table_size) {
+  _table_size = table_size;
+  _buckets = NEW_C_HEAP_ARRAY(SymbolHashMapBucket, table_size, mtSymbol);
+  for (int index = 0; index < table_size; index++) {
+    _buckets[index].clear();
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
-import javax.management.remote.JMXPrincipal;
 import javax.management.remote.JMXAuthenticator;
 import javax.security.auth.AuthPermission;
 import javax.security.auth.Subject;
@@ -91,10 +89,12 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
 
         String loginConfigName = null;
         String passwordFile = null;
+        String hashPasswords = null;
 
         if (env != null) {
             loginConfigName = (String) env.get(LOGIN_CONFIG_PROP);
             passwordFile = (String) env.get(PASSWORD_FILE_PROP);
+            hashPasswords = (String) env.get(HASH_PASSWORDS);
         }
 
         try {
@@ -114,6 +114,7 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
                 }
 
                 final String pf = passwordFile;
+                final String hashPass = hashPasswords;
                 try {
                     loginContext = AccessController.doPrivileged(
                         new PrivilegedExceptionAction<LoginContext>() {
@@ -122,7 +123,7 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
                                                 LOGIN_CONFIG_NAME,
                                                 null,
                                                 new JMXCallbackHandler(),
-                                                new FileLoginConfig(pf));
+                                                new FileLoginConfig(pf, hashPass));
                             }
                         });
                 } catch (PrivilegedActionException pae) {
@@ -250,6 +251,8 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
     private static final String LOGIN_CONFIG_NAME = "JMXPluggableAuthenticator";
     private static final String PASSWORD_FILE_PROP =
         "jmx.remote.x.password.file";
+    private static final String HASH_PASSWORDS =
+        "jmx.remote.x.password.toHashes";
     private static final ClassLogger logger =
         new ClassLogger("javax.management.remote.misc", LOGIN_CONFIG_NAME);
 
@@ -303,19 +306,22 @@ private static class FileLoginConfig extends Configuration {
 
     // The option that identifies the password file to use
     private static final String PASSWORD_FILE_OPTION = "passwordFile";
+    private static final String HASH_PASSWORDS = "hashPasswords";
 
     /**
      * Creates an instance of <code>FileLoginConfig</code>
      *
      * @param passwordFile A filepath that identifies the password file to use.
      *                     If null then the default password file is used.
+     * @param hashPasswords Flag to indicate if the password file needs to be hashed
      */
-    public FileLoginConfig(String passwordFile) {
+    public FileLoginConfig(String passwordFile, String hashPasswords) {
 
         Map<String, String> options;
         if (passwordFile != null) {
             options = new HashMap<String, String>(1);
             options.put(PASSWORD_FILE_OPTION, passwordFile);
+            options.put(HASH_PASSWORDS, hashPasswords);
         } else {
             options = Collections.emptyMap();
         }

@@ -41,6 +41,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ArithmeticOperation;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
@@ -60,13 +61,13 @@ public abstract class BinaryArithmeticNode<OP> extends BinaryNode implements Ari
     protected final SerializableBinaryFunction<OP> getOp;
 
     protected BinaryArithmeticNode(NodeClass<? extends BinaryArithmeticNode<OP>> c, SerializableBinaryFunction<OP> getOp, ValueNode x, ValueNode y) {
-        super(c, getOp.apply(ArithmeticOpTable.forStamp(x.stamp())).foldStamp(x.stamp(), y.stamp()), x, y);
+        super(c, getOp.apply(ArithmeticOpTable.forStamp(x.stamp(NodeView.DEFAULT))).foldStamp(x.stamp(NodeView.DEFAULT), y.stamp(NodeView.DEFAULT)), x, y);
         this.getOp = getOp;
     }
 
     protected final BinaryOp<OP> getOp(ValueNode forX, ValueNode forY) {
-        ArithmeticOpTable table = ArithmeticOpTable.forStamp(forX.stamp());
-        assert table.equals(ArithmeticOpTable.forStamp(forY.stamp()));
+        ArithmeticOpTable table = ArithmeticOpTable.forStamp(forX.stamp(NodeView.DEFAULT));
+        assert table.equals(ArithmeticOpTable.forStamp(forY.stamp(NodeView.DEFAULT)));
         return getOp.apply(table);
     }
 
@@ -81,14 +82,16 @@ public abstract class BinaryArithmeticNode<OP> extends BinaryNode implements Ari
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        ValueNode result = tryConstantFold(getOp(forX, forY), forX, forY, stamp());
+        NodeView view = NodeView.from(tool);
+        ValueNode result = tryConstantFold(getOp(forX, forY), forX, forY, stamp(view), view);
         if (result != null) {
             return result;
         }
         return this;
     }
 
-    public static <OP> ConstantNode tryConstantFold(BinaryOp<OP> op, ValueNode forX, ValueNode forY, Stamp stamp) {
+    @SuppressWarnings("unused")
+    public static <OP> ConstantNode tryConstantFold(BinaryOp<OP> op, ValueNode forX, ValueNode forY, Stamp stamp, NodeView view) {
         if (forX.isConstant() && forY.isConstant()) {
             Constant ret = op.foldConstant(forX.asConstant(), forY.asConstant());
             if (ret != null) {
@@ -100,32 +103,32 @@ public abstract class BinaryArithmeticNode<OP> extends BinaryNode implements Ari
 
     @Override
     public Stamp foldStamp(Stamp stampX, Stamp stampY) {
-        assert stampX.isCompatible(x.stamp()) && stampY.isCompatible(y.stamp());
+        assert stampX.isCompatible(x.stamp(NodeView.DEFAULT)) && stampY.isCompatible(y.stamp(NodeView.DEFAULT));
         return getArithmeticOp().foldStamp(stampX, stampY);
     }
 
-    public static ValueNode add(StructuredGraph graph, ValueNode v1, ValueNode v2) {
-        return graph.addOrUniqueWithInputs(AddNode.create(v1, v2));
+    public static ValueNode add(StructuredGraph graph, ValueNode v1, ValueNode v2, NodeView view) {
+        return graph.addOrUniqueWithInputs(AddNode.create(v1, v2, view));
     }
 
-    public static ValueNode add(ValueNode v1, ValueNode v2) {
-        return AddNode.create(v1, v2);
+    public static ValueNode add(ValueNode v1, ValueNode v2, NodeView view) {
+        return AddNode.create(v1, v2, view);
     }
 
-    public static ValueNode mul(StructuredGraph graph, ValueNode v1, ValueNode v2) {
-        return graph.addOrUniqueWithInputs(MulNode.create(v1, v2));
+    public static ValueNode mul(StructuredGraph graph, ValueNode v1, ValueNode v2, NodeView view) {
+        return graph.addOrUniqueWithInputs(MulNode.create(v1, v2, view));
     }
 
-    public static ValueNode mul(ValueNode v1, ValueNode v2) {
-        return MulNode.create(v1, v2);
+    public static ValueNode mul(ValueNode v1, ValueNode v2, NodeView view) {
+        return MulNode.create(v1, v2, view);
     }
 
-    public static ValueNode sub(StructuredGraph graph, ValueNode v1, ValueNode v2) {
-        return graph.addOrUniqueWithInputs(SubNode.create(v1, v2));
+    public static ValueNode sub(StructuredGraph graph, ValueNode v1, ValueNode v2, NodeView view) {
+        return graph.addOrUniqueWithInputs(SubNode.create(v1, v2, view));
     }
 
-    public static ValueNode sub(ValueNode v1, ValueNode v2) {
-        return SubNode.create(v1, v2);
+    public static ValueNode sub(ValueNode v1, ValueNode v2, NodeView view) {
+        return SubNode.create(v1, v2, view);
     }
 
     private enum ReassociateMatch {
@@ -193,7 +196,7 @@ public abstract class BinaryArithmeticNode<OP> extends BinaryNode implements Ari
      * @param forY
      * @param forX
      */
-    public static ValueNode reassociate(BinaryArithmeticNode<?> node, NodePredicate criterion, ValueNode forX, ValueNode forY) {
+    public static ValueNode reassociate(BinaryArithmeticNode<?> node, NodePredicate criterion, ValueNode forX, ValueNode forY, NodeView view) {
         assert node.getOp(forX, forY).isAssociative();
         ReassociateMatch match1 = findReassociate(node, criterion);
         if (match1 == null) {
@@ -239,21 +242,21 @@ public abstract class BinaryArithmeticNode<OP> extends BinaryNode implements Ari
         if (node instanceof AddNode || node instanceof SubNode) {
             ValueNode associated;
             if (invertM1) {
-                associated = BinaryArithmeticNode.sub(m2, m1);
+                associated = BinaryArithmeticNode.sub(m2, m1, view);
             } else if (invertM2) {
-                associated = BinaryArithmeticNode.sub(m1, m2);
+                associated = BinaryArithmeticNode.sub(m1, m2, view);
             } else {
-                associated = BinaryArithmeticNode.add(m1, m2);
+                associated = BinaryArithmeticNode.add(m1, m2, view);
             }
             if (invertA) {
-                return BinaryArithmeticNode.sub(associated, a);
+                return BinaryArithmeticNode.sub(associated, a, view);
             }
             if (aSub) {
-                return BinaryArithmeticNode.sub(a, associated);
+                return BinaryArithmeticNode.sub(a, associated, view);
             }
-            return BinaryArithmeticNode.add(a, associated);
+            return BinaryArithmeticNode.add(a, associated, view);
         } else if (node instanceof MulNode) {
-            return BinaryArithmeticNode.mul(a, AddNode.mul(m1, m2));
+            return BinaryArithmeticNode.mul(a, AddNode.mul(m1, m2, view), view);
         } else if (node instanceof AndNode) {
             return new AndNode(a, new AndNode(m1, m2));
         } else if (node instanceof OrNode) {

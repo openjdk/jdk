@@ -31,6 +31,7 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
@@ -228,7 +229,8 @@ public final class GraphEffectList extends EffectList {
      */
     public void replaceAtUsages(ValueNode node, ValueNode replacement, FixedNode insertBefore) {
         assert node != null && replacement != null : node + " " + replacement;
-        assert node.stamp().isCompatible(replacement.stamp()) : "Replacement node stamp not compatible " + node.stamp() + " vs " + replacement.stamp();
+        assert node.stamp(NodeView.DEFAULT).isCompatible(replacement.stamp(NodeView.DEFAULT)) : "Replacement node stamp not compatible " + node.stamp(NodeView.DEFAULT) + " vs " +
+                        replacement.stamp(NodeView.DEFAULT);
         add("replace at usages", (graph, obsoleteNodes) -> {
             assert node.isAlive();
             ValueNode replacementNode = graph.addOrUniqueWithInputs(replacement);
@@ -244,8 +246,8 @@ public final class GraphEffectList extends EffectList {
              * to improve the stamp information of the read. Such a read might later be replaced
              * with a read with a less precise stamp.
              */
-            if (!node.stamp().equals(replacementNode.stamp())) {
-                replacementNode = graph.unique(new PiNode(replacementNode, node.stamp()));
+            if (!node.stamp(NodeView.DEFAULT).equals(replacementNode.stamp(NodeView.DEFAULT))) {
+                replacementNode = graph.unique(new PiNode(replacementNode, node.stamp(NodeView.DEFAULT)));
             }
             node.replaceAtUsages(replacementNode);
             if (node instanceof FixedWithNextNode) {

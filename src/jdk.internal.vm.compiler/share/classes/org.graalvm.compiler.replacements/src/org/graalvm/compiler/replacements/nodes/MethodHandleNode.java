@@ -44,6 +44,7 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.GuardNode;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -263,7 +264,7 @@ public final class MethodHandleNode extends MacroStateSplitNode implements Simpl
                 // Try to get the most accurate receiver type
                 if (intrinsicMethod == IntrinsicMethod.LINK_TO_VIRTUAL || intrinsicMethod == IntrinsicMethod.LINK_TO_INTERFACE) {
                     ValueNode receiver = getReceiver(originalArguments);
-                    TypeReference receiverType = StampTool.typeReferenceOrNull(receiver.stamp());
+                    TypeReference receiverType = StampTool.typeReferenceOrNull(receiver.stamp(NodeView.DEFAULT));
                     if (receiverType != null) {
                         concreteMethod = receiverType.getType().findUniqueConcreteMethod(target);
                     }
@@ -317,7 +318,7 @@ public final class MethodHandleNode extends MacroStateSplitNode implements Simpl
              * type information anyway.
              */
             if (targetType != null && !targetType.getType().isPrimitive() && !argument.getStackKind().isPrimitive()) {
-                ResolvedJavaType argumentType = StampTool.typeOrNull(argument.stamp());
+                ResolvedJavaType argumentType = StampTool.typeOrNull(argument.stamp(NodeView.DEFAULT));
                 if (argumentType == null || (argumentType.isAssignableFrom(targetType.getType()) && !argumentType.equals(targetType.getType()))) {
                     LogicNode inst = InstanceOfNode.createAllowNull(targetType, argument, null, null);
                     assert !inst.isAlive();

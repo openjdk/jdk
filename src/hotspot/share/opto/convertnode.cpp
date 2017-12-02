@@ -73,6 +73,21 @@ const Type* ConvD2FNode::Value(PhaseGVN* phase) const {
   return TypeF::make( (float)td->getd() );
 }
 
+//------------------------------Ideal------------------------------------------
+// If we see pattern ConvF2D SomeDoubleOp ConvD2F, do operation as float.
+Node *ConvD2FNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if ( in(1)->Opcode() == Op_SqrtD ) {
+    Node* sqrtd = in(1);
+    if ( sqrtd->in(1)->Opcode() == Op_ConvF2D ) {
+      if ( Matcher::match_rule_supported(Op_SqrtF) ) {
+        Node* convf2d = sqrtd->in(1);
+        return new SqrtFNode(phase->C, sqrtd->in(0), convf2d->in(1));
+      }
+    }
+  }
+  return NULL;
+}
+
 //------------------------------Identity---------------------------------------
 // Float's can be converted to doubles with no loss of bits.  Hence
 // converting a float to a double and back to a float is a NOP.

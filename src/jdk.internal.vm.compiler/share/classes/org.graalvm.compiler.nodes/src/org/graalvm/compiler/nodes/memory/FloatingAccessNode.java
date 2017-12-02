@@ -59,6 +59,12 @@ public abstract class FloatingAccessNode extends FloatingGuardedNode implements 
     }
 
     @Override
+    public void setAddress(AddressNode address) {
+        updateUsages(this.address, address);
+        this.address = address;
+    }
+
+    @Override
     public LocationIdentity getLocationIdentity() {
         return location;
     }

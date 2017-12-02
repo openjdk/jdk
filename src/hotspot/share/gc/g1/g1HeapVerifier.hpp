@@ -34,6 +34,7 @@ class G1CollectedHeap;
 class G1HeapVerifier : public CHeapObj<mtGC> {
 private:
   G1CollectedHeap* _g1h;
+  int _enabled_verification_types;
 
   // verify_region_sets() performs verification over the region
   // lists. It will be compiled in the product code to be used when
@@ -41,8 +42,21 @@ private:
   void verify_region_sets();
 
 public:
+  enum G1VerifyType {
+    G1VerifyYoungOnly   =  1, // -XX:VerifyGCType=young-only
+    G1VerifyInitialMark =  2, // -XX:VerifyGCType=initial-mark
+    G1VerifyMixed       =  4, // -XX:VerifyGCType=mixed
+    G1VerifyRemark      =  8, // -XX:VerifyGCType=remark
+    G1VerifyCleanup     = 16, // -XX:VerifyGCType=cleanup
+    G1VerifyFull        = 32, // -XX:VerifyGCType=full
+    G1VerifyAll         = -1
+  };
 
-  G1HeapVerifier(G1CollectedHeap* heap) : _g1h(heap) { }
+  G1HeapVerifier(G1CollectedHeap* heap) : _g1h(heap), _enabled_verification_types(G1VerifyAll) { }
+
+  void parse_verification_type(const char* type);
+  void enable_verification_type(G1VerifyType type);
+  bool should_verify(G1VerifyType type);
 
   // Perform verification.
 
@@ -73,9 +87,9 @@ public:
 #endif // HEAP_REGION_SET_FORCE_VERIFY
 
   void prepare_for_verify();
-  double verify(bool guard, const char* msg);
-  void verify_before_gc();
-  void verify_after_gc();
+  double verify(G1VerifyType type, VerifyOption vo, const char* msg);
+  void verify_before_gc(G1VerifyType type);
+  void verify_after_gc(G1VerifyType type);
 
 #ifndef PRODUCT
   // Make sure that the given bitmap has no marked objects in the

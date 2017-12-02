@@ -29,6 +29,7 @@ import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.options.OptionValues;
@@ -57,7 +58,7 @@ public class NegateNodeCanonicalizationTest {
         for (byte i : a) {
             ConstantNode node = ConstantNode.forByte(i, graph);
             JavaConstant expected = JavaConstant.forInt(-i);
-            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp()).getNeg().foldConstant(node.asConstant()));
+            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp(NodeView.DEFAULT)).getNeg().foldConstant(node.asConstant()));
         }
     }
 
@@ -67,7 +68,7 @@ public class NegateNodeCanonicalizationTest {
         for (char i : a) {
             ConstantNode node = ConstantNode.forChar(i, graph);
             JavaConstant expected = JavaConstant.forInt(-i);
-            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp()).getNeg().foldConstant(node.asConstant()));
+            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp(NodeView.DEFAULT)).getNeg().foldConstant(node.asConstant()));
         }
     }
 
@@ -77,7 +78,7 @@ public class NegateNodeCanonicalizationTest {
         for (short i : a) {
             ConstantNode node = ConstantNode.forShort(i, graph);
             JavaConstant expected = JavaConstant.forInt(-i);
-            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp()).getNeg().foldConstant(node.asConstant()));
+            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp(NodeView.DEFAULT)).getNeg().foldConstant(node.asConstant()));
         }
     }
 
@@ -87,7 +88,7 @@ public class NegateNodeCanonicalizationTest {
         for (int i : a) {
             ConstantNode node = ConstantNode.forInt(i, graph);
             JavaConstant expected = JavaConstant.forInt(-i);
-            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp()).getNeg().foldConstant(node.asConstant()));
+            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp(NodeView.DEFAULT)).getNeg().foldConstant(node.asConstant()));
         }
     }
 
@@ -97,7 +98,7 @@ public class NegateNodeCanonicalizationTest {
         for (long i : a) {
             ConstantNode node = ConstantNode.forLong(i, graph);
             JavaConstant expected = JavaConstant.forLong(-i);
-            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp()).getNeg().foldConstant(node.asConstant()));
+            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp(NodeView.DEFAULT)).getNeg().foldConstant(node.asConstant()));
         }
     }
 
@@ -107,7 +108,7 @@ public class NegateNodeCanonicalizationTest {
         for (float i : a) {
             ConstantNode node = ConstantNode.forFloat(i, graph);
             JavaConstant expected = JavaConstant.forFloat(-i);
-            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp()).getNeg().foldConstant(node.asConstant()));
+            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp(NodeView.DEFAULT)).getNeg().foldConstant(node.asConstant()));
         }
     }
 
@@ -117,7 +118,7 @@ public class NegateNodeCanonicalizationTest {
         for (double i : a) {
             ConstantNode node = ConstantNode.forDouble(i, graph);
             JavaConstant expected = JavaConstant.forDouble(-i);
-            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp()).getNeg().foldConstant(node.asConstant()));
+            assertEquals(expected, ArithmeticOpTable.forStamp(node.stamp(NodeView.DEFAULT)).getNeg().foldConstant(node.asConstant()));
         }
     }
 

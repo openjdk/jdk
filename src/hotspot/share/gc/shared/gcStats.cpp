@@ -24,8 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcStats.hpp"
-#include "gc/shared/gcUtil.hpp"
-#include "memory/allocation.inline.hpp"
+#include "gc/shared/gcUtil.inline.hpp"
 
 GCStats::GCStats() {
     _avg_promoted       = new AdaptivePaddedNoZeroDevAverage(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package com.sun.jmx.remote.security;
 
 import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.mbeanserver.Util;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilePermission;
 import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.util.Arrays;
-import java.util.Hashtable;
 import java.util.Map;
-import java.util.Properties;
 
 import javax.security.auth.*;
 import javax.security.auth.callback.*;
@@ -59,10 +54,7 @@ import com.sun.jmx.remote.util.EnvHelp;
  * the access control file for JMX remote management or in a Java security
  * policy.
  *
- * <p> The password file comprises a list of key-value pairs as specified in
- * {@link Properties}. The key represents a user's name and the value is its
- * associated cleartext password. By default, the following password file is
- * used:
+ * By default, the following password file is used:
  * <pre>
  *     ${java.home}/conf/management/jmxremote.password
  * </pre>
@@ -105,6 +97,11 @@ import com.sun.jmx.remote.util.EnvHelp;
  * <dd> if <code>true</code>, this module clears the username and password
  *      stored in the module's shared state after both phases of authentication
  *      (login and commit) have completed.</dd>
+ *
+ * <dt> <code>hashPasswords</code> </dt>
+ * <dd> if <code>true</code>, this module replaces each clear text password
+ * with its hash, if present. </dd>
+ *
  * </dl>
  */
 public class FileLoginModule implements LoginModule {
@@ -135,6 +132,7 @@ public class FileLoginModule implements LoginModule {
     private boolean tryFirstPass = false;
     private boolean storePass = false;
     private boolean clearPass = false;
+    private boolean hashPasswords = false;
 
     // Authentication status
     private boolean succeeded = false;
@@ -154,7 +152,7 @@ public class FileLoginModule implements LoginModule {
     private String passwordFileDisplayName;
     private boolean userSuppliedPasswordFile;
     private boolean hasJavaHomePermission;
-    private Properties userCredentials;
+    private HashedPasswordManager hashPwdMgr;
 
     /**
      * Initialize this <code>LoginModule</code>.
@@ -186,6 +184,8 @@ public class FileLoginModule implements LoginModule {
                 "true".equalsIgnoreCase((String)options.get("storePass"));
         clearPass =
                 "true".equalsIgnoreCase((String)options.get("clearPass"));
+        hashPasswords
+                = "true".equalsIgnoreCase((String) options.get("hashPasswords"));
 
         passwordFile = (String)options.get("passwordFile");
         passwordFileDisplayName = passwordFile;
@@ -221,17 +221,28 @@ public class FileLoginModule implements LoginModule {
     public boolean login() throws LoginException {
 
         try {
-            loadPasswordFile();
+            synchronized (this) {
+                if (hashPwdMgr == null) {
+                    hashPwdMgr = new HashedPasswordManager(passwordFile, hashPasswords);
+                }
+            }
+            hashPwdMgr.loadPasswords();
         } catch (IOException ioe) {
             LoginException le = new LoginException(
                     "Error: unable to load the password file: " +
                     passwordFileDisplayName);
             throw EnvHelp.initCause(le, ioe);
-        }
-
-        if (userCredentials == null) {
-            throw new LoginException
-                ("Error: unable to locate the users' credentials.");
+        } catch (SecurityException e) {
+            if (userSuppliedPasswordFile || hasJavaHomePermission) {
+                throw e;
+            } else {
+                final FilePermission fp
+                        = new FilePermission(passwordFileDisplayName, "read");
+                AccessControlException ace = new AccessControlException(
+                        "access denied " + fp.toString());
+                ace.initCause(e);
+                throw ace;
+            }
         }
 
         if (logger.debugOn()) {
@@ -437,12 +448,7 @@ public class FileLoginModule implements LoginModule {
         // get the username and password
         getUsernamePassword(usePasswdFromSharedState);
 
-        String localPassword;
-
-        // userCredentials is initialized in login()
-        if (((localPassword = userCredentials.getProperty(username)) == null) ||
-            (! localPassword.equals(new String(password)))) {
-
+        if (!hashPwdMgr.authenticate(username, password)) {
             // username not found or passwords do not match
             if (logger.debugOn()) {
                 logger.debug("login", "Invalid username or password");
@@ -465,38 +471,6 @@ public class FileLoginModule implements LoginModule {
         if (logger.debugOn()) {
             logger.debug("login",
                 "User '" + username + "' successfully validated");
-        }
-    }
-
-    /*
-     * Read the password file.
-     */
-    private void loadPasswordFile() throws IOException {
-        FileInputStream fis;
-        try {
-            fis = new FileInputStream(passwordFile);
-        } catch (SecurityException e) {
-            if (userSuppliedPasswordFile || hasJavaHomePermission) {
-                throw e;
-            } else {
-                final FilePermission fp =
-                        new FilePermission(passwordFileDisplayName, "read");
-                AccessControlException ace = new AccessControlException(
-                        "access denied " + fp.toString());
-                ace.setStackTrace(e.getStackTrace());
-                throw ace;
-            }
-        }
-        try {
-            final BufferedInputStream bis = new BufferedInputStream(fis);
-            try {
-                userCredentials = new Properties();
-                userCredentials.load(bis);
-            } finally {
-                bis.close();
-            }
-        } finally {
-            fis.close();
         }
     }
 

@@ -26,6 +26,7 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/gcArguments.inline.hpp"
 #include "runtime/globals.hpp"
@@ -92,6 +93,22 @@ void G1Arguments::initialize_flags() {
   }
 
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
+
+#ifdef COMPILER2
+  // Enable loop strip mining to offer better pause time guarantees
+  if (FLAG_IS_DEFAULT(UseCountedLoopSafepoints)) {
+    FLAG_SET_DEFAULT(UseCountedLoopSafepoints, true);
+  }
+  if (UseCountedLoopSafepoints && FLAG_IS_DEFAULT(LoopStripMiningIter)) {
+    FLAG_SET_DEFAULT(LoopStripMiningIter, 1000);
+  }
+#endif
+}
+
+bool G1Arguments::parse_verification_type(const char* type) {
+  G1CollectedHeap::heap()->verifier()->parse_verification_type(type);
+  // Always return true because we want to parse all values.
+  return true;
 }
 
 CollectedHeap* G1Arguments::create_heap() {
