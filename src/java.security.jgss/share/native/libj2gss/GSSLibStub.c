@@ -1410,7 +1410,6 @@ Java_sun_security_jgss_wrapper_GSSLibStub_getMic(JNIEnv *env, jobject jobj,
     checkStatus(env, jobj, GSS_S_CONTEXT_EXPIRED, 0, "[GSSLibStub_getMic]");
     return NULL;
   }
-  contextHdl = (gss_ctx_id_t) jlong_to_ptr(pContext);
   qop = (gss_qop_t) jqop;
   initGSSBuffer(env, jmsg, &msg);
   if ((*env)->ExceptionCheck(env)) {
