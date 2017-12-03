@@ -22,9 +22,8 @@
  */
 
 /* @test
-   @bug 8167102
+   @bug 8167102 8181659
    @summary PrintRequestAttributeSet breaks page size set using PageFormat
-   @ignore Exclude the test until 8167102 is resolved by a new reassessed fix
    @run main/manual WrongPaperPrintingTest
  */
 
