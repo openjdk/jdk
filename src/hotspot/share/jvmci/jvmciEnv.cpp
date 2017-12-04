@@ -410,8 +410,8 @@ methodHandle JVMCIEnv::get_method_by_index(const constantPoolHandle& cpool,
 // ------------------------------------------------------------------
 // Check for changes to the system dictionary during compilation
 // class loads, evolution, breakpoints
-JVMCIEnv::CodeInstallResult JVMCIEnv::check_for_system_dictionary_modification(Dependencies* dependencies, Handle compiled_code,
-                                                                               JVMCIEnv* env, char** failure_detail) {
+JVMCIEnv::CodeInstallResult JVMCIEnv::validate_compile_task_dependencies(Dependencies* dependencies, Handle compiled_code,
+                                                                         JVMCIEnv* env, char** failure_detail) {
   // If JVMTI capabilities were enabled during compile, the compilation is invalidated.
   if (env != NULL) {
     if (!env->_jvmti_can_hotswap_or_post_breakpoint && JvmtiExport::can_hotswap_or_post_breakpoint()) {
@@ -422,37 +422,20 @@ JVMCIEnv::CodeInstallResult JVMCIEnv::check_for_system_dictionary_modification(D
 
   // Dependencies must be checked when the system dictionary changes
   // or if we don't know whether it has changed (i.e., env == NULL).
-  // In debug mode, always check dependencies.
-  bool counter_changed = env != NULL && env->_system_dictionary_modification_counter != SystemDictionary::number_of_modifications();
-  bool verify_deps = env == NULL || trueInDebug || JavaAssertions::enabled(SystemDictionary::HotSpotInstalledCode_klass()->name()->as_C_string(), true);
-  if (!counter_changed && !verify_deps) {
+  bool counter_changed = env == NULL || env->_system_dictionary_modification_counter != SystemDictionary::number_of_modifications();
+  CompileTask* task = env == NULL ? NULL : env->task();
+  Dependencies::DepType result = dependencies->validate_dependencies(task, counter_changed, failure_detail);
+  if (result == Dependencies::end_marker) {
     return JVMCIEnv::ok;
   }
 
-  for (Dependencies::DepStream deps(dependencies); deps.next(); ) {
-    Klass* witness = deps.check_dependency();
-    if (witness != NULL) {
-      // Use a fixed size buffer to prevent the string stream from
-      // resizing in the context of an inner resource mark.
-      char* buffer = NEW_RESOURCE_ARRAY(char, O_BUFLEN);
-      stringStream st(buffer, O_BUFLEN);
-      deps.print_dependency(witness, true, &st);
-      *failure_detail = st.as_string();
-      if (env == NULL || counter_changed || deps.type() == Dependencies::evol_method) {
-        return JVMCIEnv::dependencies_failed;
-      } else {
-        // The dependencies were invalid at the time of installation
-        // without any intervening modification of the system
-        // dictionary.  That means they were invalidly constructed.
-        return JVMCIEnv::dependencies_invalid;
-      }
-    }
-    if (LogCompilation) {
-      deps.log_dependency();
-    }
+  if (!Dependencies::is_klass_type(result) || counter_changed) {
+    return JVMCIEnv::dependencies_failed;
   }
-
-  return JVMCIEnv::ok;
+  // The dependencies were invalid at the time of installation
+  // without any intervening modification of the system
+  // dictionary.  That means they were invalidly constructed.
+  return JVMCIEnv::dependencies_invalid;
 }
 
 // ------------------------------------------------------------------
@@ -492,8 +475,15 @@ JVMCIEnv::CodeInstallResult JVMCIEnv::register_method(
     // Encode the dependencies now, so we can check them right away.
     dependencies->encode_content_bytes();
 
+    // Record the dependencies for the current compile in the log
+    if (LogCompilation) {
+      for (Dependencies::DepStream deps(dependencies); deps.next(); ) {
+        deps.log_dependency();
+      }
+    }
+
     // Check for {class loads, evolution, breakpoints} during compilation
-    result = check_for_system_dictionary_modification(dependencies, compiled_code, env, &failure_detail);
+    result = validate_compile_task_dependencies(dependencies, compiled_code, env, &failure_detail);
     if (result != JVMCIEnv::ok) {
       // While not a true deoptimization, it is a preemptive decompile.
       MethodData* mdp = method()->method_data();
