@@ -614,7 +614,7 @@ public class StampedLockTest extends JSR166TestCase {
         long s = lock.readLock();
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() {
-                threadAssertEquals(0L, lock.tryWriteLock());
+                assertEquals(0L, lock.tryWriteLock());
             }});
 
         awaitTermination(t);

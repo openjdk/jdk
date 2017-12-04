@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.var.in.try.with.resources.not.supported.in.source
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.misc.feature.var.in.try.with.resources
 // key: compiler.warn.source.no.bootclasspath
 // options: -source 8
 

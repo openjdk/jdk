@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.misc.diamond.and.anon.class.not.supported.in.source
+// key: compiler.misc.feature.not.supported.in.source
+// key: compiler.misc.feature.diamond.and.anon.class
 // key: compiler.err.cant.apply.diamond.1
 // key: compiler.warn.source.no.bootclasspath
 // options: -source 8

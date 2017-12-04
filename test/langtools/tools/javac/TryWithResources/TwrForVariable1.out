@@ -1,2 +1,2 @@
-TwrForVariable1.java:13:14: compiler.err.var.in.try.with.resources.not.supported.in.source: 1.8
+TwrForVariable1.java:13:15: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.var.in.try.with.resources), 8, 9
 1 error

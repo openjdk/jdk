@@ -148,6 +148,16 @@ void VM_Version::get_processor_features() {
       PrefetchCopyIntervalInBytes = 32760;
   }
 
+  if (AllocatePrefetchDistance !=-1 && (AllocatePrefetchDistance & 7)) {
+    warning("AllocatePrefetchDistance must be multiple of 8");
+    AllocatePrefetchDistance &= ~7;
+  }
+
+  if (AllocatePrefetchStepSize & 7) {
+    warning("AllocatePrefetchStepSize must be multiple of 8");
+    AllocatePrefetchStepSize &= ~7;
+  }
+
   if (SoftwarePrefetchHintDistance != -1 &&
        (SoftwarePrefetchHintDistance & 7)) {
     warning("SoftwarePrefetchHintDistance must be -1, or a multiple of 8");

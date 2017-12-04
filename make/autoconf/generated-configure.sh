@@ -5159,7 +5159,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1512085548
+DATE_WHEN_GENERATED=1512410983
 
 ###############################################################################
 #
@@ -66263,23 +66263,6 @@ if test "${with_libpng+set}" = set; then :
 fi
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which libpng to use" >&5
-$as_echo_n "checking for which libpng to use... " >&6; }
-
-  # default is bundled
-  DEFAULT_LIBPNG=bundled
-  # if user didn't specify, use DEFAULT_LIBPNG
-  if test "x${with_libpng}" = "x"; then
-    with_libpng=${DEFAULT_LIBPNG}
-  fi
-
-  if test "x${with_libpng}" = "xbundled"; then
-    USE_EXTERNAL_LIBPNG=false
-    PNG_CFLAGS=""
-    PNG_LIBS=""
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
-$as_echo "bundled" >&6; }
-  elif test "x${with_libpng}" = "xsystem"; then
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PNG" >&5
@@ -66347,6 +66330,23 @@ else
 $as_echo "yes" >&6; }
 	LIBPNG_FOUND=yes
 fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which libpng to use" >&5
+$as_echo_n "checking for which libpng to use... " >&6; }
+
+  # default is bundled
+  DEFAULT_LIBPNG=bundled
+  # if user didn't specify, use DEFAULT_LIBPNG
+  if test "x${with_libpng}" = "x"; then
+    with_libpng=${DEFAULT_LIBPNG}
+  fi
+
+  if test "x${with_libpng}" = "xbundled"; then
+    USE_EXTERNAL_LIBPNG=false
+    PNG_CFLAGS=""
+    PNG_LIBS=""
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
+$as_echo "bundled" >&6; }
+  elif test "x${with_libpng}" = "xsystem"; then
     if test "x${LIBPNG_FOUND}" = "xyes"; then
       # PKG_CHECK_MODULES will set PNG_CFLAGS and PNG_LIBS
       USE_EXTERNAL_LIBPNG=true
@@ -66444,6 +66444,40 @@ $as_echo "bundled" >&6; }
       USE_EXTERNAL_LIBZ=true
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: system" >&5
 $as_echo "system" >&6; }
+
+      if test "x$USE_EXTERNAL_LIBPNG" != "xtrue"; then
+        # If we use bundled libpng, we must verify that we have a proper zlib.
+        # For instance zlib-ng has had issues with inflateValidate().
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for system zlib functionality" >&5
+$as_echo_n "checking for system zlib functionality... " >&6; }
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include "zlib.h"
+int
+main ()
+{
+
+                #if ZLIB_VERNUM >= 0x1281
+                  inflateValidate(NULL, 0);
+                #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+else
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: not ok" >&5
+$as_echo "not ok" >&6; }
+                as_fn_error $? "System zlib not working correctly" "$LINENO" 5
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      fi
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: system not found" >&5
 $as_echo "system not found" >&6; }

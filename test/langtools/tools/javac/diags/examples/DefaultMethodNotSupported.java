@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.default.methods.not.supported.in.source
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.misc.feature.default.methods
 // options: -source 7 -Xlint:-options
 
 interface DefaultMethodNotSupported {
