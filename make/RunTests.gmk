@@ -263,6 +263,15 @@ define ParseJtregTestSelection
   )
 endef
 
+# Helper function to determine if a test specification is a special test
+#
+# It is a special test if it is "special:" followed by a test name.
+define ParseSpecialTestSelection
+  $(if $(filter special:%, $1), \
+    $1 \
+  )
+endef
+
 ifeq ($(TEST), )
   $(info No test selection given in TEST!)
   $(info Please use e.g. 'run-test TEST=tier1' or 'run-test-tier1')
@@ -280,6 +289,9 @@ $(foreach test, $(TEST), \
   ) \
   $(if $(strip $(PARSED_TESTS)), , \
     $(eval PARSED_TESTS += $(call ParseJtregTestSelection, $(test))) \
+  ) \
+  $(if $(strip $(PARSED_TESTS)), , \
+    $(eval PARSED_TESTS += $(call ParseSpecialTestSelection, $(test))) \
   ) \
   $(if $(strip $(PARSED_TESTS)), , \
     $(eval UNKNOWN_TEST := $(test)) \
@@ -565,6 +577,69 @@ define SetupRunJtregTestBody
   TARGETS += $1
 endef
 
+################################################################################
+
+### Rules for special tests
+
+SetupRunSpecialTest = $(NamedParamsMacroTemplate)
+define SetupRunSpecialTestBody
+  $1_TEST_RESULTS_DIR := $$(TEST_RESULTS_DIR)/$1
+  $1_TEST_SUPPORT_DIR := $$(TEST_SUPPORT_DIR)/$1
+  $1_EXITCODE := $$($1_TEST_RESULTS_DIR)/exitcode.txt
+
+  $1_FULL_TEST_NAME := $$(strip $$(patsubst special:%, %, $$($1_TEST)))
+  ifneq ($$(findstring :, $$($1_FULL_TEST_NAME)), )
+    $1_TEST_NAME := $$(firstword $$(subst :, ,$$($1_FULL_TEST_NAME)))
+    $1_TEST_ARGS := $$(strip $$(patsubst special:$$($1_TEST_NAME):%, %, $$($1_TEST)))
+  else
+    $1_TEST_NAME := $$($1_FULL_TEST_NAME)
+    $1_TEST_ARGS :=
+  endif
+
+  ifeq ($$($1_TEST_NAME), hotspot-internal)
+    $1_TEST_COMMAND_LINE := \
+        $$(JDK_IMAGE_DIR)/bin/java -XX:+ExecuteInternalVMTests \
+        -XX:+ShowMessageBoxOnError -version
+  else ifeq ($$($1_TEST_NAME), failure-handler)
+    $1_TEST_COMMAND_LINE := \
+        ($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f \
+        BuildFailureHandler.gmk test)
+  else ifeq ($$($1_TEST_NAME), make)
+    $1_TEST_COMMAND_LINE := \
+        ($(CD) $(TOPDIR)/test/make && $(MAKE) $(MAKE_ARGS) -f \
+        TestMake.gmk $$($1_TEST_ARGS))
+  else
+    $$(error Invalid special test specification: $$($1_TEST_NAME))
+  endif
+
+  run-test-$1:
+	$$(call LogWarn)
+	$$(call LogWarn, Running test '$$($1_TEST)')
+	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/test-execution, \
+	    $$($1_TEST_COMMAND_LINE) \
+	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/test-output.txt) \
+	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	)
+
+  $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/gtest.txt
+
+  # We can not parse the various "special" tests.
+  parse-test-$1: run-test-$1
+	$$(call LogWarn, Finished running test '$$($1_TEST)')
+	$$(call LogWarn, Test report is stored in $$(strip \
+	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
+	$$(call LogWarn, Warning: Special test results are not properly parsed!)
+	$$(eval $1_PASSED := 0)
+	$$(eval $1_FAILED := 0)
+	$$(eval $1_ERROR := 0)
+	$$(eval $1_TOTAL := 0)
+
+  $1: run-test-$1 parse-test-$1
+
+  TARGETS += $1
+endef
 
 ################################################################################
 # Setup and execute make rules for all selected tests
@@ -576,6 +651,9 @@ UseGtestTestHandler = \
 
 UseJtregTestHandler = \
   $(if $(filter jtreg:%, $1), true)
+
+UseSpecialTestHandler = \
+  $(if $(filter special:%, $1), true)
 
 # Now process each test to run and setup a proper make rule
 $(foreach test, $(TESTS_TO_RUN), \
@@ -594,6 +672,11 @@ $(foreach test, $(TESTS_TO_RUN), \
   ) \
   $(if $(call UseJtregTestHandler, $(test)), \
     $(eval $(call SetupRunJtregTest, $(TEST_ID), \
+        TEST := $(test), \
+    )) \
+  ) \
+  $(if $(call UseSpecialTestHandler, $(test)), \
+    $(eval $(call SetupRunSpecialTest, $(TEST_ID), \
         TEST := $(test), \
     )) \
   ) \
