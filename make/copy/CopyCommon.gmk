@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,49 @@
 # questions.
 #
 
-INCLUDE_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_include/$(MODULE)
 LIB_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)
 CONF_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_conf/$(MODULE)
 LEGAL_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_legal/$(MODULE)
 
-INCLUDE_DST_OS_DIR := $(INCLUDE_DST_DIR)/$(OPENJDK_TARGET_OS)
+################################################################################
+#
+# Copy exported include headers files to output directory, if present.
+#
 
+INCLUDE_TARGET_DIR := $(SUPPORT_OUTPUTDIR)/modules_include/$(MODULE)
+
+$(eval $(call SetupCopyFiles, COPY_EXPORTED_INCLUDE, \
+    SRC := $(TOPDIR)/src/$(MODULE)/share/native/include, \
+    DEST := $(INCLUDE_TARGET_DIR), \
+    FILES := $(wildcard \
+        $(TOPDIR)/src/$(MODULE)/share/native/include/* \
+        $(TOPDIR)/src/$(MODULE)/share/native/include/*/*), \
+))
+
+TARGETS += $(COPY_EXPORTED_INCLUDE)
+
+# For historical reasons, the OS include directories have odd names.
+INCLUDE_TARGET_OS_SUBDIR := $(OPENJDK_TARGET_OS)
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  INCLUDE_DST_OS_DIR := $(INCLUDE_DST_DIR)/win32
+  INCLUDE_TARGET_OS_SUBDIR := win32
 else ifeq ($(OPENJDK_TARGET_OS), macosx)
-  INCLUDE_DST_OS_DIR := $(INCLUDE_DST_DIR)/darwin
+  INCLUDE_TARGET_OS_SUBDIR := darwin
 endif
+
+# Use the most specific of OS and OS_TYPE.
+ifneq ($(wildcard $(TOPDIR)/src/$(MODULE)/$(OPENJDK_TARGET_OS)/native/include/*), )
+  INCLUDE_SOURCE_OS_SUBDIR := $(OPENJDK_TARGET_OS)
+else
+  INCLUDE_SOURCE_OS_SUBDIR := $(OPENJDK_TARGET_OS_TYPE)
+endif
+
+$(eval $(call SetupCopyFiles, COPY_EXPORTED_INCLUDE_OS, \
+    SRC := $(TOPDIR)/src/$(MODULE)/$(INCLUDE_SOURCE_OS_SUBDIR)/native/include, \
+    DEST := $(INCLUDE_TARGET_DIR)/$(INCLUDE_TARGET_OS_SUBDIR), \
+    FILES := $(wildcard \
+        $(TOPDIR)/src/$(MODULE)/$(INCLUDE_SOURCE_OS_SUBDIR)/native/include/* \
+        $(TOPDIR)/src/$(MODULE)/$(INCLUDE_SOURCE_OS_SUBDIR)/native/include/*/*), \
+))
+
+TARGETS += $(COPY_EXPORTED_INCLUDE_OS)
+
