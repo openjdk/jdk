@@ -1166,7 +1166,9 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
       -I${TOPDIR}/src/java.base/$OPENJDK_$1_OS/native/include \
       -I${TOPDIR}/src/java.base/$OPENJDK_$1_OS_TYPE/native/include \
       -I${TOPDIR}/src/java.base/share/native/libjava \
-      -I${TOPDIR}/src/java.base/$OPENJDK_$1_OS_TYPE/native/libjava"
+      -I${TOPDIR}/src/java.base/$OPENJDK_$1_OS_TYPE/native/libjava \
+      -I${TOPDIR}/src/hotspot/share/include \
+      -I${TOPDIR}/src/hotspot/os/${HOTSPOT_$1_OS_TYPE}/include"
 
   # The shared libraries are compiled using the picflag.
   $2CFLAGS_JDKLIB="[$]$2COMMON_CCXXFLAGS_JDK \

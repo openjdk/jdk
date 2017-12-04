@@ -57,9 +57,10 @@ JVM_CFLAGS_INCLUDES += \
     $(patsubst %,-I%,$(filter-out $(JVM_VARIANT_OUTPUTDIR)/gensrc/%, $(JVM_SRC_DIRS))) \
     -I$(JVM_VARIANT_OUTPUTDIR)/gensrc \
     -I$(TOPDIR)/src/hotspot/share/precompiled \
+    -I$(TOPDIR)/src/hotspot/share/include \
+    -I$(TOPDIR)/src/hotspot/os/$(HOTSPOT_TARGET_OS_TYPE)/include \
     -I$(TOPDIR)/src/java.base/share/native/include \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include \
-    -I$(TOPDIR)/src/java.management/share/native/include \
     -I$(TOPDIR)/src/java.base/share/native/libjimage \
     #
 

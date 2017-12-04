@@ -972,7 +972,6 @@ HOTSPOT_BUILD_CPU
 HOTSPOT_BUILD_OS_TYPE
 HOTSPOT_BUILD_OS
 OPENJDK_BUILD_BUNDLE_PLATFORM
-OPENJDK_BUILD_OS_EXPORT_DIR
 OPENJDK_BUILD_CPU_OSARCH
 OPENJDK_BUILD_CPU_ISADIR
 OPENJDK_BUILD_CPU_LEGACY_LIB
@@ -984,7 +983,6 @@ HOTSPOT_TARGET_OS_TYPE
 HOTSPOT_TARGET_OS
 DEFINE_CROSS_COMPILE_ARCH
 OPENJDK_TARGET_BUNDLE_PLATFORM
-OPENJDK_TARGET_OS_EXPORT_DIR
 OPENJDK_TARGET_CPU_OSARCH
 OPENJDK_TARGET_CPU_ISADIR
 OPENJDK_TARGET_CPU_LEGACY_LIB
@@ -5159,7 +5157,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1512085548
+DATE_WHEN_GENERATED=1512428089
 
 ###############################################################################
 #
@@ -16200,13 +16198,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
     OPENJDK_TARGET_CPU_JLI="amd64"
   fi
 
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      OPENJDK_TARGET_OS_EXPORT_DIR=macosx
-  else
-      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_TYPE}
-  fi
-
-
   # The new version string in JDK 9 also defined new naming of OS and ARCH for bundles
   # Macosx is osx and x86_64 is x64
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
@@ -16357,13 +16348,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
     # On all platforms except macosx, we replace x86_64 with amd64.
     OPENJDK_BUILD_CPU_JLI="amd64"
   fi
-
-  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-      OPENJDK_BUILD_OS_EXPORT_DIR=macosx
-  else
-      OPENJDK_BUILD_OS_EXPORT_DIR=${OPENJDK_BUILD_OS_TYPE}
-  fi
-
 
   # The new version string in JDK 9 also defined new naming of OS and ARCH for bundles
   # Macosx is osx and x86_64 is x64
@@ -52817,7 +52801,9 @@ fi
       -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
       -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include \
       -I${TOPDIR}/src/java.base/share/native/libjava \
-      -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava"
+      -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava \
+      -I${TOPDIR}/src/hotspot/share/include \
+      -I${TOPDIR}/src/hotspot/os/${HOTSPOT_TARGET_OS_TYPE}/include"
 
   # The shared libraries are compiled using the picflag.
   CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK \
@@ -53698,7 +53684,9 @@ fi
       -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS/native/include \
       -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/include \
       -I${TOPDIR}/src/java.base/share/native/libjava \
-      -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/libjava"
+      -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/libjava \
+      -I${TOPDIR}/src/hotspot/share/include \
+      -I${TOPDIR}/src/hotspot/os/${HOTSPOT_BUILD_OS_TYPE}/include"
 
   # The shared libraries are compiled using the picflag.
   OPENJDK_BUILD_CFLAGS_JDKLIB="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
