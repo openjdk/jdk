@@ -26,8 +26,11 @@
 package com.sun.tools.javac.parser;
 
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 
 import java.nio.CharBuffer;
 
@@ -45,14 +48,6 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
 public class JavaTokenizer {
 
     private static final boolean scannerDebug = false;
-
-    /** Allow binary literals.
-     */
-    private boolean allowBinaryLiterals;
-
-    /** Allow underscores in literals.
-     */
-    private boolean allowUnderscoresInLiterals;
 
     /** The source language setting.
      */
@@ -121,14 +116,24 @@ public class JavaTokenizer {
         this.tokens = fac.tokens;
         this.source = fac.source;
         this.reader = reader;
-        this.allowBinaryLiterals = source.allowBinaryLiterals();
-        this.allowUnderscoresInLiterals = source.allowUnderscoresInLiterals();
+    }
+
+    private void checkSourceLevel(int pos, Feature feature) {
+        if (!feature.allowedInSource(source)) {
+            lexError(DiagnosticFlag.SOURCE_LEVEL, pos, feature.error(source.name));
+        }
     }
 
     /** Report an error at the given position using the provided arguments.
      */
-    protected void lexError(int pos, String key, Object... args) {
-        log.error(pos, key, args);
+    protected void lexError(int pos, JCDiagnostic.Error key) {
+        log.error(pos, key);
+        tk = TokenKind.ERROR;
+        errPos = pos;
+    }
+
+    protected void lexError(DiagnosticFlag flags, int pos, JCDiagnostic.Error key) {
+        log.error(flags, pos, key);
         tk = TokenKind.ERROR;
         errPos = pos;
     }
@@ -175,7 +180,7 @@ public class JavaTokenizer {
                 case '\\':
                     reader.putChar('\\', true); break;
                 default:
-                    lexError(reader.bp, "illegal.esc.char");
+                    lexError(reader.bp, Errors.IllegalEscChar);
                 }
             }
         } else if (reader.bp != reader.buflen) {
@@ -190,17 +195,14 @@ public class JavaTokenizer {
             if (reader.ch != '_') {
                 reader.putChar(false);
             } else {
-                if (!allowUnderscoresInLiterals) {
-                    lexError(pos, "unsupported.underscore.lit", source.name);
-                    allowUnderscoresInLiterals = true;
-                }
+                checkSourceLevel(pos, Feature.UNDERSCORES_IN_LITERALS);
             }
             saveCh = reader.ch;
             savePos = reader.bp;
             reader.scanChar();
         } while (reader.digit(pos, digitRadix) >= 0 || reader.ch == '_');
         if (saveCh == '_')
-            lexError(savePos, "illegal.underscore");
+            lexError(savePos, Errors.IllegalUnderscore);
     }
 
     /** Read fractional part of hexadecimal floating point number.
@@ -216,11 +218,11 @@ public class JavaTokenizer {
             if (reader.digit(pos, 10) >= 0) {
                 scanDigits(pos, 10);
                 if (!hexFloatsWork)
-                    lexError(pos, "unsupported.cross.fp.lit");
+                    lexError(pos, Errors.UnsupportedCrossFpLit);
             } else
-                lexError(pos, "malformed.fp.lit");
+                lexError(pos, Errors.MalformedFpLit);
         } else {
-            lexError(pos, "malformed.fp.lit");
+            lexError(pos, Errors.MalformedFpLit);
         }
         if (reader.ch == 'f' || reader.ch == 'F') {
             reader.putChar(true);
@@ -254,7 +256,7 @@ public class JavaTokenizer {
                 scanDigits(pos, 10);
                 return;
             }
-            lexError(pos, "malformed.fp.lit");
+            lexError(pos, Errors.MalformedFpLit);
             reader.sp = sp1;
         }
     }
@@ -287,14 +289,14 @@ public class JavaTokenizer {
             scanDigits(pos, 16);
         }
         if (!seendigit)
-            lexError(pos, "invalid.hex.number");
+            lexError(pos, Errors.InvalidHexNumber);
         else
             scanHexExponentAndSuffix(pos);
     }
 
     private void skipIllegalUnderscores() {
         if (reader.ch == '_') {
-            lexError(reader.bp, "illegal.underscore");
+            lexError(reader.bp, Errors.IllegalUnderscore);
             while (reader.ch == '_')
                 reader.scanChar();
         }
@@ -329,10 +331,10 @@ public class JavaTokenizer {
             if (!seenValidDigit) {
                 switch (radix) {
                 case 2:
-                    lexError(pos, "invalid.binary.number");
+                    lexError(pos, Errors.InvalidBinaryNumber);
                     break;
                 case 16:
-                    lexError(pos, "invalid.hex.number");
+                    lexError(pos, Errors.InvalidHexNumber);
                     break;
                 }
             }
@@ -504,10 +506,7 @@ public class JavaTokenizer {
                         skipIllegalUnderscores();
                         scanNumber(pos, 16);
                     } else if (reader.ch == 'b' || reader.ch == 'B') {
-                        if (!allowBinaryLiterals) {
-                            lexError(pos, "unsupported.binary.lit", source.name);
-                            allowBinaryLiterals = true;
-                        }
+                        checkSourceLevel(pos, Feature.BINARY_LITERALS);
                         reader.scanChar();
                         skipIllegalUnderscores();
                         scanNumber(pos, 2);
@@ -519,7 +518,7 @@ public class JavaTokenizer {
                                 reader.scanChar();
                             } while (reader.ch == '_');
                             if (reader.digit(pos, 10) < 0) {
-                                lexError(savePos, "illegal.underscore");
+                                lexError(savePos, Errors.IllegalUnderscore);
                             }
                         }
                         scanNumber(pos, 8);
@@ -542,7 +541,7 @@ public class JavaTokenizer {
                             reader.putChar('.');
                             tk = TokenKind.ELLIPSIS;
                         } else {
-                            lexError(savePos, "illegal.dot");
+                            lexError(savePos, Errors.IllegalDot);
                         }
                     } else {
                         tk = TokenKind.DOT;
@@ -600,7 +599,7 @@ public class JavaTokenizer {
                             comments = addComment(comments, processComment(pos, reader.bp, style));
                             break;
                         } else {
-                            lexError(pos, "unclosed.comment");
+                            lexError(pos, Errors.UnclosedComment);
                             break loop;
                         }
                     } else if (reader.ch == '=') {
@@ -613,17 +612,17 @@ public class JavaTokenizer {
                 case '\'':
                     reader.scanChar();
                     if (reader.ch == '\'') {
-                        lexError(pos, "empty.char.lit");
+                        lexError(pos, Errors.EmptyCharLit);
                         reader.scanChar();
                     } else {
                         if (reader.ch == CR || reader.ch == LF)
-                            lexError(pos, "illegal.line.end.in.char.lit");
+                            lexError(pos, Errors.IllegalLineEndInCharLit);
                         scanLitChar(pos);
                         if (reader.ch == '\'') {
                             reader.scanChar();
                             tk = TokenKind.CHARLITERAL;
                         } else {
-                            lexError(pos, "unclosed.char.lit");
+                            lexError(pos, Errors.UnclosedCharLit);
                         }
                     }
                     break loop;
@@ -635,7 +634,7 @@ public class JavaTokenizer {
                         tk = TokenKind.STRINGLITERAL;
                         reader.scanChar();
                     } else {
-                        lexError(pos, "unclosed.str.lit");
+                        lexError(pos, Errors.UnclosedStrLit);
                     }
                     break loop;
                 default:
@@ -676,7 +675,7 @@ public class JavaTokenizer {
                                                 String.format("%s", reader.ch) :
                                                 String.format("\\u%04x", (int)reader.ch);
                             }
-                            lexError(pos, "illegal.char", arg);
+                            lexError(pos, Errors.IllegalChar(arg));
                             reader.scanChar();
                         }
                     }

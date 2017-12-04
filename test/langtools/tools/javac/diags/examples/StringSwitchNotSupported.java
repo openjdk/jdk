@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.string.switch.not.supported.in.source
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.misc.feature.string.switch
 // options: -source 6 -Xlint:-options
 
 class StringSwitchNotSupported {

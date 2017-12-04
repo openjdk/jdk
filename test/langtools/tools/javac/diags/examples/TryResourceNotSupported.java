@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.try.with.resources.not.supported.in.source
+// key: compiler.err.feature.not.supported.in.source
+// key: compiler.misc.feature.try.with.resources
 // options: -source 1.6 -Xlint:-options
 
 import java.io.*;

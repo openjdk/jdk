@@ -1,4 +1,4 @@
-- compiler.warn.source.no.bootclasspath: 1.8
+- compiler.warn.source.no.bootclasspath: 8
 SuppressDeprecation.java:83:10: compiler.warn.has.been.deprecated: g(), T
 SuppressDeprecation.java:84:14: compiler.warn.has.been.deprecated: g(), T
 SuppressDeprecation.java:85:9: compiler.warn.has.been.deprecated: var, T

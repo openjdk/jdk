@@ -35,6 +35,7 @@ import java.util.Map;
 import javax.lang.model.element.ElementVisitor;
 
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -468,7 +469,7 @@ public class Symtab {
         scope.enter(errSymbol);
 
         Source source = Source.instance(context);
-        if (source.allowModules()) {
+        if (Feature.MODULES.allowedInSource(source)) {
             java_base = enterModule(names.java_base);
             //avoid completing java.base during the Symtab initialization
             java_base.completer = Completer.NULL_COMPLETER;
