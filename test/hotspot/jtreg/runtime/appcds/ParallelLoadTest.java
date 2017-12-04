@@ -25,9 +25,8 @@
 /*
  * @test
  * @summary Load app classes from CDS archive in parallel threads
- * AppCDS does not support uncompressed oops
  * @library /test/lib
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
