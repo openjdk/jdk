@@ -113,6 +113,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBPNG],
   AC_ARG_WITH(libpng, [AS_HELP_STRING([--with-libpng],
      [use libpng from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
 
+  PKG_CHECK_MODULES(PNG, libpng, [LIBPNG_FOUND=yes], [LIBPNG_FOUND=no])
   AC_MSG_CHECKING([for which libpng to use])
 
   # default is bundled
@@ -128,7 +129,6 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBPNG],
     PNG_LIBS=""
     AC_MSG_RESULT([bundled])
   elif test "x${with_libpng}" = "xsystem"; then
-    PKG_CHECK_MODULES(PNG, libpng, [LIBPNG_FOUND=yes], [LIBPNG_FOUND=no])
     if test "x${LIBPNG_FOUND}" = "xyes"; then
       # PKG_CHECK_MODULES will set PNG_CFLAGS and PNG_LIBS
       USE_EXTERNAL_LIBPNG=true
@@ -183,6 +183,24 @@ AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
     if test "x${ZLIB_FOUND}" = "xyes"; then
       USE_EXTERNAL_LIBZ=true
       AC_MSG_RESULT([system])
+
+      if test "x$USE_EXTERNAL_LIBPNG" != "xtrue"; then
+        # If we use bundled libpng, we must verify that we have a proper zlib.
+        # For instance zlib-ng has had issues with inflateValidate().
+        AC_MSG_CHECKING([for system zlib functionality])
+        AC_COMPILE_IFELSE(
+            [AC_LANG_PROGRAM([#include "zlib.h"], [
+                #if ZLIB_VERNUM >= 0x1281
+                  inflateValidate(NULL, 0);
+                #endif
+            ])],
+            [AC_MSG_RESULT([ok])],
+            [
+                AC_MSG_RESULT([not ok])
+                AC_MSG_ERROR([System zlib not working correctly])
+            ]
+        )
+      fi
     else
       AC_MSG_RESULT([system not found])
       AC_MSG_ERROR([--with-zlib=system specified, but no zlib found!])
