@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.method.references.not.supported.in.source
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.misc.feature.method.references
 // options: -source 7 -Xlint:-options
 
 class MethodReferencesNotSupported {

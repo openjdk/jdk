@@ -51,6 +51,7 @@ import com.sun.tools.javac.code.Directive.OpensFlag;
 import com.sun.tools.javac.code.Directive.RequiresDirective;
 import com.sun.tools.javac.code.Directive.RequiresFlag;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Enter;
@@ -114,7 +115,7 @@ public class JavacElements implements Elements {
         javacTaskImpl = t instanceof JavacTaskImpl ? (JavacTaskImpl) t : null;
         log = Log.instance(context);
         Source source = Source.instance(context);
-        allowModules = source.allowModules();
+        allowModules = Feature.MODULES.allowedInSource(source);
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)

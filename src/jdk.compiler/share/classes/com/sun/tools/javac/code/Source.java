@@ -31,7 +31,12 @@ import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
 import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic.Error;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+
 import static com.sun.tools.javac.main.Option.*;
 
 /** The source language version accepted.
@@ -59,22 +64,22 @@ public enum Source {
 
     /** 1.5 introduced generics, attributes, foreach, boxing, static import,
      *  covariant return, enums, varargs, et al. */
-    JDK1_5("1.5"),
+    JDK5("5"),
 
     /** 1.6 reports encoding problems as errors instead of warnings. */
-    JDK1_6("1.6"),
+    JDK6("6"),
 
     /** 1.7 introduced try-with-resources, multi-catch, string switch, etc. */
-    JDK1_7("1.7"),
+    JDK7("7"),
 
     /** 1.8 lambda expressions and default methods. */
-    JDK1_8("1.8"),
+    JDK8("8"),
 
     /** 1.9 modularity. */
-    JDK1_9("1.9"),
+    JDK9("9"),
 
     /** 1.10 covers the to be determined language features that will be added in JDK 10. */
-    JDK1_10("1.10");
+    JDK10("10");
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -97,19 +102,19 @@ public enum Source {
         for (Source s : values()) {
             tab.put(s.name, s);
         }
-        tab.put("5", JDK1_5); // Make 5 an alias for 1.5
-        tab.put("6", JDK1_6); // Make 6 an alias for 1.6
-        tab.put("7", JDK1_7); // Make 7 an alias for 1.7
-        tab.put("8", JDK1_8); // Make 8 an alias for 1.8
-        tab.put("9", JDK1_9); // Make 9 an alias for 1.9
-        tab.put("10", JDK1_10); // Make 10 an alias for 1.10
+        tab.put("1.5", JDK5); // Make 5 an alias for 1.5
+        tab.put("1.6", JDK6); // Make 6 an alias for 1.6
+        tab.put("1.7", JDK7); // Make 7 an alias for 1.7
+        tab.put("1.8", JDK8); // Make 8 an alias for 1.8
+        tab.put("1.9", JDK9); // Make 9 an alias for 1.9
+        tab.put("1.10", JDK10); // Make 10 an alias for 1.10
     }
 
     private Source(String name) {
         this.name = name;
     }
 
-    public static final Source MIN = Source.JDK1_6;
+    public static final Source MIN = Source.JDK6;
 
     private static final Source MAX = values()[values().length - 1];
 
@@ -120,114 +125,108 @@ public enum Source {
     }
 
     public Target requiredTarget() {
-        if (this.compareTo(JDK1_10) >= 0) return Target.JDK1_10;
-        if (this.compareTo(JDK1_9) >= 0) return Target.JDK1_9;
-        if (this.compareTo(JDK1_8) >= 0) return Target.JDK1_8;
-        if (this.compareTo(JDK1_7) >= 0) return Target.JDK1_7;
-        if (this.compareTo(JDK1_6) >= 0) return Target.JDK1_6;
-        if (this.compareTo(JDK1_5) >= 0) return Target.JDK1_5;
+        if (this.compareTo(JDK10) >= 0) return Target.JDK1_10;
+        if (this.compareTo(JDK9) >= 0) return Target.JDK1_9;
+        if (this.compareTo(JDK8) >= 0) return Target.JDK1_8;
+        if (this.compareTo(JDK7) >= 0) return Target.JDK1_7;
+        if (this.compareTo(JDK6) >= 0) return Target.JDK1_6;
+        if (this.compareTo(JDK5) >= 0) return Target.JDK1_5;
         if (this.compareTo(JDK1_4) >= 0) return Target.JDK1_4;
         return Target.JDK1_1;
     }
 
-    public boolean allowDiamond() {
-        return compareTo(JDK1_7) >= 0;
+    /**
+     * Models a feature of the Java programming language. Each feature can be associated with a
+     * minimum source level, a maximum source level and a diagnostic fragment describing the feature,
+     * which is used to generate error messages of the kind {@code feature XYZ not supported in source N}.
+     */
+    public enum Feature {
+
+        DIAMOND(JDK7, Fragments.FeatureDiamond, DiagKind.NORMAL),
+        MULTICATCH(JDK7, Fragments.FeatureMulticatch, DiagKind.PLURAL),
+        IMPROVED_RETHROW_ANALYSIS(JDK7),
+        IMPROVED_CATCH_ANALYSIS(JDK7),
+        MODULES(JDK9, Fragments.FeatureModules, DiagKind.PLURAL),
+        TRY_WITH_RESOURCES(JDK7, Fragments.FeatureTryWithResources, DiagKind.NORMAL),
+        EFFECTIVELY_FINAL_VARIABLES_IN_TRY_WITH_RESOURCES(JDK9, Fragments.FeatureVarInTryWithResources, DiagKind.PLURAL),
+        BINARY_LITERALS(JDK7, Fragments.FeatureBinaryLit, DiagKind.PLURAL),
+        UNDERSCORES_IN_LITERALS(JDK7, Fragments.FeatureUnderscoreLit, DiagKind.PLURAL),
+        STRINGS_IN_SWITCH(JDK7, Fragments.FeatureStringSwitch, DiagKind.PLURAL),
+        DEPRECATION_ON_IMPORT(MIN, JDK9),
+        SIMPLIFIED_VARARGS(JDK7),
+        OBJECT_TO_PRIMITIVE_CAST(JDK7),
+        ENFORCE_THIS_DOT_INIT(JDK7),
+        POLY(JDK8),
+        LAMBDA(JDK8, Fragments.FeatureLambda, DiagKind.PLURAL),
+        METHOD_REFERENCES(JDK8, Fragments.FeatureMethodReferences, DiagKind.PLURAL),
+        DEFAULT_METHODS(JDK8, Fragments.FeatureDefaultMethods, DiagKind.PLURAL),
+        STATIC_INTERFACE_METHODS(JDK8, Fragments.FeatureStaticIntfMethods, DiagKind.PLURAL),
+        STATIC_INTERFACE_METHODS_INVOKE(JDK8, Fragments.FeatureStaticIntfMethodInvoke, DiagKind.PLURAL),
+        STRICT_METHOD_CLASH_CHECK(JDK8),
+        EFFECTIVELY_FINAL_IN_INNER_CLASSES(JDK8),
+        TYPE_ANNOTATIONS(JDK8, Fragments.FeatureTypeAnnotations, DiagKind.PLURAL),
+        ANNOTATIONS_AFTER_TYPE_PARAMS(JDK8, Fragments.FeatureAnnotationsAfterTypeParams, DiagKind.PLURAL),
+        REPEATED_ANNOTATIONS(JDK8, Fragments.FeatureRepeatableAnnotations, DiagKind.PLURAL),
+        INTERSECTION_TYPES_IN_CAST(JDK8, Fragments.FeatureIntersectionTypesInCast, DiagKind.PLURAL),
+        GRAPH_INFERENCE(JDK8),
+        FUNCTIONAL_INTERFACE_MOST_SPECIFIC(JDK8),
+        POST_APPLICABILITY_VARARGS_ACCESS_CHECK(JDK8),
+        MAP_CAPTURES_TO_BOUNDS(MIN, JDK7),
+        PRIVATE_SAFE_VARARGS(JDK9),
+        DIAMOND_WITH_ANONYMOUS_CLASS_CREATION(JDK9, Fragments.FeatureDiamondAndAnonClass, DiagKind.NORMAL),
+        UNDERSCORE_IDENTIFIER(MIN, JDK8),
+        PRIVATE_INTERFACE_METHODS(JDK9, Fragments.FeaturePrivateIntfMethods, DiagKind.PLURAL),
+        LOCAL_VARIABLE_TYPE_INFERENCE(JDK10);
+
+        enum DiagKind {
+            NORMAL,
+            PLURAL;
+        }
+
+        private final Source minLevel;
+        private final Source maxLevel;
+        private final Fragment optFragment;
+        private final DiagKind optKind;
+
+        Feature(Source minLevel) {
+            this(minLevel, null, null);
+        }
+
+        Feature(Source minLevel, Fragment optFragment, DiagKind optKind) {
+            this(minLevel, MAX, optFragment, optKind);
+        }
+
+        Feature(Source minLevel, Source maxLevel) {
+            this(minLevel, maxLevel, null, null);
+        }
+
+        Feature(Source minLevel, Source maxLevel, Fragment optFragment, DiagKind optKind) {
+            this.minLevel = minLevel;
+            this.maxLevel = maxLevel;
+            this.optFragment = optFragment;
+            this.optKind = optKind;
+        }
+
+        public boolean allowedInSource(Source source) {
+            return source.compareTo(minLevel) >= 0 &&
+                    source.compareTo(maxLevel) <= 0;
+        }
+
+        public Fragment fragment(String sourceName) {
+            Assert.checkNonNull(optFragment);
+            return optKind == DiagKind.NORMAL ?
+                    Fragments.FeatureNotSupportedInSource(optFragment, sourceName, minLevel.name) :
+                    Fragments.FeatureNotSupportedInSourcePlural(optFragment, sourceName, minLevel.name);
+        }
+
+        public Error error(String sourceName) {
+            Assert.checkNonNull(optFragment);
+            return optKind == DiagKind.NORMAL ?
+                    Errors.FeatureNotSupportedInSource(optFragment, sourceName, minLevel.name) :
+                    Errors.FeatureNotSupportedInSourcePlural(optFragment, sourceName, minLevel.name);
+        }
     }
-    public boolean allowMulticatch() {
-        return compareTo(JDK1_7) >= 0;
-    }
-    public boolean allowImprovedRethrowAnalysis() {
-        return compareTo(JDK1_7) >= 0;
-    }
-    public boolean allowImprovedCatchAnalysis() {
-        return compareTo(JDK1_7) >= 0;
-    }
-    public boolean allowModules() {
-        return compareTo(JDK1_9) >= 0;
-    }
-    public boolean allowTryWithResources() {
-        return compareTo(JDK1_7) >= 0;
-    }
-    public boolean allowEffectivelyFinalVariablesInTryWithResources() {
-        return compareTo(JDK1_9) >= 0;
-    }
-    public boolean allowBinaryLiterals() {
-        return compareTo(JDK1_7) >= 0;
-    }
-    public boolean allowUnderscoresInLiterals() {
-        return compareTo(JDK1_7) >= 0;
-    }
-    public boolean allowStringsInSwitch() {
-        return compareTo(JDK1_7) >= 0;
-    }
-    public boolean allowDeprecationOnImport() {
-        return compareTo(JDK1_9) < 0;
-    }
-    public boolean allowSimplifiedVarargs() {
-        return compareTo(JDK1_7) >= 0;
-    }
-    public boolean allowObjectToPrimitiveCast() {
-        return compareTo(JDK1_7) >= 0;
-    }
-    public boolean enforceThisDotInit() {
-        return compareTo(JDK1_7) >= 0;
-    }
-    public boolean allowPoly() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowLambda() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowMethodReferences() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowDefaultMethods() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowStaticInterfaceMethods() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowStrictMethodClashCheck() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowEffectivelyFinalInInnerClasses() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowTypeAnnotations() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowAnnotationsAfterTypeParams() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowRepeatedAnnotations() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowIntersectionTypesInCast() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowGraphInference() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowFunctionalInterfaceMostSpecific() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean allowPostApplicabilityVarargsAccessCheck() {
-        return compareTo(JDK1_8) >= 0;
-    }
-    public boolean mapCapturesToBounds() {
-        return compareTo(JDK1_8) < 0;
-    }
-    public boolean allowPrivateSafeVarargs() {
-        return compareTo(JDK1_9) >= 0;
-    }
-    public boolean allowDiamondWithAnonymousClassCreation() {
-        return compareTo(JDK1_9) >= 0;
-    }
-    public boolean allowUnderscoreIdentifier() {
-        return compareTo(JDK1_8) <= 0;
-    }
-    public boolean allowPrivateInterfaceMethods() { return compareTo(JDK1_9) >= 0; }
-    public boolean allowLocalVariableTypeInference() { return compareTo(JDK1_10) >= 0; }
+
     public static SourceVersion toSourceVersion(Source source) {
         switch(source) {
         case JDK1_2:
@@ -236,17 +235,17 @@ public enum Source {
             return RELEASE_3;
         case JDK1_4:
             return RELEASE_4;
-        case JDK1_5:
+        case JDK5:
             return RELEASE_5;
-        case JDK1_6:
+        case JDK6:
             return RELEASE_6;
-        case JDK1_7:
+        case JDK7:
             return RELEASE_7;
-        case JDK1_8:
+        case JDK8:
             return RELEASE_8;
-        case JDK1_9:
+        case JDK9:
             return RELEASE_9;
-        case JDK1_10:
+        case JDK10:
             return RELEASE_10;
         default:
             return null;

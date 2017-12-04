@@ -29,6 +29,7 @@ import java.util.ArrayList;
 
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
@@ -128,7 +129,7 @@ public class Analyzer {
         String findOpt = options.get("find");
         //parse modes
         Source source = Source.instance(context);
-        allowDiamondWithAnonymousClassCreation = source.allowDiamondWithAnonymousClassCreation();
+        allowDiamondWithAnonymousClassCreation = Feature.DIAMOND_WITH_ANONYMOUS_CLASS_CREATION.allowedInSource(source);
         analyzerModes = AnalyzerMode.getAnalyzerModes(findOpt, source);
     }
 
@@ -137,17 +138,17 @@ public class Analyzer {
      * the {@code -XDfind} option.
      */
     enum AnalyzerMode {
-        DIAMOND("diamond", Source::allowDiamond),
-        LAMBDA("lambda", Source::allowLambda),
-        METHOD("method", Source::allowGraphInference),
-        LOCAL("local", Source::allowLocalVariableTypeInference);
+        DIAMOND("diamond", Feature.DIAMOND),
+        LAMBDA("lambda", Feature.LAMBDA),
+        METHOD("method", Feature.GRAPH_INFERENCE),
+        LOCAL("local", Feature.LOCAL_VARIABLE_TYPE_INFERENCE);
 
         final String opt;
-        final Predicate<Source> sourceFilter;
+        final Feature feature;
 
-        AnalyzerMode(String opt, Predicate<Source> sourceFilter) {
+        AnalyzerMode(String opt, Feature feature) {
             this.opt = opt;
-            this.sourceFilter = sourceFilter;
+            this.feature = feature;
         }
 
         /**
@@ -168,7 +169,7 @@ public class Analyzer {
             for (AnalyzerMode mode : values()) {
                 if (modes.contains(mode.opt)) {
                     res.add(mode);
-                } else if (modes.contains("-" + mode.opt) || !mode.sourceFilter.test(source)) {
+                } else if (modes.contains("-" + mode.opt) || !mode.feature.allowedInSource(source)) {
                     res.remove(mode);
                 }
             }

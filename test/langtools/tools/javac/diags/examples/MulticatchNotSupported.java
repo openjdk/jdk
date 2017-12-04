@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.multicatch.not.supported.in.source
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.misc.feature.multicatch
 // options: -source 1.6 -Xlint:-options
 
 class MulticatchNotSupported {
