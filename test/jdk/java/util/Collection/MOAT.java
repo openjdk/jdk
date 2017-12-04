@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import static java.util.Collections.*;
 import java.lang.reflect.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MOAT {
     // Collections under test must not be initialized to contain this value,
@@ -230,6 +232,17 @@ public class MOAT {
             testListMutatorsAlwaysThrow(list);
         }
 
+        List<Integer> listCopy = List.copyOf(Arrays.asList(1, 2, 3));
+        testCollection(listCopy);
+        testImmutableList(listCopy);
+        testListMutatorsAlwaysThrow(listCopy);
+
+        List<Integer> listCollected = Stream.of(1, 2, 3).collect(Collectors.toUnmodifiableList());
+        equal(listCollected, List.of(1, 2, 3));
+        testCollection(listCollected);
+        testImmutableList(listCollected);
+        testListMutatorsAlwaysThrow(listCollected);
+
         // Immutable Set
         testEmptySet(Set.of());
         testCollMutatorsAlwaysThrow(Set.of());
@@ -251,6 +264,18 @@ public class MOAT {
             testImmutableSet(set);
             testCollMutatorsAlwaysThrow(set);
         }
+
+        Set<Integer> setCopy = Set.copyOf(Arrays.asList(1, 2, 3));
+        testCollection(setCopy);
+        testImmutableSet(setCopy);
+        testCollMutatorsAlwaysThrow(setCopy);
+
+        Set<Integer> setCollected = Stream.of(1, 1, 2, 3, 2, 3)
+                                          .collect(Collectors.toUnmodifiableSet());
+        equal(setCollected, Set.of(1, 2, 3));
+        testCollection(setCollected);
+        testImmutableSet(setCollected);
+        testCollMutatorsAlwaysThrow(setCollected);
 
         // Immutable Map
 
@@ -280,6 +305,35 @@ public class MOAT {
             testImmutableMap(map);
             testMapMutatorsAlwaysThrow(map);
         }
+
+        Map<Integer,Integer> mapCopy = Map.copyOf(new HashMap<>(Map.of(1, 101, 2, 202, 3, 303)));
+        testMap(mapCopy);
+        testImmutableMap(mapCopy);
+        testMapMutatorsAlwaysThrow(mapCopy);
+
+        Map<Integer,Integer> mapCollected1 =
+            Stream.of(1, 2, 3)
+                  .collect(Collectors.toUnmodifiableMap(i -> i, i -> 101 * i));
+        equal(mapCollected1, Map.of(1, 101, 2, 202, 3, 303));
+        testMap(mapCollected1);
+        testImmutableMap(mapCollected1);
+        testMapMutatorsAlwaysThrow(mapCollected1);
+
+        try {
+            Stream.of(1, 1, 2, 3, 2, 3)
+                  .collect(Collectors.toUnmodifiableMap(i -> i, i -> 101 * i));
+            fail("duplicates should have thrown an exception");
+        } catch (IllegalStateException ise) {
+            pass();
+        }
+
+        Map<Integer,Integer> mapCollected2 =
+            Stream.of(1, 1, 2, 3, 2, 3)
+                  .collect(Collectors.toUnmodifiableMap(i -> i, i -> 101 * i, Integer::sum));
+        equal(mapCollected2, Map.of(1, 202, 2, 404, 3, 606));
+        testMap(mapCollected2);
+        testImmutableMap(mapCollected2);
+        testMapMutatorsAlwaysThrow(mapCollected2);
     }
 
     private static void checkContainsSelf(Collection<Integer> c) {

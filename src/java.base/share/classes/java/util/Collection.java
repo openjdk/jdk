@@ -54,19 +54,15 @@ import java.util.stream.StreamSupport;
  * constructors) but all of the general-purpose {@code Collection}
  * implementations in the Java platform libraries comply.
  *
- * <p>The "destructive" methods contained in this interface, that is, the
- * methods that modify the collection on which they operate, are specified to
- * throw {@code UnsupportedOperationException} if this collection does not
- * support the operation.  If this is the case, these methods may, but are not
- * required to, throw an {@code UnsupportedOperationException} if the
- * invocation would have no effect on the collection.  For example, invoking
- * the {@link #addAll(Collection)} method on an unmodifiable collection may,
- * but is not required to, throw the exception if the collection to be added
- * is empty.
+ * <p>Certain methods are specified to be
+ * <i>optional</i>. If a collection implementation doesn't implement a
+ * particular operation, it should define the corresponding method to throw
+ * {@code UnsupportedOperationException}. Such methods are marked "optional
+ * operation" in method specifications of the collections interfaces.
  *
- * <p><a id="optional-restrictions">
- * Some collection implementations have restrictions on the elements that
- * they may contain.</a>  For example, some implementations prohibit null elements,
+ * <p><a id="optional-restrictions"></a>Some collection implementations
+ * have restrictions on the elements that they may contain.
+ * For example, some implementations prohibit null elements,
  * and some have restrictions on the types of their elements.  Attempting to
  * add an ineligible element throws an unchecked exception, typically
  * {@code NullPointerException} or {@code ClassCastException}.  Attempting
@@ -110,6 +106,86 @@ import java.util.stream.StreamSupport;
  * {@code clone()}, {@code equals()}, {@code hashCode()} and {@code toString()}
  * methods. Implementations may optionally handle the self-referential scenario,
  * however most current implementations do not do so.
+ *
+ * <h2><a id="view">View Collections</a></h2>
+ *
+ * <p>Most collections manage storage for elements they contain. By contrast, <i>view
+ * collections</i> themselves do not store elements, but instead they rely on a
+ * backing collection to store the actual elements. Operations that are not handled
+ * by the view collection itself are delegated to the backing collection. Examples of
+ * view collections include the wrapper collections returned by methods such as
+ * {@link Collections#checkedCollection Collections.checkedCollection},
+ * {@link Collections#synchronizedCollection Collections.synchronizedCollection}, and
+ * {@link Collections#unmodifiableCollection Collections.unmodifiableCollection}.
+ * Other examples of view collections include collections that provide a
+ * different representation of the same elements, for example, as
+ * provided by {@link List#subList List.subList},
+ * {@link NavigableSet#subSet NavigableSet.subSet}, or
+ * {@link Map#entrySet Map.entrySet}.
+ * Any changes made to the backing collection are visible in the view collection.
+ * Correspondingly, any changes made to the view collection &mdash; if changes
+ * are permitted &mdash; are written through to the backing collection.
+ * Although they technically aren't collections, instances of
+ * {@link Iterator} and {@link ListIterator} can also allow modifications
+ * to be written through to the backing collection, and in some cases,
+ * modifications to the backing collection will be visible to the Iterator
+ * during iteration.
+ *
+ * <h2><a id="unmodifiable">Unmodifiable Collections</a></h2>
+ *
+ * <p>Certain methods of this interface are considered "destructive" and are called
+ * "mutator" methods in that they modify the group of objects contained within
+ * the collection on which they operate. They can be specified to throw
+ * {@code UnsupportedOperationException} if this collection implementation
+ * does not support the operation. Such methods should (but are not required
+ * to) throw an {@code UnsupportedOperationException} if the invocation would
+ * have no effect on the collection. For example, consider a collection that
+ * does not support the {@link #add add} operation. What will happen if the
+ * {@link #addAll addAll} method is invoked on this collection, with an empty
+ * collection as the argument? The addition of zero elements has no effect,
+ * so it is permissible for this collection simply to do nothing and not to throw
+ * an exception. However, it is recommended that such cases throw an exception
+ * unconditionally, as throwing only in certain cases can lead to
+ * programming errors.
+ *
+ * <p>An <i>unmodifiable collection</i> is a collection, all of whose
+ * mutator methods (as defined above) are specified to throw
+ * {@code UnsupportedOperationException}. Such a collection thus cannot be
+ * modified by calling any methods on it. For a collection to be properly
+ * unmodifiable, any view collections derived from it must also be unmodifiable.
+ * For example, if a List is unmodifiable, the List returned by
+ * {@link List#subList List.subList} is also unmodifiable.
+ *
+ * <p>An unmodifiable collection is not necessarily immutable. If the
+ * contained elements are mutable, the entire collection is clearly
+ * mutable, even though it might be unmodifiable. For example, consider
+ * two unmodifiable lists containing mutable elements. The result of calling
+ * {@code list1.equals(list2)} might differ from one call to the next if
+ * the elements had been mutated, even though both lists are unmodifiable.
+ * However, if an unmodifiable collection contains all immutable elements,
+ * it can be considered effectively immutable.
+ *
+ * <h2><a id="unmodview">Unmodifiable View Collections</a></h2>
+ *
+ * <p>An <i>unmodifiable view collection</i> is a collection that is unmodifiable
+ * and that is also a view onto a backing collection. Its mutator methods throw
+ * {@code UnsupportedOperationException}, as described above, while
+ * reading and querying methods are delegated to the backing collection.
+ * The effect is to provide read-only access to the backing collection.
+ * This is useful for a component to provide users with read access to
+ * an internal collection, while preventing them from modifying such
+ * collections unexpectedly. Examples of unmodifiable view collections
+ * are those returned by the
+ * {@link Collections#unmodifiableCollection Collections.unmodifiableCollection},
+ * {@link Collections#unmodifiableList Collections.unmodifiableList}, and
+ * related methods.
+ *
+ * <p>Note that changes to the backing collection might still be possible,
+ * and if they occur, they are visible through the unmodifiable view. Thus,
+ * an unmodifiable view collection is not necessarily immutable. However,
+ * if the backing collection of an unmodifiable view is effectively immutable,
+ * or if the only reference to the backing collection is through an
+ * unmodifiable view, the view can be considered effectively immutable.
  *
  * <p>This interface is a member of the
  * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">

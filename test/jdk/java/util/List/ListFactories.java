@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@ import static java.util.Arrays.asList;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -221,14 +224,57 @@ public class ListFactories {
     static <T> T serialClone(T obj) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            oos.writeObject(obj);
-            oos.close();
+            try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                oos.writeObject(obj);
+            }
             ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
             ObjectInputStream ois = new ObjectInputStream(bais);
             return (T) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             throw new AssertionError(e);
         }
+    }
+
+    List<Integer> genList() {
+        return new ArrayList<>(Arrays.asList(1, 2, 3));
+    }
+
+    @Test
+    public void copyOfResultsEqual() {
+        List<Integer> orig = genList();
+        List<Integer> copy = List.copyOf(orig);
+
+        assertEquals(orig, copy);
+        assertEquals(copy, orig);
+    }
+
+    @Test
+    public void copyOfModifiedUnequal() {
+        List<Integer> orig = genList();
+        List<Integer> copy = List.copyOf(orig);
+        orig.add(4);
+
+        assertNotEquals(orig, copy);
+        assertNotEquals(copy, orig);
+    }
+
+    @Test
+    public void copyOfIdentity() {
+        List<Integer> orig = genList();
+        List<Integer> copy1 = List.copyOf(orig);
+        List<Integer> copy2 = List.copyOf(copy1);
+
+        assertNotSame(orig, copy1);
+        assertSame(copy1, copy2);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void copyOfRejectsNullCollection() {
+        List<Integer> list = List.copyOf(null);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void copyOfRejectsNullElements() {
+        List<Integer> list = List.copyOf(Arrays.asList(1, null, 3));
     }
 }

@@ -42,6 +42,9 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -70,6 +73,12 @@ public class MapFactories {
     }
 
     // for varargs Map.Entry methods
+
+    @SuppressWarnings("unchecked")
+    Map.Entry<Integer,String>[] genEmptyEntryArray1() {
+        return (Map.Entry<Integer,String>[])new Map.Entry<?,?>[1];
+    }
+
     @SuppressWarnings("unchecked")
     Map.Entry<Integer,String>[] genEntries(int n) {
         return IntStream.range(0, n)
@@ -322,21 +331,41 @@ public class MapFactories {
     }
 
     @Test(expectedExceptions=NullPointerException.class)
-    public void nullKeyDisallowedN() {
-        Map.Entry<Integer,String>[] entries = genEntries(MAX_ENTRIES);
-        entries[0] = new AbstractMap.SimpleImmutableEntry(null, "a");
+    public void nullKeyDisallowedVar1() {
+        Map.Entry<Integer,String>[] entries = genEmptyEntryArray1();
+        entries[0] = new AbstractMap.SimpleImmutableEntry<>(null, "a");
         Map<Integer, String> map = Map.ofEntries(entries);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
-    public void nullValueDisallowedN() {
-        Map.Entry<Integer,String>[] entries = genEntries(MAX_ENTRIES);
-        entries[0] = new AbstractMap.SimpleImmutableEntry(0, null);
+    public void nullValueDisallowedVar1() {
+        Map.Entry<Integer,String>[] entries = genEmptyEntryArray1();
+        entries[0] = new AbstractMap.SimpleImmutableEntry<>(0, null);
         Map<Integer, String> map = Map.ofEntries(entries);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
-    public void nullEntryDisallowedN() {
+    public void nullEntryDisallowedVar1() {
+        Map.Entry<Integer,String>[] entries = genEmptyEntryArray1();
+        Map<Integer, String> map = Map.ofEntries(entries);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void nullKeyDisallowedVarN() {
+        Map.Entry<Integer,String>[] entries = genEntries(MAX_ENTRIES);
+        entries[0] = new AbstractMap.SimpleImmutableEntry<>(null, "a");
+        Map<Integer, String> map = Map.ofEntries(entries);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void nullValueDisallowedVarN() {
+        Map.Entry<Integer,String>[] entries = genEntries(MAX_ENTRIES);
+        entries[0] = new AbstractMap.SimpleImmutableEntry<>(0, null);
+        Map<Integer, String> map = Map.ofEntries(entries);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void nullEntryDisallowedVarN() {
         Map.Entry<Integer,String>[] entries = genEntries(MAX_ENTRIES);
         entries[5] = null;
         Map<Integer, String> map = Map.ofEntries(entries);
@@ -344,7 +373,7 @@ public class MapFactories {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void nullArrayDisallowed() {
-        Map.ofEntries(null);
+        Map.ofEntries((Map.Entry<?,?>[])null);
     }
 
     @Test(dataProvider="all")
@@ -359,15 +388,71 @@ public class MapFactories {
     static <T> T serialClone(T obj) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            oos.writeObject(obj);
-            oos.close();
+            try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                oos.writeObject(obj);
+            }
             ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
             ObjectInputStream ois = new ObjectInputStream(bais);
             return (T) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             throw new AssertionError(e);
         }
+    }
+
+    Map<Integer, String> genMap() {
+        Map<Integer, String> map = new HashMap<>();
+        map.put(1, "a");
+        map.put(2, "b");
+        map.put(3, "c");
+        return map;
+    }
+
+    @Test
+    public void copyOfResultsEqual() {
+        Map<Integer, String> orig = genMap();
+        Map<Integer, String> copy = Map.copyOf(orig);
+
+        assertEquals(orig, copy);
+        assertEquals(copy, orig);
+    }
+
+    @Test
+    public void copyOfModifiedUnequal() {
+        Map<Integer, String> orig = genMap();
+        Map<Integer, String> copy = Map.copyOf(orig);
+        orig.put(4, "d");
+
+        assertNotEquals(orig, copy);
+        assertNotEquals(copy, orig);
+    }
+
+    @Test
+    public void copyOfIdentity() {
+        Map<Integer, String> orig = genMap();
+        Map<Integer, String> copy1 = Map.copyOf(orig);
+        Map<Integer, String> copy2 = Map.copyOf(copy1);
+
+        assertNotSame(orig, copy1);
+        assertSame(copy1, copy2);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void copyOfRejectsNullMap() {
+        Map<Integer, String> map = Map.copyOf(null);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void copyOfRejectsNullKey() {
+        Map<Integer, String> map = genMap();
+        map.put(null, "x");
+        Map<Integer, String> copy = Map.copyOf(map);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void copyOfRejectsNullValue() {
+        Map<Integer, String> map = genMap();
+        map.put(-1, null);
+        Map<Integer, String> copy = Map.copyOf(map);
     }
 
     // Map.entry() tests
@@ -386,7 +471,7 @@ public class MapFactories {
     public void entryBasicTests() {
         Map.Entry<String,String> kvh1 = Map.entry("xyzzy", "plugh");
         Map.Entry<String,String> kvh2 = Map.entry("foobar", "blurfl");
-        Map.Entry<String,String> sie = new AbstractMap.SimpleImmutableEntry("xyzzy", "plugh");
+        Map.Entry<String,String> sie = new AbstractMap.SimpleImmutableEntry<>("xyzzy", "plugh");
 
         assertTrue(kvh1.equals(sie));
         assertTrue(sie.equals(kvh1));
@@ -404,5 +489,4 @@ public class MapFactories {
         Map<Number,Number> map = Map.ofEntries(e1, e2);
         assertEquals(map.size(), 2);
     }
-
 }
