@@ -128,6 +128,9 @@ public class CompiledVFrame extends JavaVFrame {
 
   /** Returns List<MonitorInfo> */
   public List<MonitorInfo> getMonitors() {
+    if (getScope() == null) {
+      return new ArrayList<>();
+    }
     List monitors = getScope().getMonitors();
     if (monitors == null) {
       return new ArrayList<>();
