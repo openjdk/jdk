@@ -57,6 +57,7 @@ $ make exploded-run-test TEST=hotspot_tier1</code></pre>
 <h3 id="gtest">Gtest</h3>
 <p>Since the Hotspot Gtest suite is so quick, the default is to run all tests. This is specified by just <code>gtest</code>, or as a fully qualified test descriptor <code>gtest:all</code>.</p>
 <p>If you want, you can single out an individual test or a group of tests, for instance <code>gtest:LogDecorations</code> or <code>gtest:LogDecorations.level_test_vm</code>. This can be particularly useful if you want to run a shaky test repeatedly.</p>
+<p>For Gtest, there is a separate test suite for each JVM variant. The JVM variant is defined by adding <code>/&lt;variant&gt;</code> to the test descriptor, e.g. <code>gtest:Log/client</code>. If you specify no variant, gtest will run once for each JVM variant present (e.g. server, client). So if you only have the server JVM present, then <code>gtest:all</code> will be equivalent to <code>gtest:all/server</code>.</p>
 <h2 id="test-results-and-summary">Test results and summary</h2>
 <p>At the end of the test run, a summary of all tests run will be presented. This will have a consistent look, regardless of what test suites were used. This is a sample summary:</p>
 <pre><code>==============================

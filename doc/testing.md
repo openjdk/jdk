@@ -81,6 +81,12 @@ If you want, you can single out an individual test or a group of tests, for
 instance `gtest:LogDecorations` or `gtest:LogDecorations.level_test_vm`. This
 can be particularly useful if you want to run a shaky test repeatedly.
 
+For Gtest, there is a separate test suite for each JVM variant. The JVM variant
+is defined by adding `/<variant>` to the test descriptor, e.g.
+`gtest:Log/client`. If you specify no variant, gtest will run once for each JVM
+variant present (e.g. server, client). So if you only have the server JVM
+present, then `gtest:all` will be equivalent to `gtest:all/server`.
+
 ## Test results and summary
 
 At the end of the test run, a summary of all tests run will be presented. This
