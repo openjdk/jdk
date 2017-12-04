@@ -989,9 +989,8 @@ public class Collections {
     // Unmodifiable Wrappers
 
     /**
-     * Returns an unmodifiable view of the specified collection.  This method
-     * allows modules to provide users with "read-only" access to internal
-     * collections.  Query operations on the returned collection "read through"
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified collection. Query operations on the returned collection "read through"
      * to the specified collection, and attempts to modify the returned
      * collection, whether direct or via its iterator, result in an
      * {@code UnsupportedOperationException}.<p>
@@ -1102,9 +1101,8 @@ public class Collections {
     }
 
     /**
-     * Returns an unmodifiable view of the specified set.  This method allows
-     * modules to provide users with "read-only" access to internal sets.
-     * Query operations on the returned set "read through" to the specified
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified set. Query operations on the returned set "read through" to the specified
      * set, and attempts to modify the returned set, whether direct or via its
      * iterator, result in an {@code UnsupportedOperationException}.<p>
      *
@@ -1132,9 +1130,8 @@ public class Collections {
     }
 
     /**
-     * Returns an unmodifiable view of the specified sorted set.  This method
-     * allows modules to provide users with "read-only" access to internal
-     * sorted sets.  Query operations on the returned sorted set "read
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified sorted set. Query operations on the returned sorted set "read
      * through" to the specified sorted set.  Attempts to modify the returned
      * sorted set, whether direct, via its iterator, or via its
      * {@code subSet}, {@code headSet}, or {@code tailSet} views, result in
@@ -1180,9 +1177,8 @@ public class Collections {
     }
 
     /**
-     * Returns an unmodifiable view of the specified navigable set.  This method
-     * allows modules to provide users with "read-only" access to internal
-     * navigable sets.  Query operations on the returned navigable set "read
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified navigable set. Query operations on the returned navigable set "read
      * through" to the specified navigable set.  Attempts to modify the returned
      * navigable set, whether direct, via its iterator, or via its
      * {@code subSet}, {@code headSet}, or {@code tailSet} views, result in
@@ -1269,9 +1265,8 @@ public class Collections {
     }
 
     /**
-     * Returns an unmodifiable view of the specified list.  This method allows
-     * modules to provide users with "read-only" access to internal
-     * lists.  Query operations on the returned list "read through" to the
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified list. Query operations on the returned list "read through" to the
      * specified list, and attempts to modify the returned list, whether
      * direct or via its iterator, result in an
      * {@code UnsupportedOperationException}.<p>
@@ -1415,9 +1410,8 @@ public class Collections {
     }
 
     /**
-     * Returns an unmodifiable view of the specified map.  This method
-     * allows modules to provide users with "read-only" access to internal
-     * maps.  Query operations on the returned map "read through"
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified map. Query operations on the returned map "read through"
      * to the specified map, and attempts to modify the returned
      * map, whether direct or via its collection views, result in an
      * {@code UnsupportedOperationException}.<p>
@@ -1765,9 +1759,8 @@ public class Collections {
     }
 
     /**
-     * Returns an unmodifiable view of the specified sorted map.  This method
-     * allows modules to provide users with "read-only" access to internal
-     * sorted maps.  Query operations on the returned sorted map "read through"
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified sorted map. Query operations on the returned sorted map "read through"
      * to the specified sorted map.  Attempts to modify the returned
      * sorted map, whether direct, via its collection views, or via its
      * {@code subMap}, {@code headMap}, or {@code tailMap} views, result in
@@ -1809,9 +1802,8 @@ public class Collections {
     }
 
     /**
-     * Returns an unmodifiable view of the specified navigable map.  This method
-     * allows modules to provide users with "read-only" access to internal
-     * navigable maps.  Query operations on the returned navigable map "read
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified navigable map. Query operations on the returned navigable map "read
      * through" to the specified navigable map.  Attempts to modify the returned
      * navigable map, whether direct, via its collection views, or via its
      * {@code subMap}, {@code headMap}, or {@code tailMap} views, result in

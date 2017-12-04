@@ -87,15 +87,16 @@ import java.util.function.UnaryOperator;
  * Such exceptions are marked as "optional" in the specification for this
  * interface.
  *
- * <h2><a id="immutable">Immutable List Static Factory Methods</a></h2>
- * <p>The {@link List#of(Object...) List.of()} static factory methods
- * provide a convenient way to create immutable lists. The {@code List}
+ * <h2><a id="unmodifiable">Unmodifiable Lists</a></h2>
+ * <p>The {@link List#of(Object...) List.of} and
+ * {@link List#copyOf List.copyOf} static factory methods
+ * provide a convenient way to create unmodifiable lists. The {@code List}
  * instances created by these methods have the following characteristics:
  *
  * <ul>
- * <li>They are <em>structurally immutable</em>. Elements cannot be added, removed,
- * or replaced. Calling any mutator method will always cause
- * {@code UnsupportedOperationException} to be thrown.
+ * <li>They are <a href="Collection.html#unmodifiable"><i>unmodifiable</i></a>. Elements cannot
+ * be added, removed, or replaced. Calling any mutator method on the List
+ * will always cause {@code UnsupportedOperationException} to be thrown.
  * However, if the contained elements are themselves mutable,
  * this may cause the List's contents to appear to change.
  * <li>They disallow {@code null} elements. Attempts to create them with
@@ -777,9 +778,9 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing zero elements.
+     * Returns an unmodifiable list containing zero elements.
      *
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @param <E> the {@code List}'s element type
      * @return an empty {@code List}
@@ -791,9 +792,9 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing one element.
+     * Returns an unmodifiable list containing one element.
      *
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @param <E> the {@code List}'s element type
      * @param e1 the single element
@@ -807,9 +808,9 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing two elements.
+     * Returns an unmodifiable list containing two elements.
      *
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @param <E> the {@code List}'s element type
      * @param e1 the first element
@@ -824,9 +825,9 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing three elements.
+     * Returns an unmodifiable list containing three elements.
      *
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @param <E> the {@code List}'s element type
      * @param e1 the first element
@@ -842,9 +843,9 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing four elements.
+     * Returns an unmodifiable list containing four elements.
      *
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @param <E> the {@code List}'s element type
      * @param e1 the first element
@@ -861,9 +862,9 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing five elements.
+     * Returns an unmodifiable list containing five elements.
      *
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @param <E> the {@code List}'s element type
      * @param e1 the first element
@@ -881,9 +882,9 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing six elements.
+     * Returns an unmodifiable list containing six elements.
      *
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @param <E> the {@code List}'s element type
      * @param e1 the first element
@@ -903,9 +904,9 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing seven elements.
+     * Returns an unmodifiable list containing seven elements.
      *
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @param <E> the {@code List}'s element type
      * @param e1 the first element
@@ -926,9 +927,9 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing eight elements.
+     * Returns an unmodifiable list containing eight elements.
      *
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @param <E> the {@code List}'s element type
      * @param e1 the first element
@@ -950,9 +951,9 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing nine elements.
+     * Returns an unmodifiable list containing nine elements.
      *
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @param <E> the {@code List}'s element type
      * @param e1 the first element
@@ -975,9 +976,9 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing ten elements.
+     * Returns an unmodifiable list containing ten elements.
      *
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @param <E> the {@code List}'s element type
      * @param e1 the first element
@@ -1001,8 +1002,8 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Returns an immutable list containing an arbitrary number of elements.
-     * See <a href="#immutable">Immutable List Static Factory Methods</a> for details.
+     * Returns an unmodifiable list containing an arbitrary number of elements.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
      *
      * @apiNote
      * This method also accepts a single array as an argument. The element type of
@@ -1037,6 +1038,31 @@ public interface List<E> extends Collection<E> {
                 return new ImmutableCollections.List2<>(elements[0], elements[1]);
             default:
                 return new ImmutableCollections.ListN<>(elements);
+        }
+    }
+
+    /**
+     * Returns an <a href="#unmodifiable">unmodifiable List</a> containing the elements of
+     * the given Collection, in its iteration order. The given Collection must not be null,
+     * and it must not contain any null elements. If the given Collection is subsequently
+     * modified, the returned List will not reflect such modifications.
+     *
+     * @implNote
+     * If the given Collection is an <a href="#unmodifiable">unmodifiable List</a>,
+     * calling copyOf will generally not create a copy.
+     *
+     * @param <E> the {@code List}'s element type
+     * @param coll a {@code Collection} from which elements are drawn, must be non-null
+     * @return a {@code List} containing the elements of the given {@code Collection}
+     * @throws NullPointerException if coll is null, or if it contains any nulls
+     * @since 10
+     */
+    @SuppressWarnings("unchecked")
+    static <E> List<E> copyOf(Collection<? extends E> coll) {
+        if (coll instanceof ImmutableCollections.AbstractImmutableList) {
+            return (List<E>)coll;
+        } else {
+            return (List<E>)List.of(coll.toArray());
         }
     }
 }
