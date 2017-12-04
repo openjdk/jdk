@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,8 @@ public class UnsupportedOptionsTest {
         try {
             Class<?> c = Class.forName("jdk.net.ExtendedSocketOptions");
             Field field = c.getField("SO_FLOW_SLA");
+            socketOptions.add((SocketOption<?>)field.get(null));
+            field = c.getField("TCP_QUICKACK");
             socketOptions.add((SocketOption<?>)field.get(null));
         } catch (ClassNotFoundException e) {
             // ignore, jdk.net module not present
