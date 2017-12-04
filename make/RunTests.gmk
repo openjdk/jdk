@@ -68,6 +68,7 @@ $(eval $(call IncludeCustomExtension, RunTests.gmk))
 TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
 TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
 TEST_SUMMARY := $(TEST_RESULTS_DIR)/test-summary.txt
+TEST_LAST_IDS := $(TEST_SUPPORT_DIR)/test-last-ids.txt
 
 ifeq ($(CUSTOM_ROOT), )
   JTREG_TOPDIR := $(TOPDIR)
@@ -228,7 +229,8 @@ define ParseJtregTestSelection
   $(if $(findstring :, $(TEST_NAME)), \
     $(if $(filter :%, $(TEST_NAME)), \
       $(eval TEST_GROUP := $(patsubst :%, %, $(TEST_NAME))) \
-      $(eval TEST_ROOTS := $(JTREG_TESTROOTS)) \
+      $(eval TEST_ROOTS := $(foreach test_root, $(JTREG_TESTROOTS), \
+          $(call CleanupJtregPath, $(test_root)))) \
     , \
       $(eval TEST_PATH := $(word 1, $(subst :, $(SPACE), $(TEST_NAME)))) \
       $(eval TEST_GROUP := $(word 2, $(subst :, $(SPACE), $(TEST_NAME)))) \
@@ -316,6 +318,7 @@ SetupRunGtestTest = $(NamedParamsMacroTemplate)
 define SetupRunGtestTestBody
   $1_TEST_RESULTS_DIR := $$(TEST_RESULTS_DIR)/$1
   $1_TEST_SUPPORT_DIR := $$(TEST_SUPPORT_DIR)/$1
+  $1_EXITCODE := $$($1_TEST_RESULTS_DIR)/exitcode.txt
 
   $1_TEST_NAME := $$(strip $$(patsubst gtest:%, %, $$($1_TEST)))
   ifneq ($$($1_TEST_NAME), all)
@@ -332,10 +335,13 @@ define SetupRunGtestTestBody
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, \
 	    $$(FIXPATH) $$(TEST_IMAGE_DIR)/hotspot/gtest/server/gtestLauncher \
-	    -jdk $(JDK_IMAGE_DIR) $$($1_GTEST_FILTER) \
-	    --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \
-	    $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) $$(GTEST_VM_OPTIONS) \
-	    > >($(TEE) $$($1_TEST_RESULTS_DIR)/gtest.txt) || true )
+	         -jdk $(JDK_IMAGE_DIR) $$($1_GTEST_FILTER) \
+	         --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \
+	         $$($1_GTEST_REPEAT) $$(GTEST_OPTIONS) $$(GTEST_VM_OPTIONS) \
+	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/gtest.txt) \
+	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/gtest.txt
 
@@ -343,7 +349,7 @@ define SetupRunGtestTestBody
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
-	$$(if  $$(wildcard $$($1_RESULT_FILE)), \
+	$$(if $$(wildcard $$($1_RESULT_FILE)), \
 	  $$(eval $1_TOTAL := $$(shell $$(AWK) '/==========.* tests? from .* \
 	      test cases? ran/ { print $$$$2 }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_TOTAL), , $$(eval $1_TOTAL := 0)) \
@@ -398,6 +404,7 @@ SetupRunJtregTest = $(NamedParamsMacroTemplate)
 define SetupRunJtregTestBody
   $1_TEST_RESULTS_DIR := $$(TEST_RESULTS_DIR)/$1
   $1_TEST_SUPPORT_DIR := $$(TEST_SUPPORT_DIR)/$1
+  $1_EXITCODE := $$($1_TEST_RESULTS_DIR)/exitcode.txt
 
   $1_TEST_NAME := $$(strip $$(patsubst jtreg:%, %, $$($1_TEST)))
 
@@ -505,7 +512,10 @@ define SetupRunJtregTestBody
 	        -workDir:$$($1_TEST_SUPPORT_DIR) \
 	        $$(JTREG_OPTIONS) \
 	        $$(JTREG_FAILURE_HANDLER_OPTIONS) \
-	        $$($1_TEST_NAME) || true )
+	        $$($1_TEST_NAME) \
+	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/text/stats.txt
 
@@ -513,7 +523,7 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
-	$$(if  $$(wildcard $$($1_RESULT_FILE)), \
+	$$(if $$(wildcard $$($1_RESULT_FILE)), \
 	  $$(eval $1_PASSED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "passed:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
@@ -555,7 +565,7 @@ UseJtregTestHandler = \
 # Now process each test to run and setup a proper make rule
 $(foreach test, $(TESTS_TO_RUN), \
   $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
-      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
+      $(TR) -cs '[a-z][A-Z][0-9]\n' '[_*1000]')) \
   $(eval ALL_TEST_IDS += $(TEST_ID)) \
   $(if $(call UseCustomTestHandler, $(test)), \
     $(eval $(call SetupRunCustomTest, $(TEST_ID), \
@@ -592,6 +602,8 @@ run-test: $(TARGETS)
         # Create and print a table of the result of all tests run
 	$(RM) $(TEST_SUMMARY).old 2> /dev/null
 	$(MV) $(TEST_SUMMARY) $(TEST_SUMMARY).old 2> /dev/null || true
+	$(RM) $(TEST_LAST_IDS).old 2> /dev/null
+	$(MV) $(TEST_LAST_IDS) $(TEST_LAST_IDS).old 2> /dev/null || true
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
 	$(ECHO) >> $(TEST_SUMMARY) Test summary
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
@@ -599,8 +611,9 @@ run-test: $(TARGETS)
 	    TEST TOTAL PASS FAIL ERROR " "
 	$(foreach test, $(TESTS_TO_RUN), \
 	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
-	      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
-	  $(eval NAME_PATTERN := $(shell $(ECHO) $(test) | $(TR) -c \\n _)) \
+	      $(TR) -cs '[a-z][A-Z][0-9]\n' '[_*1000]')) \
+	    $(ECHO) >> $(TEST_LAST_IDS) $(TEST_ID) $(NEWLINE) \
+	  $(eval NAME_PATTERN := $(shell $(ECHO) $(test) | $(TR) -c '\n' '[_*1000]')) \
 	  $(if $(filter __________________________________________________%, $(NAME_PATTERN)), \
 	    $(eval TEST_NAME := ) \
 	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s\n" "  " "$(test)"  $(NEWLINE) \

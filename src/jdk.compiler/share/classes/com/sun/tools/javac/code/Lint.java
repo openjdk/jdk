@@ -115,7 +115,7 @@ public class Lint
             values = EnumSet.noneOf(LintCategory.class);
 
             Source source = Source.instance(context);
-            if (source.compareTo(Source.JDK1_9) >= 0) {
+            if (source.compareTo(Source.JDK9) >= 0) {
                 values.add(LintCategory.DEP_ANN);
             }
             values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);

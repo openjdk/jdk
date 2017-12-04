@@ -34,6 +34,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.javadoc.*;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -388,7 +389,7 @@ public class RootDocImpl extends DocImpl implements RootDoc {
     }
 
     public boolean isFunctionalInterface(AnnotationDesc annotationDesc) {
-        return env.source.allowLambda()
+        return Feature.LAMBDA.allowedInSource(env.source)
             && annotationDesc.annotationType().qualifiedName().equals(
                 env.syms.functionalInterfaceType.toString());
     }

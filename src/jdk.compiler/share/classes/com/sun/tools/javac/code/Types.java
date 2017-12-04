@@ -41,6 +41,7 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.code.TypeMetadata.Entry.Kind;
 import com.sun.tools.javac.comp.AttrContext;
@@ -113,9 +114,9 @@ public class Types {
         syms = Symtab.instance(context);
         names = Names.instance(context);
         Source source = Source.instance(context);
-        allowObjectToPrimitiveCast = source.allowObjectToPrimitiveCast();
-        allowDefaultMethods = source.allowDefaultMethods();
-        mapCapturesToBounds = source.mapCapturesToBounds();
+        allowObjectToPrimitiveCast = Feature.OBJECT_TO_PRIMITIVE_CAST.allowedInSource(source);
+        allowDefaultMethods = Feature.DEFAULT_METHODS.allowedInSource(source);
+        mapCapturesToBounds = Feature.MAP_CAPTURES_TO_BOUNDS.allowedInSource(source);
         chk = Check.instance(context);
         enter = Enter.instance(context);
         capturedName = names.fromString("<captured wildcard>");

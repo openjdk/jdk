@@ -2746,12 +2746,12 @@ public final class Main {
                     if (rfc) {
                         dumpCert(cert, out);
                     } else {
-                        out.println("Certificate #" + i++);
+                        out.println("Certificate #" + i);
                         out.println("====================================");
                         printX509Cert((X509Certificate)cert, out);
                         out.println();
                     }
-                    checkWeak(oneInMany(rb.getString("the.certificate"), i, chain.size()), cert);
+                    checkWeak(oneInMany(rb.getString("the.certificate"), i++, chain.size()), cert);
                 } catch (Exception e) {
                     if (debug) {
                         e.printStackTrace();

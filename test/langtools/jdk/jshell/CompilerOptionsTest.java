@@ -51,6 +51,6 @@ public class CompilerOptionsTest extends KullaTesting {
     public void testSourceVersion() {
         assertEval("import java.util.function.*;", added(VALID));
         assertDeclareFail("Function<Integer,Integer> f = x -> x*2;",
-                new ExpectedDiagnostic("compiler.err.lambda.not.supported.in.source", 32, 32, 32, -1, -1, Diagnostic.Kind.ERROR));
+                new ExpectedDiagnostic("compiler.err.feature.not.supported.in.source.plural", 32, 32, 32, -1, -1, Diagnostic.Kind.ERROR));
     }
 }

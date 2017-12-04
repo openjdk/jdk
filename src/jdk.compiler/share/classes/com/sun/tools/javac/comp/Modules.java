@@ -66,6 +66,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.ModuleFinder;
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.Completer;
@@ -185,7 +186,7 @@ public class Modules extends JCTree.Visitor {
         types = Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
         source = Source.instance(context);
-        allowModules = source.allowModules();
+        allowModules = Feature.MODULES.allowedInSource(source);
         Options options = Options.instance(context);
 
         allowAccessIntoSystem = options.isUnset(Option.RELEASE);

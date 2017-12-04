@@ -37,6 +37,7 @@ import com.sun.tools.javac.code.Scope.ImportFilter;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
@@ -137,8 +138,8 @@ public class TypeEnter implements Completer {
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
         Source source = Source.instance(context);
-        allowTypeAnnos = source.allowTypeAnnotations();
-        allowDeprecationOnImport = source.allowDeprecationOnImport();
+        allowTypeAnnos = Feature.TYPE_ANNOTATIONS.allowedInSource(source);
+        allowDeprecationOnImport = Feature.DEPRECATION_ON_IMPORT.allowedInSource(source);
     }
 
     /** Switch: support type annotations.

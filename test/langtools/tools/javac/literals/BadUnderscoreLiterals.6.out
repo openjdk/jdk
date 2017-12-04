@@ -1,7 +1,7 @@
-BadUnderscoreLiterals.java:11:17: compiler.err.unsupported.underscore.lit: 1.6
+BadUnderscoreLiterals.java:11:17: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.underscore.lit), 6, 7
 BadUnderscoreLiterals.java:15:15: compiler.err.illegal.underscore
 BadUnderscoreLiterals.java:19:19: compiler.err.illegal.underscore
-BadUnderscoreLiterals.java:22:14: compiler.err.unsupported.binary.lit: 1.6
+BadUnderscoreLiterals.java:22:14: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.binary.lit), 6, 7
 BadUnderscoreLiterals.java:22:16: compiler.err.illegal.underscore
 BadUnderscoreLiterals.java:23:17: compiler.err.illegal.underscore
 BadUnderscoreLiterals.java:26:16: compiler.err.illegal.underscore

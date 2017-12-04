@@ -1,2 +1,2 @@
-StaticInvokeSimple.java:12:15: compiler.err.static.intf.method.invoke.not.supported.in.source: 1.7
+StaticInvokeSimple.java:12:15: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.static.intf.method.invoke), 7, 8
 1 error

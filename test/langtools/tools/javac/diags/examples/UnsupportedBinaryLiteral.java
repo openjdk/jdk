@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.unsupported.binary.lit
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.misc.feature.binary.lit
 // options: -source 6 -Xlint:-options
 
 class UnsupportedBinaryLiteral {

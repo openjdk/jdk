@@ -1,2 +1,2 @@
-WrongVersion.java:12:9: compiler.err.repeatable.annotations.not.supported.in.source: 1.7
+WrongVersion.java:12:9: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.repeatable.annotations), 7, 8
 1 error

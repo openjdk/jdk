@@ -33,6 +33,7 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.Compound;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
 import com.sun.tools.javac.code.Directive.RequiresDirective;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
@@ -127,11 +128,6 @@ public class Check {
         fileManager = context.get(JavaFileManager.class);
 
         source = Source.instance(context);
-        allowSimplifiedVarargs = source.allowSimplifiedVarargs();
-        allowDefaultMethods = source.allowDefaultMethods();
-        allowStrictMethodClashCheck = source.allowStrictMethodClashCheck();
-        allowPrivateSafeVarargs = source.allowPrivateSafeVarargs();
-        allowDiamondWithAnonymousClassCreation = source.allowDiamondWithAnonymousClassCreation();
         warnOnAnyAccessToMembers = options.isSet("warnOnAccessToMembers");
 
         Target target = Target.instance(context);
@@ -155,26 +151,6 @@ public class Check {
 
         deferredLintHandler = DeferredLintHandler.instance(context);
     }
-
-    /** Switch: simplified varargs enabled?
-     */
-    boolean allowSimplifiedVarargs;
-
-    /** Switch: default methods enabled?
-     */
-    boolean allowDefaultMethods;
-
-    /** Switch: should unrelated return types trigger a method clash?
-     */
-    boolean allowStrictMethodClashCheck;
-
-    /** Switch: can the @SafeVarargs annotation be applied to private methods?
-     */
-    boolean allowPrivateSafeVarargs;
-
-    /** Switch: can diamond inference be used in anonymous instance creation ?
-     */
-    boolean allowDiamondWithAnonymousClassCreation;
 
     /** Character for synthetic names
      */
@@ -256,7 +232,7 @@ public class Check {
      *  @param pos        Position to be used for error reporting.
      */
     void warnUnsafeVararg(DiagnosticPosition pos, String key, Object... args) {
-        if (lint.isEnabled(LintCategory.VARARGS) && allowSimplifiedVarargs)
+        if (lint.isEnabled(LintCategory.VARARGS) && Feature.SIMPLIFIED_VARARGS.allowedInSource(source))
             log.warning(LintCategory.VARARGS, pos, key, args);
     }
 
@@ -814,9 +790,9 @@ public class Check {
                 t.isErroneous()) {
             return checkClassType(tree.clazz.pos(), t, true);
         } else {
-            if (tree.def != null && !allowDiamondWithAnonymousClassCreation) {
+            if (tree.def != null && !Feature.DIAMOND_WITH_ANONYMOUS_CLASS_CREATION.allowedInSource(source)) {
                 log.error(DiagnosticFlag.SOURCE_LEVEL, tree.clazz.pos(),
-                        Errors.CantApplyDiamond1(t, Fragments.DiamondAndAnonClassNotSupportedInSource(source.name)));
+                        Errors.CantApplyDiamond1(t, Feature.DIAMOND_WITH_ANONYMOUS_CLASS_CREATION.fragment(source.name)));
             }
             if (t.tsym.type.getTypeArguments().isEmpty()) {
                 log.error(tree.clazz.pos(),
@@ -906,7 +882,7 @@ public class Check {
 
     void checkVarargsMethodDecl(Env<AttrContext> env, JCMethodDecl tree) {
         MethodSymbol m = tree.sym;
-        if (!allowSimplifiedVarargs) return;
+        if (!Feature.SIMPLIFIED_VARARGS.allowedInSource(source)) return;
         boolean hasTrustMeAnno = m.attribute(syms.trustMeType.tsym) != null;
         Type varargElemType = null;
         if (m.isVarArgs()) {
@@ -914,7 +890,7 @@ public class Check {
         }
         if (hasTrustMeAnno && !isTrustMeAllowedOnMethod(m)) {
             if (varargElemType != null) {
-                JCDiagnostic msg = allowPrivateSafeVarargs ?
+                JCDiagnostic msg = Feature.PRIVATE_SAFE_VARARGS.allowedInSource(source) ?
                         diags.fragment(Fragments.VarargsTrustmeOnVirtualVarargs(m)) :
                         diags.fragment(Fragments.VarargsTrustmeOnVirtualVarargsFinalOnly(m));
                 log.error(tree,
@@ -942,7 +918,7 @@ public class Check {
             return (s.flags() & VARARGS) != 0 &&
                 (s.isConstructor() ||
                     (s.flags() & (STATIC | FINAL |
-                                  (allowPrivateSafeVarargs ? PRIVATE : 0) )) != 0);
+                                  (Feature.PRIVATE_SAFE_VARARGS.allowedInSource(source) ? PRIVATE : 0) )) != 0);
         }
 
     Type checkLocalVarType(DiagnosticPosition pos, Type t, Name name) {
@@ -1019,7 +995,7 @@ public class Check {
         if (useVarargs) {
             Type argtype = owntype.getParameterTypes().last();
             if (!types.isReifiable(argtype) &&
-                (!allowSimplifiedVarargs ||
+                (!Feature.SIMPLIFIED_VARARGS.allowedInSource(source) ||
                  sym.baseSymbol().attribute(syms.trustMeType.tsym) == null ||
                  !isTrustMeAllowedOnMethod(sym))) {
                 warnUnchecked(env.tree.pos(),
@@ -2489,7 +2465,7 @@ public class Check {
                 if (m2 == m1) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
-                if (!types.isSubSignature(sym.type, types.memberType(site, m2), allowStrictMethodClashCheck) &&
+                if (!types.isSubSignature(sym.type, types.memberType(site, m2), Feature.STRICT_METHOD_CLASH_CHECK.allowedInSource(source)) &&
                         types.hasSameArgs(m2.erasure(types), m1.erasure(types))) {
                     sym.flags_field |= CLASH;
                     if (m1 == sym) {
@@ -2534,7 +2510,7 @@ public class Check {
         for (Symbol s : types.membersClosure(site, true).getSymbolsByName(sym.name, cf)) {
             //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
             //a member of 'site') and (ii) 'sym' has the same erasure as m1, issue an error
-            if (!types.isSubSignature(sym.type, types.memberType(site, s), allowStrictMethodClashCheck)) {
+            if (!types.isSubSignature(sym.type, types.memberType(site, s), Feature.STRICT_METHOD_CLASH_CHECK.allowedInSource(source))) {
                 if (types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
                     log.error(pos,
                               Errors.NameClashSameErasureNoHide(sym, sym.location(), s, s.location()));
@@ -2634,7 +2610,7 @@ public class Check {
     void checkPotentiallyAmbiguousOverloads(DiagnosticPosition pos, Type site,
             MethodSymbol msym1, MethodSymbol msym2) {
         if (msym1 != msym2 &&
-                allowDefaultMethods &&
+                Feature.DEFAULT_METHODS.allowedInSource(source) &&
                 lint.isEnabled(LintCategory.OVERLOADS) &&
                 (msym1.flags() & POTENTIALLY_AMBIGUOUS) == 0 &&
                 (msym2.flags() & POTENTIALLY_AMBIGUOUS) == 0) {

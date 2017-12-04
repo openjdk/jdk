@@ -426,7 +426,7 @@ public class Log extends AbstractLog {
     /** A set of "not-supported-in-source-X" errors produced so far. This is used to only generate
      *  one such error per file.
      */
-    protected Set<Pair<JavaFileObject, String>>  recordedSourceLevelErrors = new HashSet<>();
+    protected Set<Pair<JavaFileObject, List<String>>>  recordedSourceLevelErrors = new HashSet<>();
 
     public boolean hasDiagnosticListener() {
         return diagListener != null;
@@ -521,12 +521,28 @@ public class Log extends AbstractLog {
         if (!d.isFlagSet(DiagnosticFlag.SOURCE_LEVEL))
             return true;
 
-        Pair<JavaFileObject, String> coords = new Pair<>(file, d.getCode());
+        Pair<JavaFileObject, List<String>> coords = new Pair<>(file, getCode(d));
         boolean shouldReport = !recordedSourceLevelErrors.contains(coords);
         if (shouldReport)
             recordedSourceLevelErrors.add(coords);
         return shouldReport;
     }
+
+    //where
+        private List<String> getCode(JCDiagnostic d) {
+            ListBuffer<String> buf = new ListBuffer<>();
+            getCodeRecursive(buf, d);
+            return buf.toList();
+        }
+
+        private void getCodeRecursive(ListBuffer<String> buf, JCDiagnostic d) {
+            buf.add(d.getCode());
+            for (Object o : d.getArgs()) {
+                if (o instanceof JCDiagnostic) {
+                    getCodeRecursive(buf, (JCDiagnostic)o);
+                }
+            }
+        }
 
     /** Prompt user after an error.
      */

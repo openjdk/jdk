@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Type.UndetVar.UndetVarListener;
 import com.sun.tools.javac.code.Types.TypeMapping;
 import com.sun.tools.javac.comp.Attr.CheckMode;
@@ -116,7 +117,8 @@ public class Infer {
         log = Log.instance(context);
         inferenceException = new InferenceException(diags);
         Options options = Options.instance(context);
-        allowGraphInference = Source.instance(context).allowGraphInference()
+        Source source = Source.instance(context);
+        allowGraphInference = Feature.GRAPH_INFERENCE.allowedInSource(source)
                 && options.isUnset("useLegacyInference");
         dependenciesFolder = options.get("debug.dumpInferenceGraphsTo");
         pendingGraphs = List.nil();

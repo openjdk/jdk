@@ -32,6 +32,7 @@ import java.util.HashMap;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
@@ -291,10 +292,10 @@ public class Flow {
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         Source source = Source.instance(context);
-        allowImprovedRethrowAnalysis = source.allowImprovedRethrowAnalysis();
-        allowImprovedCatchAnalysis = source.allowImprovedCatchAnalysis();
-        allowEffectivelyFinalInInnerClasses = source.allowEffectivelyFinalInInnerClasses();
-        enforceThisDotInit = source.enforceThisDotInit();
+        allowImprovedRethrowAnalysis = Feature.IMPROVED_RETHROW_ANALYSIS.allowedInSource(source);
+        allowImprovedCatchAnalysis = Feature.IMPROVED_CATCH_ANALYSIS.allowedInSource(source);
+        allowEffectivelyFinalInInnerClasses = Feature.EFFECTIVELY_FINAL_IN_INNER_CLASSES.allowedInSource(source);
+        enforceThisDotInit = Feature.ENFORCE_THIS_DOT_INIT.allowedInSource(source);
     }
 
     /**

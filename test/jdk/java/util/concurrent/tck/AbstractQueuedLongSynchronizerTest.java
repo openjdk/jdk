@@ -39,6 +39,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.AbstractQueuedLongSynchronizer;
 import java.util.concurrent.locks.AbstractQueuedLongSynchronizer.ConditionObject;
 
@@ -1281,6 +1282,59 @@ public class AbstractQueuedLongSynchronizerTest extends JSR166TestCase {
         assertTrue(c.awaitNanos(Long.MIN_VALUE) <= 0);
         assertFalse(c.await(Long.MIN_VALUE, NANOSECONDS));
         sync.release();
+    }
+
+    /**
+     * Tests scenario for
+     * JDK-8191937: Lost interrupt in AbstractQueuedSynchronizer when tryAcquire methods throw
+     */
+    public void testInterruptedFailingAcquire() throws InterruptedException {
+        final RuntimeException ex = new RuntimeException();
+
+        // A synchronizer only offering a choice of failure modes
+        class Sync extends AbstractQueuedLongSynchronizer {
+            boolean pleaseThrow;
+            @Override protected boolean tryAcquire(long ignored) {
+                if (pleaseThrow) throw ex;
+                return false;
+            }
+            @Override protected long tryAcquireShared(long ignored) {
+                if (pleaseThrow) throw ex;
+                return -1;
+            }
+            @Override protected boolean tryRelease(long ignored) {
+                return true;
+            }
+            @Override protected boolean tryReleaseShared(long ignored) {
+                return true;
+            }
+        }
+
+        final Sync s = new Sync();
+
+        final Thread thread = newStartedThread(new CheckedRunnable() {
+            public void realRun() {
+                try {
+                    if (ThreadLocalRandom.current().nextBoolean())
+                        s.acquire(1);
+                    else
+                        s.acquireShared(1);
+                    shouldThrow();
+                } catch (Throwable t) {
+                    assertSame(ex, t);
+                    assertTrue(Thread.interrupted());
+                }
+            }});
+        waitForThreadToEnterWaitState(thread);
+        assertSame(thread, s.getFirstQueuedThread());
+        assertTrue(s.hasQueuedPredecessors());
+        assertTrue(s.hasQueuedThreads());
+        assertEquals(1, s.getQueueLength());
+
+        s.pleaseThrow = true;
+        thread.interrupt();
+        s.release(1);
+        awaitTermination(thread);
     }
 
 }

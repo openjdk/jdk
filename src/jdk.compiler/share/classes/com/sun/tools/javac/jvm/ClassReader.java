@@ -42,6 +42,7 @@ import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeCompleter;
 import com.sun.tools.javac.code.*;
@@ -246,8 +247,8 @@ public class ClassReader {
         verbose         = options.isSet(Option.VERBOSE);
 
         Source source = Source.instance(context);
-        allowSimplifiedVarargs = source.allowSimplifiedVarargs();
-        allowModules     = source.allowModules();
+        allowSimplifiedVarargs = Feature.SIMPLIFIED_VARARGS.allowedInSource(source);
+        allowModules     = Feature.MODULES.allowedInSource(source);
 
         saveParameterNames = options.isSet(PARAMETERS);
 
