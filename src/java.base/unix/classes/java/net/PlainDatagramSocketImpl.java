@@ -45,41 +45,33 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
             ExtendedSocketOptions.getInstance();
 
     protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
-        if (!extendedOptions.isOptionSupported(name)) {
-            if (!name.equals(StandardSocketOptions.SO_REUSEPORT)) {
-                super.setOption(name, value);
+        if (isClosed()) {
+            throw new SocketException("Socket closed");
+        }
+        if (supportedOptions().contains(name)) {
+            if (extendedOptions.isOptionSupported(name)) {
+                extendedOptions.setOption(fd, name, value);
             } else {
-               if (supportedOptions().contains(name)) {
-                   super.setOption(name, value);
-               } else {
-                   throw new UnsupportedOperationException("unsupported option");
-               }
+                super.setOption(name, value);
             }
         } else {
-            if (isClosed()) {
-                throw new SocketException("Socket closed");
-            }
-            extendedOptions.setOption(fd, name, value);
+            throw new UnsupportedOperationException("unsupported option");
         }
     }
 
     @SuppressWarnings("unchecked")
     protected <T> T getOption(SocketOption<T> name) throws IOException {
-        if (!extendedOptions.isOptionSupported(name)) {
-            if (!name.equals(StandardSocketOptions.SO_REUSEPORT)) {
-                return super.getOption(name);
+        if (isClosed()) {
+            throw new SocketException("Socket closed");
+        }
+        if (supportedOptions().contains(name)) {
+            if (extendedOptions.isOptionSupported(name)) {
+                return (T) extendedOptions.getOption(fd, name);
             } else {
-                if (supportedOptions().contains(name)) {
-                    return super.getOption(name);
-                } else {
-                    throw new UnsupportedOperationException("unsupported option");
-                }
+                return super.getOption(name);
             }
         } else {
-            if (isClosed()) {
-                throw new SocketException("Socket closed");
-            }
-            return (T) extendedOptions.getOption(fd, name);
+            throw new UnsupportedOperationException("unsupported option");
         }
     }
 
