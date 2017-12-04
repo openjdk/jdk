@@ -56,46 +56,24 @@ import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
 
 /**
- * A registry for service provider instances.  Service provider
- * classes may be detected at run time by means of meta-information in
- * the JAR files containing them.  The intent is that it be relatively
- * inexpensive to load and inspect all available service provider
- * classes.  These classes may them be used to locate and instantiate
+ * A registry for Image I/O service provider instances.  Service provider
+ * classes may be discovered at runtime by the mechanisms documented in
+ * {@link java.util.ServiceLoader ServiceLoader}.
+ *
+ * The intent is that it be relatively inexpensive to load and inspect
+ * all available Image I/O service provider classes.
+ * These classes may then be used to locate and instantiate
  * more heavyweight classes that will perform actual work, in this
  * case instances of {@code ImageReader},
  * {@code ImageWriter}, {@code ImageTranscoder},
  * {@code ImageInputStream}, and {@code ImageOutputStream}.
  *
- * Service providers found from the Java platform are automatically
+ * Service providers included in the Java runtime are automatically
  * loaded as soon as this class is instantiated.
  *
  * <p> When the {@code registerApplicationClasspathSpis} method
- * is called, service provider instances declared in the
- * meta-information section of JAR files on the application class path
- * are loaded.  To declare a service provider, a {@code services}
- * subdirectory is placed within the {@code META-INF} directory
- * that is present in every JAR file.  This directory contains a file
- * for each service provider interface that has one or more
- * implementation classes present in the JAR file.  For example, if
- * the JAR file contained a class named
- * {@code com.mycompany.imageio.MyFormatReaderSpi} which
- * implements the {@code ImageReaderSpi} interface, the JAR file
- * would contain a file named:
- *
- * <pre>
- * META-INF/services/javax.imageio.spi.ImageReaderSpi
- * </pre>
- *
- * containing the line:
- *
- * <pre>
- * com.mycompany.imageio.MyFormatReaderSpi
- * </pre>
- *
- * <p> The service provider classes are intended to be lightweight
- * and quick to load.  Implementations of these interfaces
- * should avoid complex dependencies on other classes and on
- * native code.
+ * is called, additional service provider instances will be discovered
+ * using {@link java.util.ServiceLoader ServiceLoader}.
  *
  * <p> It is also possible to manually add service providers not found
  * automatically, as well as to remove those that are using the
@@ -103,9 +81,8 @@ import java.util.ServiceConfigurationError;
  * the application may customize the contents of the registry as it
  * sees fit.
  *
- * <p> For more details on declaring service providers, and the JAR
- * format in general, see the
- * <a href="{@docRoot}/../specs/jar/jar.html">JAR File Specification</a>.
+ * <p> For information on how to create and deploy service providers,
+ * refer to the documentation on {@link java.util.ServiceLoader ServiceLoader}
  */
 public final class IIORegistry extends ServiceRegistry {
 

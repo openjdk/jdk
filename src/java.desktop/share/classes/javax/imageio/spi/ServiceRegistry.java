@@ -39,19 +39,13 @@ import java.util.Set;
 import java.util.ServiceLoader;
 
 /**
- * A registry for service provider instances.
- *
- * <p> A <i>service</i> is a well-known set of interfaces and (usually
- * abstract) classes.  A <i>service provider</i> is a specific
- * implementation of a service.  The classes in a provider typically
- * implement the interface or subclass the class defined by the
- * service itself.
+ * A registry for service provider instances for Image I/O service types.
  *
  * <p> Service providers are stored in one or more <i>categories</i>,
- * each of which is defined by a class of interface (described by a
+ * each of which is defined by a class or interface (described by a
  * {@code Class} object) that all of its members must implement.
  *
- * <p>The set of categories supported is limited
+ * <p>The set of categories supported by this class is limited
  * to the following standard Image I/O service types:
  *
  * <ul>
@@ -63,9 +57,10 @@ import java.util.ServiceLoader;
  * </ul>
  *
  * <p>An attempt to load a provider that is not a subtype of one of the
- * above types will result in {@code IllegalArgumentException}. For
- * a general mechanism to load service providers, see
- * {@link java.util.ServiceLoader ServiceLoader}.
+ * above types will result in {@code IllegalArgumentException}.
+ * <p> For the general mechanism to load service providers, see
+ * {@link java.util.ServiceLoader ServiceLoader}, which is
+ * the underlying standard mechanism used by this class.
  *
  * <p> Only a single instance of a given leaf class (that is, the
  * actual class returned by {@code getClass()}, as opposed to any
@@ -80,24 +75,7 @@ import java.util.ServiceLoader;
  * the previous instance.  In practice, service provider objects are
  * usually singletons so this behavior is appropriate.
  *
- * <p> To declare a service provider, a {@code services}
- * subdirectory is placed within the {@code META-INF} directory
- * that is present in every JAR file.  This directory contains a file
- * for each service provider interface that has one or more
- * implementation classes present in the JAR file.  For example, if
- * the JAR file contained a class named
- * {@code com.mycompany.mypkg.GreenImageReaderProvider} which implements the
- * {@code javax.imageio.spi.ImageReaderSpi} interface, the JAR file
- * would contain a file named: <pre>
- * META-INF/services/javax.imageio.spi.ImageReaderSpi</pre>
- *
- * containing the line:
- *
- * <pre>
- * com.mycompany.mypkg.GreenImageReaderProvider
- * </pre>
- *
- * <p> The service provider classes should be to be lightweight and
+ * <p> The service provider classes should be lightweight and
  * quick to load.  Implementations of these interfaces should avoid
  * complex dependencies on other classes and on native code. The usual
  * pattern for more complex services is to register a lightweight
@@ -106,9 +84,8 @@ import java.util.ServiceLoader;
  * <p> An application may customize the contents of a registry as it
  * sees fit, so long as it has the appropriate runtime permission.
  *
- * <p> For more details on declaring service providers, and the JAR
- * format in general, see the
- * <a href="{@docRoot}/../specs/jar/jar.html">JAR File Specification</a>.
+ * <p> For information on how to create and deploy service providers,
+ * refer to the documentation on {@link java.util.ServiceLoader ServiceLoader}
  *
  * @see RegisterableService
  * @see java.util.ServiceLoader
