@@ -49,22 +49,22 @@ public abstract class EditorTestBase extends ReplToolTesting {
         test(defaultStartup, args, tests);
     }
 
-    public abstract void assertEdit(boolean after, String cmd,
+    abstract void assertEdit(boolean after, String cmd,
                                     Consumer<String> checkInput, Consumer<String> checkOutput, Action action);
 
-    public void assertEditInput(boolean after, String cmd, Consumer<String> checkInput, Action action) {
+    void assertEditInput(boolean after, String cmd, Consumer<String> checkInput, Action action) {
         assertEdit(after, cmd, checkInput, s -> {}, action);
     }
 
-    public void assertEditOutput(boolean after, String cmd, Consumer<String> checkOutput, Action action) {
+    void assertEditOutput(boolean after, String cmd, Consumer<String> checkOutput, Action action) {
         assertEdit(after, cmd, s -> {}, checkOutput, action);
     }
 
-    public void assertEditInput(boolean after, String cmd, String input, Action action) {
+    void assertEditInput(boolean after, String cmd, String input, Action action) {
         assertEditInput(after, cmd, s -> assertEquals(s, input, "Input"), action);
     }
 
-    public void assertEditOutput(boolean after, String cmd, String output, Action action) {
+    void assertEditOutput(boolean after, String cmd, String output, Action action) {
         assertEditOutput(after, cmd, s -> assertEquals(s.trim(), output.trim(), "command"), action);
     }
 
@@ -245,7 +245,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
         );
     }
 
-    @Test
+    @Test(enabled = false) // TODO JDK-8191875
     public void testStatementMush() {
         testEditor(
                 a -> assertCommand(a, "System.out.println(\"Hello\")",

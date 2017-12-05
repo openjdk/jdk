@@ -171,7 +171,7 @@ public class ExternalEditorTest extends EditorTestBase {
 
     private Future<?> task;
     @Override
-    public void assertEdit(boolean after, String cmd,
+    void assertEdit(boolean after, String cmd,
                            Consumer<String> checkInput, Consumer<String> checkOutput, Action action) {
         if (!after) {
             setCommandInput(cmd + "\n");

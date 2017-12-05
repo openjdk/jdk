@@ -138,7 +138,7 @@ public class StartOptionTest {
     private Consumer<String> assertOrNull(String expected, String label) {
         return expected == null
                 ? null
-                : s -> assertEquals(s.trim(), expected.trim(), label);
+                : s -> assertEquals(s.replaceAll("\\r\\n?", "\n").trim(), expected.trim(), label);
     }
 
     // Start and check the resultant: exit code (Ex), command output (Co),
