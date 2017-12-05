@@ -565,6 +565,7 @@ JAVAC_FLAGS?=@JAVAC_FLAGS@
 
 BUILD_JAVA_FLAGS := @BOOTCYCLE_JVM_ARGS_BIG@
 BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
+BUILD_JAR=@FIXPATH@ $(BUILD_JDK)/bin/jar
 
 # Interim langtools and rmic modules and arguments
 INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
