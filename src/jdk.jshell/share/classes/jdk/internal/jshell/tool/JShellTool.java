@@ -227,6 +227,8 @@ public class JShellTool implements MessageHandler {
     static final String BUILTIN_FILE_PATH_FORMAT = "/jdk/jshell/tool/resources/%s.jsh";
     static final String INT_PREFIX = "int $$exit$$ = ";
 
+    static final int OUTPUT_WIDTH = 72;
+
     // match anything followed by whitespace
     private static final Pattern OPTION_PRE_PATTERN =
             Pattern.compile("\\s*(\\S+\\s+)*?");
@@ -2347,17 +2349,14 @@ public class JShellTool implements MessageHandler {
                         return false;
                     }
                     if (!which.equals("_blank")) {
-                        hardrb("help.set." + which);
+                        printHelp("/set " + which, "help.set." + which);
                         return true;
                     }
                 }
             }
             if (matches.length > 0) {
                 for (Command c : matches) {
-                    hard("");
-                    hard("%s", c.command);
-                    hard("");
-                    hardrb(c.helpKey);
+                    printHelp(c.command, c.helpKey);
                 }
                 return true;
             } else {
@@ -2368,8 +2367,7 @@ public class JShellTool implements MessageHandler {
                         .toArray(String[]::new);
                 if (subs.length > 0) {
                     for (String sub : subs) {
-                        hardrb("help.set." + sub);
-                        hard("");
+                        printHelp("/set " + sub, "help.set." + sub);
                     }
                     return true;
                 }
@@ -2389,6 +2387,16 @@ public class JShellTool implements MessageHandler {
                 cmd -> getResourceString(cmd.helpKey + ".summary")
         );
         return true;
+    }
+
+    private void printHelp(String name, String key) {
+        int len = name.length();
+        String centered = "%" + ((OUTPUT_WIDTH + len) / 2) + "s";
+        hard("");
+        hard(centered, name);
+        hard(centered, Stream.generate(() -> "=").limit(len).collect(Collectors.joining()));
+        hard("");
+        hardrb(key);
     }
 
     private boolean cmdHistory() {
