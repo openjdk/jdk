@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6978482 7025987
+ * @requires (os.family == "windows")
  * @summary Tests unchecked casts
  * @author Sergey Malenkov
  * @modules java.desktop/com.sun.java.swing.plaf.motif

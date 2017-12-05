@@ -23,6 +23,7 @@
 
 /* @test
    @bug 8173145
+   @requires (os.family == "windows")
    @summary Menu is activated after using mnemonic Alt/Key combination
    @modules java.desktop/com.sun.java.swing.plaf.windows
    @run main Test8173145

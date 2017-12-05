@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,6 @@ module java.desktop {
         jdk.accessibility;
 
     opens javax.swing.plaf.basic to
-        jdk.jconsole;
-    opens com.sun.java.swing.plaf.windows to
         jdk.jconsole;
 
     uses java.awt.im.spi.InputMethodDescriptor;
