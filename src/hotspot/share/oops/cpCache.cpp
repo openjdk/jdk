@@ -248,14 +248,13 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
       // virtual method in java.lang.Object. This is a corner case in the spec
       // but is presumably legal. javac does not generate this code.
       //
-      // We set bytecode_1() to _invokeinterface, because that is the
-      // bytecode # used by the interpreter to see if it is resolved.
+      // We do not set bytecode_1() to _invokeinterface, because that is the
+      // bytecode # used by the interpreter to see if it is resolved.  In this
+      // case, the method gets reresolved with caller for each interface call
+      // because the actual selected method may not be public.
+      //
       // We set bytecode_2() to _invokevirtual.
       // See also interpreterRuntime.cpp. (8/25/2000)
-      // Only set resolved for the invokeinterface case if method is public.
-      // Otherwise, the method needs to be reresolved with caller for each
-      // interface call.
-      if (method->is_public()) set_bytecode_1(invoke_code);
     } else {
       assert(invoke_code == Bytecodes::_invokevirtual, "");
     }
