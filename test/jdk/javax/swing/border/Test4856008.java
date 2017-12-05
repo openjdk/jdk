@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4856008 7025987
+ * @requires (os.family == "windows")
  * @summary Tests border insets
  * @author Sergey Malenkov
  * @modules java.desktop/com.sun.java.swing.plaf.motif
