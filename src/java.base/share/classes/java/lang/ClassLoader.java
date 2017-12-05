@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.AccessControlContext;
@@ -1867,7 +1868,7 @@ public abstract class ClassLoader {
      * to be the system class loader. During construction, the class loader
      * should take great care to avoid calling {@code getSystemClassLoader()}.
      * If circular initialization of the system class loader is detected then
-     * an unspecified error or exception is thrown.
+     * an {@code IllegalStateException} is thrown.
      *
      * @implNote The system property to override the system class loader is not
      * examined until the VM is almost fully initialized. Code that executes
@@ -1918,8 +1919,8 @@ public abstract class ClassLoader {
                 // the system class loader is the built-in app class loader during startup
                 return getBuiltinAppClassLoader();
             case 3:
-                String msg = "getSystemClassLoader should only be called after VM booted";
-                throw new InternalError(msg);
+                String msg = "getSystemClassLoader cannot be called during the system class loader instantiation";
+                throw new IllegalStateException(msg);
             case 4:
                 // system fully initialized
                 assert VM.isBooted() && scl != null;
@@ -1969,7 +1970,17 @@ public abstract class ClassLoader {
                                            .getDeclaredConstructor(ClassLoader.class);
                 scl = (ClassLoader) ctor.newInstance(builtinLoader);
             } catch (Exception e) {
-                throw new Error(e);
+                Throwable cause = e;
+                if (e instanceof InvocationTargetException) {
+                    cause = e.getCause();
+                    if (cause instanceof Error) {
+                        throw (Error) cause;
+                    }
+                }
+                if (cause instanceof RuntimeException) {
+                    throw (RuntimeException) cause;
+                }
+                throw new Error(cause.getMessage(), cause);
             }
         } else {
             scl = builtinLoader;
