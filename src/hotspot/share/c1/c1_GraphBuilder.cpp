@@ -1439,6 +1439,9 @@ void GraphBuilder::call_register_finalizer() {
   }
 
   if (needs_check) {
+    // Not a trivial method because C2 can do better with inlined check.
+    compilation()->set_would_profile(true);
+
     // Perform the registration of finalizable objects.
     ValueStack* state_before = copy_state_for_exception();
     load_local(objectType, 0);
@@ -3556,6 +3559,9 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 }
 
 bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
+  // Not a trivial method because C2 may do intrinsics better.
+  compilation()->set_would_profile(true);
+
   // For calling is_intrinsic_available we need to transition to
   // the '_thread_in_vm' state because is_intrinsic_available()
   // accesses critical VM-internal data.
