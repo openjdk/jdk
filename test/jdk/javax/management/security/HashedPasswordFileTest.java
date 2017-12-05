@@ -31,43 +31,26 @@
  *
  */
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.ProcessTools;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.Test;
+
+import javax.management.MBeanServer;
+import javax.management.remote.*;
+import java.io.*;
 import java.lang.management.ManagementFactory;
-import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermission;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.*;
-import javax.management.MBeanServer;
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXConnectorServer;
-import javax.management.remote.JMXConnectorServerFactory;
-import javax.management.remote.JMXServiceURL;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
-import org.testng.annotations.AfterClass;
-
-import jdk.test.lib.Utils;
-import jdk.test.lib.process.ProcessTools;
 
 @Test
 public class HashedPasswordFileTest {
@@ -96,13 +79,12 @@ public class HashedPasswordFileTest {
             "SHA3-512"
     };
 
-    private final Random rnd = new Random();
     private final Random random = Utils.getRandomInstance();
 
     private JMXConnectorServer cs;
 
     private String randomWord() {
-        int idx = rnd.nextInt(randomWords.length);
+        int idx = random.nextInt(randomWords.length);
         return randomWords[idx];
     }
 
@@ -146,9 +128,12 @@ public class HashedPasswordFileTest {
         BufferedWriter br;
         try (FileWriter fw = new FileWriter(file)) {
             br = new BufferedWriter(fw);
-            int numentries = rnd.nextInt(5) + 3;
+            int numentries = random.nextInt(5) + 3;
             for (int i = 0; i < numentries; i++) {
-                String username = randomWord();
+                String username;
+                do {
+                    username = randomWord();
+                } while (props.get(username) != null);
                 String password = randomWord();
                 props.put(username, password);
                 br.write(username + " " + password + "\n");
@@ -182,11 +167,14 @@ public class HashedPasswordFileTest {
         BufferedWriter br;
         try (FileWriter fw = new FileWriter(file)) {
             br = new BufferedWriter(fw);
-            int numentries = rnd.nextInt(5) + 3;
+            int numentries = random.nextInt(5) + 3;
             for (int i = 0; i < numentries; i++) {
-                String username = randomWord();
+                String username;
+                do {
+                    username = randomWord();
+                } while (props.get(username) != null);
                 String password = randomWord();
-                String alg = hashAlgs[rnd.nextInt(hashAlgs.length)];
+                String alg = hashAlgs[random.nextInt(hashAlgs.length)];
                 String[] b64str = getHash(alg, password);
                 br.write(username + " " + b64str[0] + " " + b64str[1] + " " + alg + "\n");
                 props.put(username, password);
@@ -307,7 +295,7 @@ public class HashedPasswordFileTest {
         JMXServiceURL serverUrl = createServerSide(true);
         Assert.assertEquals(isPasswordFileHashed(), false);
         // create random number of clients
-        int numClients = rnd.nextInt(20) + 10;
+        int numClients = random.nextInt(20) + 10;
         List<Future> futures = new ArrayList<>();
         ExecutorService executor = Executors.newFixedThreadPool(numClients);
         for (int i = 0; i < numClients; i++) {
@@ -355,32 +343,41 @@ public class HashedPasswordFileTest {
                     sbuild.append(line).append("\n");
                     continue;
                 }
-                String[] tokens = line.split("\\s+");
+
                 // Change password for random entries
-                if ((tokens.length == 4 || tokens.length == 3) && rnd.nextBoolean()) {
-                    String password = randomWord();
-                    credentials.put(tokens[0], password);
-                    sbuild.append(tokens[0]).append(" ").append(password).append("\n");
+                if (random.nextBoolean()) {
+                    String[] tokens = line.split("\\s+");
+                    if ((tokens.length == 4 || tokens.length == 3)) {
+                        String password = randomWord();
+                        credentials.put(tokens[0], password);
+                        sbuild.append(tokens[0]).append(" ").append(password).append("\n");
+                    }
                 } else {
                     sbuild.append(line).append("\n");
                 }
             }
 
             // Add new entries in clear
-            int newentries = rnd.nextInt(2) + 3;
+            int newentries = random.nextInt(2) + 3;
             for (int i = 0; i < newentries; i++) {
-                String username = randomWord();
+                String username;
+                do {
+                    username = randomWord();
+                } while (credentials.get(username) != null);
                 String password = randomWord();
                 credentials.put(username, password);
                 sbuild.append(username).append(" ").append(password).append("\n");
             }
 
             // Add new entries as a hash
-            int numentries = rnd.nextInt(2) + 3;
+            int numentries = random.nextInt(2) + 3;
             for (int i = 0; i < numentries; i++) {
-                String username = randomWord();
+                String username;
+                do {
+                    username = randomWord();
+                } while (credentials.get(username) != null);
                 String password = randomWord();
-                String alg = hashAlgs[rnd.nextInt(hashAlgs.length)];
+                String alg = hashAlgs[random.nextInt(hashAlgs.length)];
                 String[] b64str = getHash(alg, password);
                 credentials.put(username, password);
                 sbuild.append(username).append(" ").append(b64str[0])
