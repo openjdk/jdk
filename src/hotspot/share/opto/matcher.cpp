@@ -2267,6 +2267,7 @@ void Matcher::find_shared( Node *n ) {
       case Op_CMoveL:
       case Op_CMoveN:
       case Op_CMoveP:
+      case Op_CMoveVF:
       case Op_CMoveVD:  {
         // Restructure into a binary tree for Matching.  It's possible that
         // we could move this code up next to the graph reshaping for IfNodes
