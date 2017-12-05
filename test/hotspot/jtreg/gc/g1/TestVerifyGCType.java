@@ -142,8 +142,9 @@ public class TestVerifyGCType {
                                        "-XX:+UnlockDiagnosticVMOptions",
                                        "-XX:+UseG1GC",
                                        "-XX:+WhiteBoxAPI",
-                                       "-XX:+ExplicitGCInvokesConcurrent",
                                        "-Xlog:gc,gc+start,gc+verify=info",
+                                       "-Xms16m",
+                                       "-Xmx16m",
                                        "-XX:+VerifyBeforeGC",
                                        "-XX:+VerifyAfterGC",
                                        "-XX:+VerifyDuringGC"});
@@ -173,7 +174,7 @@ public class TestVerifyGCType {
 
     private static void verifyCollection(String name, boolean expectBefore, boolean expectDuring, boolean expectAfter, String data) {
         CollectionInfo ci = CollectionInfo.parseFirst(name, data);
-        Asserts.assertTrue(ci != null, "Expected GC not found: " + name);
+        Asserts.assertTrue(ci != null, "Expected GC not found: " + name + "\n" + data);
 
         // Verify Before
         verifyType(ci, expectBefore, VERIFY_BEFORE);
@@ -243,14 +244,41 @@ public class TestVerifyGCType {
     public static class TriggerGCs {
         public static void main(String args[]) throws Exception {
             WhiteBox wb = WhiteBox.getWhiteBox();
-            // Trigger the different GCs using the WhiteBox API and System.gc()
-            // to start a concurrent cycle with -XX:+ExplicitGCInvokesConcurrent.
+            // Allocate some memory that can be turned into garbage.
+            Object[] used = alloc1M();
+
+            // Trigger the different GCs using the WhiteBox API.
             wb.fullGC();  // full
-            System.gc();  // initial-mark, remark and cleanup
+
+            // Memory have been promoted to old by full GC. Free
+            // some memory to be reclaimed by concurrent cycle.
+            partialFree(used);
+            wb.g1StartConcMarkCycle(); // initial-mark, remark and cleanup
+
             // Sleep to make sure concurrent cycle is done
-            Thread.sleep(1000);
+            while (wb.g1InConcurrentMark()) {
+                Thread.sleep(1000);
+            }
+
+            // Trigger two young GCs, first will be young-only, second will be mixed.
             wb.youngGC(); // young-only
             wb.youngGC(); // mixed
+        }
+
+        private static Object[] alloc1M() {
+            Object[] ret = new Object[1024];
+            // Alloc 1024 1k byte arrays (~1M)
+            for (int i = 0; i < ret.length; i++) {
+                ret[i] = new byte[1024];
+            }
+            return ret;
+        }
+
+        private static void partialFree(Object[] array) {
+            // Free every other element
+            for (int i = 0; i < array.length; i+=2) {
+                array[i] = null;
+            }
         }
     }
 }
