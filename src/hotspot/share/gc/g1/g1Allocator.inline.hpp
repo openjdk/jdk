@@ -30,18 +30,18 @@
 #include "gc/shared/plab.inline.hpp"
 
 HeapWord* G1Allocator::attempt_allocation(size_t word_size, AllocationContext_t context) {
-  return mutator_alloc_region(context)->attempt_allocation(word_size, false /* bot_updates */);
+  return mutator_alloc_region(context)->attempt_allocation(word_size);
 }
 
 HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size, AllocationContext_t context) {
-  HeapWord* result = mutator_alloc_region(context)->attempt_allocation_locked(word_size, false /* bot_updates */);
+  HeapWord* result = mutator_alloc_region(context)->attempt_allocation_locked(word_size);
   assert(result != NULL || mutator_alloc_region(context)->get() == NULL,
          "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region(context)->get()));
   return result;
 }
 
 HeapWord* G1Allocator::attempt_allocation_force(size_t word_size, AllocationContext_t context) {
-  return mutator_alloc_region(context)->attempt_allocation_force(word_size, false /* bot_updates */);
+  return mutator_alloc_region(context)->attempt_allocation_force(word_size);
 }
 
 inline HeapWord* G1PLABAllocator::plab_allocate(InCSetState dest,
