@@ -322,8 +322,8 @@ public final class ModuleLayer {
      * @return The newly created layer
      *
      * @throws IllegalArgumentException
-     *         If the parent of the given configuration is not the configuration
-     *         for this layer
+     *         If the given configuration has more than one parent or the parent
+     *         of the configuration is not the configuration for this layer
      * @throws LayerInstantiationException
      *         If the layer cannot be created for any of the reasons specified
      *         by the static {@code defineModulesWithOneLoader} method
@@ -364,8 +364,8 @@ public final class ModuleLayer {
      * @return The newly created layer
      *
      * @throws IllegalArgumentException
-     *         If the parent of the given configuration is not the configuration
-     *         for this layer
+     *         If the given configuration has more than one parent or the parent
+     *         of the configuration is not the configuration for this layer
      * @throws LayerInstantiationException
      *         If the layer cannot be created for any of the reasons specified
      *         by the static {@code defineModulesWithManyLoaders} method
@@ -403,8 +403,8 @@ public final class ModuleLayer {
      * @return The newly created layer
      *
      * @throws IllegalArgumentException
-     *         If the parent of the given configuration is not the configuration
-     *         for this layer
+     *         If the given configuration has more than one parent or the parent
+     *         of the configuration is not the configuration for this layer
      * @throws LayerInstantiationException
      *         If the layer cannot be created for any of the reasons specified
      *         by the static {@code defineModules} method
@@ -473,8 +473,8 @@ public final class ModuleLayer {
      * @return A controller that controls the newly created layer
      *
      * @throws IllegalArgumentException
-     *         If the parent configurations do not match the configuration of
-     *         the parent layers, including order
+     *         If the parent(s) of the given configuration do not match the
+     *         configuration of the parent layers, including order
      * @throws LayerInstantiationException
      *         If all modules cannot be defined to the same class loader for any
      *         of the reasons listed above
@@ -546,8 +546,8 @@ public final class ModuleLayer {
      * @return A controller that controls the newly created layer
      *
      * @throws IllegalArgumentException
-     *         If the parent configurations do not match the configuration of
-     *         the parent layers, including order
+     *         If the parent(s) of the given configuration do not match the
+     *         configuration of the parent layers, including order
      * @throws LayerInstantiationException
      *         If the layer cannot be created because the configuration contains
      *         a module named "{@code java.base}" or a module contains a package
@@ -637,8 +637,8 @@ public final class ModuleLayer {
      * @return A controller that controls the newly created layer
      *
      * @throws IllegalArgumentException
-     *         If the parent configurations do not match the configuration of
-     *         the parent layers, including order
+     *         If the parent(s) of the given configuration do not match the
+     *         configuration of the parent layers, including order
      * @throws LayerInstantiationException
      *         If creating the layer fails for any of the reasons listed above
      * @throws SecurityException
