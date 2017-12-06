@@ -75,8 +75,8 @@ public class AnchorCertificates {
                 } catch (Exception e) {
                     if (debug != null) {
                         debug.println("Error parsing cacerts");
+                        e.printStackTrace();
                     }
-                    e.printStackTrace();
                 }
                 return null;
             }
