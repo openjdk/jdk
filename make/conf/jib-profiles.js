@@ -779,6 +779,10 @@ var getJibProfilesDependencies = function (input, common) {
         macosx_x64: "2.7.1-Xcode6.3-MacOSX10.9+1.0"
     }[input.target_platform];
 
+    var makeBinDir = (input.build_os == "windows"
+        ? input.get("gnumake", "install_path") + "/cygwin/bin"
+        : input.get("gnumake", "install_path") + "/bin");
+
     var dependencies = {
 
         boot_jdk: {
@@ -831,13 +835,13 @@ var getJibProfilesDependencies = function (input, common) {
                 ? "gnumake-" + input.build_osenv_platform
                 : "gnumake-" + input.build_platform),
 
-            configure_args: (input.build_os == "windows"
-                ? "MAKE=" + input.get("gnumake", "install_path") + "/cygwin/bin/make"
-                : "MAKE=" + input.get("gnumake", "install_path") + "/bin/make"),
+            configure_args: "MAKE=" + makeBinDir + "/make",
 
-            environment_path: (input.build_os == "windows"
-                ? input.get("gnumake", "install_path") + "/cygwin/bin"
-                : input.get("gnumake", "install_path") + "/bin")
+            environment: {
+                "MAKE": makeBinDir + "/make"
+            },
+
+            environment_path: makeBinDir
         },
 
         freetype: {
