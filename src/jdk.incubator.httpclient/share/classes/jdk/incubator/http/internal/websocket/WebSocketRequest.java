@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.incubator.http.internal.websocket;
 
+import java.net.Proxy;
+
 /*
  * https://tools.ietf.org/html/rfc6455#section-4.1
  */
@@ -41,4 +43,9 @@ public interface WebSocketRequest {
      * WebSocket specification.
      */
     void setSystemHeader(String name, String value);
+
+    /*
+     * Sets the proxy for this request.
+     */
+    void setProxy(Proxy proxy);
 }

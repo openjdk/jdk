@@ -31,11 +31,13 @@ import jdk.incubator.http.WebSocket.Builder;
 import jdk.incubator.http.WebSocket.Listener;
 import jdk.incubator.http.internal.common.Pair;
 
+import java.net.ProxySelector;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
@@ -44,16 +46,37 @@ import static jdk.incubator.http.internal.common.Pair.pair;
 public final class BuilderImpl implements Builder {
 
     private final HttpClient client;
-    private final URI uri;
-    private final Listener listener;
-    private final Collection<Pair<String, String>> headers = new LinkedList<>();
-    private final Collection<String> subprotocols = new LinkedList<>();
+    private URI uri;
+    private Listener listener;
+    private final Optional<ProxySelector> proxySelector;
+    private final Collection<Pair<String, String>> headers;
+    private final Collection<String> subprotocols;
     private Duration timeout;
 
-    public BuilderImpl(HttpClient client, URI uri, Listener listener) {
-        this.client = requireNonNull(client, "client");
-        this.uri = requireNonNull(uri, "uri");
-        this.listener = requireNonNull(listener, "listener");
+    public BuilderImpl(HttpClient client, ProxySelector proxySelector)
+    {
+        this(client, null, null, Optional.ofNullable(proxySelector),
+             new LinkedList<>(), new LinkedList<>(), null);
+    }
+
+    private BuilderImpl(HttpClient client,
+                        URI uri,
+                        Listener listener,
+                        Optional<ProxySelector> proxySelector,
+                        Collection<Pair<String, String>> headers,
+                        Collection<String> subprotocols,
+                        Duration timeout) {
+        this.client = client;
+        this.uri = uri;
+        this.listener = listener;
+        this.proxySelector = proxySelector;
+        // If a proxy selector was supplied by the user, it should be present
+        // on the client and should be the same that what we got as an argument
+        assert !client.proxy().isPresent()
+                || client.proxy().equals(proxySelector);
+        this.headers = headers;
+        this.subprotocols = subprotocols;
+        this.timeout = timeout;
     }
 
     @Override
@@ -65,8 +88,7 @@ public final class BuilderImpl implements Builder {
     }
 
     @Override
-    public Builder subprotocols(String mostPreferred,
-                                String... lesserPreferred)
+    public Builder subprotocols(String mostPreferred, String... lesserPreferred)
     {
         requireNonNull(mostPreferred, "mostPreferred");
         requireNonNull(lesserPreferred, "lesserPreferred");
@@ -89,8 +111,13 @@ public final class BuilderImpl implements Builder {
     }
 
     @Override
-    public CompletableFuture<WebSocket> buildAsync() {
-        return WebSocketImpl.newInstanceAsync(this);
+    public CompletableFuture<WebSocket> buildAsync(URI uri, Listener listener) {
+        this.uri = requireNonNull(uri, "uri");
+        this.listener = requireNonNull(listener, "listener");
+        // A snapshot of builder inaccessible for further modification
+        // from the outside
+        BuilderImpl copy = immutableCopy();
+        return WebSocketImpl.newInstanceAsync(copy);
     }
 
     HttpClient getClient() { return client; }
@@ -104,4 +131,19 @@ public final class BuilderImpl implements Builder {
     Collection<String> getSubprotocols() { return subprotocols; }
 
     Duration getConnectTimeout() { return timeout; }
+
+    Optional<ProxySelector> getProxySelector() { return proxySelector; }
+
+    private BuilderImpl immutableCopy() {
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        BuilderImpl copy = new BuilderImpl(
+                client,
+                uri,
+                listener,
+                proxySelector,
+                List.of(this.headers.toArray(new Pair[0])),
+                List.of(this.subprotocols.toArray(new String[0])),
+                timeout);
+        return copy;
+    }
 }

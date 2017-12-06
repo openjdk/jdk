@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@ package jdk.incubator.http.internal.hpack;
 
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -400,7 +400,7 @@ public final class DecoderTest {
     // This test is missing in the spec
     //
     @Test
-    public void sizeUpdate() {
+    public void sizeUpdate() throws IOException {
         Decoder d = new Decoder(4096);
         assertEquals(d.getTable().maxSize(), 4096);
         d.decode(ByteBuffer.wrap(new byte[]{0b00111110}), true, nopCallback()); // newSize = 30
@@ -421,20 +421,14 @@ public final class DecoderTest {
         b.flip();
         {
             Decoder d = new Decoder(4096);
-            UncheckedIOException ex = assertVoidThrows(UncheckedIOException.class,
+            assertVoidThrows(IOException.class,
                     () -> d.decode(b, true, (name, value) -> { }));
-
-            assertNotNull(ex.getCause());
-            assertEquals(ex.getCause().getClass(), ProtocolException.class);
         }
         b.flip();
         {
             Decoder d = new Decoder(4096);
-            UncheckedIOException ex = assertVoidThrows(UncheckedIOException.class,
+            assertVoidThrows(IOException.class,
                     () -> d.decode(b, false, (name, value) -> { }));
-
-            assertNotNull(ex.getCause());
-            assertEquals(ex.getCause().getClass(), ProtocolException.class);
         }
     }
 
@@ -445,10 +439,8 @@ public final class DecoderTest {
                 (byte) 0b11111111, // indexed
                 (byte) 0b10011010  // 25 + ...
         });
-        UncheckedIOException e = assertVoidThrows(UncheckedIOException.class,
+        IOException e = assertVoidThrows(IOException.class,
                 () -> d.decode(data, true, nopCallback()));
-        assertNotNull(e.getCause());
-        assertEquals(e.getCause().getClass(), ProtocolException.class);
         assertExceptionMessageContains(e, "Unexpected end of header block");
     }
 
@@ -471,10 +463,10 @@ public final class DecoderTest {
                 (byte) 0b00000111
         });
 
-        IllegalArgumentException e = assertVoidThrows(IllegalArgumentException.class,
+        IOException e = assertVoidThrows(IOException.class,
                 () -> d.decode(data, true, nopCallback()));
 
-        assertExceptionMessageContains(e, "index=2147483647");
+        assertExceptionMessageContains(e.getCause(), "index=2147483647");
     }
 
     @Test
@@ -490,7 +482,7 @@ public final class DecoderTest {
                 (byte) 0b00000111
         });
 
-        IllegalArgumentException e = assertVoidThrows(IllegalArgumentException.class,
+        IOException e = assertVoidThrows(IOException.class,
                 () -> d.decode(data, true, nopCallback()));
 
         assertExceptionMessageContains(e, "Integer overflow");
@@ -507,10 +499,8 @@ public final class DecoderTest {
                 0b00000000, //  but only 3 octets available...
                 0b00000000  // /
         });
-        UncheckedIOException e = assertVoidThrows(UncheckedIOException.class,
+        IOException e = assertVoidThrows(IOException.class,
                 () -> d.decode(data, true, nopCallback()));
-        assertNotNull(e.getCause());
-        assertEquals(e.getCause().getClass(), ProtocolException.class);
         assertExceptionMessageContains(e, "Unexpected end of header block");
     }
 
@@ -527,10 +517,8 @@ public final class DecoderTest {
                 0b00000000, //  /
                 0b00000000  // /
         });
-        UncheckedIOException e = assertVoidThrows(UncheckedIOException.class,
+        IOException e = assertVoidThrows(IOException.class,
                 () -> d.decode(data, true, nopCallback()));
-        assertNotNull(e.getCause());
-        assertEquals(e.getCause().getClass(), ProtocolException.class);
         assertExceptionMessageContains(e, "Unexpected end of header block");
     }
 
@@ -547,7 +535,7 @@ public final class DecoderTest {
                 0b00011001, 0b01001101, (byte) 0b11111111,
                 (byte) 0b11111111, (byte) 0b11111111, (byte) 0b11111100
         });
-        IllegalArgumentException e = assertVoidThrows(IllegalArgumentException.class,
+        IOException e = assertVoidThrows(IOException.class,
                 () -> d.decode(data, true, nopCallback()));
 
         assertExceptionMessageContains(e, "Encountered EOS");
@@ -566,7 +554,7 @@ public final class DecoderTest {
                 0b00011001, 0b01001101, (byte) 0b11111111
                 // len("aei") + len(padding) = (5 + 5 + 5) + (9)
         });
-        IllegalArgumentException e = assertVoidThrows(IllegalArgumentException.class,
+        IOException e = assertVoidThrows(IOException.class,
                 () -> d.decode(data, true, nopCallback()));
 
         assertExceptionMessageContains(e, "Padding is too long", "len=9");
@@ -597,7 +585,7 @@ public final class DecoderTest {
                 (byte) 0b10000011, // huffman=true, length=3
                 0b00011001, 0b01111010, (byte) 0b11111110
         });
-        IllegalArgumentException e = assertVoidThrows(IllegalArgumentException.class,
+        IOException e = assertVoidThrows(IOException.class,
                 () -> d.decode(data, true, nopCallback()));
 
         assertExceptionMessageContains(e, "Not a EOS prefix");
@@ -648,13 +636,17 @@ public final class DecoderTest {
             Decoder d = supplier.get();
             do {
                 ByteBuffer n = i.next();
-                d.decode(n, !i.hasNext(), (name, value) -> {
-                    if (value == null) {
-                        actual.add(name.toString());
-                    } else {
-                        actual.add(name + ": " + value);
-                    }
-                });
+                try {
+                    d.decode(n, !i.hasNext(), (name, value) -> {
+                        if (value == null) {
+                            actual.add(name.toString());
+                        } else {
+                            actual.add(name + ": " + value);
+                        }
+                    });
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
             } while (i.hasNext());
             assertEquals(d.getTable().getStateString(), expectedHeaderTable);
             assertEquals(actual.stream().collect(Collectors.joining("\n")), expectedHeaderList);
@@ -671,13 +663,17 @@ public final class DecoderTest {
         ByteBuffer source = SpecHelper.toBytes(hexdump);
 
         List<String> actual = new LinkedList<>();
-        d.decode(source, true, (name, value) -> {
-            if (value == null) {
-                actual.add(name.toString());
-            } else {
-                actual.add(name + ": " + value);
-            }
-        });
+        try {
+            d.decode(source, true, (name, value) -> {
+                if (value == null) {
+                    actual.add(name.toString());
+                } else {
+                    actual.add(name + ": " + value);
+                }
+            });
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
 
         assertEquals(d.getTable().getStateString(), expectedHeaderTable);
         assertEquals(actual.stream().collect(Collectors.joining("\n")), expectedHeaderList);

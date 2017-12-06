@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public class HeaderTableTest {
 
     @Test
     public void staticData() {
-        HeaderTable table = new HeaderTable(0);
+        HeaderTable table = new HeaderTable(0, HPACK.getLogger());
         Map<Integer, HeaderField> staticHeaderFields = createStaticEntries();
 
         Map<String, Integer> minimalIndexes = new HashMap<>();
@@ -159,7 +159,7 @@ public class HeaderTableTest {
     @Test
     public void constructorSetsMaxSize() {
         int size = rnd.nextInt(64);
-        HeaderTable t = new HeaderTable(size);
+        HeaderTable t = new HeaderTable(size, HPACK.getLogger());
         assertEquals(t.size(), 0);
         assertEquals(t.maxSize(), size);
     }
@@ -169,13 +169,13 @@ public class HeaderTableTest {
         int maxSize = -(rnd.nextInt(100) + 1); // [-100, -1]
         IllegalArgumentException e =
                 assertVoidThrows(IllegalArgumentException.class,
-                        () -> new HeaderTable(0).setMaxSize(maxSize));
+                        () -> new HeaderTable(0, HPACK.getLogger()).setMaxSize(maxSize));
         assertExceptionMessageContains(e, "maxSize");
     }
 
     @Test
     public void zeroMaximumSize() {
-        HeaderTable table = new HeaderTable(0);
+        HeaderTable table = new HeaderTable(0, HPACK.getLogger());
         table.setMaxSize(0);
         assertEquals(table.maxSize(), 0);
     }
@@ -183,41 +183,41 @@ public class HeaderTableTest {
     @Test
     public void negativeIndex() {
         int idx = -(rnd.nextInt(256) + 1); // [-256, -1]
-        IllegalArgumentException e =
-                assertVoidThrows(IllegalArgumentException.class,
-                        () -> new HeaderTable(0).get(idx));
+        IndexOutOfBoundsException e =
+                assertVoidThrows(IndexOutOfBoundsException.class,
+                        () -> new HeaderTable(0, HPACK.getLogger()).get(idx));
         assertExceptionMessageContains(e, "index");
     }
 
     @Test
     public void zeroIndex() {
-        IllegalArgumentException e =
-                assertThrows(IllegalArgumentException.class,
-                        () -> new HeaderTable(0).get(0));
+        IndexOutOfBoundsException e =
+                assertThrows(IndexOutOfBoundsException.class,
+                        () -> new HeaderTable(0, HPACK.getLogger()).get(0));
         assertExceptionMessageContains(e, "index");
     }
 
     @Test
     public void length() {
-        HeaderTable table = new HeaderTable(0);
+        HeaderTable table = new HeaderTable(0, HPACK.getLogger());
         assertEquals(table.length(), STATIC_TABLE_LENGTH);
     }
 
     @Test
     public void indexOutsideStaticRange() {
-        HeaderTable table = new HeaderTable(0);
+        HeaderTable table = new HeaderTable(0, HPACK.getLogger());
         int idx = table.length() + (rnd.nextInt(256) + 1);
-        IllegalArgumentException e =
-                assertThrows(IllegalArgumentException.class,
+        IndexOutOfBoundsException e =
+                assertThrows(IndexOutOfBoundsException.class,
                         () -> table.get(idx));
         assertExceptionMessageContains(e, "index");
     }
 
     @Test
     public void entryPutAfterStaticArea() {
-        HeaderTable table = new HeaderTable(256);
+        HeaderTable table = new HeaderTable(256, HPACK.getLogger());
         int idx = table.length() + 1;
-        assertThrows(IllegalArgumentException.class, () -> table.get(idx));
+        assertThrows(IndexOutOfBoundsException.class, () -> table.get(idx));
 
         byte[] bytes = new byte[32];
         rnd.nextBytes(bytes);
@@ -232,13 +232,13 @@ public class HeaderTableTest {
 
     @Test
     public void staticTableHasZeroSize() {
-        HeaderTable table = new HeaderTable(0);
+        HeaderTable table = new HeaderTable(0, HPACK.getLogger());
         assertEquals(0, table.size());
     }
 
     @Test
     public void lowerIndexPriority() {
-        HeaderTable table = new HeaderTable(256);
+        HeaderTable table = new HeaderTable(256, HPACK.getLogger());
         int oldLength = table.length();
         table.put("bender", "rodriguez");
         table.put("bender", "rodriguez");
@@ -251,7 +251,7 @@ public class HeaderTableTest {
 
     @Test
     public void lowerIndexPriority2() {
-        HeaderTable table = new HeaderTable(256);
+        HeaderTable table = new HeaderTable(256, HPACK.getLogger());
         int oldLength = table.length();
         int idx = rnd.nextInt(oldLength) + 1;
         HeaderField f = table.get(idx);
@@ -267,9 +267,11 @@ public class HeaderTableTest {
 
     @Test
     public void fifo() {
-        HeaderTable t = new HeaderTable(Integer.MAX_VALUE);
         // Let's add a series of header fields
         int NUM_HEADERS = 32;
+        HeaderTable t = new HeaderTable((32 + 4) * NUM_HEADERS, HPACK.getLogger());
+        //                                ^   ^
+        //                   entry overhead   symbols per entry (max 2x2 digits)
         for (int i = 1; i <= NUM_HEADERS; i++) {
             String s = String.valueOf(i);
             t.put(s, s);
@@ -293,9 +295,11 @@ public class HeaderTableTest {
 
     @Test
     public void indexOf() {
-        HeaderTable t = new HeaderTable(Integer.MAX_VALUE);
         // Let's put a series of header fields
         int NUM_HEADERS = 32;
+        HeaderTable t = new HeaderTable((32 + 4) * NUM_HEADERS, HPACK.getLogger());
+        //                                ^   ^
+        //                   entry overhead   symbols per entry (max 2x2 digits)
         for (int i = 1; i <= NUM_HEADERS; i++) {
             String s = String.valueOf(i);
             t.put(s, s);
@@ -326,18 +330,25 @@ public class HeaderTableTest {
 
     @Test
     public void testToStringDifferentLocale() {
+        Locale locale = Locale.getDefault();
         Locale.setDefault(Locale.FRENCH);
-        String s = format("%.1f", 3.1);
-        assertEquals("3,1", s); // assumption of the test, otherwise the test is useless
-        testToString0();
+        try {
+            String s = format("%.1f", 3.1);
+            assertEquals("3,1", s); // assumption of the test, otherwise the test is useless
+            testToString0();
+        } finally {
+            Locale.setDefault(locale);
+        }
     }
 
     private void testToString0() {
-        HeaderTable table = new HeaderTable(0);
+        HeaderTable table = new HeaderTable(0, HPACK.getLogger());
         {
-            table.setMaxSize(2048);
-            String expected =
-                    format("entries: %d; used %s/%s (%.1f%%)", 0, 0, 2048, 0.0);
+            int maxSize = 2048;
+            table.setMaxSize(maxSize);
+            String expected = format(
+                    "dynamic length: %s, full length: %s, used space: %s/%s (%.1f%%)",
+                    0, STATIC_TABLE_LENGTH, 0, maxSize, 0.0);
             assertEquals(expected, table.toString());
         }
 
@@ -353,8 +364,9 @@ public class HeaderTableTest {
             int used = name.length() + value.length() + 32;
             double ratio = used * 100.0 / size;
 
-            String expected =
-                    format("entries: 1; used %s/%s (%.1f%%)", used, size, ratio);
+            String expected = format(
+                    "dynamic length: %s, full length: %s, used space: %s/%s (%.1f%%)",
+                    1, STATIC_TABLE_LENGTH + 1, used, size, ratio);
             assertEquals(expected, s);
         }
 
@@ -364,14 +376,15 @@ public class HeaderTableTest {
             table.put(":status", "");
             String s = table.toString();
             String expected =
-                    format("entries: %d; used %s/%s (%.1f%%)", 2, 78, 78, 100.0);
+                    format("dynamic length: %s, full length: %s, used space: %s/%s (%.1f%%)",
+                           2, STATIC_TABLE_LENGTH + 2, 78, 78, 100.0);
             assertEquals(expected, s);
         }
     }
 
     @Test
     public void stateString() {
-        HeaderTable table = new HeaderTable(256);
+        HeaderTable table = new HeaderTable(256, HPACK.getLogger());
         table.put("custom-key", "custom-header");
         // @formatter:off
         assertEquals("[  1] (s =  55) custom-key: custom-header\n" +

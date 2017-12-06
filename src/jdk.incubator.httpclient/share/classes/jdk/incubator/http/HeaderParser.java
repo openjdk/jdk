@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,26 +58,26 @@ class HeaderParser {
         parse();
     }
 
-    private HeaderParser () { }
+//    private HeaderParser () { }
 
-    /**
-     * Creates a new HeaderParser from this, whose keys (and corresponding
-     * values) range from "start" to "end-1"
-     */
-    public HeaderParser subsequence(int start, int end) {
-        if (start == 0 && end == nkeys) {
-            return this;
-        }
-        if (start < 0 || start >= end || end > nkeys) {
-            throw new IllegalArgumentException("invalid start or end");
-        }
-        HeaderParser n = new HeaderParser();
-        n.tab = new String [asize][2];
-        n.asize = asize;
-        System.arraycopy (tab, start, n.tab, 0, (end-start));
-        n.nkeys= (end-start);
-        return n;
-    }
+//    /**
+//     * Creates a new HeaderParser from this, whose keys (and corresponding
+//     * values) range from "start" to "end-1"
+//     */
+//    public HeaderParser subsequence(int start, int end) {
+//        if (start == 0 && end == nkeys) {
+//            return this;
+//        }
+//        if (start < 0 || start >= end || end > nkeys) {
+//            throw new IllegalArgumentException("invalid start or end");
+//        }
+//        HeaderParser n = new HeaderParser();
+//        n.tab = new String [asize][2];
+//        n.asize = asize;
+//        System.arraycopy (tab, start, n.tab, 0, (end-start));
+//        n.nkeys= (end-start);
+//        return n;
+//    }
 
     private void parse() {
 
@@ -216,9 +216,9 @@ class HeaderParser {
         return new ParserIterator (false);
     }
 
-    public Iterator<String> values () {
-        return new ParserIterator (true);
-    }
+//    public Iterator<String> values () {
+//        return new ParserIterator (true);
+//    }
 
     @Override
     public String toString () {
@@ -242,11 +242,11 @@ class HeaderParser {
         return sb.toString();
     }
 
-    public int findInt(String k, int Default) {
-        try {
-            return Integer.parseInt(findValue(k, String.valueOf(Default)));
-        } catch (Throwable t) {
-            return Default;
-        }
-    }
+//    public int findInt(String k, int Default) {
+//        try {
+//            return Integer.parseInt(findValue(k, String.valueOf(Default)));
+//        } catch (Throwable t) {
+//            return Default;
+//        }
+//    }
 }

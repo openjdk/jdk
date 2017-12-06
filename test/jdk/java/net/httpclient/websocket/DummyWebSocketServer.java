@@ -34,6 +34,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.CharacterCodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
@@ -47,9 +48,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
-import static java.lang.System.Logger.Level.ERROR;
-import static java.lang.System.Logger.Level.INFO;
-import static java.lang.System.Logger.Level.TRACE;
+import static java.lang.System.err;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
@@ -83,7 +82,6 @@ import static java.util.Objects.requireNonNull;
  */
 public final class DummyWebSocketServer implements Closeable {
 
-    private final static System.Logger log = System.getLogger(DummyWebSocketServer.class.getName());
     private final AtomicBoolean started = new AtomicBoolean();
     private final Thread thread;
     private volatile ServerSocketChannel ssc;
@@ -98,9 +96,9 @@ public final class DummyWebSocketServer implements Closeable {
         thread = new Thread(() -> {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
-                    log.log(INFO, "Accepting next connection at: " + ssc);
+                    err.println("Accepting next connection at: " + ssc);
                     SocketChannel channel = ssc.accept();
-                    log.log(INFO, "Accepted: " + channel);
+                    err.println("Accepted: " + channel);
                     try {
                         channel.configureBlocking(true);
                         StringBuilder request = new StringBuilder();
@@ -117,18 +115,18 @@ public final class DummyWebSocketServer implements Closeable {
                             b.clear();
                         }
                     } catch (IOException e) {
-                        log.log(TRACE, () -> "Error in connection: " + channel, e);
+                        err.println("Error in connection: " + channel + ", " + e);
                     } finally {
-                        log.log(INFO, "Closed: " + channel);
+                        err.println("Closed: " + channel);
                         close(channel);
                     }
                 }
             } catch (ClosedByInterruptException ignored) {
             } catch (IOException e) {
-                log.log(ERROR, e);
+                err.println(e);
             } finally {
                 close(ssc);
-                log.log(INFO, "Stopped at: " + getURI());
+                err.println("Stopped at: " + getURI());
             }
         });
         thread.setName("DummyWebSocketServer");
@@ -136,7 +134,7 @@ public final class DummyWebSocketServer implements Closeable {
     }
 
     public void open() throws IOException {
-        log.log(INFO, "Starting");
+        err.println("Starting");
         if (!started.compareAndSet(false, true)) {
             throw new IllegalStateException("Already started");
         }
@@ -149,12 +147,12 @@ public final class DummyWebSocketServer implements Closeable {
         } catch (IOException e) {
             close(ssc);
         }
-        log.log(INFO, "Started at: " + getURI());
+        err.println("Started at: " + getURI());
     }
 
     @Override
     public void close() {
-        log.log(INFO, "Stopping: " + getURI());
+        err.println("Stopping: " + getURI());
         thread.interrupt();
         close(ssc);
     }
@@ -210,12 +208,13 @@ public final class DummyWebSocketServer implements Closeable {
             if (!iterator.hasNext()) {
                 throw new IllegalStateException("The request is empty");
             }
-            if (!"GET / HTTP/1.1".equals(iterator.next())) {
+            String statusLine = iterator.next();
+            if (!(statusLine.startsWith("GET /") && statusLine.endsWith(" HTTP/1.1"))) {
                 throw new IllegalStateException
                         ("Unexpected status line: " + request.get(0));
             }
             response.add("HTTP/1.1 101 Switching Protocols");
-            Map<String, String> requestHeaders = new HashMap<>();
+            Map<String, List<String>> requestHeaders = new HashMap<>();
             while (iterator.hasNext()) {
                 String header = iterator.next();
                 String[] split = header.split(": ");
@@ -224,10 +223,8 @@ public final class DummyWebSocketServer implements Closeable {
                             ("Unexpected header: " + header
                                      + ", split=" + Arrays.toString(split));
                 }
-                if (requestHeaders.put(split[0], split[1]) != null) {
-                    throw new IllegalStateException
-                            ("Duplicating headers: " + Arrays.toString(split));
-                }
+                requestHeaders.computeIfAbsent(split[0], k -> new ArrayList<>()).add(split[1]);
+
             }
             if (requestHeaders.containsKey("Sec-WebSocket-Protocol")) {
                 throw new IllegalStateException("Subprotocols are not expected");
@@ -240,9 +237,12 @@ public final class DummyWebSocketServer implements Closeable {
             expectHeader(requestHeaders, "Upgrade", "websocket");
             response.add("Upgrade: websocket");
             expectHeader(requestHeaders, "Sec-WebSocket-Version", "13");
-            String key = requestHeaders.get("Sec-WebSocket-Key");
-            if (key == null) {
+            List<String> key = requestHeaders.get("Sec-WebSocket-Key");
+            if (key == null || key.isEmpty()) {
                 throw new IllegalStateException("Sec-WebSocket-Key is missing");
+            }
+            if (key.size() != 1) {
+                throw new IllegalStateException("Sec-WebSocket-Key has too many values : " + key);
             }
             MessageDigest sha1 = null;
             try {
@@ -250,7 +250,7 @@ public final class DummyWebSocketServer implements Closeable {
             } catch (NoSuchAlgorithmException e) {
                 throw new InternalError(e);
             }
-            String x = key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+            String x = key.get(0) + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
             sha1.update(x.getBytes(ISO_8859_1));
             String v = Base64.getEncoder().encodeToString(sha1.digest());
             response.add("Sec-WebSocket-Accept: " + v);
@@ -258,17 +258,17 @@ public final class DummyWebSocketServer implements Closeable {
         };
     }
 
-    protected static String expectHeader(Map<String, String> headers,
+    protected static String expectHeader(Map<String, List<String>> headers,
                                          String name,
                                          String value) {
-        String v = headers.get(name);
-        if (!value.equals(v)) {
+        List<String> v = headers.get(name);
+        if (!v.contains(value)) {
             throw new IllegalStateException(
                     format("Expected '%s: %s', actual: '%s: %s'",
                            name, value, name, v)
             );
         }
-        return v;
+        return value;
     }
 
     private static void close(AutoCloseable... acs) {

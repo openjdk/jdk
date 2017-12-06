@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package jdk.incubator.http.internal.frame;
 
-import jdk.incubator.http.internal.common.ByteBufferReference;
 import jdk.incubator.http.internal.common.Utils;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * Either a HeadersFrame or a ContinuationFrame
@@ -36,19 +36,15 @@ import java.nio.ByteBuffer;
 public abstract class HeaderFrame extends Http2Frame {
 
     final int headerLength;
-    final ByteBufferReference[] headerBlocks;
+    final List<ByteBuffer> headerBlocks;
 
     public static final int END_STREAM = 0x1;
     public static final int END_HEADERS = 0x4;
 
-    public HeaderFrame(int streamid, int flags, ByteBufferReference headerBlock) {
-        this(streamid, flags, new ByteBufferReference[]{headerBlock});
-    }
-
-    public HeaderFrame(int streamid, int flags, ByteBufferReference[] headerBlocks) {
+    public HeaderFrame(int streamid, int flags, List<ByteBuffer> headerBlocks) {
         super(streamid, flags);
         this.headerBlocks = headerBlocks;
-        this.headerLength = Utils.remaining(headerBlocks);
+        this.headerLength = Utils.remaining(headerBlocks, Integer.MAX_VALUE);
     }
 
     @Override
@@ -63,7 +59,7 @@ public abstract class HeaderFrame extends Http2Frame {
     }
 
 
-    public ByteBufferReference[] getHeaderBlock() {
+    public List<ByteBuffer> getHeaderBlock() {
         return headerBlocks;
     }
 

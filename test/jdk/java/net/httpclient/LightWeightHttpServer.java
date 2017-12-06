@@ -80,7 +80,7 @@ public class LightWeightHttpServer {
         ch.setLevel(Level.ALL);
         logger.addHandler(ch);
 
-        String root = System.getProperty("test.src") + "/docs";
+        String root = System.getProperty("test.src", ".") + "/docs";
         InetSocketAddress addr = new InetSocketAddress(0);
         httpServer = HttpServer.create(addr, 0);
         if (httpServer instanceof HttpsServer) {
@@ -301,11 +301,12 @@ public class LightWeightHttpServer {
 
         @Override
         public synchronized void handle(HttpExchange he) throws IOException {
-            byte[] buf = Util.readAll(he.getRequestBody());
-            try {
+            try(InputStream is = he.getRequestBody()) {
+                is.readAllBytes();
                 bar1.await();
                 bar2.await();
             } catch (InterruptedException | BrokenBarrierException e) {
+                throw new IOException(e);
             }
             he.sendResponseHeaders(200, -1); // will probably fail
             he.close();

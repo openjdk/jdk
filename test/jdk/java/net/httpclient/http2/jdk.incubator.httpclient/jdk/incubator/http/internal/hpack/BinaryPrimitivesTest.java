@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@ package jdk.incubator.http.internal.hpack;
 
 import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
@@ -80,7 +82,7 @@ public final class BinaryPrimitivesTest {
     // for all x: readInteger(writeInteger(x)) == x
     //
     @Test
-    public void integerIdentity() {
+    public void integerIdentity() throws IOException {
         final int MAX_VALUE = 1 << 22;
         int totalCases = 0;
         int maxFilling = 0;
@@ -119,7 +121,11 @@ public final class BinaryPrimitivesTest {
                         Iterable<? extends ByteBuffer> buf = relocateBuffers(injectEmptyBuffers(buffers));
                         r.configure(N);
                         for (ByteBuffer b : buf) {
-                            r.read(b);
+                            try {
+                                r.read(b);
+                            } catch (IOException e) {
+                                throw new UncheckedIOException(e);
+                            }
                         }
                         assertEquals(r.get(), expected);
                         r.reset();
@@ -155,7 +161,11 @@ public final class BinaryPrimitivesTest {
                         if (!written) {
                             fail("please increase bb size");
                         }
-                        r.configure(N).read(concat(buf));
+                        try {
+                            r.configure(N).read(concat(buf));
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
                         // TODO: check payload here
                         assertEquals(r.get(), expected);
                         w.reset();
@@ -172,7 +182,7 @@ public final class BinaryPrimitivesTest {
     // for all x: readString(writeString(x)) == x
     //
     @Test
-    public void stringIdentity() {
+    public void stringIdentity() throws IOException {
         final int MAX_STRING_LENGTH = 4096;
         ByteBuffer bytes = ByteBuffer.allocate(MAX_STRING_LENGTH + 6); // it takes 6 bytes to encode string length of Integer.MAX_VALUE
         CharBuffer chars = CharBuffer.allocate(MAX_STRING_LENGTH);
@@ -241,7 +251,11 @@ public final class BinaryPrimitivesTest {
                 if (!written) {
                     fail("please increase 'bytes' size");
                 }
-                reader.read(concat(buffers), chars);
+                try {
+                    reader.read(concat(buffers), chars);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
                 chars.flip();
                 assertEquals(chars.toString(), expected);
                 reader.reset();
@@ -279,7 +293,11 @@ public final class BinaryPrimitivesTest {
             forEachSplit(bytes, (buffers) -> {
                 for (ByteBuffer buf : buffers) {
                     int p0 = buf.position();
-                    reader.read(buf, chars);
+                    try {
+                        reader.read(buf, chars);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
                     buf.position(p0);
                 }
                 chars.flip();
@@ -333,7 +351,11 @@ public final class BinaryPrimitivesTest {
     private static void verifyRead(byte[] data, int expected, int N) {
         ByteBuffer buf = ByteBuffer.wrap(data, 0, data.length);
         IntegerReader reader = new IntegerReader();
-        reader.configure(N).read(buf);
+        try {
+            reader.configure(N).read(buf);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         assertEquals(expected, reader.get());
     }
 

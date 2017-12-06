@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
         }
     }
 
-    public <U> MinimalFuture<U> newIncompleteFuture() {
+    public static <U> MinimalFuture<U> newMinimalFuture() {
         return new MinimalFuture<>();
     }
 
@@ -156,5 +156,19 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
     @Override
     public String toString() {
         return super.toString() + " (id=" + id +")";
+    }
+
+    public static <U> MinimalFuture<U> of(CompletionStage<U> stage) {
+        MinimalFuture<U> cf = newMinimalFuture();
+        stage.whenComplete((r,t) -> complete(cf, r, t));
+        return cf;
+    }
+
+    private static <U> void complete(CompletableFuture<U> cf, U result, Throwable t) {
+        if (t == null) {
+            cf.complete(result);
+        } else {
+            cf.completeExceptionally(t);
+        }
     }
 }

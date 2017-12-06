@@ -26,7 +26,8 @@
  * @bug 8087112 8177935
  * @library /lib/testlibrary server
  * @build jdk.testlibrary.SimpleSSLContext
- * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.common
+ * @modules java.base/sun.net.www.http
+ *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors FixedThreadPoolTest
@@ -39,8 +40,8 @@ import javax.net.ssl.*;
 import java.nio.file.*;
 import java.util.concurrent.*;
 import jdk.testlibrary.SimpleSSLContext;
-import static jdk.incubator.http.HttpRequest.BodyProcessor.fromFile;
-import static jdk.incubator.http.HttpRequest.BodyProcessor.fromString;
+import static jdk.incubator.http.HttpRequest.BodyPublisher.fromFile;
+import static jdk.incubator.http.HttpRequest.BodyPublisher.fromString;
 import static jdk.incubator.http.HttpResponse.BodyHandler.asFile;
 import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
 
@@ -81,7 +82,7 @@ public class FixedThreadPoolTest {
         }
     }
 
-    @Test(timeOut=3000000)
+    @Test
     public static void test() throws Exception {
         try {
             initialize();
@@ -104,6 +105,13 @@ public class FixedThreadPoolTest {
     static HttpClient getClient() {
         if (client == null) {
             exec = Executors.newCachedThreadPool();
+            // Executor e1 = Executors.newFixedThreadPool(1);
+            // Executor e = (Runnable r) -> e1.execute(() -> {
+            //    System.out.println("[" + Thread.currentThread().getName()
+            //                       + "] Executing: "
+            //                       + r.getClass().getName());
+            //    r.run();
+            // });
             client = HttpClient.newBuilder()
                                .executor(Executors.newFixedThreadPool(2))
                                .sslContext(sslContext)

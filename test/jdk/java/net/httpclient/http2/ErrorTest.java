@@ -26,7 +26,8 @@
  * @bug 8157105
  * @library /lib/testlibrary server
  * @build jdk.testlibrary.SimpleSSLContext
- * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.common
+ * @modules java.base/sun.net.www.http
+ *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
  *          java.security.jgss
@@ -45,7 +46,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import jdk.testlibrary.SimpleSSLContext;
 import static jdk.incubator.http.HttpClient.Version.HTTP_2;
-import static jdk.incubator.http.HttpRequest.BodyProcessor.fromString;
+import static jdk.incubator.http.HttpRequest.BodyPublisher.fromString;
 import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
 import org.testng.annotations.Test;

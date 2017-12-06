@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static jdk.incubator.http.internal.websocket.TestSupport.assertCompletesExceptionally;
 import static jdk.incubator.http.internal.websocket.TestSupport.assertThrows;
@@ -45,85 +46,77 @@ import static jdk.incubator.http.internal.websocket.TestSupport.assertThrows;
  */
 public class BuildingWebSocketTest {
 
+    private final static URI VALID_URI = URI.create("ws://websocket.example.com");
+
     @Test
-    public void nulls() {
+    public void nullArguments() {
         HttpClient c = HttpClient.newHttpClient();
-        URI uri = URI.create("ws://websocket.example.com");
 
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(null, listener()));
+                     () -> c.newWebSocketBuilder()
+                            .buildAsync(null, listener()));
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(uri, null));
+                     () -> c.newWebSocketBuilder()
+                            .buildAsync(VALID_URI, null));
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(null, null));
+                     () -> c.newWebSocketBuilder()
+                            .buildAsync(null, null));
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(uri, listener())
+                     () -> c.newWebSocketBuilder()
                             .header(null, "value"));
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(uri, listener())
+                     () -> c.newWebSocketBuilder()
                             .header("name", null));
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(uri, listener())
+                     () -> c.newWebSocketBuilder()
                             .header(null, null));
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(uri, listener())
+                     () -> c.newWebSocketBuilder()
                             .subprotocols(null));
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(uri, listener())
-                            .subprotocols(null, "sub1"));
+                     () -> c.newWebSocketBuilder()
+                            .subprotocols(null, "sub2.example.com"));
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(uri, listener())
+                     () -> c.newWebSocketBuilder()
                             .subprotocols("sub1.example.com", (String) null));
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(uri, listener())
+                     () -> c.newWebSocketBuilder()
                             .subprotocols("sub1.example.com", (String[]) null));
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(uri, listener())
-                            .subprotocols("sub1.example.com",
-                                          "sub2.example.com",
-                                          null));
+                     () -> c.newWebSocketBuilder()
+                            .subprotocols("sub1.example.com", "sub2.example.com", null));
         assertThrows(NullPointerException.class,
-                     () -> c.newWebSocketBuilder(uri, listener())
+                     () -> c.newWebSocketBuilder()
+                             .subprotocols("sub1.example.com", null, "sub3.example.com"));
+        assertThrows(NullPointerException.class,
+                     () -> c.newWebSocketBuilder()
                             .connectTimeout(null));
     }
 
     @Test(dataProvider = "badURIs")
-    void illegalURI(String u) {
-        WebSocket.Builder b = HttpClient.newHttpClient()
-                .newWebSocketBuilder(URI.create(u), listener());
-        assertCompletesExceptionally(IllegalArgumentException.class, b.buildAsync());
+    void illegalURI(URI uri) {
+        WebSocket.Builder b = HttpClient.newHttpClient().newWebSocketBuilder();
+        assertCompletesExceptionally(IllegalArgumentException.class,
+                                     b.buildAsync(uri, listener()));
     }
 
     @Test
     public void illegalHeaders() {
-        List<String> headers = List.of("Authorization",
-                                       "Connection",
-                                       "Cookie",
-                                       "Content-Length",
-                                       "Date",
-                                       "Expect",
-                                       "From",
-                                       "Host",
-                                       "Origin",
-                                       "Proxy-Authorization",
-                                       "Referer",
-                                       "User-agent",
-                                       "Upgrade",
-                                       "Via",
-                                       "Warning",
-                                       "Sec-WebSocket-Accept",
-                                       "Sec-WebSocket-Extensions",
-                                       "Sec-WebSocket-Key",
-                                       "Sec-WebSocket-Protocol",
-                                       "Sec-WebSocket-Version").stream()
-                .map(String::new).collect(Collectors.toList());
+        List<String> headers =
+                List.of("Sec-WebSocket-Accept",
+                        "Sec-WebSocket-Extensions",
+                        "Sec-WebSocket-Key",
+                        "Sec-WebSocket-Protocol",
+                        "Sec-WebSocket-Version")
+                        .stream()
+                        .flatMap(s -> Stream.of(s, new String(s))) // a string and a copy of it
+                        .collect(Collectors.toList());
 
         Function<String, CompletionStage<?>> f =
-                header -> HttpClient
-                        .newHttpClient()
-                        .newWebSocketBuilder(URI.create("ws://websocket.example.com"),
-                                             listener())
-                        .buildAsync();
+                header -> HttpClient.newHttpClient()
+                        .newWebSocketBuilder()
+                        .header(header, "value")
+                        .buildAsync(VALID_URI, listener());
 
         headers.forEach(h -> assertCompletesExceptionally(IllegalArgumentException.class, f.apply(h)));
     }
@@ -134,38 +127,38 @@ public class BuildingWebSocketTest {
     @Test(dataProvider = "badSubprotocols")
     public void illegalSubprotocolsSyntax(String s) {
         WebSocket.Builder b = HttpClient.newHttpClient()
-                .newWebSocketBuilder(URI.create("ws://websocket.example.com"),
-                                     listener());
-        b.subprotocols(s);
-        assertCompletesExceptionally(IllegalArgumentException.class, b.buildAsync());
+                .newWebSocketBuilder()
+                .subprotocols(s);
+        assertCompletesExceptionally(IllegalArgumentException.class,
+                                     b.buildAsync(VALID_URI, listener()));
     }
 
     @Test(dataProvider = "duplicatingSubprotocols")
     public void illegalSubprotocolsDuplicates(String mostPreferred,
                                               String[] lesserPreferred) {
         WebSocket.Builder b = HttpClient.newHttpClient()
-                .newWebSocketBuilder(URI.create("ws://websocket.example.com"),
-                                     listener());
-        b.subprotocols(mostPreferred, lesserPreferred);
-        assertCompletesExceptionally(IllegalArgumentException.class, b.buildAsync());
+                .newWebSocketBuilder()
+                .subprotocols(mostPreferred, lesserPreferred);
+        assertCompletesExceptionally(IllegalArgumentException.class,
+                                     b.buildAsync(VALID_URI, listener()));
     }
 
     @Test(dataProvider = "badConnectTimeouts")
     public void illegalConnectTimeout(Duration d) {
         WebSocket.Builder b = HttpClient.newHttpClient()
-                .newWebSocketBuilder(URI.create("ws://websocket.example.com"),
-                                     listener());
-        b.connectTimeout(d);
-        assertCompletesExceptionally(IllegalArgumentException.class, b.buildAsync());
+                .newWebSocketBuilder()
+                .connectTimeout(d);
+        assertCompletesExceptionally(IllegalArgumentException.class,
+                                     b.buildAsync(VALID_URI, listener()));
     }
 
     @DataProvider
     public Object[][] badURIs() {
         return new Object[][]{
-                {"http://example.com"},
-                {"ftp://example.com"},
-                {"wss://websocket.example.com/hello#fragment"},
-                {"ws://websocket.example.com/hello#fragment"},
+                {URI.create("http://example.com")},
+                {URI.create("ftp://example.com")},
+                {URI.create("wss://websocket.example.com/hello#fragment")},
+                {URI.create("ws://websocket.example.com/hello#fragment")},
         };
     }
 
@@ -193,6 +186,7 @@ public class BuildingWebSocketTest {
     @DataProvider
     public static Object[][] badSubprotocols() {
         return new Object[][]{
+                {""},
                 {new String("")},
                 {"round-brackets("},
                 {"round-brackets)"},

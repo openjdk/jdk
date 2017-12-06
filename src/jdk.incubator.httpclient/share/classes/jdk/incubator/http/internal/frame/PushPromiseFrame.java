@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package jdk.incubator.http.internal.frame;
 
-import jdk.incubator.http.internal.common.ByteBufferReference;
-import jdk.incubator.http.internal.common.Utils;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 public class PushPromiseFrame extends HeaderFrame {
 
@@ -39,7 +39,7 @@ public class PushPromiseFrame extends HeaderFrame {
     public static final int END_HEADERS = 0x4;
     public static final int PADDED = 0x8;
 
-    public PushPromiseFrame(int streamid, int flags, int promisedStream, ByteBufferReference[] buffers, int padLength) {
+    public PushPromiseFrame(int streamid, int flags, int promisedStream, List<ByteBuffer> buffers, int padLength) {
         super(streamid, flags, buffers);
         this.promisedStream = promisedStream;
         if(padLength > 0 ) {

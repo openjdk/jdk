@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package jdk.incubator.http.internal.hpack;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -51,7 +52,7 @@ final class StringReader {
     private boolean huffman;
     private int remainingLength;
 
-    boolean read(ByteBuffer input, Appendable output) {
+    boolean read(ByteBuffer input, Appendable output) throws IOException {
         if (state == DONE) {
             return true;
         }

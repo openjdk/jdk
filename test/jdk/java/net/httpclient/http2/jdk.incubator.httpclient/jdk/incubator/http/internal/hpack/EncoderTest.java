@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@ package jdk.incubator.http.internal.hpack;
 
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -520,7 +521,7 @@ public final class EncoderTest {
     }
 
     @Test
-    public void initialSizeUpdateDefaultEncoder() {
+    public void initialSizeUpdateDefaultEncoder() throws IOException {
         Function<Integer, Encoder> e = Encoder::new;
         testSizeUpdate(e, 1024, asList(), asList(0));
         testSizeUpdate(e, 1024, asList(1024), asList(0));
@@ -531,7 +532,7 @@ public final class EncoderTest {
     }
 
     @Test
-    public void initialSizeUpdateCustomEncoder() {
+    public void initialSizeUpdateCustomEncoder() throws IOException {
         Function<Integer, Encoder> e = EncoderTest::newCustomEncoder;
         testSizeUpdate(e, 1024, asList(), asList(1024));
         testSizeUpdate(e, 1024, asList(1024), asList(1024));
@@ -542,7 +543,7 @@ public final class EncoderTest {
     }
 
     @Test
-    public void seriesOfSizeUpdatesDefaultEncoder() {
+    public void seriesOfSizeUpdatesDefaultEncoder() throws IOException {
         Function<Integer, Encoder> e = c -> {
             Encoder encoder = new Encoder(c);
             drainInitialUpdate(encoder);
@@ -563,7 +564,7 @@ public final class EncoderTest {
     // https://tools.ietf.org/html/rfc7541#section-4.2
     //
     @Test
-    public void seriesOfSizeUpdatesCustomEncoder() {
+    public void seriesOfSizeUpdatesCustomEncoder() throws IOException {
         Function<Integer, Encoder> e = c -> {
             Encoder encoder = newCustomEncoder(c);
             drainInitialUpdate(encoder);
@@ -638,7 +639,7 @@ public final class EncoderTest {
     private void testSizeUpdate(Function<Integer, Encoder> encoder,
                                 int initialSize,
                                 List<Integer> updates,
-                                List<Integer> expected) {
+                                List<Integer> expected) throws IOException {
         Encoder e = encoder.apply(initialSize);
         updates.forEach(e::setMaxCapacity);
         ByteBuffer b = ByteBuffer.allocate(64);

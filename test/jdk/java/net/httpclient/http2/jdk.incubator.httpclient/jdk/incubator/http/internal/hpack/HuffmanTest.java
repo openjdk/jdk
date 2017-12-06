@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@ package jdk.incubator.http.internal.hpack;
 
 import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.Stack;
 import java.util.regex.Matcher;
@@ -302,7 +304,7 @@ public final class HuffmanTest {
     // @formatter:on
 
     @Test
-    public void read_table() {
+    public void read_table() throws IOException {
         Pattern line = Pattern.compile(
                 "\\(\\s*(?<ascii>\\d+)\\s*\\)\\s*(?<binary>(\\|(0|1)+)+)\\s*" +
                         "(?<hex>[0-9a-zA-Z]+)\\s*\\[\\s*(?<len>\\d+)\\s*\\]");
@@ -555,7 +557,11 @@ public final class HuffmanTest {
     private static void read(String hexdump, String decoded) {
         ByteBuffer source = SpecHelper.toBytes(hexdump);
         Appendable actual = new StringBuilder();
-        new Huffman.Reader().read(source, actual, true);
+        try {
+            new Huffman.Reader().read(source, actual, true);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         assertEquals(actual.toString(), decoded);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package jdk.incubator.http.internal.hpack;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -73,7 +74,7 @@ final class IntegerReader {
         return this;
     }
 
-    public boolean read(ByteBuffer input) {
+    public boolean read(ByteBuffer input) throws IOException {
         if (state == NEW) {
             throw new IllegalStateException("Configure first");
         }
@@ -105,7 +106,7 @@ final class IntegerReader {
                 i = input.get();
                 long increment = b * (i & 127);
                 if (r + increment > maxValue) {
-                    throw new IllegalArgumentException(format(
+                    throw new IOException(format(
                             "Integer overflow: maxValue=%,d, value=%,d",
                             maxValue, r + increment));
                 }

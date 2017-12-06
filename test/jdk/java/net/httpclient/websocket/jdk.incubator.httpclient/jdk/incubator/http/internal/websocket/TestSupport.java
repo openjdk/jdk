@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,18 @@
 package jdk.incubator.http.internal.websocket;
 
 import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Stack;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.List.of;
 import static java.util.Objects.requireNonNull;
@@ -188,43 +193,6 @@ final class TestSupport {
         };
     }
 
-//    static <T> Iterator<T> filter(Iterator<? extends T> source,
-//                                  Predicate<? super T> predicate) {
-//        return new Iterator<>() {
-//
-//            { findNext(); }
-//
-//            T next;
-//            boolean hasNext;
-//
-//            @Override
-//            public boolean hasNext() {
-//                return hasNext;
-//            }
-//
-//            @Override
-//            public T next() {
-//                if (!hasNext) {
-//                    throw new NoSuchElementException();
-//                }
-//                T n = this.next;
-//                findNext();
-//                return n;
-//            }
-//
-//            void findNext() {
-//                while (source.hasNext()) {
-//                    T n = source.next();
-//                    if (predicate.test(n)) {
-//                        hasNext = true;
-//                        next = n;
-//                        break;
-//                    }
-//                }
-//            }
-//        };
-//    }
-
     static ByteBuffer fullCopy(ByteBuffer src) {
         ByteBuffer copy = ByteBuffer.allocate(src.capacity());
         int p = src.position();
@@ -297,141 +265,6 @@ final class TestSupport {
         a[j] = x;
     }
 
-    static <T> Iterator<T> concat(Iterator<? extends Iterator<? extends T>> iterators) {
-        requireNonNull(iterators);
-        return new Iterator<>() {
-
-            private Iterator<? extends T> current = Collections.emptyIterator();
-
-            @Override
-            public boolean hasNext() {
-                while (!current.hasNext()) {
-                    if (!iterators.hasNext()) {
-                        return false;
-                    } else {
-                        current = iterators.next();
-                    }
-                }
-                return true;
-            }
-
-            @Override
-            public T next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                return current.next();
-            }
-        };
-    }
-
-    interface Mock {
-
-        /*
-         * Completes exceptionally if there are any expectations that haven't
-         * been met within the given time period, otherwise completes normally
-         */
-        CompletableFuture<Void> expectations(long timeout, TimeUnit unit);
-    }
-
-    static final class InvocationChecker {
-
-        private final Object lock = new Object();
-        private final Iterator<InvocationExpectation> expectations;
-        private final CompletableFuture<Void> expectationsViolation
-                = new CompletableFuture<>();
-
-        InvocationChecker(Iterable<InvocationExpectation> expectations) {
-            this.expectations = requireNonNull(expectations).iterator();
-        }
-
-        /*
-         * Completes exceptionally if there are any expectations that haven't
-         * been met within the given time period, otherwise completes normally
-         */
-        CompletableFuture<Void> expectations(long timeout, TimeUnit unit) {
-            return expectationsViolation
-                    .orTimeout(timeout, unit)
-                    .handle((v, t) -> {
-                        if (t == null) {
-                            throw new InternalError(
-                                    "Unexpected normal completion: " + v);
-                        } else if (t instanceof TimeoutException) {
-                            synchronized (lock) {
-                                if (!expectations.hasNext()) {
-                                    return null;
-                                } else {
-                                    throw new AssertionFailedException(
-                                            "More invocations were expected");
-                                }
-                            }
-                        } else if (t instanceof AssertionFailedException) {
-                            throw (AssertionFailedException) t;
-                        } else {
-                            throw new RuntimeException(t);
-                        }
-                    });
-        }
-
-        void checkInvocation(String name, Object... args) {
-            synchronized (lock) {
-                if (!expectations.hasNext()) {
-                    expectationsViolation.completeExceptionally(
-                            new AssertionFailedException(
-                                    "Less invocations were expected: " + name));
-                    return;
-                }
-                InvocationExpectation next = expectations.next();
-                if (!next.name.equals(name)) {
-                    expectationsViolation.completeExceptionally(
-                            new AssertionFailedException(
-                                    "A different invocation was expected: " + name)
-                    );
-                    return;
-                }
-                if (!next.predicate.apply(args)) {
-                    expectationsViolation.completeExceptionally(
-                            new AssertionFailedException(
-                                    "Invocation doesn't match the predicate: "
-                                            + name + ", " + Arrays.toString(args))
-                    );
-                }
-            }
-        }
-    }
-
-    static final class InvocationExpectation {
-
-        final String name;
-        final F<Boolean> predicate;
-
-        InvocationExpectation(String name, F<Boolean> predicate) {
-            this.name = requireNonNull(name);
-            this.predicate = requireNonNull(predicate);
-        }
-    }
-
-    static void checkExpectations(Mock... mocks) {
-        checkExpectations(0, TimeUnit.SECONDS, mocks);
-    }
-
-    static void checkExpectations(long timeout, TimeUnit unit, Mock... mocks) {
-        CompletableFuture<?>[] completableFutures = Stream.of(mocks)
-                .map(m -> m.expectations(timeout, unit))
-                .collect(Collectors.toList()).toArray(new CompletableFuture<?>[0]);
-        CompletableFuture<Void> cf = CompletableFuture.allOf(completableFutures);
-        try {
-            cf.join();
-        } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AssertionFailedException) {
-                throw (AssertionFailedException) cause;
-            } else {
-                throw e;
-            }
-        }
-    }
-
     public static <T extends Throwable> T assertThrows(Class<? extends T> clazz,
                                                        ThrowingProcedure code) {
         @SuppressWarnings("unchecked")
@@ -465,6 +298,7 @@ final class TestSupport {
             caught = t;
         }
         if (predicate.test(caught)) {
+            System.out.println("Got expected exception: " + caught);
             return caught;
         }
         if (caught == null) {
@@ -480,44 +314,11 @@ final class TestSupport {
                                                   CompletionStage<?> stage) {
         CompletableFuture<?> cf =
                 CompletableFuture.completedFuture(null).thenCompose(x -> stage);
-        return assertThrows(t -> clazz.isInstance(t.getCause()), cf::get);
+        return assertThrows(t -> clazz == t.getCause().getClass(), cf::get);
     }
 
     interface ThrowingProcedure {
         void run() throws Throwable;
-    }
-
-    static final class Expectation {
-
-        private final List<Predicate<? super Throwable>> list = new LinkedList<>();
-
-        static Expectation ifExpect(boolean condition,
-                                    Predicate<? super Throwable> predicate) {
-            return addPredicate(new Expectation(), condition, predicate);
-        }
-
-        Expectation orExpect(boolean condition,
-                             Predicate<? super Throwable> predicate) {
-            return addPredicate(this, condition, predicate);
-        }
-
-        static Expectation addPredicate(Expectation e, boolean condition,
-                                        Predicate<? super Throwable> predicate) {
-            if (condition) {
-                e.list.add(requireNonNull(predicate));
-            }
-            return e;
-        }
-
-        public Throwable assertThrows(ThrowingProcedure code) {
-            Predicate<Throwable> p;
-            if (list.isEmpty()) {
-                p = Objects::isNull;
-            } else {
-                p = e -> list.stream().anyMatch(x -> x.test(e));
-            }
-            return TestSupport.assertThrows(p, code);
-        }
     }
 
     static final class AssertionFailedException extends RuntimeException {

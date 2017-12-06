@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,10 @@ import java.nio.ByteBuffer;
  *
  * @apiNote
  *
- * <p> The callback provides methods for all possible <a
- * href="https://tools.ietf.org/html/rfc7541#section-6">binary
- * representations</a>. This could be useful for implementing an intermediary,
- * logging, debugging, etc.
+ * <p> The callback provides methods for all possible
+ * <a href="https://tools.ietf.org/html/rfc7541#section-6">binary representations</a>.
+ * This could be useful for implementing an intermediary, logging, debugging,
+ * etc.
  *
  * <p> The callback is an interface in order to interoperate with lambdas (in
  * the most common use case):
@@ -98,7 +98,8 @@ public interface DecodingCallback {
      * @see #onLiteralNeverIndexed(int, CharSequence, CharSequence, boolean)
      * @see #onLiteralNeverIndexed(CharSequence, boolean, CharSequence, boolean)
      */
-    default void onDecoded(CharSequence name, CharSequence value,
+    default void onDecoded(CharSequence name,
+                           CharSequence value,
                            boolean sensitive) {
         onDecoded(name, value);
     }
@@ -142,8 +143,10 @@ public interface DecodingCallback {
      * @param valueHuffman
      *         if the {@code value} was Huffman encoded
      */
-    default void onLiteral(int index, CharSequence name,
-                           CharSequence value, boolean valueHuffman) {
+    default void onLiteral(int index,
+                           CharSequence name,
+                           CharSequence value,
+                           boolean valueHuffman) {
         onDecoded(name, value, false);
     }
 
@@ -166,8 +169,10 @@ public interface DecodingCallback {
      * @param valueHuffman
      *         if the {@code value} was Huffman encoded
      */
-    default void onLiteral(CharSequence name, boolean nameHuffman,
-                           CharSequence value, boolean valueHuffman) {
+    default void onLiteral(CharSequence name,
+                           boolean nameHuffman,
+                           CharSequence value,
+                           boolean valueHuffman) {
         onDecoded(name, value, false);
     }
 
@@ -190,7 +195,8 @@ public interface DecodingCallback {
      * @param valueHuffman
      *         if the {@code value} was Huffman encoded
      */
-    default void onLiteralNeverIndexed(int index, CharSequence name,
+    default void onLiteralNeverIndexed(int index,
+                                       CharSequence name,
                                        CharSequence value,
                                        boolean valueHuffman) {
         onDecoded(name, value, true);
@@ -215,8 +221,10 @@ public interface DecodingCallback {
      * @param valueHuffman
      *         if the {@code value} was Huffman encoded
      */
-    default void onLiteralNeverIndexed(CharSequence name, boolean nameHuffman,
-                                       CharSequence value, boolean valueHuffman) {
+    default void onLiteralNeverIndexed(CharSequence name,
+                                       boolean nameHuffman,
+                                       CharSequence value,
+                                       boolean valueHuffman) {
         onDecoded(name, value, true);
     }
 
@@ -241,7 +249,8 @@ public interface DecodingCallback {
      */
     default void onLiteralWithIndexing(int index,
                                        CharSequence name,
-                                       CharSequence value, boolean valueHuffman) {
+                                       CharSequence value,
+                                       boolean valueHuffman) {
         onDecoded(name, value, false);
     }
 
@@ -264,8 +273,10 @@ public interface DecodingCallback {
      * @param valueHuffman
      *         if the {@code value} was Huffman encoded
      */
-    default void onLiteralWithIndexing(CharSequence name, boolean nameHuffman,
-                                       CharSequence value, boolean valueHuffman) {
+    default void onLiteralWithIndexing(CharSequence name,
+                                       boolean nameHuffman,
+                                       CharSequence value,
+                                       boolean valueHuffman) {
         onDecoded(name, value, false);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,19 @@
 
 package jdk.incubator.http;
 
+import java.lang.System.Logger.Level;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.concurrent.locks.Condition;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+import jdk.incubator.http.internal.common.Utils;
 
 /**
- * A Simple blocking Send Window Flow-Controller that is used to control
- * outgoing Connection and Stream flows, per HTTP/2 connection.
+ * A Send Window Flow-Controller that is used to control outgoing Connection
+ * and Stream flows, per HTTP/2 connection.
  *
  * A Http2Connection has its own unique single instance of a WindowController
  * that it shares with its Streams. Each stream must acquire the appropriate
@@ -44,6 +49,10 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 final class WindowController {
 
+    static final boolean DEBUG = Utils.DEBUG; // Revisit: temporary developer's flag
+    static final System.Logger DEBUG_LOGGER =
+            Utils.getDebugLogger("WindowController"::toString, DEBUG);
+
     /**
      * Default initial connection Flow-Control Send Window size, as per HTTP/2.
      */
@@ -54,20 +63,23 @@ final class WindowController {
     /** A Map of the active streams, where the key is the stream id, and the
      *  value is the stream's Send Window size, which may be negative. */
     private final Map<Integer,Integer> streams = new HashMap<>();
+    /** A Map of streams awaiting Send Window. The key is the stream id. The
+     * value is a pair of the Stream ( representing the key's stream id ) and
+     * the requested amount of send Window. */
+    private final Map<Integer, Map.Entry<Stream<?>, Integer>> pending
+            = new LinkedHashMap<>();
 
     private final ReentrantLock controllerLock = new ReentrantLock();
-
-    private final Condition notExhausted = controllerLock.newCondition();
 
     /** A Controller with the default initial window size. */
     WindowController() {
         connectionWindowSize = DEFAULT_INITIAL_WINDOW_SIZE;
     }
 
-    /** A Controller with the given initial window size. */
-    WindowController(int initialConnectionWindowSize) {
-        connectionWindowSize = initialConnectionWindowSize;
-    }
+//    /** A Controller with the given initial window size. */
+//    WindowController(int initialConnectionWindowSize) {
+//        connectionWindowSize = initialConnectionWindowSize;
+//    }
 
     /** Registers the given stream with this controller. */
     void registerStream(int streamid, int initialStreamWindowSize) {
@@ -75,7 +87,8 @@ final class WindowController {
         try {
             Integer old = streams.put(streamid, initialStreamWindowSize);
             if (old != null)
-                throw new InternalError("Unexpected entry [" + old + "] for streamid: " + streamid);
+                throw new InternalError("Unexpected entry ["
+                        + old + "] for streamid: " + streamid);
         } finally {
             controllerLock.unlock();
         }
@@ -109,28 +122,45 @@ final class WindowController {
      * 1) the requested amount, 2) the stream's Send Window, and 3) the
      * connection's Send Window.
      *
-     * This method ( currently ) blocks until some positive amount of Send
-     * Window is available.
+     * A negative or zero value is returned if there's no window available.
+     * When the result is negative or zero, this method arranges for the
+     * given stream's {@link Stream#signalWindowUpdate()} method to be invoke at
+     * a later time when the connection and/or stream window's have been
+     * increased. The {@code tryAcquire} method should then be invoked again to
+     * attempt to acquire the available window.
      */
-    int tryAcquire(int requestAmount, int streamid) throws InterruptedException {
+    int tryAcquire(int requestAmount, int streamid, Stream<?> stream) {
         controllerLock.lock();
         try {
-            int x = 0;
-            Integer streamSize = 0;
-            while (x <= 0) {
-                streamSize = streams.get(streamid);
-                if (streamSize == null)
-                    throw new InternalError("Expected entry for streamid: " + streamid);
-                x = Math.min(requestAmount,
+            Integer streamSize = streams.get(streamid);
+            if (streamSize == null)
+                throw new InternalError("Expected entry for streamid: "
+                                        + streamid);
+            int x = Math.min(requestAmount,
                              Math.min(streamSize, connectionWindowSize));
 
-                if (x <= 0)  // stream window size may be negative
-                    notExhausted.await();
+            if (x <= 0)  { // stream window size may be negative
+                DEBUG_LOGGER.log(Level.DEBUG,
+                        "Stream %d requesting %d but only %d available (stream: %d, connection: %d)",
+                      streamid, requestAmount, Math.min(streamSize, connectionWindowSize),
+                      streamSize, connectionWindowSize);
+                // If there's not enough window size available, put the
+                // caller in a pending list.
+                pending.put(streamid, Map.entry(stream, requestAmount));
+                return x;
             }
 
+            // Remove the caller from the pending list ( if was waiting ).
+            pending.remove(streamid);
+
+            // Update window sizes and return the allocated amount to the caller.
             streamSize -= x;
             streams.put(streamid, streamSize);
             connectionWindowSize -= x;
+            DEBUG_LOGGER.log(Level.DEBUG,
+                  "Stream %d amount allocated %d, now %d available (stream: %d, connection: %d)",
+                  streamid, x, Math.min(streamSize, connectionWindowSize),
+                  streamSize, connectionWindowSize);
             return x;
         } finally {
             controllerLock.unlock();
@@ -140,10 +170,15 @@ final class WindowController {
     /**
      * Increases the Send Window size for the connection.
      *
+     * A number of awaiting requesters, from unfulfilled tryAcquire requests,
+     * may have their stream's {@link Stream#signalWindowUpdate()} method
+     * scheduled to run ( i.e. awake awaiters ).
+     *
      * @return false if, and only if, the addition of the given amount would
      *         cause the Send Window to exceed 2^31-1 (overflow), otherwise true
      */
     boolean increaseConnectionWindow(int amount) {
+        List<Stream<?>> candidates = null;
         controllerLock.lock();
         try {
             int size = connectionWindowSize;
@@ -151,9 +186,38 @@ final class WindowController {
             if (size < 0)
                 return false;
             connectionWindowSize = size;
-            notExhausted.signalAll();
+            DEBUG_LOGGER.log(Level.DEBUG, "Connection window size is now %d", size);
+
+            // Notify waiting streams, until the new increased window size is
+            // effectively exhausted.
+            Iterator<Map.Entry<Integer,Map.Entry<Stream<?>,Integer>>> iter =
+                    pending.entrySet().iterator();
+
+            while (iter.hasNext() && size > 0) {
+                Map.Entry<Integer,Map.Entry<Stream<?>,Integer>> item = iter.next();
+                Integer streamSize = streams.get(item.getKey());
+                if (streamSize == null) {
+                    iter.remove();
+                } else {
+                    Map.Entry<Stream<?>,Integer> e = item.getValue();
+                    int requestedAmount = e.getValue();
+                    // only wakes up the pending streams for which there is
+                    // at least 1 byte of space in both windows
+                    int minAmount = 1;
+                    if (size >= minAmount && streamSize >= minAmount) {
+                        size -= Math.min(streamSize, requestedAmount);
+                        iter.remove();
+                        if (candidates == null)
+                            candidates = new ArrayList<>();
+                        candidates.add(e.getKey());
+                    }
+                }
+            }
         } finally {
             controllerLock.unlock();
+        }
+        if (candidates != null) {
+            candidates.forEach(Stream::signalWindowUpdate);
         }
         return true;
     }
@@ -161,10 +225,15 @@ final class WindowController {
     /**
      * Increases the Send Window size for the given stream.
      *
+     * If the given stream is awaiting window size, from an unfulfilled
+     * tryAcquire request, it will have its stream's {@link
+     * Stream#signalWindowUpdate()} method scheduled to run ( i.e. awoken ).
+     *
      * @return false if, and only if, the addition of the given amount would
      *         cause the Send Window to exceed 2^31-1 (overflow), otherwise true
      */
     boolean increaseStreamWindow(int amount, int streamid) {
+        Stream<?> s = null;
         controllerLock.lock();
         try {
             Integer size = streams.get(streamid);
@@ -174,10 +243,27 @@ final class WindowController {
             if (size < 0)
                 return false;
             streams.put(streamid, size);
-            notExhausted.signalAll();
+            DEBUG_LOGGER.log(Level.DEBUG,
+                             "Stream %s window size is now %s", streamid, size);
+
+            Map.Entry<Stream<?>,Integer> p = pending.get(streamid);
+            if (p != null) {
+                int minAmount = 1;
+                // only wakes up the pending stream if there is at least
+                // 1 byte of space in both windows
+                if (size >= minAmount
+                        && connectionWindowSize >= minAmount) {
+                     pending.remove(streamid);
+                     s = p.getKey();
+                }
+            }
         } finally {
             controllerLock.unlock();
         }
+
+        if (s != null)
+            s.signalWindowUpdate();
+
         return true;
     }
 
@@ -199,6 +285,8 @@ final class WindowController {
                     Integer size = entry.getValue();
                     size += adjustAmount;
                     streams.put(streamid, size);
+                    DEBUG_LOGGER.log(Level.DEBUG,
+                        "Stream %s window size is now %s", streamid, size);
                 }
             }
         } finally {
@@ -216,16 +304,17 @@ final class WindowController {
         }
     }
 
-    /** Returns the Send Window size for the given stream. */
-    int streamWindowSize(int streamid) {
-        controllerLock.lock();
-        try {
-            Integer size = streams.get(streamid);
-            if (size == null)
-                throw new InternalError("Expected entry for streamid: " + streamid);
-            return size;
-        } finally {
-            controllerLock.unlock();;
-        }
-    }
+//    /** Returns the Send Window size for the given stream. */
+//    int streamWindowSize(int streamid) {
+//        controllerLock.lock();
+//        try {
+//            Integer size = streams.get(streamid);
+//            if (size == null)
+//                throw new InternalError("Expected entry for streamid: " + streamid);
+//            return size;
+//        } finally {
+//            controllerLock.unlock();
+//        }
+//    }
+
 }

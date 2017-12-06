@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import jdk.incubator.http.HttpRequest;
 import jdk.incubator.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -40,11 +42,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.stream.Stream;
+import static java.lang.System.err;
 
 /*
  * @test
  * @summary An example on how to read a response body with InputStream...
- * @run main/othervm HttpInputStreamTest
+ * @run main/othervm -Dtest.debug=true HttpInputStreamTest
  * @author daniel fuchs
  */
 public class HttpInputStreamTest {
@@ -61,7 +64,7 @@ public class HttpInputStreamTest {
     public static class HttpInputStreamHandler
         implements HttpResponse.BodyHandler<InputStream>    {
 
-        public static final int MAX_BUFFERS_IN_QUEUE = 1;
+        public static final int MAX_BUFFERS_IN_QUEUE = 1;  // lock-step with the producer
 
         private final int maxBuffers;
 
@@ -74,7 +77,7 @@ public class HttpInputStreamTest {
         }
 
         @Override
-        public synchronized HttpResponse.BodyProcessor<InputStream>
+        public HttpResponse.BodySubscriber<InputStream>
                 apply(int i, HttpHeaders hh) {
             return new HttpResponseInputStream(maxBuffers);
         }
@@ -83,17 +86,19 @@ public class HttpInputStreamTest {
          * An InputStream built on top of the Flow API.
          */
         private static class HttpResponseInputStream extends InputStream
-                    implements HttpResponse.BodyProcessor<InputStream> {
+                    implements HttpResponse.BodySubscriber<InputStream> {
 
             // An immutable ByteBuffer sentinel to mark that the last byte was received.
-            private static final ByteBuffer LAST = ByteBuffer.wrap(new byte[0]);
+            private static final ByteBuffer LAST_BUFFER = ByteBuffer.wrap(new byte[0]);
+            private static final List<ByteBuffer> LAST_LIST = List.of(LAST_BUFFER);
 
             // A queue of yet unprocessed ByteBuffers received from the flow API.
-            private final BlockingQueue<ByteBuffer> buffers;
+            private final BlockingQueue<List<ByteBuffer>> buffers;
             private volatile Flow.Subscription subscription;
             private volatile boolean closed;
             private volatile Throwable failed;
-            private volatile ByteBuffer current;
+            private volatile Iterator<ByteBuffer> currentListItr;
+            private volatile ByteBuffer currentBuffer;
 
             HttpResponseInputStream() {
                 this(MAX_BUFFERS_IN_QUEUE);
@@ -101,7 +106,8 @@ public class HttpInputStreamTest {
 
             HttpResponseInputStream(int maxBuffers) {
                 int capacity = maxBuffers <= 0 ? MAX_BUFFERS_IN_QUEUE : maxBuffers;
-                this.buffers = new ArrayBlockingQueue<>(capacity);
+                // 1 additional slot for LAST_LIST added by onComplete
+                this.buffers = new ArrayBlockingQueue<>(capacity + 1);
             }
 
             @Override
@@ -119,40 +125,49 @@ public class HttpInputStreamTest {
             // a new buffer is made available through the Flow API, or the
             // end of the flow is reached.
             private ByteBuffer current() throws IOException {
-                while (current == null || !current.hasRemaining()) {
-                    // Check whether the stream is claused or exhausted
+                while (currentBuffer == null || !currentBuffer.hasRemaining()) {
+                    // Check whether the stream is closed or exhausted
                     if (closed || failed != null) {
                         throw new IOException("closed", failed);
                     }
-                    if (current == LAST) break;
+                    if (currentBuffer == LAST_BUFFER) break;
 
                     try {
-                        // Take a new buffer from the queue, blocking
-                        // if none is available yet...
-                        if (DEBUG) System.err.println("Taking Buffer");
-                        current = buffers.take();
-                        if (DEBUG) System.err.println("Buffer Taken");
+                        if (currentListItr == null || !currentListItr.hasNext()) {
+                            // Take a new list of buffers from the queue, blocking
+                            // if none is available yet...
 
-                        // Check whether some exception was encountered
-                        // upstream
-                        if (closed || failed != null) {
-                            throw new IOException("closed", failed);
+                            if (DEBUG) err.println("Taking list of Buffers");
+                            List<ByteBuffer> lb = buffers.take();
+                            currentListItr = lb.iterator();
+                            if (DEBUG) err.println("List of Buffers Taken");
+
+                            // Check whether an exception was encountered upstream
+                            if (closed || failed != null)
+                                throw new IOException("closed", failed);
+
+                            // Check whether we're done.
+                            if (lb == LAST_LIST) {
+                                currentListItr = null;
+                                currentBuffer = LAST_BUFFER;
+                                break;
+                            }
+
+                            // Request another upstream item ( list of buffers )
+                            Flow.Subscription s = subscription;
+                            if (s != null)
+                                s.request(1);
                         }
-
-                        // Check whether we're done.
-                        if (current == LAST) break;
-
-                        // Inform the producer that it can start sending
-                        // us a new buffer
-                        Flow.Subscription s = subscription;
-                        if (s != null) s.request(1);
-
+                        assert currentListItr != null;
+                        assert currentListItr.hasNext();
+                        if (DEBUG) err.println("Next Buffer");
+                        currentBuffer = currentListItr.next();
                     } catch (InterruptedException ex) {
                         // continue
                     }
                 }
-                assert current == LAST || current.hasRemaining();
-                return current;
+                assert currentBuffer == LAST_BUFFER || currentBuffer.hasRemaining();
+                return currentBuffer;
             }
 
             @Override
@@ -160,7 +175,7 @@ public class HttpInputStreamTest {
                 // get the buffer to read from, possibly blocking if
                 // none is available
                 ByteBuffer buffer;
-                if ((buffer = current()) == LAST) return -1;
+                if ((buffer = current()) == LAST_BUFFER) return -1;
 
                 // don't attempt to read more than what is available
                 // in the current buffer.
@@ -175,22 +190,31 @@ public class HttpInputStreamTest {
             @Override
             public int read() throws IOException {
                 ByteBuffer buffer;
-                if ((buffer = current()) == LAST) return -1;
+                if ((buffer = current()) == LAST_BUFFER) return -1;
                 return buffer.get() & 0xFF;
             }
 
             @Override
             public void onSubscribe(Flow.Subscription s) {
+                if (this.subscription != null) {
+                    s.cancel();
+                    return;
+                }
                 this.subscription = s;
-                s.request(Math.max(2, buffers.remainingCapacity() + 1));
+                assert buffers.remainingCapacity() > 1; // should at least be 2
+                if (DEBUG) err.println("onSubscribe: requesting "
+                     + Math.max(1, buffers.remainingCapacity() - 1));
+                s.request(Math.max(1, buffers.remainingCapacity() - 1));
             }
 
             @Override
-            public synchronized void onNext(ByteBuffer t) {
+            public void onNext(List<ByteBuffer> t) {
                 try {
-                    if (DEBUG) System.err.println("next buffer received");
-                    buffers.put(t);
-                    if (DEBUG) System.err.println("buffered offered");
+                    if (DEBUG) err.println("next item received");
+                    if (!buffers.offer(t)) {
+                        throw new IllegalStateException("queue is full");
+                    }
+                    if (DEBUG) err.println("item offered");
                 } catch (Exception ex) {
                     failed = ex;
                     try {
@@ -203,24 +227,26 @@ public class HttpInputStreamTest {
 
             @Override
             public void onError(Throwable thrwbl) {
+                subscription = null;
                 failed = thrwbl;
             }
 
             @Override
-            public synchronized void onComplete() {
+            public void onComplete() {
                 subscription = null;
-                onNext(LAST);
+                onNext(LAST_LIST);
             }
 
             @Override
             public void close() throws IOException {
                 synchronized (this) {
+                    if (closed) return;
                     closed = true;
-                    Flow.Subscription s = subscription;
-                    if (s != null) {
-                        s.cancel();
-                    }
-                    subscription = null;
+                }
+                Flow.Subscription s = subscription;
+                subscription = null;
+                if (s != null) {
+                     s.cancel();
                 }
                 super.close();
             }
@@ -274,8 +300,8 @@ public class HttpInputStreamTest {
         //    client.sendAsync(request, HttpResponse.BodyHandler.asString()).get().body());
 
         CompletableFuture<HttpResponse<InputStream>> handle =
-            client.sendAsync(request, new HttpInputStreamHandler());
-        if (DEBUG) System.err.println("Request sent");
+            client.sendAsync(request, new HttpInputStreamHandler(3));
+        if (DEBUG) err.println("Request sent");
 
         HttpResponse<InputStream> pending = handle.get();
 
@@ -301,8 +327,8 @@ public class HttpInputStreamTest {
 
             char[] buff = new char[32];
             int off=0, n=0;
-            if (DEBUG) System.err.println("Start receiving response body");
-            if (DEBUG) System.err.println("Charset: " + charset.get());
+            if (DEBUG) err.println("Start receiving response body");
+            if (DEBUG) err.println("Charset: " + charset.get());
 
             // Start consuming the InputStream as the data arrives.
             // Will block until there is something to read...

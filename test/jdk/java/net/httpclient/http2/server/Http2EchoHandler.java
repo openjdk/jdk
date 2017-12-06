@@ -31,7 +31,7 @@ public class Http2EchoHandler implements Http2Handler {
     public void handle(Http2TestExchange t)
             throws IOException {
         try {
-            System.err.println("EchoHandler received request to " + t.getRequestURI());
+            System.err.printf("EchoHandler received request to %s from %s\n", t.getRequestURI(), t.getRemoteAddress());
             InputStream is = t.getRequestBody();
             HttpHeadersImpl map = t.getRequestHeaders();
             HttpHeadersImpl map1 = t.getResponseHeaders();

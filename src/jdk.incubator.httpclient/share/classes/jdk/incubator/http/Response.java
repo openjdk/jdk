@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package jdk.incubator.http;
+
+import java.net.URI;
 
 /**
  * Response headers and status code.
@@ -59,11 +61,26 @@ class Response {
         return headers;
     }
 
-    Exchange<?> exchange() {
-        return exchange;
-    }
+//    Exchange<?> exchange() {
+//        return exchange;
+//    }
 
     int statusCode() {
         return statusCode;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        String method = request().method();
+        URI uri = request().uri();
+        String uristring = uri == null ? "" : uri.toString();
+        sb.append('(')
+          .append(method)
+          .append(" ")
+          .append(uristring)
+          .append(") ")
+          .append(statusCode());
+        return sb.toString();
     }
 }
