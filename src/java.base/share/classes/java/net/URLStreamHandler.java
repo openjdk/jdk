@@ -480,39 +480,14 @@ public abstract class URLStreamHandler {
      * @return  a string representation of the {@code URL} argument.
      */
     protected String toExternalForm(URL u) {
-
-        // pre-compute length of StringBuffer
-        int len = u.getProtocol().length() + 1;
-        if (u.getAuthority() != null && u.getAuthority().length() > 0)
-            len += 2 + u.getAuthority().length();
-        if (u.getPath() != null) {
-            len += u.getPath().length();
-        }
-        if (u.getQuery() != null) {
-            len += 1 + u.getQuery().length();
-        }
-        if (u.getRef() != null)
-            len += 1 + u.getRef().length();
-
-        StringBuilder result = new StringBuilder(len);
-        result.append(u.getProtocol());
-        result.append(":");
-        if (u.getAuthority() != null && u.getAuthority().length() > 0) {
-            result.append("//");
-            result.append(u.getAuthority());
-        }
-        if (u.getPath() != null) {
-            result.append(u.getPath());
-        }
-        if (u.getQuery() != null) {
-            result.append('?');
-            result.append(u.getQuery());
-        }
-        if (u.getRef() != null) {
-            result.append("#");
-            result.append(u.getRef());
-        }
-        return result.toString();
+        String s;
+        return u.getProtocol()
+            + ':'
+            + (((s = u.getAuthority()) != null && s.length() > 0)
+               ? "//" + s : "")
+            + (((s = u.getPath()) != null) ? s : "")
+            + (((s = u.getQuery()) != null) ? '?' + s : "")
+            + (((s = u.getRef()) != null) ? '#' + s : "");
     }
 
     /**
