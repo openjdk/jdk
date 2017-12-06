@@ -1293,6 +1293,10 @@ public class Hashtable<K,V>
             length--;
         length = Math.min(length, origlength);
 
+        if (length < 0) { // overflow
+            length = origlength;
+        }
+
         // Check Map.Entry[].class since it's the nearest public type to
         // what we're actually creating.
         SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Map.Entry[].class, length);
