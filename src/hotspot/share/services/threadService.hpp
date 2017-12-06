@@ -33,6 +33,7 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threadSMR.hpp"
 #include "services/management.hpp"
 #include "services/serviceUtil.hpp"
 
