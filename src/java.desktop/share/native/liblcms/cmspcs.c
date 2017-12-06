@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2016 Marti Maria Saguer
+//  Copyright (c) 1998-2017 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -685,9 +685,9 @@ cmsFloat64Number CMSEXPORT cmsCIE2000DeltaE(const cmsCIELab* Lab1, const cmsCIEL
 
 // This function returns a number of gridpoints to be used as LUT table. It assumes same number
 // of gripdpoints in all dimensions. Flags may override the choice.
-int _cmsReasonableGridpointsByColorspace(cmsColorSpaceSignature Colorspace, cmsUInt32Number dwFlags)
+cmsUInt32Number _cmsReasonableGridpointsByColorspace(cmsColorSpaceSignature Colorspace, cmsUInt32Number dwFlags)
 {
-    int nChannels;
+    cmsUInt32Number nChannels;
 
     // Already specified?
     if (dwFlags & 0x00FF0000) {
@@ -831,7 +831,7 @@ cmsColorSpaceSignature CMSEXPORT _cmsICCcolorSpace(int OurNotation)
        case PT_MCH14: return cmsSigMCHEData;
        case PT_MCH15: return cmsSigMCHFData;
 
-       default:  return (cmsColorSpaceSignature) (-1);
+       default:  return (cmsColorSpaceSignature) 0;
        }
 }
 
@@ -898,7 +898,7 @@ int CMSEXPORT _cmsLCMScolorSpace(cmsColorSpaceSignature ProfileSpace)
     case cmsSigMCHFData:
     case cmsSig15colorData:return PT_MCH15;
 
-    default:  return (cmsColorSpaceSignature) (-1);
+    default:  return (cmsColorSpaceSignature) 0;
     }
 }
 

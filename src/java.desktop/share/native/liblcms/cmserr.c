@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2016 Marti Maria Saguer
+//  Copyright (c) 1998-2017 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -83,9 +83,11 @@ long int CMSEXPORT cmsfilelength(FILE* f)
     long int p , n;
 
     p = ftell(f); // register current file position
+    if (p == -1L)
+        return -1L;
 
     if (fseek(f, 0, SEEK_END) != 0) {
-        return -1;
+        return -1L;
     }
 
     n = ftell(f);
@@ -115,7 +117,7 @@ cmsBool   _cmsRegisterMemHandlerPlugin(cmsContext ContextID, cmsPluginBase* Plug
 // *********************************************************************************
 
 // This is the default memory allocation function. It does a very coarse
-// check of amout of memory, just to prevent exploits
+// check of amount of memory, just to prevent exploits
 static
 void* _cmsMallocDefaultFn(cmsContext ContextID, cmsUInt32Number size)
 {
@@ -222,7 +224,7 @@ void _cmsAllocMemPluginChunk(struct _cmsContext_struct* ctx, const struct _cmsCo
     }
     else {
 
-        // To reset it, we use the default allocators, which cannot be overriden
+        // To reset it, we use the default allocators, which cannot be overridden
         ctx ->chunks[MemPlugin] = &ctx ->DefaultMemoryManager;
     }
 }
