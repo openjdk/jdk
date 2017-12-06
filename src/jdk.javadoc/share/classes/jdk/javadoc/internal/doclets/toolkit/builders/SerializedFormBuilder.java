@@ -450,8 +450,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
     protected void buildFieldSubHeader(Content fieldsContentTree) {
         if (!utils.definesSerializableFields(currentTypeElement)) {
             VariableElement field = (VariableElement) currentMember;
-            fieldWriter.addMemberHeader(utils.asTypeElement(field.asType()),
-                    utils.getTypeName(field.asType(), false), utils.getDimension(field.asType()),
+            fieldWriter.addMemberHeader(field.asType(),
                     utils.getSimpleName(field),
                     fieldsContentTree);
         }

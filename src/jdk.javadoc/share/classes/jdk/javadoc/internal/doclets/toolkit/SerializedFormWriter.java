@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.toolkit;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -227,14 +228,23 @@ public interface SerializedFormWriter {
          * Adds the member header.
          *
          * @param fieldType the type of the field
-         * @param fieldTypeStr the type of the field in string format.  We will
-         * print this out if we can't link to the type
+         * @param fieldTypeStr the type of the field in string format, used
+         *                     only if the type cannot be linked
          * @param fieldDimensions the dimensions of the field
          * @param fieldName the name of the field
          * @param contentTree content tree to which the member header will be added
          */
         public void addMemberHeader(TypeElement fieldType, String fieldTypeStr,
             String fieldDimensions, String fieldName, Content contentTree);
+
+        /**
+         * Adds the member header.
+         *
+         * @param fieldType the type of the field
+         * @param fieldName the name of the field
+         * @param contentTree content tree to which the member header will be added
+         */
+        public void addMemberHeader(TypeMirror fieldType, String fieldName, Content contentTree);
 
         /**
          * Check to see if overview details should be printed. If
