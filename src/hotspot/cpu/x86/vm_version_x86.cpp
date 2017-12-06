@@ -1042,9 +1042,7 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif // COMPILER2 && ASSERT
-#endif // COMPILER2_OR_JVMCI
 
-#ifdef COMPILER2
 #ifdef _LP64
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;
@@ -1092,8 +1090,8 @@ void VM_Version::get_processor_features() {
     }
     FLAG_SET_DEFAULT(UseMulAddIntrinsic, false);
   }
-#endif
-#endif // COMPILER2
+#endif // _LP64
+#endif // COMPILER2_OR_JVMCI
 
   // On new cpus instructions which update whole XMM register should be used
   // to prevent partial register stall due to dependencies on high half.
