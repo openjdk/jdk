@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.incubator.http.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static jdk.incubator.http.HttpRequest.BodyProcessor.fromString;
+import static jdk.incubator.http.HttpRequest.BodyPublisher.fromString;
 import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;

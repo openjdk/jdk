@@ -40,7 +40,7 @@ import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
  * @test
  * @bug 8178147
  * @summary Ensures that small timeouts do not cause hangs due to race conditions
- * @run main/othervm SmallTimeout
+ * @run main/othervm -Djdk.incubator.http.internal.common.DEBUG=true SmallTimeout
  */
 
 // To enable logging use. Not enabled by default as it changes the dynamics
@@ -52,7 +52,25 @@ public class SmallTimeout {
     static int[] TIMEOUTS = {2, 1, 3, 2, 100, 1};
 
     // A queue for placing timed out requests so that their order can be checked.
-    static LinkedBlockingQueue<HttpRequest> queue = new LinkedBlockingQueue<>();
+    static LinkedBlockingQueue<HttpResult> queue = new LinkedBlockingQueue<>();
+
+    static final class HttpResult {
+         final HttpRequest request;
+         final Throwable   failed;
+         HttpResult(HttpRequest request, Throwable   failed) {
+             this.request = request;
+             this.failed = failed;
+         }
+
+         static HttpResult of(HttpRequest request) {
+             return new HttpResult(request, null);
+         }
+
+         static HttpResult of(HttpRequest request, Throwable t) {
+             return new HttpResult(request, t);
+         }
+
+    }
 
     static volatile boolean error;
 
@@ -76,8 +94,10 @@ public class SmallTimeout {
                 CompletableFuture<HttpResponse<Object>> response = client
                     .sendAsync(req, discard(null))
                     .whenComplete((HttpResponse<Object> r, Throwable t) -> {
+                        Throwable cause = null;
                         if (r != null) {
                             out.println("Unexpected response: " + r);
+                            cause = new RuntimeException("Unexpected response");
                             error = true;
                         }
                         if (t != null) {
@@ -85,6 +105,7 @@ public class SmallTimeout {
                                 out.println("Wrong exception type:" + t.toString());
                                 Throwable c = t.getCause() == null ? t : t.getCause();
                                 c.printStackTrace();
+                                cause = c;
                                 error = true;
                             } else {
                                 out.println("Caught expected timeout: " + t.getCause());
@@ -92,9 +113,10 @@ public class SmallTimeout {
                         }
                         if (t == null && r == null) {
                             out.println("Both response and throwable are null!");
+                            cause = new RuntimeException("Both response and throwable are null!");
                             error = true;
                         }
-                        queue.add(req);
+                        queue.add(HttpResult.of(req,cause));
                     });
             }
             System.out.println("All requests submitted. Waiting ...");
@@ -118,15 +140,18 @@ public class SmallTimeout {
 
                 final HttpRequest req = requests[i];
                 executor.execute(() -> {
+                    Throwable cause = null;
                     try {
                         client.send(req, discard(null));
                     } catch (HttpTimeoutException e) {
                         out.println("Caught expected timeout: " + e);
-                        queue.offer(req);
-                    } catch (IOException | InterruptedException ee) {
+                    } catch (Throwable ee) {
                         Throwable c = ee.getCause() == null ? ee : ee.getCause();
                         c.printStackTrace();
+                        cause = c;
                         error = true;
+                    } finally {
+                        queue.offer(HttpResult.of(req, cause));
                     }
                 });
             }
@@ -139,18 +164,20 @@ public class SmallTimeout {
             if (error)
                 throw new RuntimeException("Failed. Check output");
 
-        } finally {
-            ((ExecutorService) client.executor()).shutdownNow();
         }
     }
 
     static void checkReturn(HttpRequest[] requests) throws InterruptedException {
         // wait for exceptions and check order
+        boolean ok = true;
         for (int j = 0; j < TIMEOUTS.length; j++) {
-            HttpRequest req = queue.take();
-            out.println("Got request from queue " + req + ", order: " + getRequest(req, requests));
+            HttpResult res = queue.take();
+            HttpRequest req = res.request;
+            out.println("Got request from queue " + req + ", order: " + getRequest(req, requests)
+                         + (res.failed == null ? "" : " failed: " + res.failed));
+            ok = ok && res.failed == null;
         }
-        out.println("Return ok");
+        out.println("Return " + (ok ? "ok" : "nok"));
     }
 
     /** Returns the index of the request in the array. */

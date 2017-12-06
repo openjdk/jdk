@@ -24,20 +24,22 @@
  */
 package jdk.incubator.http.internal.hpack;
 
+import jdk.incubator.http.internal.hpack.HPACK.Logger;
 import jdk.internal.vm.annotation.Stable;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.ProtocolException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicLong;
 
+import static jdk.incubator.http.internal.hpack.HPACK.Logger.Level.EXTRA;
+import static jdk.incubator.http.internal.hpack.HPACK.Logger.Level.NORMAL;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Decodes headers from their binary representation.
  *
- * <p>Typical lifecycle looks like this:
+ * <p> Typical lifecycle looks like this:
  *
  * <p> {@link #Decoder(int) new Decoder}
  * ({@link #setMaxCapacity(int) setMaxCapacity}?
@@ -61,6 +63,9 @@ import static java.util.Objects.requireNonNull;
  * @since 9
  */
 public final class Decoder {
+
+    private final Logger logger;
+    private static final AtomicLong DECODERS_IDS = new AtomicLong();
 
     @Stable
     private static final State[] states = new State[256];
@@ -92,6 +97,7 @@ public final class Decoder {
         }
     }
 
+    private final long id;
     private final HeaderTable table;
 
     private State state = State.READY;
@@ -111,9 +117,8 @@ public final class Decoder {
      * header table.
      *
      * <p> The value has to be agreed between decoder and encoder out-of-band,
-     * e.g. by a protocol that uses HPACK (see <a
-     * href="https://tools.ietf.org/html/rfc7541#section-4.2">4.2. Maximum Table
-     * Size</a>).
+     * e.g. by a protocol that uses HPACK
+     * (see <a href="https://tools.ietf.org/html/rfc7541#section-4.2">4.2. Maximum Table Size</a>).
      *
      * @param capacity
      *         a non-negative integer
@@ -122,8 +127,24 @@ public final class Decoder {
      *         if capacity is negative
      */
     public Decoder(int capacity) {
-        setMaxCapacity(capacity);
-        table = new HeaderTable(capacity);
+        id = DECODERS_IDS.incrementAndGet();
+        logger = HPACK.getLogger().subLogger("Decoder#" + id);
+        if (logger.isLoggable(NORMAL)) {
+            logger.log(NORMAL, () -> format("new decoder with maximum table size %s",
+                                            capacity));
+        }
+        if (logger.isLoggable(NORMAL)) {
+            /* To correlate with logging outside HPACK, knowing
+               hashCode/toString is important */
+            logger.log(NORMAL, () -> {
+                String hashCode = Integer.toHexString(
+                        System.identityHashCode(this));
+                return format("toString='%s', identityHashCode=%s",
+                              toString(), hashCode);
+            });
+        }
+        setMaxCapacity0(capacity);
+        table = new HeaderTable(capacity, logger.subLogger("HeaderTable"));
         integerReader = new IntegerReader();
         stringReader = new StringReader();
         name = new StringBuilder(512);
@@ -134,9 +155,8 @@ public final class Decoder {
      * Sets a maximum capacity of the header table.
      *
      * <p> The value has to be agreed between decoder and encoder out-of-band,
-     * e.g. by a protocol that uses HPACK (see <a
-     * href="https://tools.ietf.org/html/rfc7541#section-4.2">4.2. Maximum Table
-     * Size</a>).
+     * e.g. by a protocol that uses HPACK
+     * (see <a href="https://tools.ietf.org/html/rfc7541#section-4.2">4.2. Maximum Table Size</a>).
      *
      * @param capacity
      *         a non-negative integer
@@ -145,6 +165,14 @@ public final class Decoder {
      *         if capacity is negative
      */
     public void setMaxCapacity(int capacity) {
+        if (logger.isLoggable(NORMAL)) {
+            logger.log(NORMAL, () -> format("setting maximum table size to %s",
+                                            capacity));
+        }
+        setMaxCapacity0(capacity);
+    }
+
+    private void setMaxCapacity0(int capacity) {
         if (capacity < 0) {
             throw new IllegalArgumentException("capacity >= 0: " + capacity);
         }
@@ -155,8 +183,8 @@ public final class Decoder {
     /**
      * Decodes a header block from the given buffer to the given callback.
      *
-     * <p> Suppose a header block is represented by a sequence of {@code
-     * ByteBuffer}s in the form of {@code Iterator<ByteBuffer>}. And the
+     * <p> Suppose a header block is represented by a sequence of
+     * {@code ByteBuffer}s in the form of {@code Iterator<ByteBuffer>}. And the
      * consumer of decoded headers is represented by the callback. Then to
      * decode the header block, the following approach might be used:
      *
@@ -174,7 +202,7 @@ public final class Decoder {
      *
      * <p> Once the method is invoked with {@code endOfHeaderBlock == true}, the
      * current header block is deemed ended, and inconsistencies, if any, are
-     * reported immediately by throwing an {@code UncheckedIOException}.
+     * reported immediately by throwing an {@code IOException}.
      *
      * <p> Each callback method is called only after the implementation has
      * processed the corresponding bytes. If the bytes revealed a decoding
@@ -200,25 +228,32 @@ public final class Decoder {
      *
      * @param consumer
      *         the callback
-     * @throws UncheckedIOException
+     * @throws IOException
      *         in case of a decoding error
      * @throws NullPointerException
      *         if either headerBlock or consumer are null
      */
-    public void decode(ByteBuffer headerBlock, boolean endOfHeaderBlock,
-                       DecodingCallback consumer) {
+    public void decode(ByteBuffer headerBlock,
+                       boolean endOfHeaderBlock,
+                       DecodingCallback consumer) throws IOException {
         requireNonNull(headerBlock, "headerBlock");
         requireNonNull(consumer, "consumer");
+        if (logger.isLoggable(NORMAL)) {
+            logger.log(NORMAL, () -> format("reading %s, end of header block? %s",
+                                            headerBlock, endOfHeaderBlock));
+        }
         while (headerBlock.hasRemaining()) {
             proceed(headerBlock, consumer);
         }
         if (endOfHeaderBlock && state != State.READY) {
-            throw new UncheckedIOException(
-                    new ProtocolException("Unexpected end of header block"));
+            logger.log(NORMAL, () -> format("unexpected end of %s representation",
+                                            state));
+            throw new IOException("Unexpected end of header block");
         }
     }
 
-    private void proceed(ByteBuffer input, DecodingCallback action) {
+    private void proceed(ByteBuffer input, DecodingCallback action)
+            throws IOException {
         switch (state) {
             case READY:
                 resumeReady(input);
@@ -239,14 +274,17 @@ public final class Decoder {
                 resumeSizeUpdate(input, action);
                 break;
             default:
-                throw new InternalError(
-                        "Unexpected decoder state: " + String.valueOf(state));
+                throw new InternalError("Unexpected decoder state: " + state);
         }
     }
 
     private void resumeReady(ByteBuffer input) {
         int b = input.get(input.position()) & 0xff; // absolute read
         State s = states[b];
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("next binary representation %s (first byte 0x%02x)",
+                                           s, b));
+        }
         switch (s) {
             case INDEXED:
                 integerReader.configure(7);
@@ -292,18 +330,34 @@ public final class Decoder {
     //            | 1 |        Index (7+)         |
     //            +---+---------------------------+
     //
-    private void resumeIndexed(ByteBuffer input, DecodingCallback action) {
+    private void resumeIndexed(ByteBuffer input, DecodingCallback action)
+            throws IOException {
         if (!integerReader.read(input)) {
             return;
         }
         intValue = integerReader.get();
         integerReader.reset();
+        if (logger.isLoggable(NORMAL)) {
+            logger.log(NORMAL, () -> format("indexed %s", intValue));
+        }
         try {
-            HeaderTable.HeaderField f = table.get(intValue);
+            HeaderTable.HeaderField f = getHeaderFieldAt(intValue);
             action.onIndexed(intValue, f.name, f.value);
         } finally {
             state = State.READY;
         }
+    }
+
+    private HeaderTable.HeaderField getHeaderFieldAt(int index)
+            throws IOException
+    {
+        HeaderTable.HeaderField f;
+        try {
+            f = table.get(index);
+        } catch (IndexOutOfBoundsException e) {
+            throw new IOException("header fields table index", e);
+        }
+        return f;
     }
 
     //              0   1   2   3   4   5   6   7
@@ -328,15 +382,24 @@ public final class Decoder {
     //            | Value String (Length octets)  |
     //            +-------------------------------+
     //
-    private void resumeLiteral(ByteBuffer input, DecodingCallback action) {
+    private void resumeLiteral(ByteBuffer input, DecodingCallback action)
+            throws IOException {
         if (!completeReading(input)) {
             return;
         }
         try {
             if (firstValueIndex) {
-                HeaderTable.HeaderField f = table.get(intValue);
+                if (logger.isLoggable(NORMAL)) {
+                    logger.log(NORMAL, () -> format("literal without indexing ('%s', '%s')",
+                                                    intValue, value));
+                }
+                HeaderTable.HeaderField f = getHeaderFieldAt(intValue);
                 action.onLiteral(intValue, f.name, value, valueHuffmanEncoded);
             } else {
+                if (logger.isLoggable(NORMAL)) {
+                    logger.log(NORMAL, () -> format("literal without indexing ('%s', '%s')",
+                                                    name, value));
+                }
                 action.onLiteral(name, nameHuffmanEncoded, value, valueHuffmanEncoded);
             }
         } finally {
@@ -367,7 +430,9 @@ public final class Decoder {
     //            | Value String (Length octets)  |
     //            +-------------------------------+
     //
-    private void resumeLiteralWithIndexing(ByteBuffer input, DecodingCallback action) {
+    private void resumeLiteralWithIndexing(ByteBuffer input,
+                                           DecodingCallback action)
+            throws IOException {
         if (!completeReading(input)) {
             return;
         }
@@ -381,17 +446,22 @@ public final class Decoder {
             String n;
             String v = value.toString();
             if (firstValueIndex) {
-                HeaderTable.HeaderField f = table.get(intValue);
+                if (logger.isLoggable(NORMAL)) {
+                    logger.log(NORMAL, () -> format("literal with incremental indexing ('%s', '%s')",
+                                                    intValue, value));
+                }
+                HeaderTable.HeaderField f = getHeaderFieldAt(intValue);
                 n = f.name;
                 action.onLiteralWithIndexing(intValue, n, v, valueHuffmanEncoded);
             } else {
                 n = name.toString();
+                if (logger.isLoggable(NORMAL)) {
+                    logger.log(NORMAL, () -> format("literal with incremental indexing ('%s', '%s')",
+                                                    n, value));
+                }
                 action.onLiteralWithIndexing(n, nameHuffmanEncoded, v, valueHuffmanEncoded);
             }
             table.put(n, v);
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            throw new UncheckedIOException(
-                    (IOException) new ProtocolException().initCause(e));
         } finally {
             cleanUpAfterReading();
         }
@@ -419,15 +489,25 @@ public final class Decoder {
     //            | Value String (Length octets)  |
     //            +-------------------------------+
     //
-    private void resumeLiteralNeverIndexed(ByteBuffer input, DecodingCallback action) {
+    private void resumeLiteralNeverIndexed(ByteBuffer input,
+                                           DecodingCallback action)
+            throws IOException {
         if (!completeReading(input)) {
             return;
         }
         try {
             if (firstValueIndex) {
-                HeaderTable.HeaderField f = table.get(intValue);
+                if (logger.isLoggable(NORMAL)) {
+                    logger.log(NORMAL, () -> format("literal never indexed ('%s', '%s')",
+                                                    intValue, value));
+                }
+                HeaderTable.HeaderField f = getHeaderFieldAt(intValue);
                 action.onLiteralNeverIndexed(intValue, f.name, value, valueHuffmanEncoded);
             } else {
+                if (logger.isLoggable(NORMAL)) {
+                    logger.log(NORMAL, () -> format("literal never indexed ('%s', '%s')",
+                                                    name, value));
+                }
                 action.onLiteralNeverIndexed(name, nameHuffmanEncoded, value, valueHuffmanEncoded);
             }
         } finally {
@@ -440,16 +520,21 @@ public final class Decoder {
     //            | 0 | 0 | 1 |   Max size (5+)   |
     //            +---+---------------------------+
     //
-    private void resumeSizeUpdate(ByteBuffer input, DecodingCallback action) {
+    private void resumeSizeUpdate(ByteBuffer input,
+                                  DecodingCallback action) throws IOException {
         if (!integerReader.read(input)) {
             return;
         }
         intValue = integerReader.get();
+        if (logger.isLoggable(NORMAL)) {
+            logger.log(NORMAL, () -> format("dynamic table size update %s",
+                                            intValue));
+        }
         assert intValue >= 0;
         if (intValue > capacity) {
-            throw new UncheckedIOException(new ProtocolException(
-                    format("Received capacity exceeds expected: " +
-                            "capacity=%s, expected=%s", intValue, capacity)));
+            throw new IOException(
+                    format("Received capacity exceeds expected: capacity=%s, expected=%s",
+                           intValue, capacity));
         }
         integerReader.reset();
         try {
@@ -460,7 +545,7 @@ public final class Decoder {
         }
     }
 
-    private boolean completeReading(ByteBuffer input) {
+    private boolean completeReading(ByteBuffer input) throws IOException {
         if (!firstValueRead) {
             if (firstValueIndex) {
                 if (!integerReader.read(input)) {

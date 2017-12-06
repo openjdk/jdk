@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package jdk.incubator.http;
 
 import java.net.Authenticator;
-import java.net.CookieManager;
+import java.net.CookieHandler;
 import java.net.ProxySelector;
 import java.util.concurrent.Executor;
 import javax.net.ssl.SSLContext;
@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
 
 class HttpClientBuilderImpl extends HttpClient.Builder {
 
-    CookieManager cookieManager;
+    CookieHandler cookieHandler;
     HttpClient.Redirect followRedirects;
     ProxySelector proxy;
     Authenticator authenticator;
@@ -48,9 +48,9 @@ class HttpClientBuilderImpl extends HttpClient.Builder {
     int priority = -1;
 
     @Override
-    public HttpClientBuilderImpl cookieManager(CookieManager cookieManager) {
-        requireNonNull(cookieManager);
-        this.cookieManager = cookieManager;
+    public HttpClientBuilderImpl cookieHandler(CookieHandler cookieHandler) {
+        requireNonNull(cookieHandler);
+        this.cookieHandler = cookieHandler;
         return this;
     }
 
@@ -58,7 +58,6 @@ class HttpClientBuilderImpl extends HttpClient.Builder {
     @Override
     public HttpClientBuilderImpl sslContext(SSLContext sslContext) {
         requireNonNull(sslContext);
-        Utils.checkNetPermission("setSSLContext");
         this.sslContext = sslContext;
         return this;
     }
@@ -67,7 +66,7 @@ class HttpClientBuilderImpl extends HttpClient.Builder {
     @Override
     public HttpClientBuilderImpl sslParameters(SSLParameters sslParameters) {
         requireNonNull(sslParameters);
-        this.sslParams = sslParameters;
+        this.sslParams = Utils.copySSLParameters(sslParameters);
         return this;
     }
 

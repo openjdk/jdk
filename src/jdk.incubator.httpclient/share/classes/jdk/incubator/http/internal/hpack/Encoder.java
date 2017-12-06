@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,32 @@
  */
 package jdk.incubator.http.internal.hpack;
 
+import jdk.incubator.http.internal.hpack.HPACK.Logger;
+
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static jdk.incubator.http.internal.hpack.HPACK.Logger.Level.EXTRA;
+import static jdk.incubator.http.internal.hpack.HPACK.Logger.Level.NORMAL;
 
 /**
  * Encodes headers to their binary representation.
  *
- * <p>Typical lifecycle looks like this:
+ * <p> Typical lifecycle looks like this:
  *
  * <p> {@link #Encoder(int) new Encoder}
  * ({@link #setMaxCapacity(int) setMaxCapacity}?
  * {@link #encode(ByteBuffer) encode})*
  *
- * <p> Suppose headers are represented by {@code Map<String, List<String>>}. A
- * supplier and a consumer of {@link ByteBuffer}s in forms of {@code
- * Supplier<ByteBuffer>} and {@code Consumer<ByteBuffer>} respectively. Then to
- * encode headers, the following approach might be used:
+ * <p> Suppose headers are represented by {@code Map<String, List<String>>}.
+ * A supplier and a consumer of {@link ByteBuffer}s in forms of
+ * {@code Supplier<ByteBuffer>} and {@code Consumer<ByteBuffer>} respectively.
+ * Then to encode headers, the following approach might be used:
  *
  * <pre>{@code
  *     for (Map.Entry<String, List<String>> h : headers.entrySet()) {
@@ -61,10 +66,9 @@ import static java.util.Objects.requireNonNull;
  *     }
  * }</pre>
  *
- * <p> Though the specification <a
- * href="https://tools.ietf.org/html/rfc7541#section-2"> does not define</a> how
- * an encoder is to be implemented, a default implementation is provided by the
- * method {@link #header(CharSequence, CharSequence, boolean)}.
+ * <p> Though the specification <a href="https://tools.ietf.org/html/rfc7541#section-2">does not define</a>
+ * how an encoder is to be implemented, a default implementation is provided by
+ * the method {@link #header(CharSequence, CharSequence, boolean)}.
  *
  * <p> To provide a custom encoding implementation, {@code Encoder} has to be
  * extended. A subclass then can access methods for encoding using specific
@@ -85,8 +89,8 @@ import static java.util.Objects.requireNonNull;
  * the resulting header block afterwards.
  *
  * <p> Splitting the encoding operation into header set up and header encoding,
- * separates long lived arguments ({@code name}, {@code value}, {@code
- * sensitivity}, etc.) from the short lived ones (e.g. {@code buffer}),
+ * separates long lived arguments ({@code name}, {@code value},
+ * {@code sensitivity}, etc.) from the short lived ones (e.g. {@code buffer}),
  * simplifying each operation itself.
  *
  * @implNote
@@ -99,9 +103,13 @@ import static java.util.Objects.requireNonNull;
  */
 public class Encoder {
 
+    private static final AtomicLong ENCODERS_IDS = new AtomicLong();
+
     // TODO: enum: no huffman/smart huffman/always huffman
     private static final boolean DEFAULT_HUFFMAN = true;
 
+    private final Logger logger;
+    private final long id;
     private final IndexedWriter indexedWriter = new IndexedWriter();
     private final LiteralWriter literalWriter = new LiteralWriter();
     private final LiteralNeverIndexedWriter literalNeverIndexedWriter
@@ -129,9 +137,8 @@ public class Encoder {
      * header table.
      *
      * <p> The value has to be agreed between decoder and encoder out-of-band,
-     * e.g. by a protocol that uses HPACK (see <a
-     * href="https://tools.ietf.org/html/rfc7541#section-4.2">4.2. Maximum Table
-     * Size</a>).
+     * e.g. by a protocol that uses HPACK
+     * (see <a href="https://tools.ietf.org/html/rfc7541#section-4.2">4.2. Maximum Table Size</a>).
      *
      * @param maxCapacity
      *         a non-negative integer
@@ -140,14 +147,33 @@ public class Encoder {
      *         if maxCapacity is negative
      */
     public Encoder(int maxCapacity) {
+        id = ENCODERS_IDS.incrementAndGet();
+        this.logger = HPACK.getLogger().subLogger("Encoder#" + id);
+        if (logger.isLoggable(NORMAL)) {
+            logger.log(NORMAL, () -> format("new encoder with maximum table size %s",
+                                            maxCapacity));
+        }
+        if (logger.isLoggable(EXTRA)) {
+            /* To correlate with logging outside HPACK, knowing
+               hashCode/toString is important */
+            logger.log(EXTRA, () -> {
+                String hashCode = Integer.toHexString(
+                        System.identityHashCode(this));
+                /* Since Encoder can be subclassed hashCode AND identity
+                   hashCode might be different. So let's print both. */
+                return format("toString='%s', hashCode=%s, identityHashCode=%s",
+                              toString(), hashCode(), hashCode);
+            });
+        }
         if (maxCapacity < 0) {
-            throw new IllegalArgumentException("maxCapacity >= 0: " + maxCapacity);
+            throw new IllegalArgumentException(
+                    "maxCapacity >= 0: " + maxCapacity);
         }
         // Initial maximum capacity update mechanics
         minCapacity = Long.MAX_VALUE;
         currCapacity = -1;
-        setMaxCapacity(maxCapacity);
-        headerTable = new HeaderTable(lastCapacity);
+        setMaxCapacity0(maxCapacity);
+        headerTable = new HeaderTable(lastCapacity, logger.subLogger("HeaderTable"));
     }
 
     /**
@@ -176,6 +202,10 @@ public class Encoder {
      * Sets up the given header {@code (name, value)} with possibly sensitive
      * value.
      *
+     * <p> If the {@code value} is sensitive (think security, secrecy, etc.)
+     * this encoder will compress it using a special representation
+     * (see <a href="https://tools.ietf.org/html/rfc7541#section-6.2.3">6.2.3.  Literal Header Field Never Indexed</a>).
+     *
      * <p> Fixates {@code name} and {@code value} for the duration of encoding.
      *
      * @param name
@@ -193,8 +223,13 @@ public class Encoder {
      * @see #header(CharSequence, CharSequence)
      * @see DecodingCallback#onDecoded(CharSequence, CharSequence, boolean)
      */
-    public void header(CharSequence name, CharSequence value,
+    public void header(CharSequence name,
+                       CharSequence value,
                        boolean sensitive) throws IllegalStateException {
+        if (logger.isLoggable(NORMAL)) {
+            logger.log(NORMAL, () -> format("encoding ('%s', '%s'), sensitive: %s",
+                                            name, value, sensitive));
+        }
         // Arguably a good balance between complexity of implementation and
         // efficiency of encoding
         requireNonNull(name, "name");
@@ -222,9 +257,8 @@ public class Encoder {
      * Sets a maximum capacity of the header table.
      *
      * <p> The value has to be agreed between decoder and encoder out-of-band,
-     * e.g. by a protocol that uses HPACK (see <a
-     * href="https://tools.ietf.org/html/rfc7541#section-4.2">4.2. Maximum Table
-     * Size</a>).
+     * e.g. by a protocol that uses HPACK
+     * (see <a href="https://tools.ietf.org/html/rfc7541#section-4.2">4.2. Maximum Table Size</a>).
      *
      * <p> May be called any number of times after or before a complete header
      * has been encoded.
@@ -242,11 +276,23 @@ public class Encoder {
      *         hasn't yet started to encode it
      */
     public void setMaxCapacity(int capacity) {
+        if (logger.isLoggable(NORMAL)) {
+            logger.log(NORMAL, () -> format("setting maximum table size to %s",
+                                            capacity));
+        }
+        setMaxCapacity0(capacity);
+    }
+
+    private void setMaxCapacity0(int capacity) {
         checkEncoding();
         if (capacity < 0) {
             throw new IllegalArgumentException("capacity >= 0: " + capacity);
         }
         int calculated = calculateCapacity(capacity);
+        if (logger.isLoggable(NORMAL)) {
+            logger.log(NORMAL, () -> format("actual maximum table size will be %s",
+                                            calculated));
+        }
         if (calculated < 0 || calculated > capacity) {
             throw new IllegalArgumentException(
                     format("0 <= calculated <= capacity: calculated=%s, capacity=%s",
@@ -263,9 +309,22 @@ public class Encoder {
         minCapacity = Math.min(minCapacity, lastCapacity);
     }
 
+    /**
+     * Calculates actual capacity to be used by this encoder in response to
+     * a request to update maximum table size.
+     *
+     * <p> Default implementation does not add anything to the headers table,
+     * hence this method returns {@code 0}.
+     *
+     * <p> It is an error to return a value {@code c}, where {@code c < 0} or
+     * {@code c > maxCapacity}.
+     *
+     * @param maxCapacity
+     *         upper bound
+     *
+     * @return actual capacity
+     */
     protected int calculateCapacity(int maxCapacity) {
-        // Default implementation of the Encoder won't add anything to the
-        // table, therefore no need for a table space
         return 0;
     }
 
@@ -298,7 +357,10 @@ public class Encoder {
         if (!encoding) {
             throw new IllegalStateException("A header hasn't been set up");
         }
-        if (!prependWithCapacityUpdate(headerBlock)) {
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("writing to %s", headerBlock));
+        }
+        if (!prependWithCapacityUpdate(headerBlock)) { // TODO: log
             return false;
         }
         boolean done = writer.write(headerTable, headerBlock);
@@ -339,21 +401,35 @@ public class Encoder {
 
     protected final void indexed(int index) throws IndexOutOfBoundsException {
         checkEncoding();
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("indexed %s", index));
+        }
         encoding = true;
         writer = indexedWriter.index(index);
     }
 
-    protected final void literal(int index, CharSequence value,
+    protected final void literal(int index,
+                                 CharSequence value,
                                  boolean useHuffman)
             throws IndexOutOfBoundsException {
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("literal without indexing ('%s', '%s')",
+                                           index, value));
+        }
         checkEncoding();
         encoding = true;
         writer = literalWriter
                 .index(index).value(value, useHuffman);
     }
 
-    protected final void literal(CharSequence name, boolean nameHuffman,
-                                 CharSequence value, boolean valueHuffman) {
+    protected final void literal(CharSequence name,
+                                 boolean nameHuffman,
+                                 CharSequence value,
+                                 boolean valueHuffman) {
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("literal without indexing ('%s', '%s')",
+                                           name, value));
+        }
         checkEncoding();
         encoding = true;
         writer = literalWriter
@@ -364,6 +440,10 @@ public class Encoder {
                                              CharSequence value,
                                              boolean valueHuffman)
             throws IndexOutOfBoundsException {
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("literal never indexed ('%s', '%s')",
+                                           index, value));
+        }
         checkEncoding();
         encoding = true;
         writer = literalNeverIndexedWriter
@@ -374,6 +454,10 @@ public class Encoder {
                                              boolean nameHuffman,
                                              CharSequence value,
                                              boolean valueHuffman) {
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("literal never indexed ('%s', '%s')",
+                                           name, value));
+        }
         checkEncoding();
         encoding = true;
         writer = literalNeverIndexedWriter
@@ -384,6 +468,10 @@ public class Encoder {
                                              CharSequence value,
                                              boolean valueHuffman)
             throws IndexOutOfBoundsException {
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("literal with incremental indexing ('%s', '%s')",
+                                           index, value));
+        }
         checkEncoding();
         encoding = true;
         writer = literalWithIndexingWriter
@@ -394,6 +482,10 @@ public class Encoder {
                                              boolean nameHuffman,
                                              CharSequence value,
                                              boolean valueHuffman) {
+        if (logger.isLoggable(EXTRA)) { // TODO: include huffman info?
+            logger.log(EXTRA, () -> format("literal with incremental indexing ('%s', '%s')",
+                                           name, value));
+        }
         checkEncoding();
         encoding = true;
         writer = literalWithIndexingWriter
@@ -402,6 +494,10 @@ public class Encoder {
 
     protected final void sizeUpdate(int capacity)
             throws IllegalArgumentException {
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("dynamic table size update %s",
+                                           capacity));
+        }
         checkEncoding();
         // Ensure subclass follows the contract
         if (capacity > this.maxCapacity) {
@@ -420,7 +516,7 @@ public class Encoder {
         return headerTable;
     }
 
-    protected final void checkEncoding() {
+    protected final void checkEncoding() { // TODO: better name e.g. checkIfEncodingInProgress()
         if (encoding) {
             throw new IllegalStateException(
                     "Previous encoding operation hasn't finished yet");

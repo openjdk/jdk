@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  * @modules java.base/sun.net.www
  *          jdk.incubator.httpclient
  * @summary Verify that Proxy-Authenticate header is correctly handled
- *
  * @run main/othervm ProxyAuthTest
  */
 
@@ -42,14 +41,17 @@ import java.io.PrintWriter;
 import java.net.Authenticator;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
+import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.URI;
 import jdk.incubator.http.HttpClient;
 import jdk.incubator.http.HttpRequest;
 import jdk.incubator.http.HttpResponse;
 import java.util.Base64;
+import java.util.List;
 import sun.net.www.MessageHeader;
 import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
@@ -68,8 +70,9 @@ public class ProxyAuthTest {
             InetSocketAddress paddr = new InetSocketAddress("localhost", port);
 
             URI uri = new URI("http://www.google.ie/");
+            CountingProxySelector ps = CountingProxySelector.of(paddr);
             HttpClient client = HttpClient.newBuilder()
-                                          .proxy(ProxySelector.of(paddr))
+                                          .proxy(ps)
                                           .authenticator(auth)
                                           .build();
             HttpRequest req = HttpRequest.newBuilder(uri).GET().build();
@@ -87,6 +90,9 @@ public class ProxyAuthTest {
             if (!proxy.matched) {
                 throw new RuntimeException("Proxy authentication failed");
             }
+            if (ps.count() > 1) {
+                throw new RuntimeException("CountingProxySelector. Expected 1, got " + ps.count());
+            }
         }
     }
 
@@ -99,6 +105,37 @@ public class ProxyAuthTest {
             isCalled = true;
             return new PasswordAuthentication(AUTH_USER,
                     AUTH_PASSWORD.toCharArray());
+        }
+    }
+
+    /**
+     * A Proxy Selector that wraps a ProxySelector.of(), and counts the number
+     * of times its select method has been invoked. This can be used to ensure
+     * that the Proxy Selector is invoked only once per HttpClient.sendXXX
+     * invocation.
+     */
+    static class CountingProxySelector extends ProxySelector {
+        private final ProxySelector proxySelector;
+        private volatile int count; // 0
+        private CountingProxySelector(InetSocketAddress proxyAddress) {
+            proxySelector = ProxySelector.of(proxyAddress);
+        }
+
+        public static CountingProxySelector of(InetSocketAddress proxyAddress) {
+            return new CountingProxySelector(proxyAddress);
+        }
+
+        int count() { return count; }
+
+        @Override
+        public List<Proxy> select(URI uri) {
+            count++;
+            return proxySelector.select(uri);
+        }
+
+        @Override
+        public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
+            proxySelector.connectFailed(uri, sa, ioe);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package jdk.incubator.http.internal.hpack;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 
 //
@@ -47,14 +46,15 @@ final class ISO_8859_1 {
 
     public static final class Reader {
 
-        public void read(ByteBuffer source, Appendable destination) {
+        public void read(ByteBuffer source, Appendable destination)
+                throws IOException {
             for (int i = 0, len = source.remaining(); i < len; i++) {
                 char c = (char) (source.get() & 0xff);
                 try {
                     destination.append(c);
                 } catch (IOException e) {
-                    throw new UncheckedIOException
-                            ("Error appending to the destination", e);
+                    throw new IOException(
+                            "Error appending to the destination", e);
                 }
             }
         }

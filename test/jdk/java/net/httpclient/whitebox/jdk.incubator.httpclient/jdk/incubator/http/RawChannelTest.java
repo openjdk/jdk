@@ -24,6 +24,7 @@
 package jdk.incubator.http;
 
 import jdk.incubator.http.internal.websocket.RawChannel;
+import jdk.incubator.http.internal.websocket.WebSocketRequest;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -83,6 +84,7 @@ public class RawChannelTest {
             new TestServer(server).start();
 
             final RawChannel chan = channelOf(port);
+            print("RawChannel is %s", String.valueOf(chan));
             initialWriteStall.await();
 
             // It's very important not to forget the initial bytes, possibly
@@ -185,9 +187,21 @@ public class RawChannelTest {
         URI uri = URI.create("http://127.0.0.1:" + port + "/");
         print("raw channel to %s", uri.toString());
         HttpRequest req = HttpRequest.newBuilder(uri).build();
-        HttpResponse<?> r = HttpClient.newHttpClient().send(req, discard(null));
-        r.body();
-        return ((HttpResponseImpl) r).rawChannel();
+        // Switch on isWebSocket flag to prevent the connection from
+        // being returned to the pool.
+        ((WebSocketRequest)req).isWebSocket(true);
+        HttpClient client = HttpClient.newHttpClient();
+        try {
+            HttpResponse<?> r = client.send(req, discard(null));
+            r.body();
+            return ((HttpResponseImpl) r).rawChannel();
+        } finally {
+           // Need to hold onto the client until the RawChannel is
+           // created. This would not be needed if we had created
+           // a WebSocket, but here we are fiddling directly
+           // with the internals of HttpResponseImpl!
+           java.lang.ref.Reference.reachabilityFence(client);
+        }
     }
 
     private class TestServer extends Thread { // Powered by Slowpokes

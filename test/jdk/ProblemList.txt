@@ -172,8 +172,6 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
-java/net/httpclient/websocket/ConnectionHandover.java           8188895 windows-all
-
 ############################################################################
 
 # jdk_nio

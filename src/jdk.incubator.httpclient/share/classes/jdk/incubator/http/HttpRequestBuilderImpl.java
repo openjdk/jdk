@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,12 @@
 package jdk.incubator.http;
 
 import java.net.URI;
-import jdk.incubator.http.HttpRequest.BodyProcessor;
 import java.time.Duration;
 import java.util.Optional;
-import static java.util.Objects.requireNonNull;
+import jdk.incubator.http.HttpRequest.BodyPublisher;
 import jdk.incubator.http.internal.common.HttpHeadersImpl;
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static jdk.incubator.http.internal.common.Utils.isValidName;
 import static jdk.incubator.http.internal.common.Utils.isValidValue;
 
@@ -39,16 +40,13 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
     private HttpHeadersImpl userHeaders;
     private URI uri;
     private String method;
-    //private HttpClient.Redirect followRedirects;
     private boolean expectContinue;
-    private HttpRequest.BodyProcessor body;
+    private BodyPublisher bodyPublisher;
     private volatile Optional<HttpClient.Version> version;
-    //private final HttpClientImpl client;
-    //private ProxySelector proxy;
     private Duration duration;
 
     public HttpRequestBuilderImpl(URI uri) {
-        //this.client = client;
+        requireNonNull(uri, "uri must be non-null");
         checkURI(uri);
         this.uri = uri;
         this.userHeaders = new HttpHeadersImpl();
@@ -58,31 +56,66 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
 
     public HttpRequestBuilderImpl() {
         this.userHeaders = new HttpHeadersImpl();
+        this.method = "GET"; // default, as per spec
         this.version = Optional.empty();
     }
 
     @Override
     public HttpRequestBuilderImpl uri(URI uri) {
-        requireNonNull(uri);
+        requireNonNull(uri, "uri must be non-null");
         checkURI(uri);
         this.uri = uri;
         return this;
     }
 
+    private static IllegalArgumentException newIAE(String message, Object... args) {
+        return new IllegalArgumentException(format(message, args));
+    }
+
     private static void checkURI(URI uri) {
-        String scheme = uri.getScheme().toLowerCase();
-        if (!scheme.equals("https") && !scheme.equals("http")) {
-            throw new IllegalArgumentException("invalid URI scheme");
+        String scheme = uri.getScheme();
+        if (scheme == null)
+            throw newIAE("URI with undefined scheme");
+        scheme = scheme.toLowerCase();
+        if (!(scheme.equals("https") || scheme.equals("http"))) {
+            throw newIAE("invalid URI scheme %s", scheme);
+        }
+        if (uri.getHost() == null) {
+            throw newIAE("unsupported URI %s", uri);
         }
     }
-/*
+
     @Override
-    public HttpRequestBuilderImpl followRedirects(HttpClient.Redirect follow) {
-        requireNonNull(follow);
-        this.followRedirects = follow;
+    public HttpRequestBuilderImpl copy() {
+        HttpRequestBuilderImpl b = new HttpRequestBuilderImpl(this.uri);
+        b.userHeaders = this.userHeaders.deepCopy();
+        b.method = this.method;
+        b.expectContinue = this.expectContinue;
+        b.bodyPublisher = bodyPublisher;
+        b.uri = uri;
+        b.duration = duration;
+        b.version = version;
+        return b;
+    }
+
+    private void checkNameAndValue(String name, String value) {
+        requireNonNull(name, "name");
+        requireNonNull(value, "value");
+        if (!isValidName(name)) {
+            throw newIAE("invalid header name:", name);
+        }
+        if (!isValidValue(value)) {
+            throw newIAE("invalid header value:%s", value);
+        }
+    }
+
+    @Override
+    public HttpRequestBuilderImpl setHeader(String name, String value) {
+        checkNameAndValue(name, value);
+        userHeaders.setHeader(name, value);
         return this;
     }
-*/
+
     @Override
     public HttpRequestBuilderImpl header(String name, String value) {
         checkNameAndValue(name, value);
@@ -93,8 +126,8 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
     @Override
     public HttpRequestBuilderImpl headers(String... params) {
         requireNonNull(params);
-        if (params.length % 2 != 0) {
-            throw new IllegalArgumentException("wrong number of parameters");
+        if (params.length == 0 || params.length % 2 != 0) {
+            throw newIAE("wrong number, %d, of parameters", params.length);
         }
         for (int i = 0; i < params.length; i += 2) {
             String name  = params[i];
@@ -102,45 +135,6 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
             header(name, value);
         }
         return this;
-    }
-
-    /*
-    @Override
-    public HttpRequestBuilderImpl proxy(ProxySelector proxy) {
-        requireNonNull(proxy);
-        this.proxy = proxy;
-        return this;
-    }
-*/
-    @Override
-    public HttpRequestBuilderImpl copy() {
-        HttpRequestBuilderImpl b = new HttpRequestBuilderImpl(this.uri);
-        b.userHeaders = this.userHeaders.deepCopy();
-        b.method = this.method;
-        //b.followRedirects = this.followRedirects;
-        b.expectContinue = this.expectContinue;
-        b.body = body;
-        b.uri = uri;
-        //b.proxy = proxy;
-        return b;
-    }
-
-    @Override
-    public HttpRequestBuilderImpl setHeader(String name, String value) {
-        checkNameAndValue(name, value);
-        userHeaders.setHeader(name, value);
-        return this;
-    }
-
-    private void checkNameAndValue(String name, String value) {
-        requireNonNull(name, "name");
-        requireNonNull(value, "value");
-        if (!isValidName(name)) {
-            throw new IllegalArgumentException("invalid header name");
-        }
-        if (!isValidValue(value)) {
-            throw new IllegalArgumentException("invalid header value");
-        }
     }
 
     @Override
@@ -158,49 +152,60 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
 
     HttpHeadersImpl headers() {  return userHeaders; }
 
-    //HttpClientImpl client() {return client;}
-
     URI uri() { return uri; }
 
     String method() { return method; }
 
-    //HttpClient.Redirect followRedirects() { return followRedirects; }
-
-    //ProxySelector proxy() { return proxy; }
-
     boolean expectContinue() { return expectContinue; }
 
-    public HttpRequest.BodyProcessor body() { return body; }
+    BodyPublisher bodyPublisher() { return bodyPublisher; }
 
     Optional<HttpClient.Version> version() { return version; }
 
     @Override
-    public HttpRequest.Builder GET() { return method("GET", null); }
-
-    @Override
-    public HttpRequest.Builder POST(BodyProcessor body) {
-        return method("POST", body);
+    public HttpRequest.Builder GET() {
+        return method0("GET", null);
     }
 
     @Override
-    public HttpRequest.Builder DELETE(BodyProcessor body) {
-        return method("DELETE", body);
+    public HttpRequest.Builder POST(BodyPublisher body) {
+        return method0("POST", requireNonNull(body));
     }
 
     @Override
-    public HttpRequest.Builder PUT(BodyProcessor body) {
-        return method("PUT", body);
+    public HttpRequest.Builder DELETE(BodyPublisher body) {
+        return method0("DELETE", requireNonNull(body));
     }
 
     @Override
-    public HttpRequest.Builder method(String method, BodyProcessor body) {
-        this.method = requireNonNull(method);
-        this.body = body;
+    public HttpRequest.Builder PUT(BodyPublisher body) {
+        return method0("PUT", requireNonNull(body));
+    }
+
+    @Override
+    public HttpRequest.Builder method(String method, BodyPublisher body) {
+        requireNonNull(method);
+        if (method.equals(""))
+            throw newIAE("illegal method <empty string>");
+        if (method.equals("CONNECT"))
+            throw newIAE("method CONNECT is not supported");
+        return method0(method, requireNonNull(body));
+    }
+
+    private HttpRequest.Builder method0(String method, BodyPublisher body) {
+        assert method != null;
+        assert !method.equals("GET") ? body != null : true;
+        assert !method.equals("");
+        this.method = method;
+        this.bodyPublisher = body;
         return this;
     }
 
     @Override
     public HttpRequest build() {
+        if (uri == null)
+            throw new IllegalStateException("uri is null");
+        assert method != null;
         return new HttpRequestImpl(this);
     }
 
@@ -213,6 +218,6 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
         return this;
     }
 
-    Duration duration() { return duration; }
+    Duration timeout() { return duration; }
 
 }

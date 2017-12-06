@@ -22,7 +22,8 @@
  */
 
 /*
- * @test @bug 8087112
+ * @test
+ * @bug 8087112
  * @modules jdk.incubator.httpclient
  *          java.logging
  *          jdk.httpserver
@@ -42,6 +43,7 @@ import java.net.URI;
 import jdk.incubator.http.HttpClient;
 import jdk.incubator.http.HttpRequest;
 import jdk.incubator.http.HttpResponse;
+import jdk.incubator.http.HttpResponse.BodyHandler;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -51,14 +53,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 import jdk.test.lib.util.FileUtils;
+import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.*;
 import static java.nio.file.StandardOpenOption.*;
-import static jdk.incubator.http.HttpRequest.BodyProcessor.*;
+import static jdk.incubator.http.HttpRequest.BodyPublisher.*;
 import static jdk.incubator.http.HttpResponse.BodyHandler.*;
 
 import org.testng.annotations.AfterTest;
@@ -69,12 +72,12 @@ import static org.testng.Assert.*;
 
 public class RequestBodyTest {
 
-    static final String fileroot = System.getProperty("test.src") + "/docs";
+    static final String fileroot = System.getProperty("test.src", ".") + "/docs";
     static final String midSizedFilename = "/files/notsobigfile.txt";
     static final String smallFilename = "/files/smallfile.txt";
+    final ConcurrentHashMap<String,Throwable> failures = new ConcurrentHashMap<>();
 
     HttpClient client;
-    ExecutorService exec = Executors.newCachedThreadPool();
     String httpURI;
     String httpsURI;
 
@@ -109,14 +112,25 @@ public class RequestBodyTest {
                            .sslContext(ctx)
                            .version(HttpClient.Version.HTTP_1_1)
                            .followRedirects(HttpClient.Redirect.ALWAYS)
-                           .executor(exec)
                            .build();
     }
 
     @AfterTest
     public void teardown() throws Exception {
-        exec.shutdownNow();
-        LightWeightHttpServer.stop();
+        try {
+            LightWeightHttpServer.stop();
+        } finally {
+            System.out.println("RequestBodyTest: " + failures.size() + " failures");
+            int i = 0;
+            for (String key: failures.keySet()) {
+                System.out.println("test" + key + " failed: " + failures.get(key));
+                failures.get(key).printStackTrace(System.out);
+                if (i++ > 3) {
+                   System.out.println("..... other failures not printed ....");
+                   break;
+                }
+            }
+        }
     }
 
     @DataProvider
@@ -128,8 +142,9 @@ public class RequestBodyTest {
                 for (String file : new String[] { smallFilename, midSizedFilename })
                     for (RequestBody requestBodyType : RequestBody.values())
                         for (ResponseBody responseBodyType : ResponseBody.values())
-                            values.add(new Object[]
-                                {uri, requestBodyType, responseBodyType, file, async});
+                            for (boolean bufferResponseBody : new boolean[] { false, true })
+                                values.add(new Object[]
+                                    {uri, requestBodyType, responseBodyType, file, async, bufferResponseBody});
 
         return values.stream().toArray(Object[][]::new);
     }
@@ -139,19 +154,29 @@ public class RequestBodyTest {
                   RequestBody requestBodyType,
                   ResponseBody responseBodyType,
                   String file,
-                  boolean async)
+                  boolean async,
+                  boolean bufferResponseBody)
         throws Exception
     {
-        Path filePath = Paths.get(fileroot + file);
-        URI uri = new URI(target);
+        try {
+            Path filePath = Paths.get(fileroot + file);
+            URI uri = new URI(target);
 
-        HttpRequest request = createRequest(uri, requestBodyType, filePath);
+            HttpRequest request = createRequest(uri, requestBodyType, filePath);
 
-        checkResponse(client, request, requestBodyType, responseBodyType, filePath, async);
+            checkResponse(client, request, requestBodyType, responseBodyType, filePath, async, bufferResponseBody);
+        } catch (Exception | Error x) {
+            Object[] params = new Object[] {
+                target, requestBodyType, responseBodyType,
+                file, "async=" + async, "buffer=" + bufferResponseBody
+            };
+            failures.put(java.util.Arrays.toString(params), x);
+            throw x;
+        }
     }
 
     static final int DEFAULT_OFFSET = 10;
-    static final int DEFAULT_LENGTH = 1000;
+    static final int DEFAULT_LENGTH_FACTOR = 4/5;
 
     HttpRequest createRequest(URI uri,
                               RequestBody requestBodyType,
@@ -169,7 +194,9 @@ public class RequestBodyTest {
                 rb.POST(fromByteArray(fileAsBytes));
                 break;
             case BYTE_ARRAY_OFFSET:
-                rb.POST(fromByteArray(fileAsBytes, DEFAULT_OFFSET, DEFAULT_LENGTH));
+                rb.POST(fromByteArray(fileAsBytes,
+                                      DEFAULT_OFFSET,
+                                      fileAsBytes.length * DEFAULT_LENGTH_FACTOR));
                 break;
             case BYTE_ARRAYS:
                 Iterable<byte[]> iterable = Arrays.asList(fileAsBytes);
@@ -198,16 +225,16 @@ public class RequestBodyTest {
                        RequestBody requestBodyType,
                        ResponseBody responseBodyType,
                        Path file,
-                       boolean async)
+                       boolean async,
+                       boolean bufferResponseBody)
         throws InterruptedException, IOException
     {
         String filename = file.toFile().getAbsolutePath();
         byte[] fileAsBytes = getFileBytes(filename);
         if (requestBodyType == RequestBody.BYTE_ARRAY_OFFSET) {
             // Truncate the expected response body, if only a portion was sent
-            fileAsBytes = Arrays.copyOfRange(fileAsBytes,
-                                             DEFAULT_OFFSET,
-                                             DEFAULT_OFFSET + DEFAULT_LENGTH);
+            int length = DEFAULT_OFFSET + (fileAsBytes.length * DEFAULT_LENGTH_FACTOR);
+            fileAsBytes = Arrays.copyOfRange(fileAsBytes, DEFAULT_OFFSET, length);
         }
         String fileAsString = new String(fileAsBytes, UTF_8);
         Path tempFile = Paths.get("RequestBodyTest.tmp");
@@ -215,43 +242,57 @@ public class RequestBodyTest {
 
         switch (responseBodyType) {
             case BYTE_ARRAY:
-                HttpResponse<byte[]> bar = getResponse(client, request, asByteArray(), async);
+                BodyHandler<byte[]> bh = asByteArray();
+                if (bufferResponseBody) bh = buffering(bh, 50);
+                HttpResponse<byte[]> bar = getResponse(client, request, bh, async);
                 assertEquals(bar.statusCode(), 200);
                 assertEquals(bar.body(), fileAsBytes);
                 break;
             case BYTE_ARRAY_CONSUMER:
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                HttpResponse<Void> v = getResponse(client, request,
-                        asByteArrayConsumer(o -> consumerBytes(o, baos) ), async);
+                Consumer<Optional<byte[]>> consumer = o -> consumerBytes(o, baos);
+                BodyHandler<Void> bh1 = asByteArrayConsumer(consumer);
+                if (bufferResponseBody) bh1 = buffering(bh1, 49);
+                HttpResponse<Void> v = getResponse(client, request, bh1, async);
                 byte[] ba = baos.toByteArray();
                 assertEquals(v.statusCode(), 200);
                 assertEquals(ba, fileAsBytes);
                 break;
             case DISCARD:
                 Object o = new Object();
-                HttpResponse<Object> or = getResponse(client, request, discard(o), async);
+                BodyHandler<Object> bh2 = discard(o);
+                if (bufferResponseBody) bh2 = buffering(bh2, 51);
+                HttpResponse<Object> or = getResponse(client, request, bh2, async);
                 assertEquals(or.statusCode(), 200);
                 assertSame(or.body(), o);
                 break;
             case FILE:
-                HttpResponse<Path> fr = getResponse(client, request, asFile(tempFile), async);
+                BodyHandler<Path> bh3 = asFile(tempFile);
+                if (bufferResponseBody) bh3 = buffering(bh3, 48);
+                HttpResponse<Path> fr = getResponse(client, request, bh3, async);
                 assertEquals(fr.statusCode(), 200);
                 assertEquals(Files.size(tempFile), fileAsString.length());
                 assertEquals(Files.readAllBytes(tempFile), fileAsBytes);
                 break;
             case FILE_WITH_OPTION:
-                fr = getResponse(client, request, asFile(tempFile, CREATE_NEW, WRITE), async);
+                BodyHandler<Path> bh4 = asFile(tempFile, CREATE_NEW, WRITE);
+                if (bufferResponseBody) bh4 = buffering(bh4, 52);
+                fr = getResponse(client, request, bh4, async);
                 assertEquals(fr.statusCode(), 200);
                 assertEquals(Files.size(tempFile), fileAsString.length());
                 assertEquals(Files.readAllBytes(tempFile), fileAsBytes);
                 break;
             case STRING:
-                HttpResponse<String> sr = getResponse(client, request, asString(), async);
+                BodyHandler<String> bh5 = asString();
+                if(bufferResponseBody) bh5 = buffering(bh5, 47);
+                HttpResponse<String> sr = getResponse(client, request, bh5, async);
                 assertEquals(sr.statusCode(), 200);
                 assertEquals(sr.body(), fileAsString);
                 break;
             case STRING_WITH_CHARSET:
-                HttpResponse<String> r = getResponse(client, request, asString(StandardCharsets.UTF_8), async);
+                BodyHandler<String> bh6 = asString(StandardCharsets.UTF_8);
+                if (bufferResponseBody) bh6 = buffering(bh6, 53);
+                HttpResponse<String> r = getResponse(client, request, bh6, async);
                 assertEquals(r.statusCode(), 200);
                 assertEquals(r.body(), fileAsString);
                 break;
@@ -301,6 +342,30 @@ public class RequestBodyTest {
                 baos.write(bytes.get());
         } catch (IOException x) {
             throw new UncheckedIOException(x);
+        }
+    }
+
+    // ---
+
+    /* Main entry point for standalone testing of the main functional test. */
+    public static void main(String... args) throws Exception {
+        RequestBodyTest t = new RequestBodyTest();
+        t.setup();
+        int count = 0;
+        try {
+            for (Object[] objs : t.exchanges()) {
+                count++;
+                out.printf("********* iteration: %d %s %s %s %s %s %s *********%n",
+                           count, objs[0], objs[1], objs[2], objs[3], objs[4], objs[5]);
+                t.exchange((String) objs[0],
+                           (RequestBody) objs[1],
+                           (ResponseBody) objs[2],
+                           (String) objs[3],
+                           (boolean) objs[4],
+                           (boolean) objs[5]);
+            }
+        } finally {
+            t.teardown();
         }
     }
 }

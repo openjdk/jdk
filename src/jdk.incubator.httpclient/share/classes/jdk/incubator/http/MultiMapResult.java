@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  * {@Incubating}
  * <p>
  * This is one possible implementation of the aggregate result type {@code <U>} returned
- * from {@link HttpClient#sendAsync(HttpRequest,MultiProcessor) }.
+ * from {@link HttpClient#sendAsync(HttpRequest,HttpResponse.MultiSubscriber) }.
  * The map is indexed by {@link HttpRequest} and each value is a
  * {@link java.util.concurrent.CompletableFuture}&lt;
  * {@link HttpResponse}{@code <V>}&gt;
@@ -44,9 +44,9 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * {@link CompletableFuture}&lt;{@code MultiMapResult<V>}&gt;
  * {@link HttpClient#sendAsync(HttpRequest,
- * HttpResponse.MultiProcessor) HttpClient.sendAsync(}{@link
- * HttpResponse.MultiProcessor#asMap(java.util.function.Function)
- * MultiProcessor.asMap(Function)})
+ * HttpResponse.MultiSubscriber) HttpClient.sendAsync(}{@link
+ * HttpResponse.MultiSubscriber#asMap(java.util.function.Function)
+ * MultiSubscriber.asMap(Function)})
  *
  * @param <V> the response body type for all responses
  */
@@ -117,4 +117,3 @@ public class MultiMapResult<V> implements Map<HttpRequest,CompletableFuture<Http
         return map.entrySet();
     }
 }
-

@@ -184,7 +184,7 @@ class FrameConsumer implements Frame.Consumer {
             part = determinePart(isLast);
             boolean text = opcode == Opcode.TEXT || originatingOpcode == Opcode.TEXT;
             if (!text) {
-                output.onBinary(part, data.slice());
+                output.onBinary(data.slice(), part);
                 data.position(data.limit()); // Consume
             } else {
                 boolean binaryNonEmpty = data.hasRemaining();
@@ -199,7 +199,7 @@ class FrameConsumer implements Frame.Consumer {
                 if (!(binaryNonEmpty && !textData.hasRemaining())) {
                     // If there's a binary data, that result in no text, then we
                     // don't deliver anything
-                    output.onText(part, textData);
+                    output.onText(textData, part);
                 }
             }
         }

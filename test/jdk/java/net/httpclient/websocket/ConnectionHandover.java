@@ -31,14 +31,10 @@ import java.net.URI;
  * @test
  * @bug 8164625
  * @summary Verifies HttpClient yields the connection to the WebSocket
+ * @build DummyWebSocketServer
  * @run main/othervm -Djdk.httpclient.HttpClient.log=trace ConnectionHandover
  */
 public class ConnectionHandover {
-
-    static {
-        LoggingHelper.setupLogging();
-    }
-
     /*
      * An I/O channel associated with the connection is closed by WebSocket.abort().
      * If this connection is returned to the connection pool, then the second
@@ -52,17 +48,15 @@ public class ConnectionHandover {
             server.open();
             URI uri = server.getURI();
             WebSocket.Builder webSocketBuilder =
-                    HttpClient.newHttpClient().newWebSocketBuilder(uri, new WebSocket.Listener() { });
+                    HttpClient.newHttpClient().newWebSocketBuilder();
 
-            WebSocket ws1 = webSocketBuilder.buildAsync().join();
-            try {
-                ws1.abort();
-            } catch (IOException ignored) { }
+            WebSocket ws1 = webSocketBuilder
+                    .buildAsync(uri, new WebSocket.Listener() { }).join();
+            ws1.abort();
 
-            WebSocket ws2 = webSocketBuilder.buildAsync().join(); // Exception here if the connection was pooled
-            try {
-                ws2.abort();
-            } catch (IOException ignored) { }
+            WebSocket ws2 = webSocketBuilder
+                    .buildAsync(uri, new WebSocket.Listener() { }).join(); // Exception here if the connection was pooled
+            ws2.abort();
         }
     }
 }

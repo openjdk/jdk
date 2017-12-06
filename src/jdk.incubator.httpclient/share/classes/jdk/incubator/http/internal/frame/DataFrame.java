@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 package jdk.incubator.http.internal.frame;
 
-import jdk.incubator.http.internal.common.ByteBufferReference;
 import jdk.incubator.http.internal.common.Utils;
+
+import java.nio.ByteBuffer;
+import java.util.List;
 
 public class DataFrame extends Http2Frame {
 
@@ -37,20 +39,20 @@ public class DataFrame extends Http2Frame {
     public static final int PADDED = 0x8;
 
     private int padLength;
-    private final ByteBufferReference[] data;
+    private final List<ByteBuffer> data;
     private final int dataLength;
 
-    public DataFrame(int streamid, int flags, ByteBufferReference data) {
-        this(streamid, flags, new ByteBufferReference[]{data});
+    public DataFrame(int streamid, int flags, ByteBuffer data) {
+        this(streamid, flags, List.of(data));
     }
 
-    public DataFrame(int streamid, int flags, ByteBufferReference[] data) {
+    public DataFrame(int streamid, int flags, List<ByteBuffer> data) {
         super(streamid, flags);
         this.data = data;
-        this.dataLength = Utils.remaining(data);
+        this.dataLength = Utils.remaining(data, Integer.MAX_VALUE);
     }
 
-    public DataFrame(int streamid, int flags, ByteBufferReference[] data, int padLength) {
+    public DataFrame(int streamid, int flags, List<ByteBuffer> data, int padLength) {
         this(streamid, flags, data);
         if (padLength > 0) {
             setPadLength(padLength);
@@ -78,7 +80,7 @@ public class DataFrame extends Http2Frame {
         return super.flagAsString(flag);
     }
 
-    public ByteBufferReference[] getData() {
+    public List<ByteBuffer> getData() {
         return data;
     }
 

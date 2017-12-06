@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,12 @@ import jdk.incubator.http.HttpRequest;
 import jdk.incubator.http.HttpResponse;
 import jdk.incubator.http.HttpTimeoutException;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CompletionException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
-import static jdk.incubator.http.HttpRequest.BodyProcessor.fromString;
+import static jdk.incubator.http.HttpRequest.BodyPublisher.fromString;
 import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
 
 /*

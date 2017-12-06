@@ -30,10 +30,14 @@ import jdk.incubator.http.internal.websocket.WebSocketRequest;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.time.Duration;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -44,42 +48,50 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     private final HttpHeaders userHeaders;
     private final HttpHeadersImpl systemHeaders;
     private final URI uri;
+    private Proxy proxy;
     private InetSocketAddress authority; // only used when URI not specified
     private final String method;
-    final BodyProcessor requestProcessor;
+    final BodyPublisher requestPublisher;
     final boolean secure;
     final boolean expectContinue;
     private boolean isWebSocket;
     private AccessControlContext acc;
-    private final Duration duration;
+    private final Duration timeout;  // may be null
     private final Optional<HttpClient.Version> version;
+
+    private static String userAgent() {
+        PrivilegedAction<String> pa = () -> System.getProperty("java.version");
+        String version = AccessController.doPrivileged(pa);
+        return "Java-http-client/" + version;
+    }
+
+    /** The value of the User-Agent header for all requests sent by the client. */
+    public static final String USER_AGENT = userAgent();
 
     /**
      * Creates an HttpRequestImpl from the given builder.
      */
     public HttpRequestImpl(HttpRequestBuilderImpl builder) {
         String method = builder.method();
-        this.method = method == null? "GET" : method;
+        this.method = method == null ? "GET" : method;
         this.userHeaders = ImmutableHeaders.of(builder.headers().map(), ALLOWED_HEADERS);
         this.systemHeaders = new HttpHeadersImpl();
         this.uri = builder.uri();
+        assert uri != null;
+        this.proxy = null;
         this.expectContinue = builder.expectContinue();
         this.secure = uri.getScheme().toLowerCase(Locale.US).equals("https");
-        if (builder.body() == null) {
-            this.requestProcessor = HttpRequest.noBody();
-        } else {
-            this.requestProcessor = builder.body();
-        }
-        this.duration = builder.duration();
+        this.requestPublisher = builder.bodyPublisher();  // may be null
+        this.timeout = builder.timeout();
         this.version = builder.version();
     }
 
     /**
      * Creates an HttpRequestImpl from the given request.
      */
-    public HttpRequestImpl(HttpRequest request) {
+    public HttpRequestImpl(HttpRequest request, ProxySelector ps, AccessControlContext acc) {
         String method = request.method();
-        this.method = method == null? "GET" : method;
+        this.method = method == null ? "GET" : method;
         this.userHeaders = request.headers();
         if (request instanceof HttpRequestImpl) {
             this.systemHeaders = ((HttpRequestImpl) request).systemHeaders;
@@ -87,15 +99,25 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         } else {
             this.systemHeaders = new HttpHeadersImpl();
         }
+        this.systemHeaders.setHeader("User-Agent", USER_AGENT);
         this.uri = request.uri();
+        if (isWebSocket) {
+            // WebSocket determines and sets the proxy itself
+            this.proxy = ((HttpRequestImpl) request).proxy;
+        } else {
+            if (ps != null)
+                this.proxy = retrieveProxy(ps, uri);
+            else
+                this.proxy = null;
+        }
         this.expectContinue = request.expectContinue();
         this.secure = uri.getScheme().toLowerCase(Locale.US).equals("https");
-        if (!request.bodyProcessor().isPresent()) {
-            this.requestProcessor = HttpRequest.noBody();
-        } else {
-            this.requestProcessor = request.bodyProcessor().get();
+        this.requestPublisher = request.bodyPublisher().orElse(null);
+        if (acc != null && requestPublisher instanceof RequestPublishers.FilePublisher) {
+            // Restricts the file publisher with the senders ACC, if any
+            ((RequestPublishers.FilePublisher)requestPublisher).setAccessControlContext(acc);
         }
-        this.duration = request.duration();
+        this.timeout = request.timeout().orElse(null);
         this.version = request.version();
     }
 
@@ -108,30 +130,38 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.isWebSocket = other.isWebSocket;
         this.systemHeaders = other.systemHeaders;
         this.uri = uri;
+        this.proxy = other.proxy;
         this.expectContinue = other.expectContinue;
         this.secure = uri.getScheme().toLowerCase(Locale.US).equals("https");
-        this.requestProcessor = other.requestProcessor;
+        this.requestPublisher = other.requestPublisher;  // may be null
         this.acc = other.acc;
-        this.duration = other.duration;
+        this.timeout = other.timeout;
         this.version = other.version();
     }
 
     /* used for creating CONNECT requests  */
-    HttpRequestImpl(String method, HttpClientImpl client,
-                    InetSocketAddress authority) {
+    HttpRequestImpl(String method, InetSocketAddress authority) {
         // TODO: isWebSocket flag is not specified, but the assumption is that
         // such a request will never be made on a connection that will be returned
         // to the connection pool (we might need to revisit this constructor later)
         this.method = method;
         this.systemHeaders = new HttpHeadersImpl();
         this.userHeaders = ImmutableHeaders.empty();
-        this.uri = URI.create("socket://" + authority.getHostString() + ":" + Integer.toString(authority.getPort()) + "/");
-        this.requestProcessor = HttpRequest.noBody();
+        this.uri = URI.create("socket://" + authority.getHostString() + ":"
+                              + Integer.toString(authority.getPort()) + "/");
+        this.proxy = null;
+        this.requestPublisher = null;
         this.authority = authority;
         this.secure = false;
         this.expectContinue = false;
-        this.duration = null;
-        this.version = Optional.of(client.version());
+        this.timeout = null;
+        // The CONNECT request sent for tunneling is only used in two cases:
+        //   1. websocket, which only supports HTTP/1.1
+        //   2. SSL tunneling through a HTTP/1.1 proxy
+        // In either case we do not want to upgrade the connection to the proxy.
+        // What we want to possibly upgrade is the tunneled connection to the
+        // target server (so not the CONNECT request itself)
+        this.version = Optional.of(HttpClient.Version.HTTP_1_1);
     }
 
     /**
@@ -161,14 +191,14 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         StringBuilder sb = new StringBuilder();
         sb.append(scheme).append("://").append(authority).append(path);
         this.uri = URI.create(sb.toString());
-
+        this.proxy = null;
         this.userHeaders = ImmutableHeaders.of(headers.map(), ALLOWED_HEADERS);
         this.systemHeaders = parent.systemHeaders;
         this.expectContinue = parent.expectContinue;
         this.secure = parent.secure;
-        this.requestProcessor = parent.requestProcessor;
+        this.requestPublisher = parent.requestPublisher;
         this.acc = parent.acc;
-        this.duration = parent.duration;
+        this.timeout = parent.timeout;
         this.version = parent.version;
     }
 
@@ -193,18 +223,33 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     @Override
     public boolean expectContinue() { return expectContinue; }
 
-    InetSocketAddress proxy(HttpClientImpl client) {
-        ProxySelector ps = client.proxy().orElse(null);
-        if (ps == null) {
-            ps = client.proxy().orElse(null);
+    /** Retrieves the proxy, from the given ProxySelector, if there is one. */
+    private static Proxy retrieveProxy(ProxySelector ps, URI uri) {
+        Proxy proxy = null;
+        List<Proxy> pl = ps.select(uri);
+        if (!pl.isEmpty()) {
+            Proxy p = pl.get(0);
+            if (p.type() == Proxy.Type.HTTP)
+                proxy = p;
         }
-        if (ps == null || method.equalsIgnoreCase("CONNECT")) {
+        return proxy;
+    }
+
+    InetSocketAddress proxy() {
+        if (proxy == null || proxy.type() != Proxy.Type.HTTP
+                || method.equalsIgnoreCase("CONNECT")) {
             return null;
         }
-        return (InetSocketAddress)ps.select(uri).get(0).address();
+        return (InetSocketAddress)proxy.address();
     }
 
     boolean secure() { return secure; }
+
+    @Override
+    public void setProxy(Proxy proxy) {
+        assert isWebSocket;
+        this.proxy = proxy;
+    }
 
     @Override
     public void isWebSocket(boolean is) {
@@ -215,15 +260,10 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         return isWebSocket;
     }
 
-//    /** Returns the follow-redirects setting for this request. */
-//    @Override
-//    public jdk.incubator.http.HttpClient.Redirect followRedirects() {
-//        return followRedirects;
-//    }
-
     @Override
-    public Optional<BodyProcessor> bodyProcessor() {
-        return Optional.of(requestProcessor);
+    public Optional<BodyPublisher> bodyPublisher() {
+        return requestPublisher == null ? Optional.empty()
+                                        : Optional.of(requestPublisher);
     }
 
     /**
@@ -237,13 +277,9 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     public URI uri() { return uri; }
 
     @Override
-    public Duration duration() {
-        return duration;
+    public Optional<Duration> timeout() {
+        return timeout == null ? Optional.empty() : Optional.of(timeout);
     }
-
-//    HttpClientImpl client() {
-//        return client;
-//    }
 
     HttpHeaders getUserHeaders() { return userHeaders; }
 
@@ -261,57 +297,24 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         systemHeaders.setHeader(name, value);
     }
 
-//    @Override
-//    public <T> HttpResponse<T>
-//    response(HttpResponse.BodyHandler<T> responseHandler)
-//        throws IOException, InterruptedException
-//    {
-//        if (!sent.compareAndSet(false, true)) {
-//            throw new IllegalStateException("request already sent");
-//        }
-//        MultiExchange<Void,T> mex = new MultiExchange<>(this, responseHandler);
-//        return mex.response();
-//    }
-//
-//    @Override
-//    public <T> CompletableFuture<HttpResponse<T>>
-//    responseAsync(HttpResponse.BodyHandler<T> responseHandler)
-//    {
-//        if (!sent.compareAndSet(false, true)) {
-//            throw new IllegalStateException("request already sent");
-//        }
-//        MultiExchange<Void,T> mex = new MultiExchange<>(this, responseHandler);
-//        return mex.responseAsync(null)
-//                  .thenApply((HttpResponseImpl<T> b) -> (HttpResponse<T>) b);
-//    }
-//
-//    @Override
-//    public <U, T> CompletableFuture<U>
-//    multiResponseAsync(HttpResponse.MultiProcessor<U, T> responseHandler)
-//    {
-//        if (!sent.compareAndSet(false, true)) {
-//            throw new IllegalStateException("request already sent");
-//        }
-//        MultiExchange<U,T> mex = new MultiExchange<>(this, responseHandler);
-//        return mex.multiResponseAsync();
-//    }
-
-    public InetSocketAddress getAddress(HttpClientImpl client) {
+    InetSocketAddress getAddress() {
         URI uri = uri();
         if (uri == null) {
             return authority();
         }
-        int port = uri.getPort();
-        if (port == -1) {
+        int p = uri.getPort();
+        if (p == -1) {
             if (uri.getScheme().equalsIgnoreCase("https")) {
-                port = 443;
+                p = 443;
             } else {
-                port = 80;
+                p = 80;
             }
         }
-        String host = uri.getHost();
-        if (proxy(client) == null) {
-            return new InetSocketAddress(host, port);
+        final String host = uri.getHost();
+        final int port = p;
+        if (proxy() == null) {
+            PrivilegedAction<InetSocketAddress> pa = () -> new InetSocketAddress(host, port);
+            return AccessController.doPrivileged(pa);
         } else {
             return InetSocketAddress.createUnresolved(host, port);
         }
