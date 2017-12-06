@@ -912,6 +912,17 @@ else
       $(shell $(PRINTF) "%s" $(call ShellQuote, $1) > $2)
 endif
 
+# Param 1 - Text to write
+# Param 2 - File to write to
+ifeq ($(HAS_FILE_FUNCTION), true)
+  AppendFile = \
+      $(file >>$2,$(strip $1))
+else
+  # Use printf to get consistent behavior on all platforms.
+  AppendFile = \
+      $(shell $(PRINTF) "%s" $(call ShellQuote, $1) >> $2)
+endif
+
 ################################################################################
 # DependOnVariable
 #

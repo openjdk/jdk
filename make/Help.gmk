@@ -115,6 +115,13 @@ print-configurations:
         # We need a dummy rule otherwise make will complain
 	@true
 
-ALL_GLOBAL_TARGETS := help print-configurations
+# This is not really a "help" target, but it is a global target, and those are
+# all contained in this file.
+run-test-prebuilt:
+	@( cd $(topdir) && \
+	    $(MAKE) --no-print-directory -r -R -I make/common/ -f make/RunTestsPrebuilt.gmk \
+	    run-test-prebuilt TEST="$(TEST)" )
+
+ALL_GLOBAL_TARGETS := help print-configurations run-test-prebuilt
 
 .PHONY: $(ALL_GLOBAL_TARGETS)
