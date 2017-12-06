@@ -430,7 +430,7 @@ public class JlinkTask {
                                                Set<String> roots)
     {
         if (Objects.requireNonNull(paths).isEmpty()) {
-             throw new IllegalArgumentException("Empty module path");
+             throw new IllegalArgumentException(taskHelper.getMessage("err.empty.module.path"));
         }
 
         Path[] entries = paths.toArray(new Path[0]);
@@ -447,8 +447,13 @@ public class JlinkTask {
 
             // java.base version is different than the current runtime version
             version = Runtime.Version.parse(v.toString());
-            if (Runtime.version().major() != version.major()) {
-                finder = ModulePath.of(version, true, entries);
+            if (Runtime.version().major() != version.major() ||
+                Runtime.version().minor() != version.minor()) {
+                // jlink version and java.base version do not match.
+                // We do not (yet) support this mode.
+                throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
+                    Runtime.version().major(), Runtime.version().minor(),
+                    version.major(), version.minor()));
             }
         }
 

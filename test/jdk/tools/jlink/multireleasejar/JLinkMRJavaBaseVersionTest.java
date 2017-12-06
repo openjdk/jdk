@@ -25,6 +25,8 @@
  * @test
  * @bug 8177471
  * @summary  jlink should use the version from java.base.jmod to find modules
+ * @bug 8185130
+ * @summary jlink should throw error if target image and current JDK versions don't match
  * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.process.* CheckRuntimeVersion
@@ -122,7 +124,9 @@ public class JLinkMRJavaBaseVersionTest {
         System.out.println("Testing jlink with " + getJmods() + " of target version " + version);
 
         // use jlink to build image from multi-release jar
-        jlink("m1.jar", "myimage");
+        if (jlink("m1.jar", "myimage")) {
+            return;
+        }
 
         // validate runtime image
         Path java = Paths.get("myimage", "bin", "java");
@@ -130,12 +134,7 @@ public class JLinkMRJavaBaseVersionTest {
 
         // validate the image linked with the proper MR version
 
-        if (version.equalsIgnoreOptional(Runtime.version())) {
-            ProcessTools.executeProcess(java.toString(), "-cp", System.getProperty("test.classes"),
-                                        "CheckRuntimeVersion", String.valueOf(version.major()),
-                                        "java.base", "java.logging", "m1")
-                .shouldHaveExitValue(0);
-        } else {
+        if (!version.equalsIgnoreOptional(Runtime.version())) {
             ProcessTools.executeProcess(java.toString(), "-cp", System.getProperty("test.classes"),
                                         "CheckRuntimeVersion", String.valueOf(version.major()),
                                         "java.base", "m1")
@@ -151,13 +150,19 @@ public class JLinkMRJavaBaseVersionTest {
         return Runtime.Version.parse(mref.descriptor().version().get().toString());
     }
 
-    private void jlink(String jar, String image) {
+    private boolean jlink(String jar, String image) {
         List<String> args = List.of("--output", image,
                                     "--add-modules", "m1",
                                     "--module-path",
                                     getJmods().toString() + File.pathSeparator + jar);
         System.out.println("jlink " + args.stream().collect(Collectors.joining(" ")));
         int exitCode = JLINK_TOOL.run(System.out, System.err, args.toArray(new String[0]));
-        Assert.assertEquals(exitCode, 0);
+        boolean isJDK9 = System.getProperty("java9.home") != null;
+        if (isJDK9) {
+            Assert.assertNotEquals(exitCode, 0);
+        } else {
+            Assert.assertEquals(exitCode, 0);
+        }
+        return isJDK9;
     }
 }
