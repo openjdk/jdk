@@ -124,7 +124,8 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
                 unparseableExtensions.put(ext.getExtensionId().toString(),
                         new UnparseableExtension(ext, e));
                 if (debug != null) {
-                    debug.println("Error parsing extension: " + ext);
+                    debug.println("Debug info only." +
+                       " Error parsing extension: " + ext);
                     e.printStackTrace();
                     HexDumpEncoder h = new HexDumpEncoder();
                     System.err.println(h.encodeBuffer(ext.getExtensionValue()));

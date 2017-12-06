@@ -308,7 +308,7 @@ public final class ProviderList {
         }
         if (debug != null) {
             debug.println("Loading all providers");
-            new Exception("Call trace").printStackTrace();
+            new Exception("Debug Info. Call trace:").printStackTrace();
         }
         int n = 0;
         for (int i = 0; i < configs.length; i++) {
