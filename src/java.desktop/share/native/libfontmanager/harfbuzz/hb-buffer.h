@@ -63,13 +63,26 @@ HB_BEGIN_DECLS
  */
 typedef struct hb_glyph_info_t {
   hb_codepoint_t codepoint;
-  hb_mask_t      mask;
+  hb_mask_t      mask; /* Holds hb_glyph_flags_t after hb_shape(), plus other things. */
   uint32_t       cluster;
 
   /*< private >*/
   hb_var_int_t   var1;
   hb_var_int_t   var2;
 } hb_glyph_info_t;
+
+typedef enum { /*< flags >*/
+  HB_GLYPH_FLAG_UNSAFE_TO_BREAK         = 0x00000001,
+
+  HB_GLYPH_FLAG_DEFINED                 = 0x00000001 /* OR of all defined flags */
+} hb_glyph_flags_t;
+
+HB_EXTERN hb_glyph_flags_t
+hb_glyph_info_get_glyph_flags (const hb_glyph_info_t *info);
+
+#define hb_glyph_info_get_glyph_flags(info) \
+        ((hb_glyph_flags_t) ((unsigned int) (info)->mask & HB_GLYPH_FLAG_DEFINED))
+
 
 /**
  * hb_glyph_position_t:
@@ -119,8 +132,8 @@ typedef struct hb_segment_properties_t {
 #define HB_SEGMENT_PROPERTIES_DEFAULT {HB_DIRECTION_INVALID, \
                                        HB_SCRIPT_INVALID, \
                                        HB_LANGUAGE_INVALID, \
-                                       NULL, \
-                                       NULL}
+                                       (void *) 0, \
+                                       (void *) 0}
 
 HB_EXTERN hb_bool_t
 hb_segment_properties_equal (const hb_segment_properties_t *a,
@@ -162,6 +175,7 @@ hb_buffer_set_user_data (hb_buffer_t        *buffer,
 HB_EXTERN void *
 hb_buffer_get_user_data (hb_buffer_t        *buffer,
                          hb_user_data_key_t *key);
+
 
 /**
  * hb_buffer_content_type_t:
@@ -359,6 +373,11 @@ hb_buffer_add_codepoints (hb_buffer_t          *buffer,
                           unsigned int          item_offset,
                           int                   item_length);
 
+HB_EXTERN void
+hb_buffer_append (hb_buffer_t *buffer,
+                  hb_buffer_t *source,
+                  unsigned int start,
+                  unsigned int end);
 
 HB_EXTERN hb_bool_t
 hb_buffer_set_length (hb_buffer_t  *buffer,
@@ -403,7 +422,8 @@ typedef enum { /*< flags >*/
   HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS          = 0x00000001u,
   HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS         = 0x00000002u,
   HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES       = 0x00000004u,
-  HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS        = 0x00000008u
+  HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS        = 0x00000008u,
+  HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS          = 0x00000010u
 } hb_buffer_serialize_flags_t;
 
 /**
@@ -450,6 +470,45 @@ hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
                               const char **end_ptr,
                               hb_font_t *font,
                               hb_buffer_serialize_format_t format);
+
+
+/*
+ * Compare buffers
+ */
+
+typedef enum { /*< flags >*/
+  HB_BUFFER_DIFF_FLAG_EQUAL                     = 0x0000,
+
+  /* Buffers with different content_type cannot be meaningfully compared
+   * in any further detail. */
+  HB_BUFFER_DIFF_FLAG_CONTENT_TYPE_MISMATCH     = 0x0001,
+
+  /* For buffers with differing length, the per-glyph comparison is not
+   * attempted, though we do still scan reference for dottedcircle / .notdef
+   * glyphs. */
+  HB_BUFFER_DIFF_FLAG_LENGTH_MISMATCH           = 0x0002,
+
+  /* We want to know if dottedcircle / .notdef glyphs are present in the
+   * reference, as we may not care so much about other differences in this
+   * case. */
+  HB_BUFFER_DIFF_FLAG_NOTDEF_PRESENT            = 0x0004,
+  HB_BUFFER_DIFF_FLAG_DOTTED_CIRCLE_PRESENT     = 0x0008,
+
+  /* If the buffers have the same length, we compare them glyph-by-glyph
+   * and report which aspect(s) of the glyph info/position are different. */
+  HB_BUFFER_DIFF_FLAG_CODEPOINT_MISMATCH        = 0x0010,
+  HB_BUFFER_DIFF_FLAG_CLUSTER_MISMATCH          = 0x0020,
+  HB_BUFFER_DIFF_FLAG_GLYPH_FLAGS_MISMATCH      = 0x0040,
+  HB_BUFFER_DIFF_FLAG_POSITION_MISMATCH         = 0x0080
+
+} hb_buffer_diff_flags_t;
+
+/* Compare the contents of two buffers, report types of differences. */
+HB_EXTERN hb_buffer_diff_flags_t
+hb_buffer_diff (hb_buffer_t *buffer,
+                hb_buffer_t *reference,
+                hb_codepoint_t dottedcircle_glyph,
+                unsigned int position_fuzz);
 
 
 /*

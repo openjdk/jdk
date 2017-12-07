@@ -89,9 +89,9 @@ typedef int32_t hb_atomic_int_impl_t;
 #define hb_atomic_ptr_impl_cmpexch(P,O,N)       OSAtomicCompareAndSwapPtrBarrier ((void *) (O), (void *) (N), (void **) (P))
 #else
 #if __ppc64__ || __x86_64__ || __aarch64__
-#define hb_atomic_ptr_impl_cmpexch(P,O,N)       OSAtomicCompareAndSwap64Barrier ((int64_t) (O), (int64_t) (N), (int64_t*) (P))
+#define hb_atomic_ptr_impl_cmpexch(P,O,N)       OSAtomicCompareAndSwap64Barrier ((int64_t) (void *) (O), (int64_t) (void *) (N), (int64_t*) (P))
 #else
-#define hb_atomic_ptr_impl_cmpexch(P,O,N)       OSAtomicCompareAndSwap32Barrier ((int32_t) (O), (int32_t) (N), (int32_t*) (P))
+#define hb_atomic_ptr_impl_cmpexch(P,O,N)       OSAtomicCompareAndSwap32Barrier ((int32_t) (void *) (O), (int32_t) (void *) (N), (int32_t*) (P))
 #endif
 #endif
 
@@ -124,13 +124,13 @@ typedef unsigned int hb_atomic_int_impl_t;
 #include <builtins.h>
 
 
-static inline int hb_fetch_and_add(volatile int* AI, unsigned int V) {
+static inline int _hb_fetch_and_add(volatile int* AI, unsigned int V) {
   __lwsync();
   int result = __fetch_and_add(AI, V);
   __isync();
   return result;
 }
-static inline int hb_compare_and_swaplp(volatile long* P, long O, long N) {
+static inline int _hb_compare_and_swaplp(volatile long* P, long O, long N) {
   __sync();
   int result = __compare_and_swaplp (P, &O, N);
   __sync();
@@ -139,10 +139,10 @@ static inline int hb_compare_and_swaplp(volatile long* P, long O, long N) {
 
 typedef int hb_atomic_int_impl_t;
 #define HB_ATOMIC_INT_IMPL_INIT(V) (V)
-#define hb_atomic_int_impl_add(AI, V)           hb_fetch_and_add (&(AI), (V))
+#define hb_atomic_int_impl_add(AI, V)           _hb_fetch_and_add (&(AI), (V))
 
 #define hb_atomic_ptr_impl_get(P)               (__sync(), (void *) *(P))
-#define hb_atomic_ptr_impl_cmpexch(P,O,N)       hb_compare_and_swaplp ((long*)(P), (long)(O), (long)(N))
+#define hb_atomic_ptr_impl_cmpexch(P,O,N)       _hb_compare_and_swaplp ((long*)(P), (long)(O), (long)(N))
 
 #elif !defined(HB_NO_MT)
 

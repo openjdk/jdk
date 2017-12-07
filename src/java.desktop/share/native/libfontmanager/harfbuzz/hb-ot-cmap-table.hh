@@ -380,9 +380,9 @@ struct VariationSelectorRecord
   }
 
   UINT24        varSelector;    /* Variation selector. */
-  OffsetTo<DefaultUVS, ULONG>
+  LOffsetTo<DefaultUVS>
                 defaultUVS;     /* Offset to Default UVS Table. May be 0. */
-  OffsetTo<NonDefaultUVS, ULONG>
+  LOffsetTo<NonDefaultUVS>
                 nonDefaultUVS;  /* Offset to Non-Default UVS Table. May be 0. */
   public:
   DEFINE_SIZE_STATIC (11);
@@ -486,7 +486,7 @@ struct EncodingRecord
 
   USHORT        platformID;     /* Platform ID. */
   USHORT        encodingID;     /* Platform-specific encoding ID. */
-  OffsetTo<CmapSubtable, ULONG>
+  LOffsetTo<CmapSubtable>
                 subtable;       /* Byte offset from beginning of table to the subtable for this encoding. */
   public:
   DEFINE_SIZE_STATIC (8);
@@ -508,7 +508,7 @@ struct cmap
      * unsorted subtable list. */
     int result = encodingRecord./*bsearch*/lsearch (key);
     if (result == -1 || !encodingRecord[result].subtable)
-      return NULL;
+      return nullptr;
 
     return &(this+encodingRecord[result].subtable);
   }

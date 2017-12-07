@@ -59,14 +59,14 @@ retry:
   {
     char *env = getenv ("HB_SHAPER_LIST");
     if (!env || !*env) {
-      (void) hb_atomic_ptr_cmpexch (&static_shapers, NULL, &all_shapers[0]);
+      (void) hb_atomic_ptr_cmpexch (&static_shapers, nullptr, &all_shapers[0]);
       return (const hb_shaper_pair_t *) all_shapers;
     }
 
     /* Not found; allocate one. */
     shapers = (hb_shaper_pair_t *) calloc (1, sizeof (all_shapers));
     if (unlikely (!shapers)) {
-      (void) hb_atomic_ptr_cmpexch (&static_shapers, NULL, &all_shapers[0]);
+      (void) hb_atomic_ptr_cmpexch (&static_shapers, nullptr, &all_shapers[0]);
       return (const hb_shaper_pair_t *) all_shapers;
     }
 
@@ -97,7 +97,7 @@ retry:
         p = end + 1;
     }
 
-    if (!hb_atomic_ptr_cmpexch (&static_shapers, NULL, shapers)) {
+    if (!hb_atomic_ptr_cmpexch (&static_shapers, nullptr, shapers)) {
       free (shapers);
       goto retry;
     }

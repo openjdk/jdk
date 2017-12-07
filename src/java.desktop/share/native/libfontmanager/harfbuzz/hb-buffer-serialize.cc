@@ -30,7 +30,7 @@
 static const char *serialize_formats[] = {
   "text",
   "json",
-  NULL
+  nullptr
 };
 
 /**
@@ -58,7 +58,7 @@ hb_buffer_serialize_list_formats (void)
  * @str is a valid buffer serialization format, use
  * hb_buffer_serialize_list_formats() to get the list of supported formats.
  *
- * Return value: 
+ * Return value:
  * The parsed #hb_buffer_serialize_format_t.
  *
  * Since: 0.9.7
@@ -90,7 +90,7 @@ hb_buffer_serialize_format_to_string (hb_buffer_serialize_format_t format)
     case HB_BUFFER_SERIALIZE_FORMAT_TEXT:       return serialize_formats[0];
     case HB_BUFFER_SERIALIZE_FORMAT_JSON:       return serialize_formats[1];
     default:
-    case HB_BUFFER_SERIALIZE_FORMAT_INVALID:    return NULL;
+    case HB_BUFFER_SERIALIZE_FORMAT_INVALID:    return nullptr;
   }
 }
 
@@ -104,9 +104,9 @@ _hb_buffer_serialize_glyphs_json (hb_buffer_t *buffer,
                                   hb_font_t *font,
                                   hb_buffer_serialize_flags_t flags)
 {
-  hb_glyph_info_t *info = hb_buffer_get_glyph_infos (buffer, NULL);
+  hb_glyph_info_t *info = hb_buffer_get_glyph_infos (buffer, nullptr);
   hb_glyph_position_t *pos = (flags & HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS) ?
-                             NULL : hb_buffer_get_glyph_positions (buffer, NULL);
+                             nullptr : hb_buffer_get_glyph_positions (buffer, nullptr);
 
   *buf_consumed = 0;
   for (unsigned int i = start; i < end; i++)
@@ -145,10 +145,16 @@ _hb_buffer_serialize_glyphs_json (hb_buffer_t *buffer,
 
     if (!(flags & HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS))
     {
-      p += snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"dx\":%d,\"dy\":%d",
-                     pos[i].x_offset, pos[i].y_offset);
-      p += snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"ax\":%d,\"ay\":%d",
-                     pos[i].x_advance, pos[i].y_advance);
+      p += MAX (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"dx\":%d,\"dy\":%d",
+                             pos[i].x_offset, pos[i].y_offset));
+      p += MAX (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"ax\":%d,\"ay\":%d",
+                             pos[i].x_advance, pos[i].y_advance));
+    }
+
+    if (flags & HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS)
+    {
+      if (info[i].mask & HB_GLYPH_FLAG_DEFINED)
+        p += MAX (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"fl\":%u", info[i].mask & HB_GLYPH_FLAG_DEFINED));
     }
 
     if (flags & HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS)
@@ -156,9 +162,9 @@ _hb_buffer_serialize_glyphs_json (hb_buffer_t *buffer,
       hb_glyph_extents_t extents;
       hb_font_get_glyph_extents(font, info[i].codepoint, &extents);
       p += MAX (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"xb\":%d,\"yb\":%d",
-        extents.x_bearing, extents.y_bearing));
+                extents.x_bearing, extents.y_bearing));
       p += MAX (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"w\":%d,\"h\":%d",
-        extents.width, extents.height));
+                extents.width, extents.height));
     }
 
     *p++ = '}';
@@ -188,9 +194,9 @@ _hb_buffer_serialize_glyphs_text (hb_buffer_t *buffer,
                                   hb_font_t *font,
                                   hb_buffer_serialize_flags_t flags)
 {
-  hb_glyph_info_t *info = hb_buffer_get_glyph_infos (buffer, NULL);
+  hb_glyph_info_t *info = hb_buffer_get_glyph_infos (buffer, nullptr);
   hb_glyph_position_t *pos = (flags & HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS) ?
-                             NULL : hb_buffer_get_glyph_positions (buffer, NULL);
+                             nullptr : hb_buffer_get_glyph_positions (buffer, nullptr);
 
   *buf_consumed = 0;
   for (unsigned int i = start; i < end; i++)
@@ -224,6 +230,12 @@ _hb_buffer_serialize_glyphs_text (hb_buffer_t *buffer,
       p += MAX (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), "%d", pos[i].x_advance));
       if (pos[i].y_advance)
         p += MAX (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",%d", pos[i].y_advance));
+    }
+
+    if (flags & HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS)
+    {
+      if (info[i].mask &HB_GLYPH_FLAG_DEFINED)
+        p += MAX (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), "#%X", info[i].mask &HB_GLYPH_FLAG_DEFINED));
     }
 
     if (flags & HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS)
@@ -289,7 +301,7 @@ _hb_buffer_serialize_glyphs_text (hb_buffer_t *buffer,
  * ## json
  * TODO.
  *
- * Return value: 
+ * Return value:
  * The number of serialized items.
  *
  * Since: 0.9.7
@@ -311,6 +323,8 @@ hb_buffer_serialize_glyphs (hb_buffer_t *buffer,
   if (!buf_consumed)
     buf_consumed = &sconsumed;
   *buf_consumed = 0;
+  if (buf_size)
+    *buf = '\0';
 
   assert ((!buffer->len && buffer->content_type == HB_BUFFER_CONTENT_TYPE_INVALID) ||
           buffer->content_type == HB_BUFFER_CONTENT_TYPE_GLYPHS);
@@ -393,14 +407,14 @@ parse_int (const char *pp, const char *end, int32_t *pv)
  * hb_buffer_deserialize_glyphs:
  * @buffer: an #hb_buffer_t buffer.
  * @buf: (array length=buf_len):
- * @buf_len: 
+ * @buf_len:
  * @end_ptr: (out):
- * @font: 
- * @format: 
+ * @font:
+ * @format:
  *
- * 
  *
- * Return value: 
+ *
+ * Return value:
  *
  * Since: 0.9.7
  **/
@@ -408,8 +422,8 @@ hb_bool_t
 hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
                               const char *buf,
                               int buf_len, /* -1 means nul-terminated */
-                              const char **end_ptr, /* May be NULL */
-                              hb_font_t *font, /* May be NULL */
+                              const char **end_ptr, /* May be nullptr */
+                              hb_font_t *font, /* May be nullptr */
                               hb_buffer_serialize_format_t format)
 {
   const char *end;

@@ -124,7 +124,7 @@ struct JstfPriority
 struct JstfLangSys : OffsetListOf<JstfPriority>
 {
   inline bool sanitize (hb_sanitize_context_t *c,
-                        const Record<JstfLangSys>::sanitize_closure_t * = NULL) const
+                        const Record<JstfLangSys>::sanitize_closure_t * = nullptr) const
   {
     TRACE_SANITIZE (this);
     return_trace (OffsetListOf<JstfPriority>::sanitize (c));
@@ -165,7 +165,7 @@ struct JstfScript
   inline const JstfLangSys& get_default_lang_sys (void) const { return this+defaultLangSys; }
 
   inline bool sanitize (hb_sanitize_context_t *c,
-                        const Record<JstfScript>::sanitize_closure_t * = NULL) const
+                        const Record<JstfScript>::sanitize_closure_t * = nullptr) const
   {
     TRACE_SANITIZE (this);
     return_trace (extenderGlyphs.sanitize (c, this) &&

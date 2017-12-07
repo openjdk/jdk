@@ -91,7 +91,7 @@ compose_unicode (const hb_ot_shape_normalize_context_t *c,
 static inline void
 set_glyph (hb_glyph_info_t &info, hb_font_t *font)
 {
-  font->get_nominal_glyph (info.codepoint, &info.glyph_index());
+  (void) font->get_nominal_glyph (info.codepoint, &info.glyph_index());
 }
 
 static inline void
@@ -345,13 +345,17 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
       if (_hb_glyph_info_get_modified_combining_class (&buffer->info[end]) == 0)
         break;
 
-    /* We are going to do a O(n^2).  Only do this if the sequence is short. */
-    if (end - i > 10) {
+    /* We are going to do a O(n^2).  Only do this if the sequence is short,
+     * but not too short ;). */
+    if (end - i < 2 || end - i > HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS) {
       i = end;
       continue;
     }
 
     buffer->sort (i, end, compare_combining_class);
+
+    if (plan->shaper->reorder_marks)
+      plan->shaper->reorder_marks (plan, buffer, i, end);
 
     i = end;
   }
@@ -369,46 +373,58 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
   buffer->clear_output ();
   count = buffer->len;
   unsigned int starter = 0;
+  bool combine = true;
   buffer->next_glyph ();
   while (buffer->idx < count && !buffer->in_error)
   {
     hb_codepoint_t composed, glyph;
-    if (/* We don't try to compose a non-mark character with it's preceding starter.
+    if (combine &&
+        /* We don't try to compose a non-mark character with it's preceding starter.
          * This is both an optimization to avoid trying to compose every two neighboring
          * glyphs in most scripts AND a desired feature for Hangul.  Apparently Hangul
          * fonts are not designed to mix-and-match pre-composed syllables and Jamo. */
-        HB_UNICODE_GENERAL_CATEGORY_IS_MARK (_hb_glyph_info_get_general_category (&buffer->cur())) &&
-        /* If there's anything between the starter and this char, they should have CCC
-         * smaller than this character's. */
-        (starter == buffer->out_len - 1 ||
-         _hb_glyph_info_get_modified_combining_class (&buffer->prev()) < _hb_glyph_info_get_modified_combining_class (&buffer->cur())) &&
-        /* And compose. */
-        c.compose (&c,
-                   buffer->out_info[starter].codepoint,
-                   buffer->cur().codepoint,
-                   &composed) &&
-        /* And the font has glyph for the composite. */
-        font->get_nominal_glyph (composed, &glyph))
+        HB_UNICODE_GENERAL_CATEGORY_IS_MARK (_hb_glyph_info_get_general_category (&buffer->cur())))
     {
-      /* Composes. */
-      buffer->next_glyph (); /* Copy to out-buffer. */
-      if (unlikely (buffer->in_error))
-        return;
-      buffer->merge_out_clusters (starter, buffer->out_len);
-      buffer->out_len--; /* Remove the second composable. */
-      /* Modify starter and carry on. */
-      buffer->out_info[starter].codepoint = composed;
-      buffer->out_info[starter].glyph_index() = glyph;
-      _hb_glyph_info_set_unicode_props (&buffer->out_info[starter], buffer);
+      if (/* If there's anything between the starter and this char, they should have CCC
+           * smaller than this character's. */
+          (starter == buffer->out_len - 1 ||
+           info_cc (buffer->prev()) < info_cc (buffer->cur())) &&
+          /* And compose. */
+          c.compose (&c,
+                     buffer->out_info[starter].codepoint,
+                     buffer->cur().codepoint,
+                     &composed) &&
+          /* And the font has glyph for the composite. */
+          font->get_nominal_glyph (composed, &glyph))
+      {
+        /* Composes. */
+        buffer->next_glyph (); /* Copy to out-buffer. */
+        if (unlikely (buffer->in_error))
+          return;
+        buffer->merge_out_clusters (starter, buffer->out_len);
+        buffer->out_len--; /* Remove the second composable. */
+        /* Modify starter and carry on. */
+        buffer->out_info[starter].codepoint = composed;
+        buffer->out_info[starter].glyph_index() = glyph;
+        _hb_glyph_info_set_unicode_props (&buffer->out_info[starter], buffer);
 
-      continue;
+        continue;
+      }
+      else if (/* We sometimes custom-tailor the sorted order of marks. In that case, stop
+                * trying to combine as soon as combining-class drops. */
+               starter < buffer->out_len - 1 &&
+               info_cc (buffer->prev()) > info_cc (buffer->cur()))
+        combine = false;
     }
 
     /* Blocked, or doesn't compose. */
     buffer->next_glyph ();
 
-    if (_hb_glyph_info_get_modified_combining_class (&buffer->prev()) == 0)
+    if (info_cc (buffer->prev()) == 0)
+    {
       starter = buffer->out_len - 1;
+      combine = true;
+    }
   }
   buffer->swap_buffers ();
 

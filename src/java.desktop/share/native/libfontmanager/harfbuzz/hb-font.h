@@ -563,6 +563,10 @@ hb_font_set_parent (hb_font_t *font,
 HB_EXTERN hb_font_t *
 hb_font_get_parent (hb_font_t *font);
 
+HB_EXTERN void
+hb_font_set_face (hb_font_t *font,
+                  hb_face_t *face);
+
 HB_EXTERN hb_face_t *
 hb_font_get_face (hb_font_t *font);
 
@@ -603,11 +607,34 @@ hb_font_get_ppem (hb_font_t *font,
                   unsigned int *x_ppem,
                   unsigned int *y_ppem);
 
+/*
+ * Point size per EM.  Used for optical-sizing in CoreText.
+ * A value of zero means "not set".
+ */
+HB_EXTERN void
+hb_font_set_ptem (hb_font_t *font, float ptem);
+
+HB_EXTERN float
+hb_font_get_ptem (hb_font_t *font);
+
+HB_EXTERN void
+hb_font_set_variations (hb_font_t *font,
+                        const hb_variation_t *variations,
+                        unsigned int variations_length);
+
+HB_EXTERN void
+hb_font_set_var_coords_design (hb_font_t *font,
+                               const float *coords,
+                               unsigned int coords_length);
 
 HB_EXTERN void
 hb_font_set_var_coords_normalized (hb_font_t *font,
-                                   int *coords, /* XXX 2.14 normalized */
+                                   const int *coords, /* 2.14 normalized */
                                    unsigned int coords_length);
+
+HB_EXTERN const int *
+hb_font_get_var_coords_normalized (hb_font_t *font,
+                                   unsigned int *length);
 
 HB_END_DECLS
 

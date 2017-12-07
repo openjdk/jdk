@@ -42,8 +42,10 @@ namespace OT {
 
 struct NameRecord
 {
-  static int cmp (const NameRecord *a, const NameRecord *b)
+  static int cmp (const void *pa, const void *pb)
   {
+    const NameRecord *a = (const NameRecord *) pa;
+    const NameRecord *b = (const NameRecord *) pb;
     int ret;
     ret = b->platformID.cmp (a->platformID);
     if (ret) return ret;
@@ -89,7 +91,7 @@ struct name
     key.encodingID.set (encoding_id);
     key.languageID.set (language_id);
     key.nameID.set (name_id);
-    NameRecord *match = (NameRecord *) bsearch (&key, nameRecord, count, sizeof (nameRecord[0]), (hb_compare_func_t) NameRecord::cmp);
+    NameRecord *match = (NameRecord *) bsearch (&key, nameRecord, count, sizeof (nameRecord[0]), NameRecord::cmp);
 
     if (!match)
       return 0;

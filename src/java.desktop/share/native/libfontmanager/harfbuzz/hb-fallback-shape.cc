@@ -28,6 +28,10 @@
 #include "hb-shaper-impl-private.hh"
 
 
+HB_SHAPER_DATA_ENSURE_DEFINE(fallback, face)
+HB_SHAPER_DATA_ENSURE_DEFINE(fallback, font)
+
+
 /*
  * shaper face data
  */
@@ -125,7 +129,7 @@ _hb_fallback_shape (hb_shape_plan_t    *shape_plan HB_UNUSED,
       pos[i].y_advance = 0;
       continue;
     }
-    font->get_nominal_glyph (info[i].codepoint, &info[i].codepoint);
+    (void) font->get_nominal_glyph (info[i].codepoint, &info[i].codepoint);
     font->get_glyph_advance_for_direction (info[i].codepoint,
                                            direction,
                                            &pos[i].x_advance,
@@ -138,6 +142,8 @@ _hb_fallback_shape (hb_shape_plan_t    *shape_plan HB_UNUSED,
 
   if (HB_DIRECTION_IS_BACKWARD (direction))
     hb_buffer_reverse (buffer);
+
+  buffer->safe_to_break_all ();
 
   return true;
 }

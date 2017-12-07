@@ -45,7 +45,8 @@ hb_set_create (void)
   if (!(set = hb_object_create<hb_set_t> ()))
     return hb_set_get_empty ();
 
-  set->clear ();
+  set->page_map.init ();
+  set->pages.init ();
 
   return set;
 }
@@ -95,7 +96,8 @@ hb_set_destroy (hb_set_t *set)
 {
   if (!hb_object_destroy (set)) return;
 
-  set->fini ();
+  set->page_map.finish ();
+  set->pages.finish ();
 
   free (set);
 }
@@ -105,7 +107,7 @@ hb_set_destroy (hb_set_t *set)
  * @set: a set.
  * @key:
  * @data:
- * @destroy (closure data):
+ * @destroy:
  * @replace:
  *
  * Return value:
@@ -143,9 +145,9 @@ hb_set_get_user_data (hb_set_t           *set,
  * hb_set_allocation_successful:
  * @set: a set.
  *
- * 
  *
- * Return value: 
+ *
+ * Return value:
  *
  * Since: 0.9.2
  **/
@@ -159,7 +161,7 @@ hb_set_allocation_successful (const hb_set_t  *set HB_UNUSED)
  * hb_set_clear:
  * @set: a set.
  *
- * 
+ *
  *
  * Since: 0.9.2
  **/
@@ -173,9 +175,9 @@ hb_set_clear (hb_set_t *set)
  * hb_set_is_empty:
  * @set: a set.
  *
- * 
  *
- * Return value: 
+ *
+ * Return value:
  *
  * Since: 0.9.7
  **/
@@ -188,11 +190,11 @@ hb_set_is_empty (const hb_set_t *set)
 /**
  * hb_set_has:
  * @set: a set.
- * @codepoint: 
+ * @codepoint:
  *
- * 
  *
- * Return value: 
+ *
+ * Return value:
  *
  * Since: 0.9.2
  **/
@@ -206,9 +208,9 @@ hb_set_has (const hb_set_t *set,
 /**
  * hb_set_add:
  * @set: a set.
- * @codepoint: 
+ * @codepoint:
  *
- * 
+ *
  *
  * Since: 0.9.2
  **/
@@ -222,10 +224,10 @@ hb_set_add (hb_set_t       *set,
 /**
  * hb_set_add_range:
  * @set: a set.
- * @first: 
- * @last: 
+ * @first:
+ * @last:
  *
- * 
+ *
  *
  * Since: 0.9.7
  **/
@@ -240,9 +242,9 @@ hb_set_add_range (hb_set_t       *set,
 /**
  * hb_set_del:
  * @set: a set.
- * @codepoint: 
+ * @codepoint:
  *
- * 
+ *
  *
  * Since: 0.9.2
  **/
@@ -256,10 +258,10 @@ hb_set_del (hb_set_t       *set,
 /**
  * hb_set_del_range:
  * @set: a set.
- * @first: 
- * @last: 
+ * @first:
+ * @last:
  *
- * 
+ *
  *
  * Since: 0.9.7
  **/
@@ -274,11 +276,11 @@ hb_set_del_range (hb_set_t       *set,
 /**
  * hb_set_is_equal:
  * @set: a set.
- * @other: 
+ * @other:
  *
- * 
  *
- * Return value: 
+ *
+ * Return value:
  *
  * Since: 0.9.7
  **/
@@ -292,9 +294,9 @@ hb_set_is_equal (const hb_set_t *set,
 /**
  * hb_set_set:
  * @set: a set.
- * @other: 
+ * @other:
  *
- * 
+ *
  *
  * Since: 0.9.2
  **/
@@ -308,9 +310,9 @@ hb_set_set (hb_set_t       *set,
 /**
  * hb_set_union:
  * @set: a set.
- * @other: 
+ * @other:
  *
- * 
+ *
  *
  * Since: 0.9.2
  **/
@@ -324,9 +326,9 @@ hb_set_union (hb_set_t       *set,
 /**
  * hb_set_intersect:
  * @set: a set.
- * @other: 
+ * @other:
  *
- * 
+ *
  *
  * Since: 0.9.2
  **/
@@ -340,9 +342,9 @@ hb_set_intersect (hb_set_t       *set,
 /**
  * hb_set_subtract:
  * @set: a set.
- * @other: 
+ * @other:
  *
- * 
+ *
  *
  * Since: 0.9.2
  **/
@@ -356,9 +358,9 @@ hb_set_subtract (hb_set_t       *set,
 /**
  * hb_set_symmetric_difference:
  * @set: a set.
- * @other: 
+ * @other:
  *
- * 
+ *
  *
  * Since: 0.9.2
  **/
@@ -373,14 +375,15 @@ hb_set_symmetric_difference (hb_set_t       *set,
  * hb_set_invert:
  * @set: a set.
  *
- * 
+ *
  *
  * Since: 0.9.10
+ *
+ * Deprecated: 1.6.1
  **/
 void
 hb_set_invert (hb_set_t *set)
 {
-  set->invert ();
 }
 
 /**
@@ -436,7 +439,7 @@ hb_set_get_max (const hb_set_t *set)
  * @set: a set.
  * @codepoint: (inout):
  *
- * 
+ *
  *
  * Return value: whether there was a next value.
  *

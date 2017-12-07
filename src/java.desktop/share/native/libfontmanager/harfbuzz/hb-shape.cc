@@ -45,254 +45,6 @@
  * contains the output glyphs and their positions.
  **/
 
-static bool
-parse_space (const char **pp, const char *end)
-{
-  while (*pp < end && ISSPACE (**pp))
-    (*pp)++;
-  return true;
-}
-
-static bool
-parse_char (const char **pp, const char *end, char c)
-{
-  parse_space (pp, end);
-
-  if (*pp == end || **pp != c)
-    return false;
-
-  (*pp)++;
-  return true;
-}
-
-static bool
-parse_uint (const char **pp, const char *end, unsigned int *pv)
-{
-  char buf[32];
-  unsigned int len = MIN (ARRAY_LENGTH (buf) - 1, (unsigned int) (end - *pp));
-  strncpy (buf, *pp, len);
-  buf[len] = '\0';
-
-  char *p = buf;
-  char *pend = p;
-  unsigned int v;
-
-  /* Intentionally use strtol instead of strtoul, such that
-   * -1 turns into "big number"... */
-  errno = 0;
-  v = strtol (p, &pend, 0);
-  if (errno || p == pend)
-    return false;
-
-  *pv = v;
-  *pp += pend - p;
-  return true;
-}
-
-static bool
-parse_bool (const char **pp, const char *end, unsigned int *pv)
-{
-  parse_space (pp, end);
-
-  const char *p = *pp;
-  while (*pp < end && ISALPHA(**pp))
-    (*pp)++;
-
-  /* CSS allows on/off as aliases 1/0. */
-  if (*pp - p == 2 || 0 == strncmp (p, "on", 2))
-    *pv = 1;
-  else if (*pp - p == 3 || 0 == strncmp (p, "off", 2))
-    *pv = 0;
-  else
-    return false;
-
-  return true;
-}
-
-static bool
-parse_feature_value_prefix (const char **pp, const char *end, hb_feature_t *feature)
-{
-  if (parse_char (pp, end, '-'))
-    feature->value = 0;
-  else {
-    parse_char (pp, end, '+');
-    feature->value = 1;
-  }
-
-  return true;
-}
-
-static bool
-parse_feature_tag (const char **pp, const char *end, hb_feature_t *feature)
-{
-  parse_space (pp, end);
-
-  char quote = 0;
-
-  if (*pp < end && (**pp == '\'' || **pp == '"'))
-  {
-    quote = **pp;
-    (*pp)++;
-  }
-
-  const char *p = *pp;
-  while (*pp < end && ISALNUM(**pp))
-    (*pp)++;
-
-  if (p == *pp || *pp - p > 4)
-    return false;
-
-  feature->tag = hb_tag_from_string (p, *pp - p);
-
-  if (quote)
-  {
-    /* CSS expects exactly four bytes.  And we only allow quotations for
-     * CSS compatibility.  So, enforce the length. */
-     if (*pp - p != 4)
-       return false;
-    if (*pp == end || **pp != quote)
-      return false;
-    (*pp)++;
-  }
-
-  return true;
-}
-
-static bool
-parse_feature_indices (const char **pp, const char *end, hb_feature_t *feature)
-{
-  parse_space (pp, end);
-
-  bool has_start;
-
-  feature->start = 0;
-  feature->end = (unsigned int) -1;
-
-  if (!parse_char (pp, end, '['))
-    return true;
-
-  has_start = parse_uint (pp, end, &feature->start);
-
-  if (parse_char (pp, end, ':')) {
-    parse_uint (pp, end, &feature->end);
-  } else {
-    if (has_start)
-      feature->end = feature->start + 1;
-  }
-
-  return parse_char (pp, end, ']');
-}
-
-static bool
-parse_feature_value_postfix (const char **pp, const char *end, hb_feature_t *feature)
-{
-  bool had_equal = parse_char (pp, end, '=');
-  bool had_value = parse_uint (pp, end, &feature->value) ||
-                   parse_bool (pp, end, &feature->value);
-  /* CSS doesn't use equal-sign between tag and value.
-   * If there was an equal-sign, then there *must* be a value.
-   * A value without an eqaul-sign is ok, but not required. */
-  return !had_equal || had_value;
-}
-
-
-static bool
-parse_one_feature (const char **pp, const char *end, hb_feature_t *feature)
-{
-  return parse_feature_value_prefix (pp, end, feature) &&
-         parse_feature_tag (pp, end, feature) &&
-         parse_feature_indices (pp, end, feature) &&
-         parse_feature_value_postfix (pp, end, feature) &&
-         parse_space (pp, end) &&
-         *pp == end;
-}
-
-/**
- * hb_feature_from_string:
- * @str: (array length=len) (element-type uint8_t): a string to parse
- * @len: length of @str, or -1 if string is %NULL terminated
- * @feature: (out): the #hb_feature_t to initialize with the parsed values
- *
- * Parses a string into a #hb_feature_t.
- *
- * TODO: document the syntax here.
- *
- * Return value:
- * %true if @str is successfully parsed, %false otherwise.
- *
- * Since: 0.9.5
- **/
-hb_bool_t
-hb_feature_from_string (const char *str, int len,
-                        hb_feature_t *feature)
-{
-  hb_feature_t feat;
-
-  if (len < 0)
-    len = strlen (str);
-
-  if (likely (parse_one_feature (&str, str + len, &feat)))
-  {
-    if (feature)
-      *feature = feat;
-    return true;
-  }
-
-  if (feature)
-    memset (feature, 0, sizeof (*feature));
-  return false;
-}
-
-/**
- * hb_feature_to_string:
- * @feature: an #hb_feature_t to convert
- * @buf: (array length=size) (out): output string
- * @size: the allocated size of @buf
- *
- * Converts a #hb_feature_t into a %NULL-terminated string in the format
- * understood by hb_feature_from_string(). The client in responsible for
- * allocating big enough size for @buf, 128 bytes is more than enough.
- *
- * Since: 0.9.5
- **/
-void
-hb_feature_to_string (hb_feature_t *feature,
-                      char *buf, unsigned int size)
-{
-  if (unlikely (!size)) return;
-
-  char s[128];
-  unsigned int len = 0;
-  if (feature->value == 0)
-    s[len++] = '-';
-  hb_tag_to_string (feature->tag, s + len);
-  len += 4;
-  while (len && s[len - 1] == ' ')
-    len--;
-  if (feature->start != 0 || feature->end != (unsigned int) -1)
-  {
-    s[len++] = '[';
-    if (feature->start)
-      len += MAX (0, snprintf (s + len, ARRAY_LENGTH (s) - len, "%u", feature->start));
-    if (feature->end != feature->start + 1) {
-      s[len++] = ':';
-      if (feature->end != (unsigned int) -1)
-        len += MAX (0, snprintf (s + len, ARRAY_LENGTH (s) - len, "%u", feature->end));
-    }
-    s[len++] = ']';
-  }
-  if (feature->value > 1)
-  {
-    s[len++] = '=';
-    len += MAX (0, snprintf (s + len, ARRAY_LENGTH (s) - len, "%u", feature->value));
-  }
-  assert (len < ARRAY_LENGTH (s));
-  len = MIN (len, size - 1);
-  memcpy (buf, s, len);
-  buf[len] = '\0';
-}
-
-
 static const char **static_shaper_list;
 
 #ifdef HB_USE_ATEXIT
@@ -324,7 +76,7 @@ retry:
     /* Not found; allocate one. */
     shaper_list = (const char **) calloc (1 + HB_SHAPERS_COUNT, sizeof (const char *));
     if (unlikely (!shaper_list)) {
-      static const char *nil_shaper_list[] = {NULL};
+      static const char *nil_shaper_list[] = {nullptr};
       return nil_shaper_list;
     }
 
@@ -332,9 +84,9 @@ retry:
     unsigned int i;
     for (i = 0; i < HB_SHAPERS_COUNT; i++)
       shaper_list[i] = shapers[i].name;
-    shaper_list[i] = NULL;
+    shaper_list[i] = nullptr;
 
-    if (!hb_atomic_ptr_cmpexch (&static_shaper_list, NULL, shaper_list)) {
+    if (!hb_atomic_ptr_cmpexch (&static_shaper_list, nullptr, shaper_list)) {
       free (shaper_list);
       goto retry;
     }
@@ -362,7 +114,7 @@ retry:
  * shapers will be used in the given order, otherwise the default shapers list
  * will be used.
  *
- * Return value: %FALSE if all shapers failed, %TRUE otherwise
+ * Return value: false if all shapers failed, true otherwise
  *
  * Since: 0.9.2
  **/
@@ -405,5 +157,5 @@ hb_shape (hb_font_t           *font,
           const hb_feature_t  *features,
           unsigned int         num_features)
 {
-  hb_shape_full (font, buffer, features, num_features, NULL);
+  hb_shape_full (font, buffer, features, num_features, nullptr);
 }

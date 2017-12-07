@@ -68,7 +68,7 @@ typedef CRITICAL_SECTION hb_mutex_impl_t;
 #include <pthread.h>
 typedef pthread_mutex_t hb_mutex_impl_t;
 #define HB_MUTEX_IMPL_INIT      PTHREAD_MUTEX_INITIALIZER
-#define hb_mutex_impl_init(M)   pthread_mutex_init (M, NULL)
+#define hb_mutex_impl_init(M)   pthread_mutex_init (M, nullptr)
 #define hb_mutex_impl_lock(M)   pthread_mutex_lock (M)
 #define hb_mutex_impl_unlock(M) pthread_mutex_unlock (M)
 #define hb_mutex_impl_finish(M) pthread_mutex_destroy (M)

@@ -30,6 +30,7 @@
 #endif
 
 #include "hb-private.hh"
+#include "hb-debug.hh"
 
 #include "hb-object-private.hh"
 
@@ -42,12 +43,6 @@
 
 #include <stdio.h>
 #include <errno.h>
-
-
-
-#ifndef HB_DEBUG_BLOB
-#define HB_DEBUG_BLOB (HB_DEBUG+0)
-#endif
 
 
 struct hb_blob_t {
@@ -72,8 +67,8 @@ _hb_blob_destroy_user_data (hb_blob_t *blob)
 {
   if (blob->destroy) {
     blob->destroy (blob->user_data);
-    blob->user_data = NULL;
-    blob->destroy = NULL;
+    blob->user_data = nullptr;
+    blob->destroy = nullptr;
   }
 }
 
@@ -128,6 +123,12 @@ hb_blob_create (const char        *data,
   return blob;
 }
 
+static void
+_hb_blob_destroy (void *data)
+{
+  hb_blob_destroy ((hb_blob_t *) data);
+}
+
 /**
  * hb_blob_create_sub_blob:
  * @parent: Parent blob.
@@ -164,7 +165,7 @@ hb_blob_create_sub_blob (hb_blob_t    *parent,
                          MIN (length, parent->length - offset),
                          HB_MEMORY_MODE_READONLY,
                          hb_blob_reference (parent),
-                         (hb_destroy_func_t) hb_blob_destroy);
+                         _hb_blob_destroy);
 
   return blob;
 }
@@ -188,12 +189,12 @@ hb_blob_get_empty (void)
 
     true, /* immutable */
 
-    NULL, /* data */
+    nullptr, /* data */
     0, /* length */
     HB_MEMORY_MODE_READONLY, /* mode */
 
-    NULL, /* user_data */
-    NULL  /* destroy */
+    nullptr, /* user_data */
+    nullptr  /* destroy */
   };
 
   return const_cast<hb_blob_t *> (&_hb_blob_nil);
@@ -247,7 +248,7 @@ hb_blob_destroy (hb_blob_t *blob)
  * @destroy: callback to call when @data is not needed anymore.
  * @replace: whether to replace an existing data with the same key.
  *
- * Return value: 
+ * Return value:
  *
  * Since: 0.9.2
  **/
@@ -266,9 +267,9 @@ hb_blob_set_user_data (hb_blob_t          *blob,
  * @blob: a blob.
  * @key: key for data to get.
  *
- * 
  *
- * Return value: (transfer none): 
+ *
+ * Return value: (transfer none):
  *
  * Since: 0.9.2
  **/
@@ -284,7 +285,7 @@ hb_blob_get_user_data (hb_blob_t          *blob,
  * hb_blob_make_immutable:
  * @blob: a blob.
  *
- * 
+ *
  *
  * Since: 0.9.2
  **/
@@ -301,7 +302,7 @@ hb_blob_make_immutable (hb_blob_t *blob)
  * hb_blob_is_immutable:
  * @blob: a blob.
  *
- * 
+ *
  *
  * Return value: TODO
  *
@@ -318,7 +319,7 @@ hb_blob_is_immutable (hb_blob_t *blob)
  * hb_blob_get_length:
  * @blob: a blob.
  *
- * 
+ *
  *
  * Return value: the length of blob data in bytes.
  *
@@ -335,9 +336,9 @@ hb_blob_get_length (hb_blob_t *blob)
  * @blob: a blob.
  * @length: (out):
  *
- * 
  *
- * Returns: (transfer none) (array length=length): 
+ *
+ * Returns: (transfer none) (array length=length):
  *
  * Since: 0.9.2
  **/
@@ -373,7 +374,7 @@ hb_blob_get_data_writable (hb_blob_t *blob, unsigned int *length)
     if (length)
       *length = 0;
 
-    return NULL;
+    return nullptr;
   }
 
   if (length)

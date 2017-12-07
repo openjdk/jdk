@@ -658,7 +658,7 @@ struct Ligature
     if (likely (!match_input (c, count,
                               &component[1],
                               match_glyph,
-                              NULL,
+                              nullptr,
                               &match_length,
                               match_positions,
                               &is_mark_ligature,
@@ -1014,14 +1014,17 @@ struct ReverseChainSingleSubstFormat1
     const OffsetArrayOf<Coverage> &lookahead = StructAfter<OffsetArrayOf<Coverage> > (backtrack);
     const ArrayOf<GlyphID> &substitute = StructAfter<ArrayOf<GlyphID> > (lookahead);
 
+  unsigned int start_index = 0, end_index = 0;
     if (match_backtrack (c,
                          backtrack.len, (USHORT *) backtrack.array,
-                         match_coverage, this) &&
+                         match_coverage, this,
+                         &start_index) &&
         match_lookahead (c,
                          lookahead.len, (USHORT *) lookahead.array,
                          match_coverage, this,
-                         1))
+                         1, &end_index))
     {
+      c->buffer->unsafe_to_break_from_outbuffer (start_index, end_index);
       c->replace_glyph_inplace (substitute[index]);
       /* Note: We DON'T decrease buffer->idx.  The main loop does it
        * for us.  This is useful for preventing surprises if someone

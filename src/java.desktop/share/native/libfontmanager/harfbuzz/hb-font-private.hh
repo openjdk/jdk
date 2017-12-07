@@ -108,6 +108,8 @@ struct hb_font_t {
   unsigned int x_ppem;
   unsigned int y_ppem;
 
+  float ptem;
+
   /* Font variation coordinates. */
   unsigned int num_coords;
   int *coords;

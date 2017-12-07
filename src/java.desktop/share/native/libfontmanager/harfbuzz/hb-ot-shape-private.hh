@@ -73,7 +73,7 @@ struct hb_ot_shape_planner_t
   hb_ot_shape_planner_t (const hb_shape_plan_t *master_plan) :
                          face (master_plan->face_unsafe),
                          props (master_plan->props),
-                         shaper (NULL),
+                         shaper (nullptr),
                          map (face, &props) {}
   ~hb_ot_shape_planner_t (void) { map.finish (); }
 
@@ -99,7 +99,9 @@ struct hb_ot_shape_planner_t
   }
 
   private:
-  NO_COPY (hb_ot_shape_planner_t);
+  /* No copy. */
+  hb_ot_shape_planner_t (const hb_ot_shape_planner_t &);
+  hb_ot_shape_planner_t &operator = (const hb_ot_shape_planner_t &);
 };
 
 
