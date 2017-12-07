@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug      4924383
- * @summary  Test to make sure the -group option does not cause a bad warning
- *           to be printed. Test for the group defined using patterns.
+ * @bug      4924383 8149402
+ * @summary  Test to make sure the -group option works correctly
+ *           with the given pattern usages.
  * @author   jamieh
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -55,8 +55,7 @@ public class TestGroupOption extends JavadocTester {
                 "-group");
     }
 
-    // @Test
-    // @ignore 8149402
+     @Test
     // Make sure the "Other packages" section is printed and the header for empty section is not.
     // Make sure that the headers of group that is defined using patterns are printed.
     void test2() {
@@ -66,7 +65,7 @@ public class TestGroupOption extends JavadocTester {
                 "-group", "Group abc*", "abc*",
                 "-group", "Empty group", "qwerty*",
                 "-group", "Group a*", "a*",
-                "pkg1", "pkg2", "pkg3", "abc1",  "abc2", "abc3", "other", testSrc("C.java"));
+                "pkg1", "pkg2", "pkg3", "abc1",  "abc2", "abc3", "other", testSrc("InUnnamedPackage.java"));
         checkExit(Exit.OK);
 
         checkOutput("overview-summary.html", true, "Group pkg*", "Group abc*", "Other Packages");
