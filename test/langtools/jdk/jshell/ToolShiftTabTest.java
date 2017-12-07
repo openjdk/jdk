@@ -84,15 +84,15 @@ public class ToolShiftTabTest extends UITesting {
         doRunTest((inputSink, out) -> {
             inputSink.write("4");
             inputSink.write(FIX + "m");
-            inputSink.write("\u0003 55");
+            inputSink.write(INTERRUPT + " 55");
             inputSink.write(FIX + "m");
-            inputSink.write("\u0003 55");
+            inputSink.write(INTERRUPT + " 55");
             inputSink.write(FIX + "m");
-            inputSink.write("\u0003 55");
+            inputSink.write(INTERRUPT + " 55");
             inputSink.write(FIX + "m");
-            inputSink.write("\u0003 55");
+            inputSink.write(INTERRUPT + " 55");
             inputSink.write(FIX + "m");
-            inputSink.write("\u0003'X'");
+            inputSink.write(INTERRUPT + "'X'");
             inputSink.write(FIX + "m");
             inputSink.write("nl\n");
             waitOutput(out, "|  created method nl()");

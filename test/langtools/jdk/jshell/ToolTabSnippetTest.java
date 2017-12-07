@@ -46,7 +46,6 @@ import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-import java.util.regex.Pattern;
 
 import jdk.internal.jshell.tool.ConsoleIOContextTestSupport;
 import org.testng.annotations.Test;
@@ -58,143 +57,148 @@ public class ToolTabSnippetTest extends UITesting {
         Path classes = prepareZip();
         doRunTest((inputSink, out) -> {
             inputSink.write("/env -class-path " + classes.toString() + "\n");
-            waitOutput(out, Pattern.quote(getResource("jshell.msg.set.restore")) + "\n\u0005");
+            waitOutput(out, resource("jshell.msg.set.restore") + "\n\u0005");
             inputSink.write("import jshelltest.*;\n");
             waitOutput(out, "\n\u0005");
 
             //-> <tab>
-            inputSink.write("\011");
+            inputSink.write(TAB);
             waitOutput(out, getMessage("jshell.console.completion.all.completions.number", "[0-9]+"));
-            inputSink.write("\011");
-            waitOutput(out, ".*String.*StringBuilder.*\n\r\u0005");
+            inputSink.write(TAB);
+            waitOutput(out, ".*String.*StringBuilder.*" +
+                            REDRAW_PROMPT + "");
 
             //new JShellTes<tab>
-            inputSink.write("new JShellTes\011");
-            waitOutput(out, "t\nJShellTest\\(      JShellTestAux\\(   \n\r\u0005new JShellTest");
+            inputSink.write("new JShellTes" + TAB);
+            waitOutput(out, "t\nJShellTest\\(      JShellTestAux\\(   " +
+                            REDRAW_PROMPT + "new JShellTest");
 
             //new JShellTest<tab>
-            inputSink.write("\011");
+            inputSink.write(TAB);
             waitOutput(out, "JShellTest\\(      JShellTestAux\\(   \n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.completion.current.signatures")) + "\n" +
+                            resource("jshell.console.completion.current.signatures") + "\n" +
                             "jshelltest.JShellTest\n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.see.documentation")) + "\n" +
-                            "\r\u0005new JShellTest");
-            inputSink.write("\011");
+                            resource("jshell.console.see.documentation") +
+                            REDRAW_PROMPT + "new JShellTest");
+            inputSink.write(TAB);
             waitOutput(out, "jshelltest.JShellTest\n" +
-                            "JShellTest 0\n" +
-                            "\r\u0005new JShellTest");
-            inputSink.write("\011");
+                            "JShellTest 0" +
+                            REDRAW_PROMPT + "new JShellTest");
+            inputSink.write(TAB);
             waitOutput(out, "JShellTest\\(      JShellTestAux\\(   \n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.completion.current.signatures")) + "\n" +
+                            resource("jshell.console.completion.current.signatures") + "\n" +
                             "jshelltest.JShellTest\n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.see.documentation")) + "\n" +
-                            "\r\u0005new JShellTest");
+                            resource("jshell.console.see.documentation") +
+                            REDRAW_PROMPT + "new JShellTest");
 
             //new JShellTest(<tab>
-            inputSink.write("(\011");
+            inputSink.write("(" + TAB);
             waitOutput(out, "\\(\n" +
-                            Pattern.quote(getResource("jshell.console.completion.current.signatures")) + "\n" +
+                            resource("jshell.console.completion.current.signatures") + "\n" +
                             "JShellTest\\(String str\\)\n" +
                             "JShellTest\\(String str, int i\\)\n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.see.documentation")) + "\n" +
-                            "\r\u0005new JShellTest\\(");
-            inputSink.write("\011");
+                            resource("jshell.console.see.documentation") +
+                            REDRAW_PROMPT + "new JShellTest\\(");
+            inputSink.write(TAB);
             waitOutput(out, "JShellTest\\(String str\\)\n" +
                             "JShellTest 1\n" +
                             "1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.see.next.page")) + "\n" +
-                            "\r\u0005new JShellTest\\(");
-            inputSink.write("\011");
+                            resource("jshell.console.see.next.page") +
+                            REDRAW_PROMPT + "new JShellTest\\(");
+            inputSink.write(TAB);
             waitOutput(out, "1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.see.next.javadoc")) + "\n" +
-                            "\r\u0005new JShellTest\\(");
-            inputSink.write("\011");
+                            resource("jshell.console.see.next.javadoc") +
+                            REDRAW_PROMPT + "new JShellTest\\(");
+            inputSink.write(TAB);
             waitOutput(out, "JShellTest\\(String str, int i\\)\n" +
                             "JShellTest 2\n" +
                             "\n" +
-                            getMessage("jshell.console.completion.all.completions.number", "[0-9]+") + "\n" +
-                            "\r\u0005new JShellTest\\(");
-            inputSink.write("\011");
-            waitOutput(out, ".*String.*StringBuilder.*\n\r\u0005new JShellTest\\(");
+                            getMessage("jshell.console.completion.all.completions.number", "[0-9]+") +
+                            REDRAW_PROMPT + "new JShellTest\\(");
+            inputSink.write(TAB);
+            waitOutput(out, ".*String.*StringBuilder.*" +
+                            REDRAW_PROMPT + "new JShellTest\\(");
 
-            inputSink.write("\u0003String str = \"\";\nnew JShellTest(");
-            waitOutput(out, "\u0005new JShellTest\\(");
+            inputSink.write(INTERRUPT + "String str = \"\";\nnew JShellTest(");
+            waitOutput(out, PROMPT + "new JShellTest\\(");
 
-            inputSink.write("\011");
+            inputSink.write(TAB);
             waitOutput(out, "\n" +
                             "str   \n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.completion.current.signatures")) + "\n" +
+                            resource("jshell.console.completion.current.signatures") + "\n" +
                             "JShellTest\\(String str\\)\n" +
                             "JShellTest\\(String str, int i\\)\n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.see.documentation")) + "\n" +
-                            "\r\u0005new JShellTest\\(");
-            inputSink.write("\011");
+                            resource("jshell.console.see.documentation") +
+                            REDRAW_PROMPT + "new JShellTest\\(");
+            inputSink.write(TAB);
             waitOutput(out, "JShellTest\\(String str\\)\n" +
                             "JShellTest 1\n" +
                             "1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.see.next.page")) + "\n" +
-                            "\r\u0005new JShellTest\\(");
-            inputSink.write("\011");
+                            resource("jshell.console.see.next.page") +
+                            REDRAW_PROMPT + "new JShellTest\\(");
+            inputSink.write(TAB);
             waitOutput(out, "1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.see.next.javadoc")) + "\n" +
-                            "\r\u0005new JShellTest\\(");
-            inputSink.write("\011");
+                            resource("jshell.console.see.next.javadoc") +
+                            REDRAW_PROMPT + "new JShellTest\\(");
+            inputSink.write(TAB);
             waitOutput(out, "JShellTest\\(String str, int i\\)\n" +
                             "JShellTest 2\n" +
                             "\n" +
-                            getMessage("jshell.console.completion.all.completions.number", "[0-9]+") + "\n" +
-                            "\r\u0005new JShellTest\\(");
-            inputSink.write("\011");
-            waitOutput(out, ".*String.*StringBuilder.*\n\r\u0005new JShellTest\\(");
+                            getMessage("jshell.console.completion.all.completions.number", "[0-9]+") +
+                            REDRAW_PROMPT + "new JShellTest\\(");
+            inputSink.write(TAB);
+            waitOutput(out, ".*String.*StringBuilder.*" +
+                            REDRAW_PROMPT + "new JShellTest\\(");
 
-            inputSink.write("\u0003JShellTest t = new JShellTest\011");
-            waitOutput(out, "\u0005JShellTest t = new JShellTest\n" +
+            inputSink.write(INTERRUPT + "JShellTest t = new JShellTest" + TAB);
+            waitOutput(out, PROMPT + "JShellTest t = new JShellTest\n" +
                             "JShellTest\\(   \n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.completion.current.signatures")) + "\n" +
+                            resource("jshell.console.completion.current.signatures") + "\n" +
                             "jshelltest.JShellTest\n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.completion.all.completions")) + "\n" +
-                            "\r\u0005JShellTest t = new JShellTest");
-            inputSink.write("\011");
+                            resource("jshell.console.completion.all.completions") +
+                            REDRAW_PROMPT + "JShellTest t = new JShellTest");
+            inputSink.write(TAB);
             waitOutput(out, "JShellTest\\(      JShellTestAux\\(   \n" +
                             "\n" +
-                            Pattern.quote(getResource("jshell.console.see.documentation")) + "\n" +
-                            "\r\u0005JShellTest t = new JShellTest");
+                            resource("jshell.console.see.documentation") +
+                            REDRAW_PROMPT + "JShellTest t = new JShellTest");
 
-            inputSink.write("\u0003JShellTest t = new \011");
-            waitOutput(out, "\u0005JShellTest t = new \n" +
+            inputSink.write(INTERRUPT + "JShellTest t = new " + TAB);
+            waitOutput(out, PROMPT + "JShellTest t = new \n" +
                             "JShellTest\\(   \n" +
                             "\n" +
-                            getMessage("jshell.console.completion.all.completions.number", "[0-9]+") + "\n" +
-                            "\r\u0005JShellTest t = new ");
-            inputSink.write("\011");
-            waitOutput(out, ".*String.*StringBuilder.*\n\r\u0005JShellTest t = new ");
+                            getMessage("jshell.console.completion.all.completions.number", "[0-9]+") +
+                            REDRAW_PROMPT + "JShellTest t = new ");
+            inputSink.write(TAB);
+            waitOutput(out, ".*String.*StringBuilder.*" +
+                            REDRAW_PROMPT + "JShellTest t = new ");
 
-            inputSink.write("\u0003class JShelX{}\n");
-            inputSink.write("new JShel\011");
-            waitOutput(out, "\u0005new JShel\n" +
-                            "JShelX\\(\\)         JShellTest\\(      JShellTestAux\\(   \n" +
-                            "\r\u0005new JShel");
+            inputSink.write(INTERRUPT + "class JShelX{}\n");
+            inputSink.write("new JShel" + TAB);
+            waitOutput(out, PROMPT + "new JShel\n" +
+                            "JShelX\\(\\)         JShellTest\\(      JShellTestAux\\(   " +
+                            REDRAW_PROMPT + "new JShel");
 
             //no crash:
-            inputSink.write("\u0003new Stringbuil\011");
-            waitOutput(out, "\u0005new Stringbuil\u0007");
+            inputSink.write(INTERRUPT + "new Stringbuil" + TAB);
+            waitOutput(out, PROMPT + "new Stringbuil" + BELL);
 
             //no crash: 8188072
-            inputSink.write("\u0003for (int:\011");
-            waitOutput(out, "\u0005for \\(int:\u0007");
+            inputSink.write(INTERRUPT + "for (int:" + TAB);
+            waitOutput(out, PROMPT + "for \\(int:" + BELL);
         });
     }
 
@@ -218,15 +222,15 @@ public class ToolTabSnippetTest extends UITesting {
                 }
             };
             //-> <tab>
-            inputSink.write("\011");
+            inputSink.write(TAB);
             testCompleteComputationStarted.await();
             //-> <tab><tab>
-            inputSink.write("\011\011");
+            inputSink.write(TAB + TAB);
             testCompleteComputationContinue.countDown();
-            waitOutput(out, "\u0005");
+            waitOutput(out, PROMPT);
             //-> <tab>
-            inputSink.write("\011");
-            waitOutput(out, "\u0005");
+            inputSink.write(TAB);
+            waitOutput(out, PROMPT);
             ConsoleIOContextTestSupport.IMPL = null;
         });
     }
@@ -234,24 +238,24 @@ public class ToolTabSnippetTest extends UITesting {
     public void testNoRepeat() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("String xyzAA;\n");
-            waitOutput(out, "\u0005");
+            waitOutput(out, PROMPT);
 
             //xyz<tab>
-            inputSink.write("String s = xyz\011");
+            inputSink.write("String s = xyz" + TAB);
             waitOutput(out, "^String s = xyzAA");
             inputSink.write(".");
             waitOutput(out, "^\\.");
 
-            inputSink.write("\u0003");
-            waitOutput(out, "\u0005");
+            inputSink.write(INTERRUPT);
+            waitOutput(out, PROMPT);
 
             inputSink.write("double xyzAB;\n");
-            waitOutput(out, "\u0005");
+            waitOutput(out, PROMPT);
 
             //xyz<tab>
-            inputSink.write("String s = xyz\011");
+            inputSink.write("String s = xyz" + TAB);
             String allCompletions =
-                    Pattern.quote(getResource("jshell.console.completion.all.completions"));
+                    resource("jshell.console.completion.all.completions");
             waitOutput(out, ".*xyzAA.*" + allCompletions + ".*\u0005String s = xyzA");
         });
     }

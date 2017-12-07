@@ -45,9 +45,9 @@ public class HistoryUITest extends UITesting {
     public void testPrevNextSnippet() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("void test1() {\nSystem.err.println(1);\n}\n");
-            waitOutput(out, "\u0005");
+            waitOutput(out, PROMPT);
             inputSink.write("void test2() {\nSystem.err.println(2);\n}\n");
-            waitOutput(out, "\u0005");
+            waitOutput(out, PROMPT);
             inputSink.write(CTRL_UP);
             waitOutput(out, "^void test2\\(\\) \\{");
             inputSink.write(CTRL_UP);
@@ -63,7 +63,7 @@ public class HistoryUITest extends UITesting {
             inputSink.write(UP);
             waitOutput(out, "^" + clearOut("System.err.println(2);") + "void test2\\(\\) \\{");
             inputSink.write(UP);
-            waitOutput(out, "^\u0007");
+            waitOutput(out, "^" + BELL);
             inputSink.write(DOWN);
             waitOutput(out, "^" + clearOut("void test2() {") + "System.err.println\\(2\\);");
             inputSink.write(DOWN);
@@ -71,7 +71,7 @@ public class HistoryUITest extends UITesting {
             inputSink.write(DOWN);
             waitOutput(out, "^" + clearOut("}"));
             inputSink.write(DOWN);
-            waitOutput(out, "^\u0007");
+            waitOutput(out, "^" + BELL);
         });
     }
     //where:
