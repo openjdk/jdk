@@ -58,7 +58,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _mem_slice_tail(arena(), 8,  0, NULL),  // memory slice tails
   _node_info(arena(), 8,  0, SWNodeInfo::initial), // info needed per node
   _clone_map(phase->C->clone_map()),      // map of nodes created in cloning
-  _cmovev_kit(_arena, this),              // map to facilitate CMoveVD creation
+  _cmovev_kit(_arena, this),              // map to facilitate CMoveV creation
   _align_to_ref(NULL),                    // memory reference to align vectors to
   _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial), // runtime disambiguated pointer pairs
   _dg(_arena),                            // dependence graph
@@ -511,8 +511,7 @@ void SuperWord::SLP_extract() {
     combine_packs();
 
     construct_my_pack_map();
-
-    if (_do_vector_loop) {
+    if (UseVectorCmov) {
       merge_packs_to_cmovd();
     }
 
@@ -1249,8 +1248,8 @@ void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
 
 //------------------------------data_size---------------------------
 int SuperWord::data_size(Node* s) {
-  Node* use = NULL; //test if the node is a candidate for CMoveVD optimization, then return the size of CMov
-  if (_do_vector_loop) {
+  Node* use = NULL; //test if the node is a candidate for CMoveV optimization, then return the size of CMov
+  if (UseVectorCmov) {
     use = _cmovev_kit.is_Bool_candidate(s);
     if (use != NULL) {
       return data_size(use);
@@ -1260,6 +1259,7 @@ int SuperWord::data_size(Node* s) {
       return data_size(use);
     }
   }
+
   int bsize = type2aelembytes(velt_basic_type(s));
   assert(bsize != 0, "valid size");
   return bsize;
@@ -1716,6 +1716,9 @@ Node* CMoveKit::is_CmpD_candidate(Node* def) const {
 Node_List* CMoveKit::make_cmovevd_pack(Node_List* cmovd_pk) {
   Node *cmovd = cmovd_pk->at(0);
   if (!cmovd->is_CMove()) {
+    return NULL;
+  }
+  if (cmovd->Opcode() != Op_CMoveF && cmovd->Opcode() != Op_CMoveD) {
     return NULL;
   }
   if (pack(cmovd) != NULL) { // already in the cmov pack
@@ -2377,7 +2380,13 @@ void SuperWord::output() {
         }
         BasicType bt = velt_basic_type(n);
         const TypeVect* vt = TypeVect::make(bt, vlen);
-        vn = new CMoveVDNode(cc, src1, src2, vt);
+        assert(bt == T_FLOAT || bt == T_DOUBLE, "Only vectorization for FP cmovs is supported");
+        if (bt == T_FLOAT) {
+          vn = new CMoveVFNode(cc, src1, src2, vt);
+        } else {
+          assert(bt == T_DOUBLE, "Expected double");
+          vn = new CMoveVDNode(cc, src1, src2, vt);
+        }
         NOT_PRODUCT(if(is_trace_cmov()) {tty->print("SWPointer::output: created new CMove node %d: ", vn->_idx); vn->dump();})
       } else if (opc == Op_FmaD || opc == Op_FmaF) {
         // Promote operands to vector
