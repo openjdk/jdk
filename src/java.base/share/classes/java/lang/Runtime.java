@@ -877,62 +877,6 @@ public class Runtime {
     }
 
     /**
-     * Creates a localized version of an input stream. This method takes
-     * an {@code InputStream} and returns an {@code InputStream}
-     * equivalent to the argument in all respects except that it is
-     * localized: as characters in the local character set are read from
-     * the stream, they are automatically converted from the local
-     * character set to Unicode.
-     * <p>
-     * If the argument is already a localized stream, it may be returned
-     * as the result.
-     *
-     * @param      in InputStream to localize
-     * @return     a localized input stream
-     * @see        java.io.InputStream
-     * @see        java.io.BufferedReader#BufferedReader(java.io.Reader)
-     * @see        java.io.InputStreamReader#InputStreamReader(java.io.InputStream)
-     * @deprecated As of JDK&nbsp;1.1, the preferred way to translate a byte
-     * stream in the local encoding into a character stream in Unicode is via
-     * the {@code InputStreamReader} and {@code BufferedReader}
-     * classes.
-     * This method is subject to removal in a future version of Java SE.
-     */
-    @Deprecated(since="1.1", forRemoval=true)
-    public InputStream getLocalizedInputStream(InputStream in) {
-        return in;
-    }
-
-    /**
-     * Creates a localized version of an output stream. This method
-     * takes an {@code OutputStream} and returns an
-     * {@code OutputStream} equivalent to the argument in all respects
-     * except that it is localized: as Unicode characters are written to
-     * the stream, they are automatically converted to the local
-     * character set.
-     * <p>
-     * If the argument is already a localized stream, it may be returned
-     * as the result.
-     *
-     * @deprecated As of JDK&nbsp;1.1, the preferred way to translate a
-     * Unicode character stream into a byte stream in the local encoding is via
-     * the {@code OutputStreamWriter}, {@code BufferedWriter}, and
-     * {@code PrintWriter} classes.
-     * This method is subject to removal in a future version of Java SE.
-     *
-     * @param      out OutputStream to localize
-     * @return     a localized output stream
-     * @see        java.io.OutputStream
-     * @see        java.io.BufferedWriter#BufferedWriter(java.io.Writer)
-     * @see        java.io.OutputStreamWriter#OutputStreamWriter(java.io.OutputStream)
-     * @see        java.io.PrintWriter#PrintWriter(java.io.OutputStream)
-     */
-    @Deprecated(since="1.1", forRemoval=true)
-    public OutputStream getLocalizedOutputStream(OutputStream out) {
-        return out;
-    }
-
-    /**
      * Returns the version of the Java Runtime Environment as a {@link Version}.
      *
      * @return  the {@link Version} of the Java Runtime Environment
