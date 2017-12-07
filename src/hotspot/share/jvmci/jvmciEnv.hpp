@@ -138,8 +138,8 @@ private:
 
   // Helper routine for determining the validity of a compilation
   // with respect to concurrent class loading.
-  static JVMCIEnv::CodeInstallResult check_for_system_dictionary_modification(Dependencies* target, Handle compiled_code,
-                                                                              JVMCIEnv* env, char** failure_detail);
+  static JVMCIEnv::CodeInstallResult validate_compile_task_dependencies(Dependencies* target, Handle compiled_code,
+                                                                        JVMCIEnv* env, char** failure_detail);
 
 public:
   CompileTask* task() { return _task; }

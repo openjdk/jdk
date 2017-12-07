@@ -1263,6 +1263,7 @@ const bool Matcher::match_rule_supported(int opcode) {
       if (!VM_Version::supports_cx8())
         ret_value = false;
       break;
+    case Op_CMoveVF:
     case Op_CMoveVD:
       if (UseAVX < 1 || UseAVX > 2)
         ret_value = false;
@@ -1304,6 +1305,9 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
         if ((vlen == 32) && (VM_Version::supports_avx512bw() == false))
           ret_value = false;
         break;
+      case Op_CMoveVF:
+        if (vlen != 8)
+          ret_value  = false;
       case Op_CMoveVD:
         if (vlen != 4)
           ret_value  = false;
@@ -8166,6 +8170,22 @@ instruct vmul8D_mem(vecZ dst, vecZ src, memory mem) %{
   ins_encode %{
     int vector_len = 2;
     __ vmulpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vcmov8F_reg(vecY dst, vecY src1, vecY src2, immI8 cop, cmpOp_vcmppd copnd) %{
+  predicate(UseAVX > 0 && UseAVX < 3 && n->as_Vector()->length() == 8);
+  match(Set dst (CMoveVF (Binary copnd cop) (Binary src1 src2)));
+  effect(TEMP dst, USE src1, USE src2);
+  format %{ "cmpps.$copnd  $dst, $src1, $src2  ! vcmovevf, cond=$cop\n\t"
+            "blendvps $dst,$src1,$src2,$dst ! vcmovevf\n\t"
+         %}
+  ins_encode %{
+    int vector_len = 1;
+    int cond = (Assembler::Condition)($copnd$$cmpcode);
+    __ cmpps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, cond, vector_len);
+    __ blendvps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $dst$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

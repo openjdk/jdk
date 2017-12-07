@@ -21,59 +21,64 @@
  * questions.
  */
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Platform;
 
 /*
  * @test
- * @bug 8190198
- * @summary Test clhsdb Jstack command
+ * @bug 8192823
+ * @summary Test clhsdb source command
  * @library /test/lib
- * @run main/othervm ClhsdbJstack
+ * @run main/othervm ClhsdbSource
  */
 
-public class ClhsdbJstack {
+public class ClhsdbSource {
 
-    private static void testJstack(boolean withXcomp) throws Exception {
+    public static void main(String[] args) throws Exception {
+        System.out.println("Starting ClhsdbSource test");
+
         LingeredApp theApp = null;
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
-            theApp = withXcomp ? LingeredApp.startApp(List.of("-Xcomp"))
-                               : LingeredApp.startApp();
-            System.out.print("Started LingeredApp ");
-            if (withXcomp) {
-                System.out.print("(-Xcomp) ");
-            }
-            System.out.println("with pid " + theApp.getPid());
+            theApp = LingeredApp.startApp();
+            System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
-            List<String> cmds = List.of("jstack -v");
+            Path file = Paths.get("clhsdb_cmd_file");
+            Files.write(file, "jstack -v\nhelp".getBytes());
+            List<String> cmds = List.of("source clhsdb_cmd_file");
 
             Map<String, List<String>> expStrMap = new HashMap<>();
-            expStrMap.put("jstack -v", List.of(
+            expStrMap.put("source clhsdb_cmd_file", List.of(
                     "No deadlocks found",
                     "Common-Cleaner",
                     "Signal Dispatcher",
                     "java.lang.ref.Finalizer$FinalizerThread.run",
                     "java.lang.ref.Reference",
                     "Method*",
-                    "LingeredApp.main"));
+                    "LingeredApp.main",
+                    "Available commands:",
+                    "attach pid | exec core",
+                    "intConstant [ name [ value ] ]",
+                    "type [ type [ name super isOop isInteger isUnsigned size ] ]",
+                    "symboltable name"));
 
-            test.run(theApp.getPid(), cmds, expStrMap, null);
+            Map<String, List<String>> unExpStrMap = new HashMap<>();
+            unExpStrMap.put("source clhsdb_cmd_file", List.of(
+                        "No such file or directory"));
+
+            test.run(theApp.getPid(), cmds, expStrMap, unExpStrMap);
+            Files.delete(file);
         } catch (Exception ex) {
-            throw new RuntimeException("Test ERROR (with -Xcomp=" + withXcomp + ") " + ex, ex);
+            throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
             LingeredApp.stopApp(theApp);
         }
-    }
-
-    public static void main(String[] args) throws Exception {
-        System.out.println("Starting ClhsdbJstack test");
-        testJstack(false);
-        testJstack(true);
         System.out.println("Test PASSED");
     }
 }

@@ -2114,9 +2114,11 @@ private:
   // runtime code and native libraries.
   void vzeroupper();
 
-  // AVX support for vectorized conditional move (double). The following two instructions used only coupled.
+  // AVX support for vectorized conditional move (float/double). The following two instructions used only coupled.
   void cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
   void blendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
+  void cmpps(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
+  void blendvps(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
   void vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len);
 
  protected:
