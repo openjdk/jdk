@@ -60,7 +60,8 @@ enum indic_category_t {
   OT_Repha = 15, /* Atomically-encoded logical or visual repha. */
   OT_Ra = 16,
   OT_CM = 17,  /* Consonant-Medial. */
-  OT_Symbol = 18 /* Avagraha, etc that take marks (SM,A,VD). */
+  OT_Symbol = 18, /* Avagraha, etc that take marks (SM,A,VD). */
+  OT_CS = 19
 };
 
 #define MEDIAL_FLAGS (FLAG (OT_CM))
@@ -70,7 +71,7 @@ enum indic_category_t {
  * We treat Vowels and placeholders as if they were consonants.  This is safe because Vowels
  * cannot happen in a consonant syllable.  The plus side however is, we can call the
  * consonant syllable logic from the vowel syllable function and get it all right! */
-#define CONSONANT_FLAGS (FLAG (OT_C) | FLAG (OT_Ra) | MEDIAL_FLAGS | FLAG (OT_V) | FLAG (OT_PLACEHOLDER) | FLAG (OT_DOTTEDCIRCLE))
+#define CONSONANT_FLAGS (FLAG (OT_C) | FLAG (OT_CS) | FLAG (OT_Ra) | MEDIAL_FLAGS | FLAG (OT_V) | FLAG (OT_PLACEHOLDER) | FLAG (OT_DOTTEDCIRCLE))
 #define JOINER_FLAGS (FLAG (OT_ZWJ) | FLAG (OT_ZWNJ))
 #define HALANT_OR_COENG_FLAGS (FLAG (OT_H) | FLAG (OT_Coeng))
 
@@ -121,8 +122,8 @@ enum indic_syllabic_category_t {
   INDIC_SYLLABIC_CATEGORY_CONSONANT_PREFIXED            = OT_X, /* Don't care. */
   INDIC_SYLLABIC_CATEGORY_CONSONANT_SUBJOINED           = OT_CM,
   INDIC_SYLLABIC_CATEGORY_CONSONANT_SUCCEEDING_REPHA    = OT_N,
-  INDIC_SYLLABIC_CATEGORY_CONSONANT_WITH_STACKER        = OT_Repha, /* TODO */
-  INDIC_SYLLABIC_CATEGORY_GEMINATION_MARK               = OT_SM,
+  INDIC_SYLLABIC_CATEGORY_CONSONANT_WITH_STACKER        = OT_CS,
+  INDIC_SYLLABIC_CATEGORY_GEMINATION_MARK               = OT_SM, /* https://github.com/behdad/harfbuzz/issues/552 */
   INDIC_SYLLABIC_CATEGORY_INVISIBLE_STACKER             = OT_Coeng,
   INDIC_SYLLABIC_CATEGORY_JOINER                        = OT_ZWJ,
   INDIC_SYLLABIC_CATEGORY_MODIFYING_LETTER              = OT_X,
@@ -132,7 +133,7 @@ enum indic_syllabic_category_t {
   INDIC_SYLLABIC_CATEGORY_NUMBER_JOINER                 = OT_PLACEHOLDER, /* Don't care. */
   INDIC_SYLLABIC_CATEGORY_PURE_KILLER                   = OT_M, /* Is like a vowel matra. */
   INDIC_SYLLABIC_CATEGORY_REGISTER_SHIFTER              = OT_RS,
-  INDIC_SYLLABIC_CATEGORY_SYLLABLE_MODIFIER             = OT_M, /* Misc Khmer signs. */
+  INDIC_SYLLABIC_CATEGORY_SYLLABLE_MODIFIER             = OT_SM,
   INDIC_SYLLABIC_CATEGORY_TONE_LETTER                   = OT_X,
   INDIC_SYLLABIC_CATEGORY_TONE_MARK                     = OT_N,
   INDIC_SYLLABIC_CATEGORY_VIRAMA                        = OT_H,

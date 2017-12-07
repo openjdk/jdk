@@ -169,18 +169,18 @@ disable_otl_hebrew (const hb_ot_shape_plan_t *plan)
 
 const hb_ot_complex_shaper_t _hb_ot_complex_shaper_hebrew =
 {
-  "hebrew",
-  NULL, /* collect_features */
-  NULL, /* override_features */
-  NULL, /* data_create */
-  NULL, /* data_destroy */
-  NULL, /* preprocess_text */
-  NULL, /* postprocess_glyphs */
+  nullptr, /* collect_features */
+  nullptr, /* override_features */
+  nullptr, /* data_create */
+  nullptr, /* data_destroy */
+  nullptr, /* preprocess_text */
+  nullptr, /* postprocess_glyphs */
   HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
-  NULL, /* decompose */
+  nullptr, /* decompose */
   compose_hebrew,
-  NULL, /* setup_masks */
+  nullptr, /* setup_masks */
   disable_otl_hebrew,
+  nullptr, /* reorder_marks */
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
   true, /* fallback_position */
 };

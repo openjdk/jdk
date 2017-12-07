@@ -295,7 +295,7 @@ struct MarkGlyphSetsFormat1
 
   protected:
   USHORT        format;                 /* Format identifier--format = 1 */
-  ArrayOf<OffsetTo<Coverage, ULONG> >
+  ArrayOf<LOffsetTo<Coverage> >
                 coverage;               /* Array of long offsets to mark set
                                          * coverage tables */
   public:
@@ -404,9 +404,9 @@ struct GDEF
   {
     unsigned int klass = get_glyph_class (glyph);
 
-    ASSERT_STATIC ((unsigned int) HB_OT_LAYOUT_GLYPH_PROPS_BASE_GLYPH == (unsigned int) LookupFlag::IgnoreBaseGlyphs);
-    ASSERT_STATIC ((unsigned int) HB_OT_LAYOUT_GLYPH_PROPS_LIGATURE == (unsigned int) LookupFlag::IgnoreLigatures);
-    ASSERT_STATIC ((unsigned int) HB_OT_LAYOUT_GLYPH_PROPS_MARK == (unsigned int) LookupFlag::IgnoreMarks);
+    static_assert (((unsigned int) HB_OT_LAYOUT_GLYPH_PROPS_BASE_GLYPH == (unsigned int) LookupFlag::IgnoreBaseGlyphs), "");
+    static_assert (((unsigned int) HB_OT_LAYOUT_GLYPH_PROPS_LIGATURE == (unsigned int) LookupFlag::IgnoreLigatures), "");
+    static_assert (((unsigned int) HB_OT_LAYOUT_GLYPH_PROPS_MARK == (unsigned int) LookupFlag::IgnoreMarks), "");
 
     switch (klass) {
     default:                    return 0;
@@ -443,7 +443,7 @@ struct GDEF
                                          * definitions--from beginning of GDEF
                                          * header (may be NULL).  Introduced
                                          * in version 0x00010002. */
-  OffsetTo<VariationStore, ULONG>
+  LOffsetTo<VariationStore>
                 varStore;               /* Offset to the table of Item Variation
                                          * Store--from beginning of GDEF
                                          * header (may be NULL).  Introduced

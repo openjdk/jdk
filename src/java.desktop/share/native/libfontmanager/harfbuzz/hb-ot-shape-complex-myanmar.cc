@@ -103,7 +103,7 @@ collect_features_myanmar (hb_ot_shape_planner_t *plan)
   for (unsigned int i = 0; i < ARRAY_LENGTH (basic_features); i++)
   {
     map->add_feature (basic_features[i], 1, F_GLOBAL | F_MANUAL_ZWJ);
-    map->add_gsub_pause (NULL);
+    map->add_gsub_pause (nullptr);
   }
   map->add_gsub_pause (final_reordering);
   for (unsigned int i = 0; i < ARRAY_LENGTH (other_features); i++)
@@ -130,8 +130,7 @@ enum syllable_type_t {
 /* Note: This enum is duplicated in the -machine.rl source file.
  * Not sure how to avoid duplication. */
 enum myanmar_category_t {
-  OT_As  = 18, /* Asat */
-  OT_D   = 19, /* Digits except zero */
+  OT_As  = 18,  /* Asat */
   OT_D0  = 20, /* Digit zero */
   OT_DB  = OT_N, /* Dot below */
   OT_GB  = OT_PLACEHOLDER,
@@ -145,7 +144,8 @@ enum myanmar_category_t {
   OT_VPre = 28,
   OT_VPst = 29,
   OT_VS   = 30, /* Variation selectors */
-  OT_P    = 31  /* Punctuation */
+  OT_P    = 31, /* Punctuation */
+  OT_D    = 32, /* Digits except zero */
 };
 
 
@@ -154,7 +154,7 @@ is_one_of (const hb_glyph_info_t &info, unsigned int flags)
 {
   /* If it ligated, all bets are off. */
   if (_hb_glyph_info_ligated (&info)) return false;
-  return !!(FLAG_SAFE (info.myanmar_category()) & flags);
+  return !!(FLAG_UNSAFE (info.myanmar_category()) & flags);
 }
 
 static inline bool
@@ -175,7 +175,7 @@ set_myanmar_properties (hb_glyph_info_t &info)
   /* Myanmar
    * http://www.microsoft.com/typography/OpenTypeDev/myanmar/intro.htm#analyze
    */
-  if (unlikely (hb_in_range (u, 0xFE00u, 0xFE0Fu)))
+  if (unlikely (hb_in_range<hb_codepoint_t> (u, 0xFE00u, 0xFE0Fu)))
     cat = (indic_category_t) OT_VS;
 
   switch (u)
@@ -297,6 +297,8 @@ setup_syllables (const hb_ot_shape_plan_t *plan HB_UNUSED,
                  hb_buffer_t *buffer)
 {
   find_syllables (buffer);
+  foreach_syllable (buffer, start, end)
+    buffer->unsafe_to_break (start, end);
 }
 
 static int
@@ -510,36 +512,36 @@ final_reordering (const hb_ot_shape_plan_t *plan,
  * generic shaper, except that it zeros mark advances GDEF_LATE. */
 const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar_old =
 {
-  "default",
-  NULL, /* collect_features */
-  NULL, /* override_features */
-  NULL, /* data_create */
-  NULL, /* data_destroy */
-  NULL, /* preprocess_text */
-  NULL, /* postprocess_glyphs */
+  nullptr, /* collect_features */
+  nullptr, /* override_features */
+  nullptr, /* data_create */
+  nullptr, /* data_destroy */
+  nullptr, /* preprocess_text */
+  nullptr, /* postprocess_glyphs */
   HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
-  NULL, /* decompose */
-  NULL, /* compose */
-  NULL, /* setup_masks */
-  NULL, /* disable_otl */
+  nullptr, /* decompose */
+  nullptr, /* compose */
+  nullptr, /* setup_masks */
+  nullptr, /* disable_otl */
+  nullptr, /* reorder_marks */
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
   true, /* fallback_position */
 };
 
 const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar =
 {
-  "myanmar",
   collect_features_myanmar,
   override_features_myanmar,
-  NULL, /* data_create */
-  NULL, /* data_destroy */
-  NULL, /* preprocess_text */
-  NULL, /* postprocess_glyphs */
+  nullptr, /* data_create */
+  nullptr, /* data_destroy */
+  nullptr, /* preprocess_text */
+  nullptr, /* postprocess_glyphs */
   HB_OT_SHAPE_NORMALIZATION_MODE_COMPOSED_DIACRITICS_NO_SHORT_CIRCUIT,
-  NULL, /* decompose */
-  NULL, /* compose */
+  nullptr, /* decompose */
+  nullptr, /* compose */
   setup_masks_myanmar,
-  NULL, /* disable_otl */
+  nullptr, /* disable_otl */
+  nullptr, /* reorder_marks */
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_EARLY,
   false, /* fallback_position */
 };

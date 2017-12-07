@@ -32,7 +32,7 @@
 
 /* Same order as the feature array below */
 enum {
-  NONE,
+  _JMO,
 
   LJMO,
   VJMO,
@@ -80,7 +80,7 @@ data_create_hangul (const hb_ot_shape_plan_t *plan)
 {
   hangul_shape_plan_t *hangul_plan = (hangul_shape_plan_t *) calloc (1, sizeof (hangul_shape_plan_t));
   if (unlikely (!hangul_plan))
-    return NULL;
+    return nullptr;
 
   for (unsigned int i = 0; i < HANGUL_FEATURE_COUNT; i++)
     hangul_plan->mask_array[i] = plan->map.get_1_mask (hangul_features[i]);
@@ -105,16 +105,16 @@ data_destroy_hangul (void *data)
 #define NCount (VCount * TCount)
 #define SCount (LCount * NCount)
 
-#define isCombiningL(u) (hb_in_range ((u), LBase, LBase+LCount-1))
-#define isCombiningV(u) (hb_in_range ((u), VBase, VBase+VCount-1))
-#define isCombiningT(u) (hb_in_range ((u), TBase+1, TBase+TCount-1))
-#define isCombinedS(u) (hb_in_range ((u), SBase, SBase+SCount-1))
+#define isCombiningL(u) (hb_in_range<hb_codepoint_t> ((u), LBase, LBase+LCount-1))
+#define isCombiningV(u) (hb_in_range<hb_codepoint_t> ((u), VBase, VBase+VCount-1))
+#define isCombiningT(u) (hb_in_range<hb_codepoint_t> ((u), TBase+1, TBase+TCount-1))
+#define isCombinedS(u) (hb_in_range<hb_codepoint_t> ((u), SBase, SBase+SCount-1))
 
-#define isL(u) (hb_in_ranges ((u), 0x1100u, 0x115Fu, 0xA960u, 0xA97Cu))
-#define isV(u) (hb_in_ranges ((u), 0x1160u, 0x11A7u, 0xD7B0u, 0xD7C6u))
-#define isT(u) (hb_in_ranges ((u), 0x11A8u, 0x11FFu, 0xD7CBu, 0xD7FBu))
+#define isL(u) (hb_in_ranges<hb_codepoint_t> ((u), 0x1100u, 0x115Fu, 0xA960u, 0xA97Cu))
+#define isV(u) (hb_in_ranges<hb_codepoint_t> ((u), 0x1160u, 0x11A7u, 0xD7B0u, 0xD7C6u))
+#define isT(u) (hb_in_ranges<hb_codepoint_t> ((u), 0x11A8u, 0x11FFu, 0xD7CBu, 0xD7FBu))
 
-#define isHangulTone(u) (hb_in_range ((u), 0x302Eu, 0x302Fu))
+#define isHangulTone(u) (hb_in_range<hb_codepoint_t> ((u), 0x302Eu, 0x302Fu))
 
 /* buffer var allocations */
 #define hangul_shaping_feature() complex_var_u8_0() /* hangul jamo shaping feature */
@@ -202,6 +202,7 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan,
       if (start < end && end == buffer->out_len)
       {
         /* Tone mark follows a valid syllable; move it in front, unless it's zero width. */
+        buffer->unsafe_to_break_from_outbuffer (start, buffer->idx);
         buffer->next_glyph ();
         if (!is_zero_width_char (font, u))
         {
@@ -258,6 +259,7 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan,
           else
             t = 0; /* The next character was not a trailing jamo. */
         }
+        buffer->unsafe_to_break (buffer->idx, buffer->idx + (t ? 3 : 2));
 
         /* We've got a syllable <L,V,T?>; see if it can potentially be composed. */
         if (isCombiningL (l) && isCombiningV (v) && (t == 0 || isCombiningT (t)))
@@ -322,6 +324,8 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan,
           end = start + 1;
           continue;
         }
+        else
+          buffer->unsafe_to_break (buffer->idx, buffer->idx + 2); /* Mark unsafe between LV and T. */
       }
 
       /* Otherwise, decompose if font doesn't support <LV> or <LVT>,
@@ -368,6 +372,8 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan,
             buffer->merge_out_clusters (start, end);
           continue;
         }
+        else if ((!tindex && buffer->idx + 1 < count && isT (buffer->cur(+1).codepoint)))
+          buffer->unsafe_to_break (buffer->idx, buffer->idx + 2); /* Mark unsafe between LV and T. */
       }
 
       if (has_glyph)
@@ -408,18 +414,18 @@ setup_masks_hangul (const hb_ot_shape_plan_t *plan,
 
 const hb_ot_complex_shaper_t _hb_ot_complex_shaper_hangul =
 {
-  "hangul",
   collect_features_hangul,
   override_features_hangul,
   data_create_hangul,
   data_destroy_hangul,
   preprocess_text_hangul,
-  NULL, /* postprocess_glyphs */
+  nullptr, /* postprocess_glyphs */
   HB_OT_SHAPE_NORMALIZATION_MODE_NONE,
-  NULL, /* decompose */
-  NULL, /* compose */
+  nullptr, /* decompose */
+  nullptr, /* compose */
   setup_masks_hangul,
-  NULL, /* disable_otl */
+  nullptr, /* disable_otl */
+  nullptr, /* reorder_marks */
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_NONE,
   false, /* fallback_position */
 };

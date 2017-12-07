@@ -28,22 +28,15 @@
  */
 
 #include "hb-private.hh"
+#include "hb-debug.hh"
 
 #include "hb-ft.h"
 
 #include "hb-font-private.hh"
 
-#include "hb-cache-private.hh" // Maybe use in the future?
-
 #include FT_ADVANCES_H
 #include FT_MULTIPLE_MASTERS_H
 #include FT_TRUETYPE_TABLES_H
-
-
-
-#ifndef HB_DEBUG_FT
-#define HB_DEBUG_FT (HB_DEBUG+0)
-#endif
 
 
 /* TODO:
@@ -83,7 +76,7 @@ _hb_ft_font_create (FT_Face ft_face, bool symbol, bool unref)
   hb_ft_font_t *ft_font = (hb_ft_font_t *) calloc (1, sizeof (hb_ft_font_t));
 
   if (unlikely (!ft_font))
-    return NULL;
+    return nullptr;
 
   ft_font->ft_face = ft_face;
   ft_font->symbol = symbol;
@@ -95,14 +88,16 @@ _hb_ft_font_create (FT_Face ft_face, bool symbol, bool unref)
 }
 
 static void
-_hb_ft_face_destroy (FT_Face ft_face)
+_hb_ft_face_destroy (void *data)
 {
-  FT_Done_Face (ft_face);
+  FT_Done_Face ((FT_Face) data);
 }
 
 static void
-_hb_ft_font_destroy (hb_ft_font_t *ft_font)
+_hb_ft_font_destroy (void *data)
 {
+  hb_ft_font_t *ft_font = (hb_ft_font_t *) data;
+
   if (ft_font->unref)
     _hb_ft_face_destroy (ft_font->ft_face);
 
@@ -114,7 +109,7 @@ _hb_ft_font_destroy (hb_ft_font_t *ft_font)
  * @font:
  * @load_flags:
  *
- * 
+ *
  *
  * Since: 1.0.5
  **/
@@ -124,7 +119,7 @@ hb_ft_font_set_load_flags (hb_font_t *font, int load_flags)
   if (font->immutable)
     return;
 
-  if (font->destroy != (hb_destroy_func_t) _hb_ft_font_destroy)
+  if (font->destroy != _hb_ft_font_destroy)
     return;
 
   hb_ft_font_t *ft_font = (hb_ft_font_t *) font->user_data;
@@ -136,7 +131,7 @@ hb_ft_font_set_load_flags (hb_font_t *font, int load_flags)
  * hb_ft_font_get_load_flags:
  * @font:
  *
- * 
+ *
  *
  * Return value:
  * Since: 1.0.5
@@ -144,7 +139,7 @@ hb_ft_font_set_load_flags (hb_font_t *font, int load_flags)
 int
 hb_ft_font_get_load_flags (hb_font_t *font)
 {
-  if (font->destroy != (hb_destroy_func_t) _hb_ft_font_destroy)
+  if (font->destroy != _hb_ft_font_destroy)
     return 0;
 
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font->user_data;
@@ -155,8 +150,8 @@ hb_ft_font_get_load_flags (hb_font_t *font)
 FT_Face
 hb_ft_font_get_face (hb_font_t *font)
 {
-  if (font->destroy != (hb_destroy_func_t) _hb_ft_font_destroy)
-    return NULL;
+  if (font->destroy != _hb_ft_font_destroy)
+    return nullptr;
 
   const hb_ft_font_t *ft_font = (const hb_ft_font_t *) font->user_data;
 
@@ -422,7 +417,7 @@ hb_ft_get_font_h_extents (hb_font_t *font HB_UNUSED,
   return true;
 }
 
-static hb_font_funcs_t *static_ft_funcs = NULL;
+static hb_font_funcs_t *static_ft_funcs = nullptr;
 
 #ifdef HB_USE_ATEXIT
 static
@@ -442,24 +437,24 @@ retry:
   {
     funcs = hb_font_funcs_create ();
 
-    hb_font_funcs_set_font_h_extents_func (funcs, hb_ft_get_font_h_extents, NULL, NULL);
-    //hb_font_funcs_set_font_v_extents_func (funcs, hb_ft_get_font_v_extents, NULL, NULL);
-    hb_font_funcs_set_nominal_glyph_func (funcs, hb_ft_get_nominal_glyph, NULL, NULL);
-    hb_font_funcs_set_variation_glyph_func (funcs, hb_ft_get_variation_glyph, NULL, NULL);
-    hb_font_funcs_set_glyph_h_advance_func (funcs, hb_ft_get_glyph_h_advance, NULL, NULL);
-    hb_font_funcs_set_glyph_v_advance_func (funcs, hb_ft_get_glyph_v_advance, NULL, NULL);
-    //hb_font_funcs_set_glyph_h_origin_func (funcs, hb_ft_get_glyph_h_origin, NULL, NULL);
-    hb_font_funcs_set_glyph_v_origin_func (funcs, hb_ft_get_glyph_v_origin, NULL, NULL);
-    hb_font_funcs_set_glyph_h_kerning_func (funcs, hb_ft_get_glyph_h_kerning, NULL, NULL);
-    //hb_font_funcs_set_glyph_v_kerning_func (funcs, hb_ft_get_glyph_v_kerning, NULL, NULL);
-    hb_font_funcs_set_glyph_extents_func (funcs, hb_ft_get_glyph_extents, NULL, NULL);
-    hb_font_funcs_set_glyph_contour_point_func (funcs, hb_ft_get_glyph_contour_point, NULL, NULL);
-    hb_font_funcs_set_glyph_name_func (funcs, hb_ft_get_glyph_name, NULL, NULL);
-    hb_font_funcs_set_glyph_from_name_func (funcs, hb_ft_get_glyph_from_name, NULL, NULL);
+    hb_font_funcs_set_font_h_extents_func (funcs, hb_ft_get_font_h_extents, nullptr, nullptr);
+    //hb_font_funcs_set_font_v_extents_func (funcs, hb_ft_get_font_v_extents, nullptr, nullptr);
+    hb_font_funcs_set_nominal_glyph_func (funcs, hb_ft_get_nominal_glyph, nullptr, nullptr);
+    hb_font_funcs_set_variation_glyph_func (funcs, hb_ft_get_variation_glyph, nullptr, nullptr);
+    hb_font_funcs_set_glyph_h_advance_func (funcs, hb_ft_get_glyph_h_advance, nullptr, nullptr);
+    hb_font_funcs_set_glyph_v_advance_func (funcs, hb_ft_get_glyph_v_advance, nullptr, nullptr);
+    //hb_font_funcs_set_glyph_h_origin_func (funcs, hb_ft_get_glyph_h_origin, nullptr, nullptr);
+    hb_font_funcs_set_glyph_v_origin_func (funcs, hb_ft_get_glyph_v_origin, nullptr, nullptr);
+    hb_font_funcs_set_glyph_h_kerning_func (funcs, hb_ft_get_glyph_h_kerning, nullptr, nullptr);
+    //hb_font_funcs_set_glyph_v_kerning_func (funcs, hb_ft_get_glyph_v_kerning, nullptr, nullptr);
+    hb_font_funcs_set_glyph_extents_func (funcs, hb_ft_get_glyph_extents, nullptr, nullptr);
+    hb_font_funcs_set_glyph_contour_point_func (funcs, hb_ft_get_glyph_contour_point, nullptr, nullptr);
+    hb_font_funcs_set_glyph_name_func (funcs, hb_ft_get_glyph_name, nullptr, nullptr);
+    hb_font_funcs_set_glyph_from_name_func (funcs, hb_ft_get_glyph_from_name, nullptr, nullptr);
 
     hb_font_funcs_make_immutable (funcs);
 
-    if (!hb_atomic_ptr_cmpexch (&static_ft_funcs, NULL, funcs)) {
+    if (!hb_atomic_ptr_cmpexch (&static_ft_funcs, nullptr, funcs)) {
       hb_font_funcs_destroy (funcs);
       goto retry;
     }
@@ -474,7 +469,7 @@ retry:
   hb_font_set_funcs (font,
                      funcs,
                      _hb_ft_font_create (ft_face, symbol, unref),
-                     (hb_destroy_func_t) _hb_ft_font_destroy);
+                     _hb_ft_font_destroy);
 }
 
 
@@ -488,17 +483,17 @@ reference_table  (hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data)
 
   /* Note: FreeType like HarfBuzz uses the NONE tag for fetching the entire blob */
 
-  error = FT_Load_Sfnt_Table (ft_face, tag, 0, NULL, &length);
+  error = FT_Load_Sfnt_Table (ft_face, tag, 0, nullptr, &length);
   if (error)
-    return NULL;
+    return nullptr;
 
   buffer = (FT_Byte *) malloc (length);
-  if (buffer == NULL)
-    return NULL;
+  if (!buffer)
+    return nullptr;
 
   error = FT_Load_Sfnt_Table (ft_face, tag, 0, buffer, &length);
   if (error)
-    return NULL;
+    return nullptr;
 
   return hb_blob_create ((const char *) buffer, length,
                          HB_MEMORY_MODE_WRITABLE,
@@ -507,12 +502,12 @@ reference_table  (hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data)
 
 /**
  * hb_ft_face_create:
- * @ft_face: (destroy destroy) (scope notified): 
+ * @ft_face: (destroy destroy) (scope notified):
  * @destroy:
  *
- * 
  *
- * Return value: (transfer full): 
+ *
+ * Return value: (transfer full):
  * Since: 0.9.2
  **/
 hb_face_t *
@@ -521,7 +516,7 @@ hb_ft_face_create (FT_Face           ft_face,
 {
   hb_face_t *face;
 
-  if (ft_face->stream->read == NULL) {
+  if (!ft_face->stream->read) {
     hb_blob_t *blob;
 
     blob = hb_blob_create ((const char *) ft_face->stream->base,
@@ -544,16 +539,16 @@ hb_ft_face_create (FT_Face           ft_face,
  * hb_ft_face_create_referenced:
  * @ft_face:
  *
- * 
  *
- * Return value: (transfer full): 
+ *
+ * Return value: (transfer full):
  * Since: 0.9.38
  **/
 hb_face_t *
 hb_ft_face_create_referenced (FT_Face ft_face)
 {
   FT_Reference_Face (ft_face);
-  return hb_ft_face_create (ft_face, (hb_destroy_func_t) _hb_ft_face_destroy);
+  return hb_ft_face_create (ft_face, _hb_ft_face_destroy);
 }
 
 static void
@@ -564,11 +559,11 @@ hb_ft_face_finalize (FT_Face ft_face)
 
 /**
  * hb_ft_face_create_cached:
- * @ft_face: 
+ * @ft_face:
  *
- * 
  *
- * Return value: (transfer full): 
+ *
+ * Return value: (transfer full):
  * Since: 0.9.2
  **/
 hb_face_t *
@@ -579,7 +574,7 @@ hb_ft_face_create_cached (FT_Face ft_face)
     if (ft_face->generic.finalizer)
       ft_face->generic.finalizer (ft_face);
 
-    ft_face->generic.data = hb_ft_face_create (ft_face, NULL);
+    ft_face->generic.data = hb_ft_face_create (ft_face, nullptr);
     ft_face->generic.finalizer = (FT_Generic_Finalizer) hb_ft_face_finalize;
   }
 
@@ -589,12 +584,12 @@ hb_ft_face_create_cached (FT_Face ft_face)
 
 /**
  * hb_ft_font_create:
- * @ft_face: (destroy destroy) (scope notified): 
+ * @ft_face: (destroy destroy) (scope notified):
  * @destroy:
  *
- * 
  *
- * Return value: (transfer full): 
+ *
+ * Return value: (transfer full):
  * Since: 0.9.2
  **/
 hb_font_t *
@@ -608,6 +603,19 @@ hb_ft_font_create (FT_Face           ft_face,
   font = hb_font_create (face);
   hb_face_destroy (face);
   _hb_ft_font_set_funcs (font, ft_face, false);
+  hb_ft_font_changed (font);
+  return font;
+}
+
+void
+hb_ft_font_changed (hb_font_t *font)
+{
+  if (font->destroy != _hb_ft_font_destroy)
+    return;
+
+  hb_ft_font_t *ft_font = (hb_ft_font_t *) font->user_data;
+  FT_Face ft_face = ft_font->ft_face;
+
   hb_font_set_scale (font,
                      (int) (((uint64_t) ft_face->size->metrics.x_scale * (uint64_t) ft_face->units_per_EM + (1u<<15)) >> 16),
                      (int) (((uint64_t) ft_face->size->metrics.y_scale * (uint64_t) ft_face->units_per_EM + (1u<<15)) >> 16));
@@ -618,39 +626,42 @@ hb_ft_font_create (FT_Face           ft_face,
 #endif
 
 #ifdef HAVE_FT_GET_VAR_BLEND_COORDINATES
-  FT_MM_Var *mm_var = NULL;
+  FT_MM_Var *mm_var = nullptr;
   if (!FT_Get_MM_Var (ft_face, &mm_var))
   {
-    FT_Fixed coords[mm_var->num_axis];
-    int hbCoords[mm_var->num_axis];
-    if (!FT_Get_Var_Blend_Coordinates (ft_face, mm_var->num_axis, coords))
+    FT_Fixed *ft_coords = (FT_Fixed *) calloc (mm_var->num_axis, sizeof (FT_Fixed));
+    int *coords = (int *) calloc (mm_var->num_axis, sizeof (int));
+    if (coords && ft_coords)
     {
-      for (int i = 0; i < mm_var->num_axis; ++i)
-        hbCoords[i] = coords[i] >> 2;
+      if (!FT_Get_Var_Blend_Coordinates (ft_face, mm_var->num_axis, ft_coords))
+      {
+        for (unsigned int i = 0; i < mm_var->num_axis; ++i)
+          coords[i] = ft_coords[i] >>= 2;
 
-      hb_font_set_var_coords_normalized (font, hbCoords, mm_var->num_axis);
+        hb_font_set_var_coords_normalized (font, coords, mm_var->num_axis);
+      }
     }
+    free (coords);
+    free (ft_coords);
+    free (mm_var);
   }
-  free (mm_var);
 #endif
-
-  return font;
 }
 
 /**
  * hb_ft_font_create_referenced:
  * @ft_face:
  *
- * 
  *
- * Return value: (transfer full): 
+ *
+ * Return value: (transfer full):
  * Since: 0.9.38
  **/
 hb_font_t *
 hb_ft_font_create_referenced (FT_Face ft_face)
 {
   FT_Reference_Face (ft_face);
-  return hb_ft_font_create (ft_face, (hb_destroy_func_t) _hb_ft_face_destroy);
+  return hb_ft_font_create (ft_face, _hb_ft_face_destroy);
 }
 
 
@@ -676,9 +687,9 @@ retry:
   {
     /* Not found; allocate one. */
     if (FT_Init_FreeType (&library))
-      return NULL;
+      return nullptr;
 
-    if (!hb_atomic_ptr_cmpexch (&ft_library, NULL, library)) {
+    if (!hb_atomic_ptr_cmpexch (&ft_library, nullptr, library)) {
       FT_Done_FreeType (library);
       goto retry;
     }
@@ -706,7 +717,7 @@ hb_ft_font_set_funcs (hb_font_t *font)
   if (unlikely (!blob_length))
     DEBUG_MSG (FT, font, "Font face has empty blob");
 
-  FT_Face ft_face = NULL;
+  FT_Face ft_face = nullptr;
   FT_Error err = FT_New_Memory_Face (get_ft_library (),
                                      (const FT_Byte *) blob_data,
                                      blob_length,
@@ -733,7 +744,21 @@ hb_ft_font_set_funcs (hb_font_t *font)
   {
     FT_Matrix matrix = { font->x_scale < 0 ? -1 : +1, 0,
                           0, font->y_scale < 0 ? -1 : +1};
-    FT_Set_Transform (ft_face, &matrix, NULL);
+    FT_Set_Transform (ft_face, &matrix, nullptr);
+  }
+
+  unsigned int num_coords;
+  const int *coords = hb_font_get_var_coords_normalized (font, &num_coords);
+  if (num_coords)
+  {
+    FT_Fixed *ft_coords = (FT_Fixed *) calloc (num_coords, sizeof (FT_Fixed));
+    if (ft_coords)
+    {
+      for (unsigned int i = 0; i < num_coords; i++)
+        ft_coords[i] = coords[i] << 2;
+      FT_Set_Var_Blend_Coordinates (ft_face, num_coords, ft_coords);
+      free (ft_coords);
+    }
   }
 
   ft_face->generic.data = blob;

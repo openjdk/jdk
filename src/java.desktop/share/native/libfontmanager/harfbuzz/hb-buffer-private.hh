@@ -45,11 +45,12 @@
 #define HB_BUFFER_MAX_LEN_DEFAULT 0x3FFFFFFF /* Shaping more than a billion chars? Let us know! */
 #endif
 
-ASSERT_STATIC (sizeof (hb_glyph_info_t) == 20);
-ASSERT_STATIC (sizeof (hb_glyph_info_t) == sizeof (hb_glyph_position_t));
+static_assert ((sizeof (hb_glyph_info_t) == 20), "");
+static_assert ((sizeof (hb_glyph_info_t) == sizeof (hb_glyph_position_t)), "");
 
 HB_MARK_AS_FLAG_T (hb_buffer_flags_t);
 HB_MARK_AS_FLAG_T (hb_buffer_serialize_flags_t);
+HB_MARK_AS_FLAG_T (hb_buffer_diff_flags_t);
 
 enum hb_buffer_scratch_flags_t {
   HB_BUFFER_SCRATCH_FLAG_DEFAULT                        = 0x00000000u,
@@ -57,6 +58,8 @@ enum hb_buffer_scratch_flags_t {
   HB_BUFFER_SCRATCH_FLAG_HAS_DEFAULT_IGNORABLES         = 0x00000002u,
   HB_BUFFER_SCRATCH_FLAG_HAS_SPACE_FALLBACK             = 0x00000004u,
   HB_BUFFER_SCRATCH_FLAG_HAS_GPOS_ATTACHMENT            = 0x00000008u,
+  HB_BUFFER_SCRATCH_FLAG_HAS_UNSAFE_TO_BREAK            = 0x00000010u,
+
   /* Reserved for complex shapers' internal use. */
   HB_BUFFER_SCRATCH_FLAG_COMPLEX0                       = 0x01000000u,
   HB_BUFFER_SCRATCH_FLAG_COMPLEX1                       = 0x02000000u,
@@ -232,24 +235,30 @@ struct hb_buffer_t {
     for (unsigned int j = 0; j < len; j++)
       info[j].mask |= mask;
   }
-  HB_INTERNAL void set_masks (hb_mask_t value,
-                              hb_mask_t mask,
-                              unsigned int cluster_start,
-                              unsigned int cluster_end);
+  HB_INTERNAL void set_masks (hb_mask_t value, hb_mask_t mask,
+                              unsigned int cluster_start, unsigned int cluster_end);
 
-  HB_INTERNAL void merge_clusters (unsigned int start,
-                                   unsigned int end)
+  inline void merge_clusters (unsigned int start, unsigned int end)
   {
     if (end - start < 2)
       return;
     merge_clusters_impl (start, end);
   }
-  HB_INTERNAL void merge_clusters_impl (unsigned int start,
-                                        unsigned int end);
-  HB_INTERNAL void merge_out_clusters (unsigned int start,
-                                       unsigned int end);
+  HB_INTERNAL void merge_clusters_impl (unsigned int start, unsigned int end);
+  HB_INTERNAL void merge_out_clusters (unsigned int start, unsigned int end);
   /* Merge clusters for deleting current glyph, and skip it. */
   HB_INTERNAL void delete_glyph (void);
+
+  inline void unsafe_to_break (unsigned int start,
+                               unsigned int end)
+  {
+    if (end - start < 2)
+      return;
+    unsafe_to_break_impl (start, end);
+  }
+  HB_INTERNAL void unsafe_to_break_impl (unsigned int start, unsigned int end);
+  HB_INTERNAL void unsafe_to_break_from_outbuffer (unsigned int start, unsigned int end);
+
 
   /* Internal methods */
   HB_INTERNAL bool enlarge (unsigned int size);
@@ -282,7 +291,77 @@ struct hb_buffer_t {
     return ret;
   }
   HB_INTERNAL bool message_impl (hb_font_t *font, const char *fmt, va_list ap) HB_PRINTF_FUNC(3, 0);
+
+  static inline void
+  set_cluster (hb_glyph_info_t &info, unsigned int cluster, unsigned int mask = 0)
+  {
+    if (info.cluster != cluster)
+    {
+      if (mask & HB_GLYPH_FLAG_UNSAFE_TO_BREAK)
+        info.mask |= HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
+      else
+        info.mask &= ~HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
+    }
+    info.cluster = cluster;
+  }
+
+  inline int
+  _unsafe_to_break_find_min_cluster (const hb_glyph_info_t *info,
+                                     unsigned int start, unsigned int end,
+                                     unsigned int cluster) const
+  {
+    for (unsigned int i = start; i < end; i++)
+      cluster = MIN<unsigned int> (cluster, info[i].cluster);
+    return cluster;
+  }
+  inline void
+  _unsafe_to_break_set_mask (hb_glyph_info_t *info,
+                             unsigned int start, unsigned int end,
+                             unsigned int cluster)
+  {
+    for (unsigned int i = start; i < end; i++)
+      if (cluster != info[i].cluster)
+      {
+        scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_UNSAFE_TO_BREAK;
+        info[i].mask |= HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
+      }
+  }
+
+  inline void
+  unsafe_to_break_all (void)
+  {
+    for (unsigned int i = 0; i < len; i++)
+      info[i].mask |= HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
+  }
+  inline void
+  safe_to_break_all (void)
+  {
+    for (unsigned int i = 0; i < len; i++)
+      info[i].mask &= ~HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
+  }
 };
+
+
+/* Loop over clusters. Duplicated in foreach_syllable(). */
+#define foreach_cluster(buffer, start, end) \
+  for (unsigned int \
+       _count = buffer->len, \
+       start = 0, end = _count ? _next_cluster (buffer, 0) : 0; \
+       start < _count; \
+       start = end, end = _next_cluster (buffer, start))
+
+static inline unsigned int
+_next_cluster (hb_buffer_t *buffer, unsigned int start)
+{
+  hb_glyph_info_t *info = buffer->info;
+  unsigned int count = buffer->len;
+
+  unsigned int cluster = info[start].cluster;
+  while (++start < count && cluster == info[start].cluster)
+    ;
+
+  return start;
+}
 
 
 #define HB_BUFFER_XALLOCATE_VAR(b, func, var) \

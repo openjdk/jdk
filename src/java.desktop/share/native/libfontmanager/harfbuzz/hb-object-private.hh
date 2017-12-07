@@ -33,16 +33,10 @@
 #define HB_OBJECT_PRIVATE_HH
 
 #include "hb-private.hh"
+#include "hb-debug.hh"
 
 #include "hb-atomic-private.hh"
 #include "hb-mutex-private.hh"
-
-
-/* Debug */
-
-#ifndef HB_DEBUG_OBJECT
-#define HB_DEBUG_OBJECT (HB_DEBUG+0)
-#endif
 
 
 /* reference_count */
@@ -193,7 +187,7 @@ static inline void *hb_object_get_user_data (Type               *obj,
                                              hb_user_data_key_t *key)
 {
   if (unlikely (!obj || hb_object_is_inert (obj)))
-    return NULL;
+    return nullptr;
   assert (hb_object_is_valid (obj));
   return obj->header.user_data.get (key);
 }

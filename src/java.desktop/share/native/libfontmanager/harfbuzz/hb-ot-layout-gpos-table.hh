@@ -432,6 +432,7 @@ struct MarkArray : ArrayOf<MarkRecord>  /* Array of MarkRecords--in Coverage ord
 
     hb_position_t mark_x, mark_y, base_x, base_y;
 
+    buffer->unsafe_to_break (glyph_pos, buffer->idx);
     mark_anchor.get_anchor (c, buffer->cur().codepoint, &mark_x, &mark_y);
     glyph_anchor.get_anchor (c, buffer->info[glyph_pos].codepoint, &base_x, &base_y);
 
@@ -643,6 +644,7 @@ struct PairSet
         min = mid + 1;
       else
       {
+        buffer->unsafe_to_break (buffer->idx, pos + 1);
         valueFormats[0].apply_value (c, this, &record->values[0], buffer->cur_pos());
         valueFormats[1].apply_value (c, this, &record->values[len1], buffer->pos[pos]);
         if (len2)
@@ -790,6 +792,7 @@ struct PairPosFormat2
     unsigned int klass2 = (this+classDef2).get_class (buffer->info[skippy_iter.idx].codepoint);
     if (unlikely (klass1 >= class1Count || klass2 >= class2Count)) return_trace (false);
 
+    buffer->unsafe_to_break (buffer->idx, skippy_iter.idx + 1);
     const Value *v = &values[record_len * (klass1 * class2Count + klass2)];
     valueFormat1.apply_value (c, this, v, buffer->cur_pos());
     valueFormat2.apply_value (c, this, v + len1, buffer->pos[skippy_iter.idx]);
@@ -929,6 +932,7 @@ struct CursivePosFormat1
     unsigned int i = buffer->idx;
     unsigned int j = skippy_iter.idx;
 
+    buffer->unsafe_to_break (i, j);
     hb_position_t entry_x, entry_y, exit_x, exit_y;
     (this+this_record.exitAnchor).get_anchor (c, buffer->info[i].codepoint, &exit_x, &exit_y);
     (this+next_record.entryAnchor).get_anchor (c, buffer->info[j].codepoint, &entry_x, &entry_y);
@@ -1083,7 +1087,9 @@ struct MarkBasePosFormat1
     do {
       if (!skippy_iter.prev ()) return_trace (false);
       /* We only want to attach to the first of a MultipleSubst sequence.  Reject others. */
-      if (0 == _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx])) break;
+      if (!_hb_glyph_info_multiplied (&buffer->info[skippy_iter.idx]) ||
+          0 == _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx]))
+        break;
       skippy_iter.reject ();
     } while (1);
 

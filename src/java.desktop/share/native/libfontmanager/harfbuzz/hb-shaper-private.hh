@@ -65,35 +65,51 @@ struct hb_shaper_data_t {
 #define HB_SHAPER_DATA_INVALID ((void *) -1)
 #define HB_SHAPER_DATA_IS_INVALID(data) ((void *) (data) == HB_SHAPER_DATA_INVALID)
 
-#define HB_SHAPER_DATA_TYPE(shaper, object)             struct hb_##shaper##_shaper_##object##_data_t
+#define HB_SHAPER_DATA_TYPE_NAME(shaper, object)        hb_##shaper##_shaper_##object##_data_t
+#define HB_SHAPER_DATA_TYPE(shaper, object)             struct HB_SHAPER_DATA_TYPE_NAME(shaper, object)
 #define HB_SHAPER_DATA_INSTANCE(shaper, object, instance)       (* (HB_SHAPER_DATA_TYPE(shaper, object) **) &(instance)->shaper_data.shaper)
-#define HB_SHAPER_DATA(shaper, object)                  HB_SHAPER_DATA_INSTANCE (shaper, object, object)
+#define HB_SHAPER_DATA(shaper, object)                  HB_SHAPER_DATA_INSTANCE(shaper, object, object)
 #define HB_SHAPER_DATA_CREATE_FUNC(shaper, object)      _hb_##shaper##_shaper_##object##_data_create
 #define HB_SHAPER_DATA_DESTROY_FUNC(shaper, object)     _hb_##shaper##_shaper_##object##_data_destroy
+#define HB_SHAPER_DATA_ENSURE_FUNC(shaper, object)      hb_##shaper##_shaper_##object##_data_ensure
 
 #define HB_SHAPER_DATA_PROTOTYPE(shaper, object) \
         HB_SHAPER_DATA_TYPE (shaper, object); /* Type forward declaration. */ \
         extern "C" HB_INTERNAL HB_SHAPER_DATA_TYPE (shaper, object) * \
         HB_SHAPER_DATA_CREATE_FUNC (shaper, object) (hb_##object##_t *object HB_SHAPER_DATA_CREATE_FUNC_EXTRA_ARGS); \
         extern "C" HB_INTERNAL void \
-        HB_SHAPER_DATA_DESTROY_FUNC (shaper, object) (HB_SHAPER_DATA_TYPE (shaper, object) *data)
+        HB_SHAPER_DATA_DESTROY_FUNC (shaper, object) (HB_SHAPER_DATA_TYPE (shaper, object) *data); \
+        extern "C" HB_INTERNAL bool \
+        HB_SHAPER_DATA_ENSURE_FUNC (shaper, object) (hb_##object##_t *object)
 
 #define HB_SHAPER_DATA_DESTROY(shaper, object) \
     if (HB_SHAPER_DATA_TYPE (shaper, object) *data = HB_SHAPER_DATA (shaper, object)) \
       if (data != HB_SHAPER_DATA_INVALID && data != HB_SHAPER_DATA_SUCCEEDED) \
         HB_SHAPER_DATA_DESTROY_FUNC (shaper, object) (data);
 
-#define HB_SHAPER_DATA_ENSURE_DECLARE(shaper, object) \
-static inline bool \
-hb_##shaper##_shaper_##object##_data_ensure (hb_##object##_t *object) \
+#define HB_SHAPER_DATA_ENSURE_DEFINE(shaper, object) \
+        HB_SHAPER_DATA_ENSURE_DEFINE_WITH_CONDITION(shaper, object, true)
+
+#define HB_SHAPER_DATA_ENSURE_DEFINE_WITH_CONDITION(shaper, object, condition) \
+bool \
+HB_SHAPER_DATA_ENSURE_FUNC(shaper, object) (hb_##object##_t *object) \
 {\
   retry: \
   HB_SHAPER_DATA_TYPE (shaper, object) *data = (HB_SHAPER_DATA_TYPE (shaper, object) *) hb_atomic_ptr_get (&HB_SHAPER_DATA (shaper, object)); \
+  if (likely (data) && !(condition)) { \
+    /* Drop and recreate. */ \
+    /* If someone dropped it in the mean time, throw it away and don't touch it. \
+     * Otherwise, destruct it. */ \
+    if (hb_atomic_ptr_cmpexch (&HB_SHAPER_DATA (shaper, object), data, nullptr)) { \
+      HB_SHAPER_DATA_DESTROY_FUNC (shaper, object) (data); \
+    } \
+    goto retry; \
+  } \
   if (unlikely (!data)) { \
     data = HB_SHAPER_DATA_CREATE_FUNC (shaper, object) (object); \
     if (unlikely (!data)) \
       data = (HB_SHAPER_DATA_TYPE (shaper, object) *) HB_SHAPER_DATA_INVALID; \
-    if (!hb_atomic_ptr_cmpexch (&HB_SHAPER_DATA (shaper, object), NULL, data)) { \
+    if (!hb_atomic_ptr_cmpexch (&HB_SHAPER_DATA (shaper, object), nullptr, data)) { \
       if (data && \
           data != HB_SHAPER_DATA_INVALID && \
           data != HB_SHAPER_DATA_SUCCEEDED) \
@@ -101,7 +117,7 @@ hb_##shaper##_shaper_##object##_data_ensure (hb_##object##_t *object) \
       goto retry; \
     } \
   } \
-  return data != NULL && !HB_SHAPER_DATA_IS_INVALID (data); \
+  return data != nullptr && !HB_SHAPER_DATA_IS_INVALID (data); \
 }
 
 

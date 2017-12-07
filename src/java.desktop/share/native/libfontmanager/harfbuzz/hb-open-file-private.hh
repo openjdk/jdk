@@ -53,6 +53,9 @@ struct TTCHeader;
 
 typedef struct TableRecord
 {
+  int cmp (Tag t) const
+  { return t.cmp (tag); }
+
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
@@ -73,27 +76,39 @@ typedef struct OffsetTable
   friend struct OpenTypeFontFile;
 
   inline unsigned int get_table_count (void) const
-  { return numTables; }
+  { return tables.len; }
   inline const TableRecord& get_table (unsigned int i) const
   {
-    if (unlikely (i >= numTables)) return Null(TableRecord);
     return tables[i];
+  }
+  inline unsigned int get_table_tags (unsigned int start_offset,
+                                      unsigned int *table_count, /* IN/OUT */
+                                      hb_tag_t     *table_tags /* OUT */) const
+  {
+    if (table_count)
+    {
+      if (start_offset >= tables.len)
+        *table_count = 0;
+      else
+        *table_count = MIN<unsigned int> (*table_count, tables.len - start_offset);
+
+      const TableRecord *sub_tables = tables.array + start_offset;
+      unsigned int count = *table_count;
+      for (unsigned int i = 0; i < count; i++)
+        table_tags[i] = sub_tables[i].tag;
+    }
+    return tables.len;
   }
   inline bool find_table_index (hb_tag_t tag, unsigned int *table_index) const
   {
     Tag t;
     t.set (tag);
-    unsigned int count = numTables;
-    for (unsigned int i = 0; i < count; i++)
-    {
-      if (t == tables[i].tag)
-      {
-        if (table_index) *table_index = i;
-        return true;
-      }
-    }
-    if (table_index) *table_index = Index::NOT_FOUND_INDEX;
-    return false;
+    /* Linear-search for small tables to work around fonts with unsorted
+     * table list. */
+    int i = tables.len < 64 ? tables.lsearch (t) : tables.bsearch (t);
+    if (table_index)
+      *table_index = i == -1 ? Index::NOT_FOUND_INDEX : (unsigned int) i;
+    return i != -1;
   }
   inline const TableRecord& get_table_by_tag (hb_tag_t tag) const
   {
@@ -106,16 +121,13 @@ typedef struct OffsetTable
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) && c->check_array (tables, TableRecord::static_size, numTables));
+    return_trace (c->check_struct (this) && tables.sanitize (c));
   }
 
   protected:
   Tag           sfnt_version;   /* '\0\001\0\00' if TrueType / 'OTTO' if CFF */
-  USHORT        numTables;      /* Number of tables. */
-  USHORT        searchRangeZ;   /* (Maximum power of 2 <= numTables) x 16 */
-  USHORT        entrySelectorZ; /* Log2(maximum power of 2 <= numTables). */
-  USHORT        rangeShiftZ;    /* NumTables x 16-searchRange. */
-  TableRecord   tables[VAR];    /* TableRecord entries. numTables items */
+  BinSearchArrayOf<TableRecord>
+                tables;
   public:
   DEFINE_SIZE_ARRAY (12, tables);
 } OpenTypeFontFace;
@@ -142,7 +154,7 @@ struct TTCHeaderVersion1
   Tag           ttcTag;         /* TrueType Collection ID string: 'ttcf' */
   FixedVersion<>version;        /* Version of the TTC Header (1.0),
                                  * 0x00010000u */
-  ArrayOf<OffsetTo<OffsetTable, ULONG>, ULONG>
+  ArrayOf<LOffsetTo<OffsetTable>, ULONG>
                 table;          /* Array of offsets to the OffsetTable for each font
                                  * from the beginning of the file */
   public:

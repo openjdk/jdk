@@ -29,6 +29,8 @@
 #ifndef HB_OT_LAYOUT_COMMON_PRIVATE_HH
 #define HB_OT_LAYOUT_COMMON_PRIVATE_HH
 
+#include "hb-private.hh"
+#include "hb-debug.hh"
 #include "hb-ot-layout-private.hh"
 #include "hb-open-type-private.hh"
 #include "hb-set-private.hh"
@@ -43,12 +45,6 @@
 
 
 namespace OT {
-
-
-#define TRACE_DISPATCH(this, format) \
-        hb_auto_trace_t<context_t::max_debug_depth, typename context_t::return_t> trace \
-        (&c->debug_depth, c->get_name (), this, HB_FUNC, \
-         "format %d", (int) format);
 
 
 #define NOT_COVERED             ((unsigned int) -1)
@@ -214,7 +210,7 @@ struct LangSys
   }
 
   inline bool sanitize (hb_sanitize_context_t *c,
-                        const Record<LangSys>::sanitize_closure_t * = NULL) const
+                        const Record<LangSys>::sanitize_closure_t * = nullptr) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) && featureIndex.sanitize (c));
@@ -254,7 +250,7 @@ struct Script
   inline const LangSys& get_default_lang_sys (void) const { return this+defaultLangSys; }
 
   inline bool sanitize (hb_sanitize_context_t *c,
-                        const Record<Script>::sanitize_closure_t * = NULL) const
+                        const Record<Script>::sanitize_closure_t * = nullptr) const
   {
     TRACE_SANITIZE (this);
     return_trace (defaultLangSys.sanitize (c, this) && langSys.sanitize (c, this));
@@ -435,17 +431,17 @@ struct FeatureParamsCharacterVariants
                                          * specifies a string (or strings,
                                          * for multiple languages) for a
                                          * user-interface label for this
-                                         * feature. (May be NULL.) */
+                                         * feature. (May be nullptr.) */
   USHORT        featUITooltipTextNameID;/* The ‘name’ table name ID that
                                          * specifies a string (or strings,
                                          * for multiple languages) that an
                                          * application can use for tooltip
                                          * text for this feature. (May be
-                                         * NULL.) */
+                                         * nullptr.) */
   USHORT        sampleTextNameID;       /* The ‘name’ table name ID that
                                          * specifies sample text that
                                          * illustrates the effect of this
-                                         * feature. (May be NULL.) */
+                                         * feature. (May be nullptr.) */
   USHORT        numNamedParameters;     /* Number of named parameters. (May
                                          * be zero.) */
   USHORT        firstParamUILabelNameID;/* The first ‘name’ table name ID
@@ -507,7 +503,7 @@ struct Feature
   { return this+featureParams; }
 
   inline bool sanitize (hb_sanitize_context_t *c,
-                        const Record<Feature>::sanitize_closure_t *closure = NULL) const
+                        const Record<Feature>::sanitize_closure_t *closure = nullptr) const
   {
     TRACE_SANITIZE (this);
     if (unlikely (!(c->check_struct (this) && lookupIndex.sanitize (c))))
@@ -690,7 +686,7 @@ struct CoverageFormat1
   inline unsigned int get_coverage (hb_codepoint_t glyph_id) const
   {
     int i = glyphArray.bsearch (glyph_id);
-    ASSERT_STATIC (((unsigned int) -1) == NOT_COVERED);
+    static_assert ((((unsigned int) -1) == NOT_COVERED), "");
     return i;
   }
 
@@ -941,7 +937,7 @@ struct Coverage
   }
 
   struct Iter {
-    Iter (void) : format (0) {};
+    Iter (void) : format (0), u () {};
     inline void init (const Coverage &c_) {
       format = c_.u.format;
       switch (format) {
@@ -982,8 +978,8 @@ struct Coverage
     private:
     unsigned int format;
     union {
+    CoverageFormat2::Iter       format2; /* Put this one first since it's larger; helps shut up compiler. */
     CoverageFormat1::Iter       format1;
-    CoverageFormat2::Iter       format2;
     } u;
   };
 
@@ -1323,6 +1319,14 @@ struct VariationStore
                                              this+regions);
   }
 
+  inline float get_delta (unsigned int index,
+                          int *coords, unsigned int coord_count) const
+  {
+    unsigned int outer = index >> 16;
+    unsigned int inner = index & 0xFFFF;
+    return get_delta (outer, inner, coords, coord_count);
+  }
+
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
@@ -1334,7 +1338,7 @@ struct VariationStore
 
   protected:
   USHORT                                format;
-  OffsetTo<VarRegionList, ULONG>        regions;
+  LOffsetTo<VarRegionList>              regions;
   OffsetArrayOf<VarData, ULONG>         dataSets;
   public:
   DEFINE_SIZE_ARRAY (8, dataSets);
@@ -1433,8 +1437,8 @@ struct FeatureTableSubstitutionRecord
   }
 
   protected:
-  USHORT                        featureIndex;
-  OffsetTo<Feature, ULONG>      feature;
+  USHORT                featureIndex;
+  LOffsetTo<Feature>    feature;
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -1450,7 +1454,7 @@ struct FeatureTableSubstitution
       if (record.featureIndex == feature_index)
         return &(this+record.feature);
     }
-    return NULL;
+    return nullptr;
   }
 
   inline bool sanitize (hb_sanitize_context_t *c) const
@@ -1481,9 +1485,9 @@ struct FeatureVariationRecord
   }
 
   protected:
-  OffsetTo<ConditionSet, ULONG>
+  LOffsetTo<ConditionSet>
                         conditions;
-  OffsetTo<FeatureTableSubstitution, ULONG>
+  LOffsetTo<FeatureTableSubstitution>
                         substitutions;
   public:
   DEFINE_SIZE_STATIC (8);
@@ -1527,7 +1531,7 @@ struct FeatureVariations
 
   protected:
   FixedVersion<>        version;        /* Version--0x00010000u */
-  ArrayOf<FeatureVariationRecord, ULONG>
+  LArrayOf<FeatureVariationRecord>
                         varRecords;
   public:
   DEFINE_SIZE_ARRAY (8, varRecords);

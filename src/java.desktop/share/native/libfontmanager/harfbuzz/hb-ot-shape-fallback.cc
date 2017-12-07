@@ -210,7 +210,7 @@ position_mark (const hb_ot_shape_plan_t *plan,
   pos.x_offset = pos.y_offset = 0;
 
 
-  /* We dont position LEFT and RIGHT marks. */
+  /* We don't position LEFT and RIGHT marks. */
 
   /* X positioning */
   switch (combining_class)
@@ -307,6 +307,9 @@ position_around_base (const hb_ot_shape_plan_t *plan,
                       unsigned int end)
 {
   hb_direction_t horiz_dir = HB_DIRECTION_INVALID;
+
+  buffer->unsafe_to_break (base, end);
+
   hb_glyph_extents_t base_extents;
   if (!font->get_glyph_extents (buffer->info[base].codepoint,
                                 &base_extents))

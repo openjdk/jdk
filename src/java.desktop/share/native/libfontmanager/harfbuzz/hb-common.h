@@ -43,28 +43,14 @@
 # endif /* !__cplusplus */
 #endif
 
-#if !defined (HB_DONT_DEFINE_STDINT)
-
 #if defined (_SVR4) || defined (SVR4) || defined (__OpenBSD__) || \
     defined (_sgi) || defined (__sun) || defined (sun) || \
     defined (__digital__) || defined (__HP_cc)
 #  include <inttypes.h>
 #elif defined (_AIX)
 #  include <sys/inttypes.h>
-/* VS 2010 (_MSC_VER 1600) has stdint.h */
-#elif defined (_MSC_VER) && _MSC_VER < 1600
-typedef __int8 int8_t;
-typedef unsigned __int8 uint8_t;
-typedef __int16 int16_t;
-typedef unsigned __int16 uint16_t;
-typedef __int32 int32_t;
-typedef unsigned __int32 uint32_t;
-typedef __int64 int64_t;
-typedef unsigned __int64 uint64_t;
 #else
 #  include <stdint.h>
-#endif
-
 #endif
 
 HB_BEGIN_DECLS
@@ -148,7 +134,7 @@ hb_language_from_string (const char *str, int len);
 HB_EXTERN const char *
 hb_language_to_string (hb_language_t language);
 
-#define HB_LANGUAGE_INVALID ((hb_language_t) NULL)
+#define HB_LANGUAGE_INVALID ((hb_language_t) 0)
 
 HB_EXTERN hb_language_t
 hb_language_get_default (void);
@@ -321,6 +307,14 @@ typedef enum
   /*9.0*/ HB_SCRIPT_TANGUT                      = HB_TAG ('T','a','n','g'),
   /*9.0*/ HB_SCRIPT_NEWA                        = HB_TAG ('N','e','w','a'),
 
+  /*
+   * Since 1.6.0
+   */
+  /*10.0*/HB_SCRIPT_MASARAM_GONDI               = HB_TAG ('G','o','n','m'),
+  /*10.0*/HB_SCRIPT_NUSHU                       = HB_TAG ('N','s','h','u'),
+  /*10.0*/HB_SCRIPT_SOYOMBO                     = HB_TAG ('S','o','y','o'),
+  /*10.0*/HB_SCRIPT_ZANABAZAR_SQUARE            = HB_TAG ('Z','a','n','b'),
+
   /* No script set. */
   HB_SCRIPT_INVALID                             = HB_TAG_NONE,
 
@@ -360,6 +354,42 @@ typedef struct hb_user_data_key_t {
 } hb_user_data_key_t;
 
 typedef void (*hb_destroy_func_t) (void *user_data);
+
+
+/* Font features and variations. */
+
+typedef struct hb_feature_t {
+  hb_tag_t      tag;
+  uint32_t      value;
+  unsigned int  start;
+  unsigned int  end;
+} hb_feature_t;
+
+HB_EXTERN hb_bool_t
+hb_feature_from_string (const char *str, int len,
+                        hb_feature_t *feature);
+
+HB_EXTERN void
+hb_feature_to_string (hb_feature_t *feature,
+                      char *buf, unsigned int size);
+
+/**
+ * hb_variation_t:
+ *
+ * Since: 1.4.2
+ */
+typedef struct hb_variation_t {
+  hb_tag_t tag;
+  float    value;
+} hb_variation_t;
+
+HB_EXTERN hb_bool_t
+hb_variation_from_string (const char *str, int len,
+                          hb_variation_t *variation);
+
+HB_EXTERN void
+hb_variation_to_string (hb_variation_t *variation,
+                        char *buf, unsigned int size);
 
 
 HB_END_DECLS

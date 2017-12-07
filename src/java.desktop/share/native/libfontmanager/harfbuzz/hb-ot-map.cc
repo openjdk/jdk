@@ -85,6 +85,7 @@ hb_ot_map_builder_t::add_lookups (hb_ot_map_t  &m,
                                   unsigned int  feature_index,
                                   unsigned int  variations_index,
                                   hb_mask_t     mask,
+                                  bool          auto_zwnj,
                                   bool          auto_zwj)
 {
   unsigned int lookup_indices[32];
@@ -112,6 +113,7 @@ hb_ot_map_builder_t::add_lookups (hb_ot_map_t  &m,
         return;
       lookup->mask = mask;
       lookup->index = lookup_indices[i];
+      lookup->auto_zwnj = auto_zwnj;
       lookup->auto_zwj = auto_zwj;
     }
 
@@ -136,7 +138,11 @@ hb_ot_map_builder_t::compile (hb_ot_map_t  &m,
                               const int    *coords,
                               unsigned int  num_coords)
 {
-  m.global_mask = 1;
+  static_assert ((!(HB_GLYPH_FLAG_DEFINED & (HB_GLYPH_FLAG_DEFINED + 1))), "");
+  unsigned int global_bit_mask = HB_GLYPH_FLAG_DEFINED + 1;
+  unsigned int global_bit_shift = _hb_popcount32 (HB_GLYPH_FLAG_DEFINED);
+
+  m.global_mask = global_bit_mask;
 
   unsigned int required_feature_index[2];
   hb_tag_t required_feature_tag[2];
@@ -188,7 +194,8 @@ hb_ot_map_builder_t::compile (hb_ot_map_t  &m,
 
 
   /* Allocate bits now */
-  unsigned int next_bit = 1;
+  unsigned int next_bit = global_bit_shift + 1;
+
   for (unsigned int i = 0; i < feature_infos.len; i++)
   {
     const feature_info_t *info = &feature_infos[i];
@@ -243,11 +250,12 @@ hb_ot_map_builder_t::compile (hb_ot_map_t  &m,
     map->index[1] = feature_index[1];
     map->stage[0] = info->stage[0];
     map->stage[1] = info->stage[1];
+    map->auto_zwnj = !(info->flags & F_MANUAL_ZWNJ);
     map->auto_zwj = !(info->flags & F_MANUAL_ZWJ);
     if ((info->flags & F_GLOBAL) && info->max_value == 1) {
       /* Uses the global bit */
-      map->shift = 0;
-      map->mask = 1;
+      map->shift = global_bit_shift;
+      map->mask = global_bit_mask;
     } else {
       map->shift = next_bit;
       map->mask = (1u << (next_bit + bits_needed)) - (1u << next_bit);
@@ -261,8 +269,8 @@ hb_ot_map_builder_t::compile (hb_ot_map_t  &m,
   feature_infos.shrink (0); /* Done with these */
 
 
-  add_gsub_pause (NULL);
-  add_gpos_pause (NULL);
+  add_gsub_pause (nullptr);
+  add_gpos_pause (nullptr);
 
   for (unsigned int table_index = 0; table_index < 2; table_index++)
   {
@@ -284,8 +292,7 @@ hb_ot_map_builder_t::compile (hb_ot_map_t  &m,
         add_lookups (m, face, table_index,
                      required_feature_index[table_index],
                      variations_index,
-                     1 /* mask */,
-                     true /* auto_zwj */);
+                     global_bit_mask);
 
       for (unsigned i = 0; i < m.features.len; i++)
         if (m.features[i].stage[table_index] == stage)
@@ -293,6 +300,7 @@ hb_ot_map_builder_t::compile (hb_ot_map_t  &m,
                        m.features[i].index[table_index],
                        variations_index,
                        m.features[i].mask,
+                       m.features[i].auto_zwnj,
                        m.features[i].auto_zwj);
 
       /* Sort lookups and merge duplicates */
@@ -307,6 +315,7 @@ hb_ot_map_builder_t::compile (hb_ot_map_t  &m,
           else
           {
             m.lookups[table_index][j].mask |= m.lookups[table_index][i].mask;
+            m.lookups[table_index][j].auto_zwnj &= m.lookups[table_index][i].auto_zwnj;
             m.lookups[table_index][j].auto_zwj &= m.lookups[table_index][i].auto_zwj;
           }
         m.lookups[table_index].shrink (j + 1);

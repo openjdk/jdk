@@ -50,10 +50,8 @@ struct LongMetric
   DEFINE_SIZE_STATIC (4);
 };
 
-struct _mtx
+struct hmtxvmtx
 {
-  static const hb_tag_t tableTag = HB_TAG('_','m','t','x');
-
   static const hb_tag_t hmtxTag = HB_OT_TAG_hmtx;
   static const hb_tag_t vmtxTag = HB_OT_TAG_vmtx;
 
@@ -91,10 +89,10 @@ struct _mtx
   DEFINE_SIZE_ARRAY2 (0, longMetric, leadingBearingX);
 };
 
-struct hmtx : _mtx {
+struct hmtx : hmtxvmtx {
   static const hb_tag_t tableTag        = HB_OT_TAG_hmtx;
 };
-struct vmtx : _mtx {
+struct vmtx : hmtxvmtx {
   static const hb_tag_t tableTag        = HB_OT_TAG_vmtx;
 };
 
