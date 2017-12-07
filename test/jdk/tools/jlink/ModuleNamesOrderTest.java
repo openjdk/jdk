@@ -24,14 +24,17 @@
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Properties;
 import java.util.spi.ToolProvider;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import tests.Helper;
 import tests.JImageGenerator;
+import tests.JImageGenerator.JLinkTask;
 
 /*
  * @test
@@ -44,6 +47,9 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
+ *          jdk.scripting.nashorn
+ *          jdk.scripting.nashorn.shell
+ *
  * @build tests.*
  * @run main ModuleNamesOrderTest
  */
@@ -60,12 +66,18 @@ public class ModuleNamesOrderTest {
             return;
         }
 
-        Path outputDir = helper.createNewImageDir("image8168925");
-        JImageGenerator.getJLinkTask()
-                .modulePath(helper.defaultModulePath())
-                .output(outputDir)
-                .addMods("jdk.scripting.nashorn")
-                .call().assertSuccess();
+        testDependences(helper);
+        testModulesOrder(helper);
+    }
+
+    private static List<String> modulesProperty(Path outputDir, String modulePath, String... roots)
+        throws IOException
+    {
+        JLinkTask jlinkTask = JImageGenerator.getJLinkTask()
+                                             .modulePath(modulePath)
+                                             .output(outputDir);
+        Stream.of(roots).forEach(jlinkTask::addMods);
+        jlinkTask.call().assertSuccess();
 
         File release = new File(outputDir.toString(), "release");
         if (!release.exists()) {
@@ -81,9 +93,21 @@ public class ModuleNamesOrderTest {
         if (!modules.startsWith("\"java.base ")) {
             throw new AssertionError("MODULES should start with 'java.base'");
         }
+        if (modules.charAt(0) != '"' || modules.charAt(modules.length()-1) != '"') {
+            throw new AssertionError("MODULES value should be double quoted");
+        }
 
-        if (!modules.endsWith(" jdk.scripting.nashorn\"")) {
-            throw new AssertionError("MODULES end with 'jdk.scripting.nashorn'");
+        return Stream.of(modules.substring(1, modules.length()-1).split("\\s+"))
+                     .collect(Collectors.toList());
+    }
+
+    private static void testDependences(Helper helper) throws IOException {
+        Path outputDir = helper.createNewImageDir("test");
+        List<String> modules = modulesProperty(outputDir, helper.defaultModulePath(),
+            "jdk.scripting.nashorn");
+        String last = modules.get(modules.size()-1);
+        if (!last.equals("jdk.scripting.nashorn")) {
+            throw new AssertionError("Unexpected MODULES value: " + modules);
         }
 
         checkDependency(modules, "java.logging", "java.base");
@@ -94,7 +118,23 @@ public class ModuleNamesOrderTest {
         checkDependency(modules, "jdk.scripting.nashorn", "java.scripting");
     }
 
-    private static void checkDependency(String modules, String fromMod, String toMod) {
+    /*
+     * Verify the MODULES list must be the same for the same module graph
+     */
+    private static void testModulesOrder(Helper helper) throws IOException {
+        Path image1 = helper.createNewImageDir("test1");
+        List<String> modules1 = modulesProperty(image1, helper.defaultModulePath(),
+            "jdk.scripting.nashorn", "jdk.scripting.nashorn.shell");
+        Path image2 = helper.createNewImageDir("test2");
+        List<String> modules2 = modulesProperty(image2, helper.defaultModulePath(),
+            "jdk.scripting.nashorn.shell", "jdk.scripting.nashorn");
+        if (!modules1.equals(modules2)) {
+            throw new AssertionError("MODULES should be a stable order: " +
+                modules1 + " vs " + modules2);
+        }
+    }
+
+    private static void checkDependency(List<String> modules, String fromMod, String toMod) {
         int fromModIdx = modules.indexOf(fromMod);
         if (fromModIdx == -1) {
             throw new AssertionError(fromMod + " is missing in MODULES");
