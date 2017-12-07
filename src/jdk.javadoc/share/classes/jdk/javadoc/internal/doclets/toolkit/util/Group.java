@@ -290,7 +290,7 @@ public class Group {
             groupList.add(defaultGroupName);
         }
         for (PackageElement pkg : packages) {
-            String pkgName = pkg.isUnnamed() ? null : configuration.utils.getPackageName(pkg);
+            String pkgName = configuration.utils.getPackageName(pkg);
             String groupName = pkg.isUnnamed() ? null : elementNameGroupMap.get(pkgName);
             // if this package is not explicitly assigned to a group,
             // try matching it to group specified by regular expression
