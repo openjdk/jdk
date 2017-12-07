@@ -216,7 +216,7 @@ class ConsoleIOContext extends IOContext {
                 int[] anchor = new int[] {-1};
                 List<Suggestion> suggestions;
                 List<String> doc;
-                boolean command = prefix.isEmpty() && text.trim().startsWith("/");
+                boolean command = prefix.isEmpty() && text.startsWith("/");
                 if (command) {
                     suggestions = repl.commandCompletionSuggestions(text, cursor, anchor);
                     doc = repl.commandDocumentation(text, cursor, true);

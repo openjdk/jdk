@@ -41,6 +41,11 @@ import jdk.jshell.tool.JavaShellToolBuilder;
 
 public class UITesting {
 
+    protected static final String TAB = "\011";
+    protected static final String INTERRUPT = "\u0003";
+    protected static final String BELL = "\u0007";
+    protected static final String PROMPT = "\u0005";
+    protected static final String REDRAW_PROMPT = "\n\r" + PROMPT;
     private final boolean laxLineEndings;
 
     public UITesting() {
@@ -100,10 +105,10 @@ public class UITesting {
         runner.start();
 
         try {
-            waitOutput(out, "\u0005");
+            waitOutput(out, PROMPT);
             test.test(inputSink, out);
         } finally {
-            inputSink.write("\003\003/exit");
+            inputSink.write(INTERRUPT + INTERRUPT + "/exit");
 
             runner.join(1000);
             if (runner.isAlive()) {
@@ -196,6 +201,10 @@ public class UITesting {
 
     protected String getResource(String key) {
         return resources.getString(key);
+    }
+
+    protected String resource(String key) {
+        return Pattern.quote(getResource(key).replaceAll("\t", "    "));
     }
 
     protected String getMessage(String key, Object... args) {

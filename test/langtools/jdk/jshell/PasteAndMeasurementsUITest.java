@@ -62,11 +62,11 @@ public class PasteAndMeasurementsUITest extends UITesting {
                             "\u0006\u001b\\[6nSystem.err.println\\(1\\);\n" +
                             "\u0006\u001b\\[6n\\}\n" +
                             "\\|  created method test1\\(\\)\n" +
-                            "\u0005\u001b\\[6nvoid test2\\(\\) \\{\n" +
+                            PROMPT + "\u001b\\[6nvoid test2\\(\\) \\{\n" +
                             "\u0006\u001b\\[6nSystem.err.println\\(1\\);\n" +
                             "\u0006\u001b\\[6n\\}\n" +
                             "\\|  created method test2\\(\\)\n" +
-                            "\u0005\u001b\\[6n");
+                            PROMPT + "\u001b\\[6n");
         });
     }
         private static final String ANSI_SUPPORTED_PROPERTY = "test.terminal.ansi.supported";
