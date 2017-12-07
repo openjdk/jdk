@@ -834,6 +834,8 @@ class Eval {
                         if (!toReplace.isEmpty()) {
                             replaced.addAll(toReplace);
                             replaced.stream().forEach(Unit::markForReplacement);
+                            //ensure correct classnames are set in the snippets:
+                            replaced.stream().forEach(u -> u.setWrap(ins, legit));
                         }
 
                         return toReplace.isEmpty() ? Result.SUCESS : Result.FAILURE;
