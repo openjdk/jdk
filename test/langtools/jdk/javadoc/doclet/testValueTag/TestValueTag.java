@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug      4764045 8004825 8026567
+ * @bug      4764045 8004825 8026567 8191030
  * @summary  This test ensures that the value tag works in all
- * use cases. The explainations for each test case are written below.
+ *           use cases, the tests are explained below.
  * @author   jamieh
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -103,7 +103,7 @@ public class TestValueTag extends JavadocTester {
         );
 
         checkOutput("pkg1/Class1.html", false,
-                //Base case:  using @value on a constant.
+                // Base case:  using @value on a constant.
                 "Result:  <a href=\"../pkg1/Class1.html#TEST_12_ERROR\">\"Test 12 "
                 + "generates an error message\"</a>");
 
@@ -119,22 +119,35 @@ public class TestValueTag extends JavadocTester {
                 "pkg1", "pkg2");
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true,
-                //Test @value warning printed when used with non-constant.
+                // Test @value warning printed when used with non-constant.
                 "warning - @value tag (which references nonConstant) "
                 + "can only be used in constants.",
                 "warning - @value tag (which references NULL) "
                 + "can only be used in constants.",
                 "warning - @value tag (which references TEST_12_ERROR) "
-                + "can only be used in constants."
-// TODO: re-examine these.
-//                //Test warning printed for bad reference.
-//                "warning - UnknownClass#unknownConstant (referenced by "
-//                + "@value tag) is an unknown reference.",
-//                //Test warning printed for invalid use of @value.
-//                "warning - @value tag cannot be used here."
+                + "can only be used in constants.",
+                // Test warning printed for bad reference.
+                "warning - {@value UnknownClass#unknownConstant}"
+                + " (referenced by @value tag) is an unknown reference."
         );
         checkForException();
     }
+
+    @Test()
+    void test3() {
+        javadoc("-d", "out3",
+                "-sourcepath", testSrc,
+                "pkg2", "pkg3");
+        checkExit(Exit.OK);
+
+        checkOrder("pkg3/RT.html",
+                "The value is <a href=\"../pkg3/RT.html#CONSTANT\">\"constant\"</a>.",
+                "The value1 is <a href=\"../pkg3/RT.html#CONSTANT\">\"constant\"</a>.",
+                "The value2 is <a href=\"../pkg3/RT.html#CONSTANT\">\"constant\"</a>.",
+                "The value3 is <a href=\"../pkg2/Class3.html#TEST_12_PASSES\">"
+                + "\"Test 12 passes\"</a>.");
+    }
+
 
     void checkForException() {
         checkOutput(Output.STDERR, false, "DocletAbortException");
