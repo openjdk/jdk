@@ -62,7 +62,7 @@ public class UseCountedLoopSafepointsTest {
         try {
             oa = ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
                                              "-XX:" + (enabled ? "+" : "-") + "UseCountedLoopSafepoints",
-                                             "-XX:LoopStripMiningIter=" + (enabled ? "1" : "0"), "-XX:+WhiteBoxAPI",
+                                             "-XX:+WhiteBoxAPI",
                     "-XX:-Inline", "-Xbatch", "-XX:+PrintIdeal", "-XX:LoopUnrollLimit=0",
                     "-XX:CompileOnly=" + UseCountedLoopSafepoints.class.getName() + "::testMethod",
                     UseCountedLoopSafepoints.class.getName());
