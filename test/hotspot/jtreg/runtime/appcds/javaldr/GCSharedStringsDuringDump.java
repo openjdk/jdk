@@ -101,6 +101,7 @@ public class GCSharedStringsDuringDump {
             if (output.getStdout().contains("Too many string space regions") ||
                 output.getStderr().contains("Unable to write archive heap memory regions") ||
                 output.getStdout().contains("Try increasing NewSize") ||
+                !output.getStdout().contains("oa0 space:") ||
                 output.getExitValue() != 0) {
                 // Try again with larger heap and NewSize, this should increase the
                 // G1 heap region size to 2M
