@@ -706,14 +706,11 @@ inline bool NativeInstruction::is_cond_jump()    { return (int_at(0) & 0xF0FF) =
 inline bool NativeInstruction::is_safepoint_poll() {
 #ifdef AMD64
   if (SafepointMechanism::uses_thread_local_poll()) {
-    // We know that the poll must have a REX_B prefix since we enforce its source to be
-    // a rex-register and the destination to be rax.
     const bool has_rex_prefix = ubyte_at(0) == NativeTstRegMem::instruction_rex_b_prefix;
-    const bool is_test_opcode = ubyte_at(1) == NativeTstRegMem::instruction_code_memXregl;
-    const bool is_rax_target = (ubyte_at(2) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg;
-    if (has_rex_prefix && is_test_opcode && is_rax_target) {
-      return true;
-    }
+    const int test_offset = has_rex_prefix ? 1 : 0;
+    const bool is_test_opcode = ubyte_at(test_offset) == NativeTstRegMem::instruction_code_memXregl;
+    const bool is_rax_target = (ubyte_at(test_offset + 1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg;
+    return is_test_opcode && is_rax_target;
   }
   // Try decoding a near safepoint first:
   if (ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
