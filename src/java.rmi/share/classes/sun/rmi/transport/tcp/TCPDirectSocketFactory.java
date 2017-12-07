@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.rmi.transport.tcp;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.rmi.server.RMISocketFactory;
@@ -42,6 +43,14 @@ public class TCPDirectSocketFactory extends RMISocketFactory {
 
     public ServerSocket createServerSocket(int port) throws IOException
     {
-        return new ServerSocket(port);
+        ServerSocket ss = new ServerSocket();
+        if (port == 0) {
+            // Only need SO_REUSEADDR if we're using a fixed port. If we
+            // start seeing EADDRINUSE due to collisions in free ports
+            // then we should retry the bind() a few times.
+            ss.setReuseAddress(false);
+        }
+        ss.bind(new InetSocketAddress(port));
+        return ss;
     }
 }
