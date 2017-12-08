@@ -110,6 +110,7 @@ public class JImageGenerator {
     private static final String ADD_MODULES_OPTION = "--add-modules";
     private static final String LIMIT_MODULES_OPTION = "--limit-modules";
     private static final String PLUGIN_MODULE_PATH = "--plugin-module-path";
+    private static final String LAUNCHER = "--launcher";
 
     private static final String CMDS_OPTION = "--cmds";
     private static final String CONFIG_OPTION = "--config";
@@ -579,9 +580,15 @@ public class JImageGenerator {
         private String repeatedLimitMods;
         private Path output;
         private Path existing;
+        private String launcher; // optional
 
         public JLinkTask modulePath(String modulePath) {
             this.modulePath = modulePath;
+            return this;
+        }
+
+        public JLinkTask launcher(String cmd) {
+            launcher = Objects.requireNonNull(cmd);
             return this;
         }
 
@@ -681,6 +688,10 @@ public class JImageGenerator {
             if (!pluginModulePath.isEmpty()) {
                 options.add(PLUGIN_MODULE_PATH);
                 options.add(toPath(pluginModulePath));
+            }
+            if (launcher != null && !launcher.isEmpty()) {
+                options.add(LAUNCHER);
+                options.add(launcher);
             }
             options.addAll(this.options);
             return options.toArray(new String[options.size()]);

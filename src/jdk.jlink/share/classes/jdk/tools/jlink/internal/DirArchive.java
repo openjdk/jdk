@@ -85,17 +85,17 @@ public class DirArchive implements Archive {
     private static final Consumer<String> noopConsumer = (String t) -> {
     };
 
-    public DirArchive(Path dirPath) {
-        this(dirPath, noopConsumer);
+    public DirArchive(Path dirPath, String moduleName) {
+        this(dirPath, moduleName, noopConsumer);
     }
 
-    public DirArchive(Path dirPath, Consumer<String> log) {
+    public DirArchive(Path dirPath, String moduleName, Consumer<String> log) {
         Objects.requireNonNull(dirPath);
         if (!Files.isDirectory(dirPath)) {
             throw new IllegalArgumentException(dirPath + " is not a directory");
         }
         chop = dirPath.toString().length() + 1;
-        this.moduleName = Objects.requireNonNull(dirPath.getFileName()).toString();
+        this.moduleName = Objects.requireNonNull(moduleName);
         this.dirPath = dirPath;
         this.log = log;
     }
