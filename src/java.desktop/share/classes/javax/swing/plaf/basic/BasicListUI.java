@@ -2134,8 +2134,11 @@ public class BasicListUI extends ListUI
             Rectangle leadRect =
                 (lead==-1) ? new Rectangle() : list.getCellBounds(lead, lead);
 
+            if (leadRect == null) {
+                return index;
+            }
             if (list.getLayoutOrientation() == JList.VERTICAL_WRAP &&
-                list.getVisibleRowCount() <= 0) {
+                    list.getVisibleRowCount() <= 0) {
                 if (!list.getComponentOrientation().isLeftToRight()) {
                     direction = -direction;
                 }
@@ -2146,14 +2149,20 @@ public class BasicListUI extends ListUI
                     visRect.x = leadRect.x + leadRect.width - visRect.width;
                     Point p = new Point(visRect.x - 1, leadRect.y);
                     index = list.locationToIndex(p);
+                    if (index == -1) {
+                        return index;
+                    }
                     Rectangle cellBounds = list.getCellBounds(index, index);
-                    if (visRect.intersects(cellBounds)) {
+                    if (cellBounds != null && visRect.intersects(cellBounds)) {
                         p.x = cellBounds.x - 1;
                         index = list.locationToIndex(p);
+                        if (index == -1) {
+                            return index;
+                        }
                         cellBounds = list.getCellBounds(index, index);
                     }
                     // this is necessary for right-to-left orientation only
-                    if (cellBounds.y != leadRect.y) {
+                    if (cellBounds != null && cellBounds.y != leadRect.y) {
                         p.x = cellBounds.x + cellBounds.width;
                         index = list.locationToIndex(p);
                     }
@@ -2163,13 +2172,19 @@ public class BasicListUI extends ListUI
                     visRect.x = leadRect.x;
                     Point p = new Point(visRect.x + visRect.width, leadRect.y);
                     index = list.locationToIndex(p);
+                    if (index == -1) {
+                        return index;
+                    }
                     Rectangle cellBounds = list.getCellBounds(index, index);
-                    if (visRect.intersects(cellBounds)) {
+                    if (cellBounds != null && visRect.intersects(cellBounds)) {
                         p.x = cellBounds.x + cellBounds.width;
                         index = list.locationToIndex(p);
+                        if (index == -1) {
+                            return index;
+                        }
                         cellBounds = list.getCellBounds(index, index);
                     }
-                    if (cellBounds.y != leadRect.y) {
+                    if (cellBounds != null && cellBounds.y != leadRect.y) {
                         p.x = cellBounds.x - 1;
                         index = list.locationToIndex(p);
                     }
@@ -2187,17 +2202,23 @@ public class BasicListUI extends ListUI
                         visRect.y = leadRect.y + leadRect.height - visRect.height;
                         p.y = visRect.y;
                         index = list.locationToIndex(p);
+                        if (index == -1) {
+                            return index;
+                        }
                         Rectangle cellBounds = list.getCellBounds(index, index);
                         // go one cell down if first visible cell doesn't fit
                         // into adjasted visible rectangle
-                        if (cellBounds.y < visRect.y) {
+                        if (cellBounds != null && cellBounds.y < visRect.y) {
                             p.y = cellBounds.y + cellBounds.height;
                             index = list.locationToIndex(p);
+                            if (index == -1) {
+                                return index;
+                            }
                             cellBounds = list.getCellBounds(index, index);
                         }
                         // if index isn't less then lead
                         // try to go to cell previous to lead
-                        if (cellBounds.y >= leadRect.y) {
+                        if (cellBounds != null && cellBounds.y >= leadRect.y) {
                             p.y = leadRect.y - 1;
                             index = list.locationToIndex(p);
                         }
@@ -2207,15 +2228,23 @@ public class BasicListUI extends ListUI
                     // down
                     // go to the last completely visible cell
                     Point p = new Point(leadRect.x,
-                                        visRect.y + visRect.height - 1);
+                            visRect.y + visRect.height - 1);
                     index = list.locationToIndex(p);
+                    if (index == -1) {
+                        return index;
+                    }
                     Rectangle cellBounds = list.getCellBounds(index, index);
                     // go up one cell if last visible cell doesn't fit
                     // into visible rectangle
-                    if (cellBounds.y + cellBounds.height >
-                        visRect.y + visRect.height) {
+                    if (cellBounds != null &&
+                            cellBounds.y + cellBounds.height >
+                            visRect.y + visRect.height)
+                    {
                         p.y = cellBounds.y - 1;
                         index = list.locationToIndex(p);
+                        if (index == -1) {
+                            return index;
+                        }
                         cellBounds = list.getCellBounds(index, index);
                         index = Math.max(index, lead);
                     }
@@ -2226,24 +2255,33 @@ public class BasicListUI extends ListUI
                         visRect.y = leadRect.y;
                         p.y = visRect.y + visRect.height - 1;
                         index = list.locationToIndex(p);
+                        if (index == -1) {
+                            return index;
+                        }
                         cellBounds = list.getCellBounds(index, index);
                         // go one cell up if last visible cell doesn't fit
                         // into adjasted visible rectangle
-                        if (cellBounds.y + cellBounds.height >
-                            visRect.y + visRect.height) {
+                        if (cellBounds != null &&
+                                cellBounds.y + cellBounds.height >
+                                visRect.y + visRect.height)
+                        {
                             p.y = cellBounds.y - 1;
                             index = list.locationToIndex(p);
+                            if (index == -1) {
+                                return index;
+                            }
                             cellBounds = list.getCellBounds(index, index);
                         }
                         // if index isn't greater then lead
                         // try to go to cell next after lead
-                        if (cellBounds.y <= leadRect.y) {
+                        if (cellBounds != null && cellBounds.y <= leadRect.y) {
                             p.y = leadRect.y + leadRect.height;
                             index = list.locationToIndex(p);
                         }
                     }
                 }
             }
+
             return index;
         }
 
@@ -2308,18 +2346,27 @@ public class BasicListUI extends ListUI
                                 cellBounds.x + cellBounds.width - visRect.width);
                             int startIndex =
                                 list.locationToIndex(new Point(x, cellBounds.y));
+                            if (startIndex == -1) {
+                                return;
+                            }
                             Rectangle startRect = list.getCellBounds(startIndex,
                                                                      startIndex);
-                            if (startRect.x < x && startRect.x < cellBounds.x) {
+                            if (startRect != null &&
+                                startRect.x < x && startRect.x < cellBounds.x) {
                                 startRect.x += startRect.width;
                                 startIndex =
                                     list.locationToIndex(startRect.getLocation());
+                                if (startIndex == -1) {
+                                    return;
+                                }
                                 startRect = list.getCellBounds(startIndex,
                                                                startIndex);
                             }
                             cellBounds = startRect;
                         }
-                        cellBounds.width = visRect.width;
+                        if (cellBounds != null) {
+                            cellBounds.width = visRect.width;
+                        }
                     }
                     else {
                         if (direction > 0) {
@@ -2327,15 +2374,20 @@ public class BasicListUI extends ListUI
                             int x = cellBounds.x + visRect.width;
                             int rightIndex =
                                 list.locationToIndex(new Point(x, cellBounds.y));
+                            if (rightIndex == -1) {
+                                return;
+                            }
                             Rectangle rightRect = list.getCellBounds(rightIndex,
                                                                      rightIndex);
-                            if (rightRect.x + rightRect.width > x &&
-                                rightRect.x > cellBounds.x) {
-                                rightRect.width = 0;
+                            if (rightRect != null) {
+                                if (rightRect.x + rightRect.width > x &&
+                                        rightRect.x > cellBounds.x) {
+                                    rightRect.width = 0;
+                                }
+                                cellBounds.x = Math.max(0,
+                                        rightRect.x + rightRect.width - visRect.width);
+                                cellBounds.width = visRect.width;
                             }
-                            cellBounds.x = Math.max(0,
-                                rightRect.x + rightRect.width - visRect.width);
-                            cellBounds.width = visRect.width;
                         }
                         else {
                             cellBounds.x += Math.max(0,
@@ -2357,24 +2409,35 @@ public class BasicListUI extends ListUI
                             cellBounds.y + cellBounds.height - visRect.height);
                         int startIndex =
                             list.locationToIndex(new Point(cellBounds.x, y));
+                        if (startIndex == -1) {
+                            return;
+                        }
                         Rectangle startRect = list.getCellBounds(startIndex,
                                                                  startIndex);
-                        if (startRect.y < y && startRect.y < cellBounds.y) {
+                        if (startRect != null &&
+                                startRect.y < y && startRect.y < cellBounds.y) {
                             startRect.y += startRect.height;
                             startIndex =
                                 list.locationToIndex(startRect.getLocation());
+                            if (startIndex == -1) {
+                                return;
+                            }
                             startRect =
                                 list.getCellBounds(startIndex, startIndex);
                         }
                         cellBounds = startRect;
-                        cellBounds.height = visRect.height;
+                        if (cellBounds != null) {
+                            cellBounds.height = visRect.height;
+                        }
                     }
                     else {
                         // adjust height to fit into visible rectangle
                         cellBounds.height = Math.min(cellBounds.height, visRect.height);
                     }
                 }
-                list.scrollRectToVisible(cellBounds);
+                if (cellBounds != null) {
+                    list.scrollRectToVisible(cellBounds);
+                }
             }
         }
 
