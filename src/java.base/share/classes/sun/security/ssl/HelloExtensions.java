@@ -93,6 +93,8 @@ final class HelloExtensions {
                 extension = new CertStatusReqExtension(s, extlen);
             } else if (extType == ExtensionType.EXT_STATUS_REQUEST_V2) {
                 extension = new CertStatusReqListV2Extension(s, extlen);
+            } else if (extType == ExtensionType.EXT_EXTENDED_MASTER_SECRET) {
+                extension = new ExtendedMasterSecretExtension(s, extlen);
             } else {
                 extension = new UnknownExtension(s, extlen, extType);
             }

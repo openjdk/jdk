@@ -31,45 +31,45 @@
  * @bug 6956398
  * @summary make ephemeral DH key match the length of the certificate key
  * @run main/othervm
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1639 267
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1643 267
  * @run main/othervm -Djsse.enableFFDHE=false
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1255 75
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=matched
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1255 75
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=legacy
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1255 75
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=1024
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1255 75
- *
- * @run main/othervm -Djsse.enableFFDHE=false
- *      DHEKeySizing SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA true 229 75
- *
- * @run main/othervm -Djsse.enableFFDHE=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1383 139
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=legacy
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1319 107
+ *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1259 75
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.ephemeralDHKeySize=matched
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1639 267
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=1024
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1383 139
- *
- * @run main/othervm -Djsse.enableFFDHE=false
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 357 139
+ *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1259 75
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.ephemeralDHKeySize=legacy
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 293 107
- * @run main/othervm -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=matched
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 357 139
+ *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1259 75
  * @run main/othervm -Djsse.enableFFDHE=false
  *      -Djdk.tls.ephemeralDHKeySize=1024
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 357 139
+ *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1259 75
+ *
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      DHEKeySizing SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA true 233 75
+ *
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1387 139
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=legacy
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1323 107
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=matched
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1643 267
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=1024
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1387 139
+ *
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 361 139
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=legacy
+ *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 297 107
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=matched
+ *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 361 139
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=1024
+ *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 361 139
  */
 
 /*
@@ -101,10 +101,10 @@
  * Here is a summary of the record length in the test case.
  *
  *            |  ServerHello Series  |  ClientKeyExchange | ServerHello Anon
- *   512-bit  |          1255 bytes  |           75 bytes |        229 bytes
- *   768-bit  |          1319 bytes  |          107 bytes |        293 bytes
- *  1024-bit  |          1383 bytes  |          139 bytes |        357 bytes
- *  2048-bit  |          1639 bytes  |          267 bytes |        357 bytes
+ *   512-bit  |          1259 bytes  |           75 bytes |        233 bytes
+ *   768-bit  |          1323 bytes  |          107 bytes |        297 bytes
+ *  1024-bit  |          1387 bytes  |          139 bytes |        361 bytes
+ *  2048-bit  |          1643 bytes  |          267 bytes |        361 bytes
  */
 
 import javax.net.ssl.*;

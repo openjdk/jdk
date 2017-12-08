@@ -30,12 +30,6 @@ import java.io.*;
 import java.util.*;
 import java.security.*;
 import java.nio.ByteBuffer;
-import java.security.NoSuchAlgorithmException;
-import java.security.AccessController;
-import java.security.AlgorithmConstraints;
-import java.security.AccessControlContext;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.util.function.BiFunction;
 
 import javax.crypto.*;
@@ -225,6 +219,20 @@ abstract class Handshaker {
             Debug.getBooleanProperty(
                 "jdk.tls.rejectClientInitiatedRenegotiation", false);
 
+    // To switch off the extended_master_secret extension.
+    static final boolean useExtendedMasterSecret;
+
+    // Allow session resumption without Extended Master Secret extension.
+    static final boolean allowLegacyResumption =
+            Debug.getBooleanProperty("jdk.tls.allowLegacyResumption", true);
+
+    // Allow full handshake without Extended Master Secret extension.
+    static final boolean allowLegacyMasterSecret =
+            Debug.getBooleanProperty("jdk.tls.allowLegacyMasterSecret", true);
+
+    // Is it requested to use extended master secret extension?
+    boolean requestedToUseEMS = false;
+
     // need to dispose the object when it is invalidated
     boolean invalidated;
 
@@ -232,6 +240,24 @@ abstract class Handshaker {
      * Is this an instance for Datagram Transport Layer Security (DTLS)?
      */
     final boolean isDTLS;
+
+    // Is the extended_master_secret extension supported?
+    static {
+        boolean supportExtendedMasterSecret = true;
+        try {
+            KeyGenerator kg =
+                JsseJce.getKeyGenerator("SunTlsExtendedMasterSecret");
+        } catch (NoSuchAlgorithmException nae) {
+            supportExtendedMasterSecret = false;
+        }
+
+        if (supportExtendedMasterSecret) {
+            useExtendedMasterSecret = Debug.getBooleanProperty(
+                    "jdk.tls.useExtendedMasterSecret", true);
+        } else {
+            useExtendedMasterSecret = false;
+        }
+    }
 
     Handshaker(SSLSocketImpl c, SSLContextImpl context,
             ProtocolList enabledProtocols, boolean needCertVerify,
@@ -243,7 +269,7 @@ abstract class Handshaker {
         init(context, enabledProtocols, needCertVerify, isClient,
             activeProtocolVersion, isInitialHandshake, secureRenegotiation,
             clientVerifyData, serverVerifyData);
-    }
+   }
 
     Handshaker(SSLEngineImpl engine, SSLContextImpl context,
             ProtocolList enabledProtocols, boolean needCertVerify,
@@ -1226,6 +1252,7 @@ abstract class Handshaker {
      * SHA1 hashes are of (different) constant strings, the pre-master
      * secret, and the nonces provided by the client and the server.
      */
+    @SuppressWarnings("deprecation")
     private SecretKey calculateMasterSecret(SecretKey preMasterSecret,
             ProtocolVersion requestedVersion) {
 
@@ -1276,11 +1303,37 @@ abstract class Handshaker {
         int prfHashLength = prf.getPRFHashLength();
         int prfBlockSize = prf.getPRFBlockSize();
 
-        @SuppressWarnings("deprecation")
-        TlsMasterSecretParameterSpec spec = new TlsMasterSecretParameterSpec(
-                preMasterSecret, (majorVersion & 0xFF), (minorVersion & 0xFF),
-                clnt_random.random_bytes, svr_random.random_bytes,
-                prfHashAlg, prfHashLength, prfBlockSize);
+        TlsMasterSecretParameterSpec spec;
+        if (session.getUseExtendedMasterSecret()) {
+            // reset to use the extended master secret algorithm
+            masterAlg = "SunTlsExtendedMasterSecret";
+
+            byte[] sessionHash = null;
+            if (protocolVersion.useTLS12PlusSpec()) {
+                sessionHash = handshakeHash.getFinishedHash();
+            } else {
+                // TLS 1.0/1.1, DTLS 1.0
+                sessionHash = new byte[36];
+                try {
+                    handshakeHash.getMD5Clone().digest(sessionHash, 0, 16);
+                    handshakeHash.getSHAClone().digest(sessionHash, 16, 20);
+                } catch (DigestException de) {
+                    throw new ProviderException(de);
+                }
+            }
+
+            spec = new TlsMasterSecretParameterSpec(
+                    preMasterSecret,
+                    (majorVersion & 0xFF), (minorVersion & 0xFF),
+                    sessionHash,
+                    prfHashAlg, prfHashLength, prfBlockSize);
+        } else {
+            spec = new TlsMasterSecretParameterSpec(
+                    preMasterSecret,
+                    (majorVersion & 0xFF), (minorVersion & 0xFF),
+                    clnt_random.random_bytes, svr_random.random_bytes,
+                    prfHashAlg, prfHashLength, prfBlockSize);
+        }
 
         try {
             KeyGenerator kg = JsseJce.getKeyGenerator(masterAlg);

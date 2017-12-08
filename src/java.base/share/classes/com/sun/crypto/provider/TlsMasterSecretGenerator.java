@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,21 +102,32 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
 
         try {
             byte[] master;
-            byte[] clientRandom = spec.getClientRandom();
-            byte[] serverRandom = spec.getServerRandom();
-
             if (protocolVersion >= 0x0301) {
-                byte[] seed = concat(clientRandom, serverRandom);
+                byte[] label;
+                byte[] seed;
+                byte[] extendedMasterSecretSessionHash =
+                        spec.getExtendedMasterSecretSessionHash();
+                if (extendedMasterSecretSessionHash.length != 0) {
+                    label = LABEL_EXTENDED_MASTER_SECRET;
+                    seed = extendedMasterSecretSessionHash;
+                } else {
+                    byte[] clientRandom = spec.getClientRandom();
+                    byte[] serverRandom = spec.getServerRandom();
+                    label = LABEL_MASTER_SECRET;
+                    seed = concat(clientRandom, serverRandom);
+                }
                 master = ((protocolVersion >= 0x0303) ?
-                    doTLS12PRF(premaster, LABEL_MASTER_SECRET, seed, 48,
-                        spec.getPRFHashAlg(), spec.getPRFHashLength(),
-                        spec.getPRFBlockSize()) :
-                    doTLS10PRF(premaster, LABEL_MASTER_SECRET, seed, 48));
+                        doTLS12PRF(premaster, label, seed, 48,
+                                spec.getPRFHashAlg(), spec.getPRFHashLength(),
+                                spec.getPRFBlockSize()) :
+                        doTLS10PRF(premaster, label, seed, 48));
             } else {
                 master = new byte[48];
                 MessageDigest md5 = MessageDigest.getInstance("MD5");
                 MessageDigest sha = MessageDigest.getInstance("SHA");
 
+                byte[] clientRandom = spec.getClientRandom();
+                byte[] serverRandom = spec.getServerRandom();
                 byte[] tmp = new byte[20];
                 for (int i = 0; i < 3; i++) {
                     sha.update(SSL3_CONST[i]);
@@ -175,5 +186,5 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
         }
 
     }
-
 }
+

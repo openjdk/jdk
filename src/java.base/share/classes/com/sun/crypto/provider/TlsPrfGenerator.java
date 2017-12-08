@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,11 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
 
     static final byte[] LABEL_MASTER_SECRET = // "master secret"
         { 109, 97, 115, 116, 101, 114, 32, 115, 101, 99, 114, 101, 116 };
+
+    static final byte[] LABEL_EXTENDED_MASTER_SECRET =
+                                            // "extended master secret"
+        { 101, 120, 116, 101, 110, 100, 101, 100, 32, 109, 97, 115, 116,
+          101, 114, 32, 115, 101, 99, 114, 101, 116 };
 
     static final byte[] LABEL_KEY_EXPANSION = // "key expansion"
         { 107, 101, 121, 32, 101, 120, 112, 97, 110, 115, 105, 111, 110 };
