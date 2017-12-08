@@ -1252,18 +1252,20 @@ public class SubmissionPublisher<T> implements Publisher<T>,
                         head = h += taken;
                         d = subtractDemand(taken);
                     }
-                    else if ((empty = (t == h)) && (c & COMPLETE) != 0) {
-                        closeOnComplete(s);          // end of stream
-                        break;
-                    }
                     else if ((d = demand) == 0L && (c & REQS) != 0)
                         weakCasCtl(c, c & ~REQS);    // exhausted demand
                     else if (d != 0L && (c & REQS) == 0)
                         weakCasCtl(c, c | REQS);     // new demand
-                    else if (t == (t = tail) && (empty || d == 0L)) {
-                        int bit = ((c & ACTIVE) != 0) ? ACTIVE : RUN;
-                        if (weakCasCtl(c, c & ~bit) && bit == RUN)
-                            break;                   // un-keep-alive or exit
+                    else if (t == (t = tail)) {      // stability check
+                        if ((empty = (t == h)) && (c & COMPLETE) != 0) {
+                            closeOnComplete(s);      // end of stream
+                            break;
+                        }
+                        else if (empty || d == 0L) {
+                            int bit = ((c & ACTIVE) != 0) ? ACTIVE : RUN;
+                            if (weakCasCtl(c, c & ~bit) && bit == RUN)
+                                break;               // un-keep-alive or exit
+                        }
                     }
                 }
             }
