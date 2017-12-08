@@ -492,7 +492,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
 
-  VirtualSpaceSummary create_heap_space_summary();
+  virtual VirtualSpaceSummary create_heap_space_summary();
   GCHeapSummary create_heap_summary();
 
   MetaspaceSummary create_metaspace_summary();
