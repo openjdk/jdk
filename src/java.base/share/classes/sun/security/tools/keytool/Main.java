@@ -134,8 +134,6 @@ public final class Main {
     private Set<Pair <String, String>> providers = null;
     private Set<Pair <String, String>> providerClasses = null;
     private String storetype = null;
-    private boolean hasStoretypeOption = false;
-    private boolean hasSrcStoretypeOption = false;
     private String srcProviderName = null;
     private String providerName = null;
     private String pathlist = null;
@@ -549,14 +547,12 @@ public final class Main {
                 passwords.add(storePass);
             } else if (collator.compare(flags, "-storetype") == 0 ||
                     collator.compare(flags, "-deststoretype") == 0) {
-                storetype = args[++i];
-                hasStoretypeOption = true;
+                storetype = KeyStoreUtil.niceStoreTypeName(args[++i]);
             } else if (collator.compare(flags, "-srcstorepass") == 0) {
                 srcstorePass = getPass(modifier, args[++i]);
                 passwords.add(srcstorePass);
             } else if (collator.compare(flags, "-srcstoretype") == 0) {
-                srcstoretype = args[++i];
-                hasSrcStoretypeOption = true;
+                srcstoretype = KeyStoreUtil.niceStoreTypeName(args[++i]);
             } else if (collator.compare(flags, "-srckeypass") == 0) {
                 srckeyPass = getPass(modifier, args[++i]);
                 passwords.add(srckeyPass);
@@ -708,16 +704,6 @@ public final class Main {
             ksfname = KeyStoreUtil.getCacerts();
         }
 
-        if (storetype == null) {
-            storetype = KeyStore.getDefaultType();
-        }
-        storetype = KeyStoreUtil.niceStoreTypeName(storetype);
-
-        if (srcstoretype == null) {
-            srcstoretype = KeyStore.getDefaultType();
-        }
-        srcstoretype = KeyStoreUtil.niceStoreTypeName(srcstoretype);
-
         if (P11KEYSTORE.equalsIgnoreCase(storetype) ||
                 KeyStoreUtil.isWindowsKeyStore(storetype)) {
             token = true;
@@ -740,11 +726,6 @@ public final class Main {
             (command == KEYPASSWD || command == STOREPASSWD)) {
             throw new UnsupportedOperationException(MessageFormat.format(rb.getString
                         (".storepasswd.and.keypasswd.commands.not.supported.if.storetype.is.{0}"), storetype));
-        }
-
-        if (P12KEYSTORE.equalsIgnoreCase(storetype) && command == KEYPASSWD) {
-            throw new UnsupportedOperationException(rb.getString
-                        (".keypasswd.commands.not.supported.if.storetype.is.PKCS12"));
         }
 
         if (token && (keyPass != null || newPass != null || destKeyPass != null)) {
@@ -923,9 +904,13 @@ public final class Main {
         // Create new keystore
         // Probe for keystore type when filename is available
         if (ksfile != null && ksStream != null && providerName == null &&
-                hasStoretypeOption == false && !inplaceImport) {
+                storetype == null && !inplaceImport) {
             keyStore = KeyStore.getInstance(ksfile, storePass);
+            storetype = keyStore.getType();
         } else {
+            if (storetype == null) {
+                storetype = KeyStore.getDefaultType();
+            }
             if (providerName == null) {
                 keyStore = KeyStore.getInstance(storetype);
             } else {
@@ -962,6 +947,11 @@ public final class Main {
                     ksStream.close();
                 }
             }
+        }
+
+        if (P12KEYSTORE.equalsIgnoreCase(storetype) && command == KEYPASSWD) {
+            throw new UnsupportedOperationException(rb.getString
+                    (".keypasswd.commands.not.supported.if.storetype.is.PKCS12"));
         }
 
         // All commands that create or modify the keystore require a keystore
@@ -2123,9 +2113,13 @@ public final class Main {
         try {
             // Probe for keystore type when filename is available
             if (srcksfile != null && is != null && srcProviderName == null &&
-                hasSrcStoretypeOption == false) {
+                    srcstoretype == null) {
                 store = KeyStore.getInstance(srcksfile, srcstorePass);
+                srcstoretype = store.getType();
             } else {
+                if (srcstoretype == null) {
+                    srcstoretype = KeyStore.getDefaultType();
+                }
                 if (srcProviderName == null) {
                     store = KeyStore.getInstance(srcstoretype);
                 } else {
