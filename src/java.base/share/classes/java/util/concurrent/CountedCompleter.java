@@ -735,7 +735,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
         CountedCompleter<?> a = this, s = a;
         while (a.onExceptionalCompletion(ex, s) &&
                (a = (s = a).completer) != null && a.status >= 0 &&
-               a.recordExceptionalCompletion(ex) == EXCEPTIONAL)
+               isExceptionalStatus(a.recordExceptionalCompletion(ex)))
             ;
     }
 
