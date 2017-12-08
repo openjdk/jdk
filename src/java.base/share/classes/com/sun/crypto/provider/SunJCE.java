@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -768,6 +768,8 @@ public final class SunJCE extends Provider {
                     put("KeyGenerator.SunTlsMasterSecret",
                         "com.sun.crypto.provider.TlsMasterSecretGenerator");
                     put("Alg.Alias.KeyGenerator.SunTls12MasterSecret",
+                        "SunTlsMasterSecret");
+                    put("Alg.Alias.KeyGenerator.SunTlsExtendedMasterSecret",
                         "SunTlsMasterSecret");
 
                     put("KeyGenerator.SunTlsKeyMaterial",
