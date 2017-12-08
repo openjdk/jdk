@@ -389,14 +389,15 @@ public class Level implements java.io.Serializable {
         try {
             int x = Integer.parseInt(name);
             level = KnownLevel.findByValue(x, KnownLevel::mirrored);
-            if (!level.isPresent()) {
-                // add new Level
-                Level levelObject = new Level(name, x);
-                // There's no need to use a reachability fence here because
-                // KnownLevel keeps a strong reference on the level when
-                // level.getClass() == Level.class.
-                return KnownLevel.findByValue(x, KnownLevel::mirrored).get();
+            if (level.isPresent()) {
+                return level.get();
             }
+            // add new Level
+            Level levelObject = new Level(name, x);
+            // There's no need to use a reachability fence here because
+            // KnownLevel keeps a strong reference on the level when
+            // level.getClass() == Level.class.
+            return KnownLevel.findByValue(x, KnownLevel::mirrored).get();
         } catch (NumberFormatException ex) {
             // Not an integer.
             // Drop through.
