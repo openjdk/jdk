@@ -388,15 +388,23 @@ public class LogManager {
                         // create root logger before reading primordial
                         // configuration - to ensure that it will be added
                         // before the global logger, and not after.
-                        owner.rootLogger = owner.new RootLogger();
+                        final Logger root = owner.rootLogger = owner.new RootLogger();
 
                         // Read configuration.
                         owner.readPrimordialConfiguration();
 
                         // Create and retain Logger for the root of the namespace.
-                        owner.addLogger(owner.rootLogger);
-                        if (!owner.rootLogger.isLevelInitialized()) {
-                            owner.rootLogger.setLevel(defaultLevel);
+                        owner.addLogger(root);
+
+                        // For backward compatibility: add any handlers configured using
+                        // ".handlers"
+                        owner.createLoggerHandlers("", ".handlers")
+                                .stream()
+                                .forEach(root::addHandler);
+
+                        // Initialize level if not yet initialized
+                        if (!root.isLevelInitialized()) {
+                            root.setLevel(defaultLevel);
                         }
 
                         // Adding the global Logger.
@@ -1708,7 +1716,7 @@ public class LogManager {
          * @param k a property key in the configuration
          * @param previous the old configuration
          * @param next the new configuration (modified by this function)
-         * @param remappingFunction the mapping function.
+         * @param mappingFunction the mapping function.
          */
         static void merge(String k, Properties previous, Properties next,
                           BiFunction<String, String, String> mappingFunction) {
