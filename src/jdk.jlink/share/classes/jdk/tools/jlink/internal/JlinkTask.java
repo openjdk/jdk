@@ -24,6 +24,7 @@
  */
 package jdk.tools.jlink.internal;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -824,10 +825,26 @@ public class JlinkTask {
 
                 return modularJarArchive;
             } else if (Files.isDirectory(path)) {
-                return new DirArchive(path);
+                Path modInfoPath = path.resolve("module-info.class");
+                if (Files.isRegularFile(modInfoPath)) {
+                    return new DirArchive(path, findModuleName(modInfoPath));
+                } else {
+                    throw new IllegalArgumentException(
+                        taskHelper.getMessage("err.not.a.module.directory", path));
+                }
             } else {
                 throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));
+            }
+        }
+
+        private static String findModuleName(Path modInfoPath) {
+            try (BufferedInputStream bis = new BufferedInputStream(
+                    Files.newInputStream(modInfoPath))) {
+                return ModuleDescriptor.read(bis).name();
+            } catch (IOException exp) {
+                throw new IllegalArgumentException(taskHelper.getMessage(
+                    "err.cannot.read.module.info", modInfoPath), exp);
             }
         }
 

@@ -267,15 +267,17 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 assert !mainClassName.isEmpty();
             }
 
-            String path = "/" + module + "/module-info.class";
-            Optional<ResourcePoolEntry> res = imageContent.findEntry(path);
-            if (!res.isPresent()) {
-                throw new IOException("module-info.class not found for " + module + " module");
-            }
-            ByteArrayInputStream stream = new ByteArrayInputStream(res.get().contentBytes());
-            Optional<String> mainClass = ModuleDescriptor.read(stream).mainClass();
-            if (mainClassName == null && mainClass.isPresent()) {
-                mainClassName = mainClass.get();
+            if (mainClassName == null) {
+                String path = "/" + module + "/module-info.class";
+                Optional<ResourcePoolEntry> res = imageContent.findEntry(path);
+                if (!res.isPresent()) {
+                    throw new IOException("module-info.class not found for " + module + " module");
+                }
+                ByteArrayInputStream stream = new ByteArrayInputStream(res.get().contentBytes());
+                Optional<String> mainClass = ModuleDescriptor.read(stream).mainClass();
+                if (mainClass.isPresent()) {
+                    mainClassName = mainClass.get();
+                }
             }
 
             if (mainClassName != null) {
