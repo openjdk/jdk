@@ -34,7 +34,7 @@ import static javax.lang.model.SourceVersion.*;
 /**
  * A skeletal visitor of program elements with default behavior
  * appropriate for the {@link SourceVersion#RELEASE_9 RELEASE_9}
- * source version.
+ * and {@link SourceVersion#RELEASE_10 RELEASE_10} source versions.
  *
  * <p> <b>WARNING:</b> The {@code ElementVisitor} interface
  * implemented by this class may have methods added to it in the
@@ -65,7 +65,7 @@ import static javax.lang.model.SourceVersion.*;
  * @since 9
  * @spec JPMS
  */
-@SupportedSourceVersion(RELEASE_9)
+@SupportedSourceVersion(RELEASE_10)
 public abstract class AbstractElementVisitor9<R, P> extends AbstractElementVisitor8<R, P> {
     /**
      * Constructor for concrete subclasses to call.

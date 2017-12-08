@@ -32,7 +32,8 @@ import static javax.lang.model.SourceVersion.*;
 
 /**
  * A simple visitor of types with default behavior appropriate for the
- * {@link SourceVersion#RELEASE_9 RELEASE_9} source version.
+ * {@link SourceVersion#RELEASE_9 RELEASE_9} and
+ * {@link SourceVersion#RELEASE_10 RELEASE_10} source versions.
  *
  * Visit methods corresponding to {@code RELEASE_9} and earlier
  * language constructs call {@link #defaultAction defaultAction},
@@ -71,7 +72,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleTypeVisitor7
  * @since 9
  */
-@SupportedSourceVersion(RELEASE_9)
+@SupportedSourceVersion(RELEASE_10)
 public class SimpleTypeVisitor9<R, P> extends SimpleTypeVisitor8<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
