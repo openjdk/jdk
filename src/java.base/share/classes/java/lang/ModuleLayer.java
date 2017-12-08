@@ -845,9 +845,8 @@ public final class ModuleLayer {
 
         return layers()
                 .skip(1)  // skip this layer
-                .map(l -> l.nameToModule)
-                .filter(map -> map.containsKey(name))
-                .map(map -> map.get(name))
+                .map(l -> l.nameToModule.get(name))
+                .filter(Objects::nonNull)
                 .findAny();
     }
 
