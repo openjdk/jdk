@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,16 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
 import jdk.tools.jlink.plugin.ResourcePoolModuleView;
 
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Requires.Modifier;
 
 import java.nio.ByteBuffer;
-import java.util.Deque;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -45,9 +48,8 @@ import java.util.stream.Stream;
  * Helper class to sort modules in topological order
  */
 public final class ModuleSorter {
-    private final Deque<ResourcePoolModule> nodes = new LinkedList<>();
-    private final Map<String, Set<ResourcePoolModule>> edges = new HashMap<>();
-    private final Deque<ResourcePoolModule> result = new LinkedList<>();
+    private final Map<ResourcePoolModule, Set<ResourcePoolModule>> graph = new HashMap<>();
+    private final List<ResourcePoolModule> result = new ArrayList<>();
 
     private final ResourcePoolModuleView moduleView;
 
@@ -69,11 +71,17 @@ public final class ModuleSorter {
 
     private ModuleSorter addModule(ResourcePoolModule module) {
         addNode(module);
-        readModuleDescriptor(module).requires().forEach(req -> {
+        // the module graph will be traversed in a stable order for
+        // the topological sort. So add the dependences in the module name order
+        readModuleDescriptor(module).requires()
+                                    .stream()
+                                    .sorted(Comparator.comparing(Requires::name))
+                                    .forEach(req ->
+        {
             ResourcePoolModule dep = moduleView.findModule(req.name()).orElse(null);
             if (dep != null) {
                 addNode(dep);
-                edges.get(module.name()).add(dep);
+                graph.get(module).add(dep);
             } else if (!req.modifiers().contains(Modifier.STATIC)) {
                 throw new PluginException(req.name() + " not found");
             }
@@ -82,22 +90,23 @@ public final class ModuleSorter {
     }
 
     private void addNode(ResourcePoolModule module) {
-        nodes.add(module);
-        edges.computeIfAbsent(module.name(), _n -> new HashSet<>());
+        graph.computeIfAbsent(module, _n -> new LinkedHashSet<>());
     }
 
+    /*
+     * The module graph will be traversed in a stable order
+     * (traversing the modules and their dependences in alphabetical order)
+     * so that it will produce the same result of a given module graph.
+     */
     private synchronized void build() {
-        if (!result.isEmpty() || nodes.isEmpty())
+        if (!result.isEmpty() || graph.isEmpty())
             return;
 
-        Deque<ResourcePoolModule> visited = new LinkedList<>();
-        Deque<ResourcePoolModule> done = new LinkedList<>();
-        ResourcePoolModule node;
-        while ((node = nodes.poll()) != null) {
-            if (!visited.contains(node)) {
-                visit(node, visited, done);
-            }
-        }
+        Set<ResourcePoolModule> visited = new HashSet<>();
+        Set<ResourcePoolModule> done = new HashSet<>();
+        graph.keySet().stream()
+             .sorted(Comparator.comparing(ResourcePoolModule::name))
+             .forEach(node -> visit(node, visited, done));
     }
 
     public Stream<ResourcePoolModule> sorted() {
@@ -106,19 +115,21 @@ public final class ModuleSorter {
     }
 
     private void visit(ResourcePoolModule node,
-                       Deque<ResourcePoolModule> visited,
-                       Deque<ResourcePoolModule> done) {
+                       Set<ResourcePoolModule> visited,
+                       Set<ResourcePoolModule> done) {
         if (visited.contains(node)) {
             if (!done.contains(node)) {
                 throw new IllegalArgumentException("Cyclic detected: " +
-                    node + " " + edges.get(node.name()));
+                    node + " " + graph.get(node));
             }
             return;
         }
+
+        // traverse the dependences of the given module which are
+        // also sorted in alphabetical order
         visited.add(node);
-        edges.get(node.name())
-             .forEach(x -> visit(x, visited, done));
+        graph.get(node).forEach(x -> visit(x, visited, done));
         done.add(node);
-        result.addLast(node);
+        result.add(node);
     }
 }

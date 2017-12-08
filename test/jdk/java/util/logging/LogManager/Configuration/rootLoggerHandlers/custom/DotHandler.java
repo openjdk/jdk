@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,5 +20,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package custom;
 
-public class C {}
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ *
+ * @author danielfuchs
+ */
+public class DotHandler extends java.util.logging.ConsoleHandler {
+
+    public static final AtomicLong IDS = new AtomicLong();
+    public final long id = IDS.incrementAndGet();
+    public DotHandler() {
+        System.out.println("DotHandler(" + id + ") created");
+        //new Exception("DotHandler").printStackTrace();
+    }
+
+    @Override
+    public void close() {
+        System.out.println("DotHandler(" + id + ") closed");
+        super.close();
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getName() + '(' + id + ')';
+    }
+}

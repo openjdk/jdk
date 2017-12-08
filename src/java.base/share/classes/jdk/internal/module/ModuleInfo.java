@@ -63,6 +63,9 @@ import static jdk.internal.module.ClassFileConstants.*;
 
 public final class ModuleInfo {
 
+    private final int JAVA_MIN_SUPPORTED_VERSION = 53;
+    private final int JAVA_MAX_SUPPORTED_VERSION = 54;
+
     private static final JavaLangModuleAccess JLMA
         = SharedSecrets.getJavaLangModuleAccess();
 
@@ -188,8 +191,10 @@ public final class ModuleInfo {
 
         int minor_version = in.readUnsignedShort();
         int major_version = in.readUnsignedShort();
-        if (major_version < 53) {
-            throw invalidModuleDescriptor("Must be >= 53.0");
+        if (major_version < JAVA_MIN_SUPPORTED_VERSION ||
+                major_version > JAVA_MAX_SUPPORTED_VERSION) {
+            throw invalidModuleDescriptor("Unsupported major.minor version "
+                                          + major_version + "." + minor_version);
         }
 
         ConstantPool cpool = new ConstantPool(in);
@@ -245,7 +250,7 @@ public final class ModuleInfo {
             switch (attribute_name) {
 
                 case MODULE :
-                    builder = readModuleAttribute(in, cpool);
+                    builder = readModuleAttribute(in, cpool, major_version);
                     break;
 
                 case MODULE_PACKAGES :
@@ -334,7 +339,7 @@ public final class ModuleInfo {
      * Reads the Module attribute, returning the ModuleDescriptor.Builder to
      * build the corresponding ModuleDescriptor.
      */
-    private Builder readModuleAttribute(DataInput in, ConstantPool cpool)
+    private Builder readModuleAttribute(DataInput in, ConstantPool cpool, int major)
         throws IOException
     {
         // module_name
@@ -390,8 +395,21 @@ public final class ModuleInfo {
                 JLMA.requires(builder, mods, dn, vs);
             }
 
-            if (dn.equals("java.base"))
+            if (dn.equals("java.base")) {
+                if (major >= 54
+                    && (mods.contains(Requires.Modifier.TRANSITIVE)
+                        || mods.contains(Requires.Modifier.STATIC))) {
+                    String flagName;
+                    if (mods.contains(Requires.Modifier.TRANSITIVE)) {
+                        flagName = "ACC_TRANSITIVE";
+                    } else {
+                        flagName = "ACC_STATIC_PHASE";
+                    }
+                    throw invalidModuleDescriptor("The requires entry for java.base"
+                                                  + " has " + flagName + " set");
+                }
                 requiresJavaBase = true;
+            }
         }
         if (mn.equals("java.base")) {
             if (requires_count > 0) {

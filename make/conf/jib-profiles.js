@@ -662,6 +662,16 @@ var getJibProfilesProfiles = function (input, common, data) {
         }
     });
 
+    // For open profiles, the non-debug jdk bundles, need an "open" prefix on the
+    // remote bundle names, forming the word "openjdk". See JDK-8188789.
+    common.main_profile_names.forEach(function (name) {
+        var openName = name + common.open_suffix;
+        profiles[openName].artifacts["jdk"].remote = replaceAll(
+            "\/jdk-", "/openjdk-",
+            replaceAll("\/\\1", "/open\\1",
+                       profiles[openName].artifacts["jdk"].remote));
+    });
+
     // Profiles used to run tests. Used in JPRT and Mach 5.
     var testOnlyProfiles = {
         "run-test-jprt": {

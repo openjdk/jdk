@@ -2365,9 +2365,6 @@ public class Utils {
 
     List<Element> getItems(Element e, boolean filter, ElementKind select) {
         List<Element> elements = new ArrayList<>();
-        // maintain backward compatibility by returning a null list, see AnnotationDocType.methods().
-        if (configuration.backwardCompatibility && e.getKind() == ANNOTATION_TYPE)
-            return elements;
         return new SimpleElementVisitor9<List<Element>, Void>() {
 
             @Override
