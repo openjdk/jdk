@@ -257,6 +257,7 @@ javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 tools/pack200/CommandLineTests.java                             8059906 generic-all
 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
+tools/launcher/TestXcheckJNIWarnings.java                       8190984 solaris-all
 
 tools/jimage/JImageExtractTest.java                             8170120 generic-all
 tools/jimage/JImageListTest.java                                8170120 generic-all
