@@ -38,6 +38,7 @@ import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
@@ -45,7 +46,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -2496,7 +2496,7 @@ public abstract class ClassLoader {
         }
 
         // native libraries being loaded
-        static Deque<NativeLibrary> nativeLibraryContext = new LinkedList<>();
+        static Deque<NativeLibrary> nativeLibraryContext = new ArrayDeque<>(8);
 
         /*
          * The run() method will be invoked when this class loader becomes

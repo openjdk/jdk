@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8145239 8129559 8080354
+ * @bug 8145239 8129559 8080354 8189248
  * @summary Tests for EvaluationState.classes
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ClassesTest
@@ -41,6 +41,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import jdk.jshell.Diag;
+import jdk.jshell.Snippet.Status;
 import static java.util.stream.Collectors.toList;
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
@@ -327,4 +328,24 @@ public class ClassesTest extends KullaTesting {
         VarSnippet variableKey = varKey(assertEval("a.x;"));
         assertEquals(variableKey.typeName(), "A.I1");
     }
+
+    public void testCircular() {
+        assertEval("import java.util.function.Supplier;");
+        TypeDeclSnippet aClass =
+                classKey(assertEval("public class A<T> {\n" +
+                                    "  private class SomeClass {}\n" +
+                                    "  public Supplier<T> m() {\n" +
+                                    "    return new B<>(this);\n" +
+                                    "  }\n" +
+                                    "}",
+                                   added(RECOVERABLE_DEFINED)));
+        assertEval("public class B<T> implements Supplier<T> {\n" +
+                   "  public B(A<T> a) {}\n" +
+                   "  public T get() {return null;}\n" +
+                   "}",
+                   added(VALID),
+                   ste(aClass, Status.RECOVERABLE_DEFINED, Status.VALID, true, null));
+        assertEval("new A()");
+    }
+
 }

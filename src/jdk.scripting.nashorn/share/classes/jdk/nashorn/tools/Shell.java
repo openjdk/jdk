@@ -295,7 +295,7 @@ public class Shell implements PartialParser {
                 } catch (final IOException ioe) {
                     // ignore
                 }
-                if (l.startsWith("#!")) {
+                if (l != null && l.startsWith("#!")) {
                     shebangFilePos = i;
                 }
                 // We're only checking the first non-option argument. If it's not a shebang file, we're in normal

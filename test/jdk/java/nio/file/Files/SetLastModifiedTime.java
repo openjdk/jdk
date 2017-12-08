@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,7 +37,7 @@ import static org.testng.Assert.assertFalse;
 
 /**
  * @test
- * @bug 4313887 8062949
+ * @bug 4313887 8062949 8191872
  * @library ..
  * @run testng SetLastModifiedTime
  * @summary Unit test for Files.setLastModifiedTime
@@ -113,6 +114,21 @@ public class SetLastModifiedTime {
             Files.setLastModifiedTime(null, null);
             assertTrue(false);
         } catch (NullPointerException expected) { }
+    }
+
+    @Test
+    public void testCompare() throws Exception {
+        Path path = Files.createFile(testDir.resolve("path"));
+        long timeMillis = 1512520600195L;
+        FileTime fileTime = FileTime.fromMillis(timeMillis);
+        Files.setLastModifiedTime(path, fileTime);
+        File file = path.toFile();
+        long ioTime = file.lastModified();
+        long nioTime = Files.getLastModifiedTime(path).toMillis();
+        assertTrue(ioTime == timeMillis || ioTime == 1000*(timeMillis/1000),
+            "File.lastModified() not in {time, 1000*(time/1000)}");
+        assertEquals(nioTime, ioTime,
+            "File.lastModified() != Files.getLastModifiedTime().toMillis()");
     }
 }
 
