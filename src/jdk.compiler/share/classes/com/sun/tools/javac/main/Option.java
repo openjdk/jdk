@@ -1025,6 +1025,11 @@ public enum Option {
         return (argKind != ArgKind.NONE);
     }
 
+    public boolean hasSeparateArg() {
+        return getArgKind() == ArgKind.REQUIRED &&
+               !primaryName.endsWith(":") && !primaryName.endsWith("=");
+    }
+
     public boolean matches(String option) {
         for (String name: names) {
             if (matches(option, name))
