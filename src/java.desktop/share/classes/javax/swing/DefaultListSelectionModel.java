@@ -95,14 +95,37 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * @throws IllegalArgumentException {@inheritDoc}
      */
     public void setSelectionMode(int selectionMode) {
+        int oldMode = this.selectionMode;
         switch (selectionMode) {
-        case SINGLE_SELECTION:
-        case SINGLE_INTERVAL_SELECTION:
-        case MULTIPLE_INTERVAL_SELECTION:
-            this.selectionMode = selectionMode;
-            break;
-        default:
-            throw new IllegalArgumentException("invalid selectionMode");
+            case SINGLE_SELECTION:
+            case SINGLE_INTERVAL_SELECTION:
+            case MULTIPLE_INTERVAL_SELECTION:
+                this.selectionMode = selectionMode;
+                break;
+            default:
+                throw new IllegalArgumentException("invalid selectionMode");
+        }
+
+        /*
+        This code will only be executed when selection needs to be updated on
+        changing selection mode. It will happen only if selection mode is changed
+        from MULTIPLE_INTERVAL to SINGLE_INTERVAL or SINGLE or from
+        SINGLE_INTERVAL to SINGLE
+         */
+        if (oldMode > this.selectionMode) {
+            if (this.selectionMode == SINGLE_SELECTION) {
+                if (!isSelectionEmpty()) {
+                    setSelectionInterval(minIndex, minIndex);
+                }
+            } else if (this.selectionMode == SINGLE_INTERVAL_SELECTION) {
+                if(!isSelectionEmpty()) {
+                    int selectionEndindex = minIndex;
+                    while (value.get(selectionEndindex + 1)) {
+                        selectionEndindex++;
+                    }
+                    setSelectionInterval(minIndex, selectionEndindex);
+                }
+            }
         }
     }
 
