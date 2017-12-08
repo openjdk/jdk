@@ -219,7 +219,7 @@ public final class JavacTool implements JavaCompiler {
         Set<Option> recognizedOptions = Option.getJavacToolOptions();
         for (Option o : recognizedOptions) {
             if (o.matches(option)) {
-                return o.hasArg() ? 1 : 0;
+                return o.hasSeparateArg() ? 1 : 0;
             }
         }
         return -1;
