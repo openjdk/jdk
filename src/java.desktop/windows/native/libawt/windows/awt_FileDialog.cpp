@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,13 +259,7 @@ AwtFileDialog::Show(void *p)
     OPENFILENAME ofn;
     memset(&ofn, 0, sizeof(ofn));
 
-    /*
-     * There's a situation (see bug 4906972) when InvokeFunction (by which this method is called)
-     * returnes earlier than this method returnes. Probably it's caused due to ReplyMessage system call.
-     * So for the avoidance of this mistiming we need to make new global reference here
-     * (not local as it's used by the hook) and then manage it independently of the calling thread.
-     */
-    peer = env->NewGlobalRef((jobject)p);
+    peer = (jobject)p;
 
     try {
         DASSERT(peer);
