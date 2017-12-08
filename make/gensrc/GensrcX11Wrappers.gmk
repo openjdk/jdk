@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,10 @@ ifneq ($(COMPILE_TYPE), cross)
   endif
 
   SIZER_CFLAGS := \
+      -I${TOPDIR}/src/hotspot/share/include \
+      -I${TOPDIR}/src/hotspot/os/$(HOTSPOT_TARGET_OS_TYPE)/include \
       -I$(TOPDIR)/src/java.base/share/native/include \
-      -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_EXPORT_DIR)/native/include \
+      -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include \
       -I$(TOPDIR)/src/java.base/share/native/libjava \
       -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
       -I$(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \

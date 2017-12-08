@@ -243,8 +243,9 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
   assert(fd != -1, "File descriptor is not valid");
 
   // allocate space for the file
-  if (util_posix_fallocate(fd, 0, (off_t)size) != 0) {
-    vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory."));
+  int ret = util_posix_fallocate(fd, 0, (off_t)size);
+  if (ret != 0) {
+    vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory. error(%d)", ret));
     return NULL;
   }
 
@@ -256,12 +257,13 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
   char* addr = (char*)mmap(base, size, prot, flags, fd, 0);
 
   if (addr == MAP_FAILED) {
+    warning("Failed mmap to file. (%s)", os::strerror(errno));
     return NULL;
   }
   if (base != NULL && addr != base) {
     if (!os::release_memory(addr, size)) {
       warning("Could not release memory on unsuccessful file mapping");
-     }
+    }
     return NULL;
   }
   return addr;
