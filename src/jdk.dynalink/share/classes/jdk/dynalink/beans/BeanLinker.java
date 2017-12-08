@@ -205,9 +205,8 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
             return nextComponent;
         }
 
-        return guardComponentWithRangeCheck(gicact, linkerServices,
-                callSiteDescriptor, nextComponent, new Binder(linkerServices, callSiteType, typedName),
-                isFixedKey ? NULL_GETTER_1 : NULL_GETTER_2);
+        return guardComponentWithRangeCheck(gicact, callSiteType, nextComponent,
+                new Binder(linkerServices, callSiteType, typedName), isFixedKey ? NULL_GETTER_1 : NULL_GETTER_2);
     }
 
     private static class GuardedInvocationComponentAndCollectionType {
@@ -276,21 +275,19 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     }
 
     private static GuardedInvocationComponent guardComponentWithRangeCheck(
-            final GuardedInvocationComponentAndCollectionType gicact, final LinkerServices linkerServices,
-            final CallSiteDescriptor callSiteDescriptor, final GuardedInvocationComponent nextComponent, final Binder binder,
-            final MethodHandle noOp) {
-        final MethodType callSiteType = callSiteDescriptor.getMethodType();
+            final GuardedInvocationComponentAndCollectionType gicact, final MethodType callSiteType,
+            final GuardedInvocationComponent nextComponent, final Binder binder, final MethodHandle noOp) {
 
         final MethodHandle checkGuard;
         switch(gicact.collectionType) {
             case LIST:
-                checkGuard = convertArgToNumber(RANGE_CHECK_LIST, linkerServices, callSiteDescriptor);
+                checkGuard = binder.convertArgToNumber(RANGE_CHECK_LIST);
                 break;
             case MAP:
-                checkGuard = linkerServices.filterInternalObjects(CONTAINS_MAP);
+                checkGuard = binder.linkerServices.filterInternalObjects(CONTAINS_MAP);
                 break;
             case ARRAY:
-                checkGuard = convertArgToNumber(RANGE_CHECK_ARRAY, linkerServices, callSiteDescriptor);
+                checkGuard = binder.convertArgToNumber(RANGE_CHECK_ARRAY);
                 break;
             default:
                 throw new AssertionError();
@@ -301,7 +298,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         if (nextComponent != null) {
             finalNextComponent = nextComponent;
         } else {
-            finalNextComponent = createGuardedInvocationComponentAsType(noOp, callSiteType, linkerServices);
+            finalNextComponent = createGuardedInvocationComponentAsType(noOp, callSiteType, binder.linkerServices);
         }
 
         final GuardedInvocationComponent gic = gicact.gic;
@@ -377,18 +374,6 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         return intIndex;
     }
 
-    private static MethodHandle convertArgToNumber(final MethodHandle mh, final LinkerServices ls, final CallSiteDescriptor desc) {
-        final Class<?> sourceType = desc.getMethodType().parameterType(1);
-        if(TypeUtilities.isMethodInvocationConvertible(sourceType, Number.class)) {
-            return mh;
-        } else if(ls.canConvert(sourceType, Number.class)) {
-            final MethodHandle converter = ls.getTypeConverter(sourceType, Number.class);
-            return MethodHandles.filterArguments(mh, 1, converter.asType(converter.type().changeReturnType(
-                    mh.type().parameterType(1))));
-        }
-        return mh;
-    }
-
     /**
      * Contains methods to adapt an item getter/setter method handle to the requested type, optionally binding it to a
      * fixed key first.
@@ -410,6 +395,18 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
         /*private*/ MethodHandle bindTest(final MethodHandle handle) {
             return bindToFixedKey(Guards.asType(handle, methodType));
+        }
+
+        /*private*/ MethodHandle convertArgToNumber(final MethodHandle mh) {
+            final Class<?> sourceType = methodType.parameterType(1);
+            if(TypeUtilities.isMethodInvocationConvertible(sourceType, Number.class)) {
+                return mh;
+            } else if(linkerServices.canConvert(sourceType, Number.class)) {
+                final MethodHandle converter = linkerServices.getTypeConverter(sourceType, Number.class);
+                return MethodHandles.filterArguments(mh, 1, converter.asType(converter.type().changeReturnType(
+                        mh.type().parameterType(1))));
+            }
+            return mh;
         }
 
         private MethodHandle bindToFixedKey(final MethodHandle handle) {
@@ -506,8 +503,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
             return gic.replaceInvocation(binder.bind(invocation));
         }
 
-        return guardComponentWithRangeCheck(gicact, linkerServices, callSiteDescriptor,
-                nextComponent, binder, isFixedKey ? NO_OP_SETTER_2 : NO_OP_SETTER_3);
+        return guardComponentWithRangeCheck(gicact, callSiteType, nextComponent, binder, isFixedKey ? NO_OP_SETTER_2 : NO_OP_SETTER_3);
     }
 
     private static final MethodHandle GET_COLLECTION_LENGTH = Lookup.PUBLIC.findVirtual(Collection.class, "size",
