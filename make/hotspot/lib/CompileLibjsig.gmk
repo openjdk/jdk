@@ -57,7 +57,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       endif
 
     else ifeq ($(OPENJDK_TARGET_OS), solaris)
-      LIBJSIG_CFLAGS := -m64 -KPIC -mt -I $(TOPDIR)/src/java.base/unix/native/include
+      LIBJSIG_CFLAGS := -m64 -KPIC -mt -I $(TOPDIR)/src/hotspot/os/$(HOTSPOT_TARGET_OS_TYPE)/include
       LIBJSIG_LDFLAGS := -m64 -mt -xnolib
       LIBJSIG_LIBS := $(LIBDL)
 

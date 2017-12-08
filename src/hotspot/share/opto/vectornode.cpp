@@ -92,6 +92,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_FmaF:
     assert(bt == T_FLOAT, "must be");
     return Op_FmaVF;
+  case Op_CMoveF:
+    assert(bt == T_FLOAT, "must be");
+    return Op_CMoveVF;
   case Op_CMoveD:
     assert(bt == T_DOUBLE, "must be");
     return Op_CMoveVD;

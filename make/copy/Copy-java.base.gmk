@@ -28,24 +28,6 @@ include CopyCommon.gmk
 $(eval $(call IncludeCustomExtension, copy/Copy-java.base.gmk))
 
 ################################################################################
-#
-# Copy exported header files to outputdir.
-#
-TARGETS += \
-    $(INCLUDE_DST_DIR)/jni.h \
-    $(INCLUDE_DST_DIR)/jvmticmlr.h \
-    $(INCLUDE_DST_DIR)/classfile_constants.h \
-    $(INCLUDE_DST_OS_DIR)/jni_md.h \
-    #
-
-$(INCLUDE_DST_DIR)/%.h: $(TOPDIR)/src/java.base/share/native/include/%.h
-	$(call install-file)
-
-$(INCLUDE_DST_OS_DIR)/%.h: \
-    $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include/%.h
-	$(call install-file)
-
-################################################################################
 
 ifneq ($(findstring $(OPENJDK_TARGET_OS), windows aix),)
 

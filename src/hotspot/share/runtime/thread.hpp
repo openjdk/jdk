@@ -58,6 +58,7 @@
 
 class ThreadSafepointState;
 class ThreadsList;
+class ThreadsSMRSupport;
 class NestedThreadsList;
 
 class JvmtiThreadState;
@@ -103,7 +104,6 @@ class WorkerThread;
 //   - WatcherThread
 
 class Thread: public ThreadShadow {
-  friend class Threads;
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
@@ -121,12 +121,14 @@ class Thread: public ThreadShadow {
  protected:
   // Support for forcing alignment of thread objects for biased locking
   void*       _real_malloc_address;
+
   // JavaThread lifecycle support:
-  friend class ScanHazardPtrGatherProtectedThreadsClosure;
-  friend class ScanHazardPtrGatherThreadsListClosure;
-  friend class ScanHazardPtrPrintMatchingThreadsClosure;
-  friend class ThreadsListHandle;
-  friend class ThreadsListSetter;
+  friend class ScanHazardPtrGatherProtectedThreadsClosure;  // for cmpxchg_threads_hazard_ptr(), get_threads_hazard_ptr(), is_hazard_ptr_tagged() access
+  friend class ScanHazardPtrGatherThreadsListClosure;  // for get_nested_threads_hazard_ptr(), get_threads_hazard_ptr(), untag_hazard_ptr() access
+  friend class ScanHazardPtrPrintMatchingThreadsClosure;  // for get_threads_hazard_ptr(), is_hazard_ptr_tagged() access
+  friend class ThreadsListSetter;  // for get_threads_hazard_ptr() access
+  friend class ThreadsSMRSupport;  // for get_threads_hazard_ptr() access
+
   ThreadsList* volatile _threads_hazard_ptr;
   ThreadsList*          cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value);
   ThreadsList*          get_threads_hazard_ptr();
@@ -2126,61 +2128,17 @@ inline CompilerThread* CompilerThread::current() {
 class Threads: AllStatic {
   friend class VMStructs;
  private:
-  // Safe Memory Reclamation (SMR) support:
-  // The coordination between Threads::release_stable_list() and
-  // Threads::smr_delete() uses the smr_delete_lock in order to
-  // reduce the traffic on the Threads_lock.
-  static Monitor*              _smr_delete_lock;
-  // The '_cnt', '_max' and '_times" fields are enabled via
-  // -XX:+EnableThreadSMRStatistics (see thread.cpp for a
-  // description about each field):
-  static uint                  _smr_delete_lock_wait_cnt;
-  static uint                  _smr_delete_lock_wait_max;
-  // The smr_delete_notify flag is used for proper double-check
-  // locking in order to reduce the traffic on the smr_delete_lock.
-  static volatile uint         _smr_delete_notify;
-  static volatile uint         _smr_deleted_thread_cnt;
-  static volatile uint         _smr_deleted_thread_time_max;
-  static volatile uint         _smr_deleted_thread_times;
-  static ThreadsList* volatile _smr_java_thread_list;
-  static uint64_t              _smr_java_thread_list_alloc_cnt;
-  static uint64_t              _smr_java_thread_list_free_cnt;
-  static uint                  _smr_java_thread_list_max;
-  static uint                  _smr_nested_thread_list_max;
-  static volatile uint         _smr_tlh_cnt;
-  static volatile uint         _smr_tlh_time_max;
-  static volatile uint         _smr_tlh_times;
-  static ThreadsList*          _smr_to_delete_list;
-  static uint                  _smr_to_delete_list_cnt;
-  static uint                  _smr_to_delete_list_max;
-
-  static JavaThread*           _thread_list;
-  static int                   _number_of_threads;
-  static int                   _number_of_non_daemon_threads;
-  static int                   _return_code;
-  static int                   _thread_claim_parity;
+  static JavaThread* _thread_list;
+  static int         _number_of_threads;
+  static int         _number_of_non_daemon_threads;
+  static int         _return_code;
+  static int         _thread_claim_parity;
 #ifdef ASSERT
-  static bool                  _vm_complete;
+  static bool        _vm_complete;
 #endif
 
   static void initialize_java_lang_classes(JavaThread* main_thread, TRAPS);
   static void initialize_jsr292_core_classes(TRAPS);
-
-  static ThreadsList *acquire_stable_list_fast_path(Thread *self);
-  static ThreadsList *acquire_stable_list_nested_path(Thread *self);
-  static void add_smr_deleted_thread_times(uint add_value);
-  static void clear_smr_delete_notify();
-  static ThreadsList* get_smr_java_thread_list();
-  static void inc_smr_deleted_thread_cnt();
-  static void release_stable_list_fast_path(Thread *self);
-  static void release_stable_list_nested_path(Thread *self);
-  static void release_stable_list_wake_up(char *log_str);
-  static void set_smr_delete_notify();
-  static Monitor* smr_delete_lock() { return _smr_delete_lock; }
-  static bool smr_delete_notify();
-  static void smr_free_list(ThreadsList* threads);
-  static void update_smr_deleted_thread_time_max(uint new_value);
-  static ThreadsList* xchg_smr_java_thread_list(ThreadsList* new_list);
 
  public:
   // Thread management
@@ -2190,19 +2148,6 @@ class Threads: AllStatic {
   static void remove(JavaThread* p);
   static void threads_do(ThreadClosure* tc);
   static void possibly_parallel_threads_do(bool is_par, ThreadClosure* tc);
-
-  // SMR support:
-  static ThreadsList *acquire_stable_list(Thread *self, bool is_ThreadsListSetter);
-  static void release_stable_list(Thread *self);
-  static bool is_a_protected_JavaThread(JavaThread *thread);
-  static bool is_a_protected_JavaThread_with_lock(JavaThread *thread) {
-    MutexLockerEx ml(Threads_lock->owned_by_self() ? NULL : Threads_lock);
-    return is_a_protected_JavaThread(thread);
-  }
-  static void smr_delete(JavaThread *thread);
-  static void inc_smr_tlh_cnt();
-  static void update_smr_tlh_time_max(uint new_value);
-  static void add_smr_tlh_times(uint add_value);
 
   // Initializes the vm and creates the vm thread
   static jint create_vm(JavaVMInitArgs* args, bool* canTryAgain);
@@ -2264,10 +2209,7 @@ class Threads: AllStatic {
 
   // Verification
   static void verify();
-  static void log_smr_statistics();
   static void print_on(outputStream* st, bool print_stacks, bool internal_format, bool print_concurrent_locks);
-  static void print_smr_info_on(outputStream* st);
-  static void print_smr_info_elements_on(outputStream* st, ThreadsList* t_list);
   static void print(bool print_stacks, bool internal_format) {
     // this function is only used by debug.cpp
     print_on(tty, print_stacks, internal_format, false /* no concurrent lock printed */);

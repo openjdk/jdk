@@ -224,7 +224,13 @@ address NativeLookup::lookup_critical_style(const methodHandle& method, char* pu
       st.print_raw(long_name);
       if (os_style) os::print_jni_name_suffix_on(&st, args_size);
       char* jni_name = st.as_string();
-      return (address)os::dll_lookup(dll, jni_name);
+      address critical_entry = (address)os::dll_lookup(dll, jni_name);
+      // Close the handle to avoid keeping the library alive if the native method holder is unloaded.
+      // This is fine because the library is still kept alive by JNI (see JVM_LoadLibrary). As soon
+      // as the holder class and the library are unloaded (see JVM_UnloadLibrary), the native wrapper
+      // that calls 'critical_entry' becomes unreachable and is unloaded as well.
+      os::dll_unload(dll);
+      return critical_entry;
     }
   }
 
@@ -244,7 +250,6 @@ address NativeLookup::lookup_entry(const methodHandle& method, bool& in_base_lib
   int args_size = 1                             // JNIEnv
                 + (method->is_static() ? 1 : 0) // class for static methods
                 + method->size_of_parameters(); // actual parameters
-
 
   // 1) Try JNI short style
   entry = lookup_style(method, pure_name, "",        args_size, true,  in_base_library, CHECK_NULL);
