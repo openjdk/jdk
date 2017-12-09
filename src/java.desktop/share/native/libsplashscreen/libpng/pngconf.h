@@ -29,7 +29,7 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * libpng version 1.6.28, January 5, 2017
+ * libpng version 1.6.34, September 29, 2017
  *
  * Copyright (c) 1998-2002,2004,2006-2016 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)

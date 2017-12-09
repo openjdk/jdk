@@ -1,6 +1,11 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file and, per its terms, should not be removed:
+ *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.  Oracle designates this
@@ -33,9 +38,9 @@
  * file and, per its terms, should not be removed:
  */
 
-/* libpng version 1.6.28, January 5, 2017 */
+/* libpng version 1.6.34, September 29, 2017 */
 
-/* Copyright (c) 1998-2016 Glenn Randers-Pehrson */
+/* Copyright (c) 1998-2017 Glenn Randers-Pehrson */
 
 /* This code is released under the libpng license. */
 /* For conditions of distribution and use, see the disclaimer */
