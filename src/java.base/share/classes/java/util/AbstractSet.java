@@ -93,9 +93,7 @@ public abstract class AbstractSet<E> extends AbstractCollection<E> implements Se
             return false;
         try {
             return containsAll(c);
-        } catch (ClassCastException unused)   {
-            return false;
-        } catch (NullPointerException unused) {
+        } catch (ClassCastException | NullPointerException unused) {
             return false;
         }
     }

@@ -266,6 +266,11 @@ public class SetFactories {
         Set.of((Object[])null);
     }
 
+    @Test(dataProvider="all", expectedExceptions=NullPointerException.class)
+    public void containsNullShouldThrowNPE(Set<String> act, Set<String> exp) {
+        act.contains(null);
+    }
+
     @Test(dataProvider="all")
     public void serialEquality(Set<String> act, Set<String> exp) {
         // assume that act.equals(exp) tested elsewhere
