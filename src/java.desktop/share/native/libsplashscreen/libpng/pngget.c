@@ -28,9 +28,9 @@
  * License version 2 only, as published by the Free Software Foundation.
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
-
- * Last changed in libpng 1.6.26 [October 20, 2016]
- * Copyright (c) 1998-2002,2004,2006-2016 Glenn Randers-Pehrson
+ *
+ * Last changed in libpng 1.6.32 [August 24, 2017]
+ * Copyright (c) 1998-2002,2004,2006-2017 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -795,6 +795,35 @@ png_get_sPLT(png_const_structrp png_ptr, png_inforp info_ptr,
    {
       *spalettes = info_ptr->splt_palettes;
       return info_ptr->splt_palettes_num;
+   }
+
+   return (0);
+}
+#endif
+
+#ifdef PNG_eXIf_SUPPORTED
+png_uint_32 PNGAPI
+png_get_eXIf(png_const_structrp png_ptr, png_inforp info_ptr,
+    png_bytep *exif)
+{
+  png_warning(png_ptr, "png_get_eXIf does not work; use png_get_eXIf_1");
+  PNG_UNUSED(info_ptr)
+  PNG_UNUSED(exif)
+  return 0;
+}
+
+png_uint_32 PNGAPI
+png_get_eXIf_1(png_const_structrp png_ptr, png_const_inforp info_ptr,
+    png_uint_32 *num_exif, png_bytep *exif)
+{
+   png_debug1(1, "in %s retrieval function", "eXIf");
+
+   if (png_ptr != NULL && info_ptr != NULL &&
+       (info_ptr->valid & PNG_INFO_eXIf) != 0 && exif != NULL)
+   {
+      *num_exif = info_ptr->num_exif;
+      *exif = info_ptr->exif;
+      return (PNG_INFO_eXIf);
    }
 
    return (0);
