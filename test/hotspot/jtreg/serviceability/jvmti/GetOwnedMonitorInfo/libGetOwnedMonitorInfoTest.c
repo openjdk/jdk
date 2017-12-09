@@ -49,6 +49,7 @@ extern "C" {
 
 static volatile jboolean event_has_posted = JNI_FALSE;
 static volatile jint status = PASSED;
+static volatile jclass testClass = NULL;
 
 static jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved);
 
@@ -66,16 +67,10 @@ static void ShowErrorMessage(jvmtiEnv *jvmti, jvmtiError errCode, const char *me
 }
 
 static jboolean CheckLockObject(JNIEnv *env, jobject monitor) {
-    jclass testClass;
-
-    testClass = (*env)->FindClass(env, TEST_CLASS);
     if (testClass == NULL) {
-        fprintf(stderr, "MonitorContendedEnter: " TEST_CLASS " not found\n");
-        status = FAILED;
-        event_has_posted = JNI_TRUE;
+        // JNI_OnLoad has not been called yet, so can't possibly be an instance of TEST_CLASS.
         return JNI_FALSE;
     }
-
     return (*env)->IsInstanceOf(env, monitor, testClass);
 }
 
@@ -171,7 +166,26 @@ Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) {
 
 JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *jvm, void *reserved) {
-    return JNI_VERSION_1_8;
+    jint res;
+    JNIEnv *env;
+
+    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &env),
+                                   JNI_VERSION_9);
+    if (res != JNI_OK || env == NULL) {
+        fprintf(stderr, "Error: GetEnv call failed(%d)!\n", res);
+        return JNI_ERR;
+    }
+
+    testClass = (*env)->FindClass(env, TEST_CLASS);
+    if (testClass != NULL) {
+      testClass = (*env)->NewGlobalRef(env, testClass);
+    }
+    if (testClass == NULL) {
+        fprintf(stderr, "Error: Could not load class %s!\n", TEST_CLASS);
+        return JNI_ERR;
+    }
+
+    return JNI_VERSION_9;
 }
 
 static
@@ -185,7 +199,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     printf("Agent_OnLoad started\n");
 
     res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-                                   JVMTI_VERSION_1);
+                                   JVMTI_VERSION_9);
     if (res != JNI_OK || jvmti == NULL) {
         fprintf(stderr, "Error: wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -221,6 +235,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
     }
 
+    memset(&callbacks, 0, sizeof(callbacks));
     callbacks.MonitorContendedEnter   = &MonitorContendedEnter;
     callbacks.MonitorContendedEntered = &MonitorContendedEntered;
 
