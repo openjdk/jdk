@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,24 +69,23 @@ public final class WaveFloatFileWriter extends AudioFileWriter {
 
     public void write(AudioInputStream stream, RIFFWriter writer)
             throws IOException {
-
-        RIFFWriter fmt_chunk = writer.writeChunk("fmt ");
-
-        AudioFormat format = stream.getFormat();
-        fmt_chunk.writeUnsignedShort(3); // WAVE_FORMAT_IEEE_FLOAT
-        fmt_chunk.writeUnsignedShort(format.getChannels());
-        fmt_chunk.writeUnsignedInt((int) format.getSampleRate());
-        fmt_chunk.writeUnsignedInt(((int) format.getFrameRate())
-                * format.getFrameSize());
-        fmt_chunk.writeUnsignedShort(format.getFrameSize());
-        fmt_chunk.writeUnsignedShort(format.getSampleSizeInBits());
-        fmt_chunk.close();
-        RIFFWriter data_chunk = writer.writeChunk("data");
-        byte[] buff = new byte[1024];
-        int len;
-        while ((len = stream.read(buff, 0, buff.length)) != -1)
-            data_chunk.write(buff, 0, len);
-        data_chunk.close();
+        try (final RIFFWriter fmt_chunk = writer.writeChunk("fmt ")) {
+            AudioFormat format = stream.getFormat();
+            fmt_chunk.writeUnsignedShort(3); // WAVE_FORMAT_IEEE_FLOAT
+            fmt_chunk.writeUnsignedShort(format.getChannels());
+            fmt_chunk.writeUnsignedInt((int) format.getSampleRate());
+            fmt_chunk.writeUnsignedInt(((int) format.getFrameRate())
+                                               * format.getFrameSize());
+            fmt_chunk.writeUnsignedShort(format.getFrameSize());
+            fmt_chunk.writeUnsignedShort(format.getSampleSizeInBits());
+        }
+        try (RIFFWriter data_chunk = writer.writeChunk("data")) {
+            byte[] buff = new byte[1024];
+            int len;
+            while ((len = stream.read(buff, 0, buff.length)) != -1) {
+                data_chunk.write(buff, 0, len);
+            }
+        }
     }
 
     private static final class NoCloseOutputStream extends OutputStream {
@@ -136,11 +135,11 @@ public final class WaveFloatFileWriter extends AudioFileWriter {
         checkFormat(fileType, stream);
         if (stream.getFormat().isBigEndian())
             stream = toLittleEndian(stream);
-        RIFFWriter writer = new RIFFWriter(new NoCloseOutputStream(out), "WAVE");
-        write(stream, writer);
-        int fpointer = (int) writer.getFilePointer();
-        writer.close();
-        return fpointer;
+        try (final RIFFWriter writer = new RIFFWriter(
+                new NoCloseOutputStream(out), "WAVE")) {
+            write(stream, writer);
+            return (int) writer.getFilePointer();
+        }
     }
 
     @Override
@@ -153,10 +152,9 @@ public final class WaveFloatFileWriter extends AudioFileWriter {
         checkFormat(fileType, stream);
         if (stream.getFormat().isBigEndian())
             stream = toLittleEndian(stream);
-        RIFFWriter writer = new RIFFWriter(out, "WAVE");
-        write(stream, writer);
-        int fpointer = (int) writer.getFilePointer();
-        writer.close();
-        return fpointer;
+        try (final RIFFWriter writer = new RIFFWriter(out, "WAVE")) {
+            write(stream, writer);
+            return (int) writer.getFilePointer();
+        }
     }
 }

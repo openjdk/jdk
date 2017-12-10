@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,10 +113,11 @@ public final class WaveFileWriter extends SunFileWriter {
         WaveFileFormat waveFileFormat = (WaveFileFormat)getAudioFileFormat(fileType, stream);
 
         // first write the file without worrying about length fields
-        FileOutputStream fos = new FileOutputStream( out );     // throws IOException
-        BufferedOutputStream bos = new BufferedOutputStream( fos, bisBufferSize );
-        int bytesWritten = writeWaveFile(stream, waveFileFormat, bos );
-        bos.close();
+        final int bytesWritten;
+        try (final FileOutputStream fos = new FileOutputStream(out);
+             final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+            bytesWritten = writeWaveFile(stream, waveFileFormat, bos);
+        }
 
         // now, if length fields were not specified, calculate them,
         // open as a random access file, write the appropriate fields,
@@ -125,16 +126,16 @@ public final class WaveFileWriter extends SunFileWriter {
 
             int dataLength=bytesWritten-waveFileFormat.getHeaderSize();
             int riffLength=dataLength + waveFileFormat.getHeaderSize() - 8;
-
-            RandomAccessFile raf=new RandomAccessFile(out, "rw");
-            // skip RIFF magic
-            raf.skipBytes(4);
-            raf.writeInt(big2little( riffLength ));
-            // skip WAVE magic, fmt_ magic, fmt_ length, fmt_ chunk, data magic
-            raf.skipBytes(4+4+4+WaveFileFormat.getFmtChunkSize(waveFileFormat.getWaveType())+4);
-            raf.writeInt(big2little( dataLength ));
-            // that's all
-            raf.close();
+            try (final RandomAccessFile raf = new RandomAccessFile(out, "rw")) {
+                // skip RIFF magic
+                raf.skipBytes(4);
+                raf.writeInt(big2little(riffLength));
+                // skip WAVE magic, fmt_ magic, fmt_ length, fmt_ chunk, data magic
+                raf.skipBytes(4 + 4 + 4 + WaveFileFormat.getFmtChunkSize(
+                        waveFileFormat.getWaveType()) + 4);
+                raf.writeInt(big2little(dataLength));
+                // that's all
+            }
         }
 
         return bytesWritten;
@@ -262,12 +263,6 @@ public final class WaveFileWriter extends SunFileWriter {
         int length                         = waveFileFormat.getByteLength();
         int riffLength = dataLength + headerLength - 8;
 
-        byte header[] = null;
-        ByteArrayInputStream headerStream = null;
-        ByteArrayOutputStream baos = null;
-        DataOutputStream dos = null;
-        SequenceInputStream waveStream = null;
-
         AudioFormat audioStreamFormat = null;
         AudioFormat.Encoding encoding = null;
         InputStream codedAudioStream = audioStream;
@@ -314,37 +309,31 @@ public final class WaveFileWriter extends SunFileWriter {
 
 
         // Now push the header into a stream, concat, and return the new SequenceInputStream
-
-        baos = new ByteArrayOutputStream();
-        dos = new DataOutputStream(baos);
-
-        // we write in littleendian...
-        dos.writeInt(riffMagic);
-        dos.writeInt(big2little( riffLength ));
-        dos.writeInt(waveMagic);
-        dos.writeInt(fmtMagic);
-        dos.writeInt(big2little(fmtLength));
-        dos.writeShort(big2littleShort(wav_type));
-        dos.writeShort(big2littleShort(channels));
-        dos.writeInt(big2little(sampleRate));
-        dos.writeInt(big2little(avgBytesPerSec));
-        dos.writeShort(big2littleShort(blockAlign));
-        dos.writeShort(big2littleShort(sampleSizeInBits));
-        //$$fb 2002-04-16: Fix for 4636355: RIFF audio headers could be _more_ spec compliant
-        if (wav_type != WaveFileFormat.WAVE_FORMAT_PCM) {
-            // add length 0 for "codec specific data length"
-            dos.writeShort(0);
+        final byte[] header;
+        try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             final DataOutputStream dos = new DataOutputStream(baos)) {
+            // we write in littleendian...
+            dos.writeInt(riffMagic);
+            dos.writeInt(big2little(riffLength));
+            dos.writeInt(waveMagic);
+            dos.writeInt(fmtMagic);
+            dos.writeInt(big2little(fmtLength));
+            dos.writeShort(big2littleShort(wav_type));
+            dos.writeShort(big2littleShort(channels));
+            dos.writeInt(big2little(sampleRate));
+            dos.writeInt(big2little(avgBytesPerSec));
+            dos.writeShort(big2littleShort(blockAlign));
+            dos.writeShort(big2littleShort(sampleSizeInBits));
+            //$$fb 2002-04-16: Fix for 4636355: RIFF audio headers could be _more_ spec compliant
+            if (wav_type != WaveFileFormat.WAVE_FORMAT_PCM) {
+                // add length 0 for "codec specific data length"
+                dos.writeShort(0);
+            }
+            dos.writeInt(dataMagic);
+            dos.writeInt(big2little(dataLength));
+            header = baos.toByteArray();
         }
-
-        dos.writeInt(dataMagic);
-        dos.writeInt(big2little(dataLength));
-
-        dos.close();
-        header = baos.toByteArray();
-        headerStream = new ByteArrayInputStream( header );
-        waveStream = new SequenceInputStream(headerStream,
-                            new NoCloseInputStream(codedAudioStream));
-
-        return waveStream;
+        return new SequenceInputStream(new ByteArrayInputStream(header),
+                                       new NoCloseInputStream(codedAudioStream));
     }
 }
