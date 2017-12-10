@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,10 +113,11 @@ public final class AiffFileWriter extends SunFileWriter {
         AiffFileFormat aiffFileFormat = (AiffFileFormat)getAudioFileFormat(fileType, stream);
 
         // first write the file without worrying about length fields
-        FileOutputStream fos = new FileOutputStream( out );     // throws IOException
-        BufferedOutputStream bos = new BufferedOutputStream( fos, bisBufferSize );
-        int bytesWritten = writeAiffFile(stream, aiffFileFormat, bos );
-        bos.close();
+        final int bytesWritten;
+        try (final FileOutputStream fos = new FileOutputStream(out);
+             final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+            bytesWritten = writeAiffFile(stream, aiffFileFormat, bos);
+        }
 
         // now, if length fields were not specified, calculate them,
         // open as a random access file, write the appropriate fields,
@@ -134,20 +135,19 @@ public final class AiffFileWriter extends SunFileWriter {
             long dataSize=ssndChunkSize-16;
             //TODO possibly incorrect round
             int numFrames = (int) (dataSize / ssndBlockSize);
-
-            RandomAccessFile raf=new RandomAccessFile(out, "rw");
-            // skip FORM magic
-            raf.skipBytes(4);
-            raf.writeInt(aiffLength-8);
-            // skip aiff2 magic, fver chunk, comm magic, comm size, channel count,
-            raf.skipBytes(4+aiffFileFormat.getFverChunkSize()+4+4+2);
-            // write frame count
-            raf.writeInt(numFrames);
-            // skip sample size, samplerate, SSND magic
-            raf.skipBytes(2+10+4);
-            raf.writeInt(ssndChunkSize-8);
-            // that's all
-            raf.close();
+            try (final RandomAccessFile raf = new RandomAccessFile(out, "rw")) {
+                // skip FORM magic
+                raf.skipBytes(4);
+                raf.writeInt(aiffLength - 8);
+                // skip aiff2 magic, fver chunk, comm magic, comm size, channel count,
+                raf.skipBytes(4 + aiffFileFormat.getFverChunkSize() + 4 + 4 + 2);
+                // write frame count
+                raf.writeInt(numFrames);
+                // skip sample size, samplerate, SSND magic
+                raf.skipBytes(2 + 10 + 4);
+                raf.writeInt(ssndChunkSize - 8);
+                // that's all
+            }
         }
 
         return bytesWritten;
@@ -289,10 +289,6 @@ public final class AiffFileWriter extends SunFileWriter {
         int compCode = AiffFileFormat.AIFC_PCM;
 
         byte header[] = null;
-        ByteArrayInputStream headerStream = null;
-        ByteArrayOutputStream baos = null;
-        DataOutputStream dos = null;
-        SequenceInputStream aiffStream = null;
         InputStream codedAudioStream = audioStream;
 
         // if we need to do any format conversion, do it here....
@@ -343,52 +339,39 @@ public final class AiffFileWriter extends SunFileWriter {
 
 
         // Now create an AIFF stream header...
-        baos = new ByteArrayOutputStream();
-        dos = new DataOutputStream(baos);
-
-        // Write the outer FORM chunk
-        dos.writeInt(AiffFileFormat.AIFF_MAGIC);
-        dos.writeInt( (aiffLength-8) );
-        dos.writeInt(AiffFileFormat.AIFF_MAGIC2);
-
-        // Write a FVER chunk - only for AIFC
-        //dos.writeInt(FVER_MAGIC);
-        //dos.writeInt( (fverChunkSize-8) );
-        //dos.writeInt(FVER_TIMESTAMP);
-
-        // Write a COMM chunk
-        dos.writeInt(AiffFileFormat.COMM_MAGIC);
-        dos.writeInt( (commChunkSize-8) );
-        dos.writeShort(channels);
-        dos.writeInt(numFrames);
-        dos.writeShort(sampleSize);
-        write_ieee_extended(dos, sampleFramesPerSecond);   // 10 bytes
-
-        //Only for AIFC
-        //dos.writeInt(compCode);
-        //dos.writeInt(compCode);
-        //dos.writeShort(0);
-
-        // Write the SSND chunk header
-        dos.writeInt(AiffFileFormat.SSND_MAGIC);
-        dos.writeInt( (ssndChunkSize-8) );
-        // ssndOffset and ssndBlockSize set to 0 upon
-        // recommendation in "Sound Manager" chapter in
-        // "Inside Macintosh Sound", pp 2-87  (from Babu)
-        dos.writeInt(0);        // ssndOffset
-        dos.writeInt(0);        // ssndBlockSize
-
-        // Concat this with the audioStream and return it
-
-        dos.close();
-        header = baos.toByteArray();
-        headerStream = new ByteArrayInputStream( header );
-
-        aiffStream = new SequenceInputStream(headerStream,
-                            new NoCloseInputStream(codedAudioStream));
-
-        return aiffStream;
-
+        try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             final DataOutputStream dos = new DataOutputStream(baos)) {
+            // Write the outer FORM chunk
+            dos.writeInt(AiffFileFormat.AIFF_MAGIC);
+            dos.writeInt((aiffLength - 8));
+            dos.writeInt(AiffFileFormat.AIFF_MAGIC2);
+            // Write a FVER chunk - only for AIFC
+            //dos.writeInt(FVER_MAGIC);
+            //dos.writeInt( (fverChunkSize-8) );
+            //dos.writeInt(FVER_TIMESTAMP);
+            // Write a COMM chunk
+            dos.writeInt(AiffFileFormat.COMM_MAGIC);
+            dos.writeInt((commChunkSize - 8));
+            dos.writeShort(channels);
+            dos.writeInt(numFrames);
+            dos.writeShort(sampleSize);
+            write_ieee_extended(dos, sampleFramesPerSecond);   // 10 bytes
+            //Only for AIFC
+            //dos.writeInt(compCode);
+            //dos.writeInt(compCode);
+            //dos.writeShort(0);
+            // Write the SSND chunk header
+            dos.writeInt(AiffFileFormat.SSND_MAGIC);
+            dos.writeInt((ssndChunkSize - 8));
+            // ssndOffset and ssndBlockSize set to 0 upon
+            // recommendation in "Sound Manager" chapter in
+            // "Inside Macintosh Sound", pp 2-87  (from Babu)
+            dos.writeInt(0);        // ssndOffset
+            dos.writeInt(0);        // ssndBlockSize
+            header = baos.toByteArray();
+        }
+        return new SequenceInputStream(new ByteArrayInputStream(header),
+                                       new NoCloseInputStream(codedAudioStream));
     }
 
     // HELPER METHODS

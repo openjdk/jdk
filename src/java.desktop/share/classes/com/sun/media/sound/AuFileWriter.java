@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,10 +111,11 @@ public final class AuFileWriter extends SunFileWriter {
         AuFileFormat auFileFormat = (AuFileFormat)getAudioFileFormat(fileType, stream);
 
         // first write the file without worrying about length fields
-        FileOutputStream fos = new FileOutputStream( out );     // throws IOException
-        BufferedOutputStream bos = new BufferedOutputStream( fos, bisBufferSize );
-        int bytesWritten = writeAuFile(stream, auFileFormat, bos );
-        bos.close();
+        final int bytesWritten;
+        try (final FileOutputStream fos = new FileOutputStream(out);
+             final BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+            bytesWritten = writeAuFile(stream, auFileFormat, bos);
+        }
 
         // now, if length fields were not specified, calculate them,
         // open as a random access file, write the appropriate fields,
@@ -123,14 +124,14 @@ public final class AuFileWriter extends SunFileWriter {
 
             // $$kk: 10.22.99: jan: please either implement this or throw an exception!
             // $$fb: 2001-07-13: done. Fixes Bug 4479981
-            RandomAccessFile raf=new RandomAccessFile(out, "rw");
-            if (raf.length()<=0x7FFFFFFFl) {
-                // skip AU magic and data offset field
-                raf.skipBytes(8);
-                raf.writeInt(bytesWritten-AuFileFormat.AU_HEADERSIZE);
-                // that's all
+            try (final RandomAccessFile raf = new RandomAccessFile(out, "rw")) {
+                if (raf.length() <= 0x7FFFFFFFl) {
+                    // skip AU magic and data offset field
+                    raf.skipBytes(8);
+                    raf.writeInt(bytesWritten - AuFileFormat.AU_HEADERSIZE);
+                    // that's all
+                }
             }
-            raf.close();
         }
 
         return bytesWritten;
@@ -191,39 +192,29 @@ public final class AuFileWriter extends SunFileWriter {
         int sampleRate     = (int)format.getSampleRate();
         int channels       = format.getChannels();
 
-        byte header[] = null;
-        ByteArrayInputStream headerStream = null;
-        ByteArrayOutputStream baos = null;
-        DataOutputStream dos = null;
-        SequenceInputStream auStream = null;
-
         // if we need to do any format conversion, we do it here.
         //$$ fb 2001-07-13: Bug 4391108
         audioStream = AudioSystem.getAudioInputStream(format, audioStream);
 
-        baos = new ByteArrayOutputStream();
-        dos = new DataOutputStream(baos);
-
-        dos.writeInt(AuFileFormat.AU_SUN_MAGIC);
-        dos.writeInt(headerSize);
-        dos.writeInt((int)dataSizeInBytes);
-        dos.writeInt(auType);
-        dos.writeInt(sampleRate);
-        dos.writeInt(channels);
-
+        final byte[] header;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             DataOutputStream dos = new DataOutputStream(baos)) {
+            dos.writeInt(AuFileFormat.AU_SUN_MAGIC);
+            dos.writeInt(headerSize);
+            dos.writeInt((int) dataSizeInBytes);
+            dos.writeInt(auType);
+            dos.writeInt(sampleRate);
+            dos.writeInt(channels);
+            header = baos.toByteArray();
+        }
         // Now create a new InputStream from headerStream and the InputStream
         // in audioStream
-
-        dos.close();
-        header = baos.toByteArray();
-        headerStream = new ByteArrayInputStream( header );
-        auStream = new SequenceInputStream(headerStream,
-                        new NoCloseInputStream(audioStream));
-
-        return auStream;
+        return new SequenceInputStream(new ByteArrayInputStream(header),
+                                       new NoCloseInputStream(audioStream));
     }
 
-    private int writeAuFile(AudioInputStream in, AuFileFormat auFileFormat, OutputStream out) throws IOException {
+    private int writeAuFile(AudioInputStream in, AuFileFormat auFileFormat,
+                            OutputStream out) throws IOException {
 
         int bytesRead = 0;
         int bytesWritten = 0;

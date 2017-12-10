@@ -49,7 +49,7 @@ import static javax.sound.sampled.AudioSystem.NOT_SPECIFIED;
 
 /**
  * @test
- * @bug 8038139
+ * @bug 8038139 8178401
  */
 public final class FrameLengthAfterConversion {
 
