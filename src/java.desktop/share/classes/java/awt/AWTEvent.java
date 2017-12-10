@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,24 @@
 
 package java.awt;
 
-import java.util.EventObject;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.ComponentEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.InputMethodEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.TextEvent;
+import java.awt.event.WindowEvent;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.LightweightPeer;
-import java.lang.reflect.Field;
-import sun.awt.AWTAccessor;
-import sun.util.logging.PlatformLogger;
-
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.util.EventObject;
+
+import sun.awt.AWTAccessor;
 
 /**
  * The root event class for all AWT events.
@@ -78,7 +86,7 @@ import java.security.AccessController;
  * @since 1.1
  */
 public abstract class AWTEvent extends EventObject {
-    private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.AWTEvent");
+
     private byte bdata[];
 
     /**
@@ -240,9 +248,6 @@ public abstract class AWTEvent extends EventObject {
      * their own event IDs should use IDs greater than this value.
      */
     public static final int RESERVED_ID_MAX = 1999;
-
-    // security stuff
-    private static Field inputEvent_CanAccessSystemClipboard_Field = null;
 
     /*
      * JDK 1.1 serialVersionUID
