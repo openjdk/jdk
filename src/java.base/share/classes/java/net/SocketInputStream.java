@@ -283,7 +283,7 @@ class SocketInputStream extends FileInputStream
     /**
      * Overrides finalize, the fd is closed by the Socket.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     protected void finalize() {}
 
     /**

@@ -139,7 +139,7 @@ public class WindowsAsynchronousFileChannelImpl
         invalidateAllLocks();
 
         // close the file
-        close0(handle);
+        nd.close(fdObj);
 
         // waits until all I/O operations have completed
         ioCache.close();
@@ -727,8 +727,6 @@ public class WindowsAsynchronousFileChannelImpl
 
     private static native int lockFile(long handle, long position, long size,
         boolean shared, long overlapped) throws IOException;
-
-    private static native void close0(long handle);
 
     static {
         IOUtil.load();

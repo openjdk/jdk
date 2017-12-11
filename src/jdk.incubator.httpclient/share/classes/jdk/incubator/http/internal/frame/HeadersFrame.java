@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package jdk.incubator.http.internal.frame;
 
-import jdk.incubator.http.internal.common.ByteBufferReference;
-import jdk.incubator.http.internal.common.Utils;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 public class HeadersFrame extends HeaderFrame {
 
@@ -43,19 +43,19 @@ public class HeadersFrame extends HeaderFrame {
     private int weight;
     private boolean exclusive;
 
-    public HeadersFrame(int streamid, int flags, ByteBufferReference[] headerBlocks, int padLength) {
+    public HeadersFrame(int streamid, int flags, List<ByteBuffer> headerBlocks, int padLength) {
         super(streamid, flags, headerBlocks);
         if (padLength > 0) {
             setPadLength(padLength);
         }
     }
 
-    public HeadersFrame(int streamid, int flags, ByteBufferReference[] headerBlocks) {
+    public HeadersFrame(int streamid, int flags, List<ByteBuffer> headerBlocks) {
         super(streamid, flags, headerBlocks);
     }
 
-    public HeadersFrame(int streamid, int flags, ByteBufferReference headerBlock) {
-        this(streamid, flags, new ByteBufferReference[]{headerBlock});
+    public HeadersFrame(int streamid, int flags, ByteBuffer headerBlock) {
+        this(streamid, flags, List.of(headerBlock));
     }
 
     @Override

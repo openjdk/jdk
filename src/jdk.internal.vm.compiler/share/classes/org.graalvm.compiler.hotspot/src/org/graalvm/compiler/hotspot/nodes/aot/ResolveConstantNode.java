@@ -29,6 +29,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.DeoptimizingFixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -41,13 +42,13 @@ public class ResolveConstantNode extends DeoptimizingFixedWithNextNode implement
     protected HotSpotConstantLoadAction action;
 
     public ResolveConstantNode(ValueNode value, HotSpotConstantLoadAction action) {
-        super(TYPE, value.stamp());
+        super(TYPE, value.stamp(NodeView.DEFAULT));
         this.value = value;
         this.action = action;
     }
 
     public ResolveConstantNode(ValueNode value) {
-        super(TYPE, value.stamp());
+        super(TYPE, value.stamp(NodeView.DEFAULT));
         this.value = value;
         this.action = HotSpotConstantLoadAction.RESOLVE;
     }

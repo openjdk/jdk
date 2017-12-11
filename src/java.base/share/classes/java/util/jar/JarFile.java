@@ -43,17 +43,12 @@ import java.security.CodeSource;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.Collector;
+import java.util.function.Function;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -566,7 +561,14 @@ class JarFile extends ZipFile {
      * given entry name or {@code null} if not found.
      */
     private JarFileEntry getEntry0(String name) {
-        return (JarFileEntry)JUZFA.getEntry(this, name, JarFileEntry::new);
+        // Not using a lambda/method reference here to optimize startup time
+        Function<String, JarEntry> newJarFileEntryFn = new Function<>() {
+            @Override
+            public JarEntry apply(String name) {
+                return new JarFileEntry(name);
+            }
+        };
+        return (JarFileEntry)JUZFA.getEntry(this, name, newJarFileEntryFn);
     }
 
     private String getBasename(String name) {

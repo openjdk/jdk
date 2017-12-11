@@ -280,9 +280,6 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   jthread * new_jthreadArray(int length, Handle *handles);
   jthreadGroup * new_jthreadGroupArray(int length, Handle *handles);
 
-  // convert from JNIHandle to JavaThread *
-  JavaThread  * get_JavaThread(jthread jni_thread);
-
   // convert to a jni jclass from a non-null Klass*
   jclass get_jni_class_non_null(Klass* k);
 
@@ -297,11 +294,6 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
  public:
   // get a field descriptor for the specified class and field
   static bool get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd);
-  // test for suspend - most (all?) of these should go away
-  static bool is_thread_fully_suspended(JavaThread *thread,
-                                        bool wait_for_suspend,
-                                        uint32_t *bits);
-
 
   // JVMTI API helper functions which are called at safepoint or thread is suspended.
   jvmtiError get_frame_count(JvmtiThreadState *state, jint *count_ptr);
@@ -360,14 +352,7 @@ public:
   }
   VMOp_Type type() const { return VMOp_UpdateForPopTopFrame; }
   jvmtiError result() { return _result; }
-  void doit() {
-    JavaThread* jt = _state->get_thread();
-    if (Threads::includes(jt) && !jt->is_exiting() && jt->threadObj() != NULL) {
-      _state->update_for_pop_top_frame();
-    } else {
-      _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
-    }
-  }
+  void doit();
 };
 
 // VM operation to set frame pop.
@@ -390,15 +375,7 @@ public:
   bool allow_nested_vm_operations() const { return true; }
   VMOp_Type type() const { return VMOp_SetFramePop; }
   jvmtiError result() { return _result; }
-  void doit() {
-    JavaThread* jt = _state->get_thread();
-    if (Threads::includes(jt) && !jt->is_exiting() && jt->threadObj() != NULL) {
-      int frame_number = _state->count_frames() - _depth;
-      _state->env_thread_state((JvmtiEnvBase*)_env)->set_frame_pop(frame_number);
-    } else {
-      _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
-    }
-  }
+  void doit();
 };
 
 
@@ -422,14 +399,7 @@ public:
     _result = JVMTI_ERROR_NONE;
   }
   VMOp_Type type() const { return VMOp_GetOwnedMonitorInfo; }
-  void doit() {
-    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
-    if (Threads::includes(_java_thread) && !_java_thread->is_exiting()
-                                        && _java_thread->threadObj() != NULL) {
-      _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread, _java_thread,
-                                                            _owned_monitors_list);
-    }
-  }
+  void doit();
   jvmtiError result() { return _result; }
 };
 
@@ -476,13 +446,7 @@ public:
   }
   VMOp_Type type() const { return VMOp_GetCurrentContendedMonitor; }
   jvmtiError result() { return _result; }
-  void doit() {
-    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
-    if (Threads::includes(_java_thread) && !_java_thread->is_exiting() &&
-        _java_thread->threadObj() != NULL) {
-      _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor(_calling_thread,_java_thread,_owned_monitor_ptr);
-    }
-  }
+  void doit();
 };
 
 // VM operation to get stack trace at safepoint.
@@ -509,15 +473,7 @@ public:
   }
   jvmtiError result() { return _result; }
   VMOp_Type type() const { return VMOp_GetStackTrace; }
-  void doit() {
-    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
-    if (Threads::includes(_java_thread) && !_java_thread->is_exiting()
-                                        && _java_thread->threadObj() != NULL) {
-      _result = ((JvmtiEnvBase *)_env)->get_stack_trace(_java_thread,
-                                                        _start_depth, _max_count,
-                                                        _frame_buffer, _count_ptr);
-    }
-  }
+  void doit();
 };
 
 // forward declaration
@@ -607,13 +563,7 @@ public:
   }
   VMOp_Type type() const { return VMOp_GetFrameCount; }
   jvmtiError result()    { return _result; }
-  void doit() {
-    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
-    JavaThread* jt = _state->get_thread();
-    if (Threads::includes(jt) && !jt->is_exiting() && jt->threadObj() != NULL) {
-      _result = ((JvmtiEnvBase*)_env)->get_frame_count(_state, _count_ptr);
-    }
-  }
+  void doit();
 };
 
 // VM operation to frame location at safepoint.
@@ -637,14 +587,7 @@ public:
   }
   VMOp_Type type() const { return VMOp_GetFrameLocation; }
   jvmtiError result()    { return _result; }
-  void doit() {
-    _result = JVMTI_ERROR_THREAD_NOT_ALIVE;
-    if (Threads::includes(_java_thread) && !_java_thread->is_exiting() &&
-        _java_thread->threadObj() != NULL) {
-      _result = ((JvmtiEnvBase*)_env)->get_frame_location(_java_thread, _depth,
-                                                          _method_ptr, _location_ptr);
-    }
-  }
+  void doit();
 };
 
 

@@ -26,6 +26,7 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 
 /**
@@ -73,7 +74,7 @@ public abstract class BinaryNode extends FloatingNode implements Canonicalizable
 
     @Override
     public boolean inferStamp() {
-        return updateStamp(foldStamp(getX().stamp(), getY().stamp()));
+        return updateStamp(foldStamp(getX().stamp(NodeView.DEFAULT), getY().stamp(NodeView.DEFAULT)));
     }
 
     /**

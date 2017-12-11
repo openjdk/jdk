@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug      4927552 8026567 8071982 8162674 8175200 8175218 8183511 8186332 8169819 8074407
+ * @bug      4927552 8026567 8071982 8162674 8175200 8175218 8183511 8186332
+ *           8169819 8074407 8191030
  * @summary  test generated docs for deprecated items
  * @author   jamieh
  * @library  ../lib
@@ -257,24 +258,30 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "<td class=\"colLast\"></td>\n"
                 + "</tr>\n"
                 + "<tr class=\"rowColor\">\n"
+                + "<th class=\"colDeprecatedItemName\" scope=\"row\"><a href=\"pkg/TestAnnotationType.html#field\">pkg.TestAnnotationType.field</a></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"deprecationComment\">annotation_test4 passes.</div>\n"
+                + "</td>\n"
+                + "</tr>\n"
+                + "<tr class=\"altColor\">\n"
                 + "<th class=\"colDeprecatedItemName\" scope=\"row\"><a href=\"pkg/TestClass.html#field\">pkg.TestClass.field</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"deprecationComment\">class_test2 passes. This is the second sentence of deprecated description for a field.</div>\n"
                 + "</td>\n"
                 + "</tr>\n"
-                + "<tr class=\"altColor\">\n"
+                + "<tr class=\"rowColor\">\n"
                 + "<th class=\"colDeprecatedItemName\" scope=\"row\"><a href=\"pkg/TestError.html#field\">pkg.TestError.field</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"deprecationComment\">error_test2 passes.</div>\n"
                 + "</td>\n"
                 + "</tr>\n"
-                + "<tr class=\"rowColor\">\n"
+                + "<tr class=\"altColor\">\n"
                 + "<th class=\"colDeprecatedItemName\" scope=\"row\"><a href=\"pkg/TestException.html#field\">pkg.TestException.field</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"deprecationComment\">exception_test2 passes.</div>\n"
                 + "</td>\n"
                 + "</tr>\n"
-                + "<tr class=\"altColor\">\n"
+                + "<tr class=\"rowColor\">\n"
                 + "<th class=\"colDeprecatedItemName\" scope=\"row\"><a href=\"pkg/TestInterface.html#field\">pkg.TestInterface.field</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"deprecationComment\">interface_test2 passes.</div>\n"

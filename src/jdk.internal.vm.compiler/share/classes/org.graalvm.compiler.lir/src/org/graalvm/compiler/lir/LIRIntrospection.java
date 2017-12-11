@@ -340,7 +340,7 @@ abstract class LIRIntrospection<T> extends FieldIntrospection<T> {
     private static boolean isPrintableAsciiString(byte[] array) {
         for (byte b : array) {
             char c = (char) b;
-            if (c != 0 && c < 0x20 && c > 0x7F) {
+            if (c != 0 && (c < 0x20 || c > 0x7F)) {
                 return false;
             }
         }

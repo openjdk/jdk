@@ -386,8 +386,9 @@ public class SignatureFileVerifier {
                     if (e.getMessage() != null) {
                         debug.println(key + ":  " + e.getMessage());
                     } else {
-                        debug.println(key + ":  " + algorithm +
-                                " was disabled, no exception msg given.");
+                        debug.println("Debug info only. " +  key + ":  " +
+                            algorithm +
+                            " was disabled, no exception msg given.");
                         e.printStackTrace();
                     }
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4031438 4058973 4074764 4094906 4104976 4105380 4106659 4106660 4106661
  * 4111739 4112104 4113018 4114739 4114743 4116444 4118592 4118594 4120552
- * 4142938 4169959 4232154 4293229
+ * 4142938 4169959 4232154 4293229 8187551
  * @summary Regression tests for MessageFormat and associated classes
  * @library /java/text/testlib
  * @run main MessageRegression
@@ -642,4 +642,44 @@ public class MessageRegression extends IntlTest {
                     expected + "\", got \"" + result + "\"");
         }
     }
+
+    /**
+     * @bug 8187551
+     * test MessageFormat.setFormat() method to throw AIOOBE on invalid index.
+     */
+    public void test8187551() {
+        //invalid cases ("pattern", "invalid format element index")
+        String[][] invalidCases = {{"The disk \"{1}\" contains {0}.", "2"},
+                {"The disk \"{1}\" contains {0}.", "9"},
+                {"On {1}, there are {0} and {2} folders", "3"}};
+
+        //invalid cases (must throw exception)
+        Arrays.stream(invalidCases).forEach(entry -> messageSetFormat(entry[0],
+                Integer.valueOf(entry[1])));
+    }
+
+    // test MessageFormat.setFormat() method for the given pattern and
+    // format element index
+    private void messageSetFormat(String pattern, int elemIndex) {
+        MessageFormat form = new MessageFormat(pattern);
+
+        double[] fileLimits = {0, 1, 2};
+        String[] filePart = {"no files", "one file", "{0,number} files"};
+        ChoiceFormat fileForm = new ChoiceFormat(fileLimits, filePart);
+
+        boolean AIOOBEThrown = false;
+        try {
+            form.setFormat(elemIndex, fileForm);
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            AIOOBEThrown = true;
+        }
+
+        if (!AIOOBEThrown) {
+            throw new RuntimeException("[FAILED: Must throw" +
+                    " ArrayIndexOutOfBoundsException for" +
+                    " invalid index " + elemIndex + " used in" +
+                    " MessageFormat.setFormat(index, format)]");
+        }
+    }
+
 }

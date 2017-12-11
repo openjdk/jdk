@@ -565,6 +565,7 @@ JAVAC_FLAGS?=@JAVAC_FLAGS@
 
 BUILD_JAVA_FLAGS := @BOOTCYCLE_JVM_ARGS_BIG@
 BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
+BUILD_JAR=@FIXPATH@ $(BUILD_JDK)/bin/jar
 
 # Interim langtools and rmic modules and arguments
 INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
@@ -577,7 +578,7 @@ INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
 INTERIM_LANGTOOLS_ARGS := \
     --limit-modules java.base,jdk.zipfs,$(INTERIM_LANGTOOLS_MODULES_COMMA) \
     --add-modules $(INTERIM_LANGTOOLS_MODULES_COMMA) \
-    --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_modules \
+    --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules \
     $(INTERIM_LANGTOOLS_ADD_EXPORTS) \
     #
 JAVAC_MAIN_CLASS = -m jdk.compiler.interim/com.sun.tools.javac.Main
@@ -588,8 +589,10 @@ INTERIM_RMIC_MODULES := $(addsuffix .interim, $(INTERIM_RMIC_BASE_MODULES))
 INTERIM_RMIC_ADD_EXPORTS := \
     --add-exports java.corba/com.sun.corba.se.impl.util=jdk.rmic.interim \
     #
-INTERIM_RMIC_ARGS := --limit-modules java.base,jdk.compiler,jdk.javadoc,java.corba \
-    --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_modules \
+# Use = to delay expansion of PathList since it's not available in this file.
+INTERIM_RMIC_ARGS = --limit-modules java.base,jdk.compiler,jdk.javadoc,java.corba \
+    --module-path $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/interim_rmic_modules \
+        $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules) \
     $(INTERIM_RMIC_ADD_EXPORTS) \
     #
 

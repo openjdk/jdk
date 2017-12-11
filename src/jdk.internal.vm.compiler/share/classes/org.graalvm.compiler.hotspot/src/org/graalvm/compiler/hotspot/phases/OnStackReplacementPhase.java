@@ -50,6 +50,7 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StartNode;
@@ -185,8 +186,8 @@ public class OnStackReplacementPhase extends Phase {
                  * (if a branch was not parsed for example). In cases when this is possible, we
                  * insert a guard and narrow the OSRLocal stamp at its usages.
                  */
-                Stamp narrowedStamp = proxy.value().stamp();
-                Stamp unrestrictedStamp = proxy.stamp().unrestricted();
+                Stamp narrowedStamp = proxy.value().stamp(NodeView.DEFAULT);
+                Stamp unrestrictedStamp = proxy.stamp(NodeView.DEFAULT).unrestricted();
                 ValueNode osrLocal;
                 if (i >= localsSize) {
                     osrLocal = graph.addOrUnique(new OSRLockNode(i - localsSize, unrestrictedStamp));

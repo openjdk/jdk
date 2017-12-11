@@ -687,6 +687,10 @@ jint universe_init() {
 
   Metaspace::global_initialize();
 
+  // Initialize performance counters for metaspaces
+  MetaspaceCounters::initialize_performance_counters();
+  CompressedClassSpaceCounters::initialize_performance_counters();
+
   AOTLoader::universe_init();
 
   // Checks 'AfterMemoryInit' constraints.
@@ -764,6 +768,7 @@ jint Universe::initialize_heap() {
   }
   log_info(gc)("Using %s", _collectedHeap->name());
 
+  GCArguments::arguments()->post_heap_initialize();
   ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
 
 #ifdef _LP64
@@ -852,7 +857,7 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
       || use_large_pages, "Wrong alignment to use large pages");
 
   // Now create the space.
-  ReservedHeapSpace total_rs(total_reserved, alignment, use_large_pages);
+  ReservedHeapSpace total_rs(total_reserved, alignment, use_large_pages, AllocateHeapAt);
 
   if (total_rs.is_reserved()) {
     assert((total_reserved == total_rs.size()) && ((uintptr_t)total_rs.base() % alignment == 0),
@@ -866,6 +871,9 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
       Universe::set_narrow_oop_base((address)total_rs.compressed_oop_base());
     }
 
+    if (AllocateHeapAt != NULL) {
+      log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
+    }
     return total_rs;
   }
 
@@ -1084,10 +1092,6 @@ bool universe_post_init() {
 
   // ("weak") refs processing infrastructure initialization
   Universe::heap()->post_initialize();
-
-  // Initialize performance counters for metaspaces
-  MetaspaceCounters::initialize_performance_counters();
-  CompressedClassSpaceCounters::initialize_performance_counters();
 
   MemoryService::add_metaspace_memory_pools();
 

@@ -219,7 +219,7 @@ public class Helper {
         generateModuleCompiledClasses(explodedmodssrc, explodedmodsclasses,
                 moduleName, classNames, dependencies);
 
-        Path dir = explodedmods.resolve(moduleName);
+        Path dir = explodedmods.resolve("classes").resolve(moduleName);
         return new Result(0, "", dir);
     }
 

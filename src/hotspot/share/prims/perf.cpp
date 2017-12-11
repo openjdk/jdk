@@ -30,7 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
-#include "runtime/perfData.hpp"
+#include "runtime/perfData.inline.hpp"
 #include "runtime/perfMemory.hpp"
 
 /*

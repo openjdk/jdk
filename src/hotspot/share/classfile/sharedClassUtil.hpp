@@ -27,37 +27,108 @@
 
 #include "classfile/sharedPathsMiscInfo.hpp"
 #include "memory/filemap.hpp"
+#include "classfile/classLoaderExt.hpp"
+#include "classfile/dictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
+#include "oops/klass.hpp"
+
+class FileMapHeaderExt: public FileMapInfo::FileMapHeader {
+public:
+  jshort _app_paths_start_index;    // Index of first app classpath entry
+  bool   _verify_local;             // BytecodeVerificationLocal setting
+  bool   _verify_remote;            // BytecodeVerificationRemote setting
+  bool   _has_platform_or_app_classes;          // Archive contains app classes
+
+  FileMapHeaderExt() {
+    _has_platform_or_app_classes = true;
+  }
+  virtual void populate(FileMapInfo* mapinfo, size_t alignment);
+  virtual bool validate();
+};
+
+// In addition to SharedPathsMiscInfo, the following information is also stored
+//
+//
+// + The value of Arguments::get_appclasspath() used during dumping.
+//
+class SharedPathsMiscInfoExt : public SharedPathsMiscInfo {
+private:
+  int   _app_offset;
+public:
+  enum {
+    APP       = 5
+  };
+
+  virtual const char* type_name(int type) {
+    switch (type) {
+    case APP:     return "APP";
+    default:      return SharedPathsMiscInfo::type_name(type);
+    }
+  }
+
+  virtual void print_path(outputStream* out, int type, const char* path);
+
+  SharedPathsMiscInfoExt() : SharedPathsMiscInfo() {
+    _app_offset = 0;
+  }
+  SharedPathsMiscInfoExt(char* buf, int size) : SharedPathsMiscInfo(buf, size) {
+    _app_offset = 0;
+  }
+
+  virtual bool check(jint type, const char* path);
+
+  void add_app_classpath(const char* path) {
+    add_path(path, APP);
+  }
+
+  void record_app_offset() {
+    _app_offset = get_used_bytes();
+  }
+  void pop_app() {
+    _cur_ptr = _buf_start + _app_offset;
+    write_jint(0);
+  }
+};
+
+class SharedClassPathEntryExt: public SharedClassPathEntry {
+public:
+  //Maniest attributes
+  bool _is_signed;
+  void set_manifest(Array<u1>* manifest) {
+    _manifest = manifest;
+  }
+};
 
 class SharedClassUtil : AllStatic {
 public:
-
   static SharedPathsMiscInfo* allocate_shared_paths_misc_info() {
-    return new SharedPathsMiscInfo();
+    return new SharedPathsMiscInfoExt();
   }
 
   static SharedPathsMiscInfo* allocate_shared_paths_misc_info(char* buf, int size) {
-    return new SharedPathsMiscInfo(buf, size);
+    return new SharedPathsMiscInfoExt(buf, size);
   }
 
   static FileMapInfo::FileMapHeader* allocate_file_map_header() {
-    return new FileMapInfo::FileMapHeader();
+    return new FileMapHeaderExt();
   }
 
   static size_t file_map_header_size() {
-    return sizeof(FileMapInfo::FileMapHeader);
+    return sizeof(FileMapHeaderExt);
   }
 
   static size_t shared_class_path_entry_size() {
-    return sizeof(SharedClassPathEntry);
+    return sizeof(SharedClassPathEntryExt);
   }
 
-  static void update_shared_classpath(ClassPathEntry *cpe,
-                                      SharedClassPathEntry* ent, TRAPS) {}
-  static void initialize(TRAPS) {}
+  static void update_shared_classpath(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS);
+  static void initialize(TRAPS);
 
-  inline static bool is_shared_boot_class(Klass* klass) {
-    return (klass->_shared_class_path_index >= 0);
-  }
+private:
+  static void read_extra_data(const char* filename, TRAPS);
+
+public:
+  static bool is_classpath_entry_signed(int classpath_index);
 };
 
 #endif // SHARE_VM_CLASSFILE_SHAREDCLASSUTIL_HPP

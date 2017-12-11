@@ -785,7 +785,10 @@ class SpaceManager : public CHeapObj<mtClass> {
   Mutex* const _lock;
 
   // Type of metadata allocated.
-  Metaspace::MetadataType _mdtype;
+  const Metaspace::MetadataType   _mdtype;
+
+  // Type of metaspace
+  const Metaspace::MetaspaceType  _space_type;
 
   // List of chunks in use by this SpaceManager.  Allocations
   // are done from the current chunk.  The list is used for deallocating
@@ -795,6 +798,10 @@ class SpaceManager : public CHeapObj<mtClass> {
 
   // Maximum number of small chunks to allocate to a SpaceManager
   static uint const _small_chunk_limit;
+
+  // Maximum number of specialize chunks to allocate for anonymous
+  // metadata space to a SpaceManager
+  static uint const _anon_metadata_specialize_chunk_limit;
 
   // Sum of all space in allocated chunks
   size_t _allocated_blocks_words;
@@ -846,6 +853,7 @@ class SpaceManager : public CHeapObj<mtClass> {
 
  public:
   SpaceManager(Metaspace::MetadataType mdtype,
+               Metaspace::MetaspaceType space_type,
                Mutex* lock);
   ~SpaceManager();
 
@@ -963,6 +971,7 @@ class SpaceManager : public CHeapObj<mtClass> {
 };
 
 uint const SpaceManager::_small_chunk_limit = 4;
+uint const SpaceManager::_anon_metadata_specialize_chunk_limit = 4;
 
 const char* SpaceManager::_expand_lock_name =
   "SpaceManager chunk allocation lock";
@@ -2400,6 +2409,20 @@ size_t SpaceManager::calc_chunk_size(size_t word_size) {
   // _small_chunk_limit small chunks can be allocated.
   // After that a medium chunk is preferred.
   size_t chunk_word_size;
+
+  // Special case for anonymous metadata space.
+  // Anonymous metadata space is usually small, with majority within 1K - 2K range and
+  // rarely about 4K (64-bits JVM).
+  // Instead of jumping to SmallChunk after initial chunk exhausted, keeping allocation
+  // from SpecializeChunk up to _anon_metadata_specialize_chunk_limit (4) reduces space waste
+  // from 60+% to around 30%.
+  if (_space_type == Metaspace::AnonymousMetaspaceType &&
+      _mdtype == Metaspace::NonClassType &&
+      sum_count_in_chunks_in_use(SpecializedIndex) < _anon_metadata_specialize_chunk_limit &&
+      word_size + Metachunk::overhead() <= SpecializedChunk) {
+    return SpecializedChunk;
+  }
+
   if (chunks_in_use(MediumIndex) == NULL &&
       sum_count_in_chunks_in_use(SmallIndex) < _small_chunk_limit) {
     chunk_word_size = (size_t) small_chunk_size();
@@ -2504,8 +2527,10 @@ void SpaceManager::print_on(outputStream* st) const {
 }
 
 SpaceManager::SpaceManager(Metaspace::MetadataType mdtype,
+                           Metaspace::MetaspaceType space_type,
                            Mutex* lock) :
   _mdtype(mdtype),
+  _space_type(space_type),
   _allocated_blocks_words(0),
   _allocated_chunks_words(0),
   _allocated_chunks_count(0),
@@ -3781,11 +3806,11 @@ void Metaspace::initialize(Mutex* lock, MetaspaceType type) {
   verify_global_initialization();
 
   // Allocate SpaceManager for metadata objects.
-  _vsm = new SpaceManager(NonClassType, lock);
+  _vsm = new SpaceManager(NonClassType, type, lock);
 
   if (using_class_space()) {
     // Allocate SpaceManager for classes.
-    _class_vsm = new SpaceManager(ClassType, lock);
+    _class_vsm = new SpaceManager(ClassType, type, lock);
   }
 
   MutexLockerEx cl(SpaceManager::expand_lock(), Mutex::_no_safepoint_check_flag);

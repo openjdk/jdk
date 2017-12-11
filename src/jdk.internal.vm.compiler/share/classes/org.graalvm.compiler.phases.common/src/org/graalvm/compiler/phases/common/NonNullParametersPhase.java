@@ -25,6 +25,7 @@ package org.graalvm.compiler.phases.common;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.Phase;
@@ -39,8 +40,8 @@ public class NonNullParametersPhase extends Phase {
     protected void run(StructuredGraph graph) {
         Stamp nonNull = StampFactory.objectNonNull();
         for (ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-            if (param.stamp() instanceof ObjectStamp) {
-                ObjectStamp paramStamp = (ObjectStamp) param.stamp();
+            if (param.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
+                ObjectStamp paramStamp = (ObjectStamp) param.stamp(NodeView.DEFAULT);
                 param.setStamp(paramStamp.join(nonNull));
             }
         }

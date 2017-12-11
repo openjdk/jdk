@@ -442,6 +442,9 @@ class SuperWord : public ResourceObj {
   bool isomorphic(Node* s1, Node* s2);
   // Is there no data path from s1 to s2 or s2 to s1?
   bool independent(Node* s1, Node* s2);
+  // For a node pair (s1, s2) which is isomorphic and independent,
+  // do s1 and s2 have similar input edges?
+  bool have_similar_inputs(Node* s1, Node* s2);
   // Is there a data path between s1 and s2 and both are reductions?
   bool reduction(Node* s1, Node* s2);
   // Helper for independent

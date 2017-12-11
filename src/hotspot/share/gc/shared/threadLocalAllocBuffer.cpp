@@ -30,6 +30,7 @@
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/copy.hpp"
 
 // Thread-Local Edens support
@@ -48,7 +49,7 @@ void ThreadLocalAllocBuffer::clear_before_allocation() {
 void ThreadLocalAllocBuffer::accumulate_statistics_before_gc() {
   global_stats()->initialize();
 
-  for (JavaThread *thread = Threads::first(); thread != NULL; thread = thread->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
     thread->tlab().accumulate_statistics();
     thread->tlab().initialize_statistics();
   }
@@ -130,7 +131,7 @@ void ThreadLocalAllocBuffer::make_parsable(bool retire, bool zap) {
 
 void ThreadLocalAllocBuffer::resize_all_tlabs() {
   if (ResizeTLAB) {
-    for (JavaThread *thread = Threads::first(); thread != NULL; thread = thread->next()) {
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
       thread->tlab().resize();
     }
   }

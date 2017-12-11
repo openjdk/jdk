@@ -25,9 +25,11 @@
 #ifndef SHARE_VM_GC_G1_G1MONITORINGSUPPORT_HPP
 #define SHARE_VM_GC_G1_G1MONITORINGSUPPORT_HPP
 
-#include "gc/g1/hSpaceCounters.hpp"
+#include "gc/shared/generationCounters.hpp"
 
+class CollectorCounters;
 class G1CollectedHeap;
+class HSpaceCounters;
 
 // Class for monitoring logical spaces in G1. It provides data for
 // both G1's jstat counters as well as G1's memory pools.

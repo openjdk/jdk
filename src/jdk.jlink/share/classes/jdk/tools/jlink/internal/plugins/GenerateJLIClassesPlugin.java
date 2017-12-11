@@ -54,11 +54,8 @@ import jdk.tools.jlink.plugin.Plugin;
 public final class GenerateJLIClassesPlugin implements Plugin {
 
     private static final String NAME = "generate-jli-classes";
-    private static final String IGNORE_VERSION = "ignore-version";
 
     private static final String DESCRIPTION = PluginsResourceBundle.getDescription(NAME);
-    private static final String IGNORE_VERSION_WARNING = NAME + ".ignore.version.warn";
-    private static final String VERSION_MISMATCH_WARNING = NAME + ".version.mismatch.warn";
 
     private static final String DEFAULT_TRACE_FILE = "default_jli_trace.txt";
 
@@ -84,8 +81,6 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     Map<String, Set<String>> dmhMethods = Map.of();
 
     String mainArgument;
-
-    boolean ignoreVersion;
 
     public GenerateJLIClassesPlugin() {
     }
@@ -170,7 +165,6 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     @Override
     public void configure(Map<String, String> config) {
         mainArgument = config.get(NAME);
-        ignoreVersion = Boolean.parseBoolean(config.get(IGNORE_VERSION));
     }
 
     public void initialize(ResourcePool in) {
@@ -206,26 +200,6 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                 readTraceConfig(fileLines(file));
             }
         }
-    }
-
-    private boolean checkVersion(Runtime.Version linkedVersion) {
-        Runtime.Version baseVersion = Runtime.version();
-        if (baseVersion.major() != linkedVersion.major() ||
-                baseVersion.minor() != linkedVersion.minor()) {
-            return false;
-        }
-        return true;
-    }
-
-    private Runtime.Version getLinkedVersion(ResourcePool in) {
-        ModuleDescriptor.Version version = in.moduleView()
-                .findModule("java.base")
-                .get()
-                .descriptor()
-                .version()
-                .orElseThrow(() -> new PluginException("No version defined in "
-                        + "the java.base being linked"));
-         return Runtime.Version.parse(version.toString());
     }
 
     private void readTraceConfig(Stream<String> lines) {
@@ -315,24 +289,6 @@ public final class GenerateJLIClassesPlugin implements Plugin {
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
-        if (ignoreVersion) {
-            System.out.println(
-                    PluginsResourceBundle
-                            .getMessage(IGNORE_VERSION_WARNING));
-        } else if (!checkVersion(getLinkedVersion(in))) {
-            // The linked images are not version compatible
-            if (mainArgument != null) {
-                // Log a mismatch warning if an argument was specified
-                System.out.println(
-                        PluginsResourceBundle
-                                .getMessage(VERSION_MISMATCH_WARNING,
-                                            getLinkedVersion(in),
-                                            Runtime.version()));
-            }
-            in.transformAndCopy(entry -> entry, out);
-            return out.build();
-        }
-
         initialize(in);
         // Copy all but DMH_ENTRY to out
         in.transformAndCopy(entry -> {

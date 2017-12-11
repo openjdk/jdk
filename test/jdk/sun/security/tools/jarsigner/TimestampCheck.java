@@ -694,11 +694,15 @@ public class TimestampCheck {
         gencert("ts", "-ext eku:critical=ts");
 
 
-        // Issue another cert for "ts" with a different EKU.
-        // Length should be the same. Try several times.
-        keytool("-gencert -alias ca -infile ts.req -outfile ts2.cert " +
-                "-ext eku:critical=1.3.6.1.5.5.7.3.9");
         for (int i = 0; i < 5; i++) {
+            // Issue another cert for "ts" with a different EKU.
+            // Length might be different because serial number is
+            // random. Try several times until a cert with the same
+            // length is generated so we can substitute ts.cert
+            // embedded in the PKCS7 block with ts2.cert.
+            // If cannot create one, related test will be ignored.
+            keytool("-gencert -alias ca -infile ts.req -outfile ts2.cert " +
+                    "-ext eku:critical=1.3.6.1.5.5.7.3.9");
             if (Files.size(Paths.get("ts.cert")) != Files.size(Paths.get("ts2.cert"))) {
                 Files.delete(Paths.get("ts2.cert"));
                 System.out.println("Warning: cannot create same length");

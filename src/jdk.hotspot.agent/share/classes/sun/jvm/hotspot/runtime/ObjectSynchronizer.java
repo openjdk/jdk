@@ -44,9 +44,7 @@ public class ObjectSynchronizer {
     Type type;
     try {
       type = db.lookupType("ObjectSynchronizer");
-      AddressField blockListField;
-      blockListField = type.getAddressField("gBlockList");
-      gBlockListAddr = blockListField.getValue();
+      gBlockList = type.getAddressField("gBlockList").getValue();
       blockSize = db.lookupIntConstant("ObjectSynchronizer::_BLOCKSIZE").intValue();
       defaultCacheLineSize = db.lookupIntConstant("DEFAULT_CACHE_LINE_SIZE").intValue();
     } catch (RuntimeException e) { }
@@ -84,7 +82,7 @@ public class ObjectSynchronizer {
   }
 
   public static Iterator objectMonitorIterator() {
-    if (gBlockListAddr != null) {
+    if (gBlockList != null) {
       return new ObjectMonitorIterator();
     } else {
       return null;
@@ -97,7 +95,7 @@ public class ObjectSynchronizer {
     // and are not included by this Iterator. May add them later.
 
     ObjectMonitorIterator() {
-      blockAddr = gBlockListAddr;
+      blockAddr = gBlockList;
       index = blockSize - 1;
       block = new ObjectMonitor(blockAddr);
     }
@@ -131,7 +129,7 @@ public class ObjectSynchronizer {
     private Address blockAddr;
   }
 
-  private static Address gBlockListAddr;
+  private static Address gBlockList;
   private static int blockSize;
   private static int defaultCacheLineSize;
   private static long objectMonitorTypeSize;

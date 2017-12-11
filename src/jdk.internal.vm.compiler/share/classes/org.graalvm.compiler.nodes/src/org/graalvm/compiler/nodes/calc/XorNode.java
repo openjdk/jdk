@@ -33,6 +33,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -48,17 +49,17 @@ public final class XorNode extends BinaryArithmeticNode<Xor> implements BinaryCo
 
     public XorNode(ValueNode x, ValueNode y) {
         super(TYPE, ArithmeticOpTable::getXor, x, y);
-        assert x.stamp().isCompatible(y.stamp());
+        assert x.stamp(NodeView.DEFAULT).isCompatible(y.stamp(NodeView.DEFAULT));
     }
 
-    public static ValueNode create(ValueNode x, ValueNode y) {
-        BinaryOp<Xor> op = ArithmeticOpTable.forStamp(x.stamp()).getXor();
-        Stamp stamp = op.foldStamp(x.stamp(), y.stamp());
-        ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp);
+    public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
+        BinaryOp<Xor> op = ArithmeticOpTable.forStamp(x.stamp(view)).getXor();
+        Stamp stamp = op.foldStamp(x.stamp(view), y.stamp(view));
+        ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp, view);
         if (tryConstantFold != null) {
             return tryConstantFold;
         }
-        return canonical(null, op, stamp, x, y);
+        return canonical(null, op, stamp, x, y, view);
     }
 
     @Override
@@ -68,12 +69,13 @@ public final class XorNode extends BinaryArithmeticNode<Xor> implements BinaryCo
             return ret;
         }
 
-        return canonical(this, getOp(forX, forY), stamp(), forX, forY);
+        NodeView view = NodeView.from(tool);
+        return canonical(this, getOp(forX, forY), stamp(NodeView.DEFAULT), forX, forY, view);
     }
 
-    private static ValueNode canonical(XorNode self, BinaryOp<Xor> op, Stamp stamp, ValueNode forX, ValueNode forY) {
+    private static ValueNode canonical(XorNode self, BinaryOp<Xor> op, Stamp stamp, ValueNode forX, ValueNode forY, NodeView view) {
         if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
-            return ConstantNode.forPrimitive(stamp, op.getZero(forX.stamp()));
+            return ConstantNode.forPrimitive(stamp, op.getZero(forX.stamp(view)));
         }
         if (forX.isConstant() && !forY.isConstant()) {
             return new XorNode(forY, forX);
@@ -91,7 +93,7 @@ public final class XorNode extends BinaryArithmeticNode<Xor> implements BinaryCo
                     return new NotNode(forX);
                 }
             }
-            return reassociate(self != null ? self : (XorNode) new XorNode(forX, forY).maybeCommuteInputs(), ValueNode.isConstantPredicate(), forX, forY);
+            return reassociate(self != null ? self : (XorNode) new XorNode(forX, forY).maybeCommuteInputs(), ValueNode.isConstantPredicate(), forX, forY, view);
         }
         return self != null ? self : new XorNode(forX, forY).maybeCommuteInputs();
     }

@@ -298,7 +298,7 @@ G1RemSet::~G1RemSet() {
 }
 
 uint G1RemSet::num_par_rem_sets() {
-  return MAX2(DirtyCardQueueSet::num_par_ids() + G1ConcurrentRefine::thread_num(), ParallelGCThreads);
+  return MAX2(DirtyCardQueueSet::num_par_ids() + G1ConcurrentRefine::max_num_threads(), ParallelGCThreads);
 }
 
 void G1RemSet::initialize(size_t capacity, uint max_regions) {

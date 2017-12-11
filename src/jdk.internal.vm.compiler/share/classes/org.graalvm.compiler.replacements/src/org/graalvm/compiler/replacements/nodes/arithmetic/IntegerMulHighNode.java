@@ -33,6 +33,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -81,7 +82,7 @@ public final class IntegerMulHighNode extends BinaryArithmeticNode<MulHigh> impl
             if (c instanceof PrimitiveConstant && ((PrimitiveConstant) c).getJavaKind().isNumericInteger()) {
                 long i = ((PrimitiveConstant) c).asLong();
                 if (i == 0 || i == 1) {
-                    return ConstantNode.forIntegerStamp(self.stamp(), 0);
+                    return ConstantNode.forIntegerStamp(self.stamp(NodeView.DEFAULT), 0);
                 }
             }
         }

@@ -44,6 +44,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
@@ -143,7 +144,7 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
         FixedWithNextNode basePtr = graph().add(new GetObjectAddressNode(base));
         graph().addBeforeFixed(this, basePtr);
         Stamp wordStamp = StampFactory.forKind(runtime.getTarget().wordJavaKind);
-        ValueNode wordPos = IntegerConvertNode.convert(pos, wordStamp, graph());
+        ValueNode wordPos = IntegerConvertNode.convert(pos, wordStamp, graph(), NodeView.DEFAULT);
         int shift = CodeUtil.log2(getArrayIndexScale(elementKind));
         ValueNode scaledIndex = graph().unique(new LeftShiftNode(wordPos, ConstantNode.forInt(shift, graph())));
         ValueNode offset = graph().unique(new AddNode(scaledIndex, ConstantNode.forIntegerStamp(wordStamp, getArrayBaseOffset(elementKind), graph())));
@@ -160,8 +161,8 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
             ValueNode srcAddr = computeBase(getSource(), getSourcePosition());
             ValueNode destAddr = computeBase(getDestination(), getDestinationPosition());
             ValueNode len = getLength();
-            if (len.stamp().getStackKind() != JavaKind.Long) {
-                len = IntegerConvertNode.convert(len, StampFactory.forKind(JavaKind.Long), graph());
+            if (len.stamp(NodeView.DEFAULT).getStackKind() != JavaKind.Long) {
+                len = IntegerConvertNode.convert(len, StampFactory.forKind(JavaKind.Long), graph(), NodeView.DEFAULT);
             }
             ForeignCallNode call = graph.add(new ForeignCallNode(runtime.getHostBackend().getForeignCalls(), desc, srcAddr, destAddr, len));
             call.setStateAfter(stateAfter());
@@ -232,8 +233,8 @@ public final class ArrayCopyCallNode extends AbstractMemoryCheckpoint implements
             // Can treat as disjoint
             disjoint = true;
         }
-        PrimitiveConstant constantSrc = (PrimitiveConstant) srcPos.stamp().asConstant();
-        PrimitiveConstant constantDst = (PrimitiveConstant) destPos.stamp().asConstant();
+        PrimitiveConstant constantSrc = (PrimitiveConstant) srcPos.stamp(NodeView.DEFAULT).asConstant();
+        PrimitiveConstant constantDst = (PrimitiveConstant) destPos.stamp(NodeView.DEFAULT).asConstant();
         if (constantSrc != null && constantDst != null) {
             if (!aligned) {
                 aligned = isHeapWordAligned(constantSrc, componentKind) && isHeapWordAligned(constantDst, componentKind);

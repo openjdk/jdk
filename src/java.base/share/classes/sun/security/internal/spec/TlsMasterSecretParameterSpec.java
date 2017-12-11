@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
     private final SecretKey premasterSecret;
     private final int majorVersion, minorVersion;
     private final byte[] clientRandom, serverRandom;
+    private final byte[] extendedMasterSecretSessionHash;
     private final String prfHashAlg;
     private final int prfHashLength;
     private final int prfBlockSize;
@@ -80,6 +81,50 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
             int majorVersion, int minorVersion,
             byte[] clientRandom, byte[] serverRandom,
             String prfHashAlg, int prfHashLength, int prfBlockSize) {
+        this(premasterSecret, majorVersion, minorVersion,
+                clientRandom, serverRandom,
+                new byte[0],
+                prfHashAlg, prfHashLength, prfBlockSize);
+    }
+
+    /**
+     * Constructs a new TlsMasterSecretParameterSpec.
+     *
+     * <p>The <code>getAlgorithm()</code> method of <code>premasterSecret</code>
+     * should return <code>"TlsRsaPremasterSecret"</code> if the key exchange
+     * algorithm was RSA and <code>"TlsPremasterSecret"</code> otherwise.
+     *
+     * @param premasterSecret the premaster secret
+     * @param majorVersion the major number of the protocol version
+     * @param minorVersion the minor number of the protocol version
+     * @param extendedMasterSecretSessionHash the session hash for
+     *        Extended Master Secret
+     * @param prfHashAlg the name of the TLS PRF hash algorithm to use.
+     *        Used only for TLS 1.2+.  TLS1.1 and earlier use a fixed PRF.
+     * @param prfHashLength the output length of the TLS PRF hash algorithm.
+     *        Used only for TLS 1.2+.
+     * @param prfBlockSize the input block size of the TLS PRF hash algorithm.
+     *        Used only for TLS 1.2+.
+     *
+     * @throws NullPointerException if premasterSecret is null
+     * @throws IllegalArgumentException if minorVersion or majorVersion are
+     *   negative or larger than 255
+     */
+    public TlsMasterSecretParameterSpec(SecretKey premasterSecret,
+            int majorVersion, int minorVersion,
+            byte[] extendedMasterSecretSessionHash,
+            String prfHashAlg, int prfHashLength, int prfBlockSize) {
+        this(premasterSecret, majorVersion, minorVersion,
+                new byte[0], new byte[0],
+                extendedMasterSecretSessionHash,
+                prfHashAlg, prfHashLength, prfBlockSize);
+    }
+
+    private TlsMasterSecretParameterSpec(SecretKey premasterSecret,
+            int majorVersion, int minorVersion,
+            byte[] clientRandom, byte[] serverRandom,
+            byte[] extendedMasterSecretSessionHash,
+            String prfHashAlg, int prfHashLength, int prfBlockSize) {
         if (premasterSecret == null) {
             throw new NullPointerException("premasterSecret must not be null");
         }
@@ -88,6 +133,9 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
         this.minorVersion = checkVersion(minorVersion);
         this.clientRandom = clientRandom.clone();
         this.serverRandom = serverRandom.clone();
+        this.extendedMasterSecretSessionHash =
+                (extendedMasterSecretSessionHash != null ?
+                        extendedMasterSecretSessionHash.clone() : new byte[0]);
         this.prfHashAlg = prfHashAlg;
         this.prfHashLength = prfHashLength;
         this.prfBlockSize = prfBlockSize;
@@ -144,6 +192,17 @@ public class TlsMasterSecretParameterSpec implements AlgorithmParameterSpec {
      */
     public byte[] getServerRandom() {
         return serverRandom.clone();
+    }
+
+    /**
+     * Returns a copy of the Extended Master Secret session hash.
+     *
+     * @return a copy of the Extended Master Secret session hash, or an empty
+     *         array if no extended master secret session hash was provided
+     *         at instantiation time
+     */
+    public byte[] getExtendedMasterSecretSessionHash() {
+        return extendedMasterSecretSessionHash.clone();
     }
 
     /**

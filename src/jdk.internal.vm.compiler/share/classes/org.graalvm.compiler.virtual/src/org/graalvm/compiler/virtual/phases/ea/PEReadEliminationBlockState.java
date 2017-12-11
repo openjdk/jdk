@@ -29,6 +29,7 @@ import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.FieldLocationIdentity;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.virtual.AllocatedObjectNode;
 import org.graalvm.compiler.nodes.virtual.VirtualInstanceNode;
@@ -127,7 +128,7 @@ public final class PEReadEliminationBlockState extends PartialEscapeBlockState<P
             VirtualInstanceNode instance = (VirtualInstanceNode) virtual;
             for (int i = 0; i < instance.entryCount(); i++) {
                 JavaKind declaredKind = instance.field(i).getJavaKind();
-                if (declaredKind == stampToJavaKind(values.get(i).stamp())) {
+                if (declaredKind == stampToJavaKind(values.get(i).stamp(NodeView.DEFAULT))) {
                     // We won't cache unaligned field writes upon instantiation unless we add
                     // support for non-array objects in PEReadEliminationClosure.processUnsafeLoad.
                     readCache.put(new ReadCacheEntry(new FieldLocationIdentity(instance.field(i)), representation, -1, declaredKind, false), values.get(i));

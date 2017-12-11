@@ -24,6 +24,7 @@ package org.graalvm.compiler.loop;
 
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 
@@ -93,7 +94,7 @@ public abstract class InductionVariable {
      * {@link CountedLoopInfo#isExactTripCount()} returns false for the containing loop.
      */
     public ValueNode extremumNode() {
-        return extremumNode(false, valueNode().stamp());
+        return extremumNode(false, valueNode().stamp(NodeView.DEFAULT));
     }
 
     public abstract ValueNode extremumNode(boolean assumePositiveTripCount, Stamp stamp);

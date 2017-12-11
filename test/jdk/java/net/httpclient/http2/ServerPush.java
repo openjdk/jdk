@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,11 @@
  * @bug 8087112 8159814
  * @library /lib/testlibrary server
  * @build jdk.testlibrary.SimpleSSLContext
- * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.common
+ * @modules java.base/sun.net.www.http
+ *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors,requests,responses ServerPush
+ * @run testng/othervm -Djdk.internal.httpclient.hpack.debug=true -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=errors,requests,responses ServerPush
  */
 
 import java.io.*;
@@ -37,7 +38,7 @@ import java.net.*;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import jdk.incubator.http.*;
-import jdk.incubator.http.HttpResponse.MultiProcessor;
+import jdk.incubator.http.HttpResponse.MultiSubscriber;
 import jdk.incubator.http.HttpResponse.BodyHandler;
 import java.util.*;
 import java.util.concurrent.*;
@@ -52,7 +53,7 @@ public class ServerPush {
 
     static Path tempFile;
 
-    @Test(timeOut=30000)
+    @Test
     public static void test() throws Exception {
         Http2TestServer server = null;
         final Path dir = Files.createTempDirectory("serverPush");
@@ -72,7 +73,7 @@ public class ServerPush {
             CompletableFuture<MultiMapResult<Path>> cf =
                 HttpClient.newBuilder().version(HttpClient.Version.HTTP_2)
                     .executor(e).build().sendAsync(
-                        request, MultiProcessor.asMap((req) -> {
+                        request, MultiSubscriber.asMap((req) -> {
                             URI u = req.uri();
                             Path path = Paths.get(dir.toString(), u.getPath());
                             try {

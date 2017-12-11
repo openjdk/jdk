@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 #ifndef SHARE_VM_SERVICES_MEMORYMANAGER_HPP
 #define SHARE_VM_SERVICES_MEMORYMANAGER_HPP
 
+#include "gc/shared/gcCause.hpp"
 #include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/handles.hpp"
 #include "runtime/timer.hpp"
 #include "services/memoryUsage.hpp"
 
@@ -49,11 +52,13 @@ private:
   MemoryPool* _pools[max_num_pools];
   int         _num_pools;
 
+  const char* _name;
+
 protected:
   volatile instanceOop _memory_mgr_obj;
 
 public:
-  MemoryManager();
+  MemoryManager(const char* name);
 
   int num_memory_pools() const           { return _num_pools; }
   MemoryPool* get_memory_pool(int index) {
@@ -67,7 +72,8 @@ public:
 
   virtual instanceOop get_memory_manager_instance(TRAPS);
   virtual bool is_gc_memory_manager()    { return false; }
-  virtual const char* name() = 0;
+
+  const char* name() const { return _name; }
 
   // GC support
   void oops_do(OopClosure* f);
@@ -75,29 +81,6 @@ public:
   // Static factory methods to get a memory manager of a specific type
   static MemoryManager*   get_code_cache_memory_manager();
   static MemoryManager*   get_metaspace_memory_manager();
-  static GCMemoryManager* get_copy_memory_manager();
-  static GCMemoryManager* get_msc_memory_manager();
-  static GCMemoryManager* get_parnew_memory_manager();
-  static GCMemoryManager* get_cms_memory_manager();
-  static GCMemoryManager* get_psScavenge_memory_manager();
-  static GCMemoryManager* get_psMarkSweep_memory_manager();
-  static GCMemoryManager* get_g1YoungGen_memory_manager();
-  static GCMemoryManager* get_g1OldGen_memory_manager();
-};
-
-class CodeCacheMemoryManager : public MemoryManager {
-private:
-public:
-  CodeCacheMemoryManager() : MemoryManager() {}
-
-  const char* name() { return "CodeCacheManager"; }
-};
-
-class MetaspaceMemoryManager : public MemoryManager {
-public:
-  MetaspaceMemoryManager() : MemoryManager() {}
-
-  const char* name() { return "Metaspace Manager"; }
 };
 
 class GCStatInfo : public ResourceObj {
@@ -159,8 +142,9 @@ private:
   GCStatInfo*  _current_gc_stat;
   int          _num_gc_threads;
   volatile bool _notification_enabled;
+  const char* _gc_end_message;
 public:
-  GCMemoryManager();
+  GCMemoryManager(const char* name, const char* gc_end_message);
   ~GCMemoryManager();
 
   void   initialize_gc_stat_info();
@@ -184,73 +168,6 @@ public:
 
   void set_notification_enabled(bool enabled) { _notification_enabled = enabled; }
   bool is_notification_enabled() { return _notification_enabled; }
-};
-
-// These subclasses of GCMemoryManager are defined to include
-// GC-specific information.
-// TODO: Add GC-specific information
-class CopyMemoryManager : public GCMemoryManager {
-private:
-public:
-  CopyMemoryManager() : GCMemoryManager() {}
-
-  const char* name() { return "Copy"; }
-};
-
-class MSCMemoryManager : public GCMemoryManager {
-private:
-public:
-  MSCMemoryManager() : GCMemoryManager() {}
-
-  const char* name() { return "MarkSweepCompact"; }
-};
-
-class ParNewMemoryManager : public GCMemoryManager {
-private:
-public:
-  ParNewMemoryManager() : GCMemoryManager() {}
-
-  const char* name() { return "ParNew"; }
-};
-
-class CMSMemoryManager : public GCMemoryManager {
-private:
-public:
-  CMSMemoryManager() : GCMemoryManager() {}
-
-  const char* name() { return "ConcurrentMarkSweep";}
-};
-
-class PSScavengeMemoryManager : public GCMemoryManager {
-private:
-public:
-  PSScavengeMemoryManager() : GCMemoryManager() {}
-
-  const char* name() { return "PS Scavenge"; }
-};
-
-class PSMarkSweepMemoryManager : public GCMemoryManager {
-private:
-public:
-  PSMarkSweepMemoryManager() : GCMemoryManager() {}
-
-  const char* name() { return "PS MarkSweep"; }
-};
-
-class G1YoungGenMemoryManager : public GCMemoryManager {
-private:
-public:
-  G1YoungGenMemoryManager() : GCMemoryManager() {}
-
-  const char* name() { return "G1 Young Generation"; }
-};
-
-class G1OldGenMemoryManager : public GCMemoryManager {
-private:
-public:
-  G1OldGenMemoryManager() : GCMemoryManager() {}
-
-  const char* name() { return "G1 Old Generation"; }
 };
 
 #endif // SHARE_VM_SERVICES_MEMORYMANAGER_HPP

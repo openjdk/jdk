@@ -474,20 +474,48 @@ public class InstanceKlass extends Klass {
   }
 
   // same as enum InnerClassAttributeOffset in VM code.
-  public static interface InnerClassAttributeOffset {
+  private static class InnerClassAttributeOffset {
     // from JVM spec. "InnerClasses" attribute
-    public static final int innerClassInnerClassInfoOffset = 0;
-    public static final int innerClassOuterClassInfoOffset = 1;
-    public static final int innerClassInnerNameOffset = 2;
-    public static final int innerClassAccessFlagsOffset = 3;
-    public static final int innerClassNextOffset = 4;
-  };
+    public static int innerClassInnerClassInfoOffset;
+    public static int innerClassOuterClassInfoOffset;
+    public static int innerClassInnerNameOffset;
+    public static int innerClassAccessFlagsOffset;
+    public static int innerClassNextOffset;
+    static {
+      VM.registerVMInitializedObserver(new Observer() {
+          public void update(Observable o, Object data) {
+              initialize(VM.getVM().getTypeDataBase());
+          }
+      });
+    }
 
-  public static interface EnclosingMethodAttributeOffset {
-    public static final int enclosing_method_class_index_offset = 0;
-    public static final int enclosing_method_method_index_offset = 1;
-    public static final int enclosing_method_attribute_size = 2;
-  };
+    private static synchronized void initialize(TypeDataBase db) {
+      innerClassInnerClassInfoOffset = db.lookupIntConstant(
+          "InstanceKlass::inner_class_inner_class_info_offset").intValue();
+      innerClassOuterClassInfoOffset = db.lookupIntConstant(
+          "InstanceKlass::inner_class_outer_class_info_offset").intValue();
+      innerClassInnerNameOffset = db.lookupIntConstant(
+          "InstanceKlass::inner_class_inner_name_offset").intValue();
+      innerClassAccessFlagsOffset = db.lookupIntConstant(
+          "InstanceKlass::inner_class_access_flags_offset").intValue();
+      innerClassNextOffset = db.lookupIntConstant(
+          "InstanceKlass::inner_class_next_offset").intValue();
+    }
+  }
+
+  private static class EnclosingMethodAttributeOffset {
+    public static int enclosingMethodAttributeSize;
+    static {
+      VM.registerVMInitializedObserver(new Observer() {
+          public void update(Observable o, Object data) {
+              initialize(VM.getVM().getTypeDataBase());
+          }
+      });
+    }
+    private static synchronized void initialize(TypeDataBase db) {
+      enclosingMethodAttributeSize = db.lookupIntConstant("InstanceKlass::enclosing_method_attribute_size").intValue();
+    }
+  }
 
   // refer to compute_modifier_flags in VM code.
   public long computeModifierFlags() {
@@ -498,11 +526,11 @@ public class InstanceKlass extends Klass {
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
           Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
-                      length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosing_method_attribute_size,
+                      length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosingMethodAttributeSize,
                       "just checking");
        }
        for (int i = 0; i < length; i += InnerClassAttributeOffset.innerClassNextOffset) {
-          if (i == length - EnclosingMethodAttributeOffset.enclosing_method_attribute_size) {
+          if (i == length - EnclosingMethodAttributeOffset.enclosingMethodAttributeSize) {
               break;
           }
           int ioff = innerClassList.at(i +
@@ -547,11 +575,11 @@ public class InstanceKlass extends Klass {
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
-                     length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosing_method_attribute_size,
+                     length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosingMethodAttributeSize,
                      "just checking");
        }
        for (int i = 0; i < length; i += InnerClassAttributeOffset.innerClassNextOffset) {
-         if (i == length - EnclosingMethodAttributeOffset.enclosing_method_attribute_size) {
+         if (i == length - EnclosingMethodAttributeOffset.enclosingMethodAttributeSize) {
              break;
          }
          int ioff = innerClassList.at(i +

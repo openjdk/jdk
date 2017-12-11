@@ -34,6 +34,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
@@ -90,7 +91,7 @@ public class BoxNode extends FixedWithNextNode implements VirtualizableAllocatio
     }
 
     protected VirtualBoxingNode createVirtualBoxingNode() {
-        return new VirtualBoxingNode(StampTool.typeOrNull(stamp()), boxingKind);
+        return new VirtualBoxingNode(StampTool.typeOrNull(stamp(NodeView.DEFAULT)), boxingKind);
     }
 
     @Override

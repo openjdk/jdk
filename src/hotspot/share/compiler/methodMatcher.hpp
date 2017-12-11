@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_COMPILER_METHODMATCHER_HPP
 #define SHARE_VM_COMPILER_METHODMATCHER_HPP
 
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "memory/resourceArea.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,11 @@
 
 package jdk.incubator.http;
 
+import java.security.AccessControlContext;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import jdk.incubator.http.HttpResponse.BodyHandler;
+import jdk.incubator.http.HttpResponse.UntrustedBodyHandler;
 import jdk.incubator.http.internal.common.MinimalFuture;
 import jdk.incubator.http.internal.common.Log;
 
@@ -38,59 +42,82 @@ class PushGroup<U,T> {
     final CompletableFuture<Void> resultCF;
     final CompletableFuture<Void> noMorePushesCF;
 
-    volatile Throwable error; // any exception that occured during pushes
+    volatile Throwable error; // any exception that occurred during pushes
 
     // CF for main response
     final CompletableFuture<HttpResponse<T>> mainResponse;
 
-    // user's processor object
-    final HttpResponse.MultiProcessor<U, T> multiProcessor;
+    // user's subscriber object
+    final HttpResponse.MultiSubscriber<U, T> multiSubscriber;
 
     final HttpResponse.BodyHandler<T> mainBodyHandler;
+
+    private final AccessControlContext acc;
 
     int numberOfPushes;
     int remainingPushes;
     boolean noMorePushes = false;
 
-    PushGroup(HttpResponse.MultiProcessor<U, T> multiProcessor, HttpRequestImpl req) {
-        this(multiProcessor, req, new MinimalFuture<>());
+    PushGroup(HttpResponse.MultiSubscriber<U, T> multiSubscriber,
+              HttpRequestImpl req,
+              AccessControlContext acc) {
+        this(multiSubscriber, req, new MinimalFuture<>(), acc);
     }
 
     // Check mainBodyHandler before calling nested constructor.
-    private PushGroup(HttpResponse.MultiProcessor<U, T> multiProcessor,
-            HttpRequestImpl req,
-            CompletableFuture<HttpResponse<T>> mainResponse) {
-        this(multiProcessor, mainResponse,
-             multiProcessor.onRequest(req).orElseThrow(
-                    () -> new IllegalArgumentException(
-                     "A valid body processor for the main response is required")));
+    private PushGroup(HttpResponse.MultiSubscriber<U, T> multiSubscriber,
+                      HttpRequestImpl req,
+                      CompletableFuture<HttpResponse<T>> mainResponse,
+                      AccessControlContext acc) {
+        this(multiSubscriber,
+             mainResponse,
+             multiSubscriber.onRequest(req),
+             acc);
     }
 
-    // This private constructor is called after all parameters have been
-    // checked.
-    private PushGroup(HttpResponse.MultiProcessor<U, T> multiProcessor,
+    // This private constructor is called after all parameters have been checked.
+    private PushGroup(HttpResponse.MultiSubscriber<U, T> multiSubscriber,
                       CompletableFuture<HttpResponse<T>> mainResponse,
-                      HttpResponse.BodyHandler<T> mainBodyHandler) {
+                      HttpResponse.BodyHandler<T> mainBodyHandler,
+                      AccessControlContext acc) {
 
         assert mainResponse != null; // A new instance is created above
         assert mainBodyHandler != null; // should have been checked above
 
         this.resultCF = new MinimalFuture<>();
         this.noMorePushesCF = new MinimalFuture<>();
-        this.multiProcessor = multiProcessor;
+        this.multiSubscriber = multiSubscriber;
         this.mainResponse = mainResponse.thenApply(r -> {
-            multiProcessor.onResponse(r);
+            multiSubscriber.onResponse(r);
             return r;
         });
         this.mainBodyHandler = mainBodyHandler;
+        if (acc != null) {
+            // Restricts the file publisher with the senders ACC, if any
+            if (mainBodyHandler instanceof UntrustedBodyHandler)
+                ((UntrustedBodyHandler)this.mainBodyHandler).setAccessControlContext(acc);
+        }
+        this.acc = acc;
     }
 
     CompletableFuture<Void> groupResult() {
         return resultCF;
     }
 
-    HttpResponse.MultiProcessor<U, T> processor() {
-        return multiProcessor;
+    HttpResponse.MultiSubscriber<U, T> subscriber() {
+        return multiSubscriber;
+    }
+
+    Optional<BodyHandler<T>> handlerForPushRequest(HttpRequest ppRequest) {
+        Optional<BodyHandler<T>> bh = multiSubscriber.onPushPromise(ppRequest);
+        if (acc != null && bh.isPresent()) {
+            // Restricts the file publisher with the senders ACC, if any
+            BodyHandler<T> x = bh.get();
+            if (x instanceof UntrustedBodyHandler)
+                ((UntrustedBodyHandler)x).setAccessControlContext(acc);
+            bh = Optional.of(x);
+        }
+        return bh;
     }
 
     HttpResponse.BodyHandler<T> mainResponseHandler() {
@@ -106,18 +133,11 @@ class PushGroup<U,T> {
         });
     }
 
-    synchronized CompletableFuture<HttpResponse<T>> mainResponse() {
-        return mainResponse;
-    }
-
     synchronized void addPush() {
         numberOfPushes++;
         remainingPushes++;
     }
 
-    synchronized int numberOfPushes() {
-        return numberOfPushes;
-    }
     // This is called when the main body response completes because it means
     // no more PUSH_PROMISEs are possible
 

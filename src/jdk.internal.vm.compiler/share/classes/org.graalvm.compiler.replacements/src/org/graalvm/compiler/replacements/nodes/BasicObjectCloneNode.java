@@ -34,6 +34,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
@@ -65,7 +66,7 @@ public abstract class BasicObjectCloneNode extends MacroStateSplitNode implement
     }
 
     protected Stamp computeStamp(ValueNode object) {
-        Stamp objectStamp = object.stamp();
+        Stamp objectStamp = object.stamp(NodeView.DEFAULT);
         if (objectStamp instanceof ObjectStamp) {
             objectStamp = objectStamp.join(StampFactory.objectNonNull());
         }
@@ -116,7 +117,7 @@ public abstract class BasicObjectCloneNode extends MacroStateSplitNode implement
                 tool.replaceWithVirtual(newVirtual);
             }
         } else {
-            ResolvedJavaType type = getConcreteType(originalAlias.stamp());
+            ResolvedJavaType type = getConcreteType(originalAlias.stamp(NodeView.DEFAULT));
             if (type != null && !type.isArray()) {
                 VirtualInstanceNode newVirtual = createVirtualInstanceNode(type, true);
                 ResolvedJavaField[] fields = newVirtual.getFields();

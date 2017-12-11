@@ -36,6 +36,7 @@ import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -59,7 +60,7 @@ public class ResolveDynamicStubCall extends AbstractMemoryCheckpoint implements 
     protected Constant constant;
 
     public ResolveDynamicStubCall(ValueNode value) {
-        super(TYPE, value.stamp());
+        super(TYPE, value.stamp(NodeView.DEFAULT));
         this.value = value;
     }
 

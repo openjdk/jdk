@@ -31,6 +31,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -52,7 +53,8 @@ public final class UnpackEndianHalfNode extends UnaryNode implements Lowerable {
         this.firstHalf = firstHalf;
     }
 
-    public static ValueNode create(ValueNode value, boolean firstHalf) {
+    @SuppressWarnings("unused")
+    public static ValueNode create(ValueNode value, boolean firstHalf, NodeView view) {
         if (value.isConstant() && value.asConstant().isDefaultForKind()) {
             return ConstantNode.defaultForKind(JavaKind.Int);
         }
@@ -84,7 +86,7 @@ public final class UnpackEndianHalfNode extends UnaryNode implements Lowerable {
         if ((byteOrder == ByteOrder.BIG_ENDIAN) == firstHalf) {
             result = graph().unique(new UnsignedRightShiftNode(result, ConstantNode.forInt(32, graph())));
         }
-        result = IntegerConvertNode.convert(result, StampFactory.forKind(JavaKind.Int), graph());
+        result = IntegerConvertNode.convert(result, StampFactory.forKind(JavaKind.Int), graph(), NodeView.DEFAULT);
         replaceAtUsagesAndDelete(result);
     }
 }

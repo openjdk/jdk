@@ -132,22 +132,16 @@ public class TestPrintMdo {
             throw new Error("Problem issuing the printmdo command: " + str, ioe);
         }
 
+        OutputAnalyzer output = new OutputAnalyzer(p);
+
         try {
             p.waitFor();
         } catch (InterruptedException ie) {
+            p.destroyForcibly();
             throw new Error("Problem awaiting the child process: " + ie, ie);
         }
 
-        int exitValue = p.exitValue();
-        if (exitValue != 0) {
-            String output;
-            try {
-                output = new OutputAnalyzer(p).getOutput();
-            } catch (IOException ioe) {
-                throw new Error("Can't get failed clhsdb process output: " + ioe, ioe);
-            }
-            throw new AssertionError("clhsdb wasn't run successfully: " + output);
-        }
+        output.shouldHaveExitValue(0);
     }
 
     public static void main (String... args) throws Exception {

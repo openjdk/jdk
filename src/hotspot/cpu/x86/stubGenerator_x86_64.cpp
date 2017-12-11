@@ -1264,8 +1264,11 @@ class StubGenerator: public StubCodeGenerator {
           CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
           assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
-          Label L_loop;
+          Label L_loop, L_done;
           const Register end = count;
+
+          __ testl(count, count);
+          __ jcc(Assembler::zero, L_done); // zero count - nothing to do
 
           __ leaq(end, Address(start, count, TIMES_OOP, 0));  // end == start+count*oop_size
           __ subptr(end, BytesPerHeapOop); // end - 1 to make inclusive
@@ -1280,6 +1283,7 @@ class StubGenerator: public StubCodeGenerator {
           __ movb(Address(start, count, Address::times_1), 0);
           __ decrement(count);
           __ jcc(Assembler::greaterEqual, L_loop);
+        __ BIND(L_done);
         }
         break;
       default:

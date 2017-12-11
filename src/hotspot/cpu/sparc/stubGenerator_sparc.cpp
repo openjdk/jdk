@@ -898,7 +898,9 @@ class StubGenerator: public StubCodeGenerator {
           assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
           assert_different_registers(addr, count, tmp);
 
-          Label L_loop;
+          Label L_loop, L_done;
+
+          __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_done); // zero count - nothing to do
 
           __ sll_ptr(count, LogBytesPerHeapOop, count);
           __ sub(count, BytesPerHeapOop, count);
@@ -914,6 +916,7 @@ class StubGenerator: public StubCodeGenerator {
           __ subcc(count, 1, count);
           __ brx(Assembler::greaterEqual, false, Assembler::pt, L_loop);
           __ delayed()->add(addr, 1, addr);
+        __ BIND(L_done);
         }
         break;
       case BarrierSet::ModRef:

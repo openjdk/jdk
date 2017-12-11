@@ -243,13 +243,56 @@ public class BeanLinkerTest {
         Assert.assertEquals((int) cs.getTarget().invoke(list, 1), (int) list.get(1));
         Assert.assertEquals((int) cs.getTarget().invoke(list, 2), (int) list.get(2));
         try {
-            final int x = (int) cs.getTarget().invoke(list, -1);
+            cs.getTarget().invoke(list, -1);
             throw new RuntimeException("expected IndexOutOfBoundsException");
         } catch (final IndexOutOfBoundsException ex) {
         }
 
         try {
-            final int x = (int) cs.getTarget().invoke(list, list.size());
+            cs.getTarget().invoke(list, list.size());
+            throw new RuntimeException("expected IndexOutOfBoundsException");
+        } catch (final IndexOutOfBoundsException ex) {
+        }
+    }
+
+    private Object invokeWithFixedKey(boolean publicLookup, Operation op, Object name, MethodType mt, Object... args) throws Throwable {
+        return createCallSite(publicLookup, op.named(name), mt).getTarget().invokeWithArguments(args);
+    }
+
+    @Test(dataProvider = "flags")
+    public void getElementWithFixedKeyTest(final boolean publicLookup) throws Throwable {
+        final MethodType mt = MethodType.methodType(int.class, Object.class);
+
+        final int[] arr = {23, 42};
+        Assert.assertEquals((int) invokeWithFixedKey(publicLookup, GET_ELEMENT, 0, mt, arr), 23);
+        Assert.assertEquals((int) invokeWithFixedKey(publicLookup, GET_ELEMENT, 1, mt, arr), 42);
+        try {
+            invokeWithFixedKey(publicLookup, GET_ELEMENT, -1, mt, arr);
+            throw new RuntimeException("expected ArrayIndexOutOfBoundsException");
+        } catch (final ArrayIndexOutOfBoundsException ex) {
+        }
+
+        try {
+            invokeWithFixedKey(publicLookup, GET_ELEMENT, arr.length, mt, arr);
+            throw new RuntimeException("expected ArrayIndexOutOfBoundsException");
+        } catch (final ArrayIndexOutOfBoundsException ex) {
+        }
+
+        final List<Integer> list = new ArrayList<>();
+        list.add(23);
+        list.add(430);
+        list.add(-4354);
+        for (int i = 0; i < 3; ++i) {
+            Assert.assertEquals((int) invokeWithFixedKey(publicLookup, GET_ELEMENT, i, mt, list), (int) list.get(i));
+        }
+        try {
+            invokeWithFixedKey(publicLookup, GET_ELEMENT, -1, mt, list);
+            throw new RuntimeException("expected IndexOutOfBoundsException");
+        } catch (final IndexOutOfBoundsException ex) {
+        }
+
+        try {
+            invokeWithFixedKey(publicLookup, GET_ELEMENT, list.size(), mt, list);
             throw new RuntimeException("expected IndexOutOfBoundsException");
         } catch (final IndexOutOfBoundsException ex) {
         }
@@ -286,7 +329,9 @@ public class BeanLinkerTest {
         cs.getTarget().invoke(list, 0, -list.get(0));
         Assert.assertEquals((int) list.get(0), -23);
         cs.getTarget().invoke(list, 1, -430);
+        Assert.assertEquals((int) list.get(1), -430);
         cs.getTarget().invoke(list, 2, 4354);
+        Assert.assertEquals((int) list.get(2), 4354);
         try {
             cs.getTarget().invoke(list, -1, 343);
             throw new RuntimeException("expected IndexOutOfBoundsException");
@@ -295,6 +340,52 @@ public class BeanLinkerTest {
 
         try {
             cs.getTarget().invoke(list, list.size(), 43543);
+            throw new RuntimeException("expected IndexOutOfBoundsException");
+        } catch (final IndexOutOfBoundsException ex) {
+        }
+    }
+
+    @Test(dataProvider = "flags")
+    public void setElementWithFixedKeyTest(final boolean publicLookup) throws Throwable {
+        final MethodType mt = MethodType.methodType(void.class, Object.class, int.class);
+
+        final int[] arr = {23, 42};
+        invokeWithFixedKey(publicLookup, SET_ELEMENT, 0, mt, arr, 0);
+        Assert.assertEquals(arr[0], 0);
+        invokeWithFixedKey(publicLookup, SET_ELEMENT, 1, mt, arr, -5);
+        Assert.assertEquals(arr[1], -5);
+
+        try {
+            invokeWithFixedKey(publicLookup, SET_ELEMENT, -1, mt, arr, 12);
+            throw new RuntimeException("expected ArrayIndexOutOfBoundsException");
+        } catch (final ArrayIndexOutOfBoundsException ex) {
+        }
+
+        try {
+            invokeWithFixedKey(publicLookup, SET_ELEMENT, arr.length, mt, arr, 20);
+            throw new RuntimeException("expected ArrayIndexOutOfBoundsException");
+        } catch (final ArrayIndexOutOfBoundsException ex) {
+        }
+
+        final List<Integer> list = new ArrayList<>();
+        list.add(23);
+        list.add(430);
+        list.add(-4354);
+
+        invokeWithFixedKey(publicLookup, SET_ELEMENT, 0, mt, list, -list.get(0));
+        Assert.assertEquals((int) list.get(0), -23);
+        invokeWithFixedKey(publicLookup, SET_ELEMENT, 1, mt, list, -430);
+        Assert.assertEquals((int) list.get(1), -430);
+        invokeWithFixedKey(publicLookup, SET_ELEMENT, 2, mt, list, 4354);
+        Assert.assertEquals((int) list.get(2), 4354);
+        try {
+            invokeWithFixedKey(publicLookup, SET_ELEMENT, -1, mt, list, 343);
+            throw new RuntimeException("expected IndexOutOfBoundsException");
+        } catch (final IndexOutOfBoundsException ex) {
+        }
+
+        try {
+            invokeWithFixedKey(publicLookup, SET_ELEMENT, list.size(), mt, list, 43543);
             throw new RuntimeException("expected IndexOutOfBoundsException");
         } catch (final IndexOutOfBoundsException ex) {
         }

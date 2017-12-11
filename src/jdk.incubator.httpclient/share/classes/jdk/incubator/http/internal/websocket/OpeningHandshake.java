@@ -25,11 +25,6 @@
 
 package jdk.incubator.http.internal.websocket;
 
-import jdk.incubator.http.internal.common.MinimalFuture;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import jdk.incubator.http.HttpClient;
 import jdk.incubator.http.HttpClient.Version;
 import jdk.incubator.http.HttpHeaders;
@@ -37,11 +32,22 @@ import jdk.incubator.http.HttpRequest;
 import jdk.incubator.http.HttpResponse;
 import jdk.incubator.http.HttpResponse.BodyHandler;
 import jdk.incubator.http.WebSocketHandshakeException;
+import jdk.incubator.http.internal.common.MinimalFuture;
 import jdk.incubator.http.internal.common.Pair;
+import jdk.incubator.http.internal.common.Utils;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLPermission;
 import java.nio.charset.StandardCharsets;
+import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Base64;
@@ -54,12 +60,14 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static jdk.incubator.http.internal.common.Utils.isValidName;
+import static jdk.incubator.http.internal.common.Utils.permissionForProxy;
 import static jdk.incubator.http.internal.common.Utils.stringOf;
 
-final class OpeningHandshake {
+public class OpeningHandshake {
 
     private static final String HEADER_CONNECTION = "Connection";
     private static final String HEADER_UPGRADE    = "Upgrade";
@@ -68,19 +76,20 @@ final class OpeningHandshake {
     private static final String HEADER_KEY        = "Sec-WebSocket-Key";
     private static final String HEADER_PROTOCOL   = "Sec-WebSocket-Protocol";
     private static final String HEADER_VERSION    = "Sec-WebSocket-Version";
+    private static final String VERSION           = "13";  // WebSocket's lucky number
 
-    private static final Set<String> FORBIDDEN_HEADERS;
+    private static final Set<String> ILLEGAL_HEADERS;
 
     static {
-        FORBIDDEN_HEADERS = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        FORBIDDEN_HEADERS.addAll(List.of(HEADER_ACCEPT,
-                                         HEADER_EXTENSIONS,
-                                         HEADER_KEY,
-                                         HEADER_PROTOCOL,
-                                         HEADER_VERSION));
+        ILLEGAL_HEADERS = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        ILLEGAL_HEADERS.addAll(List.of(HEADER_ACCEPT,
+                                       HEADER_EXTENSIONS,
+                                       HEADER_KEY,
+                                       HEADER_PROTOCOL,
+                                       HEADER_VERSION));
     }
 
-    private static final SecureRandom srandom = new SecureRandom();
+    private static final SecureRandom random = new SecureRandom();
 
     private final MessageDigest sha1;
     private final HttpClient client;
@@ -99,7 +108,10 @@ final class OpeningHandshake {
     private final Collection<String> subprotocols;
     private final String nonce;
 
-    OpeningHandshake(BuilderImpl b) {
+    public OpeningHandshake(BuilderImpl b) {
+        checkURI(b.getUri());
+        Proxy proxy = proxyFor(b.getProxySelector(), b.getUri());
+        checkPermissions(b, proxy);
         this.client = b.getClient();
         URI httpURI = createRequestURI(b.getUri());
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(httpURI);
@@ -108,7 +120,7 @@ final class OpeningHandshake {
             requestBuilder.timeout(connectTimeout);
         }
         for (Pair<String, String> p : b.getHeaders()) {
-            if (FORBIDDEN_HEADERS.contains(p.first)) {
+            if (ILLEGAL_HEADERS.contains(p.first)) {
                 throw illegal("Illegal header: " + p.first);
             }
             requestBuilder.header(p.first, p.second);
@@ -118,7 +130,7 @@ final class OpeningHandshake {
             String p = this.subprotocols.stream().collect(Collectors.joining(", "));
             requestBuilder.header(HEADER_PROTOCOL, p);
         }
-        requestBuilder.header(HEADER_VERSION, "13"); // WebSocket's lucky number
+        requestBuilder.header(HEADER_VERSION, VERSION);
         this.nonce = createNonce();
         requestBuilder.header(HEADER_KEY, this.nonce);
         // Setting request version to HTTP/1.1 forcibly, since it's not possible
@@ -130,6 +142,7 @@ final class OpeningHandshake {
         r.isWebSocket(true);
         r.setSystemHeader(HEADER_UPGRADE, "websocket");
         r.setSystemHeader(HEADER_CONNECTION, "Upgrade");
+        r.setProxy(proxy);
     }
 
     private static Collection<String> createRequestSubprotocols(
@@ -153,15 +166,9 @@ final class OpeningHandshake {
      *
      * https://tools.ietf.org/html/rfc6455#section-3
      */
-    private static URI createRequestURI(URI uri) {
-        // TODO: check permission for WebSocket URI and translate it into
-        // http/https permission
-        String s = uri.getScheme(); // The scheme might be null (i.e. undefined)
-        if (!("ws".equalsIgnoreCase(s) || "wss".equalsIgnoreCase(s))
-                || uri.getFragment() != null)
-        {
-            throw illegal("Bad URI: " + uri);
-        }
+    static URI createRequestURI(URI uri) {
+        String s = uri.getScheme();
+        assert "ws".equalsIgnoreCase(s) || "wss".equalsIgnoreCase(s);
         String scheme = "ws".equalsIgnoreCase(s) ? "http" : "https";
         try {
             return new URI(scheme,
@@ -177,9 +184,11 @@ final class OpeningHandshake {
         }
     }
 
-    CompletableFuture<Result> send() {
-        return client.sendAsync(this.request, BodyHandler.<Void>discard(null))
-                .thenCompose(this::resultFrom);
+    public CompletableFuture<Result> send() {
+        PrivilegedAction<CompletableFuture<Result>> pa = () ->
+                client.sendAsync(this.request, BodyHandler.<Void>discard(null))
+                      .thenCompose(this::resultFrom);
+        return AccessController.doPrivileged(pa);
     }
 
     /*
@@ -188,11 +197,11 @@ final class OpeningHandshake {
     static final class Result {
 
         final String subprotocol;
-        final RawChannel channel;
+        final TransportSupplier transport;
 
-        private Result(String subprotocol, RawChannel channel) {
+        private Result(String subprotocol, TransportSupplier transport) {
             this.subprotocol = subprotocol;
-            this.channel = channel;
+            this.transport = transport;
         }
     }
 
@@ -240,7 +249,10 @@ final class OpeningHandshake {
         if (!connection.equalsIgnoreCase("Upgrade")) {
             throw checkFailed("Bad response field: " + HEADER_CONNECTION);
         }
-        requireAbsent(headers, HEADER_VERSION);
+        Optional<String> version = requireAtMostOne(headers, HEADER_VERSION);
+        if (version.isPresent() && !version.get().equals(VERSION)) {
+            throw checkFailed("Bad response field: " + HEADER_VERSION);
+        }
         requireAbsent(headers, HEADER_EXTENSIONS);
         String x = this.nonce + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
         this.sha1.update(x.getBytes(StandardCharsets.ISO_8859_1));
@@ -251,7 +263,7 @@ final class OpeningHandshake {
         }
         String subprotocol = checkAndReturnSubprotocol(headers);
         RawChannel channel = ((RawChannel.Provider) response).rawChannel();
-        return new Result(subprotocol, channel);
+        return new Result(subprotocol, new TransportSupplier(channel));
     }
 
     private String checkAndReturnSubprotocol(HttpHeaders responseHeaders)
@@ -284,6 +296,18 @@ final class OpeningHandshake {
         }
     }
 
+    private static Optional<String> requireAtMostOne(HttpHeaders responseHeaders,
+                                                     String headerName)
+    {
+        List<String> values = responseHeaders.allValues(headerName);
+        if (values.size() > 1) {
+            throw checkFailed(format("Response field '%s' multivalued: %s",
+                                     headerName,
+                                     stringOf(values)));
+        }
+        return values.stream().findFirst();
+    }
+
     private static String requireSingle(HttpHeaders responseHeaders,
                                         String headerName)
     {
@@ -300,15 +324,69 @@ final class OpeningHandshake {
 
     private static String createNonce() {
         byte[] bytes = new byte[16];
-        OpeningHandshake.srandom.nextBytes(bytes);
+        OpeningHandshake.random.nextBytes(bytes);
         return Base64.getEncoder().encodeToString(bytes);
+    }
+
+    private static CheckFailedException checkFailed(String message) {
+        throw new CheckFailedException(message);
+    }
+
+    private static URI checkURI(URI uri) {
+        String scheme = uri.getScheme();
+        if (!("ws".equalsIgnoreCase(scheme) || "wss".equalsIgnoreCase(scheme)))
+            throw illegal("invalid URI scheme: " + scheme);
+        if (uri.getHost() == null)
+            throw illegal("URI must contain a host: " + uri);
+        if (uri.getFragment() != null)
+            throw illegal("URI must not contain a fragment: " + uri);
+        return uri;
     }
 
     private static IllegalArgumentException illegal(String message) {
         return new IllegalArgumentException(message);
     }
 
-    private static CheckFailedException checkFailed(String message) {
-        throw new CheckFailedException(message);
+    /**
+     * Returns the proxy for the given URI when sent through the given client,
+     * or {@code null} if none is required or applicable.
+     */
+    private static Proxy proxyFor(Optional<ProxySelector> selector, URI uri) {
+        if (!selector.isPresent()) {
+            return null;
+        }
+        URI requestURI = createRequestURI(uri); // Based on the HTTP scheme
+        List<Proxy> pl = selector.get().select(requestURI);
+        if (pl.isEmpty()) {
+            return null;
+        }
+        Proxy proxy = pl.get(0);
+        if (proxy.type() != Proxy.Type.HTTP) {
+            return null;
+        }
+        return proxy;
+    }
+
+    /**
+     * Performs the necessary security permissions checks to connect ( possibly
+     * through a proxy ) to the builders WebSocket URI.
+     *
+     * @throws SecurityException if the security manager denies access
+     */
+    static void checkPermissions(BuilderImpl b, Proxy proxy) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm == null) {
+            return;
+        }
+        Stream<String> headers = b.getHeaders().stream().map(p -> p.first).distinct();
+        URLPermission perm1 = Utils.permissionForServer(b.getUri(), "", headers);
+        sm.checkPermission(perm1);
+        if (proxy == null) {
+            return;
+        }
+        URLPermission perm2 = permissionForProxy((InetSocketAddress) proxy.address());
+        if (perm2 != null) {
+            sm.checkPermission(perm2);
+        }
     }
 }

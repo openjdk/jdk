@@ -56,9 +56,9 @@ public class JhsdbThreadInfoTest {
             pb.command(jhsdbLauncher.getCommand());
             Process jhsdb = pb.start();
 
-            jhsdb.waitFor();
-
             OutputAnalyzer out = new OutputAnalyzer(jhsdb);
+
+            jhsdb.waitFor();
 
             System.out.println(out.getStdout());
             System.err.println(out.getStderr());

@@ -40,7 +40,7 @@ import static java.util.Objects.requireNonNull;
  * to accept a new message. Until then, the transmitter is considered "busy" and
  * an IllegalStateException will be thrown on each attempt to invoke send.
  */
-final class Transmitter {
+public class Transmitter {
 
     /* This flag is used solely for assertions */
     private final AtomicBoolean busy = new AtomicBoolean();
@@ -49,8 +49,8 @@ final class Transmitter {
     private final RawChannel channel;
     private final RawChannel.RawEvent event;
 
-    Transmitter(RawChannel channel) {
-        this.channel = requireNonNull(channel);
+    public Transmitter(RawChannel channel) {
+        this.channel = channel;
         this.event = createHandler();
     }
 
@@ -59,13 +59,19 @@ final class Transmitter {
      * A {@code StackOverflowError} may thus occur if there's a possibility
      * that this method is called again by the supplied handler.
      */
-    void send(OutgoingMessage message, Consumer<Exception> completionHandler) {
+    public void send(OutgoingMessage message,
+                     Consumer<Exception> completionHandler)
+    {
         requireNonNull(message);
         requireNonNull(completionHandler);
         if (!busy.compareAndSet(false, true)) {
             throw new IllegalStateException();
         }
         send0(message, completionHandler);
+    }
+
+    public void close() throws IOException {
+        channel.shutdownOutput();
     }
 
     private RawChannel.RawEvent createHandler() {

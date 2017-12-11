@@ -20,10 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
+
+/**
  * @test
  * @bug 8187957
  * @summary  Verifies Tab Size works correctly in JTextArea
+ * @key headful
  * @run main TestTabSize
  */
 
@@ -96,7 +98,9 @@ public class TestTabSize {
             } catch (BadLocationException ex) {
                 excpnthrown = true;
             } finally {
-                f.dispose();
+                if (f != null) {
+                    f.dispose();
+                }
             }
         });
         if (excpnthrown) {

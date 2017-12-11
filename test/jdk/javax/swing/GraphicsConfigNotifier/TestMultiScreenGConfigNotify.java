@@ -20,12 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
+
+/**
  * @test
  * @bug 8178025
  * @summary  Verifies if graphicsConfiguration property notification is sent
  *           when frame is moved from one screen to another in multiscreen
  *           environment.
+ * @key headful
  * @run main TestMultiScreenGConfigNotify
  */
 

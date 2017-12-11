@@ -2684,7 +2684,7 @@ public class ClassReader {
 
         minorVersion = nextChar();
         majorVersion = nextChar();
-        int maxMajor = 53; // Version.MAX().major;  //******* TEMPORARY *******
+        int maxMajor = Version.MAX().major;
         int maxMinor = Version.MAX().minor;
         if (majorVersion > maxMajor ||
             majorVersion * 1000 + minorVersion <

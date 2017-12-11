@@ -37,6 +37,7 @@ import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -132,7 +133,7 @@ public class MethodCallTargetNode extends CallTargetNode implements IterableNode
             return targetMethod;
         }
 
-        return devirtualizeCall(invokeKind, targetMethod, contextType, receiver.graph().getAssumptions(), receiver.stamp());
+        return devirtualizeCall(invokeKind, targetMethod, contextType, receiver.graph().getAssumptions(), receiver.stamp(NodeView.DEFAULT));
     }
 
     public static ResolvedJavaMethod devirtualizeCall(InvokeKind invokeKind, ResolvedJavaMethod targetMethod, ResolvedJavaType contextType, Assumptions assumptions, Stamp receiverStamp) {

@@ -78,7 +78,6 @@ StubQueue::StubQueue(StubInterface* stub_interface, int buffer_size,
   _queue_begin     = 0;
   _queue_end       = 0;
   _number_of_stubs = 0;
-  register_queue(this);
 }
 
 
@@ -202,36 +201,6 @@ void StubQueue::remove_all(){
   debug_only(verify();)
   remove_first(number_of_stubs());
   assert(number_of_stubs() == 0, "sanity check");
-}
-
-
-enum { StubQueueLimit = 10 };  // there are only a few in the world
-static StubQueue* registered_stub_queues[StubQueueLimit];
-
-void StubQueue::register_queue(StubQueue* sq) {
-  for (int i = 0; i < StubQueueLimit; i++) {
-    if (registered_stub_queues[i] == NULL) {
-      registered_stub_queues[i] = sq;
-      return;
-    }
-  }
-  ShouldNotReachHere();
-}
-
-
-void StubQueue::queues_do(void f(StubQueue* sq)) {
-  for (int i = 0; i < StubQueueLimit; i++) {
-    if (registered_stub_queues[i] != NULL) {
-      f(registered_stub_queues[i]);
-    }
-  }
-}
-
-
-void StubQueue::stubs_do(void f(Stub* s)) {
-  debug_only(verify();)
-  MutexLockerEx lock(_mutex);
-  for (Stub* s = first(); s != NULL; s = next(s)) f(s);
 }
 
 

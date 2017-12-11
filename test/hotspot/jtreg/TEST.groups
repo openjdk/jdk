@@ -189,12 +189,27 @@ hotspot_tier1_runtime = \
  -runtime/Unsafe/RangeCheck.java \
  -runtime/containers/ \
   sanity/ \
-  testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java
+  testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java \
+ -:hotspot_tier1_runtime_appcds_exclude
 
 hotspot_cds = \
   runtime/SharedArchiveFile/ \
   runtime/CompressedOops/
 
+# AppCDS
+# If modifying AppCDS it is also recommended to run the open hotspot_cds group
+hotspot_appcds = \
+  runtime/appcds/
+
+# A subset of AppCDS tests to be run in JPRT push
+hotspot_tier1_runtime_appcds = \
+  runtime/appcds/HelloTest.java \
+  runtime/appcds/sharedStrings/SharedStringsBasic.java \
+  runtime/appcds/ClassLoaderTest.java
+
+hotspot_tier1_runtime_appcds_exclude = \
+  runtime/appcds/ \
+  -:hotspot_tier1_runtime_appcds
 
 hotspot_tier1_serviceability = \
   serviceability/dcmd/compiler \

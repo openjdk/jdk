@@ -62,6 +62,7 @@
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
@@ -162,7 +163,6 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     *data_ptr = (state == NULL) ? NULL :
       state->env_thread_state(this)->get_agent_thread_local_storage_data();
   } else {
-
     // jvmti_GetThreadLocalStorage is "in native" and doesn't transition
     // the thread to _thread_in_vm. However, when the TLS for a thread
     // other than the current thread is required we need to transition
@@ -172,17 +172,13 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
 
-    oop thread_oop = JNIHandles::resolve_external_guard(thread);
-    if (thread_oop == NULL) {
-      return JVMTI_ERROR_INVALID_THREAD;
+    JavaThread* java_thread = NULL;
+    ThreadsListHandle tlh(current_thread);
+    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), thread, &java_thread, NULL);
+    if (err != JVMTI_ERROR_NONE) {
+      return err;
     }
-    if (!thread_oop->is_a(SystemDictionary::Thread_klass())) {
-      return JVMTI_ERROR_INVALID_THREAD;
-    }
-    JavaThread* java_thread = java_lang_Thread::thread(thread_oop);
-    if (java_thread == NULL) {
-      return JVMTI_ERROR_THREAD_NOT_ALIVE;
-    }
+
     JvmtiThreadState* state = java_thread->jvmti_thread_state();
     *data_ptr = (state == NULL) ? NULL :
       state->env_thread_state(this)->get_agent_thread_local_storage_data();
@@ -518,42 +514,60 @@ JvmtiEnv::SetEventCallbacks(const jvmtiEventCallbacks* callbacks, jint size_of_c
 // event_thread - NULL is a valid value, must be checked
 jvmtiError
 JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, jthread event_thread,   ...) {
-  JavaThread* java_thread = NULL;
-  if (event_thread != NULL) {
-    oop thread_oop = JNIHandles::resolve_external_guard(event_thread);
-    if (thread_oop == NULL) {
-      return JVMTI_ERROR_INVALID_THREAD;
+  if (event_thread == NULL) {
+    // Can be called at Agent_OnLoad() time with event_thread == NULL
+    // when Thread::current() does not work yet so we cannot create a
+    // ThreadsListHandle that is common to both thread-specific and
+    // global code paths.
+
+    // event_type must be valid
+    if (!JvmtiEventController::is_valid_event_type(event_type)) {
+      return JVMTI_ERROR_INVALID_EVENT_TYPE;
     }
-    if (!thread_oop->is_a(SystemDictionary::Thread_klass())) {
-      return JVMTI_ERROR_INVALID_THREAD;
+
+    bool enabled = (mode == JVMTI_ENABLE);
+
+    // assure that needed capabilities are present
+    if (enabled && !JvmtiUtil::has_event_capability(event_type, get_capabilities())) {
+      return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
     }
-    java_thread = java_lang_Thread::thread(thread_oop);
-    if (java_thread == NULL) {
-      return JVMTI_ERROR_THREAD_NOT_ALIVE;
+
+    if (event_type == JVMTI_EVENT_CLASS_FILE_LOAD_HOOK && enabled) {
+      record_class_file_load_hook_enabled();
     }
-  }
+    JvmtiEventController::set_user_enabled(this, (JavaThread*) NULL, event_type, enabled);
+  } else {
+    // We have a specified event_thread.
 
-  // event_type must be valid
-  if (!JvmtiEventController::is_valid_event_type(event_type)) {
-    return JVMTI_ERROR_INVALID_EVENT_TYPE;
-  }
+    JavaThread* java_thread = NULL;
+    ThreadsListHandle tlh;
+    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), event_thread, &java_thread, NULL);
+    if (err != JVMTI_ERROR_NONE) {
+      return err;
+    }
 
-  // global events cannot be controlled at thread level.
-  if (java_thread != NULL && JvmtiEventController::is_global_event(event_type)) {
-    return JVMTI_ERROR_ILLEGAL_ARGUMENT;
-  }
+    // event_type must be valid
+    if (!JvmtiEventController::is_valid_event_type(event_type)) {
+      return JVMTI_ERROR_INVALID_EVENT_TYPE;
+    }
 
-  bool enabled = (mode == JVMTI_ENABLE);
+    // global events cannot be controlled at thread level.
+    if (JvmtiEventController::is_global_event(event_type)) {
+      return JVMTI_ERROR_ILLEGAL_ARGUMENT;
+    }
 
-  // assure that needed capabilities are present
-  if (enabled && !JvmtiUtil::has_event_capability(event_type, get_capabilities())) {
-    return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
-  }
+    bool enabled = (mode == JVMTI_ENABLE);
 
-  if (event_type == JVMTI_EVENT_CLASS_FILE_LOAD_HOOK && enabled) {
-    record_class_file_load_hook_enabled();
+    // assure that needed capabilities are present
+    if (enabled && !JvmtiUtil::has_event_capability(event_type, get_capabilities())) {
+      return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
+    }
+
+    if (event_type == JVMTI_EVENT_CLASS_FILE_LOAD_HOOK && enabled) {
+      record_class_file_load_hook_enabled();
+    }
+    JvmtiEventController::set_user_enabled(this, java_thread, event_type, enabled);
   }
-  JvmtiEventController::set_user_enabled(this, java_thread, event_type, enabled);
 
   return JVMTI_ERROR_NONE;
 } /* end SetEventNotificationMode */
@@ -817,35 +831,45 @@ JvmtiEnv::GetJLocationFormat(jvmtiJlocationFormat* format_ptr) {
 // thread_state_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::GetThreadState(jthread thread, jint* thread_state_ptr) {
-  jint state;
-  oop thread_oop;
-  JavaThread* thr;
+  JavaThread* current_thread = JavaThread::current();
+  JavaThread* java_thread = NULL;
+  oop thread_oop = NULL;
+  ThreadsListHandle tlh(current_thread);
 
   if (thread == NULL) {
-    thread_oop = JavaThread::current()->threadObj();
-  } else {
-    thread_oop = JNIHandles::resolve_external_guard(thread);
-  }
+    java_thread = current_thread;
+    thread_oop = java_thread->threadObj();
 
-  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
-    return JVMTI_ERROR_INVALID_THREAD;
+    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
+      return JVMTI_ERROR_INVALID_THREAD;
+    }
+  } else {
+    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
+    if (err != JVMTI_ERROR_NONE) {
+      // We got an error code so we don't have a JavaThread *, but
+      // only return an error from here if we didn't get a valid
+      // thread_oop.
+      if (thread_oop == NULL) {
+        return err;
+      }
+      // We have a valid thread_oop so we can return some thread state.
+    }
   }
 
   // get most state bits
-  state = (jint)java_lang_Thread::get_thread_status(thread_oop);
+  jint state = (jint)java_lang_Thread::get_thread_status(thread_oop);
 
-  // add more state bits
-  thr = java_lang_Thread::thread(thread_oop);
-  if (thr != NULL) {
-    JavaThreadState jts = thr->thread_state();
+  if (java_thread != NULL) {
+    // We have a JavaThread* so add more state bits.
+    JavaThreadState jts = java_thread->thread_state();
 
-    if (thr->is_being_ext_suspended()) {
+    if (java_thread->is_being_ext_suspended()) {
       state |= JVMTI_THREAD_STATE_SUSPENDED;
     }
     if (jts == _thread_in_native) {
       state |= JVMTI_THREAD_STATE_IN_NATIVE;
     }
-    OSThread* osThread = thr->osthread();
+    OSThread* osThread = java_thread->osthread();
     if (osThread != NULL && osThread->interrupted()) {
       state |= JVMTI_THREAD_STATE_INTERRUPTED;
     }
@@ -891,7 +915,6 @@ JvmtiEnv::GetAllThreads(jint* threads_count_ptr, jthread** threads_ptr) {
     thread_objs[i] = Handle(tle.get_threadObj(i));
   }
 
-  // have to make global handles outside of Threads_lock
   jthread *jthreads  = new_jthreadArray(nthreads, thread_objs);
   NULL_CHECK(jthreads, JVMTI_ERROR_OUT_OF_MEMORY);
 
@@ -935,19 +958,12 @@ JvmtiEnv::SuspendThread(JavaThread* java_thread) {
 jvmtiError
 JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvmtiError* results) {
   int needSafepoint = 0;  // > 0 if we need a safepoint
+  ThreadsListHandle tlh;
   for (int i = 0; i < request_count; i++) {
-    JavaThread *java_thread = get_JavaThread(request_list[i]);
-    if (java_thread == NULL) {
-      results[i] = JVMTI_ERROR_INVALID_THREAD;
-      continue;
-    }
-    // the thread has not yet run or has exited (not on threads list)
-    if (java_thread->threadObj() == NULL) {
-      results[i] = JVMTI_ERROR_THREAD_NOT_ALIVE;
-      continue;
-    }
-    if (java_lang_Thread::thread(java_thread->threadObj()) == NULL) {
-      results[i] = JVMTI_ERROR_THREAD_NOT_ALIVE;
+    JavaThread *java_thread = NULL;
+    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), request_list[i], &java_thread, NULL);
+    if (err != JVMTI_ERROR_NONE) {
+      results[i] = err;
       continue;
     }
     // don't allow hidden thread suspend request.
@@ -1018,10 +1034,12 @@ JvmtiEnv::ResumeThread(JavaThread* java_thread) {
 // results - pre-checked for NULL
 jvmtiError
 JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmtiError* results) {
+  ThreadsListHandle tlh;
   for (int i = 0; i < request_count; i++) {
-    JavaThread *java_thread = get_JavaThread(request_list[i]);
-    if (java_thread == NULL) {
-      results[i] = JVMTI_ERROR_INVALID_THREAD;
+    JavaThread* java_thread = NULL;
+    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), request_list[i], &java_thread, NULL);
+    if (err != JVMTI_ERROR_NONE) {
+      results[i] = err;
       continue;
     }
     // don't allow hidden thread resume request.
@@ -1039,7 +1057,7 @@ JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmt
       continue;
     }
 
-    results[i] = JVMTI_ERROR_NONE;  // indicate successful suspend
+    results[i] = JVMTI_ERROR_NONE;  // indicate successful resume
   }
   // per-thread resume results returned via results parameter
   return JVMTI_ERROR_NONE;
@@ -1064,20 +1082,14 @@ JvmtiEnv::StopThread(JavaThread* java_thread, jobject exception) {
 // thread - NOT pre-checked
 jvmtiError
 JvmtiEnv::InterruptThread(jthread thread) {
-  oop thread_oop = JNIHandles::resolve_external_guard(thread);
-  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass()))
-    return JVMTI_ERROR_INVALID_THREAD;
-
+  // TODO: this is very similar to JVM_Interrupt(); share code in future
   JavaThread* current_thread  = JavaThread::current();
-
-  // Todo: this is a duplicate of JVM_Interrupt; share code in future
-  // Ensure that the C++ Thread and OSThread structures aren't freed before we operate
-  MutexLockerEx ml(current_thread->threadObj() == thread_oop ? NULL : Threads_lock);
-  // We need to re-resolve the java_thread, since a GC might have happened during the
-  // acquire of the lock
-
-  JavaThread* java_thread = java_lang_Thread::thread(JNIHandles::resolve_external_guard(thread));
-  NULL_CHECK(java_thread, JVMTI_ERROR_THREAD_NOT_ALIVE);
+  JavaThread* java_thread = NULL;
+  ThreadsListHandle tlh(current_thread);
+  jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), thread, &java_thread, NULL);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
 
   Thread::interrupt(java_thread);
 
@@ -1094,16 +1106,28 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
   HandleMark hm;
 
   JavaThread* current_thread = JavaThread::current();
+  ThreadsListHandle tlh(current_thread);
 
   // if thread is NULL the current thread is used
-  oop thread_oop;
+  oop thread_oop = NULL;
   if (thread == NULL) {
     thread_oop = current_thread->threadObj();
+    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
+      return JVMTI_ERROR_INVALID_THREAD;
+    }
   } else {
-    thread_oop = JNIHandles::resolve_external_guard(thread);
+    JavaThread* java_thread = NULL;
+    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
+    if (err != JVMTI_ERROR_NONE) {
+      // We got an error code so we don't have a JavaThread *, but
+      // only return an error from here if we didn't get a valid
+      // thread_oop.
+      if (thread_oop == NULL) {
+        return err;
+      }
+      // We have a valid thread_oop so we can return some thread info.
+    }
   }
-  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass()))
-    return JVMTI_ERROR_INVALID_THREAD;
 
   Handle thread_obj(current_thread, thread_oop);
   Handle name;
@@ -1272,16 +1296,30 @@ JvmtiEnv::GetCurrentContendedMonitor(JavaThread* java_thread, jobject* monitor_p
 // arg - NULL is a valid value, must be checked
 jvmtiError
 JvmtiEnv::RunAgentThread(jthread thread, jvmtiStartFunction proc, const void* arg, jint priority) {
-  oop thread_oop = JNIHandles::resolve_external_guard(thread);
-  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
+  JavaThread* current_thread = JavaThread::current();
+
+  JavaThread* java_thread = NULL;
+  oop thread_oop = NULL;
+  ThreadsListHandle tlh(current_thread);
+  jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
+  if (err != JVMTI_ERROR_NONE) {
+    // We got an error code so we don't have a JavaThread *, but
+    // only return an error from here if we didn't get a valid
+    // thread_oop.
+    if (thread_oop == NULL) {
+      return err;
+    }
+    // We have a valid thread_oop.
+  }
+
+  if (java_thread != NULL) {
+    // 'thread' refers to an existing JavaThread.
     return JVMTI_ERROR_INVALID_THREAD;
   }
+
   if (priority < JVMTI_THREAD_MIN_PRIORITY || priority > JVMTI_THREAD_MAX_PRIORITY) {
     return JVMTI_ERROR_INVALID_PRIORITY;
   }
-
-  //Thread-self
-  JavaThread* current_thread = JavaThread::current();
 
   Handle thread_hndl(current_thread, thread_oop);
   {
@@ -1292,7 +1330,9 @@ JvmtiEnv::RunAgentThread(jthread thread, jvmtiStartFunction proc, const void* ar
     // At this point it may be possible that no osthread was created for the
     // JavaThread due to lack of memory.
     if (new_thread == NULL || new_thread->osthread() == NULL) {
-      if (new_thread) delete new_thread;
+      if (new_thread != NULL) {
+        new_thread->smr_delete();
+      }
       return JVMTI_ERROR_OUT_OF_MEMORY;
     }
 
@@ -1394,36 +1434,53 @@ JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jth
   int ngroups = 0;
   int hidden_threads = 0;
 
-  ResourceMark rm;
-  HandleMark hm;
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
 
   Handle group_hdl(current_thread, group_obj);
 
-  { MutexLocker mu(Threads_lock);
+  { // Cannot allow thread or group counts to change.
+    MutexLocker mu(Threads_lock);
 
     nthreads = java_lang_ThreadGroup::nthreads(group_hdl());
     ngroups  = java_lang_ThreadGroup::ngroups(group_hdl());
 
     if (nthreads > 0) {
+      ThreadsListHandle tlh(current_thread);
       objArrayOop threads = java_lang_ThreadGroup::threads(group_hdl());
       assert(nthreads <= threads->length(), "too many threads");
       thread_objs = NEW_RESOURCE_ARRAY(Handle,nthreads);
       for (int i=0, j=0; i<nthreads; i++) {
         oop thread_obj = threads->obj_at(i);
         assert(thread_obj != NULL, "thread_obj is NULL");
-        JavaThread *javathread = java_lang_Thread::thread(thread_obj);
-        // Filter out hidden java threads.
-        if (javathread != NULL && javathread->is_hidden_from_external_view()) {
-          hidden_threads++;
-          continue;
+        JavaThread *java_thread = NULL;
+        jvmtiError err = JvmtiExport::cv_oop_to_JavaThread(tlh.list(), thread_obj, &java_thread);
+        if (err == JVMTI_ERROR_NONE) {
+          // Have a valid JavaThread*.
+          if (java_thread->is_hidden_from_external_view()) {
+            // Filter out hidden java threads.
+            hidden_threads++;
+            continue;
+          }
+        } else {
+          // We couldn't convert thread_obj into a JavaThread*.
+          if (err == JVMTI_ERROR_INVALID_THREAD) {
+            // The thread_obj does not refer to a java.lang.Thread object
+            // so skip it.
+            hidden_threads++;
+            continue;
+          }
+          // We have a valid thread_obj, but no JavaThread*; the caller
+          // can still have limited use for the thread_obj.
         }
         thread_objs[j++] = Handle(current_thread, thread_obj);
       }
       nthreads -= hidden_threads;
-    }
+    } // ThreadsListHandle is destroyed here.
+
     if (ngroups > 0) {
       objArrayOop groups = java_lang_ThreadGroup::groups(group_hdl());
-      assert(ngroups <= groups->length(), "too many threads");
+      assert(ngroups <= groups->length(), "too many groups");
       group_objs = NEW_RESOURCE_ARRAY(Handle,ngroups);
       for (int i=0; i<ngroups; i++) {
         oop group_obj = groups->obj_at(i);
@@ -1556,7 +1613,7 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
   }
 
   // Check if java_thread is fully suspended
-  if (!is_thread_fully_suspended(java_thread, true /* wait for suspend completion */, &debug_bits)) {
+  if (!java_thread->is_thread_fully_suspended(true /* wait for suspend completion */, &debug_bits)) {
     return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
   }
   // Check to see if a PopFrame was already in progress
@@ -1686,8 +1743,8 @@ JvmtiEnv::NotifyFramePop(JavaThread* java_thread, jint depth) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
 
-  if (!JvmtiEnv::is_thread_fully_suspended(java_thread, true, &debug_bits)) {
-      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+  if (!java_thread->is_thread_fully_suspended(true, &debug_bits)) {
+    return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
   }
 
   if (TraceJVMTICalls) {

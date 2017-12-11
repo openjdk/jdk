@@ -34,11 +34,6 @@ import jdk.vm.ci.meta.JavaConstant;
 public class SPARCAddressLowering extends AddressLowering {
 
     @Override
-    public AddressNode lower(ValueNode address) {
-        return lower(address, 0);
-    }
-
-    @Override
     public AddressNode lower(ValueNode base, ValueNode offset) {
         JavaConstant immBase = asImmediate(base);
         if (immBase != null && SPARCAssembler.isSimm13(immBase)) {

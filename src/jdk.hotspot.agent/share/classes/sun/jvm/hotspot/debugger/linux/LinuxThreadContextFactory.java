@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.jvm.hotspot.debugger.linux;
 import java.lang.reflect.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.linux.amd64.*;
-import sun.jvm.hotspot.debugger.linux.ia64.*;
 import sun.jvm.hotspot.debugger.linux.x86.*;
 import sun.jvm.hotspot.debugger.linux.ppc64.*;
 import sun.jvm.hotspot.debugger.linux.sparc.*;
@@ -39,8 +38,6 @@ class LinuxThreadContextFactory {
          return new LinuxX86ThreadContext(dbg);
       } else if (cpu.equals("amd64")) {
          return new LinuxAMD64ThreadContext(dbg);
-      } else if (cpu.equals("ia64")) {
-         return new LinuxIA64ThreadContext(dbg);
       } else if (cpu.equals("sparc")) {
          return new LinuxSPARCThreadContext(dbg);
       }  else if (cpu.equals("ppc64")) {

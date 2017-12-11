@@ -30,6 +30,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
@@ -88,6 +89,6 @@ public abstract class AbstractCompareAndSwapNode extends FixedAccessNode impleme
 
     @Override
     public Stamp getAccessStamp() {
-        return expectedValue.stamp().meet(newValue.stamp()).unrestricted();
+        return expectedValue.stamp(NodeView.DEFAULT).meet(newValue.stamp(NodeView.DEFAULT)).unrestricted();
     }
 }

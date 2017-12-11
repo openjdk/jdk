@@ -34,6 +34,7 @@ import org.graalvm.compiler.lir.amd64.AMD64ArithmeticLIRGeneratorTool.RoundingMo
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
@@ -52,7 +53,7 @@ public final class AMD64RoundNode extends UnaryNode implements ArithmeticLIRLowe
     private final RoundingMode mode;
 
     public AMD64RoundNode(ValueNode value, RoundingMode mode) {
-        super(TYPE, roundStamp((FloatStamp) value.stamp(), mode), value);
+        super(TYPE, roundStamp((FloatStamp) value.stamp(NodeView.DEFAULT), mode), value);
         this.mode = mode;
     }
 
@@ -83,7 +84,7 @@ public final class AMD64RoundNode extends UnaryNode implements ArithmeticLIRLowe
 
     @Override
     public Stamp foldStamp(Stamp newStamp) {
-        assert newStamp.isCompatible(getValue().stamp());
+        assert newStamp.isCompatible(getValue().stamp(NodeView.DEFAULT));
         return roundStamp((FloatStamp) newStamp, mode);
     }
 

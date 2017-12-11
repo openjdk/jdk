@@ -26,10 +26,20 @@
 #define SHARE_VM_GC_SERIAL_SERIALHEAP_HPP
 
 #include "gc/shared/genCollectedHeap.hpp"
+#include "utilities/growableArray.hpp"
 
 class GenCollectorPolicy;
+class GCMemoryManager;
+class MemoryPool;
 
 class SerialHeap : public GenCollectedHeap {
+private:
+  MemoryPool* _eden_pool;
+  MemoryPool* _survivor_pool;
+  MemoryPool* _old_pool;
+
+  virtual void initialize_serviceability();
+
 protected:
   virtual void check_gen_kinds();
 
@@ -44,6 +54,9 @@ public:
     return "Serial";
   }
 
+  virtual GrowableArray<GCMemoryManager*> memory_managers();
+  virtual GrowableArray<MemoryPool*> memory_pools();
+
   // override
   virtual bool is_in_closed_subset(const void* p) const {
     return is_in(p);
@@ -52,7 +65,6 @@ public:
   virtual bool card_mark_must_follow_store() const {
     return false;
   }
-
 };
 
 #endif // SHARE_VM_GC_CMS_CMSHEAP_HPP

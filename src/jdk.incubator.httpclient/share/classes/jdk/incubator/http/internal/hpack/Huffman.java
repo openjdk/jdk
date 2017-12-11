@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package jdk.incubator.http.internal.hpack;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 
 import static java.lang.String.format;
@@ -51,16 +50,18 @@ public final class Huffman {
             reset();
         }
 
-        public void read(ByteBuffer source, Appendable destination,
-                         boolean isLast) {
+        public void read(ByteBuffer source,
+                         Appendable destination,
+                         boolean isLast) throws IOException {
             read(source, destination, true, isLast);
         }
 
         // Takes 'isLast' rather than returns whether the reading is done or
         // not, for more informative exceptions.
-        void read(ByteBuffer source, Appendable destination, boolean reportEOS,
-                  boolean isLast) {
-
+        void read(ByteBuffer source,
+                  Appendable destination,
+                  boolean reportEOS, /* reportEOS is exposed for tests */
+                  boolean isLast) throws IOException {
             Node c = curr;
             int l = len;
             /*
@@ -77,16 +78,20 @@ public final class Huffman {
                     l++;
                     if (c.isLeaf()) {
                         if (reportEOS && c.isEOSPath) {
-                            throw new IllegalArgumentException("Encountered EOS");
+                            throw new IOException("Encountered EOS");
+                        }
+                        char ch;
+                        try {
+                            ch = c.getChar();
+                        } catch (IllegalStateException e) {
+                            source.position(pos); // do we need this?
+                            throw new IOException(e);
                         }
                         try {
-                            destination.append(c.getChar());
-                        } catch (RuntimeException | Error e) {
-                            source.position(pos);
-                            throw e;
+                            destination.append(ch);
                         } catch (IOException e) {
-                            source.position(pos);
-                            throw new UncheckedIOException(e);
+                            source.position(pos); // do we need this?
+                            throw e;
                         }
                         c = INSTANCE.root;
                         l = 0;
@@ -107,11 +112,11 @@ public final class Huffman {
                 return; // it's ok, some extra padding bits
             }
             if (c.isEOSPath) {
-                throw new IllegalArgumentException(
+                throw new IOException(
                         "Padding is too long (len=" + len + ") " +
                                 "or unexpected end of data");
             }
-            throw new IllegalArgumentException(
+            throw new IOException(
                     "Not a EOS prefix padding or unexpected end of data");
         }
 
@@ -509,8 +514,8 @@ public final class Huffman {
      * @throws NullPointerException
      *         if the value is null
      * @throws IndexOutOfBoundsException
-     *         if any invocation of {@code value.charAt(i)}, where {@code start
-     *         <= i < end} would throw an IndexOutOfBoundsException
+     *         if any invocation of {@code value.charAt(i)}, where
+     *         {@code start <= i < end} would throw an IndexOutOfBoundsException
      */
     public int lengthOf(CharSequence value, int start, int end) {
         int len = 0;

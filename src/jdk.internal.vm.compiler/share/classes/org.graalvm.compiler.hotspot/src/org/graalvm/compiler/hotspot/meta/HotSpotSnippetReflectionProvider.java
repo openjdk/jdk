@@ -87,7 +87,7 @@ public class HotSpotSnippetReflectionProvider implements SnippetReflectionProvid
         // Need to test all fields since there no guarantee under the JMM
         // about the order in which these fields are written.
         GraalHotSpotVMConfig config = runtime.getVMConfig();
-        if (configType == null || wordTypesType == null || configType == null) {
+        if (configType == null || wordTypesType == null || runtimeType == null) {
             wordTypesType = wordTypes.getClass();
             runtimeType = runtime.getClass();
             configType = config.getClass();

@@ -10267,14 +10267,14 @@ instruct indexOf_UL(iRegP haystack, rarg2RegI haycnt, iRegP needle, rarg5RegI ne
 %}
 
 // char[] to byte[] compression
-instruct string_compress(iRegP src, rarg5RegP dst, iRegI result, roddRegI len, revenRegI evenReg, iRegI tmp, flagsReg cr) %{
+instruct string_compress(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tmp, flagsReg cr) %{
   match(Set result (StrCompressedCopy src (Binary dst len)));
-  effect(TEMP_DEF result, USE_KILL dst, USE_KILL len, TEMP evenReg, TEMP tmp, KILL cr); // R0, R1 are killed, too.
+  effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
   format %{ "String Compress $src->$dst($len) -> $result" %}
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
-                       $evenReg$$Register, $tmp$$Register);
+                       $tmp$$Register, false);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10293,13 +10293,25 @@ instruct string_compress(iRegP src, rarg5RegP dst, iRegI result, roddRegI len, r
 //%}
 
 // byte[] to char[] inflation
-instruct string_inflate(Universe dummy, rarg5RegP src, iRegP dst, roddRegI len, revenRegI evenReg, iRegI tmp, flagsReg cr) %{
+instruct string_inflate(Universe dummy, iRegP src, iRegP dst, iRegI len, iRegI tmp, flagsReg cr) %{
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
-  effect(USE_KILL src, USE_KILL len, TEMP evenReg, TEMP tmp, KILL cr); // R0, R1 are killed, too.
+  effect(TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
   format %{ "String Inflate $src->$dst($len)" %}
   ins_encode %{
-    __ string_inflate($src$$Register, $dst$$Register, $len$$Register, $evenReg$$Register, $tmp$$Register);
+    __ string_inflate($src$$Register, $dst$$Register, $len$$Register, $tmp$$Register);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// byte[] to char[] inflation
+instruct string_inflate_const(Universe dummy, iRegP src, iRegP dst, iRegI tmp, immI len, flagsReg cr) %{
+  match(Set dummy (StrInflatedCopy src (Binary dst len)));
+  effect(TEMP tmp, KILL cr); // R0, R1 are killed, too.
+  ins_cost(300);
+  format %{ "String Inflate (constLen) $src->$dst($len)" %}
+  ins_encode %{
+    __ string_inflate_const($src$$Register, $dst$$Register, $tmp$$Register, $len$$constant);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10318,14 +10330,14 @@ instruct has_negatives(rarg5RegP ary1, iRegI len, iRegI result, roddRegI oddReg,
 %}
 
 // encode char[] to byte[] in ISO_8859_1
-instruct encode_iso_array(rarg5RegP src, iRegP dst, iRegI result, roddRegI len, revenRegI evenReg, iRegI tmp, iRegI tmp2, flagsReg cr) %{
+instruct encode_iso_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tmp, flagsReg cr) %{
   match(Set result (EncodeISOArray src (Binary dst len)));
-  effect(TEMP_DEF result, USE_KILL src, USE_KILL len, TEMP evenReg, TEMP tmp, TEMP tmp2, KILL cr); // R0, R1 are killed, too.
+  effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
   format %{ "Encode array $src->$dst($len) -> $result" %}
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
-                       $evenReg$$Register, $tmp$$Register, $tmp2$$Register);
+                       $tmp$$Register, true);
   %}
   ins_pipe(pipe_class_dummy);
 %}

@@ -69,8 +69,8 @@ define SetupInterimModule
           Standard.java, \
       EXTRA_FILES := $(BUILDTOOLS_OUTPUTDIR)/gensrc/$1.interim/module-info.java, \
       COPY := .gif .png .xml .css .js javax.tools.JavaCompilerTool, \
-      BIN := $(BUILDTOOLS_OUTPUTDIR)/interim_modules/$1.interim, \
-      ADD_JAVAC_FLAGS := --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_modules \
+      BIN := $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules/$1.interim, \
+      ADD_JAVAC_FLAGS := --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules \
           $$(INTERIM_LANGTOOLS_ADD_EXPORTS) \
           -Xlint:-module, \
   ))

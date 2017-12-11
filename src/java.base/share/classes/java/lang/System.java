@@ -2109,9 +2109,6 @@ public final class System {
             public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
                 Shutdown.add(slot, registerShutdownInProgress, hook);
             }
-            public String newStringUnsafe(char[] chars) {
-                return new String(chars, true);
-            }
             public Thread newThreadWithAcc(Runnable target, AccessControlContext acc) {
                 return new Thread(target, acc);
             }

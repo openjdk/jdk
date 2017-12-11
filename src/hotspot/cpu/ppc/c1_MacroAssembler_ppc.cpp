@@ -41,20 +41,25 @@
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   const Register temp_reg = R12_scratch2;
+  Label Lmiss;
+
   verify_oop(receiver);
+  MacroAssembler::null_check(receiver, oopDesc::klass_offset_in_bytes(), &Lmiss);
   load_klass(temp_reg, receiver);
-  if (TrapBasedICMissChecks) {
+
+  if (TrapBasedICMissChecks && TrapBasedNullChecks) {
     trap_ic_miss_check(temp_reg, iCache);
   } else {
-    Label L;
+    Label Lok;
     cmpd(CCR0, temp_reg, iCache);
-    beq(CCR0, L);
+    beq(CCR0, Lok);
+    bind(Lmiss);
     //load_const_optimized(temp_reg, SharedRuntime::get_ic_miss_stub(), R0);
     calculate_address_from_global_toc(temp_reg, SharedRuntime::get_ic_miss_stub(), true, true, false);
     mtctr(temp_reg);
     bctr();
     align(32, 12);
-    bind(L);
+    bind(Lok);
   }
 }
 

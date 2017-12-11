@@ -645,19 +645,6 @@ public final class String
         this(builder, null);
     }
 
-   /*
-    * Package private constructor which shares value array for speed.
-    * this constructor is always expected to be called with share==true.
-    * a separate constructor is needed because we already have a public
-    * String(char[]) constructor that makes a copy of the given char[].
-    */
-    // TBD: this is kept for package internal use (Thread/System),
-    // should be removed if they all have a byte[] version
-    String(char[] val, boolean share) {
-        // assert share : "unshared not supported";
-        this(val, 0, val.length, null);
-    }
-
     /**
      * Returns the length of this string.
      * The length is equal to the number of <a href="Character.html#unicode">Unicode

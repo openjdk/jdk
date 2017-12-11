@@ -76,7 +76,7 @@ public class ConstantTree extends PrintableDominatorOptimizationProblem<Constant
 
         public List<UseEntry> getUsages() {
             if (usages == null) {
-                Collections.emptyList();
+                return Collections.emptyList();
             }
             return usages;
         }

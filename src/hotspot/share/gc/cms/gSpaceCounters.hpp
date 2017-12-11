@@ -52,9 +52,7 @@ class GSpaceCounters: public CHeapObj<mtGC> {
   GSpaceCounters(const char* name, int ordinal, size_t max_size, Generation* g,
                  GenerationCounters* gc, bool sampled=true);
 
-  ~GSpaceCounters() {
-    if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
-  }
+  ~GSpaceCounters();
 
   inline void update_capacity() {
     _capacity->set_value(_gen->capacity());

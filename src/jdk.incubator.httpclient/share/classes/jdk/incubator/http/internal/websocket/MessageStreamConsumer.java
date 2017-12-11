@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@ import java.nio.ByteBuffer;
  */
 interface MessageStreamConsumer {
 
-    void onText(MessagePart part, CharSequence data);
+    void onText(CharSequence data, MessagePart part);
 
-    void onBinary(MessagePart part, ByteBuffer data);
+    void onBinary(ByteBuffer data, MessagePart part);
 
     void onPing(ByteBuffer data);
 
@@ -44,11 +44,11 @@ interface MessageStreamConsumer {
 
     void onClose(int statusCode, CharSequence reason);
 
-    void onError(Exception e);
-
     /*
      * Indicates the end of stream has been reached and there will be no further
      * messages.
      */
     void onComplete();
+
+    void onError(Throwable e);
 }

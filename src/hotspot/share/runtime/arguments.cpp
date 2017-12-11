@@ -114,6 +114,108 @@ bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = NULL;
 
+bool PathString::set_value(const char *value) {
+  if (_value != NULL) {
+    FreeHeap(_value);
+  }
+  _value = AllocateHeap(strlen(value)+1, mtArguments);
+  assert(_value != NULL, "Unable to allocate space for new path value");
+  if (_value != NULL) {
+    strcpy(_value, value);
+  } else {
+    // not able to allocate
+    return false;
+  }
+  return true;
+}
+
+void PathString::append_value(const char *value) {
+  char *sp;
+  size_t len = 0;
+  if (value != NULL) {
+    len = strlen(value);
+    if (_value != NULL) {
+      len += strlen(_value);
+    }
+    sp = AllocateHeap(len+2, mtArguments);
+    assert(sp != NULL, "Unable to allocate space for new append path value");
+    if (sp != NULL) {
+      if (_value != NULL) {
+        strcpy(sp, _value);
+        strcat(sp, os::path_separator());
+        strcat(sp, value);
+        FreeHeap(_value);
+      } else {
+        strcpy(sp, value);
+      }
+      _value = sp;
+    }
+  }
+}
+
+PathString::PathString(const char* value) {
+  if (value == NULL) {
+    _value = NULL;
+  } else {
+    _value = AllocateHeap(strlen(value)+1, mtArguments);
+    strcpy(_value, value);
+  }
+}
+
+PathString::~PathString() {
+  if (_value != NULL) {
+    FreeHeap(_value);
+    _value = NULL;
+  }
+}
+
+ModulePatchPath::ModulePatchPath(const char* module_name, const char* path) {
+  assert(module_name != NULL && path != NULL, "Invalid module name or path value");
+  size_t len = strlen(module_name) + 1;
+  _module_name = AllocateHeap(len, mtInternal);
+  strncpy(_module_name, module_name, len); // copy the trailing null
+  _path =  new PathString(path);
+}
+
+ModulePatchPath::~ModulePatchPath() {
+  if (_module_name != NULL) {
+    FreeHeap(_module_name);
+    _module_name = NULL;
+  }
+  if (_path != NULL) {
+    delete _path;
+    _path = NULL;
+  }
+}
+
+SystemProperty::SystemProperty(const char* key, const char* value, bool writeable, bool internal) : PathString(value) {
+  if (key == NULL) {
+    _key = NULL;
+  } else {
+    _key = AllocateHeap(strlen(key)+1, mtArguments);
+    strcpy(_key, key);
+  }
+  _next = NULL;
+  _internal = internal;
+  _writeable = writeable;
+}
+
+AgentLibrary::AgentLibrary(const char* name, const char* options, bool is_absolute_path, void* os_lib) {
+  _name = AllocateHeap(strlen(name)+1, mtArguments);
+  strcpy(_name, name);
+  if (options == NULL) {
+    _options = NULL;
+  } else {
+    _options = AllocateHeap(strlen(options)+1, mtArguments);
+    strcpy(_options, options);
+  }
+  _is_absolute_path = is_absolute_path;
+  _os_lib = os_lib;
+  _next = NULL;
+  _state = agent_invalid;
+  _is_static_lib = false;
+}
+
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining
 // part of the option string.
 static bool match_option(const JavaVMOption *option, const char* name,
@@ -179,6 +281,23 @@ bool needs_module_property_warning = false;
 #define PATH_LEN 4
 #define UPGRADE_PATH "upgrade.path"
 #define UPGRADE_PATH_LEN 12
+
+void Arguments::add_init_library(const char* name, char* options) {
+  _libraryList.add(new AgentLibrary(name, options, false, NULL));
+}
+
+void Arguments::add_init_agent(const char* name, char* options, bool absolute_path) {
+  _agentList.add(new AgentLibrary(name, options, absolute_path, NULL));
+}
+
+// Late-binding agents not started via arguments
+void Arguments::add_loaded_agent(AgentLibrary *agentLib) {
+  _agentList.add(agentLib);
+}
+
+void Arguments::add_loaded_agent(const char* name, char* options, bool absolute_path, void* os_lib) {
+  _agentList.add(new AgentLibrary(name, options, absolute_path, os_lib));
+}
 
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {
@@ -2152,12 +2271,7 @@ bool Arguments::check_vm_args_consistency() {
   // Check lower bounds of the code cache
   // Template Interpreter code is approximately 3X larger in debug builds.
   uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
-  if (InitialCodeCacheSize < (uintx)os::vm_page_size()) {
-    jio_fprintf(defaultStream::error_stream(),
-                "Invalid InitialCodeCacheSize=%dK. Must be at least %dK.\n", InitialCodeCacheSize/K,
-                os::vm_page_size()/K);
-    status = false;
-  } else if (ReservedCodeCacheSize < InitialCodeCacheSize) {
+  if (ReservedCodeCacheSize < InitialCodeCacheSize) {
     jio_fprintf(defaultStream::error_stream(),
                 "Invalid ReservedCodeCacheSize: %dK. Must be at least InitialCodeCacheSize=%dK.\n",
                 ReservedCodeCacheSize/K, InitialCodeCacheSize/K);
@@ -2212,7 +2326,27 @@ bool Arguments::check_vm_args_consistency() {
     }
     FLAG_SET_CMDLINE(bool, PostLoopMultiversioning, false);
   }
+  if (UseCountedLoopSafepoints && LoopStripMiningIter == 0) {
+    if (!FLAG_IS_DEFAULT(UseCountedLoopSafepoints) || !FLAG_IS_DEFAULT(LoopStripMiningIter)) {
+      warning("When counted loop safepoints are enabled, LoopStripMiningIter must be at least 1 (a safepoint every 1 iteration): setting it to 1");
+    }
+    LoopStripMiningIter = 1;
+  } else if (!UseCountedLoopSafepoints && LoopStripMiningIter > 0) {
+    if (!FLAG_IS_DEFAULT(UseCountedLoopSafepoints) || !FLAG_IS_DEFAULT(LoopStripMiningIter)) {
+      warning("Disabling counted safepoints implies no loop strip mining: setting LoopStripMiningIter to 0");
+    }
+    LoopStripMiningIter = 0;
+  }
+  if (FLAG_IS_DEFAULT(LoopStripMiningIterShortLoop)) {
+    // blind guess
+    LoopStripMiningIterShortLoop = LoopStripMiningIter / 10;
+  }
 #endif
+  if (!FLAG_IS_DEFAULT(AllocateHeapAt)) {
+    if ((UseNUMAInterleaving && !FLAG_IS_DEFAULT(UseNUMAInterleaving)) || (UseNUMA && !FLAG_IS_DEFAULT(UseNUMA))) {
+      log_warning(arguments) ("NUMA support for Heap depends on the file system when AllocateHeapAt option is used.\n");
+    }
+  }
   return status;
 }
 
@@ -2770,18 +2904,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (FLAG_SET_CMDLINE(intx, ThreadStackSize, value) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-    } else if (match_option(option, "-XX:CodeCacheExpansionSize=", &tail)) {
-      julong long_CodeCacheExpansionSize = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_CodeCacheExpansionSize, os::vm_page_size());
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                   "Invalid argument: %s. Must be at least %luK.\n", option->optionString,
-                   os::vm_page_size()/K);
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(uintx, CodeCacheExpansionSize, (uintx)long_CodeCacheExpansionSize) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
     } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
                match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
       julong long_ReservedCodeCacheSize = 0;
@@ -2793,45 +2915,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_EINVAL;
       }
       if (FLAG_SET_CMDLINE(uintx, ReservedCodeCacheSize, (uintx)long_ReservedCodeCacheSize) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      // -XX:NonNMethodCodeHeapSize=
-    } else if (match_option(option, "-XX:NonNMethodCodeHeapSize=", &tail)) {
-      julong long_NonNMethodCodeHeapSize = 0;
-
-      ArgsRange errcode = parse_memory_size(tail, &long_NonNMethodCodeHeapSize, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid maximum non-nmethod code heap size: %s.\n", option->optionString);
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(uintx, NonNMethodCodeHeapSize, (uintx)long_NonNMethodCodeHeapSize) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      // -XX:ProfiledCodeHeapSize=
-    } else if (match_option(option, "-XX:ProfiledCodeHeapSize=", &tail)) {
-      julong long_ProfiledCodeHeapSize = 0;
-
-      ArgsRange errcode = parse_memory_size(tail, &long_ProfiledCodeHeapSize, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid maximum profiled code heap size: %s.\n", option->optionString);
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(uintx, ProfiledCodeHeapSize, (uintx)long_ProfiledCodeHeapSize) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      // -XX:NonProfiledCodeHeapSizee=
-    } else if (match_option(option, "-XX:NonProfiledCodeHeapSize=", &tail)) {
-      julong long_NonProfiledCodeHeapSize = 0;
-
-      ArgsRange errcode = parse_memory_size(tail, &long_NonProfiledCodeHeapSize, 1);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid maximum non-profiled code heap size: %s.\n", option->optionString);
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(uintx, NonProfiledCodeHeapSize, (uintx)long_NonProfiledCodeHeapSize) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
     // -green
@@ -3936,6 +4019,14 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
       vm_exit(0);
     }
 #endif
+
+    if (match_option(option, "-XX:+UseAppCDS")) {
+      Flag* flag = Flag::find_flag("SharedArchiveFile", 17, true, true);
+      if (flag->is_diagnostic()) {
+        flag->clear_diagnostic();
+      }
+      continue;
+    }
   }
   return JNI_OK;
 }
@@ -4306,26 +4397,7 @@ jint Arguments::apply_ergo() {
   }
 #endif
 
-  bool aot_enabled = UseAOT && AOTLibrary != NULL;
-  bool jvmci_enabled = NOT_JVMCI(false) JVMCI_ONLY(EnableJVMCI || UseJVMCICompiler);
-  bool handshakes_supported = SafepointMechanism::supports_thread_local_poll() && !aot_enabled && !jvmci_enabled && ThreadLocalHandshakes;
   // ThreadLocalHandshakesConstraintFunc handles the constraints.
-  // Here we try to figure out if a mutual exclusive option have been set that conflict with a default.
-  if (handshakes_supported) {
-    FLAG_SET_DEFAULT(UseAOT, false); // Clear the AOT flag to make sure it doesn't try to initialize.
-  } else {
-    if (FLAG_IS_DEFAULT(ThreadLocalHandshakes) && ThreadLocalHandshakes) {
-      if (aot_enabled) {
-        // If user enabled AOT but ThreadLocalHandshakes is at default set it to false.
-        log_debug(ergo)("Disabling ThreadLocalHandshakes for UseAOT.");
-        FLAG_SET_DEFAULT(ThreadLocalHandshakes, false);
-      } else if (jvmci_enabled){
-        // If user enabled JVMCI but ThreadLocalHandshakes is at default set it to false.
-        log_debug(ergo)("Disabling ThreadLocalHandshakes for EnableJVMCI/UseJVMCICompiler.");
-        FLAG_SET_DEFAULT(ThreadLocalHandshakes, false);
-      }
-    }
-  }
   if (FLAG_IS_DEFAULT(ThreadLocalHandshakes) || !SafepointMechanism::supports_thread_local_poll()) {
     log_debug(ergo)("ThreadLocalHandshakes %s", ThreadLocalHandshakes ? "enabled." : "disabled.");
   } else {
@@ -4337,7 +4409,9 @@ jint Arguments::apply_ergo() {
 
 jint Arguments::adjust_after_os() {
   if (UseNUMA) {
-    if (UseParallelGC || UseParallelOldGC) {
+    if (!FLAG_IS_DEFAULT(AllocateHeapAt)) {
+      FLAG_SET_ERGO(bool, UseNUMA, false);
+    } else if (UseParallelGC || UseParallelOldGC) {
       if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
          FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
       }

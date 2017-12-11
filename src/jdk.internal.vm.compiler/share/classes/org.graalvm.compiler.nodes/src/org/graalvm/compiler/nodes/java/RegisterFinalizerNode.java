@@ -37,6 +37,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractStateSplit;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -87,7 +88,7 @@ public final class RegisterFinalizerNode extends AbstractStateSplit implements C
      * that must be registered with the runtime upon object initialization.
      */
     public static boolean mayHaveFinalizer(ValueNode object, Assumptions assumptions) {
-        ObjectStamp objectStamp = (ObjectStamp) object.stamp();
+        ObjectStamp objectStamp = (ObjectStamp) object.stamp(NodeView.DEFAULT);
         if (objectStamp.isExactType()) {
             return objectStamp.type().hasFinalizer();
         } else if (objectStamp.type() != null) {
@@ -102,7 +103,8 @@ public final class RegisterFinalizerNode extends AbstractStateSplit implements C
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forValue) {
-        if (!(forValue.stamp() instanceof ObjectStamp)) {
+        NodeView view = NodeView.from(tool);
+        if (!(forValue.stamp(view) instanceof ObjectStamp)) {
             return this;
         }
         if (!mayHaveFinalizer(forValue, graph().getAssumptions())) {

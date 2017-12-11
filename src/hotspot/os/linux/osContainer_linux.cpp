@@ -323,7 +323,12 @@ void OSContainer::init() {
     }
   }
 
-  if (mntinfo != NULL) fclose(mntinfo);
+  fclose(mntinfo);
+
+  if (memory == NULL || cpuset == NULL || cpu == NULL || cpuacct == NULL) {
+    log_debug(os, container)("Required cgroup subsystems not found");
+    return;
+  }
 
   /*
    * Read /proc/self/cgroup and map host mount point to
@@ -383,12 +388,7 @@ void OSContainer::init() {
     }
   }
 
-  if (cgroup != NULL) fclose(cgroup);
-
-  if (memory == NULL || cpuset == NULL || cpu == NULL) {
-    log_debug(os, container)("Required cgroup subsystems not found");
-    return;
-  }
+  fclose(cgroup);
 
   // We need to update the amount of physical memory now that
   // command line arguments have been processed.

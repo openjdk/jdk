@@ -33,6 +33,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.aarch64.AArch64AddressValue;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.SignExtendNode;
@@ -66,7 +67,7 @@ public class AArch64ReadNode extends ReadNode {
         AArch64LIRGenerator lirgen = (AArch64LIRGenerator) gen.getLIRGeneratorTool();
         AArch64ArithmeticLIRGenerator arithgen = (AArch64ArithmeticLIRGenerator) lirgen.getArithmetic();
         AArch64Kind readKind = (AArch64Kind) lirgen.getLIRKind(accessStamp).getPlatformKind();
-        int resultBits = ((IntegerStamp) stamp()).getBits();
+        int resultBits = ((IntegerStamp) stamp(NodeView.DEFAULT)).getBits();
         gen.setResult(this, arithgen.emitExtendMemory(isSigned, readKind, resultBits, (AArch64AddressValue) gen.operand(getAddress()), gen.state(this)));
     }
 
@@ -86,7 +87,7 @@ public class AArch64ReadNode extends ReadNode {
 
         AddressNode address = readNode.getAddress();
         LocationIdentity location = readNode.getLocationIdentity();
-        Stamp stamp = usage.stamp();
+        Stamp stamp = usage.stamp(NodeView.DEFAULT);
         GuardingNode guard = readNode.getGuard();
         BarrierType barrierType = readNode.getBarrierType();
         boolean nullCheck = readNode.getNullCheck();

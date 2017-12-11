@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SNIServerName;
+import jdk.incubator.http.internal.frame.ErrorFrame;
 
 /**
  * Waits for incoming TCP connections from a client and establishes
@@ -131,6 +133,18 @@ public class Http2TestServer implements AutoCloseable {
         handlers.put(path, handler);
     }
 
+    volatile Http2TestExchangeSupplier exchangeSupplier = Http2TestExchangeSupplier.ofDefault();
+
+    /**
+     * Sets an explicit exchange handler to be used for all future connections.
+     * Useful for testing scenarios where non-standard or specific server
+     * behaviour is required, either direct control over the frames sent, "bad"
+     * behaviour, or something else.
+     */
+    public void setExchangeSupplier(Http2TestExchangeSupplier exchangeSupplier) {
+        this.exchangeSupplier = exchangeSupplier;
+    }
+
     Http2Handler getHandlerFor(String path) {
         if (path == null || path.equals(""))
             path = "/";
@@ -159,8 +173,9 @@ public class Http2TestServer implements AutoCloseable {
     public void stop() {
         // TODO: clean shutdown GoAway
         stopping = true;
+        System.err.printf("Server stopping %d connections\n", connections.size());
         for (Http2TestServerConnection connection : connections.values()) {
-            connection.close();
+            connection.close(ErrorFrame.NO_ERROR);
         }
         try {
             server.close();
@@ -199,23 +214,25 @@ public class Http2TestServer implements AutoCloseable {
                 while (!stopping) {
                     Socket socket = server.accept();
                     InetSocketAddress addr = (InetSocketAddress) socket.getRemoteSocketAddress();
-                    Http2TestServerConnection c = new Http2TestServerConnection(this, socket);
+                    Http2TestServerConnection c =
+                            new Http2TestServerConnection(this, socket, exchangeSupplier);
                     connections.put(addr, c);
                     try {
                         c.run();
-                    } catch(Throwable e) {
+                    } catch (Throwable e) {
                         // we should not reach here, but if we do
                         // the connection might not have been closed
                         // and if so then the client might wait
                         // forever.
                         connections.remove(addr, c);
-                        c.close();
-                        throw e;
+                        c.close(ErrorFrame.PROTOCOL_ERROR);
+                        System.err.println("TestServer: start exception: " + e);
+                        //throw e;
                     }
                 }
             } catch (Throwable e) {
                 if (!stopping) {
-                    System.err.println("TestServer: start exception: " + e);
+                    System.err.println("TestServer: terminating, caught " + e);
                     e.printStackTrace();
                 }
             }

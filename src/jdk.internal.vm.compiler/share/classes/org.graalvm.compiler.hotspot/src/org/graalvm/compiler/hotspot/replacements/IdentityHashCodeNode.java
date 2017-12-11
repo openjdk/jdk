@@ -35,6 +35,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.Lowerable;
@@ -65,7 +66,7 @@ public class IdentityHashCodeNode extends FixedWithNextNode implements Canonical
     @Override
     public Node canonical(CanonicalizerTool tool) {
         if (object.isConstant()) {
-            assert object.stamp() instanceof AbstractObjectStamp;
+            assert object.stamp(NodeView.DEFAULT) instanceof AbstractObjectStamp;
             JavaConstant c = (JavaConstant) object.asConstant();
             if (ImmutableCode.getValue(tool.getOptions())) {
                 return this;

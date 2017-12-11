@@ -985,12 +985,33 @@ public:
   }
 
   void hint(int imm) {
-    system(0b00, 0b011, 0b0010, imm, 0b000);
+    system(0b00, 0b011, 0b0010, 0b0000, imm);
   }
 
   void nop() {
     hint(0);
   }
+
+  void yield() {
+    hint(1);
+  }
+
+  void wfe() {
+    hint(2);
+  }
+
+  void wfi() {
+    hint(3);
+  }
+
+  void sev() {
+    hint(4);
+  }
+
+  void sevl() {
+    hint(5);
+  }
+
   // we only provide mrs and msr for the special purpose system
   // registers where op1 (instr[20:19]) == 11 and, (currently) only
   // use it for FPSR n.b msr has L (instr[21]) == 0 mrs has L == 1

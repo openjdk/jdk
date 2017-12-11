@@ -175,7 +175,7 @@ class SocketOutputStream extends FileOutputStream
     /**
      * Overrides finalize, the fd is closed by the Socket.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     protected void finalize() {}
 
     /**

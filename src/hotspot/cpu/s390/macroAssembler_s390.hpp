@@ -198,6 +198,9 @@ class MacroAssembler: public Assembler {
   // Test a bit in a register. Result is reflected in CC.
   void testbit(Register r, unsigned int bitPos);
 
+  void prefetch_read(Address a);
+  void prefetch_update(Address a);
+
   // Clear a register, i.e. load const zero into reg. Return len (in bytes) of
   // generated instruction(s).
   //   whole_reg: Clear 64 bits if true, 32 bits otherwise.
@@ -836,7 +839,7 @@ class MacroAssembler: public Assembler {
   void load_mirror(Register mirror, Register method);
 
   //--------------------------
-  //---  perations on arrays.
+  //---  Operations on arrays.
   //--------------------------
   unsigned int Clear_Array(Register cnt_arg, Register base_pointer_arg, Register src_addr, Register src_len);
   unsigned int Clear_Array_Const(long cnt, Register base);
@@ -849,19 +852,33 @@ class MacroAssembler: public Assembler {
   // Special String Intrinsics Implementation.
   //-------------------------------------------
   // Intrinsics for CompactStrings
-  // Compress char[] to byte[]. odd_reg contains cnt. tmp3 is only needed for precise behavior in failure case. Kills dst.
-  unsigned int string_compress(Register result, Register src, Register dst, Register odd_reg,
-                               Register even_reg, Register tmp, Register tmp2 = noreg);
+  //   Restores: src, dst
+  //   Uses:     cnt
+  //   Kills:    tmp, Z_R0, Z_R1.
+  //   Early clobber: result.
+  //   Boolean precise controls accuracy of result value.
+  unsigned int string_compress(Register result, Register src, Register dst, Register cnt,
+                               Register tmp,    bool precise);
+
+  // Inflate byte[] to char[].
+  unsigned int string_inflate_trot(Register src, Register dst, Register cnt, Register tmp);
+
+  // Inflate byte[] to char[].
+  //   Restores: src, dst
+  //   Uses:     cnt
+  //   Kills:    tmp, Z_R0, Z_R1.
+  unsigned int string_inflate(Register src, Register dst, Register cnt, Register tmp);
+
+  // Inflate byte[] to char[], length known at compile time.
+  //   Restores: src, dst
+  //   Kills:    tmp, Z_R0, Z_R1.
+  // Note:
+  //   len is signed int. Counts # characters, not bytes.
+  unsigned int string_inflate_const(Register src, Register dst, Register tmp, int len);
 
   // Kills src.
   unsigned int has_negatives(Register result, Register src, Register cnt,
                              Register odd_reg, Register even_reg, Register tmp);
-
-  // Inflate byte[] to char[].
-  unsigned int string_inflate_trot(Register src, Register dst, Register cnt, Register tmp);
-  // Odd_reg contains cnt. Kills src.
-  unsigned int string_inflate(Register src, Register dst, Register odd_reg,
-                              Register even_reg, Register tmp);
 
   unsigned int string_compare(Register str1, Register str2, Register cnt1, Register cnt2,
                               Register odd_reg, Register even_reg, Register result, int ae);

@@ -662,6 +662,16 @@ var getJibProfilesProfiles = function (input, common, data) {
         }
     });
 
+    // For open profiles, the non-debug jdk bundles, need an "open" prefix on the
+    // remote bundle names, forming the word "openjdk". See JDK-8188789.
+    common.main_profile_names.forEach(function (name) {
+        var openName = name + common.open_suffix;
+        profiles[openName].artifacts["jdk"].remote = replaceAll(
+            "\/jdk-", "/openjdk-",
+            replaceAll("\/\\1", "/open\\1",
+                       profiles[openName].artifacts["jdk"].remote));
+    });
+
     // Profiles used to run tests. Used in JPRT and Mach 5.
     var testOnlyProfiles = {
         "run-test-jprt": {
@@ -779,6 +789,10 @@ var getJibProfilesDependencies = function (input, common) {
         macosx_x64: "2.7.1-Xcode6.3-MacOSX10.9+1.0"
     }[input.target_platform];
 
+    var makeBinDir = (input.build_os == "windows"
+        ? input.get("gnumake", "install_path") + "/cygwin/bin"
+        : input.get("gnumake", "install_path") + "/bin");
+
     var dependencies = {
 
         boot_jdk: {
@@ -831,13 +845,13 @@ var getJibProfilesDependencies = function (input, common) {
                 ? "gnumake-" + input.build_osenv_platform
                 : "gnumake-" + input.build_platform),
 
-            configure_args: (input.build_os == "windows"
-                ? "MAKE=" + input.get("gnumake", "install_path") + "/cygwin/bin/make"
-                : "MAKE=" + input.get("gnumake", "install_path") + "/bin/make"),
+            configure_args: "MAKE=" + makeBinDir + "/make",
 
-            environment_path: (input.build_os == "windows"
-                ? input.get("gnumake", "install_path") + "/cygwin/bin"
-                : input.get("gnumake", "install_path") + "/bin")
+            environment: {
+                "MAKE": makeBinDir + "/make"
+            },
+
+            environment_path: makeBinDir
         },
 
         freetype: {

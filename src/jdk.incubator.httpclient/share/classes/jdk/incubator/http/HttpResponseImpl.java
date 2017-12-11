@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,10 @@ package jdk.incubator.http;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import javax.net.ssl.SSLParameters;
-import jdk.incubator.http.internal.common.Log;
 import jdk.incubator.http.internal.websocket.RawChannel;
 
 /**
@@ -41,13 +42,11 @@ class HttpResponseImpl<T> extends HttpResponse<T> implements RawChannel.Provider
     final int responseCode;
     final Exchange<T> exchange;
     final HttpRequest initialRequest;
-    final HttpRequestImpl finalRequest;
+    final Optional<HttpResponse<T>> previousResponse;
     final HttpHeaders headers;
-    //final HttpHeaders trailers;
     final SSLParameters sslParameters;
     final URI uri;
     final HttpClient.Version version;
-    //final AccessControlContext acc;
     RawChannel rawchan;
     final HttpConnection connection;
     final Stream<T> stream;
@@ -55,41 +54,43 @@ class HttpResponseImpl<T> extends HttpResponse<T> implements RawChannel.Provider
 
     public HttpResponseImpl(HttpRequest initialRequest,
                             Response response,
-                            T body, Exchange<T> exch) {
+                            HttpResponse<T> previousResponse,
+                            T body,
+                            Exchange<T> exch) {
         this.responseCode = response.statusCode();
         this.exchange = exch;
         this.initialRequest = initialRequest;
-        this.finalRequest = exchange.request();
+        this.previousResponse = Optional.ofNullable(previousResponse);
         this.headers = response.headers();
         //this.trailers = trailers;
-        this.sslParameters = exch.client().sslParameters().orElse(null);
-        this.uri = finalRequest.uri();
+        this.sslParameters = exch.client().sslParameters();
+        this.uri = response.request().uri();
         this.version = response.version();
         this.connection = exch.exchImpl.connection();
         this.stream = null;
         this.body = body;
     }
 
-    // A response to a PUSH_PROMISE
-    public HttpResponseImpl(Response response,
-                            HttpRequestImpl pushRequest,
-                            ImmutableHeaders headers,
-                            Stream<T> stream,
-                            SSLParameters sslParameters,
-                            T body) {
-        this.responseCode = response.statusCode();
-        this.exchange = null;
-        this.initialRequest = null; // ## fix this
-        this.finalRequest = pushRequest;
-        this.headers = headers;
-        //this.trailers = null;
-        this.sslParameters = sslParameters;
-        this.uri = finalRequest.uri(); // TODO: take from headers
-        this.version = HttpClient.Version.HTTP_2;
-        this.connection = stream.connection();
-        this.stream = stream;
-        this.body = body;
-    }
+//    // A response to a PUSH_PROMISE
+//    public HttpResponseImpl(Response response,
+//                            HttpRequestImpl pushRequest,
+//                            ImmutableHeaders headers,
+//                            Stream<T> stream,
+//                            SSLParameters sslParameters,
+//                            T body) {
+//        this.responseCode = response.statusCode();
+//        this.exchange = null;
+//        this.initialRequest = null; // ## fix this
+//        this.finalRequest = pushRequest;
+//        this.headers = headers;
+//        //this.trailers = null;
+//        this.sslParameters = sslParameters;
+//        this.uri = finalRequest.uri(); // TODO: take from headers
+//        this.version = HttpClient.Version.HTTP_2;
+//        this.connection = stream.connection();
+//        this.stream = stream;
+//        this.body = body;
+//    }
 
     private ExchangeImpl<?> exchangeImpl() {
         return exchange != null ? exchange.exchImpl : stream;
@@ -106,8 +107,8 @@ class HttpResponseImpl<T> extends HttpResponse<T> implements RawChannel.Provider
     }
 
     @Override
-    public HttpRequest finalRequest() {
-        return finalRequest;
+    public Optional<HttpResponse<T>> previousResponse() {
+        return previousResponse;
     }
 
     @Override
@@ -162,31 +163,24 @@ class HttpResponseImpl<T> extends HttpResponse<T> implements RawChannel.Provider
             }
             // Http1Exchange may have some remaining bytes in its
             // internal buffer.
-            final ByteBuffer remaining =((Http1Exchange<?>)exchImpl).getBuffer();
-            rawchan = new RawChannelImpl(exchange.client(), connection, remaining);
+            Supplier<ByteBuffer> initial = ((Http1Exchange<?>)exchImpl)::drainLeftOverBytes;
+            rawchan = new RawChannelImpl(exchange.client(), connection, initial);
         }
         return rawchan;
     }
 
     @Override
-    public CompletableFuture<HttpHeaders> trailers() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    static void logResponse(Response r) {
-        if (!Log.requests()) {
-            return;
-        }
+    public String toString() {
         StringBuilder sb = new StringBuilder();
-        String method = r.request().method();
-        URI uri = r.request().uri();
+        String method = request().method();
+        URI uri = request().uri();
         String uristring = uri == null ? "" : uri.toString();
         sb.append('(')
-                .append(method)
-                .append(" ")
-                .append(uristring)
-                .append(") ")
-                .append(r.statusCode());
-        Log.logResponse(sb.toString());
+          .append(method)
+          .append(" ")
+          .append(uristring)
+          .append(") ")
+          .append(statusCode());
+        return sb.toString();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,18 @@
  */
 package jdk.incubator.http;
 
+import java.lang.System.Logger.Level;
 import jdk.incubator.http.internal.frame.SettingsFrame;
 import jdk.incubator.http.internal.frame.WindowUpdateFrame;
+import jdk.incubator.http.internal.common.Utils;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 abstract class WindowUpdateSender {
 
+    final static boolean DEBUG = Utils.DEBUG;
+    final System.Logger debug =
+            Utils.getDebugLogger(this::dbgString, DEBUG);
 
     final int limit;
     final Http2Connection connection;
@@ -59,6 +64,7 @@ abstract class WindowUpdateSender {
     abstract int getStreamId();
 
     void update(int delta) {
+        debug.log(Level.DEBUG, "update: %d", delta);
         if (received.addAndGet(delta) > limit) {
             synchronized (this) {
                 int tosend = received.get();
@@ -71,8 +77,12 @@ abstract class WindowUpdateSender {
     }
 
     void sendWindowUpdate(int delta) {
+        debug.log(Level.DEBUG, "sending window update: %d", delta);
         connection.sendUnorderedFrame(new WindowUpdateFrame(getStreamId(), delta));
     }
 
+    String dbgString() {
+        return "WindowUpdateSender(stream: " + getStreamId() + ")";
+    }
 
 }

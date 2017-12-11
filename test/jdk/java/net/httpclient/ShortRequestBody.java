@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
  * questions.
  */
 
-import java.io.*;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpResponse;
-import jdk.incubator.http.HttpRequest;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
@@ -32,14 +32,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
-import static java.lang.System.out;
+import java.util.function.Supplier;
+import jdk.incubator.http.HttpClient;
+import jdk.incubator.http.HttpResponse;
+import jdk.incubator.http.HttpRequest;
+import jdk.incubator.http.HttpTimeoutException;
+
+import static java.lang.System.err;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -48,23 +54,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @test
  * @bug 8151441
  * @summary Request body of incorrect (larger or smaller) sizes than that
- *          reported by the body processor
+ *          reported by the body publisher
  * @run main/othervm ShortRequestBody
  */
 
 public class ShortRequestBody {
 
     static final Path testSrc = Paths.get(System.getProperty("test.src", "."));
-    static volatile HttpClient staticDefaultClient;
-
-    static HttpClient defaultClient() {
-        if (staticDefaultClient == null) {
-            synchronized (ShortRequestBody.class) {
-                staticDefaultClient = HttpClient.newHttpClient();
-            }
-        }
-        return staticDefaultClient;
-    }
 
     // Some body types ( sources ) for testing.
     static final String STRING_BODY = "Hello world";
@@ -79,14 +75,14 @@ public class ShortRequestBody {
                                                   fileSize(FILE_BODY) };
     static final int[] BODY_OFFSETS = new int[] { 0, +1, -1, +2, -2, +3, -3 };
 
-    // A delegating body processor. Subtypes will have a concrete body type.
+    // A delegating Body Publisher. Subtypes will have a concrete body type.
     static abstract class AbstractDelegateRequestBody
-            implements HttpRequest.BodyProcessor {
+            implements HttpRequest.BodyPublisher {
 
-        final HttpRequest.BodyProcessor delegate;
+        final HttpRequest.BodyPublisher delegate;
         final long contentLength;
 
-        AbstractDelegateRequestBody(HttpRequest.BodyProcessor delegate,
+        AbstractDelegateRequestBody(HttpRequest.BodyPublisher delegate,
                                     long contentLength) {
             this.delegate = delegate;
             this.contentLength = contentLength;
@@ -101,26 +97,26 @@ public class ShortRequestBody {
         public long contentLength() { return contentLength; /* may be wrong! */ }
     }
 
-    // Request body processors that may generate a different number of actual
+    // Request body Publishers that may generate a different number of actual
     // bytes to that of what is reported through their {@code contentLength}.
 
     static class StringRequestBody extends AbstractDelegateRequestBody {
         StringRequestBody(String body, int additionalLength) {
-            super(HttpRequest.BodyProcessor.fromString(body),
+            super(HttpRequest.BodyPublisher.fromString(body),
                   body.getBytes(UTF_8).length + additionalLength);
         }
     }
 
     static class ByteArrayRequestBody extends AbstractDelegateRequestBody {
         ByteArrayRequestBody(byte[] body, int additionalLength) {
-            super(HttpRequest.BodyProcessor.fromByteArray(body),
+            super(HttpRequest.BodyPublisher.fromByteArray(body),
                   body.length + additionalLength);
         }
     }
 
     static class FileRequestBody extends AbstractDelegateRequestBody {
         FileRequestBody(Path path, int additionalLength) throws IOException {
-            super(HttpRequest.BodyProcessor.fromFile(path),
+            super(HttpRequest.BodyPublisher.fromFile(path),
                   Files.size(path) + additionalLength);
         }
     }
@@ -128,53 +124,63 @@ public class ShortRequestBody {
     // ---
 
     public static void main(String[] args) throws Exception {
+        HttpClient sharedClient = HttpClient.newHttpClient();
+        List<Supplier<HttpClient>> clientSuppliers = new ArrayList<>();
+        clientSuppliers.add(() -> HttpClient.newHttpClient());
+        clientSuppliers.add(() -> sharedClient);
+
         try (Server server = new Server()) {
-            URI uri = new URI("http://127.0.0.1:" + server.getPort() + "/");
+            for (Supplier<HttpClient> cs : clientSuppliers) {
+                err.println("\n---- next supplier ----\n");
+                URI uri = new URI("http://127.0.0.1:" + server.getPort() + "/");
 
-            // sanity
-            success(uri, new StringRequestBody(STRING_BODY, 0));
-            success(uri, new ByteArrayRequestBody(BYTE_ARRAY_BODY, 0));
-            success(uri, new FileRequestBody(FILE_BODY, 0));
+                // sanity ( 6 requests to keep client and server offsets easy to workout )
+                success(cs, uri, new StringRequestBody(STRING_BODY, 0));
+                success(cs, uri, new ByteArrayRequestBody(BYTE_ARRAY_BODY, 0));
+                success(cs, uri, new FileRequestBody(FILE_BODY, 0));
+                success(cs, uri, new StringRequestBody(STRING_BODY, 0));
+                success(cs, uri, new ByteArrayRequestBody(BYTE_ARRAY_BODY, 0));
+                success(cs, uri, new FileRequestBody(FILE_BODY, 0));
 
-            for (int i=1; i< BODY_OFFSETS.length; i++) {
-                failureBlocking(uri, new StringRequestBody(STRING_BODY, BODY_OFFSETS[i]));
-                failureBlocking(uri, new ByteArrayRequestBody(BYTE_ARRAY_BODY, BODY_OFFSETS[i]));
-                failureBlocking(uri, new FileRequestBody(FILE_BODY, BODY_OFFSETS[i]));
+                for (int i = 1; i < BODY_OFFSETS.length; i++) {
+                    failureBlocking(cs, uri, new StringRequestBody(STRING_BODY, BODY_OFFSETS[i]));
+                    failureBlocking(cs, uri, new ByteArrayRequestBody(BYTE_ARRAY_BODY, BODY_OFFSETS[i]));
+                    failureBlocking(cs, uri, new FileRequestBody(FILE_BODY, BODY_OFFSETS[i]));
 
-                failureNonBlocking(uri, new StringRequestBody(STRING_BODY, BODY_OFFSETS[i]));
-                failureNonBlocking(uri, new ByteArrayRequestBody(BYTE_ARRAY_BODY, BODY_OFFSETS[i]));
-                failureNonBlocking(uri, new FileRequestBody(FILE_BODY, BODY_OFFSETS[i]));
-            }
-        } finally {
-            Executor def = defaultClient().executor();
-            if (def instanceof ExecutorService) {
-               ((ExecutorService)def).shutdownNow();
+                    failureNonBlocking(cs, uri, new StringRequestBody(STRING_BODY, BODY_OFFSETS[i]));
+                    failureNonBlocking(cs, uri, new ByteArrayRequestBody(BYTE_ARRAY_BODY, BODY_OFFSETS[i]));
+                    failureNonBlocking(cs, uri, new FileRequestBody(FILE_BODY, BODY_OFFSETS[i]));
+                }
             }
         }
     }
 
-    static void success(URI uri, HttpRequest.BodyProcessor processor)
+    static void success(Supplier<HttpClient> clientSupplier,
+                        URI uri,
+                        HttpRequest.BodyPublisher publisher)
         throws Exception
     {
         CompletableFuture<HttpResponse<Void>> cf;
         HttpRequest request = HttpRequest.newBuilder(uri)
-                                         .POST(processor)
+                                         .POST(publisher)
                                          .build();
-        cf = defaultClient().sendAsync(request, discard(null));
+        cf = clientSupplier.get().sendAsync(request, discard(null));
 
         HttpResponse<Void> resp = cf.get(30, TimeUnit.SECONDS);
-        out.println("Response code: " + resp.statusCode());
+        err.println("Response code: " + resp.statusCode());
         check(resp.statusCode() == 200, "Expected 200, got ", resp.statusCode());
     }
 
-    static void failureNonBlocking(URI uri, HttpRequest.BodyProcessor processor)
+    static void failureNonBlocking(Supplier<HttpClient> clientSupplier,
+                                   URI uri,
+                                   HttpRequest.BodyPublisher publisher)
         throws Exception
     {
         CompletableFuture<HttpResponse<Void>> cf;
         HttpRequest request = HttpRequest.newBuilder(uri)
-                                         .POST(processor)
+                                         .POST(publisher)
                                          .build();
-        cf = defaultClient().sendAsync(request, discard(null));
+        cf = clientSupplier.get().sendAsync(request, discard(null));
 
         try {
             HttpResponse<Void> r = cf.get(30, TimeUnit.SECONDS);
@@ -182,23 +188,34 @@ public class ShortRequestBody {
         } catch (TimeoutException x) {
             throw new RuntimeException("Unexpected timeout", x);
         } catch (ExecutionException expected) {
-            out.println("Caught expected: " + expected);
-            check(expected.getCause() instanceof IOException,
+            err.println("Caught expected: " + expected);
+            Throwable t = expected.getCause();
+            check(t instanceof IOException,
                   "Expected cause IOException, but got: ", expected.getCause());
+            String msg = t.getMessage();
+            check(msg.contains("Too many") || msg.contains("Too few"),
+                    "Expected Too many|Too few, got: ", t);
         }
     }
 
-    static void failureBlocking(URI uri, HttpRequest.BodyProcessor processor)
+    static void failureBlocking(Supplier<HttpClient> clientSupplier,
+                                URI uri,
+                                HttpRequest.BodyPublisher publisher)
         throws Exception
     {
         HttpRequest request = HttpRequest.newBuilder(uri)
-                                         .POST(processor)
+                                         .POST(publisher)
                                          .build();
         try {
-            HttpResponse<Void> r = defaultClient().send(request, discard(null));
+            HttpResponse<Void> r = clientSupplier.get().send(request, discard(null));
             throw new RuntimeException("Unexpected response: " + r.statusCode());
+        } catch (HttpTimeoutException x) {
+            throw new RuntimeException("Unexpected timeout", x);
         } catch (IOException expected) {
-            out.println("Caught expected: " + expected);
+            err.println("Caught expected: " + expected);
+            String msg = expected.getMessage();
+            check(msg.contains("Too many") || msg.contains("Too few"),
+                    "Expected Too many|Too few, got: ", expected);
         }
     }
 
@@ -225,20 +242,40 @@ public class ShortRequestBody {
 
             while (!closed) {
                 try (Socket s = ss.accept()) {
+                    err.println("Server: got connection");
                     InputStream is = s.getInputStream();
                     readRequestHeaders(is);
                     byte[] ba = new byte[1024];
 
                     int length = BODY_LENGTHS[count % 3];
                     length += BODY_OFFSETS[offset];
+                    err.println("Server: count=" + count + ", offset=" + offset);
+                    err.println("Server: expecting " +length+ " bytes");
+                    int read = is.readNBytes(ba, 0, length);
+                    err.println("Server: actually read " + read + " bytes");
 
-                    is.readNBytes(ba, 0, length);
-
-                    OutputStream os = s.getOutputStream();
-                    os.write(RESPONSE.getBytes(US_ASCII));
+                    // Update the counts before replying, to prevent the
+                    // client-side racing reset with this thread.
                     count++;
                     if (count % 6 == 0) // 6 is the number of failure requests per offset
                         offset++;
+                    if (count % 42 == 0) {
+                        count = 0;  // reset, for second iteration
+                        offset = 0;
+                    }
+
+                    if (read < length) {
+                        // no need to reply, client has already closed
+                        // ensure closed
+                        if (is.read() != -1)
+                            new AssertionError("Unexpected read");
+                    } else {
+                        OutputStream os = s.getOutputStream();
+                        err.println("Server: writing "
+                                + RESPONSE.getBytes(US_ASCII).length + " bytes");
+                        os.write(RESPONSE.getBytes(US_ASCII));
+                    }
+
                 } catch (IOException e) {
                     if (!closed)
                         System.out.println("Unexpected" + e);

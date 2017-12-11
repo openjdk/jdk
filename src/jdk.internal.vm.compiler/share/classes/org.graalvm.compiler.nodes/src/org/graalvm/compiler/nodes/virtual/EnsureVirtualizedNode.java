@@ -35,6 +35,7 @@ import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
@@ -76,7 +77,7 @@ public final class EnsureVirtualizedNode extends FixedWithNextNode implements Vi
 
     @Override
     public void lower(LoweringTool tool) {
-        ensureVirtualFailure(this, object.stamp());
+        ensureVirtualFailure(this, object.stamp(NodeView.DEFAULT));
     }
 
     public static void ensureVirtualFailure(Node location, Stamp stamp) {

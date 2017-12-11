@@ -160,7 +160,7 @@ public class ProfileCompiledMethodsPhase extends Phase {
             return 10;
         } else if (node instanceof Access) {
             return 2;
-        } else if (node instanceof LogicNode || node instanceof ConvertNode || node instanceof BinaryNode || node instanceof NotNode) {
+        } else if (node instanceof LogicNode || node instanceof ConvertNode || node instanceof NotNode) {
             return 1;
         } else if (node instanceof IntegerDivRemNode || node instanceof FloatDivNode || node instanceof RemNode) {
             return 10;
@@ -168,7 +168,7 @@ public class ProfileCompiledMethodsPhase extends Phase {
             return 3;
         } else if (node instanceof Invoke) {
             return 5;
-        } else if (node instanceof IfNode || node instanceof SafepointNode) {
+        } else if (node instanceof IfNode || node instanceof SafepointNode || node instanceof BinaryNode) {
             return 1;
         } else if (node instanceof SwitchNode) {
             return node.successors().count();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,18 @@ import jdk.vm.ci.code.Register;
 abstract class AArch64HotSpotEpilogueOp extends AArch64BlockEndOp {
 
     private final GraalHotSpotVMConfig config;
+    private final Register thread;
+
+    protected AArch64HotSpotEpilogueOp(LIRInstructionClass<? extends AArch64HotSpotEpilogueOp> c, GraalHotSpotVMConfig config, Register thread) {
+        super(c);
+        this.config = config;
+        this.thread = thread;
+    }
 
     protected AArch64HotSpotEpilogueOp(LIRInstructionClass<? extends AArch64HotSpotEpilogueOp> c, GraalHotSpotVMConfig config) {
         super(c);
         this.config = config;
+        this.thread = null; // no safepoint
     }
 
     protected void leaveFrame(CompilationResultBuilder crb, AArch64MacroAssembler masm, boolean emitSafepoint) {
@@ -49,7 +57,7 @@ abstract class AArch64HotSpotEpilogueOp extends AArch64BlockEndOp {
         if (emitSafepoint) {
             try (ScratchRegister sc = masm.getScratchRegister()) {
                 Register scratch = sc.getRegister();
-                AArch64HotSpotSafepointOp.emitCode(crb, masm, config, true, scratch, null);
+                AArch64HotSpotSafepointOp.emitCode(crb, masm, config, true, thread, scratch, null);
             }
         }
     }

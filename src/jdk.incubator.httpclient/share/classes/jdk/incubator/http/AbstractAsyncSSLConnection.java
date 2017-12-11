@@ -28,9 +28,19 @@ package jdk.incubator.http;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import jdk.incubator.http.internal.common.ExceptionallyCloseable;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLParameters;
+
+import jdk.incubator.http.internal.common.SSLTube;
+import jdk.incubator.http.internal.common.Log;
+import jdk.incubator.http.internal.common.Utils;
 
 
 /**
@@ -52,34 +62,127 @@ import jdk.incubator.http.internal.common.ExceptionallyCloseable;
  *
  */
 abstract class AbstractAsyncSSLConnection extends HttpConnection
-               implements AsyncConnection, ExceptionallyCloseable {
+{
+    protected final SSLEngine engine;
+    protected final String serverName;
+    protected final SSLParameters sslParameters;
 
-
-    AbstractAsyncSSLConnection(InetSocketAddress addr, HttpClientImpl client) {
+    AbstractAsyncSSLConnection(InetSocketAddress addr,
+                               HttpClientImpl client,
+                               String serverName,
+                               String[] alpn) {
         super(addr, client);
+        this.serverName = serverName;
+        SSLContext context = client.theSSLContext();
+        sslParameters = createSSLParameters(client, serverName, alpn);
+        Log.logParams(sslParameters);
+        engine = createEngine(context, sslParameters);
     }
 
-    abstract SSLEngine getEngine();
-    abstract AsyncSSLDelegate sslDelegate();
     abstract HttpConnection plainConnection();
-    abstract HttpConnection downgrade();
+    abstract SSLTube getConnectionFlow();
+
+    final CompletableFuture<String> getALPN() {
+        assert connected();
+        return getConnectionFlow().getALPN();
+    }
+
+    final SSLEngine getEngine() { return engine; }
+
+    private static SSLParameters createSSLParameters(HttpClientImpl client,
+                                                     String serverName,
+                                                     String[] alpn) {
+        SSLParameters sslp = client.sslParameters();
+        SSLParameters sslParameters = Utils.copySSLParameters(sslp);
+        if (alpn != null) {
+            Log.logSSL("AbstractAsyncSSLConnection: Setting application protocols: {0}",
+                       Arrays.toString(alpn));
+            sslParameters.setApplicationProtocols(alpn);
+        } else {
+            Log.logSSL("AbstractAsyncSSLConnection: no applications set!");
+        }
+        if (serverName != null) {
+            sslParameters.setServerNames(List.of(new SNIHostName(serverName)));
+        }
+        return sslParameters;
+    }
+
+    private static SSLEngine createEngine(SSLContext context,
+                                          SSLParameters sslParameters) {
+        SSLEngine engine = context.createSSLEngine();
+        engine.setUseClientMode(true);
+        engine.setSSLParameters(sslParameters);
+        return engine;
+    }
 
     @Override
     final boolean isSecure() {
         return true;
     }
 
-    // Blocking read functions not used here
-    @Override
-    protected final ByteBuffer readImpl() throws IOException {
-        throw new UnsupportedOperationException("Not supported.");
+    // Support for WebSocket/RawChannelImpl which unfortunately
+    // still depends on synchronous read/writes.
+    // It should be removed when RawChannelImpl moves to using asynchronous APIs.
+    static final class SSLConnectionChannel extends DetachedConnectionChannel {
+        final DetachedConnectionChannel delegate;
+        final SSLDelegate sslDelegate;
+        SSLConnectionChannel(DetachedConnectionChannel delegate, SSLDelegate sslDelegate) {
+            this.delegate = delegate;
+            this.sslDelegate = sslDelegate;
+        }
+
+        SocketChannel channel() {
+            return delegate.channel();
+        }
+
+        @Override
+        ByteBuffer read() throws IOException {
+            SSLDelegate.WrapperResult r = sslDelegate.recvData(ByteBuffer.allocate(8192));
+            // TODO: check for closure
+            int n = r.result.bytesProduced();
+            if (n > 0) {
+                return r.buf;
+            } else if (n == 0) {
+                return Utils.EMPTY_BYTEBUFFER;
+            } else {
+                return null;
+            }
+        }
+        @Override
+        long write(ByteBuffer[] buffers, int start, int number) throws IOException {
+            long l = SSLDelegate.countBytes(buffers, start, number);
+            SSLDelegate.WrapperResult r = sslDelegate.sendData(buffers, start, number);
+            if (r.result.getStatus() == SSLEngineResult.Status.CLOSED) {
+                if (l > 0) {
+                    throw new IOException("SSLHttpConnection closed");
+                }
+            }
+            return l;
+        }
+        @Override
+        public void shutdownInput() throws IOException {
+            delegate.shutdownInput();
+        }
+        @Override
+        public void shutdownOutput() throws IOException {
+            delegate.shutdownOutput();
+        }
+        @Override
+        public void close() {
+            delegate.close();
+        }
     }
 
-    // whenReceivedResponse only used in HTTP/1.1 (Http1Exchange)
-    // AbstractAsyncSSLConnection is only used with HTTP/2
+    // Support for WebSocket/RawChannelImpl which unfortunately
+    // still depends on synchronous read/writes.
+    // It should be removed when RawChannelImpl moves to using asynchronous APIs.
     @Override
-    final CompletableFuture<Void> whenReceivingResponse() {
-        throw new UnsupportedOperationException("Not supported.");
+    DetachedConnectionChannel detachChannel() {
+        assert client() != null;
+        DetachedConnectionChannel detachedChannel = plainConnection().detachChannel();
+        SSLDelegate sslDelegate = new SSLDelegate(engine,
+                                                  detachedChannel.channel());
+        return new SSLConnectionChannel(detachedChannel, sslDelegate);
     }
 
 }

@@ -3371,7 +3371,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   __ testbitdi(CCR0, R0, Rflags, ConstantPoolCacheEntry::is_vfinal_shift);
   __ bfalse(CCR0, LnotFinal);
 
-  if (RewriteBytecodes && !UseSharedSpaces) {
+  if (RewriteBytecodes && !UseSharedSpaces && !DumpSharedSpaces) {
     patch_bytecode(Bytecodes::_fast_invokevfinal, Rnew_bc, R12_scratch2);
   }
   invokevfinal_helper(Rvtableindex_or_method, Rflags, R11_scratch1, R12_scratch2);

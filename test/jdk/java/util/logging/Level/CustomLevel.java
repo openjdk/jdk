@@ -22,6 +22,8 @@
  */
 
 import java.io.*;
+import java.lang.management.ManagementFactory;
+import java.lang.management.PlatformLoggingMXBean;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -35,9 +37,11 @@ import java.util.logging.*;
 
 /*
  * @test
- * @bug 8026027 6543126
+ * @bug 8026027 6543126 8187073
+ * @modules java.logging
+  *         java.management
  * @summary Test Level.parse to look up custom levels by name and its
- *          localized name
+ *          localized name, as well as severity.
  *
  * @run main/othervm CustomLevel
  */
@@ -73,6 +77,8 @@ public class CustomLevel extends Level {
     public static void main(String[] args) throws Exception {
         setupCustomLevels();
         setUpCustomLevelsOtherLoader();
+        PlatformLoggingMXBean mxbean = ManagementFactory.getPlatformMXBean(PlatformLoggingMXBean.class);
+        Logger logger = Logger.getLogger("foo.bar");
 
         // Level.parse will return the custom Level instance
         for (Level level : levels) {
@@ -96,7 +102,26 @@ public class CustomLevel extends Level {
                     + l.getClass() + " for " + localizedName
                     + " in " + rb.getBaseBundleName());
             }
+            l = Level.parse(String.valueOf(level.intValue()));
+            System.out.println("Level.parse(" + level.intValue() + ") returns " + l);
+            if (l != level) {
+                if (l == null || l.intValue() != level.intValue()) {
+                    throw new RuntimeException("Unexpected level " + l
+                            + (l == null ? "" : (" " + l.getClass()))
+                            + " for " + level.intValue());
+                }
+            }
+            mxbean.setLoggerLevel(logger.getName(), String.valueOf(level.intValue()));
+            Level l2 = logger.getLevel();
+            if (l2 != level) {
+                if (l2 == null || l2.intValue() != level.intValue()) {
+                    throw new RuntimeException("Unexpected level " + l2
+                            + (l2 == null ? "" : (" " + l2.getClass()))
+                            + " for " + level.intValue());
+                }
+            }
         }
+
 
         final long otherLevelCount = levels.stream()
             .filter(CustomLevel::isCustomLoader)

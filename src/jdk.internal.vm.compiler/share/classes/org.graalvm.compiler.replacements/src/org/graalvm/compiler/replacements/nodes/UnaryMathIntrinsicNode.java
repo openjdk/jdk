@@ -36,6 +36,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
@@ -106,8 +107,8 @@ public final class UnaryMathIntrinsicNode extends UnaryNode implements Arithmeti
     }
 
     protected UnaryMathIntrinsicNode(ValueNode value, UnaryOperation op) {
-        super(TYPE, computeStamp(value.stamp(), op), value);
-        assert value.stamp() instanceof FloatStamp && PrimitiveStamp.getBits(value.stamp()) == 64;
+        super(TYPE, computeStamp(value.stamp(NodeView.DEFAULT), op), value);
+        assert value.stamp(NodeView.DEFAULT) instanceof FloatStamp && PrimitiveStamp.getBits(value.stamp(NodeView.DEFAULT)) == 64;
         this.operation = op;
     }
 

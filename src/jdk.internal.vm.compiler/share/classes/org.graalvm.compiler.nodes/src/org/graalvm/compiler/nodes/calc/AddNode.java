@@ -32,6 +32,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -51,21 +52,21 @@ public class AddNode extends BinaryArithmeticNode<Add> implements NarrowableArit
         super(c, ArithmeticOpTable::getAdd, x, y);
     }
 
-    public static ValueNode create(ValueNode x, ValueNode y) {
-        BinaryOp<Add> op = ArithmeticOpTable.forStamp(x.stamp()).getAdd();
-        Stamp stamp = op.foldStamp(x.stamp(), y.stamp());
-        ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp);
+    public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
+        BinaryOp<Add> op = ArithmeticOpTable.forStamp(x.stamp(view)).getAdd();
+        Stamp stamp = op.foldStamp(x.stamp(view), y.stamp(view));
+        ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp, view);
         if (tryConstantFold != null) {
             return tryConstantFold;
         }
         if (x.isConstant() && !y.isConstant()) {
-            return canonical(null, op, y, x);
+            return canonical(null, op, y, x, view);
         } else {
-            return canonical(null, op, x, y);
+            return canonical(null, op, x, y, view);
         }
     }
 
-    private static ValueNode canonical(AddNode addNode, BinaryOp<Add> op, ValueNode forX, ValueNode forY) {
+    private static ValueNode canonical(AddNode addNode, BinaryOp<Add> op, ValueNode forX, ValueNode forY, NodeView view) {
         AddNode self = addNode;
         boolean associative = op.isAssociative();
         if (associative) {
@@ -91,16 +92,16 @@ public class AddNode extends BinaryArithmeticNode<Add> implements NarrowableArit
             }
             if (associative && self != null) {
                 // canonicalize expressions like "(a + 1) + 2"
-                ValueNode reassociated = reassociate(self, ValueNode.isConstantPredicate(), forX, forY);
+                ValueNode reassociated = reassociate(self, ValueNode.isConstantPredicate(), forX, forY, view);
                 if (reassociated != self) {
                     return reassociated;
                 }
             }
         }
         if (forX instanceof NegateNode) {
-            return BinaryArithmeticNode.sub(forY, ((NegateNode) forX).getValue());
+            return BinaryArithmeticNode.sub(forY, ((NegateNode) forX).getValue(), view);
         } else if (forY instanceof NegateNode) {
-            return BinaryArithmeticNode.sub(forX, ((NegateNode) forY).getValue());
+            return BinaryArithmeticNode.sub(forX, ((NegateNode) forY).getValue(), view);
         }
         if (self == null) {
             self = (AddNode) new AddNode(forX, forY).maybeCommuteInputs();
@@ -125,7 +126,8 @@ public class AddNode extends BinaryArithmeticNode<Add> implements NarrowableArit
             return new AddNode(forY, forX);
         }
         BinaryOp<Add> op = getOp(forX, forY);
-        return canonical(this, op, forX, forY);
+        NodeView view = NodeView.from(tool);
+        return canonical(this, op, forX, forY, view);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,15 @@ final class AMD64HotSpotReturnOp extends AMD64HotSpotEpilogueBlockEndOp implemen
     public static final LIRInstructionClass<AMD64HotSpotReturnOp> TYPE = LIRInstructionClass.create(AMD64HotSpotReturnOp.class);
     @Use({REG, ILLEGAL}) protected Value value;
     private final boolean isStub;
+    private final Register thread;
     private final Register scratchForSafepointOnReturn;
     private final GraalHotSpotVMConfig config;
 
-    AMD64HotSpotReturnOp(Value value, boolean isStub, Register scratchForSafepointOnReturn, GraalHotSpotVMConfig config) {
+    AMD64HotSpotReturnOp(Value value, boolean isStub, Register thread, Register scratchForSafepointOnReturn, GraalHotSpotVMConfig config) {
         super(TYPE);
         this.value = value;
         this.isStub = isStub;
+        this.thread = thread;
         this.scratchForSafepointOnReturn = scratchForSafepointOnReturn;
         this.config = config;
     }
@@ -61,7 +63,7 @@ final class AMD64HotSpotReturnOp extends AMD64HotSpotEpilogueBlockEndOp implemen
         leaveFrameAndRestoreRbp(crb, masm);
         if (!isStub) {
             // Every non-stub compile method must have a poll before the return.
-            AMD64HotSpotSafepointOp.emitCode(crb, masm, config, true, null, scratchForSafepointOnReturn);
+            AMD64HotSpotSafepointOp.emitCode(crb, masm, config, true, null, thread, scratchForSafepointOnReturn);
 
             /*
              * We potentially return to the interpreter, and that's an AVX-SSE transition. The only

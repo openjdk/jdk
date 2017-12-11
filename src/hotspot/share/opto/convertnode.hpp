@@ -51,6 +51,7 @@ class ConvD2FNode : public Node {
   virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint  ideal_reg() const { return Op_RegF; }
 };
 

@@ -23,6 +23,7 @@
 package org.graalvm.compiler.loop;
 
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.IntegerConvertNode;
 
@@ -49,12 +50,12 @@ public class DerivedConvertedInductionVariable extends DerivedInductionVariable 
 
     @Override
     public ValueNode initNode() {
-        return IntegerConvertNode.convert(base.initNode(), stamp, graph());
+        return IntegerConvertNode.convert(base.initNode(), stamp, graph(), NodeView.DEFAULT);
     }
 
     @Override
     public ValueNode strideNode() {
-        return IntegerConvertNode.convert(base.strideNode(), stamp, graph());
+        return IntegerConvertNode.convert(base.strideNode(), stamp, graph(), NodeView.DEFAULT);
     }
 
     @Override
@@ -84,7 +85,7 @@ public class DerivedConvertedInductionVariable extends DerivedInductionVariable 
 
     @Override
     public ValueNode exitValueNode() {
-        return IntegerConvertNode.convert(base.exitValueNode(), stamp, graph());
+        return IntegerConvertNode.convert(base.exitValueNode(), stamp, graph(), NodeView.DEFAULT);
     }
 
     @Override

@@ -124,7 +124,7 @@ class nmethod : public CompiledMethod {
   bool _unload_reported;
 
   // Protected by Patching_lock
-  volatile char _state;             // {not_installed, in_use, not_entrant, zombie, unloaded}
+  volatile signed char _state;               // {not_installed, in_use, not_entrant, zombie, unloaded}
 
 #ifdef ASSERT
   bool _oops_are_stale;  // indicates that it's no longer safe to access oops section

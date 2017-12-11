@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
+import java.util.concurrent.CompletableFuture;
+
 import jdk.incubator.http.HttpClient;
 import jdk.incubator.http.WebSocket;
 
@@ -42,9 +44,8 @@ public class WebSocketExample {
 
     public void newBuilderExample0() {
         HttpClient client = HttpClient.newHttpClient();
-        WebSocket.Builder builder = client.newWebSocketBuilder(
-                URI.create("ws://websocket.example.com"),
-                listener);
+        CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
+                .buildAsync(URI.create("ws://websocket.example.com"), listener);
     }
 
     public void newBuilderExample1() {
@@ -52,8 +53,7 @@ public class WebSocketExample {
         HttpClient client = HttpClient.newBuilder()
                 .proxy(ProxySelector.of(addr))
                 .build();
-        WebSocket.Builder builder = client.newWebSocketBuilder(
-                URI.create("ws://websocket.example.com"),
-                listener);
+        CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
+                .buildAsync(URI.create("ws://websocket.example.com"), listener);
     }
 }

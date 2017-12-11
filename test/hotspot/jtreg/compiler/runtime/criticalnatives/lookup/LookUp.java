@@ -24,7 +24,8 @@
 
 /* @test
  * @bug 8167408
- * @run main/othervm/native -Xcomp compiler.runtime.criticalnatives.lookup.LookUp
+ * @requires os.arch != "aarch64"
+ * @run main/othervm/native -Xcomp -XX:+CriticalJNINatives compiler.runtime.criticalnatives.lookup.LookUp
  */
 package compiler.runtime.criticalnatives.lookup;
 public class LookUp {

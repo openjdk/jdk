@@ -20,13 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
+
+/**
  * @test
  * @bug 8043315
  * @summary  Verifies if setting Nimbus.Overrides property affects
  *           keymap installation
+ * @key headful
  * @run main TestNimbusOverride
  */
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;

@@ -30,6 +30,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.aarch64.AArch64AddressValue;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -88,7 +89,7 @@ public class AArch64AddressNode extends AddressNode implements LIRLowerable {
             }
         }
 
-        LIRKind kind = LIRKind.combineDerived(tool.getLIRKind(stamp()), baseReference, indexReference);
+        LIRKind kind = LIRKind.combineDerived(tool.getLIRKind(stamp(NodeView.DEFAULT)), baseReference, indexReference);
         gen.setResult(this, new AArch64AddressValue(kind, baseValue, indexValue, (int) displacement, scaleFactor, addressingMode));
     }
 

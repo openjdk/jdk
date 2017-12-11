@@ -32,6 +32,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -82,7 +83,7 @@ public final class ReadRegisterNode extends FixedWithNextNode implements LIRLowe
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-        LIRKind kind = generator.getLIRGeneratorTool().getLIRKind(stamp());
+        LIRKind kind = generator.getLIRGeneratorTool().getLIRKind(stamp(NodeView.DEFAULT));
         Value result = register.asValue(kind);
         if (incoming) {
             generator.getLIRGeneratorTool().emitIncomingValues(new Value[]{result});

@@ -54,6 +54,7 @@ public abstract class FixedAccessNode extends DeoptimizingFixedWithNextNode impl
         return address;
     }
 
+    @Override
     public void setAddress(AddressNode address) {
         updateUsages(this.address, address);
         this.address = address;

@@ -27,6 +27,7 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -39,7 +40,7 @@ public final class OpaqueNode extends FloatingNode implements LIRLowerable {
     @Input protected ValueNode value;
 
     public OpaqueNode(ValueNode value) {
-        super(TYPE, value.stamp().unrestricted());
+        super(TYPE, value.stamp(NodeView.DEFAULT).unrestricted());
         this.value = value;
     }
 

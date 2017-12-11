@@ -27,8 +27,6 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import jdk.internal.misc.SharedSecrets;
-import jdk.internal.misc.JavaLangAccess;
 
 /**
  * <P>A thin wrapper around {@code java.util.Date} that allows
@@ -73,8 +71,6 @@ import jdk.internal.misc.JavaLangAccess;
  * @since 1.1
  */
 public class Timestamp extends java.util.Date {
-
-    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Constructs a {@code Timestamp} object initialized
@@ -313,7 +309,7 @@ public class Timestamp extends java.util.Date {
         buf[yearSize + 15] = '.';
         Date.formatDecimalInt(tmpNanos, buf, yearSize + 16, 9 - trailingZeros);
 
-        return jla.newStringUnsafe(buf);
+        return new String(buf);
     }
 
     /**

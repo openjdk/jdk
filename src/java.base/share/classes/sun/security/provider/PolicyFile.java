@@ -512,7 +512,8 @@ public class PolicyFile extends java.security.Policy {
                         }
                     } catch (Exception e) {
                         if (debug != null) {
-                            debug.println("error reading policy "+e);
+                            debug.println(
+                                "Debug info only. Error reading policy " +e);
                             e.printStackTrace();
                         }
                         // ignore that policy
@@ -559,6 +560,7 @@ public class PolicyFile extends java.security.Policy {
             } catch (Exception e) {
                 // ignore, treat it like we have no keystore
                 if (debug != null) {
+                    debug.println("Debug info only. Ignoring exception.");
                     e.printStackTrace();
                 }
             }

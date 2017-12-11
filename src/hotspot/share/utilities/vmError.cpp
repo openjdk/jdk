@@ -36,6 +36,7 @@
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "runtime/vm_version.hpp"
@@ -1655,7 +1656,12 @@ void VMError::controlled_crash(int how) {
   char * const dataPtr = NULL;  // bad data pointer
   const void (*funcPtr)(void) = (const void(*)()) 0xF;  // bad function pointer
 
-  // Keep this in sync with test/runtime/ErrorHandling/ErrorHandler.java
+  // Keep this in sync with test/hotspot/jtreg/runtime/ErrorHandling/ErrorHandler.java
+  // which tests cases 1 thru 13.
+  // Case 14 is tested by test/hotspot/jtreg/runtime/ErrorHandling/SafeFetchInErrorHandlingTest.java.
+  // Case 15 is tested by test/hotspot/jtreg/runtime/ErrorHandling/SecondaryErrorTest.java.
+  // Case 16 is tested by test/hotspot/jtreg/runtime/ErrorHandling/ThreadsListHandleInErrorHandlingTest.java.
+  // Case 17 is tested by test/hotspot/jtreg/runtime/ErrorHandling/NestedThreadsListHandleInErrorHandlingTest.java.
   switch (how) {
     case  1: vmassert(str == NULL, "expected null");
     case  2: vmassert(num == 1023 && *str == 'X',
@@ -1683,6 +1689,17 @@ void VMError::controlled_crash(int how) {
     case 13: (*funcPtr)(); break;
     case 14: crash_with_segfault(); break;
     case 15: crash_with_sigfpe(); break;
+    case 16: {
+      ThreadsListHandle tlh;
+      fatal("Force crash with an active ThreadsListHandle.");
+    }
+    case 17: {
+      ThreadsListHandle tlh;
+      {
+        ThreadsListHandle tlh2;
+        fatal("Force crash with a nested ThreadsListHandle.");
+      }
+    }
 
     default: tty->print_cr("ERROR: %d: unexpected test_num value.", how);
   }

@@ -62,8 +62,12 @@ ifeq ($(findstring CYGWIN,$(UNAME_S)), CYGWIN)
   endif
 endif
 
+ifndef CONCURRENCY_FACTOR
+  CONCURRENCY_FACTOR = 1
+endif
+
 # Concurrency based on min(cores / 2, 12)
-CONCURRENCY := $(shell expr $(NUM_CORES) / 2)
+CONCURRENCY := $(shell awk 'BEGIN { printf "%.0f", $(NUM_CORES) / 2 * $(CONCURRENCY_FACTOR) }')
 ifeq ($(CONCURRENCY), 0)
   CONCURRENCY := 1
 else ifeq ($(shell expr $(CONCURRENCY) \> 12), 1)

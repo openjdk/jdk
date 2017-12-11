@@ -16,3 +16,10 @@ More information about the LogCompilation output can be found at
 https://wiki.openjdk.java.net/display/HotSpot/LogCompilation+overview
 https://wiki.openjdk.java.net/display/HotSpot/PrintCompilation
 https://wiki.openjdk.java.net/display/HotSpot/LogCompilation+tool
+
+The project layout is now for Maven. To build the project with Maven do:
+
+  mvn clean install
+
+The build also copies the resulting target jar to ./logc.jar for easy 
+interop with the Makefile build.
