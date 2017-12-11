@@ -56,6 +56,7 @@ import sun.font.CreatedFontTracker;
 import sun.font.Font2D;
 import sun.font.Font2DHandle;
 import sun.font.FontAccess;
+import sun.font.FontDesignMetrics;
 import sun.font.FontManager;
 import sun.font.FontManagerFactory;
 import sun.font.FontUtilities;
@@ -2603,9 +2604,8 @@ public class Font implements java.io.Serializable
         }
 
         if (simple) {
-            GlyphVector gv = new StandardGlyphVector(this, chars, beginIndex,
-                                                     limit - beginIndex, frc);
-            return gv.getLogicalBounds();
+            FontDesignMetrics metrics = FontDesignMetrics.getMetrics(this, frc);
+            return metrics.getSimpleBounds(chars, beginIndex, limit-beginIndex);
         } else {
             // need char array constructor on textlayout
             String str = new String(chars, beginIndex, limit - beginIndex);
