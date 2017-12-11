@@ -33,6 +33,7 @@ import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Rectangle2D;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 
@@ -517,6 +518,28 @@ public final class FontDesignMetrics extends FontMetrics {
 
         return (int) (0.5 + width);
     }
+
+    /**
+     * This method is called from java.awt.Font only after verifying
+     * the arguments and that the text is simple and there are no
+     * layout attributes, font transform etc.
+     */
+    public Rectangle2D getSimpleBounds(char data[], int off, int len) {
+
+        float width = 0;
+        int limit = off + len;
+        for (int i=off; i < limit; i++) {
+            char ch = data[i];
+            if (ch < 0x100) {
+                width += getLatinCharWidth(ch);
+            } else {
+                width += handleCharWidth(ch);
+            }
+        }
+
+        float height = ascent + descent + leading;
+        return new Rectangle2D.Float(0f, -ascent, width, height);
+     }
 
     /**
      * Gets the advance widths of the first 256 characters in the

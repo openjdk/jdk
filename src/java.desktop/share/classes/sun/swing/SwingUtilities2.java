@@ -890,8 +890,17 @@ public class SwingUtilities2 {
                                           FontMetrics fm,
                                           boolean useFPAPI)
     {
-        return len == 0 ? 0 : getFontStringWidth(new String(data, offset, len),
-                                                 fm, useFPAPI);
+        if (len == 0) {
+           return 0;
+        }
+        if (useFPAPI) {
+            Rectangle2D bounds = fm.getFont().
+                                     getStringBounds(data, offset, offset + len,
+                                                     fm.getFontRenderContext());
+            return (float) bounds.getWidth();
+        } else {
+            return fm.charsWidth(data, offset, len);
+        }
     }
 
     public static float getFontStringWidth(String data, FontMetrics fm,
