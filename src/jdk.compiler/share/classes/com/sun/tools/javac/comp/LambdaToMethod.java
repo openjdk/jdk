@@ -510,6 +510,28 @@ public class LambdaToMethod extends TreeTranslator {
         }
     }
 
+    /**
+     * Translate instance creation expressions with implicit enclosing instances
+     * @param tree
+     */
+    @Override
+    public void visitNewClass(JCNewClass tree) {
+        if (context == null || !analyzer.lambdaNewClassFilter(context, tree)) {
+            super.visitNewClass(tree);
+        } else {
+            int prevPos = make.pos;
+            try {
+                make.at(tree);
+
+                LambdaTranslationContext lambdaContext = (LambdaTranslationContext) context;
+                tree = lambdaContext.translate(tree);
+                super.visitNewClass(tree);
+            } finally {
+                make.at(prevPos);
+            }
+        }
+    }
+
     @Override
     public void visitVarDef(JCVariableDecl tree) {
         LambdaTranslationContext lambdaContext = (LambdaTranslationContext)context;
@@ -984,6 +1006,7 @@ public class LambdaToMethod extends TreeTranslator {
                 //create the instance creation expression
                 //note that method reference syntax does not allow an explicit
                 //enclosing class (so the enclosing class is null)
+                // but this may need to be patched up later with the proxy for the outer this
                 JCNewClass newClass = make.NewClass(null,
                         List.nil(),
                         make.Type(tree.getQualifierExpression().type),
@@ -2127,6 +2150,21 @@ public class LambdaToMethod extends TreeTranslator {
                     return t;
                 }
                 return null;
+            }
+
+            /* Translate away naked new instance creation expressions with implicit enclosing instances,
+               anchoring them to synthetic parameters that stand proxy for the qualified outer this handle.
+            */
+            public JCNewClass translate(JCNewClass newClass) {
+                Assert.check(newClass.clazz.type.tsym.hasOuterInstance() && newClass.encl == null);
+                Map<Symbol, Symbol> m = translatedSymbols.get(LambdaSymbolKind.CAPTURED_OUTER_THIS);
+                final Type enclosingType = newClass.clazz.type.getEnclosingType();
+                if (m.containsKey(enclosingType.tsym)) {
+                      Symbol tSym = m.get(enclosingType.tsym);
+                      JCExpression encl = make.Ident(tSym).setType(enclosingType);
+                      newClass.encl = encl;
+                }
+                return newClass;
             }
 
             /**
