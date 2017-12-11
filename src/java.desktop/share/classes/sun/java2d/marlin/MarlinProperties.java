@@ -145,6 +145,18 @@ public final class MarlinProperties {
         return getBoolean("sun.java2d.renderer.useSimplifier", "false");
     }
 
+    public static boolean isDoClip() {
+        return getBoolean("sun.java2d.renderer.clip", "true");
+    }
+
+    public static boolean isDoClipRuntimeFlag() {
+        return getBoolean("sun.java2d.renderer.clip.runtime.enable", "false");
+    }
+
+    public static boolean isDoClipAtRuntime() {
+        return getBoolean("sun.java2d.renderer.clip.runtime", "true");
+    }
+
     // debugging parameters
 
     public static boolean isDoStats() {

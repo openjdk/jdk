@@ -139,11 +139,7 @@ public final class MarlinCache implements MarlinConst {
             // ie number of primitives:
 
             // fast check min and max width (maxx < 23bits):
-            if (width <= RLE_MIN_WIDTH || width >= RLE_MAX_WIDTH) {
-                useRLE = false;
-            } else {
-                useRLE = true;
-            }
+            useRLE = (width > RLE_MIN_WIDTH && width < RLE_MAX_WIDTH);
         }
 
         // the ceiling of (maxy - miny + 1) / TILE_SIZE;

@@ -56,12 +56,16 @@ final class Curve {
              float x3, float y3,
              float x4, float y4)
     {
-        ax = 3.0f * (x2 - x3) + x4 - x1;
-        ay = 3.0f * (y2 - y3) + y4 - y1;
-        bx = 3.0f * (x1 - 2.0f * x2 + x3);
-        by = 3.0f * (y1 - 2.0f * y2 + y3);
-        cx = 3.0f * (x2 - x1);
-        cy = 3.0f * (y2 - y1);
+        final float dx32 = 3.0f * (x3 - x2);
+        final float dy32 = 3.0f * (y3 - y2);
+        final float dx21 = 3.0f * (x2 - x1);
+        final float dy21 = 3.0f * (y2 - y1);
+        ax = (x4 - x1) - dx32;
+        ay = (y4 - y1) - dy32;
+        bx = (dx32 - dx21);
+        by = (dy32 - dy21);
+        cx = dx21;
+        cy = dy21;
         dx = x1;
         dy = y1;
         dax = 3.0f * ax; day = 3.0f * ay;
@@ -72,11 +76,13 @@ final class Curve {
              float x2, float y2,
              float x3, float y3)
     {
+        final float dx21 = (x2 - x1);
+        final float dy21 = (y2 - y1);
         ax = 0.0f; ay = 0.0f;
-        bx = x1 - 2.0f * x2 + x3;
-        by = y1 - 2.0f * y2 + y3;
-        cx = 2.0f * (x2 - x1);
-        cy = 2.0f * (y2 - y1);
+        bx = (x3 - x2) - dx21;
+        by = (y3 - y2) - dy21;
+        cx = 2.0f * dx21;
+        cy = 2.0f * dy21;
         dx = x1;
         dy = y1;
         dax = 0.0f; day = 0.0f;

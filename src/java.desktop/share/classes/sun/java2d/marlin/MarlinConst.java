@@ -128,4 +128,47 @@ interface MarlinConst {
 
     public static final int BLOCK_SIZE_LG = MarlinProperties.getBlockSize_Log2();
     public static final int BLOCK_SIZE    = 1 << BLOCK_SIZE_LG;
+
+    // Constants
+    public static final int WIND_EVEN_ODD = 0;
+    public static final int WIND_NON_ZERO = 1;
+
+    /**
+     * Constant value for join style.
+     */
+    public static final int JOIN_MITER = 0;
+
+    /**
+     * Constant value for join style.
+     */
+    public static final int JOIN_ROUND = 1;
+
+    /**
+     * Constant value for join style.
+     */
+    public static final int JOIN_BEVEL = 2;
+
+    /**
+     * Constant value for end cap style.
+     */
+    public static final int CAP_BUTT = 0;
+
+    /**
+     * Constant value for end cap style.
+     */
+    public static final int CAP_ROUND = 1;
+
+    /**
+     * Constant value for end cap style.
+     */
+    public static final int CAP_SQUARE = 2;
+
+    // Out codes
+    static final int OUTCODE_TOP      = 1;
+    static final int OUTCODE_BOTTOM   = 2;
+    static final int OUTCODE_LEFT     = 4;
+    static final int OUTCODE_RIGHT    = 8;
+    static final int OUTCODE_MASK_T_B = OUTCODE_TOP  | OUTCODE_BOTTOM;
+    static final int OUTCODE_MASK_L_R = OUTCODE_LEFT | OUTCODE_RIGHT;
+    static final int OUTCODE_MASK_T_B_L_R = OUTCODE_MASK_T_B | OUTCODE_MASK_L_R;
 }

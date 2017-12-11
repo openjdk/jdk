@@ -75,16 +75,22 @@ final class DRendererContext extends ReentrantContext implements IRendererContex
     final MarlinCache cache;
     // flag indicating the shape is stroked (1) or filled (0)
     int stroking = 0;
+    // flag indicating to clip the shape
+    boolean doClip = false;
+    // flag indicating if the path is closed or not (in advance) to handle properly caps
+    boolean closedPath = false;
+    // clip rectangle (ymin, ymax, xmin, xmax):
+    final double[] clipRect = new double[4];
 
     // Array caches:
     /* clean int[] cache (zero-filled) = 5 refs */
     private final IntArrayCache cleanIntCache = new IntArrayCache(true, 5);
-    /* dirty int[] cache = 4 refs */
-    private final IntArrayCache dirtyIntCache = new IntArrayCache(false, 4);
-    /* dirty double[] cache = 3 refs */
-    private final DoubleArrayCache dirtyDoubleCache = new DoubleArrayCache(false, 3);
-    /* dirty byte[] cache = 1 ref */
-    private final ByteArrayCache dirtyByteCache = new ByteArrayCache(false, 1);
+    /* dirty int[] cache = 5 refs */
+    private final IntArrayCache dirtyIntCache = new IntArrayCache(false, 5);
+    /* dirty double[] cache = 4 refs (2 polystack) */
+    private final DoubleArrayCache dirtyDoubleCache = new DoubleArrayCache(false, 4);
+    /* dirty byte[] cache = 2 ref (2 polystack) */
+    private final ByteArrayCache dirtyByteCache = new ByteArrayCache(false, 2);
 
     // RendererContext statistics
     final RendererStats stats;
@@ -119,7 +125,7 @@ final class DRendererContext extends ReentrantContext implements IRendererContex
         nPQPathIterator  = new NormalizingPathIterator.NearestPixelQuarter(double6);
 
         // MarlinRenderingEngine.TransformingPathConsumer2D
-        transformerPC2D = new DTransformingPathConsumer2D();
+        transformerPC2D = new DTransformingPathConsumer2D(this);
 
         // Renderer:
         cache = new MarlinCache(this);
@@ -141,7 +147,10 @@ final class DRendererContext extends ReentrantContext implements IRendererContex
             }
             stats.totalOffHeap = 0L;
         }
-        stroking = 0;
+        stroking   = 0;
+        doClip     = false;
+        closedPath = false;
+
         // if context is maked as DIRTY:
         if (dirty) {
             // may happen if an exception if thrown in the pipeline processing:
@@ -162,12 +171,11 @@ final class DRendererContext extends ReentrantContext implements IRendererContex
 
     Path2D.Double getPath2D() {
         // resolve reference:
-        Path2D.Double p2d
-            = (refPath2D != null) ? refPath2D.get() : null;
+        Path2D.Double p2d = (refPath2D != null) ? refPath2D.get() : null;
 
         // create a new Path2D ?
         if (p2d == null) {
-            p2d = new Path2D.Double(Path2D.WIND_NON_ZERO, INITIAL_EDGES_COUNT); // 32K
+            p2d = new Path2D.Double(WIND_NON_ZERO, INITIAL_EDGES_COUNT); // 32K
 
             // update weak reference:
             refPath2D = new WeakReference<Path2D.Double>(p2d);

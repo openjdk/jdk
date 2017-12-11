@@ -46,6 +46,9 @@ final class DRenderer implements DPathConsumer2D, MarlinRenderer {
     static final int SUBPIXEL_MASK_X = SUBPIXEL_POSITIONS_X - 1;
     static final int SUBPIXEL_MASK_Y = SUBPIXEL_POSITIONS_Y - 1;
 
+    static final double RDR_OFFSET_X = 0.5d / SUBPIXEL_SCALE_X;
+    static final double RDR_OFFSET_Y = 0.5d / SUBPIXEL_SCALE_Y;
+
     // number of subpixels corresponding to a tile line
     private static final int SUBPIXEL_TILE
         = TILE_H << SUBPIXEL_LG_POSITIONS_Y;
@@ -56,9 +59,6 @@ final class DRenderer implements DPathConsumer2D, MarlinRenderer {
 
     // crossing capacity = edges count / 4 ~ 1024
     static final int INITIAL_CROSSING_COUNT = INITIAL_EDGES_COUNT >> 2;
-
-    public static final int WIND_EVEN_ODD = 0;
-    public static final int WIND_NON_ZERO = 1;
 
     // common to all types of input path segments.
     // OFFSET as bytes
@@ -522,10 +522,10 @@ final class DRenderer implements DPathConsumer2D, MarlinRenderer {
 
     DRenderer(final DRendererContext rdrCtx) {
         this.rdrCtx = rdrCtx;
+        this.curve = rdrCtx.curve;
+        this.cache = rdrCtx.cache;
 
         this.edges = rdrCtx.newOffHeapArray(INITIAL_EDGES_CAPACITY); // 96K
-
-        this.curve = rdrCtx.curve;
 
         edgeBuckets_ref      = rdrCtx.newCleanIntArrayRef(INITIAL_BUCKET_ARRAY); // 64K
         edgeBucketCounts_ref = rdrCtx.newCleanIntArrayRef(INITIAL_BUCKET_ARRAY); // 64K
@@ -536,8 +536,6 @@ final class DRenderer implements DPathConsumer2D, MarlinRenderer {
         // 2048 (pixelsize) pixel large
         alphaLine_ref = rdrCtx.newCleanIntArrayRef(INITIAL_AA_ARRAY); // 8K
         alphaLine     = alphaLine_ref.initial;
-
-        this.cache = rdrCtx.cache;
 
         crossings_ref     = rdrCtx.newDirtyIntArrayRef(INITIAL_CROSSING_COUNT); // 2K
         aux_crossings_ref = rdrCtx.newDirtyIntArrayRef(INITIAL_CROSSING_COUNT); // 2K
@@ -668,7 +666,7 @@ final class DRenderer implements DPathConsumer2D, MarlinRenderer {
     }
 
     @Override
-    public void moveTo(double pix_x0, double pix_y0) {
+    public void moveTo(final double pix_x0, final double pix_y0) {
         closePath();
         final double sx = tosubpixx(pix_x0);
         final double sy = tosubpixy(pix_y0);
@@ -679,7 +677,7 @@ final class DRenderer implements DPathConsumer2D, MarlinRenderer {
     }
 
     @Override
-    public void lineTo(double pix_x1, double pix_y1) {
+    public void lineTo(final double pix_x1, final double pix_y1) {
         final double x1 = tosubpixx(pix_x1);
         final double y1 = tosubpixy(pix_y1);
         addLine(x0, y0, x1, y1);
@@ -688,24 +686,26 @@ final class DRenderer implements DPathConsumer2D, MarlinRenderer {
     }
 
     @Override
-    public void curveTo(double x1, double y1,
-                        double x2, double y2,
-                        double x3, double y3)
+    public void curveTo(final double pix_x1, final double pix_y1,
+                        final double pix_x2, final double pix_y2,
+                        final double pix_x3, final double pix_y3)
     {
-        final double xe = tosubpixx(x3);
-        final double ye = tosubpixy(y3);
-        curve.set(x0, y0, tosubpixx(x1), tosubpixy(y1),
-                          tosubpixx(x2), tosubpixy(y2), xe, ye);
+        final double xe = tosubpixx(pix_x3);
+        final double ye = tosubpixy(pix_y3);
+        curve.set(x0, y0, tosubpixx(pix_x1), tosubpixy(pix_y1),
+                  tosubpixx(pix_x2), tosubpixy(pix_y2), xe, ye);
         curveBreakIntoLinesAndAdd(x0, y0, curve, xe, ye);
         x0 = xe;
         y0 = ye;
     }
 
     @Override
-    public void quadTo(double x1, double y1, double x2, double y2) {
-        final double xe = tosubpixx(x2);
-        final double ye = tosubpixy(y2);
-        curve.set(x0, y0, tosubpixx(x1), tosubpixy(y1), xe, ye);
+    public void quadTo(final double pix_x1, final double pix_y1,
+                       final double pix_x2, final double pix_y2)
+    {
+        final double xe = tosubpixx(pix_x2);
+        final double ye = tosubpixy(pix_y2);
+        curve.set(x0, y0, tosubpixx(pix_x1), tosubpixy(pix_y1), xe, ye);
         quadBreakIntoLinesAndAdd(x0, y0, curve, xe, ye);
         x0 = xe;
         y0 = ye;
@@ -713,9 +713,11 @@ final class DRenderer implements DPathConsumer2D, MarlinRenderer {
 
     @Override
     public void closePath() {
-        addLine(x0, y0, sx0, sy0);
-        x0 = sx0;
-        y0 = sy0;
+        if (x0 != sx0 || y0 != sy0) {
+            addLine(x0, y0, sx0, sy0);
+            x0 = sx0;
+            y0 = sy0;
+        }
     }
 
     @Override
