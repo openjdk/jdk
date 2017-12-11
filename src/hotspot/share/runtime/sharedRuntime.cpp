@@ -970,7 +970,7 @@ JNI_ENTRY(void*, throw_unsatisfied_link_error(JNIEnv* env, ...))
 {
   // We return a bad value here to make sure that the exception is
   // forwarded before we look at the return value.
-  THROW_(vmSymbols::java_lang_UnsatisfiedLinkError(), (void*)badJNIHandle);
+  THROW_(vmSymbols::java_lang_UnsatisfiedLinkError(), (void*)badAddress);
 }
 JNI_END
 

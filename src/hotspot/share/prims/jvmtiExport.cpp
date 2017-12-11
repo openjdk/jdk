@@ -53,6 +53,7 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "services/serviceUtil.hpp"
 #include "utilities/macros.hpp"
@@ -719,6 +720,108 @@ JvmtiExport::get_all_native_method_prefixes(int* count_ptr) {
     MutexLocker mu(JvmtiThreadState_lock);
     return JvmtiEnvBase::get_all_native_method_prefixes(count_ptr);
   }
+}
+
+// Convert an external thread reference to a JavaThread found on the
+// specified ThreadsList. The ThreadsListHandle in the caller "protects"
+// the returned JavaThread *.
+//
+// If thread_oop_p is not NULL, then the caller wants to use the oop
+// after this call so the oop is returned. On success, *jt_pp is set
+// to the converted JavaThread * and JVMTI_ERROR_NONE is returned.
+// On error, returns various JVMTI_ERROR_* values.
+//
+jvmtiError
+JvmtiExport::cv_external_thread_to_JavaThread(ThreadsList * t_list,
+                                              jthread thread,
+                                              JavaThread ** jt_pp,
+                                              oop * thread_oop_p) {
+  assert(t_list != NULL, "must have a ThreadsList");
+  assert(jt_pp != NULL, "must have a return JavaThread pointer");
+  // thread_oop_p is optional so no assert()
+
+  oop thread_oop = JNIHandles::resolve_external_guard(thread);
+  if (thread_oop == NULL) {
+    // NULL jthread, GC'ed jthread or a bad JNI handle.
+    return JVMTI_ERROR_INVALID_THREAD;
+  }
+  // Looks like an oop at this point.
+
+  if (!thread_oop->is_a(SystemDictionary::Thread_klass())) {
+    // The oop is not a java.lang.Thread.
+    return JVMTI_ERROR_INVALID_THREAD;
+  }
+  // Looks like a java.lang.Thread oop at this point.
+
+  if (thread_oop_p != NULL) {
+    // Return the oop to the caller; the caller may still want
+    // the oop even if this function returns an error.
+    *thread_oop_p = thread_oop;
+  }
+
+  JavaThread * java_thread = java_lang_Thread::thread(thread_oop);
+  if (java_thread == NULL) {
+    // The java.lang.Thread does not contain a JavaThread * so it has
+    // not yet run or it has died.
+    return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+  // Looks like a live JavaThread at this point.
+
+  // We do not check the EnableThreadSMRExtraValidityChecks option
+  // for this includes() call because JVM/TI's spec is tighter.
+  if (!t_list->includes(java_thread)) {
+    // Not on the JavaThreads list so it is not alive.
+    return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+
+  // Return a live JavaThread that is "protected" by the
+  // ThreadsListHandle in the caller.
+  *jt_pp = java_thread;
+
+  return JVMTI_ERROR_NONE;
+}
+
+// Convert an oop to a JavaThread found on the specified ThreadsList.
+// The ThreadsListHandle in the caller "protects" the returned
+// JavaThread *.
+//
+// On success, *jt_pp is set to the converted JavaThread * and
+// JVMTI_ERROR_NONE is returned. On error, returns various
+// JVMTI_ERROR_* values.
+//
+jvmtiError
+JvmtiExport::cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
+                                  JavaThread ** jt_pp) {
+  assert(t_list != NULL, "must have a ThreadsList");
+  assert(thread_oop != NULL, "must have an oop");
+  assert(jt_pp != NULL, "must have a return JavaThread pointer");
+
+  if (!thread_oop->is_a(SystemDictionary::Thread_klass())) {
+    // The oop is not a java.lang.Thread.
+    return JVMTI_ERROR_INVALID_THREAD;
+  }
+  // Looks like a java.lang.Thread oop at this point.
+
+  JavaThread * java_thread = java_lang_Thread::thread(thread_oop);
+  if (java_thread == NULL) {
+    // The java.lang.Thread does not contain a JavaThread * so it has
+    // not yet run or it has died.
+    return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+  // Looks like a live JavaThread at this point.
+
+  // We do not check the EnableThreadSMRExtraValidityChecks option
+  // for this includes() call because JVM/TI's spec is tighter.
+  if (!t_list->includes(java_thread)) {
+    // Not on the JavaThreads list so it is not alive.
+    return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+
+  // Return a live JavaThread that is "protected" by the
+  // ThreadsListHandle in the caller.
+  *jt_pp = java_thread;
+
+  return JVMTI_ERROR_NONE;
 }
 
 class JvmtiClassFileLoadHookPoster : public StackObj {
@@ -2475,7 +2578,7 @@ extern "C" {
 
 jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
                                      const char *options, outputStream* st) {
-  char ebuf[1024];
+  char ebuf[1024] = {0};
   char buffer[JVM_MAXPATHLEN];
   void* library = NULL;
   jint result = JNI_ERR;
@@ -2525,6 +2628,8 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       if (!agent_lib->is_static_lib()) {
         os::dll_unload(library);
       }
+      st->print_cr("%s is not available in %s",
+                   on_attach_symbols[0], agent_lib->name());
       delete agent_lib;
     } else {
       // Invoke the Agent_OnAttach function
@@ -2551,8 +2656,13 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       }
 
       // Agent_OnAttach executed so completion status is JNI_OK
-      st->print_cr("%d", result);
+      st->print_cr("return code: %d", result);
       result = JNI_OK;
+    }
+  } else {
+    st->print_cr("%s was not loaded.", agent);
+    if (*ebuf != '\0') {
+      st->print_cr("%s", ebuf);
     }
   }
   return result;
@@ -2685,8 +2795,7 @@ void JvmtiVMObjectAllocEventCollector::oops_do_for_all_threads(OopClosure* f) {
     return;
   }
 
-  // Runs at safepoint. So no need to acquire Threads_lock.
-  for (JavaThread *jthr = Threads::first(); jthr != NULL; jthr = jthr->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jthr = jtiwh.next(); ) {
     JvmtiThreadState *state = jthr->jvmti_thread_state();
     if (state != NULL) {
       JvmtiVMObjectAllocEventCollector *collector;

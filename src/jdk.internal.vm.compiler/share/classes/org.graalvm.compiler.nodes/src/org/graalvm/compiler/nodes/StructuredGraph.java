@@ -360,9 +360,9 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
             ValueNode result = returnNode.result();
             if (result != null) {
                 if (returnStamp == null) {
-                    returnStamp = result.stamp();
+                    returnStamp = result.stamp(NodeView.DEFAULT);
                 } else {
-                    returnStamp = returnStamp.meet(result.stamp());
+                    returnStamp = returnStamp.meet(result.stamp(NodeView.DEFAULT));
                 }
             }
         }

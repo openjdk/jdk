@@ -105,8 +105,7 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
     /**
      * A taken submitted task is completed
      */
-    public void testTake()
-        throws InterruptedException, ExecutionException {
+    public void testTake() throws Exception {
         CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
         cs.submit(new StringTask());
         Future f = cs.take();
@@ -127,8 +126,7 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
     /**
      * poll returns non-null when the returned task is completed
      */
-    public void testPoll1()
-        throws InterruptedException, ExecutionException {
+    public void testPoll1() throws Exception {
         CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
         assertNull(cs.poll());
         cs.submit(new StringTask());
@@ -147,15 +145,15 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
     /**
      * timed poll returns non-null when the returned task is completed
      */
-    public void testPoll2()
-        throws InterruptedException, ExecutionException {
+    public void testPoll2() throws Exception {
         CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
         assertNull(cs.poll());
         cs.submit(new StringTask());
 
         long startTime = System.nanoTime();
         Future f;
-        while ((f = cs.poll(SHORT_DELAY_MS, MILLISECONDS)) == null) {
+        while ((f = cs.poll(timeoutMillis(), MILLISECONDS)) == null) {
+            assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
             if (millisElapsedSince(startTime) > LONG_DELAY_MS)
                 fail("timed out");
             Thread.yield();
@@ -167,8 +165,7 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
     /**
      * poll returns null before the returned task is completed
      */
-    public void testPollReturnsNull()
-        throws InterruptedException, ExecutionException {
+    public void testPollReturnsNullBeforeCompletion() throws Exception {
         CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
         final CountDownLatch proceed = new CountDownLatch(1);
         cs.submit(new Callable() { public String call() throws Exception {
@@ -188,29 +185,28 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
     /**
      * successful and failed tasks are both returned
      */
-    public void testTaskAssortment()
-        throws InterruptedException, ExecutionException {
+    public void testTaskAssortment() throws Exception {
         CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
         ArithmeticException ex = new ArithmeticException();
-        for (int i = 0; i < 2; i++) {
+        final int rounds = 2;
+        for (int i = rounds; i--> 0; ) {
             cs.submit(new StringTask());
             cs.submit(callableThrowing(ex));
             cs.submit(runnableThrowing(ex), null);
         }
         int normalCompletions = 0;
         int exceptionalCompletions = 0;
-        for (int i = 0; i < 3 * 2; i++) {
+        for (int i = 3 * rounds; i--> 0; ) {
             try {
-                if (cs.take().get() == TEST_STRING)
-                    normalCompletions++;
-            }
-            catch (ExecutionException expected) {
-                assertTrue(expected.getCause() instanceof ArithmeticException);
+                assertSame(TEST_STRING, cs.take().get());
+                normalCompletions++;
+            } catch (ExecutionException expected) {
+                assertSame(ex, expected.getCause());
                 exceptionalCompletions++;
             }
         }
-        assertEquals(2 * 1, normalCompletions);
-        assertEquals(2 * 2, exceptionalCompletions);
+        assertEquals(1 * rounds, normalCompletions);
+        assertEquals(2 * rounds, exceptionalCompletions);
         assertNull(cs.poll());
     }
 

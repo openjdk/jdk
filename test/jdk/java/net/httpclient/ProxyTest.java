@@ -41,10 +41,12 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -121,6 +123,37 @@ public class ProxyTest {
         }
     }
 
+    /**
+     * A Proxy Selector that wraps a ProxySelector.of(), and counts the number
+     * of times its select method has been invoked. This can be used to ensure
+     * that the Proxy Selector is invoked only once per HttpClient.sendXXX
+     * invocation.
+     */
+    static class CountingProxySelector extends ProxySelector {
+        private final ProxySelector proxySelector;
+        private volatile int count; // 0
+        private CountingProxySelector(InetSocketAddress proxyAddress) {
+            proxySelector = ProxySelector.of(proxyAddress);
+        }
+
+        public static CountingProxySelector of(InetSocketAddress proxyAddress) {
+            return new CountingProxySelector(proxyAddress);
+        }
+
+        int count() { return count; }
+
+        @Override
+        public List<Proxy> select(URI uri) {
+            count++;
+            return proxySelector.select(uri);
+        }
+
+        @Override
+        public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
+            proxySelector.connectFailed(uri, sa, ioe);
+        }
+    }
+
     public static void test(HttpServer server, HttpClient.Version version)
             throws IOException,
             URISyntaxException,
@@ -158,7 +191,7 @@ public class ProxyTest {
             System.out.println("\nReal test begins here.");
             System.out.println("Setting up request with HttpClient for version: "
                     + version.name());
-            ProxySelector ps = ProxySelector.of(
+            CountingProxySelector ps = CountingProxySelector.of(
                     InetSocketAddress.createUnresolved("localhost", proxy.getAddress().getPort()));
             HttpClient client = HttpClient.newBuilder()
                 .version(version)
@@ -177,6 +210,9 @@ public class ProxyTest {
             System.out.println("Received: " + resp);
             if (!RESPONSE.equals(resp)) {
                 throw new AssertionError("Unexpected response");
+            }
+            if (ps.count() > 1) {
+                throw new AssertionError("CountingProxySelector. Expected 1, got " + ps.count());
             }
         } finally {
             System.out.println("Stopping proxy");

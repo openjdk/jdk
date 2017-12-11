@@ -2751,27 +2751,28 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   case Op_CallRuntime:
   case Op_CallLeaf:
   case Op_CallLeafNoFP: {
-    assert( n->is_Call(), "" );
+    assert (n->is_Call(), "");
     CallNode *call = n->as_Call();
     // Count call sites where the FP mode bit would have to be flipped.
     // Do not count uncommon runtime calls:
     // uncommon_trap, _complete_monitor_locking, _complete_monitor_unlocking,
     // _new_Java, _new_typeArray, _new_objArray, _rethrow_Java, ...
-    if( !call->is_CallStaticJava() || !call->as_CallStaticJava()->_name ) {
+    if (!call->is_CallStaticJava() || !call->as_CallStaticJava()->_name) {
       frc.inc_call_count();   // Count the call site
     } else {                  // See if uncommon argument is shared
       Node *n = call->in(TypeFunc::Parms);
       int nop = n->Opcode();
       // Clone shared simple arguments to uncommon calls, item (1).
-      if( n->outcnt() > 1 &&
+      if (n->outcnt() > 1 &&
           !n->is_Proj() &&
           nop != Op_CreateEx &&
           nop != Op_CheckCastPP &&
           nop != Op_DecodeN &&
           nop != Op_DecodeNKlass &&
-          !n->is_Mem() ) {
+          !n->is_Mem() &&
+          !n->is_Phi()) {
         Node *x = n->clone();
-        call->set_req( TypeFunc::Parms, x );
+        call->set_req(TypeFunc::Parms, x);
       }
     }
     break;
@@ -3244,9 +3245,11 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     break;
   case Op_Loop:
   case Op_CountedLoop:
+  case Op_OuterStripMinedLoop:
     if (n->as_Loop()->is_inner_loop()) {
       frc.inc_inner_loop_count();
     }
+    n->as_Loop()->verify_strip_mined(0);
     break;
   case Op_LShiftI:
   case Op_RShiftI:
@@ -3525,6 +3528,14 @@ bool Compile::final_graph_reshaping() {
         record_method_not_compilable("infinite loop");
         return true;            // Found unvisited kid; must be unreach
       }
+
+    // Here so verification code in final_graph_reshaping_walk()
+    // always see an OuterStripMinedLoopEnd
+    if (n->is_OuterStripMinedLoopEnd()) {
+      IfNode* init_iff = n->as_If();
+      Node* iff = new IfNode(init_iff->in(0), init_iff->in(1), init_iff->_prob, init_iff->_fcnt);
+      n->subsume_by(iff, this);
+    }
   }
 
   // If original bytecodes contained a mixture of floats and doubles

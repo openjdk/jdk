@@ -28,6 +28,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -49,7 +50,8 @@ public final class IntegerAddExactSplitNode extends IntegerExactArithmeticSplitN
 
     @Override
     public void simplify(SimplifierTool tool) {
-        if (!IntegerStamp.addCanOverflow((IntegerStamp) x.stamp(), (IntegerStamp) y.stamp())) {
+        NodeView view = NodeView.from(tool);
+        if (!IntegerStamp.addCanOverflow((IntegerStamp) x.stamp(view), (IntegerStamp) y.stamp(view))) {
             tool.deleteBranch(overflowSuccessor);
             tool.addToWorkList(next);
             AddNode replacement = graph().unique(new AddNode(x, y));

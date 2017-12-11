@@ -190,7 +190,8 @@ public class SPARCHotSpotLIRGenerator extends SPARCLIRGenerator implements HotSp
             operand = resultOperandFor(javaKind, input.getValueKind());
             emitMove(operand, input);
         }
-        append(new SPARCHotSpotReturnOp(operand, getStub() != null, config, getSafepointAddressValue()));
+        Register thread = getProviders().getRegisters().getThreadRegister();
+        append(new SPARCHotSpotReturnOp(operand, getStub() != null, config, thread, getSafepointAddressValue()));
     }
 
     @Override
@@ -383,7 +384,7 @@ public class SPARCHotSpotLIRGenerator extends SPARCLIRGenerator implements HotSp
 
     public AllocatableValue getSafepointAddressValue() {
         if (this.safepointAddressValue == null) {
-            this.safepointAddressValue = newVariable(LIRKind.value(target().arch.getWordKind()));
+            this.safepointAddressValue = SPARCHotSpotSafepointOp.getSafepointAddressValue(this);
         }
         return this.safepointAddressValue;
     }

@@ -146,15 +146,6 @@ void AOTLoader::initialize() {
       return;
     }
 
-    const char* home = Arguments::get_java_home();
-    const char* file_separator = os::file_separator();
-
-    for (int i = 0; i < (int) (sizeof(modules) / sizeof(const char*)); i++) {
-      char library[JVM_MAXPATHLEN];
-      jio_snprintf(library, sizeof(library), "%s%slib%slib%s%s%s%s", home, file_separator, file_separator, modules[i], UseCompressedOops ? "-coop" : "", UseG1GC ? "" : "-nong1", os::dll_file_extension());
-      load_library(library, false);
-    }
-
     // Scan the AOTLibrary option.
     if (AOTLibrary != NULL) {
       const int len = (int)strlen(AOTLibrary);
@@ -171,6 +162,16 @@ void AOTLoader::initialize() {
           load_library(name, true);
         }
       }
+    }
+
+    // Load well-know AOT libraries from Java installation directory.
+    const char* home = Arguments::get_java_home();
+    const char* file_separator = os::file_separator();
+
+    for (int i = 0; i < (int) (sizeof(modules) / sizeof(const char*)); i++) {
+      char library[JVM_MAXPATHLEN];
+      jio_snprintf(library, sizeof(library), "%s%slib%slib%s%s%s%s", home, file_separator, file_separator, modules[i], UseCompressedOops ? "-coop" : "", UseG1GC ? "" : "-nong1", os::dll_file_extension());
+      load_library(library, false);
     }
   }
 }
@@ -239,6 +240,21 @@ void AOTLoader::set_narrow_klass_shift() {
 }
 
 void AOTLoader::load_library(const char* name, bool exit_on_error) {
+  // Skip library if a library with the same name is already loaded.
+  const int file_separator = *os::file_separator();
+  const char* start = strrchr(name, file_separator);
+  const char* new_name = (start == NULL) ? name : (start + 1);
+  FOR_ALL_AOT_LIBRARIES(lib) {
+    const char* lib_name = (*lib)->name();
+    start = strrchr(lib_name, file_separator);
+    const char* old_name = (start == NULL) ? lib_name : (start + 1);
+    if (strcmp(old_name, new_name) == 0) {
+      if (PrintAOT) {
+        warning("AOT library %s is already loaded as %s.", name, lib_name);
+      }
+      return;
+    }
+  }
   char ebuf[1024];
   void* handle = os::dll_load(name, ebuf, sizeof ebuf);
   if (handle == NULL) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ class RedirectFilter implements HeaderFilter {
             "jdk.httpclient.redirects.retrylimit", DEFAULT_MAX_REDIRECTS
     );
 
+    // A public no-arg constructor is required by FilterFactory
+    public RedirectFilter() {}
+
     @Override
     public synchronized void request(HttpRequestImpl r, MultiExchange<?,?> e) throws IOException {
         this.request = r;
@@ -84,9 +87,8 @@ class RedirectFilter implements HeaderFilter {
 
     private URI getRedirectedURI(HttpHeaders headers) {
         URI redirectedURI;
-        String ss = headers.firstValue("Location").orElse("Not present");
         redirectedURI = headers.firstValue("Location")
-                .map((s) -> URI.create(s))
+                .map(URI::create)
                 .orElseThrow(() -> new UncheckedIOException(
                         new IOException("Invalid redirection")));
 

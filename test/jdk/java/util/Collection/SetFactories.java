@@ -40,6 +40,9 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -275,14 +278,63 @@ public class SetFactories {
     static <T> T serialClone(T obj) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            oos.writeObject(obj);
-            oos.close();
+            try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                oos.writeObject(obj);
+            }
             ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
             ObjectInputStream ois = new ObjectInputStream(bais);
             return (T) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             throw new AssertionError(e);
         }
+    }
+
+    Set<Integer> genSet() {
+        return new HashSet<>(Arrays.asList(1, 2, 3));
+    }
+
+    @Test
+    public void copyOfResultsEqual() {
+        Set<Integer> orig = genSet();
+        Set<Integer> copy = Set.copyOf(orig);
+
+        assertEquals(orig, copy);
+        assertEquals(copy, orig);
+    }
+
+    @Test
+    public void copyOfModifiedUnequal() {
+        Set<Integer> orig = genSet();
+        Set<Integer> copy = Set.copyOf(orig);
+        orig.add(4);
+
+        assertNotEquals(orig, copy);
+        assertNotEquals(copy, orig);
+    }
+
+    @Test
+    public void copyOfIdentity() {
+        Set<Integer> orig = genSet();
+        Set<Integer> copy1 = Set.copyOf(orig);
+        Set<Integer> copy2 = Set.copyOf(copy1);
+
+        assertNotSame(orig, copy1);
+        assertSame(copy1, copy2);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void copyOfRejectsNullCollection() {
+        Set<Integer> set = Set.copyOf(null);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void copyOfRejectsNullElements() {
+        Set<Integer> set = Set.copyOf(Arrays.asList(1, null, 3));
+    }
+
+    @Test
+    public void copyOfAcceptsDuplicates() {
+        Set<Integer> set = Set.copyOf(Arrays.asList(1, 1, 2, 3, 3, 3));
+        assertEquals(set, Set.of(1, 2, 3));
     }
 }

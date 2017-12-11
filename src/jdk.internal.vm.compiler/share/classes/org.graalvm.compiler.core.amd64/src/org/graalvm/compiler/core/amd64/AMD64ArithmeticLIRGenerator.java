@@ -99,8 +99,9 @@ import org.graalvm.compiler.lir.amd64.AMD64ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.lir.amd64.AMD64Binary;
 import org.graalvm.compiler.lir.amd64.AMD64BinaryConsumer;
 import org.graalvm.compiler.lir.amd64.AMD64ClearRegisterOp;
-import org.graalvm.compiler.lir.amd64.AMD64MathIntrinsicUnaryOp;
 import org.graalvm.compiler.lir.amd64.AMD64MathIntrinsicBinaryOp;
+import org.graalvm.compiler.lir.amd64.AMD64MathIntrinsicUnaryOp;
+import org.graalvm.compiler.lir.amd64.AMD64Move;
 import org.graalvm.compiler.lir.amd64.AMD64MulDivOp;
 import org.graalvm.compiler.lir.amd64.AMD64ShiftOp;
 import org.graalvm.compiler.lir.amd64.AMD64SignExtendOp;
@@ -287,14 +288,33 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
         return ((AMD64Kind) kind).isInteger();
     }
 
+    private Variable emitBaseOffsetLea(LIRKind resultKind, Value base, int offset, OperandSize size) {
+        Variable result = getLIRGen().newVariable(resultKind);
+        AMD64AddressValue address = new AMD64AddressValue(resultKind, getLIRGen().asAllocatable(base), offset);
+        getLIRGen().append(new AMD64Move.LeaOp(result, address, size));
+        return result;
+    }
+
     @Override
     public Variable emitAdd(LIRKind resultKind, Value a, Value b, boolean setFlags) {
         TargetDescription target = getLIRGen().target();
         boolean isAvx = ((AMD64) target.arch).getFeatures().contains(CPUFeature.AVX);
         switch ((AMD64Kind) a.getPlatformKind()) {
             case DWORD:
+                if (isJavaConstant(b) && !setFlags) {
+                    long displacement = asJavaConstant(b).asLong();
+                    if (NumUtil.isInt(displacement) && displacement != 1 && displacement != -1) {
+                        return emitBaseOffsetLea(resultKind, a, (int) displacement, OperandSize.DWORD);
+                    }
+                }
                 return emitBinary(resultKind, ADD, DWORD, true, a, b, setFlags);
             case QWORD:
+                if (isJavaConstant(b) && !setFlags) {
+                    long displacement = asJavaConstant(b).asLong();
+                    if (NumUtil.isInt(displacement) && displacement != 1 && displacement != -1) {
+                        return emitBaseOffsetLea(resultKind, a, (int) displacement, OperandSize.QWORD);
+                    }
+                }
                 return emitBinary(resultKind, ADD, QWORD, true, a, b, setFlags);
             case SINGLE:
                 if (isAvx) {

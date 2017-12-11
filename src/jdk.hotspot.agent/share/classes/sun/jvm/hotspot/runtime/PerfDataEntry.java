@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,26 +92,34 @@ public class PerfDataEntry extends VMObject {
         return (flags() & 0x1) != 0;
     }
 
-    // NOTE: Keep this in sync with PerfData::Units enum in VM code
-    public interface PerfDataUnits {
-        public static final int U_None   = 1;
-        public static final int U_Bytes  = 2;
-        public static final int U_Ticks  = 3;
-        public static final int U_Events = 4;
-        public static final int U_String = 5;
-        public static final int U_Hertz  = 6;
+    private static class PerfDataUnits {
+        public static int U_None;
+        public static int U_Bytes;
+        public static int U_Ticks;
+        public static int U_Events;
+        public static int U_String;
+        public static int U_Hertz;
+
+        static {
+            VM.registerVMInitializedObserver(new Observer() {
+                public void update(Observable o, Object data) {
+                    initialize(VM.getVM().getTypeDataBase());
+                }
+            });
+        }
+        private static synchronized void initialize(TypeDataBase db) {
+            U_None = db.lookupIntConstant("PerfData::U_None");
+            U_Bytes = db.lookupIntConstant("PerfData::U_Bytes");
+            U_Ticks = db.lookupIntConstant("PerfData::U_Ticks");
+            U_Events = db.lookupIntConstant("PerfData::U_Events");
+            U_String = db.lookupIntConstant("PerfData::U_String");
+            U_Hertz = db.lookupIntConstant("PerfData::U_Hertz");
+        }
     }
 
     // returns one of the constants in PerfDataUnits
     public int dataUnits() {
         return (int) dataUnitsField.getValue(addr);
-    }
-
-    // NOTE: Keep this in sync with PerfData::Variability enum in VM code
-    public interface PerfDataVariability {
-        public static final int V_Constant  = 1;
-        public static final int V_Monotonic = 2;
-        public static final int V_Variable  = 3;
     }
 
     // returns one of the constants in PerfDataVariability
@@ -131,7 +139,7 @@ public class PerfDataEntry extends VMObject {
     public boolean booleanValue() {
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(vectorLength() == 0 &&
-                        dataType() == BasicType.tBoolean, "not a boolean");
+                        dataType() == BasicType.getTBoolean(), "not a boolean");
         }
         return addr.getJBooleanAt(dataOffset());
     }
@@ -139,7 +147,7 @@ public class PerfDataEntry extends VMObject {
     public char charValue() {
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(vectorLength() == 0 &&
-                        dataType() == BasicType.tChar, "not a char");
+                        dataType() == BasicType.getTChar(), "not a char");
         }
         return addr.getJCharAt(dataOffset());
     }
@@ -147,7 +155,7 @@ public class PerfDataEntry extends VMObject {
     public byte byteValue() {
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(vectorLength() == 0 &&
-                        dataType() == BasicType.tByte, "not a byte");
+                        dataType() == BasicType.getTByte(), "not a byte");
         }
         return addr.getJByteAt(dataOffset());
 
@@ -156,7 +164,7 @@ public class PerfDataEntry extends VMObject {
     public short shortValue() {
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(vectorLength() == 0 &&
-                        dataType() == BasicType.tShort, "not a short");
+                        dataType() == BasicType.getTShort(), "not a short");
         }
         return addr.getJShortAt(dataOffset());
     }
@@ -164,7 +172,7 @@ public class PerfDataEntry extends VMObject {
     public int intValue() {
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(vectorLength() == 0 &&
-                        dataType() == BasicType.tInt, "not an int");
+                        dataType() == BasicType.getTInt(), "not an int");
         }
         return addr.getJIntAt(dataOffset());
     }
@@ -172,7 +180,7 @@ public class PerfDataEntry extends VMObject {
     public long longValue() {
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(vectorLength() == 0 &&
-                        dataType() == BasicType.tLong, "not a long");
+                        dataType() == BasicType.getTLong(), "not a long");
         }
         return addr.getJLongAt(dataOffset());
     }
@@ -180,7 +188,7 @@ public class PerfDataEntry extends VMObject {
     public float floatValue() {
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(vectorLength() == 0 &&
-                        dataType() == BasicType.tFloat, "not a float");
+                        dataType() == BasicType.getTFloat(), "not a float");
         }
         return addr.getJFloatAt(dataOffset());
     }
@@ -188,7 +196,7 @@ public class PerfDataEntry extends VMObject {
     public double doubleValue() {
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(vectorLength() == 0 &&
-                        dataType() == BasicType.tDouble, "not a double");
+                        dataType() == BasicType.getTDouble(), "not a double");
         }
         return addr.getJDoubleAt(dataOffset());
     }
@@ -197,7 +205,7 @@ public class PerfDataEntry extends VMObject {
         int len = vectorLength();
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(len > 0 &&
-                        dataType() == BasicType.tBoolean, "not a boolean vector");
+                        dataType() == BasicType.getTBoolean(), "not a boolean vector");
         }
         boolean[] res = new boolean[len];
         final int off = dataOffset();
@@ -212,7 +220,7 @@ public class PerfDataEntry extends VMObject {
         int len = vectorLength();
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(len > 0 &&
-                        dataType() == BasicType.tChar, "not a char vector");
+                        dataType() == BasicType.getTChar(), "not a char vector");
         }
         char[] res = new char[len];
         final int off = dataOffset();
@@ -227,7 +235,7 @@ public class PerfDataEntry extends VMObject {
         int len = vectorLength();
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(len > 0 &&
-                        dataType() == BasicType.tByte, "not a byte vector");
+                        dataType() == BasicType.getTByte(), "not a byte vector");
         }
         byte[] res = new byte[len];
         final int off = dataOffset();
@@ -242,7 +250,7 @@ public class PerfDataEntry extends VMObject {
         int len = vectorLength();
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(len > 0 &&
-                        dataType() == BasicType.tShort, "not a short vector");
+                        dataType() == BasicType.getTShort(), "not a short vector");
         }
         short[] res = new short[len];
         final int off = dataOffset();
@@ -257,7 +265,7 @@ public class PerfDataEntry extends VMObject {
         int len = vectorLength();
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(len > 0 &&
-                        dataType() == BasicType.tInt, "not an int vector");
+                        dataType() == BasicType.getTInt(), "not an int vector");
         }
         int[] res = new int[len];
         final int off = dataOffset();
@@ -272,7 +280,7 @@ public class PerfDataEntry extends VMObject {
         int len = vectorLength();
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(len > 0 &&
-                        dataType() == BasicType.tLong, "not a long vector");
+                        dataType() == BasicType.getTLong(), "not a long vector");
         }
         long[] res = new long[len];
         final int off = dataOffset();
@@ -287,7 +295,7 @@ public class PerfDataEntry extends VMObject {
         int len = vectorLength();
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(len > 0 &&
-                        dataType() == BasicType.tFloat, "not a float vector");
+                        dataType() == BasicType.getTFloat(), "not a float vector");
         }
         float[] res = new float[len];
         final int off = dataOffset();
@@ -302,7 +310,7 @@ public class PerfDataEntry extends VMObject {
         int len = vectorLength();
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(len > 0 &&
-                        dataType() == BasicType.tDouble, "not a double vector");
+                        dataType() == BasicType.getTDouble(), "not a double vector");
         }
         double[] res = new double[len];
         final int off = dataOffset();
@@ -319,38 +327,27 @@ public class PerfDataEntry extends VMObject {
         int len = vectorLength();
         String str = null;
         if (len == 0) { // scalar
-            switch (dataType) {
-            case BasicType.tBoolean:
+            if (dataType == BasicType.getTBoolean()) {
                 str = Boolean.toString(booleanValue());
-                break;
-            case BasicType.tChar:
+            } else if (dataType == BasicType.getTChar()) {
                 str = "'" + Character.toString(charValue()) + "'";
-                break;
-            case BasicType.tByte:
+            } else if (dataType == BasicType.getTByte()) {
                 str = Byte.toString(byteValue());
-                break;
-            case BasicType.tShort:
+            } else if (dataType == BasicType.getTShort()) {
                 str = Short.toString(shortValue());
-                break;
-            case BasicType.tInt:
+            } else if (dataType ==  BasicType.getTInt()) {
                 str = Integer.toString(intValue());
-                break;
-            case BasicType.tLong:
+            } else if (dataType == BasicType.getTLong()) {
                 str = Long.toString(longValue());
-                break;
-            case BasicType.tFloat:
+            } else if (dataType == BasicType.getTFloat()) {
                 str = Float.toString(floatValue());
-                break;
-            case BasicType.tDouble:
+            } else if (dataType == BasicType.getTDouble()) {
                 str = Double.toString(doubleValue());
-                break;
-            default:
+            } else {
                 str = "<unknown scalar value>";
-                break;
             }
         } else { // vector
-            switch (dataType) {
-            case BasicType.tBoolean: {
+            if (dataType == BasicType.getTBoolean()) {
                 boolean[] res = booleanArrayValue();
                 StringBuffer buf = new StringBuffer();
                 buf.append('[');
@@ -360,26 +357,17 @@ public class PerfDataEntry extends VMObject {
                 }
                 buf.append(']');
                 str = buf.toString();
-                break;
-            }
-
-            case BasicType.tChar: {
+            } else if (dataType == BasicType.getTChar()) {
                 // char[] is returned as a String
                 str = new String(charArrayValue());
-                break;
-            }
-
-            case BasicType.tByte: {
+            } else if (dataType == BasicType.getTByte()) {
                 // byte[] is returned as a String
                 try {
                     str = new String(byteArrayValue(), "US-ASCII");
                 } catch (java.io.UnsupportedEncodingException e) {
                     str = "can't decode string : " + e.getMessage();
                 }
-                break;
-            }
-
-            case BasicType.tShort: {
+            } else if (dataType == BasicType.getTShort()) {
                 short[] res = shortArrayValue();
                 StringBuffer buf = new StringBuffer();
                 buf.append('[');
@@ -389,10 +377,7 @@ public class PerfDataEntry extends VMObject {
                 }
                 buf.append(']');
                 str = buf.toString();
-                break;
-            }
-
-            case BasicType.tInt: {
+            } else if (dataType ==  BasicType.getTInt()) {
                 int[] res = intArrayValue();
                 StringBuffer buf = new StringBuffer();
                 buf.append('[');
@@ -402,10 +387,7 @@ public class PerfDataEntry extends VMObject {
                 }
                 buf.append(']');
                 str = buf.toString();
-                break;
-            }
-
-            case BasicType.tLong: {
+            } else if (dataType == BasicType.getTLong()) {
                 long[] res = longArrayValue();
                 StringBuffer buf = new StringBuffer();
                 buf.append('[');
@@ -415,10 +397,7 @@ public class PerfDataEntry extends VMObject {
                 }
                 buf.append(']');
                 str = buf.toString();
-                break;
-            }
-
-            case BasicType.tFloat: {
+            } else if (dataType == BasicType.getTFloat()) {
                 float[] res = floatArrayValue();
                 StringBuffer buf = new StringBuffer();
                 buf.append('[');
@@ -428,10 +407,7 @@ public class PerfDataEntry extends VMObject {
                 }
                 buf.append(']');
                 str = buf.toString();
-                break;
-            }
-
-            case BasicType.tDouble: {
+            } else if (dataType == BasicType.getTDouble()) {
                 double[] res = doubleArrayValue();
                 StringBuffer buf = new StringBuffer();
                 buf.append('[');
@@ -441,33 +417,22 @@ public class PerfDataEntry extends VMObject {
                 }
                 buf.append(']');
                 str = buf.toString();
-                break;
-            }
-
-            default:
+            } else {
                 str = "<unknown vector value>";
-                break;
             }
         }
 
         // add units
-        switch (dataUnits()) {
-        case PerfDataUnits.U_None:
-            break;
-        case PerfDataUnits.U_Bytes:
+        int dataUnitsValue = dataUnits();
+
+        if (dataUnitsValue == PerfDataUnits.U_Bytes) {
             str += " byte(s)";
-            break;
-        case PerfDataUnits.U_Ticks:
+        } else if (dataUnitsValue == PerfDataUnits.U_Ticks) {
             str += " tick(s)";
-            break;
-        case PerfDataUnits.U_Events:
+        } else if (dataUnitsValue == PerfDataUnits.U_Events) {
             str += " event(s)";
-            break;
-        case PerfDataUnits.U_String:
-            break;
-        case PerfDataUnits.U_Hertz:
+        } else if (dataUnitsValue == PerfDataUnits.U_Hertz) {
             str += " Hz";
-            break;
         }
 
         return str;

@@ -99,6 +99,7 @@ import org.graalvm.compiler.nodes.DeoptimizeNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -736,7 +737,7 @@ public class MonitorSnippets implements Snippets {
             StructuredGraph graph = monitorenterNode.graph();
             checkBalancedMonitors(graph, tool);
 
-            assert ((ObjectStamp) monitorenterNode.object().stamp()).nonNull();
+            assert ((ObjectStamp) monitorenterNode.object().stamp(NodeView.DEFAULT)).nonNull();
 
             Arguments args;
             if (useFastLocking) {
@@ -781,7 +782,7 @@ public class MonitorSnippets implements Snippets {
         }
 
         public static boolean isTracingEnabledForType(ValueNode object) {
-            ResolvedJavaType type = StampTool.typeOrNull(object.stamp());
+            ResolvedJavaType type = StampTool.typeOrNull(object.stamp(NodeView.DEFAULT));
             String filter = TraceMonitorsTypeFilter.getValue(object.getOptions());
             if (filter == null) {
                 return false;

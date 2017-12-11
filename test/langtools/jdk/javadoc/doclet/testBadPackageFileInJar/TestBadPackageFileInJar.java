@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,26 @@
 /*
  * @test
  * @bug 4691095 6306394
- * @summary Test to make sure that Javadoc emits a useful warning
- * when a bad package.html file is in the JAR.
+ * @summary Make sure that Javadoc emits a useful warning
+ *          when a bad package.html exists in a JAR archive.
  * @author jamieh
- * @library ../lib
+ * @library /tools/lib ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build JavadocTester
+ * @build JavadocTester toolbox.ToolBox toolbox.JarTask
  * @run main TestBadPackageFileInJar
  */
 
+import toolbox.JarTask;
+import toolbox.Task.Result;
+import toolbox.ToolBox;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 public class TestBadPackageFileInJar extends JavadocTester {
+
+    final ToolBox tb = new ToolBox();
 
     public static void main(String... args) throws Exception {
         TestBadPackageFileInJar tester = new TestBadPackageFileInJar();
@@ -41,10 +51,25 @@ public class TestBadPackageFileInJar extends JavadocTester {
     }
 
     @Test
-    void test() {
+    void test() throws IOException {
+        // create the file
+        Path pkgDir = Paths.get("pkg");
+        tb.createDirectories(pkgDir);
+        Path pkgfilePath = pkgDir.resolve("package.html");
+        tb.writeFile(pkgfilePath, "<html>\n\n</html>");
+
+        // create the jar file
+        Path jarFile = Paths.get("badPackageFileInJar.jar");
+        JarTask jar = new JarTask(tb, "badPackageFileInJar.jar");
+        jar.files(pkgDir.toString()).run();
+
+        // clean up to prevent accidental pick up
+        tb.cleanDirectory(pkgDir);
+        tb.deleteFiles(pkgDir.toString());
+
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
-                "-classpath",  testSrc("badPackageFileInJar.jar"),
+                "-classpath",  jarFile.toString(),
                 "pkg");
         checkExit(Exit.OK);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,10 +70,8 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
 import javax.security.auth.Subject;
-
 import com.sun.jmx.remote.internal.rmi.RMIExporter;
 import com.sun.jmx.remote.security.JMXPluggableAuthenticator;
-
 import jdk.internal.agent.Agent;
 import jdk.internal.agent.AgentConfigurationError;
 import static jdk.internal.agent.AgentConfigurationError.*;
@@ -102,6 +100,7 @@ public final class ConnectorBootstrap {
         public static final String USE_REGISTRY_SSL = "false";
         public static final String USE_AUTHENTICATION = "true";
         public static final String PASSWORD_FILE_NAME = "jmxremote.password";
+        public static final String HASH_PASSWORDS = "true";
         public static final String ACCESS_FILE_NAME = "jmxremote.access";
         public static final String SSL_NEED_CLIENT_AUTH = "false";
     }
@@ -129,6 +128,8 @@ public final class ConnectorBootstrap {
                 "com.sun.management.jmxremote.authenticate";
         public static final String PASSWORD_FILE_NAME =
                 "com.sun.management.jmxremote.password.file";
+        public static final String HASH_PASSWORDS
+                = "com.sun.management.jmxremote.password.toHashes";
         public static final String ACCESS_FILE_NAME =
                 "com.sun.management.jmxremote.access.file";
         public static final String LOGIN_CONFIG_NAME =
@@ -412,6 +413,7 @@ public final class ConnectorBootstrap {
 
         String loginConfigName = null;
         String passwordFileName = null;
+        boolean shouldHashPasswords = true;
         String accessFileName = null;
 
         // Initialize settings when authentication is active
@@ -426,6 +428,11 @@ public final class ConnectorBootstrap {
                 passwordFileName =
                         props.getProperty(PropertyNames.PASSWORD_FILE_NAME,
                         getDefaultFileName(DefaultValues.PASSWORD_FILE_NAME));
+                String hashPasswords
+                        = props.getProperty(PropertyNames.HASH_PASSWORDS,
+                                DefaultValues.HASH_PASSWORDS);
+                shouldHashPasswords = Boolean.parseBoolean(hashPasswords);
+
                 checkPasswordFile(passwordFileName);
             }
 
@@ -474,7 +481,7 @@ public final class ConnectorBootstrap {
                     sslConfigFileName, enabledCipherSuitesList,
                     enabledProtocolsList, sslNeedClientAuth,
                     useAuthentication, loginConfigName,
-                    passwordFileName, accessFileName, bindAddress, jmxRmiFilter);
+                    passwordFileName, shouldHashPasswords, accessFileName, bindAddress, jmxRmiFilter);
             cs = data.jmxConnectorServer;
             url = data.jmxRemoteURL;
             config("startRemoteConnectorServer",
@@ -567,6 +574,10 @@ public final class ConnectorBootstrap {
 
         if (!file.canRead()) {
             throw new AgentConfigurationError(PASSWORD_FILE_NOT_READABLE, passwordFileName);
+        }
+
+        if(!file.canWrite() && PropertyNames.HASH_PASSWORDS.equalsIgnoreCase("true")) {
+            logger.log(Level.WARNING, "");
         }
 
         FileSystem fs = FileSystem.open();
@@ -729,6 +740,7 @@ public final class ConnectorBootstrap {
             boolean useAuthentication,
             String loginConfigName,
             String passwordFileName,
+            boolean shouldHashPasswords,
             String accessFileName,
             String bindAddress,
             String jmxRmiFilter)
@@ -760,6 +772,9 @@ public final class ConnectorBootstrap {
             }
             if (passwordFileName != null) {
                 env.put("jmx.remote.x.password.file", passwordFileName);
+            }
+            if (shouldHashPasswords) {
+                env.put("jmx.remote.x.password.toHashes", "true");
             }
 
             env.put("jmx.remote.x.access.file", accessFileName);

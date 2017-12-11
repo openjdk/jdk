@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_OBJECTMONITOR_HPP
 #define SHARE_VM_RUNTIME_OBJECTMONITOR_HPP
 
+#include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
@@ -212,18 +213,10 @@ class ObjectMonitor {
   static int Knob_VerifyMatch;
   static int Knob_SpinLimit;
 
-  void* operator new (size_t size) throw() {
-    return AllocateHeap(size, mtInternal);
-  }
-  void* operator new[] (size_t size) throw() {
-    return operator new (size);
-  }
-  void operator delete(void* p) {
-    FreeHeap(p);
-  }
-  void operator delete[] (void *p) {
-    operator delete(p);
-  }
+  void* operator new (size_t size) throw();
+  void* operator new[] (size_t size) throw();
+  void operator delete(void* p);
+  void operator delete[] (void *p);
 
   // TODO-FIXME: the "offset" routines should return a type of off_t instead of int ...
   // ByteSize would also be an appropriate type.

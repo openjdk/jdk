@@ -40,6 +40,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
+#include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/utsname.h>
 #include <time.h>
@@ -51,6 +52,20 @@
 #define MAX_PID INT_MAX
 #endif
 #define IS_VALID_PID(p) (p > 0 && p < MAX_PID)
+
+#ifndef MAP_ANONYMOUS
+  #define MAP_ANONYMOUS MAP_ANON
+#endif
+
+#define check_with_errno(check_type, cond, msg)                             \
+  do {                                                                      \
+    int err = errno;                                                        \
+    check_type(cond, "%s; error='%s' (errno=%s)", msg, os::strerror(err),   \
+               os::errno_name(err));                                        \
+} while (false)
+
+#define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
+#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
 
 // Check core dump limit and report possible place where core can be found
 void os::check_dump_limit(char* buffer, size_t bufferSize) {
@@ -145,10 +160,124 @@ void os::wait_for_keypress_at_exit(void) {
   return;
 }
 
+int os::create_file_for_heap(const char* dir) {
+
+  const char name_template[] = "/jvmheap.XXXXXX";
+
+  char *fullname = (char*)os::malloc((strlen(dir) + strlen(name_template) + 1), mtInternal);
+  if (fullname == NULL) {
+    vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
+    return -1;
+  }
+  (void)strncpy(fullname, dir, strlen(dir)+1);
+  (void)strncat(fullname, name_template, strlen(name_template));
+
+  os::native_path(fullname);
+
+  sigset_t set, oldset;
+  int ret = sigfillset(&set);
+  assert_with_errno(ret == 0, "sigfillset returned error");
+
+  // set the file creation mask.
+  mode_t file_mode = S_IRUSR | S_IWUSR;
+
+  // create a new file.
+  int fd = mkstemp(fullname);
+
+  if (fd < 0) {
+    warning("Could not create file for heap with template %s", fullname);
+    os::free(fullname);
+    return -1;
+  }
+
+  // delete the name from the filesystem. When 'fd' is closed, the file (and space) will be deleted.
+  ret = unlink(fullname);
+  assert_with_errno(ret == 0, "unlink returned error");
+
+  os::free(fullname);
+  return fd;
+}
+
+static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
+  char * addr;
+  int flags = MAP_PRIVATE NOT_AIX( | MAP_NORESERVE ) | MAP_ANONYMOUS;
+  if (requested_addr != NULL) {
+    assert((uintptr_t)requested_addr % os::vm_page_size() == 0, "Requested address should be aligned to OS page size");
+    flags |= MAP_FIXED;
+  }
+
+  // Map reserved/uncommitted pages PROT_NONE so we fail early if we
+  // touch an uncommitted page. Otherwise, the read/write might
+  // succeed if we have enough swap space to back the physical page.
+  addr = (char*)::mmap(requested_addr, bytes, PROT_NONE,
+                       flags, -1, 0);
+
+  if (addr != MAP_FAILED) {
+    MemTracker::record_virtual_memory_reserve((address)addr, bytes, CALLER_PC);
+    return addr;
+  }
+  return NULL;
+}
+
+static int util_posix_fallocate(int fd, off_t offset, off_t len) {
+#ifdef __APPLE__
+  fstore_t store = { F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, len };
+  // First we try to get a continuous chunk of disk space
+  int ret = fcntl(fd, F_PREALLOCATE, &store);
+  if (ret == -1) {
+    // Maybe we are too fragmented, try to allocate non-continuous range
+    store.fst_flags = F_ALLOCATEALL;
+    ret = fcntl(fd, F_PREALLOCATE, &store);
+  }
+  if(ret != -1) {
+    return ftruncate(fd, len);
+  }
+  return -1;
+#else
+  return posix_fallocate(fd, offset, len);
+#endif
+}
+
+// Map the given address range to the provided file descriptor.
+char* os::map_memory_to_file(char* base, size_t size, int fd) {
+  assert(fd != -1, "File descriptor is not valid");
+
+  // allocate space for the file
+  if (util_posix_fallocate(fd, 0, (off_t)size) != 0) {
+    vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory."));
+    return NULL;
+  }
+
+  int prot = PROT_READ | PROT_WRITE;
+  int flags = MAP_SHARED;
+  if (base != NULL) {
+    flags |= MAP_FIXED;
+  }
+  char* addr = (char*)mmap(base, size, prot, flags, fd, 0);
+
+  if (addr == MAP_FAILED) {
+    return NULL;
+  }
+  if (base != NULL && addr != base) {
+    if (!os::release_memory(addr, size)) {
+      warning("Could not release memory on unsuccessful file mapping");
+     }
+    return NULL;
+  }
+  return addr;
+}
+
+char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd) {
+  assert(fd != -1, "File descriptor is not valid");
+  assert(base != NULL, "Base cannot be NULL");
+
+  return map_memory_to_file(base, size, fd);
+}
+
 // Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
 // so on posix, unmap the section at the start and at the end of the chunk that we mapped
 // rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
       "Alignment must be a multiple of allocation granularity (page size)");
   assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
@@ -156,7 +285,20 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment) {
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
 
-  char* extra_base = os::reserve_memory(extra_size, NULL, alignment);
+  char* extra_base;
+  if (file_desc != -1) {
+    // For file mapping, we do not call os:reserve_memory(extra_size, NULL, alignment, file_desc) because
+    // we need to deal with shrinking of the file space later when we release extra memory after alignment.
+    // We also cannot called os:reserve_memory() with file_desc set to -1 because on aix we might get SHM memory.
+    // So here to call a helper function while reserve memory for us. After we have a aligned base,
+    // we will replace anonymous mapping with file mapping.
+    extra_base = reserve_mmapped_memory(extra_size, NULL);
+    if (extra_base != NULL) {
+      MemTracker::record_virtual_memory_reserve((address)extra_base, extra_size, CALLER_PC);
+    }
+  } else {
+    extra_base = os::reserve_memory(extra_size, NULL, alignment);
+  }
 
   if (extra_base == NULL) {
     return NULL;
@@ -183,6 +325,13 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment) {
       os::release_memory(extra_base + begin_offset + size, end_offset);
   }
 
+  if (file_desc != -1) {
+    // After we have an aligned address, we can replace anonymous mapping with file mapping
+    if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == NULL) {
+      vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
+    }
+    MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
+  }
   return aligned_base;
 }
 
@@ -478,8 +627,7 @@ int os::sleep(Thread* thread, jlong millis, bool interruptible) {
 // interrupt support
 
 void os::interrupt(Thread* thread) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(),
-    "possibility of dangling Thread pointer");
+  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   OSThread* osthread = thread->osthread();
 
@@ -499,12 +647,10 @@ void os::interrupt(Thread* thread) {
 
   ParkEvent * ev = thread->_ParkEvent ;
   if (ev != NULL) ev->unpark() ;
-
 }
 
 bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(),
-    "possibility of dangling Thread pointer");
+  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   OSThread* osthread = thread->osthread();
 
@@ -1350,16 +1496,6 @@ void os::ThreadCrashProtection::check_crash_protection(int sig,
     }
   }
 }
-
-#define check_with_errno(check_type, cond, msg)                             \
-  do {                                                                      \
-    int err = errno;                                                        \
-    check_type(cond, "%s; error='%s' (errno=%s)", msg, os::strerror(err),   \
-               os::errno_name(err));                                        \
-} while (false)
-
-#define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
-#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
 
 // POSIX unamed semaphores are not supported on OS X.
 #ifndef __APPLE__

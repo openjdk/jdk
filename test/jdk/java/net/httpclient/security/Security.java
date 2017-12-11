@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
@@ -297,15 +296,15 @@ public class Security {
                 CompletableFuture<HttpResponse<String>> cf =
                     client.sendAsync(request, new HttpResponse.BodyHandler<String>() {
                         @Override
-                        public HttpResponse.BodyProcessor<String> apply(int status, HttpHeaders responseHeaders)  {
-                            final HttpResponse.BodyProcessor<String> stproc = sth.apply(status, responseHeaders);
-                            return new HttpResponse.BodyProcessor<String>() {
+                        public HttpResponse.BodySubscriber<String> apply(int status, HttpHeaders responseHeaders)  {
+                            final HttpResponse.BodySubscriber<String> stproc = sth.apply(status, responseHeaders);
+                            return new HttpResponse.BodySubscriber<String>() {
                                 @Override
                                 public CompletionStage<String> getBody() {
                                     return stproc.getBody();
                                 }
                                 @Override
-                                public void onNext(ByteBuffer item) {
+                                public void onNext(List<ByteBuffer> item) {
                                     SecurityManager sm = System.getSecurityManager();
                                     // should succeed.
                                     sm.checkPermission(new RuntimePermission("foobar"));
@@ -337,6 +336,9 @@ public class Security {
                     Throwable t = e.getCause();
                     if (t instanceof SecurityException)
                         throw (SecurityException)t;
+                    else if ((t instanceof IOException)
+                              && (t.getCause() instanceof SecurityException))
+                        throw ((SecurityException)t.getCause());
                     else
                         throw new RuntimeException(t);
                 }
@@ -379,7 +381,7 @@ public class Security {
             r.execute();
             if (!succeeds) {
                 System.out.println("FAILED: expected security exception");
-                throw new RuntimeException("Failed");
+                throw new RuntimeException("FAILED: expected security exception\"");
             }
             System.out.println (policy + " succeeded as expected");
         } catch (BindException e) {
@@ -419,12 +421,6 @@ public class Security {
         } finally {
             s1.stop(0);
             executor.shutdownNow();
-            for (HttpClient client : clients) {
-                Executor e = client.executor();
-                if (e instanceof ExecutorService) {
-                    ((ExecutorService)e).shutdownNow();
-                }
-            }
         }
     }
 

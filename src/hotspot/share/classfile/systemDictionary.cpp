@@ -1087,7 +1087,7 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
 #if INCLUDE_CDS
   ResourceMark rm(THREAD);
   if (DumpSharedSpaces && !class_loader.is_null() &&
-      !ArgumentsExt::using_AppCDS() && strcmp(class_name->as_C_string(), "Unnamed") != 0) {
+      !UseAppCDS && strcmp(class_name->as_C_string(), "Unnamed") != 0) {
     // If AppCDS is not enabled, don't define the class at dump time (except for the "Unnamed"
     // class, which is used by MethodHandles).
     THROW_MSG_NULL(vmSymbols::java_lang_ClassNotFoundException(), class_name->as_C_string());

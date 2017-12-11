@@ -124,16 +124,6 @@ public interface JavaLangAccess {
     void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook);
 
     /**
-     * Returns a new string backed by the provided character array. The
-     * character array is not copied and must never be modified after the
-     * String is created, in order to fulfill String's contract.
-     *
-     * @param chars the character array to back the string
-     * @return a newly created string whose content is the character array
-     */
-    String newStringUnsafe(char[] chars);
-
-    /**
      * Returns a new Thread with the given Runnable and an
      * inherited AccessControlContext.
      */

@@ -51,4 +51,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORT_RESERVED_STACK_AREA
 
+#define THREAD_LOCAL_POLL
+
 #endif // CPU_AARCH64_VM_GLOBALDEFINITIONS_AARCH64_HPP

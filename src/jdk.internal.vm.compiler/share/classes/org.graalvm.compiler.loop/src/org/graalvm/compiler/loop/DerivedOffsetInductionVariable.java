@@ -27,6 +27,7 @@ import static org.graalvm.compiler.loop.MathUtil.sub;
 
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
@@ -90,14 +91,14 @@ public class DerivedOffsetInductionVariable extends DerivedInductionVariable {
     @Override
     public ValueNode strideNode() {
         if (value instanceof SubNode && base.valueNode() == value.getY()) {
-            return graph().addOrUniqueWithInputs(NegateNode.create(base.strideNode()));
+            return graph().addOrUniqueWithInputs(NegateNode.create(base.strideNode(), NodeView.DEFAULT));
         }
         return base.strideNode();
     }
 
     @Override
     public ValueNode extremumNode(boolean assumePositiveTripCount, Stamp stamp) {
-        return op(base.extremumNode(assumePositiveTripCount, stamp), IntegerConvertNode.convert(offset, stamp, graph()));
+        return op(base.extremumNode(assumePositiveTripCount, stamp), IntegerConvertNode.convert(offset, stamp, graph(), NodeView.DEFAULT));
     }
 
     @Override

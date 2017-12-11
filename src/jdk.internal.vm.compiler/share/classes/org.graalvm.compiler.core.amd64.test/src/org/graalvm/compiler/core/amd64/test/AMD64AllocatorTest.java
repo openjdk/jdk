@@ -44,7 +44,7 @@ public class AMD64AllocatorTest extends AllocatorTest {
 
     @Test
     public void test1() {
-        testAllocation("test1snippet", 3, 1, 0);
+        testAllocation("test1snippet", 3, 0, 0);
     }
 
     public static long test1snippet(long x) {

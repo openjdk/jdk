@@ -135,8 +135,6 @@ public class TimeoutOrdering {
             if (error)
                 throw new RuntimeException("Failed. Check output");
 
-        } finally {
-            ((ExecutorService) client.executor()).shutdownNow();
         }
     }
 

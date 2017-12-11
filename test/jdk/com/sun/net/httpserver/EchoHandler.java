@@ -66,8 +66,8 @@ public class EchoHandler implements HttpHandler {
             t.sendResponseHeaders(200, in.length);
             OutputStream os = t.getResponseBody();
             os.write(in);
-            close(os);
-            close(is);
+            close(t, os);
+            close(t, is);
         } else {
             OutputStream os = t.getResponseBody();
             byte[] buf = new byte[64 * 1024];
@@ -84,15 +84,21 @@ public class EchoHandler implements HttpHandler {
                 String s = Integer.toString(count);
                 os.write(s.getBytes());
             }
-            close(os);
-            close(is);
+            close(t, os);
+            close(t, is);
         }
     }
 
     protected void close(OutputStream os) throws IOException {
-            os.close();
+        os.close();
     }
     protected void close(InputStream is) throws IOException {
-            is.close();
+        is.close();
+    }
+    protected void close(HttpExchange t, OutputStream os) throws IOException {
+        close(os);
+    }
+    protected void close(HttpExchange t, InputStream is) throws IOException {
+        close(is);
     }
 }

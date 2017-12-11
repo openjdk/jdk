@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,9 @@ class AuthenticationFilter implements HeaderFilter {
     static final int UNAUTHORIZED = 401;
     static final int PROXY_UNAUTHORIZED = 407;
 
+    // A public no-arg constructor is required by FilterFactory
+    public AuthenticationFilter() {}
+
     private PasswordAuthentication getCredentials(String header,
                                                   boolean proxy,
                                                   HttpRequestImpl req)
@@ -83,7 +86,7 @@ class AuthenticationFilter implements HeaderFilter {
     }
 
     private URI getProxyURI(HttpRequestImpl r) {
-        InetSocketAddress proxy = r.proxy(exchange.client());
+        InetSocketAddress proxy = r.proxy();
         if (proxy == null) {
             return null;
         }
@@ -216,7 +219,6 @@ class AuthenticationFilter implements HeaderFilter {
             return null;   // error gets returned to app
         }
 
-        String realm = parser.findValue("realm");
         AuthInfo au = proxy ? exchange.proxyauth : exchange.serverauth;
         if (au == null) {
             PasswordAuthentication pw = getCredentials(authval, proxy, req);

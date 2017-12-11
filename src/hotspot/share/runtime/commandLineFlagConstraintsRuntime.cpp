@@ -138,10 +138,6 @@ Flag::Error ThreadLocalHandshakesConstraintFunc(bool value, bool verbose) {
       CommandLineError::print(verbose, "ThreadLocalHandshakes not yet supported on this platform\n");
       return Flag::VIOLATES_CONSTRAINT;
     }
-    if (UseAOT JVMCI_ONLY(|| EnableJVMCI || UseJVMCICompiler)) {
-      CommandLineError::print(verbose, "ThreadLocalHandshakes not yet supported in combination with AOT or JVMCI\n");
-      return Flag::VIOLATES_CONSTRAINT;
-    }
   }
   return Flag::SUCCESS;
 }

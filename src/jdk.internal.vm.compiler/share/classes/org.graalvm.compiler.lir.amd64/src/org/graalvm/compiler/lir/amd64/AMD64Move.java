@@ -299,16 +299,23 @@ public class AMD64Move {
 
         @Def({REG}) protected AllocatableValue result;
         @Use({COMPOSITE, UNINITIALIZED}) protected AMD64AddressValue address;
+        private final OperandSize size;
 
-        public LeaOp(AllocatableValue result, AMD64AddressValue address) {
+        public LeaOp(AllocatableValue result, AMD64AddressValue address, OperandSize size) {
             super(TYPE);
             this.result = result;
             this.address = address;
+            this.size = size;
         }
 
         @Override
         public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
-            masm.leaq(asRegister(result, AMD64Kind.QWORD), address.toAddress());
+            if (size == OperandSize.QWORD) {
+                masm.leaq(asRegister(result, AMD64Kind.QWORD), address.toAddress());
+            } else {
+                assert size == OperandSize.DWORD;
+                masm.lead(asRegister(result, AMD64Kind.DWORD), address.toAddress());
+            }
         }
     }
 

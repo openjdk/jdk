@@ -830,7 +830,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(nmethod,                     _osr_link,                                     nmethod*)                              \
   nonstatic_field(nmethod,                     _scavenge_root_link,                           nmethod*)                              \
   nonstatic_field(nmethod,                     _scavenge_root_state,                          jbyte)                                 \
-  nonstatic_field(nmethod,                     _state,                                        volatile char)                         \
+  nonstatic_field(nmethod,                     _state,                                        volatile signed char)                         \
   nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
@@ -1350,8 +1350,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_integer_type(int)                                               \
   declare_integer_type(long)                                              \
   declare_integer_type(char)                                              \
+  declare_integer_type(volatile signed char)                              \
   declare_unsigned_integer_type(unsigned char)                            \
-  declare_unsigned_integer_type(volatile char)                            \
   declare_unsigned_integer_type(u_char)                                   \
   declare_unsigned_integer_type(unsigned int)                             \
   declare_unsigned_integer_type(uint)                                     \
@@ -1534,6 +1534,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(PerfDataPrologue*)                                \
   declare_toplevel_type(PerfDataEntry)                                    \
   declare_toplevel_type(PerfMemory)                                       \
+  declare_type(PerfData, CHeapObj<mtInternal>)                            \
                                                                           \
   /*********************************/                                     \
   /* SymbolTable, SystemDictionary */                                     \
@@ -1958,6 +1959,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_c2_type(NegFNode, NegNode)                                      \
   declare_c2_type(NegDNode, NegNode)                                      \
   declare_c2_type(AtanDNode, Node)                                        \
+  declare_c2_type(SqrtFNode, Node)                                        \
   declare_c2_type(SqrtDNode, Node)                                        \
   declare_c2_type(ReverseBytesINode, Node)                                \
   declare_c2_type(ReverseBytesLNode, Node)                                \
@@ -2480,6 +2482,12 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_constant(InstanceKlass::inner_class_access_flags_offset)        \
   declare_constant(InstanceKlass::inner_class_next_offset)                \
                                                                           \
+  /*****************************************************/                 \
+  /* InstanceKlass EnclosingMethodAttributeOffset enum */                 \
+  /*****************************************************/                 \
+                                                                          \
+  declare_constant(InstanceKlass::enclosing_method_attribute_size)        \
+                                                                          \
   /*********************************/                                     \
   /* InstanceKlass ClassState enum */                                     \
   /*********************************/                                     \
@@ -2635,6 +2643,46 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_constant(Deoptimization::_reason_shift)                         \
   declare_constant(Deoptimization::_debug_id_shift)                       \
                                                                           \
+  /******************************************/                            \
+  /* BasicType enum (globalDefinitions.hpp) */                            \
+  /******************************************/                            \
+                                                                          \
+  declare_constant(T_BOOLEAN)                                             \
+  declare_constant(T_CHAR)                                                \
+  declare_constant(T_FLOAT)                                               \
+  declare_constant(T_DOUBLE)                                              \
+  declare_constant(T_BYTE)                                                \
+  declare_constant(T_SHORT)                                               \
+  declare_constant(T_INT)                                                 \
+  declare_constant(T_LONG)                                                \
+  declare_constant(T_OBJECT)                                              \
+  declare_constant(T_ARRAY)                                               \
+  declare_constant(T_VOID)                                                \
+  declare_constant(T_ADDRESS)                                             \
+  declare_constant(T_NARROWOOP)                                           \
+  declare_constant(T_METADATA)                                            \
+  declare_constant(T_NARROWKLASS)                                         \
+  declare_constant(T_CONFLICT)                                            \
+  declare_constant(T_ILLEGAL)                                             \
+                                                                          \
+  /**********************************************/                        \
+  /* BasicTypeSize enum (globalDefinitions.hpp) */                        \
+  /**********************************************/                        \
+                                                                          \
+  declare_constant(T_BOOLEAN_size)                                        \
+  declare_constant(T_CHAR_size)                                           \
+  declare_constant(T_FLOAT_size)                                          \
+  declare_constant(T_DOUBLE_size)                                         \
+  declare_constant(T_BYTE_size)                                           \
+  declare_constant(T_SHORT_size)                                          \
+  declare_constant(T_INT_size)                                            \
+  declare_constant(T_LONG_size)                                           \
+  declare_constant(T_OBJECT_size)                                         \
+  declare_constant(T_ARRAY_size)                                          \
+  declare_constant(T_NARROWOOP_size)                                      \
+  declare_constant(T_NARROWKLASS_size)                                    \
+  declare_constant(T_VOID_size)                                           \
+                                                                          \
   /*********************/                                                 \
   /* Matcher (C2 only) */                                                 \
   /*********************/                                                 \
@@ -2732,6 +2780,21 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_preprocessor_constant("REG_COUNT", REG_COUNT)                \
   declare_c2_preprocessor_constant("SAVED_ON_ENTRY_REG_COUNT", SAVED_ON_ENTRY_REG_COUNT) \
   declare_c2_preprocessor_constant("C_SAVED_ON_ENTRY_REG_COUNT", C_SAVED_ON_ENTRY_REG_COUNT) \
+                                                                          \
+  /************/                                                          \
+  /* PerfData */                                                          \
+  /************/                                                          \
+                                                                          \
+  /***********************/                                               \
+  /* PerfData Units enum */                                               \
+  /***********************/                                               \
+                                                                          \
+  declare_constant(PerfData::U_None)                                      \
+  declare_constant(PerfData::U_Bytes)                                     \
+  declare_constant(PerfData::U_Ticks)                                     \
+  declare_constant(PerfData::U_Events)                                    \
+  declare_constant(PerfData::U_String)                                    \
+  declare_constant(PerfData::U_Hertz)                                     \
                                                                           \
   /****************/                                                      \
   /* JVMCI */                                                             \

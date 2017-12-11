@@ -279,7 +279,9 @@ ifeq ($(HAS_SPEC),)
           # generated files.
           ifeq ($$(MAKE_RESTARTS),)
             ifeq ($$(words $$(matching_confs)), 1)
-              $$(info Building configuration '$$(matching_confs)' (matching CONF=$$(CONF)))
+              ifneq ($$(findstring $$(LOG_LEVEL), info debug trace),)
+                $$(info Building configuration '$$(matching_confs)' (matching CONF=$$(CONF)))
+              endif
             else
               $$(info Building these configurations (matching CONF=$$(CONF)):)
               $$(foreach var, $$(matching_confs), $$(info * $$(var)))

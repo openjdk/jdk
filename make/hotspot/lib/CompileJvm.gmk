@@ -59,6 +59,7 @@ JVM_CFLAGS_INCLUDES += \
     -I$(TOPDIR)/src/hotspot/share/precompiled \
     -I$(TOPDIR)/src/java.base/share/native/include \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include \
+    -I$(TOPDIR)/src/java.management/share/native/include \
     -I$(TOPDIR)/src/java.base/share/native/libjimage \
     #
 

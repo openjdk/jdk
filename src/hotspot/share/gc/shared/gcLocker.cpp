@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 
 volatile jint GCLocker::_jni_lock_count = 0;
 volatile bool GCLocker::_needs_gc       = false;
@@ -45,14 +46,16 @@ void GCLocker::verify_critical_count() {
     assert(!needs_gc() || _debug_jni_lock_count == _jni_lock_count, "must agree");
     int count = 0;
     // Count the number of threads with critical operations in progress
-    for (JavaThread* thr = Threads::first(); thr; thr = thr->next()) {
+    JavaThreadIteratorWithHandle jtiwh;
+    for (; JavaThread *thr = jtiwh.next(); ) {
       if (thr->in_critical()) {
         count++;
       }
     }
     if (_jni_lock_count != count) {
       log_error(gc, verify)("critical counts don't match: %d != %d", _jni_lock_count, count);
-      for (JavaThread* thr = Threads::first(); thr; thr = thr->next()) {
+      jtiwh.rewind();
+      for (; JavaThread *thr = jtiwh.next(); ) {
         if (thr->in_critical()) {
           log_error(gc, verify)(INTPTR_FORMAT " in_critical %d", p2i(thr), thr->in_critical());
         }

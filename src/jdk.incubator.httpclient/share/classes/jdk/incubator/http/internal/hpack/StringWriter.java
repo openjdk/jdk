@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,9 @@ final class StringWriter {
         return configure(input, 0, input.length(), huffman);
     }
 
-    StringWriter configure(CharSequence input, int start, int end,
+    StringWriter configure(CharSequence input,
+                           int start,
+                           int end,
                            boolean huffman) {
         if (start < 0 || end < 0 || end > input.length() || start > end) {
             throw new IndexOutOfBoundsException(

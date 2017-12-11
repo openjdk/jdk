@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,5 +287,17 @@ public class Platform {
         } else {
             return "so";
         }
+    }
+
+    /*
+     * This should match the #if condition in ClassListParser::load_class_from_source().
+     */
+    public static boolean areCustomLoadersSupportedForCDS() {
+        boolean isLinux = Platform.isLinux();
+        boolean is64 = Platform.is64bit();
+        boolean isSolaris = Platform.isSolaris();
+        boolean isAix = Platform.isAix();
+
+        return (is64 && (isLinux || isSolaris || isAix));
     }
 }

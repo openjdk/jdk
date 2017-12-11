@@ -29,6 +29,7 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -46,7 +47,7 @@ public class FixedValueAnchorNode extends FixedWithNextNode implements LIRLowera
     }
 
     protected FixedValueAnchorNode(NodeClass<? extends FixedValueAnchorNode> c, ValueNode object) {
-        super(c, object.stamp());
+        super(c, object.stamp(NodeView.DEFAULT));
         this.object = object;
     }
 
@@ -63,7 +64,7 @@ public class FixedValueAnchorNode extends FixedWithNextNode implements LIRLowera
     @Override
     public boolean inferStamp() {
         if (predefinedStamp == null) {
-            return updateStamp(object.stamp());
+            return updateStamp(object.stamp(NodeView.DEFAULT));
         } else {
             return false;
         }

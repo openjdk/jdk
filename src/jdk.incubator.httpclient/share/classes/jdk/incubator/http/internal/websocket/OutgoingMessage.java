@@ -71,12 +71,13 @@ abstract class OutgoingMessage {
      * so it would be possible to defer the work it does until the most
      * convenient moment (up to the point where sentTo is invoked).
      */
-    protected void contextualize(Context context) {
+    protected boolean contextualize(Context context) {
         // masking and charset decoding should be performed here rather than in
         // the constructor (as of today)
         if (context.isCloseSent()) {
             throw new IllegalStateException("Close sent");
         }
+        return true;
     }
 
     protected boolean sendTo(RawChannel channel) throws IOException {
@@ -115,7 +116,7 @@ abstract class OutgoingMessage {
         }
 
         @Override
-        protected void contextualize(Context context) {
+        protected boolean contextualize(Context context) {
             super.contextualize(context);
             if (context.isPreviousBinary() && !context.isPreviousLast()) {
                 throw new IllegalStateException("Unexpected text message");
@@ -125,6 +126,7 @@ abstract class OutgoingMessage {
             context.setPreviousBinary(false);
             context.setPreviousText(true);
             context.setPreviousLast(isLast);
+            return true;
         }
     }
 
@@ -139,7 +141,7 @@ abstract class OutgoingMessage {
         }
 
         @Override
-        protected void contextualize(Context context) {
+        protected boolean contextualize(Context context) {
             super.contextualize(context);
             if (context.isPreviousText() && !context.isPreviousLast()) {
                 throw new IllegalStateException("Unexpected binary message");
@@ -150,6 +152,7 @@ abstract class OutgoingMessage {
             context.setPreviousText(false);
             context.setPreviousBinary(true);
             context.setPreviousLast(isLast);
+            return true;
         }
     }
 
@@ -195,9 +198,13 @@ abstract class OutgoingMessage {
         }
 
         @Override
-        protected void contextualize(Context context) {
-            super.contextualize(context);
-            context.setCloseSent();
+        protected boolean contextualize(Context context) {
+            if (context.isCloseSent()) {
+                return false;
+            } else {
+                context.setCloseSent();
+                return true;
+            }
         }
     }
 

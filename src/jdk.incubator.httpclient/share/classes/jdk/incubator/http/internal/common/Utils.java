@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package jdk.incubator.http.internal.common;
 
-import jdk.internal.misc.InnocuousThread;
+import jdk.incubator.http.HttpHeaders;
 import sun.net.NetProperties;
 import sun.net.util.IPAddressUtil;
 
@@ -33,11 +33,12 @@ import javax.net.ssl.SSLParameters;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.net.InetSocketAddress;
-import java.net.NetPermission;
 import java.net.URI;
 import java.net.URLPermission;
 import java.nio.ByteBuffer;
@@ -48,29 +49,45 @@ import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
-import jdk.incubator.http.HttpHeaders;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * Miscellaneous utilities
  */
 public final class Utils {
 
+    public static final boolean ASSERTIONSENABLED;
+    static {
+        boolean enabled = false;
+        assert enabled = true;
+        ASSERTIONSENABLED = enabled;
+    }
+//    public static final boolean TESTING;
+//    static {
+//        if (ASSERTIONSENABLED) {
+//            PrivilegedAction<String> action = () -> System.getProperty("test.src");
+//            TESTING = AccessController.doPrivileged(action) != null;
+//        } else TESTING = false;
+//    }
+    public static final boolean DEBUG = // Revisit: temporary dev flag.
+            getBooleanProperty(DebugLogger.HTTP_NAME, false);
+    public static final boolean DEBUG_HPACK = // Revisit: temporary dev flag.
+            getBooleanProperty(DebugLogger.HPACK_NAME, false);
+    public static final boolean TESTING = DEBUG;
+
     /**
      * Allocated buffer size. Must never be higher than 16K. But can be lower
      * if smaller allocation units preferred. HTTP/2 mandates that all
      * implementations support frame payloads of at least 16K.
      */
-    public static final int DEFAULT_BUFSIZE = 16 * 1024;
+    private static final int DEFAULT_BUFSIZE = 16 * 1024;
 
     public static final int BUFSIZE = getIntegerNetProperty(
             "jdk.httpclient.bufsize", DEFAULT_BUFSIZE
@@ -84,11 +101,15 @@ public final class Utils {
     public static final Predicate<String>
         ALLOWED_HEADERS = header -> !Utils.DISALLOWED_HEADERS_SET.contains(header);
 
-    public static final Predicate<String>
-        ALL_HEADERS = header -> true;
-
     public static ByteBuffer getBuffer() {
         return ByteBuffer.allocate(BUFSIZE);
+    }
+
+    public static Throwable getCompletionCause(Throwable x) {
+        if (!(x instanceof CompletionException)
+                && !(x instanceof ExecutionException)) return x;
+        final Throwable cause = x.getCause();
+        return cause == null ? x : cause;
     }
 
     public static IOException getIOException(Throwable t) {
@@ -102,38 +123,43 @@ public final class Utils {
         return new IOException(t);
     }
 
-    /**
-     * We use the same buffer for reading all headers and dummy bodies in an Exchange.
-     */
-    public static ByteBuffer getExchangeBuffer() {
-        ByteBuffer buf = getBuffer();
-        // Force a read the first time it is used
-        buf.limit(0);
-        return buf;
-    }
-
-    /**
-     * Puts position to limit and limit to capacity so we can resume reading
-     * into this buffer, but if required > 0 then limit may be reduced so that
-     * no more than required bytes are read next time.
-     */
-    static void resumeChannelRead(ByteBuffer buf, int required) {
-        int limit = buf.limit();
-        buf.position(limit);
-        int capacity = buf.capacity() - limit;
-        if (required > 0 && required < capacity) {
-            buf.limit(limit + required);
-        } else {
-            buf.limit(buf.capacity());
-        }
-    }
-
     private Utils() { }
 
-    public static ExecutorService innocuousThreadPool() {
-        return Executors.newCachedThreadPool(
-                (r) -> InnocuousThread.newThread("DefaultHttpClient", r));
+    /**
+     * Returns the security permissions required to connect to the proxy, or
+     * {@code null} if none is required or applicable.
+     */
+    public static URLPermission permissionForProxy(InetSocketAddress proxyAddress) {
+        if (proxyAddress == null)
+            return null;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("socket://")
+          .append(proxyAddress.getHostString()).append(":")
+          .append(proxyAddress.getPort());
+        String urlString = sb.toString();
+        return new URLPermission(urlString, "CONNECT");
     }
+
+    /**
+     * Returns the security permission required for the given details.
+     */
+    public static URLPermission permissionForServer(URI uri,
+                                                    String method,
+                                                    Stream<String> headers) {
+        String urlString = new StringBuilder()
+                .append(uri.getScheme()).append("://")
+                .append(uri.getAuthority())
+                .append(uri.getPath()).toString();
+
+        StringBuilder actionStringBuilder = new StringBuilder(method);
+        String collected = headers.collect(joining(","));
+        if (!collected.isEmpty()) {
+            actionStringBuilder.append(":").append(collected);
+        }
+        return new URLPermission(urlString, actionStringBuilder.toString());
+    }
+
 
     // ABNF primitives defined in RFC 7230
     private static final boolean[] tchar      = new boolean[256];
@@ -217,55 +243,6 @@ public final class Utils {
         return accepted;
     }
 
-    /**
-     * Returns the security permission required for the given details.
-     * If method is CONNECT, then uri must be of form "scheme://host:port"
-     */
-    public static URLPermission getPermission(URI uri,
-                                              String method,
-                                              Map<String, List<String>> headers) {
-        StringBuilder sb = new StringBuilder();
-
-        String urlstring, actionstring;
-
-        if (method.equals("CONNECT")) {
-            urlstring = uri.toString();
-            actionstring = "CONNECT";
-        } else {
-            sb.append(uri.getScheme())
-                    .append("://")
-                    .append(uri.getAuthority())
-                    .append(uri.getPath());
-            urlstring = sb.toString();
-
-            sb = new StringBuilder();
-            sb.append(method);
-            if (headers != null && !headers.isEmpty()) {
-                sb.append(':');
-                Set<String> keys = headers.keySet();
-                boolean first = true;
-                for (String key : keys) {
-                    if (!first) {
-                        sb.append(',');
-                    }
-                    sb.append(key);
-                    first = false;
-                }
-            }
-            actionstring = sb.toString();
-        }
-        return new URLPermission(urlstring, actionstring);
-    }
-
-    public static void checkNetPermission(String target) {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            return;
-        }
-        NetPermission np = new NetPermission(target);
-        sm.checkPermission(np);
-    }
-
     public static int getIntegerNetProperty(String name, int defaultValue) {
         return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
                 NetProperties.getInteger(name, defaultValue));
@@ -274,6 +251,11 @@ public final class Utils {
     static String getNetProperty(String name) {
         return AccessController.doPrivileged((PrivilegedAction<String>) () ->
                 NetProperties.get(name));
+    }
+
+    static boolean getBooleanProperty(String name, boolean def) {
+        return AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
+                Boolean.parseBoolean(System.getProperty(name, String.valueOf(def))));
     }
 
     public static SSLParameters copySSLParameters(SSLParameters p) {
@@ -313,7 +295,7 @@ public final class Utils {
             t.printStackTrace(p);
             s = bos.toString("US-ASCII");
         } catch (UnsupportedEncodingException ex) {
-            // can't happen
+            throw new InternalError(ex); // Can't happen
         }
         return s;
     }
@@ -337,28 +319,47 @@ public final class Utils {
         return srcLen - src.remaining();
     }
 
-    // copy up to amount from src to dst, but no more
-    public static int copyUpTo(ByteBuffer src, ByteBuffer dst, int amount) {
-        int toCopy = Math.min(src.remaining(), Math.min(dst.remaining(), amount));
-        copy(src, dst, toCopy);
-        return toCopy;
-    }
+    /** Threshold beyond which data is no longer copied into the current
+     * buffer, if that buffer has enough unused space. */
+    private static final int COPY_THRESHOLD = 8192;
 
     /**
-     * Copy amount bytes from src to dst. at least amount must be
-     * available in both dst and in src
+     * Adds the data from buffersToAdd to currentList. Either 1) appends the
+     * data from a particular buffer to the last buffer in the list ( if
+     * there is enough unused space ), or 2) adds it to the list.
+     *
+     * @return the number of bytes added
      */
-    public static void copy(ByteBuffer src, ByteBuffer dst, int amount) {
-        int excess = src.remaining() - amount;
-        assert excess >= 0;
-        if (excess > 0) {
-            int srclimit = src.limit();
-            src.limit(srclimit - excess);
-            dst.put(src);
-            src.limit(srclimit);
-        } else {
-            dst.put(src);
+    public static long accumulateBuffers(List<ByteBuffer> currentList,
+                                         List<ByteBuffer> buffersToAdd) {
+        long accumulatedBytes = 0;
+        for (ByteBuffer bufferToAdd : buffersToAdd) {
+            int remaining = bufferToAdd.remaining();
+            if (remaining <= 0)
+                continue;
+            int listSize = currentList.size();
+            if (listSize == 0) {
+                currentList.add(bufferToAdd);
+                accumulatedBytes = remaining;
+                continue;
+            }
+
+            ByteBuffer lastBuffer = currentList.get(listSize - 1);
+            int freeSpace = lastBuffer.capacity() - lastBuffer.limit();
+            if (remaining <= COPY_THRESHOLD && freeSpace >= remaining) {
+                // append the new data to the unused space in the last buffer
+                int position = lastBuffer.position();
+                int limit = lastBuffer.limit();
+                lastBuffer.position(limit);
+                lastBuffer.limit(limit + remaining);
+                lastBuffer.put(bufferToAdd);
+                lastBuffer.position(position);
+            } else {
+                currentList.add(bufferToAdd);
+            }
+            accumulatedBytes += remaining;
         }
+        return accumulatedBytes;
     }
 
     public static ByteBuffer copy(ByteBuffer src) {
@@ -378,34 +379,75 @@ public final class Utils {
         return Arrays.toString(source.toArray());
     }
 
-    public static int remaining(ByteBuffer[] bufs) {
-        int remain = 0;
+    public static long remaining(ByteBuffer[] bufs) {
+        long remain = 0;
         for (ByteBuffer buf : bufs) {
             remain += buf.remaining();
         }
         return remain;
     }
 
-    public static int remaining(List<ByteBuffer> bufs) {
-        int remain = 0;
-        for (ByteBuffer buf : bufs) {
-            remain += buf.remaining();
+    public static boolean hasRemaining(List<ByteBuffer> bufs) {
+        synchronized (bufs) {
+            for (ByteBuffer buf : bufs) {
+                if (buf.hasRemaining())
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    public static long remaining(List<ByteBuffer> bufs) {
+        long remain = 0;
+        synchronized (bufs) {
+            for (ByteBuffer buf : bufs) {
+                remain += buf.remaining();
+            }
         }
         return remain;
     }
 
-    public static int remaining(ByteBufferReference[] refs) {
-        int remain = 0;
+    public static int remaining(List<ByteBuffer> bufs, int max) {
+        long remain = 0;
+        synchronized (bufs) {
+            for (ByteBuffer buf : bufs) {
+                remain += buf.remaining();
+                if (remain > max) {
+                    throw new IllegalArgumentException("too many bytes");
+                }
+            }
+        }
+        return (int) remain;
+    }
+
+    public static long remaining(ByteBufferReference[] refs) {
+        long remain = 0;
         for (ByteBufferReference ref : refs) {
             remain += ref.get().remaining();
         }
         return remain;
     }
 
-    // assumes buffer was written into starting at position zero
-    static void unflip(ByteBuffer buf) {
-        buf.position(buf.limit());
-        buf.limit(buf.capacity());
+    public static int remaining(ByteBufferReference[] refs, int max) {
+        long remain = 0;
+        for (ByteBufferReference ref : refs) {
+            remain += ref.get().remaining();
+            if (remain > max) {
+                throw new IllegalArgumentException("too many bytes");
+            }
+        }
+        return (int) remain;
+    }
+
+    public static int remaining(ByteBuffer[] refs, int max) {
+        long remain = 0;
+        for (ByteBuffer b : refs) {
+            remain += b.remaining();
+            if (remain > max) {
+                throw new IllegalArgumentException("too many bytes");
+            }
+        }
+        return (int) remain;
     }
 
     public static void close(Closeable... closeables) {
@@ -416,80 +458,11 @@ public final class Utils {
         }
     }
 
-    public static void close(Throwable t, Closeable... closeables) {
-        for (Closeable c : closeables) {
-            try {
-                ExceptionallyCloseable.close(t, c);
-            } catch (IOException ignored) { }
-        }
-    }
-
-    /**
-     * Returns an array with the same buffers, but starting at position zero
-     * in the array.
-     */
-    public static ByteBuffer[] reduce(ByteBuffer[] bufs, int start, int number) {
-        if (start == 0 && number == bufs.length) {
-            return bufs;
-        }
-        ByteBuffer[] nbufs = new ByteBuffer[number];
-        int j = 0;
-        for (int i=start; i<start+number; i++) {
-            nbufs[j++] = bufs[i];
-        }
-        return nbufs;
-    }
-
-    static String asString(ByteBuffer buf) {
-        byte[] b = new byte[buf.remaining()];
-        buf.get(b);
-        return new String(b, StandardCharsets.US_ASCII);
-    }
-
-    /**
-     * Returns a single threaded executor which uses one invocation
-     * of the parent executor to execute tasks (in sequence).
-     *
-     * Use a null valued Runnable to terminate.
-     */
-    // TODO: this is a blocking way of doing this;
-    public static Executor singleThreadExecutor(Executor parent) {
-        BlockingQueue<Optional<Runnable>> queue = new LinkedBlockingQueue<>();
-        parent.execute(() -> {
-            while (true) {
-                try {
-                    Optional<Runnable> o = queue.take();
-                    if (!o.isPresent()) {
-                        return;
-                    }
-                    o.get().run();
-                } catch (InterruptedException ex) {
-                    return;
-                }
-            }
-        });
-        return new Executor() {
-            @Override
-            public void execute(Runnable command) {
-                queue.offer(Optional.ofNullable(command));
-            }
-        };
-    }
-
-    private static void executeInline(Runnable r) {
-        r.run();
-    }
-
-    static Executor callingThreadExecutor() {
-        return Utils::executeInline;
-    }
-
     // Put all these static 'empty' singletons here
-    @SuppressWarnings("rawtypes")
-    public static final CompletableFuture[] EMPTY_CFARRAY = new CompletableFuture[0];
-
     public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
     public static final ByteBuffer[] EMPTY_BB_ARRAY = new ByteBuffer[0];
+    public static final List<ByteBuffer> EMPTY_BB_LIST = List.of();
+    public static final ByteBufferReference[] EMPTY_BBR_ARRAY = new ByteBufferReference[0];
 
     public static ByteBuffer slice(ByteBuffer buffer, int amount) {
         ByteBuffer newb = buffer.slice();
@@ -514,5 +487,156 @@ public final class Utils {
 
     public static UncheckedIOException unchecked(IOException e) {
         return new UncheckedIOException(e);
+    }
+
+    /**
+     * Get a logger for debug HTTP traces.
+     *
+     * The logger should only be used with levels whose severity is
+     * {@code <= DEBUG}. By default, this logger will forward all messages
+     * logged to an internal logger named "jdk.internal.httpclient.debug".
+     * In addition, if the property -Djdk.internal.httpclient.debug=true is set,
+     * it will print the messages on stderr.
+     * The logger will add some decoration to the printed message, in the form of
+     * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
+     *
+     * @param dbgTag A lambda that returns a string that identifies the caller
+     *               (e.g: "SocketTube(3)", or "Http2Connection(SocketTube(3))")
+     *
+     * @return A logger for HTTP internal debug traces
+     */
+    public static Logger getDebugLogger(Supplier<String> dbgTag) {
+        return getDebugLogger(dbgTag, DEBUG);
+    }
+
+    /**
+     * Get a logger for debug HTTP traces.The logger should only be used
+     * with levels whose severity is {@code <= DEBUG}.
+     *
+     * By default, this logger will forward all messages logged to an internal
+     * logger named "jdk.internal.httpclient.debug".
+     * In addition, if the message severity level is >= to
+     * the provided {@code errLevel} it will print the messages on stderr.
+     * The logger will add some decoration to the printed message, in the form of
+     * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
+     *
+     * @apiNote To obtain a logger that will always print things on stderr in
+     *          addition to forwarding to the internal logger, use
+     *          {@code getDebugLogger(this::dbgTag, Level.ALL);}.
+     *          This is also equivalent to calling
+     *          {@code getDebugLogger(this::dbgTag, true);}.
+     *          To obtain a logger that will only forward to the internal logger,
+     *          use {@code getDebugLogger(this::dbgTag, Level.OFF);}.
+     *          This is also equivalent to calling
+     *          {@code getDebugLogger(this::dbgTag, false);}.
+     *
+     * @param dbgTag A lambda that returns a string that identifies the caller
+     *               (e.g: "SocketTube(3)", or "Http2Connection(SocketTube(3))")
+     * @param errLevel The level above which messages will be also printed on
+     *               stderr (in addition to be forwarded to the internal logger).
+     *
+     * @return A logger for HTTP internal debug traces
+     */
+    static Logger getDebugLogger(Supplier<String> dbgTag, Level errLevel) {
+        return DebugLogger.createHttpLogger(dbgTag, Level.OFF, errLevel);
+    }
+
+    /**
+     * Get a logger for debug HTTP traces.The logger should only be used
+     * with levels whose severity is {@code <= DEBUG}.
+     *
+     * By default, this logger will forward all messages logged to an internal
+     * logger named "jdk.internal.httpclient.debug".
+     * In addition, the provided boolean {@code on==true}, it will print the
+     * messages on stderr.
+     * The logger will add some decoration to the printed message, in the form of
+     * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
+     *
+     * @apiNote To obtain a logger that will always print things on stderr in
+     *          addition to forwarding to the internal logger, use
+     *          {@code getDebugLogger(this::dbgTag, true);}.
+     *          This is also equivalent to calling
+     *          {@code getDebugLogger(this::dbgTag, Level.ALL);}.
+     *          To obtain a logger that will only forward to the internal logger,
+     *          use {@code getDebugLogger(this::dbgTag, false);}.
+     *          This is also equivalent to calling
+     *          {@code getDebugLogger(this::dbgTag, Level.OFF);}.
+     *
+     * @param dbgTag A lambda that returns a string that identifies the caller
+     *               (e.g: "SocketTube(3)", or "Http2Connection(SocketTube(3))")
+     * @param on  Whether messages should also be printed on
+     *               stderr (in addition to be forwarded to the internal logger).
+     *
+     * @return A logger for HTTP internal debug traces
+     */
+    public static Logger getDebugLogger(Supplier<String> dbgTag, boolean on) {
+        Level errLevel = on ? Level.ALL : Level.OFF;
+        return getDebugLogger(dbgTag, errLevel);
+    }
+
+    /**
+     * Get a logger for debug HPACK traces.The logger should only be used
+     * with levels whose severity is {@code <= DEBUG}.
+     *
+     * By default, this logger will forward all messages logged to an internal
+     * logger named "jdk.internal.httpclient.hpack.debug".
+     * In addition, if the message severity level is >= to
+     * the provided {@code outLevel} it will print the messages on stdout.
+     * The logger will add some decoration to the printed message, in the form of
+     * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
+     *
+     * @apiNote To obtain a logger that will always print things on stdout in
+     *          addition to forwarding to the internal logger, use
+     *          {@code getHpackLogger(this::dbgTag, Level.ALL);}.
+     *          This is also equivalent to calling
+     *          {@code getHpackLogger(this::dbgTag, true);}.
+     *          To obtain a logger that will only forward to the internal logger,
+     *          use {@code getHpackLogger(this::dbgTag, Level.OFF);}.
+     *          This is also equivalent to calling
+     *          {@code getHpackLogger(this::dbgTag, false);}.
+     *
+     * @param dbgTag A lambda that returns a string that identifies the caller
+     *               (e.g: "Http2Connection(SocketTube(3))/hpack.Decoder(3)")
+     * @param outLevel The level above which messages will be also printed on
+     *               stdout (in addition to be forwarded to the internal logger).
+     *
+     * @return A logger for HPACK internal debug traces
+     */
+    public static Logger getHpackLogger(Supplier<String> dbgTag, Level outLevel) {
+        Level errLevel = Level.OFF;
+        return DebugLogger.createHpackLogger(dbgTag, outLevel, errLevel);
+    }
+
+    /**
+     * Get a logger for debug HPACK traces.The logger should only be used
+     * with levels whose severity is {@code <= DEBUG}.
+     *
+     * By default, this logger will forward all messages logged to an internal
+     * logger named "jdk.internal.httpclient.hpack.debug".
+     * In addition, the provided boolean {@code on==true}, it will print the
+     * messages on stdout.
+     * The logger will add some decoration to the printed message, in the form of
+     * {@code <Level>:[<thread-name>] [<elapsed-time>] <dbgTag>: <formatted message>}
+     *
+     * @apiNote To obtain a logger that will always print things on stdout in
+     *          addition to forwarding to the internal logger, use
+     *          {@code getHpackLogger(this::dbgTag, true);}.
+     *          This is also equivalent to calling
+     *          {@code getHpackLogger(this::dbgTag, Level.ALL);}.
+     *          To obtain a logger that will only forward to the internal logger,
+     *          use {@code getHpackLogger(this::dbgTag, false);}.
+     *          This is also equivalent to calling
+     *          {@code getHpackLogger(this::dbgTag, Level.OFF);}.
+     *
+     * @param dbgTag A lambda that returns a string that identifies the caller
+     *               (e.g: "Http2Connection(SocketTube(3))/hpack.Decoder(3)")
+     * @param on  Whether messages should also be printed on
+     *            stdout (in addition to be forwarded to the internal logger).
+     *
+     * @return A logger for HPACK internal debug traces
+     */
+    public static Logger getHpackLogger(Supplier<String> dbgTag, boolean on) {
+        Level outLevel = on ? Level.ALL : Level.OFF;
+        return getHpackLogger(dbgTag, outLevel);
     }
 }

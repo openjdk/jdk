@@ -57,18 +57,7 @@ public:
     debug_only(_nesting = 0;);
   }
 
-  char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-#ifdef ASSERT
-    if (_nesting < 1 && !_warned++)
-      fatal("memory leak: allocating without ResourceMark");
-    if (UseMallocOnly) {
-      // use malloc, but save pointer in res. area for later freeing
-      char** save = (char**)internal_malloc_4(sizeof(char*));
-      return (*save = (char*)os::malloc(size, mtThread, CURRENT_PC));
-    }
-#endif
-    return (char*)Amalloc(size, alloc_failmode);
-  }
+  char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
   // Bias this resource area to specific memory type
   // (by default, ResourceArea is tagged as mtThread, per-thread general purpose storage)

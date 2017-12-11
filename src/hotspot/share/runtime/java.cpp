@@ -356,6 +356,8 @@ void print_statistics() {
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
   }
+
+  Threads::log_smr_statistics();
 }
 
 #else // PRODUCT MODE STATISTICS
@@ -396,6 +398,8 @@ void print_statistics() {
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
     Method::print_touched_methods(tty);
   }
+
+  Threads::log_smr_statistics();
 }
 
 #endif

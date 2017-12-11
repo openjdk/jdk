@@ -39,6 +39,7 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNegationNode;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -55,8 +56,8 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
 
     public static final NodeClass<ConditionalNode> TYPE = NodeClass.create(ConditionalNode.class);
     @Input(InputType.Condition) LogicNode condition;
-    @Input ValueNode trueValue;
-    @Input ValueNode falseValue;
+    @Input(InputType.Value) ValueNode trueValue;
+    @Input(InputType.Value) ValueNode falseValue;
 
     public LogicNode condition() {
         return condition;
@@ -67,23 +68,23 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
     }
 
     public ConditionalNode(LogicNode condition, ValueNode trueValue, ValueNode falseValue) {
-        super(TYPE, trueValue.stamp().meet(falseValue.stamp()));
-        assert trueValue.stamp().isCompatible(falseValue.stamp());
+        super(TYPE, trueValue.stamp(NodeView.DEFAULT).meet(falseValue.stamp(NodeView.DEFAULT)));
+        assert trueValue.stamp(NodeView.DEFAULT).isCompatible(falseValue.stamp(NodeView.DEFAULT));
         this.condition = condition;
         this.trueValue = trueValue;
         this.falseValue = falseValue;
     }
 
-    public static ValueNode create(LogicNode condition) {
-        return create(condition, ConstantNode.forInt(1, condition.graph()), ConstantNode.forInt(0, condition.graph()));
+    public static ValueNode create(LogicNode condition, NodeView view) {
+        return create(condition, ConstantNode.forInt(1, condition.graph()), ConstantNode.forInt(0, condition.graph()), view);
     }
 
-    public static ValueNode create(LogicNode condition, ValueNode trueValue, ValueNode falseValue) {
-        ValueNode synonym = findSynonym(condition, trueValue, falseValue);
+    public static ValueNode create(LogicNode condition, ValueNode trueValue, ValueNode falseValue, NodeView view) {
+        ValueNode synonym = findSynonym(condition, trueValue, falseValue, view);
         if (synonym != null) {
             return synonym;
         }
-        ValueNode result = canonicalizeConditional(condition, trueValue, falseValue, trueValue.stamp().meet(falseValue.stamp()));
+        ValueNode result = canonicalizeConditional(condition, trueValue, falseValue, trueValue.stamp(view).meet(falseValue.stamp(view)), view);
         if (result != null) {
             return result;
         }
@@ -92,7 +93,7 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
 
     @Override
     public boolean inferStamp() {
-        Stamp valueStamp = trueValue.stamp().meet(falseValue.stamp());
+        Stamp valueStamp = trueValue.stamp(NodeView.DEFAULT).meet(falseValue.stamp(NodeView.DEFAULT));
         if (condition instanceof IntegerLessThanNode) {
             IntegerLessThanNode lessThan = (IntegerLessThanNode) condition;
             if (lessThan.getX() == trueValue && lessThan.getY() == falseValue) {
@@ -130,12 +131,13 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool) {
-        ValueNode synonym = findSynonym(condition, trueValue(), falseValue());
+        NodeView view = NodeView.from(tool);
+        ValueNode synonym = findSynonym(condition, trueValue(), falseValue(), view);
         if (synonym != null) {
             return synonym;
         }
 
-        ValueNode result = canonicalizeConditional(condition, trueValue(), falseValue(), stamp);
+        ValueNode result = canonicalizeConditional(condition, trueValue(), falseValue(), stamp, view);
         if (result != null) {
             return result;
         }
@@ -143,7 +145,7 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
         return this;
     }
 
-    public static ValueNode canonicalizeConditional(LogicNode condition, ValueNode trueValue, ValueNode falseValue, Stamp stamp) {
+    public static ValueNode canonicalizeConditional(LogicNode condition, ValueNode trueValue, ValueNode falseValue, Stamp stamp, NodeView view) {
         if (trueValue == falseValue) {
             return trueValue;
         }
@@ -156,12 +158,12 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
             }
         }
 
-        if (trueValue.stamp() instanceof IntegerStamp) {
+        if (trueValue.stamp(view) instanceof IntegerStamp) {
             // check if the conditional is redundant
             if (condition instanceof IntegerLessThanNode) {
                 IntegerLessThanNode lessThan = (IntegerLessThanNode) condition;
-                IntegerStamp falseValueStamp = (IntegerStamp) falseValue.stamp();
-                IntegerStamp trueValueStamp = (IntegerStamp) trueValue.stamp();
+                IntegerStamp falseValueStamp = (IntegerStamp) falseValue.stamp(view);
+                IntegerStamp trueValueStamp = (IntegerStamp) trueValue.stamp(view);
                 if (lessThan.getX() == trueValue && lessThan.getY() == falseValue) {
                     // return "x" for "x < y ? x : y" in case that we know "x <= y"
                     if (trueValueStamp.upperBound() <= falseValueStamp.lowerBound()) {
@@ -182,25 +184,25 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
                 long constFalseValue = falseValue.asJavaConstant().asLong();
                 if (condition instanceof IntegerEqualsNode) {
                     IntegerEqualsNode equals = (IntegerEqualsNode) condition;
-                    if (equals.getY().isConstant() && equals.getX().stamp() instanceof IntegerStamp) {
-                        IntegerStamp equalsXStamp = (IntegerStamp) equals.getX().stamp();
+                    if (equals.getY().isConstant() && equals.getX().stamp(view) instanceof IntegerStamp) {
+                        IntegerStamp equalsXStamp = (IntegerStamp) equals.getX().stamp(view);
                         if (equalsXStamp.upMask() == 1) {
                             long equalsY = equals.getY().asJavaConstant().asLong();
                             if (equalsY == 0) {
                                 if (constTrueValue == 0 && constFalseValue == 1) {
                                     // return x when: x == 0 ? 0 : 1;
-                                    return IntegerConvertNode.convertUnsigned(equals.getX(), stamp);
+                                    return IntegerConvertNode.convertUnsigned(equals.getX(), stamp, view);
                                 } else if (constTrueValue == 1 && constFalseValue == 0) {
                                     // negate a boolean value via xor
-                                    return IntegerConvertNode.convertUnsigned(XorNode.create(equals.getX(), ConstantNode.forIntegerStamp(equals.getX().stamp(), 1)), stamp);
+                                    return IntegerConvertNode.convertUnsigned(XorNode.create(equals.getX(), ConstantNode.forIntegerStamp(equals.getX().stamp(view), 1), view), stamp, view);
                                 }
                             } else if (equalsY == 1) {
                                 if (constTrueValue == 1 && constFalseValue == 0) {
                                     // return x when: x == 1 ? 1 : 0;
-                                    return IntegerConvertNode.convertUnsigned(equals.getX(), stamp);
+                                    return IntegerConvertNode.convertUnsigned(equals.getX(), stamp, view);
                                 } else if (constTrueValue == 0 && constFalseValue == 1) {
                                     // negate a boolean value via xor
-                                    return IntegerConvertNode.convertUnsigned(XorNode.create(equals.getX(), ConstantNode.forIntegerStamp(equals.getX().stamp(), 1)), stamp);
+                                    return IntegerConvertNode.convertUnsigned(XorNode.create(equals.getX(), ConstantNode.forIntegerStamp(equals.getX().stamp(view), 1), view), stamp, view);
                                 }
                             }
                         }
@@ -211,10 +213,10 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
                     // (value & 1) == 1 ? 1 : 0
                     IntegerTestNode integerTestNode = (IntegerTestNode) condition;
                     if (integerTestNode.getY().isConstant()) {
-                        assert integerTestNode.getX().stamp() instanceof IntegerStamp;
+                        assert integerTestNode.getX().stamp(view) instanceof IntegerStamp;
                         long testY = integerTestNode.getY().asJavaConstant().asLong();
                         if (testY == 1 && constTrueValue == 0 && constFalseValue == 1) {
-                            return IntegerConvertNode.convertUnsigned(AndNode.create(integerTestNode.getX(), integerTestNode.getY()), stamp);
+                            return IntegerConvertNode.convertUnsigned(AndNode.create(integerTestNode.getX(), integerTestNode.getY(), view), stamp, view);
                         }
                     }
                 }
@@ -231,7 +233,7 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
                         if (trueValue instanceof AddNode) {
                             AddNode add = (AddNode) trueValue;
                             if (add.getX() == falseValue) {
-                                int bits = ((IntegerStamp) trueValue.stamp()).getBits();
+                                int bits = ((IntegerStamp) trueValue.stamp(NodeView.DEFAULT)).getBits();
                                 ValueNode shift = new RightShiftNode(lt.getX(), ConstantNode.forIntegerBits(32, bits - 1));
                                 ValueNode and = new AndNode(shift, add.getY());
                                 return new AddNode(add.getX(), and);
@@ -245,10 +247,10 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
         return null;
     }
 
-    private static ValueNode findSynonym(ValueNode condition, ValueNode trueValue, ValueNode falseValue) {
+    private static ValueNode findSynonym(ValueNode condition, ValueNode trueValue, ValueNode falseValue, NodeView view) {
         if (condition instanceof LogicNegationNode) {
             LogicNegationNode negated = (LogicNegationNode) condition;
-            return ConditionalNode.create(negated.getValue(), falseValue, trueValue);
+            return ConditionalNode.create(negated.getValue(), falseValue, trueValue, view);
         }
         if (condition instanceof LogicConstantNode) {
             LogicConstantNode c = (LogicConstantNode) condition;
@@ -267,6 +269,6 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
     }
 
     public ConditionalNode(StructuredGraph graph, Condition condition, ValueNode x, ValueNode y) {
-        this(createCompareNode(graph, condition, x, y, null));
+        this(createCompareNode(graph, condition, x, y, null, NodeView.DEFAULT));
     }
 }

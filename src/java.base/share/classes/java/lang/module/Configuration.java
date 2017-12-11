@@ -543,9 +543,8 @@ public final class Configuration {
         if (!parents.isEmpty()) {
             return configurations()
                     .skip(1)  // skip this configuration
-                    .map(cf -> cf.nameToModule)
-                    .filter(map -> map.containsKey(name))
-                    .map(map -> map.get(name))
+                    .map(cf -> cf.nameToModule.get(name))
+                    .filter(Objects::nonNull)
                     .findFirst();
         }
 

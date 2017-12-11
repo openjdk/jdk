@@ -53,10 +53,12 @@ public class ClhsdbLauncher {
     private void attach(long lingeredAppPid)
         throws IOException {
 
-        System.out.println("Starting clhsdb against " + lingeredAppPid);
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
         launcher.addToolArg("clhsdb");
-        launcher.addToolArg("--pid=" + Long.toString(lingeredAppPid));
+        if (lingeredAppPid != -1) {
+            launcher.addToolArg("--pid=" + Long.toString(lingeredAppPid));
+            System.out.println("Starting clhsdb against " + lingeredAppPid);
+        }
 
         ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);

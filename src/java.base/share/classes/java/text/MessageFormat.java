@@ -701,6 +701,10 @@ public class MessageFormat extends Format {
      *            larger than the number of format elements in the pattern string
      */
     public void setFormat(int formatElementIndex, Format newFormat) {
+
+        if (formatElementIndex > maxOffset) {
+            throw new ArrayIndexOutOfBoundsException(formatElementIndex);
+        }
         formats[formatElementIndex] = newFormat;
     }
 

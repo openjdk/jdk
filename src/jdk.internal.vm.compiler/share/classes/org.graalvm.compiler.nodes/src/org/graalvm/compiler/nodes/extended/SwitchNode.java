@@ -46,6 +46,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.meta.Constant;
@@ -79,7 +80,8 @@ public abstract class SwitchNode extends ControlSplitNode {
      */
     protected SwitchNode(NodeClass<? extends SwitchNode> c, ValueNode value, AbstractBeginNode[] successors, int[] keySuccessors, double[] keyProbabilities) {
         super(c, StampFactory.forVoid());
-        assert value.stamp().getStackKind().isNumericInteger() || value.stamp() instanceof AbstractPointerStamp : value.stamp() + " key not supported by SwitchNode";
+        assert value.stamp(NodeView.DEFAULT).getStackKind().isNumericInteger() || value.stamp(NodeView.DEFAULT) instanceof AbstractPointerStamp : value.stamp(NodeView.DEFAULT) +
+                        " key not supported by SwitchNode";
         assert keySuccessors.length == keyProbabilities.length;
         this.successors = new NodeSuccessorList<>(this, successors);
         this.value = value;

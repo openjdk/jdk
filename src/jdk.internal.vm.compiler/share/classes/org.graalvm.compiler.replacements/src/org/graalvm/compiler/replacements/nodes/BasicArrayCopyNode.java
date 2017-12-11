@@ -37,6 +37,7 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.memory.AbstractMemoryCheckpoint;
@@ -164,8 +165,8 @@ public class BasicArrayCopyNode extends AbstractMemoryCheckpoint implements Virt
      * Returns true if this copy doesn't require store checks. Trivially true for primitive arrays.
      */
     public boolean isExact() {
-        ResolvedJavaType srcType = StampTool.typeOrNull(getSource().stamp());
-        ResolvedJavaType destType = StampTool.typeOrNull(getDestination().stamp());
+        ResolvedJavaType srcType = StampTool.typeOrNull(getSource().stamp(NodeView.DEFAULT));
+        ResolvedJavaType destType = StampTool.typeOrNull(getDestination().stamp(NodeView.DEFAULT));
         if (srcType == null || !srcType.isArray() || destType == null || !destType.isArray()) {
             return false;
         }
@@ -173,7 +174,7 @@ public class BasicArrayCopyNode extends AbstractMemoryCheckpoint implements Virt
             return true;
         }
 
-        if (StampTool.isExactType(getDestination().stamp())) {
+        if (StampTool.isExactType(getDestination().stamp(NodeView.DEFAULT))) {
             if (destType != null && destType.isAssignableFrom(srcType)) {
                 return true;
             }

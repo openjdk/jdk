@@ -54,6 +54,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/mallocTracker.hpp"
@@ -197,15 +198,7 @@ char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
 }
 
 OSReturn os::set_priority(Thread* thread, ThreadPriority p) {
-#ifdef ASSERT
-  if (!(!thread->is_Java_thread() ||
-         Thread::current() == thread  ||
-         Threads_lock->owned_by_self()
-         || thread->is_Compiler_thread()
-        )) {
-    assert(false, "possibility of dangling Thread pointer");
-  }
-#endif
+  debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   if (p >= MinPriority && p <= MaxPriority) {
     int priority = java_to_os_priority[p];
@@ -1100,7 +1093,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 #endif
 
-  for(JavaThread *thread = Threads::first(); thread; thread = thread->next()) {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
     // Check for privilege stack
     if (thread->privileged_stack_top() != NULL &&
         thread->privileged_stack_top()->contains(addr)) {
@@ -1126,7 +1119,6 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       if (verbose) thread->print_on(st);
       return;
     }
-
   }
 
   // Check if in metaspace and print types that have vptrs (only method now)
@@ -1665,7 +1657,6 @@ void os::initialize_initial_active_processor_count() {
 }
 
 void os::SuspendedThreadTask::run() {
-  assert(Threads_lock->owned_by_self() || (_thread == VMThread::vm_thread()), "must have threads lock to call this");
   internal_do_task();
   _done = true;
 }
@@ -1674,10 +1665,21 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
-  char* result = pd_reserve_memory(bytes, addr, alignment_hint);
-  if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint, int file_desc) {
+  char* result = NULL;
+
+  if (file_desc != -1) {
+    // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
+    // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
+    result = os::map_memory_to_file(addr, bytes, file_desc);
+    if (result != NULL) {
+      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+    }
+  } else {
+    result = pd_reserve_memory(bytes, addr, alignment_hint);
+    if (result != NULL) {
+      MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    }
   }
 
   return result;
@@ -1694,10 +1696,18 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint,
   return result;
 }
 
-char* os::attempt_reserve_memory_at(size_t bytes, char* addr) {
-  char* result = pd_attempt_reserve_memory_at(bytes, addr);
-  if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+char* os::attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc) {
+  char* result = NULL;
+  if (file_desc != -1) {
+    result = pd_attempt_reserve_memory_at(bytes, addr, file_desc);
+    if (result != NULL) {
+      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+    }
+  } else {
+    result = pd_attempt_reserve_memory_at(bytes, addr);
+    if (result != NULL) {
+      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+    }
   }
   return result;
 }

@@ -29,6 +29,7 @@ import java.util.*;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
 
@@ -115,18 +116,10 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         return li;
     }
 
-    /**
-     * Add the member header.
-     *
-     * @param fieldType the class document to be listed
-     * @param fieldTypeStr the string for the field type to be documented
-     * @param fieldDimensions the dimensions of the field string to be added
-     * @param fieldName name of the field to be added
-     * @param contentTree the content tree to which the member header will be added
-     */
+    @Override
     public void addMemberHeader(TypeElement fieldType, String fieldTypeStr,
             String fieldDimensions, String fieldName, Content contentTree) {
-        Content nameContent = new RawHtml(fieldName);
+        Content nameContent = new StringContent(fieldName);
         Content heading = HtmlTree.HEADING(HtmlConstants.MEMBER_HEADING, nameContent);
         contentTree.addContent(heading);
         Content pre = new HtmlTree(HtmlTag.PRE);
@@ -138,6 +131,20 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
             pre.addContent(fieldContent);
         }
         pre.addContent(fieldDimensions + " ");
+        pre.addContent(fieldName);
+        contentTree.addContent(pre);
+    }
+
+    @Override
+    public void addMemberHeader(TypeMirror fieldType, String fieldName, Content contentTree) {
+        Content nameContent = new StringContent(fieldName);
+        Content heading = HtmlTree.HEADING(HtmlConstants.MEMBER_HEADING, nameContent);
+        contentTree.addContent(heading);
+        Content pre = new HtmlTree(HtmlTag.PRE);
+        Content fieldContent = writer.getLink(new LinkInfoImpl(
+                configuration, LinkInfoImpl.Kind.SERIAL_MEMBER, fieldType));
+        pre.addContent(fieldContent);
+        pre.addContent(" ");
         pre.addContent(fieldName);
         contentTree.addContent(pre);
     }

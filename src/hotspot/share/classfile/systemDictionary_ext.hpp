@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,17 @@
 #ifndef SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_EXT_HPP
 #define SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_EXT_HPP
 
+#if INCLUDE_CDS
+
+#define WK_KLASSES_DO_EXT(do_klass) \
+  /* well-known classes */                                                                                            \
+  do_klass(jdk_internal_loader_ClassLoaders_klass,         jdk_internal_loader_ClassLoaders,            Pre )         \
+  /*end*/
+
+#else
+
 #define WK_KLASSES_DO_EXT(do_klass)
+
+#endif // INCLUDE_CDS
 
 #endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_EXT_HPP

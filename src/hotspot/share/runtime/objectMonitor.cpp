@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/markOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -241,6 +242,19 @@ static volatile int InitDone        = 0;
 //
 // * See also http://blogs.sun.com/dave
 
+
+void* ObjectMonitor::operator new (size_t size) throw() {
+  return AllocateHeap(size, mtInternal);
+}
+void* ObjectMonitor::operator new[] (size_t size) throw() {
+  return operator new (size);
+}
+void ObjectMonitor::operator delete(void* p) {
+  FreeHeap(p);
+}
+void ObjectMonitor::operator delete[] (void *p) {
+  operator delete(p);
+}
 
 // -----------------------------------------------------------------------------
 // Enter support
@@ -2138,6 +2152,7 @@ ObjectWaiter::ObjectWaiter(Thread* thread) {
   _next     = NULL;
   _prev     = NULL;
   _notified = 0;
+  _notifier_tid = 0;
   TState    = TS_RUN;
   _thread   = thread;
   _event    = thread->_ParkEvent;

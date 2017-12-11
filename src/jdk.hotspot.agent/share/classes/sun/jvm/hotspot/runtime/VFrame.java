@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,10 +117,7 @@ public class VFrame {
       return null;
     }
     Frame s = fr.realSender(tempMap);
-    // ia64 in 1.4.1 only has java frames and no entryFrame
-    // so "s" can be null here for the first frame.
     if (s == null) {
-      Assert.that(VM.getVM().getCPU().equals("ia64"), "Only ia64 should have null here");
       return null;
     }
     if (s.isFirstFrame()) {

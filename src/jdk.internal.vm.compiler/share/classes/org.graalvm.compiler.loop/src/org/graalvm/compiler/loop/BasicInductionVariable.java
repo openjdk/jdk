@@ -30,6 +30,7 @@ import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
@@ -70,7 +71,7 @@ public class BasicInductionVariable extends InductionVariable {
 
     @Override
     public Direction direction() {
-        Stamp stamp = rawStride.stamp();
+        Stamp stamp = rawStride.stamp(NodeView.DEFAULT);
         if (stamp instanceof IntegerStamp) {
             IntegerStamp integerStamp = (IntegerStamp) stamp;
             Direction dir = null;
@@ -140,27 +141,27 @@ public class BasicInductionVariable extends InductionVariable {
 
     @Override
     public ValueNode extremumNode(boolean assumePositiveTripCount, Stamp stamp) {
-        Stamp fromStamp = phi.stamp();
+        Stamp fromStamp = phi.stamp(NodeView.DEFAULT);
         StructuredGraph graph = graph();
         ValueNode stride = strideNode();
         ValueNode initNode = this.initNode();
         if (!fromStamp.isCompatible(stamp)) {
-            stride = IntegerConvertNode.convert(stride, stamp, graph());
-            initNode = IntegerConvertNode.convert(initNode, stamp, graph());
+            stride = IntegerConvertNode.convert(stride, stamp, graph(), NodeView.DEFAULT);
+            initNode = IntegerConvertNode.convert(initNode, stamp, graph(), NodeView.DEFAULT);
         }
         ValueNode maxTripCount = loop.counted().maxTripCountNode(assumePositiveTripCount);
-        if (!maxTripCount.stamp().isCompatible(stamp)) {
-            maxTripCount = IntegerConvertNode.convert(maxTripCount, stamp, graph());
+        if (!maxTripCount.stamp(NodeView.DEFAULT).isCompatible(stamp)) {
+            maxTripCount = IntegerConvertNode.convert(maxTripCount, stamp, graph(), NodeView.DEFAULT);
         }
         return add(graph, mul(graph, stride, sub(graph, maxTripCount, ConstantNode.forIntegerStamp(stamp, 1, graph))), initNode);
     }
 
     @Override
     public ValueNode exitValueNode() {
-        Stamp stamp = phi.stamp();
+        Stamp stamp = phi.stamp(NodeView.DEFAULT);
         ValueNode maxTripCount = loop.counted().maxTripCountNode(false);
-        if (!maxTripCount.stamp().isCompatible(stamp)) {
-            maxTripCount = IntegerConvertNode.convert(maxTripCount, stamp, graph());
+        if (!maxTripCount.stamp(NodeView.DEFAULT).isCompatible(stamp)) {
+            maxTripCount = IntegerConvertNode.convert(maxTripCount, stamp, graph(), NodeView.DEFAULT);
         }
         return add(graph(), mul(graph(), strideNode(), maxTripCount), initNode());
     }

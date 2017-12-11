@@ -23,10 +23,12 @@
 package org.graalvm.compiler.nodes.calc;
 
 import org.graalvm.compiler.core.common.type.IntegerStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -43,27 +45,39 @@ public class UnsignedRemNode extends IntegerDivRemNode implements LIRLowerable {
     }
 
     protected UnsignedRemNode(NodeClass<? extends UnsignedRemNode> c, ValueNode x, ValueNode y) {
-        super(c, x.stamp().unrestricted(), Op.REM, Type.UNSIGNED, x, y);
+        super(c, x.stamp(NodeView.DEFAULT).unrestricted(), Op.REM, Type.UNSIGNED, x, y);
+    }
+
+    public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
+        Stamp stamp = x.stamp(view).unrestricted();
+        return canonical(null, x, y, stamp, view);
     }
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        int bits = ((IntegerStamp) stamp()).getBits();
+        NodeView view = NodeView.from(tool);
+        return canonical(this, forX, forY, stamp(view), view);
+    }
+
+    @SuppressWarnings("unused")
+    public static ValueNode canonical(UnsignedRemNode self, ValueNode forX, ValueNode forY, Stamp stamp, NodeView view) {
+        int bits = ((IntegerStamp) stamp).getBits();
         if (forX.isConstant() && forY.isConstant()) {
             long yConst = CodeUtil.zeroExtend(forY.asJavaConstant().asLong(), bits);
             if (yConst == 0) {
-                return this; // this will trap, cannot canonicalize
+                return self != null ? self : new UnsignedRemNode(forX, forY); // this will trap,
+                                                                              // cannot canonicalize
             }
-            return ConstantNode.forIntegerStamp(stamp(), Long.remainderUnsigned(CodeUtil.zeroExtend(forX.asJavaConstant().asLong(), bits), yConst));
+            return ConstantNode.forIntegerStamp(stamp, Long.remainderUnsigned(CodeUtil.zeroExtend(forX.asJavaConstant().asLong(), bits), yConst));
         } else if (forY.isConstant()) {
             long c = CodeUtil.zeroExtend(forY.asJavaConstant().asLong(), bits);
             if (c == 1) {
-                return ConstantNode.forIntegerStamp(stamp(), 0);
+                return ConstantNode.forIntegerStamp(stamp, 0);
             } else if (CodeUtil.isPowerOf2(c)) {
-                return new AndNode(forX, ConstantNode.forIntegerStamp(stamp(), c - 1));
+                return new AndNode(forX, ConstantNode.forIntegerStamp(stamp, c - 1));
             }
         }
-        return this;
+        return self != null ? self : new UnsignedRemNode(forX, forY);
     }
 
     @Override

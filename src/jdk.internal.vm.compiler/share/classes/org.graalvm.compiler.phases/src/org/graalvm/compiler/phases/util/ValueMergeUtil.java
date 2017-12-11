@@ -29,6 +29,7 @@ import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.ControlSinkNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.UnwindNode;
@@ -52,7 +53,7 @@ public class ValueMergeUtil {
                     singleResult = result;
                 } else if (phiResult == null) {
                     /* Found a second result value, so create phi node. */
-                    phiResult = merge.graph().addWithoutUnique(new ValuePhiNode(result.stamp().unrestricted(), merge));
+                    phiResult = merge.graph().addWithoutUnique(new ValuePhiNode(result.stamp(NodeView.DEFAULT).unrestricted(), merge));
                     for (int i = 0; i < merge.forwardEndCount(); i++) {
                         phiResult.addInput(singleResult);
                     }

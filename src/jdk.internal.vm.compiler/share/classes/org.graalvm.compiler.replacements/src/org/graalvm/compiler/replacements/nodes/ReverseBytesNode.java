@@ -32,6 +32,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -54,7 +55,7 @@ public final class ReverseBytesNode extends UnaryNode implements LIRLowerable {
 
     @Override
     public Stamp foldStamp(Stamp newStamp) {
-        assert newStamp.isCompatible(getValue().stamp());
+        assert newStamp.isCompatible(getValue().stamp(NodeView.DEFAULT));
         IntegerStamp valueStamp = (IntegerStamp) newStamp;
         if (getStackKind() == JavaKind.Int) {
             long mask = CodeUtil.mask(JavaKind.Int.getBitCount());
@@ -62,7 +63,7 @@ public final class ReverseBytesNode extends UnaryNode implements LIRLowerable {
         } else if (getStackKind() == JavaKind.Long) {
             return IntegerStamp.stampForMask(valueStamp.getBits(), Long.reverse(valueStamp.downMask()), Long.reverse(valueStamp.upMask()));
         } else {
-            return stamp();
+            return stamp(NodeView.DEFAULT);
         }
     }
 

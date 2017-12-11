@@ -159,97 +159,101 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
 
         intervalInLoop = new BitMap2D(allocator.operandSize(), allocator.numLoops());
 
-        // iterate all blocks
-        for (final AbstractBlockBase<?> block : allocator.sortedBlocks()) {
-            try (Indent indent = debug.logAndIndent("compute local live sets for block %s", block)) {
+        try {
+            // iterate all blocks
+            for (final AbstractBlockBase<?> block : allocator.sortedBlocks()) {
+                try (Indent indent = debug.logAndIndent("compute local live sets for block %s", block)) {
 
-                final BitSet liveGen = new BitSet(liveSize);
-                final BitSet liveKill = new BitSet(liveSize);
+                    final BitSet liveGen = new BitSet(liveSize);
+                    final BitSet liveKill = new BitSet(liveSize);
 
-                ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(block);
-                int numInst = instructions.size();
+                    ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(block);
+                    int numInst = instructions.size();
 
-                ValueConsumer useConsumer = (operand, mode, flags) -> {
-                    if (isVariable(operand)) {
-                        int operandNum = allocator.operandNumber(operand);
-                        if (!liveKill.get(operandNum)) {
-                            liveGen.set(operandNum);
-                            if (debug.isLogEnabled()) {
-                                debug.log("liveGen for operand %d(%s)", operandNum, operand);
+                    ValueConsumer useConsumer = (operand, mode, flags) -> {
+                        if (isVariable(operand)) {
+                            int operandNum = allocator.operandNumber(operand);
+                            if (!liveKill.get(operandNum)) {
+                                liveGen.set(operandNum);
+                                if (debug.isLogEnabled()) {
+                                    debug.log("liveGen for operand %d(%s)", operandNum, operand);
+                                }
+                            }
+                            if (block.getLoop() != null) {
+                                intervalInLoop.setBit(operandNum, block.getLoop().getIndex());
                             }
                         }
-                        if (block.getLoop() != null) {
-                            intervalInLoop.setBit(operandNum, block.getLoop().getIndex());
-                        }
-                    }
 
-                    if (allocator.detailedAsserts) {
-                        verifyInput(block, liveKill, operand);
-                    }
-                };
-                ValueConsumer stateConsumer = (operand, mode, flags) -> {
-                    if (LinearScan.isVariableOrRegister(operand)) {
-                        int operandNum = allocator.operandNumber(operand);
-                        if (!liveKill.get(operandNum)) {
-                            liveGen.set(operandNum);
-                            if (debug.isLogEnabled()) {
-                                debug.log("liveGen in state for operand %d(%s)", operandNum, operand);
+                        if (allocator.detailedAsserts) {
+                            verifyInput(block, liveKill, operand);
+                        }
+                    };
+                    ValueConsumer stateConsumer = (operand, mode, flags) -> {
+                        if (LinearScan.isVariableOrRegister(operand)) {
+                            int operandNum = allocator.operandNumber(operand);
+                            if (!liveKill.get(operandNum)) {
+                                liveGen.set(operandNum);
+                                if (debug.isLogEnabled()) {
+                                    debug.log("liveGen in state for operand %d(%s)", operandNum, operand);
+                                }
                             }
                         }
-                    }
-                };
-                ValueConsumer defConsumer = (operand, mode, flags) -> {
-                    if (isVariable(operand)) {
-                        int varNum = allocator.operandNumber(operand);
-                        liveKill.set(varNum);
-                        if (debug.isLogEnabled()) {
-                            debug.log("liveKill for operand %d(%s)", varNum, operand);
+                    };
+                    ValueConsumer defConsumer = (operand, mode, flags) -> {
+                        if (isVariable(operand)) {
+                            int varNum = allocator.operandNumber(operand);
+                            liveKill.set(varNum);
+                            if (debug.isLogEnabled()) {
+                                debug.log("liveKill for operand %d(%s)", varNum, operand);
+                            }
+                            if (block.getLoop() != null) {
+                                intervalInLoop.setBit(varNum, block.getLoop().getIndex());
+                            }
                         }
-                        if (block.getLoop() != null) {
-                            intervalInLoop.setBit(varNum, block.getLoop().getIndex());
+
+                        if (allocator.detailedAsserts) {
+                            /*
+                             * Fixed intervals are never live at block boundaries, so they need not
+                             * be processed in live sets. Process them only in debug mode so that
+                             * this can be checked
+                             */
+                            verifyTemp(liveKill, operand);
                         }
+                    };
+
+                    // iterate all instructions of the block
+                    for (int j = 0; j < numInst; j++) {
+                        final LIRInstruction op = instructions.get(j);
+
+                        try (Indent indent2 = debug.logAndIndent("handle op %d: %s", op.id(), op)) {
+                            op.visitEachInput(useConsumer);
+                            op.visitEachAlive(useConsumer);
+                            /*
+                             * Add uses of live locals from interpreter's point of view for proper
+                             * debug information generation.
+                             */
+                            op.visitEachState(stateConsumer);
+                            op.visitEachTemp(defConsumer);
+                            op.visitEachOutput(defConsumer);
+                        }
+                    } // end of instruction iteration
+
+                    BlockData blockSets = allocator.getBlockData(block);
+                    blockSets.liveGen = liveGen;
+                    blockSets.liveKill = liveKill;
+                    blockSets.liveIn = new BitSet(liveSize);
+                    blockSets.liveOut = new BitSet(liveSize);
+
+                    if (debug.isLogEnabled()) {
+                        debug.log("liveGen  B%d %s", block.getId(), blockSets.liveGen);
+                        debug.log("liveKill B%d %s", block.getId(), blockSets.liveKill);
                     }
 
-                    if (allocator.detailedAsserts) {
-                        /*
-                         * Fixed intervals are never live at block boundaries, so they need not be
-                         * processed in live sets. Process them only in debug mode so that this can
-                         * be checked
-                         */
-                        verifyTemp(liveKill, operand);
-                    }
-                };
-
-                // iterate all instructions of the block
-                for (int j = 0; j < numInst; j++) {
-                    final LIRInstruction op = instructions.get(j);
-
-                    try (Indent indent2 = debug.logAndIndent("handle op %d: %s", op.id(), op)) {
-                        op.visitEachInput(useConsumer);
-                        op.visitEachAlive(useConsumer);
-                        /*
-                         * Add uses of live locals from interpreter's point of view for proper debug
-                         * information generation.
-                         */
-                        op.visitEachState(stateConsumer);
-                        op.visitEachTemp(defConsumer);
-                        op.visitEachOutput(defConsumer);
-                    }
-                } // end of instruction iteration
-
-                BlockData blockSets = allocator.getBlockData(block);
-                blockSets.liveGen = liveGen;
-                blockSets.liveKill = liveKill;
-                blockSets.liveIn = new BitSet(liveSize);
-                blockSets.liveOut = new BitSet(liveSize);
-
-                if (debug.isLogEnabled()) {
-                    debug.log("liveGen  B%d %s", block.getId(), blockSets.liveGen);
-                    debug.log("liveKill B%d %s", block.getId(), blockSets.liveKill);
                 }
-
-            }
-        } // end of block iteration
+            } // end of block iteration
+        } catch (OutOfMemoryError oom) {
+            throw new PermanentBailoutException(oom, "Out-of-memory during live set allocation of size %d", liveSize);
+        }
     }
 
     private void verifyTemp(BitSet liveKill, Value operand) {

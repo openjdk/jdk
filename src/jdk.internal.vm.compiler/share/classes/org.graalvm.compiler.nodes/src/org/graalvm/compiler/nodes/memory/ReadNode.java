@@ -39,6 +39,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.CanonicalizableLocation;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
@@ -94,7 +95,7 @@ public class ReadNode extends FloatableAccessNode implements LIRLowerableAccess,
     @Override
     public FloatingAccessNode asFloatingNode(MemoryNode lastLocationAccess) {
         try (DebugCloseable position = withNodeSourcePosition()) {
-            return graph().unique(new FloatingReadNode(getAddress(), getLocationIdentity(), lastLocationAccess, stamp(), getGuard(), getBarrierType()));
+            return graph().unique(new FloatingReadNode(getAddress(), getLocationIdentity(), lastLocationAccess, stamp(NodeView.DEFAULT), getGuard(), getBarrierType()));
         }
     }
 
@@ -104,6 +105,7 @@ public class ReadNode extends FloatableAccessNode implements LIRLowerableAccess,
     }
 
     public static ValueNode canonicalizeRead(ValueNode read, AddressNode address, LocationIdentity locationIdentity, CanonicalizerTool tool) {
+        NodeView view = NodeView.from(tool);
         MetaAccessProvider metaAccess = tool.getMetaAccess();
         if (tool.canonicalizeReads() && address instanceof OffsetAddressNode) {
             OffsetAddressNode objAddress = (OffsetAddressNode) address;
@@ -112,10 +114,10 @@ public class ReadNode extends FloatableAccessNode implements LIRLowerableAccess,
                 long displacement = objAddress.getOffset().asJavaConstant().asLong();
                 int stableDimension = ((ConstantNode) object).getStableDimension();
                 if (locationIdentity.isImmutable() || stableDimension > 0) {
-                    Constant constant = read.stamp().readConstant(tool.getConstantReflection().getMemoryAccessProvider(), object.asConstant(), displacement);
+                    Constant constant = read.stamp(view).readConstant(tool.getConstantReflection().getMemoryAccessProvider(), object.asConstant(), displacement);
                     boolean isDefaultStable = locationIdentity.isImmutable() || ((ConstantNode) object).isDefaultStable();
                     if (constant != null && (isDefaultStable || !constant.isDefaultForKind())) {
-                        return ConstantNode.forConstant(read.stamp(), constant, Math.max(stableDimension - 1, 0), isDefaultStable, metaAccess);
+                        return ConstantNode.forConstant(read.stamp(view), constant, Math.max(stableDimension - 1, 0), isDefaultStable, metaAccess);
                     }
                 }
             }
@@ -128,7 +130,7 @@ public class ReadNode extends FloatableAccessNode implements LIRLowerableAccess,
             if (locationIdentity instanceof CanonicalizableLocation) {
                 CanonicalizableLocation canonicalize = (CanonicalizableLocation) locationIdentity;
                 ValueNode result = canonicalize.canonicalizeRead(read, address, object, tool);
-                assert result != null && result.stamp().isCompatible(read.stamp());
+                assert result != null && result.stamp(view).isCompatible(read.stamp(view));
                 return result;
             }
 
@@ -148,6 +150,6 @@ public class ReadNode extends FloatableAccessNode implements LIRLowerableAccess,
 
     @Override
     public Stamp getAccessStamp() {
-        return stamp();
+        return stamp(NodeView.DEFAULT);
     }
 }

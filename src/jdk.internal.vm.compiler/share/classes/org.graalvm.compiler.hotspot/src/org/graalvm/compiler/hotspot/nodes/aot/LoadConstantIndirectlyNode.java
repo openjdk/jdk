@@ -34,6 +34,7 @@ import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -55,14 +56,14 @@ public class LoadConstantIndirectlyNode extends FloatingNode implements Canonica
     protected HotSpotConstantLoadAction action;
 
     public LoadConstantIndirectlyNode(ValueNode value) {
-        super(TYPE, value.stamp());
+        super(TYPE, value.stamp(NodeView.DEFAULT));
         this.value = value;
         this.constant = null;
         this.action = HotSpotConstantLoadAction.RESOLVE;
     }
 
     public LoadConstantIndirectlyNode(ValueNode value, HotSpotConstantLoadAction action) {
-        super(TYPE, value.stamp());
+        super(TYPE, value.stamp(NodeView.DEFAULT));
         this.value = value;
         this.constant = null;
         this.action = action;

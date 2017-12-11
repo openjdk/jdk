@@ -27,6 +27,7 @@
 
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
@@ -59,60 +60,11 @@ class PathString : public CHeapObj<mtArguments> {
  public:
   char* value() const { return _value; }
 
-  bool set_value(const char *value) {
-    if (_value != NULL) {
-      FreeHeap(_value);
-    }
-    _value = AllocateHeap(strlen(value)+1, mtArguments);
-    assert(_value != NULL, "Unable to allocate space for new path value");
-    if (_value != NULL) {
-      strcpy(_value, value);
-    } else {
-      // not able to allocate
-      return false;
-    }
-    return true;
-  }
+  bool set_value(const char *value);
+  void append_value(const char *value);
 
-  void append_value(const char *value) {
-    char *sp;
-    size_t len = 0;
-    if (value != NULL) {
-      len = strlen(value);
-      if (_value != NULL) {
-        len += strlen(_value);
-      }
-      sp = AllocateHeap(len+2, mtArguments);
-      assert(sp != NULL, "Unable to allocate space for new append path value");
-      if (sp != NULL) {
-        if (_value != NULL) {
-          strcpy(sp, _value);
-          strcat(sp, os::path_separator());
-          strcat(sp, value);
-          FreeHeap(_value);
-        } else {
-          strcpy(sp, value);
-        }
-        _value = sp;
-      }
-    }
-  }
-
-  PathString(const char* value) {
-    if (value == NULL) {
-      _value = NULL;
-    } else {
-      _value = AllocateHeap(strlen(value)+1, mtArguments);
-      strcpy(_value, value);
-    }
-  }
-
-  ~PathString() {
-    if (_value != NULL) {
-      FreeHeap(_value);
-      _value = NULL;
-    }
-  }
+  PathString(const char* value);
+  ~PathString();
 };
 
 // ModulePatchPath records the module/path pair as specified to --patch-module.
@@ -121,24 +73,8 @@ private:
   char* _module_name;
   PathString* _path;
 public:
-  ModulePatchPath(const char* module_name, const char* path) {
-    assert(module_name != NULL && path != NULL, "Invalid module name or path value");
-    size_t len = strlen(module_name) + 1;
-    _module_name = AllocateHeap(len, mtInternal);
-    strncpy(_module_name, module_name, len); // copy the trailing null
-    _path =  new PathString(path);
-  }
-
-  ~ModulePatchPath() {
-    if (_module_name != NULL) {
-      FreeHeap(_module_name);
-      _module_name = NULL;
-    }
-    if (_path != NULL) {
-      delete _path;
-      _path = NULL;
-    }
-  }
+  ModulePatchPath(const char* module_name, const char* path);
+  ~ModulePatchPath();
 
   inline void set_path(const char* path) { _path->set_value(path); }
   inline const char* module_name() const { return _module_name; }
@@ -185,17 +121,7 @@ class SystemProperty : public PathString {
   }
 
   // Constructor
-  SystemProperty(const char* key, const char* value, bool writeable, bool internal = false) : PathString(value) {
-    if (key == NULL) {
-      _key = NULL;
-    } else {
-      _key = AllocateHeap(strlen(key)+1, mtArguments);
-      strcpy(_key, key);
-    }
-    _next = NULL;
-    _internal = internal;
-    _writeable = writeable;
-  }
+  SystemProperty(const char* key, const char* value, bool writeable, bool internal = false);
 };
 
 
@@ -234,21 +160,7 @@ public:
   void set_invalid()                        { _state = agent_invalid; }
 
   // Constructor
-  AgentLibrary(const char* name, const char* options, bool is_absolute_path, void* os_lib) {
-    _name = AllocateHeap(strlen(name)+1, mtArguments);
-    strcpy(_name, name);
-    if (options == NULL) {
-      _options = NULL;
-    } else {
-      _options = AllocateHeap(strlen(options)+1, mtArguments);
-      strcpy(_options, options);
-    }
-    _is_absolute_path = is_absolute_path;
-    _os_lib = os_lib;
-    _next = NULL;
-    _state = agent_invalid;
-    _is_static_lib = false;
-  }
+  AgentLibrary(const char* name, const char* options, bool is_absolute_path, void* os_lib);
 };
 
 // maintain an order of entry list of AgentLibrary
@@ -420,19 +332,15 @@ class Arguments : AllStatic {
 
   // -Xrun arguments
   static AgentLibraryList _libraryList;
-  static void add_init_library(const char* name, char* options)
-    { _libraryList.add(new AgentLibrary(name, options, false, NULL)); }
+  static void add_init_library(const char* name, char* options);
 
   // -agentlib and -agentpath arguments
   static AgentLibraryList _agentList;
-  static void add_init_agent(const char* name, char* options, bool absolute_path)
-    { _agentList.add(new AgentLibrary(name, options, absolute_path, NULL)); }
+  static void add_init_agent(const char* name, char* options, bool absolute_path);
 
   // Late-binding agents not started via arguments
-  static void add_loaded_agent(AgentLibrary *agentLib)
-    { _agentList.add(agentLib); }
-  static void add_loaded_agent(const char* name, char* options, bool absolute_path, void* os_lib)
-    { _agentList.add(new AgentLibrary(name, options, absolute_path, os_lib)); }
+  static void add_loaded_agent(AgentLibrary *agentLib);
+  static void add_loaded_agent(const char* name, char* options, bool absolute_path, void* os_lib);
 
   // Operation modi
   static Mode _mode;

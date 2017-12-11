@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,13 @@ package javax.lang.model.util;
 
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.type.*;
-
+import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
 /**
  * A skeletal visitor of types with default behavior appropriate for
- * the {@link javax.lang.model.SourceVersion#RELEASE_9 RELEASE_9}
- * source version.
+ * the {@link SourceVersion#RELEASE_9 RELEASE_9}
+ * and {@link SourceVersion#RELEASE_10 RELEASE_10} source versions.
  *
  * <p> <b>WARNING:</b> The {@code TypeVisitor} interface implemented
  * by this class may have methods added to it in the future to
@@ -63,7 +63,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractTypeVisitor8
  * @since 9
  */
-@SupportedSourceVersion(RELEASE_9)
+@SupportedSourceVersion(RELEASE_10)
 public abstract class AbstractTypeVisitor9<R, P> extends AbstractTypeVisitor8<R, P> {
     /**
      * Constructor for concrete subclasses to call.

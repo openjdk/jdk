@@ -123,14 +123,15 @@ public class CtwRunner {
                         .collect(Collectors.joining(" "));
                 String phase = phaseName(classStart);
                 Path out = Paths.get(".", phase + ".out");
+                Path err = Paths.get(".", phase + ".err");
                 System.out.printf("%s %dms START : [%s]%n" +
                         "cout/cerr are redirected to %s%n",
                         phase, TimeUnit.NANOSECONDS.toMillis(System.nanoTime()),
-                        commandLine, out);
-                int exitCode = pb.redirectErrorStream(true)
-                        .redirectOutput(out.toFile())
-                        .start()
-                        .waitFor();
+                        commandLine, phase);
+                int exitCode = pb.redirectOutput(out.toFile())
+                                 .redirectError(err.toFile())
+                                 .start()
+                                 .waitFor();
                 System.out.printf("%s %dms END : exit code = %d%n",
                         phase, TimeUnit.NANOSECONDS.toMillis(System.nanoTime()),
                         exitCode);

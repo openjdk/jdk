@@ -36,7 +36,6 @@ public:
   // Otherwise returns false.
   static inline bool process_options(const JavaVMOption *option) { return false; }
   static inline void report_unsupported_options() { }
-  static inline bool using_AppCDS() { return false; }
 };
 
 void ArgumentsExt::set_gc_specific_flags() {

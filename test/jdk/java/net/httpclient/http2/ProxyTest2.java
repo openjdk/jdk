@@ -62,7 +62,8 @@ import java.util.concurrent.*;
  *           tunnelling through an HTTP/1.1 proxy.
  * @modules jdk.incubator.httpclient
  * @library /lib/testlibrary server
- * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.common
+ * @modules java.base/sun.net.www.http
+ *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
  * @build jdk.testlibrary.SimpleSSLContext ProxyTest2

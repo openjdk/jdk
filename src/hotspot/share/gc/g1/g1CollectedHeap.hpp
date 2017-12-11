@@ -42,14 +42,15 @@
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YCTypes.hpp"
-#include "gc/g1/hSpaceCounters.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "memory/memRegion.hpp"
+#include "services/memoryManager.hpp"
 #include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -64,6 +65,7 @@ class GenerationSpec;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
 class G1ParScanThreadState;
+class MemoryPool;
 class ObjectClosure;
 class SpaceClosure;
 class CompactibleSpaceClosure;
@@ -126,6 +128,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class VM_G1IncCollectionPause;
   friend class VMStructs;
   friend class MutatorAllocRegion;
+  friend class G1FullCollector;
   friend class G1GCAllocRegion;
   friend class G1HeapVerifier;
 
@@ -148,6 +151,13 @@ private:
   WorkGang* _workers;
   G1CollectorPolicy* _collector_policy;
 
+  GCMemoryManager _memory_manager;
+  GCMemoryManager _full_gc_memory_manager;
+
+  MemoryPool* _eden_pool;
+  MemoryPool* _survivor_pool;
+  MemoryPool* _old_pool;
+
   static size_t _humongous_object_threshold_in_words;
 
   // The secondary free list which contains regions that have been
@@ -160,6 +170,8 @@ private:
 
   // It keeps track of the humongous regions.
   HeapRegionSet _humongous_set;
+
+  virtual void initialize_serviceability();
 
   void eagerly_reclaim_humongous_regions();
   // Start a new incremental collection set for the next pause.
@@ -517,7 +529,6 @@ protected:
 private:
   // Internal helpers used during full GC to split it up to
   // increase readability.
-  void do_full_collection_inner(G1FullGCScope* scope);
   void abort_concurrent_cycle();
   void verify_before_full_collection(bool explicit_gc);
   void prepare_heap_for_full_collection();
@@ -1005,6 +1016,9 @@ public:
 
   // Adaptive size policy.  No such thing for g1.
   virtual AdaptiveSizePolicy* size_policy() { return NULL; }
+
+  virtual GrowableArray<GCMemoryManager*> memory_managers();
+  virtual GrowableArray<MemoryPool*> memory_pools();
 
   // The rem set and barrier set.
   G1RemSet* g1_rem_set() const { return _g1_rem_set; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private byte                compressionMethod;
     private CipherSuite         cipherSuite;
     private SecretKey           masterSecret;
+    private final boolean       useExtendedMasterSecret;
 
     /*
      * Information not part of the SSLv3 protocol spec, but used
@@ -148,7 +149,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     private SSLSessionImpl() {
         this(ProtocolVersion.NONE, CipherSuite.C_NULL, null,
-            new SessionId(false, null), null, -1);
+            new SessionId(false, null), null, -1, false);
     }
 
     /*
@@ -158,9 +159,11 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     SSLSessionImpl(ProtocolVersion protocolVersion, CipherSuite cipherSuite,
             Collection<SignatureAndHashAlgorithm> algorithms,
-            SecureRandom generator, String host, int port) {
+            SecureRandom generator, String host, int port,
+            boolean useExtendedMasterSecret) {
         this(protocolVersion, cipherSuite, algorithms,
-             new SessionId(defaultRejoinable, generator), host, port);
+             new SessionId(defaultRejoinable, generator), host, port,
+             useExtendedMasterSecret);
     }
 
     /*
@@ -168,7 +171,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     SSLSessionImpl(ProtocolVersion protocolVersion, CipherSuite cipherSuite,
             Collection<SignatureAndHashAlgorithm> algorithms,
-            SessionId id, String host, int port) {
+            SessionId id, String host, int port,
+            boolean useExtendedMasterSecret) {
         this.protocolVersion = protocolVersion;
         sessionId = id;
         peerCerts = null;
@@ -182,6 +186,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             SignatureAndHashAlgorithm.getAlgorithmNames(algorithms);
         negotiatedMaxFragLen = -1;
         statusResponses = null;
+        this.useExtendedMasterSecret = useExtendedMasterSecret;
 
         if (debug != null && Debug.isOn("session")) {
             System.out.println("%% Initialized:  " + this);
@@ -201,6 +206,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     SecretKey getMasterSecret() {
         return masterSecret;
+    }
+
+    boolean getUseExtendedMasterSecret() {
+        return useExtendedMasterSecret;
     }
 
     void setPeerCertificates(X509Certificate[] peer) {

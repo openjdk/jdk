@@ -86,6 +86,9 @@ public class BootAppendTests {
 
         logTestCase("5");
         testBootAppendClass();
+
+        logTestCase("6");
+        testBootAppendExtraDir();
     }
 
     private static void logTestCase(String msg) {
@@ -227,6 +230,30 @@ public class BootAppendTests {
                 .setXShareMode(mode).setUseVersion(false)
                 .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-showversion",
                            "--limit-modules=java.base", "-cp", appJar)
+                .addSuffix("-Xlog:class+load=info",
+                           APP_CLASS, BOOT_APPEND_CLASS_NAME);
+
+            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
+            CDSTestUtils.checkExec(out, opts, "[class,load] nonjdk.myPackage.MyClass");
+
+            // If CDS is enabled, the nonjdk.myPackage.MyClass should be loaded
+            // from the shared archive.
+            if (mode.equals("on")) {
+                CDSTestUtils.checkExec(out, opts,
+                    "[class,load] nonjdk.myPackage.MyClass source: shared objects file");
+            }
+        }
+    }
+
+    // Test #6: This is similar to Test #5. During runtime, an extra dir
+    //          is appended to the bootclasspath. It should not invalidate
+    //          the shared archive.
+    public static void testBootAppendExtraDir() throws Exception {
+        for (String mode : modes) {
+            CDSOptions opts = (new CDSOptions())
+                .setXShareMode(mode).setUseVersion(false)
+                .addPrefix("-Xbootclasspath/a:" + bootAppendJar + File.pathSeparator + appJar,
+                           "-showversion", "--limit-modules=java.base", "-cp", appJar)
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_CLASS_NAME);
 

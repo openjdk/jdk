@@ -33,6 +33,7 @@
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMarkSweep.hpp"
+#include "gc/parallel/psMemoryPool.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.hpp"
@@ -45,6 +46,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
+#include "services/memoryManager.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/vmError.hpp"
 
@@ -105,9 +107,9 @@ jint ParallelScavengeHeap::initialize() {
     (old_gen()->virtual_space()->high_boundary() ==
      young_gen()->virtual_space()->low_boundary()),
     "Boundaries must meet");
-  // initialize the policy counters - 2 collectors, 3 generations
+  // initialize the policy counters - 2 collectors, 2 generations
   _gc_policy_counters =
-    new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 3, _size_policy);
+    new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 2, _size_policy);
 
   // Set up the GCTaskManager
   _gc_task_manager = GCTaskManager::create(ParallelGCThreads);
@@ -119,7 +121,35 @@ jint ParallelScavengeHeap::initialize() {
   return JNI_OK;
 }
 
+void ParallelScavengeHeap::initialize_serviceability() {
+
+  _eden_pool = new EdenMutableSpacePool(_young_gen,
+                                        _young_gen->eden_space(),
+                                        "PS Eden Space",
+                                        false /* support_usage_threshold */);
+
+  _survivor_pool = new SurvivorMutableSpacePool(_young_gen,
+                                                "PS Survivor Space",
+                                                false /* support_usage_threshold */);
+
+  _old_pool = new PSGenerationPool(_old_gen,
+                                   "PS Old Gen",
+                                   true /* support_usage_threshold */);
+
+  _young_manager = new GCMemoryManager("PS Scavenge", "end of minor GC");
+  _old_manager = new GCMemoryManager("PS MarkSweep", "end of major GC");
+
+  _old_manager->add_pool(_eden_pool);
+  _old_manager->add_pool(_survivor_pool);
+  _old_manager->add_pool(_old_pool);
+
+  _young_manager->add_pool(_eden_pool);
+  _young_manager->add_pool(_survivor_pool);
+
+}
+
 void ParallelScavengeHeap::post_initialize() {
+  CollectedHeap::post_initialize();
   // Need to init the tenuring threshold
   PSScavenge::initialize();
   if (UseParallelOldGC) {
@@ -674,3 +704,19 @@ void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
 void ParallelScavengeHeap::verify_nmethod(nmethod* nm) {
   CodeCache::verify_scavenge_root_nmethod(nm);
 }
+
+GrowableArray<GCMemoryManager*> ParallelScavengeHeap::memory_managers() {
+  GrowableArray<GCMemoryManager*> memory_managers(2);
+  memory_managers.append(_young_manager);
+  memory_managers.append(_old_manager);
+  return memory_managers;
+}
+
+GrowableArray<MemoryPool*> ParallelScavengeHeap::memory_pools() {
+  GrowableArray<MemoryPool*> memory_pools(3);
+  memory_pools.append(_eden_pool);
+  memory_pools.append(_survivor_pool);
+  memory_pools.append(_old_pool);
+  return memory_pools;
+}
+

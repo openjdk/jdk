@@ -25,10 +25,14 @@
 
 package java.io;
 
+import java.lang.ref.Cleaner;
 import java.util.ArrayList;
 import java.util.List;
+
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.ref.CleanerFactory;
+import jdk.internal.ref.PhantomCleanable;
 
 /**
  * Instances of the file descriptor class serve as an opaque handle
@@ -64,7 +68,7 @@ public final class FileDescriptor {
         SharedSecrets.setJavaIOFileDescriptorAccess(
                 new JavaIOFileDescriptorAccess() {
                     public void set(FileDescriptor fdo, int fd) {
-                        fdo.fd = fd;
+                        fdo.set(fd);
                     }
 
                     public int get(FileDescriptor fdo) {
@@ -79,8 +83,12 @@ public final class FileDescriptor {
                         return fdo.append;
                     }
 
-                    public void close(FileDescriptor fdo) {
+                    public void close(FileDescriptor fdo) throws IOException {
                         fdo.close();
+                    }
+
+                    public void registerCleanup(FileDescriptor fdo) {
+                        fdo.registerCleanup();
                     }
 
                     public void setHandle(FileDescriptor fdo, long handle) {
@@ -93,6 +101,11 @@ public final class FileDescriptor {
                 }
         );
     }
+
+    /**
+     * Cleanup in case FileDescriptor is not explicitly closed.
+     */
+    private FDCleanup cleanup;
 
     /**
      * Constructs an (invalid) FileDescriptor
@@ -178,6 +191,34 @@ public final class FileDescriptor {
     private static native void initIDs();
 
     /**
+     * Set the fd.
+     * If setting to -1, clear the cleaner.
+     * The {@link #registerCleanup()} method should be called for new fds.
+     * @param fd the fd or -1 to indicate closed
+     */
+    @SuppressWarnings("unchecked")
+    synchronized void set(int fd) {
+        if (fd == -1 && cleanup != null) {
+            cleanup.clear();
+            cleanup = null;
+        }
+        this.fd = fd;
+    }
+
+    /**
+     * Register a cleanup for the current raw fd.
+     * Used directly in java.io and indirectly via fdAccess.
+     * The cleanup should be registered after the fd is set in the FileDescriptor.
+     */
+    @SuppressWarnings("unchecked")
+    synchronized void registerCleanup() {
+        if (cleanup != null) {
+            cleanup.clear();
+        }
+        cleanup = FDCleanup.create(this);
+    }
+
+    /**
      * Returns true, if the file was opened for appending.
      */
     private static native boolean getAppend(int fd);
@@ -185,9 +226,30 @@ public final class FileDescriptor {
     /**
      * Close the raw file descriptor or handle, if it has not already been closed
      * and set the fd and handle to -1.
+     * Clear the cleaner so the close does not happen twice.
      * Package private to allow it to be used in java.io.
+     * @throws IOException if close fails
      */
-    native void close();
+    @SuppressWarnings("unchecked")
+    synchronized void close() throws IOException {
+        if (cleanup != null) {
+            cleanup.clear();
+            cleanup = null;
+        }
+        close0();
+    }
+
+    /*
+     * Close the raw file descriptor or handle, if it has not already been closed
+     * and set the fd and handle to -1.
+     */
+    private native void close0() throws IOException;
+
+    /*
+     * Raw close of the file descriptor.
+     * Used only for last chance cleanup.
+     */
+    private static native void cleanupClose0(int fd) throws IOException;
 
     /*
      * Package private methods to track referents.
@@ -249,6 +311,47 @@ public final class FileDescriptor {
             } finally {
                 if (ioe != null)
                     throw ioe;
+            }
+        }
+    }
+
+    /**
+     * Cleanup for a FileDescriptor when it becomes phantom reachable.
+     * Create a cleanup if fd != -1.
+     * Subclassed from {@code PhantomCleanable} so that {@code clear} can be
+     * called to disable the cleanup when the fd is closed by any means other
+     * than calling {@link FileDescriptor#close}.
+     * Otherwise, it may close the native fd after it has been reused.
+     */
+    static final class FDCleanup extends PhantomCleanable<Object> {
+        private final int fd;
+
+        static FDCleanup create(FileDescriptor fdo) {
+            return fdo.fd == -1
+                ? null
+                : new FDCleanup(fdo, CleanerFactory.cleaner(), fdo.fd);
+        }
+
+        /**
+         * Constructor for a phantom cleanable reference.
+         * @param obj the object to monitor
+         * @param cleaner the cleaner
+         * @param fd file descriptor to close
+         */
+        private FDCleanup(Object obj, Cleaner cleaner, int fd) {
+            super(obj, cleaner);
+            this.fd = fd;
+        }
+
+        /**
+         * Close the native fd.
+         */
+        @Override
+        protected void performCleanup() {
+            try {
+                cleanupClose0(fd);
+            } catch (IOException ioe) {
+                throw new UncheckedIOException("close", ioe);
             }
         }
     }

@@ -21,10 +21,12 @@
  * questions.
  */
 
-/* @test
+/**
+ * @test
  * @bug 8155197
  * @summary Tests whether the value of mostRecentFocusOwner for a window is correct, if
  *          another window is displayed during focus transition
+ * @key headful
  * @library ../../regtesthelpers
  * @build Util
  * @run main FocusTransitionTest

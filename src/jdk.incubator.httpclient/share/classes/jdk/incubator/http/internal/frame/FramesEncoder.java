@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,8 @@
 
 package jdk.incubator.http.internal.frame;
 
-import jdk.incubator.http.internal.common.ByteBufferReference;
-import jdk.incubator.http.internal.common.Utils;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -45,25 +41,24 @@ public class FramesEncoder {
     public FramesEncoder() {
     }
 
-    public ByteBufferReference[] encodeFrames(List<HeaderFrame> frames) {
-        List<ByteBufferReference> refs = new ArrayList<>(frames.size() * 2);
+    public List<ByteBuffer> encodeFrames(List<HeaderFrame> frames) {
+        List<ByteBuffer> bufs = new ArrayList<>(frames.size() * 2);
         for (HeaderFrame f : frames) {
-            refs.addAll(Arrays.asList(encodeFrame(f)));
+            bufs.addAll(encodeFrame(f));
         }
-        return refs.toArray(new ByteBufferReference[0]);
+        return bufs;
     }
 
-    public ByteBufferReference encodeConnectionPreface(byte[] preface, SettingsFrame frame) {
+    public ByteBuffer encodeConnectionPreface(byte[] preface, SettingsFrame frame) {
         final int length = frame.length();
-        ByteBufferReference ref = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length + preface.length);
-        ByteBuffer buf = ref.get();
+        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length + preface.length);
         buf.put(preface);
         putSettingsFrame(buf, frame, length);
         buf.flip();
-        return ref;
+        return buf;
     }
 
-    public ByteBufferReference[] encodeFrame(Http2Frame frame) {
+    public List<ByteBuffer> encodeFrame(Http2Frame frame) {
         switch (frame.type()) {
             case DataFrame.TYPE:
                 return encodeDataFrame((DataFrame) frame);
@@ -93,47 +88,45 @@ public class FramesEncoder {
     private static final int NO_FLAGS = 0;
     private static final int ZERO_STREAM = 0;
 
-    private ByteBufferReference[] encodeDataFrame(DataFrame frame) {
+    private List<ByteBuffer> encodeDataFrame(DataFrame frame) {
         // non-zero stream
         assert frame.streamid() != 0;
-        ByteBufferReference ref = encodeDataFrameStart(frame);
+        ByteBuffer buf = encodeDataFrameStart(frame);
         if (frame.getFlag(DataFrame.PADDED)) {
-            return joinWithPadding(ref, frame.getData(), frame.getPadLength());
+            return joinWithPadding(buf, frame.getData(), frame.getPadLength());
         } else {
-            return join(ref, frame.getData());
+            return join(buf, frame.getData());
         }
     }
 
-    private ByteBufferReference encodeDataFrameStart(DataFrame frame) {
+    private ByteBuffer encodeDataFrameStart(DataFrame frame) {
         boolean isPadded = frame.getFlag(DataFrame.PADDED);
         final int length = frame.getDataLength() + (isPadded ? (frame.getPadLength() + 1) : 0);
-        ByteBufferReference ref = getBuffer(Http2Frame.FRAME_HEADER_SIZE + (isPadded ? 1 : 0));
-        ByteBuffer buf = ref.get();
+        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + (isPadded ? 1 : 0));
         putHeader(buf, length, DataFrame.TYPE, frame.getFlags(), frame.streamid());
         if (isPadded) {
             buf.put((byte) frame.getPadLength());
         }
         buf.flip();
-        return ref;
+        return buf;
     }
 
-    private ByteBufferReference[] encodeHeadersFrame(HeadersFrame frame) {
+    private List<ByteBuffer> encodeHeadersFrame(HeadersFrame frame) {
         // non-zero stream
         assert frame.streamid() != 0;
-        ByteBufferReference ref = encodeHeadersFrameStart(frame);
+        ByteBuffer buf = encodeHeadersFrameStart(frame);
         if (frame.getFlag(HeadersFrame.PADDED)) {
-            return joinWithPadding(ref, frame.getHeaderBlock(), frame.getPadLength());
+            return joinWithPadding(buf, frame.getHeaderBlock(), frame.getPadLength());
         } else {
-            return join(ref, frame.getHeaderBlock());
+            return join(buf, frame.getHeaderBlock());
         }
     }
 
-    private ByteBufferReference encodeHeadersFrameStart(HeadersFrame frame) {
+    private ByteBuffer encodeHeadersFrameStart(HeadersFrame frame) {
         boolean isPadded = frame.getFlag(HeadersFrame.PADDED);
         boolean hasPriority = frame.getFlag(HeadersFrame.PRIORITY);
         final int length = frame.getHeaderLength() + (isPadded ? (frame.getPadLength() + 1) : 0) + (hasPriority ? 5 : 0);
-        ByteBufferReference ref = getBuffer(Http2Frame.FRAME_HEADER_SIZE + (isPadded ? 1 : 0) + (hasPriority ? 5 : 0));
-        ByteBuffer buf = ref.get();
+        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + (isPadded ? 1 : 0) + (hasPriority ? 5 : 0));
         putHeader(buf, length, HeadersFrame.TYPE, frame.getFlags(), frame.streamid());
         if (isPadded) {
             buf.put((byte) frame.getPadLength());
@@ -142,51 +135,47 @@ public class FramesEncoder {
             putPriority(buf, frame.getExclusive(), frame.getStreamDependency(), frame.getWeight());
         }
         buf.flip();
-        return ref;
+        return buf;
     }
 
-    private ByteBufferReference[] encodePriorityFrame(PriorityFrame frame) {
+    private List<ByteBuffer> encodePriorityFrame(PriorityFrame frame) {
         // non-zero stream; no flags
         assert frame.streamid() != 0;
         final int length = 5;
-        ByteBufferReference ref = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
-        ByteBuffer buf = ref.get();
+        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
         putHeader(buf, length, PriorityFrame.TYPE, NO_FLAGS, frame.streamid());
         putPriority(buf, frame.exclusive(), frame.streamDependency(), frame.weight());
         buf.flip();
-        return new ByteBufferReference[]{ref};
+        return List.of(buf);
     }
 
-    private ByteBufferReference[] encodeResetFrame(ResetFrame frame) {
+    private List<ByteBuffer> encodeResetFrame(ResetFrame frame) {
         // non-zero stream; no flags
         assert frame.streamid() != 0;
         final int length = 4;
-        ByteBufferReference ref = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
-        ByteBuffer buf = ref.get();
+        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
         putHeader(buf, length, ResetFrame.TYPE, NO_FLAGS, frame.streamid());
         buf.putInt(frame.getErrorCode());
         buf.flip();
-        return new ByteBufferReference[]{ref};
+        return List.of(buf);
     }
 
-    private ByteBufferReference[] encodeSettingsFrame(SettingsFrame frame) {
+    private List<ByteBuffer> encodeSettingsFrame(SettingsFrame frame) {
         // only zero stream
         assert frame.streamid() == 0;
         final int length = frame.length();
-        ByteBufferReference ref = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
-        ByteBuffer buf = ref.get();
+        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
         putSettingsFrame(buf, frame, length);
         buf.flip();
-        return new ByteBufferReference[]{ref};
+        return List.of(buf);
     }
 
-    private ByteBufferReference[] encodePushPromiseFrame(PushPromiseFrame frame) {
+    private List<ByteBuffer> encodePushPromiseFrame(PushPromiseFrame frame) {
         // non-zero stream
         assert frame.streamid() != 0;
         boolean isPadded = frame.getFlag(PushPromiseFrame.PADDED);
         final int length = frame.getHeaderLength() + (isPadded ? 5 : 4);
-        ByteBufferReference ref = getBuffer(Http2Frame.FRAME_HEADER_SIZE + (isPadded ? 5 : 4));
-        ByteBuffer buf = ref.get();
+        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + (isPadded ? 5 : 4));
         putHeader(buf, length, PushPromiseFrame.TYPE, frame.getFlags(), frame.streamid());
         if (isPadded) {
             buf.put((byte) frame.getPadLength());
@@ -195,31 +184,29 @@ public class FramesEncoder {
         buf.flip();
 
         if (frame.getFlag(PushPromiseFrame.PADDED)) {
-            return joinWithPadding(ref, frame.getHeaderBlock(), frame.getPadLength());
+            return joinWithPadding(buf, frame.getHeaderBlock(), frame.getPadLength());
         } else {
-            return join(ref, frame.getHeaderBlock());
+            return join(buf, frame.getHeaderBlock());
         }
     }
 
-    private ByteBufferReference[] encodePingFrame(PingFrame frame) {
+    private List<ByteBuffer> encodePingFrame(PingFrame frame) {
         // only zero stream
         assert frame.streamid() == 0;
         final int length = 8;
-        ByteBufferReference ref = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
-        ByteBuffer buf = ref.get();
+        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
         putHeader(buf, length, PingFrame.TYPE, frame.getFlags(), ZERO_STREAM);
         buf.put(frame.getData());
         buf.flip();
-        return new ByteBufferReference[]{ref};
+        return List.of(buf);
     }
 
-    private ByteBufferReference[] encodeGoAwayFrame(GoAwayFrame frame) {
+    private List<ByteBuffer> encodeGoAwayFrame(GoAwayFrame frame) {
         // only zero stream; no flags
         assert frame.streamid() == 0;
         byte[] debugData = frame.getDebugData();
         final int length = 8 + debugData.length;
-        ByteBufferReference ref = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
-        ByteBuffer buf = ref.get();
+        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
         putHeader(buf, length, GoAwayFrame.TYPE, NO_FLAGS, ZERO_STREAM);
         buf.putInt(frame.getLastStream());
         buf.putInt(frame.getErrorCode());
@@ -227,45 +214,50 @@ public class FramesEncoder {
             buf.put(debugData);
         }
         buf.flip();
-        return new ByteBufferReference[]{ref};
+        return List.of(buf);
     }
 
-    private ByteBufferReference[] encodeWindowUpdateFrame(WindowUpdateFrame frame) {
+    private List<ByteBuffer> encodeWindowUpdateFrame(WindowUpdateFrame frame) {
         // any stream; no flags
         final int length = 4;
-        ByteBufferReference ref = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
-        ByteBuffer buf = ref.get();
+        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
         putHeader(buf, length, WindowUpdateFrame.TYPE, NO_FLAGS, frame.streamid);
         buf.putInt(frame.getUpdate());
         buf.flip();
-        return new ByteBufferReference[]{ref};
+        return List.of(buf);
     }
 
-    private ByteBufferReference[] encodeContinuationFrame(ContinuationFrame frame) {
+    private List<ByteBuffer> encodeContinuationFrame(ContinuationFrame frame) {
         // non-zero stream;
         assert frame.streamid() != 0;
         final int length = frame.getHeaderLength();
-        ByteBufferReference ref = getBuffer(Http2Frame.FRAME_HEADER_SIZE);
-        ByteBuffer buf = ref.get();
+        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE);
         putHeader(buf, length, ContinuationFrame.TYPE, frame.getFlags(), frame.streamid());
         buf.flip();
-        return join(ref, frame.getHeaderBlock());
+        return join(buf, frame.getHeaderBlock());
     }
 
-    private ByteBufferReference[] joinWithPadding(ByteBufferReference ref, ByteBufferReference[] data, int padLength) {
-        ByteBufferReference[] references = new ByteBufferReference[2 + data.length];
-        references[0] = ref;
-        System.arraycopy(data, 0, references, 1, data.length);
-        assert references[references.length - 1] == null;
-        references[references.length - 1] = getPadding(padLength);
-        return references;
+    private List<ByteBuffer> joinWithPadding(ByteBuffer buf, List<ByteBuffer> data, int padLength) {
+        int len = data.size();
+        if (len == 0) return List.of(buf, getPadding(padLength));
+        else if (len == 1) return List.of(buf, data.get(0), getPadding(padLength));
+        else if (len == 2) return List.of(buf, data.get(0), data.get(1), getPadding(padLength));
+        List<ByteBuffer> res = new ArrayList<>(len+2);
+        res.add(buf);
+        res.addAll(data);
+        res.add(getPadding(padLength));
+        return res;
     }
 
-    private ByteBufferReference[] join(ByteBufferReference ref, ByteBufferReference[] data) {
-        ByteBufferReference[] references = new ByteBufferReference[1 + data.length];
-        references[0] = ref;
-        System.arraycopy(data, 0, references, 1, data.length);
-        return references;
+    private List<ByteBuffer> join(ByteBuffer buf, List<ByteBuffer> data) {
+        int len = data.size();
+        if (len == 0) return List.of(buf);
+        else if (len == 1) return List.of(buf, data.get(0));
+        else if (len == 2) return List.of(buf, data.get(0), data.get(1));
+        List<ByteBuffer> joined = new ArrayList<>(len + 1);
+        joined.add(buf);
+        joined.addAll(data);
+        return joined;
     }
 
     private void putSettingsFrame(ByteBuffer buf, SettingsFrame frame, int length) {
@@ -287,15 +279,15 @@ public class FramesEncoder {
         buf.put((byte) weight);
     }
 
-    private ByteBufferReference getBuffer(int capacity) {
-        return ByteBufferReference.of(ByteBuffer.allocate(capacity));
+    private ByteBuffer getBuffer(int capacity) {
+        return ByteBuffer.allocate(capacity);
     }
 
-    public ByteBufferReference getPadding(int length) {
+    public ByteBuffer getPadding(int length) {
         if (length > 255) {
             throw new IllegalArgumentException("Padding too big");
         }
-        return ByteBufferReference.of(ByteBuffer.allocate(length)); // zeroed!
+        return ByteBuffer.allocate(length); // zeroed!
     }
 
 }

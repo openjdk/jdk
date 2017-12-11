@@ -471,11 +471,8 @@ synthesizeUnloadEvent(void *signatureVoid, void *envVoid)
     jbyte eventSessionID = currentSessionID;
     struct bag *eventBag = eventHelper_createEventBag();
 
-    if (eventBag == NULL) {
-        /* TO DO: Report, but don't die
-         */
-        JDI_ASSERT(eventBag != NULL);
-    }
+    /* TO DO: Report null error, but don't die */
+    JDI_ASSERT(eventBag != NULL);
 
     /* Signature needs to last, so convert extra copy to
      * classname

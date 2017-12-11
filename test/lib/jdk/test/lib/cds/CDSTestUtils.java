@@ -166,9 +166,9 @@ public class CDSTestUtils {
             outStr.contains("Unable to map ReadWrite shared space at required address") ||
             outStr.contains("Unable to map MiscData shared space at required address") ||
             outStr.contains("Unable to map MiscCode shared space at required address") ||
-            outStr.contains("Unable to map shared string space at required address") ||
+            outStr.contains("Unable to map OptionalData shared space at required address") ||
             outStr.contains("Could not allocate metaspace at a compatible address") ||
-            outStr.contains("Unable to allocate shared string space: range is not within java heap") ))
+            outStr.contains("UseSharedSpaces: Unable to allocate region, range is not within java heap") ))
         {
             return true;
         }

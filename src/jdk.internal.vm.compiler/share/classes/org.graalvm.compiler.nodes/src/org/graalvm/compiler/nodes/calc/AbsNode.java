@@ -31,6 +31,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -44,6 +45,23 @@ public final class AbsNode extends UnaryArithmeticNode<Abs> implements Arithmeti
 
     public AbsNode(ValueNode x) {
         super(TYPE, ArithmeticOpTable::getAbs, x);
+    }
+
+    public static ValueNode create(ValueNode value, NodeView view) {
+        ValueNode synonym = findSynonym(value, view);
+        if (synonym != null) {
+            return synonym;
+        }
+        return new NegateNode(value);
+    }
+
+    protected static ValueNode findSynonym(ValueNode forValue, NodeView view) {
+        ArithmeticOpTable.UnaryOp<Abs> absOp = ArithmeticOpTable.forStamp(forValue.stamp(view)).getAbs();
+        ValueNode synonym = UnaryArithmeticNode.findSynonym(forValue, absOp);
+        if (synonym != null) {
+            return synonym;
+        }
+        return null;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,19 @@
 
 package jdk.incubator.http.internal.frame;
 
-import jdk.incubator.http.internal.common.ByteBufferReference;
-import jdk.incubator.http.internal.common.Utils;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 public class ContinuationFrame extends HeaderFrame {
 
     public static final int TYPE = 0x9;
 
-    public ContinuationFrame(int streamid, int flags, ByteBufferReference[] headerBlocks) {
+    public ContinuationFrame(int streamid, int flags, List<ByteBuffer> headerBlocks) {
         super(streamid, flags, headerBlocks);
     }
 
-    public ContinuationFrame(int streamid, ByteBufferReference headersBlock) {
-        this(streamid, 0, new ByteBufferReference[]{headersBlock});
+    public ContinuationFrame(int streamid, ByteBuffer headersBlock) {
+        this(streamid, 0, List.of(headersBlock));
     }
 
     @Override

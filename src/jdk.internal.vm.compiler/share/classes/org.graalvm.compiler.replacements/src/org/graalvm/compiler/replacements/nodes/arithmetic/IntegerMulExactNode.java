@@ -31,6 +31,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -48,8 +49,8 @@ public final class IntegerMulExactNode extends MulNode implements IntegerExactAr
 
     public IntegerMulExactNode(ValueNode x, ValueNode y) {
         super(TYPE, x, y);
-        setStamp(x.stamp().unrestricted());
-        assert x.stamp().isCompatible(y.stamp()) && x.stamp() instanceof IntegerStamp;
+        setStamp(x.stamp(NodeView.DEFAULT).unrestricted());
+        assert x.stamp(NodeView.DEFAULT).isCompatible(y.stamp(NodeView.DEFAULT)) && x.stamp(NodeView.DEFAULT) instanceof IntegerStamp;
     }
 
     @Override
@@ -76,10 +77,10 @@ public final class IntegerMulExactNode extends MulNode implements IntegerExactAr
                 return forX;
             }
             if (c == 0) {
-                return ConstantNode.forIntegerStamp(stamp(), 0);
+                return ConstantNode.forIntegerStamp(stamp(NodeView.DEFAULT), 0);
             }
         }
-        if (!IntegerStamp.multiplicationCanOverflow((IntegerStamp) x.stamp(), (IntegerStamp) y.stamp())) {
+        if (!IntegerStamp.multiplicationCanOverflow((IntegerStamp) x.stamp(NodeView.DEFAULT), (IntegerStamp) y.stamp(NodeView.DEFAULT))) {
             return new MulNode(x, y).canonical(tool);
         }
         return this;
@@ -104,7 +105,7 @@ public final class IntegerMulExactNode extends MulNode implements IntegerExactAr
 
     @Override
     public IntegerExactArithmeticSplitNode createSplit(AbstractBeginNode next, AbstractBeginNode deopt) {
-        return graph().add(new IntegerMulExactSplitNode(stamp(), getX(), getY(), next, deopt));
+        return graph().add(new IntegerMulExactSplitNode(stamp(NodeView.DEFAULT), getX(), getY(), next, deopt));
     }
 
     @Override

@@ -28,6 +28,7 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveDynamicConstantNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvokeDynamicPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
@@ -136,7 +137,7 @@ public class HotSpotInvokeDynamicPlugin implements InvokeDynamicPlugin {
 
         ConstantNode appendixNode = ConstantNode.forConstant(appendix, builder.getMetaAccess(), builder.getGraph());
 
-        Stamp appendixStamp = appendixNode.stamp();
+        Stamp appendixStamp = appendixNode.stamp(NodeView.DEFAULT);
         Stamp resolveStamp = treatAppendixAsConstant ? appendixStamp : appendixStamp.unrestricted();
         ResolveDynamicConstantNode resolveNode = new ResolveDynamicConstantNode(resolveStamp, appendixNode);
         ResolveDynamicConstantNode added = builder.append(resolveNode);

@@ -330,6 +330,7 @@ import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ReturnNode;
@@ -1092,71 +1093,71 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     protected ValueNode genIntegerAdd(ValueNode x, ValueNode y) {
-        return AddNode.create(x, y);
+        return AddNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genIntegerSub(ValueNode x, ValueNode y) {
-        return SubNode.create(x, y);
+        return SubNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genIntegerMul(ValueNode x, ValueNode y) {
-        return MulNode.create(x, y);
+        return MulNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genFloatAdd(ValueNode x, ValueNode y) {
-        return AddNode.create(x, y);
+        return AddNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genFloatSub(ValueNode x, ValueNode y) {
-        return SubNode.create(x, y);
+        return SubNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genFloatMul(ValueNode x, ValueNode y) {
-        return MulNode.create(x, y);
+        return MulNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genFloatDiv(ValueNode x, ValueNode y) {
-        return FloatDivNode.create(x, y);
+        return FloatDivNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genFloatRem(ValueNode x, ValueNode y) {
-        return new RemNode(x, y);
+        return RemNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genIntegerDiv(ValueNode x, ValueNode y) {
-        return new SignedDivNode(x, y);
+        return SignedDivNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genIntegerRem(ValueNode x, ValueNode y) {
-        return new SignedRemNode(x, y);
+        return SignedRemNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genNegateOp(ValueNode x) {
-        return NegateNode.create(x);
+        return NegateNode.create(x, NodeView.DEFAULT);
     }
 
     protected ValueNode genLeftShift(ValueNode x, ValueNode y) {
-        return LeftShiftNode.create(x, y);
+        return LeftShiftNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genRightShift(ValueNode x, ValueNode y) {
-        return RightShiftNode.create(x, y);
+        return RightShiftNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genUnsignedRightShift(ValueNode x, ValueNode y) {
-        return new UnsignedRightShiftNode(x, y);
+        return UnsignedRightShiftNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genAnd(ValueNode x, ValueNode y) {
-        return AndNode.create(x, y);
+        return AndNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genOr(ValueNode x, ValueNode y) {
-        return OrNode.create(x, y);
+        return OrNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genXor(ValueNode x, ValueNode y) {
-        return XorNode.create(x, y);
+        return XorNode.create(x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genNormalizeCompare(ValueNode x, ValueNode y, boolean isUnorderedLess) {
@@ -1164,19 +1165,19 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     protected ValueNode genFloatConvert(FloatConvert op, ValueNode input) {
-        return FloatConvertNode.create(op, input);
+        return FloatConvertNode.create(op, input, NodeView.DEFAULT);
     }
 
     protected ValueNode genNarrow(ValueNode input, int bitCount) {
-        return NarrowNode.create(input, bitCount);
+        return NarrowNode.create(input, bitCount, NodeView.DEFAULT);
     }
 
     protected ValueNode genSignExtend(ValueNode input, int bitCount) {
-        return SignExtendNode.create(input, bitCount);
+        return SignExtendNode.create(input, bitCount, NodeView.DEFAULT);
     }
 
     protected ValueNode genZeroExtend(ValueNode input, int bitCount) {
-        return ZeroExtendNode.create(input, bitCount);
+        return ZeroExtendNode.create(input, bitCount, NodeView.DEFAULT);
     }
 
     protected void genGoto() {
@@ -1191,15 +1192,15 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     protected LogicNode genObjectEquals(ValueNode x, ValueNode y) {
-        return ObjectEqualsNode.create(constantReflection, metaAccess, options, x, y);
+        return ObjectEqualsNode.create(constantReflection, metaAccess, options, x, y, NodeView.DEFAULT);
     }
 
     protected LogicNode genIntegerEquals(ValueNode x, ValueNode y) {
-        return IntegerEqualsNode.create(constantReflection, metaAccess, options, null, x, y);
+        return IntegerEqualsNode.create(constantReflection, metaAccess, options, null, x, y, NodeView.DEFAULT);
     }
 
     protected LogicNode genIntegerLessThan(ValueNode x, ValueNode y) {
-        return IntegerLessThanNode.create(constantReflection, metaAccess, options, null, x, y);
+        return IntegerLessThanNode.create(constantReflection, metaAccess, options, null, x, y, NodeView.DEFAULT);
     }
 
     protected ValueNode genUnique(ValueNode x) {
@@ -1219,7 +1220,7 @@ public class BytecodeParser implements GraphBuilderContext {
 
         ValueNode exception = frameState.pop(JavaKind.Object);
         FixedGuardNode nullCheck = append(new FixedGuardNode(graph.addOrUniqueWithInputs(IsNullNode.create(exception)), NullCheckException, InvalidateReprofile, true));
-        ValueNode nonNullException = graph.maybeAddOrUnique(PiNode.create(exception, exception.stamp().join(objectNonNull()), nullCheck));
+        ValueNode nonNullException = graph.maybeAddOrUnique(PiNode.create(exception, exception.stamp(NodeView.DEFAULT).join(objectNonNull()), nullCheck));
         lastInstr.setNext(handleException(nonNullException, bci(), false));
     }
 
@@ -1244,7 +1245,7 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     protected ValueNode genConditional(ValueNode x) {
-        return ConditionalNode.create((LogicNode) x);
+        return ConditionalNode.create((LogicNode) x, NodeView.DEFAULT);
     }
 
     protected NewInstanceNode createNewInstance(ResolvedJavaType type, boolean fillContents) {
@@ -1275,7 +1276,7 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     protected ValueNode emitExplicitNullCheck(ValueNode receiver) {
-        if (StampTool.isPointerNonNull(receiver.stamp())) {
+        if (StampTool.isPointerNonNull(receiver.stamp(NodeView.DEFAULT))) {
             return receiver;
         }
         BytecodeExceptionNode exception = graph.add(new BytecodeExceptionNode(metaAccess, NullPointerException.class));
@@ -1293,7 +1294,7 @@ public class BytecodeParser implements GraphBuilderContext {
     protected void emitExplicitBoundsCheck(ValueNode index, ValueNode length) {
         AbstractBeginNode trueSucc = graph.add(new BeginNode());
         BytecodeExceptionNode exception = graph.add(new BytecodeExceptionNode(metaAccess, ArrayIndexOutOfBoundsException.class, index));
-        append(new IfNode(genUnique(IntegerBelowNode.create(constantReflection, metaAccess, options, null, index, length)), trueSucc, exception, FAST_PATH_PROBABILITY));
+        append(new IfNode(genUnique(IntegerBelowNode.create(constantReflection, metaAccess, options, null, index, length, NodeView.DEFAULT)), trueSucc, exception, FAST_PATH_PROBABILITY));
         lastInstr = trueSucc;
 
         exception.setStateAfter(createFrameState(bci(), exception));
@@ -1803,7 +1804,7 @@ public class BytecodeParser implements GraphBuilderContext {
             this.args = args;
             this.resultType = resultType;
             this.beforeStackSize = frameState.stackSize();
-            this.needsNullCheck = !targetMethod.isStatic() && args[0].getStackKind() == JavaKind.Object && !StampTool.isPointerNonNull(args[0].stamp());
+            this.needsNullCheck = !targetMethod.isStatic() && args[0].getStackKind() == JavaKind.Object && !StampTool.isPointerNonNull(args[0].stamp(NodeView.DEFAULT));
             this.nodeCount = graph.getNodeCount();
             this.mark = graph.getMark();
         }
@@ -1817,7 +1818,8 @@ public class BytecodeParser implements GraphBuilderContext {
                 int expectedStackSize = beforeStackSize + resultType.getSlotCount();
                 assert expectedStackSize == frameState.stackSize() : error("plugin manipulated the stack incorrectly: expected=%d, actual=%d", expectedStackSize, frameState.stackSize());
                 NodeIterable<Node> newNodes = graph.getNewNodes(mark);
-                assert !needsNullCheck || isPointerNonNull(args[0].stamp()) : error("plugin needs to null check the receiver of %s: receiver=%s", targetMethod.format("%H.%n(%p)"), args[0]);
+                assert !needsNullCheck || isPointerNonNull(args[0].stamp(NodeView.DEFAULT)) : error("plugin needs to null check the receiver of %s: receiver=%s", targetMethod.format("%H.%n(%p)"),
+                                args[0]);
                 for (Node n : newNodes) {
                     if (n instanceof StateSplit) {
                         StateSplit stateSplit = (StateSplit) n;
@@ -1891,7 +1893,7 @@ public class BytecodeParser implements GraphBuilderContext {
             LoadHubNode hub = graph.unique(new LoadHubNode(stampProvider, nonNullReceiver));
             LoadMethodNode actual = append(new LoadMethodNode(methodStamp, targetMethod, receiverType, method.getDeclaringClass(), hub));
             ConstantNode expected = graph.unique(ConstantNode.forConstant(methodStamp, targetMethod.getEncoding(), getMetaAccess()));
-            LogicNode compare = graph.addOrUniqueWithInputs(CompareNode.createCompareNode(constantReflection, metaAccess, options, null, Condition.EQ, actual, expected));
+            LogicNode compare = graph.addOrUniqueWithInputs(CompareNode.createCompareNode(constantReflection, metaAccess, options, null, Condition.EQ, actual, expected, NodeView.DEFAULT));
 
             JavaTypeProfile profile = null;
             if (profilingInfo != null && this.optimisticOpts.useTypeCheckHints(getOptions())) {
@@ -2394,7 +2396,7 @@ public class BytecodeParser implements GraphBuilderContext {
         if (kind != returnKind) {
             // sub-word integer
             assert returnKind.isNumericInteger() && returnKind.getStackKind() == JavaKind.Int;
-            IntegerStamp stamp = (IntegerStamp) value.stamp();
+            IntegerStamp stamp = (IntegerStamp) value.stamp(NodeView.DEFAULT);
 
             // the bytecode verifier doesn't check that the value is in the correct range
             if (stamp.lowerBound() < returnKind.getMinValue() || returnKind.getMaxValue() < stamp.upperBound()) {
@@ -2480,7 +2482,7 @@ public class BytecodeParser implements GraphBuilderContext {
         JsrScope scope = currentBlock.getJsrScope();
         int retAddress = scope.nextReturnAddress();
         ConstantNode returnBciNode = getJsrConstant(retAddress);
-        LogicNode guard = IntegerEqualsNode.create(constantReflection, metaAccess, options, null, local, returnBciNode);
+        LogicNode guard = IntegerEqualsNode.create(constantReflection, metaAccess, options, null, local, returnBciNode, NodeView.DEFAULT);
         guard = graph.addOrUniqueWithInputs(guard);
         append(new FixedGuardNode(guard, JavaSubroutineMismatch, InvalidateReprofile));
         if (!successor.getJsrScope().equals(scope.pop())) {
@@ -3184,7 +3186,7 @@ public class BytecodeParser implements GraphBuilderContext {
     private void genConditionalForIf(BciBlock trueBlock, LogicNode condition, int oldBci, int trueBlockInt, int falseBlockInt, boolean genReturn) {
         ConstantNode trueValue = graph.unique(ConstantNode.forInt(trueBlockInt));
         ConstantNode falseValue = graph.unique(ConstantNode.forInt(falseBlockInt));
-        ValueNode conditionalNode = ConditionalNode.create(condition, trueValue, falseValue);
+        ValueNode conditionalNode = ConditionalNode.create(condition, trueValue, falseValue, NodeView.DEFAULT);
         if (conditionalNode.graph() == null) {
             conditionalNode = graph.addOrUniqueWithInputs(conditionalNode);
         }
@@ -3716,7 +3718,7 @@ public class BytecodeParser implements GraphBuilderContext {
             }
         }
 
-        boolean nonNull = ((ObjectStamp) object.stamp()).nonNull();
+        boolean nonNull = ((ObjectStamp) object.stamp(NodeView.DEFAULT)).nonNull();
         if (castNode == null) {
             LogicNode condition = genUnique(createInstanceOfAllowNull(checkedType, object, null));
             if (condition.isTautology()) {
@@ -4174,7 +4176,8 @@ public class BytecodeParser implements GraphBuilderContext {
         ValueNode value = frameState.pop(JavaKind.Int);
 
         int nofCases = bs.numberOfCases();
-        double[] keyProbabilities = switchProbability(nofCases + 1, bci);
+        int nofCasesPlusDefault = nofCases + 1;
+        double[] keyProbabilities = switchProbability(nofCasesPlusDefault, bci);
 
         EconomicMap<Integer, SuccessorInfo> bciToBlockSuccessorIndex = EconomicMap.create(Equivalence.DEFAULT);
         for (int i = 0; i < currentBlock.getSuccessorCount(); i++) {
@@ -4184,11 +4187,11 @@ public class BytecodeParser implements GraphBuilderContext {
 
         ArrayList<BciBlock> actualSuccessors = new ArrayList<>();
         int[] keys = new int[nofCases];
-        int[] keySuccessors = new int[nofCases + 1];
+        int[] keySuccessors = new int[nofCasesPlusDefault];
         int deoptSuccessorIndex = -1;
         int nextSuccessorIndex = 0;
         boolean constantValue = value.isConstant();
-        for (int i = 0; i < nofCases + 1; i++) {
+        for (int i = 0; i < nofCasesPlusDefault; i++) {
             if (i < nofCases) {
                 keys[i] = bs.keyAt(i);
             }
@@ -4200,13 +4203,55 @@ public class BytecodeParser implements GraphBuilderContext {
                 }
                 keySuccessors[i] = deoptSuccessorIndex;
             } else {
-                int targetBci = i >= nofCases ? bs.defaultTarget() : bs.targetAt(i);
+                int targetBci = i < nofCases ? bs.targetAt(i) : bs.defaultTarget();
                 SuccessorInfo info = bciToBlockSuccessorIndex.get(targetBci);
                 if (info.actualIndex < 0) {
                     info.actualIndex = nextSuccessorIndex++;
                     actualSuccessors.add(currentBlock.getSuccessor(info.blockIndex));
                 }
                 keySuccessors[i] = info.actualIndex;
+            }
+        }
+        /*
+         * When the profile indicates a case is never taken, the above code will cause the case to
+         * deopt should it be subsequently encountered. However, the case may share code with
+         * another case that is taken according to the profile.
+         *
+         * For example:
+         * // @formatter:off
+         * switch (opcode) {
+         *     case GOTO:
+         *     case GOTO_W: {
+         *         // emit goto code
+         *         break;
+         *     }
+         * }
+         * // @formatter:on
+         *
+         * The profile may indicate the GOTO_W case is never taken, and thus a deoptimization stub
+         * will be emitted. There might be optimization opportunity if additional branching based
+         * on opcode is within the case block. Specially, if there is only single case that
+         * reaches a target, we have better chance cutting out unused branches. Otherwise,
+         * it might be beneficial routing to the same code instead of deopting.
+         *
+         * The following code rewires deoptimization stub to existing resolved branch target if
+         * the target is connected by more than 1 cases.
+         */
+        if (deoptSuccessorIndex >= 0) {
+            int[] connectedCases = new int[nextSuccessorIndex];
+            for (int i = 0; i < nofCasesPlusDefault; i++) {
+                connectedCases[keySuccessors[i]]++;
+            }
+
+            for (int i = 0; i < nofCasesPlusDefault; i++) {
+                if (keySuccessors[i] == deoptSuccessorIndex) {
+                    int targetBci = i < nofCases ? bs.targetAt(i) : bs.defaultTarget();
+                    SuccessorInfo info = bciToBlockSuccessorIndex.get(targetBci);
+                    int rewiredIndex = info.actualIndex;
+                    if (rewiredIndex >= 0 && connectedCases[rewiredIndex] > 1) {
+                        keySuccessors[i] = info.actualIndex;
+                    }
+                }
             }
         }
 

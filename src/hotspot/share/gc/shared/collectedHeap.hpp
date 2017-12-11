@@ -34,6 +34,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/growableArray.hpp"
 
 // A "CollectedHeap" is an implementation of a java heap for HotSpot.  This
 // is an abstract class: there may be many different kinds of heaps.  This
@@ -46,6 +47,8 @@ class CollectorPolicy;
 class GCHeapSummary;
 class GCTimer;
 class GCTracer;
+class GCMemoryManager;
+class MemoryPool;
 class MetaspaceSummary;
 class Thread;
 class ThreadClosure;
@@ -217,7 +220,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // In many heaps, there will be a need to perform some initialization activities
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
-  virtual void post_initialize() = 0;
+  virtual void post_initialize();
 
   // Stop any onging concurrent work and prepare for exit.
   virtual void stop() {}
@@ -485,6 +488,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Return the CollectorPolicy for the heap
   virtual CollectorPolicy* collector_policy() const = 0;
 
+  virtual GrowableArray<GCMemoryManager*> memory_managers() = 0;
+  virtual GrowableArray<MemoryPool*> memory_pools() = 0;
+
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;
 
@@ -529,6 +535,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Generate any dumps preceding or following a full gc
  private:
   void full_gc_dump(GCTimer* timer, bool before);
+
+  virtual void initialize_serviceability() = 0;
+
  public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);

@@ -31,6 +31,7 @@ import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.UnaryOpLogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -77,7 +78,7 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
     @Override
     public boolean verify() {
         assertTrue(getValue() != null, "is null input must not be null");
-        assertTrue(getValue().stamp() instanceof AbstractPointerStamp, "input must be a pointer not %s", getValue().stamp());
+        assertTrue(getValue().stamp(NodeView.DEFAULT) instanceof AbstractPointerStamp, "input must be a pointer not %s", getValue().stamp(NodeView.DEFAULT));
         return super.verify();
     }
 
@@ -113,7 +114,7 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
     @Override
     public void virtualize(VirtualizerTool tool) {
         ValueNode alias = tool.getAlias(getValue());
-        TriState fold = tryFold(alias.stamp());
+        TriState fold = tryFold(alias.stamp(NodeView.DEFAULT));
         if (fold != TriState.UNKNOWN) {
             tool.replaceWithValue(LogicConstantNode.forBoolean(fold.isTrue(), graph()));
         }
@@ -122,7 +123,7 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
     @Override
     public Stamp getSucceedingStampForValue(boolean negated) {
         // Ignore any more precise input stamp since canonicalization will skip through PiNodes
-        AbstractPointerStamp pointerStamp = (AbstractPointerStamp) getValue().stamp().unrestricted();
+        AbstractPointerStamp pointerStamp = (AbstractPointerStamp) getValue().stamp(NodeView.DEFAULT).unrestricted();
         return negated ? pointerStamp.asNonNull() : pointerStamp.asAlwaysNull();
     }
 

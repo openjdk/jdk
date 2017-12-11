@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,23 @@
 
 package jdk.incubator.http;
 
+import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 
 /**
  * Event handling interface from HttpClientImpl's selector.
  *
- * If BLOCKING is set, then the channel will be put in blocking
- * mode prior to handle() being called. If false, then it remains non-blocking.
- *
  * If REPEATING is set then the event is not cancelled after being posted.
  */
 abstract class AsyncEvent {
 
-    public static final int BLOCKING = 0x1; // non blocking if not set
     public static final int REPEATING = 0x2; // one off event if not set
 
     protected final int flags;
+
+    AsyncEvent() {
+        this(0);
+    }
 
     AsyncEvent(int flags) {
         this.flags = flags;
@@ -55,12 +56,13 @@ abstract class AsyncEvent {
     /** Called when event occurs */
     public abstract void handle();
 
-    /** Called when selector is shutting down. Abort all exchanges. */
-    public abstract void abort();
-
-    public boolean blocking() {
-        return (flags & BLOCKING) != 0;
-    }
+    /**
+     * Called when an error occurs during registration, or when the selector has
+     * been shut down. Aborts all exchanges.
+     *
+     * @param ioe  the IOException, or null
+     */
+    public abstract void abort(IOException ioe);
 
     public boolean repeating() {
         return (flags & REPEATING) != 0;

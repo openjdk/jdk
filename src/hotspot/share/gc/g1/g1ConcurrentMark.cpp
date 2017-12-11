@@ -1015,9 +1015,7 @@ void G1ConcurrentMark::checkpoint_roots_final(bool clear_all_soft_refs) {
   SvcGCMarker sgcm(SvcGCMarker::OTHER);
 
   if (VerifyDuringGC) {
-    HandleMark hm;  // handle scope
-    g1h->prepare_for_verify();
-    Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (before)");
+    g1h->verifier()->verify(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "During GC (before)");
   }
   g1h->verifier()->check_bitmaps("Remark Start");
 
@@ -1038,9 +1036,7 @@ void G1ConcurrentMark::checkpoint_roots_final(bool clear_all_soft_refs) {
 
     // Verify the heap w.r.t. the previous marking bitmap.
     if (VerifyDuringGC) {
-      HandleMark hm;  // handle scope
-      g1h->prepare_for_verify();
-      Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (overflow)");
+      g1h->verifier()->verify(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "During GC (overflow)");
     }
 
     // Clear the marking state because we will be restarting
@@ -1055,9 +1051,7 @@ void G1ConcurrentMark::checkpoint_roots_final(bool clear_all_soft_refs) {
                                        true /* expected_active */);
 
     if (VerifyDuringGC) {
-      HandleMark hm;  // handle scope
-      g1h->prepare_for_verify();
-      Universe::verify(VerifyOption_G1UseNextMarking, "During GC (after)");
+      g1h->verifier()->verify(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UseNextMarking, "During GC (after)");
     }
     g1h->verifier()->check_bitmaps("Remark End");
     assert(!restart_for_overflow(), "sanity");
@@ -1189,9 +1183,7 @@ void G1ConcurrentMark::cleanup() {
   g1h->verifier()->verify_region_sets_optional();
 
   if (VerifyDuringGC) {
-    HandleMark hm;  // handle scope
-    g1h->prepare_for_verify();
-    Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (before)");
+    g1h->verifier()->verify(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "During GC (before)");
   }
   g1h->verifier()->check_bitmaps("Cleanup Start");
 
@@ -1263,9 +1255,7 @@ void G1ConcurrentMark::cleanup() {
   Universe::update_heap_info_at_gc();
 
   if (VerifyDuringGC) {
-    HandleMark hm;  // handle scope
-    g1h->prepare_for_verify();
-    Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (after)");
+    g1h->verifier()->verify(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "During GC (after)");
   }
 
   g1h->verifier()->check_bitmaps("Cleanup End");
@@ -1756,28 +1746,24 @@ private:
   G1ConcurrentMark* _cm;
 public:
   void work(uint worker_id) {
-    // Since all available tasks are actually started, we should
-    // only proceed if we're supposed to be active.
-    if (worker_id < _cm->active_tasks()) {
-      G1CMTask* task = _cm->task(worker_id);
-      task->record_start_time();
-      {
-        ResourceMark rm;
-        HandleMark hm;
+    G1CMTask* task = _cm->task(worker_id);
+    task->record_start_time();
+    {
+      ResourceMark rm;
+      HandleMark hm;
 
-        G1RemarkThreadsClosure threads_f(G1CollectedHeap::heap(), task);
-        Threads::threads_do(&threads_f);
-      }
-
-      do {
-        task->do_marking_step(1000000000.0 /* something very large */,
-                              true         /* do_termination       */,
-                              false        /* is_serial            */);
-      } while (task->has_aborted() && !_cm->has_overflown());
-      // If we overflow, then we do not want to restart. We instead
-      // want to abort remark and do concurrent marking again.
-      task->record_end_time();
+      G1RemarkThreadsClosure threads_f(G1CollectedHeap::heap(), task);
+      Threads::threads_do(&threads_f);
     }
+
+    do {
+      task->do_marking_step(1000000000.0 /* something very large */,
+                            true         /* do_termination       */,
+                            false        /* is_serial            */);
+    } while (task->has_aborted() && !_cm->has_overflown());
+    // If we overflow, then we do not want to restart. We instead
+    // want to abort remark and do concurrent marking again.
+    task->record_end_time();
   }
 
   G1CMRemarkTask(G1ConcurrentMark* cm, uint active_workers) :

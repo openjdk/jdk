@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ public class java_lang_Class {
 
   // java.lang.Class fields
   static int klassOffset;
+  static int arrayKlassOffset;
   static IntField oopSizeField;
 
   static {
@@ -56,6 +57,7 @@ public class java_lang_Class {
     // find them from InstanceKlass for java.lang.Class.
     Type jlc = db.lookupType("java_lang_Class");
     klassOffset = (int) jlc.getCIntegerField("_klass_offset").getValue();
+    arrayKlassOffset = (int) jlc.getCIntegerField("_array_klass_offset").getValue();
     int oopSizeOffset = (int) jlc.getCIntegerField("_oop_size_offset").getValue();
     oopSizeField = new IntField(new NamedFieldIdentifier("oop_size"), oopSizeOffset, true);
   }
@@ -69,4 +71,23 @@ public class java_lang_Class {
   public static long getOopSize(Oop aClass) {
     return java_lang_Class.oopSizeField.getValue(aClass);
   }
+
+  /**
+   * Returns the Java name for this Java mirror
+   */
+  public static String asExternalName(Oop aClass) {
+    Klass k = java_lang_Class.asKlass(aClass);
+    if (k == null) { // primitive array
+      BasicType type = BasicType.T_VOID;
+      ArrayKlass ak = (ArrayKlass)Metadata.instantiateWrapperFor(
+                             aClass.getHandle().getAddressAt(arrayKlassOffset));
+      if (ak != null) {
+        type = BasicType.intToBasicType(ak.getElementType());
+      }
+      return type.getName();
+    } else {
+      return k.getName().asString();
+    }
+  }
+
 }

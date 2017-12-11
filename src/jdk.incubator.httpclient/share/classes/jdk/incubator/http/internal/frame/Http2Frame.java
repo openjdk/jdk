@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,6 @@ public abstract class Http2Frame {
         flags |= flag;
     }
 
-    public void setFlags(int flags) {
-        this.flags = flags;
-    }
-
     public int getFlags() {
         return flags;
     }
@@ -61,16 +57,16 @@ public abstract class Http2Frame {
         return (flags & flag) != 0;
     }
 
-    public void clearFlag(int flag) {
-        flags &= 0xffffffff ^ flag;
-    }
+//    public void clearFlag(int flag) {
+//        flags &= 0xffffffff ^ flag;
+//    }
 
     public void streamid(int streamid) {
         this.streamid = streamid;
     }
 
 
-    public String typeAsString() {
+    private String typeAsString() {
         return asString(type());
     }
 

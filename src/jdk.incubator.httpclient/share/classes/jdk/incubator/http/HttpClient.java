@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,16 @@ package jdk.incubator.http;
 
 import java.io.IOException;
 import java.net.Authenticator;
-import java.net.CookieManager;
+import java.net.CookieHandler;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 
@@ -60,10 +63,25 @@ public abstract class HttpClient {
     /**
      * Returns a new HttpClient with default settings.
      *
+     * <p> Equivalent to {@code newBuilder().build()}.
+     *
+     * <p> The default settings include: the "GET" request method, a preference
+     * of {@linkplain HttpClient.Version#HTTP_2 HTTP/2}, a redirection policy of
+     * {@linkplain Redirect#NEVER NEVER}, the {@linkplain
+     * ProxySelector#getDefault() default proxy selector}, and the {@linkplain
+     * SSLContext#getDefault() default SSL context}.
+     *
+     * @implNote The system-wide default values are retrieved at the time the
+     * {@code HttpClient} instance is constructed. Changing the system-wide
+     * values after an {@code HttpClient} instance has been built, for
+     * instance, by calling {@link ProxySelector#setDefault(ProxySelector)}
+     * or {@link SSLContext#setDefault(SSLContext)}, has no effect on already
+     * built instances.
+     *
      * @return a new HttpClient
      */
     public static HttpClient newHttpClient() {
-        return new HttpClientBuilderImpl().build();
+        return newBuilder().build();
     }
 
     /**
@@ -76,55 +94,65 @@ public abstract class HttpClient {
     }
 
     /**
-     * A builder of immutable {@link HttpClient}s. {@code HttpClient.Builder}s
-     * are created by calling {@link HttpClient#newBuilder()}.
+     * A builder of immutable {@link HttpClient}s.
      * {@Incubating}
      *
-     * <p> Each of the setter methods in this class modifies the state of the
-     * builder and returns <i>this</i> (ie. the same instance). The methods are
-     * not synchronized and should not be called from multiple threads without
-     * external synchronization.
-     *
-     * <p> {@link #build()} returns a new {@code HttpClient} each time it is
-     * called.
+     * <p> Builders are created by invoking {@linkplain HttpClient#newBuilder()
+     * newBuilder}. Each of the setter methods modifies the state of the builder
+     * and returns the same instance. Builders are not thread-safe and should not be
+     * used concurrently from multiple threads without external synchronization.
      *
      * @since 9
      */
     public abstract static class Builder {
 
+        /**
+         * A proxy selector that always return {@link Proxy#NO_PROXY} implying
+         * a direct connection.
+         * This is a convenience object that can be passed to {@link #proxy(ProxySelector)}
+         * in order to build an instance of {@link HttpClient} that uses no
+         * proxy.
+         */
+        public static final ProxySelector NO_PROXY = ProxySelector.of(null);
+
+        /**
+         * Creates a Builder.
+         */
         protected Builder() {}
 
         /**
-         * Sets a cookie manager.
+         * Sets a cookie handler.
          *
-         * @param cookieManager the cookie manager
+         * @param cookieHandler the cookie handler
          * @return this builder
          */
-        public abstract Builder cookieManager(CookieManager cookieManager);
+        public abstract Builder cookieHandler(CookieHandler cookieHandler);
 
         /**
-         * Sets an {@code SSLContext}. If a security manager is set, then the caller
-         * must have the {@link java.net.NetPermission NetPermission}
-         * ({@code "setSSLContext"})
+         * Sets an {@code SSLContext}.
          *
-         * <p> The effect of not calling this method, is that a default {@link
-         * javax.net.ssl.SSLContext} is used, which is normally adequate for
-         * client applications that do not need to specify protocols, or require
-         * client authentication.
+         * <p> If this method is not invoked prior to {@linkplain #build()
+         * building}, then newly built clients will use the {@linkplain
+         * SSLContext#getDefault() default context}, which is normally adequate
+         * for client applications that do not need to specify protocols, or
+         * require client authentication.
          *
          * @param sslContext the SSLContext
          * @return this builder
-         * @throws SecurityException if a security manager is set and the
-         *                           caller does not have any required permission
          */
         public abstract Builder sslContext(SSLContext sslContext);
 
         /**
-         * Sets an {@code SSLParameters}. If this method is not called, then a default
-         * set of parameters are used. The contents of the given object are
-         * copied. Some parameters which are used internally by the HTTP protocol
-         * implementation (such as application protocol list) should not be set
-         * by callers, as they are ignored.
+         * Sets an {@code SSLParameters}.
+         *
+         * <p> If this method is not invoked prior to {@linkplain #build()
+         * building}, then newly built clients will use a default,
+         * implementation specific, set of parameters.
+         *
+         * <p> Some parameters which are used internally by the HTTP Client
+         * implementation (such as the application protocol list) should not be
+         * set by callers, as they may be ignored. The contents of the given
+         * object are copied.
          *
          * @param sslParameters the SSLParameters
          * @return this builder
@@ -132,10 +160,17 @@ public abstract class HttpClient {
         public abstract Builder sslParameters(SSLParameters sslParameters);
 
         /**
-         * Sets the executor to be used for asynchronous tasks. If this method is
-         * not called, a default executor is set, which is the one returned from {@link
-         * java.util.concurrent.Executors#newCachedThreadPool()
-         * Executors.newCachedThreadPool}.
+         * Sets the executor to be used for asynchronous and dependent tasks.
+         *
+         * <p> If this method is not invoked prior to {@linkplain #build()
+         * building}, a default executor is created for each newly built {@code
+         * HttpClient}. The default executor uses a {@linkplain
+         * Executors#newCachedThreadPool(ThreadFactory) cached thread pool},
+         * with a custom thread factory.
+         *
+         * @implNote If a security manager has been installed, the thread
+         * factory creates threads that run with an access control context that
+         * has no permissions.
          *
          * @param executor the Executor
          * @return this builder
@@ -144,8 +179,11 @@ public abstract class HttpClient {
 
         /**
          * Specifies whether requests will automatically follow redirects issued
-         * by the server. This setting can be overridden on each request. The
-         * default value for this setting is {@link Redirect#NEVER NEVER}
+         * by the server.
+         *
+         * <p> If this method is not invoked prior to {@linkplain #build()
+         * building}, then newly built clients will use a default redirection
+         * policy of {@link Redirect#NEVER NEVER}.
          *
          * @param policy the redirection policy
          * @return this builder
@@ -153,10 +191,14 @@ public abstract class HttpClient {
         public abstract Builder followRedirects(Redirect policy);
 
         /**
-         * Requests a specific HTTP protocol version where possible. If not set,
-         * the version defaults to {@link HttpClient.Version#HTTP_2}. If
-         * {@link HttpClient.Version#HTTP_2} is set, then each request will
-         * attempt to upgrade to HTTP/2. If the upgrade succeeds, then the
+         * Requests a specific HTTP protocol version where possible.
+         *
+         * <p> If this method is not invoked prior to {@linkplain #build()
+         * building}, then newly built clients will prefer {@linkplain
+         * Version#HTTP_2 HTTP/2}.
+         *
+         * <p> If set to {@linkplain Version#HTTP_2 HTTP/2}, then each request
+         * will attempt to upgrade to HTTP/2. If the upgrade succeeds, then the
          * response to this request will use HTTP/2 and all subsequent requests
          * and responses to the same
          * <a href="https://tools.ietf.org/html/rfc6454#section-4">origin server</a>
@@ -180,12 +222,22 @@ public abstract class HttpClient {
         public abstract Builder priority(int priority);
 
         /**
-         * Sets a {@link java.net.ProxySelector} for this client. If no selector
-         * is set, then no proxies are used. If a {@code null} parameter is
-         * given then the system wide default proxy selector is used.
+         * Sets a {@link java.net.ProxySelector}.
          *
-         * @implNote {@link java.net.ProxySelector#of(InetSocketAddress)}
-         * provides a {@code ProxySelector} which uses one proxy for all requests.
+         * @apiNote {@link ProxySelector#of(InetSocketAddress)}
+         * provides a {@code ProxySelector} which uses a single proxy for all
+         * requests. The system-wide proxy selector can be retrieved by
+         * {@link ProxySelector#getDefault()}.
+         *
+         * @implNote
+         * If this method is not invoked prior to {@linkplain #build()
+         * building}, then newly built clients will use the {@linkplain
+         * ProxySelector#getDefault() default proxy selector}, which
+         * is normally adequate for client applications. This default
+         * behavior can be turned off by supplying an explicit proxy
+         * selector to this method, such as {@link #NO_PROXY} or one
+         * returned by {@link ProxySelector#of(InetSocketAddress)},
+         * before calling {@link #build()}.
          *
          * @param selector the ProxySelector
          * @return this builder
@@ -201,7 +253,7 @@ public abstract class HttpClient {
         public abstract Builder authenticator(Authenticator a);
 
         /**
-         * Returns a {@link HttpClient} built from the current state of this
+         * Returns a new {@link HttpClient} built from the current state of this
          * builder.
          *
          * @return this builder
@@ -211,50 +263,58 @@ public abstract class HttpClient {
 
 
     /**
-     * Returns an {@code Optional} which contains this client's {@link
-     * CookieManager}. If no {@code CookieManager} was set in this client's builder,
-     * then the {@code Optional} is empty.
+     * Returns an {@code Optional} containing this client's {@linkplain
+     * CookieHandler}. If no {@code CookieHandler} was set in this client's
+     * builder, then the {@code Optional} is empty.
      *
-     * @return an {@code Optional} containing this client's {@code CookieManager}
+     * @return an {@code Optional} containing this client's {@code CookieHandler}
      */
-    public abstract Optional<CookieManager> cookieManager();
+    public abstract Optional<CookieHandler> cookieHandler();
 
     /**
-     * Returns the follow-redirects setting for this client. The default value
-     * for this setting is {@link HttpClient.Redirect#NEVER}
+     * Returns the follow redirects policy for this client. The default value
+     * for client's built by builders that do not specify a redirect policy is
+     * {@link HttpClient.Redirect#NEVER NEVER}.
      *
      * @return this client's follow redirects setting
      */
     public abstract Redirect followRedirects();
 
     /**
-     * Returns an {@code Optional} containing the {@code ProxySelector} for this client.
-     * If no proxy is set then the {@code Optional} is empty.
+     * Returns an {@code Optional} containing the {@code ProxySelector}
+     * supplied to this client. If no proxy selector was set in this client's
+     * builder, then the {@code Optional} is empty.
      *
-     * @return an {@code Optional} containing this client's proxy selector
+     * <p> Even though this method may return an empty optional, the {@code
+     * HttpClient} may still have an non-exposed {@linkplain
+     * Builder#proxy(ProxySelector) default proxy selector} that is
+     * used for sending HTTP requests.
+     *
+     * @return an {@code Optional} containing the proxy selector supplied
+     *        to this client.
      */
     public abstract Optional<ProxySelector> proxy();
 
     /**
-     * Returns the {@code SSLContext}, if one was set on this client. If a security
-     * manager is set, then the caller must have the
-     * {@link java.net.NetPermission NetPermission}("getSSLContext") permission.
-     * If no {@code SSLContext} was set, then the default context is returned.
+     * Returns this client's {@code SSLContext}.
+     *
+     * <p> If no {@code SSLContext} was set in this client's builder, then the
+     * {@linkplain SSLContext#getDefault() default context} is returned.
      *
      * @return this client's SSLContext
-     * @throws SecurityException if the caller does not have permission to get
-     *         the SSLContext
      */
     public abstract SSLContext sslContext();
 
     /**
-     * Returns an {@code Optional} containing the {@link SSLParameters} set on
-     * this client. If no {@code SSLParameters} were set in the client's builder,
-     * then the {@code Optional} is empty.
+     * Returns a copy of this client's {@link SSLParameters}.
      *
-     * @return an {@code Optional} containing this client's {@code SSLParameters}
+     * <p> If no {@code SSLParameters} were set in the client's builder, then an
+     * implementation specific default set of parameters, that the client will
+     * use, is returned.
+     *
+     * @return this client's {@code SSLParameters}
      */
-    public abstract Optional<SSLParameters> sslParameters();
+    public abstract SSLParameters sslParameters();
 
     /**
      * Returns an {@code Optional} containing the {@link Authenticator} set on
@@ -274,14 +334,18 @@ public abstract class HttpClient {
     public abstract HttpClient.Version version();
 
     /**
-     * Returns the {@code Executor} set on this client. If an {@code
-     * Executor} was not set on the client's builder, then a default
-     * object is returned. The default {@code Executor} is created independently
-     * for each client.
+     * Returns an {@code Optional} containing this client's {@linkplain
+     * Executor}. If no {@code Executor} was set in the client's builder,
+     * then the {@code Optional} is empty.
      *
-     * @return this client's Executor
+     * <p> Even though this method may return an empty optional, the {@code
+     * HttpClient} may still have an non-exposed {@linkplain
+     * HttpClient.Builder#executor(Executor) default executor} that is used for
+     * executing asynchronous and dependent tasks.
+     *
+     * @return an {@code Optional} containing this client's {@code Executor}
      */
-    public abstract Executor executor();
+    public abstract Optional<Executor> executor();
 
     /**
      * The HTTP protocol version.
@@ -349,8 +413,14 @@ public abstract class HttpClient {
      * @param req the request
      * @param responseBodyHandler the response body handler
      * @return the response body
-     * @throws java.io.IOException if an I/O error occurs when sending or receiving
-     * @throws java.lang.InterruptedException if the operation is interrupted
+     * @throws IOException if an I/O error occurs when sending or receiving
+     * @throws InterruptedException if the operation is interrupted
+     * @throws IllegalArgumentException if the request method is not supported
+     * @throws SecurityException If a security manager has been installed
+     *          and it denies {@link java.net.URLPermission access} to the
+     *          URL in the given request, or proxy if one is configured.
+     *          See HttpRequest for further information about
+     *          <a href="HttpRequest.html#securitychecks">security checks</a>.
      */
     public abstract <T> HttpResponse<T>
     send(HttpRequest req, HttpResponse.BodyHandler<T> responseBodyHandler)
@@ -359,6 +429,17 @@ public abstract class HttpClient {
     /**
      * Sends the given request asynchronously using this client and the given
      * response handler.
+     *
+     * <p> The returned completable future completes exceptionally with:
+     * <ul>
+     * <li>{@link IOException} - if an I/O error occurs when sending or receiving</li>
+     * <li>{@link IllegalArgumentException} - if the request method is not supported</li>
+     * <li>{@link SecurityException} - If a security manager has been installed
+     *          and it denies {@link java.net.URLPermission access} to the
+     *          URL in the given request, or proxy if one is configured.
+     *          See HttpRequest for further information about
+     *          <a href="HttpRequest.html#securitychecks">security checks</a>.</li>
+     * </ul>
      *
      * @param <T> the response body type
      * @param req the request
@@ -372,25 +453,34 @@ public abstract class HttpClient {
      * Sends the given request asynchronously using this client and the given
      * multi response handler.
      *
+     * <p> The returned completable future completes exceptionally with:
+     * <ul>
+     * <li>{@link IOException} - if an I/O error occurs when sending or receiving</li>
+     * <li>{@link IllegalArgumentException} - if the request method is not supported</li>
+     * <li>{@link SecurityException} - If a security manager has been installed
+     *          and it denies {@link java.net.URLPermission access} to the
+     *          URL in the given request, or proxy if one is configured.
+     *          See HttpRequest for further information about
+     *          <a href="HttpRequest.html#securitychecks">security checks</a>.</li>
+     * </ul>
+     *
      * @param <U> a type representing the aggregated results
      * @param <T> a type representing all of the response bodies
      * @param req the request
-     * @param multiProcessor the MultiProcessor for the request
+     * @param multiSubscriber the multiSubscriber for the request
      * @return a {@code CompletableFuture<U>}
      */
     public abstract <U, T> CompletableFuture<U>
-    sendAsync(HttpRequest req, HttpResponse.MultiProcessor<U, T> multiProcessor);
+    sendAsync(HttpRequest req, HttpResponse.MultiSubscriber<U, T> multiSubscriber);
 
     /**
-     * Creates a builder of {@link WebSocket} instances connected to the given
-     * URI and receiving events and messages with the given {@code Listener}.
+     * Creates a new {@code WebSocket} builder (optional operation).
      *
      * <p> <b>Example</b>
      * <pre>{@code
      *     HttpClient client = HttpClient.newHttpClient();
-     *     WebSocket.Builder builder = client.newWebSocketBuilder(
-     *             URI.create("ws://websocket.example.com"),
-     *             listener);
+     *     CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
+     *             .buildAsync(URI.create("ws://websocket.example.com"), listener);
      * }</pre>
      *
      * <p> Finer control over the WebSocket Opening Handshake can be achieved
@@ -402,28 +492,33 @@ public abstract class HttpClient {
      *     HttpClient client = HttpClient.newBuilder()
      *             .proxy(ProxySelector.of(addr))
      *             .build();
-     *     WebSocket.Builder builder = client.newWebSocketBuilder(
-     *             URI.create("ws://websocket.example.com"),
-     *             listener);
+     *     CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
+     *             .buildAsync(URI.create("ws://websocket.example.com"), listener);
      * }</pre>
      *
-     * @implSpec The default implementation of this method throws {@code
-     * UnsupportedOperationException}. However, clients obtained through
+     * <p> A {@code WebSocket.Builder} returned from this method is not safe for
+     * use by multiple threads without external synchronization.
+     *
+     * @implSpec The default implementation of this method throws
+     * {@code UnsupportedOperationException}. Clients obtained through
      * {@link HttpClient#newHttpClient()} or {@link HttpClient#newBuilder()}
-     * provide WebSocket capability.
+     * return a {@code WebSocket} builder.
      *
-     * @param uri
-     *         the WebSocket URI
-     * @param listener
-     *         the listener
+     * @implNote Both builder and {@code WebSocket}s created with it operate in
+     * a non-blocking fashion. That is, their methods do not block before
+     * returning a {@code CompletableFuture}. Asynchronous tasks are executed in
+     * this {@code HttpClient}'s executor.
      *
-     * @return a builder of {@code WebSocket} instances
+     * <p> When a {@code CompletionStage} returned from
+     * {@link WebSocket.Listener#onClose Listener.onClose} completes,
+     * the {@code WebSocket} will send a Close message that has the same code
+     * the received message has and an empty reason.
+     *
+     * @return a {@code WebSocket.Builder}
      * @throws UnsupportedOperationException
      *         if this {@code HttpClient} does not provide WebSocket support
      */
-    public WebSocket.Builder newWebSocketBuilder(URI uri,
-                                                 WebSocket.Listener listener)
-    {
+    public WebSocket.Builder newWebSocketBuilder() {
         throw new UnsupportedOperationException();
     }
 }

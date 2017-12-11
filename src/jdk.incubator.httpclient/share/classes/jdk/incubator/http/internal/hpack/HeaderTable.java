@@ -24,6 +24,7 @@
  */
 package jdk.incubator.http.internal.hpack;
 
+import jdk.incubator.http.internal.hpack.HPACK.Logger;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.HashMap;
@@ -32,6 +33,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static java.lang.String.format;
+import static jdk.incubator.http.internal.hpack.HPACK.Logger.Level.EXTRA;
+import static jdk.incubator.http.internal.hpack.HPACK.Logger.Level.NORMAL;
 
 //
 // Header Table combined from two tables: static and dynamic.
@@ -122,11 +125,13 @@ final class HeaderTable {
         }
     }
 
+    private final Logger logger;
     private final Table dynamicTable = new Table(0);
     private int maxSize;
     private int size;
 
-    public HeaderTable(int maxSize) {
+    public HeaderTable(int maxSize, Logger logger) {
+        this.logger = logger;
         setMaxSize(maxSize);
     }
 
@@ -211,21 +216,41 @@ final class HeaderTable {
     }
 
     private void put(HeaderField h) {
+        if (logger.isLoggable(NORMAL)) {
+            logger.log(NORMAL, () -> format("adding ('%s', '%s')",
+                                            h.name, h.value));
+        }
         int entrySize = sizeOf(h);
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("size of ('%s', '%s') is %s",
+                                           h.name, h.value, entrySize));
+        }
         while (entrySize > maxSize - size && size != 0) {
+            if (logger.isLoggable(EXTRA)) {
+                logger.log(EXTRA, () -> format("insufficient space %s, must evict entry",
+                                               (maxSize - size)));
+            }
             evictEntry();
         }
         if (entrySize > maxSize - size) {
+            if (logger.isLoggable(EXTRA)) {
+                logger.log(EXTRA, () -> format("not adding ('%s, '%s'), too big",
+                                               h.name, h.value));
+            }
             return;
         }
         size += entrySize;
         dynamicTable.add(h);
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("('%s, '%s') added", h.name, h.value));
+            logger.log(EXTRA, this::toString);
+        }
     }
 
     void setMaxSize(int maxSize) {
         if (maxSize < 0) {
-            throw new IllegalArgumentException
-                    ("maxSize >= 0: maxSize=" + maxSize);
+            throw new IllegalArgumentException(
+                    "maxSize >= 0: maxSize=" + maxSize);
         }
         while (maxSize < size && size != 0) {
             evictEntry();
@@ -237,22 +262,29 @@ final class HeaderTable {
 
     HeaderField evictEntry() {
         HeaderField f = dynamicTable.remove();
-        size -= sizeOf(f);
+        int s = sizeOf(f);
+        this.size -= s;
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format("evicted entry ('%s', '%s') of size %s",
+                                           f.name, f.value, s));
+            logger.log(EXTRA, this::toString);
+        }
         return f;
     }
 
     @Override
     public String toString() {
         double used = maxSize == 0 ? 0 : 100 * (((double) size) / maxSize);
-        return format("entries: %d; used %s/%s (%.1f%%)", dynamicTable.size(),
-                size, maxSize, used);
+        return format("dynamic length: %d, full length: %s, used space: %s/%s (%.1f%%)",
+                      dynamicTable.size(), length(), size, maxSize, used);
     }
 
-    int checkIndex(int index) {
-        if (index < 1 || index > STATIC_TABLE_LENGTH + dynamicTable.size()) {
-            throw new IllegalArgumentException(
+    private int checkIndex(int index) {
+        int len = length();
+        if (index < 1 || index > len) {
+            throw new IndexOutOfBoundsException(
                     format("1 <= index <= length(): index=%s, length()=%s",
-                            index, length()));
+                           index, len));
         }
         return index;
     }

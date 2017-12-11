@@ -21,9 +21,11 @@
  * questions.
  */
 
-/* @test
+/**
+ * @test
  * @bug 8190230
  * @summary [macosx] Order of overlapping of modal dialogs is wrong
+ * @key headful
  * @run main SiblingChildOrderTest
  */
 

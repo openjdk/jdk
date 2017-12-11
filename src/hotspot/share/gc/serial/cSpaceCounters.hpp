@@ -52,9 +52,7 @@ class CSpaceCounters: public CHeapObj<mtGC> {
   CSpaceCounters(const char* name, int ordinal, size_t max_size,
                  ContiguousSpace* s, GenerationCounters* gc);
 
-  ~CSpaceCounters() {
-      if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
-  }
+  ~CSpaceCounters();
 
   virtual void update_capacity();
   virtual void update_used();

@@ -80,7 +80,7 @@ public final class ModuleInfoWriter {
      */
     private static byte[] toModuleInfo(ModuleDescriptor md, ModuleTarget target) {
         ClassWriter cw = new ClassWriter(0);
-        cw.visit(Opcodes.V9, ACC_MODULE, "module-info", null, null, null);
+        cw.visit(Opcodes.V10, ACC_MODULE, "module-info", null, null, null);
 
         int moduleFlags = md.modifiers().stream()
                 .map(MODULE_MODS_TO_FLAGS::get)

@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/resourceArea.hpp"
+#include "memory/resourceArea.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/memTracker.hpp"

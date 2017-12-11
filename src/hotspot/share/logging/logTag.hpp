@@ -121,6 +121,7 @@
   LOG_TAG(safepoint) \
   LOG_TAG(scavenge) \
   LOG_TAG(scrub) \
+  LOG_TAG(smr) \
   LOG_TAG(stacktrace) \
   LOG_TAG(stackwalk) \
   LOG_TAG(start) \

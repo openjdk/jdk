@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,14 @@ package jdk.incubator.http;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.TreeMap;
 import java.util.function.Predicate;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNull;
 
-final class ImmutableHeaders implements HttpHeaders {
+final class ImmutableHeaders extends HttpHeaders {
 
     private final Map<String, List<String>> map;
 
@@ -69,25 +66,6 @@ final class ImmutableHeaders implements HttpHeaders {
                         }
                 );
         this.map = unmodifiableMap(m);
-    }
-
-    @Override
-    public Optional<String> firstValue(String name) {
-        return allValues(name).stream().findFirst();
-    }
-
-    @Override
-    public OptionalLong firstValueAsLong(String name) {
-        return allValues(name).stream().mapToLong(Long::valueOf).findFirst();
-    }
-
-    @Override
-    public List<String> allValues(String name) {
-        requireNonNull(name);
-        List<String> values = map.get(name);
-        // Making unmodifiable list out of empty in order to make a list which
-        // throws UOE unconditionally
-        return values != null ? values : unmodifiableList(emptyList());
     }
 
     @Override

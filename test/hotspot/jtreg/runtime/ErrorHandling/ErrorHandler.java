@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires (vm.debug == true)
  * @bug 6888954
  * @bug 8015884
  * @summary Exercise HotSpot error handling code by invoking java with
@@ -39,6 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class ErrorHandler {
 
     public static OutputAnalyzer runTest(int testcase) throws Exception {
+        // The -XX:ErrorHandlerTest=N option requires debug bits.
         return new OutputAnalyzer(
             ProcessTools.createJavaProcessBuilder(
             "-XX:-TransmitErrorReport", "-XX:-CreateCoredumpOnCrash", "-XX:ErrorHandlerTest=" + testcase)
@@ -46,10 +48,6 @@ public class ErrorHandler {
     }
 
     public static void main(String[] args) throws Exception {
-        // Test is only applicable for debug builds
-        if (!Platform.isDebugBuild()) {
-            return;
-        }
         // Keep this in sync with hotspot/src/share/vm/utilities/debug.cpp
         int i = 1;
         String[] strings = {
@@ -69,6 +67,10 @@ public class ErrorHandler {
         String[] patterns = {
             "(SIGILL|SIGSEGV|EXCEPTION_ACCESS_VIOLATION).* at pc=",
             "(SIGBUS|SIGSEGV|SIGILL|EXCEPTION_ACCESS_VIOLATION).* at pc="
+            // -XX:ErrorHandlerTest=14 is tested by SafeFetchInErrorHandlingTest.java
+            // -XX:ErrorHandlerTest=15 is tested by SecondaryErrorTest.java
+            // -XX:ErrorHandlerTest=16 is tested by ThreadsListHandleInErrorHandlingTest.java
+            // -XX:ErrorHandlerTest=17 is tested by NestedThreadsListHandleInErrorHandlingTest.java
         };
 
         for (String s : strings) {

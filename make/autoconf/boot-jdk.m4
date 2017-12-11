@@ -353,9 +353,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 
   AC_MSG_CHECKING([flags for boot jdk java command] )
 
-  # Disable special log output when a debug build is used as Boot JDK...
-  ADD_JVM_ARG_IF_OK([-XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput],boot_jdk_jvmargs,[$JAVA])
-
   # Force en-US environment
   ADD_JVM_ARG_IF_OK([-Duser.language=en -Duser.country=US],boot_jdk_jvmargs,[$JAVA])
 

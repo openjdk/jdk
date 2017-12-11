@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
+import java.util.function.Supplier;
 
 /*
  * Each RawChannel corresponds to a TCP connection (SocketChannel) but is
@@ -41,17 +42,19 @@ import java.nio.channels.SocketChannel;
 final class RawChannelImpl implements RawChannel {
 
     private final HttpClientImpl client;
-    private final HttpConnection connection;
+    private final HttpConnection.DetachedConnectionChannel detachedChannel;
     private final Object         initialLock = new Object();
-    private ByteBuffer           initial;
+    private Supplier<ByteBuffer> initial;
 
     RawChannelImpl(HttpClientImpl client,
                    HttpConnection connection,
-                   ByteBuffer initial)
+                   Supplier<ByteBuffer> initial)
             throws IOException
     {
         this.client = client;
-        this.connection = connection;
+        this.detachedChannel = connection.detachChannel();
+        this.initial = initial;
+
         SocketChannel chan = connection.channel();
         client.cancelRegistration(chan);
         // Constructing a RawChannel is supposed to have a "hand over"
@@ -64,14 +67,10 @@ final class RawChannelImpl implements RawChannel {
                 chan.close();
             } catch (IOException e1) {
                 e.addSuppressed(e1);
+            } finally {
+                detachedChannel.close();
             }
             throw e;
-        }
-        // empty the initial buffer into our own copy.
-        synchronized (initialLock) {
-            this.initial = initial.hasRemaining()
-                    ? Utils.copy(initial)
-                    : Utils.EMPTY_BYTEBUFFER;
         }
     }
 
@@ -80,13 +79,13 @@ final class RawChannelImpl implements RawChannel {
         private final RawEvent re;
 
         NonBlockingRawAsyncEvent(RawEvent re) {
-            super(0); // !BLOCKING & !REPEATING
+            // !BLOCKING & !REPEATING
             this.re = re;
         }
 
         @Override
         public SelectableChannel channel() {
-            return connection.channel();
+            return detachedChannel.channel();
         }
 
         @Override
@@ -100,7 +99,7 @@ final class RawChannelImpl implements RawChannel {
         }
 
         @Override
-        public void abort() { }
+        public void abort(IOException ioe) { }
     }
 
     @Override
@@ -110,8 +109,9 @@ final class RawChannelImpl implements RawChannel {
 
     @Override
     public ByteBuffer read() throws IOException {
-        assert !connection.channel().isBlocking();
-        return connection.read();
+        assert !detachedChannel.channel().isBlocking();
+        // connection.read() will no longer be available.
+        return detachedChannel.read();
     }
 
     @Override
@@ -120,7 +120,9 @@ final class RawChannelImpl implements RawChannel {
             if (initial == null) {
                 throw new IllegalStateException();
             }
-            ByteBuffer ref = initial;
+            ByteBuffer ref = initial.get();
+            ref = ref.hasRemaining() ? Utils.copy(ref)
+                    : Utils.EMPTY_BYTEBUFFER;
             initial = null;
             return ref;
         }
@@ -128,21 +130,29 @@ final class RawChannelImpl implements RawChannel {
 
     @Override
     public long write(ByteBuffer[] src, int offset, int len) throws IOException {
-        return connection.write(src, offset, len);
+        // this makes the whitebox driver test fail.
+        return detachedChannel.write(src, offset, len);
     }
 
     @Override
     public void shutdownInput() throws IOException {
-        connection.shutdownInput();
+        detachedChannel.shutdownInput();
     }
 
     @Override
     public void shutdownOutput() throws IOException {
-        connection.shutdownOutput();
+        detachedChannel.shutdownOutput();
     }
 
     @Override
     public void close() throws IOException {
-        connection.close();
+        detachedChannel.close();
     }
+
+    @Override
+    public String toString() {
+        return super.toString()+"("+ detachedChannel.toString() + ")";
+    }
+
+
 }

@@ -33,6 +33,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ArithmeticOperation;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 
@@ -47,12 +48,12 @@ public abstract class UnaryArithmeticNode<OP> extends UnaryNode implements Arith
     protected final SerializableUnaryFunction<OP> getOp;
 
     protected UnaryArithmeticNode(NodeClass<? extends UnaryArithmeticNode<OP>> c, SerializableUnaryFunction<OP> getOp, ValueNode value) {
-        super(c, getOp.apply(ArithmeticOpTable.forStamp(value.stamp())).foldStamp(value.stamp()), value);
+        super(c, getOp.apply(ArithmeticOpTable.forStamp(value.stamp(NodeView.DEFAULT))).foldStamp(value.stamp(NodeView.DEFAULT)), value);
         this.getOp = getOp;
     }
 
     protected final UnaryOp<OP> getOp(ValueNode forValue) {
-        return getOp.apply(ArithmeticOpTable.forStamp(forValue.stamp()));
+        return getOp.apply(ArithmeticOpTable.forStamp(forValue.stamp(NodeView.DEFAULT)));
     }
 
     @Override
@@ -62,7 +63,7 @@ public abstract class UnaryArithmeticNode<OP> extends UnaryNode implements Arith
 
     @Override
     public Stamp foldStamp(Stamp newStamp) {
-        assert newStamp.isCompatible(getValue().stamp());
+        assert newStamp.isCompatible(getValue().stamp(NodeView.DEFAULT));
         return getOp(getValue()).foldStamp(newStamp);
     }
 
@@ -77,7 +78,7 @@ public abstract class UnaryArithmeticNode<OP> extends UnaryNode implements Arith
 
     protected static <OP> ValueNode findSynonym(ValueNode forValue, UnaryOp<OP> op) {
         if (forValue.isConstant()) {
-            return ConstantNode.forPrimitive(op.foldStamp(forValue.stamp()), op.foldConstant(forValue.asConstant()));
+            return ConstantNode.forPrimitive(op.foldStamp(forValue.stamp(NodeView.DEFAULT)), op.foldConstant(forValue.asConstant()));
         }
         return null;
     }

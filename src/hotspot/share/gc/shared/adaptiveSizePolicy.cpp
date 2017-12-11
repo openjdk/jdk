@@ -26,6 +26,7 @@
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/gcUtil.inline.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
 #include "runtime/timer.hpp"

@@ -197,9 +197,18 @@ public class JavacElements implements Elements {
         for (ModuleSymbol msym : modules.allModules()) {
             S sym = nameToSymbol(msym, nameStr, clazz);
 
-            if (sym != null) {
-                if (!allowModules || clazz == ClassSymbol.class || !sym.members().isEmpty()) {
-                    //do not add packages without members:
+            if (sym == null)
+                continue;
+
+            if (clazz == ClassSymbol.class) {
+                // Always include classes
+                found.add(sym);
+            } else if (clazz == PackageSymbol.class) {
+                // In module mode, ignore the "spurious" empty packages that "enclose" module-specific packages.
+                // For example, if a module contains classes or package info in package p.q.r, it will also appear
+                // to have additional packages p.q and p, even though these packages have no content other
+                // than the subpackage.  We don't want those empty packages showing up in searches for p or p.q.
+                if (!sym.members().isEmpty() || ((PackageSymbol) sym).package_info != null) {
                     found.add(sym);
                 }
             }

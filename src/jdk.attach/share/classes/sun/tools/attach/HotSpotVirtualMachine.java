@@ -86,18 +86,23 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     private void loadAgentLibrary(String agentLibrary, boolean isAbsolute, String options)
         throws AgentLoadException, AgentInitializationException, IOException
     {
+        String msgPrefix = "return code: ";
         InputStream in = execute("load",
                                  agentLibrary,
                                  isAbsolute ? "true" : "false",
                                  options);
-        try {
-            int result = readInt(in);
-            if (result != 0) {
-                throw new AgentInitializationException("Agent_OnAttach failed", result);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+            String result = reader.readLine();
+            if (result == null) {
+                throw new AgentLoadException("Target VM did not respond");
+            } else if (result.startsWith(msgPrefix)) {
+                int retCode = Integer.parseInt(result.substring(msgPrefix.length()));
+                if (retCode != 0) {
+                    throw new AgentInitializationException("Agent_OnAttach failed", retCode);
+                }
+            } else {
+                throw new AgentLoadException(result);
             }
-        } finally {
-            in.close();
-
         }
     }
 

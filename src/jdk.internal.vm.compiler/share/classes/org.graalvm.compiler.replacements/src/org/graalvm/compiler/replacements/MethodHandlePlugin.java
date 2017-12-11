@@ -83,6 +83,10 @@ public class MethodHandlePlugin implements NodePlugin {
                     // As such, it needs to recursively inline everything.
                     inlineEverything = args.length != argumentsList.size();
                 }
+                if (inlineEverything && !callTarget.targetMethod().hasBytecodes()) {
+                    // we need to force-inline but we can not, leave the invoke as-is
+                    return false;
+                }
                 b.handleReplacedInvoke(invoke.getInvokeKind(), callTarget.targetMethod(), argumentsList.toArray(new ValueNode[argumentsList.size()]), inlineEverything);
             }
             return true;

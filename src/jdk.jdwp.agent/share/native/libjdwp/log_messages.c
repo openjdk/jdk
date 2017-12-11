@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,6 +187,7 @@ log_message_end(const char *format, ...)
             /* Construct message string. */
             va_start(ap, format);
             (void)vsnprintf(message, sizeof(message), format, ap);
+            message[sizeof(message) - 1] = 0;
             va_end(ap);
 
             get_time_stamp(datetime, sizeof(datetime));

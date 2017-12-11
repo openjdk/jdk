@@ -134,7 +134,7 @@ public final class ConstantNode extends FloatingNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        LIRKind kind = gen.getLIRGeneratorTool().getLIRKind(stamp());
+        LIRKind kind = gen.getLIRGeneratorTool().getLIRKind(stamp(NodeView.DEFAULT));
         if (onlyUsedInVirtualState()) {
             gen.setResult(this, new ConstantValue(kind, value));
         } else {
@@ -525,7 +525,7 @@ public final class ConstantNode extends FloatingNode implements LIRLowerable {
     @Override
     public String toString(Verbosity verbosity) {
         if (verbosity == Verbosity.Name) {
-            return super.toString(Verbosity.Name) + "(" + value.toValueString() + ", " + stamp().unrestricted().toString() + ")";
+            return super.toString(Verbosity.Name) + "(" + value.toValueString() + ", " + stamp(NodeView.DEFAULT).unrestricted().toString() + ")";
         } else {
             return super.toString(verbosity);
         }

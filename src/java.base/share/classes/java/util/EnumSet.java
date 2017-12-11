@@ -75,7 +75,6 @@ import jdk.internal.misc.SharedSecrets;
  * @author Josh Bloch
  * @since 1.5
  * @see EnumMap
- * @serial exclude
  */
 @SuppressWarnings("serial") // No serialVersionUID due to usage of
                             // serial proxy pattern
@@ -85,12 +84,12 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
     /**
      * The class of all the elements of this set.
      */
-    final Class<E> elementType;
+    final transient Class<E> elementType;
 
     /**
-     * All of the values comprising T.  (Cached for performance.)
+     * All of the values comprising E.  (Cached for performance.)
      */
-    final Enum<?>[] universe;
+    final transient Enum<?>[] universe;
 
     EnumSet(Class<E>elementType, Enum<?>[] universe) {
         this.elementType = elementType;
@@ -416,7 +415,7 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
      *
      * @serial include
      */
-    private static class SerializationProxy <E extends Enum<E>>
+    private static class SerializationProxy<E extends Enum<E>>
         implements java.io.Serializable
     {
 
@@ -441,10 +440,18 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
             elements = set.toArray(ZERO_LENGTH_ENUM_ARRAY);
         }
 
-        // instead of cast to E, we should perhaps use elementType.cast()
-        // to avoid injection of forged stream, but it will slow the implementation
+        /**
+         * Returns an {@code EnumSet} object with initial state
+         * held by this proxy.
+         *
+         * @return a {@code EnumSet} object with initial state
+         * held by this proxy
+         */
         @SuppressWarnings("unchecked")
         private Object readResolve() {
+            // instead of cast to E, we should perhaps use elementType.cast()
+            // to avoid injection of forged stream, but it will slow the
+            // implementation
             EnumSet<E> result = EnumSet.noneOf(elementType);
             for (Enum<?> e : elements)
                 result.add((E)e);
@@ -454,13 +461,24 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
         private static final long serialVersionUID = 362491234563181265L;
     }
 
+    /**
+     * Returns a
+     * <a href="../../serialized-form.html#java.util.EnumSet.SerializationProxy">
+     * SerializationProxy</a>
+     * representing the state of this instance.
+     *
+     * @return a {@link SerializationProxy}
+     * representing the state of this instance
+     */
     Object writeReplace() {
         return new SerializationProxy<>(this);
     }
 
-    // readObject method for the serialization proxy pattern
-    // See Effective Java, Second Ed., Item 78.
-    private void readObject(java.io.ObjectInputStream stream)
+    /**
+     * @param s the stream
+     * @throws java.io.InvalidObjectException always
+     */
+    private void readObject(java.io.ObjectInputStream s)
         throws java.io.InvalidObjectException {
         throw new java.io.InvalidObjectException("Proxy required");
     }

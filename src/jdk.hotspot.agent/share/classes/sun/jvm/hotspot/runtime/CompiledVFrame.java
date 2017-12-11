@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,12 +127,12 @@ public class CompiledVFrame extends JavaVFrame {
   }
 
   /** Returns List<MonitorInfo> */
-  public List   getMonitors() {
+  public List<MonitorInfo> getMonitors() {
     List monitors = getScope().getMonitors();
     if (monitors == null) {
-      return new ArrayList();
+      return new ArrayList<>();
     }
-    List result = new ArrayList(monitors.size());
+    List<MonitorInfo> result = new ArrayList<>(monitors.size());
     for (int i = 0; i < monitors.size(); i++) {
       MonitorValue mv = (MonitorValue) monitors.get(i);
       ScopeValue ov = mv.owner();
