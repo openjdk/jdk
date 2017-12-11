@@ -23,28 +23,37 @@
 
 /*
  * @test
- * @bug 8131019 8190552
+ * @bug 8131019 8189778 8190552
  * @summary Test JavadocHelper
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/jdk.internal.shellsupport.doc
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
- * @run testng JavadocHelperTest
+ * @run testng/timeout=900/othervm JavadocHelperTest
  */
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.ModuleElement.ExportsDirective;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.DiagnosticListener;
@@ -70,15 +79,15 @@ public class JavadocHelperTest {
                       "Top level. ");
         doTestJavadoc("",
                       t -> getFirstMethod(t, "test.Super"),
-                      " javadoc1A\n" +
+                      " javadoc1\n" +
                       "\n" +
-                      " @param p1 param1A\n" +
-                      " @param p2 param2A\n" +
-                      " @param p3 param3A\n" +
-                      " @throws IllegalStateException exc1A\n" +
-                      " @throws IllegalArgumentException exc2A\n" +
-                      " @throws IllegalAccessException exc3A\n" +
-                      " @return valueA\n");
+                      " @param p1 param1\n" +
+                      " @param p2 param2\n" +
+                      " @param p3 param3\n" +
+                      " @throws IllegalStateException exc1\n" +
+                      " @throws IllegalArgumentException exc2\n" +
+                      " @throws IllegalAccessException exc3\n" +
+                      " @return value\n");
     }
 
     private Element getFirstMethod(JavacTask task, String typeName) {
@@ -90,15 +99,15 @@ public class JavadocHelperTest {
     public void testInheritNoJavadoc() throws Exception {
         doTestJavadoc("",
                       getSubTest,
-                      " javadoc1A\n" +
+                      " javadoc1\n" +
                       "\n" +
-                      " @param p1 param1A\n" +
-                      " @param p2 param2A\n" +
-                      " @param p3 param3A\n" +
-                      " @throws IllegalStateException exc1A\n" +
-                      " @throws IllegalArgumentException exc2A\n" +
-                      " @throws IllegalAccessException exc3A\n" +
-                      " @return valueA\n");
+                      " @param p1 param1\n" +
+                      " @param p2 param2\n" +
+                      " @param p3 param3\n" +
+                      " @throws IllegalStateException exc1\n" +
+                      " @throws IllegalArgumentException exc2\n" +
+                      " @throws IllegalAccessException exc3\n" +
+                      " @return value\n");
     }
 
     public void testInheritFull() throws Exception {
@@ -140,7 +149,7 @@ public class JavadocHelperTest {
                       " Prefix javadoc1 suffix.\n" +
                       "\n" +
                       " @param p1 prefix param1 suffix\n" +
-                      "@param p2  param2\n" +
+                      "@param p2 param2\n" +
                       " @param p3 prefix param3 suffix\n" +
                       " @throws IllegalStateException prefix exc1 suffix\n" +
                       " @throws IllegalArgumentException prefix exc2 suffix\n" +
@@ -161,8 +170,8 @@ public class JavadocHelperTest {
                       "     */\n",
                       getSubTest,
                       " Prefix javadoc1 suffix.\n" +
-                      "@param p1  param1\n" +
                       "\n" +
+                      "@param p1 param1\n" +
                       " @param p2 prefix param2 suffix\n" +
                       " @param p3 prefix param3 suffix\n" +
                       " @throws IllegalStateException prefix exc1 suffix\n" +
@@ -189,7 +198,7 @@ public class JavadocHelperTest {
                       " @param p2 prefix param2 suffix\n" +
                       " @param p3 prefix param3 suffix\n" +
                       " @throws IllegalStateException prefix exc1 suffix\n" +
-                      "@throws java.lang.IllegalArgumentException  exc2\n" +
+                      "@throws java.lang.IllegalArgumentException exc2\n" +
                       " @throws IllegalAccessException prefix exc3 suffix\n" +
                       " @return prefix value suffix\n");
     }
@@ -214,11 +223,101 @@ public class JavadocHelperTest {
                       " @throws IllegalStateException prefix exc1 suffix\n" +
                       " @throws IllegalArgumentException prefix exc2 suffix\n" +
                       " @throws IllegalAccessException prefix exc3 suffix\n" +
-                      "@return  value\n");
+                      "@return value\n");
     }
 
+    public void testInheritAllButOne() throws Exception {
+        doTestJavadoc("    /**\n" +
+                      "     * @throws IllegalArgumentException {@inheritDoc}\n" +
+                      "     */\n",
+                      getSubTest,
+                      "javadoc1\n" +
+                      "@param p1 param1\n" +
+                      "@param p2 param2\n" +
+                      "@param p3 param3\n" +
+                      "@throws java.lang.IllegalStateException exc1\n" +
+                      " @throws IllegalArgumentException exc2\n" +
+                      "@throws java.lang.IllegalAccessException exc3\n" +
+                      "@return value\n");
+    }
+
+    public void testInheritEmpty() throws Exception {
+        doTestJavadoc("    /**\n" +
+                      "     */\n",
+                      "    /**@param p1\n" +
+                      "     * @param p2\n" +
+                      "     * @param p3\n" +
+                      "     * @throws IllegalStateException\n" +
+                      "     * @throws IllegalArgumentException\n" +
+                      "     * @throws IllegalAccessException\n" +
+                      "     * @return\n" +
+                      "     */\n",
+                      getSubTest,
+                      "\n" +
+                      "@param p1 \n" +
+                      "@param p2 \n" +
+                      "@param p3 \n" +
+                      "@throws java.lang.IllegalStateException \n" +
+                      "@throws java.lang.IllegalArgumentException \n" +
+                      "@throws java.lang.IllegalAccessException \n" +
+                      "@return \n");
+    }
+
+    public void testEmptyValue() throws Exception {
+        doTestJavadoc("    /**\n" +
+                      "     */\n",
+                      "    /**@param p1 {@value}\n" +
+                      "     * @param p2\n" +
+                      "     * @param p3\n" +
+                      "     * @throws IllegalStateException\n" +
+                      "     * @throws IllegalArgumentException\n" +
+                      "     * @throws IllegalAccessException\n" +
+                      "     * @return\n" +
+                      "     */\n",
+                      getSubTest,
+                      "\n" +
+                      "@param p1 {@value}\n" +
+                      "@param p2 \n" +
+                      "@param p3 \n" +
+                      "@throws java.lang.IllegalStateException \n" +
+                      "@throws java.lang.IllegalArgumentException \n" +
+                      "@throws java.lang.IllegalAccessException \n" +
+                      "@return \n");
+    }
+
+    public void testShortComment() throws Exception {
+        doTestJavadoc("    /**Test.*/\n",
+                      getSubTest,
+                      "Test." +
+                      "@param p1 param1\n" +
+                      "@param p2 param2\n" +
+                      "@param p3 param3\n" +
+                      "@throws java.lang.IllegalStateException exc1\n" +
+                      "@throws java.lang.IllegalArgumentException exc2\n" +
+                      "@throws java.lang.IllegalAccessException exc3\n" +
+                      "@return value\n");
+    }
 
     private void doTestJavadoc(String origJavadoc, Function<JavacTask, Element> getElement, String expectedJavadoc) throws Exception {
+        doTestJavadoc(origJavadoc,
+                      "    /**\n" +
+                      "     * javadoc1\n" +
+                      "     *\n" +
+                      "     * @param p1 param1\n" +
+                      "     * @param p2 param2\n" +
+                      "     * @param p3 param3\n" +
+                      "     * @throws IllegalStateException exc1\n" +
+                      "     * @throws IllegalArgumentException exc2\n" +
+                      "     * @throws IllegalAccessException exc3\n" +
+                      "     * @return value\n" +
+                      "     */\n",
+                      getElement, expectedJavadoc);
+    }
+
+    private void doTestJavadoc(String origJavadoc,
+                               String superJavadoc,
+                               Function<JavacTask, Element> getElement,
+                               String expectedJavadoc) throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         String subClass =
                 "package test;\n" +
@@ -231,17 +330,7 @@ public class JavadocHelperTest {
                 "/**Top level." +
                 " */\n" +
                 "public class Super {\n" +
-                "    /**\n" +
-                "     * javadoc1A\n" +
-                "     *\n" +
-                "     * @param p1 param1A\n" +
-                "     * @param p2 param2A\n" +
-                "     * @param p3 param3A\n" +
-                "     * @throws IllegalStateException exc1A\n" +
-                "     * @throws IllegalArgumentException exc2A\n" +
-                "     * @throws IllegalAccessException exc3A\n" +
-                "     * @return valueA\n" +
-                "     */\n" +
+                superJavadoc +
                 "    public String test(int p1, int p2, int p3) throws IllegalStateException, IllegalArgumentException, IllegalAccessException { return null;} \n" +
                 "}\n";
 
@@ -292,5 +381,54 @@ public class JavadocHelperTest {
             return code;
         }
 
+    }
+
+    public void testAllDocs() throws IOException {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        DiagnosticListener<? super JavaFileObject> noErrors = d -> {
+            if (d.getKind() == Kind.ERROR) {
+                throw new AssertionError(d.getMessage(null));
+            }
+        };
+
+        List<Path> sources = new ArrayList<>();
+        Path home = Paths.get(System.getProperty("java.home"));
+        Path srcZip = home.resolve("lib").resolve("src.zip");
+        if (Files.isReadable(srcZip)) {
+            URI uri = URI.create("jar:" + srcZip.toUri());
+            try (FileSystem zipFO = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+                Path root = zipFO.getRootDirectories().iterator().next();
+
+                //modular format:
+                try (DirectoryStream<Path> ds = Files.newDirectoryStream(root)) {
+                    for (Path p : ds) {
+                        if (Files.isDirectory(p)) {
+                            sources.add(p);
+                        }
+                    }
+                }
+                try (StandardJavaFileManager fm =
+                        compiler.getStandardFileManager(null, null, null)) {
+                    JavacTask task =
+                            (JavacTask) compiler.getTask(null, fm, noErrors, null, null, null);
+                    task.getElements().getTypeElement("java.lang.Object");
+                    for (ModuleElement me : task.getElements().getAllModuleElements()) {
+                        List<ExportsDirective> exports =
+                                ElementFilter.exportsIn(me.getDirectives());
+                        for (ExportsDirective ed : exports) {
+                            try (JavadocHelper helper = JavadocHelper.create(task, sources)) {
+                                List<? extends Element> content =
+                                        ed.getPackage().getEnclosedElements();
+                                for (TypeElement clazz : ElementFilter.typesIn(content)) {
+                                    for (Element el : clazz.getEnclosedElements()) {
+                                        helper.getResolvedDocComment(el);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
