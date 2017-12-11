@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -839,7 +839,7 @@ writePaths(PacketOutputStream *out, char *string) {
     }
 
     pos = string;
-    for ( i = 0 ; i < npaths ; i++ ) {
+    for ( i = 0 ; i < npaths && pos != NULL; i++ ) {
         char *psPos;
         int   plen;
 
@@ -858,8 +858,6 @@ writePaths(PacketOutputStream *out, char *string) {
 
     jvmtiDeallocate(buf);
 }
-
-
 
 static jboolean
 classPaths(PacketInputStream *in, PacketOutputStream *out)
