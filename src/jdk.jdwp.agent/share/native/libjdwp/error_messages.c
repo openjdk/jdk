@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ vprint_message(FILE *fp, const char *prefix, const char *suffix,
 
     /* Fill buffer with single UTF-8 string */
     (void)vsnprintf((char*)utf8buf, sizeof(utf8buf), format, ap);
+    utf8buf[sizeof(utf8buf) - 1] = 0;
     len = (int)strlen((char*)utf8buf);
 
     /* Convert to platform encoding (ignore errors, dangerous area) */

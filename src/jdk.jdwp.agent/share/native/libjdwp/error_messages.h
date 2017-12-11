@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ const char * jdwpErrorText(jdwpError);
     #define THIS_FILE __FILE__
 #endif
 
-#define EXIT_ERROR(error,msg) \
+#define EXIT_ERROR(error, msg) \
         { \
                 print_message(stderr, "JDWP exit error ", "\n", \
                         "%s(%d): %s [%s:%d]", \
@@ -56,21 +56,21 @@ const char * jdwpErrorText(jdwpError);
                 debugInit_exit((jvmtiError)error, msg); \
         }
 
-#define JDI_ASSERT(expression)  \
-do {                            \
-    if (gdata && gdata->assertOn && !(expression)) {            \
+#define JDI_ASSERT(expression) \
+do { \
+    if (gdata && gdata->assertOn && !(expression)) { \
         jdiAssertionFailed(THIS_FILE, __LINE__, #expression); \
-    }                                           \
+    } \
 } while (0)
 
-#define JDI_ASSERT_MSG(expression, msg)  \
-do {                            \
-    if (gdata && gdata->assertOn && !(expression)) {            \
+#define JDI_ASSERT_MSG(expression, msg) \
+do { \
+    if (gdata && gdata->assertOn && !(expression)) { \
         jdiAssertionFailed(THIS_FILE, __LINE__, msg); \
-    }                                           \
+    } \
 } while (0)
 
-#define JDI_ASSERT_FAILED(msg)  \
+#define JDI_ASSERT_FAILED(msg) \
    jdiAssertionFailed(THIS_FILE, __LINE__, msg)
 
 void do_pause(void);
