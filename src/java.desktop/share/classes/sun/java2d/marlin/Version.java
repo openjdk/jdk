@@ -27,7 +27,7 @@ package sun.java2d.marlin;
 
 public final class Version {
 
-    private static final String VERSION = "marlin-0.7.5-Unsafe-OpenJDK";
+    private static final String VERSION = "marlin-0.8.2-Unsafe-OpenJDK";
 
     public static String getVersion() {
         return VERSION;

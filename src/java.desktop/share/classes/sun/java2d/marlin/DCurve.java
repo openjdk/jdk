@@ -56,12 +56,16 @@ final class DCurve {
              double x3, double y3,
              double x4, double y4)
     {
-        ax = 3.0d * (x2 - x3) + x4 - x1;
-        ay = 3.0d * (y2 - y3) + y4 - y1;
-        bx = 3.0d * (x1 - 2.0d * x2 + x3);
-        by = 3.0d * (y1 - 2.0d * y2 + y3);
-        cx = 3.0d * (x2 - x1);
-        cy = 3.0d * (y2 - y1);
+        final double dx32 = 3.0d * (x3 - x2);
+        final double dy32 = 3.0d * (y3 - y2);
+        final double dx21 = 3.0d * (x2 - x1);
+        final double dy21 = 3.0d * (y2 - y1);
+        ax = (x4 - x1) - dx32;
+        ay = (y4 - y1) - dy32;
+        bx = (dx32 - dx21);
+        by = (dy32 - dy21);
+        cx = dx21;
+        cy = dy21;
         dx = x1;
         dy = y1;
         dax = 3.0d * ax; day = 3.0d * ay;
@@ -72,11 +76,13 @@ final class DCurve {
              double x2, double y2,
              double x3, double y3)
     {
+        final double dx21 = (x2 - x1);
+        final double dy21 = (y2 - y1);
         ax = 0.0d; ay = 0.0d;
-        bx = x1 - 2.0d * x2 + x3;
-        by = y1 - 2.0d * y2 + y3;
-        cx = 2.0d * (x2 - x1);
-        cy = 2.0d * (y2 - y1);
+        bx = (x3 - x2) - dx21;
+        by = (y3 - y2) - dy21;
+        cx = 2.0d * dx21;
+        cy = 2.0d * dy21;
         dx = x1;
         dy = y1;
         dax = 0.0d; day = 0.0d;

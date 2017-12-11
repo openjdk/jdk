@@ -28,6 +28,7 @@ package sun.java2d.marlin;
 import java.util.Arrays;
 
 import sun.awt.geom.PathConsumer2D;
+import sun.java2d.marlin.Helpers.PolyStack;
 
 // TODO: some of the arithmetic here is too verbose and prone to hard to
 // debug typos. We should consider making a small Point/Vector class that
@@ -38,42 +39,16 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     private static final int DRAWING_OP_TO = 1; // ie. curve, line, or quad
     private static final int CLOSE = 2;
 
-    /**
-     * Constant value for join style.
-     */
-    public static final int JOIN_MITER = 0;
-
-    /**
-     * Constant value for join style.
-     */
-    public static final int JOIN_ROUND = 1;
-
-    /**
-     * Constant value for join style.
-     */
-    public static final int JOIN_BEVEL = 2;
-
-    /**
-     * Constant value for end cap style.
-     */
-    public static final int CAP_BUTT = 0;
-
-    /**
-     * Constant value for end cap style.
-     */
-    public static final int CAP_ROUND = 1;
-
-    /**
-     * Constant value for end cap style.
-     */
-    public static final int CAP_SQUARE = 2;
-
     // pisces used to use fixed point arithmetic with 16 decimal digits. I
     // didn't want to change the values of the constant below when I converted
     // it to floating point, so that's why the divisions by 2^16 are there.
     private static final float ROUND_JOIN_THRESHOLD = 1000.0f/65536.0f;
 
-    private static final float C = 0.5522847498307933f;
+    // kappa = (4/3) * (SQRT(2) - 1)
+    private static final float C = (float)(4.0d * (Math.sqrt(2.0d) - 1.0d) / 3.0d);
+
+    // SQRT(2)
+    private static final float SQRT_2 = (float)Math.sqrt(2.0d);
 
     private static final int MAX_N_CURVES = 11;
 
@@ -120,6 +95,20 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     // dirty curve
     final Curve curve;
 
+    // Bounds of the drawing region, at pixel precision.
+    private float[] clipRect;
+
+    // the outcode of the current point
+    private int cOutCode = 0;
+
+    // the outcode of the starting point
+    private int sOutCode = 0;
+
+    // flag indicating if the path is opened (clipped)
+    private boolean opened = false;
+    // flag indicating if the starting point's cap is done
+    private boolean capStart = false;
+
     /**
      * Constructs a <code>Stroker</code>.
      * @param rdrCtx per-thread renderer context
@@ -127,7 +116,15 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     Stroker(final RendererContext rdrCtx) {
         this.rdrCtx = rdrCtx;
 
-        this.reverse = new PolyStack(rdrCtx);
+        this.reverse = (rdrCtx.stats != null) ?
+            new PolyStack(rdrCtx,
+                    rdrCtx.stats.stat_str_polystack_types,
+                    rdrCtx.stats.stat_str_polystack_curves,
+                    rdrCtx.stats.hist_str_polystack_curves,
+                    rdrCtx.stats.stat_array_str_polystack_curves,
+                    rdrCtx.stats.stat_array_str_polystack_types)
+            : new PolyStack(rdrCtx);
+
         this.curve = rdrCtx.curve;
     }
 
@@ -143,13 +140,15 @@ final class Stroker implements PathConsumer2D, MarlinConst {
      * <code>JOIN_MITER</code>, <code>JOIN_ROUND</code> or
      * <code>JOIN_BEVEL</code>.
      * @param miterLimit the desired miter limit
+     * @param scale scaling factor applied to clip boundaries
      * @return this instance
      */
-    Stroker init(PathConsumer2D pc2d,
-              float lineWidth,
-              int capStyle,
-              int joinStyle,
-              float miterLimit)
+    Stroker init(final PathConsumer2D pc2d,
+                 final float lineWidth,
+                 final int capStyle,
+                 final int joinStyle,
+                 final float miterLimit,
+                 final float scale)
     {
         this.out = pc2d;
 
@@ -158,13 +157,45 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         this.capStyle = capStyle;
         this.joinStyle = joinStyle;
 
-        float limit = miterLimit * lineWidth2;
+        final float limit = miterLimit * lineWidth2;
         this.miterLimitSq = limit * limit;
 
         this.prev = CLOSE;
 
         rdrCtx.stroking = 1;
 
+        if (rdrCtx.doClip) {
+            // Adjust the clipping rectangle with the stroker margin (miter limit, width)
+            float rdrOffX = 0.0f, rdrOffY = 0.0f;
+            float margin = lineWidth2;
+
+            if (capStyle == CAP_SQUARE) {
+                margin *= SQRT_2;
+            }
+            if ((joinStyle == JOIN_MITER) && (margin < limit)) {
+                margin = limit;
+            }
+            if (scale != 1.0f) {
+                margin *= scale;
+                rdrOffX = scale * Renderer.RDR_OFFSET_X;
+                rdrOffY = scale * Renderer.RDR_OFFSET_Y;
+            }
+            // add a small rounding error:
+            margin += 1e-3f;
+
+            // bounds as half-open intervals: minX <= x < maxX and minY <= y < maxY
+            // adjust clip rectangle (ymin, ymax, xmin, xmax):
+            final float[] _clipRect = rdrCtx.clipRect;
+            _clipRect[0] -= margin - rdrOffY;
+            _clipRect[1] += margin + rdrOffY;
+            _clipRect[2] -= margin - rdrOffX;
+            _clipRect[3] += margin + rdrOffX;
+            this.clipRect = _clipRect;
+        } else {
+            this.clipRect = null;
+            this.cOutCode = 0;
+            this.sOutCode = 0;
+        }
         return this; // fluent API
     }
 
@@ -174,6 +205,9 @@ final class Stroker implements PathConsumer2D, MarlinConst {
      */
     void dispose() {
         reverse.dispose();
+
+        opened   = false;
+        capStart = false;
 
         if (DO_CLEAN_DIRTY) {
             // Force zero-fill dirty arrays:
@@ -445,19 +479,62 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     }
 
     @Override
-    public void moveTo(float x0, float y0) {
-        if (prev == DRAWING_OP_TO) {
-            finish();
+    public void moveTo(final float x0, final float y0) {
+        moveTo(x0, y0, cOutCode);
+        // update starting point:
+        this.sx0 = x0;
+        this.sy0 = y0;
+        this.sdx = 1.0f;
+        this.sdy = 0.0f;
+        this.opened   = false;
+        this.capStart = false;
+
+        if (clipRect != null) {
+            final int outcode = Helpers.outcode(x0, y0, clipRect);
+            this.cOutCode = outcode;
+            this.sOutCode = outcode;
         }
-        this.sx0 = this.cx0 = x0;
-        this.sy0 = this.cy0 = y0;
-        this.cdx = this.sdx = 1.0f;
-        this.cdy = this.sdy = 0.0f;
-        this.prev = MOVE_TO;
+    }
+
+    private void moveTo(final float x0, final float y0,
+                        final int outcode)
+    {
+        if (prev == MOVE_TO) {
+            this.cx0 = x0;
+            this.cy0 = y0;
+        } else {
+            if (prev == DRAWING_OP_TO) {
+                finish(outcode);
+            }
+            this.prev = MOVE_TO;
+            this.cx0 = x0;
+            this.cy0 = y0;
+            this.cdx = 1.0f;
+            this.cdy = 0.0f;
+        }
     }
 
     @Override
-    public void lineTo(float x1, float y1) {
+    public void lineTo(final float x1, final float y1) {
+        lineTo(x1, y1, false);
+    }
+
+    private void lineTo(final float x1, final float y1,
+                        final boolean force)
+    {
+        final int outcode0 = this.cOutCode;
+        if (!force && clipRect != null) {
+            final int outcode1 = Helpers.outcode(x1, y1, clipRect);
+            this.cOutCode = outcode1;
+
+            // basic rejection criteria
+            if ((outcode0 & outcode1) != 0) {
+                moveTo(x1, y1, outcode0);
+                opened = true;
+                return;
+            }
+        }
+
         float dx = x1 - cx0;
         float dy = y1 - cy0;
         if (dx == 0.0f && dy == 0.0f) {
@@ -467,7 +544,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         final float mx = offset0[0];
         final float my = offset0[1];
 
-        drawJoin(cdx, cdy, cx0, cy0, dx, dy, cmx, cmy, mx, my);
+        drawJoin(cdx, cdy, cx0, cy0, dx, dy, cmx, cmy, mx, my, outcode0);
 
         emitLineTo(cx0 + mx, cy0 + my);
         emitLineTo( x1 + mx,  y1 + my);
@@ -475,43 +552,65 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         emitLineToRev(cx0 - mx, cy0 - my);
         emitLineToRev( x1 - mx,  y1 - my);
 
-        this.cmx = mx;
-        this.cmy = my;
-        this.cdx = dx;
-        this.cdy = dy;
+        this.prev = DRAWING_OP_TO;
         this.cx0 = x1;
         this.cy0 = y1;
-        this.prev = DRAWING_OP_TO;
+        this.cdx = dx;
+        this.cdy = dy;
+        this.cmx = mx;
+        this.cmy = my;
     }
 
     @Override
     public void closePath() {
-        if (prev != DRAWING_OP_TO) {
+        // distinguish empty path at all vs opened path ?
+        if (prev != DRAWING_OP_TO && !opened) {
             if (prev == CLOSE) {
                 return;
             }
             emitMoveTo(cx0, cy0 - lineWidth2);
-            this.cmx = this.smx = 0.0f;
-            this.cmy = this.smy = -lineWidth2;
-            this.cdx = this.sdx = 1.0f;
-            this.cdy = this.sdy = 0.0f;
-            finish();
+
+            this.sdx = 1.0f;
+            this.sdy = 0.0f;
+            this.cdx = 1.0f;
+            this.cdy = 0.0f;
+
+            this.smx = 0.0f;
+            this.smy = -lineWidth2;
+            this.cmx = 0.0f;
+            this.cmy = -lineWidth2;
+
+            finish(cOutCode);
             return;
         }
 
-        if (cx0 != sx0 || cy0 != sy0) {
-            lineTo(sx0, sy0);
+        // basic acceptance criteria
+        if ((sOutCode & cOutCode) == 0) {
+            if (cx0 != sx0 || cy0 != sy0) {
+                lineTo(sx0, sy0, true);
+            }
+
+            drawJoin(cdx, cdy, cx0, cy0, sdx, sdy, cmx, cmy, smx, smy, sOutCode);
+
+            emitLineTo(sx0 + smx, sy0 + smy);
+
+            if (opened) {
+                emitLineTo(sx0 - smx, sy0 - smy);
+            } else {
+                emitMoveTo(sx0 - smx, sy0 - smy);
+            }
         }
-
-        drawJoin(cdx, cdy, cx0, cy0, sdx, sdy, cmx, cmy, smx, smy);
-
-        emitLineTo(sx0 + smx, sy0 + smy);
-
-        emitMoveTo(sx0 - smx, sy0 - smy);
+        // Ignore caps like finish(false)
         emitReverse();
 
         this.prev = CLOSE;
-        emitClose();
+
+        if (opened) {
+            // do not emit close
+            opened = false;
+        } else {
+            emitClose();
+        }
     }
 
     private void emitReverse() {
@@ -521,7 +620,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     @Override
     public void pathDone() {
         if (prev == DRAWING_OP_TO) {
-            finish();
+            finish(cOutCode);
         }
 
         out.pathDone();
@@ -534,23 +633,39 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         dispose();
     }
 
-    private void finish() {
-        if (capStyle == CAP_ROUND) {
-            drawRoundCap(cx0, cy0, cmx, cmy);
-        } else if (capStyle == CAP_SQUARE) {
-            emitLineTo(cx0 - cmy + cmx, cy0 + cmx + cmy);
-            emitLineTo(cx0 - cmy - cmx, cy0 + cmx - cmy);
+    private void finish(final int outcode) {
+        // Problem: impossible to guess if the path will be closed in advance
+        //          i.e. if caps must be drawn or not ?
+        // Solution: use the ClosedPathDetector before Stroker to determine
+        // if the path is a closed path or not
+        if (!rdrCtx.closedPath) {
+            if (outcode == 0) {
+                // current point = end's cap:
+                if (capStyle == CAP_ROUND) {
+                    drawRoundCap(cx0, cy0, cmx, cmy);
+                } else if (capStyle == CAP_SQUARE) {
+                    emitLineTo(cx0 - cmy + cmx, cy0 + cmx + cmy);
+                    emitLineTo(cx0 - cmy - cmx, cy0 + cmx - cmy);
+                }
+            }
+            emitReverse();
+
+            if (!capStart) {
+                capStart = true;
+
+                if (sOutCode == 0) {
+                    // starting point = initial cap:
+                    if (capStyle == CAP_ROUND) {
+                        drawRoundCap(sx0, sy0, -smx, -smy);
+                    } else if (capStyle == CAP_SQUARE) {
+                        emitLineTo(sx0 + smy - smx, sy0 - smx - smy);
+                        emitLineTo(sx0 + smy + smx, sy0 - smx + smy);
+                    }
+                }
+            }
+        } else {
+            emitReverse();
         }
-
-        emitReverse();
-
-        if (capStyle == CAP_ROUND) {
-            drawRoundCap(sx0, sy0, -smx, -smy);
-        } else if (capStyle == CAP_SQUARE) {
-            emitLineTo(sx0 + smy - smx, sy0 - smx - smy);
-            emitLineTo(sx0 + smy + smx, sy0 - smx + smy);
-        }
-
         emitClose();
     }
 
@@ -622,23 +737,28 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                           float x0, float y0,
                           float dx, float dy,
                           float omx, float omy,
-                          float mx, float my)
+                          float mx, float my,
+                          final int outcode)
     {
         if (prev != DRAWING_OP_TO) {
             emitMoveTo(x0 + mx, y0 + my);
-            this.sdx = dx;
-            this.sdy = dy;
-            this.smx = mx;
-            this.smy = my;
+            if (!opened) {
+                this.sdx = dx;
+                this.sdy = dy;
+                this.smx = mx;
+                this.smy = my;
+            }
         } else {
-            boolean cw = isCW(pdx, pdy, dx, dy);
-            if (joinStyle == JOIN_MITER) {
-                drawMiter(pdx, pdy, x0, y0, dx, dy, omx, omy, mx, my, cw);
-            } else if (joinStyle == JOIN_ROUND) {
-                drawRoundJoin(x0, y0,
-                              omx, omy,
-                              mx, my, cw,
-                              ROUND_JOIN_THRESHOLD);
+            final boolean cw = isCW(pdx, pdy, dx, dy);
+            if (outcode == 0) {
+                if (joinStyle == JOIN_MITER) {
+                    drawMiter(pdx, pdy, x0, y0, dx, dy, omx, omy, mx, my, cw);
+                } else if (joinStyle == JOIN_ROUND) {
+                    drawRoundJoin(x0, y0,
+                                  omx, omy,
+                                  mx, my, cw,
+                                  ROUND_JOIN_THRESHOLD);
+                }
             }
             emitLineTo(x0, y0, !cw);
         }
@@ -943,10 +1063,29 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         return ret;
     }
 
-    @Override public void curveTo(float x1, float y1,
-                                  float x2, float y2,
-                                  float x3, float y3)
+    @Override
+    public void curveTo(final float x1, final float y1,
+                        final float x2, final float y2,
+                        final float x3, final float y3)
     {
+        final int outcode0 = this.cOutCode;
+        if (clipRect != null) {
+            final int outcode3 = Helpers.outcode(x3, y3, clipRect);
+            this.cOutCode = outcode3;
+
+            if ((outcode0 & outcode3) != 0) {
+                final int outcode1 = Helpers.outcode(x1, y1, clipRect);
+                final int outcode2 = Helpers.outcode(x2, y2, clipRect);
+
+                // basic rejection criteria
+                if ((outcode0 & outcode1 & outcode2 & outcode3) != 0) {
+                    moveTo(x3, y3, outcode0);
+                    opened = true;
+                    return;
+                }
+            }
+        }
+
         final float[] mid = middle;
 
         mid[0] = cx0; mid[1] = cy0;
@@ -955,7 +1094,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         mid[6] = x3;  mid[7] = y3;
 
         // need these so we can update the state at the end of this method
-        final float xf = mid[6], yf = mid[7];
+        final float xf = x3, yf = y3;
         float dxs = mid[2] - mid[0];
         float dys = mid[3] - mid[1];
         float dxf = mid[6] - mid[4];
@@ -981,6 +1120,10 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         }
         if (dxs == 0.0f && dys == 0.0f) {
             // this happens if the "curve" is just a point
+            // fix outcode0 for lineTo() call:
+            if (clipRect != null) {
+                this.cOutCode = outcode0;
+            }
             lineTo(mid[0], mid[1]);
             return;
         }
@@ -999,7 +1142,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         }
 
         computeOffset(dxs, dys, lineWidth2, offset0);
-        drawJoin(cdx, cdy, cx0, cy0, dxs, dys, cmx, cmy, offset0[0], offset0[1]);
+        drawJoin(cdx, cdy, cx0, cy0, dxs, dys, cmx, cmy, offset0[0], offset0[1], outcode0);
 
         final int nSplits = findSubdivPoints(curve, mid, subdivTs, 8, lineWidth2);
 
@@ -1034,16 +1177,36 @@ final class Stroker implements PathConsumer2D, MarlinConst {
             emitLineToRev(r[kind - 2], r[kind - 1]);
         }
 
-        this.cmx = (l[kind - 2] - r[kind - 2]) / 2.0f;
-        this.cmy = (l[kind - 1] - r[kind - 1]) / 2.0f;
-        this.cdx = dxf;
-        this.cdy = dyf;
+        this.prev = DRAWING_OP_TO;
         this.cx0 = xf;
         this.cy0 = yf;
-        this.prev = DRAWING_OP_TO;
+        this.cdx = dxf;
+        this.cdy = dyf;
+        this.cmx = (l[kind - 2] - r[kind - 2]) / 2.0f;
+        this.cmy = (l[kind - 1] - r[kind - 1]) / 2.0f;
     }
 
-    @Override public void quadTo(float x1, float y1, float x2, float y2) {
+    @Override
+    public void quadTo(final float x1, final float y1,
+                       final float x2, final float y2)
+    {
+        final int outcode0 = this.cOutCode;
+        if (clipRect != null) {
+            final int outcode2 = Helpers.outcode(x2, y2, clipRect);
+            this.cOutCode = outcode2;
+
+            if ((outcode0 & outcode2) != 0) {
+                final int outcode1 = Helpers.outcode(x1, y1, clipRect);
+
+                // basic rejection criteria
+                if ((outcode0 & outcode1 & outcode2) != 0) {
+                    moveTo(x2, y2, outcode0);
+                    opened = true;
+                    return;
+                }
+            }
+        }
+
         final float[] mid = middle;
 
         mid[0] = cx0; mid[1] = cy0;
@@ -1051,7 +1214,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         mid[4] = x2;  mid[5] = y2;
 
         // need these so we can update the state at the end of this method
-        final float xf = mid[4], yf = mid[5];
+        final float xf = x2, yf = y2;
         float dxs = mid[2] - mid[0];
         float dys = mid[3] - mid[1];
         float dxf = mid[4] - mid[2];
@@ -1062,6 +1225,10 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         }
         if (dxs == 0.0f && dys == 0.0f) {
             // this happens if the "curve" is just a point
+            // fix outcode0 for lineTo() call:
+            if (clipRect != null) {
+                this.cOutCode = outcode0;
+            }
             lineTo(mid[0], mid[1]);
             return;
         }
@@ -1079,7 +1246,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         }
 
         computeOffset(dxs, dys, lineWidth2, offset0);
-        drawJoin(cdx, cdy, cx0, cy0, dxs, dys, cmx, cmy, offset0[0], offset0[1]);
+        drawJoin(cdx, cdy, cx0, cy0, dxs, dys, cmx, cmy, offset0[0], offset0[1], outcode0);
 
         int nSplits = findSubdivPoints(curve, mid, subdivTs, 6, lineWidth2);
 
@@ -1114,214 +1281,16 @@ final class Stroker implements PathConsumer2D, MarlinConst {
             emitLineToRev(r[kind - 2], r[kind - 1]);
         }
 
-        this.cmx = (l[kind - 2] - r[kind - 2]) / 2.0f;
-        this.cmy = (l[kind - 1] - r[kind - 1]) / 2.0f;
-        this.cdx = dxf;
-        this.cdy = dyf;
+        this.prev = DRAWING_OP_TO;
         this.cx0 = xf;
         this.cy0 = yf;
-        this.prev = DRAWING_OP_TO;
+        this.cdx = dxf;
+        this.cdy = dyf;
+        this.cmx = (l[kind - 2] - r[kind - 2]) / 2.0f;
+        this.cmy = (l[kind - 1] - r[kind - 1]) / 2.0f;
     }
 
     @Override public long getNativeConsumer() {
         throw new InternalError("Stroker doesn't use a native consumer");
-    }
-
-    // a stack of polynomial curves where each curve shares endpoints with
-    // adjacent ones.
-    static final class PolyStack {
-        private static final byte TYPE_LINETO  = (byte) 0;
-        private static final byte TYPE_QUADTO  = (byte) 1;
-        private static final byte TYPE_CUBICTO = (byte) 2;
-
-        // curves capacity = edges count (8192) = edges x 2 (coords)
-        private static final int INITIAL_CURVES_COUNT = INITIAL_EDGES_COUNT << 1;
-
-        // types capacity = edges count (4096)
-        private static final int INITIAL_TYPES_COUNT = INITIAL_EDGES_COUNT;
-
-        float[] curves;
-        int end;
-        byte[] curveTypes;
-        int numCurves;
-
-        // per-thread renderer context
-        final RendererContext rdrCtx;
-
-        // curves ref (dirty)
-        final FloatArrayCache.Reference curves_ref;
-        // curveTypes ref (dirty)
-        final ByteArrayCache.Reference curveTypes_ref;
-
-        // used marks (stats only)
-        int curveTypesUseMark;
-        int curvesUseMark;
-
-        /**
-         * Constructor
-         * @param rdrCtx per-thread renderer context
-         */
-        PolyStack(final RendererContext rdrCtx) {
-            this.rdrCtx = rdrCtx;
-
-            curves_ref = rdrCtx.newDirtyFloatArrayRef(INITIAL_CURVES_COUNT); // 32K
-            curves     = curves_ref.initial;
-
-            curveTypes_ref = rdrCtx.newDirtyByteArrayRef(INITIAL_TYPES_COUNT); // 4K
-            curveTypes     = curveTypes_ref.initial;
-            numCurves = 0;
-            end = 0;
-
-            if (DO_STATS) {
-                curveTypesUseMark = 0;
-                curvesUseMark = 0;
-            }
-        }
-
-        /**
-         * Disposes this PolyStack:
-         * clean up before reusing this instance
-         */
-        void dispose() {
-            end = 0;
-            numCurves = 0;
-
-            if (DO_STATS) {
-                rdrCtx.stats.stat_rdr_poly_stack_types.add(curveTypesUseMark);
-                rdrCtx.stats.stat_rdr_poly_stack_curves.add(curvesUseMark);
-                rdrCtx.stats.hist_rdr_poly_stack_curves.add(curvesUseMark);
-
-                // reset marks
-                curveTypesUseMark = 0;
-                curvesUseMark = 0;
-            }
-
-            // Return arrays:
-            // curves and curveTypes are kept dirty
-            curves     = curves_ref.putArray(curves);
-            curveTypes = curveTypes_ref.putArray(curveTypes);
-        }
-
-        private void ensureSpace(final int n) {
-            // use substraction to avoid integer overflow:
-            if (curves.length - end < n) {
-                if (DO_STATS) {
-                    rdrCtx.stats.stat_array_stroker_polystack_curves
-                        .add(end + n);
-                }
-                curves = curves_ref.widenArray(curves, end, end + n);
-            }
-            if (curveTypes.length <= numCurves) {
-                if (DO_STATS) {
-                    rdrCtx.stats.stat_array_stroker_polystack_curveTypes
-                        .add(numCurves + 1);
-                }
-                curveTypes = curveTypes_ref.widenArray(curveTypes,
-                                                       numCurves,
-                                                       numCurves + 1);
-            }
-        }
-
-        void pushCubic(float x0, float y0,
-                       float x1, float y1,
-                       float x2, float y2)
-        {
-            ensureSpace(6);
-            curveTypes[numCurves++] = TYPE_CUBICTO;
-            // we reverse the coordinate order to make popping easier
-            final float[] _curves = curves;
-            int e = end;
-            _curves[e++] = x2;    _curves[e++] = y2;
-            _curves[e++] = x1;    _curves[e++] = y1;
-            _curves[e++] = x0;    _curves[e++] = y0;
-            end = e;
-        }
-
-        void pushQuad(float x0, float y0,
-                      float x1, float y1)
-        {
-            ensureSpace(4);
-            curveTypes[numCurves++] = TYPE_QUADTO;
-            final float[] _curves = curves;
-            int e = end;
-            _curves[e++] = x1;    _curves[e++] = y1;
-            _curves[e++] = x0;    _curves[e++] = y0;
-            end = e;
-        }
-
-        void pushLine(float x, float y) {
-            ensureSpace(2);
-            curveTypes[numCurves++] = TYPE_LINETO;
-            curves[end++] = x;    curves[end++] = y;
-        }
-
-        void popAll(PathConsumer2D io) {
-            if (DO_STATS) {
-                // update used marks:
-                if (numCurves > curveTypesUseMark) {
-                    curveTypesUseMark = numCurves;
-                }
-                if (end > curvesUseMark) {
-                    curvesUseMark = end;
-                }
-            }
-            final byte[]  _curveTypes = curveTypes;
-            final float[] _curves = curves;
-            int nc = numCurves;
-            int e  = end;
-
-            while (nc != 0) {
-                switch(_curveTypes[--nc]) {
-                case TYPE_LINETO:
-                    e -= 2;
-                    io.lineTo(_curves[e], _curves[e+1]);
-                    continue;
-                case TYPE_QUADTO:
-                    e -= 4;
-                    io.quadTo(_curves[e+0], _curves[e+1],
-                              _curves[e+2], _curves[e+3]);
-                    continue;
-                case TYPE_CUBICTO:
-                    e -= 6;
-                    io.curveTo(_curves[e+0], _curves[e+1],
-                               _curves[e+2], _curves[e+3],
-                               _curves[e+4], _curves[e+5]);
-                    continue;
-                default:
-                }
-            }
-            numCurves = 0;
-            end = 0;
-        }
-
-        @Override
-        public String toString() {
-            String ret = "";
-            int nc = numCurves;
-            int last = end;
-            int len;
-            while (nc != 0) {
-                switch(curveTypes[--nc]) {
-                case TYPE_LINETO:
-                    len = 2;
-                    ret += "line: ";
-                    break;
-                case TYPE_QUADTO:
-                    len = 4;
-                    ret += "quad: ";
-                    break;
-                case TYPE_CUBICTO:
-                    len = 6;
-                    ret += "cubic: ";
-                    break;
-                default:
-                    len = 0;
-                }
-                last -= len;
-                ret += Arrays.toString(Arrays.copyOfRange(curves, last, last+len))
-                                       + "\n";
-            }
-            return ret;
-        }
     }
 }
