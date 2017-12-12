@@ -94,6 +94,23 @@
  * If you modify the model on a separate thread you run the risk of exceptions
  * and possible display corruption.
  * <p>
+ * Although it is generally safe to make updates to the UI immediately,
+ * when executing on the event dispatch thread, there is an exception :
+ * if a model listener tries to further change the UI before the UI has been
+ * updated to reflect a pending change then the UI may render incorrectly.
+ *
+ * This can happen if an application installed listener needs to update the UI
+ * in response to an event which will cause a change in the model structure.
+ * It is important to first allow component installed listeners to process this
+ * change, since there is no guarantee of the order in which listeners may be
+ * called.
+ *
+ * The solution is for the application listener to make the change using
+ * {@link SwingUtilities.invokeLater} so that any changes to  UI rendering will
+ * be done post processing all the model listeners installed by the component.
+ * </p>
+ * <p>
+ *
  * As all events are delivered on the event dispatching thread, care must be
  * taken in event processing. In particular, a long running task, such as
  * network io or computational intensive processing, executed on the event
