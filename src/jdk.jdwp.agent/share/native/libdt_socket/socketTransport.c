@@ -70,7 +70,6 @@ static jdwpTransportEnv single_env = (jdwpTransportEnv)&interface;
             RETURN_IO_ERROR("recv error"); \
         }
 
-#define HEADER_SIZE     11
 #define MAX_DATA_SIZE 1000
 
 static jint recv_fully(int, char *, int);
@@ -790,7 +789,7 @@ socketTransport_writePacket(jdwpTransportEnv* env, const jdwpPacket *packet)
     /*
      * room for header and up to MAX_DATA_SIZE data bytes
      */
-    char header[HEADER_SIZE + MAX_DATA_SIZE];
+    char header[JDWP_HEADER_SIZE + MAX_DATA_SIZE];
     jbyte *data;
 
     /* packet can't be null */
@@ -799,7 +798,7 @@ socketTransport_writePacket(jdwpTransportEnv* env, const jdwpPacket *packet)
     }
 
     len = packet->type.cmd.len;         /* includes header */
-    data_len = len - HEADER_SIZE;
+    data_len = len - JDWP_HEADER_SIZE;
 
     /* bad packet */
     if (data_len < 0) {
@@ -825,15 +824,15 @@ socketTransport_writePacket(jdwpTransportEnv* env, const jdwpPacket *packet)
     data = packet->type.cmd.data;
     /* Do one send for short packets, two for longer ones */
     if (data_len <= MAX_DATA_SIZE) {
-        memcpy(header + HEADER_SIZE, data, data_len);
-        if (send_fully(socketFD, (char *)&header, HEADER_SIZE + data_len) !=
-            HEADER_SIZE + data_len) {
+        memcpy(header + JDWP_HEADER_SIZE, data, data_len);
+        if (send_fully(socketFD, (char *)&header, JDWP_HEADER_SIZE + data_len) !=
+            JDWP_HEADER_SIZE + data_len) {
             RETURN_IO_ERROR("send failed");
         }
     } else {
-        memcpy(header + HEADER_SIZE, data, MAX_DATA_SIZE);
-        if (send_fully(socketFD, (char *)&header, HEADER_SIZE + MAX_DATA_SIZE) !=
-            HEADER_SIZE + MAX_DATA_SIZE) {
+        memcpy(header + JDWP_HEADER_SIZE, data, MAX_DATA_SIZE);
+        if (send_fully(socketFD, (char *)&header, JDWP_HEADER_SIZE + MAX_DATA_SIZE) !=
+            JDWP_HEADER_SIZE + MAX_DATA_SIZE) {
             RETURN_IO_ERROR("send failed");
         }
         /* Send the remaining data bytes right out of the data area. */
