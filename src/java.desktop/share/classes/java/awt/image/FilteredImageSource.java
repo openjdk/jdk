@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@ import java.awt.image.ColorModel;
 /**
  * This class is an implementation of the ImageProducer interface which
  * takes an existing image and a filter object and uses them to produce
- * image data for a new filtered version of the original image.
+ * image data for a new filtered version of the original image. Furthermore,
+ * {@code FilteredImageSource} is safe for use by multiple threads.
  * Here is an example which filters an image by swapping the red and
  * blue components:
  * <pre>
@@ -171,7 +172,7 @@ public class FilteredImageSource implements ImageProducer {
      * @param ic  the consumer for the filtered image
      * @see ImageConsumer
      */
-    public void startProduction(ImageConsumer ic) {
+    public synchronized void startProduction(ImageConsumer ic) {
         if (proxies == null) {
             proxies = new Hashtable<>();
         }
@@ -198,7 +199,7 @@ public class FilteredImageSource implements ImageProducer {
      *
      * @see ImageConsumer
      */
-    public void requestTopDownLeftRightResend(ImageConsumer ic) {
+    public synchronized void requestTopDownLeftRightResend(ImageConsumer ic) {
         if (proxies != null) {
             ImageFilter imgf = proxies.get(ic);
             if (imgf != null) {
