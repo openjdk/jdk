@@ -575,7 +575,21 @@ public final class Scanner implements Iterator<String>, Closeable {
      *         does not exist
      */
     public Scanner(InputStream source, String charsetName) {
-        this(makeReadable(Objects.requireNonNull(source, "source"), toCharset(charsetName)),
+        this(source, toCharset(charsetName));
+    }
+
+    /**
+     * Constructs a new {@code Scanner} that produces values scanned
+     * from the specified input stream. Bytes from the stream are converted
+     * into characters using the specified charset.
+     *
+     * @param  source an input stream to be scanned
+     * @param  charset the charset used to convert bytes from the file
+     *         into characters to be scanned
+     * @since  10
+     */
+    public Scanner(InputStream source, Charset charset) {
+        this(makeReadable(Objects.requireNonNull(source, "source"), charset),
              WHITESPACE_PATTERN);
     }
 
@@ -594,7 +608,18 @@ public final class Scanner implements Iterator<String>, Closeable {
         }
     }
 
+    /*
+     * This method is added so that null-check on charset can be performed before
+     * creating InputStream as an existing test required it.
+    */
+    private static Readable makeReadable(Path source, Charset charset)
+            throws IOException {
+        Objects.requireNonNull(charset, "charset");
+        return makeReadable(Files.newInputStream(source), charset);
+    }
+
     private static Readable makeReadable(InputStream source, Charset charset) {
+        Objects.requireNonNull(charset, "charset");
         return new InputStreamReader(source, charset);
     }
 
@@ -629,6 +654,22 @@ public final class Scanner implements Iterator<String>, Closeable {
         this(Objects.requireNonNull(source), toDecoder(charsetName));
     }
 
+    /**
+     * Constructs a new {@code Scanner} that produces values scanned
+     * from the specified file. Bytes from the file are converted into
+     * characters using the specified charset.
+     *
+     * @param  source A file to be scanned
+     * @param  charset The charset used to convert bytes from the file
+     *         into characters to be scanned
+     * @throws IOException
+     *         if an I/O error occurs opening the source
+     * @since  10
+     */
+    public Scanner(File source, Charset charset) throws IOException {
+        this(Objects.requireNonNull(source), charset.newDecoder());
+    }
+
     private Scanner(File source, CharsetDecoder dec)
         throws FileNotFoundException
     {
@@ -647,6 +688,12 @@ public final class Scanner implements Iterator<String>, Closeable {
     private static Readable makeReadable(ReadableByteChannel source,
                                          CharsetDecoder dec) {
         return Channels.newReader(source, dec, -1);
+    }
+
+    private static Readable makeReadable(ReadableByteChannel source,
+                                         Charset charset) {
+        Objects.requireNonNull(charset, "charset");
+        return Channels.newReader(source, charset);
     }
 
     /**
@@ -688,8 +735,22 @@ public final class Scanner implements Iterator<String>, Closeable {
         this(Objects.requireNonNull(source), toCharset(charsetName));
     }
 
-    private Scanner(Path source, Charset charset)  throws IOException {
-        this(makeReadable(Files.newInputStream(source), charset));
+    /**
+     * Constructs a new {@code Scanner} that produces values scanned
+     * from the specified file. Bytes from the file are converted into
+     * characters using the specified charset.
+     *
+     * @param   source
+     *          the path to the file to be scanned
+     * @param   charset
+     *          the charset used to convert bytes from the file
+     *          into characters to be scanned
+     * @throws  IOException
+     *          if an I/O error occurs opening the source
+     * @since   10
+     */
+    public Scanner(Path source, Charset charset)  throws IOException {
+        this(makeReadable(source, charset));
     }
 
     /**
@@ -732,6 +793,21 @@ public final class Scanner implements Iterator<String>, Closeable {
      */
     public Scanner(ReadableByteChannel source, String charsetName) {
         this(makeReadable(Objects.requireNonNull(source, "source"), toDecoder(charsetName)),
+             WHITESPACE_PATTERN);
+    }
+
+    /**
+     * Constructs a new {@code Scanner} that produces values scanned
+     * from the specified channel. Bytes from the source are converted into
+     * characters using the specified charset.
+     *
+     * @param source a channel to scan
+     * @param charset the encoding type used to convert bytes from the
+     *        channel into characters to be scanned
+     * @since 10
+     */
+    public Scanner(ReadableByteChannel source, Charset charset) {
+        this(makeReadable(Objects.requireNonNull(source, "source"), charset),
              WHITESPACE_PATTERN);
     }
 
