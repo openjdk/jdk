@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,7 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4302966 8176841
- * @modules jdk.localedata
- * @summary In Czech Republic first day of week is Monday not Sunday
- */
-
-import java.util.Calendar;
-import java.util.Locale;
-
-public class Bug4302966 {
-
-    public static void main(String[] args) {
-        Calendar czechCalendar = Calendar.getInstance(new Locale("cs", "CZ"));
-        int firstDayOfWeek = czechCalendar.getFirstDayOfWeek();
-        if (firstDayOfWeek != Calendar.MONDAY) {
-            throw new RuntimeException();
-        }
-    }
+module provider {
+    exports foo;
+    provides java.util.spi.LocaleNameProvider with foo.LocaleNameProviderImpl;
 }

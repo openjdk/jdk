@@ -48,6 +48,7 @@ import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.LocaleNameProvider;
+import java.util.stream.Collectors;
 
 import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
@@ -62,6 +63,7 @@ import sun.util.locale.ParseStatus;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
 import sun.util.locale.provider.LocaleServiceProviderPool;
+import sun.util.locale.provider.TimeZoneNameUtility;
 
 /**
  * A <code>Locale</code> object represents a specific geographical, political,
@@ -665,10 +667,12 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Display types for retrieving localized names from the name providers.
      */
-    private static final int DISPLAY_LANGUAGE = 0;
-    private static final int DISPLAY_COUNTRY  = 1;
-    private static final int DISPLAY_VARIANT  = 2;
-    private static final int DISPLAY_SCRIPT   = 3;
+    private static final int DISPLAY_LANGUAGE  = 0;
+    private static final int DISPLAY_COUNTRY   = 1;
+    private static final int DISPLAY_VARIANT   = 2;
+    private static final int DISPLAY_SCRIPT    = 3;
+    private static final int DISPLAY_UEXT_KEY  = 4;
+    private static final int DISPLAY_UEXT_TYPE = 5;
 
     /**
      * Private constructor used by getInstance method
@@ -942,11 +946,14 @@ public final class Locale implements Cloneable, Serializable {
             variant = props.getProperty("user.variant", "");
         }
 
-        return getInstance(language, script, country, variant, null);
+        return getInstance(language, script, country, variant,
+                getDefaultExtensions(props.getProperty("user.extensions", ""))
+                    .orElse(null));
     }
 
     private static Locale initDefault(Locale.Category category) {
         Properties props = GetPropertyAction.privilegedGetProperties();
+
         return getInstance(
             props.getProperty(category.languageKey,
                     defaultLocale.getLanguage()),
@@ -956,7 +963,22 @@ public final class Locale implements Cloneable, Serializable {
                     defaultLocale.getCountry()),
             props.getProperty(category.variantKey,
                     defaultLocale.getVariant()),
-            null);
+            getDefaultExtensions(props.getProperty(category.extensionsKey, ""))
+                .orElse(defaultLocale.getLocaleExtensions()));
+    }
+
+    private static Optional<LocaleExtensions> getDefaultExtensions(String extensionsProp) {
+        LocaleExtensions exts = null;
+
+        try {
+            exts = new InternalLocaleBuilder()
+                .setExtensions(extensionsProp)
+                .getLocaleExtensions();
+        } catch (LocaleSyntaxException e) {
+            // just ignore this incorrect property
+        }
+
+        return Optional.ofNullable(exts);
     }
 
     /**
@@ -1771,7 +1793,7 @@ public final class Locale implements Cloneable, Serializable {
      * @exception NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayLanguage(Locale inLocale) {
-        return getDisplayString(baseLocale.getLanguage(), inLocale, DISPLAY_LANGUAGE);
+        return getDisplayString(baseLocale.getLanguage(), null, inLocale, DISPLAY_LANGUAGE);
     }
 
     /**
@@ -1801,7 +1823,7 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public String getDisplayScript(Locale inLocale) {
-        return getDisplayString(baseLocale.getScript(), inLocale, DISPLAY_SCRIPT);
+        return getDisplayString(baseLocale.getScript(), null, inLocale, DISPLAY_SCRIPT);
     }
 
     /**
@@ -1844,29 +1866,24 @@ public final class Locale implements Cloneable, Serializable {
      * @exception NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayCountry(Locale inLocale) {
-        return getDisplayString(baseLocale.getRegion(), inLocale, DISPLAY_COUNTRY);
+        return getDisplayString(baseLocale.getRegion(), null, inLocale, DISPLAY_COUNTRY);
     }
 
-    private String getDisplayString(String code, Locale inLocale, int type) {
-        if (code.length() == 0) {
-            return "";
-        }
+    private String getDisplayString(String code, String cat, Locale inLocale, int type) {
+        Objects.requireNonNull(inLocale);
+        Objects.requireNonNull(code);
 
-        if (inLocale == null) {
-            throw new NullPointerException();
+        if (code.isEmpty()) {
+            return "";
         }
 
         LocaleServiceProviderPool pool =
             LocaleServiceProviderPool.getPool(LocaleNameProvider.class);
-        String key = (type == DISPLAY_VARIANT ? "%%"+code : code);
+        String rbKey = (type == DISPLAY_VARIANT ? "%%"+code : code);
         String result = pool.getLocalizedObject(
                                 LocaleNameGetter.INSTANCE,
-                                inLocale, key, type, code);
-            if (result != null) {
-                return result;
-            }
-
-        return code;
+                                inLocale, rbKey, type, code, cat);
+        return result != null ? result : code;
     }
 
     /**
@@ -1894,29 +1911,31 @@ public final class Locale implements Cloneable, Serializable {
         if (baseLocale.getVariant().length() == 0)
             return "";
 
-        LocaleResources lr = LocaleProviderAdapter.forJRE().getLocaleResources(inLocale);
+        LocaleResources lr = LocaleProviderAdapter
+            .getResourceBundleBased()
+            .getLocaleResources(inLocale);
 
         String names[] = getDisplayVariantArray(inLocale);
 
         // Get the localized patterns for formatting a list, and use
         // them to format the list.
         return formatList(names,
-                          lr.getLocaleName("ListPattern"),
                           lr.getLocaleName("ListCompositionPattern"));
     }
 
     /**
      * Returns a name for the locale that is appropriate for display to the
      * user. This will be the values returned by getDisplayLanguage(),
-     * getDisplayScript(), getDisplayCountry(), and getDisplayVariant() assembled
-     * into a single string. The non-empty values are used in order,
-     * with the second and subsequent names in parentheses.  For example:
+     * getDisplayScript(), getDisplayCountry(), getDisplayVariant() and
+     * optional <a href="./Locale.html#def_locale_extension">Unicode extensions</a>
+     * assembled into a single string. The non-empty values are used in order, with
+     * the second and subsequent names in parentheses.  For example:
      * <blockquote>
-     * language (script, country, variant)<br>
-     * language (country)<br>
-     * language (variant)<br>
-     * script (country)<br>
-     * country<br>
+     * language (script, country, variant(, extension)*)<br>
+     * language (country(, extension)*)<br>
+     * language (variant(, extension)*)<br>
+     * script (country(, extension)*)<br>
+     * country (extension)*<br>
      * </blockquote>
      * depending on which fields are specified in the locale.  If the
      * language, script, country, and variant fields are all empty,
@@ -1931,16 +1950,17 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Returns a name for the locale that is appropriate for display
      * to the user.  This will be the values returned by
-     * getDisplayLanguage(), getDisplayScript(),getDisplayCountry(),
-     * and getDisplayVariant() assembled into a single string.
-     * The non-empty values are used in order,
-     * with the second and subsequent names in parentheses.  For example:
+     * getDisplayLanguage(), getDisplayScript(),getDisplayCountry()
+     * getDisplayVariant(), and optional <a href="./Locale.html#def_locale_extension">
+     * Unicode extensions</a> assembled into a single string. The non-empty
+     * values are used in order, with the second and subsequent names in
+     * parentheses.  For example:
      * <blockquote>
-     * language (script, country, variant)<br>
-     * language (country)<br>
-     * language (variant)<br>
-     * script (country)<br>
-     * country<br>
+     * language (script, country, variant(, extension)*)<br>
+     * language (country(, extension)*)<br>
+     * language (variant(, extension)*)<br>
+     * script (country(, extension)*)<br>
+     * country (extension)*<br>
      * </blockquote>
      * depending on which fields are specified in the locale.  If the
      * language, script, country, and variant fields are all empty,
@@ -1951,7 +1971,9 @@ public final class Locale implements Cloneable, Serializable {
      * @throws NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayName(Locale inLocale) {
-        LocaleResources lr =  LocaleProviderAdapter.forJRE().getLocaleResources(inLocale);
+        LocaleResources lr =  LocaleProviderAdapter
+            .getResourceBundleBased()
+            .getLocaleResources(inLocale);
 
         String languageName = getDisplayLanguage(inLocale);
         String scriptName = getDisplayScript(inLocale);
@@ -1960,7 +1982,6 @@ public final class Locale implements Cloneable, Serializable {
 
         // Get the localized patterns for formatting a display name.
         String displayNamePattern = lr.getLocaleName("DisplayNamePattern");
-        String listPattern = lr.getLocaleName("ListPattern");
         String listCompositionPattern = lr.getLocaleName("ListCompositionPattern");
 
         // The display name consists of a main name, followed by qualifiers.
@@ -1977,7 +1998,7 @@ public final class Locale implements Cloneable, Serializable {
             if (variantNames.length == 0) {
                 return "";
             } else {
-                return formatList(variantNames, listPattern, listCompositionPattern);
+                return formatList(variantNames, listCompositionPattern);
             }
         }
         ArrayList<String> names = new ArrayList<>(4);
@@ -1992,6 +2013,16 @@ public final class Locale implements Cloneable, Serializable {
         }
         if (variantNames.length != 0) {
             names.addAll(Arrays.asList(variantNames));
+        }
+
+        // add Unicode extensions
+        if (localeExtensions != null) {
+            localeExtensions.getUnicodeLocaleAttributes().stream()
+                .map(key -> getDisplayString(key, null, inLocale, DISPLAY_UEXT_KEY))
+                .forEach(names::add);
+            localeExtensions.getUnicodeLocaleKeys().stream()
+                .map(key -> getDisplayKeyTypeExtensionString(key, lr, inLocale))
+                .forEach(names::add);
         }
 
         // The first one in the main name
@@ -2014,7 +2045,7 @@ public final class Locale implements Cloneable, Serializable {
             // list case, but this is more efficient, and we want it to be
             // efficient since all the language-only locales will not have any
             // qualifiers.
-            qualifierNames.length != 0 ? formatList(qualifierNames, listPattern, listCompositionPattern) : null
+            qualifierNames.length != 0 ? formatList(qualifierNames, listCompositionPattern) : null
         };
 
         if (displayNamePattern != null) {
@@ -2121,11 +2152,43 @@ public final class Locale implements Cloneable, Serializable {
         // For each variant token, lookup the display name.  If
         // not found, use the variant name itself.
         for (int i=0; i<names.length; ++i) {
-            names[i] = getDisplayString(tokenizer.nextToken(),
+            names[i] = getDisplayString(tokenizer.nextToken(), null,
                                 inLocale, DISPLAY_VARIANT);
         }
 
         return names;
+    }
+
+    private String getDisplayKeyTypeExtensionString(String key, LocaleResources lr, Locale inLocale) {
+        String type = localeExtensions.getUnicodeLocaleType(key);
+        String ret = getDisplayString(type, key, inLocale, DISPLAY_UEXT_TYPE);
+
+        if (ret == null || ret.equals(type)) {
+            // no localization for this type. try combining key/type separately
+            String displayType = type;
+            switch (key) {
+            case "cu":
+                displayType = lr.getCurrencyName(type.toLowerCase(Locale.ROOT));
+                break;
+            case "rg":
+                if (type != null &&
+                    // UN M.49 code should not be allowed here
+                    type.matches("^[a-zA-Z]{2}[zZ]{4}$")) {
+                        displayType = lr.getLocaleName(type.substring(0, 2).toUpperCase(Locale.ROOT));
+                }
+                break;
+            case "tz":
+                displayType = TimeZoneNameUtility.retrieveGenericDisplayName(
+                    TimeZoneNameUtility.convertLDMLShortID(type).orElse(type),
+                    TimeZone.LONG, inLocale);
+                break;
+            }
+            ret = MessageFormat.format(lr.getLocaleName("ListKeyTypePattern"),
+                getDisplayString(key, null, inLocale, DISPLAY_UEXT_KEY),
+                Optional.ofNullable(displayType).orElse(type));
+        }
+
+        return ret;
     }
 
     /**
@@ -2133,62 +2196,34 @@ public final class Locale implements Cloneable, Serializable {
      * If either of the patterns is null, then a the list is
      * formatted by concatenation with the delimiter ','.
      * @param stringList the list of strings to be formatted.
-     * @param listPattern should create a MessageFormat taking 0-3 arguments
      * and formatting them into a list.
-     * @param listCompositionPattern should take 2 arguments
-     * and is used by composeList.
+     * @param pattern should take 2 arguments for reduction
      * @return a string representing the list.
      */
-    private static String formatList(String[] stringList, String listPattern, String listCompositionPattern) {
+    private static String formatList(String[] stringList, String pattern) {
         // If we have no list patterns, compose the list in a simple,
         // non-localized way.
-        if (listPattern == null || listCompositionPattern == null) {
-            StringJoiner sj = new StringJoiner(",");
-            for (int i = 0; i < stringList.length; ++i) {
-                sj.add(stringList[i]);
-            }
-            return sj.toString();
+        if (pattern == null) {
+            return Arrays.stream(stringList).collect(Collectors.joining(","));
         }
 
-        // Compose the list down to three elements if necessary
-        if (stringList.length > 3) {
-            MessageFormat format = new MessageFormat(listCompositionPattern);
-            stringList = composeList(format, stringList);
+        switch (stringList.length) {
+            case 0:
+                return "";
+            case 1:
+                return stringList[0];
+            default:
+                return Arrays.stream(stringList).reduce("",
+                    (s1, s2) -> {
+                        if (s1.equals("")) {
+                            return s2;
+                        }
+                        if (s2.equals("")) {
+                            return s1;
+                        }
+                        return MessageFormat.format(pattern, s1, s2);
+                    });
         }
-
-        // Rebuild the argument list with the list length as the first element
-        Object[] args = new Object[stringList.length + 1];
-        System.arraycopy(stringList, 0, args, 1, stringList.length);
-        args[0] = stringList.length;
-
-        // Format it using the pattern in the resource
-        MessageFormat format = new MessageFormat(listPattern);
-        return format.format(args);
-    }
-
-    /**
-     * Given a list of strings, return a list shortened to three elements.
-     * Shorten it by applying the given format to the first two elements
-     * recursively.
-     * @param format a format which takes two arguments
-     * @param list a list of strings
-     * @return if the list is three elements or shorter, the same list;
-     * otherwise, a new list of three elements.
-     */
-    private static String[] composeList(MessageFormat format, String[] list) {
-        if (list.length <= 3) return list;
-
-        // Use the given format to compose the first two elements into one
-        String[] listItems = { list[0], list[1] };
-        String newItem = format.format(listItems);
-
-        // Form a new list one element shorter
-        String[] newList = new String[list.length-1];
-        System.arraycopy(list, 2, newList, 1, newList.length-1);
-        newList[0] = newItem;
-
-        // Recurse
-        return composeList(format, newList);
     }
 
     // Duplicate of sun.util.locale.UnicodeLocaleExtension.isKey in order to
@@ -2345,9 +2380,10 @@ public final class Locale implements Cloneable, Serializable {
                                 Locale locale,
                                 String key,
                                 Object... params) {
-            assert params.length == 2;
+            assert params.length == 3;
             int type = (Integer)params[0];
             String code = (String)params[1];
+            String cat = (String)params[2];
 
             switch(type) {
             case DISPLAY_LANGUAGE:
@@ -2358,6 +2394,10 @@ public final class Locale implements Cloneable, Serializable {
                 return localeNameProvider.getDisplayVariant(code, locale);
             case DISPLAY_SCRIPT:
                 return localeNameProvider.getDisplayScript(code, locale);
+            case DISPLAY_UEXT_KEY:
+                return localeNameProvider.getDisplayUnicodeExtensionKey(code, locale);
+            case DISPLAY_UEXT_TYPE:
+                return localeNameProvider.getDisplayUnicodeExtensionType(code, cat, locale);
             default:
                 assert false; // shouldn't happen
             }
@@ -2384,7 +2424,8 @@ public final class Locale implements Cloneable, Serializable {
         DISPLAY("user.language.display",
                 "user.script.display",
                 "user.country.display",
-                "user.variant.display"),
+                "user.variant.display",
+                "user.extensions.display"),
 
         /**
          * Category used to represent the default locale for
@@ -2393,19 +2434,23 @@ public final class Locale implements Cloneable, Serializable {
         FORMAT("user.language.format",
                "user.script.format",
                "user.country.format",
-               "user.variant.format");
+               "user.variant.format",
+               "user.extensions.format");
 
-        Category(String languageKey, String scriptKey, String countryKey, String variantKey) {
+        Category(String languageKey, String scriptKey, String countryKey,
+                String variantKey, String extensionsKey) {
             this.languageKey = languageKey;
             this.scriptKey = scriptKey;
             this.countryKey = countryKey;
             this.variantKey = variantKey;
+            this.extensionsKey = extensionsKey;
         }
 
         final String languageKey;
         final String scriptKey;
         final String countryKey;
         final String variantKey;
+        final String extensionsKey;
     }
 
     /**

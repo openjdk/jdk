@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,26 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4302966 8176841
- * @modules jdk.localedata
- * @summary In Czech Republic first day of week is Monday not Sunday
- */
-
-import java.util.Calendar;
 import java.util.Locale;
 
-public class Bug4302966 {
+/*
+ * Test application that verifies default locales. Invoked from
+ * SystemPropertyTests
+ */
+public class DefaultLocaleTest {
+    public static void main(String... args) {
+        String defLoc = Locale.getDefault().toString();
+        String defFmtLoc = Locale.getDefault(Locale.Category.FORMAT).toString();
+        String defDspLoc = Locale.getDefault(Locale.Category.DISPLAY).toString();
 
-    public static void main(String[] args) {
-        Calendar czechCalendar = Calendar.getInstance(new Locale("cs", "CZ"));
-        int firstDayOfWeek = czechCalendar.getFirstDayOfWeek();
-        if (firstDayOfWeek != Calendar.MONDAY) {
-            throw new RuntimeException();
+        if (!defLoc.equals(args[0]) ||
+            !defFmtLoc.equals(args[1]) ||
+            !defDspLoc.equals(args[2])) {
+            System.err.println("Some default locale(s) don't match.\n" +
+                "Default Locale expected: " + args[0] + ", result: " + defLoc + "\n" +
+                "Default Format Locale expected: " + args[1] + ", result: " + defFmtLoc + "\n" +
+                "Default Display Locale expected: " + args[2] + ", result: " + defDspLoc);
+            System.exit(-1);
         }
     }
 }
