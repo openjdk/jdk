@@ -34,6 +34,11 @@ public class SecmodTest extends PKCS11Test {
     static String DBDIR;
     static char[] password = "test12".toCharArray();
     static String keyAlias = "mykey";
+    static boolean useSqlite = false;
+
+    static void useSqlite(boolean b) {
+        useSqlite = b;
+    }
 
     static boolean initSecmod() throws Exception {
         useNSS();
@@ -49,14 +54,24 @@ public class SecmodTest extends PKCS11Test {
         safeReload(LIBPATH + System.mapLibraryName("nssckbi"));
 
         DBDIR = System.getProperty("test.classes", ".") + SEP + "tmpdb";
-        System.setProperty("pkcs11test.nss.db", DBDIR);
+        if (useSqlite) {
+            System.setProperty("pkcs11test.nss.db", "sql:/" + DBDIR);
+        } else {
+            System.setProperty("pkcs11test.nss.db", DBDIR);
+        }
         File dbdirFile = new File(DBDIR);
         if (dbdirFile.exists() == false) {
             dbdirFile.mkdir();
         }
-        copyFile("secmod.db", BASE, DBDIR);
-        copyFile("key3.db", BASE, DBDIR);
-        copyFile("cert8.db", BASE, DBDIR);
+
+        if (useSqlite) {
+            copyFile("key4.db", BASE, DBDIR);
+            copyFile("cert9.db", BASE, DBDIR);
+        } else {
+            copyFile("secmod.db", BASE, DBDIR);
+            copyFile("key3.db", BASE, DBDIR);
+            copyFile("cert8.db", BASE, DBDIR);
+        }
         return true;
     }
 
