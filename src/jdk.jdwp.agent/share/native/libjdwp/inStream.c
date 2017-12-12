@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ inStream_init(PacketInputStream *stream, jdwpPacket packet)
 {
     stream->packet = packet;
     stream->error = JDWP_ERROR(NONE);
-    stream->left = packet.type.cmd.len;
+    stream->left = packet.type.cmd.len - JDWP_HEADER_SIZE;
     stream->current = packet.type.cmd.data;
     stream->refs = bagCreateBag(sizeof(jobject), INITIAL_REF_ALLOC);
     if (stream->refs == NULL) {
@@ -411,12 +411,6 @@ inStream_readString(PacketInputStream *stream)
     return string;
 }
 
-jboolean
-inStream_endOfInput(PacketInputStream *stream)
-{
-    return (stream->left > 0);
-}
-
 jdwpError
 inStream_error(PacketInputStream *stream)
 {
@@ -424,7 +418,8 @@ inStream_error(PacketInputStream *stream)
 }
 
 void
-inStream_clearError(PacketInputStream *stream) {
+inStream_clearError(PacketInputStream *stream)
+{
     stream->error = JDWP_ERROR(NONE);
 }
 

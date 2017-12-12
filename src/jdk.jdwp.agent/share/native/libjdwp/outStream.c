@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,7 +418,7 @@ outStream_send(PacketOutputStream *stream) {
      * packet.
      */
     if (stream->firstSegment.next == NULL) {
-        stream->packet.type.cmd.len = 11 + stream->firstSegment.length;
+        stream->packet.type.cmd.len = JDWP_HEADER_SIZE + stream->firstSegment.length;
         stream->packet.type.cmd.data = stream->firstSegment.data;
         rc = transport_sendPacket(&stream->packet);
         return rc;
@@ -447,7 +447,7 @@ outStream_send(PacketOutputStream *stream) {
         segment = segment->next;
     }
 
-    stream->packet.type.cmd.len = 11 + len;
+    stream->packet.type.cmd.len = JDWP_HEADER_SIZE + len;
     stream->packet.type.cmd.data = data;
     rc = transport_sendPacket(&stream->packet);
     stream->packet.type.cmd.data = NULL;
