@@ -96,7 +96,14 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * NumberFormat nf = NumberFormat.getInstance(Locale.FRENCH);
  * }</pre>
  * </blockquote>
- * You can also use a <code>NumberFormat</code> to parse numbers:
+ *
+ * <p>If the locale contains "nu" (numbers) and/or "rg" (region override)
+ * <a href="../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+ * the decimal digits, and/or the country used for formatting are overridden.
+ * If both "nu" and "rg" are specified, the decimal digits from the "nu"
+ * extension supersedes the implicit one from the "rg" extension.
+ *
+ * <p>You can also use a {@code NumberFormat} to parse numbers:
  * <blockquote>
  * <pre>{@code
  * myNumber = nf.parse(myString);

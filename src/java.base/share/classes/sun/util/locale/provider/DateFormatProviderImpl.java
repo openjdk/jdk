@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Set;
+import java.util.TimeZone;
 
 /**
  * Concrete implementation of the  {@link java.text.spi.DateFormatProvider
@@ -147,16 +148,28 @@ public class DateFormatProviderImpl extends DateFormatProvider implements Availa
             throw new NullPointerException();
         }
 
-        SimpleDateFormat sdf = new SimpleDateFormat("", locale);
+        // Check for region override
+        Locale rg = CalendarDataUtility.findRegionOverride(locale);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("", rg);
         Calendar cal = sdf.getCalendar();
         try {
             String pattern = LocaleProviderAdapter.forType(type)
-                .getLocaleResources(locale).getDateTimePattern(timeStyle, dateStyle,
+                .getLocaleResources(rg).getDateTimePattern(timeStyle, dateStyle,
                                                                cal);
             sdf.applyPattern(pattern);
         } catch (MissingResourceException mre) {
             // Specify the fallback pattern
             sdf.applyPattern("M/d/yy h:mm a");
+        }
+
+        // Check for timezone override
+        String tz = locale.getUnicodeLocaleType("tz");
+        if (tz != null) {
+            sdf.setTimeZone(
+                TimeZoneNameUtility.convertLDMLShortID(tz)
+                    .map(TimeZone::getTimeZone)
+                    .orElseGet(sdf::getTimeZone));
         }
 
         return sdf;
