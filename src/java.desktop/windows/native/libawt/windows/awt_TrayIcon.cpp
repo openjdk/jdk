@@ -411,12 +411,15 @@ MsgRouting AwtTrayIcon::WmMouseMove(UINT flags, int x, int y)
 
 MsgRouting AwtTrayIcon::WmBalloonUserClick(UINT flags, int x, int y)
 {
-    if (AwtComponent::GetJavaModifiers() & java_awt_event_InputEvent_BUTTON1_DOWN_MASK) {
-        MSG msg;
-        AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
-        SendActionEvent(java_awt_event_ActionEvent_ACTION_PERFORMED, ::JVM_CurrentTimeMillis(NULL, 0),
-                        AwtComponent::GetActionModifiers(), &msg);
-    }
+    // The windows api GetKeyState() when read would provide the key state of the requrested key
+    // but it is not guaranteed to receive the same as it is stored in the thread message queue and
+    // unless the thread runs faster.
+    // Event NIN_BALLOONUSERCLICK is received only upon left mouse click. Hence the additional check
+    // is not required.
+    MSG msg;
+    AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
+    SendActionEvent(java_awt_event_ActionEvent_ACTION_PERFORMED, ::JVM_CurrentTimeMillis(NULL, 0),
+                    AwtComponent::GetActionModifiers(), &msg);
     return mrConsume;
 }
 
