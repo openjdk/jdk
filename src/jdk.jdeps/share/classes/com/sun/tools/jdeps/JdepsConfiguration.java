@@ -38,8 +38,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleDescriptor.Exports;
-import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
@@ -71,6 +69,7 @@ public class JdepsConfiguration implements AutoCloseable {
     public static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     public static final String ALL_DEFAULT = "ALL-DEFAULT";
     public static final String ALL_SYSTEM = "ALL-SYSTEM";
+
     public static final String MODULE_INFO = "module-info.class";
 
     private final SystemModuleFinder system;
@@ -91,8 +90,7 @@ public class JdepsConfiguration implements AutoCloseable {
                                Set<String> roots,
                                List<Path> classpaths,
                                List<Archive> initialArchives,
-                               boolean allDefaultModules,
-                               boolean allSystemModules,
+                               Set<String> tokens,
                                Runtime.Version version)
         throws IOException
     {
@@ -104,16 +102,13 @@ public class JdepsConfiguration implements AutoCloseable {
 
         // build root set for resolution
         Set<String> mods = new HashSet<>(roots);
-
-        // add all system modules to the root set for unnamed module or set explicitly
-        boolean unnamed = !initialArchives.isEmpty() || !classpaths.isEmpty();
-        if (allSystemModules || (unnamed && !allDefaultModules)) {
+        if (tokens.contains(ALL_SYSTEM)) {
             systemModulePath.findAll().stream()
                 .map(mref -> mref.descriptor().name())
                 .forEach(mods::add);
         }
 
-        if (allDefaultModules) {
+        if (tokens.contains(ALL_DEFAULT)) {
             mods.addAll(systemModulePath.defaultSystemRoots());
         }
 
@@ -200,10 +195,10 @@ public class JdepsConfiguration implements AutoCloseable {
         return m!= null ? Optional.of(m.descriptor()) : Optional.empty();
     }
 
-    boolean isValidToken(String name) {
+    public static boolean isToken(String name) {
         return ALL_MODULE_PATH.equals(name) ||
-                ALL_DEFAULT.equals(name) ||
-                ALL_SYSTEM.equals(name);
+               ALL_DEFAULT.equals(name) ||
+               ALL_SYSTEM.equals(name);
     }
 
     /**
@@ -482,13 +477,10 @@ public class JdepsConfiguration implements AutoCloseable {
         final List<Archive> initialArchives = new ArrayList<>();
         final List<Path> paths = new ArrayList<>();
         final List<Path> classPaths = new ArrayList<>();
+        final Set<String> tokens = new HashSet<>();
 
         ModuleFinder upgradeModulePath;
         ModuleFinder appModulePath;
-        boolean addAllApplicationModules;
-        boolean addAllDefaultModules;
-        boolean addAllSystemModules;
-        boolean allModules;
         Runtime.Version version;
 
         public Builder() {
@@ -513,31 +505,12 @@ public class JdepsConfiguration implements AutoCloseable {
 
         public Builder addmods(Set<String> addmods) {
             for (String mn : addmods) {
-                switch (mn) {
-                    case ALL_MODULE_PATH:
-                        this.addAllApplicationModules = true;
-                        break;
-                    case ALL_DEFAULT:
-                        this.addAllDefaultModules = true;
-                        break;
-                    case ALL_SYSTEM:
-                        this.addAllSystemModules = true;
-                        break;
-                    default:
-                        this.rootModules.add(mn);
+                if (isToken(mn)) {
+                    tokens.add(mn);
+                } else {
+                    rootModules.add(mn);
                 }
             }
-            return this;
-        }
-
-        /*
-         * This method is for --check option to find all target modules specified
-         * in qualified exports.
-         *
-         * Include all system modules and modules found on modulepath
-         */
-        public Builder allModules() {
-            this.allModules = true;
             return this;
         }
 
@@ -579,7 +552,9 @@ public class JdepsConfiguration implements AutoCloseable {
                         .forEach(rootModules::add);
             }
 
-            if ((addAllApplicationModules || allModules) && appModulePath != null) {
+            // add all modules to the root set for unnamed module or set explicitly
+            boolean unnamed = !initialArchives.isEmpty() || !classPaths.isEmpty();
+            if ((unnamed || tokens.contains(ALL_MODULE_PATH)) && appModulePath != null) {
                 appModulePath.findAll().stream()
                     .map(mref -> mref.descriptor().name())
                     .forEach(rootModules::add);
@@ -587,7 +562,7 @@ public class JdepsConfiguration implements AutoCloseable {
 
             // no archive is specified for analysis
             // add all system modules as root if --add-modules ALL-SYSTEM is specified
-            if (addAllSystemModules && rootModules.isEmpty() &&
+            if (tokens.contains(ALL_SYSTEM) && rootModules.isEmpty() &&
                     initialArchives.isEmpty() && classPaths.isEmpty()) {
                 systemModulePath.findAll()
                     .stream()
@@ -595,13 +570,16 @@ public class JdepsConfiguration implements AutoCloseable {
                     .forEach(rootModules::add);
             }
 
+            if (unnamed && !tokens.contains(ALL_DEFAULT)) {
+                tokens.add(ALL_SYSTEM);
+            }
+
             return new JdepsConfiguration(systemModulePath,
                                           finder,
                                           rootModules,
                                           classPaths,
                                           initialArchives,
-                                          addAllDefaultModules,
-                                          allModules,
+                                          tokens,
                                           version);
         }
 
