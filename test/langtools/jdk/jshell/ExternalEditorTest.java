@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing external editor.
- * @bug 8143955 8080843 8163816 8143006 8169828 8171130
+ * @bug 8143955 8080843 8163816 8143006 8169828 8171130 8162989
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ReplToolTesting CustomEditor EditorTestBase
  * @run testng ExternalEditorTest
@@ -52,6 +52,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class ExternalEditorTest extends EditorTestBase {
@@ -76,15 +78,7 @@ public class ExternalEditorTest extends EditorTestBase {
 
     @Override
     public String getSource() {
-        try {
-            outputStream.writeInt(CustomEditor.GET_SOURCE_CODE);
-            int length = inputStream.readInt();
-            byte[] bytes = new byte[length];
-            inputStream.readFully(bytes);
-            return new String(bytes, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return readString(CustomEditor.GET_SOURCE_CODE);
     }
 
     private void sendCode(int code) {
@@ -110,6 +104,22 @@ public class ExternalEditorTest extends EditorTestBase {
     @Override
     public void cancel() {
         sendCode(CustomEditor.CANCEL_CODE);
+    }
+
+    protected String getFilename() {
+        return readString(CustomEditor.GET_FILENAME);
+    }
+
+    private String readString(int code) {
+        try {
+            outputStream.writeInt(code);
+            int length = inputStream.readInt();
+            byte[] bytes = new byte[length];
+            inputStream.readFully(bytes);
+            return new String(bytes, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
@@ -141,6 +151,22 @@ public class ExternalEditorTest extends EditorTestBase {
                     exit();
                 })
         );
+    }
+
+    @Test
+    public void testTempFileDeleted() {
+        String[] fna = new String[1];
+        testEditor(
+                a -> assertVariable(a, "int", "a", "0", "0"),
+                a -> assertEditOutput(a, "/ed 1", "a ==> 10", () -> {
+                    fna[0] = getFilename();
+                    assertTrue(Files.exists(Paths.get(fna[0])), "Test set-up failed: " + fna[0]);
+                    writeSource("\n\n\nint a = 10;\n\n\n");
+                    exit();
+                }),
+               a -> assertCommand(a, "if (true) {} else {}", "")
+        );
+        assertFalse(Files.exists(Paths.get(fna[0])), "File not deleted: " + fna[0]);
     }
 
     private static boolean isWindows() {

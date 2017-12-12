@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017. Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ public class CustomEditor implements AutoCloseable {
     public static final int SOURCE_CODE = 0;
     public static final int GET_SOURCE_CODE = 1;
     public static final int REMOVE_CODE = 2;
+    public static final int GET_FILENAME = 3;
 
     public static final int EXIT_CODE = -1;
     public static final int ACCEPT_CODE = -2;
@@ -68,15 +69,16 @@ public class CustomEditor implements AutoCloseable {
                     return;
                 }
                 case GET_SOURCE_CODE: {
-                    byte[] bytes = source.getBytes(StandardCharsets.UTF_8);
-                    output.writeInt(bytes.length);
-                    output.write(bytes);
-                    output.flush();
+                    writeString(output, source);
                     break;
                 }
                 case REMOVE_CODE: {
                     // only for external editor
                     Files.delete(path);
+                    break;
+                }
+                case GET_FILENAME: {
+                    writeString(output, path.toString());
                     break;
                 }
                 case CANCEL_CODE: {
@@ -95,6 +97,13 @@ public class CustomEditor implements AutoCloseable {
                 }
             }
         }
+    }
+
+    private void writeString(DataOutputStream output, String s) throws IOException {
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        output.writeInt(bytes.length);
+        output.write(bytes);
+        output.flush();
     }
 
     public static void main(String[] args) throws IOException {
