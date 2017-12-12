@@ -113,6 +113,8 @@ import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * <li> expose elements of native Java arrays, {@link java.util.List} and {@link java.util.Map} objects as
  * {@link StandardOperation#GET} and {@link StandardOperation#SET} operations in the
  * {@link StandardNamespace#ELEMENT} namespace;</li>
+ * <li> expose removal of elements of {@link java.util.List} and {@link java.util.Map} objects as
+ * {@link StandardOperation#REMOVE} operation in the {@link StandardNamespace#ELEMENT} namespace;</li>
  * <li>expose a virtual property named {@code length} on Java arrays, {@link java.util.Collection} and
  * {@link java.util.Map} objects;</li>
  * <li>expose {@link StandardOperation#NEW} on instances of {@link StaticClass}
