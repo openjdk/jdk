@@ -4238,9 +4238,6 @@ public class Attr extends JCTree.Visitor {
     public void visitTypeArray(JCArrayTypeTree tree) {
         Type etype = attribType(tree.elemtype, env);
         Type type = new ArrayType(etype, syms.arrayClass);
-        if (etype.isErroneous()) {
-            type = types.createErrorType(type);
-        }
         result = check(tree, type, KindSelector.TYP, resultInfo);
     }
 
