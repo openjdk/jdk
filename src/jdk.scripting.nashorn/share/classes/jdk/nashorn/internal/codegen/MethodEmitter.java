@@ -702,19 +702,21 @@ public class MethodEmitter {
         }
         pushType(Type.typeFor(Throwable.class));
     }
+
     /**
      * Start a try/catch block.
      *
-     * @param entry          start label for try
-     * @param exit           end label for try
-     * @param recovery       start label for catch
-     * @param typeDescriptor type descriptor for exception
+     * @param entry    start label for try
+     * @param exit     end label for try
+     * @param recovery start label for catch
+     * @param clazz    exception class or null for any Throwable
      * @param isOptimismHandler true if this is a hander for {@code UnwarrantedOptimismException}. Normally joining on a
      * catch handler kills temporary variables, but optimism handlers are an exception, as they need to capture
      * temporaries as well, so they must remain live.
      */
-    private void _try(final Label entry, final Label exit, final Label recovery, final String typeDescriptor, final boolean isOptimismHandler) {
+    void _try(final Label entry, final Label exit, final Label recovery, final Class<?> clazz, final boolean isOptimismHandler) {
         recovery.joinFromTry(entry.getStack(), isOptimismHandler);
+        final String typeDescriptor = clazz == null ? null : CompilerConstants.className(clazz);
         method.visitTryCatchBlock(entry.getLabel(), exit.getLabel(), recovery.getLabel(), typeDescriptor);
     }
 
@@ -727,7 +729,7 @@ public class MethodEmitter {
      * @param clazz    exception class
      */
     void _try(final Label entry, final Label exit, final Label recovery, final Class<?> clazz) {
-        _try(entry, exit, recovery, CompilerConstants.className(clazz), clazz == UnwarrantedOptimismException.class);
+        _try(entry, exit, recovery, clazz, clazz == UnwarrantedOptimismException.class);
     }
 
     /**

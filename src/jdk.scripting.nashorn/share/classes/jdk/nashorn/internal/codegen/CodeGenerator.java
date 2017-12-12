@@ -346,28 +346,30 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         assert identNode.getSymbol().isScope() : identNode + " is not in scope!";
         final int flags = getScopeCallSiteFlags(symbol);
-        if (isFastScope(symbol)) {
-            // Only generate shared scope getter for fast-scope symbols so we know we can dial in correct scope.
-            if (symbol.getUseCount() > SharedScopeCall.FAST_SCOPE_GET_THRESHOLD && !identNode.isOptimistic()) {
-                // As shared scope vars are only used with non-optimistic identifiers, we switch from using TypeBounds to
-                // just a single definitive type, resultBounds.widest.
-                new OptimisticOperation(identNode, TypeBounds.OBJECT) {
-                    @Override
-                    void loadStack() {
-                        method.loadCompilerConstant(SCOPE);
-                    }
-
-                    @Override
-                    void consumeStack() {
-                        loadSharedScopeVar(resultBounds.widest, symbol, flags);
-                    }
-                }.emit();
-            } else {
-                new LoadFastScopeVar(identNode, resultBounds, flags).emit();
-            }
-        } else {
-            //slow scope load, we have no proto depth
+        if (!isFastScope(symbol)) {
+            // slow scope load, prototype chain must be inspected at runtime
             new LoadScopeVar(identNode, resultBounds, flags).emit();
+        } else if (identNode.isCompileTimePropertyName() || symbol.getUseCount() < SharedScopeCall.SHARED_GET_THRESHOLD) {
+            // fast scope load with known prototype depth
+            new LoadFastScopeVar(identNode, resultBounds, flags).emit();
+        } else {
+            // Only generate shared scope getter for often used fast-scope symbols.
+            new OptimisticOperation(identNode, resultBounds) {
+                @Override
+                void loadStack() {
+                    method.loadCompilerConstant(SCOPE);
+                    final int depth = getScopeProtoDepth(lc.getCurrentBlock(), symbol);
+                    assert depth >= 0;
+                    method.load(depth);
+                    method.load(getProgramPoint());
+                }
+
+                @Override
+                void consumeStack() {
+                    final Type resultType = isOptimistic ? getOptimisticCoercedType() : resultBounds.widest;
+                    lc.getScopeGet(unit, symbol, resultType, flags, isOptimistic).generateInvoke(method);
+                }
+            }.emit();
         }
 
         return method;
@@ -467,12 +469,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         throw new AssertionError();
     }
 
-    private MethodEmitter loadSharedScopeVar(final Type valueType, final Symbol symbol, final int flags) {
-        assert isFastScope(symbol);
-        method.load(getScopeProtoDepth(lc.getCurrentBlock(), symbol));
-        return lc.getScopeGet(unit, symbol, valueType, flags).generateInvoke(method);
-    }
-
     private class LoadScopeVar extends OptimisticOperation {
         final IdentNode identNode;
         private final int flags;
@@ -551,15 +547,20 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             if (swap) {
                 method.swap();
             }
-            if (depth > 1) {
-                method.load(depth);
-                method.invoke(ScriptObject.GET_PROTO_DEPTH);
-            } else {
-                method.invoke(ScriptObject.GET_PROTO);
-            }
+            invokeGetProto(depth);
             if (swap) {
                 method.swap();
             }
+        }
+    }
+
+    private void invokeGetProto(final int depth) {
+        assert depth > 0;
+        if (depth > 1) {
+            method.load(depth);
+            method.invoke(ScriptObject.GET_PROTO_DEPTH);
+        } else {
+            method.invoke(ScriptObject.GET_PROTO);
         }
     }
 
@@ -1386,12 +1387,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return;
         }
         method.loadCompilerConstant(SCOPE);
-        if (count > 1) {
-            method.load(count);
-            method.invoke(ScriptObject.GET_PROTO_DEPTH);
-        } else {
-            method.invoke(ScriptObject.GET_PROTO);
-        }
+        invokeGetProto(count);
         method.storeCompilerConstant(SCOPE);
     }
 
@@ -1444,20 +1440,22 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final CodeGeneratorLexicalContext codegenLexicalContext = lc;
 
         function.accept(new SimpleNodeVisitor() {
+
             private MethodEmitter sharedScopeCall(final IdentNode identNode, final int flags) {
                 final Symbol symbol = identNode.getSymbol();
-                final boolean isFastScope = isFastScope(symbol);
+                assert isFastScope(symbol);
+
                 new OptimisticOperation(callNode, resultBounds) {
                     @Override
                     void loadStack() {
                         method.loadCompilerConstant(SCOPE);
-                        if (isFastScope) {
-                            method.load(getScopeProtoDepth(currentBlock, symbol));
-                        } else {
-                            method.load(-1); // Bypass fast-scope code in shared callsite
-                        }
+                        final int depth = getScopeProtoDepth(currentBlock, symbol);
+                        assert depth >= 0;
+                        method.load(depth);
+                        method.load(getProgramPoint());
                         loadArgs(args);
                     }
+
                     @Override
                     void consumeStack() {
                         final Type[] paramTypes = method.getTypesFromStack(args.size());
@@ -1466,13 +1464,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         for(int i = 0; i < paramTypes.length; ++i) {
                             paramTypes[i] = Type.generic(paramTypes[i]);
                         }
-                        // As shared scope calls are only used in non-optimistic compilation, we switch from using
-                        // TypeBounds to just a single definitive type, resultBounds.widest.
+
+                        final Type resultType = isOptimistic ? getOptimisticCoercedType() : resultBounds.widest;
                         final SharedScopeCall scopeCall = codegenLexicalContext.getScopeCall(unit, symbol,
-                                identNode.getType(), resultBounds.widest, paramTypes, flags);
+                                identNode.getType(), resultType, paramTypes, flags, isOptimistic);
                         scopeCall.generateInvoke(method);
                     }
                 }.emit();
+
                 return method;
             }
 
@@ -1573,15 +1572,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     final int flags = getScopeCallSiteFlags(symbol);
                     final int useCount = symbol.getUseCount();
 
-                    // Threshold for generating shared scope callsite is lower for fast scope symbols because we know
-                    // we can dial in the correct scope. However, we also need to enable it for non-fast scopes to
-                    // support huge scripts like mandreel.js.
+                    // We only use shared scope calls for fast scopes
                     if (callNode.isEval()) {
                         evalCall(node, flags);
-                    } else if (useCount <= SharedScopeCall.FAST_SCOPE_CALL_THRESHOLD
-                            || !isFastScope(symbol) && useCount <= SharedScopeCall.SLOW_SCOPE_CALL_THRESHOLD
-                            || CodeGenerator.this.lc.inDynamicScope()
-                            || callNode.isOptimistic()) {
+                    } else if (!isFastScope(symbol) || symbol.getUseCount() < SharedScopeCall.SHARED_CALL_THRESHOLD) {
                         scopeCall(node, flags);
                     } else {
                         sharedScopeCall(node, flags);
@@ -4650,7 +4644,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private abstract class OptimisticOperation {
-        private final boolean isOptimistic;
+        final boolean isOptimistic;
         // expression and optimistic are the same reference
         private final Expression expression;
         private final Optimistic optimistic;
@@ -4966,7 +4960,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
          * affect it.
          * @return
          */
-        private Type getOptimisticCoercedType() {
+        Type getOptimisticCoercedType() {
             final Type optimisticType = expression.getType();
             assert resultBounds.widest.widerThan(optimisticType);
             final Type narrowest = resultBounds.narrowest;
