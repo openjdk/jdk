@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,13 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.function.Consumer;
@@ -104,6 +107,8 @@ public class ExternalEditor {
             launch(cmd);
         } catch (IOException ex) {
             errorHandler.accept(ex.getMessage());
+        } finally {
+            deleteDirectory();
         }
     }
 
@@ -187,6 +192,33 @@ public class ExternalEditor {
             saveHandler.accept(Files.lines(tmpfile).collect(Collectors.joining("\n", "", "\n")));
         } catch (IOException ex) {
             errorHandler.accept("Failure in read edit file: " + ex.getMessage());
+        }
+    }
+
+    private void deleteDirectory() {
+        try {
+            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                        throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path directory, IOException fail)
+                        throws IOException {
+                    if (fail == null) {
+                        Files.delete(directory);
+                        return FileVisitResult.CONTINUE;
+                    }
+                    throw fail;
+                }
+            });
+        } catch (IOException exc) {
+            // ignore: The end-user will not want to see this, it is in a temp
+            // directory so it will go away eventually, and tests verify that
+            // the deletion is occurring.
         }
     }
 }
