@@ -137,7 +137,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WDesktopPeer_moveToTrash
             fop.hwnd = NULL;
             fop.wFunc = FO_DELETE;
             fop.pFrom = fileBuffer;
-            fop.fFlags = FOF_ALLOWUNDO;
+            fop.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_NOERRORUI;
 
             int res = SHFileOperation(&fop);
 
