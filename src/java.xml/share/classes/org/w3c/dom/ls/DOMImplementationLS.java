@@ -51,12 +51,13 @@ import org.w3c.dom.DOMException;
  * binding-specific casting methods on an instance of the
  * <code>DOMImplementation</code> interface or, if the <code>Document</code>
  * supports the feature <code>"Core"</code> version <code>"3.0"</code>
- * defined in [<a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>DOM Level 3 Core</a>]
+ * defined in
+ * [<a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>DOM Level 3 Core</a>]
  * , by using the method <code>DOMImplementation.getFeature</code> with
  * parameter values <code>"LS"</code> (or <code>"LS-Async"</code>) and
  * <code>"3.0"</code> (respectively).
- * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>Document Object Model (DOM) Level 3 Load
-and Save Specification</a>.
+ * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>
+Document Object Model (DOM) Level 3 Load and Save Specification</a>.
  *
  * @since 1.5
  */
@@ -90,9 +91,11 @@ public interface DOMImplementationLS {
      *   <code>LSParser</code> for any kind of schema types (i.e. the
      *   LSParser will be free to use any schema found), use the value
      *   <code>null</code>.
-     * <p ><b>Note:</b>    For W3C XML Schema [<a href='http://www.w3.org/TR/2001/REC-xmlschema-1-20010502/'>XML Schema Part 1</a>]
+     * <p ><b>Note:</b>    For W3C XML Schema
+     * [<a href='http://www.w3.org/TR/2001/REC-xmlschema-1-20010502/'>XML Schema Part 1</a>]
      *   , applications must use the value
-     *   <code>"http://www.w3.org/2001/XMLSchema"</code>. For XML DTD [<a href='http://www.w3.org/TR/2004/REC-xml-20040204'>XML 1.0</a>],
+     *   <code>"http://www.w3.org/2001/XMLSchema"</code>. For XML DTD
+     * [<a href='http://www.w3.org/TR/2004/REC-xml-20040204'>XML 1.0</a>],
      *   applications must use the value
      *   <code>"http://www.w3.org/TR/REC-xml"</code>. Other Schema languages
      *   are outside the scope of the W3C and therefore should recommend an
@@ -102,8 +105,8 @@ public interface DOMImplementationLS {
      *   depending on the value of the <code>mode</code> argument.
      * <p ><b>Note:</b>    By default, the newly created <code>LSParser</code>
      *   does not contain a <code>DOMErrorHandler</code>, i.e. the value of
-     *   the "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-error-handler'>
-     *   error-handler</a>" configuration parameter is <code>null</code>. However, implementations
+     *   the "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
+     *   configuration parameter is <code>null</code>. However, implementations
      *   may provide a default error handler at creation time. In that case,
      *   the initial value of the <code>"error-handler"</code> configuration
      *   parameter on the new <code>LSParser</code> object contains a
