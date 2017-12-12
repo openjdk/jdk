@@ -32,7 +32,7 @@ import java.io.UnsupportedEncodingException;
 public class URLEncoderEncodeArgs {
     public static void main (String[] args) {
         try {
-            String s1 = URLEncoder.encode ("Hello World", null);
+            String s1 = URLEncoder.encode ("Hello World", (String)null);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException ("NPE should have been thrown");
         } catch (NullPointerException e) {

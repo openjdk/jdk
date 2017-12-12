@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,11 @@ import java.nio.charset.UnsupportedCharsetException;
  * <p> Methods in this class never throw I/O exceptions, although some of its
  * constructors may.  The client may inquire as to whether any errors have
  * occurred by invoking {@link #checkError checkError()}.
+ *
+ * <p> This class always replaces malformed and unmappable character sequences with
+ * the charset's default replacement string.
+ * The {@linkplain java.nio.charset.CharsetEncoder} class should be used when more
+ * control over the encoding process is required.
  *
  * @author      Frank Yellin
  * @author      Mark Reinhold
@@ -137,7 +142,26 @@ public class PrintWriter extends Writer {
      * @see java.io.OutputStreamWriter#OutputStreamWriter(java.io.OutputStream)
      */
     public PrintWriter(OutputStream out, boolean autoFlush) {
-        this(new BufferedWriter(new OutputStreamWriter(out)), autoFlush);
+        this(out, autoFlush, Charset.defaultCharset());
+    }
+
+    /**
+     * Creates a new PrintWriter from an existing OutputStream.  This
+     * convenience constructor creates the necessary intermediate
+     * OutputStreamWriter, which will convert characters into bytes using the
+     * specified charset.
+     *
+     * @param  out        An output stream
+     * @param  autoFlush  A boolean; if true, the {@code println},
+     *                    {@code printf}, or {@code format} methods will
+     *                    flush the output buffer
+     * @param  charset
+     *         A {@linkplain java.nio.charset.Charset charset}
+     *
+     * @since 10
+     */
+    public PrintWriter(OutputStream out, boolean autoFlush, Charset charset) {
+        this(new BufferedWriter(new OutputStreamWriter(out, charset)), autoFlush);
 
         // save print stream for error propagation
         if (out instanceof java.io.PrintStream) {
@@ -226,6 +250,36 @@ public class PrintWriter extends Writer {
 
     /**
      * Creates a new PrintWriter, without automatic line flushing, with the
+     * specified file name and charset.  This convenience constructor creates
+     * the necessary intermediate {@link java.io.OutputStreamWriter
+     * OutputStreamWriter}, which will encode characters using the provided
+     * charset.
+     *
+     * @param  fileName
+     *         The name of the file to use as the destination of this writer.
+     *         If the file exists then it will be truncated to zero size;
+     *         otherwise, a new file will be created.  The output will be
+     *         written to the file and is buffered.
+     *
+     * @param  charset
+     *         A {@linkplain java.nio.charset.Charset charset}
+     *
+     * @throws  IOException
+     *          if an I/O error occurs while opening or creating the file
+     *
+     * @throws  SecurityException
+     *          If a security manager is present and {@link
+     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
+     *          access to the file
+     *
+     * @since  10
+     */
+    public PrintWriter(String fileName, Charset charset) throws IOException {
+        this(Objects.requireNonNull(charset, "charset"), new File(fileName));
+    }
+
+    /**
+     * Creates a new PrintWriter, without automatic line flushing, with the
      * specified file.  This convenience constructor creates the necessary
      * intermediate {@link java.io.OutputStreamWriter OutputStreamWriter},
      * which will encode characters using the {@linkplain
@@ -293,6 +347,36 @@ public class PrintWriter extends Writer {
         throws FileNotFoundException, UnsupportedEncodingException
     {
         this(toCharset(csn), file);
+    }
+
+    /**
+     * Creates a new PrintWriter, without automatic line flushing, with the
+     * specified file and charset.  This convenience constructor creates the
+     * necessary intermediate {@link java.io.OutputStreamWriter
+     * OutputStreamWriter}, which will encode characters using the provided
+     * charset.
+     *
+     * @param  file
+     *         The file to use as the destination of this writer.  If the file
+     *         exists then it will be truncated to zero size; otherwise, a new
+     *         file will be created.  The output will be written to the file
+     *         and is buffered.
+     *
+     * @param  charset
+     *         A {@linkplain java.nio.charset.Charset charset}
+     *
+     * @throws  IOException
+     *          if an I/O error occurs while opening or creating the file
+     *
+     * @throws  SecurityException
+     *          If a security manager is present and {@link
+     *          SecurityManager#checkWrite checkWrite(file.getPath())}
+     *          denies write access to the file
+     *
+     * @since  10
+     */
+    public PrintWriter(File file, Charset charset) throws IOException {
+        this(Objects.requireNonNull(charset, "charset"), file);
     }
 
     /** Checks to make sure that the stream has not been closed */

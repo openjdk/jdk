@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package jdk.internal.util.xml;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 /**
  * Basic XMLStreamWriter for writing simple XML files such as those
  * defined in java.util.Properties
@@ -38,6 +41,7 @@ public  interface XMLStreamWriter {
     //Defaults the XML version to 1.0, and the encoding to utf-8
     public static final String DEFAULT_XML_VERSION = "1.0";
     public static final String DEFAULT_ENCODING = "UTF-8";
+    public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     /**
      * Writes a start tag to the output.  All writeStartElement methods
