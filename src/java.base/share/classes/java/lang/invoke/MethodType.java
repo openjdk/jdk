@@ -105,23 +105,10 @@ class MethodType implements java.io.Serializable {
     private @Stable String methodDescriptor;  // cache for toMethodDescriptorString
 
     /**
-     * Check the given parameters for validity and store them into the final fields.
+     * Constructor that performs no copying or validation.
+     * Should only be called from the factory method makeImpl
      */
-    private MethodType(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
-        checkRtype(rtype);
-        checkPtypes(ptypes);
-        this.rtype = rtype;
-        // defensively copy the array passed in by the user
-        this.ptypes = trusted ? ptypes : Arrays.copyOf(ptypes, ptypes.length);
-    }
-
-    /**
-     * Construct a temporary unchecked instance of MethodType for use only as a key to the intern table.
-     * Does not check the given parameters for validity, and must discarded (if untrusted) or checked
-     * (if trusted) after it has been used as a searching key.
-     * The parameters are reversed for this constructor, so that it is not accidentally used.
-     */
-    private MethodType(Class<?>[] ptypes, Class<?> rtype) {
+    private MethodType(Class<?> rtype, Class<?>[] ptypes) {
         this.rtype = rtype;
         this.ptypes = ptypes;
     }
@@ -308,18 +295,21 @@ class MethodType implements java.io.Serializable {
         if (ptypes.length == 0) {
             ptypes = NO_PTYPES; trusted = true;
         }
-        MethodType primordialMT = new MethodType(ptypes, rtype);
+        MethodType primordialMT = new MethodType(rtype, ptypes);
         MethodType mt = internTable.get(primordialMT);
         if (mt != null)
             return mt;
 
         // promote the object to the Real Thing, and reprobe
+        MethodType.checkRtype(rtype);
         if (trusted) {
-            MethodType.checkRtype(rtype);
             MethodType.checkPtypes(ptypes);
             mt = primordialMT;
         } else {
-            mt = new MethodType(rtype, ptypes, false);
+            // Make defensive copy then validate
+            ptypes = Arrays.copyOf(ptypes, ptypes.length);
+            MethodType.checkPtypes(ptypes);
+            mt = new MethodType(rtype, ptypes);
         }
         mt.form = MethodTypeForm.findForm(mt);
         return internTable.add(mt);
