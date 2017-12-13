@@ -20,21 +20,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.hotspot.amd64;
+package org.graalvm.compiler.jtt.bytecode;
 
-import org.graalvm.compiler.core.amd64.AMD64LIRKindTool;
-import org.graalvm.compiler.core.common.LIRKind;
+import org.junit.Test;
 
-import jdk.vm.ci.amd64.AMD64Kind;
+import org.graalvm.compiler.jtt.JTTTest;
 
-public class AMD64HotSpotLIRKindTool extends AMD64LIRKindTool {
-    @Override
-    public LIRKind getNarrowOopKind() {
-        return LIRKind.compressedReference(AMD64Kind.DWORD);
+/*
+ */
+public class BC_ldiv_overflow extends JTTTest {
+
+    public static long test(long a, long b) {
+        return a / (b | 1);
     }
 
-    @Override
-    public LIRKind getNarrowPointerKind() {
-        return LIRKind.value(AMD64Kind.DWORD);
+    @Test
+    public void run0() throws Throwable {
+        runTest("test", Long.MIN_VALUE, -1L);
     }
+
+    @Test
+    public void run1() throws Throwable {
+        runTest("test", Long.MIN_VALUE, 1L);
+    }
+
 }

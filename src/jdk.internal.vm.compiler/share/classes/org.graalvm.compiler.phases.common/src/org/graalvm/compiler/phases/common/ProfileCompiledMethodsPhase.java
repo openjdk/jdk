@@ -121,7 +121,7 @@ public class ProfileCompiledMethodsPhase extends Phase {
 
     private static void addSectionCounters(FixedWithNextNode start, Collection<Block> sectionBlocks, Collection<Loop<Block>> childLoops, ScheduleResult schedule, ControlFlowGraph cfg) {
         HashSet<Block> blocks = new HashSet<>(sectionBlocks);
-        for (Loop<?> loop : childLoops) {
+        for (Loop<Block> loop : childLoops) {
             blocks.removeAll(loop.getBlocks());
         }
         double weight = getSectionWeight(schedule, blocks) / cfg.blockFor(start).probability();
