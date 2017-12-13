@@ -24,19 +24,20 @@
 /*
  * @test
  * @bug 4638588 4635809 6256068 6270645 8025633 8026567 8162363 8175200
+ *      8192850
  * @summary Test to make sure that members are inherited properly in the Javadoc.
- *          Verify that inheritence labels are correct.
+ *          Verify that inheritance labels are correct.
  * @author jamieh
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
- * @run main TestMemberInheritence
+ * @run main TestMemberInheritance
  */
 
-public class TestMemberInheritence extends JavadocTester {
+public class TestMemberInheritance extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestMemberInheritence tester = new TestMemberInheritence();
+        TestMemberInheritance tester = new TestMemberInheritance();
         tester.runTests();
     }
 
@@ -77,7 +78,7 @@ public class TestMemberInheritence extends JavadocTester {
                 + "</dl>");
 
         checkOutput("diamond/Z.html", true,
-                // Test diamond inheritence member summary (6256068)
+                // Test diamond inheritance member summary (6256068)
                 "<code><a href=\"../diamond/A.html#aMethod--\">aMethod</a></code>");
 
         checkOutput("inheritDist/C.html", true,
@@ -93,8 +94,9 @@ public class TestMemberInheritence extends JavadocTester {
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"../pkg1/Implementer.html#between-java.time.LocalDate-java.time.LocalDate-\">"
                 + "between</a></span>&#8203;(java.time.LocalDate&nbsp;startDateInclusive,\n"
-                + "       java.time.LocalDate&nbsp;endDateExclusive)</code></th>",
-                // check the inherited from interfaces
+                + "       java.time.LocalDate&nbsp;endDateExclusive)</code></th>");
+
+        checkOutput("pkg1/Implementer.html", false,
                 "<h3>Methods inherited from interface&nbsp;pkg1.<a href=\"../pkg1/Interface.html\""
                 + " title=\"interface in pkg1\">Interface</a></h3>\n"
                 + "<code><a href=\"../pkg1/Interface.html#between-java.time.chrono.ChronoLocalDate"

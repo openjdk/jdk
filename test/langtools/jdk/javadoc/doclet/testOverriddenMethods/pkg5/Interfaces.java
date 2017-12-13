@@ -29,6 +29,14 @@ public class Interfaces {
          /** field f in A */
          public int f = 0;
 
+         public static String QUOTE = "Winter is coming";
+
+         /** a documented static method */
+         public static void msd() {}
+
+         /* An undocumented static method */
+         public static void msn() {}
+
          /** A property in parent */
          DoubleProperty rate = null;
          public void setRate(double l);

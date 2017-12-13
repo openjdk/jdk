@@ -30,14 +30,13 @@
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    JavadocTester
- * @run main TestMultiInheritence
+ * @run main TestMultiInheritance
  */
 
-// TODO: should be TestMultiInheritance
-public class TestMultiInheritence extends JavadocTester {
+public class TestMultiInheritance extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestMultiInheritence tester = new TestMultiInheritence();
+        TestMultiInheritance tester = new TestMultiInheritance();
         tester.runTests();
     }
 

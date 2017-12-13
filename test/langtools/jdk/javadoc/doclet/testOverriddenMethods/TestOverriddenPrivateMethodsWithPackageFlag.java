@@ -30,13 +30,13 @@
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
- * @run main TestOverridenPrivateMethodsWithPackageFlag
+ * @run main TestOverriddenPrivateMethodsWithPackageFlag
  */
 
-public class TestOverridenPrivateMethodsWithPackageFlag extends JavadocTester {
+public class TestOverriddenPrivateMethodsWithPackageFlag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestOverridenPrivateMethodsWithPackageFlag tester = new TestOverridenPrivateMethodsWithPackageFlag();
+        TestOverriddenPrivateMethodsWithPackageFlag tester = new TestOverriddenPrivateMethodsWithPackageFlag();
         tester.runTests();
     }
 

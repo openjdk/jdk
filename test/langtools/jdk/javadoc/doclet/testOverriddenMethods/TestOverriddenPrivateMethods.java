@@ -30,13 +30,13 @@
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
- * @run main TestOverridenPrivateMethodsWithPrivateFlag
+ * @run main TestOverriddenPrivateMethods
  */
 
-public class TestOverridenPrivateMethodsWithPrivateFlag extends JavadocTester {
+public class TestOverriddenPrivateMethods extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestOverridenPrivateMethodsWithPrivateFlag tester = new TestOverridenPrivateMethodsWithPrivateFlag();
+        TestOverriddenPrivateMethods tester = new TestOverriddenPrivateMethods();
         tester.runTests();
     }
 
@@ -44,40 +44,34 @@ public class TestOverridenPrivateMethodsWithPrivateFlag extends JavadocTester {
     void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
-                "-private",
                 "pkg1", "pkg2");
         checkExit(Exit.OK);
 
         // The public method should be overridden
         checkOutput("pkg1/SubClass.html", true,
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod");
-
-        // The package private method should be overridden since the base and sub class are in the same
-        // package.
-        checkOutput("pkg1/SubClass.html", true,
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod");
+                "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
+                + "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod");
 
         // The public method in different package should be overridden
         checkOutput("pkg2/SubClass.html", true,
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod");
+                "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
+                + "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod");
 
-        // The private method in should not be overridden
         checkOutput("pkg1/SubClass.html", false,
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod");
+                //The package private method should be overridden since the base and sub class are in the same
+                //package.  However, the link should not show up because the package private methods are not documented.
+                "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
+                + "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod",
+                //The private method in should not be overridden
+                "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
+                + "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod");
 
-        // The private method in different package should not be overridden
         checkOutput("pkg2/SubClass.html", false,
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod");
-
-        // The package private method should not be overridden since the base and sub class are in
-        // different packages.
-        checkOutput("pkg2/SubClass.html", false,
-         "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod");
+                //The private method in different package should not be overridden
+                "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
+                + "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod",
+                //The package private method should not be overridden since the base and sub class are in
+                //different packages.
+                "Overrides:</span></dt><dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod");
     }
 }
