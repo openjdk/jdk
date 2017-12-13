@@ -43,6 +43,7 @@ import java.lang.module.ModuleReference;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
@@ -381,7 +382,7 @@ public class JShellTool implements MessageHandler {
         private Collection<String> validPaths(Collection<String> vals, String context, boolean isModulePath) {
             Stream<String> result = vals.stream()
                     .map(s -> Arrays.stream(s.split(File.pathSeparator))
-                        .map(sp -> toPathResolvingUserHome(sp))
+                        .flatMap(sp -> toPathImpl(sp, context))
                         .filter(p -> checkValidPathEntry(p, context, isModulePath))
                         .map(p -> p.toString())
                         .collect(Collectors.joining(File.pathSeparator)));
@@ -419,6 +420,16 @@ public class JShellTool implements MessageHandler {
             msg("jshell.err.arg", context, p);
             failed = true;
             return false;
+        }
+
+        private Stream<Path> toPathImpl(String path, String context) {
+            try {
+                return Stream.of(toPathResolvingUserHome(path));
+            } catch (InvalidPathException ex) {
+                msg("jshell.err.file.not.found", context, path);
+                failed = true;
+                return Stream.empty();
+            }
         }
 
         Options parse(OptionSet options) {
