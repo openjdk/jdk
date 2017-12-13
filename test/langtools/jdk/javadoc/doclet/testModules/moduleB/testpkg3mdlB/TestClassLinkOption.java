@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package testpkg3mdlB;
 
 /**
-  * This is a test description for the moduleB module. Search word {@index search_word} with no description.
-  *
-  * @uses testpkgmdlB.TestClassInModuleB With a test description for uses.
-  * @provides testpkg2mdlB.TestInterface2InModuleB
-  * @deprecated This module is deprecated using just the javadoc tag.
-  */
-@testpkgmdlB.AnnotationType(optional="Module Annotation", required=2016)
-@testpkgmdlB.AnnotationTypeUndocumented(optional="Module Annotation", required=2016)
-module moduleB {
-    opens testpkgmdlB;
-
-    exports testpkg2mdlB to moduleA;
-    exports testpkg3mdlB to moduleA;
-
-    uses testpkgmdlB.TestClassInModuleB;
-    uses testpkgmdlB.TestClass2InModuleB;
-
-    provides testpkg2mdlB.TestInterfaceInModuleB with testpkgmdlB.TestClassInModuleB;
-    provides testpkg2mdlB.TestInterface2InModuleB with testpkgmdlB.TestClass2InModuleB;
+ * {@link java.lang.String Link to String Class}.<br>
+ * {@link java.lang Link to java.lang package}.<br>
+ * {@link java.base Link to java.base module}.
+ *
+ * @author bhavespa
+ */
+public class TestClassLinkOption {
+    public String testMethod() {
+        return "foo";
+    }
 }

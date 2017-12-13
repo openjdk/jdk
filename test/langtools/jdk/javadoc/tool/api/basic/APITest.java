@@ -227,7 +227,7 @@ class APITest {
             "member-search-index.js",
             "member-search-index.zip",
             "overview-tree.html",
-            "package-list",
+            "element-list",
             "package-search-index.js",
             "package-search-index.zip",
             "pkg/C.html",

@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.io.*;
 
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.doclet.DocletEnvironment;
@@ -34,7 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 
 /**
- * Write out the package index.
+ * Write out the element index.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -43,7 +44,7 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
  *
  * @author Atul M Dambalkar
  */
-public class PackageListWriter {
+public class ElementListWriter {
 
     private final BaseConfiguration configuration;
     private final Utils utils;
@@ -54,31 +55,44 @@ public class PackageListWriter {
      *
      * @param configuration the current configuration of the doclet.
      */
-    public PackageListWriter(BaseConfiguration configuration) {
-        file = DocFile.createFileForOutput(configuration, DocPaths.PACKAGE_LIST);
+    public ElementListWriter(BaseConfiguration configuration) {
+        file = DocFile.createFileForOutput(configuration, DocPaths.ELEMENT_LIST);
         this.configuration = configuration;
         this.utils = configuration.utils;
     }
 
     /**
-     * Generate the package index.
+     * Generate the element index.
      *
      * @param configuration the current configuration of the doclet.
      * @throws DocFileIOException if there is a problem writing the output
      */
     public static void generate(BaseConfiguration configuration) throws DocFileIOException {
-        PackageListWriter packgen = new PackageListWriter(configuration);
-        packgen.generatePackageListFile(configuration.docEnv);
+        ElementListWriter elemgen = new ElementListWriter(configuration);
+        elemgen.generateElementListFile(configuration.docEnv);
     }
 
-    protected void generatePackageListFile(DocletEnvironment docEnv) throws DocFileIOException {
+    protected void generateElementListFile(DocletEnvironment docEnv) throws DocFileIOException {
         try (BufferedWriter out = new BufferedWriter(file.openWriter())) {
-            for (PackageElement pkg : configuration.packages) {
-                // if the -nodeprecated option is set and the package is marked as
-                // deprecated, do not include it in the packages list.
-                if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
-                    out.write(pkg.toString());
-                    out.newLine();
+            if (configuration.showModules) {
+                for (ModuleElement mdle : configuration.modulePackages.keySet()) {
+                    if (!(configuration.nodeprecated && utils.isDeprecated(mdle))) {
+                        out.write(DocletConstants.MODULE_PREFIX + mdle.toString());
+                        out.newLine();
+                        for (PackageElement pkg : configuration.modulePackages.get(mdle)) {
+                            out.write(pkg.toString());
+                            out.newLine();
+                        }
+                    }
+                }
+            } else {
+                for (PackageElement pkg : configuration.packages) {
+                    // if the -nodeprecated option is set and the package is marked as
+                    // deprecated, do not include it in the packages list.
+                    if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
+                        out.write(pkg.toString());
+                        out.newLine();
+                    }
                 }
             }
         } catch (IOException e) {
