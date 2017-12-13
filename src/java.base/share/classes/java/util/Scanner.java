@@ -33,10 +33,13 @@ import java.nio.charset.*;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.text.*;
+import java.text.spi.NumberFormatProvider;
 import java.util.function.Consumer;
 import java.util.regex.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
 /**
  * A simple text scanner which can parse primitive types and strings using
@@ -1262,9 +1265,27 @@ public final class Scanner implements Iterator<String>, Closeable {
 
         modCount++;
         this.locale = locale;
-        DecimalFormat df =
-            (DecimalFormat)NumberFormat.getNumberInstance(locale);
+
+        DecimalFormat df = null;
+        NumberFormat nf = NumberFormat.getNumberInstance(locale);
         DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(locale);
+        if (nf instanceof DecimalFormat) {
+             df = (DecimalFormat) nf;
+        } else {
+
+            // In case where NumberFormat.getNumberInstance() returns
+            // other instance (non DecimalFormat) based on the provider
+            // used and java.text.spi.NumberFormatProvider implementations,
+            // DecimalFormat constructor is used to obtain the instance
+            LocaleProviderAdapter adapter = LocaleProviderAdapter
+                    .getAdapter(NumberFormatProvider.class, locale);
+            if (!(adapter instanceof ResourceBundleBasedAdapter)) {
+                adapter = LocaleProviderAdapter.getResourceBundleBased();
+            }
+            String[] all = adapter.getLocaleResources(locale)
+                    .getNumberPatterns();
+            df = new DecimalFormat(all[0], dfs);
+        }
 
         // These must be literalized to avoid collision with regex
         // metacharacters such as dot or parenthesis
