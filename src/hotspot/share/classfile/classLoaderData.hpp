@@ -307,7 +307,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void packages_do(void f(PackageEntry*));
 
   // Deallocate free list during class unloading.
-  void free_deallocate_list();
+  void free_deallocate_list();      // for the classes that are not unloaded
+  void unload_deallocate_list();    // for the classes that are unloaded
 
   // Allocate out of this class loader data
   MetaWord* allocate(size_t size);
