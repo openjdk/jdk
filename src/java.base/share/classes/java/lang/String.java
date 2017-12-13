@@ -3046,6 +3046,10 @@ public final class String
         return COMPACT_STRINGS ? coder : UTF16;
     }
 
+    byte[] value() {
+        return value;
+    }
+
     private boolean isLatin1() {
         return COMPACT_STRINGS && coder == LATIN1;
     }
