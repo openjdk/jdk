@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4857717 8025633 8026567
+ * @bug 4857717 8025633 8026567 8164407
  * @summary Test to make sure that externally overriden and implemented methods
  * are documented properly.  The method should still include "implements" or
  * "overrides" documentation even though the method is external.
@@ -53,14 +53,14 @@ public class TestExternalOverridenMethod extends JavadocTester {
         checkOutput("pkg/XReader.html", true,
                 "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
                 + "<dd><code><a href=\"" + uri + "/java/io/FilterReader.html?is-external=true#read--\" "
-                + "title=\"class or interface in java.io\">read</a></code>&nbsp;in class&nbsp;<code>"
+                + "title=\"class or interface in java.io\" class=\"externalLink\">read</a></code>&nbsp;in class&nbsp;<code>"
                 + "<a href=\"" + uri + "/java/io/FilterReader.html?is-external=true\" "
-                + "title=\"class or interface in java.io\">FilterReader</a></code></dd>",
+                + "title=\"class or interface in java.io\" class=\"externalLink\">FilterReader</a></code></dd>",
                 "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
                 + "<dd><code><a href=\"" + uri + "/java/io/DataInput.html?is-external=true#readInt--\" "
-                + "title=\"class or interface in java.io\">readInt</a></code>&nbsp;in interface&nbsp;<code>"
+                + "title=\"class or interface in java.io\" class=\"externalLink\">readInt</a></code>&nbsp;in interface&nbsp;<code>"
                 + "<a href=\"" + uri + "/java/io/DataInput.html?is-external=true\" "
-                + "title=\"class or interface in java.io\">DataInput</a></code></dd>"
+                + "title=\"class or interface in java.io\" class=\"externalLink\">DataInput</a></code></dd>"
         );
     }
 }

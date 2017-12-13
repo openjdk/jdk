@@ -2673,7 +2673,8 @@ public class Utils {
     }
 
     /**
-     * package name, an unnamed package is returned as &lt;Unnamed&gt;
+     * Get the package name for a given package element. An unnamed package is returned as &lt;Unnamed&gt;
+     *
      * @param pkg
      * @return
      */
@@ -2682,6 +2683,19 @@ public class Utils {
             return DocletConstants.DEFAULT_PACKAGE_NAME;
         }
         return pkg.getQualifiedName().toString();
+    }
+
+    /**
+     * Get the module name for a given module element. An unnamed module is returned as &lt;Unnamed&gt;
+     *
+     * @param mdle a ModuleElement
+     * @return
+     */
+    public String getModuleName(ModuleElement mdle) {
+        if (mdle == null || mdle.isUnnamed()) {
+            return DocletConstants.DEFAULT_ELEMENT_NAME;
+        }
+        return mdle.getQualifiedName().toString();
     }
 
     public boolean isAttribute(DocTree doctree) {

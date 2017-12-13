@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4369014 4851991
+ * @bug 4369014 4851991 8164407
  * @summary Determine if the docRoot inline tag works properly.
  * If docRoot performs as documented, the test passes.
  * Make sure that the docRoot tag works with the -bottom option.
@@ -54,10 +54,10 @@ public class TestDocRootInlineTag extends JavadocTester {
 
         checkOutput("TestDocRootTag.html", true,
                 "<a href=\"" + uri + "/java/io/File.html?is-external=true\" "
-                + "title=\"class or interface in java.io\"><code>File</code></a>",
+                + "title=\"class or interface in java.io\" class=\"externalLink\"><code>File</code></a>",
                 "<a href=\"./glossary.html\">glossary</a>",
                 "<a href=\"" + uri + "/java/io/File.html?is-external=true\" "
-                + "title=\"class or interface in java.io\"><code>Second File Link</code></a>",
+                + "title=\"class or interface in java.io\" class=\"externalLink\"><code>Second File Link</code></a>",
                 "The value of @docRoot is \"./\"");
 
         checkOutput("index-all.html", true,
