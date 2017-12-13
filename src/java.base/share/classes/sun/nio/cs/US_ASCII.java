@@ -58,8 +58,7 @@ public class US_ASCII
         return new Encoder(this);
     }
 
-    private static class Decoder extends CharsetDecoder
-                                 implements ArrayDecoder {
+    private static class Decoder extends CharsetDecoder {
 
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
@@ -128,32 +127,9 @@ public class US_ASCII
             else
                 return decodeBufferLoop(src, dst);
         }
-
-        private char repl = '\uFFFD';
-        protected void implReplaceWith(String newReplacement) {
-            repl = newReplacement.charAt(0);
-        }
-
-        public int decode(byte[] src, int sp, int len, char[] dst) {
-            int dp = 0;
-            len = Math.min(len, dst.length);
-            while (dp < len) {
-                byte b = src[sp++];
-                if (b >= 0)
-                    dst[dp++] = (char)b;
-                else
-                    dst[dp++] = repl;
-            }
-            return dp;
-        }
-
-        public boolean isASCIICompatible() {
-            return true;
-        }
     }
 
-    private static class Encoder extends CharsetEncoder
-                                 implements ArrayEncoder {
+    private static class Encoder extends CharsetEncoder {
 
         private Encoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
@@ -237,36 +213,5 @@ public class US_ASCII
                 return encodeBufferLoop(src, dst);
         }
 
-        private byte repl = (byte)'?';
-        protected void implReplaceWith(byte[] newReplacement) {
-            repl = newReplacement[0];
-        }
-
-        public int encode(char[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
-            int sl = sp + Math.min(len, dst.length);
-            while (sp < sl) {
-                char c = src[sp++];
-                if (c < 0x80) {
-                    dst[dp++] = (byte)c;
-                    continue;
-                }
-                if (Character.isHighSurrogate(c) && sp < sl &&
-                    Character.isLowSurrogate(src[sp])) {
-                    if (len > dst.length) {
-                        sl++;
-                        len--;
-                    }
-                    sp++;
-                }
-                dst[dp++] = repl;
-            }
-            return dp;
-        }
-
-        public boolean isASCIICompatible() {
-            return true;
-        }
     }
-
 }

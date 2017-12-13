@@ -27,6 +27,7 @@ package sun.util.cldr;
 
 import java.security.AccessController;
 import java.security.AccessControlException;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.text.spi.BreakIteratorProvider;
@@ -37,15 +38,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.spi.CalendarDataProvider;
 import sun.util.locale.provider.JRELocaleProviderAdapter;
-import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleDataMetaInfo;
+import sun.util.locale.provider.LocaleProviderAdapter;
 
 /**
  * LocaleProviderAdapter implementation for the CLDR locale data.
@@ -106,6 +108,24 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     @Override
+    public CalendarDataProvider getCalendarDataProvider() {
+        if (calendarDataProvider == null) {
+            CalendarDataProvider provider = AccessController.doPrivileged(
+                (PrivilegedAction<CalendarDataProvider>) () ->
+                    new CLDRCalendarDataProviderImpl(
+                        getAdapterType(),
+                        getLanguageTagSet("CalendarData")));
+
+            synchronized (this) {
+                if (calendarDataProvider == null) {
+                    calendarDataProvider = provider;
+                }
+            }
+        }
+        return calendarDataProvider;
+    }
+
+    @Override
     public CollatorProvider getCollatorProvider() {
         return null;
     }
@@ -123,6 +143,10 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
 
     @Override
     protected Set<String> createLanguageTagSet(String category) {
+        // Assume all categories support the same set as AvailableLocales
+        // in CLDR adapter.
+        category = "AvailableLocales";
+
         // Directly call Base tags, as we know it's in the base module.
         String supportedLocaleString = baseMetaInfo.availableLanguageTags(category);
         String nonBaseTags = null;
@@ -219,5 +243,12 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
         return Locale.ROOT.equals(locale)
                 || langtags.contains(locale.stripExtensions().toLanguageTag())
                 || langtags.contains(getEquivalentLoc(locale).toLanguageTag());
+    }
+
+    /**
+     * Returns the time zone ID from an LDML's short ID
+     */
+    public Optional<String> getTimeZoneID(String shortID) {
+        return Optional.ofNullable(baseMetaInfo.tzShortIDs().get(shortID));
     }
 }

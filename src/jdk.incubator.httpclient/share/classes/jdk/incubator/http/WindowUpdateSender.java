@@ -59,6 +59,8 @@ abstract class WindowUpdateSender {
         //   or
         // - remaining window size reached max frame size.
         limit = Math.min(v0, v1);
+        debug.log(Level.DEBUG, "maxFrameSize=%d, initWindowSize=%d, limit=%d",
+                maxFrameSize, initWindowSize, limit);
     }
 
     abstract int getStreamId();

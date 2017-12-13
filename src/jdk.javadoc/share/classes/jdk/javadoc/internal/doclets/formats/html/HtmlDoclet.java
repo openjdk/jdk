@@ -117,8 +117,10 @@ public class HtmlDoclet extends AbstractDoclet {
             SourceToHTMLConverter.convertRoot(configuration,
                 docEnv, DocPaths.SOURCE_OUTPUT);
         }
-
-        if (configuration.topFile.isEmpty()) {
+        // Modules with no documented classes may be specified on the
+        // command line to specify a service provider, allow these.
+        if (configuration.getSpecifiedModuleElements().isEmpty() &&
+                configuration.topFile.isEmpty()) {
             messages.error("doclet.No_Non_Deprecated_Classes_To_Document");
             return;
         }

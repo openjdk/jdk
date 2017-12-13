@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
 package java.net;
 
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.Objects;
 
 /**
  * Utility class for HTML form decoding. This class contains static methods
@@ -108,7 +112,43 @@ public class URLDecoder {
     /**
      * Decodes an {@code application/x-www-form-urlencoded} string using
      * a specific encoding scheme.
-     * The supplied encoding is used to determine
+     *
+     * <p>
+     * This method behaves the same as {@linkplain decode(String s, Charset charset)}
+     * except that it will {@linkplain java.nio.charset.Charset#forName look up the charset}
+     * using the given encoding name.
+     *
+     * @implNote This implementation will throw an {@link java.lang.IllegalArgumentException}
+     * when illegal strings are encountered.
+     *
+     * @param s the {@code String} to decode
+     * @param enc   The name of a supported
+     *    <a href="../lang/package-summary.html#charenc">character
+     *    encoding</a>.
+     * @return the newly decoded {@code String}
+     * @throws UnsupportedEncodingException
+     *             If character encoding needs to be consulted, but
+     *             named character encoding is not supported
+     * @see URLEncoder#encode(java.lang.String, java.lang.String)
+     * @since 1.4
+     */
+    public static String decode(String s, String enc) throws UnsupportedEncodingException {
+        if (enc.length() == 0) {
+            throw new UnsupportedEncodingException ("URLDecoder: empty string enc parameter");
+        }
+
+        try {
+            Charset charset = Charset.forName(enc);
+            return decode(s, charset);
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
+            throw new UnsupportedEncodingException(enc);
+        }
+    }
+
+    /**
+     * Decodes an {@code application/x-www-form-urlencoded} string using
+     * a specific {@linkplain java.nio.charset.Charset Charset}.
+     * The supplied charset is used to determine
      * what characters are represented by any consecutive sequences of the
      * form "<i>{@code %xy}</i>".
      * <p>
@@ -118,28 +158,24 @@ public class URLDecoder {
      * UTF-8 should be used. Not doing so may introduce
      * incompatibilities.</em>
      *
+     * @implNote This implementation will throw an {@link java.lang.IllegalArgumentException}
+     * when illegal strings are encountered.
+     *
      * @param s the {@code String} to decode
-     * @param enc   The name of a supported
-     *    <a href="../lang/package-summary.html#charenc">character
-     *    encoding</a>.
+     * @param charset the given charset
      * @return the newly decoded {@code String}
-     * @exception  UnsupportedEncodingException
-     *             If character encoding needs to be consulted, but
-     *             named character encoding is not supported
-     * @see URLEncoder#encode(java.lang.String, java.lang.String)
-     * @since 1.4
+     * @throws NullPointerException if {@code s} or {@code charset} is {@code null}
+     * @throws IllegalArgumentException if the implementation encounters illegal
+     * characters
+     * @see URLEncoder#encode(java.lang.String, java.nio.charset.Charset)
+     * @since 10
      */
-    public static String decode(String s, String enc)
-        throws UnsupportedEncodingException{
-
+    public static String decode(String s, Charset charset) {
+        Objects.requireNonNull(charset, "Charset");
         boolean needToChange = false;
         int numChars = s.length();
         StringBuilder sb = new StringBuilder(numChars > 500 ? numChars / 2 : numChars);
         int i = 0;
-
-        if (enc.length() == 0) {
-            throw new UnsupportedEncodingException ("URLDecoder: empty string enc parameter");
-        }
 
         char c;
         byte[] bytes = null;
@@ -173,7 +209,9 @@ public class URLDecoder {
                             (c=='%')) {
                         int v = Integer.parseInt(s, i + 1, i + 3, 16);
                         if (v < 0)
-                            throw new IllegalArgumentException("URLDecoder: Illegal hex characters in escape (%) pattern - negative value");
+                            throw new IllegalArgumentException(
+                                    "URLDecoder: Illegal hex characters in escape "
+                                            + "(%) pattern - negative value");
                         bytes[pos++] = (byte) v;
                         i+= 3;
                         if (i < numChars)
@@ -187,7 +225,7 @@ public class URLDecoder {
                         throw new IllegalArgumentException(
                          "URLDecoder: Incomplete trailing escape (%) pattern");
 
-                    sb.append(new String(bytes, 0, pos, enc));
+                    sb.append(new String(bytes, 0, pos, charset));
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException(
                     "URLDecoder: Illegal hex characters in escape (%) pattern - "

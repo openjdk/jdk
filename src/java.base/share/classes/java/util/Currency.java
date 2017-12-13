@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.util;
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.IOException;
@@ -42,6 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.spi.CurrencyNameProvider;
+import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleServiceProviderPool;
 import sun.util.logging.PlatformLogger;
 
@@ -348,6 +348,13 @@ public final class Currency implements Serializable {
      * until December 31, 2001, and the Euro from January 1, 2002, local time
      * of the respective countries.
      * <p>
+     * If the specified {@code locale} contains "cu" and/or "rg"
+     * <a href="./Locale.html#def_locale_extension">Unicode extensions</a>,
+     * the instance returned from this method reflects
+     * the values specified with those extensions. If both "cu" and "rg" are
+     * specified, the currency from the "cu" extension supersedes the implicit one
+     * from the "rg" extension.
+     * <p>
      * The method returns <code>null</code> for territories that don't
      * have a currency, such as Antarctica.
      *
@@ -361,12 +368,19 @@ public final class Currency implements Serializable {
      * is not a supported ISO 3166 country code.
      */
     public static Currency getInstance(Locale locale) {
-        String country = locale.getCountry();
-        if (country == null) {
-            throw new NullPointerException();
+        // check for locale overrides
+        String override = locale.getUnicodeLocaleType("cu");
+        if (override != null) {
+            try {
+                return getInstance(override.toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException iae) {
+                // override currency is invalid. Fall through.
+            }
         }
 
-        if (country.length() != 2) {
+        String country = CalendarDataUtility.findRegionOverride(locale).getCountry();
+
+        if (country == null || !country.matches("^[a-zA-Z]{2}$")) {
             throw new IllegalArgumentException();
         }
 
@@ -482,6 +496,12 @@ public final class Currency implements Serializable {
      * locale is the US, while for other locales it may be "US$". If no
      * symbol can be determined, the ISO 4217 currency code is returned.
      * <p>
+     * If the default {@link Locale.Category#DISPLAY DISPLAY} locale
+     * contains "rg" (region override)
+     * <a href="./Locale.html#def_locale_extension">Unicode extension</a>,
+     * the symbol returned from this method reflects
+     * the value specified with that extension.
+     * <p>
      * This is equivalent to calling
      * {@link #getSymbol(Locale)
      *     getSymbol(Locale.getDefault(Locale.Category.DISPLAY))}.
@@ -498,6 +518,11 @@ public final class Currency implements Serializable {
      * For example, for the US Dollar, the symbol is "$" if the specified
      * locale is the US, while for other locales it may be "US$". If no
      * symbol can be determined, the ISO 4217 currency code is returned.
+     * <p>
+     * If the specified {@code locale} contains "rg" (region override)
+     * <a href="./Locale.html#def_locale_extension">Unicode extension</a>,
+     * the symbol returned from this method reflects
+     * the value specified with that extension.
      *
      * @param locale the locale for which a display name for this currency is
      * needed
@@ -507,6 +532,7 @@ public final class Currency implements Serializable {
     public String getSymbol(Locale locale) {
         LocaleServiceProviderPool pool =
             LocaleServiceProviderPool.getPool(CurrencyNameProvider.class);
+        locale = CalendarDataUtility.findRegionOverride(locale);
         String symbol = pool.getLocalizedObject(
                                 CurrencyNameGetter.INSTANCE,
                                 locale, currencyCode, SYMBOL);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import sun.text.spi.JavaTimeDateTimePatternProvider;
+import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
 import sun.util.locale.provider.TimeZoneNameUtility;
@@ -198,6 +199,10 @@ public final class DateTimeFormatterBuilder {
      * Gets the formatting pattern for date and time styles for a locale and chronology.
      * The locale and chronology are used to lookup the locale specific format
      * for the requested dateStyle and/or timeStyle.
+     * <p>
+     * If the locale contains the "rg" (region override)
+     * <a href="../../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+     * the formatting pattern is overridden with the one appropriate for the region.
      *
      * @param dateStyle  the FormatStyle for the date, null for time-only pattern
      * @param timeStyle  the FormatStyle for the time, null for date-only pattern
@@ -216,7 +221,8 @@ public final class DateTimeFormatterBuilder {
         LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, locale);
         JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
         String pattern = provider.getJavaTimeDateTimePattern(convertStyle(timeStyle),
-                         convertStyle(dateStyle), chrono.getCalendarType(), locale);
+                         convertStyle(dateStyle), chrono.getCalendarType(),
+                         CalendarDataUtility.findRegionOverride(locale));
         return pattern;
     }
 

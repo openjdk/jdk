@@ -1049,7 +1049,7 @@ shmemBase_sendPacket(SharedMemoryConnection *connection, const jdwpPacket *packe
         CHECK_ERROR(sendBytes(connection, &packet->type.cmd.cmd, sizeof(jbyte)));
     }
 
-    data_length = packet->type.cmd.len - 11;
+    data_length = packet->type.cmd.len - JDWP_HEADER_SIZE;
     SHMEM_GUARANTEE(data_length >= 0);
     CHECK_ERROR(sendBytes(connection, &data_length, sizeof(jint)));
 
@@ -1125,10 +1125,10 @@ shmemBase_receivePacket(SharedMemoryConnection *connection, jdwpPacket *packet)
     if (data_length < 0) {
         return SYS_ERR;
     } else if (data_length == 0) {
-        packet->type.cmd.len = 11;
+        packet->type.cmd.len = JDWP_HEADER_SIZE;
         packet->type.cmd.data = NULL;
     } else {
-        packet->type.cmd.len = data_length + 11;
+        packet->type.cmd.len = data_length + JDWP_HEADER_SIZE;
         packet->type.cmd.data = (*callback->alloc)(data_length);
         if (packet->type.cmd.data == NULL) {
             return SYS_ERR;

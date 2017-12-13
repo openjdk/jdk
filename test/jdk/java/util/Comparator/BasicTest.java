@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,21 @@
 
 /**
  * @test
+ * @bug 8171826
  * @summary Comparator default method tests
  * @run testng BasicTest
  */
 
-import java.util.TreeMap;
-import java.util.Comparator;
 import org.testng.annotations.Test;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
-import java.util.function.ToDoubleFunction;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 @Test(groups = "unit")
 public class BasicTest {
@@ -365,5 +364,30 @@ public class BasicTest {
             Comparator<People> cmp = Comparator.comparingDouble(null);
             fail("comparing(null) should throw NPE");
         } catch (NullPointerException npe) {}
+    }
+
+    public void testNaturalAndReverseIdentity() {
+        var naturalOrder = Comparator.<String>naturalOrder();
+        var reverseOrder = Comparator.<String>reverseOrder();
+
+        assertEquals(
+                naturalOrder,
+                Collections.reverseOrder(reverseOrder),
+                "Comparator.naturalOrder() and Collections.reverseOrder(Comparator.reverseOrder()) not equal");
+
+        assertEquals(
+                reverseOrder,
+                Collections.reverseOrder(naturalOrder),
+                "Comparator.reverseOrder() and Collections.reverseOrder(Comparator.naturalOrder()) not equal");
+
+        assertEquals(
+                naturalOrder.reversed(),
+                reverseOrder,
+                "Comparator.naturalOrder().reversed() amd Comparator.reverseOrder() not equal");
+
+        assertEquals(
+                reverseOrder.reversed(),
+                naturalOrder,
+                "Comparator.reverseOrder().reversed() and Comparator.naturalOrder() not equal");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.util.xml;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.InvalidPropertiesFormatException;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -94,11 +95,11 @@ public class PropertiesDefaultHandler extends DefaultHandler {
          */
     }
 
-    public void store(Properties props, OutputStream os, String comment, String encoding)
+    public void store(Properties props, OutputStream os, String comment, Charset charset)
         throws IOException
     {
         try {
-            XMLStreamWriter writer = new XMLStreamWriterImpl(os, encoding);
+            XMLStreamWriter writer = new XMLStreamWriterImpl(os, charset);
             writer.writeStartDocument();
             writer.writeDTD(PROPS_DTD_DECL);
             writer.writeStartElement(ELEMENT_ROOT);

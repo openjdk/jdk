@@ -39,6 +39,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -2603,7 +2604,8 @@ public class ModuleDescriptor
      * Returns a string containing the given set of modifiers and label.
      */
     private static <M> String toString(Set<M> mods, String what) {
-        return (Stream.concat(mods.stream().map(e -> e.toString().toLowerCase()),
+        return (Stream.concat(mods.stream().map(e -> e.toString()
+                                                      .toLowerCase(Locale.ROOT)),
                               Stream.of(what)))
                 .collect(Collectors.joining(" "));
     }

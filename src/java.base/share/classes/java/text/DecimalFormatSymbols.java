@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.io.Serializable;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.util.Currency;
 import java.util.Locale;
+import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
@@ -55,6 +56,10 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <code>DecimalFormatSymbols</code> from its locale data.  If you need to change any
  * of these symbols, you can get the <code>DecimalFormatSymbols</code> object from
  * your <code>DecimalFormat</code> and modify it.
+ *
+ * <p>If the locale contains "rg" (region override)
+ * <a href="../util/Locale.html#def_locale_extension">Unicode extension</a>,
+ * the symbols are overridden for the designated region.
  *
  * @see          java.util.Locale
  * @see          DecimalFormat
@@ -609,13 +614,18 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private void initialize( Locale locale ) {
         this.locale = locale;
 
+        // check for region override
+        Locale override = locale.getUnicodeLocaleType("nu") == null ?
+            CalendarDataUtility.findRegionOverride(locale) :
+            locale;
+
         // get resource bundle data
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, locale);
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, override);
         // Avoid potential recursions
         if (!(adapter instanceof ResourceBundleBasedAdapter)) {
             adapter = LocaleProviderAdapter.getResourceBundleBased();
         }
-        Object[] data = adapter.getLocaleResources(locale).getDecimalFormatSymbolsData();
+        Object[] data = adapter.getLocaleResources(override).getDecimalFormatSymbolsData();
         String[] numberElements = (String[]) data[0];
 
         decimalSeparator = numberElements[0].charAt(0);

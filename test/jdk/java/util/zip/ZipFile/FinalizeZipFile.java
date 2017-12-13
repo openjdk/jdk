@@ -31,6 +31,7 @@ import java.io.*;
 import java.util.Random;
 import java.util.zip.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class FinalizeZipFile {
 
@@ -78,10 +79,9 @@ public class FinalizeZipFile {
 
     public static void realMain(String[] args) throws Throwable {
         makeGarbage();
-
-        System.gc();
-        finalizersDone.await();
-
+        while (!finalizersDone.await(10, TimeUnit.MILLISECONDS)) {
+            System.gc();
+        }
         // Not all ZipFiles were collected?
         equal(finalizersDone.getCount(), 0L);
     }

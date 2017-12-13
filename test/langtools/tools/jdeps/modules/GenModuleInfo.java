@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @summary Tests jdeps --generate-module-info option
+ * @bug 8193192
  * @library ../lib
  * @build CompilerUtils JdepsUtil JdepsRunner
  * @modules jdk.jdeps/com.sun.tools.jdeps
  * @run testng GenModuleInfo
+ * @summary Tests jdeps --generate-module-info option
  */
 
 import java.io.File;
@@ -58,14 +59,20 @@ public class GenModuleInfo {
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get("mods");
     private static final Path LIBS_DIR = Paths.get("libs");
+    private static final Path MLIBS_DIR = Paths.get("mlibs");
     private static final Path DEST_DIR = Paths.get("moduleinfosrc");
     private static final Path NEW_MODS_DIR = Paths.get("new_mods");
 
     // the names of the modules in this test
     public static final String UNSUPPORTED = "unsupported";
     public static final Set<String> MODULES = Set.of(
-        "mI", "mII", "mIII", "provider", UNSUPPORTED
+        "mI", "mII", "mIII", "provider", "test", UNSUPPORTED
     );
+
+    @BeforeTest
+    public void setup() throws Exception {
+        compileAndCreateJars();
+    }
 
     /**
      * Compile modules
@@ -76,6 +83,21 @@ public class GenModuleInfo {
         MODULES.stream()
                .filter(mn -> !mn.equals(UNSUPPORTED))
                .forEach(mn -> assertTrue(CompilerUtils.compileModule(SRC_DIR, dest, mn)));
+    }
+
+    /**
+     * Create JAR files with no module-info.class
+     */
+    public static void createModularJARs(Path mods, Path dest, String... modules) throws IOException {
+        Files.createDirectory(dest);
+        // create modular JAR
+        for (String mn : modules) {
+            Path root = mods.resolve(mn);
+            try (Stream<Path> stream = Files.find(root, Integer.MAX_VALUE,
+                        (p, attr) -> { return attr.isRegularFile(); })) {
+                JdepsUtil.createJar(dest.resolve(mn + ".jar"), root, stream);
+            }
+        }
     }
 
     /**
@@ -141,18 +163,16 @@ public class GenModuleInfo {
 
     }
 
-    /**
-     * Compiles all modules used by the test
-     */
-    @BeforeTest
-    public void compileAll() throws Exception {
+    public static void compileAndCreateJars() throws Exception {
         CompilerUtils.cleanDir(MODS_DIR);
         CompilerUtils.cleanDir(LIBS_DIR);
-        CompilerUtils.cleanDir(DEST_DIR);
-        CompilerUtils.cleanDir(NEW_MODS_DIR);
 
         compileModules(MODS_DIR);
 
+        // create modular JARs except test
+        createModularJARs(MODS_DIR, MLIBS_DIR, MODULES.stream().filter(mn -> !mn.equals("test"))
+                                                      .toArray(String[]::new));
+        // create non-modular JARs
         createJARFiles(MODS_DIR, LIBS_DIR);
     }
 
@@ -166,35 +186,67 @@ public class GenModuleInfo {
 
     @Test
     public void test() throws IOException {
-        Files.createDirectory(DEST_DIR);
+        Path dest = DEST_DIR.resolve("case1");
+        Path classes = NEW_MODS_DIR.resolve("case1");
+        Files.createDirectories(dest);
+        Files.createDirectories(classes);
 
         Stream<String> files = MODULES.stream()
                 .map(mn -> LIBS_DIR.resolve(mn + ".jar"))
                 .map(Path::toString);
 
         Stream<String> options = Stream.concat(
-            Stream.of("--generate-module-info", DEST_DIR.toString()), files);
+            Stream.of("--generate-module-info", dest.toString()), files);
         JdepsRunner.run(options.toArray(String[]::new));
 
         // check file exists
         MODULES.stream()
-             .map(mn -> DEST_DIR.resolve(mn).resolve("module-info.java"))
+             .map(mn -> dest.resolve(mn).resolve("module-info.java"))
              .forEach(f -> assertTrue(Files.exists(f)));
 
         // copy classes to a temporary directory
         // and then compile new module-info.java
-        copyClasses(MODS_DIR, NEW_MODS_DIR);
-        compileNewGenModuleInfo(DEST_DIR, NEW_MODS_DIR);
+        copyClasses(MODS_DIR, classes);
+        compileNewGenModuleInfo(dest, classes);
 
         for (String mn : MODULES) {
-            Path p1 = NEW_MODS_DIR.resolve(mn).resolve(MODULE_INFO);
-            Path p2 = MODS_DIR.resolve(mn).resolve(MODULE_INFO);
+            verify(mn, classes, MODS_DIR);
+        }
+    }
 
-            try (InputStream in1 = Files.newInputStream(p1);
-                 InputStream in2 = Files.newInputStream(p2)) {
-                verify(ModuleDescriptor.read(in1),
-                       ModuleDescriptor.read(in2, () -> packages(MODS_DIR.resolve(mn))));
-            }
+    @Test
+    public void withModulePath() throws IOException {
+        Path dest = DEST_DIR.resolve("case2");
+        Path classes = NEW_MODS_DIR.resolve("case2");
+        Files.createDirectories(dest);
+        Files.createDirectories(classes);
+
+        JdepsRunner.run("--module-path", MLIBS_DIR.toString(),
+                        "--generate-module-info", dest.toString(),
+                        LIBS_DIR.resolve("test.jar").toString());
+
+        String name = "test";
+        Path gensrc = dest.resolve(name).resolve("module-info.java");
+        assertTrue(Files.exists(gensrc));
+
+        // copy classes to a temporary directory
+        // and then compile new module-info.java
+        copyClasses(MODS_DIR.resolve(name), classes.resolve(name));
+        assertTrue(CompilerUtils.compileModule(dest, classes, name, "-p", MLIBS_DIR.toString()));
+
+        verify(name, classes, MODS_DIR);
+    }
+
+    /**
+     * Verify the dependences from the given module-info.class files
+     */
+    public void verify(String mn, Path mdir1, Path mdir2) throws IOException {
+        Path p1 = mdir1.resolve(mn).resolve(MODULE_INFO);
+        Path p2 = mdir2.resolve(mn).resolve(MODULE_INFO);
+        try (InputStream in1 = Files.newInputStream(p1);
+             InputStream in2 = Files.newInputStream(p2)) {
+            verify(ModuleDescriptor.read(in1),
+                   ModuleDescriptor.read(in2, () -> packages(mdir2.resolve(mn))));
         }
     }
 

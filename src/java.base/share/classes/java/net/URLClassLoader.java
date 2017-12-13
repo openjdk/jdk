@@ -658,8 +658,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      *
      * @param name the resource name
      * @exception IOException if an I/O exception occurs
-     * @return an {@code Enumeration} of {@code URL}s
-     *         If the loader is closed, the Enumeration will be empty.
+     * @return An {@code Enumeration} of {@code URL}s.
+     *         If the loader is closed, the Enumeration contains no elements.
      */
     public Enumeration<URL> findResources(final String name)
         throws IOException

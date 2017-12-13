@@ -31,22 +31,24 @@ import java.io.IOException;
 import java.io.EOFException;
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.io.UncheckedIOException;
+import java.lang.ref.Cleaner.Cleanable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.Path;
 import java.nio.file.Files;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Objects;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.WeakHashMap;
@@ -61,8 +63,8 @@ import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.perf.PerfCounter;
+import jdk.internal.ref.CleanerFactory;
 
-import static java.util.zip.ZipConstants.*;
 import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
 
@@ -73,6 +75,21 @@ import static java.util.zip.ZipUtils.*;
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
+ * @apiNote
+ * To release resources used by this {@code ZipFile}, the {@link #close()} method
+ * should be called explicitly or by try-with-resources. Subclasses are responsible
+ * for the cleanup of resources acquired by the subclass. Subclasses that override
+ * {@link #finalize()} in order to perform cleanup should be modified to use alternative
+ * cleanup mechanisms such as {@link java.lang.ref.Cleaner} and remove the overriding
+ * {@code finalize} method.
+ *
+ * @implSpec
+ * If this {@code ZipFile} has been subclassed and the {@code close} method has
+ * been overridden, the {@code close} method will be called by the finalization
+ * when {@code ZipFile} is unreachable. But the subclasses should not depend on
+ * this specific implementation; the finalization is not reliable and the
+ * {@code finalize} method is deprecated to be removed.
+ *
  * @author      David Connelly
  * @since 1.1
  */
@@ -81,8 +98,14 @@ class ZipFile implements ZipConstants, Closeable {
 
     private final String name;     // zip file name
     private volatile boolean closeRequested;
-    private Source zsrc;
     private ZipCoder zc;
+
+    // The "resource" used by this zip file that needs to be
+    // cleaned after use.
+    // a) the input streams that need to be closed
+    // b) the list of cached Inflater objects
+    // c) the "native" source of this zip file.
+    private final CleanableResource res;
 
     private static final int STORED = ZipEntry.STORED;
     private static final int DEFLATED = ZipEntry.DEFLATED;
@@ -214,10 +237,13 @@ class ZipFile implements ZipConstants, Closeable {
             }
         }
         Objects.requireNonNull(charset, "charset");
+
         this.zc = ZipCoder.get(charset);
         this.name = name;
         long t0 = System.nanoTime();
-        this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0);
+
+        this.res = CleanableResource.get(this, file, mode);
+
         PerfCounter.getZipFileOpenTime().addElapsedTimeFrom(t0);
         PerfCounter.getZipFileCount().increment();
     }
@@ -284,10 +310,10 @@ class ZipFile implements ZipConstants, Closeable {
     public String getComment() {
         synchronized (this) {
             ensureOpen();
-            if (zsrc.comment == null) {
+            if (res.zsrc.comment == null) {
                 return null;
             }
-            return zc.toString(zsrc.comment);
+            return zc.toString(res.zsrc.comment);
         }
     }
 
@@ -318,17 +344,13 @@ class ZipFile implements ZipConstants, Closeable {
         synchronized (this) {
             ensureOpen();
             byte[] bname = zc.getBytes(name);
-            int pos = zsrc.getEntryPos(bname, true);
+            int pos = res.zsrc.getEntryPos(bname, true);
             if (pos != -1) {
                 return getZipEntry(name, bname, pos, func);
             }
         }
         return null;
     }
-
-    // The outstanding inputstreams that need to be closed,
-    // mapped to the inflater objects they use.
-    private final Map<InputStream, Inflater> streams = new WeakHashMap<>();
 
     /**
      * Returns an input stream for reading the contents of the specified
@@ -348,6 +370,8 @@ class ZipFile implements ZipConstants, Closeable {
         Objects.requireNonNull(entry, "entry");
         int pos = -1;
         ZipFileInputStream in = null;
+        Source zsrc = res.zsrc;
+        Set<InputStream> istreams = res.istreams;
         synchronized (this) {
             ensureOpen();
             if (Objects.equals(lastEntryName, entry.name)) {
@@ -363,8 +387,8 @@ class ZipFile implements ZipConstants, Closeable {
             in = new ZipFileInputStream(zsrc.cen, pos);
             switch (CENHOW(zsrc.cen, pos)) {
             case STORED:
-                synchronized (streams) {
-                    streams.put(in, null);
+                synchronized (istreams) {
+                    istreams.add(in);
                 }
                 return in;
             case DEFLATED:
@@ -377,10 +401,9 @@ class ZipFile implements ZipConstants, Closeable {
                 if (size <= 0) {
                     size = 4096;
                 }
-                Inflater inf = getInflater();
-                InputStream is = new ZipFileInflaterInputStream(in, inf, (int)size);
-                synchronized (streams) {
-                    streams.put(is, inf);
+                InputStream is = new ZipFileInflaterInputStream(in, res, (int)size);
+                synchronized (istreams) {
+                    istreams.add(is);
                 }
                 return is;
             default:
@@ -392,25 +415,30 @@ class ZipFile implements ZipConstants, Closeable {
     private class ZipFileInflaterInputStream extends InflaterInputStream {
         private volatile boolean closeRequested;
         private boolean eof = false;
+        private final Cleanable cleanable;
 
-        ZipFileInflaterInputStream(ZipFileInputStream zfin, Inflater inf,
-                int size) {
-            super(zfin, inf, size);
+        ZipFileInflaterInputStream(ZipFileInputStream zfin,
+                                   CleanableResource res, int size) {
+            this(zfin, res, res.getInflater(), size);
         }
+
+        private ZipFileInflaterInputStream(ZipFileInputStream zfin,
+                                           CleanableResource res,
+                                           Inflater inf, int size) {
+            super(zfin, inf, size);
+            this.cleanable = CleanerFactory.cleaner().register(this,
+                    () -> res.releaseInflater(inf));
+       }
 
         public void close() throws IOException {
             if (closeRequested)
                 return;
             closeRequested = true;
-
             super.close();
-            Inflater inf;
-            synchronized (streams) {
-                inf = streams.remove(this);
+            synchronized (res.istreams) {
+                res.istreams.remove(this);
             }
-            if (inf != null) {
-                releaseInflater(inf);
-            }
+            cleanable.clean();
         }
 
         // Override fill() method to provide an extra "dummy" byte
@@ -436,43 +464,7 @@ class ZipFile implements ZipConstants, Closeable {
             return (avail > (long) Integer.MAX_VALUE ?
                     Integer.MAX_VALUE : (int) avail);
         }
-
-        @SuppressWarnings("deprecation")
-        protected void finalize() throws Throwable {
-            close();
-        }
     }
-
-    /*
-     * Gets an inflater from the list of available inflaters or allocates
-     * a new one.
-     */
-    private Inflater getInflater() {
-        Inflater inf;
-        synchronized (inflaterCache) {
-            while ((inf = inflaterCache.poll()) != null) {
-                if (!inf.ended()) {
-                    return inf;
-                }
-            }
-        }
-        return new Inflater(true);
-    }
-
-    /*
-     * Releases the specified inflater to the list of available inflaters.
-     */
-    private void releaseInflater(Inflater inf) {
-        if (!inf.ended()) {
-            inf.reset();
-            synchronized (inflaterCache) {
-                inflaterCache.add(inf);
-            }
-        }
-    }
-
-    // List of available Inflater objects for decompression
-    private final Deque<Inflater> inflaterCache = new ArrayDeque<>();
 
     /**
      * Returns the path name of the ZIP file.
@@ -518,7 +510,7 @@ class ZipFile implements ZipConstants, Closeable {
                     throw new NoSuchElementException();
                 }
                 // each "entry" has 3 ints in table entries
-                return (T)getZipEntry(null, null, zsrc.getEntryPos(i++ * 3), gen);
+                return (T)getZipEntry(null, null, res.zsrc.getEntryPos(i++ * 3), gen);
             }
         }
 
@@ -536,14 +528,14 @@ class ZipFile implements ZipConstants, Closeable {
     public Enumeration<? extends ZipEntry> entries() {
         synchronized (this) {
             ensureOpen();
-            return new ZipEntryIterator<ZipEntry>(zsrc.total, ZipEntry::new);
+            return new ZipEntryIterator<ZipEntry>(res.zsrc.total, ZipEntry::new);
         }
     }
 
     private Enumeration<JarEntry> entries(Function<String, JarEntry> func) {
         synchronized (this) {
             ensureOpen();
-            return new ZipEntryIterator<JarEntry>(zsrc.total, func);
+            return new ZipEntryIterator<JarEntry>(res.zsrc.total, func);
         }
     }
 
@@ -568,7 +560,7 @@ class ZipFile implements ZipConstants, Closeable {
             if (index >= 0 && index < fence) {
                 synchronized (ZipFile.this) {
                     ensureOpen();
-                    action.accept(gen.apply(zsrc.getEntryPos(index++ * 3)));
+                    action.accept(gen.apply(res.zsrc.getEntryPos(index++ * 3)));
                 }
                 return true;
             }
@@ -589,13 +581,13 @@ class ZipFile implements ZipConstants, Closeable {
     public Stream<? extends ZipEntry> stream() {
         synchronized (this) {
             ensureOpen();
-            return StreamSupport.stream(new EntrySpliterator<>(0, zsrc.total,
+            return StreamSupport.stream(new EntrySpliterator<>(0, res.zsrc.total,
                 pos -> getZipEntry(null, null, pos, ZipEntry::new)), false);
        }
     }
 
     private String getEntryName(int pos) {
-        byte[] cen = zsrc.cen;
+        byte[] cen = res.zsrc.cen;
         int nlen = CENNAM(cen, pos);
         int clen = CENCOM(cen, pos);
         int flag = CENFLG(cen, pos);
@@ -620,7 +612,7 @@ class ZipFile implements ZipConstants, Closeable {
         synchronized (this) {
             ensureOpen();
             return StreamSupport.stream(
-                new EntrySpliterator<>(0, zsrc.total, this::getEntryName), false);
+                new EntrySpliterator<>(0, res.zsrc.total, this::getEntryName), false);
         }
     }
 
@@ -638,7 +630,7 @@ class ZipFile implements ZipConstants, Closeable {
     private Stream<JarEntry> stream(Function<String, JarEntry> func) {
         synchronized (this) {
             ensureOpen();
-            return StreamSupport.stream(new EntrySpliterator<>(0, zsrc.total,
+            return StreamSupport.stream(new EntrySpliterator<>(0, res.zsrc.total,
                 pos -> (JarEntry)getZipEntry(null, null, pos, func)), false);
         }
     }
@@ -649,7 +641,7 @@ class ZipFile implements ZipConstants, Closeable {
     /* Checks ensureOpen() before invoke this method */
     private ZipEntry getZipEntry(String name, byte[] bname, int pos,
                                  Function<String, ? extends ZipEntry> func) {
-        byte[] cen = zsrc.cen;
+        byte[] cen = res.zsrc.cen;
         int nlen = CENNAM(cen, pos);
         int elen = CENEXT(cen, pos);
         int clen = CENCOM(cen, pos);
@@ -698,12 +690,170 @@ class ZipFile implements ZipConstants, Closeable {
     public int size() {
         synchronized (this) {
             ensureOpen();
-            return zsrc.total;
+            return res.zsrc.total;
+        }
+    }
+
+    private static class CleanableResource implements Runnable {
+        // The outstanding inputstreams that need to be closed
+        final Set<InputStream> istreams;
+
+        // List of cached Inflater objects for decompression
+        Deque<Inflater> inflaterCache;
+
+        final Cleanable cleanable;
+
+        Source zsrc;
+
+        CleanableResource(ZipFile zf, File file, int mode) throws IOException {
+            this.cleanable = CleanerFactory.cleaner().register(zf, this);
+            this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
+            this.inflaterCache = new ArrayDeque<>();
+            this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0);
+        }
+
+        void clean() {
+            cleanable.clean();
+        }
+
+        /*
+         * Gets an inflater from the list of available inflaters or allocates
+         * a new one.
+         */
+        Inflater getInflater() {
+            Inflater inf;
+            synchronized (inflaterCache) {
+                if ((inf = inflaterCache.poll()) != null) {
+                    return inf;
+                }
+            }
+            return new Inflater(true);
+        }
+
+        /*
+         * Releases the specified inflater to the list of available inflaters.
+         */
+        void releaseInflater(Inflater inf) {
+            Deque<Inflater> inflaters = this.inflaterCache;
+            if (inflaters != null) {
+                synchronized (inflaters) {
+                    // double checked!
+                    if (inflaters == this.inflaterCache) {
+                        inf.reset();
+                        inflaters.add(inf);
+                        return;
+                    }
+                }
+            }
+            // inflaters cache already closed - just end it.
+            inf.end();
+        }
+
+        public void run() {
+            IOException ioe = null;
+
+            // Release cached inflaters and close the cache first
+            Deque<Inflater> inflaters = this.inflaterCache;
+            if (inflaters != null) {
+                synchronized (inflaters) {
+                    // no need to double-check as only one thread gets a
+                    // chance to execute run() (Cleaner guarantee)...
+                    Inflater inf;
+                    while ((inf = inflaters.poll()) != null) {
+                        inf.end();
+                    }
+                    // close inflaters cache
+                    this.inflaterCache = null;
+                }
+            }
+
+            // Close streams, release their inflaters
+            if (istreams != null) {
+                synchronized (istreams) {
+                    if (!istreams.isEmpty()) {
+                        InputStream[] copy = istreams.toArray(new InputStream[0]);
+                        istreams.clear();
+                        for (InputStream is : copy) {
+                            try {
+                                is.close();
+                            }  catch (IOException e) {
+                                if (ioe == null) ioe = e;
+                                else ioe.addSuppressed(e);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Release zip src
+            if (zsrc != null) {
+                synchronized (zsrc) {
+                    try {
+                        Source.release(zsrc);
+                        zsrc = null;
+                     }  catch (IOException e) {
+                         if (ioe == null) ioe = e;
+                         else ioe.addSuppressed(e);
+                    }
+                }
+            }
+            if (ioe != null) {
+                throw new UncheckedIOException(ioe);
+            }
+        }
+
+        CleanableResource(File file, int mode)
+            throws IOException {
+            this.cleanable = null;
+            this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
+            this.inflaterCache = new ArrayDeque<>();
+            this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0);
+        }
+
+        /*
+         * If {@code ZipFile} has been subclassed and the {@code close} method is
+         * overridden, uses the {@code finalizer} mechanism for resource cleanup.
+         * So {@code close} method can be called when the the {@code ZipFile} is
+         * unreachable. This mechanism will be removed when {@code finalize} method
+         * is removed from {@code ZipFile}.
+         */
+        static CleanableResource get(ZipFile zf, File file, int mode)
+            throws IOException {
+            Class<?> clz = zf.getClass();
+            while (clz != ZipFile.class) {
+                try {
+                    clz.getDeclaredMethod("close");
+                    return new FinalizableResource(zf, file, mode);
+                } catch (NoSuchMethodException nsme) {}
+                clz = clz.getSuperclass();
+            }
+            return new CleanableResource(zf, file, mode);
+        }
+
+        static class FinalizableResource extends CleanableResource {
+            ZipFile zf;
+            FinalizableResource(ZipFile zf, File file, int mode)
+                throws IOException {
+                super(file, mode);
+                this.zf = zf;
+            }
+
+            @Override
+            void clean() {
+                run();
+            }
+
+            @Override
+            @SuppressWarnings("deprecation")
+            protected void finalize() throws IOException {
+                zf.close();
+            }
         }
     }
 
     /**
      * Closes the ZIP file.
+     *
      * <p> Closing this ZIP file will close all of the input streams
      * previously returned by invocations of the {@link #getInputStream
      * getInputStream} method.
@@ -717,31 +867,12 @@ class ZipFile implements ZipConstants, Closeable {
         closeRequested = true;
 
         synchronized (this) {
-            // Close streams, release their inflaters
-            synchronized (streams) {
-                if (!streams.isEmpty()) {
-                    Map<InputStream, Inflater> copy = new HashMap<>(streams);
-                    streams.clear();
-                    for (Map.Entry<InputStream, Inflater> e : copy.entrySet()) {
-                        e.getKey().close();
-                        Inflater inf = e.getValue();
-                        if (inf != null) {
-                            inf.end();
-                        }
-                    }
-                }
-            }
-            // Release cached inflaters
-            synchronized (inflaterCache) {
-                Inflater inf;
-                while ((inf = inflaterCache.poll()) != null) {
-                    inf.end();
-                }
-            }
-            // Release zip src
-            if (zsrc != null) {
-                Source.close(zsrc);
-                zsrc = null;
+            // Close streams, release their inflaters, release cached inflaters
+            // and release zip source
+            try {
+                res.clean();
+            } catch (UncheckedIOException ioe) {
+                throw ioe.getCause();
             }
         }
     }
@@ -750,34 +881,26 @@ class ZipFile implements ZipConstants, Closeable {
      * Ensures that the system resources held by this ZipFile object are
      * released when there are no more references to it.
      *
-     * <p>
-     * Since the time when GC would invoke this method is undetermined,
-     * it is strongly recommended that applications invoke the {@code close}
-     * method as soon they have finished accessing this {@code ZipFile}.
-     * This will prevent holding up system resources for an undetermined
-     * length of time.
+     * @deprecated The {@code finalize} method has been deprecated and will be
+     *     removed. It is implemented as a no-op. Subclasses that override
+     *     {@code finalize} in order to perform cleanup should be modified to
+     *     use alternative cleanup mechanisms and to remove the overriding
+     *     {@code finalize} method. The recommended cleanup for ZipFile object
+     *     is to explicitly invoke {@code close} method when it is no longer in
+     *     use, or use try-with-resources. If the {@code close} is not invoked
+     *     explicitly the resources held by this object will be released when
+     *     the instance becomes unreachable.
      *
-     * @deprecated The {@code finalize} method has been deprecated.
-     *     Subclasses that override {@code finalize} in order to perform cleanup
-     *     should be modified to use alternative cleanup mechanisms and
-     *     to remove the overriding {@code finalize} method.
-     *     When overriding the {@code finalize} method, its implementation must explicitly
-     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
-     *     See the specification for {@link Object#finalize()} for further
-     *     information about migration options.
      * @throws IOException if an I/O error has occurred
-     * @see    java.util.zip.ZipFile#close()
      */
-    @Deprecated(since="9")
-    protected void finalize() throws IOException {
-        close();
-    }
+    @Deprecated(since="9", forRemoval=true)
+    protected void finalize() throws IOException {}
 
     private void ensureOpen() {
         if (closeRequested) {
             throw new IllegalStateException("zip file closed");
         }
-        if (zsrc == null) {
+        if (res.zsrc == null) {
             throw new IllegalStateException("The object is not initialized.");
         }
     }
@@ -798,7 +921,7 @@ class ZipFile implements ZipConstants, Closeable {
         protected long rem;     // number of remaining bytes within entry
         protected long size;    // uncompressed size of this entry
 
-        ZipFileInputStream(byte[] cen, int cenpos) throws IOException {
+        ZipFileInputStream(byte[] cen, int cenpos) {
             rem = CENSIZ(cen, cenpos);
             size = CENLEN(cen, cenpos);
             pos = CENOFF(cen, cenpos);
@@ -808,10 +931,10 @@ class ZipFile implements ZipConstants, Closeable {
                 checkZIP64(cen, cenpos);
             }
             // negative for lazy initialization, see getDataOffset();
-            pos = - (pos + ZipFile.this.zsrc.locpos);
+            pos = - (pos + ZipFile.this.res.zsrc.locpos);
         }
 
-        private void checkZIP64(byte[] cen, int cenpos) throws IOException {
+         private void checkZIP64(byte[] cen, int cenpos) {
             int off = cenpos + CENHDR + CENNAM(cen, cenpos);
             int end = off + CENEXT(cen, cenpos);
             while (off + 4 < end) {
@@ -857,7 +980,7 @@ class ZipFile implements ZipConstants, Closeable {
             if (pos <= 0) {
                 byte[] loc = new byte[LOCHDR];
                 pos = -pos;
-                int len = ZipFile.this.zsrc.readFullyAt(loc, 0, loc.length, pos);
+                int len = ZipFile.this.res.zsrc.readFullyAt(loc, 0, loc.length, pos);
                 if (len != LOCHDR) {
                     throw new ZipException("ZipFile error reading zip file");
                 }
@@ -882,7 +1005,7 @@ class ZipFile implements ZipConstants, Closeable {
                 if (len <= 0) {
                     return 0;
                 }
-                len = ZipFile.this.zsrc.readAt(b, off, len, pos);
+                len = ZipFile.this.res.zsrc.readAt(b, off, len, pos);
                 if (len > 0) {
                     pos += len;
                     rem -= len;
@@ -932,15 +1055,11 @@ class ZipFile implements ZipConstants, Closeable {
             }
             closeRequested = true;
             rem = 0;
-            synchronized (streams) {
-                streams.remove(this);
+            synchronized (res.istreams) {
+                res.istreams.remove(this);
             }
         }
 
-        @SuppressWarnings("deprecation")
-        protected void finalize() {
-            close();
-        }
     }
 
     /**
@@ -952,6 +1071,7 @@ class ZipFile implements ZipConstants, Closeable {
     private String[] getMetaInfEntryNames() {
         synchronized (this) {
             ensureOpen();
+            Source zsrc = res.zsrc;
             if (zsrc.metanames == null) {
                 return null;
             }
@@ -972,7 +1092,7 @@ class ZipFile implements ZipConstants, Closeable {
             new JavaUtilZipFileAccess() {
                 @Override
                 public boolean startsWithLocHeader(ZipFile zip) {
-                    return zip.zsrc.startsWithLoc;
+                    return zip.res.zsrc.startsWithLoc;
                 }
                 @Override
                 public String[] getMetaInfEntryNames(ZipFile zip) {
@@ -1080,7 +1200,7 @@ class ZipFile implements ZipConstants, Closeable {
         private static final HashMap<Key, Source> files = new HashMap<>();
 
 
-        public static Source get(File file, boolean toDelete) throws IOException {
+        static Source get(File file, boolean toDelete) throws IOException {
             Key key = new Key(file,
                               Files.readAttributes(file.toPath(), BasicFileAttributes.class));
             Source src = null;
@@ -1105,9 +1225,9 @@ class ZipFile implements ZipConstants, Closeable {
             }
         }
 
-        private static void close(Source src) throws IOException {
+        static void release(Source src) throws IOException {
             synchronized (files) {
-                if (--src.refs == 0) {
+                if (src != null && --src.refs == 0) {
                     files.remove(src.key);
                     src.close();
                 }

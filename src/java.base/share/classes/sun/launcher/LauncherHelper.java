@@ -268,7 +268,7 @@ public final class LauncherHelper {
         Locale locale = Locale.getDefault();
         ostream.println(LOCALE_SETTINGS);
         ostream.println(INDENT + "default locale = " +
-                locale.getDisplayLanguage());
+                locale.getDisplayName());
         ostream.println(INDENT + "default display locale = " +
                 Locale.getDefault(Category.DISPLAY).getDisplayName());
         ostream.println(INDENT + "default format locale = " +

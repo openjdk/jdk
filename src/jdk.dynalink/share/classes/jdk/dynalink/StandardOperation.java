@@ -111,6 +111,15 @@ public enum StandardOperation implements Operation {
      */
     SET,
     /**
+     * Removes the value from a namespace defined on an object. Call sites with this
+     * operation should have a signature of
+     * <code>(receiver,&nbsp;name)&rarr;void</code> or
+     * <code>(receiver)&rarr;void</code> when used with {@link NamedOperation},
+     * with all parameters being of any type (either primitive
+     * or reference). This operation must always be used as part of a {@link NamespaceOperation}.
+     */
+    REMOVE,
+    /**
      * Call a callable object. Call sites with this operation should have a
      * signature of <code>(callable,&nbsp;receiver,&nbsp;arguments...)&rarr;value</code>,
      * with all parameters and return type being of any type (either primitive or

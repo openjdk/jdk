@@ -510,7 +510,8 @@ class DateTimeTextProvider {
     @SuppressWarnings("unchecked")
     static <T> T getLocalizedResource(String key, Locale locale) {
         LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased()
-                                    .getLocaleResources(locale);
+                                    .getLocaleResources(
+                                        CalendarDataUtility.findRegionOverride(locale));
         ResourceBundle rb = lr.getJavaTimeFormatData();
         return rb.containsKey(key) ? (T) rb.getObject(key) : null;
     }

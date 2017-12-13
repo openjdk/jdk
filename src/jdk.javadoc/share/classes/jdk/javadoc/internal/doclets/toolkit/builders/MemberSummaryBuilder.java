@@ -489,6 +489,10 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                         continue;
                     }
 
+                    // Skip static methods in interfaces they are not inherited
+                    if (utils.isInterface(inheritedClass) && utils.isStatic(inheritedMember))
+                        continue;
+
                     // If applicable, filter those overridden methods that
                     // should not be documented in the summary/detail sections,
                     // and instead document them in the footnote. Care must be taken
@@ -496,9 +500,8 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                     // but comments for these are synthesized on the output.
                     ExecutableElement inheritedMethod = (ExecutableElement)inheritedMember;
                     if (enclosedSuperMethods.stream()
-                            .anyMatch(e -> utils.executableMembersEqual(inheritedMethod, e)
-                                    && (!utils.isSimpleOverride(e)
-                                    || visibleMemberMap.getPropertyElement(e) != null))) {
+                            .anyMatch(e -> utils.executableMembersEqual(inheritedMethod, e) &&
+                                    (!utils.isSimpleOverride(e) || visibleMemberMap.getPropertyElement(e) != null))) {
                         inheritedMembers.add(inheritedMember);
                     }
                 }

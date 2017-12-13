@@ -97,6 +97,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import sun.util.locale.provider.TimeZoneNameUtility;
 
 /**
  * Formatter for printing and parsing date-time objects.
@@ -548,7 +549,7 @@ public final class DateTimeFormatter {
      * For example, {@code d MMM uuuu} will format 2011-12-03 as '3 Dec 2011'.
      * <p>
      * The formatter will use the {@link Locale#getDefault(Locale.Category) default FORMAT locale}.
-     * This can be changed using {@link DateTimeFormatter#withLocale(Locale)} on the returned formatter
+     * This can be changed using {@link DateTimeFormatter#withLocale(Locale)} on the returned formatter.
      * Alternatively use the {@link #ofPattern(String, Locale)} variant of this method.
      * <p>
      * The returned formatter has no override chronology or zone.
@@ -572,7 +573,7 @@ public final class DateTimeFormatter {
      * For example, {@code d MMM uuuu} will format 2011-12-03 as '3 Dec 2011'.
      * <p>
      * The formatter will use the specified locale.
-     * This can be changed using {@link DateTimeFormatter#withLocale(Locale)} on the returned formatter
+     * This can be changed using {@link DateTimeFormatter#withLocale(Locale)} on the returned formatter.
      * <p>
      * The returned formatter has no override chronology or zone.
      * It uses {@link ResolverStyle#SMART SMART} resolver style.
@@ -1443,16 +1444,69 @@ public final class DateTimeFormatter {
      * This is used to lookup any part of the formatter needing specific
      * localization, such as the text or localized pattern.
      * <p>
+     * The locale is stored as passed in, without further processing.
+     * If the locale has <a href="../../util/Locale.html#def_locale_extension">
+     * Unicode extensions</a>, they may be used later in text
+     * processing. To set the chronology, time-zone and decimal style from
+     * unicode extensions, see {@link #localizedBy localizedBy()}.
+     * <p>
      * This instance is immutable and unaffected by this method call.
      *
      * @param locale  the new locale, not null
      * @return a formatter based on this formatter with the requested locale, not null
+     * @see #localizedBy(Locale)
      */
     public DateTimeFormatter withLocale(Locale locale) {
         if (this.locale.equals(locale)) {
             return this;
         }
         return new DateTimeFormatter(printerParser, locale, decimalStyle, resolverStyle, resolverFields, chrono, zone);
+    }
+
+    /**
+     * Returns a copy of this formatter with localized values of the locale,
+     * calendar, region, decimal style and/or timezone, that supercede values in
+     * this formatter.
+     * <p>
+     * This is used to lookup any part of the formatter needing specific
+     * localization, such as the text or localized pattern. If the locale contains the
+     * "ca" (calendar), "nu" (numbering system), "rg" (region override), and/or
+     * "tz" (timezone)
+     * <a href="../../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+     * the chronology, numbering system and/or the zone are overridden. If both "ca"
+     * and "rg" are specified, the chronology from the "ca" extension supersedes the
+     * implicit one from the "rg" extension. Same is true for the "nu" extension.
+     * <p>
+     * Unlike the {@link #withLocale withLocale} method, the call to this method may
+     * produce a different formatter depending on the order of method chaining with
+     * other withXXXX() methods.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param locale  the locale, not null
+     * @return a formatter based on this formatter with localized values of
+     *      the calendar, decimal style and/or timezone, that supercede values in this
+     *      formatter.
+     * @see #withLocale(Locale)
+     * @since 10
+     */
+    public DateTimeFormatter localizedBy(Locale locale) {
+        if (this.locale.equals(locale)) {
+            return this;
+        }
+
+        // Check for decimalStyle/chronology/timezone in locale object
+        Chronology c = locale.getUnicodeLocaleType("ca") != null ?
+                       Chronology.ofLocale(locale) : chrono;
+        DecimalStyle ds = locale.getUnicodeLocaleType("nu") != null ?
+                       DecimalStyle.of(locale) : decimalStyle;
+        String tzType = locale.getUnicodeLocaleType("tz");
+        ZoneId z  = tzType != null ?
+                    TimeZoneNameUtility.convertLDMLShortID(tzType)
+                        .map(ZoneId::of)
+                        .orElse(zone) :
+                    zone;
+        return new DateTimeFormatter(printerParser, locale, ds, resolverStyle, resolverFields, c, z);
     }
 
     //-----------------------------------------------------------------------
