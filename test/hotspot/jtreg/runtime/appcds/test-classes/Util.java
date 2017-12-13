@@ -39,7 +39,7 @@ public class Util {
         throws FileNotFoundException, IOException, NoSuchMethodException, IllegalAccessException,
                InvocationTargetException
     {
-        DataInputStream dis = new DataInputStream(new FileInputStream(clsFile));
+      try (DataInputStream dis = new DataInputStream(new FileInputStream(clsFile))) {
         byte[] buff = new byte[(int)clsFile.length()];
         dis.readFully(buff);
         replace(buff, fromString, toString);
@@ -57,6 +57,7 @@ public class Util {
         System.out.println("Loaded : " + cls);
 
         return cls;
+      }
     }
 
     /**
@@ -146,11 +147,10 @@ public class Util {
         JarFile jf = new JarFile(jarFile);
         JarEntry ent = jf.getJarEntry(className.replace('.', '/') + ".class");
 
-        DataInputStream dis = new DataInputStream(jf.getInputStream(ent));
-        byte[] buff = new byte[(int)ent.getSize()];
-        dis.readFully(buff);
-        dis.close();
-
-        return buff;
+        try (DataInputStream dis = new DataInputStream(jf.getInputStream(ent))) {
+            byte[] buff = new byte[(int)ent.getSize()];
+            dis.readFully(buff);
+            return buff;
+        }
     }
 }

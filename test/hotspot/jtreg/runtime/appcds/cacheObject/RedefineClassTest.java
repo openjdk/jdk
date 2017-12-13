@@ -43,7 +43,6 @@
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.List;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.cds.CDSOptions;
