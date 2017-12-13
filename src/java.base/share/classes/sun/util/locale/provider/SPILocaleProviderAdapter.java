@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,28 +160,24 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public BreakIterator getWordInstance(Locale locale) {
             BreakIteratorProvider bip = getImpl(locale);
-            assert bip != null;
             return bip.getWordInstance(locale);
         }
 
         @Override
         public BreakIterator getLineInstance(Locale locale) {
             BreakIteratorProvider bip = getImpl(locale);
-            assert bip != null;
             return bip.getLineInstance(locale);
         }
 
         @Override
         public BreakIterator getCharacterInstance(Locale locale) {
             BreakIteratorProvider bip = getImpl(locale);
-            assert bip != null;
             return bip.getCharacterInstance(locale);
         }
 
         @Override
         public BreakIterator getSentenceInstance(Locale locale) {
             BreakIteratorProvider bip = getImpl(locale);
-            assert bip != null;
             return bip.getSentenceInstance(locale);
         }
 
@@ -215,7 +211,6 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public Collator getInstance(Locale locale) {
             CollatorProvider cp = getImpl(locale);
-            assert cp != null;
             return cp.getInstance(locale);
         }
     }
@@ -249,21 +244,18 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public DateFormat getTimeInstance(int style, Locale locale) {
             DateFormatProvider dfp = getImpl(locale);
-            assert dfp != null;
             return dfp.getTimeInstance(style, locale);
         }
 
         @Override
         public DateFormat getDateInstance(int style, Locale locale) {
             DateFormatProvider dfp = getImpl(locale);
-            assert dfp != null;
             return dfp.getDateInstance(style, locale);
         }
 
         @Override
         public DateFormat getDateTimeInstance(int dateStyle, int timeStyle, Locale locale) {
             DateFormatProvider dfp = getImpl(locale);
-            assert dfp != null;
             return dfp.getDateTimeInstance(dateStyle, timeStyle, locale);
         }
     }
@@ -297,7 +289,6 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public DateFormatSymbols getInstance(Locale locale) {
             DateFormatSymbolsProvider dfsp = getImpl(locale);
-            assert dfsp != null;
             return dfsp.getInstance(locale);
         }
     }
@@ -331,7 +322,6 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public DecimalFormatSymbols getInstance(Locale locale) {
             DecimalFormatSymbolsProvider dfsp = getImpl(locale);
-            assert dfsp != null;
             return dfsp.getInstance(locale);
         }
     }
@@ -365,28 +355,24 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public NumberFormat getCurrencyInstance(Locale locale) {
             NumberFormatProvider nfp = getImpl(locale);
-            assert nfp != null;
             return nfp.getCurrencyInstance(locale);
         }
 
         @Override
         public NumberFormat getIntegerInstance(Locale locale) {
             NumberFormatProvider nfp = getImpl(locale);
-            assert nfp != null;
             return nfp.getIntegerInstance(locale);
         }
 
         @Override
         public NumberFormat getNumberInstance(Locale locale) {
             NumberFormatProvider nfp = getImpl(locale);
-            assert nfp != null;
             return nfp.getNumberInstance(locale);
         }
 
         @Override
         public NumberFormat getPercentInstance(Locale locale) {
             NumberFormatProvider nfp = getImpl(locale);
-            assert nfp != null;
             return nfp.getPercentInstance(locale);
         }
     }
@@ -420,14 +406,12 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public int getFirstDayOfWeek(Locale locale) {
             CalendarDataProvider cdp = getImpl(locale);
-            assert cdp != null;
             return cdp.getFirstDayOfWeek(locale);
         }
 
         @Override
         public int getMinimalDaysInFirstWeek(Locale locale) {
             CalendarDataProvider cdp = getImpl(locale);
-            assert cdp != null;
             return cdp.getMinimalDaysInFirstWeek(locale);
         }
     }
@@ -463,7 +447,6 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
                                               int field, int value,
                                               int style, Locale locale) {
             CalendarNameProvider cdp = getImpl(locale);
-            assert cdp != null;
             return cdp.getDisplayName(calendarType, field, value, style, locale);
         }
 
@@ -472,7 +455,6 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
                                                              int field, int style,
                                                              Locale locale) {
             CalendarNameProvider cdp = getImpl(locale);
-            assert cdp != null;
             return cdp.getDisplayNames(calendarType, field, style, locale);
         }
     }
@@ -506,14 +488,12 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public String getSymbol(String currencyCode, Locale locale) {
             CurrencyNameProvider cnp = getImpl(locale);
-            assert cnp != null;
             return cnp.getSymbol(currencyCode, locale);
         }
 
         @Override
         public String getDisplayName(String currencyCode, Locale locale) {
             CurrencyNameProvider cnp = getImpl(locale);
-            assert cnp != null;
             return cnp.getDisplayName(currencyCode, locale);
         }
     }
@@ -547,29 +527,37 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public String getDisplayLanguage(String languageCode, Locale locale) {
             LocaleNameProvider lnp = getImpl(locale);
-            assert lnp != null;
             return lnp.getDisplayLanguage(languageCode, locale);
         }
 
         @Override
         public String getDisplayScript(String scriptCode, Locale locale) {
             LocaleNameProvider lnp = getImpl(locale);
-            assert lnp != null;
             return lnp.getDisplayScript(scriptCode, locale);
         }
 
         @Override
         public String getDisplayCountry(String countryCode, Locale locale) {
             LocaleNameProvider lnp = getImpl(locale);
-            assert lnp != null;
             return lnp.getDisplayCountry(countryCode, locale);
         }
 
         @Override
         public String getDisplayVariant(String variant, Locale locale) {
             LocaleNameProvider lnp = getImpl(locale);
-            assert lnp != null;
             return lnp.getDisplayVariant(variant, locale);
+        }
+
+        @Override
+        public String getDisplayUnicodeExtensionKey(String key, Locale locale) {
+            LocaleNameProvider lnp = getImpl(locale);
+            return lnp.getDisplayUnicodeExtensionKey(key, locale);
+        }
+
+        @Override
+        public String getDisplayUnicodeExtensionType(String extType, String key, Locale locale) {
+            LocaleNameProvider lnp = getImpl(locale);
+            return lnp.getDisplayUnicodeExtensionType(extType, key, locale);
         }
     }
 
@@ -602,14 +590,12 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         @Override
         public String getDisplayName(String ID, boolean daylight, int style, Locale locale) {
             TimeZoneNameProvider tznp = getImpl(locale);
-            assert tznp != null;
             return tznp.getDisplayName(ID, daylight, style, locale);
         }
 
         @Override
         public String getGenericDisplayName(String ID, int style, Locale locale) {
             TimeZoneNameProvider tznp = getImpl(locale);
-            assert tznp != null;
             return tznp.getGenericDisplayName(ID, style, locale);
         }
     }

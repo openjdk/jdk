@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,20 +256,21 @@ class ResourceBundleGenerator implements BundleGenerator {
         CLDRConverter.info("Generating file " + file);
 
         try (PrintWriter out = new PrintWriter(file, "us-ascii")) {
-            out.println(CopyrightHeaders.getOpenJDKCopyright());
+            out.printf(CopyrightHeaders.getOpenJDKCopyright());
 
-            out.println((CLDRConverter.isBaseModule ? "package sun.util.cldr;\n\n" :
+            out.printf((CLDRConverter.isBaseModule ? "package sun.util.cldr;\n\n" :
                                   "package sun.util.resources.cldr.provider;\n\n")
                       + "import java.util.HashMap;\n"
                       + "import java.util.Locale;\n"
                       + "import java.util.Map;\n"
-                      + "import sun.util.locale.provider.LocaleProviderAdapter;\n"
-                      + "import sun.util.locale.provider.LocaleDataMetaInfo;\n");
+                      + "import sun.util.locale.provider.LocaleDataMetaInfo;\n"
+                      + "import sun.util.locale.provider.LocaleProviderAdapter;\n\n");
             out.printf("public class %s implements LocaleDataMetaInfo {\n", className);
-            out.println("    private static final Map<String, String> resourceNameToLocales = new HashMap<>();\n" +
-                        (CLDRConverter.isBaseModule ?
-                        "    private static final Map<Locale, String[]> parentLocalesMap = new HashMap<>();\n\n" : "\n") +
-                        "    static {\n");
+            out.printf("    private static final Map<String, String> resourceNameToLocales = new HashMap<>();\n" +
+                       (CLDRConverter.isBaseModule ?
+                       "    private static final Map<Locale, String[]> parentLocalesMap = new HashMap<>();\n\n" :
+                       "\n") +
+                       "    static {\n");
 
             for (String key : metaInfo.keySet()) {
                 if (key.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)) {
@@ -296,30 +297,50 @@ class ResourceBundleGenerator implements BundleGenerator {
                     }
                     out.printf("\n             });\n");
                 } else {
-                    out.printf("        resourceNameToLocales.put(\"%s\",\n", key);
-                    out.printf("              \"%s\");\n",
-                    toLocaleList(key.equals("FormatData") ? metaInfo.get("AvailableLocales") :
-                                            metaInfo.get(key), false));
+                    if ("AvailableLocales".equals(key)) {
+                        out.printf("        resourceNameToLocales.put(\"%s\",\n", key);
+                        out.printf("              \"%s\");\n", toLocaleList(metaInfo.get(key), false));
+                    }
                 }
             }
-            out.println("    }\n\n");
 
-            out.println("    @Override\n" +
+            out.printf("    }\n\n");
+
+            // end of static initializer block.
+
+            // Short TZ names for delayed initialization
+            if (CLDRConverter.isBaseModule) {
+                out.printf("    private static class TZShortIDMapHolder {\n");
+                out.printf("        static final Map<String, String> tzShortIDMap = new HashMap<>();\n");
+                out.printf("        static {\n");
+                CLDRConverter.handlerTimeZone.getData().entrySet().stream()
+                    .forEach(e -> {
+                        out.printf("            tzShortIDMap.put(\"%s\", \"%s\");\n", e.getKey(),
+                                ((String)e.getValue()));
+                    });
+                out.printf("        }\n    }\n\n");
+            }
+
+            out.printf("    @Override\n" +
                         "    public LocaleProviderAdapter.Type getType() {\n" +
                         "        return LocaleProviderAdapter.Type.CLDR;\n" +
                         "    }\n\n");
 
-            out.println("    @Override\n" +
+            out.printf("    @Override\n" +
                         "    public String availableLanguageTags(String category) {\n" +
                         "        return resourceNameToLocales.getOrDefault(category, \"\");\n" +
                         "    }\n\n");
 
             if (CLDRConverter.isBaseModule) {
+                out.printf("    @Override\n" +
+                           "    public Map<String, String> tzShortIDs() {\n" +
+                           "        return TZShortIDMapHolder.tzShortIDMap;\n" +
+                           "    }\n\n");
                 out.printf("    public Map<Locale, String[]> parentLocales() {\n" +
                            "        return parentLocalesMap;\n" +
                            "    }\n}");
             } else {
-                out.println("}");
+                out.printf("}");
             }
         }
     }

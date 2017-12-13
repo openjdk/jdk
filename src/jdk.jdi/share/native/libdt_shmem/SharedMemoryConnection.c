@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ packetToByteArray(JNIEnv *env, jdwpPacket *str)
     jint tmpInt;
 
     total_length = str->type.cmd.len;
-    data_length = total_length - 11;
+    data_length = total_length - JDWP_HEADER_SIZE;
 
     /* total packet length is header + data */
     array = (*env)->NewByteArray(env, total_length);
@@ -142,7 +142,7 @@ packetToByteArray(JNIEnv *env, jdwpPacket *str)
     /* finally the data */
 
     if (data_length > 0) {
-        (*env)->SetByteArrayRegion(env, array, 11,
+        (*env)->SetByteArrayRegion(env, array, JDWP_HEADER_SIZE,
                                    data_length, str->type.cmd.data);
         if ((*env)->ExceptionOccurred(env)) {
             return NULL;
@@ -168,7 +168,7 @@ byteArrayToPacket(JNIEnv *env, jbyteArray b, jdwpPacket *str)
 {
     jsize total_length, data_length;
     jbyte *data;
-    unsigned char pktHeader[11]; /* sizeof length + id + flags + cmdSet + cmd */
+    unsigned char pktHeader[JDWP_HEADER_SIZE];
 
     /*
      * Get the packet header

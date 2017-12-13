@@ -196,13 +196,23 @@ public final class Secmod {
         }
 
         if (configDir != null) {
-            File configBase = new File(configDir);
-            if (configBase.isDirectory() == false ) {
-                throw new IOException("configDir must be a directory: " + configDir);
+            String configDirPath = null;
+            String sqlPrefix = "sql:/";
+            if (!configDir.startsWith(sqlPrefix)) {
+                configDirPath = configDir;
+            } else {
+                StringBuilder configDirPathSB = new StringBuilder(configDir);
+                configDirPath = configDirPathSB.substring(sqlPrefix.length());
             }
-            File secmodFile = new File(configBase, "secmod.db");
-            if (secmodFile.isFile() == false) {
-                throw new FileNotFoundException(secmodFile.getPath());
+            File configBase = new File(configDirPath);
+            if (configBase.isDirectory() == false ) {
+                throw new IOException("configDir must be a directory: " + configDirPath);
+            }
+            if (!configDir.startsWith(sqlPrefix)) {
+                File secmodFile = new File(configBase, "secmod.db");
+                if (secmodFile.isFile() == false) {
+                    throw new FileNotFoundException(secmodFile.getPath());
+                }
             }
         }
 

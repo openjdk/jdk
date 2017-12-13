@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
     private int _state = 0;
     private Element _currentEle;
     private XMLWriter _writer;
-    private String _encoding;
+    private Charset _charset;
     /**
      * This flag can be used to turn escaping off for content. It does
      * not apply to attribute content.
@@ -79,26 +79,23 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
             System.getProperty("line.separator").toCharArray();
 
     public XMLStreamWriterImpl(OutputStream os) throws XMLStreamException {
-        this(os, XMLStreamWriter.DEFAULT_ENCODING);
+        this(os, XMLStreamWriter.DEFAULT_CHARSET);
     }
 
-    public XMLStreamWriterImpl(OutputStream os, String encoding)
+    public XMLStreamWriterImpl(OutputStream os, Charset cs)
         throws XMLStreamException
     {
-        Charset cs = null;
-        if (encoding == null) {
-            _encoding = XMLStreamWriter.DEFAULT_ENCODING;
+        if (cs == null) {
+            _charset = XMLStreamWriter.DEFAULT_CHARSET;
         } else {
             try {
-                cs = getCharset(encoding);
+                _charset = checkCharset(cs);
             } catch (UnsupportedEncodingException e) {
                 throw new XMLStreamException(e);
             }
-
-            this._encoding = encoding;
         }
 
-        _writer = new XMLWriter(os, encoding, cs);
+        _writer = new XMLWriter(os, null, _charset);
     }
 
     /**
@@ -108,7 +105,7 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
      * @throws XMLStreamException
      */
     public void writeStartDocument() throws XMLStreamException {
-        writeStartDocument(_encoding, XMLStreamWriter.DEFAULT_XML_VERSION);
+        writeStartDocument(_charset.name(), XMLStreamWriter.DEFAULT_XML_VERSION);
     }
 
     /**
@@ -118,7 +115,7 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
      * @throws XMLStreamException
      */
     public void writeStartDocument(String version) throws XMLStreamException {
-        writeStartDocument(_encoding, version, null);
+        writeStartDocument(_charset.name(), version, null);
     }
 
     /**
@@ -155,7 +152,7 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
         _state = STATE_XML_DECL;
         String enc = encoding;
         if (enc == null) {
-            enc = _encoding;
+            enc = _charset.name();
         } else {
             //check if the encoding is supported
             try {
@@ -562,6 +559,20 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
             throw new UnsupportedEncodingException(encoding);
         }
         return cs;
+    }
+
+    /**
+     * Checks for charset support.
+     * @param charset the specified charset
+     * @return the charset
+     * @throws UnsupportedEncodingException if the charset is not supported
+     */
+    private Charset checkCharset(Charset charset) throws UnsupportedEncodingException {
+        if (charset.name().equalsIgnoreCase("UTF-32")) {
+            throw new UnsupportedEncodingException("The basic XMLWriter does "
+                    + "not support " + charset.name());
+        }
+        return charset;
     }
 
     /*

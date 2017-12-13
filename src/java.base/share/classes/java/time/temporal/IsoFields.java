@@ -81,6 +81,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
+import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
 
@@ -430,7 +431,9 @@ public final class IsoFields {
             public String getDisplayName(Locale locale) {
                 Objects.requireNonNull(locale, "locale");
                 LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased()
-                                            .getLocaleResources(locale);
+                                            .getLocaleResources(
+                                                CalendarDataUtility
+                                                    .findRegionOverride(locale));
                 ResourceBundle rb = lr.getJavaTimeFormatData();
                 return rb.containsKey("field.week") ? rb.getString("field.week") : toString();
             }

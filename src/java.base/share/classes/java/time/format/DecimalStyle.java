@@ -147,6 +147,11 @@ public final class DecimalStyle {
      * Obtains the DecimalStyle for the specified locale.
      * <p>
      * This method provides access to locale sensitive decimal style symbols.
+     * If the locale contains "nu" (Numbering System) and/or "rg"
+     * (Region Override) <a href="../../util/Locale.html#def_locale_extension">
+     * Unicode extensions</a>, returned instance will reflect the values specified with
+     * those extensions. If both "nu" and "rg" are specified, the value from
+     * the "nu" extension supersedes the implicit one from the "rg" extension.
      *
      * @param locale  the locale, not null
      * @return the decimal style, not null

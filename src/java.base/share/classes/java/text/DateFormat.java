@@ -97,6 +97,13 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * DateFormat df = DateFormat.getDateInstance(DateFormat.LONG, Locale.FRANCE);
  * }</pre>
  * </blockquote>
+ *
+ * <p>If the specified locale contains "ca" (calendar), "rg" (region override),
+ * and/or "tz" (timezone) <a href="../util/Locale.html#def_locale_extension">Unicode
+ * extensions</a>, the calendar, the country and/or the time zone for formatting
+ * are overridden. If both "ca" and "rg" are specified, the calendar from the "ca"
+ * extension supersedes the implicit one from the "rg" extension.
+ *
  * <p>You can use a DateFormat to parse also.
  * <blockquote>
  * <pre>{@code

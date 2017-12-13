@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,32 @@ class NumberingSystemsParseHandler extends AbstractLDMLHandler<String> {
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         switch (qName) {
         case "numberingSystem":
-            if ("numeric".equals(attributes.getValue("type"))) {
-                // eg, <numberingSystem id="latn" type="numeric" digits="0123456789"/>
-                put(attributes.getValue("id"), attributes.getValue("digits"));
+            numberingSystem: {
+                if ("numeric".equals(attributes.getValue("type"))) {
+                    // eg, <numberingSystem id="latn" type="numeric" digits="0123456789"/>
+                    String script = attributes.getValue("id");
+                    String digits = attributes.getValue("digits");
+
+                    if (Character.isSurrogate(digits.charAt(0))) {
+                        // DecimalFormatSymbols doesn't support supplementary characters as digit zero.
+                        break numberingSystem;
+                    }
+                    // in case digits are in the reversed order, reverse back the order.
+                    if (digits.charAt(0) > digits.charAt(digits.length() - 1)) {
+                        StringBuilder sb = new StringBuilder(digits);
+                        digits = sb.reverse().toString();
+                    }
+                    // Check if the order is sequential.
+                    char c0 = digits.charAt(0);
+                    for (int i = 1; i < digits.length(); i++) {
+                        if (digits.charAt(i) != c0 + i) {
+                            break numberingSystem;
+                        }
+                    }
+
+                    // script/digits are acceptable.
+                    put(script, digits);
+                }
             }
             pushIgnoredContainer(qName);
             break;

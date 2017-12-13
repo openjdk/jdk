@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,51 +84,16 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
             values.put(CLDRConverter.PARENT_LOCALE_PREFIX+key,
                 parentLocalesMap.get(key));
             });
-        } else {
-            String countryData = getWeekData(id, JAVA_FIRSTDAY, firstDayMap);
-        if (countryData != null) {
-            values.put(JAVA_FIRSTDAY, countryData);
-        }
-            String minDaysData = getWeekData(id, JAVA_MINDAY, minDaysMap);
-        if (minDaysData != null) {
-            values.put(JAVA_MINDAY, minDaysData);
-        }
+            firstDayMap.keySet().forEach(key -> {
+            values.put(CLDRConverter.CALENDAR_FIRSTDAY_PREFIX+firstDayMap.get(key),
+                key);
+            });
+            minDaysMap.keySet().forEach(key -> {
+            values.put(CLDRConverter.CALENDAR_MINDAYS_PREFIX+minDaysMap.get(key),
+                key);
+            });
         }
         return values.isEmpty() ? null : values;
-    }
-
-    /**
-     * It returns either firstDay or minDays in the JRE format for the country.
-     *
-     * @param country       territory code of the requested data
-     * @param jreDataName   JAVA_FIRSTDAY or JAVA_MINDAY
-     * @param dataMap       firstDayMap or minDaysMap
-     * @return the value for the given jreDataName, or null if requested value
-     *         (firstDay/minDays) is not available although that is highly unlikely
-     *         because of the default value for the world (001).
-     */
-    String getWeekData(String country, final String jreDataName, final Map<String, Object> dataMap) {
-        String countryValue = null;
-        String defaultWorldValue = null;
-        for (String key : dataMap.keySet()) {
-            if (key.contains(country)) {
-                if (jreDataName.equals(JAVA_FIRSTDAY)) {
-                    countryValue = DAY_OF_WEEK_MAP.get((String) dataMap.get(key));
-                } else if (jreDataName.equals(JAVA_MINDAY)) {
-                    countryValue = (String) dataMap.get(key);
-                }
-                if (countryValue != null) {
-                    return countryValue;
-                }
-            } else if (key.contains(WORLD)) {
-                if (jreDataName.equals(JAVA_FIRSTDAY)) {
-                    defaultWorldValue = DAY_OF_WEEK_MAP.get((String) dataMap.get(key));
-                } else if (jreDataName.equals(JAVA_MINDAY)) {
-                    defaultWorldValue = (String) dataMap.get(key);
-                }
-            }
-        }
-        return defaultWorldValue;
     }
 
     @Override
@@ -152,7 +117,33 @@ class SupplementDataParseHandler extends AbstractLDMLHandler<Object> {
         switch (qName) {
         case "firstDay":
             if (!isIgnored(attributes)) {
-                firstDayMap.put(attributes.getValue("territories"), attributes.getValue("day"));
+                String fd;
+
+                switch (attributes.getValue("day")) {
+                    case "sun":
+                        fd = "1";
+                        break;
+                    default:
+                    case "mon":
+                        fd = "2";
+                        break;
+                    case "tue":
+                        fd = "3";
+                        break;
+                    case "wed":
+                        fd = "4";
+                        break;
+                    case "thu":
+                        fd = "5";
+                        break;
+                    case "fri":
+                        fd = "6";
+                        break;
+                    case "sat":
+                        fd = "7";
+                        break;
+                }
+                firstDayMap.put(attributes.getValue("territories"), fd);
             }
             break;
         case "minDays":

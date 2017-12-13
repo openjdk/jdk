@@ -56,10 +56,11 @@ import org.w3c.dom.Element;
  * <code>Document</code>, <code>DocumentType</code>, <code>Notation</code>,
  * <code>Entity</code>, and <code>Attr</code> nodes are never passed to the
  * <code>acceptNode</code> method on the filter. The child nodes of an
- * <code>EntityReference</code> node are passed to the filter if the
- * parameter "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-entities'>
- * entities</a>" is set to <code>false</code>. Note that, as described by the parameter "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-entities'>
- * entities</a>", unexpanded entity reference nodes are never discarded and are always
+ * <code>EntityReference</code> node are passed to the filter if the parameter
+ * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-entities'>entities</a>"
+ * is set to <code>false</code>. Note that, as described by the parameter
+ * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-entities'>entities</a>",
+ * unexpanded entity reference nodes are never discarded and are always
  * passed to the filter.
  * <p> All validity checking while parsing a document occurs on the source
  * document as it appears on the input stream, not on the DOM document as it
@@ -71,8 +72,8 @@ import org.w3c.dom.Element;
  * passed to the filter methods.
  * <p> DOM applications must not raise exceptions in a filter. The effect of
  * throwing exceptions from a filter is DOM implementation dependent.
- * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>Document Object Model (DOM) Level 3 Load
-and Save Specification</a>.
+ * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>
+Document Object Model (DOM) Level 3 Load and Save Specification</a>.
  *
  * @since 1.5
  */
@@ -195,8 +196,8 @@ public interface LSParserFilter {
      * <code>SHOW_NOTATION</code>, <code>SHOW_ENTITY</code>, and
      * <code>SHOW_DOCUMENT_FRAGMENT</code> are meaningless here. Those nodes
      * will never be passed to <code>LSParserFilter.acceptNode</code>.
-     * <br> The constants used here are defined in [<a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113'>DOM Level 2 Traversal and      Range</a>]
-     * .
+     * <br> The constants used here are defined in
+     * [<a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113'>DOM Level 2 Traversal and Range</a>].
      */
     public int getWhatToShow();
 

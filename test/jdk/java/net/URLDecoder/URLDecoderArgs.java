@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4444194
+ * @bug 4444194 8190577
  * @summary  java.net.URLDecoder.decode(s, enc) treats an empty encoding name as "UTF-8"
  */
 import java.net.URLDecoder;
@@ -32,7 +32,7 @@ import java.io.UnsupportedEncodingException;
 public class URLDecoderArgs {
     public static void main (String[] args) {
         try {
-            String s1 = URLDecoder.decode ("Hello World", null);
+            String s1 = URLDecoder.decode ("Hello World", (String)null);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException ("NPE should have been thrown");
         } catch (NullPointerException e) {

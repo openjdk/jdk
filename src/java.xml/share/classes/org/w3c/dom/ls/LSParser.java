@@ -53,7 +53,8 @@ import org.w3c.dom.DOMException;
  * corresponding DOM document structure. A <code>LSParser</code> instance
  * can be obtained by invoking the
  * <code>DOMImplementationLS.createLSParser()</code> method.
- * <p> As specified in [<a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>DOM Level 3 Core</a>]
+ * <p> As specified in
+ * [<a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>DOM Level 3 Core</a>]
  * , when a document is first made available via the LSParser:
  * <ul>
  * <li> there will
@@ -63,16 +64,18 @@ import org.w3c.dom.DOMException;
  * <li> it is expected that the <code>value</code> and
  * <code>nodeValue</code> attributes of an <code>Attr</code> node initially
  * return the <a href='http://www.w3.org/TR/2004/REC-xml-20040204#AVNormalize'>XML 1.0
- * normalized value</a>. However, if the parameters "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-validate-if-schema'>
- * validate-if-schema</a>" and "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-datatype-normalization'>
- * datatype-normalization</a>" are set to <code>true</code>, depending on the attribute normalization
+ * normalized value</a>. However, if the parameters
+ * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-validate-if-schema'>validate-if-schema</a>" and
+ * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-datatype-normalization'>datatype-normalization</a>"
+ * are set to <code>true</code>, depending on the attribute normalization
  * used, the attribute values may differ from the ones obtained by the XML
- * 1.0 attribute normalization. If the parameters "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-datatype-normalization'>
- * datatype-normalization</a>" is set to <code>false</code>, the XML 1.0 attribute normalization is
+ * 1.0 attribute normalization. If the parameters
+ * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-datatype-normalization'>datatype-normalization</a>"
+ * is set to <code>false</code>, the XML 1.0 attribute normalization is
  * guaranteed to occur, and if the attributes list does not contain
  * namespace declarations, the <code>attributes</code> attribute on
- * <code>Element</code> node represents the property <b>[attributes]</b> defined in [<a href='http://www.w3.org/TR/2004/REC-xml-infoset-20040204/'>XML Information Set</a>]
- * .
+ * <code>Element</code> node represents the property <b>[attributes]</b> defined in
+ * [<a href='http://www.w3.org/TR/2004/REC-xml-infoset-20040204/'>XML Information Set</a>].
  * </li>
  * </ul>
  * <p> Asynchronous <code>LSParser</code> objects are expected to also
@@ -102,17 +105,18 @@ import org.w3c.dom.DOMException;
  * <p ><b>Note:</b>  All events defined in this specification use the
  * namespace URI <code>"http://www.w3.org/2002/DOMLS"</code>.
  * <p> While parsing an input source, errors are reported to the application
- * through the error handler (<code>LSParser.domConfig</code>'s "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-error-handler'>
- * error-handler</a>" parameter). This specification does in no way try to define all possible
+ * through the error handler (<code>LSParser.domConfig</code>'s
+ * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
+ * parameter). This specification does in no way try to define all possible
  * errors that can occur while parsing XML, or any other markup, but some
  * common error cases are defined. The types (<code>DOMError.type</code>) of
  * errors and warnings defined by this specification are:
  * <dl>
  * <dt>
  * <code>"check-character-normalization-failure" [error]</code> </dt>
- * <dd> Raised if
- * the parameter "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-check-character-normalization'>
- * check-character-normalization</a>" is set to true and a string is encountered that fails normalization
+ * <dd> Raised if the parameter
+ * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-check-character-normalization'>check-character-normalization</a>"
+ * is set to true and a string is encountered that fails normalization
  * checking. </dd>
  * <dt><code>"doctype-not-allowed" [fatal]</code></dt>
  * <dd> Raised if the
@@ -127,8 +131,9 @@ import org.w3c.dom.DOMException;
  * <dd> Raised if a processing
  * instruction is encountered in a location where the base URI of the
  * processing instruction can not be preserved.  One example of a case where
- * this warning will be raised is if the configuration parameter "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-entities'>
- * entities</a>" is set to <code>false</code> and the following XML file is parsed:
+ * this warning will be raised is if the configuration parameter
+ * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-entities'>entities</a>"
+ * is set to <code>false</code> and the following XML file is parsed:
  * <pre>
  * &lt;!DOCTYPE root [ &lt;!ENTITY e SYSTEM 'subdir/myentity.ent' ]&gt;
  * &lt;root&gt; &amp;e; &lt;/root&gt;</pre>
@@ -139,9 +144,9 @@ import org.w3c.dom.DOMException;
  * </dd>
  * <dt><code>"unbound-prefix-in-entity" [warning]</code></dt>
  * <dd> An
- * implementation dependent warning that may be raised if the configuration
- * parameter "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-namespaces'>
- * namespaces</a>" is set to <code>true</code> and an unbound namespace prefix is
+ * implementation dependent warning that may be raised if the configuration parameter
+ * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-namespaces'>namespaces</a>"
+ * is set to <code>true</code> and an unbound namespace prefix is
  * encountered in an entity's replacement text. Raising this warning is not
  * enforced since some existing parsers may not recognize unbound namespace
  * prefixes in the replacement text of entities. </dd>
@@ -164,8 +169,8 @@ import org.w3c.dom.DOMException;
  * are expected to raise implementation specific errors and warnings for any
  * other error and warning cases such as IO errors (file not found,
  * permission denied,...), XML well-formedness errors, and so on.
- * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>Document Object Model (DOM) Level 3 Load
-and Save Specification</a>.
+ * <p>See also the
+ * <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>Document Object Model (DOM) Level 3 Load and Save Specification</a>.
  *
  * @since 1.5
  */
@@ -180,8 +185,10 @@ public interface LSParser {
      * needed parameter values from this <code>DOMConfiguration</code>
      * object to the <code>DOMConfiguration</code> object referenced by the
      * <code>Document</code> object.
-     * <br> In addition to the parameters recognized in on the <a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#DOMConfiguration'>
-     * DOMConfiguration</a> interface defined in [<a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>DOM Level 3 Core</a>]
+     * <br> In addition to the parameters recognized in on the
+     * <a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#DOMConfiguration'>DOMConfiguration</a>
+     * interface defined in
+     * [<a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>DOM Level 3 Core</a>]
      * , the <code>DOMConfiguration</code> objects for <code>LSParser</code>
      * add or modify the following parameters:
      * <dl>
@@ -190,7 +197,8 @@ public interface LSParser {
      * <dd>
      * <dl>
      * <dt><code>true</code></dt>
-     * <dd>[<em>optional</em>] (<em>default</em>) If a higher level protocol such as HTTP [<a href='http://www.ietf.org/rfc/rfc2616.txt'>IETF RFC 2616</a>] provides an
+     * <dd>[<em>optional</em>] (<em>default</em>) If a higher level protocol such as HTTP
+     * [<a href='http://www.ietf.org/rfc/rfc2616.txt'>IETF RFC 2616</a>] provides an
      * indication of the character encoding of the input stream being
      * processed, that will override any encoding specified in the XML
      * declaration or the Text declaration (see also section 4.3.3,
@@ -206,7 +214,8 @@ public interface LSParser {
      * <dl>
      * <dt>
      * <code>true</code></dt>
-     * <dd>[<em>optional</em>] Throw a fatal <b>"doctype-not-allowed"</b> error if a doctype node is found while parsing the document. This is
+     * <dd>[<em>optional</em>] Throw a fatal <b>"doctype-not-allowed"</b> error
+     * if a doctype node is found while parsing the document. This is
      * useful when dealing with things like SOAP envelopes where doctype
      * nodes are not allowed. </dd>
      * <dt><code>false</code></dt>
@@ -218,14 +227,17 @@ public interface LSParser {
      * <dl>
      * <dt>
      * <code>true</code></dt>
-     * <dd>[<em>required</em>] (<em>default</em>) If, while verifying full normalization when [<a href='http://www.w3.org/TR/2004/REC-xml11-20040204/'>XML 1.1</a>] is
+     * <dd>[<em>required</em>] (<em>default</em>) If, while verifying full normalization when
+     * [<a href='http://www.w3.org/TR/2004/REC-xml11-20040204/'>XML 1.1</a>] is
      * supported, a processor encounters characters for which it cannot
      * determine the normalization properties, then the processor will
      * ignore any possible denormalizations caused by these characters.
-     * This parameter is ignored for [<a href='http://www.w3.org/TR/2004/REC-xml-20040204'>XML 1.0</a>]. </dd>
+     * This parameter is ignored for [<a href='http://www.w3.org/TR/2004/REC-xml-20040204'>XML 1.0</a>].
+     * </dd>
      * <dt>
      * <code>false</code></dt>
-     * <dd>[<em>optional</em>] Report an fatal <b>"unknown-character-denormalization"</b> error if a character is encountered for which the processor cannot
+     * <dd>[<em>optional</em>] Report an fatal <b>"unknown-character-denormalization"</b>
+     * error if a character is encountered for which the processor cannot
      * determine the normalization properties. </dd>
      * </dl></dd>
      * <dt><code>"infoset"</code></dt>
@@ -238,7 +250,8 @@ public interface LSParser {
      * <dd>
      * <dl>
      * <dt><code>true</code></dt>
-     * <dd>[<em>required</em>] (<em>default</em>) Perform the namespace processing as defined in [<a href='http://www.w3.org/TR/1999/REC-xml-names-19990114/'>XML Namespaces</a>]
+     * <dd>[<em>required</em>] (<em>default</em>) Perform the namespace processing as defined in
+     * [<a href='http://www.w3.org/TR/1999/REC-xml-names-19990114/'>XML Namespaces</a>]
      *  and [<a href='http://www.w3.org/TR/2004/REC-xml-names11-20040204/'>XML Namespaces 1.1</a>]
      * . </dd>
      * <dt><code>false</code></dt>
@@ -259,7 +272,8 @@ public interface LSParser {
      * <code>true</code></dt>
      * <dd>[<em>optional</em>] Check that the media type of the parsed resource is a supported media
      * type. If an unsupported media type is encountered, a fatal error of
-     * type <b>"unsupported-media-type"</b> will be raised. The media types defined in [<a href='http://www.ietf.org/rfc/rfc3023.txt'>IETF RFC 3023</a>] must always
+     * type <b>"unsupported-media-type"</b> will be raised. The media types defined in
+     * [<a href='http://www.ietf.org/rfc/rfc3023.txt'>IETF RFC 3023</a>] must always
      * be accepted. </dd>
      * <dt><code>false</code></dt>
      * <dd>[<em>required</em>] (<em>default</em>) Accept any media type. </dd>
@@ -294,8 +308,8 @@ public interface LSParser {
      * terminate the parsing early.
      * <br> The filter is invoked after the operations requested by the
      * <code>DOMConfiguration</code> parameters have been applied. For
-     * example, if "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-validate'>
-     * validate</a>" is set to <code>true</code>, the validation is done before invoking the
+     * example, if "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-validate'>validate</a>"
+     * is set to <code>true</code>, the validation is done before invoking the
      * filter.
      */
     public LSParserFilter getFilter();
@@ -306,8 +320,8 @@ public interface LSParser {
      * terminate the parsing early.
      * <br> The filter is invoked after the operations requested by the
      * <code>DOMConfiguration</code> parameters have been applied. For
-     * example, if "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-validate'>
-     * validate</a>" is set to <code>true</code>, the validation is done before invoking the
+     * example, if "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-validate'>validate</a>"
+     * is set to <code>true</code>, the validation is done before invoking the
      * filter.
      */
     public void setFilter(LSParserFilter filter);
@@ -340,15 +354,18 @@ public interface LSParser {
      * @exception LSException
      *    PARSE_ERR: Raised if the <code>LSParser</code> was unable to load
      *   the XML document. DOM applications should attach a
-     *   <code>DOMErrorHandler</code> using the parameter "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-error-handler'>
-     *   error-handler</a>" if they wish to get details on the error.
+     *   <code>DOMErrorHandler</code> using the parameter
+     * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
+     * if they wish to get details on the error.
      */
     public Document parse(LSInput input)
                           throws DOMException, LSException;
 
     /**
-     *  Parse an XML document from a location identified by a URI reference [<a href='http://www.ietf.org/rfc/rfc2396.txt'>IETF RFC 2396</a>]. If the URI
-     * contains a fragment identifier (see section 4.1 in [<a href='http://www.ietf.org/rfc/rfc2396.txt'>IETF RFC 2396</a>]), the
+     *  Parse an XML document from a location identified by a URI reference
+     * [<a href='http://www.ietf.org/rfc/rfc2396.txt'>IETF RFC 2396</a>]. If the URI
+     * contains a fragment identifier (see section 4.1 in
+     * [<a href='http://www.ietf.org/rfc/rfc2396.txt'>IETF RFC 2396</a>]), the
      * behavior is not defined by this specification, future versions of
      * this specification may define the behavior.
      * @param uri The location of the XML document to be read.
@@ -364,8 +381,9 @@ public interface LSParser {
      * @exception LSException
      *    PARSE_ERR: Raised if the <code>LSParser</code> was unable to load
      *   the XML document. DOM applications should attach a
-     *   <code>DOMErrorHandler</code> using the parameter "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-error-handler'>
-     *   error-handler</a>" if they wish to get details on the error.
+     *   <code>DOMErrorHandler</code> using the parameter
+     * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
+     * if they wish to get details on the error.
      */
     public Document parseURI(String uri)
                              throws DOMException, LSException;
@@ -431,14 +449,17 @@ public interface LSParser {
      * <code>LSParser</code> is asynchronous (<code>LSParser.async</code> is
      * <code>true</code>).
      * <br> If an error occurs while parsing, the caller is notified through
-     * the <code>ErrorHandler</code> instance associated with the "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-error-handler'>
-     * error-handler</a>" parameter of the <code>DOMConfiguration</code>.
+     * the <code>ErrorHandler</code> instance associated with the
+     * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
+     * parameter of the <code>DOMConfiguration</code>.
      * <br> When calling <code>parseWithContext</code>, the values of the
      * following configuration parameters will be ignored and their default
-     * values will always be used instead: "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-validate'>
-     * validate</a>", "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-validate-if-schema'>
-     * validate-if-schema</a>", and "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-element-content-whitespace'>
-     * element-content-whitespace</a>". Other parameters will be treated normally, and the parser is expected
+     * values will always be used instead:
+     * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-validate'>validate</a>",
+     * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-validate-if-schema'>validate-if-schema</a>",
+     * and
+     * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-element-content-whitespace'>element-content-whitespace</a>".
+     * Other parameters will be treated normally, and the parser is expected
      * to call the <code>LSParserFilter</code> just as if a whole document
      * was parsed.
      * @param input  The <code>LSInput</code> from which the source document
@@ -463,7 +484,8 @@ public interface LSParser {
      * @exception DOMException
      *   HIERARCHY_REQUEST_ERR: Raised if the content cannot replace, be
      *   inserted before, after, or as a child of the context node (see also
-     *   <code>Node.insertBefore</code> or <code>Node.replaceChild</code> in [<a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>DOM Level 3 Core</a>]
+     *   <code>Node.insertBefore</code> or <code>Node.replaceChild</code> in
+     * [<a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>DOM Level 3 Core</a>]
      *   ).
      *   <br> NOT_SUPPORTED_ERR: Raised if the <code>LSParser</code> doesn't
      *   support this method, or if the context node is of type
@@ -479,8 +501,9 @@ public interface LSParser {
      * @exception LSException
      *    PARSE_ERR: Raised if the <code>LSParser</code> was unable to load
      *   the XML fragment. DOM applications should attach a
-     *   <code>DOMErrorHandler</code> using the parameter "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-error-handler'>
-     *   error-handler</a>" if they wish to get details on the error.
+     *   <code>DOMErrorHandler</code> using the parameter
+     * "<a href='https://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#parameter-error-handler'>error-handler</a>"
+     * if they wish to get details on the error.
      */
     public Node parseWithContext(LSInput input,
                                  Node contextArg,

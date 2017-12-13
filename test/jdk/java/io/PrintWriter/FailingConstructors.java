@@ -67,7 +67,7 @@ public class FailingConstructors {
         check(exists, file);
 
         try {
-            new PrintWriter(file, null);
+            new PrintWriter(file, (String)null);
             fail();
         } catch(FileNotFoundException|NullPointerException e) {
             pass();
@@ -86,7 +86,7 @@ public class FailingConstructors {
         check(exists, file);
 
         try {
-            new PrintWriter(file.getName(), null);
+            new PrintWriter(file.getName(), (String)null);
             fail();
         } catch(FileNotFoundException|NullPointerException e) {
             pass();

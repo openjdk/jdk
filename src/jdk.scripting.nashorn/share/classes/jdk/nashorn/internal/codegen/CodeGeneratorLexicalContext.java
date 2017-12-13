@@ -184,10 +184,14 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
      * @param returnType the return type
      * @param paramTypes the parameter types
      * @param flags the callsite flags
+     * @param isOptimistic is this an optimistic call
      * @return an object representing a shared scope call
      */
-    SharedScopeCall getScopeCall(final CompileUnit unit, final Symbol symbol, final Type valueType, final Type returnType, final Type[] paramTypes, final int flags) {
-        final SharedScopeCall scopeCall = new SharedScopeCall(symbol, valueType, returnType, paramTypes, flags);
+    SharedScopeCall getScopeCall(final CompileUnit unit, final Symbol symbol, final Type valueType,
+                                 final Type returnType, final Type[] paramTypes, final int flags,
+                                 final boolean isOptimistic) {
+        final SharedScopeCall scopeCall = new SharedScopeCall(symbol, valueType, returnType, paramTypes, flags,
+                isOptimistic);
         if (scopeCalls.containsKey(scopeCall)) {
             return scopeCalls.get(scopeCall);
         }
@@ -203,10 +207,12 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
      * @param symbol the symbol
      * @param valueType the type of the variable
      * @param flags the callsite flags
-     * @return an object representing a shared scope call
+     * @param isOptimistic is this an optimistic get
+     * @return an object representing a shared scope get
      */
-    SharedScopeCall getScopeGet(final CompileUnit unit, final Symbol symbol, final Type valueType, final int flags) {
-        return getScopeCall(unit, symbol, valueType, valueType, null, flags);
+    SharedScopeCall getScopeGet(final CompileUnit unit, final Symbol symbol, final Type valueType, final int flags,
+                                final boolean isOptimistic) {
+        return getScopeCall(unit, symbol, valueType, valueType, null, flags, isOptimistic);
     }
 
     void onEnterBlock(final Block block) {

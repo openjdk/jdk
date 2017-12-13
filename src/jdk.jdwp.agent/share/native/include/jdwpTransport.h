@@ -96,6 +96,8 @@ typedef struct {
  * See: http://java.sun.com/j2se/1.5/docs/guide/jpda/jdwp-spec.html
  */
 
+#define JDWP_HEADER_SIZE 11
+
 enum {
     /*
      * If additional flags are added that apply to jdwpCmdPacket,

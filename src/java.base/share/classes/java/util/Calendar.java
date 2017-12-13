@@ -58,6 +58,7 @@ import sun.util.BuddhistCalendar;
 import sun.util.calendar.ZoneInfo;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.TimeZoneNameUtility;
 import sun.util.spi.CalendarProvider;
 
 /**
@@ -128,9 +129,14 @@ import sun.util.spi.CalendarProvider;
  *
  * <code>Calendar</code> defines a locale-specific seven day week using two
  * parameters: the first day of the week and the minimal days in first week
- * (from 1 to 7).  These numbers are taken from the locale resource data when a
- * <code>Calendar</code> is constructed.  They may also be specified explicitly
- * through the methods for setting their values.
+ * (from 1 to 7).  These numbers are taken from the locale resource data or the
+ * locale itself when a {@code Calendar} is constructed. If the designated
+ * locale contains "fw" and/or "rg" <a href="./Locale.html#def_locale_extension">
+ * Unicode extensions</a>, the first day of the week will be obtained according to
+ * those extensions. If both "fw" and "rg" are specified, the value from the "fw"
+ * extension supersedes the implicit one from the "rg" extension.
+ * They may also be specified explicitly through the methods for setting their
+ * values.
  *
  * <p>When setting or getting the <code>WEEK_OF_MONTH</code> or
  * <code>WEEK_OF_YEAR</code> fields, <code>Calendar</code> must determine the
@@ -1444,6 +1450,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
          *
          * <p>The default values are used for locale and time zone if these
          * parameters haven't been given explicitly.
+         * <p>
+         * If the locale contains the time zone with "tz"
+         * <a href="Locale.html#def_locale_extension">Unicode extension</a>,
+         * and time zone hasn't been given explicitly, time zone in the locale
+         * is used.
          *
          * <p>Any out of range field values are either normalized in lenient
          * mode or detected as an invalid value in non-lenient mode.
@@ -1463,7 +1474,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                 locale = Locale.getDefault();
             }
             if (zone == null) {
-                zone = TimeZone.getDefault();
+                zone = defaultTimeZone(locale);
             }
             Calendar cal;
             if (type == null) {
@@ -1605,12 +1616,17 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * <code>Calendar</code> returned is based on the current time
      * in the default time zone with the default
      * {@link Locale.Category#FORMAT FORMAT} locale.
+     * <p>
+     * If the locale contains the time zone with "tz"
+     * <a href="Locale.html#def_locale_extension">Unicode extension</a>,
+     * that time zone is used instead.
      *
      * @return a Calendar.
      */
     public static Calendar getInstance()
     {
-        return createCalendar(TimeZone.getDefault(), Locale.getDefault(Locale.Category.FORMAT));
+        Locale aLocale = Locale.getDefault(Locale.Category.FORMAT);
+        return createCalendar(defaultTimeZone(aLocale), aLocale);
     }
 
     /**
@@ -1631,13 +1647,17 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * Gets a calendar using the default time zone and specified locale.
      * The <code>Calendar</code> returned is based on the current time
      * in the default time zone with the given locale.
+     * <p>
+     * If the locale contains the time zone with "tz"
+     * <a href="Locale.html#def_locale_extension">Unicode extension</a>,
+     * that time zone is used instead.
      *
      * @param aLocale the locale for the week data
      * @return a Calendar.
      */
     public static Calendar getInstance(Locale aLocale)
     {
-        return createCalendar(TimeZone.getDefault(), aLocale);
+        return createCalendar(defaultTimeZone(aLocale), aLocale);
     }
 
     /**
@@ -1653,6 +1673,16 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                                        Locale aLocale)
     {
         return createCalendar(zone, aLocale);
+    }
+
+    private static TimeZone defaultTimeZone(Locale l) {
+        TimeZone defaultTZ = TimeZone.getDefault();
+        String shortTZID = l.getUnicodeLocaleType("tz");
+        return shortTZID != null ?
+            TimeZoneNameUtility.convertLDMLShortID(shortTZID)
+                .map(TimeZone::getTimeZone)
+                .orElse(defaultTZ) :
+            defaultTZ;
     }
 
     private static Calendar createCalendar(TimeZone zone,

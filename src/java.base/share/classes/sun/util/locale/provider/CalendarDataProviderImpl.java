@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,14 +46,16 @@ public class CalendarDataProviderImpl extends CalendarDataProvider implements Av
 
     @Override
     public int getFirstDayOfWeek(Locale locale) {
-        return LocaleProviderAdapter.forType(type).getLocaleResources(locale)
+        String fw = LocaleProviderAdapter.forType(type).getLocaleResources(locale)
                    .getCalendarData(CalendarDataUtility.FIRST_DAY_OF_WEEK);
+        return convertToCalendarData(fw);
     }
 
     @Override
     public int getMinimalDaysInFirstWeek(Locale locale) {
-        return LocaleProviderAdapter.forType(type).getLocaleResources(locale)
+        String md = LocaleProviderAdapter.forType(type).getLocaleResources(locale)
                    .getCalendarData(CalendarDataUtility.MINIMAL_DAYS_IN_FIRST_WEEK);
+        return convertToCalendarData(md);
     }
 
     @Override
@@ -64,5 +66,10 @@ public class CalendarDataProviderImpl extends CalendarDataProvider implements Av
     @Override
     public Set<String> getAvailableLanguageTags() {
         return langtags;
+    }
+
+    private int convertToCalendarData(String src) {
+        int val = Integer.parseInt(src);
+        return (src.isEmpty() || val <= 0 || val > 7) ? 0 : val;
     }
 }

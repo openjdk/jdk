@@ -527,7 +527,7 @@ public final class Channels {
      * behaves in exactly the same way as the expression
      *
      * <pre> {@code
-     *     Channels.newReader(ch, Charset.forName(csName).newDecoder(), -1)
+     *     Channels.newReader(ch, Charset.forName(csName))
      * } </pre>
      *
      * @param  ch
@@ -547,6 +547,38 @@ public final class Channels {
     {
         Objects.requireNonNull(csName, "csName");
         return newReader(ch, Charset.forName(csName).newDecoder(), -1);
+    }
+
+    /**
+     * Constructs a reader that decodes bytes from the given channel according
+     * to the given charset.
+     *
+     * <p> An invocation of this method of the form
+     *
+     * <pre> {@code
+     *     Channels.newReader(ch, charset)
+     * } </pre>
+     *
+     * behaves in exactly the same way as the expression
+     *
+     * <pre> {@code
+     *     Channels.newReader(ch, Charset.forName(csName).newDecoder(), -1)
+     * } </pre>
+     *
+     * <p> The reader's default action for malformed-input and unmappable-character
+     * errors is to {@linkplain java.nio.charset.CodingErrorAction#REPORT report}
+     * them. When more control over the error handling is required, the constructor
+     * that takes a {@linkplain java.nio.charset.CharsetDecoder} should be used.
+     *
+     * @param  ch The channel from which bytes will be read
+     *
+     * @param  charset The charset to be used
+     *
+     * @return  A new reader
+     */
+    public static Reader newReader(ReadableByteChannel ch, Charset charset) {
+        Objects.requireNonNull(charset, "charset");
+        return newReader(ch, charset.newDecoder(), -1);
     }
 
     /**
@@ -595,7 +627,7 @@ public final class Channels {
      * behaves in exactly the same way as the expression
      *
      * <pre> {@code
-     *     Channels.newWriter(ch, Charset.forName(csName).newEncoder(), -1)
+     *     Channels.newWriter(ch, Charset.forName(csName))
      * } </pre>
      *
      * @param  ch
@@ -616,4 +648,38 @@ public final class Channels {
         Objects.requireNonNull(csName, "csName");
         return newWriter(ch, Charset.forName(csName).newEncoder(), -1);
     }
+
+    /**
+     * Constructs a writer that encodes characters according to the given
+     * charset and writes the resulting bytes to the given channel.
+     *
+     * <p> An invocation of this method of the form
+     *
+     * <pre> {@code
+     *     Channels.newWriter(ch, charset)
+     * } </pre>
+     *
+     * behaves in exactly the same way as the expression
+     *
+     * <pre> {@code
+     *     Channels.newWriter(ch, Charset.forName(csName).newEncoder(), -1)
+     * } </pre>
+     *
+     * <p> The writer's default action for malformed-input and unmappable-character
+     * errors is to {@linkplain java.nio.charset.CodingErrorAction#REPORT report}
+     * them. When more control over the error handling is required, the constructor
+     * that takes a {@linkplain java.nio.charset.CharsetEncoder} should be used.
+     *
+     * @param  ch
+     *         The channel to which bytes will be written
+     *
+     * @param  charset
+     *         The charset to be used
+     *
+     * @return  A new writer
+     */
+    public static Writer newWriter(WritableByteChannel ch, Charset charset) {
+        Objects.requireNonNull(charset, "charset");
+        return newWriter(ch, charset.newEncoder(), -1);
+}
 }

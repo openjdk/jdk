@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,14 @@
 package com.sun.tools.jdeps;
 
 import java.io.PrintWriter;
-import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleFinder;
-import java.lang.module.ModuleReference;
+import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -161,7 +157,7 @@ public final class Graph<T> {
      * Returns all nodes reachable from the given set of roots.
      */
     public Set<T> dfs(Set<T> roots) {
-        Deque<T> deque = new LinkedList<>(roots);
+        Deque<T> deque = new ArrayDeque<>(roots);
         Set<T> visited = new HashSet<>();
         while (!deque.isEmpty()) {
             T u = deque.pop();
@@ -197,7 +193,7 @@ public final class Graph<T> {
         if (includeAdjacent && isAdjacent(u, v)) {
             return true;
         }
-        Deque<T> stack = new LinkedList<>();
+        Deque<T> stack = new ArrayDeque<>();
         Set<T> visited = new HashSet<>();
         stack.push(u);
         while (!stack.isEmpty()) {
@@ -292,12 +288,10 @@ public final class Graph<T> {
      * Topological sort
      */
     static class TopoSorter<T> {
-        final Deque<T> result = new LinkedList<>();
-        final Deque<T> nodes;
+        final Deque<T> result = new ArrayDeque<>();
         final Graph<T> graph;
         TopoSorter(Graph<T> graph) {
             this.graph = graph;
-            this.nodes = new LinkedList<>(graph.nodes);
             sort();
         }
 
@@ -310,17 +304,16 @@ public final class Graph<T> {
         }
 
         private void sort() {
-            Deque<T> visited = new LinkedList<>();
-            Deque<T> done = new LinkedList<>();
-            T node;
-            while ((node = nodes.poll()) != null) {
+            Set<T> visited = new HashSet<>();
+            Set<T> done = new HashSet<>();
+            for (T node : graph.nodes()) {
                 if (!visited.contains(node)) {
                     visit(node, visited, done);
                 }
             }
         }
 
-        private void visit(T node, Deque<T> visited, Deque<T> done) {
+        private void visit(T node, Set<T> visited, Set<T> done) {
             if (visited.contains(node)) {
                 if (!done.contains(node)) {
                     throw new IllegalArgumentException("Cyclic detected: " +
@@ -330,7 +323,7 @@ public final class Graph<T> {
             }
             visited.add(node);
             graph.edges().get(node).stream()
-                .forEach(x -> visit(x, visited, done));
+                 .forEach(x -> visit(x, visited, done));
             done.add(node);
             result.addLast(node);
         }

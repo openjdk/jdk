@@ -37,6 +37,10 @@ import java.io.BufferedWriter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.StreamCorruptedException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -997,6 +1001,11 @@ class Properties extends Hashtable<Object,Object> {
      *
      * <p>The specified stream remains open after this method returns.
      *
+     * <p>This method behaves the same as
+     * {@linkplain #storeToXML(OutputStream os, String comment, Charset charset)}
+     * except that it will {@linkplain java.nio.charset.Charset#forName look up the charset}
+     * using the given encoding name.
+     *
      * @param os        the output stream on which to emit the XML document.
      * @param comment   a description of the property list, or {@code null}
      *                  if no comment is desired.
@@ -1011,20 +1020,67 @@ class Properties extends Hashtable<Object,Object> {
      * @throws NullPointerException if {@code os} is {@code null},
      *         or if {@code encoding} is {@code null}.
      * @throws ClassCastException  if this {@code Properties} object
-     *         contains any keys or values that are not
-     *         {@code Strings}.
+     *         contains any keys or values that are not {@code Strings}.
      * @see    #loadFromXML(InputStream)
      * @see    <a href="http://www.w3.org/TR/REC-xml/#charencoding">Character
      *         Encoding in Entities</a>
      * @since 1.5
      */
     public void storeToXML(OutputStream os, String comment, String encoding)
-        throws IOException
-    {
+        throws IOException {
         Objects.requireNonNull(os);
         Objects.requireNonNull(encoding);
+
+        try {
+            Charset charset = Charset.forName(encoding);
+            storeToXML(os, comment, charset);
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
+            throw new UnsupportedEncodingException(encoding);
+        }
+    }
+
+    /**
+     * Emits an XML document representing all of the properties contained
+     * in this table, using the specified encoding.
+     *
+     * <p>The XML document will have the following DOCTYPE declaration:
+     * <pre>
+     * &lt;!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd"&gt;
+     * </pre>
+     *
+     * <p>If the specified comment is {@code null} then no comment
+     * will be stored in the document.
+     *
+     * <p> An implementation is required to support writing of XML documents
+     * that use the "{@code UTF-8}" or "{@code UTF-16}" encoding. An
+     * implementation may support additional encodings.
+     *
+     * <p> Unmappable characters for the specified charset will be encoded as
+     * numeric character references.
+     *
+     * <p>The specified stream remains open after this method returns.
+     *
+     * @param os        the output stream on which to emit the XML document.
+     * @param comment   a description of the property list, or {@code null}
+     *                  if no comment is desired.
+     * @param charset   the charset
+     *
+     * @throws IOException if writing to the specified output stream
+     *         results in an {@code IOException}.
+     * @throws NullPointerException if {@code os} or {@code charset} is {@code null}.
+     * @throws ClassCastException  if this {@code Properties} object
+     *         contains any keys or values that are not {@code Strings}.
+     * @see    #loadFromXML(InputStream)
+     * @see    <a href="http://www.w3.org/TR/REC-xml/#charencoding">Character
+     *         Encoding in Entities</a>
+     * @since 10
+     */
+    public void storeToXML(OutputStream os, String comment, Charset charset)
+        throws IOException {
+        Objects.requireNonNull(os, "OutputStream");
+        Objects.requireNonNull(charset, "Charset");
         PropertiesDefaultHandler handler = new PropertiesDefaultHandler();
-        handler.store(this, os, comment, encoding);
+        handler.store(this, os, comment, charset);
     }
 
     /**
