@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires !vm.graal.enabled
  * @modules jdk.jdeps jdk.zipfs
  * @library /lib/testlibrary
  * @build ShowModuleResolutionTest jdk.testlibrary.*
