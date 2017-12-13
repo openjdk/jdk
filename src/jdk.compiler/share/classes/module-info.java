@@ -26,8 +26,7 @@
 /**
  * Defines the implementation of the
  * {@linkplain javax.tools.ToolProvider#getSystemJavaCompiler system Java compiler}
- * and its command line equivalent, <em>{@index javac javac tool}</em>,
- * as well as <em>{@index javah javah tool}</em>.
+ * and its command line equivalent, <em>{@index javac javac tool}</em>.
  *
  * <h2 style="font-family:'DejaVu Sans Mono', monospace; font-style:italic">javac</h2>
  *
@@ -56,17 +55,9 @@
  * {@code jdk.zipfs} module, must be available if the compiler is to be able
  * to read JAR files.
  *
- * <h2 style="font-family:'DejaVu Sans Mono', monospace; font-style:italic">javah</h2>
- *
- * <p>
- * <em>javah</em> only exists as a command line tool, and does not provide any
- * direct API. As of JDK 9, it has been deprecated.
- * Use the {@code -h} option in <em>javac</em> instead.</p>
- *
  * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
  * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink javac_tool_reference javac},
- *     {@extLink javah_tool_reference javah}
+ * <dd>{@extLink javac_tool_reference javac}
  * </dl>
  *
  * @provides java.util.spi.ToolProvider
