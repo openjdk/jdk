@@ -25,6 +25,9 @@
 
 package java.util.zip;
 
+import java.util.function.LongConsumer;
+import java.util.function.LongSupplier;
+
 /**
  * This class provides support for general purpose decompression using the
  * popular ZLIB compression library. The ZLIB compression library was
@@ -115,7 +118,20 @@ public class Inflater {
      * @param nowrap if true then support GZIP compatible compression
      */
     public Inflater(boolean nowrap) {
-        this.zsRef = ZStreamRef.get(this, () -> init(nowrap), Inflater::end);
+        this.zsRef = ZStreamRef.get(this,
+                // Desugared for startup purposes.
+                new LongSupplier() {
+                    @Override
+                    public long getAsLong() {
+                        return init(nowrap);
+                    }
+                },
+                new LongConsumer() {
+                    @Override
+                    public void accept(long value) {
+                        end();
+                    }
+                });
     }
 
     /**
