@@ -22,15 +22,15 @@
  */
 package org.graalvm.compiler.hotspot;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.asStackSlot;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
+import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 
 import java.util.ArrayList;
 
-import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
@@ -52,8 +52,10 @@ public final class HotSpotReferenceMapBuilder extends ReferenceMapBuilder {
 
     private final int totalFrameSize;
     private final int maxOopMapStackOffset;
+    private final int uncompressedReferenceSize;
 
-    public HotSpotReferenceMapBuilder(int totalFrameSize, int maxOopMapStackOffset) {
+    public HotSpotReferenceMapBuilder(int totalFrameSize, int maxOopMapStackOffset, int uncompressedReferenceSize) {
+        this.uncompressedReferenceSize = uncompressedReferenceSize;
         this.objectValues = new ArrayList<>();
         this.objectCount = 0;
         this.maxOopMapStackOffset = maxOopMapStackOffset;
@@ -116,6 +118,7 @@ public final class HotSpotReferenceMapBuilder extends ReferenceMapBuilder {
 
                 for (int i = 0; i < kind.getPlatformKind().getVectorLength(); i++) {
                     if (kind.isReference(i)) {
+                        assert kind.isCompressedReference(i) ? (bytes < uncompressedReferenceSize) : (bytes == uncompressedReferenceSize);
                         objects[idx] = toLocation(obj, i * bytes);
                         derivedBase[idx] = base;
                         sizeInBytes[idx] = bytes;

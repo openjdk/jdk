@@ -33,9 +33,9 @@ import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugContext.Scope;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
 import org.graalvm.compiler.lir.FullInfopointOp;
@@ -150,7 +150,7 @@ public class JVMCIInfopointErrorTest extends GraalCompilerTest {
         codeCache.addCode(method, compiledCode, null, null);
     }
 
-    @Test(expected = JVMCIError.class)
+    @Test(expected = Error.class)
     public void testInvalidShortOop() {
         test((tool, state, safepoint) -> {
             PlatformKind kind = tool.target().arch.getPlatformKind(JavaKind.Short);
@@ -163,14 +163,14 @@ public class JVMCIInfopointErrorTest extends GraalCompilerTest {
         });
     }
 
-    @Test(expected = JVMCIError.class)
+    @Test(expected = Error.class)
     public void testInvalidShortDerivedOop() {
         test((tool, state, safepoint) -> {
             Variable baseOop = tool.newVariable(LIRKind.fromJavaKind(tool.target().arch, JavaKind.Object));
             tool.append(new ValueDef(baseOop));
 
             PlatformKind kind = tool.target().arch.getPlatformKind(JavaKind.Short);
-            LIRKind lirKind = LIRKind.derivedReference(kind, baseOop);
+            LIRKind lirKind = LIRKind.derivedReference(kind, baseOop, false);
 
             Variable var = tool.newVariable(lirKind);
             tool.append(new ValueDef(var));

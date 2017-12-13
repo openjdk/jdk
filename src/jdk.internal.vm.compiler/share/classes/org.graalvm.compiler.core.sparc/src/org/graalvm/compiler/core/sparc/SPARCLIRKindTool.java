@@ -68,7 +68,7 @@ public class SPARCLIRKindTool implements LIRKindTool {
 
     @Override
     public LIRKind getNarrowOopKind() {
-        return LIRKind.reference(SPARCKind.WORD);
+        return LIRKind.compressedReference(SPARCKind.WORD);
     }
 
     @Override

@@ -141,6 +141,7 @@ public class StandardGraphBuilderPlugins {
         registerJMHBlackholePlugins(plugins, bytecodeProvider);
         registerJFRThrowablePlugins(plugins, bytecodeProvider);
         registerMethodHandleImplPlugins(plugins, snippetReflection, bytecodeProvider);
+        registerJcovCollectPlugins(plugins, bytecodeProvider);
     }
 
     private static final Field STRING_VALUE_FIELD;
@@ -904,6 +905,23 @@ public class StandardGraphBuilderPlugins {
                         }
                     }
                     b.addPush(JavaKind.Boolean, newResult);
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    /**
+     * Registers a plugin to ignore {@code com.sun.tdk.jcov.runtime.Collect.hit} within an
+     * intrinsic.
+     */
+    private static void registerJcovCollectPlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider) {
+        Registration r = new Registration(plugins, "com.sun.tdk.jcov.runtime.Collect", bytecodeProvider);
+        r.register1("hit", int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode object) {
+                if (b.parsingIntrinsic()) {
                     return true;
                 }
                 return false;
