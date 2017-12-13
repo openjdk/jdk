@@ -216,7 +216,9 @@ public class ToolSimpleTest extends ReplToolTesting {
     public void testInvalidClassPath() {
         test(
                 a -> assertCommand(a, "/env --class-path snurgefusal",
-                        "|  File 'snurgefusal' for '--class-path' is not found.")
+                        "|  File 'snurgefusal' for '--class-path' is not found."),
+                a -> assertCommand(a, "/env --class-path ?",
+                        "|  File '?' for '--class-path' is not found.")
         );
     }
 
