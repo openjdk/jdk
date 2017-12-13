@@ -72,13 +72,14 @@ public class MultiReleaseJars {
         if (contents == null) {
             throw new java.lang.RuntimeException("No input for writing to file" + file);
         }
-        FileOutputStream fos = new FileOutputStream(file);
-        PrintStream ps = new PrintStream(fos);
-        for (String str : contents) {
-            ps.println(str);
+        try (
+             FileOutputStream fos = new FileOutputStream(file);
+             PrintStream ps = new PrintStream(fos)
+        ) {
+            for (String str : contents) {
+                ps.println(str);
+            }
         }
-        ps.close();
-        fos.close();
     }
 
     /* version.jar entries and files:

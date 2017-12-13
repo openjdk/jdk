@@ -182,9 +182,9 @@ public class InstrumentationTest {
         // We use the flagFile to prevent the child process to make progress, until we have
         // attached to it.
         File f = new File(flagFile);
-        FileOutputStream o = new FileOutputStream(f);
-        o.write(1);
-        o.close();
+        try (FileOutputStream o = new FileOutputStream(f)) {
+            o.write(1);
+        }
         if (!f.exists()) {
             throw new RuntimeException("Failed to create " + f);
         }
