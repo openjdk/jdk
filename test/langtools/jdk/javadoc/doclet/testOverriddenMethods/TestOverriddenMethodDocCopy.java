@@ -30,17 +30,17 @@
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    JavadocTester
- * @run main TestOverridenMethodDocCopy
+ * @run main TestOverriddenMethodDocCopy
  */
 
-public class TestOverridenMethodDocCopy extends JavadocTester {
+public class TestOverriddenMethodDocCopy extends JavadocTester {
 
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
      */
     public static void main(String... args) throws Exception {
-        TestOverridenMethodDocCopy tester = new TestOverridenMethodDocCopy();
+        TestOverriddenMethodDocCopy tester = new TestOverriddenMethodDocCopy();
         tester.runTests();
     }
 
