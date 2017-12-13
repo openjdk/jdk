@@ -27,7 +27,8 @@
  * @modules java.base/jdk.internal.misc:+open
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions
+ *                   -Xbootclasspath/a:. -XX:+WhiteBoxAPI
  *                   -Xbatch -XX:-TieredCompilation -XX:+AlwaysIncrementalInline
  *                   -XX:CompileCommand=compileonly,compiler.ciReplay.TestDumpReplay::*
  *                   compiler.ciReplay.TestDumpReplay
