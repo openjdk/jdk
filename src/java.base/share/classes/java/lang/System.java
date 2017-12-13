@@ -2184,6 +2184,15 @@ public final class System {
             public Stream<ModuleLayer> layers(ClassLoader loader) {
                 return ModuleLayer.layers(loader);
             }
+
+            public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
+                return StringCoding.newStringUTF8NoRepl(bytes, off, len);
+            }
+
+            public byte[] getBytesUTF8NoRepl(String s) {
+                return StringCoding.getBytesUTF8NoRepl(s);
+            }
+
         });
     }
 }

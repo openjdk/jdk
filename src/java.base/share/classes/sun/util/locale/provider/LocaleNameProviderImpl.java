@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,28 @@ public class LocaleNameProviderImpl extends LocaleNameProvider implements Availa
     @Override
     public String getDisplayVariant(String vrnt, Locale locale) {
         return getDisplayString("%%"+vrnt, locale);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public String getDisplayUnicodeExtensionKey(String key, Locale locale) {
+        super.getDisplayUnicodeExtensionKey(key, locale); // null check
+        String rbKey = "key." + key;
+        String name = getDisplayString(rbKey, locale);
+        return rbKey.equals(name) ? key : name;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public String getDisplayUnicodeExtensionType(String extType, String key, Locale locale) {
+        super.getDisplayUnicodeExtensionType(extType, key, locale); // null check
+        String rbKey = "type." + key + "." + extType;
+        String name = getDisplayString(rbKey, locale);
+        return rbKey.equals(name) ? extType : name;
     }
 
     private String getDisplayString(String key, Locale locale) {

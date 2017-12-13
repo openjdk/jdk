@@ -24,9 +24,10 @@
  */
 
 package java.util;
-import java.io.Serializable;
-import java.io.ObjectOutputStream;
+
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -5164,14 +5165,19 @@ public class Collections {
      *         specified comparator.
      * @since 1.5
      */
+    @SuppressWarnings("unchecked")
     public static <T> Comparator<T> reverseOrder(Comparator<T> cmp) {
-        if (cmp == null)
-            return reverseOrder();
-
-        if (cmp instanceof ReverseComparator2)
-            return ((ReverseComparator2<T>)cmp).cmp;
-
-        return new ReverseComparator2<>(cmp);
+        if (cmp == null) {
+            return (Comparator<T>) ReverseComparator.REVERSE_ORDER;
+        } else if (cmp == ReverseComparator.REVERSE_ORDER) {
+            return (Comparator<T>) Comparators.NaturalOrderComparator.INSTANCE;
+        } else if (cmp == Comparators.NaturalOrderComparator.INSTANCE) {
+            return (Comparator<T>) ReverseComparator.REVERSE_ORDER;
+        } else if (cmp instanceof ReverseComparator2) {
+            return ((ReverseComparator2<T>) cmp).cmp;
+        } else {
+            return new ReverseComparator2<>(cmp);
+        }
     }
 
     /**

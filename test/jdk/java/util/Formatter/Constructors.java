@@ -401,12 +401,23 @@ public class Constructors {
         }
 
         try (PrintStream ps = new PrintStream("foo")) {
-            new Formatter(ps, null, Locale.UK);
-            fail("new Formatter(new PrintStream(\"foo\"), null, Locale.UK)");
+            new Formatter(ps, (String)null, Locale.UK);
+            fail("new Formatter(new PrintStream(\"foo\"), (String)null, Locale.UK)");
         } catch (NullPointerException x) {
             pass();
         } catch (Exception x) {
-            fail("new Formatter(new PrintStream(\"foo\"), null, Locale.UK)",
+            fail("new Formatter(new PrintStream(\"foo\"), (String)null, Locale.UK)",
+                 x);
+        }
+
+        // Formatter(OutputStream os, Charset charset, Locale l)
+        try (PrintStream ps = new PrintStream("foo")) {
+            new Formatter(ps, (Charset)null, Locale.UK);
+            fail("new Formatter(new PrintStream(\"foo\"), (Charset)null, Locale.UK)");
+        } catch (NullPointerException x) {
+            pass();
+        } catch (Exception x) {
+            fail("new Formatter(new PrintStream(\"foo\"), (Charset)null, Locale.UK)",
                  x);
         }
 
@@ -438,12 +449,22 @@ public class Constructors {
 
         // PrintStream(String fileName, String csn)
         try {
-            new PrintStream("foo", null);
-            fail("new PrintStream(\"foo\", null)");
+            new PrintStream("foo", (String)null);
+            fail("new PrintStream(\"foo\", (String)null)");
         } catch (NullPointerException x) {
             pass();
         } catch (Exception x) {
-            fail("new PrintStream(\"foo\", null)", x);
+            fail("new PrintStream(\"foo\", (String)null)", x);
+        }
+
+        // PrintStream(String fileName, Charset charset)
+        try {
+            new PrintStream("foo", (Charset)null);
+            fail("new PrintStream(\"foo\", (Charset)null)");
+        } catch (NullPointerException x) {
+            pass();
+        } catch (Exception x) {
+            fail("new PrintStream(\"foo\", (Charset)null)", x);
         }
 
         // PrintStream(File file)
@@ -455,12 +476,22 @@ public class Constructors {
 
         // PrintStream(File file, String csn)
         try {
-            new PrintStream(new File("foo"), null);
-            fail("new PrintStream(new File(\"foo\"), null)");
+            new PrintStream(new File("foo"), (String)null);
+            fail("new PrintStream(new File(\"foo\"), (String)null)");
         } catch (NullPointerException x) {
             pass();
         } catch (Exception x) {
-            fail("new PrintStream(new File(\"foo\"), null)", x);
+            fail("new PrintStream(new File(\"foo\"), (String)null)", x);
+        }
+
+        // PrintStream(File file, Charset charset)
+        try {
+            new PrintStream(new File("foo"), (Charset)null);
+            fail("new PrintStream(new File(\"foo\"), (Charset)null)");
+        } catch (NullPointerException x) {
+            pass();
+        } catch (Exception x) {
+            fail("new PrintStream(new File(\"foo\"), (Charset)null)", x);
         }
 
         // PrintWriter(String fileName)
@@ -472,12 +503,22 @@ public class Constructors {
 
         // PrintWriter(String fileName, String csn)
         try {
-            new PrintWriter("foo", null);
-            fail("new PrintWriter(\"foo\"), null");
+            new PrintWriter("foo", (String)null);
+            fail("new PrintWriter(\"foo\"), (String)null");
         } catch (NullPointerException x) {
             pass();
         } catch (Exception x) {
-            fail("new PrintWriter(\"foo\"), null", x);
+            fail("new PrintWriter(\"foo\"), (String)null", x);
+        }
+
+        // PrintWriter(String fileName, Charset charset)
+        try {
+            new PrintWriter("foo", (Charset)null);
+            fail("new PrintWriter(\"foo\"), (Charset)null");
+        } catch (NullPointerException x) {
+            pass();
+        } catch (Exception x) {
+            fail("new PrintWriter(\"foo\"), (Charset)null", x);
         }
 
         // PrintWriter(File file)
@@ -489,12 +530,22 @@ public class Constructors {
 
         // PrintWriter(File file, String csn)
         try {
-            new PrintWriter(new File("foo"), null);
-            fail("new PrintWriter(new File(\"foo\")), null");
+            new PrintWriter(new File("foo"), (String)null);
+            fail("new PrintWriter(new File(\"foo\")), (String)null");
         } catch (NullPointerException x) {
             pass();
         } catch (Exception x) {
-            fail("new PrintWriter(new File(\"foo\")), null", x);
+            fail("new PrintWriter(new File(\"foo\")), (String)null", x);
+        }
+
+        // PrintWriter(File file, Charset charset)
+        try {
+            new PrintWriter(new File("foo"), (Charset)null);
+            fail("new PrintWriter(new File(\"foo\")), (Charset)null");
+        } catch (NullPointerException x) {
+            pass();
+        } catch (Exception x) {
+            fail("new PrintWriter(new File(\"foo\")), (Charset)null", x);
         }
 
         if (fail != 0)

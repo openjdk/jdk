@@ -76,12 +76,16 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             // ignore this element - it has language and territory elements that aren't locale data
             pushIgnoredContainer(qName);
             break;
-        case "type":
-            if ("calendar".equals(attributes.getValue("key"))) {
-                pushStringEntry(qName, attributes, CLDRConverter.CALENDAR_NAME_PREFIX + attributes.getValue("type"));
-            } else {
-                pushIgnoredContainer(qName);
-            }
+
+        // for LocaleNames
+        // copy string
+        case "localeSeparator":
+            pushStringEntry(qName, attributes,
+                CLDRConverter.LOCALE_SEPARATOR);
+            break;
+        case "localeKeyTypePattern":
+            pushStringEntry(qName, attributes,
+                CLDRConverter.LOCALE_KEYTYPE);
             break;
 
         case "language":
@@ -94,6 +98,24 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 CLDRConverter.LOCALE_NAME_PREFIX +
                 (qName.equals("variant") ? "%%" : "") +
                 attributes.getValue("type"));
+            break;
+
+        case "key":
+            // for LocaleNames
+            // copy string
+            pushStringEntry(qName, attributes,
+                CLDRConverter.LOCALE_KEY_PREFIX +
+                convertOldKeyName(attributes.getValue("type")));
+            break;
+
+        case "type":
+            // for LocaleNames/CalendarNames
+            // copy string
+            pushStringEntry(qName, attributes,
+                CLDRConverter.LOCALE_TYPE_PREFIX +
+                convertOldKeyName(attributes.getValue("key")) + "." +
+                attributes.getValue("type"));
+
             break;
 
         //
@@ -515,26 +537,10 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 currentNumberingSystem = script + ".";
                 String digits = CLDRConverter.handlerNumbering.get(script);
                 if (digits == null) {
-                    throw new InternalError("null digits for " + script);
-                }
-                if (Character.isSurrogate(digits.charAt(0))) {
-                    // DecimalFormatSymbols doesn't support supplementary characters as digit zero.
                     pushIgnoredContainer(qName);
                     break;
                 }
-                // in case digits are in the reversed order, reverse back the order.
-                if (digits.charAt(0) > digits.charAt(digits.length() - 1)) {
-                    StringBuilder sb = new StringBuilder(digits);
-                    digits = sb.reverse().toString();
-                }
-                // Check if the order is sequential.
-                char c0 = digits.charAt(0);
-                for (int i = 1; i < digits.length(); i++) {
-                    if (digits.charAt(i) != c0 + i) {
-                        pushIgnoredContainer(qName);
-                        break symbols;
-                    }
-                }
+
                 @SuppressWarnings("unchecked")
                 List<String> numberingScripts = (List<String>) get("numberingScripts");
                 if (numberingScripts == null) {
@@ -924,17 +930,35 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 }
             }
         } else if (currentContainer instanceof Entry) {
-                Entry<?> entry = (Entry<?>) currentContainer;
-                Object value = entry.getValue();
-                if (value != null) {
-                    String key = entry.getKey();
-                    // Tweak for MonthNames for the root locale, Needed for
-                    // SimpleDateFormat.format()/parse() roundtrip.
-                    if (id.equals("root") && key.startsWith("MonthNames")) {
-                        value = new DateFormatSymbols(Locale.US).getShortMonths();
-                    }
-                    put(entry.getKey(), value);
+            Entry<?> entry = (Entry<?>) currentContainer;
+            Object value = entry.getValue();
+            if (value != null) {
+                String key = entry.getKey();
+                // Tweak for MonthNames for the root locale, Needed for
+                // SimpleDateFormat.format()/parse() roundtrip.
+                if (id.equals("root") && key.startsWith("MonthNames")) {
+                    value = new DateFormatSymbols(Locale.US).getShortMonths();
                 }
+                put(entry.getKey(), value);
             }
         }
     }
+
+    public String convertOldKeyName(String key) {
+        // Explicitly obtained from "alias" attribute in each "key" element.
+        switch (key) {
+            case "calendar":
+                return "ca";
+            case "currency":
+                return "cu";
+            case "collation":
+                return "co";
+            case "numbers":
+                return "nu";
+            case "timezone":
+                return "tz";
+            default:
+                return key;
+        }
+    }
+}

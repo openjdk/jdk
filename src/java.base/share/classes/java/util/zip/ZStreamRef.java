@@ -25,22 +25,89 @@
 
 package java.util.zip;
 
+import java.util.function.LongConsumer;
+import java.util.function.LongSupplier;
+import java.lang.ref.Cleaner.Cleanable;
+import jdk.internal.ref.CleanerFactory;
+
 /**
- * A reference to the native zlib's z_stream structure.
+ * A reference to the native zlib's z_stream structure. It also
+ * serves as the "cleaner" to clean up the native resource when
+ * the deflater or infalter is ended, closed or cleaned.
  */
+class ZStreamRef implements Runnable {
 
-class ZStreamRef {
+    private LongConsumer end;
+    private long address;
+    private final Cleanable cleanable;
 
-    private volatile long address;
-    ZStreamRef (long address) {
-        this.address = address;
+    private ZStreamRef (Object owner, LongSupplier addr, LongConsumer end) {
+        this.cleanable = CleanerFactory.cleaner().register(owner, this);
+        this.end = end;
+        this.address = addr.getAsLong();
     }
 
     long address() {
         return address;
     }
 
-    void clear() {
+    void clean() {
+        cleanable.clean();
+    }
+
+    public synchronized void run() {
+        long addr = address;
         address = 0;
+        if (addr != 0) {
+            end.accept(addr);
+        }
+    }
+
+    private ZStreamRef (LongSupplier addr, LongConsumer end) {
+        this.cleanable = null;
+        this.end = end;
+        this.address = addr.getAsLong();
+    }
+
+    /*
+     * If {@code Inflater/Deflater} has been subclassed and the {@code end} method
+     * is overridden, uses {@code finalizer} mechanism for resource cleanup. So
+     * {@code end} method can be called when the {@code Inflater/Deflater} is
+     * unreachable. This mechanism will be removed when the {@code finalize} method
+     * is removed from {@code Inflater/Deflater}.
+     */
+    static ZStreamRef get(Object owner, LongSupplier addr, LongConsumer end) {
+        Class<?> clz = owner.getClass();
+        while (clz != Deflater.class && clz != Inflater.class) {
+            try {
+                clz.getDeclaredMethod("end");
+                return new FinalizableZStreamRef(owner, addr, end);
+            } catch (NoSuchMethodException nsme) {}
+            clz = clz.getSuperclass();
+        }
+        return new ZStreamRef(owner, addr, end);
+    }
+
+    private static class FinalizableZStreamRef extends ZStreamRef {
+        final Object owner;
+
+        FinalizableZStreamRef (Object owner, LongSupplier addr, LongConsumer end) {
+            super(addr, end);
+            this.owner = owner;
+        }
+
+        @Override
+        void clean() {
+            run();
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        protected void finalize() {
+            if (owner instanceof Inflater)
+                ((Inflater)owner).end();
+            else
+                ((Deflater)owner).end();
+        }
     }
 }

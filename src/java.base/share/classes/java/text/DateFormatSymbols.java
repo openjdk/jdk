@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
@@ -81,6 +82,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * new SimpleDateFormat(aPattern, DateFormatSymbols.getInstance(aLocale)).
  * </pre>
  * </blockquote>
+ *
+ * <p>If the locale contains "rg" (region override)
+ * <a href="../util/Locale.html#def_locale_extension">Unicode extension</a>,
+ * the symbols are overridden for the designated region.
  *
  * <p>
  * <code>DateFormatSymbols</code> objects are cloneable. When you obtain
@@ -716,15 +721,18 @@ public class DateFormatSymbols implements Serializable, Cloneable {
             }
             dfs = new DateFormatSymbols(false);
 
+            // check for region override
+            Locale override = CalendarDataUtility.findRegionOverride(locale);
+
             // Initialize the fields from the ResourceBundle for locale.
             LocaleProviderAdapter adapter
-                = LocaleProviderAdapter.getAdapter(DateFormatSymbolsProvider.class, locale);
+                = LocaleProviderAdapter.getAdapter(DateFormatSymbolsProvider.class, override);
             // Avoid any potential recursions
             if (!(adapter instanceof ResourceBundleBasedAdapter)) {
                 adapter = LocaleProviderAdapter.getResourceBundleBased();
             }
             ResourceBundle resource
-                = ((ResourceBundleBasedAdapter)adapter).getLocaleData().getDateFormatData(locale);
+                = ((ResourceBundleBasedAdapter)adapter).getLocaleData().getDateFormatData(override);
 
             dfs.locale = locale;
             // JRE and CLDR use different keys

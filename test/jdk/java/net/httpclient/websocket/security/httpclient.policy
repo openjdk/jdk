@@ -49,6 +49,7 @@ grant codeBase "jrt:/jdk.incubator.httpclient" {
     permission java.util.PropertyPermission "jdk.httpclient.maxstreams","read";
     permission java.util.PropertyPermission "jdk.httpclient.redirects.retrylimit","read";
     permission java.util.PropertyPermission "jdk.httpclient.windowsize","read";
+    permission java.util.PropertyPermission "jdk.httpclient.receiveBufferSize","read";
     permission java.util.PropertyPermission "jdk.httpclient.bufsize","read";
     permission java.util.PropertyPermission "jdk.httpclient.internal.selector.timeout","read";
     permission java.util.PropertyPermission "jdk.internal.httpclient.debug","read";

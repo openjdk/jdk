@@ -1229,9 +1229,8 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @return proto at given depth
      */
     public final ScriptObject getProto(final int n) {
-        assert n > 0;
-        ScriptObject p = getProto();
-        for (int i = n; --i > 0;) {
+        ScriptObject p = this;
+        for (int i = n; i > 0; i--) {
             p = p.getProto();
         }
         return p;

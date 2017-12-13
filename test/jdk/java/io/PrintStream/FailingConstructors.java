@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 7000511
+ * @bug 7000511 8190577
  * @summary PrintStream, PrintWriter, Formatter, Scanner leave files open when
  *          exception thrown
  */
@@ -68,7 +68,7 @@ public class FailingConstructors {
         check(exists, file);
 
         try {
-            new PrintStream(file, null);
+            new PrintStream(file, (String)null);
             fail();
         } catch(FileNotFoundException|NullPointerException e) {
             pass();
@@ -87,7 +87,7 @@ public class FailingConstructors {
         check(exists, file);
 
         try {
-            new PrintStream(file.getName(), null);
+            new PrintStream(file.getName(), (String)null);
             fail();
         } catch(FileNotFoundException|NullPointerException e) {
             pass();

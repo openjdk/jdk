@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,9 +173,14 @@ public class NumberFormatProviderImpl extends NumberFormatProvider implements Av
             throw new NullPointerException();
         }
 
+        // Check for region override
+        Locale override = locale.getUnicodeLocaleType("nu") == null ?
+            CalendarDataUtility.findRegionOverride(locale) :
+            locale;
+
         LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
-        String[] numberPatterns = adapter.getLocaleResources(locale).getNumberPatterns();
-        DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(locale);
+        String[] numberPatterns = adapter.getLocaleResources(override).getNumberPatterns();
+        DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(override);
         int entry = (choice == INTEGERSTYLE) ? NUMBERSTYLE : choice;
         DecimalFormat format = new DecimalFormat(numberPatterns[entry], symbols);
 

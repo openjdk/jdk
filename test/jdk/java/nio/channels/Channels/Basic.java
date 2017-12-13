@@ -108,13 +108,24 @@ public class Basic {
         } catch (NullPointerException npe) {}
 
         try {
-            Channels.newReader(rbc, null);
+            Channels.newReader(rbc, (String)null);
             failNpeExpected();
         } catch (NullPointerException npe) {}
 
 
         try {
-            Channels.newReader(null, null);
+            Channels.newReader(null, (String)null);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newReader(rbc, (Charset)null);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+
+        try {
+            Channels.newReader(null, (Charset)null);
             failNpeExpected();
         } catch (NullPointerException npe) {}
 
@@ -142,15 +153,24 @@ public class Basic {
         } catch (NullPointerException npe) {}
 
         try {
-            Channels.newWriter(wbc, null);
+            Channels.newWriter(wbc, (String)null);
             failNpeExpected();
         } catch (NullPointerException npe) {}
 
         try {
-            Channels.newWriter(null, null);
+            Channels.newWriter(null, (String)null);
             failNpeExpected();
         } catch (NullPointerException npe) {}
 
+        try {
+            Channels.newWriter(wbc, (Charset)null);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newWriter(null, (Charset)null);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
 
         try {
             blah = File.createTempFile("blah", null);

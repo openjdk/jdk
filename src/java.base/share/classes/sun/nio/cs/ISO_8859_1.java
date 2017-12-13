@@ -63,8 +63,8 @@ public class ISO_8859_1
         return new Encoder(this);
     }
 
-    private static class Decoder extends CharsetDecoder
-                                 implements ArrayDecoder {
+    private static class Decoder extends CharsetDecoder {
+
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
         }
@@ -124,23 +124,10 @@ public class ISO_8859_1
             else
                 return decodeBufferLoop(src, dst);
         }
-
-        public int decode(byte[] src, int sp, int len, char[] dst) {
-            if (len > dst.length)
-                len = dst.length;
-            int dp = 0;
-            while (dp < len)
-                dst[dp++] = (char)(src[sp++] & 0xff);
-            return dp;
-        }
-
-        public boolean isASCIICompatible() {
-            return true;
-        }
     }
 
-    private static class Encoder extends CharsetEncoder
-                                 implements ArrayEncoder {
+    private static class Encoder extends CharsetEncoder {
+
         private Encoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
         }
@@ -270,40 +257,6 @@ public class ISO_8859_1
                 return encodeArrayLoop(src, dst);
             else
                 return encodeBufferLoop(src, dst);
-        }
-
-        private byte repl = (byte)'?';
-        protected void implReplaceWith(byte[] newReplacement) {
-            repl = newReplacement[0];
-        }
-
-        public int encode(char[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
-            int slen = Math.min(len, dst.length);
-            int sl = sp + slen;
-            while (sp < sl) {
-                int ret = encodeISOArray(src, sp, dst, dp, slen);
-                sp = sp + ret;
-                dp = dp + ret;
-                if (ret != slen) {
-                    char c = src[sp++];
-                    if (Character.isHighSurrogate(c) && sp < sl &&
-                        Character.isLowSurrogate(src[sp])) {
-                        if (len > dst.length) {
-                            sl++;
-                            len--;
-                        }
-                        sp++;
-                    }
-                    dst[dp++] = repl;
-                    slen = Math.min((sl - sp), (dst.length - dp));
-                }
-            }
-            return dp;
-        }
-
-        public boolean isASCIICompatible() {
-            return true;
         }
     }
 }

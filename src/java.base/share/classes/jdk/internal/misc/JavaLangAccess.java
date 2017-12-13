@@ -254,4 +254,23 @@ public interface JavaLangAccess {
      * given class loader.
      */
     Stream<ModuleLayer> layers(ClassLoader loader);
+
+    /**
+     * Returns a new string by decoding from the given utf8 bytes array.
+     *
+     * @param off the index of the first byte to decode
+     * @param len the number of bytes to decode
+     * @return the newly created string
+     * @throws IllegalArgumentException for malformed or unmappable bytes.
+     */
+    String newStringUTF8NoRepl(byte[] bytes, int off, int len);
+
+    /**
+     * Encode the given string into a sequence of bytes using utf8.
+     *
+     * @param s the string to encode
+     * @return the encoded bytes in utf8
+     * @throws IllegalArgumentException for malformed surrogates
+     */
+    byte[] getBytesUTF8NoRepl(String s);
 }

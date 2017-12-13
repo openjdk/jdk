@@ -265,7 +265,7 @@
   </target>
 
   <!-- generate javadoc for Nashorn classes -->
-  <target name="javadoc" depends="jar">
+  <target name="javadoc" depends="jar" unless="test.class">
     <javadoc destdir="${dist.javadoc.dir}" use="yes"
         windowtitle="${nashorn.product.name} ${nashorn.version}"
         additionalparam="-quiet" failonerror="true" useexternalfile="true"> 

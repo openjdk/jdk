@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,23 +122,21 @@ public class LocaleResources {
         return (byte[]) localeData.getBreakIteratorResources(locale).getObject(key);
     }
 
-    int getCalendarData(String key) {
-        Integer caldata;
+    public String getCalendarData(String key) {
+        String caldata = "";
         String cacheKey = CALENDAR_DATA  + key;
 
         removeEmptyReferences();
 
         ResourceReference data = cache.get(cacheKey);
-        if (data == null || ((caldata = (Integer) data.get()) == null)) {
+        if (data == null || ((caldata = (String) data.get()) == null)) {
             ResourceBundle rb = localeData.getCalendarData(locale);
             if (rb.containsKey(key)) {
-                caldata = Integer.parseInt(rb.getString(key));
-            } else {
-                caldata = 0;
+                caldata = rb.getString(key);
             }
 
             cache.put(cacheKey,
-                      new ResourceReference(cacheKey, (Object) caldata, referenceQueue));
+                      new ResourceReference(cacheKey, caldata, referenceQueue));
         }
 
         return caldata;

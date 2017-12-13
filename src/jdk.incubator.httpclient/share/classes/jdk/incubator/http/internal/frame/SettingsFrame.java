@@ -100,6 +100,11 @@ public class SettingsFrame extends Http2Frame {
         this(0);
     }
 
+    public SettingsFrame(SettingsFrame other) {
+        super(0, other.flags);
+        parameters = Arrays.copyOf(other.parameters, MAX_PARAM);
+    }
+
     @Override
     public int type() {
         return TYPE;
