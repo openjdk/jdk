@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires !vm.graal.enabled
  * @library /lib/testlibrary /test/lib
  * @modules java.desktop java.logging jdk.compiler
  * @build LimitModsTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*

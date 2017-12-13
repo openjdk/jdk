@@ -36,6 +36,7 @@ requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
 requires.properties= \
     sun.arch.data.model \
     java.runtime.name \
+    vm.graal.enabled \
     vm.cds
 
 # Minimum jtreg version
