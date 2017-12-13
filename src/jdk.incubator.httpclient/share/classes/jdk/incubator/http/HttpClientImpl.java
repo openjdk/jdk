@@ -1038,7 +1038,7 @@ class HttpClientImpl extends HttpClient {
     // used for the connection window
     int getReceiveBufferSize() {
         return Utils.getIntegerNetProperty(
-                "jdk.httpclient.connectionWindowSize", 256 * 1024
+                "jdk.httpclient.receiveBufferSize", 2 * 1024 * 1024
         );
     }
 }
