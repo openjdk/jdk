@@ -29,6 +29,7 @@ import static org.testng.AssertJUnit.*;
 import org.testng.annotations.Test;
 import org.netbeans.jemmy.ClassReference;
 import org.netbeans.jemmy.ComponentChooser;
+import org.netbeans.jemmy.Timeouts;
 import org.netbeans.jemmy.operators.JButtonOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JProgressBarOperator;
@@ -47,10 +48,12 @@ import org.testng.annotations.Listeners;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.progressbar.ProgressBarDemo
- * @run testng ProgressBarDemoTest
+ * @run testng/timeout=240 ProgressBarDemoTest
  */
 @Listeners(GuiTestListener.class)
 public class ProgressBarDemoTest {
+
+    private final static long PROGRESS_BAR_TIMEOUT = 180000;
 
     @Test
     public void test() throws Exception {
@@ -147,9 +150,15 @@ public class ProgressBarDemoTest {
 
     // Check progess bar progression and start/stop button disabled/enabled states
     public void checkCompleteProgress(JFrameOperator frame, JButtonOperator startButton, JButtonOperator stopButton, JProgressBarOperator progressBar) throws Exception {
+        Timeouts timeouts = progressBar.getTimeouts();
+        long defaultTimeout = timeouts.getTimeout("ComponentOperator.WaitStateTimeout");
         startButton.pushNoBlock();
 
+        // Set progress bar timeout as 3 minutes as it take long time to reach maximum
+        timeouts.setTimeout("ComponentOperator.WaitStateTimeout", PROGRESS_BAR_TIMEOUT);
         progressBar.waitValue(progressBar.getMaximum());
+        // Reset timeout to default timeout value
+        timeouts.setTimeout("ComponentOperator.WaitStateTimeout", defaultTimeout);
 
         startButton.waitComponentEnabled();
 
