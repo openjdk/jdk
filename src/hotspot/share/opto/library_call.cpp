@@ -1789,10 +1789,19 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
     return StubRoutines::dexp() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
       runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dexp),  "EXP");
-  case vmIntrinsics::_dpow:
-    return StubRoutines::dpow() != NULL ?
-      runtime_math(OptoRuntime::Math_DD_D_Type(), StubRoutines::dpow(), "dpow") :
+  case vmIntrinsics::_dpow: {
+    Node* exp = round_double_node(argument(2));
+    const TypeD* d = _gvn.type(exp)->isa_double_constant();
+    if (d != NULL && d->getd() == 2.0) {
+      // Special case: pow(x, 2.0) => x * x
+      Node* base = round_double_node(argument(0));
+      set_result(_gvn.transform(new MulDNode(base, base)));
+      return true;
+    }
+    return StubRoutines::dexp() != NULL ?
+      runtime_math(OptoRuntime::Math_DD_D_Type(), StubRoutines::dpow(),  "dpow") :
       runtime_math(OptoRuntime::Math_DD_D_Type(), FN_PTR(SharedRuntime::dpow),  "POW");
+  }
 #undef FN_PTR
 
    // These intrinsics are not yet correctly implemented
