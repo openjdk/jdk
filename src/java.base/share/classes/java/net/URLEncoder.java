@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException ;
 import java.util.BitSet;
+import java.util.Objects;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -168,44 +169,60 @@ public class URLEncoder {
 
     /**
      * Translates a string into {@code application/x-www-form-urlencoded}
-     * format using a specific encoding scheme. This method uses the
-     * supplied encoding scheme to obtain the bytes for unsafe
-     * characters.
+     * format using a specific encoding scheme.
      * <p>
-     * <em><strong>Note:</strong> The <a href=
-     * "http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars">
-     * World Wide Web Consortium Recommendation</a> states that
-     * UTF-8 should be used. Not doing so may introduce
-     * incompatibilities.</em>
+     * This method behaves the same as {@linkplain encode(String s, Charset charset)}
+     * except that it will {@linkplain java.nio.charset.Charset#forName look up the charset}
+     * using the given encoding name.
      *
      * @param   s   {@code String} to be translated.
      * @param   enc   The name of a supported
      *    <a href="../lang/package-summary.html#charenc">character
      *    encoding</a>.
      * @return  the translated {@code String}.
-     * @exception  UnsupportedEncodingException
+     * @throws  UnsupportedEncodingException
      *             If the named encoding is not supported
      * @see URLDecoder#decode(java.lang.String, java.lang.String)
      * @since 1.4
      */
     public static String encode(String s, String enc)
         throws UnsupportedEncodingException {
+        if (enc == null) {
+            throw new NullPointerException("charsetName");
+        }
+
+        try {
+            Charset charset = Charset.forName(enc);
+            return encode(s, charset);
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
+            throw new UnsupportedEncodingException(enc);
+        }
+    }
+
+    /**
+     * Translates a string into {@code application/x-www-form-urlencoded}
+     * format using a specific {@linkplain java.nio.charset.Charset Charset}.
+     * This method uses the supplied charset to obtain the bytes for unsafe
+     * characters.
+     * <p>
+     * <em><strong>Note:</strong> The <a href=
+     * "http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars">
+     * World Wide Web Consortium Recommendation</a> states that
+     * UTF-8 should be used. Not doing so may introduce incompatibilities.</em>
+     *
+     * @param   s   {@code String} to be translated.
+     * @param charset the given charset
+     * @return  the translated {@code String}.
+     * @throws NullPointerException if {@code s} or {@code charset} is {@code null}.
+     * @see URLDecoder#decode(java.lang.String, java.nio.charset.Charset)
+     * @since 10
+     */
+    public static String encode(String s, Charset charset) {
+        Objects.requireNonNull(charset, "charset");
 
         boolean needToChange = false;
         StringBuilder out = new StringBuilder(s.length());
-        Charset charset;
         CharArrayWriter charArrayWriter = new CharArrayWriter();
-
-        if (enc == null)
-            throw new NullPointerException("charsetName");
-
-        try {
-            charset = Charset.forName(enc);
-        } catch (IllegalCharsetNameException e) {
-            throw new UnsupportedEncodingException(enc);
-        } catch (UnsupportedCharsetException e) {
-            throw new UnsupportedEncodingException(enc);
-        }
 
         for (int i = 0; i < s.length();) {
             int c = (int) s.charAt(i);

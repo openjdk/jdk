@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,6 @@ jvalue inStream_readValue(struct PacketInputStream *in, jbyte *typeKeyPtr);
 
 jdwpError inStream_skipBytes(PacketInputStream *stream, jint count);
 
-jboolean inStream_endOfInput(PacketInputStream *stream);
 jdwpError inStream_error(PacketInputStream *stream);
 void inStream_clearError(PacketInputStream *stream);
 void inStream_destroy(PacketInputStream *stream);

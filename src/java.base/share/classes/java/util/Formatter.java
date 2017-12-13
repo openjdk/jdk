@@ -2137,6 +2137,39 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     /**
+     * Constructs a new formatter with the specified file name, charset, and
+     * locale.
+     *
+     * @param  fileName
+     *         The name of the file to use as the destination of this
+     *         formatter.  If the file exists then it will be truncated to
+     *         zero size; otherwise, a new file will be created.  The output
+     *         will be written to the file and is buffered.
+     *
+     * @param  charset
+     *         A {@linkplain java.nio.charset.Charset charset}
+     *
+     * @param  l
+     *         The {@linkplain java.util.Locale locale} to apply during
+     *         formatting.  If {@code l} is {@code null} then no localization
+     *         is applied.
+     *
+     * @throws  IOException
+     *          if an I/O error occurs while opening or creating the file
+     *
+     * @throws  SecurityException
+     *          If a security manager is present and {@link
+     *          SecurityManager#checkWrite checkWrite(fileName)} denies write
+     *          access to the file
+     *
+     * @throws NullPointerException
+     *         if {@code fileName} or {@code charset} is {@code null}.
+     */
+    public Formatter(String fileName, Charset charset, Locale l) throws IOException {
+        this(Objects.requireNonNull(charset, "charset"), l, new File(fileName));
+    }
+
+    /**
      * Constructs a new formatter with the specified file.
      *
      * <p> The charset used is the {@linkplain
@@ -2248,6 +2281,40 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     /**
+     * Constructs a new formatter with the specified file, charset, and
+     * locale.
+     *
+     * @param  file
+     *         The file to use as the destination of this formatter.  If the
+     *         file exists then it will be truncated to zero size; otherwise,
+     *         a new file will be created.  The output will be written to the
+     *         file and is buffered.
+     *
+     * @param  charset
+     *         A {@linkplain java.nio.charset.Charset charset}
+     *
+     * @param  l
+     *         The {@linkplain java.util.Locale locale} to apply during
+     *         formatting.  If {@code l} is {@code null} then no localization
+     *         is applied.
+     *
+     * @throws IOException
+     *         if an I/O error occurs while opening or creating the file
+     *
+     * @throws SecurityException
+     *         If a security manager is present and {@link
+     *         SecurityManager#checkWrite checkWrite(file.getPath())} denies
+     *         write access to the file
+     *
+     * @throws NullPointerException
+     *         if {@code file} or {@code charset} is {@code null}.
+     */
+    public Formatter(File file, Charset charset, Locale l) throws IOException {
+        this(Objects.requireNonNull(charset, "charset"), l, file);
+    }
+
+
+    /**
      * Constructs a new formatter with the specified print stream.
      *
      * <p> The locale used is the {@linkplain
@@ -2338,6 +2405,29 @@ public final class Formatter implements Closeable, Flushable {
         throws UnsupportedEncodingException
     {
         this(l, new BufferedWriter(new OutputStreamWriter(os, csn)));
+    }
+
+    /**
+     * Constructs a new formatter with the specified output stream, charset,
+     * and locale.
+     *
+     * @param  os
+     *         The output stream to use as the destination of this formatter.
+     *         The output will be buffered.
+     *
+     * @param  charset
+     *         A {@linkplain java.nio.charset.Charset charset}
+     *
+     * @param  l
+     *         The {@linkplain java.util.Locale locale} to apply during
+     *         formatting.  If {@code l} is {@code null} then no localization
+     *         is applied.
+     *
+     * @throws NullPointerException
+     *         if {@code os} or {@code charset} is {@code null}.
+     */
+    public Formatter(OutputStream os, Charset charset, Locale l) {
+        this(l, new BufferedWriter(new OutputStreamWriter(os, charset)));
     }
 
     private static char getZero(Locale l) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.TimeZoneNameProvider;
 import sun.util.calendar.ZoneInfo;
+import sun.util.cldr.CLDRLocaleProviderAdapter;
+import static sun.util.locale.provider.LocaleProviderAdapter.Type;
 
 /**
  * Utility class that deals with the localized time zone names
@@ -150,6 +153,18 @@ public final class TimeZoneNameUtility {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Converts the time zone id from LDML's 5-letter id to tzdb's id
+     *
+     * @param shortID       time zone short ID defined in LDML
+     * @return the tzdb's time zone ID
+     */
+    public static Optional<String> convertLDMLShortID(String shortID) {
+        return ((CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(Type.CLDR))
+                    .getTimeZoneID(shortID)
+                    .map(id -> id.replaceAll("\\s.*", ""));
     }
 
     private static String[] retrieveDisplayNamesImpl(String id, Locale locale) {

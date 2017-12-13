@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -540,7 +540,7 @@ class JdepsTask {
     }
 
     boolean run() throws IOException {
-        try (JdepsConfiguration config = buildConfig(command.allModules())) {
+        try (JdepsConfiguration config = buildConfig()) {
             if (!options.nowarning) {
                 // detect split packages
                 config.splitPackages().entrySet()
@@ -553,7 +553,7 @@ class JdepsTask {
 
             // check if any module specified in --add-modules, --require, and -m is missing
             options.addmods.stream()
-                .filter(mn -> !config.isValidToken(mn))
+                .filter(mn -> !JdepsConfiguration.isToken(mn))
                 .forEach(mn -> config.findModule(mn).orElseThrow(() ->
                     new UncheckedBadArgs(new BadArgs("err.module.not.found", mn))));
 
@@ -561,18 +561,14 @@ class JdepsTask {
         }
     }
 
-    private JdepsConfiguration buildConfig(boolean allModules) throws IOException {
+    private JdepsConfiguration buildConfig() throws IOException {
         JdepsConfiguration.Builder builder =
             new JdepsConfiguration.Builder(options.systemModulePath);
 
         builder.upgradeModulePath(options.upgradeModulePath)
                .appModulePath(options.modulePath)
-               .addmods(options.addmods);
-
-        if (allModules) {
-            // check all system modules in the image
-            builder.allModules();
-        }
+               .addmods(options.addmods)
+               .addmods(command.addModules());
 
         if (options.classpath != null)
             builder.addClassPath(options.classpath);
@@ -655,8 +651,8 @@ class JdepsTask {
          * only.  The method should be overridden when this command should
          * analyze all modules instead.
          */
-        boolean allModules() {
-            return false;
+        Set<String> addModules() {
+            return Set.of();
         }
 
         @Override
@@ -871,8 +867,8 @@ class JdepsTask {
          * analyzed to find all modules that depend on the modules specified in the
          * --require option directly and indirectly
          */
-        public boolean allModules() {
-            return options.requires.size() > 0;
+        Set<String> addModules() {
+            return options.requires.size() > 0 ? Set.of("ALL-SYSTEM") : Set.of();
         }
     }
 
@@ -975,8 +971,8 @@ class JdepsTask {
         /*
          * Returns true to analyze all modules
          */
-        public boolean allModules() {
-            return true;
+        Set<String> addModules() {
+            return Set.of("ALL-SYSTEM", "ALL-MODULE-PATH");
         }
     }
 

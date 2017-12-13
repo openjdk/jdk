@@ -32,7 +32,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -138,7 +137,7 @@ enum Profile {
     // for debugging
     public static void main(String[] args) throws IOException {
         // initialize Profiles
-        new JdepsConfiguration.Builder().allModules().build();
+        new JdepsConfiguration.Builder().addmods(Set.of("ALL-SYSTEM")).build();
 
         // find platform modules
         if (Profile.getProfileCount() == 0) {

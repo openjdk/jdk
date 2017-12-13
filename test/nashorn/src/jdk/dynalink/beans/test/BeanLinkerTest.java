@@ -30,6 +30,7 @@ import static jdk.dynalink.StandardNamespace.PROPERTY;
 import static jdk.dynalink.StandardOperation.CALL;
 import static jdk.dynalink.StandardOperation.GET;
 import static jdk.dynalink.StandardOperation.NEW;
+import static jdk.dynalink.StandardOperation.REMOVE;
 import static jdk.dynalink.StandardOperation.SET;
 
 import java.lang.invoke.CallSite;
@@ -39,7 +40,9 @@ import java.lang.invoke.MethodType;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.DynamicLinker;
 import jdk.dynalink.DynamicLinkerFactory;
@@ -90,6 +93,7 @@ public class BeanLinkerTest {
     private static final Operation GET_ELEMENT = GET.withNamespace(ELEMENT);
     private static final Operation GET_METHOD = GET.withNamespace(METHOD);
     private static final Operation SET_ELEMENT = SET.withNamespace(ELEMENT);
+    private static final Operation REMOVE_ELEMENT = REMOVE.withNamespace(ELEMENT);
 
     private static final MethodHandle findThrower(final String name) {
         try {
@@ -121,8 +125,8 @@ public class BeanLinkerTest {
             final CallSiteDescriptor desc = req.getCallSiteDescriptor();
             final Operation op = desc.getOperation();
             final Operation baseOp = NamedOperation.getBaseOperation(op);
-            if (baseOp != GET_ELEMENT && baseOp != SET_ELEMENT) {
-                // We only handle GET_ELEMENT and SET_ELEMENT.
+            if (baseOp != GET_ELEMENT && baseOp != SET_ELEMENT && baseOp != REMOVE_ELEMENT) {
+                // We only handle GET_ELEMENT, SET_ELEMENT and REMOVE_ELEMENT.
                 return null;
             }
 
@@ -537,5 +541,86 @@ public class BeanLinkerTest {
                 Assert.assertTrue(th instanceof AccessControlException);
             }
         }
+    }
+
+    @Test(dataProvider = "flags")
+    public void removeElementFromListTest(final boolean publicLookup) throws Throwable {
+        final MethodType mt = MethodType.methodType(void.class, Object.class, int.class);
+        final CallSite cs = createCallSite(publicLookup, REMOVE_ELEMENT, mt);
+
+        final List<Integer> list = new ArrayList<>(List.of(23, 430, -4354));
+
+        cs.getTarget().invoke(list, 1);
+        Assert.assertEquals(list, List.of(23, -4354));
+        cs.getTarget().invoke(list, 1);
+        Assert.assertEquals(list, List.of(23));
+        cs.getTarget().invoke(list, 0);
+        Assert.assertEquals(list, List.of());
+        try {
+            cs.getTarget().invoke(list, -1);
+            throw new RuntimeException("expected IndexOutOfBoundsException");
+        } catch (final IndexOutOfBoundsException ex) {
+        }
+
+        try {
+            cs.getTarget().invoke(list, list.size());
+            throw new RuntimeException("expected IndexOutOfBoundsException");
+        } catch (final IndexOutOfBoundsException ex) {
+        }
+    }
+
+    @Test(dataProvider = "flags")
+    public void removeElementFromListWithFixedKeyTest(final boolean publicLookup) throws Throwable {
+        final MethodType mt = MethodType.methodType(void.class, Object.class);
+
+        final List<Integer> list = new ArrayList<>(List.of(23, 430, -4354));
+
+        createCallSite(publicLookup, REMOVE_ELEMENT.named(1), mt).getTarget().invoke(list);
+        Assert.assertEquals(list, List.of(23, -4354));
+        createCallSite(publicLookup, REMOVE_ELEMENT.named(1), mt).getTarget().invoke(list);
+        Assert.assertEquals(list, List.of(23));
+        createCallSite(publicLookup, REMOVE_ELEMENT.named(0), mt).getTarget().invoke(list);
+        Assert.assertEquals(list, List.of());
+        try {
+            createCallSite(publicLookup, REMOVE_ELEMENT.named(-1), mt).getTarget().invoke(list);
+            throw new RuntimeException("expected IndexOutOfBoundsException");
+        } catch (final IndexOutOfBoundsException ex) {
+        }
+
+        try {
+            createCallSite(publicLookup, REMOVE_ELEMENT.named(list.size()), mt).getTarget().invoke(list);
+            throw new RuntimeException("expected IndexOutOfBoundsException");
+        } catch (final IndexOutOfBoundsException ex) {
+        }
+    }
+
+    @Test(dataProvider = "flags")
+    public void removeElementFromMapTest(final boolean publicLookup) throws Throwable {
+        final MethodType mt = MethodType.methodType(void.class, Object.class, Object.class);
+        final CallSite cs = createCallSite(publicLookup, REMOVE_ELEMENT, mt);
+
+        final Map<String, String> map = new HashMap<>(Map.of("k1", "v1", "k2", "v2", "k3", "v3"));
+
+        cs.getTarget().invoke(map, "k2");
+        Assert.assertEquals(map, Map.of("k1", "v1", "k3", "v3"));
+        cs.getTarget().invoke(map, "k4");
+        Assert.assertEquals(map, Map.of("k1", "v1", "k3", "v3"));
+        cs.getTarget().invoke(map, "k1");
+        Assert.assertEquals(map, Map.of("k3", "v3"));
+    }
+
+
+    @Test(dataProvider = "flags")
+    public void removeElementFromMapWithFixedKeyTest(final boolean publicLookup) throws Throwable {
+        final MethodType mt = MethodType.methodType(void.class, Object.class);
+
+        final Map<String, String> map = new HashMap<>(Map.of("k1", "v1", "k2", "v2", "k3", "v3"));
+
+        createCallSite(publicLookup, REMOVE_ELEMENT.named("k2"), mt).getTarget().invoke(map);
+        Assert.assertEquals(map, Map.of("k1", "v1", "k3", "v3"));
+        createCallSite(publicLookup, REMOVE_ELEMENT.named("k4"), mt).getTarget().invoke(map);
+        Assert.assertEquals(map, Map.of("k1", "v1", "k3", "v3"));
+        createCallSite(publicLookup, REMOVE_ELEMENT.named("k1"), mt).getTarget().invoke(map);
+        Assert.assertEquals(map, Map.of("k3", "v3"));
     }
 }

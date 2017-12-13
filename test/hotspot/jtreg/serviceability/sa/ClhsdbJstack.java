@@ -38,14 +38,17 @@ import jdk.test.lib.Platform;
 
 public class ClhsdbJstack {
 
-    public static void main(String[] args) throws Exception {
-        System.out.println("Starting ClhsdbJstack test");
-
+    private static void testJstack(boolean withXcomp) throws Exception {
         LingeredApp theApp = null;
         try {
             ClhsdbLauncher test = new ClhsdbLauncher();
-            theApp = LingeredApp.startApp();
-            System.out.println("Started LingeredApp with pid " + theApp.getPid());
+            theApp = withXcomp ? LingeredApp.startApp(List.of("-Xcomp"))
+                               : LingeredApp.startApp();
+            System.out.print("Started LingeredApp ");
+            if (withXcomp) {
+                System.out.print("(-Xcomp) ");
+            }
+            System.out.println("with pid " + theApp.getPid());
 
             List<String> cmds = List.of("jstack -v");
 
@@ -61,10 +64,16 @@ public class ClhsdbJstack {
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
         } catch (Exception ex) {
-            throw new RuntimeException("Test ERROR " + ex, ex);
+            throw new RuntimeException("Test ERROR (with -Xcomp=" + withXcomp + ") " + ex, ex);
         } finally {
             LingeredApp.stopApp(theApp);
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        System.out.println("Starting ClhsdbJstack test");
+        testJstack(false);
+        testJstack(true);
         System.out.println("Test PASSED");
     }
 }

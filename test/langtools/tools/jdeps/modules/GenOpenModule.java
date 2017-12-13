@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,41 +54,39 @@ public class GenOpenModule extends GenModuleInfo {
     private static final Path DEST_DIR = Paths.get("moduleinfosrc");
     private static final Path NEW_MODS_DIR = Paths.get("new_mods");
 
-    /**
-     * Compiles all modules used by the test
-     */
     @BeforeTest
-    public void compileAll() throws Exception {
-
-        compileModules(MODS_DIR);
-
-        createJARFiles(MODS_DIR, LIBS_DIR);
+    public void setup() throws Exception {
+        compileAndCreateJars();
     }
 
     @Test
     public void test() throws IOException {
+        Path dest = DEST_DIR.resolve("open");
+        Path classes = NEW_MODS_DIR.resolve("open");
+        Files.createDirectories(dest);
+        Files.createDirectories(classes);
+
         Stream<String> files = MODULES.stream()
                 .map(mn -> LIBS_DIR.resolve(mn + ".jar"))
                 .map(Path::toString);
 
         Stream<String> options = Stream.concat(
-            Stream.of("--generate-open-module", DEST_DIR.toString()), files);
+            Stream.of("--generate-open-module", dest.toString()), files);
         JdepsRunner.run(options.toArray(String[]::new));
 
         // check file exists
         MODULES.stream()
-             .map(mn -> DEST_DIR.resolve(mn).resolve("module-info.java"))
+             .map(mn -> dest.resolve(mn).resolve("module-info.java"))
              .forEach(f -> assertTrue(Files.exists(f)));
 
         // copy classes to a temporary directory
         // and then compile new module-info.java
-        copyClasses(MODS_DIR, NEW_MODS_DIR);
-        compileNewGenModuleInfo(DEST_DIR, NEW_MODS_DIR);
+        copyClasses(MODS_DIR, classes);
+        compileNewGenModuleInfo(dest, classes);
 
         for (String mn : MODULES) {
-            Path p1 = NEW_MODS_DIR.resolve(mn).resolve(MODULE_INFO);
+            Path p1 = classes.resolve(mn).resolve(MODULE_INFO);
             Path p2 = MODS_DIR.resolve(mn).resolve(MODULE_INFO);
-
             try (InputStream in1 = Files.newInputStream(p1);
                  InputStream in2 = Files.newInputStream(p2)) {
                 verify(ModuleDescriptor.read(in1),

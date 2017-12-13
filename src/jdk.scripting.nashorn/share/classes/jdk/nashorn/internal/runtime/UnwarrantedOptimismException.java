@@ -153,12 +153,15 @@ public final class UnwarrantedOptimismException extends RuntimeException {
     }
 
     /**
-     * Check if we ended up with a primitive return value (even though it may be
-     * too wide for what we tried to do, e.g. double instead of int)
-     * @return true if return value is primitive
+     * Return a new {@code UnwarrantedOptimismException} with the same return value and the
+     * new program point.
+     *
+     * @param newProgramPoint new new program point
+     * @return the new exception instance
      */
-    public boolean hasPrimitiveReturnValue() {
-        return returnValue instanceof Number || returnValue instanceof Boolean;
+    public UnwarrantedOptimismException replaceProgramPoint(final int newProgramPoint) {
+        assert isValid(newProgramPoint);
+        return new UnwarrantedOptimismException(returnValue, newProgramPoint, returnType);
     }
 
     @Override

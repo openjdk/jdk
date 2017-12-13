@@ -741,13 +741,18 @@ public abstract class PKCS11Test {
     }
 
     private static String distro() {
-        try (BufferedReader in =
-            new BufferedReader(new InputStreamReader(
-                Runtime.getRuntime().exec("uname -v").getInputStream()))) {
+        if (props.getProperty("os.name").equals("SunOS")) {
+            try (BufferedReader in =
+                         new BufferedReader(new InputStreamReader(
+                                 Runtime.getRuntime().exec("uname -v").getInputStream()))) {
 
-            return in.readLine();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to determine distro.", e);
+                return in.readLine();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to determine distro.", e);
+            }
+        } else {
+            // Not used outside Solaris
+            return null;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.util.locale.provider;
 
+import java.util.Map;
+
 /**
  * LocaleData meta info SPI
  *
@@ -46,4 +48,13 @@ public interface LocaleDataMetaInfo {
      * @return concatenated language tags, separated by a space.
      */
     public String availableLanguageTags(String category);
+
+    /**
+     * Returns a map for short time zone ids in BCP47 Unicode extension and
+     * the long time zone ids.
+     * @return map of short id to long ids, separated by a space.
+     */
+    default public Map<String, String>  tzShortIDs() {
+        return null;
+    }
 }

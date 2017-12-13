@@ -286,13 +286,17 @@ public final class WeekFields implements Serializable {
      * Obtains an instance of {@code WeekFields} appropriate for a locale.
      * <p>
      * This will look up appropriate values from the provider of localization data.
+     * If the locale contains "fw" (First day of week) and/or "rg"
+     * (Region Override) <a href="../../util/Locale.html#def_locale_extension">
+     * Unicode extensions</a>, returned instance will reflect the values specified with
+     * those extensions. If both "fw" and "rg" are specified, the value from
+     * the "fw" extension supersedes the implicit one from the "rg" extension.
      *
      * @param locale  the locale to use, not null
      * @return the week-definition, not null
      */
     public static WeekFields of(Locale locale) {
         Objects.requireNonNull(locale, "locale");
-        locale = new Locale(locale.getLanguage(), locale.getCountry());  // elminate variants
 
         int calDow = CalendarDataUtility.retrieveFirstDayOfWeek(locale);
         DayOfWeek dow = DayOfWeek.SUNDAY.plus(calDow - 1);
@@ -1041,7 +1045,8 @@ public final class WeekFields implements Serializable {
             Objects.requireNonNull(locale, "locale");
             if (rangeUnit == YEARS) {  // only have values for week-of-year
                 LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased()
-                        .getLocaleResources(locale);
+                        .getLocaleResources(
+                            CalendarDataUtility.findRegionOverride(locale));
                 ResourceBundle rb = lr.getJavaTimeFormatData();
                 return rb.containsKey("field.week") ? rb.getString("field.week") : name;
             }

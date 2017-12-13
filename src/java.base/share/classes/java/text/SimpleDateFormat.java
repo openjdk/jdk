@@ -672,7 +672,7 @@ public class SimpleDateFormat extends DateFormat {
             // However, the calendar should use the current default TimeZone.
             // If this is not contained in the locale zone strings, then the zone
             // will be formatted using generic GMT+/-H:MM nomenclature.
-            calendar = Calendar.getInstance(TimeZone.getDefault(), loc);
+            calendar = Calendar.getInstance(loc);
         }
     }
 

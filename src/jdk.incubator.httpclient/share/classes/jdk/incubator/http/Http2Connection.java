@@ -228,7 +228,7 @@ class Http2Connection  {
     private final WindowController windowController = new WindowController();
     private final FramesController framesController = new FramesController();
     private final Http2TubeSubscriber subscriber = new Http2TubeSubscriber();
-    final WindowUpdateSender windowUpdater;
+    final ConnectionWindowUpdateSender windowUpdater;
     private volatile Throwable cause;
     private volatile Supplier<ByteBuffer> initial;
 
@@ -247,7 +247,8 @@ class Http2Connection  {
         this.nextstreamid = nextstreamid;
         this.key = key;
         this.clientSettings = this.client2.getClientSettings();
-        this.framesDecoder = new FramesDecoder(this::processFrame, clientSettings.getParameter(SettingsFrame.MAX_FRAME_SIZE));
+        this.framesDecoder = new FramesDecoder(this::processFrame,
+                clientSettings.getParameter(SettingsFrame.MAX_FRAME_SIZE));
         // serverSettings will be updated by server
         this.serverSettings = SettingsFrame.getDefaultSettings();
         this.hpackOut = new Encoder(serverSettings.getParameter(HEADER_TABLE_SIZE));
@@ -255,7 +256,8 @@ class Http2Connection  {
         debugHpack.log(Level.DEBUG, () -> "For the record:" + super.toString());
         debugHpack.log(Level.DEBUG, "Decoder created: %s", hpackIn);
         debugHpack.log(Level.DEBUG, "Encoder created: %s", hpackOut);
-        this.windowUpdater = new ConnectionWindowUpdateSender(this, client().getReceiveBufferSize());
+        this.windowUpdater = new ConnectionWindowUpdateSender(this,
+                client2.getConnectionWindowSize(clientSettings));
     }
 
     /**
@@ -774,7 +776,8 @@ class Http2Connection  {
         Log.logTrace("{0}: start sending connection preface to {1}",
                      connection.channel().getLocalAddress(),
                      connection.address());
-        SettingsFrame sf = client2.getClientSettings();
+        SettingsFrame sf = new SettingsFrame(clientSettings);
+        int initialWindowSize = sf.getParameter(INITIAL_WINDOW_SIZE);
         ByteBuffer buf = framesEncoder.encodeConnectionPreface(PREFACE_BYTES, sf);
         Log.logFrames(sf, "OUT");
         // send preface bytes and SettingsFrame together
@@ -788,8 +791,10 @@ class Http2Connection  {
 
         // send a Window update for the receive buffer we are using
         // minus the initial 64 K specified in protocol
-        final int len = client2.client().getReceiveBufferSize() - (64 * 1024 - 1);
-        windowUpdater.sendWindowUpdate(len);
+        final int len = windowUpdater.initialWindowSize - initialWindowSize;
+        if (len > 0) {
+            windowUpdater.sendWindowUpdate(len);
+        }
         // there will be an ACK to the windows update - which should
         // cause any pending data stored before the preface was sent to be
         // flushed (see PrefaceController).
@@ -1202,9 +1207,11 @@ class Http2Connection  {
 
     static final class ConnectionWindowUpdateSender extends WindowUpdateSender {
 
+        final int initialWindowSize;
         public ConnectionWindowUpdateSender(Http2Connection connection,
                                             int initialWindowSize) {
             super(connection, initialWindowSize);
+            this.initialWindowSize = initialWindowSize;
         }
 
         @Override
