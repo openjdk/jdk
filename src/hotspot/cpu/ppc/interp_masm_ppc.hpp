@@ -57,10 +57,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   static const Address d_tmp;
 
   // dispatch routines
-  void dispatch_next(TosState state, int step = 0);
+  void dispatch_next(TosState state, int step = 0, bool generate_poll = false);
   void dispatch_via (TosState state, address* table);
   void load_dispatch_table(Register dst, address* table);
-  void dispatch_Lbyte_code(TosState state, Register bytecode, address* table, bool verify = false);
+  void dispatch_Lbyte_code(TosState state, Register bytecode, address* table, bool generate_poll = false);
 
   // Called by shared interpreter generator.
   void dispatch_prolog(TosState state, int step = 0);

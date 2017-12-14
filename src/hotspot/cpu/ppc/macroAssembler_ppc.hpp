@@ -647,6 +647,9 @@ class MacroAssembler: public Assembler {
   // Support for serializing memory accesses between threads
   void serialize_memory(Register thread, Register tmp1, Register tmp2);
 
+  // Check if safepoint requested and if so branch
+  void safepoint_poll(Label& slow_path, Register temp_reg);
+
   // GC barrier support.
   void card_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp);
   void card_table_write(jbyte* byte_map_base, Register Rtmp, Register Robj);
