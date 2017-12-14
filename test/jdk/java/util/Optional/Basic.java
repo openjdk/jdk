@@ -132,6 +132,13 @@ public class Basic {
         Boolean got = empty.orElseThrow(ObscureException::new);
     }
 
+    @Test(expectedExceptions=NoSuchElementException.class)
+    public void testEmptyOrElseThrowNoArg() throws Exception {
+        Optional<Boolean> empty = Optional.empty();
+
+        Boolean got = empty.orElseThrow();
+    }
+
     @Test(groups = "unit")
     public void testPresent() {
         Optional<Boolean> empty = Optional.empty();
@@ -147,6 +154,7 @@ public class Basic {
         assertTrue(!present.toString().equals(presentEmptyString.toString()));
         assertTrue(-1 != present.toString().indexOf(Boolean.TRUE.toString()));
         assertSame(Boolean.TRUE, present.get());
+        assertSame(Boolean.TRUE, present.orElseThrow());
 
         AtomicBoolean presentCheck = new AtomicBoolean();
         present.ifPresent(v -> presentCheck.set(true));
@@ -191,6 +199,7 @@ public class Basic {
         instance = Optional.ofNullable("Duke");
         assertTrue(instance.isPresent());
         assertEquals(instance.get(), "Duke");
+        assertEquals(instance.orElseThrow(), "Duke");
     }
 
     @Test(groups = "unit")
@@ -214,11 +223,13 @@ public class Basic {
         result = duke.filter(s -> s.startsWith("D"));
         assertTrue(result.isPresent());
         assertEquals(result.get(), "Duke");
+        assertEquals(result.orElseThrow(), "Duke");
 
         Optional<String> emptyString = Optional.of("");
         result = emptyString.filter(String::isEmpty);
         assertTrue(result.isPresent());
         assertEquals(result.get(), "");
+        assertEquals(result.orElseThrow(), "");
     }
 
     @Test(groups = "unit")
@@ -287,6 +298,7 @@ public class Basic {
         l = duke.flatMap(s -> Optional.of(s.length()));
         assertTrue(l.isPresent());
         assertEquals(l.get().intValue(), 4);
+        assertEquals(l.orElseThrow().intValue(), 4);
 
         // Verify same instance
         l = duke.flatMap(s -> fixture);

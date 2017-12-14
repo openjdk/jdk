@@ -124,6 +124,13 @@ public class BasicDouble {
         double got = empty.orElseThrow(ObscureException::new);
     }
 
+    @Test(expectedExceptions=NoSuchElementException.class)
+    public void testEmptyOrElseThrowNoArg() throws Exception {
+        OptionalDouble empty = OptionalDouble.empty();
+
+        double got = empty.orElseThrow();
+    }
+
     @Test(groups = "unit")
     public void testPresent() {
         OptionalDouble empty = OptionalDouble.empty();
@@ -137,7 +144,9 @@ public class BasicDouble {
         assertTrue(Double.hashCode(1.0) == present.hashCode());
         assertFalse(present.toString().isEmpty());
         assertTrue(-1 != present.toString().indexOf(Double.toString(present.getAsDouble()).toString()));
+        assertTrue(-1 != present.toString().indexOf(Double.toString(present.orElseThrow()).toString()));
         assertEquals(1.0, present.getAsDouble());
+        assertEquals(1.0, present.orElseThrow());
 
         AtomicBoolean presentCheck = new AtomicBoolean();
         present.ifPresent(v -> presentCheck.set(true));
