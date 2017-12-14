@@ -1315,23 +1315,28 @@ inline void Assembler::z_br(Register r2) { assert(r2 != Z_R0, "nop if target is 
 
 inline void Assembler::z_exrl(Register r1, Label& L) { z_exrl(r1, target(L)); }  // z10
 inline void Assembler::z_larl(Register r1, Label& L) { z_larl(r1, target(L)); }
-inline void Assembler::z_bru(   Label& L) { z_brc(bcondAlways,target(L)); }
-inline void Assembler::z_brul(  Label& L) { z_brcl(bcondAlways,target(L)); }
-inline void Assembler::z_brul( address a) { z_brcl(bcondAlways,a); }
-inline void Assembler::z_brh(   Label& L) { z_brc(bcondHigh,target(L)); }
-inline void Assembler::z_brl(   Label& L) { z_brc(bcondLow,target(L)); }
-inline void Assembler::z_bre(   Label& L) { z_brc(bcondEqual,target(L)); }
-inline void Assembler::z_brnh(  Label& L) { z_brc(bcondNotHigh,target(L)); }
-inline void Assembler::z_brnl(  Label& L) { z_brc(bcondNotLow,target(L)); }
-inline void Assembler::z_brne(  Label& L) { z_brc(bcondNotEqual,target(L)); }
-inline void Assembler::z_brz(   Label& L) { z_brc(bcondZero,target(L)); }
-inline void Assembler::z_brnz(  Label& L) { z_brc(bcondNotZero,target(L)); }
-inline void Assembler::z_braz(  Label& L) { z_brc(bcondAllZero,target(L)); }
-inline void Assembler::z_brnaz( Label& L) { z_brc(bcondNotAllZero,target(L)); }
+inline void Assembler::z_bru(   Label& L) { z_brc(bcondAlways, target(L)); }
+inline void Assembler::z_brul(  Label& L) { z_brcl(bcondAlways, target(L)); }
+inline void Assembler::z_brul( address a) { z_brcl(bcondAlways,a ); }
+inline void Assembler::z_brh(   Label& L) { z_brc(bcondHigh, target(L)); }
+inline void Assembler::z_brl(   Label& L) { z_brc(bcondLow, target(L)); }
+inline void Assembler::z_bre(   Label& L) { z_brc(bcondEqual, target(L)); }
+inline void Assembler::z_brnh(  Label& L) { z_brc(bcondNotHigh, target(L)); }
+inline void Assembler::z_brnl(  Label& L) { z_brc(bcondNotLow, target(L)); }
+inline void Assembler::z_brne(  Label& L) { z_brc(bcondNotEqual, target(L)); }
+inline void Assembler::z_brz(   Label& L) { z_brc(bcondZero, target(L)); }
+inline void Assembler::z_brnz(  Label& L) { z_brc(bcondNotZero, target(L)); }
+inline void Assembler::z_braz(  Label& L) { z_brc(bcondAllZero, target(L)); }
+inline void Assembler::z_brnaz( Label& L) { z_brc(bcondNotAllZero, target(L)); }
 inline void Assembler::z_brnp(  Label& L) { z_brc( bcondNotPositive, target( L)); }
-inline void Assembler::z_btrue( Label& L) { z_brc(bcondAllOne,target(L)); }
-inline void Assembler::z_bfalse(Label& L) { z_brc(bcondAllZero,target(L)); }
-inline void Assembler::z_brno(  Label& L) { z_brc(bcondNotOrdered,target(L)); }
+inline void Assembler::z_btrue( Label& L) { z_brc(bcondAllOne, target(L)); }
+inline void Assembler::z_bfalse(Label& L) { z_brc(bcondAllZero, target(L)); }
+inline void Assembler::z_bvat(  Label& L) { z_brc(bcondVAlltrue, target(L)); }
+inline void Assembler::z_bvnt(  Label& L) { z_brc((Assembler::branch_condition)(bcondVMixed | bcondVAllfalse), target(L)); }
+inline void Assembler::z_bvmix( Label& L) { z_brc(bcondVMixed, target(L)); }
+inline void Assembler::z_bvaf(  Label& L) { z_brc(bcondVAllfalse, target(L)); }
+inline void Assembler::z_bvnf(  Label& L) { z_brc((Assembler::branch_condition)(bcondVMixed | bcondVAlltrue), target(L)); }
+inline void Assembler::z_brno(  Label& L) { z_brc(bcondNotOrdered, target(L)); }
 inline void Assembler::z_brc( branch_condition m, Label& L) { z_brc(m, target(L)); }
 inline void Assembler::z_brcl(branch_condition m, Label& L) { z_brcl(m, target(L)); }
 
