@@ -26,7 +26,9 @@
  * @bug 8178070
  * @summary Test packages table in module summary pages
  * @library /tools/lib ../lib
- * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.javadoc/jdk.javadoc.internal.tool
  * @build toolbox.ModuleBuilder toolbox.ToolBox JavadocTester
  * @run main TestModulePackages
  */
