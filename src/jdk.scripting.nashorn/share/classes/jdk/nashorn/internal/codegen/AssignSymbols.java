@@ -796,7 +796,7 @@ final class AssignSymbols extends SimpleNodeVisitor implements Loggable {
             args.add(strictFlagNode);
 
         } else {
-            return LiteralNode.newInstance(unaryNode, true);
+            throw new AssertionError("Unexpected delete with " + rhs.getClass().getName() + " expression");
         }
         return new RuntimeNode(unaryNode, request, args);
     }
