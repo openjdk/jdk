@@ -4914,13 +4914,14 @@ unsigned int MacroAssembler::CopyRawMemory_AlignedDisjoint(Register src_reg, Reg
 // The result is the number of characters copied before the first incompatible character was found.
 // If precise is true, the processing stops exactly at this point. Otherwise, the result may be off
 // by a few bytes. The result always indicates the number of copied characters.
+// When used as a character index, the returned value points to the first incompatible character.
 //
 // Note: Does not behave exactly like package private StringUTF16 compress java implementation in case of failure:
 // - Different number of characters may have been written to dead array (if precise is false).
 // - Returns a number <cnt instead of 0. (Result gets compared with cnt.)
 unsigned int MacroAssembler::string_compress(Register result, Register src, Register dst, Register cnt,
                                              Register tmp,    bool precise) {
-  assert_different_registers(Z_R0, Z_R1, src, dst, cnt, tmp);
+  assert_different_registers(Z_R0, Z_R1, result, src, dst, cnt, tmp);
 
   if (precise) {
     BLOCK_COMMENT("encode_iso_array {");
@@ -5027,7 +5028,7 @@ unsigned int MacroAssembler::string_compress(Register result, Register src, Regi
       z_vo(Vtmp1, Vtmp1, Vtmp2);
       z_vn(Vtmp1, Vtmp1, Vmask);
       z_vceqhs(Vtmp1, Vtmp1, Vzero);       // high half of all chars must be zero for successful compress.
-      z_brne(VectorBreak);                 // break vector loop, incompatible character found.
+      z_bvnt(VectorBreak);                 // break vector loop if not all vector elements compare eq -> incompatible character found.
                                            // re-process data from current iteration in break handler.
 
       //---<  pack & store characters  >---
@@ -5094,24 +5095,28 @@ unsigned int MacroAssembler::string_compress(Register result, Register src, Regi
     z_tmll(Rcnt, min_cnt-1);
     z_brnaz(ScalarShortcut);               // if all bits zero, there is nothing left to do for scalar loop.
                                            // Rix == 0 in all cases.
+    z_sllg(Z_R1, Rcnt, 1);                 // # src bytes already processed. Only lower 32 bits are valid!
+                                           //   Z_R1 contents must be treated as unsigned operand! For huge strings,
+                                           //   (Rcnt >= 2**30), the value may spill into the sign bit by sllg.
     z_lgfr(result, Rcnt);                  // all characters processed.
-    z_sgfr(Rdst, Rcnt);                    // restore ptr
-    z_sgfr(Rsrc, Rcnt);                    // restore ptr, double the element count for Rsrc restore
-    z_sgfr(Rsrc, Rcnt);
+    z_slgfr(Rdst, Rcnt);                   // restore ptr
+    z_slgfr(Rsrc, Z_R1);                   // restore ptr, double the element count for Rsrc restore
     z_bru(AllDone);
 
     bind(UnrolledBreak);
     z_lgfr(Z_R0, Rcnt);                    // # chars processed in total after unrolled loop
     z_nilf(Z_R0, ~(min_cnt-1));
-    z_sll(Rix, log_min_cnt);               // # chars processed so far in UnrolledLoop, excl. current iteration.
-    z_sr(Z_R0, Rix);                       // correct # chars processed in total.
+    z_sll(Rix, log_min_cnt);               // # chars not yet processed in UnrolledLoop (due to break), broken iteration not included.
+    z_sr(Z_R0, Rix);                       // fix # chars processed OK so far.
     if (!precise) {
       z_lgfr(result, Z_R0);
+      z_sllg(Z_R1, Z_R0, 1);               // # src bytes already processed. Only lower 32 bits are valid!
+                                           //   Z_R1 contents must be treated as unsigned operand! For huge strings,
+                                           //   (Rcnt >= 2**30), the value may spill into the sign bit by sllg.
       z_aghi(result, min_cnt/2);           // min_cnt/2 characters have already been written
                                            // but ptrs were not updated yet.
-      z_sgfr(Rdst, Z_R0);                  // restore ptr
-      z_sgfr(Rsrc, Z_R0);                  // restore ptr, double the element count for Rsrc restore
-      z_sgfr(Rsrc, Z_R0);
+      z_slgfr(Rdst, Z_R0);                 // restore ptr
+      z_slgfr(Rsrc, Z_R1);                 // restore ptr, double the element count for Rsrc restore
       z_bru(AllDone);
     }
     bind(UnrolledDone);
@@ -5165,7 +5170,7 @@ unsigned int MacroAssembler::string_compress(Register result, Register src, Regi
       z_sr(Rix, Z_R0);
     }
     z_lgfr(result, Rcnt);                  // # processed characters (if all runs ok).
-    z_brz(ScalarDone);
+    z_brz(ScalarDone);                     // uses CC from Rix calculation
 
     bind(ScalarLoop);
       z_llh(Z_R1, 0, Z_R0, Rsrc);
