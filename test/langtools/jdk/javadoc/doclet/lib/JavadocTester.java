@@ -236,6 +236,9 @@ public abstract class JavadocTester {
     /** The current run of javadoc. Incremented when javadoc is called. */
     private int javadocRunNum = 0;
 
+    /** The current subtest number for this run of javadoc. Incremented when checking(...) is called. */
+    private int javadocTestNum = 0;
+
     /** Marker annotation for test methods to be invoked by runTests. */
     @Retention(RetentionPolicy.RUNTIME)
     @interface Test { }
@@ -295,11 +298,11 @@ public abstract class JavadocTester {
         fileContentCache.clear();
 
         javadocRunNum++;
+        javadocTestNum = 0; // reset counter for this run of javadoc
         if (javadocRunNum == 1) {
             out.println("Running javadoc...");
         } else {
-            out.println("Running javadoc (run "
-                                    + javadocRunNum + ")...");
+            out.println("Running javadoc (run "+ javadocRunNum + ")...");
         }
 
         outputDir = new File(".");
@@ -441,8 +444,7 @@ public abstract class JavadocTester {
      * Check for content in (or not in) the generated output.
      * Within the search strings, the newline character \n
      * will be translated to the platform newline character sequence.
-     * @param path a path within the most recent output directory
-     *  or the name of one of the output buffers, identifying
+     * @param path a path within the most recent output directory, identifying
      *  where to look for the search strings.
      * @param expectedFound true if all of the search strings are expected
      *  to be found, or false if all of the strings are expected to be
@@ -451,15 +453,13 @@ public abstract class JavadocTester {
      */
     public void checkOutput(String path, boolean expectedFound, String... strings) {
         // Read contents of file
-        String fileString;
         try {
-            fileString = readFile(outputDir, path);
+            String fileString = readFile(outputDir, path);
+            checkOutput(new File(outputDir, path).getPath(), fileString, expectedFound, strings);
         } catch (Error e) {
             checking("Read file");
             failed("Error reading file: " + e);
-            return;
         }
-        checkOutput(path, fileString, expectedFound, strings);
     }
 
     /**
@@ -476,6 +476,7 @@ public abstract class JavadocTester {
         checkOutput(output.toString(), outputMap.get(output), expectedFound, strings);
     }
 
+    // NOTE: path may be the name of an Output stream as well as a file path
     private void checkOutput(String path, String fileString, boolean expectedFound, String... strings) {
         for (String stringToFind : strings) {
 //            log.logCheckOutput(path, expectedFound, stringToFind);
@@ -484,25 +485,27 @@ public abstract class JavadocTester {
             boolean isFound = findString(fileString, stringToFind);
             if (isFound == expectedFound) {
                 passed(path + ": following text " + (isFound ? "found:" : "not found:") + "\n"
-                        + stringToFind + "\n");
+                        + stringToFind);
             } else {
                 failed(path + ": following text " + (isFound ? "found:" : "not found:") + "\n"
-                        + stringToFind + "\n");
+                        + stringToFind);
             }
         }
     }
 
     /**
-     * Get the content of the one of the output streams written by
-     * javadoc.
+     * Get the content of the one of the output streams written by javadoc.
+     * @param output the name of the output stream
+     * @return the content of the output stream
      */
     public String getOutput(Output output) {
         return outputMap.get(output);
     }
 
     /**
-     * Get the content of the one of the output streams written by
-     * javadoc.
+     * Get the content of the one of the output streams written by javadoc.
+     * @param output the name of the output stream
+     * @return the content of the output stream, as a line of lines
      */
     public List<String> getOutputLines(Output output) {
         String text = outputMap.get(output);
@@ -534,9 +537,9 @@ public abstract class JavadocTester {
             File file = new File(outputDir, path);
             boolean isFound = file.exists();
             if (isFound == expectedFound) {
-                passed(path + ": file " + (isFound ? "found:" : "not found:") + "\n");
+                passed(file, "file " + (isFound ? "found:" : "not found:") + "\n");
             } else {
-                failed(path + ": file " + (isFound ? "found:" : "not found:") + "\n");
+                failed(file, "file " + (isFound ? "found:" : "not found:") + "\n");
             }
         }
     }
@@ -548,20 +551,21 @@ public abstract class JavadocTester {
      * @param strings  the strings whose order to check
      */
     public void checkOrder(String path, String... strings) {
+        File file = new File(outputDir, path);
         String fileString = readOutputFile(path);
         int prevIndex = -1;
         for (String s : strings) {
             s = s.replace("\n", NL); // normalize new lines
             int currentIndex = fileString.indexOf(s, prevIndex + 1);
-            checking(s + " at index " + currentIndex);
+            checking("file: " + file + ": " + s + " at index " + currentIndex);
             if (currentIndex == -1) {
-                failed(s + " not found.");
+                failed(file, s + " not found.");
                 continue;
             }
             if (currentIndex > prevIndex) {
-                passed(s + " is in the correct order");
+                passed(file, s + " is in the correct order");
             } else {
-                failed("file: " + path + ": " + s + " is in the wrong order.");
+                failed(file, s + " is in the wrong order.");
             }
             prevIndex = currentIndex;
         }
@@ -575,19 +579,20 @@ public abstract class JavadocTester {
      * @param strings ensure each are unique
      */
     public void checkUnique(String path, String... strings) {
+        File file = new File(outputDir, path);
         String fileString = readOutputFile(path);
         for (String s : strings) {
             int currentIndex = fileString.indexOf(s);
             checking(s + " at index " + currentIndex);
             if (currentIndex == -1) {
-                failed(s + " not found.");
+                failed(file, s + " not found.");
                 continue;
             }
             int nextindex = fileString.indexOf(s, currentIndex + s.length());
             if (nextindex == -1) {
-                passed(s + " is unique");
+                passed(file, s + " is unique");
             } else {
-                failed(s + " is not unique, found at " + nextindex);
+                failed(file, s + " is not unique, found at " + nextindex);
             }
         }
     }
@@ -702,16 +707,35 @@ public abstract class JavadocTester {
 
     protected void checking(String message) {
         numTestsRun++;
-        print("Starting subtest " + numTestsRun, message);
+        javadocTestNum++;
+        print("Starting subtest " + javadocRunNum + "." + javadocTestNum, message);
+    }
+
+    protected void passed(File file, String message) {
+        passed(file + ": " + message);
     }
 
     protected void passed(String message) {
         numTestsPassed++;
         print("Passed", message);
+        out.println();
+    }
+
+    protected void failed(File file, String message) {
+        failed(file + ": " + message);
     }
 
     protected void failed(String message) {
         print("FAILED", message);
+        StackWalker.getInstance().walk(s -> {
+            s.dropWhile(f -> f.getMethodName().equals("failed"))
+                    .takeWhile(f -> !f.getMethodName().equals("runTests"))
+                    .forEach(f -> out.println("        at "
+                            + f.getClassName() + "." + f.getMethodName()
+                            + "(" + f.getFileName() + ":" + f.getLineNumber() + ")"));
+            return null;
+        });
+        out.println();
     }
 
     private void print(String prefix, String message) {
@@ -720,7 +744,10 @@ public abstract class JavadocTester {
         else {
             out.print(prefix);
             out.print(": ");
-            out.println(message.replace("\n", NL));
+            out.print(message.replace("\n", NL));
+            if (!(message.endsWith("\n") || message.endsWith(NL))) {
+                out.println();
+            }
         }
     }
 

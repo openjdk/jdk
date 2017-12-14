@@ -994,7 +994,7 @@ public class TestModules extends JavadocTester {
                 + "</tr>\n"
                 + "</tbody>\n"
                 + "</table>");
-        checkOutput("moduletags-summary.html", found,
+        checkOutput("moduletags-summary.html", true,
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdltags/package-summary.html\">testpkgmdltags</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>");
     }
@@ -1025,6 +1025,7 @@ public class TestModules extends JavadocTester {
                 "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;<a href=\"#modules.summary\">"
                 + "Modules</a>&nbsp;|&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;<a href=\"#services.summary\">Services</a></li>",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></th>\n"
+                + "<td class=\"colSecond\">None</td>\n"
                 + "<td class=\"colSecond\">All Modules</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>",
                 "<td class=\"colFirst\"> </td>\n"
@@ -1045,12 +1046,11 @@ public class TestModules extends JavadocTester {
                 "<caption><span>Exports</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
-                + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
+                + "<th class=\"colSecond\" scope=\"col\">Exported To Modules</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>");
-        checkOutput("moduletags-summary.html", found,
+        checkOutput("moduletags-summary.html", true,
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdltags/package-summary.html\">testpkgmdltags</a></th>\n"
-                + "<td class=\"colSecond\">All Modules</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>");
     }
 

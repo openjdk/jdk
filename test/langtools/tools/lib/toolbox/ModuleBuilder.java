@@ -43,6 +43,7 @@ public class ModuleBuilder {
     private final ToolBox tb;
     private final String name;
     private String comment = "";
+    private boolean open;
     private List<String> requires = new ArrayList<>();
     private List<String> exports = new ArrayList<>();
     private List<String> opens = new ArrayList<>();
@@ -53,11 +54,22 @@ public class ModuleBuilder {
 
     /**
      * Creates a builder for a module.
-     * @param tb a Toolbox that can be used to compile the module declaration.
+     * @param tb a Toolbox that can be used to compile the module declaration
      * @param name the name of the module to be built
      */
     public ModuleBuilder(ToolBox tb, String name) {
+        this(tb, false, name);
+    }
+
+    /**
+     * Creates a builder for a module.
+     * @param tb a Toolbox that can be used to compile the module declaration
+     * @param open whether or not this is an open module
+     * @param name the name of the module to be built
+     */
+    public ModuleBuilder(ToolBox tb, boolean open, String name) {
         this.tb = tb;
+        this.open = open;
         this.name = name;
     }
 
@@ -213,6 +225,9 @@ public class ModuleBuilder {
             sb.append("/**\n * ")
                     .append(comment.replace("\n", "\n * "))
                     .append("\n */\n");
+        }
+        if (open) {
+            sb.append("open ");
         }
         sb.append("module ").append(name).append(" {\n");
         requires.forEach(r -> sb.append("    " + r + "\n"));
