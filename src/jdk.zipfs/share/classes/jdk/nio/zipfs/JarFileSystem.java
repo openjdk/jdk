@@ -70,14 +70,14 @@ class JarFileSystem extends ZipFileSystem {
             if (o instanceof String) {
                 String s = (String)o;
                 if (s.equals("runtime")) {
-                    version = Runtime.version().major();
+                    version = Runtime.version().feature();
                 } else {
                     version = Integer.parseInt(s);
                 }
             } else if (o instanceof Integer) {
                 version = (Integer)o;
             } else if (o instanceof Version) {
-                version = ((Version)o).major();
+                version = ((Version)o).feature();
             } else {
                 throw new IllegalArgumentException("env parameter must be String, Integer, "
                         + "or Version");

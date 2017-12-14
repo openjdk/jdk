@@ -1050,17 +1050,17 @@ var concatObjects = function (o1, o2) {
  * Constructs the numeric version string from reading the
  * make/autoconf/version-numbers file and removing all trailing ".0".
  *
- * @param major Override major version
- * @param minor Override minor version
- * @param security Override security version
+ * @param feature Override feature version
+ * @param interim Override interim version
+ * @param update Override update version
  * @param patch Override patch version
  * @returns {String} The numeric version string
  */
-var getVersion = function (major, minor, security, patch) {
+var getVersion = function (feature, interim, update, patch) {
     var version_numbers = getVersionNumbers();
-    var version = (major != null ? major : version_numbers.get("DEFAULT_VERSION_MAJOR"))
-        + "." + (minor != null ? minor : version_numbers.get("DEFAULT_VERSION_MINOR"))
-        + "." + (security != null ? security :  version_numbers.get("DEFAULT_VERSION_SECURITY"))
+    var version = (feature != null ? feature : version_numbers.get("DEFAULT_VERSION_FEATURE"))
+        + "." + (interim != null ? interim : version_numbers.get("DEFAULT_VERSION_INTERIM"))
+        + "." + (update != null ? update :  version_numbers.get("DEFAULT_VERSION_UPDATE"))
         + "." + (patch != null ? patch : version_numbers.get("DEFAULT_VERSION_PATCH"));
     while (version.match(".*\\.0$")) {
         version = version.substring(0, version.length - 2);

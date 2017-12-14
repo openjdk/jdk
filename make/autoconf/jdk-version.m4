@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,9 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   BASIC_DEPRECATED_ARG_WITH([update-version])
   BASIC_DEPRECATED_ARG_WITH([user-release-suffix])
   BASIC_DEPRECATED_ARG_WITH([build-number])
+  BASIC_DEPRECATED_ARG_WITH([version-major])
+  BASIC_DEPRECATED_ARG_WITH([version-minor])
+  BASIC_DEPRECATED_ARG_WITH([version-security])
 
   # Source the version numbers file
   . $AUTOCONF_DIR/version-numbers
@@ -87,20 +90,20 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   elif test "x$with_version_string" != x; then
     # Additional [] needed to keep m4 from mangling shell constructs.
     if [ [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z]+))?((\+)([0-9]+)?(-([-a-zA-Z0-9.]+))?)?$ ]] ]; then
-      VERSION_MAJOR=${BASH_REMATCH[[1]]}
-      VERSION_MINOR=${BASH_REMATCH[[3]]}
-      VERSION_SECURITY=${BASH_REMATCH[[5]]}
+      VERSION_FEATURE=${BASH_REMATCH[[1]]}
+      VERSION_INTERIM=${BASH_REMATCH[[3]]}
+      VERSION_UPDATE=${BASH_REMATCH[[5]]}
       VERSION_PATCH=${BASH_REMATCH[[7]]}
       VERSION_PRE=${BASH_REMATCH[[9]]}
       version_plus_separator=${BASH_REMATCH[[11]]}
       VERSION_BUILD=${BASH_REMATCH[[12]]}
       VERSION_OPT=${BASH_REMATCH[[14]]}
       # Unspecified numerical fields are interpreted as 0.
-      if test "x$VERSION_MINOR" = x; then
-        VERSION_MINOR=0
+      if test "x$VERSION_INTERIM" = x; then
+        VERSION_INTERIM=0
       fi
-      if test "x$VERSION_SECURITY" = x; then
-        VERSION_SECURITY=0
+      if test "x$VERSION_UPDATE" = x; then
+        VERSION_UPDATE=0
       fi
       if test "x$VERSION_PATCH" = x; then
         VERSION_PATCH=0
@@ -191,64 +194,64 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     fi
   fi
 
-  AC_ARG_WITH(version-major, [AS_HELP_STRING([--with-version-major],
-      [Set version 'MAJOR' field (first number) @<:@current source value@:>@])],
-      [with_version_major_present=true], [with_version_major_present=false])
+  AC_ARG_WITH(version-feature, [AS_HELP_STRING([--with-version-feature],
+      [Set version 'FEATURE' field (first number) @<:@current source value@:>@])],
+      [with_version_feature_present=true], [with_version_feature_present=false])
 
-  if test "x$with_version_major_present" = xtrue; then
-    if test "x$with_version_major" = xyes; then
-      AC_MSG_ERROR([--with-version-major must have a value])
+  if test "x$with_version_feature_present" = xtrue; then
+    if test "x$with_version_feature" = xyes; then
+      AC_MSG_ERROR([--with-version-feature must have a value])
     else
-      JDKVER_CHECK_AND_SET_NUMBER(VERSION_MAJOR, $with_version_major)
+      JDKVER_CHECK_AND_SET_NUMBER(VERSION_FEATURE, $with_version_feature)
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is to get value from version-numbers
-      VERSION_MAJOR="$DEFAULT_VERSION_MAJOR"
+      VERSION_FEATURE="$DEFAULT_VERSION_FEATURE"
     fi
   fi
 
-  AC_ARG_WITH(version-minor, [AS_HELP_STRING([--with-version-minor],
-      [Set version 'MINOR' field (second number) @<:@current source value@:>@])],
-      [with_version_minor_present=true], [with_version_minor_present=false])
+  AC_ARG_WITH(version-interim, [AS_HELP_STRING([--with-version-interim],
+      [Set version 'INTERIM' field (second number) @<:@current source value@:>@])],
+      [with_version_interim_present=true], [with_version_interim_present=false])
 
-  if test "x$with_version_minor_present" = xtrue; then
-    if test "x$with_version_minor" = xyes; then
-      AC_MSG_ERROR([--with-version-minor must have a value])
-    elif test "x$with_version_minor" = xno; then
+  if test "x$with_version_interim_present" = xtrue; then
+    if test "x$with_version_interim" = xyes; then
+      AC_MSG_ERROR([--with-version-interim must have a value])
+    elif test "x$with_version_interim" = xno; then
       # Interpret --without-* as empty string (i.e. 0) instead of the literal "no"
-      VERSION_MINOR=0
-    elif test "x$with_version_minor" = x; then
-      VERSION_MINOR=0
+      VERSION_INTERIM=0
+    elif test "x$with_version_interim" = x; then
+      VERSION_INTERIM=0
     else
-      JDKVER_CHECK_AND_SET_NUMBER(VERSION_MINOR, $with_version_minor)
+      JDKVER_CHECK_AND_SET_NUMBER(VERSION_INTERIM, $with_version_interim)
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_MINOR=$DEFAULT_VERSION_MINOR
+      VERSION_INTERIM=$DEFAULT_VERSION_INTERIM
     fi
   fi
 
-  AC_ARG_WITH(version-security, [AS_HELP_STRING([--with-version-security],
-      [Set version 'SECURITY' field (third number) @<:@current source value@:>@])],
-      [with_version_security_present=true], [with_version_security_present=false])
+  AC_ARG_WITH(version-update, [AS_HELP_STRING([--with-version-update],
+      [Set version 'UPDATE' field (third number) @<:@current source value@:>@])],
+      [with_version_update_present=true], [with_version_update_present=false])
 
-  if test "x$with_version_security_present" = xtrue; then
-    if test "x$with_version_security" = xyes; then
-      AC_MSG_ERROR([--with-version-security must have a value])
-    elif test "x$with_version_security" = xno; then
+  if test "x$with_version_update_present" = xtrue; then
+    if test "x$with_version_update" = xyes; then
+      AC_MSG_ERROR([--with-version-update must have a value])
+    elif test "x$with_version_update" = xno; then
       # Interpret --without-* as empty string (i.e. 0) instead of the literal "no"
-      VERSION_SECURITY=0
-    elif test "x$with_version_security" = x; then
-      VERSION_SECURITY=0
+      VERSION_UPDATE=0
+    elif test "x$with_version_update" = x; then
+      VERSION_UPDATE=0
     else
-      JDKVER_CHECK_AND_SET_NUMBER(VERSION_SECURITY, $with_version_security)
+      JDKVER_CHECK_AND_SET_NUMBER(VERSION_UPDATE, $with_version_update)
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_SECURITY=$DEFAULT_VERSION_SECURITY
+      VERSION_UPDATE=$DEFAULT_VERSION_UPDATE
     fi
   fi
 
@@ -284,7 +287,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   fi
 
   # VERSION_NUMBER but always with exactly 4 positions, with 0 for empty positions.
-  VERSION_NUMBER_FOUR_POSITIONS=$VERSION_MAJOR.$VERSION_MINOR.$VERSION_SECURITY.$VERSION_PATCH
+  VERSION_NUMBER_FOUR_POSITIONS=$VERSION_FEATURE.$VERSION_INTERIM.$VERSION_UPDATE.$VERSION_PATCH
 
   stripped_version_number=$VERSION_NUMBER_FOUR_POSITIONS
   # Strip trailing zeroes from stripped_version_number
@@ -302,12 +305,38 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # The short version string, just VERSION_NUMBER and PRE, if present.
   VERSION_SHORT=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}
 
+  # The version date
+  AC_ARG_WITH(version-date, [AS_HELP_STRING([--with-version-date],
+      [Set version date @<:@current source value@:>@])])
+  if test "x$with_version_date" = xyes; then
+    AC_MSG_ERROR([--with-version-date must have a value])
+  elif test "x$with_version_date" != x; then
+    if [ ! [[ $with_version_date =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] ]; then
+      AC_MSG_ERROR(["$with_version_date" is not a valid version date]) 
+    else
+      VERSION_DATE="$with_version_date"
+    fi
+  else
+    VERSION_DATE="$DEFAULT_VERSION_DATE"
+  fi
+
+  # The vendor version string, if any
+  AC_ARG_WITH(vendor-version-string, [AS_HELP_STRING([--with-vendor-version-string],
+      [Set vendor version string @<:@not specified@:>@])])
+  if test "x$with_vendor_version_string" = xyes; then
+    AC_MSG_ERROR([--with-vendor-version-string must have a value])
+  elif [ ! [[ $with_vendor_version_string =~ ^[[:graph:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with--vendor-version-string contains non-graphical characters: $with_vendor_version_string])
+  else
+    VENDOR_VERSION_STRING="$with_vendor_version_string"
+  fi
+
   AC_MSG_CHECKING([for version string])
   AC_MSG_RESULT([$VERSION_STRING])
 
-  AC_SUBST(VERSION_MAJOR)
-  AC_SUBST(VERSION_MINOR)
-  AC_SUBST(VERSION_SECURITY)
+  AC_SUBST(VERSION_FEATURE)
+  AC_SUBST(VERSION_INTERIM)
+  AC_SUBST(VERSION_UPDATE)
   AC_SUBST(VERSION_PATCH)
   AC_SUBST(VERSION_PRE)
   AC_SUBST(VERSION_BUILD)
@@ -317,4 +346,6 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(VERSION_STRING)
   AC_SUBST(VERSION_SHORT)
   AC_SUBST(VERSION_IS_GA)
+  AC_SUBST(VERSION_DATE)
+  AC_SUBST(VENDOR_VERSION_STRING)
 ])
