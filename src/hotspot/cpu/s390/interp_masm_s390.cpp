@@ -36,6 +36,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -74,16 +75,16 @@ void InterpreterMacroAssembler::dispatch_epilog(TosState state, int step) {
   dispatch_next(state, step);
 }
 
-void InterpreterMacroAssembler::dispatch_next(TosState state, int bcp_incr) {
+void InterpreterMacroAssembler::dispatch_next(TosState state, int bcp_incr, bool generate_poll) {
   z_llgc(Z_bytecode, bcp_incr, Z_R0, Z_bcp);  // Load next bytecode.
   add2reg(Z_bcp, bcp_incr);                   // Advance bcp. Add2reg produces optimal code.
-  dispatch_base(state, Interpreter::dispatch_table(state));
+  dispatch_base(state, Interpreter::dispatch_table(state), generate_poll);
 }
 
 // Common code to dispatch and dispatch_only.
 // Dispatch value in Lbyte_code and increment Lbcp.
 
-void InterpreterMacroAssembler::dispatch_base(TosState state, address* table) {
+void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bool generate_poll) {
   verify_FPU(1, state);
 
 #ifdef ASSERT
@@ -109,7 +110,20 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table) {
   verify_oop(Z_tos, state);
 
   // Dispatch table to use.
-  load_absolute_address(Z_tmp_1, (address) table);  // Z_tmp_1 = table;
+  load_absolute_address(Z_tmp_1, (address)table);  // Z_tmp_1 = table;
+
+  if (SafepointMechanism::uses_thread_local_poll() && generate_poll) {
+    address *sfpt_tbl = Interpreter::safept_table(state);
+    if (table != sfpt_tbl) {
+      Label dispatch;
+      const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
+      // Armed page has poll_bit set, if poll bit is cleared just continue.
+      z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
+      z_braz(dispatch);
+      load_absolute_address(Z_tmp_1, (address)sfpt_tbl);  // Z_tmp_1 = table;
+      bind(dispatch);
+    }
+  }
 
   // 0 <= Z_bytecode < 256 => Use a 32 bit shift, because it is shorter than sllg.
   // Z_bytecode must have been loaded zero-extended for this approach to be correct.
@@ -119,8 +133,8 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table) {
   z_br(Z_tmp_1);
 }
 
-void InterpreterMacroAssembler::dispatch_only(TosState state) {
-  dispatch_base(state, Interpreter::dispatch_table(state));
+void InterpreterMacroAssembler::dispatch_only(TosState state, bool generate_poll) {
+  dispatch_base(state, Interpreter::dispatch_table(state), generate_poll);
 }
 
 void InterpreterMacroAssembler::dispatch_only_normal(TosState state) {
