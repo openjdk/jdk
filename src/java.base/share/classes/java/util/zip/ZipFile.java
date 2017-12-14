@@ -427,12 +427,7 @@ class ZipFile implements ZipConstants, Closeable {
                                            Inflater inf, int size) {
             super(zfin, inf, size);
             this.cleanable = CleanerFactory.cleaner().register(this,
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            res.releaseInflater(inf);
-                        }
-                    });
+                    () -> res.releaseInflater(inf));
        }
 
         public void close() throws IOException {
