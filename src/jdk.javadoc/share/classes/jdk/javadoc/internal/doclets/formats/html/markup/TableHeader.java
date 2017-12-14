@@ -77,6 +77,14 @@ public class TableHeader {
     }
 
     /**
+     * Creates a header row, with specified content for each cell.
+     * @param headerCellContents a content object for each header cell
+     */
+    public TableHeader(List<Content> headerCellContents) {
+        this.cellContents = headerCellContents;
+    }
+
+    /**
      * Set the style class names for each header cell.
      * The number of names must match the number of cells given to the constructor.
      * @param styles the style class names
@@ -87,6 +95,20 @@ public class TableHeader {
             throw new IllegalStateException();
         }
         this.styles = Arrays.asList(styles);
+        return this;
+    }
+
+    /**
+     * Set the style class names for each header cell.
+     * The number of names must match the number of cells given to the constructor.
+     * @param styles the style class names
+     * @return this object
+     */
+    public TableHeader styles(List<HtmlStyle> styles) {
+        if (styles.size() != cellContents.size()) {
+            throw new IllegalStateException();
+        }
+        this.styles = styles;
         return this;
     }
 
