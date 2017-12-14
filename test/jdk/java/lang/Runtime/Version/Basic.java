@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import static java.lang.System.out;
 
 public class Basic {
+
     private static final Class<? extends Throwable> IAE
         = IllegalArgumentException.class;
     private static final Class<? extends Throwable> NPE
@@ -51,17 +52,19 @@ public class Basic {
 
     public static void main(String ... args) {
 
-        //// Tests for parse(), major(), minor(), security(), pre(),
-        //// build(), optional(), version(), toString()
-        //   v                          M     m sec pre bld opt
+        //// Tests for parse(), feature(), interim(), update(), patch(),
+        //// pre(), build(), optional(), version(), and toString()
+        //   v                          f     i  u  p pre bld opt
 
         // $VNUM
-        test("9",                       9,    0, 0, "", 0, "");
-        test("9.1",                     9,    1, 0, "", 0, "");
-        test("9.0.1",                   9,    0, 1, "", 0, "");
-        test("404.1.2",                 404,  1, 2, "", 0, "");
-        test("9.1.2.3",                 9,    1, 2, "", 0, "");
-        test("1000.0.0.0.0.0.99999999", 1000, 0, 0, "", 0, "");
+        test("9",                       9,    0, 0, 0, "", 0, "");
+        test("9.1",                     9,    1, 0, 0, "", 0, "");
+        test("9.0.1",                   9,    0, 1, 0, "", 0, "");
+        test("9.0.0.1",                 9,    0, 0, 1, "", 0, "");
+        test("9.0.0.0.1",               9,    0, 0, 0, "", 0, "");
+        test("404.1.2",                 404,  1, 2, 0, "", 0, "");
+        test("9.1.2.3",                 9,    1, 2, 3, "", 0, "");
+        test("1000.0.0.0.0.0.99999999", 1000, 0, 0, 0, "", 0, "");
 
         tryCatch(null,    NPE);
         tryCatch("",      IAE);
@@ -75,23 +78,23 @@ public class Basic {
         tryCatch(TOO_BIG_STR, NFE);
 
         // $PRE
-        test("9-ea",       9, 0, 0, "ea",       0, "");
-        test("9-internal", 9, 0, 0, "internal", 0, "");
-        test("9-0",        9, 0, 0, "0",        0, "");
-        test("9.2.7-8",    9, 2, 7, "8",        0, "");
-        test("1-ALL",      1, 0, 0, "ALL",      0, "");
-        test("2.3.4.5-1a", 2, 3, 4, "1a",       0, "");
-        test("1-" + TOO_BIG_STR, 1, 0, 0, TOO_BIG_STR, 0, "");
+        test("9-ea",       9, 0, 0, 0, "ea",       0, "");
+        test("9-internal", 9, 0, 0, 0, "internal", 0, "");
+        test("9-0",        9, 0, 0, 0, "0",        0, "");
+        test("9.2.7-8",    9, 2, 7, 0, "8",        0, "");
+        test("1-ALL",      1, 0, 0, 0, "ALL",      0, "");
+        test("2.3.4.5-1a", 2, 3, 4, 5, "1a",       0, "");
+        test("1-" + TOO_BIG_STR, 1, 0, 0, 0, TOO_BIG_STR, 0, "");
 
         tryCatch("9:-ea",     IAE);
         tryCatch("3.14159-",  IAE);
         tryCatch("3.14159-%", IAE);
 
         // $BUILD
-        test("9+0",            9, 0,  0,  "",      0,       "");
-        test("3.14+9999900",   3, 14, 0,  "",      9999900, "");
-        test("9-pre+105",      9, 0,  0,  "pre",   105,     "");
-        test("6.0.42-8beta+4", 6, 0,  42, "8beta", 4,       "");
+        test("9+0",            9, 0,  0,  0, "",      0,       "");
+        test("3.14+9999900",   3, 14, 0,  0, "",      9999900, "");
+        test("9-pre+105",      9, 0,  0,  0, "pre",   105,     "");
+        test("6.0.42-8beta+4", 6, 0,  42, 0, "8beta", 4,       "");
 
         tryCatch("9+",     IAE);
         tryCatch("7+a",    IAE);
@@ -101,13 +104,13 @@ public class Basic {
         tryCatch("1+" + TOO_BIG_STR, NFE);
 
         // $OPT
-        test("9+-foo",          9,   0, 0, "",       0,  "foo");
-        test("9-pre-opt",       9,   0, 0, "pre",    0,  "opt");
-        test("42+---bar",       42,  0, 0, "",       0,  "--bar");
-        test("2.91+-8061493-",  2,  91, 0, "",       0,  "8061493-");
-        test("24+-foo.bar",     24,  0, 0, "",       0,  "foo.bar");
-        test("9-ribbit+17-...", 9,   0, 0, "ribbit", 17, "...");
-        test("7+1-" + TOO_BIG_STR, 7,0, 0, "",       1,  TOO_BIG_STR);
+        test("9+-foo",          9,   0, 0, 0, "",       0,  "foo");
+        test("9-pre-opt",       9,   0, 0, 0, "pre",    0,  "opt");
+        test("42+---bar",       42,  0, 0, 0, "",       0,  "--bar");
+        test("2.91+-8061493-",  2,  91, 0, 0, "",       0,  "8061493-");
+        test("24+-foo.bar",     24,  0, 0, 0, "",       0,  "foo.bar");
+        test("9-ribbit+17-...", 9,   0, 0, 0, "ribbit", 17, "...");
+        test("7+1-" + TOO_BIG_STR, 7,0, 0, 0, "",       1,  TOO_BIG_STR);
 
         tryCatch("9-pre+-opt", IAE);
         tryCatch("1.4142+-",   IAE);
@@ -127,6 +130,8 @@ public class Basic {
         testEHC("9",          "8",                false, false,  1,    1);
 
         testEHC("10.512.1",   "10.512.2",         false, false, -1,   -1);
+        testEHC("10.512.0.1", "10.512.0.2",       false, false, -1,   -1);
+        testEHC("10.512.0.0.1", "10.512.0.0.2",   false, false, -1,   -1);
         testEHC("512.10.1",   "512.11.1",         false, false, -1,   -1);
 
         // $OPT comparison
@@ -164,17 +169,21 @@ public class Basic {
 
     }
 
-    private static void test(String s, Integer major, Integer minor,
-                             Integer sec, String pre, Integer build,
-                             String opt)
+    private static void test(String s, Integer feature, Integer interim,
+                             Integer update, Integer patch,
+                             String pre, Integer build, String opt)
     {
         Version v = testParse(s);
 
         testStr(v.toString(), s);
 
-        testInt(v.major(), major);
-        testInt(v.minor(), minor);
-        testInt(v.security(), sec);
+        testInt(v.feature(), feature);
+        testInt(v.major(), feature);
+        testInt(v.interim(), interim);
+        testInt(v.minor(), interim);
+        testInt(v.update(), update);
+        testInt(v.security(), update);
+        testInt(v.patch(), patch);
         testStr((v.pre().isPresent() ? v.pre().get() : ""), pre);
         testInt((v.build().isPresent() ? v.build().get() : 0), build);
         testStr((v.optional().isPresent() ? v.optional().get() : ""), opt);
@@ -381,4 +390,5 @@ public class Basic {
             first = x;
         }
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,14 @@ unsigned int Abstract_VM_Version::_L1_data_cache_line_size = 0;
   #error HOTSPOT_VERSION_STRING must be defined
 #endif
 
-#ifndef VERSION_MAJOR
-  #error VERSION_MAJOR must be defined
+#ifndef VERSION_FEATURE
+  #error VERSION_FEATURE must be defined
 #endif
-#ifndef VERSION_MINOR
-  #error VERSION_MINOR must be defined
+#ifndef VERSION_INTERIM
+  #error VERSION_INTERIM must be defined
 #endif
-#ifndef VERSION_SECURITY
-  #error VERSION_SECURITY must be defined
+#ifndef VERSION_UPDATE
+  #error VERSION_UPDATE must be defined
 #endif
 #ifndef VERSION_PATCH
   #error VERSION_PATCH must be defined
@@ -76,9 +76,9 @@ unsigned int Abstract_VM_Version::_L1_data_cache_line_size = 0;
 
 // HOTSPOT_VERSION_STRING equals the JDK VERSION_STRING (unless overridden
 // in a standalone build).
-int Abstract_VM_Version::_vm_major_version = VERSION_MAJOR;
-int Abstract_VM_Version::_vm_minor_version = VERSION_MINOR;
-int Abstract_VM_Version::_vm_security_version = VERSION_SECURITY;
+int Abstract_VM_Version::_vm_major_version = VERSION_FEATURE;
+int Abstract_VM_Version::_vm_minor_version = VERSION_INTERIM;
+int Abstract_VM_Version::_vm_security_version = VERSION_UPDATE;
 int Abstract_VM_Version::_vm_patch_version = VERSION_PATCH;
 int Abstract_VM_Version::_vm_build_number = VERSION_BUILD;
 unsigned int Abstract_VM_Version::_parallel_worker_threads = 0;

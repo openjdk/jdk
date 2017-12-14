@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   BUNDLE_ID := $(MACOSX_BUNDLE_ID_BASE).$(VERSION_SHORT)
   BUNDLE_NAME := $(MACOSX_BUNDLE_NAME_BASE) $(VERSION_SHORT)
   BUNDLE_INFO := $(MACOSX_BUNDLE_NAME_BASE) $(VERSION_STRING)
-  BUNDLE_PLATFORM_VERSION := $(VERSION_MAJOR).$(VERSION_MINOR)
+  BUNDLE_PLATFORM_VERSION := $(VERSION_FEATURE).$(VERSION_INTERIM)
   BUNDLE_VERSION := $(VERSION_NUMBER)
   ifeq ($(COMPANY_NAME), N/A)
     BUNDLE_VENDOR := UNDEFINED
