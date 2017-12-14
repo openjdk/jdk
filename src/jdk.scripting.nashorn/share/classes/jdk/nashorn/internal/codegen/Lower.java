@@ -228,6 +228,16 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         return super.leaveIndexNode(indexNode);
     }
 
+    @Override
+    public Node leaveDELETE(final UnaryNode delete) {
+        final Expression expression = delete.getExpression();
+        if (expression instanceof IdentNode || expression instanceof BaseNode) {
+            return delete;
+        }
+        return new BinaryNode(Token.recast(delete.getToken(), TokenType.COMMARIGHT), expression,
+                LiteralNode.newInstance(delete.getToken(), delete.getFinish(), true));
+    }
+
     // If expression is a primitive literal that is not an array index and does return its string value. Else return null.
     private static String getConstantPropertyName(final Expression expression) {
         if (expression instanceof LiteralNode.PrimitiveLiteralNode) {
