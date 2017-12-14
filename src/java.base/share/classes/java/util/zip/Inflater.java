@@ -25,6 +25,9 @@
 
 package java.util.zip;
 
+import java.lang.ref.Cleaner.Cleanable;
+import jdk.internal.ref.CleanerFactory;
+
 /**
  * This class provides support for general purpose decompression using the
  * popular ZLIB compression library. The ZLIB compression library was
@@ -88,7 +91,7 @@ package java.util.zip;
 
 public class Inflater {
 
-    private final ZStreamRef zsRef;
+    private final InflaterZStreamRef zsRef;
     private byte[] buf = defaultBuf;
     private int off, len;
     private boolean finished;
@@ -115,7 +118,7 @@ public class Inflater {
      * @param nowrap if true then support GZIP compatible compression
      */
     public Inflater(boolean nowrap) {
-        this.zsRef = ZStreamRef.get(this, () -> init(nowrap), Inflater::end);
+        this.zsRef = InflaterZStreamRef.get(this, init(nowrap));
     }
 
     /**
@@ -428,4 +431,75 @@ public class Inflater {
     private static native int getAdler(long addr);
     private static native void reset(long addr);
     private static native void end(long addr);
+
+    /**
+     * A reference to the native zlib's z_stream structure. It also
+     * serves as the "cleaner" to clean up the native resource when
+     * the Inflater is ended, closed or cleaned.
+     */
+    static class InflaterZStreamRef implements Runnable {
+
+        private long address;
+        private final Cleanable cleanable;
+
+        private InflaterZStreamRef(Inflater owner, long addr) {
+            this.cleanable = (owner != null) ? CleanerFactory.cleaner().register(owner, this) : null;
+            this.address = addr;
+        }
+
+        long address() {
+            return address;
+        }
+
+        void clean() {
+            cleanable.clean();
+        }
+
+        public synchronized void run() {
+            long addr = address;
+            address = 0;
+            if (addr != 0) {
+                end(addr);
+            }
+        }
+
+        /*
+         * If {@code Inflater} has been subclassed and the {@code end} method is
+         * overridden, uses {@code finalizer} mechanism for resource cleanup. So
+         * {@code end} method can be called when the {@code Inflater} is unreachable.
+         * This mechanism will be removed when the {@code finalize} method is
+         * removed from {@code Inflater}.
+         */
+        static InflaterZStreamRef get(Inflater owner, long addr) {
+            Class<?> clz = owner.getClass();
+            while (clz != Inflater.class) {
+                try {
+                    clz.getDeclaredMethod("end");
+                    return new FinalizableZStreamRef(owner, addr);
+                } catch (NoSuchMethodException nsme) {}
+                clz = clz.getSuperclass();
+            }
+            return new InflaterZStreamRef(owner, addr);
+        }
+
+        private static class FinalizableZStreamRef extends InflaterZStreamRef {
+            final Inflater owner;
+
+            FinalizableZStreamRef(Inflater owner, long addr) {
+                super(null, addr);
+                this.owner = owner;
+            }
+
+            @Override
+            void clean() {
+                run();
+            }
+
+            @Override
+            @SuppressWarnings("deprecation")
+            protected void finalize() {
+                owner.end();
+            }
+        }
+    }
 }
