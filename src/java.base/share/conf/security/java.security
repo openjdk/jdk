@@ -881,6 +881,7 @@ jdk.xml.dsig.secureValidationPolicy=\
     disallowReferenceUriSchemes file http https,\
     minKeySize RSA 1024,\
     minKeySize DSA 1024,\
+    minKeySize EC 224,\
     noDuplicateIds,\
     noRetrievalMethodLoops
 
