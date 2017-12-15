@@ -56,7 +56,7 @@ public enum SourceVersion {
      * 1.7: diamond syntax, try-with-resources, etc.
      * 1.8: lambda expressions and default methods
      *   9: modules, small cleanups to 1.7 and 1.8 changes
-     *  10: to-be-determined changes
+     *  10: local-variable type inference (var)
      */
 
     /**
@@ -156,6 +156,9 @@ public enum SourceVersion {
     /**
      * The version recognized by the Java Platform, Standard Edition
      * 10.
+     *
+     * Additions in this release include local-variable type inference
+     * ({@code var}).
      *
      * @since 10
      */

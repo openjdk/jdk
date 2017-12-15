@@ -412,6 +412,21 @@ class ZipFile implements ZipConstants, Closeable {
         }
     }
 
+    private static class InflaterCleanupAction implements Runnable {
+        private final Inflater inf;
+        private final CleanableResource res;
+
+        InflaterCleanupAction(Inflater inf, CleanableResource res) {
+            this.inf = inf;
+            this.res = res;
+        }
+
+        @Override
+        public void run() {
+            res.releaseInflater(inf);
+        }
+    }
+
     private class ZipFileInflaterInputStream extends InflaterInputStream {
         private volatile boolean closeRequested;
         private boolean eof = false;
@@ -427,13 +442,8 @@ class ZipFile implements ZipConstants, Closeable {
                                            Inflater inf, int size) {
             super(zfin, inf, size);
             this.cleanable = CleanerFactory.cleaner().register(this,
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            res.releaseInflater(inf);
-                        }
-                    });
-       }
+                    new InflaterCleanupAction(inf, res));
+        }
 
         public void close() throws IOException {
             if (closeRequested)

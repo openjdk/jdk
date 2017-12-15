@@ -43,6 +43,8 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/events.hpp"
@@ -2019,6 +2021,15 @@ address MacroAssembler::get_PC(Register result, int64_t offset) {
   return here + offset;
 }
 
+void MacroAssembler::instr_size(Register size, Register pc) {
+  // Extract 2 most significant bits of current instruction.
+  z_llgc(size, Address(pc));
+  z_srl(size, 6);
+  // Compute (x+3)&6 which translates 0->2, 1->4, 2->4, 3->6.
+  z_ahi(size, 3);
+  z_nill(size, 6);
+}
+
 // Resize_frame with SP(new) = SP(old) - [offset].
 void MacroAssembler::resize_frame_sub(Register offset, Register fp, bool load_fp)
 {
@@ -2703,6 +2714,19 @@ void MacroAssembler::serialize_memory(Register thread, Register tmp1, Register t
 
   z_release();
   z_st(Z_R0, 0, tmp2, tmp1);
+}
+
+void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
+    // Armed page has poll_bit set.
+    z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
+    z_brnaz(slow_path);
+  } else {
+    load_const_optimized(temp_reg, SafepointSynchronize::address_of_state());
+    z_cli(/*SafepointSynchronize::sz_state()*/4-1, temp_reg, SafepointSynchronize::_not_synchronized);
+    z_brne(slow_path);
+  }
 }
 
 // Don't rely on register locking, always use Z_R1 as scratch register instead.
@@ -4914,13 +4938,14 @@ unsigned int MacroAssembler::CopyRawMemory_AlignedDisjoint(Register src_reg, Reg
 // The result is the number of characters copied before the first incompatible character was found.
 // If precise is true, the processing stops exactly at this point. Otherwise, the result may be off
 // by a few bytes. The result always indicates the number of copied characters.
+// When used as a character index, the returned value points to the first incompatible character.
 //
 // Note: Does not behave exactly like package private StringUTF16 compress java implementation in case of failure:
 // - Different number of characters may have been written to dead array (if precise is false).
 // - Returns a number <cnt instead of 0. (Result gets compared with cnt.)
 unsigned int MacroAssembler::string_compress(Register result, Register src, Register dst, Register cnt,
                                              Register tmp,    bool precise) {
-  assert_different_registers(Z_R0, Z_R1, src, dst, cnt, tmp);
+  assert_different_registers(Z_R0, Z_R1, result, src, dst, cnt, tmp);
 
   if (precise) {
     BLOCK_COMMENT("encode_iso_array {");
@@ -5027,7 +5052,7 @@ unsigned int MacroAssembler::string_compress(Register result, Register src, Regi
       z_vo(Vtmp1, Vtmp1, Vtmp2);
       z_vn(Vtmp1, Vtmp1, Vmask);
       z_vceqhs(Vtmp1, Vtmp1, Vzero);       // high half of all chars must be zero for successful compress.
-      z_brne(VectorBreak);                 // break vector loop, incompatible character found.
+      z_bvnt(VectorBreak);                 // break vector loop if not all vector elements compare eq -> incompatible character found.
                                            // re-process data from current iteration in break handler.
 
       //---<  pack & store characters  >---
@@ -5094,24 +5119,28 @@ unsigned int MacroAssembler::string_compress(Register result, Register src, Regi
     z_tmll(Rcnt, min_cnt-1);
     z_brnaz(ScalarShortcut);               // if all bits zero, there is nothing left to do for scalar loop.
                                            // Rix == 0 in all cases.
+    z_sllg(Z_R1, Rcnt, 1);                 // # src bytes already processed. Only lower 32 bits are valid!
+                                           //   Z_R1 contents must be treated as unsigned operand! For huge strings,
+                                           //   (Rcnt >= 2**30), the value may spill into the sign bit by sllg.
     z_lgfr(result, Rcnt);                  // all characters processed.
-    z_sgfr(Rdst, Rcnt);                    // restore ptr
-    z_sgfr(Rsrc, Rcnt);                    // restore ptr, double the element count for Rsrc restore
-    z_sgfr(Rsrc, Rcnt);
+    z_slgfr(Rdst, Rcnt);                   // restore ptr
+    z_slgfr(Rsrc, Z_R1);                   // restore ptr, double the element count for Rsrc restore
     z_bru(AllDone);
 
     bind(UnrolledBreak);
     z_lgfr(Z_R0, Rcnt);                    // # chars processed in total after unrolled loop
     z_nilf(Z_R0, ~(min_cnt-1));
-    z_sll(Rix, log_min_cnt);               // # chars processed so far in UnrolledLoop, excl. current iteration.
-    z_sr(Z_R0, Rix);                       // correct # chars processed in total.
+    z_sll(Rix, log_min_cnt);               // # chars not yet processed in UnrolledLoop (due to break), broken iteration not included.
+    z_sr(Z_R0, Rix);                       // fix # chars processed OK so far.
     if (!precise) {
       z_lgfr(result, Z_R0);
+      z_sllg(Z_R1, Z_R0, 1);               // # src bytes already processed. Only lower 32 bits are valid!
+                                           //   Z_R1 contents must be treated as unsigned operand! For huge strings,
+                                           //   (Rcnt >= 2**30), the value may spill into the sign bit by sllg.
       z_aghi(result, min_cnt/2);           // min_cnt/2 characters have already been written
                                            // but ptrs were not updated yet.
-      z_sgfr(Rdst, Z_R0);                  // restore ptr
-      z_sgfr(Rsrc, Z_R0);                  // restore ptr, double the element count for Rsrc restore
-      z_sgfr(Rsrc, Z_R0);
+      z_slgfr(Rdst, Z_R0);                 // restore ptr
+      z_slgfr(Rsrc, Z_R1);                 // restore ptr, double the element count for Rsrc restore
       z_bru(AllDone);
     }
     bind(UnrolledDone);
@@ -5165,7 +5194,7 @@ unsigned int MacroAssembler::string_compress(Register result, Register src, Regi
       z_sr(Rix, Z_R0);
     }
     z_lgfr(result, Rcnt);                  // # processed characters (if all runs ok).
-    z_brz(ScalarDone);
+    z_brz(ScalarDone);                     // uses CC from Rix calculation
 
     bind(ScalarLoop);
       z_llh(Z_R1, 0, Z_R0, Rsrc);
@@ -6450,27 +6479,6 @@ void MacroAssembler::translate_tt(Register r1, Register r2, uint m3) {
   bind(retry);
   Assembler::z_trtt(r1, r2, m3);
   Assembler::z_brc(Assembler::bcondOverflow /* CC==3 (iterate) */, retry);
-}
-
-void MacroAssembler::generate_safepoint_check(Label& slow_path, Register scratch, bool may_relocate) {
-  if (scratch == noreg) scratch = Z_R1;
-  address Astate = SafepointSynchronize::address_of_state();
-  BLOCK_COMMENT("safepoint check:");
-
-  if (may_relocate) {
-    ptrdiff_t total_distance = Astate - this->pc();
-    if (RelAddr::is_in_range_of_RelAddr32(total_distance)) {
-      RelocationHolder rspec = external_word_Relocation::spec(Astate);
-      (this)->relocate(rspec, relocInfo::pcrel_addr_format);
-      load_absolute_address(scratch, Astate);
-    } else {
-      load_const_optimized(scratch, Astate);
-    }
-  } else {
-    load_absolute_address(scratch, Astate);
-  }
-  z_cli(/*SafepointSynchronize::sz_state()*/4-1, scratch, SafepointSynchronize::_not_synchronized);
-  z_brne(slow_path);
 }
 
 

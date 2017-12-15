@@ -49,7 +49,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
                             bool check_exceptions);
 
   // Base routine for all dispatches.
-  void dispatch_base(TosState state, address* table);
+  void dispatch_base(TosState state, address* table, bool generate_poll = false);
 
  public:
   InterpreterMacroAssembler(CodeBuffer* c)
@@ -78,11 +78,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // dispatch routines
   void dispatch_prolog(TosState state, int step = 0);
   void dispatch_epilog(TosState state, int step = 0);
-  void dispatch_only(TosState state);
+  void dispatch_only(TosState state, bool generate_poll = false);
   // Dispatch normal table via Z_bytecode (assume Z_bytecode is loaded already).
   void dispatch_only_normal(TosState state);
   void dispatch_normal(TosState state);
-  void dispatch_next(TosState state, int step = 0);
+  void dispatch_next(TosState state, int step = 0, bool generate_poll = false);
   void dispatch_next_noverify_oop(TosState state, int step = 0);
   void dispatch_via(TosState state, address* table);
 

@@ -2165,7 +2165,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
         __ serialize_memory(Z_thread, Z_R1, Z_R2);
       }
     }
-    __ generate_safepoint_check(sync, Z_R1, true);
+    __ safepoint_poll(sync, Z_R1);
 
     __ load_and_test_int(Z_R0, Address(Z_thread, JavaThread::suspend_flags_offset()));
     __ z_bre(no_block);
@@ -3190,11 +3190,17 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   bool cause_return = (poll_type == POLL_AT_RETURN);
   // Make room for return address (or push it again)
-  if (!cause_return)
+  if (!cause_return) {
     __ z_lg(Z_R14, Address(Z_thread, JavaThread::saved_exception_pc_offset()));
+  }
 
   // Save registers, fpu state, and flags
   map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers);
+
+  if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
+    // Keep a copy of the return pc to detect if it gets modified.
+    __ z_lgr(Z_R6, Z_R14);
+  }
 
   // The following is basically a call_VM. However, we need the precise
   // address of the call in order to generate an oopmap. Hence, we do all the
@@ -3230,6 +3236,21 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // No exception case
   __ bind(noException);
+
+  if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
+    Label no_adjust;
+     // If our stashed return pc was modified by the runtime we avoid touching it
+    const int offset_of_return_pc = _z_abi16(return_pc) + RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);
+    __ z_cg(Z_R6, offset_of_return_pc, Z_SP);
+    __ z_brne(no_adjust);
+
+    // Adjust return pc forward to step over the safepoint poll instruction
+    __ instr_size(Z_R1_scratch, Z_R6);
+    __ z_agr(Z_R6, Z_R1_scratch);
+    __ z_stg(Z_R6, offset_of_return_pc, Z_SP);
+
+    __ bind(no_adjust);
+  }
 
   // Normal exit, restore registers and exit.
   RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers);

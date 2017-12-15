@@ -43,6 +43,7 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
+import jdk.nashorn.internal.runtime.WithObject;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**
@@ -106,10 +107,35 @@ public final class NativeJavaImporter extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object __noSuchProperty__(final Object self, final Object name) {
-        if (! (self instanceof NativeJavaImporter)) {
-            throw typeError("not.a.java.importer", ScriptRuntime.safeToString(self));
+        final NativeJavaImporter javaImporter = getJavaImporter(self);
+        if (javaImporter != null) {
+            return javaImporter.createProperty(JSType.toString(name));
         }
-        return ((NativeJavaImporter)self).createProperty(JSType.toString(name));
+        throw typeError("not.a.java.importer", ScriptRuntime.safeToString(self));
+    }
+
+    private static NativeJavaImporter getJavaImporter(Object self) {
+        final NativeJavaImporter expression;
+        if (self instanceof NativeJavaImporter) {
+            expression = (NativeJavaImporter)self;
+        } else if (self instanceof ScriptObject) {
+            expression = getJavaImporterInScope((ScriptObject)self);
+        } else {
+            expression = null;
+        }
+        return expression;
+    }
+
+    private static NativeJavaImporter getJavaImporterInScope(ScriptObject self) {
+        for (ScriptObject obj = self; obj != null; obj = obj.getProto()) {
+            if (obj instanceof WithObject) {
+                final ScriptObject expression = ((WithObject)obj).getExpression();
+                if (expression instanceof NativeJavaImporter) {
+                    return (NativeJavaImporter)expression;
+                }
+            }
+        }
+        return null;
     }
 
     /**

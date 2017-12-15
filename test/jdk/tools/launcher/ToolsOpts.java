@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8002091
- * @summary Test options patterns for javac,javah,javap and javadoc using
+ * @summary Test options patterns for javac,javap and javadoc using
  * javac as a test launcher. Create a dummy javac and intercept options to check
  * reception of options as passed through the launcher without having to launch
  * javac. Only -J and -cp ./* options should be consumed by the launcher.

@@ -36,6 +36,7 @@
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "nativeInst_s390.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_s390.inline.hpp"
 
@@ -1135,8 +1136,12 @@ void LIR_Assembler::return_op(LIR_Opr result) {
          (result->is_single_fpu() && result->as_float_reg() == Z_F0) ||
          (result->is_double_fpu() && result->as_double_reg() == Z_F0), "convention");
 
-  AddressLiteral pp(os::get_polling_page());
-  __ load_const_optimized(Z_R1_scratch, pp);
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    __ z_lg(Z_R1_scratch, Address(Z_thread, Thread::polling_page_offset()));
+  } else {
+    AddressLiteral pp(os::get_polling_page());
+    __ load_const_optimized(Z_R1_scratch, pp);
+  }
 
   // Pop the frame before the safepoint code.
   __ pop_frame_restore_retPC(initial_frame_size_in_bytes());
@@ -1154,13 +1159,18 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 }
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
-  AddressLiteral pp(os::get_polling_page());
-  __ load_const_optimized(tmp->as_register_lo(), pp);
+  const Register poll_addr = tmp->as_register_lo();
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    __ z_lg(poll_addr, Address(Z_thread, Thread::polling_page_offset()));
+  } else {
+    AddressLiteral pp(os::get_polling_page());
+    __ load_const_optimized(poll_addr, pp);
+  }
   guarantee(info != NULL, "Shouldn't be NULL");
   add_debug_info_for_branch(info);
   int offset = __ offset();
   __ relocate(relocInfo::poll_type);
-  __ load_from_polling_page(tmp->as_register_lo());
+  __ load_from_polling_page(poll_addr);
   return offset;
 }
 
