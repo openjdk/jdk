@@ -36,6 +36,7 @@
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 #define __ _masm->
@@ -1314,11 +1315,10 @@ void LIR_Assembler::return_op(LIR_Opr result) {
     __ pop_frame();
   }
 
-  if (LoadPollAddressFromThread) {
-    // TODO: PPC port __ ld(polling_page, in_bytes(JavaThread::poll_address_offset()), R16_thread);
-    Unimplemented();
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    __ ld(polling_page, in_bytes(Thread::polling_page_offset()), R16_thread);
   } else {
-    __ load_const_optimized(polling_page, (long)(address) os::get_polling_page(), R0); // TODO: PPC port: get_standard_polling_page()
+    __ load_const_optimized(polling_page, (long)(address) os::get_polling_page(), R0);
   }
 
   // Restore return pc relative to callers' sp.
@@ -1341,26 +1341,18 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
-
-  if (LoadPollAddressFromThread) {
-    const Register poll_addr = tmp->as_register();
-    // TODO: PPC port __ ld(poll_addr, in_bytes(JavaThread::poll_address_offset()), R16_thread);
-    Unimplemented();
-    __ relocate(relocInfo::poll_type); // XXX
-    guarantee(info != NULL, "Shouldn't be NULL");
-    int offset = __ offset();
-    add_debug_info_for_branch(info);
-    __ load_from_polling_page(poll_addr);
-    return offset;
+  const Register poll_addr = tmp->as_register();
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    __ ld(poll_addr, in_bytes(Thread::polling_page_offset()), R16_thread);
+  } else {
+    __ load_const_optimized(poll_addr, (intptr_t)os::get_polling_page(), R0);
   }
-
-  __ load_const_optimized(tmp->as_register(), (intptr_t)os::get_polling_page(), R0); // TODO: PPC port: get_standard_polling_page()
   if (info != NULL) {
     add_debug_info_for_branch(info);
   }
   int offset = __ offset();
   __ relocate(relocInfo::poll_type);
-  __ load_from_polling_page(tmp->as_register());
+  __ load_from_polling_page(poll_addr);
 
   return offset;
 }

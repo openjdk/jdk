@@ -1853,7 +1853,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // Push return address for "ret" on stack.
     __ push_ptr(Z_tos);
     // And away we go!
-    __ dispatch_next(vtos);
+    __ dispatch_next(vtos, 0 , true);
     return;
   }
 
@@ -1961,7 +1961,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   // Z_tos: Return bci for jsr's, unused otherwise.
   // Z_bytecode: target bytecode
   // Z_bcp: target bcp
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 
   // Out-of-line code runtime calls.
   if (UseLoopCounter) {
@@ -2072,7 +2072,7 @@ void TemplateTable::ret() {
   __ get_method(Z_tos);
   __ mem2reg_opt(Z_R1_scratch, Address(Z_tos, Method::const_offset()));
   __ load_address(Z_bcp, Address(Z_R1_scratch, Z_tmp_1, ConstMethod::codes_offset()));
-  __ dispatch_next(vtos);
+  __ dispatch_next(vtos, 0 , true);
 }
 
 void TemplateTable::wide_ret() {
@@ -2085,7 +2085,7 @@ void TemplateTable::wide_ret() {
   __ get_method(Z_tos);
   __ mem2reg_opt(Z_R1_scratch, Address(Z_tos, Method::const_offset()));
   __ load_address(Z_bcp, Address(Z_R1_scratch, Z_tmp_1, ConstMethod::codes_offset()));
-  __ dispatch_next(vtos);
+  __ dispatch_next(vtos, 0, true);
 }
 
 void TemplateTable::tableswitch () {
@@ -2129,7 +2129,7 @@ void TemplateTable::tableswitch () {
   // Load next bytecode.
   __ z_llgc(Z_bytecode, Address(Z_bcp, index));
   __ z_agr(Z_bcp, index); // Advance bcp.
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 
   // Handle default.
   __ bind(default_case);
@@ -2193,7 +2193,7 @@ void TemplateTable::fast_linearswitch () {
   // Load next bytecode.
   __ z_llgc(Z_bytecode, Address(Z_bcp, offset, 0));
   __ z_agr(Z_bcp, offset); // Advance bcp.
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 }
 
 
@@ -2302,7 +2302,7 @@ void TemplateTable::fast_binaryswitch() {
   // Load next bytecode.
   __ z_llgc(Z_bytecode, Address(Z_bcp, j));
   __ z_agr(Z_bcp, j);       // Advance bcp.
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 
   // default case -> j = default offset
   __ bind(default_case);
@@ -2312,7 +2312,7 @@ void TemplateTable::fast_binaryswitch() {
   // Load next bytecode.
   __ z_llgc(Z_bytecode, Address(Z_bcp, j));
   __ z_agr(Z_bcp, j);       // Advance bcp.
-  __ dispatch_only(vtos);
+  __ dispatch_only(vtos, true);
 }
 
 void TemplateTable::_return(TosState state) {
@@ -2331,6 +2331,17 @@ void TemplateTable::_return(TosState state) {
     __ z_bfalse(skip_register_finalizer);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), Rthis);
     __ bind(skip_register_finalizer);
+  }
+
+  if (SafepointMechanism::uses_thread_local_poll() && _desc->bytecode() != Bytecodes::_return_register_finalizer) {
+    Label no_safepoint;
+    const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
+    __ z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
+    __ z_braz(no_safepoint);
+    __ push(state);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
+    __ pop(state);
+    __ bind(no_safepoint);
   }
 
   if (state == itos) {

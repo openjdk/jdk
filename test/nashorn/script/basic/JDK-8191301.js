@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,25 @@
  * questions.
  */
 
-public class ParamClassTest {
-    static {
-        System.loadLibrary("Test");
-    }
+/**
+ * JDK-8191301 : JavaImporter fails to resolve imported elements within functions, that contain too many statements
+ *
+ * @test
+ * @run
+ * @option -Dnashorn.compiler.splitter.threshold=150
+ * @fork
+ */
 
-    public native void method(Param s);
-
-    public static void main(String[] a) {
-    }
-}
-
-class Param {
+var imports = new JavaImporter(java.lang);
+with (imports) {
+    function func() {
+        System.out.println('a');
+        System.out.println('a');
+        System.out.println('a');
+        System.out.println('a');
+        System.out.println('a');
+        System.out.println('a');
+        System.out.println('a');
+    };
+    func();
 }

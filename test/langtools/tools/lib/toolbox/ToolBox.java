@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -524,6 +524,8 @@ public class ToolBox {
             return source;
         }
 
+        private static Pattern commentPattern =
+                Pattern.compile("(?s)(\\s+//.*?\n|/\\*.*?\\*/)");
         private static Pattern modulePattern =
                 Pattern.compile("module\\s+((?:\\w+\\.)*)");
         private static Pattern packagePattern =
@@ -533,13 +535,24 @@ public class ToolBox {
 
         /**
          * Extracts the Java file name from the class declaration.
-         * This method is intended for simple files and uses regular expressions,
-         * so comments matching the pattern can make the method fail.
+         * This method is intended for simple files and uses regular expressions.
+         * Comments in the source are stripped before looking for the
+         * declarations from which the name is derived.
          */
         static String getJavaFileNameFromSource(String source) {
+            StringBuilder sb = new StringBuilder();
+            Matcher matcher = commentPattern.matcher(source);
+            int start = 0;
+            while (matcher.find()) {
+                sb.append(source.substring(start, matcher.start()));
+                start = matcher.end();
+            }
+            sb.append(source.substring(start));
+            source = sb.toString();
+
             String packageName = null;
 
-            Matcher matcher = modulePattern.matcher(source);
+            matcher = modulePattern.matcher(source);
             if (matcher.find())
                 return "module-info.java";
 

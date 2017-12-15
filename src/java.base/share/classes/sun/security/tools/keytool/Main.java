@@ -1058,11 +1058,6 @@ public final class Main {
                 System.err.println(form.format(source));
                 keyPass = storePass;
             }
-            if (newPass != null && !Arrays.equals(storePass, newPass)) {
-                Object[] source = {"-new"};
-                System.err.println(form.format(source));
-                newPass = storePass;
-            }
             if (destKeyPass != null && !Arrays.equals(storePass, destKeyPass)) {
                 Object[] source = {"-destkeypass"};
                 System.err.println(form.format(source));
@@ -1243,10 +1238,7 @@ public final class Main {
             doSelfCert(alias, dname, sigAlgName);
             kssave = true;
         } else if (command == STOREPASSWD) {
-            storePassNew = newPass;
-            if (storePassNew == null) {
-                storePassNew = getNewPasswd("keystore password", storePass);
-            }
+            doChangeStorePasswd();
             kssave = true;
         } else if (command == GENCERT) {
             if (alias == null) {
@@ -2258,8 +2250,9 @@ public final class Main {
             newPass = destKeyPass;
             pp = new PasswordProtection(destKeyPass);
         } else if (objs.snd != null) {
-            newPass = objs.snd;
-            pp = new PasswordProtection(objs.snd);
+            newPass = P12KEYSTORE.equalsIgnoreCase(storetype) ?
+                    storePass : objs.snd;
+            pp = new PasswordProtection(newPass);
         }
 
         try {
@@ -2762,6 +2755,28 @@ public final class Main {
             }
         }
     }
+
+    private void doChangeStorePasswd() throws Exception {
+        storePassNew = newPass;
+        if (storePassNew == null) {
+            storePassNew = getNewPasswd("keystore password", storePass);
+        }
+        if (P12KEYSTORE.equalsIgnoreCase(storetype)) {
+            // When storetype is PKCS12, we need to change all keypass as well
+            for (String alias : Collections.list(keyStore.aliases())) {
+                if (!keyStore.isCertificateEntry(alias)) {
+                    // keyPass should be either null or same with storePass,
+                    // but keep it in case one day we want to "normalize"
+                    // a PKCS12 keystore having different passwords.
+                    Pair<Entry, char[]> objs
+                            = recoverEntry(keyStore, alias, storePass, keyPass);
+                    keyStore.setEntry(alias, objs.fst,
+                            new PasswordProtection(storePassNew));
+                }
+            }
+        }
+    }
+
     /**
      * Creates a self-signed certificate, and stores it as a single-element
      * certificate chain.

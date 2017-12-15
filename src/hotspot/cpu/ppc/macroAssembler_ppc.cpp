@@ -37,6 +37,8 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
@@ -3017,6 +3019,18 @@ void MacroAssembler::serialize_memory(Register thread, Register tmp1, Register t
   load_const(tmp1, (long) os::get_memory_serialize_page());
   release();
   stwx(R0, tmp1, tmp2);
+}
+
+void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    ld(temp_reg, in_bytes(Thread::polling_page_offset()), R16_thread);
+    // Armed page has poll_bit set.
+    andi_(temp_reg, temp_reg, SafepointMechanism::poll_bit());
+  } else {
+    lwz(temp_reg, (RegisterOrConstant)(intptr_t)SafepointSynchronize::address_of_state());
+    cmpwi(CCR0, temp_reg, SafepointSynchronize::_not_synchronized);
+  }
+  bne(CCR0, slow_path);
 }
 
 

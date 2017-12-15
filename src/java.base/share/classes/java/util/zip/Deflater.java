@@ -25,6 +25,9 @@
 
 package java.util.zip;
 
+import java.lang.ref.Cleaner.Cleanable;
+import jdk.internal.ref.CleanerFactory;
+
 /**
  * This class provides support for general purpose compression using the
  * popular ZLIB compression library. The ZLIB compression library was
@@ -88,7 +91,7 @@ package java.util.zip;
 
 public class Deflater {
 
-    private final ZStreamRef zsRef;
+    private final DeflaterZStreamRef zsRef;
     private byte[] buf = new byte[0];
     private int off, len;
     private int level, strategy;
@@ -183,9 +186,8 @@ public class Deflater {
     public Deflater(int level, boolean nowrap) {
         this.level = level;
         this.strategy = DEFAULT_STRATEGY;
-        this.zsRef = ZStreamRef.get(this,
-                () -> init(level, DEFAULT_STRATEGY, nowrap),
-                Deflater::end);
+        this.zsRef = DeflaterZStreamRef.get(this,
+                                    init(level, DEFAULT_STRATEGY, nowrap));
     }
 
     /**
@@ -591,4 +593,75 @@ public class Deflater {
     private static native int getAdler(long addr);
     private static native void reset(long addr);
     private static native void end(long addr);
+
+    /**
+     * A reference to the native zlib's z_stream structure. It also
+     * serves as the "cleaner" to clean up the native resource when
+     * the Deflater is ended, closed or cleaned.
+     */
+    static class DeflaterZStreamRef implements Runnable {
+
+        private long address;
+        private final Cleanable cleanable;
+
+        private DeflaterZStreamRef(Deflater owner, long addr) {
+            this.cleanable = (owner != null) ? CleanerFactory.cleaner().register(owner, this) : null;
+            this.address = addr;
+        }
+
+        long address() {
+            return address;
+        }
+
+        void clean() {
+            cleanable.clean();
+        }
+
+        public synchronized void run() {
+            long addr = address;
+            address = 0;
+            if (addr != 0) {
+                end(addr);
+            }
+        }
+
+        /*
+         * If {@code Deflater} has been subclassed and the {@code end} method is
+         * overridden, uses {@code finalizer} mechanism for resource cleanup. So
+         * {@code end} method can be called when the {@code Deflater} is unreachable.
+         * This mechanism will be removed when the {@code finalize} method is
+         * removed from {@code Deflater}.
+         */
+        static DeflaterZStreamRef get(Deflater owner, long addr) {
+            Class<?> clz = owner.getClass();
+            while (clz != Deflater.class) {
+                try {
+                    clz.getDeclaredMethod("end");
+                    return new FinalizableZStreamRef(owner, addr);
+                } catch (NoSuchMethodException nsme) {}
+                clz = clz.getSuperclass();
+            }
+            return new DeflaterZStreamRef(owner, addr);
+        }
+
+        private static class FinalizableZStreamRef extends DeflaterZStreamRef {
+            final Deflater owner;
+
+            FinalizableZStreamRef (Deflater owner, long addr) {
+                super(null, addr);
+                this.owner = owner;
+            }
+
+            @Override
+            void clean() {
+                run();
+            }
+
+            @Override
+            @SuppressWarnings("deprecation")
+            protected void finalize() {
+                owner.end();
+            }
+        }
+    }
 }

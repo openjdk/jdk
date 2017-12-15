@@ -260,8 +260,6 @@ class MacroAssembler: public Assembler {
   //
   // Constants, loading constants, TOC support
   //
-  // Safepoint check factored out.
-  void generate_safepoint_check(Label& slow_path, Register scratch = noreg, bool may_relocate = true);
 
   // Load generic address: d <- base(a) + index(a) + disp(a).
   inline void load_address(Register d, const Address &a);
@@ -442,6 +440,9 @@ class MacroAssembler: public Assembler {
 
   // Get current PC + offset. Offset given in bytes, must be even!
   address get_PC(Register result, int64_t offset);
+
+  // Get size of instruction at pc (which must point to valid code).
+  void instr_size(Register size, Register pc);
 
   // Accessing, and in particular modifying, a stack location is only safe if
   // the stack pointer (Z_SP) is set such that the accessed stack location is
@@ -640,6 +641,9 @@ class MacroAssembler: public Assembler {
 
   // Support for serializing memory accesses between threads.
   void serialize_memory(Register thread, Register tmp1, Register tmp2);
+
+  // Check if safepoint requested and if so branch
+  void safepoint_poll(Label& slow_path, Register temp_reg);
 
   // Stack overflow checking
   void bang_stack_with_offset(int offset);

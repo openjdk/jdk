@@ -30,9 +30,10 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 /**
- * A container object which may or may not contain an {@code int} value.  If a
- * value is present, {@code isPresent()} returns {@code true} and
- * {@code getAsInt()} returns the value.
+ * A container object which may or may not contain an {@code int} value.
+ * If a value is present, {@code isPresent()} returns {@code true}. If no
+ * value is present, the object is considered <i>empty</i> and
+ * {@code isPresent()} returns {@code false}.
  *
  * <p>Additional methods that depend on the presence or absence of a contained
  * value are provided, such as {@link #orElse(int) orElse()}
@@ -117,14 +118,10 @@ public final class OptionalInt {
      * {@code NoSuchElementException}.
      *
      * @apiNote
-     * The methods {@link #orElse(int) orElse} and
-     * {@link #orElseGet(IntSupplier) orElseGet}
-     * are generally preferable to this method, as they return a substitute
-     * value if the value is absent, instead of throwing an exception.
+     * The preferred alternative to this method is {@link #orElseThrow()}.
      *
      * @return the value described by this {@code OptionalInt}
      * @throws NoSuchElementException if no value is present
-     * @see OptionalInt#isPresent()
      */
     public int getAsInt() {
         if (!isPresent) {
@@ -222,6 +219,21 @@ public final class OptionalInt {
      */
     public int orElseGet(IntSupplier supplier) {
         return isPresent ? value : supplier.getAsInt();
+    }
+
+    /**
+     * If a value is present, returns the value, otherwise throws
+     * {@code NoSuchElementException}.
+     *
+     * @return the value described by this {@code OptionalInt}
+     * @throws NoSuchElementException if no value is present
+     * @since 10
+     */
+    public int orElseThrow() {
+        if (!isPresent) {
+            throw new NoSuchElementException("No value present");
+        }
+        return value;
     }
 
     /**
