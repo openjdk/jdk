@@ -28,7 +28,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
-#include "runtime/threadSMR.hpp"
 
 inline void Thread::set_suspend_flag(SuspendFlags f) {
   assert(sizeof(jint) == sizeof(_suspend_flags), "size mismatch");
@@ -210,28 +209,6 @@ inline void JavaThread::set_terminated(TerminatedTypes t) {
 inline void JavaThread::set_terminated_value() {
   // use release-store so the setting of _terminated is seen more quickly
   OrderAccess::release_store((volatile jint *) &_terminated, (jint) _thread_terminated);
-}
-
-inline void Threads::add_smr_tlh_times(uint add_value) {
-  Atomic::add(add_value, &_smr_tlh_times);
-}
-
-inline void Threads::inc_smr_tlh_cnt() {
-  Atomic::inc(&_smr_tlh_cnt);
-}
-
-inline void Threads::update_smr_tlh_time_max(uint new_value) {
-  while (true) {
-    uint cur_value = _smr_tlh_time_max;
-    if (new_value <= cur_value) {
-      // No need to update max value so we're done.
-      break;
-    }
-    if (Atomic::cmpxchg(new_value, &_smr_tlh_time_max, cur_value) == cur_value) {
-      // Updated max value so we're done. Otherwise try it all again.
-      break;
-    }
-  }
 }
 
 #endif // SHARE_VM_RUNTIME_THREAD_INLINE_HPP

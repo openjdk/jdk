@@ -195,6 +195,9 @@
   product(bool, UseSubwordForMaxVector, true,                               \
           "Use Subword Analysis to set maximum vector size")                \
                                                                             \
+  product(bool, UseVectorCmov, false,                                       \
+          "Use Vectorized Cmov")                                            \
+                                                                            \
   develop(intx, UnrollLimitForProfileCheck, 1,                              \
           "Don't use profile_trip_cnt() to restrict unrolling until "       \
           "unrolling would push the number of unrolled iterations above "   \

@@ -4404,15 +4404,6 @@ public class Parser extends AbstractParser implements Loggable {
         final long unaryToken = token;
 
         switch (type) {
-        case DELETE: {
-            next();
-            final Expression expr = unaryExpression();
-            if (expr instanceof BaseNode || expr instanceof IdentNode) {
-                return new UnaryNode(unaryToken, expr);
-            }
-            appendStatement(new ExpressionStatement(unaryLine, unaryToken, finish, expr));
-            return LiteralNode.newInstance(unaryToken, finish, true);
-        }
         case ADD:
         case SUB: {
             final TokenType opType = type;
@@ -4420,6 +4411,7 @@ public class Parser extends AbstractParser implements Loggable {
             final Expression expr = unaryExpression();
             return new UnaryNode(Token.recast(unaryToken, (opType == TokenType.ADD) ? TokenType.POS : TokenType.NEG), expr);
         }
+        case DELETE:
         case VOID:
         case TYPEOF:
         case BIT_NOT:

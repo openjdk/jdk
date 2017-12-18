@@ -899,81 +899,68 @@ public class Runtime {
      *
      * <h2><a id="verNum">Version numbers</a></h2>
      *
-     * <p> A <em>version number</em>, {@code $VNUM}, is a non-empty sequence
-     * of elements separated by period characters (U+002E).  An element is
-     * either zero, or an unsigned integer numeral without leading zeros.  The
-     * final element in a version number must not be zero.  The format is:
-     * </p>
+     * <p> A <em>version number</em>, {@code $VNUM}, is a non-empty sequence of
+     * elements separated by period characters (U+002E).  An element is either
+     * zero, or an unsigned integer numeral without leading zeros.  The final
+     * element in a version number must not be zero.  When an element is
+     * incremented, all subsequent elements are removed.  The format is: </p>
      *
      * <blockquote><pre>
-     *     [1-9][0-9]*((\.0)*\.[1-9][0-9]*)*
+     * [1-9][0-9]*((\.0)*\.[1-9][0-9]*)*
      * </pre></blockquote>
      *
-     * <p> The sequence may be of arbitrary length but the first three
-     * elements are assigned specific meanings, as follows:</p>
+     * <p> The sequence may be of arbitrary length but the first four elements
+     * are assigned specific meanings, as follows:</p>
      *
      * <blockquote><pre>
-     *     $MAJOR.$MINOR.$SECURITY
+     * $FEATURE.$INTERIM.$UPDATE.$PATCH
      * </pre></blockquote>
      *
      * <ul>
      *
-     * <li><p> <a id="major">{@code $MAJOR}</a> --- The major version
-     * number, incremented for a major release that contains significant new
-     * features as specified in a new edition of the Java&#160;SE Platform
-     * Specification, <em>e.g.</em>, <a
-     * href="https://jcp.org/en/jsr/detail?id=337">JSR 337</a> for
-     * Java&#160;SE&#160;8.  Features may be removed in a major release, given
-     * advance notice at least one major release ahead of time, and
-     * incompatible changes may be made when justified. The {@code $MAJOR}
-     * version number of JDK&#160;8 is {@code 8}; the {@code $MAJOR} version
-     * number of JDK&#160;9 is {@code 9}.  When {@code $MAJOR} is incremented,
-     * all subsequent elements are removed. </p></li>
+     * <li><p> <a id="FEATURE">{@code $FEATURE}</a> &#x2014; The
+     * feature-release counter, incremented for every feature release
+     * regardless of release content.  Features may be added in a feature
+     * release; they may also be removed, if advance notice was given at least
+     * one feature release ahead of time.  Incompatible changes may be made
+     * when justified. </p></li>
      *
-     * <li><p> <a id="minor">{@code $MINOR}</a> --- The minor version
-     * number, incremented for a minor update release that may contain
-     * compatible bug fixes, revisions to standard APIs mandated by a
-     * <a href="https://jcp.org/en/procedures/jcp2#5.3">Maintenance Release</a>
-     * of the relevant Platform Specification, and implementation features
-     * outside the scope of that Specification such as new JDK-specific APIs,
-     * additional service providers, new garbage collectors, and ports to new
-     * hardware architectures. </p></li>
+     * <li><p> <a id="INTERIM">{@code $INTERIM}</a> &#x2014; The
+     * interim-release counter, incremented for non-feature releases that
+     * contain compatible bug fixes and enhancements but no incompatible
+     * changes, no feature removals, and no changes to standard APIs.
+     * </p></li>
      *
-     * <li><p> <a id="security">{@code $SECURITY}</a> --- The security
-     * level, incremented for a security update release that contains critical
-     * fixes including those necessary to improve security.  {@code $SECURITY}
-     * is <strong>not</strong> reset when {@code $MINOR} is incremented.  A
-     * higher value of {@code $SECURITY} for a given {@code $MAJOR} value,
-     * therefore, always indicates a more secure release, regardless of the
-     * value of {@code $MINOR}. </p></li>
+     * <li><p> <a id="UPDATE">{@code $UPDATE}</a> &#x2014; The update-release
+     * counter, incremented for compatible update releases that fix security
+     * issues, regressions, and bugs in newer features. </p></li>
+     *
+     * <li><p> <a id="PATCH">{@code $PATCH}</a> &#x2014; The emergency
+     * patch-release counter, incremented only when it's necessary to produce
+     * an emergency release to fix a critical issue. </p></li>
      *
      * </ul>
      *
-     * <p> The fourth and later elements of a version number are free for use
-     * by downstream consumers of this code base.  Such a consumer may,
-     * <em>e.g.</em>, use the fourth element to identify patch releases which
-     * contain a small number of critical non-security fixes in addition to
-     * the security fixes in the corresponding security release. </p>
+     * <p> The fifth and later elements of a version number are free for use by
+     * platform implementors, to identify implementor-specific patch
+     * releases. </p>
      *
-     * <p> The version number does not include trailing zero elements;
-     * <em>i.e.</em>, {@code $SECURITY} is omitted if it has the value zero,
-     * and {@code $MINOR} is omitted if both {@code $MINOR} and {@code
-     * $SECURITY} have the value zero. </p>
+     * <p> A version number never has trailing zero elements.  If an element
+     * and all those that follow it logically have the value zero then all of
+     * them are omitted. </p>
      *
      * <p> The sequence of numerals in a version number is compared to another
      * such sequence in numerical, pointwise fashion; <em>e.g.</em>, {@code
-     * 9.9.1} is less than {@code 9.10.3}. If one sequence is shorter than
-     * another then the missing elements of the shorter sequence are
-     * considered to be less than the corresponding elements of the longer
-     * sequence; <em>e.g.</em>, {@code 9.1.2} is less than {@code 9.1.2.1}.
-     * </p>
+     * 10.0.4} is less than {@code 10.1.2}.  If one sequence is shorter than
+     * another then the missing elements of the shorter sequence are considered
+     * to be less than the corresponding elements of the longer sequence;
+     * <em>e.g.</em>, {@code 10.0.2} is less than {@code 10.0.2.1}. </p>
      *
      * <h2><a id="verStr">Version strings</a></h2>
      *
-     * <p> A <em>version string</em>, {@code $VSTR}, consists of a version
-     * number {@code $VNUM}, as described above, optionally followed by
-     * pre-release and build information, in one of the following formats:
-     * </p>
+     * <p> A <em>version string</em>, {@code $VSTR}, is a version number {@code
+     * $VNUM}, as described above, optionally followed by pre-release and build
+     * information, in one of the following formats: </p>
      *
      * <blockquote><pre>
      *     $VNUM(-$PRE)?\+$BUILD(-$OPT)?
@@ -986,19 +973,19 @@ public class Runtime {
      * <ul>
      *
      * <li><p> <a id="pre">{@code $PRE}</a>, matching {@code ([a-zA-Z0-9]+)}
-     * --- A pre-release identifier.  Typically {@code ea}, for a
-     * potentially unstable early-access release under active development,
-     * or {@code internal}, for an internal developer build. </p></li>
+     * &#x2014; A pre-release identifier.  Typically {@code ea}, for a
+     * potentially unstable early-access release under active development, or
+     * {@code internal}, for an internal developer build. </p></li>
      *
      * <li><p> <a id="build">{@code $BUILD}</a>, matching {@code
-     * (0|[1-9][0-9]*)} --- The build number, incremented for each promoted
+     * (0|[1-9][0-9]*)} &#x2014; The build number, incremented for each promoted
      * build.  {@code $BUILD} is reset to {@code 1} when any portion of {@code
      * $VNUM} is incremented. </p></li>
      *
-     * <li><p> <a id="opt">{@code $OPT}</a>, matching {@code
-     * ([-a-zA-Z0-9.]+)} --- Additional build information, if desired.  In
-     * the case of an {@code internal} build this will often contain the date
-     * and time of the build. </p></li>
+     * <li><p> <a id="opt">{@code $OPT}</a>, matching {@code ([-a-zA-Z0-9.]+)}
+     * &#x2014; Additional build information, if desired.  In the case of an
+     * {@code internal} build this will often contain the date and time of the
+     * build. </p></li>
      *
      * </ul>
      *
@@ -1082,7 +1069,7 @@ public class Runtime {
                 throw new NullPointerException();
 
             // Shortcut to avoid initializing VersionPattern when creating
-            // major version constants during startup
+            // feature-version constants during startup
             if (isSimpleNumber(s)) {
                 return new Version(List.of(Integer.parseInt(s)),
                         Optional.empty(), Optional.empty(), Optional.empty());
@@ -1139,43 +1126,114 @@ public class Runtime {
         }
 
         /**
-         * Returns the <a href="#major">major</a> version number.
+         * Returns the value of the <a href="#FEATURE">feature</a> element of
+         * the version number.
          *
-         * @return  The major version number
+         * @return The value of the feature element
+         *
+         * @since 10
          */
-        public int major() {
+        public int feature() {
             return version.get(0);
         }
 
         /**
-         * Returns the <a href="#minor">minor</a> version number or zero if it
-         * was not set.
+         * Returns the value of the <a href="#INTERIM">interim</a> element of
+         * the version number, or zero if it is absent.
          *
-         * @return  The minor version number or zero if it was not set
+         * @return The value of the interim element, or zero
+         *
+         * @since 10
          */
-        public int minor() {
+        public int interim() {
             return (version.size() > 1 ? version.get(1) : 0);
         }
 
         /**
-         * Returns the <a href="#security">security</a> version number or zero
-         * if it was not set.
+         * Returns the value of the <a href="#UPDATE">update</a> element of the
+         * version number, or zero if it is absent.
          *
-         * @return  The security version number or zero if it was not set
+         * @return The value of the update element, or zero
+         *
+         * @since 10
          */
-        public int security() {
+        public int update() {
             return (version.size() > 2 ? version.get(2) : 0);
         }
 
         /**
-         * Returns an unmodifiable {@link java.util.List List} of the
-         * integer numerals contained in the <a href="#verNum">version
-         * number</a>.  The {@code List} always contains at least one
-         * element corresponding to the <a href="#major">major version
-         * number</a>.
+         * Returns the value of the <a href="#PATCH">patch</a> element of the
+         * version number, or zero if it is absent.
          *
-         * @return  An unmodifiable list of the integer numerals
-         *          contained in the version number
+         * @return The value of the patch element, or zero
+         *
+         * @since 10
+         */
+        public int patch() {
+            return (version.size() > 3 ? version.get(3) : 0);
+        }
+
+        /**
+         * Returns the value of the major element of the version number.
+         *
+         * @deprecated As of Java&nbsp;SE 10, the first element of a version
+         * number is not the major-release number but the feature-release
+         * counter, incremented for every time-based release.  Use the {@link
+         * #feature()} method in preference to this method.  For compatibility,
+         * this method returns the value of the <a href="FEATURE">feature</a>
+         * element.
+         *
+         * @return The value of the feature element
+         */
+        @Deprecated(since = "10")
+        public int major() {
+            return feature();
+        }
+
+        /**
+         * Returns the value of the minor element of the version number, or
+         * zero if it is absent.
+         *
+         * @deprecated As of Java&nbsp;SE 10, the second element of a version
+         * number is not the minor-release number but the interim-release
+         * counter, incremented for every interim release.  Use the {@link
+         * #interim()} method in preference to this method.  For compatibility,
+         * this method returns the value of the <a href="INTERIM">interim</a>
+         * element, or zero if it is absent.
+         *
+         * @return The value of the interim element, or zero
+         */
+        @Deprecated(since = "10")
+        public int minor() {
+            return interim();
+        }
+
+        /**
+         * Returns the value of the security element of the version number, or
+         * zero if it is absent.
+         *
+         * @deprecated As of Java&nbsp;SE 10, the third element of a version
+         * number is not the security level but the update-release counter,
+         * incremented for every update release.  Use the {@link #update()}
+         * method in preference to this method.  For compatibility, this method
+         * returns the value of the <a href="UPDATE">update</a> element, or
+         * zero if it is absent.
+         *
+         * @return  The value of the update element, or zero
+         */
+        @Deprecated(since = "10")
+        public int security() {
+            return update();
+        }
+
+        /**
+         * Returns an unmodifiable {@link java.util.List List} of the integers
+         * represented in the <a href="#verNum">version number</a>.  The {@code
+         * List} always contains at least one element corresponding to the <a
+         * href="#feature">feature version number</a>.
+         *
+         * @return  An unmodifiable list of the integers
+         *          represented in the version number
          */
         public List<Integer> version() {
             return version;

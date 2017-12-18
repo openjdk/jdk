@@ -29,6 +29,7 @@
 #include "interp_masm_ppc.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 #ifdef PRODUCT
@@ -53,7 +54,7 @@ void InterpreterMacroAssembler::jump_to_entry(address entry, Register Rscratch) 
   }
 }
 
-void InterpreterMacroAssembler::dispatch_next(TosState state, int bcp_incr) {
+void InterpreterMacroAssembler::dispatch_next(TosState state, int bcp_incr, bool generate_poll) {
   Register bytecode = R12_scratch2;
   if (bcp_incr != 0) {
     lbzu(bytecode, bcp_incr, R14_bcp);
@@ -61,7 +62,7 @@ void InterpreterMacroAssembler::dispatch_next(TosState state, int bcp_incr) {
     lbz(bytecode, 0, R14_bcp);
   }
 
-  dispatch_Lbyte_code(state, bytecode, Interpreter::dispatch_table(state));
+  dispatch_Lbyte_code(state, bytecode, Interpreter::dispatch_table(state), generate_poll);
 }
 
 void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {
@@ -203,15 +204,25 @@ void InterpreterMacroAssembler::load_dispatch_table(Register dst, address* table
 }
 
 void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register bytecode,
-                                                    address* table, bool verify) {
-  if (verify) {
-    unimplemented("dispatch_Lbyte_code: verify"); // See Sparc Implementation to implement this
-  }
-
+                                                    address* table, bool generate_poll) {
   assert_different_registers(bytecode, R11_scratch1);
 
   // Calc dispatch table address.
   load_dispatch_table(R11_scratch1, table);
+
+  if (SafepointMechanism::uses_thread_local_poll() && generate_poll) {
+    address *sfpt_tbl = Interpreter::safept_table(state);
+    if (table != sfpt_tbl) {
+      Label dispatch;
+      ld(R0, in_bytes(Thread::polling_page_offset()), R16_thread);
+      // Armed page has poll_bit set, if poll bit is cleared just continue.
+      andi_(R0, R0, SafepointMechanism::poll_bit());
+      beq(CCR0, dispatch);
+      load_dispatch_table(R11_scratch1, sfpt_tbl);
+      align(32, 16);
+      bind(dispatch);
+    }
+  }
 
   sldi(R12_scratch2, bytecode, LogBytesPerWord);
   ldx(R11_scratch1, R11_scratch1, R12_scratch2);

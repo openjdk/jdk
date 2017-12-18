@@ -63,6 +63,7 @@ public enum HtmlStyle {
     details,
     docSummary,
     emphasizedPhrase,
+    externalLink,
     fixedNav,
     header,
     horizontal,

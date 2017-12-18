@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4652655 4857717 8025633 8026567 8071982
+ * @bug 4652655 4857717 8025633 8026567 8071982 8164407
  * @summary This test verifies that class cross references work properly.
  * @author jamieh
  * @library ../lib
@@ -52,16 +52,16 @@ public class TestClassCrossReferences extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("C.html", true,
-                "<a href=\"" + uri + "java/math/package-summary.html?is-external=true\">"
+                "<a href=\"" + uri + "java/math/package-summary.html?is-external=true\" class=\"externalLink\">"
                 + "<code>Link to math package</code></a>",
                 "<a href=\"" + uri + "javax/swing/text/AbstractDocument.AttributeContext.html?is-external=true\" "
-                + "title=\"class or interface in javax.swing.text\"><code>Link to AttributeContext innerclass</code></a>",
+                + "title=\"class or interface in javax.swing.text\" class=\"externalLink\"><code>Link to AttributeContext innerclass</code></a>",
                 "<a href=\"" + uri + "java/math/BigDecimal.html?is-external=true\" "
-                + "title=\"class or interface in java.math\"><code>Link to external class BigDecimal</code></a>",
+                + "title=\"class or interface in java.math\" class=\"externalLink\"><code>Link to external class BigDecimal</code></a>",
                 "<a href=\"" + uri + "java/math/BigInteger.html?is-external=true#gcd-java.math.BigInteger-\" "
-                + "title=\"class or interface in java.math\"><code>Link to external member gcd</code></a>",
+                + "title=\"class or interface in java.math\" class=\"externalLink\"><code>Link to external member gcd</code></a>",
                 "<a href=\"" + uri + "javax/tools/SimpleJavaFileObject.html?is-external=true#URI\" "
-                + "title=\"class or interface in javax.tools\"><code>Link to external member URI</code></a>",
+                + "title=\"class or interface in javax.tools\" class=\"externalLink\"><code>Link to external member URI</code></a>",
                 "<dl>\n"
                 + "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
                 + "<dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>\n"

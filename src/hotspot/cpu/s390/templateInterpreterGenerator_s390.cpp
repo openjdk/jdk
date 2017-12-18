@@ -1633,7 +1633,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Check for safepoint operation in progress and/or pending suspend requests.
   {
     Label Continue, do_safepoint;
-    __ generate_safepoint_check(do_safepoint, Z_R1, true);
+    __ safepoint_poll(do_safepoint, Z_R1);
     // Check for suspend.
     __ load_and_test_int(Z_R0/*suspend_flags*/, thread_(suspend_flags));
     __ z_bre(Continue); // 0 -> no flag set -> not suspended
@@ -1937,7 +1937,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     Label    slow_path;
 
     // If we need a safepoint check, generate full interpreter entry.
-    __ generate_safepoint_check(slow_path, Z_R1, false);
+    __ safepoint_poll(slow_path, Z_R1);
 
     BLOCK_COMMENT("CRC32_update {");
 
@@ -1990,7 +1990,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
     Label    slow_path;
 
     // If we need a safepoint check, generate full interpreter entry.
-    __ generate_safepoint_check(slow_path, Z_R1, false);
+    __ safepoint_poll(slow_path, Z_R1);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.

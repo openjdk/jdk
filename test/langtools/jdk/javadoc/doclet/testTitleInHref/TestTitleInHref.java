@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4714257
+ * @bug 4714257 8164407
  * @summary Test to make sure that the title attribute shows up in links.
  * @author jamieh
  * @library ../lib
@@ -55,7 +55,7 @@ public class TestTitleInHref extends JavadocTester {
                 "<a href=\"../pkg/Interface.html\" title=\"interface in pkg\">",
                 //Test to make sure that the title shows up in cross link shows up
                 "<a href=\"" + uri + "/java/io/File.html?is-external=true\" "
-                + "title=\"class or interface in java.io\">"
+                + "title=\"class or interface in java.io\" class=\"externalLink\">"
                 + "<code>This is a cross link to class File</code></a>");
     }
 }

@@ -36,6 +36,7 @@ module moduleB {
     opens testpkgmdlB;
 
     exports testpkg2mdlB to moduleA;
+    exports testpkg3mdlB to moduleA;
 
     uses testpkgmdlB.TestClassInModuleB;
     uses testpkgmdlB.TestClass2InModuleB;

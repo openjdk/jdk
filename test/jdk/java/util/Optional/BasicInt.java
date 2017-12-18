@@ -124,6 +124,13 @@ public class BasicInt {
         int got = empty.orElseThrow(ObscureException::new);
     }
 
+    @Test(expectedExceptions=NoSuchElementException.class)
+    public void testEmptyOrElseThrowNoArg() throws Exception {
+        OptionalInt empty = OptionalInt.empty();
+
+        int got = empty.orElseThrow();
+    }
+
     @Test(groups = "unit")
     public void testPresent() {
         OptionalInt empty = OptionalInt.empty();
@@ -137,7 +144,9 @@ public class BasicInt {
         assertTrue(Integer.hashCode(1) == present.hashCode());
         assertFalse(present.toString().isEmpty());
         assertTrue(-1 != present.toString().indexOf(Integer.toString(present.getAsInt()).toString()));
+        assertTrue(-1 != present.toString().indexOf(Integer.toString(present.orElseThrow()).toString()));
         assertEquals(1, present.getAsInt());
+        assertEquals(1, present.orElseThrow());
 
         AtomicBoolean presentCheck = new AtomicBoolean();
         present.ifPresent(v -> presentCheck.set(true));

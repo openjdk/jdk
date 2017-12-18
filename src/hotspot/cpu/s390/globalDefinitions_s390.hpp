@@ -54,4 +54,6 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #define SUPPORT_RESERVED_STACK_AREA
 
+#define THREAD_LOCAL_POLL
+
 #endif // CPU_S390_VM_GLOBALDEFINITIONS_S390_HPP

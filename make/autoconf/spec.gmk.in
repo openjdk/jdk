@@ -78,7 +78,6 @@ OPENJDK_TARGET_CPU_ISADIR:=@OPENJDK_TARGET_CPU_ISADIR@
 OPENJDK_TARGET_CPU_LEGACY:=@OPENJDK_TARGET_CPU_LEGACY@
 OPENJDK_TARGET_CPU_LEGACY_LIB:=@OPENJDK_TARGET_CPU_LEGACY_LIB@
 OPENJDK_TARGET_CPU_OSARCH:=@OPENJDK_TARGET_CPU_OSARCH@
-OPENJDK_TARGET_OS_EXPORT_DIR:=@OPENJDK_TARGET_OS_EXPORT_DIR@
 
 HOTSPOT_TARGET_OS := @HOTSPOT_TARGET_OS@
 HOTSPOT_TARGET_OS_TYPE := @HOTSPOT_TARGET_OS_TYPE@
@@ -144,10 +143,9 @@ COPYRIGHT_YEAR:=@COPYRIGHT_YEAR@
 
 ## Building blocks of the version string
 # First three version numbers, with well-specified meanings (numerical)
-VERSION_MAJOR := @VERSION_MAJOR@
-VERSION_MINOR := @VERSION_MINOR@
-VERSION_SECURITY := @VERSION_SECURITY@
-# Optional fourth element for use by OpenJDK consumers (numerical)
+VERSION_FEATURE := @VERSION_FEATURE@
+VERSION_INTERIM := @VERSION_INTERIM@
+VERSION_UPDATE := @VERSION_UPDATE@
 VERSION_PATCH := @VERSION_PATCH@
 # The pre-release identifier (string)
 VERSION_PRE := @VERSION_PRE@
@@ -165,17 +163,23 @@ VERSION_NUMBER_FOUR_POSITIONS := @VERSION_NUMBER_FOUR_POSITIONS@
 VERSION_STRING := @VERSION_STRING@
 # The short version string, without trailing zeroes and just PRE, if present.
 VERSION_SHORT := @VERSION_SHORT@
-# The Java specification version. It usually equals the major version number.
-VERSION_SPECIFICATION := @VERSION_MAJOR@
+# The Java specification version. It usually equals the feature version number.
+VERSION_SPECIFICATION := @VERSION_FEATURE@
 # A GA version is defined by the PRE string being empty. Rather than testing for
 # that, this variable defines it with true/false.
 VERSION_IS_GA := @VERSION_IS_GA@
 
+# Version date
+VERSION_DATE := @VERSION_DATE@
+
+# Vendor version string
+VENDOR_VERSION_STRING := @VENDOR_VERSION_STRING@
+
 # Convenience CFLAGS settings for passing version information into native programs.
 VERSION_CFLAGS := \
-    -DVERSION_MAJOR=$(VERSION_MAJOR) \
-    -DVERSION_MINOR=$(VERSION_MINOR) \
-    -DVERSION_SECURITY=$(VERSION_SECURITY) \
+    -DVERSION_FEATURE=$(VERSION_FEATURE) \
+    -DVERSION_INTERIM=$(VERSION_INTERIM) \
+    -DVERSION_UPDATE=$(VERSION_UPDATE) \
     -DVERSION_PATCH=$(VERSION_PATCH) \
     -DVERSION_PRE='"$(VERSION_PRE)"' \
     -DVERSION_BUILD=$(VERSION_BUILD) \
@@ -184,6 +188,8 @@ VERSION_CFLAGS := \
     -DVERSION_STRING='"$(VERSION_STRING)"' \
     -DVERSION_SHORT='"$(VERSION_SHORT)"' \
     -DVERSION_SPECIFICATION='"$(VERSION_SPECIFICATION)"' \
+    -DVERSION_DATE='"$(VERSION_DATE)"' \
+    -DVENDOR_VERSION_STRING='"$(VENDOR_VERSION_STRING)"' \
     #
 
 # Platform naming variables
