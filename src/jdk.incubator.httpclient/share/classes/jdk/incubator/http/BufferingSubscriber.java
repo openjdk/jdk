@@ -80,7 +80,7 @@ class BufferingSubscriber<T> implements HttpResponse.BodySubscriber<T>
 
     BufferingSubscriber(HttpResponse.BodySubscriber<T> downstreamSubscriber,
                         int bufferSize) {
-        this.downstreamSubscriber = downstreamSubscriber;
+        this.downstreamSubscriber = Objects.requireNonNull(downstreamSubscriber);
         this.bufferSize = bufferSize;
         synchronized (buffersLock) {
             internalBuffers = new ArrayList<>();

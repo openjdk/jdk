@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.function.Supplier;
@@ -109,7 +110,7 @@ class RequestPublishers {
         private volatile long contentLength;
 
         IterablePublisher(Iterable<byte[]> content) {
-            this.content = content;
+            this.content = Objects.requireNonNull(content);
         }
 
         // The ByteBufferIterator will iterate over the byte[] arrays in
@@ -323,7 +324,7 @@ class RequestPublishers {
         private final Supplier<? extends InputStream> streamSupplier;
 
         InputStreamPublisher(Supplier<? extends InputStream> streamSupplier) {
-            this.streamSupplier = streamSupplier;
+            this.streamSupplier = Objects.requireNonNull(streamSupplier);
         }
 
         @Override
