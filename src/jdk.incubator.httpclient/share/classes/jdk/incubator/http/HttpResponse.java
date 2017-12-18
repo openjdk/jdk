@@ -344,24 +344,14 @@ public abstract class HttpResponse<T> {
          * Returns a {@code BodyHandler<String>} that returns a
          * {@link BodySubscriber BodySubscriber}{@code <String>} obtained from
          * {@link BodySubscriber#asString(Charset) BodySubscriber.asString(Charset)}.
-         * If a charset is provided, the body is decoded using it. If charset is
-         * {@code null} then the handler tries to determine the character set
-         * from the {@code Content-encoding} header. If that charset is not
-         * supported then {@link java.nio.charset.StandardCharsets#UTF_8 UTF_8}
-         * is used.
+         * The body is decoded using the given character set.
          *
-         * @param charset The name of the charset to interpret the body as. If
-         *                {@code null} then the charset is determined from the
-         *                <i>Content-encoding</i> header.
+         * @param charset the character set to convert the body with
          * @return a response body handler
          */
         public static BodyHandler<String> asString(Charset charset) {
-            return (status, headers) -> {
-                if (charset != null) {
-                    return BodySubscriber.asString(charset);
-                }
-                return BodySubscriber.asString(charsetFrom(headers));
-            };
+            Objects.requireNonNull(charset);
+            return (status, headers) -> BodySubscriber.asString(charset);
         }
 
         /**
@@ -386,11 +376,11 @@ public abstract class HttpResponse<T> {
          */
         public static BodyHandler<Path> asFile(Path file, OpenOption... openOptions) {
             Objects.requireNonNull(file);
+            List<OpenOption> opts = List.of(openOptions);
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 String fn = pathForSecurityCheck(file);
                 sm.checkWrite(fn);
-                List<OpenOption> opts = Arrays.asList(openOptions);
                 if (opts.contains(StandardOpenOption.DELETE_ON_CLOSE))
                     sm.checkDelete(fn);
                 if (opts.contains(StandardOpenOption.READ))
@@ -450,11 +440,11 @@ public abstract class HttpResponse<T> {
         public static BodyHandler<Path> asFileDownload(Path directory,
                                                        OpenOption... openOptions) {
             Objects.requireNonNull(directory);
+            List<OpenOption> opts = List.of(openOptions);
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 String fn = pathForSecurityCheck(directory);
                 sm.checkWrite(fn);
-                List<OpenOption> opts = Arrays.asList(openOptions);
                 if (opts.contains(StandardOpenOption.DELETE_ON_CLOSE))
                     sm.checkDelete(fn);
                 if (opts.contains(StandardOpenOption.READ))
@@ -494,6 +484,7 @@ public abstract class HttpResponse<T> {
          * @return a response body handler
          */
         public static BodyHandler<Void> asByteArrayConsumer(Consumer<Optional<byte[]>> consumer) {
+            Objects.requireNonNull(consumer);
             return (status, headers) -> BodySubscriber.asByteArrayConsumer(consumer);
         }
 
@@ -547,6 +538,7 @@ public abstract class HttpResponse<T> {
          */
          public static <T> BodyHandler<T> buffering(BodyHandler<T> downstreamHandler,
                                                     int bufferSize) {
+             Objects.requireNonNull(downstreamHandler);
              if (bufferSize <= 0)
                  throw new IllegalArgumentException("must be greater than 0");
              return (status, headers) -> BodySubscriber
@@ -613,6 +605,7 @@ public abstract class HttpResponse<T> {
          * @return a body subscriber
          */
         public static BodySubscriber<String> asString(Charset charset) {
+            Objects.requireNonNull(charset);
             return new ResponseSubscribers.ByteArraySubscriber<>(
                     bytes -> new String(bytes, charset)
             );
@@ -662,11 +655,11 @@ public abstract class HttpResponse<T> {
          */
         public static BodySubscriber<Path> asFile(Path file, OpenOption... openOptions) {
             Objects.requireNonNull(file);
+            List<OpenOption> opts = List.of(openOptions);
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 String fn = pathForSecurityCheck(file);
                 sm.checkWrite(fn);
-                List<OpenOption> opts = Arrays.asList(openOptions);
                 if (opts.contains(StandardOpenOption.DELETE_ON_CLOSE))
                     sm.checkDelete(fn);
                 if (opts.contains(StandardOpenOption.READ))

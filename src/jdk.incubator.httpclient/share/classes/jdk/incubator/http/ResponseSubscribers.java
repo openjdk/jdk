@@ -62,7 +62,7 @@ class ResponseSubscribers {
         private final AtomicBoolean subscribed = new AtomicBoolean();
 
         ConsumerSubscriber(Consumer<Optional<byte[]>> consumer) {
-            this.consumer = consumer;
+            this.consumer = Objects.requireNonNull(consumer);
         }
 
         @Override
