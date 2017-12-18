@@ -457,6 +457,8 @@ class Dependencies: public ResourceObj {
 
   void copy_to(nmethod* nm);
 
+  DepType validate_dependencies(CompileTask* task, bool counter_changed, char** failure_detail = NULL);
+
   void log_all_dependencies();
 
   void log_dependency(DepType dept, GrowableArray<ciBaseObject*>* args) {

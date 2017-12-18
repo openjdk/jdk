@@ -26,6 +26,7 @@
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
+        8164407
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -45,7 +46,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testHtml4() {
-        javadoc("-d", "out", "-use",
+        javadoc("-d", "out", "-use", "-Xdoclint:none",
                 "-overview", testSrc("overview.html"),
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
@@ -67,7 +68,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testHtml5() {
-        javadoc("-d", "out-html5", "-html5", "-use",
+        javadoc("-d", "out-html5", "-html5", "-use", "-Xdoclint:none",
                 "-overview", testSrc("overview.html"),
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
@@ -89,7 +90,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testHtml4NoComment() {
-        javadoc("-d", "out-nocomment", "-nocomment", "-use",
+        javadoc("-d", "out-nocomment", "-nocomment", "-use", "-Xdoclint:none",
                 "-overview", testSrc("overview.html"),
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
@@ -107,7 +108,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testHtml5NoComment() {
-        javadoc("-d", "out-html5-nocomment", "-nocomment", "-html5", "-use",
+        javadoc("-d", "out-html5-nocomment", "-nocomment", "-html5", "-use", "-Xdoclint:none",
                 "-overview", testSrc("overview.html"),
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
@@ -158,7 +159,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testJDTagsInModules() {
-        javadoc("-d", "out-mdltags", "-author", "-version",
+        javadoc("-d", "out-mdltags", "-author", "-version", "-Xdoclint:none",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -173,7 +174,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testModuleSummary() {
-        javadoc("-d", "out-moduleSummary", "-use",
+        javadoc("-d", "out-moduleSummary", "-use", "-Xdoclint:none",
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
                 "testpkgmdlA", "testpkgmdlB", "moduleB/testpkg2mdlB");
@@ -200,7 +201,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testModuleFilesAndLinks() {
-        javadoc("-d", "out-modulelinks",
+        javadoc("-d", "out-modulelinks", "-Xdoclint:none",
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
                 "testpkgmdlA", "testpkgmdlB");
@@ -214,7 +215,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testModuleDeprecation() {
-        javadoc("-d", "out-moduledepr",
+        javadoc("-d", "out-moduledepr", "-Xdoclint:none",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -229,7 +230,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testModuleAnnotation() {
-        javadoc("-d", "out-moduleanno",
+        javadoc("-d", "out-moduleanno", "-Xdoclint:none",
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
                 "testpkgmdlA", "testpkgmdlB");
@@ -242,7 +243,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testApiMode() {
-        javadoc("-d", "out-api", "-use", "--show-module-contents=api", "-author", "-version",
+        javadoc("-d", "out-api", "-use", "--show-module-contents=api", "-author", "-version", "-Xdoclint:none",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -261,7 +262,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testAllMode() {
-        javadoc("-d", "out-all", "-use", "--show-module-contents=all", "-author", "-version",
+        javadoc("-d", "out-all", "-use", "--show-module-contents=all", "-author", "-version", "-Xdoclint:none",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -319,7 +320,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testSingleModuleMultiplePkg() {
-        javadoc("-d", "out-singlemodmultiplepkg", "--show-module-contents=all",
+        javadoc("-d", "out-singlemodmultiplepkg", "--show-module-contents=all", "-Xdoclint:none",
                 "--module-source-path", testSrc,
                 "--module", "moduleB",
                 "testpkg2mdlB", "testpkgmdlB");
@@ -332,7 +333,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testGroupOption() {
-        javadoc("-d", "out-group", "--show-module-contents=all",
+        javadoc("-d", "out-group", "--show-module-contents=all", "-Xdoclint:none",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -353,7 +354,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testGroupOptionOrdering() {
-        javadoc("-d", "out-groupOrder", "--show-module-contents=all",
+        javadoc("-d", "out-groupOrder", "--show-module-contents=all", "-Xdoclint:none",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -373,7 +374,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testUnnamedModuleGroupOption() {
-        javadoc("-d", "out-groupnomodule", "-use",
+        javadoc("-d", "out-groupnomodule", "-use", "-Xdoclint:none",
                 "-overview", testSrc("overview.html"),
                 "-sourcepath", testSrc,
                 "-group", "Package Group 0", "testpkgnomodule",
@@ -390,7 +391,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testGroupOptionPackageOrdering() {
-        javadoc("-d", "out-groupPkgOrder", "-use",
+        javadoc("-d", "out-groupPkgOrder", "-use", "-Xdoclint:none",
                 "-overview", testSrc("overview.html"),
                 "-sourcepath", testSrc,
                 "-group", "Z Group", "testpkgnomodule",
@@ -405,7 +406,7 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testGroupOptionSingleModule() {
-        javadoc("-d", "out-groupsinglemodule", "-use",
+        javadoc("-d", "out-groupsinglemodule", "-use", "-Xdoclint:none",
                 "--module-source-path", testSrc,
                 "-group", "Module Group B", "moduleB*",
                 "--module", "moduleB",
@@ -419,12 +420,27 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testModuleName() {
-        javadoc("-d", "out-modulename", "-use",
+        javadoc("-d", "out-modulename", "-use", "-Xdoclint:none",
                 "--module-source-path", testSrc,
                 "--module", "moduleB,test.moduleFullName",
                 "testpkg2mdlB", "testpkgmdlB", "testpkgmdlfullname");
         checkExit(Exit.OK);
         checkModuleName(true);
+    }
+
+    /**
+     * Test -linkoffline option.
+     */
+    @Test
+    void testLinkOffline() {
+        String url = "https://docs.oracle.com/javase/9/docs/api/";
+        javadoc("-d", "out-linkoffline", "-use", "--show-module-contents=all", "-Xdoclint:none",
+                "--module-source-path", testSrc,
+                "--module", "moduleA,moduleB",
+                "-linkoffline", url, testSrc + "/jdk",
+                "testpkgmdlA", "testpkgmdlB", "testpkg3mdlB");
+        checkExit(Exit.OK);
+        checkLinkOffline();
     }
 
     void checkDescription(boolean found) {
@@ -978,7 +994,7 @@ public class TestModules extends JavadocTester {
                 + "</tr>\n"
                 + "</tbody>\n"
                 + "</table>");
-        checkOutput("moduletags-summary.html", found,
+        checkOutput("moduletags-summary.html", true,
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdltags/package-summary.html\">testpkgmdltags</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>");
     }
@@ -1009,6 +1025,7 @@ public class TestModules extends JavadocTester {
                 "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;<a href=\"#modules.summary\">"
                 + "Modules</a>&nbsp;|&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;<a href=\"#services.summary\">Services</a></li>",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></th>\n"
+                + "<td class=\"colSecond\">None</td>\n"
                 + "<td class=\"colSecond\">All Modules</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>",
                 "<td class=\"colFirst\"> </td>\n"
@@ -1029,12 +1046,11 @@ public class TestModules extends JavadocTester {
                 "<caption><span>Exports</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
-                + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
+                + "<th class=\"colSecond\" scope=\"col\">Exported To Modules</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>");
-        checkOutput("moduletags-summary.html", found,
+        checkOutput("moduletags-summary.html", true,
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdltags/package-summary.html\">testpkgmdltags</a></th>\n"
-                + "<td class=\"colSecond\">All Modules</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>");
     }
 
@@ -1205,4 +1221,16 @@ public class TestModules extends JavadocTester {
                 + "</dd>\n"
                 + "</dl>");
     }
+
+    void checkLinkOffline() {
+        checkOutput("testpkg3mdlB/package-summary.html", true,
+                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java/lang/String.html?is-external=true\" "
+                + "title=\"class or interface in java.lang\" class=\"externalLink\"><code>Link to String Class</code></a>");
+        checkOutput("testpkg3mdlB/package-summary.html", true,
+                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java/lang/package-summary.html?is-external=true\" "
+                + "class=\"externalLink\"><code>Link to java.lang package</code></a>");
+        checkOutput("testpkg3mdlB/package-summary.html", true,
+                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base-summary.html?is-external=true\" "
+                + "class=\"externalLink\"><code>Link to java.base module</code></a>");
+}
 }

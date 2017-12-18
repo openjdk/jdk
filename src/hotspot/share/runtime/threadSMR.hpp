@@ -77,11 +77,77 @@
 // longer protected by a ThreadsListHandle.
 
 
+// SMR Support for the Threads class.
+//
+class ThreadsSMRSupport : AllStatic {
+  // The coordination between ThreadsSMRSupport::release_stable_list() and
+  // ThreadsSMRSupport::smr_delete() uses the smr_delete_lock in order to
+  // reduce the traffic on the Threads_lock.
+  static Monitor*              _smr_delete_lock;
+  // The '_cnt', '_max' and '_times" fields are enabled via
+  // -XX:+EnableThreadSMRStatistics (see thread.cpp for a
+  // description about each field):
+  static uint                  _smr_delete_lock_wait_cnt;
+  static uint                  _smr_delete_lock_wait_max;
+  // The smr_delete_notify flag is used for proper double-check
+  // locking in order to reduce the traffic on the smr_delete_lock.
+  static volatile uint         _smr_delete_notify;
+  static volatile uint         _smr_deleted_thread_cnt;
+  static volatile uint         _smr_deleted_thread_time_max;
+  static volatile uint         _smr_deleted_thread_times;
+  static ThreadsList* volatile _smr_java_thread_list;
+  static uint64_t              _smr_java_thread_list_alloc_cnt;
+  static uint64_t              _smr_java_thread_list_free_cnt;
+  static uint                  _smr_java_thread_list_max;
+  static uint                  _smr_nested_thread_list_max;
+  static volatile uint         _smr_tlh_cnt;
+  static volatile uint         _smr_tlh_time_max;
+  static volatile uint         _smr_tlh_times;
+  static ThreadsList*          _smr_to_delete_list;
+  static uint                  _smr_to_delete_list_cnt;
+  static uint                  _smr_to_delete_list_max;
+
+  static ThreadsList *acquire_stable_list_fast_path(Thread *self);
+  static ThreadsList *acquire_stable_list_nested_path(Thread *self);
+  static void add_smr_deleted_thread_times(uint add_value);
+  static void add_smr_tlh_times(uint add_value);
+  static void clear_smr_delete_notify();
+  static void inc_smr_deleted_thread_cnt();
+  static void inc_smr_java_thread_list_alloc_cnt();
+  static void inc_smr_tlh_cnt();
+  static bool is_a_protected_JavaThread(JavaThread *thread);
+  static void release_stable_list_fast_path(Thread *self);
+  static void release_stable_list_nested_path(Thread *self);
+  static void release_stable_list_wake_up(char *log_str);
+  static void set_smr_delete_notify();
+  static Monitor* smr_delete_lock() { return _smr_delete_lock; }
+  static bool smr_delete_notify();
+  static void smr_free_list(ThreadsList* threads);
+  static void update_smr_deleted_thread_time_max(uint new_value);
+  static void update_smr_java_thread_list_max(uint new_value);
+  static void update_smr_tlh_time_max(uint new_value);
+  static ThreadsList* xchg_smr_java_thread_list(ThreadsList* new_list);
+
+ public:
+  static ThreadsList *acquire_stable_list(Thread *self, bool is_ThreadsListSetter);
+  static void add_thread(JavaThread *thread);
+  static ThreadsList* get_smr_java_thread_list();
+  static bool is_a_protected_JavaThread_with_lock(JavaThread *thread);
+  static void release_stable_list(Thread *self);
+  static void remove_thread(JavaThread *thread);
+  static void smr_delete(JavaThread *thread);
+  static void update_smr_tlh_stats(uint millis);
+
+  // Logging and printing support:
+  static void log_smr_statistics();
+  static void print_smr_info_elements_on(outputStream* st, ThreadsList* t_list);
+  static void print_smr_info_on(outputStream* st);
+};
+
 // A fast list of JavaThreads.
 //
 class ThreadsList : public CHeapObj<mtThread> {
-  friend class ScanHazardPtrGatherProtectedThreadsClosure;
-  friend class Threads;
+  friend class ThreadsSMRSupport;  // for next_list(), set_next_list() access
 
   const uint _length;
   ThreadsList* _next_list;
@@ -92,6 +158,9 @@ class ThreadsList : public CHeapObj<mtThread> {
 
   ThreadsList *next_list() const        { return _next_list; }
   void set_next_list(ThreadsList *list) { _next_list = list; }
+
+  static ThreadsList* add_thread(ThreadsList* list, JavaThread* java_thread);
+  static ThreadsList* remove_thread(ThreadsList* list, JavaThread* java_thread);
 
 public:
   ThreadsList(int entries);
@@ -110,9 +179,6 @@ public:
   int find_index_of_JavaThread(JavaThread* target);
   JavaThread* find_JavaThread_from_java_tid(jlong java_tid) const;
   bool includes(const JavaThread * const p) const;
-
-  static ThreadsList* add_thread(ThreadsList* list, JavaThread* java_thread);
-  static ThreadsList* remove_thread(ThreadsList* list, JavaThread* java_thread);
 };
 
 // Linked list of ThreadsLists to support nested ThreadsListHandles.

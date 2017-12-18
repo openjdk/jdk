@@ -62,6 +62,9 @@ public class DocPaths {
     /** The name of the subdirectory for user-provided additional documentation files. */
     public static final DocPath DOC_FILES = DocPath.create("doc-files");
 
+    /** The name of the file for the element list. */
+    public static final DocPath ELEMENT_LIST = DocPath.create("element-list");
+
     /** The name of the image file showing a magnifying glass on the search box. */
     public static final DocPath GLASS_IMG = DocPath.create("glass.png");
 
@@ -149,7 +152,7 @@ public class DocPaths {
     /** The name of the file for the package frame. */
     public static final DocPath PACKAGE_FRAME = DocPath.create("package-frame.html");
 
-    /** The name of the file for the package list. */
+    /** The name of the file for the package list. This is to support the legacy mode. */
     public static final DocPath PACKAGE_LIST = DocPath.create("package-list");
 
     /** The name of the package search index file. */
@@ -182,7 +185,12 @@ public class DocPaths {
 
     /** The name of the file for the module summary. */
     public static DocPath moduleSummary(ModuleElement mdle) {
-        return DocPath.create(mdle.getQualifiedName() + "-summary.html");
+        return DocPaths.moduleSummary(mdle.getQualifiedName().toString());
+    }
+
+    /** The name of the file for the module summary. */
+    public static DocPath moduleSummary(String mdleName) {
+        return DocPath.create(mdleName + "-summary.html");
     }
 
     /** The name of the file for the module frame. */

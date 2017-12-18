@@ -259,6 +259,24 @@ public class Links {
      */
     public static Content createLink(DocLink link, Content label, boolean strong,
             String title, String target) {
+        return createLink(link, label, strong, title, target, false);
+    }
+
+    /**
+     * Creates a link of the form {@code <a href="link" title="title" target="target">label</a>}.
+     * If {@code strong} is set, the label will be wrapped in
+     *      {@code <span style="typeNameLink">...</span>}.
+     *
+     * @param link       the details for the link
+     * @param label      the content for the link
+     * @param strong     whether to wrap the {@code label} in a SPAN element
+     * @param title      the title for the link
+     * @param target     the target for the link, or null
+     * @param isExternal is the link external to the generated documentation
+     * @return a content tree for the link
+     */
+    public static Content createLink(DocLink link, Content label, boolean strong,
+            String title, String target, boolean isExternal) {
         Content body = label;
         if (strong) {
             body = HtmlTree.SPAN(HtmlStyle.typeNameLink, body);
@@ -270,7 +288,24 @@ public class Links {
         if (target != null && target.length() != 0) {
             l.addAttr(HtmlAttr.TARGET, target);
         }
+        if (isExternal) {
+            l.setStyle(HtmlStyle.externalLink);
+        }
         return l;
+    }
+
+    /**
+     * Creates a link.
+     *
+     * @param link       the details for the link
+     * @param label      the content for the link
+     * @param isExternal is the link external to the generated documentation
+     * @return a content tree for the link
+     */
+    public static Content createLink(DocLink link, Content label, boolean isExternal) {
+        HtmlTree anchor = HtmlTree.A(link.toString(), label);
+        anchor.setStyle(HtmlStyle.externalLink);
+        return anchor;
     }
 
 

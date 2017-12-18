@@ -52,11 +52,52 @@ inline void ThreadsList::threads_do(T *cl) const {
   }
 }
 
+// These three inlines are private to ThreadsSMRSupport, but
+// they are called by public inline update_smr_tlh_stats() below:
+
+inline void ThreadsSMRSupport::add_smr_tlh_times(uint add_value) {
+  Atomic::add(add_value, &_smr_tlh_times);
+}
+
+inline void ThreadsSMRSupport::inc_smr_tlh_cnt() {
+  Atomic::inc(&_smr_tlh_cnt);
+}
+
+inline void ThreadsSMRSupport::update_smr_tlh_time_max(uint new_value) {
+  while (true) {
+    uint cur_value = _smr_tlh_time_max;
+    if (new_value <= cur_value) {
+      // No need to update max value so we're done.
+      break;
+    }
+    if (Atomic::cmpxchg(new_value, &_smr_tlh_time_max, cur_value) == cur_value) {
+      // Updated max value so we're done. Otherwise try it all again.
+      break;
+    }
+  }
+}
+
+
 inline ThreadsList* ThreadsListSetter::list() {
   ThreadsList *ret = _target->get_threads_hazard_ptr();
   assert(ret != NULL, "hazard ptr should be set");
   assert(!Thread::is_hazard_ptr_tagged(ret), "hazard ptr should be validated");
   return ret;
+}
+
+inline ThreadsList* ThreadsSMRSupport::get_smr_java_thread_list() {
+  return (ThreadsList*)OrderAccess::load_acquire(&_smr_java_thread_list);
+}
+
+inline bool ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(JavaThread *thread) {
+  MutexLockerEx ml(Threads_lock->owned_by_self() ? NULL : Threads_lock);
+  return is_a_protected_JavaThread(thread);
+}
+
+inline void ThreadsSMRSupport::update_smr_tlh_stats(uint millis) {
+  ThreadsSMRSupport::inc_smr_tlh_cnt();
+  ThreadsSMRSupport::add_smr_tlh_times(millis);
+  ThreadsSMRSupport::update_smr_tlh_time_max(millis);
 }
 
 #endif // SHARE_VM_RUNTIME_THREADSMR_INLINE_HPP

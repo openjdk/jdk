@@ -1630,7 +1630,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // Push returnAddress for "ret" on stack.
     __ push_ptr(R17_tos);
     // And away we go!
-    __ dispatch_next(vtos);
+    __ dispatch_next(vtos, 0 ,true);
     return;
   }
 
@@ -1643,7 +1643,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   const bool increment_invocation_counter_for_backward_branches = UseCompiler && UseLoopCounter;
   if (increment_invocation_counter_for_backward_branches) {
     Label Lforward;
-    __ dispatch_prolog(vtos);
 
     // Check branch direction.
     __ cmpdi(CCR0, Rdisp, 0);
@@ -1744,11 +1743,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     }
 
     __ bind(Lforward);
-    __ dispatch_epilog(vtos);
-
-  } else {
-    __ dispatch_next(vtos);
   }
+  __ dispatch_next(vtos, 0, true);
 }
 
 // Helper function for if_cmp* methods below.
@@ -1829,7 +1825,7 @@ void TemplateTable::ret() {
   __ ld(R11_scratch1, in_bytes(Method::const_offset()), R19_method);
   __ add(R11_scratch1, R17_tos, R11_scratch1);
   __ addi(R14_bcp, R11_scratch1, in_bytes(ConstMethod::codes_offset()));
-  __ dispatch_next(vtos);
+  __ dispatch_next(vtos, 0, true);
 }
 
 void TemplateTable::wide_ret() {
@@ -1846,7 +1842,7 @@ void TemplateTable::wide_ret() {
   __ ld(Rscratch1, in_bytes(Method::const_offset()), R19_method);
   __ addi(Rscratch2, R17_tos, in_bytes(ConstMethod::codes_offset()));
   __ add(R14_bcp, Rscratch1, Rscratch2);
-  __ dispatch_next(vtos);
+  __ dispatch_next(vtos, 0, true);
 }
 
 void TemplateTable::tableswitch() {
@@ -1896,7 +1892,7 @@ void TemplateTable::tableswitch() {
   __ bind(Ldispatch);
 
   __ add(R14_bcp, Roffset, R14_bcp);
-  __ dispatch_next(vtos);
+  __ dispatch_next(vtos, 0, true);
 }
 
 void TemplateTable::lookupswitch() {
@@ -1960,7 +1956,7 @@ void TemplateTable::fast_linearswitch() {
 
   __ bind(Lcontinue_execution);
   __ add(R14_bcp, Roffset, R14_bcp);
-  __ dispatch_next(vtos);
+  __ dispatch_next(vtos, 0, true);
 }
 
 // Table switch using binary search (value/offset pairs are ordered).
@@ -2093,7 +2089,7 @@ void TemplateTable::fast_binaryswitch() {
 
   __ extsw(Rj, Rj);
   __ add(R14_bcp, Rj, R14_bcp);
-  __ dispatch_next(vtos);
+  __ dispatch_next(vtos, 0 , true);
 }
 
 void TemplateTable::_return(TosState state) {
@@ -2122,6 +2118,17 @@ void TemplateTable::_return(TosState state) {
 
     __ align(32, 12);
     __ bind(Lskip_register_finalizer);
+  }
+
+  if (SafepointMechanism::uses_thread_local_poll() && _desc->bytecode() != Bytecodes::_return_register_finalizer) {
+    Label no_safepoint;
+    __ ld(R11_scratch1, in_bytes(Thread::polling_page_offset()), R16_thread);
+    __ andi_(R11_scratch1, R11_scratch1, SafepointMechanism::poll_bit());
+    __ beq(CCR0, no_safepoint);
+    __ push(state);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
+    __ pop(state);
+    __ bind(no_safepoint);
   }
 
   // Move the result value into the correct register and remove memory stack frame.

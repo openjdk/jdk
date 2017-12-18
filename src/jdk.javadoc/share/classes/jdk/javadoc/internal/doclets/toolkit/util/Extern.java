@@ -56,10 +56,10 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 public class Extern {
 
     /**
-     * Map package names onto Extern Item objects.
+     * Map element names onto Extern Item objects.
      * Lazily initialized.
      */
-    private Map<String, Item> packageToItemMap;
+    private Map<String, Item> elementToItemMap;
 
     /**
      * The global configuration information for this run.
@@ -77,12 +77,12 @@ public class Extern {
     private class Item {
 
         /**
-         * Package name, found in the "package-list" file in the {@link path}.
+         * Element name, found in the "element-list" file in the {@link path}.
          */
-        final String packageName;
+        final String elementName;
 
         /**
-         * The URL or the directory path at which the package documentation will be
+         * The URL or the directory path at which the element documentation will be
          * avaliable.
          */
         final String path;
@@ -93,33 +93,40 @@ public class Extern {
         final boolean relative;
 
         /**
-         * Constructor to build a Extern Item object and map it with the package name.
-         * If the same package name is found in the map, then the first mapped
+         * If the item is a module then true else if it is a package then false.
+         */
+        boolean isModule = false;
+
+        /**
+         * Constructor to build a Extern Item object and map it with the element name.
+         * If the same element name is found in the map, then the first mapped
          * Item object or offline location will be retained.
          *
-         * @param packageName Package name found in the "package-list" file.
-         * @param path        URL or Directory path from where the "package-list"
+         * @param elementName Element name found in the "element-list" file.
+         * @param path        URL or Directory path from where the "element-list"
          * file is picked.
          * @param relative    True if path is URL, false if directory path.
+         * @param isModule    True if the item is a module. False if it is a package.
          */
-        Item(String packageName, String path, boolean relative) {
-            this.packageName = packageName;
+        Item(String elementName, String path, boolean relative, boolean isModule) {
+            this.elementName = elementName;
             this.path = path;
             this.relative = relative;
-            if (packageToItemMap == null) {
-                packageToItemMap = new HashMap<>();
+            this.isModule = isModule;
+            if (elementToItemMap == null) {
+                elementToItemMap = new HashMap<>();
             }
-            if (!packageToItemMap.containsKey(packageName)) { // save the previous
-                packageToItemMap.put(packageName, this);        // mapped location
+            if (!elementToItemMap.containsKey(elementName)) { // save the previous
+                elementToItemMap.put(elementName, this);        // mapped location
             }
         }
 
         /**
-         * String representation of "this" with packagename and the path.
+         * String representation of "this" with elementname and the path.
          */
         @Override
         public String toString() {
-            return packageName + (relative? " -> " : " => ") + path;
+            return elementName + (relative? " -> " : " => ") + path;
         }
     }
 
@@ -134,31 +141,42 @@ public class Extern {
      * @return true if the element is externally documented
      */
     public boolean isExternal(Element element) {
-        if (packageToItemMap == null) {
+        if (elementToItemMap == null) {
             return false;
         }
         PackageElement pe = configuration.utils.containingPackage(element);
         if (pe.isUnnamed()) {
             return false;
         }
-        return packageToItemMap.get(configuration.utils.getPackageName(pe)) != null;
+        return elementToItemMap.get(configuration.utils.getPackageName(pe)) != null;
+    }
+
+    /**
+     * Determine if a element item is a module or not.
+     *
+     * @param elementName name of the element.
+     * @return true if the element is a module
+     */
+    public boolean isModule(String elementName) {
+        Item elem = findElementItem(elementName);
+        return (elem == null) ? false : elem.isModule;
     }
 
     /**
      * Convert a link to be an external link if appropriate.
      *
-     * @param pkgName The package name.
+     * @param elemName The element name.
      * @param relativepath    The relative path.
      * @param filename    The link to convert.
      * @return if external return converted link else return null
      */
-    public DocLink getExternalLink(String pkgName, DocPath relativepath, String filename) {
-        return getExternalLink(pkgName, relativepath, filename, null);
+    public DocLink getExternalLink(String elemName, DocPath relativepath, String filename) {
+        return getExternalLink(elemName, relativepath, filename, null);
     }
 
-    public DocLink getExternalLink(String pkgName, DocPath relativepath, String filename,
+    public DocLink getExternalLink(String elemName, DocPath relativepath, String filename,
             String memberName) {
-        Item fnd = findPackageItem(pkgName);
+        Item fnd = findElementItem(elemName);
         if (fnd == null)
             return null;
 
@@ -170,56 +188,56 @@ public class Extern {
     }
 
     /**
-     * Build the extern package list from given URL or the directory path,
+     * Build the extern element list from given URL or the directory path,
      * as specified with the "-link" flag.
      * Flag error if the "-link" or "-linkoffline" option is already used.
      *
      * @param url        URL or Directory path.
      * @param reporter   The <code>DocErrorReporter</code> used to report errors.
      * @return true if successful, false otherwise
-     * @throws DocFileIOException if there is a problem reading a package list file
+     * @throws DocFileIOException if there is a problem reading a element list file
      */
     public boolean link(String url, Reporter reporter) throws DocFileIOException {
         return link(url, url, reporter, false);
     }
 
     /**
-     * Build the extern package list from given URL or the directory path,
+     * Build the extern element list from given URL or the directory path,
      * as specified with the "-linkoffline" flag.
      * Flag error if the "-link" or "-linkoffline" option is already used.
      *
      * @param url        URL or Directory path.
-     * @param pkglisturl This can be another URL for "package-list" or ordinary
+     * @param elemlisturl This can be another URL for "element-list" or ordinary
      *                   file.
      * @param reporter   The <code>DocErrorReporter</code> used to report errors.
      * @return true if successful, false otherwise
-     * @throws DocFileIOException if there is a problem reading a package list file
+     * @throws DocFileIOException if there is a problem reading the element list file
      */
-    public boolean link(String url, String pkglisturl, Reporter reporter) throws DocFileIOException {
-        return link(url, pkglisturl, reporter, true);
+    public boolean link(String url, String elemlisturl, Reporter reporter) throws DocFileIOException {
+        return link(url, elemlisturl, reporter, true);
     }
 
     /*
-     * Build the extern package list from given URL or the directory path.
+     * Build the extern element list from given URL or the directory path.
      * Flag error if the "-link" or "-linkoffline" option is already used.
      *
      * @param url        URL or Directory path.
-     * @param pkglisturl This can be another URL for "package-list" or ordinary
+     * @param elemlisturl This can be another URL for "element-list" or ordinary
      *                   file.
      * @param reporter   The <code>DocErrorReporter</code> used to report errors.
      * @param linkoffline True if -linkoffline is used and false if -link is used.
      * @return true if successful, false otherwise
-     * @throws DocFileIOException if there is a problem reading a package list file
+     * @throws DocFileIOException if there is a problem reading the element list file
      */
-    private boolean link(String url, String pkglisturl, Reporter reporter, boolean linkoffline)
+    private boolean link(String url, String elemlisturl, Reporter reporter, boolean linkoffline)
                 throws DocFileIOException {
         this.linkoffline = linkoffline;
         try {
             url = adjustEndFileSeparator(url);
-            if (isUrl(pkglisturl)) {
-                readPackageListFromURL(url, toURL(adjustEndFileSeparator(pkglisturl)));
+            if (isUrl(elemlisturl)) {
+                readElementListFromURL(url, toURL(adjustEndFileSeparator(elemlisturl)));
             } else {
-                readPackageListFromFile(url, DocFile.createFileForInput(configuration, pkglisturl));
+                readElementListFromFile(url, DocFile.createFileForInput(configuration, elemlisturl));
             }
             return true;
         } catch (Fault f) {
@@ -245,15 +263,15 @@ public class Extern {
     }
 
     /**
-     * Get the Extern Item object associated with this package name.
+     * Get the Extern Item object associated with this element name.
      *
-     * @param pkgName Package name.
+     * @param elemName Element name.
      */
-    private Item findPackageItem(String pkgName) {
-        if (packageToItemMap == null) {
+    private Item findElementItem(String elemName) {
+        if (elementToItemMap == null) {
             return null;
         }
-        return packageToItemMap.get(pkgName);
+        return elementToItemMap.get(elemName);
     }
 
     /**
@@ -264,42 +282,75 @@ public class Extern {
     }
 
     /**
-     * Fetch the URL and read the "package-list" file.
+     * Fetch the URL and read the "element-list" file.
      *
-     * @param urlpath        Path to the packages.
-     * @param pkglisturlpath URL or the path to the "package-list" file.
+     * @param urlpath        Path to the elements.
+     * @param elemlisturlpath URL or the path to the "element-list" file.
      */
-    private void readPackageListFromURL(String urlpath, URL pkglisturlpath) throws Fault {
+    private void readElementListFromURL(String urlpath, URL elemlisturlpath) throws Fault {
         try {
-            URL link = pkglisturlpath.toURI().resolve(DocPaths.PACKAGE_LIST.getPath()).toURL();
-            readPackageList(link.openStream(), urlpath, false);
+            URL link = elemlisturlpath.toURI().resolve(DocPaths.ELEMENT_LIST.getPath()).toURL();
+            readElementList(link.openStream(), urlpath, false);
         } catch (URISyntaxException | MalformedURLException exc) {
-            throw new Fault(configuration.getText("doclet.MalformedURL", pkglisturlpath.toString()), exc);
+            throw new Fault(configuration.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
         } catch (IOException exc) {
-            throw new Fault(configuration.getText("doclet.URL_error", pkglisturlpath.toString()), exc);
+            readAlternateURL(urlpath, elemlisturlpath);
         }
     }
 
     /**
-     * Read the "package-list" file which is available locally.
+     * Fetch the URL and read the "package-list" file.
      *
-     * @param path URL or directory path to the packages.
-     * @param pkgListPath Path to the local "package-list" file.
-     * @throws Fault if an error occurs that can be treated as a warning
-     * @throws DocFileIOException if there is a problem opening the package list file
+     * @param urlpath        Path to the packages.
+     * @param elemlisturlpath URL or the path to the "package-list" file.
      */
-    private void readPackageListFromFile(String path, DocFile pkgListPath)
+    private void readAlternateURL(String urlpath, URL elemlisturlpath) throws Fault {
+        try {
+            URL link = elemlisturlpath.toURI().resolve(DocPaths.PACKAGE_LIST.getPath()).toURL();
+            readElementList(link.openStream(), urlpath, false);
+        } catch (URISyntaxException | MalformedURLException exc) {
+            throw new Fault(configuration.getText("doclet.MalformedURL", elemlisturlpath.toString()), exc);
+        } catch (IOException exc) {
+            throw new Fault(configuration.getText("doclet.URL_error", elemlisturlpath.toString()), exc);
+        }
+    }
+
+    /**
+     * Read the "element-list" file which is available locally.
+     *
+     * @param path URL or directory path to the elements.
+     * @param elemListPath Path to the local "element-list" file.
+     * @throws Fault if an error occurs that can be treated as a warning
+     * @throws DocFileIOException if there is a problem opening the element list file
+     */
+    private void readElementListFromFile(String path, DocFile elemListPath)
             throws Fault, DocFileIOException {
-        DocFile file = pkgListPath.resolve(DocPaths.PACKAGE_LIST);
+        DocFile file = elemListPath.resolve(DocPaths.ELEMENT_LIST);
         if (! (file.isAbsolute() || linkoffline)){
             file = file.resolveAgainst(DocumentationTool.Location.DOCUMENTATION_OUTPUT);
         }
+        if (file.exists()) {
+            readElementList(file, path);
+        } else {
+            DocFile file1 = elemListPath.resolve(DocPaths.PACKAGE_LIST);
+            if (!(file1.isAbsolute() || linkoffline)) {
+                file1 = file1.resolveAgainst(DocumentationTool.Location.DOCUMENTATION_OUTPUT);
+            }
+            if (file1.exists()) {
+                readElementList(file1, path);
+            } else {
+                throw new Fault(configuration.getText("doclet.File_error", file.getPath()), null);
+            }
+        }
+    }
+
+    private void readElementList(DocFile file, String path) throws Fault, DocFileIOException {
         try {
-            if (file.exists() && file.canRead()) {
-                boolean pathIsRelative =
-                        !isUrl(path)
+            if (file.canRead()) {
+                boolean pathIsRelative
+                        = !isUrl(path)
                         && !DocFile.createFileForInput(configuration, path).isAbsolute();
-                readPackageList(file.openInputStream(), path, pathIsRelative);
+                readElementList(file.openInputStream(), path, pathIsRelative);
             } else {
                 throw new Fault(configuration.getText("doclet.File_error", file.getPath()), null);
             }
@@ -309,33 +360,32 @@ public class Extern {
     }
 
     /**
-     * Read the file "package-list" and for each package name found, create
-     * Extern object and associate it with the package name in the map.
+     * Read the file "element-list" and for each element name found, create
+     * Extern object and associate it with the element name in the map.
      *
-     * @param input    InputStream from the "package-list" file.
-     * @param path     URL or the directory path to the packages.
+     * @param input     InputStream from the "element-list" file.
+     * @param path     URL or the directory path to the elements.
      * @param relative Is path relative?
      * @throws IOException if there is a problem reading or closing the stream
      */
-    private void readPackageList(InputStream input, String path, boolean relative)
+    private void readElementList(InputStream input, String path, boolean relative)
                          throws IOException {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(input))) {
-            StringBuilder strbuf = new StringBuilder();
-            int c;
-            while ((c = in.read()) >= 0) {
-                char ch = (char) c;
-                if (ch == '\n' || ch == '\r') {
-                    if (strbuf.length() > 0) {
-                        String packname = strbuf.toString();
-                        String packpath = path
-                                + packname.replace('.', '/') + '/';
-                        Item ignore = new Item(packname, packpath, relative);
-                        strbuf.setLength(0);
+            in.lines().forEach((elemname) -> {
+                if (elemname.length() > 0) {
+                    boolean module;
+                    String elempath;
+                    if (elemname.startsWith(DocletConstants.MODULE_PREFIX)) {
+                        elemname = elemname.replace(DocletConstants.MODULE_PREFIX, "");
+                        elempath = path;
+                        module = true;
+                    } else {
+                        elempath = path + elemname.replace('.', '/') + '/';
+                        module = false;
                     }
-                } else {
-                    strbuf.append(ch);
+                    Item ignore = new Item(elemname, elempath, relative, module);
                 }
-            }
+            });
         }
     }
 

@@ -83,7 +83,7 @@ define_pd_global(bool, CompactStrings, true);
 // 2x unrolled loop is shorter with more than 9 HeapWords.
 define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
 
-define_pd_global(bool, ThreadLocalHandshakes, false);
+define_pd_global(bool, ThreadLocalHandshakes, true);
 
 // Platform dependent flag handling: flags only defined on this platform.
 #define ARCH_FLAGS(develop, \
@@ -94,12 +94,6 @@ define_pd_global(bool, ThreadLocalHandshakes, false);
                    range, \
                    constraint, \
                    writeable)  \
-                                                                            \
-  /* Load poll address from thread. This is used to implement per-thread */ \
-  /* safepoints on platforms != IA64. */                                    \
-  product(bool, LoadPollAddressFromThread, false,                           \
-          "Load polling page address from thread object (required for "     \
-          "per-thread safepoints on platforms != IA64)")                    \
                                                                             \
   product(uintx, PowerArchitecturePPC64, 0,                                 \
           "CPU Version: x for PowerX. Currently recognizes Power5 to "      \

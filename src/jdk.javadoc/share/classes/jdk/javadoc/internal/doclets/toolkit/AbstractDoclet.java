@@ -42,7 +42,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.UncheckedDocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.InternalException;
-import jdk.javadoc.internal.doclets.toolkit.util.PackageListWriter;
+import jdk.javadoc.internal.doclets.toolkit.util.ElementListWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.ResourceIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -210,7 +210,7 @@ public abstract class AbstractDoclet implements Doclet {
 
         generateClassFiles(docEnv, classtree);
 
-        PackageListWriter.generate(configuration);
+        ElementListWriter.generate(configuration);
         generatePackageFiles(classtree);
         generateModuleFiles();
 

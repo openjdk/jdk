@@ -98,9 +98,9 @@ void G1Arguments::initialize_flags() {
   // Enable loop strip mining to offer better pause time guarantees
   if (FLAG_IS_DEFAULT(UseCountedLoopSafepoints)) {
     FLAG_SET_DEFAULT(UseCountedLoopSafepoints, true);
-  }
-  if (UseCountedLoopSafepoints && FLAG_IS_DEFAULT(LoopStripMiningIter)) {
-    FLAG_SET_DEFAULT(LoopStripMiningIter, 1000);
+    if (FLAG_IS_DEFAULT(LoopStripMiningIter)) {
+      FLAG_SET_DEFAULT(LoopStripMiningIter, 1000);
+    }
   }
 #endif
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8164512
+ * @bug 8164512 8191360
  * @summary verify if the native library is unloaded when the class loader is GC'ed
  * @build p.Test
  * @run main/othervm/native -Xcheck:jni NativeLibraryTest

@@ -1119,7 +1119,7 @@ public class HtmlDocletWriter {
                     (label == null) || label.isEmpty() ? defaultLabel : label,
                     strong,
                     resources.getText("doclet.Href_Class_Or_Interface_Title", packageName),
-                    "");
+                    "", true);
             }
         }
         return null;
@@ -1135,6 +1135,11 @@ public class HtmlDocletWriter {
     public DocLink getCrossPackageLink(String pkgName) {
         return configuration.extern.getExternalLink(pkgName, pathToRoot,
             DocPaths.PACKAGE_SUMMARY.getPath());
+    }
+
+    public DocLink getCrossModuleLink(String mdleName) {
+        return configuration.extern.getExternalLink(mdleName, pathToRoot,
+            DocPaths.moduleSummary(mdleName).getPath());
     }
 
     /**
@@ -1411,13 +1416,14 @@ public class HtmlDocletWriter {
                             new StringContent(refPackage.getQualifiedName()));
                 return getPackageLink(refPackage, label);
             } else {
-                // @see is not referencing an included class or package.  Check for cross links.
+                // @see is not referencing an included class, module or package. Check for cross links.
                 Content classCrossLink;
-                DocLink packageCrossLink = getCrossPackageLink(refClassName);
-                if (packageCrossLink != null) {
-                    // Package cross link found
-                    return Links.createLink(packageCrossLink,
-                        (label.isEmpty() ? text : label));
+                DocLink elementCrossLink = (configuration.extern.isModule(refClassName))
+                        ? getCrossModuleLink(refClassName) : getCrossPackageLink(refClassName);
+                if (elementCrossLink != null) {
+                    // Element cross link found
+                    return Links.createLink(elementCrossLink,
+                            (label.isEmpty() ? text : label), true);
                 } else if ((classCrossLink = getCrossClassLink(refClassName,
                         refMemName, label, false, !isLinkPlain)) != null) {
                     // Class cross link found (possibly to a member in the class)

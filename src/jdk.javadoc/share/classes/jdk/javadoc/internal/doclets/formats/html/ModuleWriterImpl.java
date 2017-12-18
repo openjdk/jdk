@@ -106,21 +106,34 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             = new TreeMap<>(utils.makeModuleComparator());
 
     /**
-     * Map of packages exported by this module and the modules it has been exported to.
+     * Details about a package in a module.
+     * A package may be not exported, or exported to some modules, or exported to all modules.
+     * A package may be not opened, or opened to some modules, or opened to all modules.
+     * A package that is neither exported or opened to any modules is a concealed package.
+     * An open module opens all its packages to all modules.
      */
-    private final Map<PackageElement, SortedSet<ModuleElement>> exportedPackages
-            = new TreeMap<>(utils.makePackageComparator());
+    class PackageEntry {
+        /**
+         * Summary of package exports:
+         * If null, the package is not exported to any modules;
+         * if empty, the package is exported to all modules;
+         * otherwise, the package is exported to these modules.
+         */
+        Set<ModuleElement> exportedTo;
+
+        /**
+         * Summary of package opens:
+         * If null, the package is not opened to any modules;
+         * if empty, the package is opened to all modules;
+         * otherwise, the package is opened to these modules.
+         */
+        Set<ModuleElement> openedTo;
+    }
 
     /**
-     * Map of opened packages by this module and the modules it has been opened to.
+     * Map of packages of this module, and details of whether they are exported or opened.
      */
-    private final Map<PackageElement, SortedSet<ModuleElement>> openedPackages
-            = new TreeMap<>(utils.makePackageComparator());
-
-    /**
-     * Set of concealed packages of this module.
-     */
-    private final SortedSet<PackageElement> concealedPackages = new TreeSet<>(utils.makePackageComparator());
+    private final Map<PackageElement, PackageEntry> packages = new TreeMap<>(utils.makePackageComparator());
 
     /**
      * Map of indirect modules (transitive closure) and their exported packages.
@@ -284,51 +297,52 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         }
         });
 
-        // Get all packages for the module and put it in the concealed packages set.
-        utils.getModulePackageMap().getOrDefault(mdle, Collections.emptySet()).forEach((pkg) -> {
-            if (shouldDocument(pkg) && moduleMode == ModuleMode.ALL) {
-                concealedPackages.add(pkg);
+        // Get all packages if module is open or if displaying concealed modules
+        for (PackageElement pkg : utils.getModulePackageMap().getOrDefault(mdle, Collections.emptySet())) {
+            if (shouldDocument(pkg) && (mdle.isOpen() || moduleMode == ModuleMode.ALL)) {
+                PackageEntry e = new PackageEntry();
+                if (mdle.isOpen()) {
+                    e.openedTo = Collections.emptySet();
+                }
+                packages.put(pkg, e);
             }
-        });
+        };
 
-        // Get all exported packages for the module using the exports directive for the module.
-        (ElementFilter.exportsIn(mdle.getDirectives())).forEach((directive) -> {
+        // Get all exported packages for the module, using the exports directive for the module.
+        for (ModuleElement.ExportsDirective directive : ElementFilter.exportsIn(mdle.getDirectives())) {
             PackageElement p = directive.getPackage();
             if (shouldDocument(p)) {
-                SortedSet<ModuleElement> mdleList = new TreeSet<>(utils.makeModuleComparator());
                 List<? extends ModuleElement> targetMdles = directive.getTargetModules();
-                if (targetMdles != null) {
-                    mdleList.addAll(targetMdles);
-                }
-                // Qualified exports should not be displayed in the api mode. So if mdleList is empty,
-                // its exported to all modules and hence can be added.
-                if (moduleMode == ModuleMode.ALL || mdleList.isEmpty()) {
-                    exportedPackages.put(p, mdleList);
-                }
-                if (moduleMode == ModuleMode.ALL) {
-                    concealedPackages.remove(p);
+                // Include package if in details mode, or exported to all (i.e. targetModules == null)
+                if (moduleMode == ModuleMode.ALL || targetMdles == null) {
+                    PackageEntry packageEntry = packages.computeIfAbsent(p, pkg -> new PackageEntry());
+                    SortedSet<ModuleElement> mdleList = new TreeSet<>(utils.makeModuleComparator());
+                    if (targetMdles != null) {
+                        mdleList.addAll(targetMdles);
+                    }
+                    packageEntry.exportedTo = mdleList;
                 }
             }
-        });
-        // Get all opened packages for the module using the opens directive for the module.
-        (ElementFilter.opensIn(mdle.getDirectives())).forEach((directive) -> {
+        }
+
+        // Get all opened packages for the module, using the opens directive for the module.
+        // If it is an open module, there will be no separate opens directives.
+        for (ModuleElement.OpensDirective directive : ElementFilter.opensIn(mdle.getDirectives())) {
             PackageElement p = directive.getPackage();
             if (shouldDocument(p)) {
-                SortedSet<ModuleElement> mdleList = new TreeSet<>(utils.makeModuleComparator());
                 List<? extends ModuleElement> targetMdles = directive.getTargetModules();
-                if (targetMdles != null) {
-                    mdleList.addAll(targetMdles);
-                }
-                // Qualified opens should not be displayed in the api mode. So if mdleList is empty,
-                // it is opened to all modules and hence can be added.
-                if (moduleMode == ModuleMode.ALL || mdleList.isEmpty()) {
-                    openedPackages.put(p, mdleList);
-                }
-                if (moduleMode == ModuleMode.ALL) {
-                    concealedPackages.remove(p);
+                // Include package if in details mode, or opened to all (i.e. targetModules == null)
+                if (moduleMode == ModuleMode.ALL || targetMdles == null) {
+                    PackageEntry packageEntry = packages.computeIfAbsent(p, pkg -> new PackageEntry());
+                    SortedSet<ModuleElement> mdleList = new TreeSet<>(utils.makeModuleComparator());
+                    if (targetMdles != null) {
+                        mdleList.addAll(targetMdles);
+                    }
+                    packageEntry.openedTo = mdleList;
                 }
             }
-        });
+        }
+
         // Get all the exported and opened packages, for the transitive closure of the module, to be displayed in
         // the indirect packages tables.
         dependentModules.forEach((module, mod) -> {
@@ -348,15 +362,19 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 indirectPackages.put(module, exportPkgList);
             }
             SortedSet<PackageElement> openPkgList = new TreeSet<>(utils.makePackageComparator());
-            (ElementFilter.opensIn(module.getDirectives())).forEach((directive) -> {
-                PackageElement pkg = directive.getPackage();
-                if (shouldDocument(pkg)) {
-                    // Qualified opens are not displayed in API mode
-                    if (moduleMode == ModuleMode.ALL || directive.getTargetModules() == null) {
-                        openPkgList.add(pkg);
+            if (module.isOpen()) {
+                openPkgList.addAll(utils.getModulePackageMap().getOrDefault(module, Collections.emptySet()));
+            } else {
+                (ElementFilter.opensIn(module.getDirectives())).forEach((directive) -> {
+                    PackageElement pkg = directive.getPackage();
+                    if (shouldDocument(pkg)) {
+                        // Qualified opens are not displayed in API mode
+                        if (moduleMode == ModuleMode.ALL || directive.getTargetModules() == null) {
+                            openPkgList.add(pkg);
+                        }
                     }
-                }
-            });
+                });
+            }
             // If none of the indirect modules have opened packages to be displayed, we should not be
             // displaying the table and so it should not be added to the map.
             if (!openPkgList.isEmpty()) {
@@ -556,13 +574,13 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
 
     @Override
     public void addPackagesSummary(Content summaryContentTree) {
-        if (display(exportedPackages) || display(openedPackages) || display(concealedPackages)
+        if (display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages)) {
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.setStyle(HtmlStyle.blockList);
             addSummaryHeader(HtmlConstants.START_OF_PACKAGES_SUMMARY, SectionName.PACKAGES,
                     contents.navPackages, li);
-            if (display(exportedPackages) || display(openedPackages) || display(concealedPackages)) {
+            if (display(packages)) {
                 String tableSummary = resources.getText("doclet.Member_Table_Summary",
                         resources.getText("doclet.Packages_Summary"),
                         resources.getText("doclet.packages"));
@@ -607,77 +625,115 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         Table table = new Table(configuration.htmlVersion, HtmlStyle.packagesSummary)
                 .setSummary(tableSummary)
                 .setDefaultTab(resources.getText("doclet.All_Packages"))
-                .addTab(resources.getText("doclet.Exported_Packages_Summary"),
-                        e -> exportedPackages.containsKey((PackageElement) e))
-                .addTab(resources.getText("doclet.Opened_Packages_Summary"),
-                        e -> openedPackages.containsKey((PackageElement) e))
-                .addTab(resources.getText("doclet.Concealed_Packages_Summary"),
-                        e -> concealedPackages.contains((PackageElement) e))
+                .addTab(resources.getText("doclet.Exported_Packages_Summary"), this::isExported)
+                .addTab(resources.getText("doclet.Opened_Packages_Summary"), this::isOpened)
+                .addTab(resources.getText("doclet.Concealed_Packages_Summary"), this::isConcealed)
                 .setTabScript(i -> String.format("showPkgs(%d);", i))
                 .setTabScriptVariable("packages");
 
-        if (configuration.docEnv.getModuleMode() == ModuleMode.API) {
-            table.setHeader(new TableHeader(contents.packageLabel, contents.descriptionLabel))
-                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
-        } else {
-            table.setHeader(new TableHeader(contents.packageLabel, contents.moduleLabel, contents.descriptionLabel))
-                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
+        // Determine whether to show the "Exported To" and "Opened To" columns,
+        // based on whether such columns would provide "useful" info.
+        int numExports = 0;
+        int numUnqualifiedExports = 0;
+        int numOpens = 0;
+        int numUnqualifiedOpens = 0;
+
+        for (PackageEntry e : packages.values()) {
+            if (e.exportedTo != null) {
+                numExports++;
+                if (e.exportedTo.isEmpty()) {
+                    numUnqualifiedExports++;
+                }
+            }
+            if (e.openedTo != null) {
+                numOpens++;
+                if (e.openedTo.isEmpty()) {
+                    numUnqualifiedOpens++;
+                }
+            }
         }
 
-        addPackageTableRows(table);
+        boolean showExportedTo = numExports > 0 && (numOpens > 0   || numUnqualifiedExports < packages.size());
+        boolean showOpenedTo   = numOpens > 0   && (numExports > 0 || numUnqualifiedOpens < packages.size());
+
+        // Create the table header and column styles.
+        List<Content> colHeaders = new ArrayList<>();
+        List<HtmlStyle> colStyles = new ArrayList<>();
+        colHeaders.add(contents.packageLabel);
+        colStyles.add(HtmlStyle.colFirst);
+
+        if (showExportedTo) {
+            colHeaders.add(contents.exportedTo);
+            colStyles.add(HtmlStyle.colSecond);
+        }
+
+        if (showOpenedTo) {
+            colHeaders.add(contents.openedTo);
+            colStyles.add(HtmlStyle.colSecond);
+        }
+
+        colHeaders.add(contents.descriptionLabel);
+        colStyles.add(HtmlStyle.colLast);
+
+        table.setHeader(new TableHeader(colHeaders).styles(colStyles))
+                .setColumnStyles(colStyles);
+
+        // Add the table rows, based on the "packages" map.
+        for (Map.Entry<PackageElement, PackageEntry> e : packages.entrySet()) {
+            PackageElement pkg = e.getKey();
+            PackageEntry entry = e.getValue();
+            List<Content> row = new ArrayList<>();
+            Content pkgLinkContent = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
+            row.add(pkgLinkContent);
+
+            if (showExportedTo) {
+                row.add(getPackageExportOpensTo(entry.exportedTo));
+            }
+            if (showOpenedTo) {
+                row.add(getPackageExportOpensTo(entry.openedTo));
+            }
+            Content summary = new ContentBuilder();
+            addSummaryComment(pkg, summary);
+            row.add(summary);
+
+            table.addRow(pkg, row);
+        }
+
         li.addContent(table.toContent());
         if (table.needsScript()) {
             mainBodyScript.append(table.getScript());
         }
     }
 
-    /**
-     * Get the package table rows.
-     *
-     * @return a content object
-     */
-    private void addPackageTableRows(Table table) {
-        addPackageTableRows(table, exportedPackages);
-        addPackageTableRows(table, openedPackages);
-        // Show concealed packages only in "all" mode.
-        if (moduleMode == ModuleMode.ALL) {
-            for (PackageElement pkg : concealedPackages) {
-                Content pkgLinkContent = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
-                Content noModules = new StringContent(resources.getText("doclet.None"));
-                Content summary = new ContentBuilder();
-                addSummaryComment(pkg, summary);
-                table.addRow(pkg, pkgLinkContent, noModules, summary);
-            }
-        }
+    private boolean isExported(Element e) {
+        PackageEntry entry = packages.get((PackageElement) e);
+        return (entry != null) && (entry.exportedTo != null);
     }
 
-    private void addPackageTableRows(Table table, Map<PackageElement,SortedSet<ModuleElement>> ap) {
-        for (Map.Entry<PackageElement, SortedSet<ModuleElement>> entry : ap.entrySet()) {
-            List<Content> row = new ArrayList<>();
-            PackageElement pkg = entry.getKey();
-            SortedSet<ModuleElement> mdleList = entry.getValue();
-            Content pkgLinkContent = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
-            row.add(pkgLinkContent);
+    private boolean isOpened(Element e) {
+        PackageEntry entry = packages.get((PackageElement) e);
+        return (entry != null) && (entry.openedTo != null);
+    }
 
-            if (moduleMode == ModuleMode.ALL) {
-                Content modules = new ContentBuilder();
-                if (!mdleList.isEmpty()) {
-                    for (ModuleElement m : mdleList) {
-                        if (!modules.isEmpty()) {
-                            modules.addContent(new HtmlTree(HtmlTag.BR));
-                        }
-                        modules.addContent(getModuleLink(m, new StringContent(m.getQualifiedName())));
-                    }
-                } else {
-                    Content allModules = new StringContent(resources.getText("doclet.All_Modules"));
-                    modules.addContent(allModules);
+    private boolean isConcealed(Element e) {
+        PackageEntry entry = packages.get((PackageElement) e);
+        return (entry != null) && (entry.exportedTo == null) && (entry.openedTo == null);
+    }
+
+    private Content getPackageExportOpensTo(Set<ModuleElement> modules) {
+        if (modules == null) {
+            return new StringContent(resources.getText("doclet.None"));
+        } else if (modules.isEmpty()) {
+            return new StringContent(resources.getText("doclet.All_Modules"));
+        } else {
+            Content list = new ContentBuilder();
+            for (ModuleElement m : modules) {
+                if (!list.isEmpty()) {
+                    list.addContent(new StringContent(", "));
                 }
-                row.add(modules);
+                list.addContent(getModuleLink(m, new StringContent(m.getQualifiedName())));
             }
-            Content summary = new ContentBuilder();
-            addSummaryComment(pkg, summary);
-            row.add(summary);
-            table.addRow(pkg, row);
+            return list;
         }
     }
 
@@ -692,14 +748,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             ModuleElement m = entry.getKey();
             SortedSet<PackageElement> pkgList = entry.getValue();
             Content moduleLinkContent = getModuleLink(m, new StringContent(m.getQualifiedName()));
-            Content packages = new ContentBuilder();
+            Content list = new ContentBuilder();
             String sep = "";
             for (PackageElement pkg : pkgList) {
-                packages.addContent(sep);
-                packages.addContent(getPackageLink(pkg, new StringContent(utils.getPackageName(pkg))));
+                list.addContent(sep);
+                list.addContent(getPackageLink(pkg, new StringContent(utils.getPackageName(pkg))));
                 sep = " ";
             }
-            table.addRow(moduleLinkContent, packages);
+            table.addRow(moduleLinkContent, list);
         }
     }
 
@@ -898,7 +954,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 ? Links.createLink(SectionName.MODULES, contents.navModules)
                 : contents.navModules);
         addNavGap(liNav);
-        liNav.addContent((display(exportedPackages) || display(openedPackages) || display(concealedPackages)
+        liNav.addContent((display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages))
                 ? Links.createLink(SectionName.PACKAGES, contents.navPackages)
                 : contents.navPackages);

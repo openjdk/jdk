@@ -887,6 +887,8 @@ JAVA
 BOOT_JDK
 JAVA_CHECK
 JAVAC_CHECK
+VENDOR_VERSION_STRING
+VERSION_DATE
 VERSION_IS_GA
 VERSION_SHORT
 VERSION_STRING
@@ -896,9 +898,9 @@ VERSION_OPT
 VERSION_BUILD
 VERSION_PRE
 VERSION_PATCH
-VERSION_SECURITY
-VERSION_MINOR
-VERSION_MAJOR
+VERSION_UPDATE
+VERSION_INTERIM
+VERSION_FEATURE
 MACOSX_BUNDLE_ID_BASE
 MACOSX_BUNDLE_NAME_BASE
 HOTSPOT_VM_DISTRO
@@ -972,7 +974,6 @@ HOTSPOT_BUILD_CPU
 HOTSPOT_BUILD_OS_TYPE
 HOTSPOT_BUILD_OS
 OPENJDK_BUILD_BUNDLE_PLATFORM
-OPENJDK_BUILD_OS_EXPORT_DIR
 OPENJDK_BUILD_CPU_OSARCH
 OPENJDK_BUILD_CPU_ISADIR
 OPENJDK_BUILD_CPU_LEGACY_LIB
@@ -984,7 +985,6 @@ HOTSPOT_TARGET_OS_TYPE
 HOTSPOT_TARGET_OS
 DEFINE_CROSS_COMPILE_ARCH
 OPENJDK_TARGET_BUNDLE_PLATFORM
-OPENJDK_TARGET_OS_EXPORT_DIR
 OPENJDK_TARGET_CPU_OSARCH
 OPENJDK_TARGET_CPU_ISADIR
 OPENJDK_TARGET_CPU_LEGACY_LIB
@@ -1093,6 +1093,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -1143,14 +1144,19 @@ with_milestone
 with_update_version
 with_user_release_suffix
 with_build_number
+with_version_major
+with_version_minor
+with_version_security
 with_version_string
 with_version_pre
 with_version_opt
 with_version_build
-with_version_major
-with_version_minor
-with_version_security
+with_version_feature
+with_version_interim
+with_version_update
 with_version_patch
+with_version_date
+with_vendor_version_string
 with_boot_jdk
 with_build_jdk
 with_import_modules
@@ -1377,6 +1383,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1629,6 +1636,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1766,7 +1782,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1919,6 +1935,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -2060,6 +2077,12 @@ Optional Packages:
                           compatibility and is ignored
   --with-build-number     Deprecated. Option is kept for backwards
                           compatibility and is ignored
+  --with-version-major    Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-version-minor    Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-version-security Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-version-string   Set version string [calculated]
   --with-version-pre      Set the base part of the version 'PRE' field
                           (pre-release identifier) ['internal']
@@ -2067,14 +2090,17 @@ Optional Packages:
                           [<timestamp>.<user>.<dirname>]
   --with-version-build    Set version 'BUILD' field (build number) [not
                           specified]
-  --with-version-major    Set version 'MAJOR' field (first number) [current
+  --with-version-feature  Set version 'FEATURE' field (first number) [current
                           source value]
-  --with-version-minor    Set version 'MINOR' field (second number) [current
+  --with-version-interim  Set version 'INTERIM' field (second number) [current
                           source value]
-  --with-version-security Set version 'SECURITY' field (third number) [current
+  --with-version-update   Set version 'UPDATE' field (third number) [current
                           source value]
   --with-version-patch    Set version 'PATCH' field (fourth number) [not
                           specified]
+  --with-version-date     Set version date [current source value]
+  --with-vendor-version-string
+                          Set vendor version string [not specified]
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
   --with-build-jdk        path to JDK of same version as is being built[the
                           newly built JDK]
@@ -4449,7 +4475,7 @@ VALID_JVM_VARIANTS="server client minimal core zero custom"
 
 
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -5159,7 +5185,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1512479382
+DATE_WHEN_GENERATED=1513206608
 
 ###############################################################################
 #
@@ -16200,13 +16226,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
     OPENJDK_TARGET_CPU_JLI="amd64"
   fi
 
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      OPENJDK_TARGET_OS_EXPORT_DIR=macosx
-  else
-      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_TYPE}
-  fi
-
-
   # The new version string in JDK 9 also defined new naming of OS and ARCH for bundles
   # Macosx is osx and x86_64 is x64
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
@@ -16357,13 +16376,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
     # On all platforms except macosx, we replace x86_64 with amd64.
     OPENJDK_BUILD_CPU_JLI="amd64"
   fi
-
-  if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-      OPENJDK_BUILD_OS_EXPORT_DIR=macosx
-  else
-      OPENJDK_BUILD_OS_EXPORT_DIR=${OPENJDK_BUILD_OS_TYPE}
-  fi
-
 
   # The new version string in JDK 9 also defined new naming of OS and ARCH for bundles
   # Macosx is osx and x86_64 is x64
@@ -25004,6 +25016,33 @@ fi
 
 
 
+
+# Check whether --with-version-major was given.
+if test "${with_version_major+set}" = set; then :
+  withval=$with_version_major; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-version-major is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-version-major is deprecated and will be ignored." >&2;}
+fi
+
+
+
+
+# Check whether --with-version-minor was given.
+if test "${with_version_minor+set}" = set; then :
+  withval=$with_version_minor; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-version-minor is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-version-minor is deprecated and will be ignored." >&2;}
+fi
+
+
+
+
+# Check whether --with-version-security was given.
+if test "${with_version_security+set}" = set; then :
+  withval=$with_version_security; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-version-security is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-version-security is deprecated and will be ignored." >&2;}
+fi
+
+
+
   # Source the version numbers file
   . $AUTOCONF_DIR/version-numbers
 
@@ -25032,20 +25071,20 @@ fi
   elif test "x$with_version_string" != x; then
     # Additional [] needed to keep m4 from mangling shell constructs.
     if  [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z]+))?((\+)([0-9]+)?(-([-a-zA-Z0-9.]+))?)?$ ]] ; then
-      VERSION_MAJOR=${BASH_REMATCH[1]}
-      VERSION_MINOR=${BASH_REMATCH[3]}
-      VERSION_SECURITY=${BASH_REMATCH[5]}
+      VERSION_FEATURE=${BASH_REMATCH[1]}
+      VERSION_INTERIM=${BASH_REMATCH[3]}
+      VERSION_UPDATE=${BASH_REMATCH[5]}
       VERSION_PATCH=${BASH_REMATCH[7]}
       VERSION_PRE=${BASH_REMATCH[9]}
       version_plus_separator=${BASH_REMATCH[11]}
       VERSION_BUILD=${BASH_REMATCH[12]}
       VERSION_OPT=${BASH_REMATCH[14]}
       # Unspecified numerical fields are interpreted as 0.
-      if test "x$VERSION_MINOR" = x; then
-        VERSION_MINOR=0
+      if test "x$VERSION_INTERIM" = x; then
+        VERSION_INTERIM=0
       fi
-      if test "x$VERSION_SECURITY" = x; then
-        VERSION_SECURITY=0
+      if test "x$VERSION_UPDATE" = x; then
+        VERSION_UPDATE=0
       fi
       if test "x$VERSION_PATCH" = x; then
         VERSION_PATCH=0
@@ -25174,22 +25213,22 @@ $as_echo "$as_me: WARNING: Value for VERSION_BUILD has been sanitized from '$wit
   fi
 
 
-# Check whether --with-version-major was given.
-if test "${with_version_major+set}" = set; then :
-  withval=$with_version_major; with_version_major_present=true
+# Check whether --with-version-feature was given.
+if test "${with_version_feature+set}" = set; then :
+  withval=$with_version_feature; with_version_feature_present=true
 else
-  with_version_major_present=false
+  with_version_feature_present=false
 fi
 
 
-  if test "x$with_version_major_present" = xtrue; then
-    if test "x$with_version_major" = xyes; then
-      as_fn_error $? "--with-version-major must have a value" "$LINENO" 5
+  if test "x$with_version_feature_present" = xtrue; then
+    if test "x$with_version_feature" = xyes; then
+      as_fn_error $? "--with-version-feature must have a value" "$LINENO" 5
     else
 
   # Additional [] needed to keep m4 from mangling shell constructs.
-  if  ! [[ "$with_version_major" =~ ^0*([1-9][0-9]*)|(0)$ ]]  ; then
-    as_fn_error $? "\"$with_version_major\" is not a valid numerical value for VERSION_MAJOR" "$LINENO" 5
+  if  ! [[ "$with_version_feature" =~ ^0*([1-9][0-9]*)|(0)$ ]]  ; then
+    as_fn_error $? "\"$with_version_feature\" is not a valid numerical value for VERSION_FEATURE" "$LINENO" 5
   fi
   # Extract the version number without leading zeros.
   cleaned_value=${BASH_REMATCH[1]}
@@ -25199,44 +25238,44 @@ fi
   fi
 
   if test $cleaned_value -gt 255; then
-    as_fn_error $? "VERSION_MAJOR is given as $with_version_major. This is greater than 255 which is not allowed." "$LINENO" 5
+    as_fn_error $? "VERSION_FEATURE is given as $with_version_feature. This is greater than 255 which is not allowed." "$LINENO" 5
   fi
-  if test "x$cleaned_value" != "x$with_version_major"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Value for VERSION_MAJOR has been sanitized from '$with_version_major' to '$cleaned_value'" >&5
-$as_echo "$as_me: WARNING: Value for VERSION_MAJOR has been sanitized from '$with_version_major' to '$cleaned_value'" >&2;}
+  if test "x$cleaned_value" != "x$with_version_feature"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Value for VERSION_FEATURE has been sanitized from '$with_version_feature' to '$cleaned_value'" >&5
+$as_echo "$as_me: WARNING: Value for VERSION_FEATURE has been sanitized from '$with_version_feature' to '$cleaned_value'" >&2;}
   fi
-  VERSION_MAJOR=$cleaned_value
+  VERSION_FEATURE=$cleaned_value
 
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is to get value from version-numbers
-      VERSION_MAJOR="$DEFAULT_VERSION_MAJOR"
+      VERSION_FEATURE="$DEFAULT_VERSION_FEATURE"
     fi
   fi
 
 
-# Check whether --with-version-minor was given.
-if test "${with_version_minor+set}" = set; then :
-  withval=$with_version_minor; with_version_minor_present=true
+# Check whether --with-version-interim was given.
+if test "${with_version_interim+set}" = set; then :
+  withval=$with_version_interim; with_version_interim_present=true
 else
-  with_version_minor_present=false
+  with_version_interim_present=false
 fi
 
 
-  if test "x$with_version_minor_present" = xtrue; then
-    if test "x$with_version_minor" = xyes; then
-      as_fn_error $? "--with-version-minor must have a value" "$LINENO" 5
-    elif test "x$with_version_minor" = xno; then
+  if test "x$with_version_interim_present" = xtrue; then
+    if test "x$with_version_interim" = xyes; then
+      as_fn_error $? "--with-version-interim must have a value" "$LINENO" 5
+    elif test "x$with_version_interim" = xno; then
       # Interpret --without-* as empty string (i.e. 0) instead of the literal "no"
-      VERSION_MINOR=0
-    elif test "x$with_version_minor" = x; then
-      VERSION_MINOR=0
+      VERSION_INTERIM=0
+    elif test "x$with_version_interim" = x; then
+      VERSION_INTERIM=0
     else
 
   # Additional [] needed to keep m4 from mangling shell constructs.
-  if  ! [[ "$with_version_minor" =~ ^0*([1-9][0-9]*)|(0)$ ]]  ; then
-    as_fn_error $? "\"$with_version_minor\" is not a valid numerical value for VERSION_MINOR" "$LINENO" 5
+  if  ! [[ "$with_version_interim" =~ ^0*([1-9][0-9]*)|(0)$ ]]  ; then
+    as_fn_error $? "\"$with_version_interim\" is not a valid numerical value for VERSION_INTERIM" "$LINENO" 5
   fi
   # Extract the version number without leading zeros.
   cleaned_value=${BASH_REMATCH[1]}
@@ -25246,44 +25285,44 @@ fi
   fi
 
   if test $cleaned_value -gt 255; then
-    as_fn_error $? "VERSION_MINOR is given as $with_version_minor. This is greater than 255 which is not allowed." "$LINENO" 5
+    as_fn_error $? "VERSION_INTERIM is given as $with_version_interim. This is greater than 255 which is not allowed." "$LINENO" 5
   fi
-  if test "x$cleaned_value" != "x$with_version_minor"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Value for VERSION_MINOR has been sanitized from '$with_version_minor' to '$cleaned_value'" >&5
-$as_echo "$as_me: WARNING: Value for VERSION_MINOR has been sanitized from '$with_version_minor' to '$cleaned_value'" >&2;}
+  if test "x$cleaned_value" != "x$with_version_interim"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Value for VERSION_INTERIM has been sanitized from '$with_version_interim' to '$cleaned_value'" >&5
+$as_echo "$as_me: WARNING: Value for VERSION_INTERIM has been sanitized from '$with_version_interim' to '$cleaned_value'" >&2;}
   fi
-  VERSION_MINOR=$cleaned_value
+  VERSION_INTERIM=$cleaned_value
 
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_MINOR=$DEFAULT_VERSION_MINOR
+      VERSION_INTERIM=$DEFAULT_VERSION_INTERIM
     fi
   fi
 
 
-# Check whether --with-version-security was given.
-if test "${with_version_security+set}" = set; then :
-  withval=$with_version_security; with_version_security_present=true
+# Check whether --with-version-update was given.
+if test "${with_version_update+set}" = set; then :
+  withval=$with_version_update; with_version_update_present=true
 else
-  with_version_security_present=false
+  with_version_update_present=false
 fi
 
 
-  if test "x$with_version_security_present" = xtrue; then
-    if test "x$with_version_security" = xyes; then
-      as_fn_error $? "--with-version-security must have a value" "$LINENO" 5
-    elif test "x$with_version_security" = xno; then
+  if test "x$with_version_update_present" = xtrue; then
+    if test "x$with_version_update" = xyes; then
+      as_fn_error $? "--with-version-update must have a value" "$LINENO" 5
+    elif test "x$with_version_update" = xno; then
       # Interpret --without-* as empty string (i.e. 0) instead of the literal "no"
-      VERSION_SECURITY=0
-    elif test "x$with_version_security" = x; then
-      VERSION_SECURITY=0
+      VERSION_UPDATE=0
+    elif test "x$with_version_update" = x; then
+      VERSION_UPDATE=0
     else
 
   # Additional [] needed to keep m4 from mangling shell constructs.
-  if  ! [[ "$with_version_security" =~ ^0*([1-9][0-9]*)|(0)$ ]]  ; then
-    as_fn_error $? "\"$with_version_security\" is not a valid numerical value for VERSION_SECURITY" "$LINENO" 5
+  if  ! [[ "$with_version_update" =~ ^0*([1-9][0-9]*)|(0)$ ]]  ; then
+    as_fn_error $? "\"$with_version_update\" is not a valid numerical value for VERSION_UPDATE" "$LINENO" 5
   fi
   # Extract the version number without leading zeros.
   cleaned_value=${BASH_REMATCH[1]}
@@ -25293,19 +25332,19 @@ fi
   fi
 
   if test $cleaned_value -gt 255; then
-    as_fn_error $? "VERSION_SECURITY is given as $with_version_security. This is greater than 255 which is not allowed." "$LINENO" 5
+    as_fn_error $? "VERSION_UPDATE is given as $with_version_update. This is greater than 255 which is not allowed." "$LINENO" 5
   fi
-  if test "x$cleaned_value" != "x$with_version_security"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Value for VERSION_SECURITY has been sanitized from '$with_version_security' to '$cleaned_value'" >&5
-$as_echo "$as_me: WARNING: Value for VERSION_SECURITY has been sanitized from '$with_version_security' to '$cleaned_value'" >&2;}
+  if test "x$cleaned_value" != "x$with_version_update"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Value for VERSION_UPDATE has been sanitized from '$with_version_update' to '$cleaned_value'" >&5
+$as_echo "$as_me: WARNING: Value for VERSION_UPDATE has been sanitized from '$with_version_update' to '$cleaned_value'" >&2;}
   fi
-  VERSION_SECURITY=$cleaned_value
+  VERSION_UPDATE=$cleaned_value
 
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_SECURITY=$DEFAULT_VERSION_SECURITY
+      VERSION_UPDATE=$DEFAULT_VERSION_UPDATE
     fi
   fi
 
@@ -25366,7 +25405,7 @@ $as_echo "$as_me: WARNING: Value for VERSION_PATCH has been sanitized from '$wit
   fi
 
   # VERSION_NUMBER but always with exactly 4 positions, with 0 for empty positions.
-  VERSION_NUMBER_FOUR_POSITIONS=$VERSION_MAJOR.$VERSION_MINOR.$VERSION_SECURITY.$VERSION_PATCH
+  VERSION_NUMBER_FOUR_POSITIONS=$VERSION_FEATURE.$VERSION_INTERIM.$VERSION_UPDATE.$VERSION_PATCH
 
   stripped_version_number=$VERSION_NUMBER_FOUR_POSITIONS
   # Strip trailing zeroes from stripped_version_number
@@ -25384,10 +25423,46 @@ $as_echo "$as_me: WARNING: Value for VERSION_PATCH has been sanitized from '$wit
   # The short version string, just VERSION_NUMBER and PRE, if present.
   VERSION_SHORT=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}
 
+  # The version date
+
+# Check whether --with-version-date was given.
+if test "${with_version_date+set}" = set; then :
+  withval=$with_version_date;
+fi
+
+  if test "x$with_version_date" = xyes; then
+    as_fn_error $? "--with-version-date must have a value" "$LINENO" 5
+  elif test "x$with_version_date" != x; then
+    if  ! [[ $with_version_date =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] ; then
+      as_fn_error $? "\"$with_version_date\" is not a valid version date" "$LINENO" 5
+    else
+      VERSION_DATE="$with_version_date"
+    fi
+  else
+    VERSION_DATE="$DEFAULT_VERSION_DATE"
+  fi
+
+  # The vendor version string, if any
+
+# Check whether --with-vendor-version-string was given.
+if test "${with_vendor_version_string+set}" = set; then :
+  withval=$with_vendor_version_string;
+fi
+
+  if test "x$with_vendor_version_string" = xyes; then
+    as_fn_error $? "--with-vendor-version-string must have a value" "$LINENO" 5
+  elif  ! [[ $with_vendor_version_string =~ ^[[:graph:]]*$ ]] ; then
+    as_fn_error $? "--with--vendor-version-string contains non-graphical characters: $with_vendor_version_string" "$LINENO" 5
+  else
+    VENDOR_VERSION_STRING="$with_vendor_version_string"
+  fi
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for version string" >&5
 $as_echo_n "checking for version string... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $VERSION_STRING" >&5
 $as_echo "$VERSION_STRING" >&6; }
+
+
 
 
 
@@ -50669,7 +50744,7 @@ $as_echo "no" >&6; }
         -D\"JDK_COMPONENT=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) binary\" \
         -D\"JDK_VER=\$(VERSION_NUMBER)\" \
         -D\"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
-        -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(VERSION_MAJOR)\" \
+        -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(VERSION_FEATURE)\" \
         -D\"JDK_FVER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\""
 
     JVM_RCFLAGS="$JVM_RCFLAGS \
@@ -52817,7 +52892,9 @@ fi
       -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
       -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include \
       -I${TOPDIR}/src/java.base/share/native/libjava \
-      -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava"
+      -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava \
+      -I${TOPDIR}/src/hotspot/share/include \
+      -I${TOPDIR}/src/hotspot/os/${HOTSPOT_TARGET_OS_TYPE}/include"
 
   # The shared libraries are compiled using the picflag.
   CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK \
@@ -53698,7 +53775,9 @@ fi
       -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS/native/include \
       -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/include \
       -I${TOPDIR}/src/java.base/share/native/libjava \
-      -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/libjava"
+      -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/libjava \
+      -I${TOPDIR}/src/hotspot/share/include \
+      -I${TOPDIR}/src/hotspot/os/${HOTSPOT_BUILD_OS_TYPE}/include"
 
   # The shared libraries are compiled using the picflag.
   OPENJDK_BUILD_CFLAGS_JDKLIB="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \

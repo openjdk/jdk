@@ -33,6 +33,7 @@
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:-UseCounterDecay
+ *                   -XX:CompileCommand=compileonly,*SimpleTestCaseHelper::method
  *                   compiler.whitebox.LockCompilationTest
  */
 
@@ -46,20 +47,7 @@ public class LockCompilationTest extends CompilerWhiteBoxTest {
         // This case waits for 5 seconds and verifies that the method hasn't been
         // compiled during that time. Only do that for one of the test cases.
 
-        // Only compile SimpleTestCaseHelper.method and exclude all other to ensure no
-        // contention on the compile queue causes problems.
-        String directive =
-                "[{ match:\"*SimpleTestCaseHelper.method\", Exclude:false}, " +
-                " { match:\"*.*\", Exclude:true}]";
-        if (WHITE_BOX.addCompilerDirective(directive) != 2) {
-            throw new RuntimeException("Could not add directive");
-        }
-        try {
-            CompilerWhiteBoxTest.main(LockCompilationTest::new, new String[] {"METHOD_TEST"});
-        } finally {
-            WHITE_BOX.removeCompilerDirective(2);
-        }
-
+        CompilerWhiteBoxTest.main(LockCompilationTest::new, new String[] {"METHOD_TEST"});
     }
 
     private LockCompilationTest(TestCase testCase) {

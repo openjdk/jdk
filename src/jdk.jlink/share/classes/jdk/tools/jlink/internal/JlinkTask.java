@@ -448,13 +448,14 @@ public class JlinkTask {
 
             // java.base version is different than the current runtime version
             version = Runtime.Version.parse(v.toString());
-            if (Runtime.version().major() != version.major() ||
-                Runtime.version().minor() != version.minor()) {
+            if (Runtime.version().feature() != version.feature() ||
+                Runtime.version().interim() != version.interim())
+            {
                 // jlink version and java.base version do not match.
                 // We do not (yet) support this mode.
                 throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
-                    Runtime.version().major(), Runtime.version().minor(),
-                    version.major(), version.minor()));
+                    Runtime.version().feature(), Runtime.version().interim(),
+                    version.feature(), version.interim()));
             }
         }
 

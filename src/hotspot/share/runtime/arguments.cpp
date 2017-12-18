@@ -674,6 +674,14 @@ static bool lookup_special_flag(const char *flag_name, size_t skip_index) {
   return false;
 }
 
+// Verifies the correctness of the entries in the special_jvm_flags table.
+// If there is a semantic error (i.e. a bug in the table) such as the obsoletion
+// version being earlier than the deprecation version, then a warning is issued
+// and verification fails - by returning false. If it is detected that the table
+// is out of date, with respect to the current version, then a warning is issued
+// but verification does not fail. This allows the VM to operate when the version
+// is first updated, without needing to update all the impacted flags at the
+// same time.
 static bool verify_special_jvm_flags() {
   bool success = true;
   for (size_t i = 0; special_jvm_flags[i].name != NULL; i++) {
@@ -710,7 +718,6 @@ static bool verify_special_jvm_flags() {
       if (!version_less_than(JDK_Version::current(), flag.obsolete_in)) {
         if (Flag::find_flag(flag.name) != NULL) {
           warning("Global variable for obsolete special flag entry \"%s\" should be removed", flag.name);
-          success = false;
         }
       }
     }
@@ -720,7 +727,6 @@ static bool verify_special_jvm_flags() {
       if (!version_less_than(JDK_Version::current(), flag.expired_in)) {
         if (Flag::find_flag(flag.name) != NULL) {
           warning("Global variable for expired flag entry \"%s\" should be removed", flag.name);
-          success = false;
         }
       }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,9 +112,9 @@ import java.util.zip.ZipFile;
  * <li>
  * {@code jdk.util.jar.version} can be assigned a value that is the
  * {@code String} representation of a non-negative integer
- * {@code <= Runtime.version().major()}.  The value is used to set the effective
+ * {@code <= Runtime.version().feature()}.  The value is used to set the effective
  * runtime version to something other than the default value obtained by
- * evaluating {@code Runtime.version().major()}. The effective runtime version
+ * evaluating {@code Runtime.version().feature()}. The effective runtime version
  * is the version that the {@link JarFile#JarFile(File, boolean, int, Runtime.Version)}
  * constructor uses when the value of the last argument is
  * {@code JarFile.runtimeVersion()}.
@@ -143,7 +143,7 @@ import java.util.zip.ZipFile;
 public
 class JarFile extends ZipFile {
     private final static Runtime.Version BASE_VERSION;
-    private final static int BASE_VERSION_MAJOR;
+    private final static int BASE_VERSION_FEATURE;
     private final static Runtime.Version RUNTIME_VERSION;
     private final static boolean MULTI_RELEASE_ENABLED;
     private final static boolean MULTI_RELEASE_FORCED;
@@ -153,7 +153,7 @@ class JarFile extends ZipFile {
     private boolean jvInitialized;
     private boolean verify;
     private final Runtime.Version version;  // current version
-    private final int versionMajor;         // version.major()
+    private final int versionFeature;         // version.feature()
     private boolean isMultiRelease;         // is jar multi-release?
 
     // indicates if Class-Path attribute present
@@ -170,14 +170,14 @@ class JarFile extends ZipFile {
         JUZFA = jdk.internal.misc.SharedSecrets.getJavaUtilZipFileAccess();
         // multi-release jar file versions >= 9
         BASE_VERSION = Runtime.Version.parse(Integer.toString(8));
-        BASE_VERSION_MAJOR = BASE_VERSION.major();
+        BASE_VERSION_FEATURE = BASE_VERSION.feature();
         String jarVersion = GetPropertyAction.privilegedGetProperty("jdk.util.jar.version");
-        int runtimeVersion = Runtime.version().major();
+        int runtimeVersion = Runtime.version().feature();
         if (jarVersion != null) {
             int jarVer = Integer.parseInt(jarVersion);
             runtimeVersion = (jarVer > runtimeVersion)
                     ? runtimeVersion
-                    : Math.max(jarVer, BASE_VERSION_MAJOR);
+                    : Math.max(jarVer, BASE_VERSION_FEATURE);
         }
         RUNTIME_VERSION = Runtime.Version.parse(Integer.toString(runtimeVersion));
         String enableMultiRelease = GetPropertyAction
@@ -224,10 +224,10 @@ class JarFile extends ZipFile {
      * Returns the version that represents the effective runtime versioned
      * configuration of a multi-release jar file.
      * <p>
-     * By default the major version number of the returned {@code Version} will
-     * be equal to the major version number of {@code Runtime.version()}.
+     * By default the feature version number of the returned {@code Version} will
+     * be equal to the feature version number of {@code Runtime.version()}.
      * However, if the {@code jdk.util.jar.version} property is set, the
-     * returned {@code Version} is derived from that property and major version
+     * returned {@code Version} is derived from that property and feature version
      * numbers may not be equal.
      *
      * @return the version that represents the runtime versioned configuration
@@ -322,7 +322,7 @@ class JarFile extends ZipFile {
      * <p>
      * The canonical form derived from the version parameter is
      * {@code Runtime.Version.parse(Integer.toString(n))} where {@code n} is
-     * {@code Math.max(version.major(), JarFile.baseVersion().major())}.
+     * {@code Math.max(version.feature(), JarFile.baseVersion().feature())}.
      *
      * @param file the jar file to be opened for reading
      * @param verify whether or not to verify the jar file if
@@ -341,17 +341,17 @@ class JarFile extends ZipFile {
         super(file, mode);
         this.verify = verify;
         Objects.requireNonNull(version);
-        if (MULTI_RELEASE_FORCED || version.major() == RUNTIME_VERSION.major()) {
+        if (MULTI_RELEASE_FORCED || version.feature() == RUNTIME_VERSION.feature()) {
             // This deals with the common case where the value from JarFile.runtimeVersion() is passed
             this.version = RUNTIME_VERSION;
-        } else if (version.major() <= BASE_VERSION_MAJOR) {
+        } else if (version.feature() <= BASE_VERSION_FEATURE) {
             // This also deals with the common case where the value from JarFile.baseVersion() is passed
             this.version = BASE_VERSION;
         } else {
             // Canonicalize
-            this.version = Runtime.Version.parse(Integer.toString(version.major()));
+            this.version = Runtime.Version.parse(Integer.toString(version.feature()));
         }
-        this.versionMajor = this.version.major();
+        this.versionFeature = this.version.feature();
     }
 
     /**
@@ -579,7 +579,7 @@ class JarFile extends ZipFile {
                 // filter out dir META-INF/versions/ and META-INF/versions/*/
                 // and any entry with version > 'version'
                 if (index == -1 || index == (name.length() - 1) ||
-                    Integer.parseInt(name, off, index, 10) > versionMajor) {
+                    Integer.parseInt(name, off, index, 10) > versionFeature) {
                     return null;
                 }
             } catch (NumberFormatException x) {
@@ -592,11 +592,11 @@ class JarFile extends ZipFile {
     }
 
     private JarEntry getVersionedEntry(String name, JarEntry je) {
-        if (BASE_VERSION_MAJOR < versionMajor) {
+        if (BASE_VERSION_FEATURE < versionFeature) {
             if (!name.startsWith(META_INF)) {
                 // search for versioned entry
-                int v = versionMajor;
-                while (v > BASE_VERSION_MAJOR) {
+                int v = versionFeature;
+                while (v > BASE_VERSION_FEATURE) {
                     JarFileEntry vje = getEntry0(META_INF_VERSIONS + v + "/" + name);
                     if (vje != null) {
                         return vje.withBasename(name);
@@ -673,7 +673,7 @@ class JarFile extends ZipFile {
         }
 
         JarFileEntry realEntry() {
-            if (isMultiRelease() && versionMajor != BASE_VERSION_MAJOR) {
+            if (isMultiRelease() && versionFeature != BASE_VERSION_FEATURE) {
                 String entryName = super.getName();
                 return entryName == basename || entryName.equals(basename) ?
                         this : new JarFileEntry(entryName, this);

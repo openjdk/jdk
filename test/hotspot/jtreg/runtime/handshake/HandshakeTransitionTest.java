@@ -49,6 +49,14 @@ public class HandshakeTransitionTest {
     public static void main(String[] args) throws Exception {
         String lib = System.getProperty("test.nativepath");
         WhiteBox wb = WhiteBox.getWhiteBox();
+        Boolean useJVMCICompiler = wb.getBooleanVMFlag("UseJVMCICompiler");
+        String useJVMCICompilerStr;
+        if (useJVMCICompiler != null) {
+            useJVMCICompilerStr = useJVMCICompiler ?  "-XX:+UseJVMCICompiler" : "-XX:-UseJVMCICompiler";
+        } else {
+            // pass something innocuous
+            useJVMCICompilerStr = "-XX:+UnlockExperimentalVMOptions";
+        }
         ProcessBuilder pb =
             ProcessTools.createJavaProcessBuilder(
                     true,
@@ -60,7 +68,7 @@ public class HandshakeTransitionTest {
                     "-XX:ConcGCThreads=1",
                     "-XX:CICompilerCount=2",
                     "-XX:+UnlockExperimentalVMOptions",
-                    (wb.getBooleanVMFlag("UseJVMCICompiler") ?  "-XX:+UseJVMCICompiler" : "-XX:-UseJVMCICompiler"),
+                    useJVMCICompilerStr,
                     "HandshakeTransitionTest$Test");
 
 

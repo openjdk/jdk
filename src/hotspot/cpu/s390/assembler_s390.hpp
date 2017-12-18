@@ -1459,6 +1459,10 @@ class Assembler : public AbstractAssembler {
     bcondLogNotZero          =  bcondLogNotZero_Carry | bcondLogNotZero_NoCarry,
     bcondLogCarry            =  bcondLogZero_Carry | bcondLogNotZero_Carry,
     bcondLogBorrow           =  /* bcondLogZero_Borrow | */ bcondLogNotZero_Borrow,
+    // Vector compare instructions
+    bcondVAlltrue    =  8,  // All  vector elements evaluate true
+    bcondVMixed      =  4,  // Some vector elements evaluate true, some false
+    bcondVAllfalse   =  1,  // All  vector elements evaluate false
     // string search instructions
     bcondFound       =  4,
     bcondNotFound    =  2,
@@ -3021,6 +3025,12 @@ class Assembler : public AbstractAssembler {
 
   inline void z_btrue( Label& L);
   inline void z_bfalse(Label& L);
+
+  inline void z_bvat(Label& L);   // all true
+  inline void z_bvnt(Label& L);   // not all true (mixed or all false)
+  inline void z_bvmix(Label& L);  // mixed true and false
+  inline void z_bvaf(Label& L);   // not all false (mixed or all true)
+  inline void z_bvnf(Label& L);   // all false
 
   inline void z_brno( Label& L);
 

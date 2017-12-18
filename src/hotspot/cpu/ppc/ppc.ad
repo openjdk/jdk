@@ -1577,11 +1577,10 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (method_needs_polling) {
-    if (LoadPollAddressFromThread) {
-      // TODO: PPC port __ ld(polling_page, in_bytes(JavaThread::poll_address_offset()), R16_thread);
-      Unimplemented();
+    if (SafepointMechanism::uses_thread_local_poll()) {
+      __ ld(polling_page, in_bytes(JavaThread::polling_page_offset()), R16_thread);
     } else {
-      __ load_const_optimized(polling_page, (long)(address) os::get_polling_page()); // TODO: PPC port: get_standard_polling_page()
+      __ load_const_optimized(polling_page, (long)(address) os::get_polling_page());
     }
   }
 
@@ -14147,7 +14146,6 @@ instruct repl2L_immIminus1(vecX dst, immI_minus1 src) %{
 
 instruct safePoint_poll(iRegPdst poll) %{
   match(SafePoint poll);
-  predicate(LoadPollAddressFromThread);
 
   // It caused problems to add the effect that r0 is killed, but this
   // effect no longer needs to be mentioned, since r0 is not contained
@@ -14155,24 +14153,6 @@ instruct safePoint_poll(iRegPdst poll) %{
 
   format %{ "LD      R0, #0, $poll \t// Safepoint poll for GC" %}
   size(4);
-  ins_encode( enc_poll(0x0, poll) );
-  ins_pipe(pipe_class_default);
-%}
-
-// Safepoint without per-thread support. Load address of page to poll
-// as constant.
-// Rscratch2RegP is R12.
-// LoadConPollAddr node is added in pd_post_matching_hook(). It must be
-// a seperate node so that the oop map is at the right location.
-instruct safePoint_poll_conPollAddr(rscratch2RegP poll) %{
-  match(SafePoint poll);
-  predicate(!LoadPollAddressFromThread);
-
-  // It caused problems to add the effect that r0 is killed, but this
-  // effect no longer needs to be mentioned, since r0 is not contained
-  // in a reg_class.
-
-  format %{ "LD      R0, #0, R12 \t// Safepoint poll for GC" %}
   ins_encode( enc_poll(0x0, poll) );
   ins_pipe(pipe_class_default);
 %}

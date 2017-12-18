@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public class AboutDialog extends InternalDialog {
     }
 
     private static String getOnlineDocUrl() {
-        String version = Integer.toString(Runtime.version().major());
+        String version = Integer.toString(Runtime.version().feature());
         return Resources.format(Messages.HELP_ABOUT_DIALOG_USER_GUIDE_LINK_URL,
                                 version);
     }

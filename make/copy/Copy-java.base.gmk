@@ -28,24 +28,6 @@ include CopyCommon.gmk
 $(eval $(call IncludeCustomExtension, copy/Copy-java.base.gmk))
 
 ################################################################################
-#
-# Copy exported header files to outputdir.
-#
-TARGETS += \
-    $(INCLUDE_DST_DIR)/jni.h \
-    $(INCLUDE_DST_DIR)/jvmticmlr.h \
-    $(INCLUDE_DST_DIR)/classfile_constants.h \
-    $(INCLUDE_DST_OS_DIR)/jni_md.h \
-    #
-
-$(INCLUDE_DST_DIR)/%.h: $(TOPDIR)/src/java.base/share/native/include/%.h
-	$(call install-file)
-
-$(INCLUDE_DST_OS_DIR)/%.h: \
-    $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include/%.h
-	$(call install-file)
-
-################################################################################
 
 ifneq ($(findstring $(OPENJDK_TARGET_OS), windows aix),)
 
@@ -237,9 +219,10 @@ endif
 # different license.
 JDK_LICENSE ?= $(wildcard $(TOPDIR)/LICENSE)
 JDK_NOTICE  ?= $(wildcard $(TOPDIR)/ASSEMBLY_EXCEPTION)
+JDK_ADDITIONAL_LICENSE_INFO  ?= $(wildcard $(TOPDIR)/ADDITIONAL_LICENSE_INFO)
 
 $(eval $(call SetupCopyFiles, COPY_JDK_NOTICES, \
-    FILES := $(JDK_LICENSE) $(JDK_NOTICE), \
+    FILES := $(JDK_LICENSE) $(JDK_NOTICE) $(JDK_ADDITIONAL_LICENSE_INFO), \
     DEST := $(LEGAL_DST_DIR), \
     FLATTEN := true, \
 ))
