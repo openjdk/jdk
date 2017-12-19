@@ -901,10 +901,10 @@ VERSION_PATCH
 VERSION_UPDATE
 VERSION_INTERIM
 VERSION_FEATURE
+COMPANY_NAME
 MACOSX_BUNDLE_ID_BASE
 MACOSX_BUNDLE_NAME_BASE
 HOTSPOT_VM_DISTRO
-COMPANY_NAME
 JDK_RC_PLATFORM_NAME
 PRODUCT_SUFFIX
 PRODUCT_NAME
@@ -1147,6 +1147,7 @@ with_build_number
 with_version_major
 with_version_minor
 with_version_security
+with_vendor_name
 with_version_string
 with_version_pre
 with_version_opt
@@ -2083,6 +2084,7 @@ Optional Packages:
                           compatibility and is ignored
   --with-version-security Deprecated. Option is kept for backwards
                           compatibility and is ignored
+  --with-vendor-name      Set vendor name [not specified]
   --with-version-string   Set version string [calculated]
   --with-version-pre      Set the base part of the version 'PRE' field
                           (pre-release identifier) ['internal']
@@ -5185,7 +5187,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1513206608
+DATE_WHEN_GENERATED=1513702260
 
 ###############################################################################
 #
@@ -25054,6 +25056,21 @@ fi
 
 
 
+
+  # The vendor name, if any
+
+# Check whether --with-vendor-name was given.
+if test "${with_vendor_name+set}" = set; then :
+  withval=$with_vendor_name;
+fi
+
+  if test "x$with_vendor_name" = xyes; then
+    as_fn_error $? "--with-vendor-name must have a value" "$LINENO" 5
+  elif  ! [[ $with_vendor_name =~ ^[[:print:]]*$ ]] ; then
+    as_fn_error $? "--with--vendor-name contains non-printing characters: $with_vendor_name" "$LINENO" 5
+  else
+    COMPANY_NAME="$with_vendor_name"
+  fi
 
 
   # Override version from arguments
