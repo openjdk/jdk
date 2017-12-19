@@ -193,6 +193,26 @@ public class ClassReader {
     int[] parameterNameIndices;
 
     /**
+     * A table to hold annotations for method parameters.
+     */
+    ParameterAnnotations[] parameterAnnotations;
+
+    /**
+     * A holder for parameter annotations.
+     */
+    static class ParameterAnnotations {
+        List<CompoundAnnotationProxy> proxies;
+
+        void add(List<CompoundAnnotationProxy> newAnnotations) {
+            if (proxies == null) {
+                proxies = newAnnotations;
+            } else {
+                proxies = proxies.prependList(newAnnotations);
+            }
+        }
+    }
+
+    /**
      * Whether or not any parameter names have been found.
      */
     boolean haveParameterNameIndices;
@@ -1218,7 +1238,7 @@ public class ClassReader {
 
             new AttributeReader(names.RuntimeInvisibleParameterAnnotations, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
-                    attachParameterAnnotations(sym);
+                    readParameterAnnotations(sym);
                 }
             },
 
@@ -1230,7 +1250,7 @@ public class ClassReader {
 
             new AttributeReader(names.RuntimeVisibleParameterAnnotations, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
-                    attachParameterAnnotations(sym);
+                    readParameterAnnotations(sym);
                 }
             },
 
@@ -1288,10 +1308,14 @@ public class ClassReader {
                         int numEntries = nextByte();
                         parameterNameIndices = new int[numEntries];
                         haveParameterNameIndices = true;
+                        int index = 0;
                         for (int i = 0; i < numEntries; i++) {
                             int nameIndex = nextChar();
                             int flags = nextChar();
-                            parameterNameIndices[i] = nameIndex;
+                            if ((flags & (Flags.MANDATED | Flags.SYNTHETIC)) != 0) {
+                                continue;
+                            }
+                            parameterNameIndices[index++] = nameIndex;
                         }
                     }
                     bp = newbp;
@@ -1571,65 +1595,82 @@ public class ClassReader {
  * Reading Java-language annotations
  ***********************************************************************/
 
+    /**
+     * Save annotations.
+     */
+    List<CompoundAnnotationProxy> readAnnotations() {
+        int numAttributes = nextChar();
+        ListBuffer<CompoundAnnotationProxy> annotations = new ListBuffer<>();
+        for (int i = 0; i < numAttributes; i++) {
+            annotations.append(readCompoundAnnotation());
+        }
+        return annotations.toList();
+    }
+
     /** Attach annotations.
      */
     void attachAnnotations(final Symbol sym) {
-        int numAttributes = nextChar();
-        if (numAttributes != 0) {
-            ListBuffer<CompoundAnnotationProxy> proxies = new ListBuffer<>();
-            for (int i = 0; i<numAttributes; i++) {
-                CompoundAnnotationProxy proxy = readCompoundAnnotation();
-                if (proxy.type.tsym == syms.proprietaryType.tsym)
-                    sym.flags_field |= PROPRIETARY;
-                else if (proxy.type.tsym == syms.profileType.tsym) {
-                    if (profile != Profile.DEFAULT) {
-                        for (Pair<Name,Attribute> v: proxy.values) {
-                            if (v.fst == names.value && v.snd instanceof Attribute.Constant) {
-                                Attribute.Constant c = (Attribute.Constant) v.snd;
-                                if (c.type == syms.intType && ((Integer) c.value) > profile.value) {
-                                    sym.flags_field |= NOT_IN_PROFILE;
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    if (proxy.type.tsym == syms.annotationTargetType.tsym) {
-                        target = proxy;
-                    } else if (proxy.type.tsym == syms.repeatableType.tsym) {
-                        repeatable = proxy;
-                    } else if (proxy.type.tsym == syms.deprecatedType.tsym) {
-                        sym.flags_field |= (DEPRECATED | DEPRECATED_ANNOTATION);
-                        for (Pair<Name, Attribute> v : proxy.values) {
-                            if (v.fst == names.forRemoval && v.snd instanceof Attribute.Constant) {
-                                Attribute.Constant c = (Attribute.Constant) v.snd;
-                                if (c.type == syms.booleanType && ((Integer) c.value) != 0) {
-                                    sym.flags_field |= DEPRECATED_REMOVAL;
-                                }
-                            }
-                        }
-                    }
-
-                    proxies.append(proxy);
-                }
-            }
-            annotate.normal(new AnnotationCompleter(sym, proxies.toList()));
-        }
+        attachAnnotations(sym, readAnnotations());
     }
 
-    /** Attach parameter annotations.
+    /**
+     * Attach annotations.
      */
-    void attachParameterAnnotations(final Symbol method) {
-        final MethodSymbol meth = (MethodSymbol)method;
-        int numParameters = buf[bp++] & 0xFF;
-        List<VarSymbol> parameters = meth.params();
-        int pnum = 0;
-        while (parameters.tail != null) {
-            attachAnnotations(parameters.head);
-            parameters = parameters.tail;
-            pnum++;
+    void attachAnnotations(final Symbol sym, List<CompoundAnnotationProxy> annotations) {
+        if (annotations.isEmpty()) {
+            return;
         }
-        if (pnum != numParameters) {
+        ListBuffer<CompoundAnnotationProxy> proxies = new ListBuffer<>();
+        for (CompoundAnnotationProxy proxy : annotations) {
+            if (proxy.type.tsym == syms.proprietaryType.tsym)
+                sym.flags_field |= PROPRIETARY;
+            else if (proxy.type.tsym == syms.profileType.tsym) {
+                if (profile != Profile.DEFAULT) {
+                    for (Pair<Name, Attribute> v : proxy.values) {
+                        if (v.fst == names.value && v.snd instanceof Attribute.Constant) {
+                            Attribute.Constant c = (Attribute.Constant)v.snd;
+                            if (c.type == syms.intType && ((Integer)c.value) > profile.value) {
+                                sym.flags_field |= NOT_IN_PROFILE;
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (proxy.type.tsym == syms.annotationTargetType.tsym) {
+                    target = proxy;
+                } else if (proxy.type.tsym == syms.repeatableType.tsym) {
+                    repeatable = proxy;
+                } else if (proxy.type.tsym == syms.deprecatedType.tsym) {
+                    sym.flags_field |= (DEPRECATED | DEPRECATED_ANNOTATION);
+                    for (Pair<Name, Attribute> v : proxy.values) {
+                        if (v.fst == names.forRemoval && v.snd instanceof Attribute.Constant) {
+                            Attribute.Constant c = (Attribute.Constant)v.snd;
+                            if (c.type == syms.booleanType && ((Integer)c.value) != 0) {
+                                sym.flags_field |= DEPRECATED_REMOVAL;
+                            }
+                        }
+                    }
+                }
+                proxies.append(proxy);
+            }
+        }
+        annotate.normal(new AnnotationCompleter(sym, proxies.toList()));
+    }
+
+    /** Read parameter annotations.
+     */
+    void readParameterAnnotations(Symbol meth) {
+        int numParameters = buf[bp++] & 0xFF;
+        if (parameterAnnotations == null) {
+            parameterAnnotations = new ParameterAnnotations[numParameters];
+        } else if (parameterAnnotations.length != numParameters) {
             throw badClassFile("bad.runtime.invisible.param.annotations", meth);
+        }
+        for (int pnum = 0; pnum < numParameters; pnum++) {
+            if (parameterAnnotations[pnum] == null) {
+                parameterAnnotations[pnum] = new ParameterAnnotations();
+            }
+            parameterAnnotations[pnum].add(readAnnotations());
         }
     }
 
@@ -2394,8 +2435,7 @@ public class ClassReader {
         } finally {
             currentOwner = prevOwner;
         }
-        if (saveParameterNames)
-            setParameterNames(m, type);
+        setParameters(m, type);
 
         if ((flags & VARARGS) != 0) {
             final Type last = type.getParameterTypes().last();
@@ -2448,22 +2488,17 @@ public class ClassReader {
     }
 
     /**
-     * Set the parameter names for a symbol from the name index in the
-     * parameterNameIndicies array. The type of the symbol may have changed
-     * while reading the method attributes (see the Signature attribute).
-     * This may be because of generic information or because anonymous
-     * synthetic parameters were added.   The original type (as read from
-     * the method descriptor) is used to help guess the existence of
+     * Set the parameters for a method symbol, including any names and
+     * annotations that were read.
+     *
+     * <p>The type of the symbol may have changed while reading the
+     * method attributes (see the Signature attribute). This may be
+     * because of generic information or because anonymous synthetic
+     * parameters were added.   The original type (as read from the
+     * method descriptor) is used to help guess the existence of
      * anonymous synthetic parameters.
-     * On completion, sym.savedParameter names will either be null (if
-     * no parameter names were found in the class file) or will be set to a
-     * list of names, one per entry in sym.type.getParameterTypes, with
-     * any missing names represented by the empty name.
      */
-    void setParameterNames(MethodSymbol sym, Type jvmType) {
-        // if no names were found in the class file, there's nothing more to do
-        if (!haveParameterNameIndices)
-            return;
+    void setParameters(MethodSymbol sym, Type jvmType) {
         // If we get parameter names from MethodParameters, then we
         // don't need to skip.
         int firstParam = 0;
@@ -2474,16 +2509,16 @@ public class ClassReader {
             // make a corresponding allowance here for the position of
             // the first parameter.  Note that this assumes the
             // skipped parameter has a width of 1 -- i.e. it is not
-        // a double width type (long or double.)
-        if (sym.name == names.init && currentOwner.hasOuterInstance()) {
-            // Sometimes anonymous classes don't have an outer
-            // instance, however, there is no reliable way to tell so
-            // we never strip this$n
-            if (!currentOwner.name.isEmpty())
-                firstParam += 1;
-        }
+            // a double width type (long or double.)
+            if (sym.name == names.init && currentOwner.hasOuterInstance()) {
+                // Sometimes anonymous classes don't have an outer
+                // instance, however, there is no reliable way to tell so
+                // we never strip this$n
+                if (!currentOwner.name.isEmpty())
+                    firstParam += 1;
+            }
 
-        if (sym.type != jvmType) {
+            if (sym.type != jvmType) {
                 // reading the method attributes has caused the
                 // symbol's type to be changed. (i.e. the Signature
                 // attribute.)  This may happen if there are hidden
@@ -2493,21 +2528,55 @@ public class ClassReader {
                 // at the beginning, and so skip over them. The
                 // primary case for this is two hidden parameters
                 // passed into Enum constructors.
-            int skip = Code.width(jvmType.getParameterTypes())
-                    - Code.width(sym.type.getParameterTypes());
-            firstParam += skip;
-        }
+                int skip = Code.width(jvmType.getParameterTypes())
+                        - Code.width(sym.type.getParameterTypes());
+                firstParam += skip;
+            }
         }
         List<Name> paramNames = List.nil();
-        int index = firstParam;
+        ListBuffer<VarSymbol> params = new ListBuffer<>();
+        int nameIndex = firstParam;
+        int annotationIndex = 0;
         for (Type t: sym.type.getParameterTypes()) {
-            int nameIdx = (index < parameterNameIndices.length
-                    ? parameterNameIndices[index] : 0);
-            Name name = nameIdx == 0 ? names.empty : readName(nameIdx);
+            Name name = parameterName(nameIndex, paramNames);
             paramNames = paramNames.prepend(name);
-            index += sawMethodParameters ? 1 : Code.width(t);
+            VarSymbol param = new VarSymbol(PARAMETER, name, t, sym);
+            params.append(param);
+            if (parameterAnnotations != null) {
+                ParameterAnnotations annotations = parameterAnnotations[annotationIndex];
+                if (annotations != null && annotations.proxies != null
+                        && !annotations.proxies.isEmpty()) {
+                    annotate.normal(new AnnotationCompleter(param, annotations.proxies));
+                }
+            }
+            nameIndex += sawMethodParameters ? 1 : Code.width(t);
+            annotationIndex++;
         }
-        sym.savedParameterNames = paramNames.reverse();
+        if (parameterAnnotations != null && parameterAnnotations.length != annotationIndex) {
+            throw badClassFile("bad.runtime.invisible.param.annotations", sym);
+        }
+        Assert.checkNull(sym.params);
+        sym.params = params.toList();
+        parameterAnnotations = null;
+        parameterNameIndices = null;
+    }
+
+
+    // Returns the name for the parameter at position 'index', either using
+    // names read from the MethodParameters, or by synthesizing a name that
+    // is not on the 'exclude' list.
+    private Name parameterName(int index, List<Name> exclude) {
+        if (parameterNameIndices != null && index < parameterNameIndices.length
+                && parameterNameIndices[index] != 0) {
+            return readName(parameterNameIndices[index]);
+        }
+        String prefix = "arg";
+        while (true) {
+            Name argName = names.fromString(prefix + exclude.size());
+            if (!exclude.contains(argName))
+                return argName;
+            prefix += "$";
+        }
     }
 
     /**
