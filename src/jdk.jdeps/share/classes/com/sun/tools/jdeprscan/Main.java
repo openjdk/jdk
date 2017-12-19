@@ -106,7 +106,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
     // Keep these updated manually until there's a compiler API
     // that allows querying of supported releases.
     final Set<String> releasesWithoutForRemoval = Set.of("6", "7", "8");
-    final Set<String> releasesWithForRemoval = Set.of("9", "10");
+    final Set<String> releasesWithForRemoval = Set.of("9", "10", "11");
 
     final Set<String> validReleases;
     {
@@ -358,14 +358,15 @@ public class Main implements DiagnosticListener<JavaFileObject> {
      * Process classes from a particular JDK release, using only information
      * in this JDK.
      *
-     * @param release "6", "7", "8", "9", or "10"
+     * @param release "6", "7", "8", "9", "10", or "11"
      * @param classes collection of classes to process, may be empty
      * @return success value
      */
     boolean processRelease(String release, Collection<String> classes) throws IOException {
         options.addAll(List.of("--release", release));
 
-        if (release.equals("9") || release.equals("10")) {
+        if (release.equals("9") || release.equals("10") ||
+            release.equals("11")) {
             List<String> rootMods = List.of("java.se", "java.se.ee");
             TraverseProc proc = new TraverseProc(rootMods);
             JavaCompiler.CompilationTask task =
@@ -481,7 +482,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
         String dir = null;
         String jar = null;
         String jdkHome = null;
-        String release = "10";
+        String release = "11";
         List<String> loadClasses = new ArrayList<>();
         String csvFile = null;
 
