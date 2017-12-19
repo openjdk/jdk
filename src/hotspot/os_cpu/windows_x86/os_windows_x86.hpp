@@ -29,32 +29,32 @@
   // NOTE: we are back in class os here, not win32
   //
 #ifdef AMD64
-  static jint      (*atomic_xchg_func)          (jint,      volatile jint*);
-  static intptr_t  (*atomic_xchg_long_func)     (jlong,     volatile jlong*);
+  static int32_t   (*atomic_xchg_func)          (int32_t, volatile int32_t*);
+  static int64_t   (*atomic_xchg_long_func)     (int64_t, volatile int64_t*);
 
-  static jint      (*atomic_cmpxchg_func)       (jint,      volatile jint*,  jint);
-  static jbyte     (*atomic_cmpxchg_byte_func)  (jbyte,     volatile jbyte*, jbyte);
-  static jlong     (*atomic_cmpxchg_long_func)  (jlong,     volatile jlong*, jlong);
+  static int32_t   (*atomic_cmpxchg_func)       (int32_t,  volatile int32_t*, int32_t);
+  static int8_t    (*atomic_cmpxchg_byte_func)  (int8_t,   volatile int8_t*,  int8_t);
+  static int64_t   (*atomic_cmpxchg_long_func)  (int64_t,  volatile int64_t*, int64_t);
 
-  static jint      (*atomic_add_func)           (jint,      volatile jint*);
-  static intptr_t  (*atomic_add_ptr_func)       (intptr_t,  volatile intptr_t*);
+  static int32_t   (*atomic_add_func)           (int32_t,  volatile int32_t*);
+  static int64_t   (*atomic_add_long_func)      (int64_t,  volatile int64_t*);
 
-  static jint      atomic_xchg_bootstrap        (jint,      volatile jint*);
-  static intptr_t  atomic_xchg_long_bootstrap   (jlong,     volatile jlong*);
+  static int32_t   atomic_xchg_bootstrap        (int32_t,  volatile int32_t*);
+  static int64_t   atomic_xchg_long_bootstrap   (int64_t,  volatile int64_t*);
 
-  static jint      atomic_cmpxchg_bootstrap     (jint,      volatile jint*,  jint);
-  static jbyte     atomic_cmpxchg_byte_bootstrap(jbyte,     volatile jbyte*, jbyte);
+  static int32_t   atomic_cmpxchg_bootstrap     (int32_t,  volatile int32_t*, int32_t);
+  static int8_t    atomic_cmpxchg_byte_bootstrap(int8_t,   volatile int8_t*,  int8_t);
 #else
 
-  static jlong (*atomic_cmpxchg_long_func)  (jlong, volatile jlong*, jlong);
+  static int64_t (*atomic_cmpxchg_long_func)  (int64_t, volatile int64_t*, int64_t);
 
 #endif // AMD64
 
-  static jlong atomic_cmpxchg_long_bootstrap(jlong, volatile jlong*, jlong);
+  static int64_t atomic_cmpxchg_long_bootstrap(int64_t, volatile int64_t*, int64_t);
 
 #ifdef AMD64
-  static jint      atomic_add_bootstrap         (jint,      volatile jint*);
-  static intptr_t  atomic_add_ptr_bootstrap     (intptr_t,  volatile intptr_t*);
+  static int32_t  atomic_add_bootstrap         (int32_t,  volatile int32_t*);
+  static int64_t  atomic_add_long_bootstrap    (int64_t,  volatile int64_t*);
 #endif // AMD64
 
   static void setup_fpu();
