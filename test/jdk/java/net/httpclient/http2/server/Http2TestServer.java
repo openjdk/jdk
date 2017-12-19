@@ -170,7 +170,7 @@ public class Http2TestServer implements AutoCloseable {
         return new ServerSocket(port);
     }
 
-    public void stop() {
+    public synchronized void stop() {
         // TODO: clean shutdown GoAway
         stopping = true;
         System.err.printf("Server stopping %d connections\n", connections.size());
@@ -205,6 +205,15 @@ public class Http2TestServer implements AutoCloseable {
         return serverName;
     }
 
+    private synchronized void putConnection(InetSocketAddress addr, Http2TestServerConnection c) {
+        if (!stopping)
+            connections.put(addr, c);
+    }
+
+    private synchronized void removeConnection(InetSocketAddress addr, Http2TestServerConnection c) {
+        connections.remove(addr, c);
+    }
+
     /**
      * Starts a thread which waits for incoming connections.
      */
@@ -216,7 +225,7 @@ public class Http2TestServer implements AutoCloseable {
                     InetSocketAddress addr = (InetSocketAddress) socket.getRemoteSocketAddress();
                     Http2TestServerConnection c =
                             new Http2TestServerConnection(this, socket, exchangeSupplier);
-                    connections.put(addr, c);
+                    putConnection(addr, c);
                     try {
                         c.run();
                     } catch (Throwable e) {
@@ -224,7 +233,7 @@ public class Http2TestServer implements AutoCloseable {
                         // the connection might not have been closed
                         // and if so then the client might wait
                         // forever.
-                        connections.remove(addr, c);
+                        removeConnection(addr, c);
                         c.close(ErrorFrame.PROTOCOL_ERROR);
                         System.err.println("TestServer: start exception: " + e);
                         //throw e;

@@ -84,7 +84,7 @@ class PlainHttpConnection extends HttpConnection {
                 boolean finished = chan.finishConnect();
                 assert finished : "Expected channel to be connected";
                 debug.log(Level.DEBUG,
-                          "ConnectEvent: connect finished: %s", finished);
+                          "ConnectEvent: connect finished: %s Local addr: %s", finished, chan.getLocalAddress());
                 connected = true;
                 // complete async since the event runs on the SelectorManager thread
                 cf.completeAsync(() -> null, client().theExecutor());
