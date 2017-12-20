@@ -3404,7 +3404,6 @@ void TemplateTable::_new() {
   Label done;
   Label initialize_header;
   Label initialize_object; // including clearing the fields
-  Label allocate_shared;
 
   __ get_cpool_and_tags(r4, r0);
   // Make sure the class we're about to instantiate has been resolved.
@@ -3433,18 +3432,24 @@ void TemplateTable::_new() {
   // test to see if it has a finalizer or is malformed in some way
   __ tbnz(r3, exact_log2(Klass::_lh_instance_slow_path_bit), slow_case);
 
-  // Allocate the instance
-  // 1) Try to allocate in the TLAB
-  // 2) if fail and the object is large allocate in the shared Eden
-  // 3) if the above fails (or is not applicable), go to a slow case
-  // (creates a new TLAB, etc.)
-
+  // Allocate the instance:
+  //  If TLAB is enabled:
+  //    Try to allocate in the TLAB.
+  //    If fails, go to the slow path.
+  //  Else If inline contiguous allocations are enabled:
+  //    Try to allocate in eden.
+  //    If fails due to heap end, go to slow path.
+  //
+  //  If TLAB is enabled OR inline contiguous is enabled:
+  //    Initialize the allocation.
+  //    Exit.
+  //
+  //  Go to slow path.
   const bool allow_shared_alloc =
     Universe::heap()->supports_inline_contig_alloc();
 
   if (UseTLAB) {
-    __ tlab_allocate(r0, r3, 0, noreg, r1,
-                     allow_shared_alloc ? allocate_shared : slow_case);
+    __ tlab_allocate(r0, r3, 0, noreg, r1, slow_case);
 
     if (ZeroTLAB) {
       // the fields have been already cleared
@@ -3453,19 +3458,19 @@ void TemplateTable::_new() {
       // initialize both the header and fields
       __ b(initialize_object);
     }
+  } else {
+    // Allocation in the shared Eden, if allowed.
+    //
+    // r3: instance size in bytes
+    if (allow_shared_alloc) {
+      __ eden_allocate(r0, r3, 0, r10, slow_case);
+      __ incr_allocated_bytes(rthread, r3, 0, rscratch1);
+    }
   }
 
-  // Allocation in the shared Eden, if allowed.
-  //
-  // r3: instance size in bytes
-  if (allow_shared_alloc) {
-    __ bind(allocate_shared);
-
-    __ eden_allocate(r0, r3, 0, r10, slow_case);
-    __ incr_allocated_bytes(rthread, r3, 0, rscratch1);
-  }
-
-  if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {
+  // If UseTLAB or allow_shared_alloc are true, the object is created above and
+  // there is an initialize need. Otherwise, skip and go to the slow path.
+  if (UseTLAB || allow_shared_alloc) {
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
     __ bind(initialize_object);
