@@ -826,7 +826,10 @@ JNI_ENTRY_CHECKED(jint,
     }
     jint result = UNCHECKED()->EnsureLocalCapacity(env, capacity);
     if (result == JNI_OK) {
-      add_planned_handle_capacity(thr->active_handles(), capacity);
+      // increase local ref capacity if needed
+      if ((size_t)capacity > thr->active_handles()->get_planned_capacity()) {
+        add_planned_handle_capacity(thr->active_handles(), capacity);
+      }
     }
     functionExit(thr);
     return result;

@@ -26,8 +26,7 @@
  * @test MultiReleaseJars
  * @bug 8170105
  * @summary Test multi-release jar with AppCDS.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
@@ -72,13 +71,14 @@ public class MultiReleaseJars {
         if (contents == null) {
             throw new java.lang.RuntimeException("No input for writing to file" + file);
         }
-        FileOutputStream fos = new FileOutputStream(file);
-        PrintStream ps = new PrintStream(fos);
-        for (String str : contents) {
-            ps.println(str);
+        try (
+             FileOutputStream fos = new FileOutputStream(file);
+             PrintStream ps = new PrintStream(fos)
+        ) {
+            for (String str : contents) {
+                ps.println(str);
+            }
         }
-        ps.close();
-        fos.close();
     }
 
     /* version.jar entries and files:

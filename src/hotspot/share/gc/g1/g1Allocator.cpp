@@ -190,14 +190,12 @@ HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
 
   HeapWord* result = survivor_gc_alloc_region(context)->attempt_allocation(min_word_size,
                                                                            desired_word_size,
-                                                                           actual_word_size,
-                                                                           false /* bot_updates */);
+                                                                           actual_word_size);
   if (result == NULL && !survivor_is_full(context)) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
     result = survivor_gc_alloc_region(context)->attempt_allocation_locked(min_word_size,
                                                                           desired_word_size,
-                                                                          actual_word_size,
-                                                                          false /* bot_updates */);
+                                                                          actual_word_size);
     if (result == NULL) {
       set_survivor_full(context);
     }
@@ -217,14 +215,12 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
 
   HeapWord* result = old_gc_alloc_region(context)->attempt_allocation(min_word_size,
                                                                       desired_word_size,
-                                                                      actual_word_size,
-                                                                      true /* bot_updates */);
+                                                                      actual_word_size);
   if (result == NULL && !old_is_full(context)) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
     result = old_gc_alloc_region(context)->attempt_allocation_locked(min_word_size,
                                                                      desired_word_size,
-                                                                     actual_word_size,
-                                                                     true /* bot_updates */);
+                                                                     actual_word_size);
     if (result == NULL) {
       set_old_full(context);
     }

@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Testing use of UseAppCDS flag
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -108,12 +107,14 @@ public class UseAppCDS {
 
     public static List<String> toClassNames(String filename) throws IOException {
         ArrayList<String> classes = new ArrayList<>();
-        BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filename)));
-        for (; ; ) {
-            String line = br.readLine();
-            if (line == null)
-                break;
-            classes.add(line.replaceAll("/", "."));
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filename)))) {
+            for (; ; ) {
+                String line = br.readLine();
+                if (line == null) {
+                    break;
+                }
+                classes.add(line.replaceAll("/", "."));
+            }
         }
         return classes;
     }

@@ -3473,7 +3473,7 @@ static inline void *prefetch_and_load_ptr(void **addr, intx prefetch_interval) {
              X = (JavaThread*)prefetch_and_load_ptr((void**)MACRO_current_p, (intx)MACRO_scan_interval))
 
 // All JavaThreads
-#define ALL_JAVA_THREADS(X) DO_JAVA_THREADS(ThreadsSMRSupport::get_smr_java_thread_list(), X)
+#define ALL_JAVA_THREADS(X) DO_JAVA_THREADS(ThreadsSMRSupport::get_java_thread_list(), X)
 
 // All JavaThreads + all non-JavaThreads (i.e., every thread in the system)
 void Threads::threads_do(ThreadClosure* tc) {
@@ -4038,9 +4038,16 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
         }
         if (library == NULL) {
           const char *sub_msg = " on the library path, with error: ";
-          size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;
+          const char *sub_msg2 = "\nModule java.instrument may be missing from runtime image.";
+
+          size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) +
+                       strlen(ebuf) + strlen(sub_msg2) + 1;
           char *buf = NEW_C_HEAP_ARRAY(char, len, mtThread);
-          jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
+          if (!agent->is_instrument_lib()) {
+            jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
+          } else {
+            jio_snprintf(buf, len, "%s%s%s%s%s", msg, name, sub_msg, ebuf, sub_msg2);
+          }
           // If we can't find the agent, exit.
           vm_exit_during_initialization(buf, NULL);
           FREE_C_HEAP_ARRAY(char, buf);
@@ -4382,7 +4389,7 @@ void Threads::remove(JavaThread* p) {
   // that we do not remove thread without safepoint code notice
   { MutexLocker ml(Threads_lock);
 
-    assert(ThreadsSMRSupport::get_smr_java_thread_list()->includes(p), "p must be present");
+    assert(ThreadsSMRSupport::get_java_thread_list()->includes(p), "p must be present");
 
     // Maintain fast thread list
     ThreadsSMRSupport::remove_thread(p);
@@ -4610,7 +4617,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   }
 #endif // INCLUDE_SERVICES
 
-  ThreadsSMRSupport::print_smr_info_on(st);
+  ThreadsSMRSupport::print_info_on(st);
   st->cr();
 
   ALL_JAVA_THREADS(p) {
@@ -4679,7 +4686,7 @@ class PrintOnErrorClosure : public ThreadClosure {
 // memory (even in resource area), it might deadlock the error handler.
 void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
                              int buflen) {
-  ThreadsSMRSupport::print_smr_info_on(st);
+  ThreadsSMRSupport::print_info_on(st);
   st->cr();
 
   bool found_current = false;

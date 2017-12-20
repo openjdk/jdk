@@ -103,12 +103,11 @@ class StubRoutines: AllStatic {
   static address _atomic_xchg_entry;
   static address _atomic_xchg_long_entry;
   static address _atomic_store_entry;
-  static address _atomic_store_ptr_entry;
   static address _atomic_cmpxchg_entry;
   static address _atomic_cmpxchg_byte_entry;
   static address _atomic_cmpxchg_long_entry;
   static address _atomic_add_entry;
-  static address _atomic_add_ptr_entry;
+  static address _atomic_add_long_entry;
   static address _fence_entry;
   static address _d2i_wrapper;
   static address _d2l_wrapper;
@@ -277,12 +276,11 @@ class StubRoutines: AllStatic {
   static address atomic_xchg_entry()                       { return _atomic_xchg_entry; }
   static address atomic_xchg_long_entry()                  { return _atomic_xchg_long_entry; }
   static address atomic_store_entry()                      { return _atomic_store_entry; }
-  static address atomic_store_ptr_entry()                  { return _atomic_store_ptr_entry; }
   static address atomic_cmpxchg_entry()                    { return _atomic_cmpxchg_entry; }
   static address atomic_cmpxchg_byte_entry()               { return _atomic_cmpxchg_byte_entry; }
   static address atomic_cmpxchg_long_entry()               { return _atomic_cmpxchg_long_entry; }
   static address atomic_add_entry()                        { return _atomic_add_entry; }
-  static address atomic_add_ptr_entry()                    { return _atomic_add_ptr_entry; }
+  static address atomic_add_long_entry()                   { return _atomic_add_long_entry; }
   static address fence_entry()                             { return _fence_entry; }
 
   static address d2i_wrapper()                             { return _d2i_wrapper; }

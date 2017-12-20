@@ -27,7 +27,7 @@
  * @summary Exercise the java.lang.instrument.Instrumentation APIs on classes archived
  *          using CDS/AppCDSv1/AppCDSv2.
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/test-classes
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.flavor != "minimal"
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
@@ -182,9 +182,9 @@ public class InstrumentationTest {
         // We use the flagFile to prevent the child process to make progress, until we have
         // attached to it.
         File f = new File(flagFile);
-        FileOutputStream o = new FileOutputStream(f);
-        o.write(1);
-        o.close();
+        try (FileOutputStream o = new FileOutputStream(f)) {
+            o.write(1);
+        }
         if (!f.exists()) {
             throw new RuntimeException("Failed to create " + f);
         }

@@ -24,8 +24,8 @@
 
 /*
  * @test CommandLineFlagCombo
- * AppCDS does not support uncompressed oops
- * @requires (vm.gc=="null") & ((vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true))
+ * @requires vm.cds
+ * @requires (vm.gc=="null")
  * @summary Test command line flag combinations that
  *          could likely affect the behaviour of AppCDS
  * @library /test/lib

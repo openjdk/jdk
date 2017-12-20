@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,37 +83,27 @@ private:
   // whether the _alloc_region is NULL or not.
   static HeapRegion* _dummy_region;
 
-  // Some of the methods below take a bot_updates parameter. Its value
-  // should be the same as the _bot_updates field. The idea is that
-  // the parameter will be a constant for a particular alloc region
-  // and, given that these methods will be hopefully inlined, the
-  // compiler should compile out the test.
-
   // Perform a non-MT-safe allocation out of the given region.
-  static inline HeapWord* allocate(HeapRegion* alloc_region,
-                                   size_t word_size,
-                                   bool bot_updates);
+  inline HeapWord* allocate(HeapRegion* alloc_region,
+                            size_t word_size);
 
   // Perform a MT-safe allocation out of the given region.
-  static inline HeapWord* par_allocate(HeapRegion* alloc_region,
-                                       size_t word_size,
-                                       bool bot_updates);
+  inline HeapWord* par_allocate(HeapRegion* alloc_region,
+                                size_t word_size);
   // Perform a MT-safe allocation out of the given region, with the given
   // minimum and desired size. Returns the actual size allocated (between
   // minimum and desired size) in actual_word_size if the allocation has been
   // successful.
-  static inline HeapWord* par_allocate(HeapRegion* alloc_region,
-                                       size_t min_word_size,
-                                       size_t desired_word_size,
-                                       size_t* actual_word_size,
-                                       bool bot_updates);
+  inline HeapWord* par_allocate(HeapRegion* alloc_region,
+                                size_t min_word_size,
+                                size_t desired_word_size,
+                                size_t* actual_word_size);
 
   // Ensure that the region passed as a parameter has been filled up
   // so that noone else can allocate out of it any more.
   // Returns the number of bytes that have been wasted by filled up
   // the space.
-  static size_t fill_up_remaining_space(HeapRegion* alloc_region,
-                                        bool bot_updates);
+  size_t fill_up_remaining_space(HeapRegion* alloc_region);
 
   // After a region is allocated by alloc_new_region, this
   // method is used to set it as the active alloc_region
@@ -160,8 +150,7 @@ public:
   // First-level allocation: Should be called without holding a
   // lock. It will try to allocate lock-free out of the active region,
   // or return NULL if it was unable to.
-  inline HeapWord* attempt_allocation(size_t word_size,
-                                      bool bot_updates);
+  inline HeapWord* attempt_allocation(size_t word_size);
   // Perform an allocation out of the current allocation region, with the given
   // minimum and desired size. Returns the actual size allocated (between
   // minimum and desired size) in actual_word_size if the allocation has been
@@ -170,8 +159,7 @@ public:
   // out of the active region, or return NULL if it was unable to.
   inline HeapWord* attempt_allocation(size_t min_word_size,
                                       size_t desired_word_size,
-                                      size_t* actual_word_size,
-                                      bool bot_updates);
+                                      size_t* actual_word_size);
 
   // Second-level allocation: Should be called while holding a
   // lock. It will try to first allocate lock-free out of the active
@@ -179,23 +167,20 @@ public:
   // alloc region with a new one. We require that the caller takes the
   // appropriate lock before calling this so that it is easier to make
   // it conform to its locking protocol.
-  inline HeapWord* attempt_allocation_locked(size_t word_size,
-                                             bool bot_updates);
+  inline HeapWord* attempt_allocation_locked(size_t word_size);
   // Same as attempt_allocation_locked(size_t, bool), but allowing specification
   // of minimum word size of the block in min_word_size, and the maximum word
   // size of the allocation in desired_word_size. The actual size of the block is
   // returned in actual_word_size.
   inline HeapWord* attempt_allocation_locked(size_t min_word_size,
                                              size_t desired_word_size,
-                                             size_t* actual_word_size,
-                                             bool bot_updates);
+                                             size_t* actual_word_size);
 
   // Should be called to allocate a new region even if the max of this
   // type of regions has been reached. Should only be called if other
   // allocation attempts have failed and we are not holding a valid
   // active region.
-  inline HeapWord* attempt_allocation_force(size_t word_size,
-                                            bool bot_updates);
+  inline HeapWord* attempt_allocation_force(size_t word_size);
 
   // Should be called before we start using this object.
   void init();
@@ -236,7 +221,7 @@ protected:
   virtual void retire_region(HeapRegion* alloc_region, size_t allocated_bytes);
 
   virtual size_t retire(bool fill_up);
-public:
+
   G1GCAllocRegion(const char* name, bool bot_updates, G1EvacStats* stats, InCSetState::in_cset_state_t purpose)
   : G1AllocRegion(name, bot_updates), _stats(stats), _purpose(purpose) {
     assert(stats != NULL, "Must pass non-NULL PLAB statistics");

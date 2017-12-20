@@ -307,7 +307,7 @@ public class SPARCHotSpotLIRGenerator extends SPARCLIRGenerator implements HotSp
         assert inputKind.getPlatformKind() == XWORD : inputKind;
         if (inputKind.isReference(0)) {
             // oop
-            Variable result = newVariable(LIRKind.reference(WORD));
+            Variable result = newVariable(LIRKind.compressedReference(WORD));
             append(new SPARCHotSpotMove.CompressPointer(result, asAllocatable(pointer), getProviders().getRegisters().getHeapBaseRegister().asValue(), encoding, nonNull));
             return result;
         } else {

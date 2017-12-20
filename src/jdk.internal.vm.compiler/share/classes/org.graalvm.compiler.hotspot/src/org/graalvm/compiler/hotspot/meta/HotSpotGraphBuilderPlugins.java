@@ -46,6 +46,7 @@ import org.graalvm.compiler.hotspot.nodes.CurrentJavaThreadNode;
 import org.graalvm.compiler.hotspot.replacements.AESCryptSubstitutions;
 import org.graalvm.compiler.hotspot.replacements.BigIntegerSubstitutions;
 import org.graalvm.compiler.hotspot.replacements.CRC32Substitutions;
+import org.graalvm.compiler.hotspot.replacements.CRC32CSubstitutions;
 import org.graalvm.compiler.hotspot.replacements.CallSiteTargetNode;
 import org.graalvm.compiler.hotspot.replacements.CipherBlockChainingSubstitutions;
 import org.graalvm.compiler.hotspot.replacements.ClassGetHubNode;
@@ -165,6 +166,7 @@ public class HotSpotGraphBuilderPlugins {
                 registerConstantPoolPlugins(invocationPlugins, wordTypes, config, replacementBytecodeProvider);
                 registerAESPlugins(invocationPlugins, config, replacementBytecodeProvider);
                 registerCRC32Plugins(invocationPlugins, config, replacementBytecodeProvider);
+                registerCRC32CPlugins(invocationPlugins, config, replacementBytecodeProvider);
                 registerBigIntegerPlugins(invocationPlugins, config, replacementBytecodeProvider);
                 registerSHAPlugins(invocationPlugins, config, replacementBytecodeProvider);
                 registerUnsafePlugins(invocationPlugins, replacementBytecodeProvider);
@@ -528,6 +530,14 @@ public class HotSpotGraphBuilderPlugins {
                 r.registerMethodSubstitution(CRC32Substitutions.class, "updateBytes0", int.class, byte[].class, int.class, int.class);
                 r.registerMethodSubstitution(CRC32Substitutions.class, "updateByteBuffer0", int.class, long.class, int.class, int.class);
             }
+        }
+    }
+
+    private static void registerCRC32CPlugins(InvocationPlugins plugins, GraalHotSpotVMConfig config, BytecodeProvider bytecodeProvider) {
+        if (config.useCRC32CIntrinsics) {
+            Registration r = new Registration(plugins, "java.util.zip.CRC32C", bytecodeProvider);
+            r.registerMethodSubstitution(CRC32CSubstitutions.class, "updateBytes", int.class, byte[].class, int.class, int.class);
+            r.registerMethodSubstitution(CRC32CSubstitutions.class, "updateDirectByteBuffer", int.class, long.class, int.class, int.class);
         }
     }
 }

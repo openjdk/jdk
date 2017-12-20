@@ -45,6 +45,7 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.runtime.JVMCICompiler;
 
@@ -142,7 +143,8 @@ public abstract class HotSpotHostBackend extends HotSpotBackend {
 
     @Override
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
-        return new HotSpotReferenceMapBuilder(totalFrameSize, config.maxOopMapStackOffset);
+        int uncompressedReferenceSize = getTarget().arch.getPlatformKind(JavaKind.Object).getSizeInBytes();
+        return new HotSpotReferenceMapBuilder(totalFrameSize, config.maxOopMapStackOffset, uncompressedReferenceSize);
     }
 
 }

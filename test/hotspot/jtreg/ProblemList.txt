@@ -42,6 +42,7 @@
 
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/codecache/stress/OverloadCompileQueueTest.java 8166554 generic-all
+compiler/codegen/Test6896617.java 8193479 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8140405 generic-all
 compiler/jvmci/compilerToVM/GetResolvedJavaTypeTest.java 8158860 generic-all
 compiler/jvmci/compilerToVM/InvalidateInstalledCodeTest.java 8163894 generic-all
@@ -50,6 +51,7 @@ compiler/startup/SmallCodeCacheStartup.java 8134286 generic-all
 compiler/tiered/LevelTransitionTest.java 8067651 generic-all
 compiler/types/correctness/CorrectnessTest.java 8066173 generic-all
 compiler/types/correctness/OffTest.java 8066173 generic-all
+compiler/c2/Test8007294.java 8192992 generic-all
 
 # aot test intermittently failing in jprt 8175791
 compiler/aot/DeoptimizationTest.java 8175791 windows-all
@@ -77,7 +79,6 @@ runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 # This test is disabled since it will stress NMT and timeout during normal testing
 runtime/NMT/MallocStressTest.java 8166548 generic-all
 runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
-runtime/AppCDS/UseAppCDS.java 8165603 windows-all
 
 #############################################################################
 
