@@ -11,9 +11,4 @@ public class HelloWorld {
    * @param args The parameters are ignored.
    */
   public static void main(java.lang.String... args);
-
-  /**
-   * This declaration is for the benefit of javah tests.
-   */
-  public native void test();
 }

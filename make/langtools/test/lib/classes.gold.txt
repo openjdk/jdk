@@ -1,9 +1,4 @@
 META-INF/MANIFEST.MF
-com/sun/tools/apt/Main.class
-com/sun/tools/apt/main/Main.class
-com/sun/tools/apt/resources/apt.class
-com/sun/tools/apt/resources/apt_ja.class
-com/sun/tools/apt/resources/apt_zh_CN.class
 com/sun/tools/doclets/formats/html/resources/standard.class
 com/sun/tools/doclets/formats/html/resources/standard_ja.class
 com/sun/tools/doclets/formats/html/resources/standard_zh_CN.class
@@ -26,13 +21,3 @@ com/sun/tools/javadoc/Main.class
 com/sun/tools/javadoc/resources/javadoc.class
 com/sun/tools/javadoc/resources/javadoc_ja.class
 com/sun/tools/javadoc/resources/javadoc_zh_CN.class
-com/sun/tools/javah/Main.class
-com/sun/tools/javah/resources/Linux_ppc.class
-com/sun/tools/javah/resources/Linux_sparc.class
-com/sun/tools/javah/resources/SunOS_sparc.class
-com/sun/tools/javah/resources/SunOS_sparcv9.class
-com/sun/tools/javah/resources/l10n.class
-com/sun/tools/javah/resources/l10n_ja.class
-com/sun/tools/javah/resources/l10n_zh_CN.class
-com/sun/tools/javah/resources/win32_x86.class
-sun/tools/javap/Main.class
