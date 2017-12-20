@@ -112,7 +112,7 @@ final class Splitter extends SimpleNodeVisitor implements Loggable {
         assert lc.isEmpty() : "LexicalContext not empty";
 
         if (weight >= SPLIT_THRESHOLD) {
-            log.info("Splitting '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
+            log.info("Splitting function '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
             functionNode = (FunctionNode)functionNode.accept(this);
 
             if (functionNode.isSplit()) {
@@ -287,7 +287,7 @@ final class Splitter extends SimpleNodeVisitor implements Loggable {
     @SuppressWarnings("rawtypes")
     @Override
     public Node leaveLiteralNode(final LiteralNode literal) {
-        long weight = WeighNodes.weigh(literal);
+        final long weight = WeighNodes.weigh(literal);
 
         if (weight < SPLIT_THRESHOLD) {
             return literal;
@@ -310,14 +310,14 @@ final class Splitter extends SimpleNodeVisitor implements Loggable {
                 final int  postset = postsets[i];
                 final Node element = value[postset];
 
-                weight = WeighNodes.weigh(element);
-                totalWeight += WeighNodes.AASTORE_WEIGHT + weight;
+                final long elementWeight = WeighNodes.weigh(element);
+                totalWeight += WeighNodes.AASTORE_WEIGHT + elementWeight;
 
                 if (totalWeight >= SPLIT_THRESHOLD) {
-                    final CompileUnit unit = compiler.findUnit(totalWeight - weight);
+                    final CompileUnit unit = compiler.findUnit(totalWeight - elementWeight);
                     ranges.add(new Splittable.SplitRange(unit, lo, i));
                     lo = i;
-                    totalWeight = weight;
+                    totalWeight = elementWeight;
                 }
             }
 
@@ -325,6 +325,8 @@ final class Splitter extends SimpleNodeVisitor implements Loggable {
                 final CompileUnit unit = compiler.findUnit(totalWeight);
                 ranges.add(new Splittable.SplitRange(unit, lo, postsets.length));
             }
+
+            log.info("Splitting array literal in '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
 
             return arrayLiteralNode.setSplitRanges(lc, ranges);
         }
@@ -334,7 +336,7 @@ final class Splitter extends SimpleNodeVisitor implements Loggable {
 
     @Override
     public Node leaveObjectNode(final ObjectNode objectNode) {
-        long weight = WeighNodes.weigh(objectNode);
+        final long weight = WeighNodes.weigh(objectNode);
 
         if (weight < SPLIT_THRESHOLD) {
             return objectNode;
@@ -355,14 +357,14 @@ final class Splitter extends SimpleNodeVisitor implements Loggable {
             final boolean isConstant = LiteralNode.isConstant(property.getValue());
 
             if (!isConstant || !isSpillObject) {
-                weight = isConstant ? 0 : WeighNodes.weigh(property.getValue());
-                totalWeight += WeighNodes.AASTORE_WEIGHT + weight;
+                final long propertyWeight = isConstant ? 0 : WeighNodes.weigh(property.getValue());
+                totalWeight += WeighNodes.AASTORE_WEIGHT + propertyWeight;
 
                 if (totalWeight >= SPLIT_THRESHOLD) {
-                    final CompileUnit unit = compiler.findUnit(totalWeight - weight);
+                    final CompileUnit unit = compiler.findUnit(totalWeight - propertyWeight);
                     ranges.add(new Splittable.SplitRange(unit, lo, i));
                     lo = i;
-                    totalWeight = weight;
+                    totalWeight = propertyWeight;
                 }
             }
         }
@@ -371,6 +373,8 @@ final class Splitter extends SimpleNodeVisitor implements Loggable {
             final CompileUnit unit = compiler.findUnit(totalWeight);
             ranges.add(new Splittable.SplitRange(unit, lo, properties.size()));
         }
+
+        log.info("Splitting object node in '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
 
         return objectNode.setSplitRanges(lc, ranges);
     }
