@@ -89,7 +89,7 @@ public class NestedThreadsListHandleInErrorHandlingTest {
         // We should have a section of Threads class SMR info:
         Pattern.compile("Threads class SMR info:"),
         // We should have one nested ThreadsListHandle:
-        Pattern.compile(".*, _smr_nested_thread_list_max=1"),
+        Pattern.compile(".*, _nested_thread_list_max=1"),
         // The current thread (marked with '=>') in the threads list
         // should show a hazard ptr:
         Pattern.compile("=>.* JavaThread \"main\" .*_threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*, _nested_threads_hazard_ptr_cnt=1, _nested_threads_hazard_ptrs=0x.*"),

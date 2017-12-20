@@ -46,6 +46,7 @@ import java.util.ResourceBundle;
  *          throwing NullPointerException. The test uses --limit-module
  *          to force the selection of one or the other.
  * @author danielfuchs
+ * @requires !vm.graal.enabled
  * @build LoggerFinderAPI
  * @run main/othervm --limit-modules java.base,java.logging
  *          -Djava.util.logging.SimpleFormatter.format=LOG-%4$s:-[%2$s]-%5$s%6$s%n

@@ -136,7 +136,7 @@ public:
     return _class_name;
   }
 
-  InstanceKlass* load_current_class(TRAPS);
+  Klass* load_current_class(TRAPS);
 
   bool is_loading_from_source();
 

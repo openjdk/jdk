@@ -1852,17 +1852,23 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     TraceTime t1("compilation", &time);
     EventCompilation event;
 
-    JVMCIEnv env(task, system_dictionary_modification_counter);
-    methodHandle method(thread, target_handle);
-    jvmci->compile_method(method, osr_bci, &env);
+    // Skip redefined methods
+    if (target_handle->is_old()) {
+        failure_reason = "redefined method";
+        retry_message = "not retryable";
+        compilable = ciEnv::MethodCompilable_never;
+    } else {
+        JVMCIEnv env(task, system_dictionary_modification_counter);
+        methodHandle method(thread, target_handle);
+        jvmci->compile_method(method, osr_bci, &env);
 
-    post_compile(thread, task, event, task->code() != NULL, NULL);
-
-    failure_reason = env.failure_reason();
-    if (!env.retryable()) {
-      retry_message = "not retryable";
-      compilable = ciEnv::MethodCompilable_not_at_tier;
+        failure_reason = env.failure_reason();
+        if (!env.retryable()) {
+          retry_message = "not retryable";
+          compilable = ciEnv::MethodCompilable_not_at_tier;
+        }
     }
+    post_compile(thread, task, event, task->code() != NULL, NULL);
 
   } else
 #endif // INCLUDE_JVMCI

@@ -3473,7 +3473,7 @@ static inline void *prefetch_and_load_ptr(void **addr, intx prefetch_interval) {
              X = (JavaThread*)prefetch_and_load_ptr((void**)MACRO_current_p, (intx)MACRO_scan_interval))
 
 // All JavaThreads
-#define ALL_JAVA_THREADS(X) DO_JAVA_THREADS(ThreadsSMRSupport::get_smr_java_thread_list(), X)
+#define ALL_JAVA_THREADS(X) DO_JAVA_THREADS(ThreadsSMRSupport::get_java_thread_list(), X)
 
 // All JavaThreads + all non-JavaThreads (i.e., every thread in the system)
 void Threads::threads_do(ThreadClosure* tc) {
@@ -4382,7 +4382,7 @@ void Threads::remove(JavaThread* p) {
   // that we do not remove thread without safepoint code notice
   { MutexLocker ml(Threads_lock);
 
-    assert(ThreadsSMRSupport::get_smr_java_thread_list()->includes(p), "p must be present");
+    assert(ThreadsSMRSupport::get_java_thread_list()->includes(p), "p must be present");
 
     // Maintain fast thread list
     ThreadsSMRSupport::remove_thread(p);
@@ -4610,7 +4610,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   }
 #endif // INCLUDE_SERVICES
 
-  ThreadsSMRSupport::print_smr_info_on(st);
+  ThreadsSMRSupport::print_info_on(st);
   st->cr();
 
   ALL_JAVA_THREADS(p) {
@@ -4679,7 +4679,7 @@ class PrintOnErrorClosure : public ThreadClosure {
 // memory (even in resource area), it might deadlock the error handler.
 void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
                              int buflen) {
-  ThreadsSMRSupport::print_smr_info_on(st);
+  ThreadsSMRSupport::print_info_on(st);
   st->cr();
 
   bool found_current = false;

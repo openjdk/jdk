@@ -44,7 +44,9 @@ public class ArrayTest {
     static String arrayClasses[] = {
         "ArrayTestHelper",
         "[Ljava/lang/Comparable;",
-        "[I"
+        "[I",
+        "[[[Ljava/lang/Object;",
+        "[[B"
     };
 
     public static void main(String[] args) throws Exception {
@@ -56,7 +58,12 @@ public class ArrayTest {
         String bootClassPath = "-Xbootclasspath/a:" + whiteBoxJar;
 
         // create an archive containing array classes
-        TestCommon.dump(appJar, TestCommon.list(arrayClasses), bootClassPath, "-verbose:class");
+        OutputAnalyzer output = TestCommon.dump(appJar, TestCommon.list(arrayClasses), bootClassPath, "-verbose:class");
+        // we currently don't support array classes during CDS dump
+        output.shouldContain("Preload Warning: Cannot find [Ljava/lang/Comparable;")
+              .shouldContain("Preload Warning: Cannot find [I")
+              .shouldContain("Preload Warning: Cannot find [[[Ljava/lang/Object;")
+              .shouldContain("Preload Warning: Cannot find [[B");
 
         List<String> argsList = new ArrayList<String>();
         argsList.add("-XX:+UnlockDiagnosticVMOptions");
@@ -67,12 +74,13 @@ public class ArrayTest {
         argsList.add("-verbose:class");
         argsList.add("ArrayTestHelper");
         // the following are input args to the ArrayTestHelper.
-        for (int i = 0; i < arrayClasses.length; i++) {
+        // skip checking array classes during run time
+        for (int i = 0; i < 1; i++) {
             argsList.add(arrayClasses[i]);
         }
         String[] opts = new String[argsList.size()];
         opts = argsList.toArray(opts);
-        OutputAnalyzer output = TestCommon.execCommon(opts);
+        output = TestCommon.execCommon(opts);
         TestCommon.checkExec(output);
     }
 }
