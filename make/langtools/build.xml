@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+  ~ Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
   ~ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
   ~
   ~ This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
  The output of the build is as follows:
 
  build
-   |-bin (scripts to invoke various tools, javac, javah etc.)
+   |-bin (scripts to invoke various tools, javac etc.)
    |-genrsc (generated sources - i.e. properties)
    |-modules (compiled classes in a modular layout)
    |-jtreg (test work/results)
@@ -254,7 +254,6 @@
         <build-tool name="javac"/>
         <build-tool name="javadoc"/>
         <build-tool name="javap"/>
-        <build-tool name="javah"/>
         <build-tool name="jdeps"/>
         <build-tool name="sjavac"/>
         <build-tool name="jshell"/>
