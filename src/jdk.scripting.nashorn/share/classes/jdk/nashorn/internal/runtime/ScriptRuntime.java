@@ -136,6 +136,16 @@ public final class ScriptRuntime {
     public static final Call INVALIDATE_RESERVED_BUILTIN_NAME = staticCallNoLookup(ScriptRuntime.class, "invalidateReservedBuiltinName", void.class, String.class);
 
     /**
+     * Used to perform failed delete under strict mode
+     */
+    public static final Call STRICT_FAIL_DELETE = staticCallNoLookup(ScriptRuntime.class, "strictFailDelete", boolean.class, String.class);
+
+    /**
+     * Used to find the scope for slow delete
+     */
+    public static final Call SLOW_DELETE = staticCallNoLookup(ScriptRuntime.class, "slowDelete", boolean.class, ScriptObject.class, String.class);
+
+    /**
      * Converts a switch tag value to a simple integer. deflt value if it can't.
      *
      * @param tag   Switch statement tag value.
@@ -780,87 +790,40 @@ public final class ScriptRuntime {
     }
 
     /**
-     * ECMA 11.4.1 - delete operation, generic implementation
-     *
-     * @param obj       object with property to delete
-     * @param property  property to delete
-     * @param strict    are we in strict mode
-     *
-     * @return true if property was successfully found and deleted
-     */
-    public static boolean DELETE(final Object obj, final Object property, final Object strict) {
-        if (obj instanceof ScriptObject) {
-            return ((ScriptObject)obj).delete(property, Boolean.TRUE.equals(strict));
-        }
-
-        if (obj instanceof Undefined) {
-            return ((Undefined)obj).delete(property, false);
-        }
-
-        if (obj == null) {
-            throw typeError("cant.delete.property", safeToString(property), "null");
-        }
-
-        if (obj instanceof ScriptObjectMirror) {
-            return ((ScriptObjectMirror)obj).delete(property);
-        }
-
-        if (JSType.isPrimitive(obj)) {
-            return ((ScriptObject) JSType.toScriptObject(obj)).delete(property, Boolean.TRUE.equals(strict));
-        }
-
-        if (obj instanceof JSObject) {
-            ((JSObject)obj).removeMember(Objects.toString(property));
-            return true;
-        }
-
-        // if object is not reference type, vacuously delete is successful.
-        return true;
-    }
-
-    /**
      * ECMA 11.4.1 - delete operator, implementation for slow scopes
      *
      * This implementation of 'delete' walks the scope chain to find the scope that contains the
-     * property to be deleted, then invokes delete on it.
+     * property to be deleted, then invokes delete on it. Always used on scopes, never strict.
      *
      * @param obj       top scope object
      * @param property  property to delete
-     * @param strict    are we in strict mode
      *
      * @return true if property was successfully found and deleted
      */
-    public static boolean SLOW_DELETE(final Object obj, final Object property, final Object strict) {
-        if (obj instanceof ScriptObject) {
-            ScriptObject sobj = (ScriptObject) obj;
-            final String key = property.toString();
-            while (sobj != null && sobj.isScope()) {
-                final FindProperty find = sobj.findProperty(key, false);
-                if (find != null) {
-                    return sobj.delete(key, Boolean.TRUE.equals(strict));
-                }
-                sobj = sobj.getProto();
+    public static boolean slowDelete(final ScriptObject obj, final String property) {
+        ScriptObject sobj = obj;
+        while (sobj != null && sobj.isScope()) {
+            final FindProperty find = sobj.findProperty(property, false);
+            if (find != null) {
+                return sobj.delete(property, false);
             }
+            sobj = sobj.getProto();
         }
-        return DELETE(obj, property, strict);
+        return obj.delete(property, false);
     }
 
     /**
      * ECMA 11.4.1 - delete operator, special case
      *
-     * This is 'delete' that always fails. We have to check strict mode and throw error.
-     * That is why this is a runtime function. Or else we could have inlined 'false'.
+     * This is 'delete' on a scope; it always fails under strict mode.
+     * It always throws an exception, but is declared to return a boolean
+     * to be compatible with the delete operator type.
      *
      * @param property  property to delete
-     * @param strict    are we in strict mode
-     *
-     * @return false always
+     * @return nothing, always throws an exception.
      */
-    public static boolean FAIL_DELETE(final Object property, final Object strict) {
-        if (Boolean.TRUE.equals(strict)) {
-            throw syntaxError("strict.cant.delete", safeToString(property));
-        }
-        return false;
+    public static boolean strictFailDelete(final String property) {
+        throw syntaxError("strict.cant.delete", property);
     }
 
     /**

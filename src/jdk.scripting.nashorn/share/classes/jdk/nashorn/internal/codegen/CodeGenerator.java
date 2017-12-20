@@ -151,6 +151,7 @@ import jdk.nashorn.internal.runtime.Undefined;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
@@ -1138,6 +1139,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             @Override
             public boolean enterVOID(final UnaryNode unaryNode) {
                 loadVOID(unaryNode, resultBounds);
+                return false;
+            }
+
+            @Override
+            public boolean enterDELETE(final UnaryNode unaryNode) {
+                loadDELETE(unaryNode);
                 return false;
             }
 
@@ -3788,6 +3795,53 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         loadAndDiscard(unaryNode.getExpression());
         if (!lc.popDiscardIfCurrent(unaryNode)) {
             method.loadUndefined(resultBounds.widest);
+        }
+    }
+
+    public void loadDELETE(final UnaryNode unaryNode) {
+        final Expression expression = unaryNode.getExpression();
+        if (expression instanceof IdentNode) {
+            final IdentNode ident = (IdentNode)expression;
+            final Symbol symbol = ident.getSymbol();
+            final String name = ident.getName();
+
+            if (symbol.isThis()) {
+                // Can't delete "this", ignore and return true
+                if (!lc.popDiscardIfCurrent(unaryNode)) {
+                    method.load(true);
+                }
+            } else if (lc.getCurrentFunction().isStrict()) {
+                // All other scope identifier delete attempts fail for strict mode
+                method.load(name);
+                method.invoke(ScriptRuntime.STRICT_FAIL_DELETE);
+            } else if (!symbol.isScope() && (symbol.isParam() || (symbol.isVar() && !symbol.isProgramLevel()))) {
+                // If symbol is a function parameter, or a declared non-global variable, delete is a no-op and returns false.
+                if (!lc.popDiscardIfCurrent(unaryNode)) {
+                    method.load(false);
+                }
+            } else {
+                method.loadCompilerConstant(SCOPE);
+                method.load(name);
+                if ((symbol.isGlobal() && !symbol.isFunctionDeclaration()) || symbol.isProgramLevel()) {
+                    method.invoke(ScriptRuntime.SLOW_DELETE);
+                } else {
+                    method.load(false); // never strict here; that was handled with STRICT_FAIL_DELETE above.
+                    method.invoke(ScriptObject.DELETE);
+                }
+            }
+        } else if (expression instanceof BaseNode) {
+            loadExpressionAsObject(((BaseNode)expression).getBase());
+            if (expression instanceof AccessNode) {
+                final AccessNode accessNode = (AccessNode) expression;
+                method.dynamicRemove(accessNode.getProperty(), getCallSiteFlags(), accessNode.isIndex());
+            } else if (expression instanceof IndexNode) {
+                loadExpressionAsObject(((IndexNode) expression).getIndex());
+                method.dynamicRemoveIndex(getCallSiteFlags());
+            } else {
+                throw new AssertionError(expression.getClass().getName());
+            }
+        } else {
+            throw new AssertionError(expression.getClass().getName());
         }
     }
 

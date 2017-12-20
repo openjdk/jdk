@@ -414,20 +414,21 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
 
     protected GuardedInvocationComponent getGuardedInvocationComponent(final ComponentLinkRequest req)
     throws Exception {
-        if (!req.namespaces.isEmpty()) {
-            final Namespace ns = req.namespaces.get(0);
-            final Operation op = req.baseOperation;
-            if (op == StandardOperation.GET) {
-                if (ns == StandardNamespace.PROPERTY) {
-                    return getPropertyGetter(req.popNamespace());
-                } else if (ns == StandardNamespace.METHOD) {
-                    return getMethodGetter(req.popNamespace());
-                }
-            } else if (op == StandardOperation.SET && ns == StandardNamespace.PROPERTY) {
-                return getPropertySetter(req.popNamespace());
-            }
+        if (req.namespaces.isEmpty()) {
+            return null;
         }
-        return null;
+        final Namespace ns = req.namespaces.get(0);
+        final Operation op = req.baseOperation;
+        if (op == StandardOperation.GET) {
+            if (ns == StandardNamespace.PROPERTY) {
+                return getPropertyGetter(req.popNamespace());
+            } else if (ns == StandardNamespace.METHOD) {
+                return getMethodGetter(req.popNamespace());
+            }
+        } else if (op == StandardOperation.SET && ns == StandardNamespace.PROPERTY) {
+            return getPropertySetter(req.popNamespace());
+        }
+        return getNextComponent(req.popNamespace());
     }
 
     GuardedInvocationComponent getNextComponent(final ComponentLinkRequest req) throws Exception {
