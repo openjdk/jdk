@@ -33,6 +33,7 @@ import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEff
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF_NOFP;
 import static org.graalvm.compiler.hotspot.replacements.CRC32Substitutions.UPDATE_BYTES_CRC32;
+import static org.graalvm.compiler.hotspot.replacements.CRC32CSubstitutions.UPDATE_BYTES_CRC32C;
 import static org.graalvm.word.LocationIdentity.any;
 
 import org.graalvm.compiler.core.common.LIRKind;
@@ -98,6 +99,9 @@ public class AMD64HotSpotForeignCallsProvider extends HotSpotHostForeignCallsPro
         if (config.useCRC32Intrinsics) {
             // This stub does callee saving
             registerForeignCall(UPDATE_BYTES_CRC32, config.updateBytesCRC32Stub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, any());
+        }
+        if (config.useCRC32CIntrinsics) {
+            registerForeignCall(UPDATE_BYTES_CRC32C, config.updateBytesCRC32C, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, any());
         }
 
         super.initialize(providers, options);

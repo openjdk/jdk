@@ -183,6 +183,9 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     jobject ret = NULL;
     jstring jVMVal = NULL;
 
+    if ((*env)->EnsureLocalCapacity(env, 50) < 0) {
+        return NULL;
+    }
     sprops = GetJavaProperties(env);
     CHECK_NULL_RETURN(sprops, NULL);
 

@@ -26,7 +26,7 @@
  * @test
  * @summary DumpLoadedClassList should exclude generated classes, classes in bootclasspath/a and
  *          --patch-module.
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar

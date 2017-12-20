@@ -23,20 +23,19 @@
  */
 
 /*
- *  @test
- *  @summary SharedArchiveConsistency
- *   AppCDS does not support uncompressed oops
- *  @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
- *  @library /test/lib
- *  @modules java.base/jdk.internal.misc
- *           java.compiler
- *           java.management
- *           jdk.jartool/sun.tools.jar
- *           jdk.internal.jvmstat/sun.jvmstat.monitor
- *  @build sun.hotspot.WhiteBox
- *  @compile test-classes/Hello.java
- *  @run main ClassFileInstaller sun.hotspot.WhiteBox
- *  @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SharedArchiveConsistency
+ * @test
+ * @summary SharedArchiveConsistency
+ * @requires vm.cds
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.jartool/sun.tools.jar
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @build sun.hotspot.WhiteBox
+ * @compile test-classes/Hello.java
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SharedArchiveConsistency
  */
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
@@ -245,11 +244,10 @@ public class SharedArchiveConsistency {
     // Copy file with bytes deleted or inserted
     // del -- true, deleted, false, inserted
     public static void copyFile(File from, File to, boolean del) throws Exception {
-        FileChannel inputChannel = null;
-        FileChannel outputChannel = null;
-        try {
-            inputChannel = new FileInputStream(from).getChannel();
-            outputChannel = new FileOutputStream(to).getChannel();
+        try (
+            FileChannel inputChannel = new FileInputStream(from).getChannel();
+            FileChannel outputChannel = new FileOutputStream(to).getChannel()
+        ) {
             long size = inputChannel.size();
             int init_size = getFileHeaderSize(inputChannel);
             outputChannel.transferFrom(inputChannel, 0, init_size);
@@ -264,9 +262,6 @@ public class SharedArchiveConsistency {
                 outputChannel.write(ByteBuffer.wrap(new byte[n]));
                 outputChannel.transferFrom(inputChannel, init_size + n , size - init_size);
             }
-        } finally {
-            inputChannel.close();
-            outputChannel.close();
         }
     }
 

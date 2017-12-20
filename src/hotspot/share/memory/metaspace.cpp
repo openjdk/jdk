@@ -3695,7 +3695,6 @@ void Metaspace::ergo_initialize() {
   MaxMetaspaceExpansion = align_down_bounded(MaxMetaspaceExpansion, _commit_alignment);
 
   CompressedClassSpaceSize = align_down_bounded(CompressedClassSpaceSize, _reserve_alignment);
-  set_compressed_class_space_size(CompressedClassSpaceSize);
 
   // Initial virtual space size will be calculated at global_initialize()
   size_t min_metaspace_sz =
@@ -3714,6 +3713,7 @@ void Metaspace::ergo_initialize() {
                   min_metaspace_sz);
   }
 
+  set_compressed_class_space_size(CompressedClassSpaceSize);
 }
 
 void Metaspace::global_initialize() {

@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Try different combination of mismatched UseAppCDS between dump time and run time.
- * (Note: AppCDS does not support uncompressed oops.)
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -194,15 +194,26 @@ interface GraphPrinter extends Closeable, JavaConstantFormatter {
 
     static String constantToString(Object value) {
         Class<?> c = value.getClass();
+        String suffix = "";
         if (c.isArray()) {
             return constantArrayToString(value);
         } else if (value instanceof Enum) {
             return ((Enum<?>) value).name();
         } else if (isToStringTrusted(c)) {
-            return value.toString();
+            try {
+                return value.toString();
+            } catch (Throwable t) {
+                suffix = "[toString error: " + t.getClass().getName() + "]";
+                if (isToStringTrusted(t.getClass())) {
+                    try {
+                        suffix = "[toString error: " + t + "]";
+                    } catch (Throwable t2) {
+                        // No point in going further
+                    }
+                }
+            }
         }
-        return MetaUtil.getSimpleName(c, true) + "@" + Integer.toHexString(System.identityHashCode(value));
-
+        return MetaUtil.getSimpleName(c, true) + "@" + Integer.toHexString(System.identityHashCode(value)) + suffix;
     }
 
     static String constantArrayToString(Object array) {

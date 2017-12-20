@@ -32,6 +32,7 @@ import java.util.List;
  * @bug 8143554 8044773
  * @summary Test checks that UnsupportedOperationException for unsupported
  * SOCKET_OPTIONS is thrown by both getOption() and setOption() methods.
+ * @requires !vm.graal.enabled
  * @run main UnsupportedOptionsTest
  * @run main/othervm --limit-modules=java.base UnsupportedOptionsTest
  */

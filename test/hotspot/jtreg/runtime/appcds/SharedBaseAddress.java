@@ -27,8 +27,7 @@
  * @summary Test variety of values for SharedBaseAddress, in AppCDS mode,
  *          making sure VM handles normal values as well as edge values
  *          w/o a crash.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
