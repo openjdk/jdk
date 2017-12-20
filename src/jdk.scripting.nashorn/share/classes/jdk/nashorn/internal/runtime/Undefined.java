@@ -112,6 +112,11 @@ public final class Undefined extends DefaultPropertyAccess {
                 return findSetIndexMethod(desc);
             }
             return findSetMethod(desc);
+        case REMOVE:
+            if (!(desc.getOperation() instanceof NamedOperation)) {
+                return findDeleteIndexMethod(desc);
+            }
+            return findDeleteMethod(desc);
         default:
         }
         return null;
@@ -124,6 +129,7 @@ public final class Undefined extends DefaultPropertyAccess {
 
     private static final MethodHandle GET_METHOD = findOwnMH("get", Object.class, Object.class);
     private static final MethodHandle SET_METHOD = MH.insertArguments(findOwnMH("set", void.class, Object.class, Object.class, int.class), 3, NashornCallSiteDescriptor.CALLSITE_STRICT);
+    private static final MethodHandle DELETE_METHOD = MH.insertArguments(findOwnMH("delete", boolean.class, Object.class, boolean.class), 2, false);
 
     private static GuardedInvocation findGetMethod(final CallSiteDescriptor desc) {
         return new GuardedInvocation(MH.insertArguments(GET_METHOD, 1, NashornCallSiteDescriptor.getOperand(desc)), UNDEFINED_GUARD).asType(desc);
@@ -140,6 +146,15 @@ public final class Undefined extends DefaultPropertyAccess {
     private static GuardedInvocation findSetIndexMethod(final CallSiteDescriptor desc) {
         return new GuardedInvocation(SET_METHOD, UNDEFINED_GUARD).asType(desc);
     }
+
+    private static GuardedInvocation findDeleteMethod(final CallSiteDescriptor desc) {
+        return new GuardedInvocation(MH.insertArguments(DELETE_METHOD, 1, NashornCallSiteDescriptor.getOperand(desc)), UNDEFINED_GUARD).asType(desc);
+    }
+
+    private static GuardedInvocation findDeleteIndexMethod(final CallSiteDescriptor desc) {
+        return new GuardedInvocation(DELETE_METHOD, UNDEFINED_GUARD).asType(desc);
+    }
+
 
     @Override
     public Object get(final Object key) {

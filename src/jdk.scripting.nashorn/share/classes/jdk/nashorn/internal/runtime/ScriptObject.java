@@ -189,6 +189,8 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /** Method handle for generic property setter */
     public static final Call GENERIC_SET = virtualCallNoLookup(ScriptObject.class, "set", void.class, Object.class, Object.class, int.class);
 
+    public static final Call DELETE = virtualCall(MethodHandles.lookup(), ScriptObject.class, "delete", boolean.class, Object.class, boolean.class);
+
     static final MethodHandle[] SET_SLOW = new MethodHandle[] {
         findOwnMH_V("set", void.class, Object.class, int.class, int.class),
         findOwnMH_V("set", void.class, Object.class, double.class, int.class),
@@ -201,6 +203,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     static final MethodHandle CAS_MAP           = findOwnMH_V("compareAndSetMap", boolean.class, PropertyMap.class, PropertyMap.class);
     static final MethodHandle EXTENSION_CHECK   = findOwnMH_V("extensionCheck", boolean.class, boolean.class, String.class);
     static final MethodHandle ENSURE_SPILL_SIZE = findOwnMH_V("ensureSpillSize", Object.class, int.class);
+
+    private static final GuardedInvocation DELETE_GUARDED = new GuardedInvocation(MH.insertArguments(DELETE.methodHandle(), 2, false), NashornGuards.getScriptObjectGuard());
+    private static final GuardedInvocation DELETE_GUARDED_STRICT = new GuardedInvocation(MH.insertArguments(DELETE.methodHandle(), 2, true), NashornGuards.getScriptObjectGuard());
 
     /**
      * Constructor
@@ -1869,6 +1874,13 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             return desc.getOperation() instanceof NamedOperation
                     ? findSetMethod(desc, request)
                     : findSetIndexMethod(desc, request);
+        case REMOVE:
+            final GuardedInvocation inv = NashornCallSiteDescriptor.isStrict(desc) ? DELETE_GUARDED_STRICT : DELETE_GUARDED;
+            final Object name = NamedOperation.getName(desc.getOperation());
+            if (name != null) {
+                return inv.replaceMethods(MH.insertArguments(inv.getInvocation(), 1, name), inv.getGuard());
+            }
+            return inv;
         case CALL:
             return findCallMethod(desc, request);
         case NEW:
