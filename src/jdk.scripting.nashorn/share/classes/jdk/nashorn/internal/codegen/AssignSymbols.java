@@ -59,6 +59,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import jdk.nashorn.internal.ir.AccessNode;
+import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.CatchNode;
@@ -735,70 +736,11 @@ final class AssignSymbols extends SimpleNodeVisitor implements Loggable {
 
     @Override
     public Node leaveUnaryNode(final UnaryNode unaryNode) {
-        switch (unaryNode.tokenType()) {
-        case DELETE:
-            return leaveDELETE(unaryNode);
-        case TYPEOF:
+        if (unaryNode.tokenType() == TokenType.TYPEOF) {
             return leaveTYPEOF(unaryNode);
-        default:
+        } else {
             return super.leaveUnaryNode(unaryNode);
         }
-    }
-
-    private Node leaveDELETE(final UnaryNode unaryNode) {
-        final FunctionNode currentFunctionNode = lc.getCurrentFunction();
-        final boolean      strictMode          = currentFunctionNode.isStrict();
-        final Expression   rhs                 = unaryNode.getExpression();
-        final Expression   strictFlagNode      = (Expression)LiteralNode.newInstance(unaryNode, strictMode).accept(this);
-
-        Request request = Request.DELETE;
-        final List<Expression> args = new ArrayList<>();
-
-        if (rhs instanceof IdentNode) {
-            final IdentNode ident = (IdentNode)rhs;
-            // If this is a declared variable or a function parameter, delete always fails (except for globals).
-            final String name = ident.getName();
-            final Symbol symbol = ident.getSymbol();
-
-            if (symbol.isThis()) {
-                // Can't delete "this", ignore and return true
-                return LiteralNode.newInstance(unaryNode, true);
-            }
-            final Expression literalNode = LiteralNode.newInstance(unaryNode, name);
-            final boolean failDelete = strictMode || (!symbol.isScope() && (symbol.isParam() || (symbol.isVar() && !symbol.isProgramLevel())));
-
-            if (!failDelete) {
-                args.add(compilerConstantIdentifier(SCOPE));
-            }
-            args.add(literalNode);
-            args.add(strictFlagNode);
-
-            if (failDelete) {
-                request = Request.FAIL_DELETE;
-            } else if ((symbol.isGlobal() && !symbol.isFunctionDeclaration()) || symbol.isProgramLevel()) {
-                request = Request.SLOW_DELETE;
-            }
-        } else if (rhs instanceof AccessNode) {
-            final Expression base     = ((AccessNode)rhs).getBase();
-            final String     property = ((AccessNode)rhs).getProperty();
-
-            args.add(base);
-            args.add(LiteralNode.newInstance(unaryNode, property));
-            args.add(strictFlagNode);
-
-        } else if (rhs instanceof IndexNode) {
-            final IndexNode indexNode = (IndexNode)rhs;
-            final Expression base  = indexNode.getBase();
-            final Expression index = indexNode.getIndex();
-
-            args.add(base);
-            args.add(index);
-            args.add(strictFlagNode);
-
-        } else {
-            throw new AssertionError("Unexpected delete with " + rhs.getClass().getName() + " expression");
-        }
-        return new RuntimeNode(unaryNode, request, args);
     }
 
     @Override
