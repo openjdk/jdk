@@ -1001,18 +1001,18 @@ public class BridgeMethodsTemplateTest extends BridgeMethodTestCase {
 
     public void testA5() throws IOException, ReflectiveOperationException {
         compileSpec("C(A(Id0),Jd0)",
-                    "compiler.err.types.incompatible.unrelated.defaults");
+                    "compiler.err.types.incompatible");
     }
 
     public void testA6() throws IOException, ReflectiveOperationException {
         compileSpec("C(A(Ia0,Jd0))",
                     "compiler.err.does.not.override.abstract",
-                    "compiler.err.types.incompatible.abstract.default");
+                    "compiler.err.types.incompatible");
     }
 
     public void testA7() throws IOException, ReflectiveOperationException {
         compileSpec("C(A(Id0,Jd0))",
-                    "compiler.err.types.incompatible.unrelated.defaults");
+                    "compiler.err.types.incompatible");
     }
 
     public void testA8() throws IOException, ReflectiveOperationException {
