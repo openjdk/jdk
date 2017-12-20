@@ -77,7 +77,6 @@ runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 # This test is disabled since it will stress NMT and timeout during normal testing
 runtime/NMT/MallocStressTest.java 8166548 generic-all
 runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
-runtime/AppCDS/UseAppCDS.java 8165603 windows-all
 
 #############################################################################
 

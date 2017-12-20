@@ -315,12 +315,13 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   return k;
 }
 
-InstanceKlass* ClassListParser::load_current_class(TRAPS) {
+Klass* ClassListParser::load_current_class(TRAPS) {
   TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name, THREAD);
   guarantee(!HAS_PENDING_EXCEPTION, "Exception creating a symbol.");
 
-  InstanceKlass *klass = NULL;
+  Klass *klass = NULL;
   if (!is_loading_from_source()) {
+    // Load classes for the boot/platform/app loaders only.
     if (is_super_specified()) {
       error("If source location is not specified, super class must not be specified");
     }
@@ -330,40 +331,36 @@ InstanceKlass* ClassListParser::load_current_class(TRAPS) {
 
     bool non_array = !FieldType::is_array(class_name_symbol);
 
-    Handle s = java_lang_String::create_from_symbol(class_name_symbol, CHECK_0);
-    // Translate to external class name format, i.e., convert '/' chars to '.'
-    Handle string = java_lang_String::externalize_classname(s, CHECK_0);
     JavaValue result(T_OBJECT);
-    InstanceKlass* spec_klass =  non_array ?
-      SystemDictionary::ClassLoader_klass() : SystemDictionary::Class_klass();
-    Symbol* method_name = non_array ?
-      vmSymbols::loadClass_name() : vmSymbols::forName_name();
-    Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-
     if (non_array) {
+      // At this point, we are executing in the context of the boot loader. We
+      // cannot call Class.forName because that is context dependent and
+      // would load only classes for the boot loader.
+      //
+      // Instead, let's call java_system_loader().loadClass() directly, which will
+      // delegate to the correct loader (boot, platform or app) depending on
+      // the class name.
+
+      Handle s = java_lang_String::create_from_symbol(class_name_symbol, CHECK_0);
+      // ClassLoader.loadClass() wants external class name format, i.e., convert '/' chars to '.'
+      Handle ext_class_name = java_lang_String::externalize_classname(s, CHECK_0);
+      Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
+
       JavaCalls::call_virtual(&result,
                               loader, //SystemDictionary::java_system_loader(),
-                              spec_klass,
-                              method_name, //vmSymbols::loadClass_name(),
+                              SystemDictionary::ClassLoader_klass(),
+                              vmSymbols::loadClass_name(),
                               vmSymbols::string_class_signature(),
-                              string,
+                              ext_class_name,
                               THREAD);
     } else {
-      JavaCalls::call_static(&result,
-                             spec_klass,
-                             method_name,
-                             vmSymbols::string_class_signature(),
-                             string,
-                             CHECK_NULL);
+      // array classes are not supported in class list.
+      THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
     }
     assert(result.get_type() == T_OBJECT, "just checking");
     oop obj = (oop) result.get_jobject();
     if (!HAS_PENDING_EXCEPTION && (obj != NULL)) {
-      if (non_array) {
-        klass = InstanceKlass::cast(java_lang_Class::as_Klass(obj));
-      } else {
-        klass = static_cast<InstanceKlass*>(java_lang_Class::array_klass_acquire(obj));
-      }
+      klass = java_lang_Class::as_Klass(obj);
     } else { // load classes in bootclasspath/a
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION;
@@ -372,7 +369,7 @@ InstanceKlass* ClassListParser::load_current_class(TRAPS) {
       if (non_array) {
         Klass* k = SystemDictionary::resolve_or_null(class_name_symbol, CHECK_NULL);
         if (k != NULL) {
-          klass = InstanceKlass::cast(k);
+          klass = k;
         } else {
           if (!HAS_PENDING_EXCEPTION) {
             THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
@@ -388,14 +385,15 @@ InstanceKlass* ClassListParser::load_current_class(TRAPS) {
     }
   }
 
-  if (klass != NULL && is_id_specified()) {
+  if (klass != NULL && klass->is_instance_klass() && is_id_specified()) {
+    InstanceKlass* ik = InstanceKlass::cast(klass);
     int id = this->id();
-    SystemDictionaryShared::update_shared_entry(klass, id);
+    SystemDictionaryShared::update_shared_entry(ik, id);
     InstanceKlass* old = table()->lookup(id);
-    if (old != NULL && old != klass) {
+    if (old != NULL && old != ik) {
       error("Duplicated ID %d for class %s", id, _class_name);
     }
-    table()->add(id, klass);
+    table()->add(id, ik);
   }
 
   return klass;

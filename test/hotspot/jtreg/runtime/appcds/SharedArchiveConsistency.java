@@ -245,11 +245,10 @@ public class SharedArchiveConsistency {
     // Copy file with bytes deleted or inserted
     // del -- true, deleted, false, inserted
     public static void copyFile(File from, File to, boolean del) throws Exception {
-        FileChannel inputChannel = null;
-        FileChannel outputChannel = null;
-        try {
-            inputChannel = new FileInputStream(from).getChannel();
-            outputChannel = new FileOutputStream(to).getChannel();
+        try (
+            FileChannel inputChannel = new FileInputStream(from).getChannel();
+            FileChannel outputChannel = new FileOutputStream(to).getChannel()
+        ) {
             long size = inputChannel.size();
             int init_size = getFileHeaderSize(inputChannel);
             outputChannel.transferFrom(inputChannel, 0, init_size);
@@ -264,9 +263,6 @@ public class SharedArchiveConsistency {
                 outputChannel.write(ByteBuffer.wrap(new byte[n]));
                 outputChannel.transferFrom(inputChannel, init_size + n , size - init_size);
             }
-        } finally {
-            inputChannel.close();
-            outputChannel.close();
         }
     }
 

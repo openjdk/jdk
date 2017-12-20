@@ -765,6 +765,11 @@ ALIGNED_(8) juint _log2_pow[] =
     0xfefa39efUL, 0x3fe62e42UL, 0xfefa39efUL, 0xbfe62e42UL
 };
 
+ALIGNED_(8) juint _DOUBLE2[] =
+{
+    0x00000000UL, 0x40000000UL
+};
+
 //registers,
 // input: xmm0, xmm1
 // scratch: xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7
@@ -803,12 +808,20 @@ void MacroAssembler::fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   address HIGHMASK_LOG_X = (address)_HIGHMASK_LOG_X;
   address HALFMASK = (address)_HALFMASK;
   address log2 = (address)_log2_pow;
+  address DOUBLE2 = (address)_DOUBLE2;
 
 
   bind(start);
   subq(rsp, 40);
   movsd(Address(rsp, 8), xmm0);
   movsd(Address(rsp, 16), xmm1);
+
+  // Special case: pow(x, 2.0) => x * x
+  movdq(tmp1, xmm1);
+  cmp64(tmp1, ExternalAddress(DOUBLE2));
+  jccb(Assembler::notEqual, B1_2);
+  mulsd(xmm0, xmm0);
+  jmp(B1_5);
 
   bind(B1_2);
   pextrw(eax, xmm0, 3);

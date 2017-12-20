@@ -45,7 +45,7 @@ public class TestThreadDumpSMRInfo {
     // Here's a sample "Threads class SMR info" section:
     //
     // Threads class SMR info:
-    // _smr_java_thread_list=0x0000000000ce8da0, length=23, elements={
+    // _java_thread_list=0x0000000000ce8da0, length=23, elements={
     // 0x000000000043a800, 0x0000000000aee800, 0x0000000000b06800, 0x0000000000b26000,
     // 0x0000000000b28800, 0x0000000000b2b000, 0x0000000000b2e000, 0x0000000000b30000,
     // 0x0000000000b32800, 0x0000000000b35000, 0x0000000000b3f000, 0x0000000000b41800,
@@ -53,9 +53,9 @@ public class TestThreadDumpSMRInfo {
     // 0x0000000000b55800, 0x0000000000b57800, 0x0000000000b5a000, 0x0000000000b5c800,
     // 0x0000000000cc8800, 0x0000000000fd9800, 0x0000000000ef4800
     // }
-    // _smr_java_thread_list_alloc_cnt=24, _smr_java_thread_list_free_cnt=23, _smr_java_thread_list_max=23, _smr_nested_thread_list_max=0
-    // _smr_delete_lock_wait_cnt=0, _smr_delete_lock_wait_max=0
-    // _smr_to_delete_list_cnt=0, _smr_to_delete_list_max=1
+    // _java_thread_list_alloc_cnt=24, _java_thread_list_free_cnt=23, _java_thread_list_max=23, _nested_thread_list_max=0
+    // _delete_lock_wait_cnt=0, _delete_lock_wait_max=0
+    // _to_delete_list_cnt=0, _to_delete_list_max=1
 
     final static String HEADER_STR = "Threads class SMR info:";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,29 @@
  * questions.
  */
 
-/**
- *
- * @test
- * @requires !vm.graal.enabled
- * @summary Tests that the -javaagent option adds the java.instrument into
- * the module graph
- *
- * @run shell MakeJAR3.sh SimpleAgent
- * @run main/othervm -javaagent:SimpleAgent.jar --limit-modules java.base TestAgentWithLimitMods
- *
- */
-public class TestAgentWithLimitMods {
+#include <jni.h>
+#include <stdio.h>
 
-    public static void main(String[] args) {
-        System.out.println("Test passed");
-    }
+void reduceLocalCapacity(JNIEnv* env) {
+    puts("reduceLocalCapacity: setting to 1");
+    (*env)->EnsureLocalCapacity(env,1);
+}
 
+JNIEXPORT void JNICALL
+Java_TestCheckedEnsureLocalCapacity_ensureCapacity(JNIEnv *env,
+                                                   jobject unused,
+                                                   jobject target,
+                                                   jint capacity,
+                                                   jint copies) {
+  int i;
+  printf("ensureCapacity: setting to %d\n", capacity);
+  (*env)->EnsureLocalCapacity(env, capacity); // set high
+  reduceLocalCapacity(env);     // sets low
+
+  printf("ensureCapacity: creating %d LocalRefs\n", copies);
+  for (i = 0; i < copies; i++) {
+    target = (*env)->NewLocalRef(env, target);
+  }
+
+  puts("ensureCapacity: done");
 }
