@@ -114,9 +114,6 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
 #define VENDOR_URL_BUG "http://bugreport.java.com/bugreport/"
 #endif
 
-#define JAVA_MAX_SUPPORTED_VERSION 54
-#define JAVA_MAX_SUPPORTED_MINOR_VERSION 0
-
 #ifdef JAVA_SPECIFICATION_VENDOR /* Third party may NOT overwrite this. */
   #error "ERROR: No override of JAVA_SPECIFICATION_VENDOR is allowed"
 #else
@@ -219,8 +216,8 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     PUTPROP(props, "java.vendor.url", VENDOR_URL);
     PUTPROP(props, "java.vendor.url.bug", VENDOR_URL_BUG);
 
-    jio_snprintf(buf, sizeof(buf), "%d.%d", JAVA_MAX_SUPPORTED_VERSION,
-                                            JAVA_MAX_SUPPORTED_MINOR_VERSION);
+    jio_snprintf(buf, sizeof(buf), "%d.%d", JVM_CLASSFILE_MAJOR_VERSION,
+                                            JVM_CLASSFILE_MINOR_VERSION);
     PUTPROP(props, "java.class.version", buf);
 
     if (sprops->awt_toolkit) {

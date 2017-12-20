@@ -887,6 +887,8 @@ JAVA
 BOOT_JDK
 JAVA_CHECK
 JAVAC_CHECK
+VERSION_CLASSFILE_MINOR
+VERSION_CLASSFILE_MAJOR
 VENDOR_VERSION_STRING
 VERSION_DATE
 VERSION_IS_GA
@@ -968,6 +970,7 @@ JDK_VARIANT
 USERNAME
 TOPDIR
 PATH_SEP
+OPENJDK_BUILD_OS_INCLUDE_SUBDIR
 HOTSPOT_BUILD_CPU_DEFINE
 HOTSPOT_BUILD_CPU_ARCH
 HOTSPOT_BUILD_CPU
@@ -978,6 +981,7 @@ OPENJDK_BUILD_CPU_OSARCH
 OPENJDK_BUILD_CPU_ISADIR
 OPENJDK_BUILD_CPU_LEGACY_LIB
 OPENJDK_BUILD_CPU_LEGACY
+OPENJDK_TARGET_OS_INCLUDE_SUBDIR
 HOTSPOT_TARGET_CPU_DEFINE
 HOTSPOT_TARGET_CPU_ARCH
 HOTSPOT_TARGET_CPU
@@ -1093,7 +1097,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -1383,7 +1386,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1636,15 +1638,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1782,7 +1775,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1935,7 +1928,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -5185,7 +5177,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1513206608
+DATE_WHEN_GENERATED=1513362567
 
 ###############################################################################
 #
@@ -16316,6 +16308,14 @@ $as_echo "$COMPILE_TYPE" >&6; }
   fi
 
 
+  # For historical reasons, the OS include directories have odd names.
+  OPENJDK_TARGET_OS_INCLUDE_SUBDIR="$OPENJDK_TARGET_OS"
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    OPENJDK_TARGET_OS_INCLUDE_SUBDIR="win32"
+  elif test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+    OPENJDK_TARGET_OS_INCLUDE_SUBDIR="darwin"
+  fi
+
 
 
   # Also store the legacy naming of the cpu.
@@ -16466,6 +16466,14 @@ $as_echo "$COMPILE_TYPE" >&6; }
     HOTSPOT_BUILD_CPU_DEFINE=$(echo $OPENJDK_BUILD_CPU | tr a-z A-Z)
   fi
 
+
+  # For historical reasons, the OS include directories have odd names.
+  OPENJDK_BUILD_OS_INCLUDE_SUBDIR="$OPENJDK_TARGET_OS"
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    OPENJDK_BUILD_OS_INCLUDE_SUBDIR="win32"
+  elif test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+    OPENJDK_BUILD_OS_INCLUDE_SUBDIR="darwin"
+  fi
 
 
 
@@ -25457,10 +25465,17 @@ fi
     VENDOR_VERSION_STRING="$with_vendor_version_string"
   fi
 
+  # We could define --with flags for these, if really needed
+  VERSION_CLASSFILE_MAJOR="$DEFAULT_VERSION_CLASSFILE_MAJOR"
+  VERSION_CLASSFILE_MINOR="$DEFAULT_VERSION_CLASSFILE_MINOR"
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for version string" >&5
 $as_echo_n "checking for version string... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $VERSION_STRING" >&5
 $as_echo "$VERSION_STRING" >&6; }
+
+
+
 
 
 
@@ -52888,9 +52903,7 @@ fi
   # Setup some hard coded includes
   COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
       -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
-      -I${TOPDIR}/src/java.base/share/native/include \
-      -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
-      -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include \
+      -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base/\$(OPENJDK_TARGET_OS_INCLUDE_SUBDIR) \
       -I${TOPDIR}/src/java.base/share/native/libjava \
       -I${TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava \
       -I${TOPDIR}/src/hotspot/share/include \
@@ -53771,9 +53784,7 @@ fi
   # Setup some hard coded includes
   OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
       -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
-      -I${TOPDIR}/src/java.base/share/native/include \
-      -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS/native/include \
-      -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/include \
+      -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base/\$(OPENJDK_TARGET_OS_INCLUDE_SUBDIR) \
       -I${TOPDIR}/src/java.base/share/native/libjava \
       -I${TOPDIR}/src/java.base/$OPENJDK_BUILD_OS_TYPE/native/libjava \
       -I${TOPDIR}/src/hotspot/share/include \
