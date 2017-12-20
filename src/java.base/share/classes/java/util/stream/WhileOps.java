@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ final class WhileOps {
 
                     @Override
                     public void accept(T t) {
-                        if (take = predicate.test(t)) {
+                        if (take && (take = predicate.test(t))) {
                             downstream.accept(t);
                         }
                     }
@@ -152,7 +152,7 @@ final class WhileOps {
 
                     @Override
                     public void accept(int t) {
-                        if (take = predicate.test(t)) {
+                        if (take && (take = predicate.test(t))) {
                             downstream.accept(t);
                         }
                     }
@@ -209,7 +209,7 @@ final class WhileOps {
 
                     @Override
                     public void accept(long t) {
-                        if (take = predicate.test(t)) {
+                        if (take && (take = predicate.test(t))) {
                             downstream.accept(t);
                         }
                     }
@@ -266,7 +266,7 @@ final class WhileOps {
 
                     @Override
                     public void accept(double t) {
-                        if (take = predicate.test(t)) {
+                        if (take && (take = predicate.test(t))) {
                             downstream.accept(t);
                         }
                     }
