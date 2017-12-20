@@ -31,7 +31,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Map;
-import javax.script.Bindings;
+import java.util.Objects;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.Operation;
 import jdk.dynalink.StandardOperation;
@@ -64,11 +64,10 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
         return canLinkTypeStatic(type);
     }
 
-    static boolean canLinkTypeStatic(final Class<?> type) {
-        // can link JSObject also handles Map, Bindings to make
+    private static boolean canLinkTypeStatic(final Class<?> type) {
+        // can link JSObject also handles Map (this includes Bindings) to make
         // sure those are not JSObjects.
         return Map.class.isAssignableFrom(type) ||
-               Bindings.class.isAssignableFrom(type) ||
                JSObject.class.isAssignableFrom(type);
     }
 
@@ -84,7 +83,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
         if (self instanceof JSObject) {
             inv = lookup(desc, request, linkerServices);
             inv = inv.replaceMethods(linkerServices.filterInternalObjects(inv.getInvocation()), inv.getGuard());
-        } else if (self instanceof Map || self instanceof Bindings) {
+        } else if (self instanceof Map) {
             // guard to make sure the Map or Bindings does not turn into JSObject later!
             final GuardedInvocation beanInv = nashornBeansLinker.getGuardedInvocation(request, linkerServices);
             inv = new GuardedInvocation(beanInv.getInvocation(),
@@ -114,6 +113,13 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
             case SET:
                 if (NashornCallSiteDescriptor.hasStandardNamespace(desc)) {
                     return name != null ? findSetMethod(name) : findSetIndexMethod();
+                }
+                break;
+            case REMOVE:
+                if (NashornCallSiteDescriptor.hasStandardNamespace(desc)) {
+                    return new GuardedInvocation(
+                            name == null ? JSOBJECTLINKER_DEL : MH.insertArguments(JSOBJECTLINKER_DEL, 1, name),
+                            IS_JSOBJECT_GUARD);
                 }
                 break;
             case CALL:
@@ -206,6 +212,15 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
         }
     }
 
+    @SuppressWarnings("unused")
+    private static boolean del(final Object jsobj, final Object key) {
+        if (jsobj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)jsobj).delete(key);
+        }
+        ((JSObject) jsobj).removeMember(Objects.toString(key));
+        return true;
+    }
+
     private static int getIndex(final Number n) {
         final double value = n.doubleValue();
         return JSType.isRepresentableAsInt(value) ? (int)value : -1;
@@ -245,6 +260,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
     private static final MethodHandle IS_JSOBJECT_GUARD  = findOwnMH_S("isJSObject", boolean.class, Object.class);
     private static final MethodHandle JSOBJECTLINKER_GET = findOwnMH_S("get", Object.class, MethodHandle.class, Object.class, Object.class);
     private static final MethodHandle JSOBJECTLINKER_PUT = findOwnMH_S("put", Void.TYPE, Object.class, Object.class, Object.class);
+    private static final MethodHandle JSOBJECTLINKER_DEL = findOwnMH_S("del", boolean.class, Object.class, Object.class);
 
     // method handles of JSObject class
     private static final MethodHandle JSOBJECT_GETMEMBER     = findJSObjectMH_V("getMember", Object.class, String.class);
