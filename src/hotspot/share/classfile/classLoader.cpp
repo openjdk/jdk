@@ -803,7 +803,7 @@ void ClassLoader::setup_boot_search_path(const char *class_path) {
   bool set_base_piece = true;
 
 #if INCLUDE_CDS
-  if (DumpSharedSpaces || UseSharedSpaces) {
+  if (DumpSharedSpaces) {
     if (!Arguments::has_jimage()) {
       vm_exit_during_initialization("CDS is not supported in exploded JDK build", NULL);
     }
