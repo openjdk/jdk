@@ -142,6 +142,7 @@ public:
   void*           _os_lib;
   bool            _is_absolute_path;
   bool            _is_static_lib;
+  bool            _is_instrument_lib;
   AgentState      _state;
   AgentLibrary*   _next;
 
@@ -154,13 +155,15 @@ public:
   void set_os_lib(void* os_lib)             { _os_lib = os_lib; }
   AgentLibrary* next() const                { return _next; }
   bool is_static_lib() const                { return _is_static_lib; }
+  bool is_instrument_lib() const            { return _is_instrument_lib; }
   void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
   bool valid()                              { return (_state == agent_valid); }
   void set_valid()                          { _state = agent_valid; }
   void set_invalid()                        { _state = agent_invalid; }
 
   // Constructor
-  AgentLibrary(const char* name, const char* options, bool is_absolute_path, void* os_lib);
+  AgentLibrary(const char* name, const char* options, bool is_absolute_path,
+               void* os_lib, bool instrument_lib=false);
 };
 
 // maintain an order of entry list of AgentLibrary
@@ -337,6 +340,7 @@ class Arguments : AllStatic {
   // -agentlib and -agentpath arguments
   static AgentLibraryList _agentList;
   static void add_init_agent(const char* name, char* options, bool absolute_path);
+  static void add_instrument_agent(const char* name, char* options, bool absolute_path);
 
   // Late-binding agents not started via arguments
   static void add_loaded_agent(AgentLibrary *agentLib);
