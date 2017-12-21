@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -45,6 +44,7 @@ import com.sun.org.apache.xpath.internal.objects.XObject;
  *
  * @see <a href="http://www.exslt.org/">EXSLT</a>
  * @xsl.usage general
+ * @LastModified: Nov 2017
  */
 
 public class ExsltDatetime

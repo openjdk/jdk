@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,6 +28,8 @@ import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
 /**
  * This class represents the data structure basics of the XPath
  * object.
+ *
+ * @LastModified: Nov 2017
  */
 public class OpMap
 {

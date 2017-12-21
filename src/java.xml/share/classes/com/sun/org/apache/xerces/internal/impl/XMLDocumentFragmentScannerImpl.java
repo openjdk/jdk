@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
  */
 
 /*
@@ -72,6 +71,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author Eric Ye, IBM
  * @author Sunitha Reddy, SUN Microsystems
  *
+ * @LastModified: Sep 2017
  */
 public class XMLDocumentFragmentScannerImpl
         extends XMLScanner

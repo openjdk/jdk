@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,6 +36,7 @@ import org.w3c.dom.ranges.RangeException;
  *
  * @xerces.internal
  *
+ * @LastModified: Oct 2017
  */
 public class RangeImpl  implements Range {
 

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,6 +39,7 @@ import com.sun.org.apache.xml.internal.dtm.DTM;
 
 /**
  * @author Morten Jorgensen
+ * @LastModified: Oct 2017
  */
 final class ProcessingInstructionPattern extends StepPattern {
 

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -59,6 +58,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author John Howard (johnh@schemasoft.com)
+ * @LastModified: Oct 2017
  */
 public final class XSLTC {
 

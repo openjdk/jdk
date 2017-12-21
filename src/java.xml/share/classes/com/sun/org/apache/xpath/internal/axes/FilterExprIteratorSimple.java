@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -36,6 +35,8 @@ import java.util.List;
 /**
  * Class to use for one-step iteration that doesn't have a predicate, and
  * doesn't need to set the context.
+ *
+ * @LastModified: Oct 2017
  */
 public class FilterExprIteratorSimple extends LocPathIterator
 {

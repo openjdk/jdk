@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -53,7 +52,9 @@ import org.w3c.dom.Node;
  * </ul>
  *
  * <p>State: In progress!!</p>
- * */
+ *
+ * @LastModified: Nov 2017
+ */
 public class DTMNodeList extends DTMNodeListBase {
     private DTMIterator m_iter;
 

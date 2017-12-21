@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,6 +36,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
  * @author Morten Jorgensen
+ * @LastModified: Nov 2017
  */
 final class Message extends Instruction {
     private boolean _terminate = false;

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -95,6 +94,7 @@ import org.xml.sax.ext.EntityResolver2;
  * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  * @author Michael Glavassevich, IBM
  *
+ * @LastModified: Oct 2017
  */
 final class ValidatorHandlerImpl extends ValidatorHandler implements
     DTDHandler, EntityState, PSVIProvider, ValidatorHelper, XMLDocumentHandler {

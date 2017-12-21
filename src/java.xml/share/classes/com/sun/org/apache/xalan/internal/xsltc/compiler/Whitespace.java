@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -43,6 +42,7 @@ import java.util.StringTokenizer;
 
 /**
  * @author Morten Jorgensen
+ * @LastModified: Oct 2017
  */
 final class Whitespace extends TopLevelElement {
     // Three possible actions for the translet:

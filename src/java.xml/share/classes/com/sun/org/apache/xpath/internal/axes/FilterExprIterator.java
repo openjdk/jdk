@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,6 +28,9 @@ import com.sun.org.apache.xpath.internal.XPathVisitor;
 import com.sun.org.apache.xpath.internal.objects.XNodeSet;
 import java.util.List;
 
+/**
+ * @LastModified: Oct 2017
+ */
 public class FilterExprIterator extends BasicTestIterator
 {
     static final long serialVersionUID = 2552176105165737614L;

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -95,6 +94,7 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
+ * @LastModified: Nov 2017
  */
 public final class TransformerImpl extends Transformer
     implements DOMCache, ErrorListener

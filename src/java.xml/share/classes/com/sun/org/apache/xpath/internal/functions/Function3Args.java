@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,6 +30,7 @@ import java.util.List;
 /**
  * Base class for functions that accept three arguments.
  * @xsl.usage advanced
+ * @LastModified: Oct 2017
  */
 public class Function3Args extends Function2Args
 {

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,6 +31,7 @@ import org.w3c.dom.Node;
  * all the traces of the nested exceptions, not just the trace
  * of this object.
  * @xsl.usage general
+ * @LastModified: Oct 2017
  */
 public class XPathException extends TransformerException
 {

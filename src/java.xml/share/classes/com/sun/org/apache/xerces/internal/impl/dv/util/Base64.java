@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,6 +36,7 @@ package com.sun.org.apache.xerces.internal.impl.dv.util;
  *
  * @author Jeffrey Rodriguez
  * @author Sandy Gao
+ * @LastModified: Nov 2017
  */
 public final class  Base64 {
 
