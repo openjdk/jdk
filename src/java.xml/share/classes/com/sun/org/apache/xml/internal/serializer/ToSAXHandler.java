@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -36,6 +35,7 @@ import org.xml.sax.ext.LexicalHandler;
  * This class is not a public API.
  *
  * @xsl.usage internal
+ * @LastModified: Oct 2017
  */
 public abstract class ToSAXHandler extends SerializerBase {
     public ToSAXHandler() { }

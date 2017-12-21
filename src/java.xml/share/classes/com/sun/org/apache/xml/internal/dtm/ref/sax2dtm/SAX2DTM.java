@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -63,6 +62,8 @@ import org.xml.sax.ext.LexicalHandler;
 /**
  * This class implements a DTM that tends to be optimized more for speed than
  * for compactness, that is constructed via SAX2 ContentHandler events.
+ *
+ * @LastModified: Oct 2017
  */
 public class SAX2DTM extends DTMDefaultBaseIterators
         implements EntityResolver, DTDHandler, ContentHandler, ErrorHandler,

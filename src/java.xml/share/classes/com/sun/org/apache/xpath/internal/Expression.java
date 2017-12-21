@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,6 +41,8 @@ import org.xml.sax.ContentHandler;
  * construction has completed.  An exception to the immutibility rule is iterators
  * and walkers, which must be cloned in order to be used -- the original must
  * still be immutable.
+ *
+ * @LastModified: Oct 2017
  */
 public abstract class Expression implements java.io.Serializable, ExpressionNode, XPathVisitable
 {

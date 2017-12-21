@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -59,6 +58,7 @@ import java.util.Stack;
  * @version $Id: MethodGen.java 1749603 2016-06-21 20:50:19Z ggregory $
  * @see InstructionList
  * @see Method
+ * @LastModified: Oct 2017
  */
 public class MethodGen extends FieldGenOrMethodGen {
 

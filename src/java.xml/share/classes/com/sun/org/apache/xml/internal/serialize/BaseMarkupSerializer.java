@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -129,6 +128,8 @@ import org.xml.sax.ext.LexicalHandler;
  * is replaced by that of Xalan. Main class
  * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
  * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.
+ *
+ * @LastModified: Nov 2017
  */
 @Deprecated
 public abstract class BaseMarkupSerializer

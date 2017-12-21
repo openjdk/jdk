@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
  */
 
 /*
@@ -65,6 +64,7 @@ import jdk.xml.internal.SecuritySupport;
  * Refer to the table in unit-test javax.xml.stream.XMLStreamReaderTest.SupportDTD for changes
  * related to property SupportDTD.
  * @author Joe Wang, Sun Microsystems
+ * @LastModified: Sep 2017
  */
 public class XMLDocumentScannerImpl
         extends XMLDocumentFragmentScannerImpl{

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,6 +40,7 @@ import java.util.List;
  * the expression executes, it calls ExtensionsTable#extFunction, and then
  * converts the result to the appropriate XObject.
  * @xsl.usage advanced
+ * @LastModified: Oct 2017
  */
 public class FuncExtFunction extends Function
 {

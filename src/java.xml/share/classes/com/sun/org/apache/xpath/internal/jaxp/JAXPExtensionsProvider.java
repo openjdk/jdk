@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -38,6 +37,7 @@ import jdk.xml.internal.JdkXmlFeatures;
 /**
  *
  * @author Ramesh Mandava ( ramesh.mandava@sun.com )
+ * @LastModified: Nov 2017
  */
 public class JAXPExtensionsProvider implements ExtensionsProvider {
 

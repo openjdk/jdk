@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,6 +29,7 @@ import java.util.AbstractList;
  *
  * @xerces.internal
  *
+ * @LastModified: Oct 2017
  */
 @SuppressWarnings("unchecked") // method <T>toArray(T[])
 public final class ObjectListImpl extends AbstractList<Object> implements ObjectList {

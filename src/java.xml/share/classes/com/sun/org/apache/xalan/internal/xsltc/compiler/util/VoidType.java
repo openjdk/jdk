@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,6 +28,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.Constants;
 /**
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
+ * @LastModified: Oct 2017
  */
 public final class VoidType extends Type {
     protected VoidType() {}

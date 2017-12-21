@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -69,6 +68,7 @@ import org.xml.sax.SAXException;
  * @author Santiago Pericas-Geertsen
  * @author Morten Jorgensen
  * @author Douglas Sellers <douglasjsellers@hotmail.com>
+ * @LastModified: Oct 2017
  */
 public final class SAXImpl extends SAX2DTM2
                            implements DOMEnhancedForDTM, DOMBuilder

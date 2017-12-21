@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,6 +39,7 @@ import org.xml.sax.ext.LexicalHandler;
  * that SAX doesn't handle yet) and adds the result to a document
  * or document fragment.
  * @xsl.usage general
+ * @LastModified: Oct 2017
  */
 public class DOMBuilder
         implements ContentHandler, LexicalHandler

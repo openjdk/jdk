@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,6 +29,7 @@ import java.util.Locale;
 /**
 * International friendly string comparison with case-order
  * @author Igor Hersht, igorh@ca.ibm.com
+ * @LastModified: Oct 2017
 */
 public class StringComparable implements Comparable<StringComparable>  {
 

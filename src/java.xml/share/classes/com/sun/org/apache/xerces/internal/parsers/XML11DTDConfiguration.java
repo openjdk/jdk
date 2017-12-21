@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -104,6 +103,7 @@ import java.util.Locale;
  * @author Michael Glavassevich, IBM
  * @author John Kim, IBM
  *
+ * @LastModified: Oct 2017
  */
 public class XML11DTDConfiguration extends ParserConfigurationSettings
     implements XMLPullParserConfiguration, XML11Configurable {

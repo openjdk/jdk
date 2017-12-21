@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -31,6 +30,7 @@ import org.w3c.dom.DOMStringList;
  * This class implemets the DOM Level 3 Core interface DOMStringList.
  *
  * @xsl.usage internal
+ * @LastModified: Oct 2017
  */
 final class DOMStringListImpl implements DOMStringList {
 

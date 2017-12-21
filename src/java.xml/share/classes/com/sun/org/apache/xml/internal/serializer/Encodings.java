@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -49,6 +48,7 @@ import jdk.xml.internal.SecuritySupport;
  * for each encoding.
  *
  * @author <a href="mailto:arkin@intalio.com">Assaf Arkin</a>
+ * @LastModified: Oct 2017
  */
 
 public final class Encodings extends Object

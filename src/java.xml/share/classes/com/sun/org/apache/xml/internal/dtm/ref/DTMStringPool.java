@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -53,7 +52,9 @@ import java.util.List;
  * ObjectPool if one was needed.</p>
  *
  * <p>Status: Passed basic test in main().</p>
- * */
+ *
+ * @LastModified: Oct 2017
+ */
 public class DTMStringPool
 {
   List<String> m_intToString;

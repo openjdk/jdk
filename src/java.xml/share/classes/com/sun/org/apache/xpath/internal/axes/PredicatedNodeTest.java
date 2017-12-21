@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,6 +33,9 @@ import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.patterns.NodeTest;
 import java.util.List;
 
+/**
+ * @LastModified: Oct 2017
+ */
 public abstract class PredicatedNodeTest extends NodeTest implements SubContextList
 {
     static final long serialVersionUID = -6193530757296377351L;

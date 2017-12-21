@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -36,6 +35,8 @@ import javax.xml.transform.Source;
  * The <code>DTMDefaultBase</code> class serves as a helper base for DTMs.
  * It sets up structures for navigation and type, while leaving data
  * management and construction to the derived classes.
+ *
+ * @LastModified: Oct 2017
  */
 public abstract class DTMDefaultBase implements DTM
 {

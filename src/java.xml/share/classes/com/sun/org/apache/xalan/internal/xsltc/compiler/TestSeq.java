@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -48,6 +47,7 @@ import java.util.Map;
  * @author Santiago Pericas-Geertsen
  * @author Erwin Bolwidt <ejb@klomp.org>
  * @author Morten Jorgensen <morten.jorgensen@sun.com>
+ * @LastModified: Nov 2017
  */
 final class TestSeq {
 

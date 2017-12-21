@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -61,6 +60,7 @@ import org.w3c.dom.UserDataHandler;
  * DTMNodeProxy may be subclassed further to present specific DOM node types.
  *
  * @see org.w3c.dom
+ * @LastModified: Nov 2017
  */
 public class DTMNodeProxy
   implements Node, Document, Text, Element, Attr,

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -85,6 +84,7 @@ import org.w3c.dom.traversal.TreeWalker;
  * @author Andy Clark, IBM
  * @author Ralf Pfeiffer, IBM
  * @since  PR-DOM-Level-1-19980818.
+ * @LastModified: Nov 2017
  */
 public class DocumentImpl
     extends CoreDocumentImpl

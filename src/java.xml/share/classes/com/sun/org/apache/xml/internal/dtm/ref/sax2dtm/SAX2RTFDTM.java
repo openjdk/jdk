@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -58,7 +57,9 @@ import org.xml.sax.SAXException;
  * %REVIEW% In fact, since the differences are so minor, I think it
  * may be possible/practical to fold them back into the base
  * SAX2DTM. Consider that as a future code-size optimization.
- * */
+ *
+ * @LastModified: Oct 2017
+ */
 public class SAX2RTFDTM extends SAX2DTM
 {
   /** Set true to monitor SAX events and similar diagnostic info. */

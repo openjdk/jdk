@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,6 +31,7 @@ import jdk.xml.internal.SecuritySupport;
  *
  * @xerces.internal
  *
+ * @LastModified: Sep 2017
  */
 class RegexParser {
     static final int T_CHAR = 0;
