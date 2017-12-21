@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,19 +24,22 @@
  */
 
 /**
- * JDK-8165198:  Inconsistent values with JavaImporter after accessing undefined variable
+ * JDK-8193491 : JavaImporter fails to resolve method elements within functions, that contain too many statements
  *
  * @test
  * @run
+ * @option -Dnashorn.compiler.splitter.threshold=200
+ * @fork
  */
 
-var NashornScriptEngineFactory = Java.type("jdk.nashorn.api.scripting.NashornScriptEngineFactory");
-var e = new NashornScriptEngineFactory().getScriptEngine("-ot=false");
-try {
-    e.eval("with(new JavaImporter(java.util)){x}");
-} catch (e) {
-    print(e);
+var imports = new JavaImporter(java.lang, java.util, java.io);
+with (imports) {
+    function func() {
+        var m = new HashMap();
+        var f = new File(".");
+        var i = new Integer(2);
+        System.out.println(i);
+        System.out.println('a');
+    };
+    func();
 }
-e.eval("with(new JavaImporter(java.util)){x=1}");
-var output2 = e.eval("with(new JavaImporter(java.util)){x}");
-print(output2);
