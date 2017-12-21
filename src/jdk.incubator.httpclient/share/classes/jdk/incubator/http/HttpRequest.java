@@ -622,6 +622,49 @@ public abstract class HttpRequest {
     public interface BodyPublisher extends Flow.Publisher<ByteBuffer> {
 
         /**
+         * Returns a request body publisher whose body is retrieved from the
+         * given {@code Flow.Publisher}. The returned request body publisher
+         * has an unknown content length.
+         *
+         * @apiNote This method can be used as an adapter between {@code
+         * BodyPublisher} and {@code Flow.Publisher}, where the amount of
+         * request body that the publisher will publish is unknown.
+         *
+         * @param publisher the publisher responsible for publishing the body
+         * @return a BodyPublisher
+         */
+        static BodyPublisher fromPublisher(Flow.Publisher<? extends ByteBuffer> publisher) {
+            return new RequestPublishers.PublisherAdapter(publisher, -1L);
+        }
+
+        /**
+         * Returns a request body publisher whose body is retrieved from the
+         * given {@code Flow.Publisher}. The returned request body publisher
+         * has the given content length.
+         *
+         * <p> The given {@code contentLength} is a positive number, that
+         * represents the exact amount of bytes the {@code publisher} must
+         * publish.
+         *
+         * @apiNote This method can be used as an adapter between {@code
+         * BodyPublisher} and {@code Flow.Publisher}, where the amount of
+         * request body that the publisher will publish is known.
+         *
+         * @param publisher the publisher responsible for publishing the body
+         * @param contentLength a positive number representing the exact
+         *                      amount of bytes the publisher will publish
+         * @throws IllegalArgumentException if the content length is
+         *                                  non-positive
+         * @return a BodyPublisher
+         */
+        static BodyPublisher fromPublisher(Flow.Publisher<? extends ByteBuffer> publisher,
+                                           long contentLength) {
+            if (contentLength < 1)
+                throw new IllegalArgumentException("non-positive contentLength: " + contentLength);
+            return new RequestPublishers.PublisherAdapter(publisher, contentLength);
+        }
+
+        /**
          * Returns a request body publisher whose body is the given {@code
          * String}, converted using the {@link StandardCharsets#UTF_8 UTF_8}
          * character set.

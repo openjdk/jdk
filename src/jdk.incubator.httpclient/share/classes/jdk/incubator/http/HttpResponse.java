@@ -46,6 +46,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Subscriber;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.net.ssl.SSLParameters;
@@ -329,6 +330,75 @@ public abstract class HttpResponse<T> {
         public BodySubscriber<T> apply(int statusCode, HttpHeaders responseHeaders);
 
         /**
+         * Returns a response body handler that returns a {@link BodySubscriber
+         * BodySubscriber}{@code <Void>} obtained from {@linkplain
+         * BodySubscriber#fromSubscriber(Subscriber)}, with the given
+         * {@code subscriber}.
+         *
+         * <p> The response body is not available through this, or the {@code
+         * HttpResponse} API, but instead all response body is forwarded to the
+         * given {@code subscriber}, which should make it available, if
+         * appropriate, through some other mechanism, e.g. an entry in a
+         * database, etc.
+         *
+         * @apiNote This method can be used as an adapter between {@code
+         * BodySubscriber} and {@code Flow.Subscriber}.
+         *
+         * <p> For example:
+         * <pre> {@code
+         *  TextSubscriber subscriber = new TextSubscriber();
+         *  HttpResponse<Void> response = client.sendAsync(request,
+         *      BodyHandler.fromSubscriber(subscriber)).join();
+         *  System.out.println(response.statusCode());
+         * }</pre>
+         *
+         * @param subscriber the subscriber
+         * @return a response body handler
+         */
+        public static BodyHandler<Void>
+        fromSubscriber(Subscriber<? super List<ByteBuffer>> subscriber) {
+            Objects.requireNonNull(subscriber);
+            return (status, headers) -> BodySubscriber.fromSubscriber(subscriber,
+                                                                      s -> null);
+        }
+
+        /**
+         * Returns a response body handler that returns a {@link BodySubscriber
+         * BodySubscriber}{@code <T>} obtained from {@link
+         * BodySubscriber#fromSubscriber(Subscriber, Function)}, with the
+         * given {@code subscriber} and {@code finisher} function.
+         *
+         * <p> The given {@code finisher} function is applied after the given
+         * subscriber's {@code onComplete} has been invoked. The {@code finisher}
+         * function is invoked with the given subscriber, and returns a value
+         * that is set as the response's body.
+         *
+         * @apiNote This method can be used as an adapter between {@code
+         * BodySubscriber} and {@code Flow.Subscriber}.
+         *
+         * <p> For example:
+         * <pre> {@code
+         * TextSubscriber subscriber = ...;  // accumulates bytes and transforms them into a String
+         * HttpResponse<String> response = client.sendAsync(request,
+         *     BodyHandler.fromSubscriber(subscriber, TextSubscriber::getTextResult)).join();
+         * String text = response.body();
+         * }</pre>
+         *
+         * @param <S> the type of the Subscriber
+         * @param <T> the type of the response body
+         * @param subscriber the subscriber
+         * @param finisher a function to be applied after the subscriber has completed
+         * @return a response body handler
+         */
+        public static <S extends Subscriber<? super List<ByteBuffer>>,T> BodyHandler<T>
+        fromSubscriber(S subscriber, Function<S,T> finisher) {
+            Objects.requireNonNull(subscriber);
+            Objects.requireNonNull(finisher);
+            return (status, headers) -> BodySubscriber.fromSubscriber(subscriber,
+                                                                      finisher);
+        }
+
+        /**
          * Returns a response body handler which discards the response body and
          * uses the given value as a replacement for it.
          *
@@ -593,6 +663,53 @@ public abstract class HttpResponse<T> {
          * @return a CompletionStage for the response body
          */
         public CompletionStage<T> getBody();
+
+        /**
+         * Returns a body subscriber that forwards all response body to the
+         * given {@code Flow.Subscriber}. The {@linkplain #getBody()} completion
+         * stage} of the returned body subscriber completes after one of the
+         * given subscribers {@code onComplete} or {@code onError} has been
+         * invoked.
+         *
+         * @apiNote This method can be used as an adapter between {@code
+         * BodySubscriber} and {@code Flow.Subscriber}.
+         *
+         * @param <S> the type of the Subscriber
+         * @param subscriber the subscriber
+         * @return a body subscriber
+         */
+        public static <S extends Subscriber<? super List<ByteBuffer>>> BodySubscriber<Void>
+        fromSubscriber(S subscriber) {
+            return new ResponseSubscribers.SubscriberAdapter<S,Void>(subscriber, s -> null);
+        }
+
+        /**
+         * Returns a body subscriber that forwards all response body to the
+         * given {@code Flow.Subscriber}. The {@linkplain #getBody()} completion
+         * stage} of the returned body subscriber completes after one of the
+         * given subscribers {@code onComplete} or {@code onError} has been
+         * invoked.
+         *
+         * <p> The given {@code finisher} function is applied after the given
+         * subscriber's {@code onComplete} has been invoked. The {@code finisher}
+         * function is invoked with the given subscriber, and returns a value
+         * that is set as the response's body.
+         *
+         * @apiNote This method can be used as an adapter between {@code
+         * BodySubscriber} and {@code Flow.Subscriber}.
+         *
+         * @param <S> the type of the Subscriber
+         * @param <T> the type of the response body
+         * @param subscriber the subscriber
+         * @param finisher a function to be applied after the subscriber has
+         *                 completed
+         * @return a body subscriber
+         */
+        public static <S extends Subscriber<? super List<ByteBuffer>>,T> BodySubscriber<T>
+        fromSubscriber(S subscriber,
+                       Function<S,T> finisher) {
+            return new ResponseSubscribers.SubscriberAdapter<S,T>(subscriber, finisher);
+        }
 
         /**
          * Returns a body subscriber which stores the response body as a {@code
