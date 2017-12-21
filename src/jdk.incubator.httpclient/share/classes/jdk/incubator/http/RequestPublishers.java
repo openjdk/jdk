@@ -46,6 +46,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Publisher;
 import java.util.function.Supplier;
 import jdk.incubator.http.HttpRequest.BodyPublisher;
 import jdk.incubator.http.internal.common.Utils;
@@ -347,6 +348,28 @@ class RequestPublishers {
         @Override
         public long contentLength() {
             return -1;
+        }
+    }
+
+    static final class PublisherAdapter implements BodyPublisher {
+
+        private final Publisher<? extends ByteBuffer> publisher;
+        private final long contentLength;
+
+        PublisherAdapter(Publisher<? extends ByteBuffer> publisher,
+                         long contentLength) {
+            this.publisher = Objects.requireNonNull(publisher);
+            this.contentLength = contentLength;
+        }
+
+        @Override
+        public final long contentLength() {
+            return contentLength;
+        }
+
+        @Override
+        public final void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+            publisher.subscribe(subscriber);
         }
     }
 }
