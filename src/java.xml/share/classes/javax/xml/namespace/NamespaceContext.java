@@ -67,7 +67,7 @@ import java.util.Iterator;
  * <p>A prefix can only be bound to a <strong>single</strong>
  * Namespace URI in the current scope.
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @see javax.xml.XMLConstants
  *   javax.xml.XMLConstants for declarations of common XML values
  * @see <a href="http://www.w3.org/TR/xmlschema-2/#QName">

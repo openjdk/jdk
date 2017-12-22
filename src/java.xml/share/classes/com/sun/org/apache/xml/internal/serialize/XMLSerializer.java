@@ -83,7 +83,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * spaces at beginning of line will be stripped.
  *
  * @author <a href="mailto:arkin@intalio.com">Assaf Arkin</a>
- * @author <a href="mailto:rahul.srivastava@sun.com">Rahul Srivastava</a>
+ * @author Rahul Srivastava
  * @author Elena Litani IBM
  * @see Serializer
  *

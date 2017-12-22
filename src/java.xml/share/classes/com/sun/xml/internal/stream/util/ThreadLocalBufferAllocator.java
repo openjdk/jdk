@@ -35,8 +35,8 @@ import java.lang.ref.*;
  * The local storage is activated on the return of the buffer.
  * The buffer returns null if it is already allocated.
  *
- * @author Binu.John@sun.com
- * @author Santiago.PericasGeertsen@sun.com
+ * @author Binu John
+ * @author Santiago PericasGeertsen
  */
 public class ThreadLocalBufferAllocator {
    private static ThreadLocal<SoftReference<BufferAllocator>> tlba = new ThreadLocal<>();

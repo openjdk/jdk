@@ -74,7 +74,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * class to initially adapt their SAX1 implementation to work under
  * this revised class.
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @since 1.4
  */
 @SuppressWarnings("deprecation")

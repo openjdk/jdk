@@ -36,7 +36,7 @@ import org.xml.sax.SAXException;
  * kind of SAXException tunneling.
  *
  * @author
- *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ *     Kohsuke Kawaguchi
  *
  * @LastModified: Oct 2017
  */

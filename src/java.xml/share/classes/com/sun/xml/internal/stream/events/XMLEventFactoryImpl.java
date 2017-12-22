@@ -42,7 +42,7 @@ import javax.xml.stream.events.StartElement;
 
 /**
  *
- * @author  Neeraj Bajaj, k.venugopal@sun.com
+ * @author  Neeraj Bajaj, k venugopal
  */
 public class XMLEventFactoryImpl extends XMLEventFactory {
 

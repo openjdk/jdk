@@ -36,7 +36,7 @@ import jdk.xml.internal.JdkXmlFeatures;
 
 /**
  *
- * @author Ramesh Mandava ( ramesh.mandava@sun.com )
+ * @author Ramesh Mandava
  * @LastModified: Nov 2017
  */
 public class JAXPExtensionsProvider implements ExtensionsProvider {

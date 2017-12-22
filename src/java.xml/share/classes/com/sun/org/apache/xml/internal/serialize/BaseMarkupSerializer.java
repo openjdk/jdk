@@ -118,9 +118,9 @@ import org.xml.sax.ext.LexicalHandler;
  *
  *
  * @author <a href="mailto:arkin@intalio.com">Assaf Arkin</a>
- * @author <a href="mailto:rahul.srivastava@sun.com">Rahul Srivastava</a>
+ * @author Rahul Srivastava
  * @author Elena Litani, IBM
- * @author Sunitha Reddy, Sun Microsystems
+ * @author Sunitha Reddy
  * @see Serializer
  * @see org.w3c.dom.ls.LSSerializer
  *

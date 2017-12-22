@@ -37,13 +37,13 @@ import javax.xml.stream.XMLResolver;
 import jdk.xml.internal.JdkXmlUtils;
 
 /**
- *  This class manages different properties related to Stax specification and its implementation.
+ * This class manages different properties related to Stax specification and its implementation.
  * This class constructor also takes itself (PropertyManager object) as parameter and initializes the
  * object with the property taken from the object passed.
  *
- * @author  Neeraj Bajaj, neeraj.bajaj@sun.com
- * @author K.Venugopal@sun.com
- * @author Sunitha Reddy, sunitha.reddy@sun.com
+ * @author Neeraj Bajaj
+ * @author K Venugopal
+ * @author Sunitha Reddy
  */
 
 public class PropertyManager {

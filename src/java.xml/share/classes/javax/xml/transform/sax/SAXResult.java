@@ -33,7 +33,7 @@ import org.xml.sax.ext.LexicalHandler;
 /**
  * <p>Acts as an holder for a transformation Result.</p>
  *
- * @author <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @since 1.4
  */
 public class SAXResult implements Result {
