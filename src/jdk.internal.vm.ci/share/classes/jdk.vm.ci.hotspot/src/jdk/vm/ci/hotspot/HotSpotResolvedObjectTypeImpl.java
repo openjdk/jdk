@@ -922,7 +922,10 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     public ResolvedJavaMethod getClassInitializer() {
-        return compilerToVM().getClassInitializer(this);
+        if (!isArray()) {
+            return compilerToVM().getClassInitializer(this);
+        }
+        return null;
     }
 
     @Override
