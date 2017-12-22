@@ -59,7 +59,7 @@ import jdk.xml.internal.SecuritySupport;
  *
  * <p><code>QName</code> is immutable.</p>
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xmlschema-2/#QName">
  *   XML Schema Part2: Datatypes specification</a>
  * @see <a href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">

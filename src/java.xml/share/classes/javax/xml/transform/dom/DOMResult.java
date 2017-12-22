@@ -36,7 +36,7 @@ import org.w3c.dom.Node;
  * a Document node as the holder for the result of the transformation,
  * which may be retrieved with {@link #getNode()}.
  *
- * @author <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @since 1.4
  */
 public class DOMResult implements Result {

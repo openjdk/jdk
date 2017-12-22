@@ -32,7 +32,7 @@ import org.xml.sax.SAXParseException;
 /**
  * <p>Static utility methods for the Validation API implementation.</p>
  *
- * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ * @author Kohsuke Kawaguchi
  */
 final class Util {
 

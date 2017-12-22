@@ -31,7 +31,7 @@ import javax.xml.namespace.QName;
 /**
  * <p>Utility class to contain basic Datatype values as constants.</p>
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @since 1.5
  */
 

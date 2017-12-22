@@ -44,7 +44,7 @@ import java.util.Properties;
  * <p>A <code>Transformer</code> may be used multiple times.  Parameters and
  * output properties are preserved across transformations.</p>
  *
- * @author <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @since 1.4
  */
 public abstract class Transformer {

@@ -46,7 +46,7 @@ import java.util.Map;
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
  * @author Erwin Bolwidt <ejb@klomp.org>
- * @author Morten Jorgensen <morten.jorgensen@sun.com>
+ * @author Morten Jorgensen
  * @LastModified: Nov 2017
  */
 final class TestSeq {

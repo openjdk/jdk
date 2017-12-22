@@ -30,7 +30,7 @@ import javax.xml.stream.Location;
 /**
  *Implementation of Location interface to be used by
  *event readers.
- *@author Neeraj.bajaj@sun.com,k.venugopal@sun.com
+ *@author Neeraj bajaj,k venugopal
  */
 public class LocationImpl implements Location{
     String systemId;

@@ -91,7 +91,7 @@ import org.xml.sax.ext.EntityResolver2;
  * <p>Implementation of ValidatorHandler for W3C XML Schemas and
  * also a validator helper for <code>SAXSource</code>s.</p>
  *
- * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ * @author Kohsuke Kawaguchi
  * @author Michael Glavassevich, IBM
  *
  * @LastModified: Oct 2017

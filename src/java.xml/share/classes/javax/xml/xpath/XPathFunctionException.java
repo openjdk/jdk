@@ -28,8 +28,8 @@ package javax.xml.xpath;
 /**
  * {@code XPathFunctionException} represents an error with an XPath function.
  *
- * @author  <a href="mailto:Norman.Walsh@Sun.com">Norman Walsh</a>
- * @author  <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author  Norman Walsh
+ * @author  Jeff Suttor
  * @since 1.5
  */
 public class XPathFunctionException extends XPathExpressionException {

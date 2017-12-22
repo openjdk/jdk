@@ -40,7 +40,7 @@ import javax.xml.transform.Source;
  * <p><em>Note:</em> Due to their internal use of either a {@link Reader} or {@link InputStream} instance,
  * <code>StreamSource</code> instances may only be used once.</p>
  *
- * @author <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @since 1.4
  */
 public class StreamSource implements Source {

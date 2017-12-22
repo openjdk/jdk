@@ -56,7 +56,7 @@ import org.xml.sax.SAXException;
  * <code>Document</code>. It merely requires that the implementation
  * communicate with the application using these existing APIs.
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @since 1.4
  */
 

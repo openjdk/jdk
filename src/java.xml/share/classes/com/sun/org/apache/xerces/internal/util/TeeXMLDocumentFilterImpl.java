@@ -37,7 +37,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
  *
  *
  * @author
- *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ *     Kohsuke Kawaguchi
  */
 public class TeeXMLDocumentFilterImpl implements XMLDocumentFilter {
     /**
