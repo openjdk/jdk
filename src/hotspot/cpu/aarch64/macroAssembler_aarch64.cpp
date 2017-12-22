@@ -3742,13 +3742,16 @@ void  MacroAssembler::decode_klass_not_null(Register r) {
 }
 
 void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
-  assert (UseCompressedOops, "should only be used for compressed oops");
-  assert (Universe::heap() != NULL, "java heap should be initialized");
-  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
-
+#ifdef ASSERT
+  {
+    ThreadInVMfromUnknown tiv;
+    assert (UseCompressedOops, "should only be used for compressed oops");
+    assert (Universe::heap() != NULL, "java heap should be initialized");
+    assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+    assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "should be real oop");
+  }
+#endif
   int oop_index = oop_recorder()->find_index(obj);
-  assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "should be real oop");
-
   InstructionMark im(this);
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
   code_section()->relocate(inst_mark(), rspec);
@@ -4006,8 +4009,13 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
   if (obj == NULL) {
     oop_index = oop_recorder()->allocate_oop_index(obj);
   } else {
+#ifdef ASSERT
+    {
+      ThreadInVMfromUnknown tiv;
+      assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "should be real oop");
+    }
+#endif
     oop_index = oop_recorder()->find_index(obj);
-    assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "should be real oop");
   }
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
   if (! immediate) {
@@ -4030,8 +4038,13 @@ void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
 }
 
 Address MacroAssembler::constant_oop_address(jobject obj) {
-  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
-  assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "not an oop");
+#ifdef ASSERT
+  {
+    ThreadInVMfromUnknown tiv;
+    assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+    assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "not an oop");
+  }
+#endif
   int oop_index = oop_recorder()->find_index(obj);
   return Address((address)obj, oop_Relocation::spec(oop_index));
 }
