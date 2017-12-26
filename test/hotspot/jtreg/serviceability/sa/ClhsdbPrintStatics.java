@@ -58,7 +58,7 @@ public class ClhsdbPrintStatics {
                     "Abstract_VM_Version::_vm_major_version",
                     "ClassLoaderDataGraph::_head", "SymbolTable::_the_table",
                     "JNIHandles::_weak_global_handles", "PerfMemory::_top",
-                    "_jfr_checkpoints", "ObjectSynchronizer::gBlockList",
+                    "ObjectSynchronizer::gBlockList",
                     "java_lang_Class::_oop_size_offset",
                     "CodeCache::_scavenge_root_nmethods"));
             expStrMap.put("printstatics SystemDictionary", List.of(
