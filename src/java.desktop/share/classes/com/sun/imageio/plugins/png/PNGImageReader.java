@@ -739,6 +739,17 @@ public class PNGImageReader extends ImageReader {
                     // If chunk type is 'IDAT', we've reached the image data.
                     if (imageStartPosition == -1L) {
                         /*
+                         * The PNG specification mandates that if colorType is
+                         * PNG_COLOR_PALETTE then the PLTE chunk should appear
+                         * before the first IDAT chunk.
+                         */
+                        if (colorType == PNG_COLOR_PALETTE &&
+                            !(metadata.PLTE_present))
+                        {
+                            throw new IIOException("Required PLTE chunk"
+                                    + " missing");
+                        }
+                        /*
                          * PNGs may contain multiple IDAT chunks containing
                          * a portion of image data. We store the position of
                          * the first IDAT chunk and continue with iteration
