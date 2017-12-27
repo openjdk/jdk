@@ -31,16 +31,11 @@
 #include "logging/log.hpp"
 #include "osContainer_linux.hpp"
 
-/*
- * Warning: Some linux distros use 0x7FFFFFFFFFFFF000
- * and others use 0x7FFFFFFFFFFFFFFF for unlimited.
- */
-#define UNLIMITED_MEM CONST64(0x7FFFFFFFFFFFF000)
-
 #define PER_CPU_SHARES 1024
 
 bool  OSContainer::_is_initialized   = false;
 bool  OSContainer::_is_containerized = false;
+julong _unlimited_memory;
 
 class CgroupSubsystem: CHeapObj<mtInternal> {
  friend class OSContainer;
@@ -216,6 +211,8 @@ void OSContainer::init() {
 
   _is_initialized = true;
   _is_containerized = false;
+
+  _unlimited_memory = (LONG_MAX / os::vm_page_size()) * os::vm_page_size();
 
   log_trace(os, container)("OSContainer::init: Initializing Container Support");
   if (!UseContainerSupport) {
@@ -419,37 +416,37 @@ char * OSContainer::container_type() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong OSContainer::memory_limit_in_bytes() {
-  GET_CONTAINER_INFO(jlong, memory, "/memory.limit_in_bytes",
-                     "Memory Limit is: " JLONG_FORMAT, JLONG_FORMAT, memlimit);
+  GET_CONTAINER_INFO(julong, memory, "/memory.limit_in_bytes",
+                     "Memory Limit is: " JULONG_FORMAT, JULONG_FORMAT, memlimit);
 
-  if (memlimit >= UNLIMITED_MEM) {
+  if (memlimit >= _unlimited_memory) {
     log_trace(os, container)("Memory Limit is: Unlimited");
     return (jlong)-1;
   }
   else {
-    return memlimit;
+    return (jlong)memlimit;
   }
 }
 
 jlong OSContainer::memory_and_swap_limit_in_bytes() {
-  GET_CONTAINER_INFO(jlong, memory, "/memory.memsw.limit_in_bytes",
-                     "Memory and Swap Limit is: " JLONG_FORMAT, JLONG_FORMAT, memswlimit);
-  if (memswlimit >= UNLIMITED_MEM) {
+  GET_CONTAINER_INFO(julong, memory, "/memory.memsw.limit_in_bytes",
+                     "Memory and Swap Limit is: " JULONG_FORMAT, JULONG_FORMAT, memswlimit);
+  if (memswlimit >= _unlimited_memory) {
     log_trace(os, container)("Memory and Swap Limit is: Unlimited");
     return (jlong)-1;
   } else {
-    return memswlimit;
+    return (jlong)memswlimit;
   }
 }
 
 jlong OSContainer::memory_soft_limit_in_bytes() {
-  GET_CONTAINER_INFO(jlong, memory, "/memory.soft_limit_in_bytes",
-                     "Memory Soft Limit is: " JLONG_FORMAT, JLONG_FORMAT, memsoftlimit);
-  if (memsoftlimit >= UNLIMITED_MEM) {
+  GET_CONTAINER_INFO(julong, memory, "/memory.soft_limit_in_bytes",
+                     "Memory Soft Limit is: " JULONG_FORMAT, JULONG_FORMAT, memsoftlimit);
+  if (memsoftlimit >= _unlimited_memory) {
     log_trace(os, container)("Memory Soft Limit is: Unlimited");
     return (jlong)-1;
   } else {
-    return memsoftlimit;
+    return (jlong)memsoftlimit;
   }
 }
 
