@@ -2946,8 +2946,9 @@ void JavaThread::metadata_do(void f(Metadata*)) {
     if (ct->env() != NULL) {
       ct->env()->metadata_do(f);
     }
-    if (ct->task() != NULL) {
-      ct->task()->metadata_do(f);
+    CompileTask* task = ct->task();
+    if (task != NULL) {
+      task->metadata_do(f);
     }
   }
 }
@@ -3001,10 +3002,10 @@ void JavaThread::print_on(outputStream *st) const {
   _safepoint_state->print_on(st);
 #endif // PRODUCT
   if (is_Compiler_thread()) {
-    CompilerThread* ct = (CompilerThread*)this;
-    if (ct->task() != NULL) {
+    CompileTask *task = ((CompilerThread*)this)->task();
+    if (task != NULL) {
       st->print("   Compiling: ");
-      ct->task()->print(st, NULL, true, false);
+      task->print(st, NULL, true, false);
     } else {
       st->print("   No compile task");
     }
@@ -4712,9 +4713,15 @@ void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen) {
   ALL_JAVA_THREADS(thread) {
     if (thread->is_Compiler_thread()) {
       CompilerThread* ct = (CompilerThread*) thread;
-      if (ct->task() != NULL) {
+
+      // Keep task in local variable for NULL check.
+      // ct->_task might be set to NULL by concurring compiler thread
+      // because it completed the compilation. The task is never freed,
+      // though, just returned to a free list.
+      CompileTask* task = ct->task();
+      if (task != NULL) {
         thread->print_name_on_error(st, buf, buflen);
-        ct->task()->print(st, NULL, true, true);
+        task->print(st, NULL, true, true);
       }
     }
   }
