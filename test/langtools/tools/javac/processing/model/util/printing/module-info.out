@@ -19,7 +19,8 @@ public class P {
  */
 @java.lang.Deprecated
 module printing {
-  requires static transitive java.base;
+  requires java.base;
+  requires static transitive java.compiler;
   exports p to m.m1, m.m2;
   opens p to m.m1, m.m2;
   uses p.P;

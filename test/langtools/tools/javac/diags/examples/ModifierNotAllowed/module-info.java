@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,8 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8173609
- * @summary printing of modules
- * @compile/ref=module-info.out -Xprint p/P.java module-info.java
- */
+// key: compiler.err.modifier.not.allowed.here
 
-/**
- * Printing of modules
- */
-@Deprecated
-module printing {
-    requires static transitive java.compiler;
-    exports p to m.m1, m.m2;
-    opens p to m.m1, m.m2;
-    uses p.P;
-    provides p.P with p.P.P1, p.P.P2;
+module m {
+     requires transitive java.base;
 }
