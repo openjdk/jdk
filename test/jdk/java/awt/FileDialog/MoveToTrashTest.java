@@ -23,7 +23,7 @@
 
 /*
   @test
-  @bug 8190515
+  @bug 8190515 8193468
   @summary java.awt.Desktop.moveToTrash(File) prompts on Windows 7 but not on Mac.
   @run main MoveToTrashTest
 */
@@ -39,18 +39,23 @@ public class MoveToTrashTest {
     private static boolean fileStatus = false;
 
     public static void main(String[] args) {
-        try {
-            file = File.createTempFile("TestFile","txt");
-        } catch (IOException ex) {
-            throw new RuntimeException("Test failed. Exception thrown: ", ex);
-        }
+        if (!Desktop.getDesktop().isSupported(Desktop.Action.MOVE_TO_TRASH)) {
+            System.out.println("Move to trash action is not supported on the"+
+               " platform under test. Marking the test passed");
+        } else {
+            try {
+                file = File.createTempFile("TestFile","txt");
+            } catch (IOException ex) {
+                throw new RuntimeException("Test failed. Exception thrown: ", ex);
+            }
 
-        // In case any UI that may pop up while deleting the file would
-        // block this thread until the user actions them. Hence do file
-        // check in a different thread and we assume it takes about sometime
-        // till it deletes the file(or popup) on the main thread.
-        new Thread(null, MoveToTrashTest::checkFileExistence, "FileCheck", 0, false).start();
-        fileStatus = Desktop.getDesktop().moveToTrash(file);
+            // In case any UI that may pop up while deleting the file would
+            // block this thread until the user actions them. Hence do file
+            // check in a different thread and we assume it takes about sometime
+            // till it deletes the file(or popup) on the main thread.
+            new Thread(null, MoveToTrashTest::checkFileExistence, "FileCheck", 0, false).start();
+            fileStatus = Desktop.getDesktop().moveToTrash(file);
+        }
     }
 
     private static void checkFileExistence() {
@@ -63,10 +68,10 @@ public class MoveToTrashTest {
 
         robot.delay(1500);
 
-        if(!fileStatus) {
+        if (!fileStatus) {
             throw new RuntimeException("Test failed due to error while deleting the file");
         } else {
-            if(file.exists()) {
+            if (file.exists()) {
                 throw new RuntimeException("Test failed");
             } else {
                 System.out.println("Test passed");
