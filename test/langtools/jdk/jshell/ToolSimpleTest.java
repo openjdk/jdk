@@ -296,7 +296,7 @@ public class ToolSimpleTest extends ReplToolTesting {
     @Test
     public void testDropNegative() {
         test(false, new String[]{"--no-startup"},
-                a -> assertCommandOutputStartsWith(a, "/drop 0", "|  No snippet with id: 0"),
+                a -> assertCommandOutputStartsWith(a, "/drop 0", "|  No snippet with ID: 0"),
                 a -> assertCommandOutputStartsWith(a, "/drop a", "|  No such snippet: a"),
                 a -> assertCommandCheckOutput(a, "/drop",
                         assertStartsWith("|  In the /drop argument, please specify an import, variable, method, or class to drop.")),
