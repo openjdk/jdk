@@ -25,7 +25,9 @@
 
 package java.io;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -229,30 +231,55 @@ public abstract class InputStream implements Closeable {
      * @since 9
      */
     public byte[] readAllBytes() throws IOException {
-        byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
-        int capacity = buf.length;
-        int nread = 0;
+        List<byte[]> bufs = null;
+        byte[] result = null;
+        int total = 0;
         int n;
-        for (;;) {
-            // read to EOF which may read more or less than initial buffer size
-            while ((n = read(buf, nread, capacity - nread)) > 0)
+        do {
+            byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
+            int nread = 0;
+
+            // read to EOF which may read more or less than buffer size
+            while ((n = read(buf, nread, buf.length - nread)) > 0) {
                 nread += n;
-
-            // if the last call to read returned -1, then we're done
-            if (n < 0)
-                break;
-
-            // need to allocate a larger buffer
-            if (capacity <= MAX_BUFFER_SIZE - capacity) {
-                capacity = capacity << 1;
-            } else {
-                if (capacity == MAX_BUFFER_SIZE)
-                    throw new OutOfMemoryError("Required array size too large");
-                capacity = MAX_BUFFER_SIZE;
             }
-            buf = Arrays.copyOf(buf, capacity);
+
+            if (nread > 0) {
+                if (MAX_BUFFER_SIZE - total < nread) {
+                    throw new OutOfMemoryError("Required array size too large");
+                }
+                total += nread;
+                if (result == null) {
+                    result = buf;
+                } else {
+                    if (bufs == null) {
+                        bufs = new ArrayList<>();
+                        bufs.add(result);
+                    }
+                    bufs.add(buf);
+                }
+            }
+        } while (n >= 0); // if the last call to read returned -1, then break
+
+        if (bufs == null) {
+            if (result == null) {
+                return new byte[0];
+            }
+            return result.length == total ?
+                result : Arrays.copyOf(result, total);
         }
-        return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
+
+        result = new byte[total];
+        int offset = 0;
+        int remaining = total;
+        for (byte[] b : bufs) {
+            int len = Math.min(b.length, remaining);
+            System.arraycopy(b, 0, result, offset, len);
+            offset += len;
+            remaining -= len;
+        }
+
+        return result;
     }
 
     /**

@@ -52,7 +52,7 @@ public class T6265137 {
             String srcdir = System.getProperty("test.src");
             Iterable<? extends JavaFileObject> files =
                 fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(srcdir, "T6265137a.java")));
-            javac.getTask(null, fm, dl, Arrays.asList("-target","10"), null, files).call();
+            javac.getTask(null, fm, dl, Arrays.asList("-target","11"), null, files).call();
         }
     }
 }

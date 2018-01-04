@@ -1817,7 +1817,7 @@ public class JShellTool implements MessageHandler {
 
         // Documentation pseudo-commands
         registerCommand(new Command("/<id>",
-                "help.id",
+                "help.slashID",
                 arg -> cmdHelp("rerun"),
                 EMPTY_COMPLETION_PROVIDER,
                 CommandKind.HELP_ONLY));
@@ -1828,6 +1828,9 @@ public class JShellTool implements MessageHandler {
                 CommandKind.HELP_ONLY));
         registerCommand(new Command("intro",
                 "help.intro",
+                CommandKind.HELP_SUBJECT));
+        registerCommand(new Command("id",
+                "help.id",
                 CommandKind.HELP_SUBJECT));
         registerCommand(new Command("shortcuts",
                 "help.shortcuts",
