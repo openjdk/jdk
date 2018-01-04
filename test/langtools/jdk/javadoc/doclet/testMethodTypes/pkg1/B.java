@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 package pkg1;
 
 /**
- * This interface has different types of methods such as "Instance Methods" and
- * "Abstract Methods". All the tabs will display same list of methods.
+ * This interface has different types of methods such as "Static Methods",
+ * "Instance Methods", "Abstract Methods", "Default Methods".
  */
 public interface B {
 
@@ -36,21 +36,45 @@ public interface B {
 
     /**
      * This is the second abstract instance method.
+     * @return a string
      */
     public String getName();
 
     /**
      * This is the third abstract instance method.
+     * @return a boolean value
      */
     public boolean addEntry();
 
     /**
      * This is the fourth abstract instance method.
+     * @return a boolean value
      */
     public boolean removeEntry();
 
     /**
      * This is the fifth abstract instance method.
+     * @return a string
      */
     public String getPermissions();
+
+    /**
+     * A static interface method.
+     */
+    public static void aStaticMethod() {}
+
+    /**
+     * Another static interface method.
+     */
+    public static void anotherStaticMethod() {}
+
+    /**
+     * A default method.
+     */
+    public default void aDefaultMethod() {}
+
+    /**
+     * Another default method.
+     */
+    public default void anotherDefaultMethod() {}
 }
