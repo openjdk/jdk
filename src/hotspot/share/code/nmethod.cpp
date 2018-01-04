@@ -1625,7 +1625,7 @@ bool nmethod::test_set_oops_do_mark() {
   assert(nmethod::oops_do_marking_is_active(), "oops_do_marking_prologue must be called");
   if (_oops_do_mark_link == NULL) {
     // Claim this nmethod for this thread to mark.
-    if (Atomic::cmpxchg(NMETHOD_SENTINEL, &_oops_do_mark_link, (nmethod*)NULL) == NULL) {
+    if (Atomic::replace_if_null(NMETHOD_SENTINEL, &_oops_do_mark_link)) {
       // Atomically append this nmethod (now claimed) to the head of the list:
       nmethod* observed_mark_nmethods = _oops_do_mark_nmethods;
       for (;;) {
