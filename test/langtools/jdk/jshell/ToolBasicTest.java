@@ -189,8 +189,8 @@ public class ToolBasicTest extends ReplToolTesting {
 
     public void testRerun() {
         test(false, new String[] {"--no-startup"},
-                (a) -> assertCommand(a, "/0", "|  No snippet with id: 0"),
-                (a) -> assertCommand(a, "/5", "|  No snippet with id: 5")
+                (a) -> assertCommand(a, "/0", "|  No snippet with ID: 0"),
+                (a) -> assertCommand(a, "/5", "|  No snippet with ID: 5")
         );
         String[] codes = new String[] {
                 "int a = 0;", // var
@@ -251,9 +251,9 @@ public class ToolBasicTest extends ReplToolTesting {
         );
 
         test(false, new String[] {"--no-startup"},
-                (a) -> assertCommand(a, "/s1", "|  No snippet with id: s1"),
-                (a) -> assertCommand(a, "/1", "|  No snippet with id: 1"),
-                (a) -> assertCommand(a, "/e1", "|  No snippet with id: e1")
+                (a) -> assertCommand(a, "/s1", "|  No snippet with ID: s1"),
+                (a) -> assertCommand(a, "/1", "|  No snippet with ID: 1"),
+                (a) -> assertCommand(a, "/e1", "|  No snippet with ID: e1")
         );
     }
 
