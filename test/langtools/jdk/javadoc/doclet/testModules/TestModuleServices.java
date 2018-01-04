@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178067
+ * @bug 8178067 8192007
  * @summary tests the module's services, such as provides and uses
  * @modules jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
@@ -34,6 +34,7 @@
  * @run main TestModuleServices
  */
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -49,6 +50,106 @@ public class TestModuleServices extends JavadocTester {
 
     public TestModuleServices() {
         tb = new ToolBox();
+    }
+
+    @Test
+    public void checkModuleServicesDescription(Path base) throws Exception {
+        Path src = Files.createDirectories(base.resolve("src"));
+        ModuleBuilder mb = new ModuleBuilder(tb, "moduleService")
+                .comment("This module exports a package containing the declaration of a service type.")
+                .exports("pkgService")
+                .classes("/**A Package that has a service.*/ package pkgService;")
+                .classes("package pkgService; /**A service Interface for service providers.*/ "
+                        + "public interface Service {\n"
+                        + "    /**\n"
+                        + "     * A test method for the service.\n"
+                        + "     */\n"
+                        + "    void testMethod1();\n"
+                        + "    /**\n"
+                        + "     * Another test method for the service.\n"
+                        + "     */\n"
+                        + "    void testMethod2();\n"
+                        + "}");
+        mb.write(src);
+        mb = new ModuleBuilder(tb, "moduleServiceProvider")
+                .comment("This module provides an implementation of a service.\n" +
+                        "@provides pkgService.Service Provides a service whose name is ServiceProvider.")
+                .requires("moduleService")
+                .provides("pkgService.Service", "pkgServiceProvider.ServiceProvider")
+                .classes("/**A Package that has a service provider.*/ package pkgServiceProvider;")
+                .classes("package pkgServiceProvider;\n"
+                        + "public class ServiceProvider implements pkgService.Service {\n"
+                        + "    /**\n"
+                        + "     * {@inheritDoc}\n"
+                        + "     */\n"
+                        + "    public void testMethod1() {}\n"
+                        + "    /**\n"
+                        + "     * This is an internal implementation so the documentation will not be seen.\n"
+                        + "     */\n"
+                        + "    public void testMethod2() {}\n"
+                        + "}");
+        mb.write(src);
+        mb = new ModuleBuilder(tb, "moduleServiceUser")
+                .comment("This module uses a service defined in another module.\n"
+                        + "@uses pkgService.Service If no other provider is found, a default internal implementation will be used.")
+                .requires("moduleService")
+                .uses("pkgService.Service")
+                .classes("/**A Package that has a service user.*/ package pkgServiceUser;")
+                .classes("package pkgServiceUser;\n"
+                        + "/**\n"
+                        + " * A service user class.\n"
+                        + " */\n"
+                        + "public class ServiceUser {\n"
+                        + "}");
+        mb.write(src);
+        mb = new ModuleBuilder(tb, "moduleServiceUserNoDescription")
+                .comment("This is another module that uses a service defined in another module.\n"
+                        + "@uses pkgService.Service")
+                .requires("moduleService")
+                .uses("pkgService.Service")
+                .classes("/**A Package that has a service user with no description.*/ package pkgServiceUserNoDescription;")
+                .classes("package pkgServiceUserNoDescription;\n"
+                        + "/**\n"
+                        + " * A service user class.\n"
+                        + " */\n"
+                        + "public class ServiceUserNoDescription {\n"
+                        + "}");
+        mb.write(src);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-quiet", "-noindex",
+                "--module-source-path", src.toString(),
+                "--module", "moduleService,moduleServiceProvider,moduleServiceUser,moduleServiceUserNoDescription",
+                "pkgService", "moduleServiceProvider/pkgServiceProvider", "moduleServiceUser/pkgServiceUser",
+                "moduleServiceUserNoDescription/pkgServiceUserNoDescription");
+        checkExit(Exit.OK);
+
+        checkOutput("moduleServiceProvider-summary.html", true,
+                "<tr class=\"altColor\">\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"pkgService/Service.html\" "
+                + "title=\"interface in pkgService\">Service</a></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">Provides a service whose name is ServiceProvider.</div>\n"
+                + "</td>\n"
+                + "</tr>");
+        checkOutput("moduleServiceUser-summary.html", true,
+                "<tr class=\"altColor\">\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"pkgService/Service.html\" title=\"interface in pkgService\">Service</a></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">If no other provider is found, a default internal implementation will be used.</div>\n"
+                + "</td>\n"
+                + "</tr>");
+        checkOutput("moduleServiceUserNoDescription-summary.html", true,
+                "<tr class=\"altColor\">\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"pkgService/Service.html\" title=\"interface in pkgService\">Service</a></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">A service Interface for service providers.</div>\n"
+                + "</td>\n"
+                + "</tr>");
+        checkOutput("moduleServiceProvider-summary.html", false,
+                "A service Interface for service providers.");
+        checkOutput("moduleServiceUser-summary.html", false,
+                "A service Interface for service providers.");
     }
 
     @Test
@@ -251,7 +352,8 @@ public class TestModuleServices extends JavadocTester {
                 "<tbody>\n" +
                 "<tr class=\"altColor\">\n" +
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
-                "<td class=\"colLast\">abc&nbsp;</td>\n" +
+                "<td class=\"colLast\">\n" +
+                "<div class=\"block\">abc</div>\n</td>\n" +
                 "</tr>\n" +
                 "</tbody>\n" +
                 "</table>\n");
@@ -292,7 +394,8 @@ public class TestModuleServices extends JavadocTester {
                 "<tbody>\n" +
                 "<tr class=\"altColor\">\n" +
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
-                "<td class=\"colLast\">abc&nbsp;</td>\n" +
+                "<td class=\"colLast\">\n" +
+                "<div class=\"block\">abc</div>\n</td>\n" +
                 "</tr>\n" +
                 "</tbody>\n" +
                 "</table>",
@@ -305,7 +408,8 @@ public class TestModuleServices extends JavadocTester {
                 "<tbody>\n" +
                 "<tr class=\"altColor\">\n" +
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"p2/B.html\" title=\"class in p2\">B</a></th>\n" +
-                "<td class=\"colLast\">def&nbsp;</td>\n" +
+                "<td class=\"colLast\">\n" +
+                "<div class=\"block\">def</div>\n</td>\n" +
                 "</tr>\n" +
                 "</tbody>\n" +
                 "</table>\n");
