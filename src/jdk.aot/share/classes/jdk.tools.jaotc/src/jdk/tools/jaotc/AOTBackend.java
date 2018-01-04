@@ -166,7 +166,7 @@ final class AOTBackend {
 
     void printCompiledMethod(HotSpotResolvedJavaMethod resolvedMethod, CompilationResult compResult) {
         // This is really not installing the method.
-        InstalledCode installedCode = codeCache.addCode(resolvedMethod, HotSpotCompiledCodeBuilder.createCompiledCode(codeCache, null, null, compResult), null, null);
+        InstalledCode installedCode = codeCache.addCode(resolvedMethod, HotSpotCompiledCodeBuilder.createCompiledCode(codeCache, resolvedMethod, null, compResult), null, null);
         String disassembly = codeCache.disassemble(installedCode);
         if (disassembly != null) {
             main.printer.printlnDebug(disassembly);
