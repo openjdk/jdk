@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,8 @@ include GensrcCommonLangtools.gmk
 $(eval $(call SetupVersionProperties,JAVAC_VERSION, \
     com/sun/tools/javac/resources/version.properties))
 
-$(eval $(call SetupVersionProperties,JAVAH_VERSION, \
-    com/sun/tools/javah/resources/version.properties))
-
 $(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
-    $(JAVAC_VERSION) $(JAVAH_VERSION)))
+    $(JAVAC_VERSION)))
 
 $(eval $(call SetupParseProperties,PARSE_PROPERTIES, \
 	com/sun/tools/javac/resources/compiler.properties))

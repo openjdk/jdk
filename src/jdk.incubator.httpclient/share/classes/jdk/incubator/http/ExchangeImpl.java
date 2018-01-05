@@ -98,6 +98,7 @@ abstract class ExchangeImpl<T> {
                        HttpConnection connection)
     {
         DEBUG_LOGGER.log(Level.DEBUG, "handling HTTP/2 connection creation result");
+        boolean secure = exchange.request().secure();
         if (t != null) {
             DEBUG_LOGGER.log(Level.DEBUG,
                              "handling HTTP/2 connection creation failed: %s",
@@ -115,6 +116,12 @@ abstract class ExchangeImpl<T> {
                                   + "with unexpected exception: %s", (Object)t);
                 return CompletableFuture.failedFuture(t);
             }
+        }
+        if (secure && c== null) {
+            DEBUG_LOGGER.log(Level.DEBUG, "downgrading to HTTP/1.1 ");
+            CompletableFuture<? extends ExchangeImpl<U>> ex =
+                    createHttp1Exchange(exchange, null);
+            return ex;
         }
         if (c == null) {
             // no existing connection. Send request with HTTP 1 and then

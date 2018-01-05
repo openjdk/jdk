@@ -35,8 +35,8 @@ import java.io.InvalidClassException;
 /**
  * {@code XPathException} represents a generic XPath exception.
  *
- * @author  <a href="Norman.Walsh@Sun.com">Norman Walsh</a>
- * @author <a href="mailto:Jeff.Suttor@Sun.COM">Jeff Suttor</a>
+ * @author Norman Walsh
+ * @author Jeff Suttor
  * @since 1.5
  */
 public class XPathException extends Exception {

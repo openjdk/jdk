@@ -868,25 +868,10 @@ public abstract class SunToolkit extends Toolkit
                 java.security.Permission perm =
                     URLUtil.getConnectPermission(url);
                 if (perm != null) {
-                    try {
-                        sm.checkPermission(perm);
-                    } catch (SecurityException se) {
-                        // fallback to checkRead/checkConnect for pre 1.2
-                        // security managers
-                        if ((perm instanceof java.io.FilePermission) &&
-                            perm.getActions().indexOf("read") != -1) {
-                            sm.checkRead(perm.getName());
-                        } else if ((perm instanceof
-                            java.net.SocketPermission) &&
-                            perm.getActions().indexOf("connect") != -1) {
-                            sm.checkConnect(url.getHost(), url.getPort());
-                        } else {
-                            throw se;
-                        }
-                    }
+                    sm.checkPermission(perm);
                 }
             } catch (java.io.IOException ioe) {
-                    sm.checkConnect(url.getHost(), url.getPort());
+                sm.checkConnect(url.getHost(), url.getPort());
             }
         }
     }

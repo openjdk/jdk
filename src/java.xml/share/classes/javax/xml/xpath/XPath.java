@@ -98,8 +98,8 @@ import org.xml.sax.InputSource;
  * method is invoked, applications may not recursively call
  * the {@code evaluate} method.
  *
- * @author  <a href="Norman.Walsh@Sun.com">Norman Walsh</a>
- * @author  <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author  Norman Walsh
+ * @author  Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xpath">XML Path Language (XPath) Version 1.0</a>
  * @since 1.5
  */

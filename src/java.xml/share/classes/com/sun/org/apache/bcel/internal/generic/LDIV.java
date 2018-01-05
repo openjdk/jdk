@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,6 +28,7 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  *        ..., result.word1, result.word2
  *
  * @version $Id: LDIV.java 1747278 2016-06-07 17:28:43Z britter $
+ * @LastModified: Oct 2017
  */
 public class LDIV extends ArithmeticInstruction implements ExceptionThrower {
 

@@ -28,7 +28,7 @@ import org.xml.sax.Locator;
  * Wraps SAX {@link Locator} into Xerces {@link XMLLocator}.
  *
  * @author
- *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ *     Kohsuke Kawaguchi
  */
 public class LocatorWrapper implements XMLLocator {
 

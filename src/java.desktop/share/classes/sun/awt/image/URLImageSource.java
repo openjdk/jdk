@@ -46,25 +46,10 @@ public class URLImageSource extends InputStreamImageSource {
                 java.security.Permission perm =
                       URLUtil.getConnectPermission(u);
                 if (perm != null) {
-                    try {
-                        sm.checkPermission(perm);
-                    } catch (SecurityException se) {
-                        // fallback to checkRead/checkConnect for pre 1.2
-                        // security managers
-                        if ((perm instanceof java.io.FilePermission) &&
-                                perm.getActions().indexOf("read") != -1) {
-                            sm.checkRead(perm.getName());
-                        } else if ((perm instanceof
-                                java.net.SocketPermission) &&
-                                perm.getActions().indexOf("connect") != -1) {
-                            sm.checkConnect(u.getHost(), u.getPort());
-                        } else {
-                            throw se;
-                        }
-                    }
+                    sm.checkPermission(perm);
                 }
             } catch (java.io.IOException ioe) {
-                    sm.checkConnect(u.getHost(), u.getPort());
+                sm.checkConnect(u.getHost(), u.getPort());
             }
         }
         this.url = u;

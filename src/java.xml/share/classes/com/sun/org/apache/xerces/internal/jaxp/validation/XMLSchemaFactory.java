@@ -64,7 +64,7 @@ import org.xml.sax.SAXParseException;
 /**
  * {@link SchemaFactory} for XML Schema.
  *
- * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ * @author Kohsuke Kawaguchi
  */
 public final class XMLSchemaFactory extends SchemaFactory {
 

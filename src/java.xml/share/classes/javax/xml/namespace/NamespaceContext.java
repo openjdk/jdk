@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,15 +67,13 @@ import java.util.Iterator;
  * <p>A prefix can only be bound to a <strong>single</strong>
  * Namespace URI in the current scope.
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @see javax.xml.XMLConstants
  *   javax.xml.XMLConstants for declarations of common XML values
  * @see <a href="http://www.w3.org/TR/xmlschema-2/#QName">
  *   XML Schema Part2: Datatypes</a>
- * @see <a href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">
+ * @see <a href="http://www.w3.org/TR/REC-xml-names/">
  *   Namespaces in XML</a>
- * @see <a href="http://www.w3.org/XML/xml-names-19990114-errata">
- *   Namespaces in XML Errata</a>
  * @since 1.5
  */
 

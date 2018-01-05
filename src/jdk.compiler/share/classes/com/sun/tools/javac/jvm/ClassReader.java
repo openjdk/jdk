@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1339,7 +1339,8 @@ public class ClassReader {
                             throw badClassFile("module.name.mismatch", moduleName, currentModule.name);
                         }
 
-                        msym.flags.addAll(readModuleFlags(nextChar()));
+                        Set<ModuleFlags> moduleFlags = readModuleFlags(nextChar());
+                        msym.flags.addAll(moduleFlags);
                         msym.version = readName(nextChar());
 
                         ListBuffer<RequiresDirective> requires = new ListBuffer<>();
@@ -1347,6 +1348,14 @@ public class ClassReader {
                         for (int i = 0; i < nrequires; i++) {
                             ModuleSymbol rsym = syms.enterModule(readModuleName(nextChar()));
                             Set<RequiresFlag> flags = readRequiresFlags(nextChar());
+                            if (rsym == syms.java_base && majorVersion >= V54.major) {
+                                if (flags.contains(RequiresFlag.TRANSITIVE)) {
+                                    throw badClassFile("bad.requires.flag", RequiresFlag.TRANSITIVE);
+                                }
+                                if (flags.contains(RequiresFlag.STATIC_PHASE)) {
+                                    throw badClassFile("bad.requires.flag", RequiresFlag.STATIC_PHASE);
+                                }
+                            }
                             nextChar(); // skip compiled version
                             requires.add(new RequiresDirective(rsym, flags));
                         }

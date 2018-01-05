@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -84,7 +83,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * spaces at beginning of line will be stripped.
  *
  * @author <a href="mailto:arkin@intalio.com">Assaf Arkin</a>
- * @author <a href="mailto:rahul.srivastava@sun.com">Rahul Srivastava</a>
+ * @author Rahul Srivastava
  * @author Elena Litani IBM
  * @see Serializer
  *
@@ -92,6 +91,8 @@ import org.xml.sax.helpers.AttributesImpl;
  * is replaced by that of Xalan. Main class
  * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
  * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.
+ *
+ * @LastModified: Oct 2017
  */
 @Deprecated
 public class XMLSerializer

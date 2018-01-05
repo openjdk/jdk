@@ -373,13 +373,16 @@ final class Exchange<T> {
                                                  client.client2(),
                                                  this, e::drainLeftOverBytes)
                         .thenCompose((Http2Connection c) -> {
-                            c.putConnection();
+                            boolean cached = c.offerConnection();
                             Stream<T> s = c.getStream(1);
+
                             if (s == null) {
                                 // s can be null if an exception occurred
                                 // asynchronously while sending the preface.
                                 Throwable t = c.getRecordedCause();
                                 if (t != null) {
+                                    if (!cached)
+                                        c.close();
                                     return MinimalFuture.failedFuture(
                                             new IOException("Can't get stream 1: " + t, t));
                                 }

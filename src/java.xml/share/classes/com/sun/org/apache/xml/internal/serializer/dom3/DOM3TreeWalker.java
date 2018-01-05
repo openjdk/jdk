@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -63,6 +62,7 @@ import org.xml.sax.helpers.LocatorImpl;
  * parameters and filters if any during serialization.
  *
  * @xsl.usage internal
+ * @LastModified: Oct 2017
  */
 final class DOM3TreeWalker {
 

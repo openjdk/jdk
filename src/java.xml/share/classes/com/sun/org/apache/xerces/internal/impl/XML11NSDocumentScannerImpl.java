@@ -741,7 +741,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
         // Take advantage of the fact that next string _should_ be "fElementQName.rawName",
         //In scanners most of the time is consumed on checks done for XML characters, we can
         // optimize on it and avoid the checks done for endElement,
-        //we will also avoid symbol table lookup - neeraj.bajaj@sun.com
+        //we will also avoid symbol table lookup.
 
         // this should work both for namespace processing true or false...
 

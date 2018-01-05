@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,6 +27,9 @@ package com.sun.org.apache.xalan.internal.xsltc.compiler;
 import com.sun.java_cup.internal.runtime.Symbol;
 
 
+/**
+ * @LastModified: Oct 2017
+ */
 class XPathLexer implements com.sun.java_cup.internal.runtime.Scanner {
         private final int YY_BUFFER_SIZE = 512;
         private final int YY_F = -1;

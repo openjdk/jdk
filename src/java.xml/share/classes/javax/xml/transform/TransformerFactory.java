@@ -38,8 +38,8 @@ import com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl;
  * {@code TransformerFactory} abstract class. If the property is not
  * defined, a platform default is be used.
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
- * @author <a href="mailto:Neeraj.Bajaj@sun.com">Neeraj Bajaj</a>
+ * @author Jeff Suttor
+ * @author Neeraj Bajaj
  *
  * @since 1.5
  */

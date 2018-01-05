@@ -2442,7 +2442,9 @@ void SuperWord::output() {
     }
   }//for (int i = 0; i < _block.length(); i++)
 
-  C->set_max_vector_size(max_vlen_in_bytes);
+  if (max_vlen_in_bytes > C->max_vector_size()) {
+    C->set_max_vector_size(max_vlen_in_bytes);
+  }
   if (max_vlen_in_bytes > 0) {
     cl->mark_loop_vectorized();
   }

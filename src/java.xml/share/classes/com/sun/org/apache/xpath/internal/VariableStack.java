@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,6 +33,7 @@ import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
  * <p>This has been changed from the previous incarnations of this
  * class to be fairly low level.</p>
  * @xsl.usage internal
+ * @LastModified: Nov 2017
  */
 public class VariableStack implements Cloneable
 {

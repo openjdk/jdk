@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,6 +34,8 @@ import java.util.List;
 /**
  * This class is the dynamic wrapper for a Xalan DTMIterator instance, and
  * provides random access capabilities.
+ *
+ * @LastModified: Oct 2017
  */
 public class NodeSequence extends XObject
   implements DTMIterator, Cloneable, PathComponent

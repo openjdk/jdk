@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,13 @@ package com.sun.tools.javac.code;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Locale;
 import java.util.Set;
 
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.ModuleElement.DirectiveVisitor;
 
+import com.sun.tools.javac.api.Messages;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
@@ -71,6 +73,11 @@ public abstract class Directive implements ModuleElement.Directive {
         }
 
         public final int value;
+
+        @Override
+        public String toString() {
+            return String.format("ACC_%s (0x%04x", name(), value);
+        }
     }
 
     /** Flags for ExportsDirective. */

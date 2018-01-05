@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -38,6 +37,8 @@ import javax.xml.transform.TransformerException;
 
 /**
  * The variable reference expression executer.
+ *
+ * @LastModified: Oct 2017
  */
 public class Variable extends Expression implements PathComponent
 {

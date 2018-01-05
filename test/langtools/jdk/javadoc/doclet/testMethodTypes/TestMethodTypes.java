@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug      8002304 8024096
- * @summary  Test for various method types in the method summary table
+ * @bug      8002304 8024096 8193671
+ * @summary  Test for various method type tabs in the method summary table
  * @author   Bhavesh Patel
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -62,13 +62,18 @@ public class TestMethodTypes extends JavadocTester {
                 "<tr id=\"i0\" class=\"altColor\">");
 
         checkOutput("pkg1/B.html", true,
-                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All "
-                + "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
-                + "Instance Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t3\" class=\"tableTab\"><span><a href=\"javascript:show(4);\">"
-                + "Abstract Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "</caption>");
+                "var methods = {\"i0\":6,\"i1\":18,\"i2\":18,\"i3\":1,\"i4\":1,"
+                + "\"i5\":6,\"i6\":6,\"i7\":6,\"i8\":6};\n",
+                "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Methods</span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t1\" class=\"tableTab\">"
+                + "<span><a href=\"javascript:show(1);\">Static Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t2\" class=\"tableTab\">"
+                + "<span><a href=\"javascript:show(2);\">Instance Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" class=\"tableTab\">"
+                + "<span><a href=\"javascript:show(4);\">Abstract Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t5\" class=\"tableTab\">"
+                + "<span><a href=\"javascript:show(16);\">Default Methods</a></span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span></caption>\n");
 
         checkOutput("pkg1/D.html", true,
                 "var methods = {",

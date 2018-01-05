@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -44,6 +43,7 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * Utility functions that do not really belong to any class in particular.
  *
  * @version $Id: Utility.java 1751107 2016-07-03 02:41:18Z dbrosius $
+ * @LastModified: Oct 2017
  */
 // @since 6.0 methods are no longer final
 public abstract class Utility {

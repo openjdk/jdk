@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,6 +27,8 @@ import java.util.List;
 /**
  * This class is in charge of lexical processing of the XPath
  * expression into tokens.
+ *
+ * @LastModified: Nov 2017
  */
 class Lexer
 {

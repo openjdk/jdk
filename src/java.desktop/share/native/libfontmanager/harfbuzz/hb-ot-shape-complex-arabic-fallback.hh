@@ -77,7 +77,13 @@ arabic_fallback_synthesize_lookup_single (const hb_ot_shape_plan_t *plan HB_UNUS
 
   /* Bubble-sort or something equally good!
    * May not be good-enough for presidential candidate interviews, but good-enough for us... */
+
+#if defined(_AIX)
+  /* Workaround AIX xlC 12 compilation problems caused by the overloaded versions of 'cmp' in IntType */
+  hb_stable_sort (&glyphs[0], num_glyphs, (int(*)(const OT::GlyphID*, const OT::GlyphID *)) OT::GlyphID::cmp, &substitutes[0]);
+#else
   hb_stable_sort (&glyphs[0], num_glyphs, OT::GlyphID::cmp, &substitutes[0]);
+#endif
 
   OT::Supplier<OT::GlyphID> glyphs_supplier      (glyphs, num_glyphs);
   OT::Supplier<OT::GlyphID> substitutes_supplier (substitutes, num_glyphs);
@@ -126,7 +132,13 @@ arabic_fallback_synthesize_lookup_ligature (const hb_ot_shape_plan_t *plan HB_UN
     first_glyphs_indirection[num_first_glyphs] = first_glyph_idx;
     num_first_glyphs++;
   }
+
+#if defined(_AIX)
+  /* Workaround AIX xlC 12 compilation problems caused by the overloaded versions of 'cmp' in IntType */
+  hb_stable_sort (&first_glyphs[0], num_first_glyphs, (int(*)(const OT::GlyphID *, const OT::GlyphID *)) OT::GlyphID::cmp, &first_glyphs_indirection[0]);
+#else
   hb_stable_sort (&first_glyphs[0], num_first_glyphs, OT::GlyphID::cmp, &first_glyphs_indirection[0]);
+#endif
 
   /* Now that the first-glyphs are sorted, walk again, populate ligatures. */
   for (unsigned int i = 0; i < num_first_glyphs; i++)

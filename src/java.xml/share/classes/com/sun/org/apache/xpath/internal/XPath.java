@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,6 +40,7 @@ import javax.xml.transform.TransformerException;
  * The XPath class wraps an expression object and provides general services
  * for execution of that expression.
  * @xsl.usage advanced
+ * @LastModified: Oct 2017
  */
 public class XPath implements Serializable, ExpressionOwner
 {

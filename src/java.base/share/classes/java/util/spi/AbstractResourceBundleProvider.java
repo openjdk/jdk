@@ -45,42 +45,46 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  *
  * <p>
  * Resource bundles can be packaged in one or more
- * named modules, <em>bundle modules</em>.  The <em>consumer</em> of the
+ * named modules, <em>service provider modules</em>.  The <em>consumer</em> of the
  * resource bundle is the one calling {@link ResourceBundle#getBundle(String)}.
  * In order for the consumer module to load a resource bundle
  * "{@code com.example.app.MyResources}" provided by another module,
  * it will use the {@linkplain java.util.ServiceLoader service loader}
- * mechanism.  A service interface named "{@code com.example.app.MyResourcesProvider}"
- * must be defined and a <em>bundle provider module</em> will provide an
- * implementation class of "{@code com.example.app.MyResourcesProvider}"
+ * mechanism.  A service interface named "{@code com.example.app.spi.MyResourcesProvider}"
+ * must be defined and a <em>service provider module</em> will provide an
+ * implementation class of "{@code com.example.app.spi.MyResourcesProvider}"
  * as follows:
  *
- * <pre><code>
- * import com.example.app.MyResourcesProvider;
+ * <blockquote><pre>
+ * {@code import com.example.app.spi.MyResourcesProvider;
  * class MyResourcesProviderImpl extends AbstractResourceBundleProvider
  *     implements MyResourcesProvider
  * {
+ *     public MyResourcesProviderImpl() {
+ *         super("java.properties");
+ *     }
+ *     // this provider maps the resource bundle to per-language package
  *     protected String toBundleName(String baseName, Locale locale) {
- *         // return the bundle name per the naming of the resource bundle
- *         :
+ *         return "p." + locale.getLanguage() + "." + baseName;
  *     }
  *
  *     public ResourceBundle getBundle(String baseName, Locale locale) {
- *         // this module only provides bundles in french
+ *         // this module only provides bundles in French
  *         if (locale.equals(Locale.FRENCH)) {
  *              return super.getBundle(baseName, locale);
  *         }
+ *         // otherwise return null
  *         return null;
  *     }
- * }</code></pre>
+ * }}</pre></blockquote>
  *
- * @see <a href="../ResourceBundle.html#bundleprovider">
- *     Resource Bundles in Named Modules</a>
- * @see <a href="../ResourceBundle.html#RBP_support">
- *     ResourceBundleProvider Service Providers</a>
+ * Refer to {@link ResourceBundleProvider} for details.
  *
+ * @see <a href="../ResourceBundle.html#resource-bundle-modules">
+ *      Resource Bundles and Named Modules</a>
  * @since 9
  * @spec JPMS
+
  */
 public abstract class AbstractResourceBundleProvider implements ResourceBundleProvider {
     private static final JavaUtilResourceBundleAccess RB_ACCESS =

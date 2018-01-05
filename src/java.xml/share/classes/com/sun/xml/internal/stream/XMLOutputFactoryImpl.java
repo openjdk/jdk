@@ -48,7 +48,7 @@ import com.sun.xml.internal.stream.writers.XMLStreamWriterImpl;
  * This class provides the implementation of XMLOutputFactory.
  *
  * @author  Neeraj Bajaj,
- * @author k.venugopal@sun.com
+ * @author k venugopal
  */
 public class XMLOutputFactoryImpl extends XMLOutputFactory {
 

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,6 +32,7 @@ import org.w3c.dom.DOMImplementationList;
  *
  * @author Neil Delima, IBM
  * @since DOM Level 3 Core
+ * @LastModified: Oct 2017
  */
 public class DOMImplementationListImpl implements DOMImplementationList {
 

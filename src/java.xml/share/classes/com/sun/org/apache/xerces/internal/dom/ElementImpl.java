@@ -682,7 +682,6 @@ public class ElementImpl
                     // If the new name has a different prefix, the list may become unsorted.
                     // Maybe it would be better to resort the list, but the simplest
                     // fix seems to be to remove the old attribute and re-insert it.
-                    // -- Norman.Walsh@Sun.COM, 2 Feb 2007
                     newAttr = (Attr) attributes.removeItem(newAttr, false);
                     attributes.addItem(newAttr);
                 }

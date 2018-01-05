@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -56,6 +55,7 @@ import org.w3c.dom.traversal.NodeIterator;
  * to the same calls; the disadvantage is that some of them may return
  * less-than-enlightening results when you do so.</p>
  * @xsl.usage advanced
+ * @LastModified: Nov 2017
  */
 public class NodeSet
         implements NodeList, NodeIterator, Cloneable, ContextNodeList

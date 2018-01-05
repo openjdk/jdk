@@ -31,7 +31,7 @@ import org.xml.sax.SAXException;
  * and pass them down to SAX {@link ErrorHandler}.
  *
  * @author
- *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ *     Kohsuke Kawaguchi
  */
 public abstract class ErrorHandlerAdaptor implements XMLErrorHandler
 {

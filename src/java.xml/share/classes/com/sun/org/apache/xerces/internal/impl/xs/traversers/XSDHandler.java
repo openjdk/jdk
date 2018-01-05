@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -131,6 +130,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * @author Neil Graham, IBM
  * @author Pavani Mukthipudi, Sun Microsystems
  *
+ * @LastModified: Nov 2017
  */
 @SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public class XSDHandler {

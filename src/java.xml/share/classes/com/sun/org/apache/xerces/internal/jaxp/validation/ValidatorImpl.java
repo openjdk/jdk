@@ -46,9 +46,9 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * <p>Implementation of Validator for W3C XML Schemas.</p>
  *
- * @author <a href="mailto:Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
+ * @author Kohsuke Kawaguchi
  * @author Michael Glavassevich, IBM
- * @author <a href="mailto:Sunitha.Reddy@Sun.com">Sunitha Reddy</a>
+ * @author Sunitha Reddy
  */
 final class ValidatorImpl extends Validator implements PSVIProvider {
 
