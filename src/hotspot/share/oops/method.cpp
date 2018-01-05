@@ -446,7 +446,7 @@ MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
 
 bool Method::init_method_counters(MethodCounters* counters) {
   // Try to install a pointer to MethodCounters, return true on success.
-  return Atomic::cmpxchg(counters, &_method_counters, (MethodCounters*)NULL) == NULL;
+  return Atomic::replace_if_null(counters, &_method_counters);
 }
 
 void Method::cleanup_inline_caches() {

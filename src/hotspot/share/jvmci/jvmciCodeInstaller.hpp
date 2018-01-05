@@ -185,7 +185,7 @@ private:
   void pd_patch_MetaspaceConstant(int pc_offset, Handle constant, TRAPS);
   void pd_patch_DataSectionReference(int pc_offset, int data_offset, TRAPS);
   void pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, TRAPS);
-  void pd_relocate_JavaMethod(Handle method, jint pc_offset, TRAPS);
+  void pd_relocate_JavaMethod(CodeBuffer &cbuf, Handle method, jint pc_offset, TRAPS);
   void pd_relocate_poll(address pc, jint mark, TRAPS);
 
   objArrayOop sites() { return (objArrayOop) JNIHandles::resolve(_sites_handle); }

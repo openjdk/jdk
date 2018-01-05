@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary classpath mismatch between dump time and execution time
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

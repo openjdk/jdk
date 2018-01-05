@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary AppCDS handling of directories in -cp
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @run main DirClasspathTest
  */
