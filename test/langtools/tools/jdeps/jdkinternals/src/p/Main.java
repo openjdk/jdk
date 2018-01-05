@@ -27,10 +27,14 @@ import com.sun.image.codec.jpeg.JPEGCodec;
 import sun.misc.Service;
 import sun.misc.SoftCache;
 import sun.reflect.Reflection;
+import sun.reflect.ReflectionFactory;
 
 public class Main {
     public static void main() {
         // in jdk.unsupported
+        ReflectionFactory factory = ReflectionFactory.getReflectionFactory();
+
+        // removed from jdk.unsupported in JDK 11
         Class<?> caller = Reflection.getCallerClass(2);
 
         // removed

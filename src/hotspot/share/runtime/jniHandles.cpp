@@ -47,6 +47,7 @@ jobject JNIHandles::make_local(oop obj) {
   } else {
     Thread* thread = Thread::current();
     assert(Universe::heap()->is_in_reserved(obj), "sanity check");
+    assert(!current_thread_in_native(), "must not be in native");
     return thread->active_handles()->allocate_handle(obj);
   }
 }
@@ -59,6 +60,8 @@ jobject JNIHandles::make_local(Thread* thread, oop obj) {
     return NULL;                // ignore null handles
   } else {
     assert(Universe::heap()->is_in_reserved(obj), "sanity check");
+    assert(thread->is_Java_thread(), "not a Java thread");
+    assert(!current_thread_in_native(), "must not be in native");
     return thread->active_handles()->allocate_handle(obj);
   }
 }
@@ -70,6 +73,7 @@ jobject JNIHandles::make_local(JNIEnv* env, oop obj) {
   } else {
     JavaThread* thread = JavaThread::thread_from_jni_environment(env);
     assert(Universe::heap()->is_in_reserved(obj), "sanity check");
+    assert(!current_thread_in_native(), "must not be in native");
     return thread->active_handles()->allocate_handle(obj);
   }
 }
@@ -77,6 +81,7 @@ jobject JNIHandles::make_local(JNIEnv* env, oop obj) {
 
 jobject JNIHandles::make_global(Handle obj) {
   assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!current_thread_in_native(), "must not be in native");
   jobject res = NULL;
   if (!obj.is_null()) {
     // ignore null handles
@@ -93,6 +98,7 @@ jobject JNIHandles::make_global(Handle obj) {
 
 jobject JNIHandles::make_weak_global(Handle obj) {
   assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!current_thread_in_native(), "must not be in native");
   jobject res = NULL;
   if (!obj.is_null()) {
     // ignore null handles
@@ -265,6 +271,13 @@ void JNIHandles::verify() {
   weak_oops_do(&verify_handle);
 }
 
+// This method is implemented here to avoid circular includes between
+// jniHandles.hpp and thread.hpp.
+bool JNIHandles::current_thread_in_native() {
+  Thread* thread = Thread::current();
+  return (thread->is_Java_thread() &&
+          JavaThread::current()->thread_state() == _thread_in_native);
+}
 
 
 void jni_handles_init() {

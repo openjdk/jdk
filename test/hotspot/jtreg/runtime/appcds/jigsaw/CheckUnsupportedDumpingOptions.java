@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Abort dumping if any of the new jigsaw vm options is specified.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib ..
  * @modules java.base/jdk.internal.misc
  *          java.management

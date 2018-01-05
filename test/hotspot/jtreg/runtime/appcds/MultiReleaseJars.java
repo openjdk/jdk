@@ -26,8 +26,7 @@
  * @test MultiReleaseJars
  * @bug 8170105
  * @summary Test multi-release jar with AppCDS.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar

@@ -85,7 +85,8 @@ public class RemovedJDKInternals {
                 .reference("p.Main", "java.lang.Object", "java.base")
                 .reference("p.Main", "java.util.Iterator", "java.base")
                 .reference("p.S", "java.lang.Object", "java.base")
-                .jdkInternal("p.Main", "sun.reflect.Reflection", "jdk.unsupported")
+                .jdkInternal("p.Main", "sun.reflect.ReflectionFactory", "jdk.unsupported")
+                .removedJdkInternal("p.Main", "sun.reflect.Reflection")
                 .removedJdkInternal("p.Main", "com.sun.image.codec.jpeg.JPEGCodec")
                 .removedJdkInternal("p.Main", "sun.misc.Service")
                 .removedJdkInternal("p.Main", "sun.misc.SoftCache")
@@ -118,7 +119,8 @@ public class RemovedJDKInternals {
         "com.sun.image.codec.jpeg.JPEGCodec", "Use javax.imageio @since 1.4",
         "sun.misc.Service", "Use java.util.ServiceLoader @since 1.6",
         "sun.misc.SoftCache", "Removed. See http://openjdk.java.net/jeps/260",
-        "sun.reflect.Reflection", "Use java.lang.StackWalker @since 9"
+        "sun.reflect.Reflection", "Use java.lang.StackWalker @since 9",
+        "sun.reflect.ReflectionFactory", "See http://openjdk.java.net/jeps/260"
     );
 
     @Test
@@ -139,6 +141,8 @@ public class RemovedJDKInternals {
             int pos = line.indexOf("Use ");
             if (pos < 0)
                 pos = line.indexOf("Removed. ");
+            if (pos < 0)
+                pos = line.indexOf("See ");
 
             assertTrue(pos > 0);
             String name = line.substring(0, pos).trim();
