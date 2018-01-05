@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     4910483
+ * @bug     4910483 8183961
  * @summary Javadoc renders the string ".*\\.pdf" as ".\*\.pdf"
  * @modules jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
@@ -41,7 +41,12 @@ import com.sun.tools.javac.util.Context;
 
 import javax.tools.JavaFileObject;
 
-/**Test comment abc*\\def*/
+// Test the original issue ("\\") as well as other appearances of '\',
+// including a vanilla Unicode escape (U+0021, '!'), and a sequence
+// which is not a Unicode escape
+
+/**Test comment abc*\\def\
+ *xyz\u0021\\u0021*/
 public class T4910483 {
     public static void main(String... args) {
         JavaCompiler compiler = JavaCompiler.instance(new Context());
@@ -55,7 +60,7 @@ public class T4910483 {
         JCTree classDef = cu.getTypeDecls().head;
         String commentText = cu.docComments.getCommentText(classDef);
 
-        String expected = "Test comment abc*\\\\def"; // 4 '\' escapes to 2 in a string literal
+        String expected = "Test comment abc*\\\\def\\\nxyz!\\\\u0021"; // 4 '\' escapes to 2 in a string literal
         if (!expected.equals(commentText)) {
             throw new AssertionError("Incorrect comment text: [" + commentText + "], expected [" + expected + "]");
         }

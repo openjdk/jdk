@@ -39,7 +39,7 @@ import org.xml.sax.SAXException;
  * and produces the equivalent {@link XMLDocumentHandler} events.
  *
  * @author
- *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ *     Kohsuke Kawaguchi
  */
 public class SAX2XNI implements ContentHandler, XMLDocumentSource {
     public SAX2XNI( XMLDocumentHandler core ) {

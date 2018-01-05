@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -46,6 +45,7 @@ import org.xml.sax.ext.Locator2;
  * @author G. Todd Miller
  * @author Sunitha Reddy
  * @author Huizhe Wang
+ * @LastModified: Nov 2017
  */
 public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
 

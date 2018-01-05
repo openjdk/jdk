@@ -41,8 +41,7 @@ import jdk.xml.internal.SecuritySupport;
  * <p>This class is duplicated for each JAXP subpackage so keep it in
  * sync.  It is package private for secure class loading.</p>
  *
- * @author Santiago.PericasGeertsen@sun.com
- * @author Huizhe.Wang@oracle.com
+ * @author Santiago PericasGeertsen
  */
 class FactoryFinder {
     private static final String DEFAULT_PACKAGE = "com.sun.org.apache.xerces.internal";

@@ -47,7 +47,7 @@ import org.xml.sax.helpers.NamespaceSupport;
 
 /**
  * This class provides support to build a DOM tree using XMLStreamWriter API's.
- * @author K.Venugopal@sun.com
+ * @author K Venugopal
  */
 
 /*

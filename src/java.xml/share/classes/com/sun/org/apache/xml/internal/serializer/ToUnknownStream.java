@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -49,6 +48,7 @@ import org.xml.sax.SAXException;
  *
  * This class is not a public API, it is public because it is used within Xalan.
  * @xsl.usage internal
+ * @LastModified: Oct 2017
  */
 public final class ToUnknownStream extends SerializerBase
 {

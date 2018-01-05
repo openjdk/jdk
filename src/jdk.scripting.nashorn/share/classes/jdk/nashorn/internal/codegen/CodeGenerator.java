@@ -1286,7 +1286,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     boolean useOptimisticTypes() {
-        return !lc.inSplitNode() && compiler.useOptimisticTypes();
+        return !lc.inSplitLiteral() && compiler.useOptimisticTypes();
     }
 
     @Override
@@ -2924,12 +2924,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // to synthetic functions, and FunctionNode.needsCallee() will no longer need to test for isSplit().
             final int literalSlot = fixScopeSlot(currentFunction, 3);
 
-            lc.enterSplitNode();
+            lc.enterSplitLiteral();
 
             creator.populateRange(method, literalType, literalSlot, splitRange.getLow(), splitRange.getHigh());
 
             method._return();
-            lc.exitSplitNode();
+            lc.exitSplitLiteral();
             method.end();
             lc.releaseSlots();
             popMethodEmitter();
@@ -4708,10 +4708,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             this.optimistic = optimistic;
             this.expression = (Expression)optimistic;
             this.resultBounds = resultBounds;
-            this.isOptimistic = isOptimistic(optimistic) && useOptimisticTypes() &&
+            this.isOptimistic = isOptimistic(optimistic)
                     // Operation is only effectively optimistic if its type, after being coerced into the result bounds
                     // is narrower than the upper bound.
-                    resultBounds.within(Type.generic(((Expression)optimistic).getType())).narrowerThan(resultBounds.widest);
+                    && resultBounds.within(Type.generic(((Expression)optimistic).getType())).narrowerThan(resultBounds.widest);
+            // Optimistic operations need to be executed in optimistic context, else unwarranted optimism will go unnoticed
+            assert !this.isOptimistic || useOptimisticTypes();
         }
 
         MethodEmitter emit() {

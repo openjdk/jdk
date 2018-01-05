@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,6 +29,8 @@ import javax.xml.namespace.QName;
  * accessed by name. Note that <code>XSNamedMap</code> does not inherit from
  * <code>XSObjectList</code>. The <code>XSObject</code>s in
  * <code>XSNamedMap</code>s are not maintained in any particular order.
+ *
+ * @LastModified: Oct 2017
  */
 public interface XSNamedMap extends Map<QName, XSObject> {
     /**

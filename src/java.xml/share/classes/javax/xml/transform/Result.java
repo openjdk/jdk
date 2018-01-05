@@ -29,7 +29,7 @@ package javax.xml.transform;
  * <p>An object that implements this interface contains the information
  * needed to build a transformation result tree.
  *
- * @author <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @since 1.4
  */
 public interface Result {

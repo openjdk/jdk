@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,6 +29,8 @@ import com.sun.org.apache.xpath.internal.axes.WalkerFactory;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 /**
  * Special context node pattern matcher.
+ *
+ * @LastModified: Oct 2017
  */
 public class ContextMatchStepPattern extends StepPattern
 {

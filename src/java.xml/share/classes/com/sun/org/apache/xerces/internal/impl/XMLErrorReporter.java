@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -71,6 +70,7 @@ import org.xml.sax.ErrorHandler;
  * @author Eric Ye, IBM
  * @author Andy Clark, IBM
  *
+ * @LastModified: Nov 2017
  */
 public class XMLErrorReporter
     implements XMLComponent {

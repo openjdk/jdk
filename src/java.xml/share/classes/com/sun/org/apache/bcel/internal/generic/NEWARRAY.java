@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,6 +31,7 @@ import java.io.IOException;
  * type must be one of T_INT, T_SHORT, ...
  *
  * @version $Id: NEWARRAY.java 1747278 2016-06-07 17:28:43Z britter $
+ * @LastModified: Oct 2017
  */
 public class NEWARRAY extends Instruction implements AllocationInstruction, ExceptionThrower,
         StackProducer {

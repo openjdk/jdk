@@ -40,7 +40,7 @@ import org.xml.sax.SAXParseException;
  * rather than copying it into every component that needs an error handler
  * and update all of them whenever it is changed, IMO.
  *
- * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ * @author Kohsuke Kawaguchi
  *
  */
 public abstract class ErrorHandlerProxy implements ErrorHandler {

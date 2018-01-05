@@ -401,8 +401,8 @@ class ResponseContent {
             pusher.onSubscribe(this.sub = sub);
             try {
                 if (contentLength == 0) {
-                    pusher.onComplete();
                     onFinished.run();
+                    pusher.onComplete();
                     onComplete.accept(null);
                 }
             } catch (Throwable t) {

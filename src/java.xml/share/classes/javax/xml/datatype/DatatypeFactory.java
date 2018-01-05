@@ -80,9 +80,9 @@ import com.sun.org.apache.xerces.internal.jaxp.datatype.DatatypeFactoryImpl;
  *    </li>
  * </ol>
  *
- * @author <a href="mailto:Joseph.Fialli@Sun.COM">Joseph Fialli</a>
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
- * @author <a href="mailto:Neeraj.Bajaj@sun.com">Neeraj Bajaj</a>
+ * @author Joseph Fialli
+ * @author Jeff Suttor
+ * @author Neeraj Bajaj
  *
  * @since 1.5
  */

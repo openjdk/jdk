@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,6 +41,7 @@ import java.util.StringTokenizer;
  * <b>deprecated.</b></em>
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
+ * @LastModified: Oct 2017
  */
 public class KeyIndex extends DTMAxisIteratorBase {
 

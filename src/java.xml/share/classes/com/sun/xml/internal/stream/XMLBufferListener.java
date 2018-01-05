@@ -29,8 +29,8 @@ package com.sun.xml.internal.stream;
  * XMLBufferListerner should be implemented by classes which wish to receive
  * call backs from XMLEntityReader.
  *
- * @author k.venugopal@sun.com,
- * @author Neeraj.bajaj@sun.com
+ * @author k venugopal,
+ * @author Neeraj bajaj
  */
 public interface XMLBufferListener {
 

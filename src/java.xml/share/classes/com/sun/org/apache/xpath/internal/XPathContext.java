@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -57,6 +56,7 @@ import org.xml.sax.XMLReader;
  *
  * <p>This class extends DTMManager but does not directly implement it.</p>
  * @xsl.usage advanced
+ * @LastModified: Oct 2017
  */
 public class XPathContext extends DTMManager // implements ExpressionContext
 {

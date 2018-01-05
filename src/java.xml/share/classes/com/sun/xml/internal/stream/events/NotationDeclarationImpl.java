@@ -32,7 +32,7 @@ import com.sun.xml.internal.stream.dtd.nonvalidating.XMLNotationDecl;
 /**
  * Implementation of NotationDeclaration event.
  *
- * @author k.venugopal@sun.com
+ * @author k venugopal
  */
 public class NotationDeclarationImpl extends DummyEvent implements NotationDeclaration {
 

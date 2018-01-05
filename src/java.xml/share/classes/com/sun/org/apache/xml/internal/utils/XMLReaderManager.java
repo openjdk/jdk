@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,6 +41,8 @@ import org.xml.sax.helpers.XMLReaderFactory;
 /**
  * Creates XMLReader objects and caches them for re-use.
  * This class follows the singleton pattern.
+ *
+ * @LastModified: Sep 2017
  */
 @SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public class XMLReaderManager {

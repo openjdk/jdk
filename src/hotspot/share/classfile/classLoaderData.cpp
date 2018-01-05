@@ -831,9 +831,10 @@ void ClassLoaderData::free_deallocate_list() {
 }
 
 // This is distinct from free_deallocate_list.  For class loader data that are
-// unloading, this frees the C heap memory for constant pools on the list.  If there
-// were C heap memory allocated for methods, it would free that too.  The C heap memory
-// for InstanceKlasses on this list is freed in the ClassLoaderData destructor.
+// unloading, this frees the C heap memory for items on the list, and unlinks
+// scratch or error classes so that unloading events aren't triggered for these
+// classes. The metadata is removed with the unloading metaspace.
+// There isn't C heap memory allocated for methods, so nothing is done for them.
 void ClassLoaderData::unload_deallocate_list() {
   // Don't need lock, at safepoint
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
@@ -846,9 +847,15 @@ void ClassLoaderData::unload_deallocate_list() {
     Metadata* m = _deallocate_list->at(i);
     assert (!m->on_stack(), "wouldn't be unloading if this were so");
     _deallocate_list->remove_at(i);
-    // Only constant pool entries have C heap memory to free.
     if (m->is_constantPool()) {
       ((ConstantPool*)m)->release_C_heap_structures();
+    } else if (m->is_klass()) {
+      InstanceKlass* ik = (InstanceKlass*)m;
+      // also releases ik->constants() C heap memory
+      InstanceKlass::release_C_heap_structures(ik);
+      // Remove the class so unloading events aren't triggered for
+      // this class (scratch or error class) in do_unloading().
+      remove_class(ik);
     }
   }
 }

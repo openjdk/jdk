@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.RandomAccess;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
@@ -43,6 +44,7 @@ public final class ObjectNode extends Expression implements LexicalContextNode, 
     private final List<PropertyNode> elements;
 
     /** Ranges for splitting large literals over multiple compile units in codegen. */
+    @Ignore
     private final List<Splittable.SplitRange> splitRanges;
 
     /**

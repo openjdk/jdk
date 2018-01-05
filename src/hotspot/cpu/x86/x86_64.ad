@@ -547,8 +547,12 @@ source %{
 
 #define __ _masm.
 
+static bool generate_vzeroupper(Compile* C) {
+  return (VM_Version::supports_vzeroupper() && (C->max_vector_size() > 16 || C->clear_upper_avx() == true)) ? true: false;  // Generate vzeroupper
+}
+
 static int clear_avx_size() {
-  return (VM_Version::supports_vzeroupper()) ? 3: 0;  // vzeroupper
+  return generate_vzeroupper(Compile::current()) ? 3: 0;  // vzeroupper
 }
 
 // !!!!! Special hack to get all types of calls to specify the byte offset
@@ -931,7 +935,7 @@ int MachPrologNode::reloc() const
 void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   Compile* C = ra_->C;
-  if (VM_Version::supports_vzeroupper()) {
+  if (generate_vzeroupper(C)) {
     st->print("vzeroupper");
     st->cr(); st->print("\t");
   }
@@ -971,9 +975,11 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   Compile* C = ra_->C;
   MacroAssembler _masm(&cbuf);
 
-  // Clear upper bits of YMM registers when current compiled code uses
-  // wide vectors to avoid AVX <-> SSE transition penalty during call.
-  __ vzeroupper();
+  if (generate_vzeroupper(C)) {
+    // Clear upper bits of YMM registers when current compiled code uses
+    // wide vectors to avoid AVX <-> SSE transition penalty during call.
+    __ vzeroupper();
+  }
 
   int framesize = C->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
@@ -2112,11 +2118,13 @@ encode %{
 
   enc_class clear_avx %{
     debug_only(int off0 = cbuf.insts_size());
-    // Clear upper bits of YMM registers to avoid AVX <-> SSE transition penalty
-    // Clear upper bits of YMM registers when current compiled code uses
-    // wide vectors to avoid AVX <-> SSE transition penalty during call.
-    MacroAssembler _masm(&cbuf);
-    __ vzeroupper();
+    if (generate_vzeroupper(Compile::current())) {
+      // Clear upper bits of YMM registers to avoid AVX <-> SSE transition penalty
+      // Clear upper bits of YMM registers when current compiled code uses
+      // wide vectors to avoid AVX <-> SSE transition penalty during call.
+      MacroAssembler _masm(&cbuf);
+      __ vzeroupper();
+    }
     debug_only(int off1 = cbuf.insts_size());
     assert(off1 - off0 == clear_avx_size(), "correct size prediction");
   %}

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -62,6 +61,8 @@ import org.xml.sax.SAXException;
  * <p>
  * %MK% The code in this class is critical to the XSLTC_DTM performance. Be very careful
  * when making changes here!
+ *
+ * @LastModified: Oct 2017
  */
 public class SAX2DTM2 extends SAX2DTM
 {

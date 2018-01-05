@@ -149,7 +149,7 @@
  *     <li>xs:unsignedShort</li>
  * </ul>
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xmlschema-2/#dateTime">
  *             W3C XML Schema 1.0 Part 2, Section 3.2.7-14</a>
  * @see <a href="http://www.w3.org/TR/xpath-datamodel#dt-dayTimeDuration">

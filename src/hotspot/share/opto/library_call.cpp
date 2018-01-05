@@ -328,6 +328,13 @@ class LibraryCallKit : public GraphKit {
 
   bool inline_profileBoolean();
   bool inline_isCompileConstant();
+  void clear_upper_avx() {
+#ifdef X86
+    if (UseAVX >= 2) {
+      C->set_clear_upper_avx(true);
+    }
+#endif
+  }
 };
 
 //---------------------------make_vm_intrinsic----------------------------
@@ -1082,6 +1089,7 @@ Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1_start, Node
 
   // All these intrinsics have checks.
   C->set_has_split_ifs(true); // Has chance for split-if optimization
+  clear_upper_avx();
 
   return _gvn.transform(result);
 }
@@ -1156,6 +1164,8 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
 
   const TypeAryPtr* mtype = (ae == StrIntrinsicNode::UU) ? TypeAryPtr::CHARS : TypeAryPtr::BYTES;
   set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), arg1, arg2, ae)));
+  clear_upper_avx();
+
   return true;
 }
 
@@ -1227,6 +1237,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex() {
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);
+  clear_upper_avx();
   return true;
 }
 
@@ -1325,6 +1336,7 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   set_control(_gvn.transform(region));
   record_for_igvn(region);
   set_result(_gvn.transform(phi));
+  clear_upper_avx();
 
   return true;
 }
@@ -1488,6 +1500,8 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   if (compress) {
     set_result(_gvn.transform(count));
   }
+  clear_upper_avx();
+
   return true;
 }
 
@@ -1585,6 +1599,8 @@ bool LibraryCallKit::inline_string_toBytesU() {
   if (!stopped()) {
     set_result(newcopy);
   }
+  clear_upper_avx();
+
   return true;
 }
 
@@ -5295,6 +5311,8 @@ bool LibraryCallKit::inline_arraycopy() {
     assert(validated, "shouldn't transform if all arguments not validated");
     set_all_memory(n);
   }
+  clear_upper_avx();
+
 
   return true;
 }
@@ -5415,6 +5433,8 @@ bool LibraryCallKit::inline_encodeISOArray() {
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
   set_memory(res_mem, mtype);
   set_result(enc);
+  clear_upper_avx();
+
   return true;
 }
 

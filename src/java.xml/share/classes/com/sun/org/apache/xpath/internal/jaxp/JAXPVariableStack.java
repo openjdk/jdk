@@ -37,7 +37,7 @@ import com.sun.org.apache.xalan.internal.res.XSLMessages;
  * Overrides {@link VariableStack} and delegates the call to
  * {@link javax.xml.xpath.XPathVariableResolver}.
  *
- * @author Ramesh Mandava ( ramesh.mandava@sun.com )
+ * @author Ramesh Mandava
  */
 public class JAXPVariableStack extends VariableStack {
 

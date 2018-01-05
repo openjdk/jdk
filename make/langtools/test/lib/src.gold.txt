@@ -29,15 +29,5 @@ com/sun/tools/javadoc/Main.java
 com/sun/tools/javadoc/resources/javadoc.properties
 com/sun/tools/javadoc/resources/javadoc_ja.properties
 com/sun/tools/javadoc/resources/javadoc_zh_CN.properties
-com/sun/tools/javah/Main.java
-com/sun/tools/javah/resources/Linux_ppc.properties
-com/sun/tools/javah/resources/Linux_sparc.properties
-com/sun/tools/javah/resources/SunOS_sparc.properties
-com/sun/tools/javah/resources/SunOS_sparcv9.properties
-com/sun/tools/javah/resources/l10n.properties
-com/sun/tools/javah/resources/l10n_ja.properties
-com/sun/tools/javah/resources/l10n_zh_CN.properties
-com/sun/tools/javah/resources/win32_x86.properties
 javax/lang/model/overview.html
 javax/tools/overview.html
-sun/tools/javap/Main.java

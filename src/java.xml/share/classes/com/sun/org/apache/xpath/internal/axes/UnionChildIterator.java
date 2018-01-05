@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,6 +31,8 @@ import java.util.List;
  * This class defines a simplified type of union iterator that only
  * tests along the child axes.  If the conditions are right, it is
  * much faster than using a UnionPathIterator.
+ *
+ * @LastModified: Oct 2017
  */
 public class UnionChildIterator extends ChildTestIterator
 {

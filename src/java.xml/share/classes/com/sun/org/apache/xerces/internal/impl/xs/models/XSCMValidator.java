@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,6 +32,7 @@ import java.util.List;
  *
  * @author Sandy Gao, IBM
  * @author Elena Litani, IBM
+ * @LastModified: Oct 2017
  */
 public interface XSCMValidator {
 

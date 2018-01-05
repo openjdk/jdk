@@ -31,8 +31,8 @@ import java.lang.ref.*;
  * Buffer allocator for buffers of sizes 128 B, 2 KB and 8 KB. Includes
  * methods for allocating and freeing buffers.
  *
- * @author Binu.John@sun.com
- * @author Santiago.PericasGeertsen@sun.com
+ * @author Binu John
+ * @author Santiago PericasGeertsen
  */
 public class BufferAllocator {
     private static final int SMALL_SIZE_LIMIT = 128;

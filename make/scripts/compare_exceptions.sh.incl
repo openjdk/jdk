@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,6 @@ if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
       ./bin/java
       ./bin/javac
       ./bin/javadoc
-      ./bin/javah
       ./bin/javap
       ./bin/jdeps
       ./bin/jcmd
@@ -197,7 +196,6 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ];
       ./bin/java
       ./bin/javac
       ./bin/javadoc
-      ./bin/javah
       ./bin/javap
       ./bin/jdeps
       ./bin/jcmd
@@ -306,7 +304,6 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
       ./bin/java
       ./bin/javac
       ./bin/javadoc
-      ./bin/javah
       ./bin/javap
       ./bin/jdeps
       ./bin/jcmd
@@ -394,7 +391,6 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
       ./bin/java.exe
       ./bin/javac.exe
       ./bin/javadoc.exe
-      ./bin/javah.exe
       ./bin/javap.exe
       ./bin/jdeps.exe
       ./bin/javaw.exe
@@ -486,7 +482,6 @@ if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
       ./bin/java
       ./bin/javac
       ./bin/javadoc
-      ./bin/javah
       ./bin/javap
       ./bin/javaws
       ./bin/jdeps

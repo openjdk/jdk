@@ -38,7 +38,7 @@ import org.w3c.dom.Node;
  * Parsers can be made namespace aware by calling
  * {@link javax.xml.parsers.DocumentBuilderFactory#setNamespaceAware(boolean awareness)}.</p>
  *
- * @author <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @see <a href="http://www.w3.org/TR/DOM-Level-2">Document Object Model (DOM) Level 2 Specification</a>
  * @since 1.4
  */

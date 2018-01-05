@@ -50,7 +50,7 @@ import org.xml.sax.SAXException;
  * A validator helper for <code>StreamSource</code>s.</p>
  *
  * @author Michael Glavassevich, IBM
- * @author <a href="mailto:Sunitha.Reddy@Sun.com">Sunitha Reddy</a>
+ * @author Sunitha Reddy
  */
 final class StreamValidatorHelper implements ValidatorHelper {
 

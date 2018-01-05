@@ -41,7 +41,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
  * get rid of this awkward adaptor class.
  *
  * @author
- *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ *     Kohsuke Kawaguchi
  */
 public final class XMLInputSourceAdaptor implements Source {
     /**

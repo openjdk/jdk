@@ -39,8 +39,8 @@ import javax.xml.namespace.NamespaceContext;
  * can be exposed to the application, we must intern all Strings before
  * calling NamespaceSupport methods.
  *
- * @author  Neeraj Bajaj, Sun Microsystems, inc.
- * @author Santiago.PericasGeertsen@sun.com
+ * @author  Neeraj Bajaj
+ * @author Santiago PericasGeertsen
  *
  */
 public class NamespaceContextWrapper implements NamespaceContext {

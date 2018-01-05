@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,6 +38,7 @@ import org.w3c.dom.Element;
  * is used as the name of the object. The default namespace is not used for
  * unprefixed names."
  * @xsl.usage general
+ * @LastModified: Oct 2017
  */
 public class QName implements java.io.Serializable
 {

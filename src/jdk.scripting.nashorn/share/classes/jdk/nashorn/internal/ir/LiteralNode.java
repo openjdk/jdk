@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.objects.NativeArray;
@@ -633,6 +634,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         private final int[] postsets;
 
         /** Ranges for splitting up large literals in code generation */
+        @Ignore
         private final List<Splittable.SplitRange> splitRanges;
 
         /** Does this array literal have a spread element? */

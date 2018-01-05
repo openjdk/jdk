@@ -29,7 +29,7 @@ import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
  * <p>Filter {@link XMLGrammarPool} that exposes a
  * read-only view of the underlying pool.</p>
  *
- * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ * @author Kohsuke Kawaguchi
  */
 final class ReadOnlyGrammarPool implements XMLGrammarPool {
 
