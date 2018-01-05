@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4394,13 +4394,49 @@ FILE* os::open(int fd, const char* mode) {
 
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
-  WIN32_FIND_DATA fd;
-  HANDLE f = FindFirstFile(path, &fd);
-  if (f == INVALID_HANDLE_VALUE) {
-    return true;
+  char* search_path = (char*)os::malloc(strlen(path) + 3, mtInternal);
+  if (search_path == NULL) {
+    errno = ENOMEM;
+    return false;
   }
-  FindClose(f);
-  return false;
+  strcpy(search_path, path);
+  // Append "*", or possibly "\\*", to path
+  if (path[1] == ':' &&
+    (path[2] == '\0' ||
+    (path[2] == '\\' && path[3] == '\0'))) {
+    // No '\\' needed for cases like "Z:" or "Z:\"
+    strcat(search_path, "*");
+  }
+  else {
+    strcat(search_path, "\\*");
+  }
+  errno_t err = ERROR_SUCCESS;
+  wchar_t* wpath = create_unc_path(search_path, err);
+  if (err != ERROR_SUCCESS) {
+    if (wpath != NULL) {
+      destroy_unc_path(wpath);
+    }
+    os::free(search_path);
+    errno = err;
+    return false;
+  }
+  WIN32_FIND_DATAW fd;
+  HANDLE f = ::FindFirstFileW(wpath, &fd);
+  destroy_unc_path(wpath);
+  bool is_empty = true;
+  if (f != INVALID_HANDLE_VALUE) {
+    while (is_empty && ::FindNextFileW(f, &fd)) {
+      // An empty directory contains only the current directory file
+      // and the previous directory file.
+      if ((wcscmp(fd.cFileName, L".") != 0) &&
+          (wcscmp(fd.cFileName, L"..") != 0)) {
+        is_empty = false;
+      }
+    }
+    FindClose(f);
+  }
+  os::free(search_path);
+  return is_empty;
 }
 
 // create binary file, rewriting existing file if required
