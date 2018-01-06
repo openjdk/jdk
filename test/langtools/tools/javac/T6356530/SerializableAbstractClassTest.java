@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,31 @@
 
 /*
  * @test
- * @bug 6356530
- * @summary -Xlint:serial does not flag abstract classes with concrete methods/members
- * @compile/fail/ref=SerializableAbstractClassWithNonAbstractMethodsTest.out -XDrawDiagnostics -Werror -Xlint:serial SerializableAbstractClassWithNonAbstractMethodsTest.java
+ * @bug 6356530 8191637
+ * @summary -Xlint:serial does not flag abstract classes with persisent fields
+ * @compile/fail/ref=SerializableAbstractClassTest.out -XDrawDiagnostics -Werror -Xlint:serial SerializableAbstractClassTest.java
  */
 
-abstract class SerializableAbstractClassWithNonAbstractMethodsTest implements java.io.Serializable {
-    void m1() {}
+abstract class SerializableAbstractClassTest implements java.io.Serializable {
+    // no serialVersionUID; error
     abstract void m2();
 
-    abstract class AWithUID implements java.io.Serializable {
+    static abstract class AWithUID implements java.io.Serializable {
         private static final long serialVersionUID = 0;
         void m(){}
     }
 
+    interface I extends java.io.Serializable {
+        // no need for serialVersionUID
+    }
+
     interface IDefault extends java.io.Serializable {
+        // no need for serialVersionUID
         default int m() { return 1; }
     }
 
-    interface IDefaultAndUID extends java.io.Serializable {
+    interface IUID extends java.io.Serializable {
+        // no need for serialVersionUID, but not wrong
         static final long serialVersionUID = 0;
-        default int m() { return 1; }
     }
 }
