@@ -31,7 +31,7 @@ import jdk.test.lib.RandomFactory;
 
 /*
  * @test
- * @bug 8080835
+ * @bug 8080835 8193832
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run main ReadAllBytes
@@ -47,15 +47,11 @@ public class ReadAllBytes {
         test(new byte[]{});
         test(new byte[]{1, 2, 3});
         test(createRandomBytes(1024));
-        test(createRandomBytes((1 << 13) - 1));
-        test(createRandomBytes((1 << 13)));
-        test(createRandomBytes((1 << 13) + 1));
-        test(createRandomBytes((1 << 15) - 1));
-        test(createRandomBytes((1 << 15)));
-        test(createRandomBytes((1 << 15) + 1));
-        test(createRandomBytes((1 << 17) - 1));
-        test(createRandomBytes((1 << 17)));
-        test(createRandomBytes((1 << 17) + 1));
+        for (int shift : new int[] {13, 14, 15, 17}) {
+            for (int offset : new int[] {-1, 0, 1}) {
+                test(createRandomBytes((1 << shift) + offset));
+            }
+        }
     }
 
     static void test(byte[] expectedBytes) throws IOException {

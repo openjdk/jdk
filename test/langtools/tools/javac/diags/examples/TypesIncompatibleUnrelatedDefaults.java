@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.types.incompatible.unrelated.defaults
+// key: compiler.err.types.incompatible
+// key: compiler.misc.incompatible.unrelated.defaults
 
 class TypesIncompatibleUnrelatedDefaults {
     interface A {
