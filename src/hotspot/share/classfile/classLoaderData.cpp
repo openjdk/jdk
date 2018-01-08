@@ -63,6 +63,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -75,9 +76,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#endif // INCLUDE_ALL_GCS
 #if INCLUDE_TRACE
 #include "trace/tracing.hpp"
 #endif
@@ -759,18 +757,9 @@ void ClassLoaderData::remove_handle(OopHandle h) {
   oop* ptr = h.ptr_raw();
   if (ptr != NULL) {
     assert(_handles.contains(ptr), "Got unexpected handle " PTR_FORMAT, p2i(ptr));
-#if INCLUDE_ALL_GCS
-    // This barrier is used by G1 to remember the old oop values, so
-    // that we don't forget any objects that were live at the snapshot at
-    // the beginning.
-    if (UseG1GC) {
-      oop obj = *ptr;
-      if (obj != NULL) {
-        G1SATBCardTableModRefBS::enqueue(obj);
-      }
-    }
-#endif
-    *ptr = NULL;
+    // This root is not walked in safepoints, and hence requires an appropriate
+    // decorator that e.g. maintains the SATB invariant in SATB collectors.
+    RootAccess<IN_CONCURRENT_ROOT>::oop_store(ptr, oop(NULL));
   }
 }
 
