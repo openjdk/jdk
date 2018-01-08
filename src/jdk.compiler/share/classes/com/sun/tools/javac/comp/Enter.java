@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -421,6 +421,12 @@ public class Enter extends JCTree.Visitor {
                 // We are seeing a member class.
                 c = syms.enterClass(env.toplevel.modle, tree.name, (TypeSymbol)owner);
                 if (c.owner != owner) {
+                    if (c.name != tree.name) {
+                        log.error(tree.pos(), Errors.SameBinaryName(c.name, tree.name));
+                        result = types.createErrorType(tree.name, (TypeSymbol)owner, Type.noType);
+                        tree.sym = (ClassSymbol)result.tsym;
+                        return;
+                    }
                     //anonymous class loaded from a classfile may be recreated from source (see below)
                     //if this class is a member of such an anonymous class, fix the owner:
                     Assert.check(owner.owner.kind != TYP, owner::toString);
