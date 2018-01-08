@@ -6,7 +6,7 @@ NestedInnerClassNames.java:46:13: compiler.err.already.defined: kindname.class, 
 NestedInnerClassNames.java:59:9: compiler.err.already.defined: kindname.class, NestedInnerClassNames.foo$bar, kindname.class, NestedInnerClassNames
 NestedInnerClassNames.java:76:13: compiler.err.already.defined: kindname.class, NestedInnerClassNames.$bar, kindname.class, NestedInnerClassNames
 NestedInnerClassNames.java:90:13: compiler.err.already.defined: kindname.class, NestedInnerClassNames.bar$bar.bar, kindname.class, NestedInnerClassNames.bar$bar
-NestedInnerClassNames.java:109:5: compiler.err.duplicate.class: NestedInnerClassNames.foo.foo
+NestedInnerClassNames.java:109:5: compiler.err.same.binary.name: foo, foo$foo
 NestedInnerClassNames.java:19:9: compiler.err.already.defined: kindname.class, NestedInnerClassNames, kindname.package, compiler.misc.unnamed.package
 NestedInnerClassNames.java:28:13: compiler.err.already.defined: kindname.class, foo, kindname.method, m2()
 NestedInnerClassNames.java:40:13: compiler.err.already.defined: kindname.class, NestedInnerClassNames, kindname.package, compiler.misc.unnamed.package
