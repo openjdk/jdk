@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -78,6 +77,7 @@ import jdk.xml.internal.JdkXmlUtils;
  * @author Neil Graham, IBM
  * @author Michael Glavassevich, IBM
  *
+ * @LastModified: Oct 2017
  */
 public class XML11Configuration extends ParserConfigurationSettings
     implements XMLPullParserConfiguration, XML11Configurable {

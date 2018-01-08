@@ -470,8 +470,12 @@ void NonTieredCompPolicy::trace_frequency_counter_overflow(const methodHandle& m
       if (bci != InvocationEntryBci) {
         MethodData* mdo = m->method_data();
         if (mdo != NULL) {
-          int count = mdo->bci_to_data(branch_bci)->as_JumpData()->taken();
-          tty->print_cr("back branch count = %d", count);
+          ProfileData *pd = mdo->bci_to_data(branch_bci);
+          if (pd == NULL) {
+            tty->print_cr("back branch count = N/A (missing ProfileData)");
+          } else {
+            tty->print_cr("back branch count = %d", pd->as_JumpData()->taken());
+          }
         }
       }
     }

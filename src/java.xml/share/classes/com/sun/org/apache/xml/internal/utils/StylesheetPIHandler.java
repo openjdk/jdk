@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -36,6 +35,8 @@ import org.xml.sax.helpers.DefaultHandler;
  * Search for the xml-stylesheet processing instructions in an XML document.
  * @see <a href="http://www.w3.org/TR/xml-stylesheet/">
  * Associating Style Sheets with XML documents, Version 1.0</a>
+ *
+ * @LastModified: Oct 2017
  */
 public class StylesheetPIHandler extends DefaultHandler
 {

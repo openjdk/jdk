@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -45,6 +44,7 @@ import java.util.List;
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
  * @author Morten Jorgensen
+ * @LastModified: Oct 2017
  */
 final class Choose extends Instruction {
 

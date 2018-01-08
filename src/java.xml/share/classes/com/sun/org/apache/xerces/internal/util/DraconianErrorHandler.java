@@ -29,7 +29,7 @@ import org.xml.sax.SAXParseException;
  * {@link ErrorHandler} that throws all errors and fatal errors.
  *
  * @author
- *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ *     Kohsuke Kawaguchi
  */
 public class DraconianErrorHandler implements ErrorHandler {
     /**

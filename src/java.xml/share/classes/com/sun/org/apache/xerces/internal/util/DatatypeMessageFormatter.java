@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,6 +29,7 @@ import jdk.xml.internal.SecuritySupport;
  * <p>Used to format JAXP 1.3 Datatype API error messages using a specified locale.</p>
  *
  * @author  Neeraj Bajaj, Sun Microsystems
+ * @LastModified: Sep 2017
  */
 public class DatatypeMessageFormatter {
 

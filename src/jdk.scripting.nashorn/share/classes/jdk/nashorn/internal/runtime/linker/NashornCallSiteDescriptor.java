@@ -29,6 +29,7 @@ import static jdk.dynalink.StandardNamespace.ELEMENT;
 import static jdk.dynalink.StandardNamespace.METHOD;
 import static jdk.dynalink.StandardNamespace.PROPERTY;
 import static jdk.dynalink.StandardOperation.GET;
+import static jdk.dynalink.StandardOperation.REMOVE;
 import static jdk.dynalink.StandardOperation.SET;
 
 import java.lang.invoke.MethodHandles;
@@ -63,7 +64,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * form of static methods.
  */
 public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
-    // Lowest three bits describe the operation
+    // Lowest four bits describe the operation
     /** Property getter operation {@code obj.prop} */
     public static final int GET_PROPERTY        = 0;
     /** Element getter operation {@code obj[index]} */
@@ -76,12 +77,16 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
     public static final int SET_PROPERTY        = 4;
     /** Element setter operation {@code obj[index] = value} */
     public static final int SET_ELEMENT         = 5;
+    /** Property remove operation {@code delete obj.prop} */
+    public static final int REMOVE_PROPERTY     = 6;
+    /** Element remove operation {@code delete obj[index]} */
+    public static final int REMOVE_ELEMENT      = 7;
     /** Call operation {@code fn(args...)} */
-    public static final int CALL                = 6;
+    public static final int CALL                = 8;
     /** New operation {@code new Constructor(args...)} */
-    public static final int NEW                 = 7;
+    public static final int NEW                 = 9;
 
-    private static final int OPERATION_MASK = 7;
+    private static final int OPERATION_MASK = 15;
 
     // Correspond to the operation indices above.
     private static final Operation[] OPERATIONS = new Operation[] {
@@ -91,42 +96,44 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
         GET.withNamespaces(METHOD, ELEMENT, PROPERTY),
         SET.withNamespaces(PROPERTY, ELEMENT),
         SET.withNamespaces(ELEMENT, PROPERTY),
+        REMOVE.withNamespaces(PROPERTY, ELEMENT),
+        REMOVE.withNamespaces(ELEMENT, PROPERTY),
         StandardOperation.CALL,
         StandardOperation.NEW
     };
 
     /** Flags that the call site references a scope variable (it's an identifier reference or a var declaration, not a
      * property access expression. */
-    public static final int CALLSITE_SCOPE         = 1 << 3;
+    public static final int CALLSITE_SCOPE         = 1 << 4;
     /** Flags that the call site is in code that uses ECMAScript strict mode. */
-    public static final int CALLSITE_STRICT        = 1 << 4;
+    public static final int CALLSITE_STRICT        = 1 << 5;
     /** Flags that a property getter or setter call site references a scope variable that is located at a known distance
      * in the scope chain. Such getters and setters can often be linked more optimally using these assumptions. */
-    public static final int CALLSITE_FAST_SCOPE    = 1 << 5;
+    public static final int CALLSITE_FAST_SCOPE    = 1 << 6;
     /** Flags that a callsite type is optimistic, i.e. we might get back a wider return value than encoded in the
      * descriptor, and in that case we have to throw an UnwarrantedOptimismException */
-    public static final int CALLSITE_OPTIMISTIC    = 1 << 6;
+    public static final int CALLSITE_OPTIMISTIC    = 1 << 7;
     /** Is this really an apply that we try to call as a call? */
-    public static final int CALLSITE_APPLY_TO_CALL = 1 << 7;
+    public static final int CALLSITE_APPLY_TO_CALL = 1 << 8;
     /** Does this a callsite for a variable declaration? */
-    public static final int CALLSITE_DECLARE       = 1 << 8;
+    public static final int CALLSITE_DECLARE       = 1 << 9;
 
     /** Flags that the call site is profiled; Contexts that have {@code "profile.callsites"} boolean property set emit
      * code where call sites have this flag set. */
-    public static final int CALLSITE_PROFILE         = 1 << 9;
+    public static final int CALLSITE_PROFILE         = 1 << 10;
     /** Flags that the call site is traced; Contexts that have {@code "trace.callsites"} property set emit code where
      * call sites have this flag set. */
-    public static final int CALLSITE_TRACE           = 1 << 10;
+    public static final int CALLSITE_TRACE           = 1 << 11;
     /** Flags that the call site linkage miss (and thus, relinking) is traced; Contexts that have the keyword
      * {@code "miss"} in their {@code "trace.callsites"} property emit code where call sites have this flag set. */
-    public static final int CALLSITE_TRACE_MISSES    = 1 << 11;
+    public static final int CALLSITE_TRACE_MISSES    = 1 << 12;
     /** Flags that entry/exit to/from the method linked at call site are traced; Contexts that have the keyword
      * {@code "enterexit"} in their {@code "trace.callsites"} property emit code where call sites have this flag set. */
-    public static final int CALLSITE_TRACE_ENTEREXIT = 1 << 12;
+    public static final int CALLSITE_TRACE_ENTEREXIT = 1 << 13;
     /** Flags that values passed as arguments to and returned from the method linked at call site are traced; Contexts
      * that have the keyword {@code "values"} in their {@code "trace.callsites"} property emit code where call sites
      * have this flag set. */
-    public static final int CALLSITE_TRACE_VALUES    = 1 << 13;
+    public static final int CALLSITE_TRACE_VALUES    = 1 << 14;
 
     //we could have more tracing flags here, for example CALLSITE_TRACE_SCOPE, but bits are a bit precious
     //right now given the program points
@@ -138,10 +145,10 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
      * TODO: rethink if we need the various profile/trace flags or the linker can use the Context instead to query its
      * trace/profile settings.
      */
-    public static final int CALLSITE_PROGRAM_POINT_SHIFT = 14;
+    public static final int CALLSITE_PROGRAM_POINT_SHIFT = 15;
 
     /**
-     * Maximum program point value. We have 18 bits left over after flags, and
+     * Maximum program point value. We have 17 bits left over after flags, and
      * it should be plenty. Program points are local to a single function. Every
      * function maps to a single JVM bytecode method that can have at most 65535
      * bytes. (Large functions are synthetically split into smaller functions.)
@@ -222,8 +229,10 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
         case 3: return "GET_METHOD_ELEMENT";
         case 4: return "SET_PROPERTY";
         case 5: return "SET_ELEMENT";
-        case 6: return "CALL";
-        case 7: return "NEW";
+        case 6: return "REMOVE_PROPERTY";
+        case 7: return "REMOVE_ELEMENT";
+        case 8: return "CALL";
+        case 9: return "NEW";
         default: throw new AssertionError();
         }
     }

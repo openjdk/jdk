@@ -151,6 +151,7 @@ import jdk.nashorn.internal.runtime.Undefined;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
@@ -1142,6 +1143,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
 
             @Override
+            public boolean enterDELETE(final UnaryNode unaryNode) {
+                loadDELETE(unaryNode);
+                return false;
+            }
+
+            @Override
             public boolean enterEQ(final BinaryNode binaryNode) {
                 loadCmp(binaryNode, Condition.EQ);
                 return false;
@@ -1279,7 +1286,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     boolean useOptimisticTypes() {
-        return !lc.inSplitNode() && compiler.useOptimisticTypes();
+        return !lc.inSplitLiteral() && compiler.useOptimisticTypes();
     }
 
     @Override
@@ -2917,12 +2924,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // to synthetic functions, and FunctionNode.needsCallee() will no longer need to test for isSplit().
             final int literalSlot = fixScopeSlot(currentFunction, 3);
 
-            lc.enterSplitNode();
+            lc.enterSplitLiteral();
 
             creator.populateRange(method, literalType, literalSlot, splitRange.getLow(), splitRange.getHigh());
 
             method._return();
-            lc.exitSplitNode();
+            lc.exitSplitLiteral();
             method.end();
             lc.releaseSlots();
             popMethodEmitter();
@@ -3791,6 +3798,53 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
     }
 
+    public void loadDELETE(final UnaryNode unaryNode) {
+        final Expression expression = unaryNode.getExpression();
+        if (expression instanceof IdentNode) {
+            final IdentNode ident = (IdentNode)expression;
+            final Symbol symbol = ident.getSymbol();
+            final String name = ident.getName();
+
+            if (symbol.isThis()) {
+                // Can't delete "this", ignore and return true
+                if (!lc.popDiscardIfCurrent(unaryNode)) {
+                    method.load(true);
+                }
+            } else if (lc.getCurrentFunction().isStrict()) {
+                // All other scope identifier delete attempts fail for strict mode
+                method.load(name);
+                method.invoke(ScriptRuntime.STRICT_FAIL_DELETE);
+            } else if (!symbol.isScope() && (symbol.isParam() || (symbol.isVar() && !symbol.isProgramLevel()))) {
+                // If symbol is a function parameter, or a declared non-global variable, delete is a no-op and returns false.
+                if (!lc.popDiscardIfCurrent(unaryNode)) {
+                    method.load(false);
+                }
+            } else {
+                method.loadCompilerConstant(SCOPE);
+                method.load(name);
+                if ((symbol.isGlobal() && !symbol.isFunctionDeclaration()) || symbol.isProgramLevel()) {
+                    method.invoke(ScriptRuntime.SLOW_DELETE);
+                } else {
+                    method.load(false); // never strict here; that was handled with STRICT_FAIL_DELETE above.
+                    method.invoke(ScriptObject.DELETE);
+                }
+            }
+        } else if (expression instanceof BaseNode) {
+            loadExpressionAsObject(((BaseNode)expression).getBase());
+            if (expression instanceof AccessNode) {
+                final AccessNode accessNode = (AccessNode) expression;
+                method.dynamicRemove(accessNode.getProperty(), getCallSiteFlags(), accessNode.isIndex());
+            } else if (expression instanceof IndexNode) {
+                loadExpressionAsObject(((IndexNode) expression).getIndex());
+                method.dynamicRemoveIndex(getCallSiteFlags());
+            } else {
+                throw new AssertionError(expression.getClass().getName());
+            }
+        } else {
+            throw new AssertionError(expression.getClass().getName());
+        }
+    }
+
     public void loadADD(final BinaryNode binaryNode, final TypeBounds resultBounds) {
         new OptimisticOperation(binaryNode, resultBounds) {
             @Override
@@ -4654,10 +4708,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             this.optimistic = optimistic;
             this.expression = (Expression)optimistic;
             this.resultBounds = resultBounds;
-            this.isOptimistic = isOptimistic(optimistic) && useOptimisticTypes() &&
+            this.isOptimistic = isOptimistic(optimistic)
                     // Operation is only effectively optimistic if its type, after being coerced into the result bounds
                     // is narrower than the upper bound.
-                    resultBounds.within(Type.generic(((Expression)optimistic).getType())).narrowerThan(resultBounds.widest);
+                    && resultBounds.within(Type.generic(((Expression)optimistic).getType())).narrowerThan(resultBounds.widest);
+            // Optimistic operations need to be executed in optimistic context, else unwarranted optimism will go unnoticed
+            assert !this.isOptimistic || useOptimisticTypes();
         }
 
         MethodEmitter emit() {

@@ -26,6 +26,7 @@
  * @bug 8151099
  * @summary Verify platform MXBeans initialized properly with java.management
  *          module only. No other management provider
+ * @requires !vm.graal.enabled
  * @modules java.management
  * @run main/othervm --limit-modules=java.management DefaultManagementProviderTest
  */

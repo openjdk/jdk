@@ -31,7 +31,7 @@ package javax.xml.parsers;
  * parser factory specified in the system properties cannot be found
  * or instantiated.
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @since 1.4
  */
 

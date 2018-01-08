@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -64,6 +63,7 @@ import org.w3c.dom.TypeInfo;
  * @author Sandy Gao, IBM
  * @author Neeraj Bajaj, Sun Microsystems, inc.
  *
+ * @LastModified: Nov 2017
  */
 public class XSSimpleTypeDecl implements XSSimpleType, TypeInfo {
 

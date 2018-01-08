@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -46,6 +45,7 @@ import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
  * the case where the LocPathIterator is "owned" by a UnionPathIterator,
  * in which case the UnionPathIterator will cache the nodes.</p>
  * @xsl.usage advanced
+ * @LastModified: Nov 2017
  */
 public abstract class LocPathIterator extends PredicatedNodeTest
         implements Cloneable, DTMIterator, java.io.Serializable, PathComponent

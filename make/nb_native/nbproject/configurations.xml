@@ -6670,18 +6670,6 @@
                 <in>examples.not-yet.txt</in>
               </df>
             </df>
-            <df name="javah">
-              <df name="6572945">
-                <df name="gold">
-                  <df name="jni.dir.1">
-                    <in>TestClass1.h</in>
-                    <in>TestClass1_Inner1.h</in>
-                    <in>TestClass1_Inner2.h</in>
-                    <in>TestClass2.h</in>
-                  </df>
-                </df>
-              </df>
-            </df>
             <df name="jdeprscan">
               <df name="tests">
                 <df name="jdk">
@@ -40847,26 +40835,6 @@
             flavor2="0">
       </item>
       <item path="../../test/langtools/tools/javac/diags/examples.not-yet.txt"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../test/langtools/tools/javah/6572945/gold/jni.dir.1/TestClass1.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../test/langtools/tools/javah/6572945/gold/jni.dir.1/TestClass1_Inner1.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../test/langtools/tools/javah/6572945/gold/jni.dir.1/TestClass1_Inner2.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../test/langtools/tools/javah/6572945/gold/jni.dir.1/TestClass2.h"
             ex="false"
             tool="3"
             flavor2="0">

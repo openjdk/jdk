@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -36,6 +35,8 @@ import org.w3c.dom.Node;
 
 /**
  * Execute the XML Signature here() function.
+ *
+ * @LastModified: Oct 2017
  */
 public final class FuncHere extends Function {
 

@@ -76,8 +76,8 @@ public class TestClassDump {
         if (Files.notExists(Paths.get("jtreg_classes2", "sun", "util", "calendar", "BaseCalendar.class"))) {
             throw new RuntimeException("jtreg_classes2/sun/util/calendar/BaseCalendar.class not found");
         }
-        if (Files.notExists(Paths.get("jtreg_classes2", "jdk", "internal", "vm", "PostVMInitHook.class"))) {
-            throw new RuntimeException("jtreg_classes2/jdk/internal/vm/PostVMInitHook.class not found");
+        if (Files.notExists(Paths.get("jtreg_classes2", "jdk", "internal", "loader", "BootLoader.class"))) {
+            throw new RuntimeException("jtreg_classes2/jdk/internal/loader/BootLoader.class not found");
         }
     }
 

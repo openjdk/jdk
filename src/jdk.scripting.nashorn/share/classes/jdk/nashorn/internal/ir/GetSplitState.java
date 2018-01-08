@@ -27,6 +27,7 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Scope;
 
@@ -39,6 +40,7 @@ public final class GetSplitState extends Expression {
     private static final long serialVersionUID = 1L;
 
     /** The sole instance of this AST node. */
+    @Ignore
     public final static GetSplitState INSTANCE = new GetSplitState();
 
     private GetSplitState() {

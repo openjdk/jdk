@@ -111,7 +111,8 @@ public class ClassFile {
         V51(51, 0),   // JDK 1.7
         V52(52, 0),   // JDK 1.8: lambda, type annos, param names
         V53(53, 0),   // JDK 1.9: modules, indy string concat
-        V54(54, 0);   // JDK 10
+        V54(54, 0),   // JDK 10
+        V55(55, 0);   // JDK 11: constant dynamic
         Version(int major, int minor) {
             this.major = major;
             this.minor = minor;

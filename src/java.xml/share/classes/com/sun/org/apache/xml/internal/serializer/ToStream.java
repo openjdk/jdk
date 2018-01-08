@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -53,6 +52,7 @@ import org.xml.sax.SAXException;
  * serializers (xml, html, text ...) that write output to a stream.
  *
  * @xsl.usage internal
+ * @LastModified: Nov 2017
  */
 abstract public class ToStream extends SerializerBase {
 

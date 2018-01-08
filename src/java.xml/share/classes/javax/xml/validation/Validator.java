@@ -48,7 +48,7 @@ import org.xml.sax.SAXNotSupportedException;
  * the {@code validate} method.
  *
  *
- * @author  <a href="mailto:Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
+ * @author  Kohsuke Kawaguchi
  * @since 1.5
  */
 public abstract class Validator {

@@ -74,10 +74,21 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(PRODUCT_NAME)
   AC_SUBST(PRODUCT_SUFFIX)
   AC_SUBST(JDK_RC_PLATFORM_NAME)
-  AC_SUBST(COMPANY_NAME)
   AC_SUBST(HOTSPOT_VM_DISTRO)
   AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
   AC_SUBST(MACOSX_BUNDLE_ID_BASE)
+
+  # The vendor name, if any
+  AC_ARG_WITH(vendor-name, [AS_HELP_STRING([--with-vendor-name],
+      [Set vendor name @<:@not specified@:>@])])
+  if test "x$with_vendor_name" = xyes; then
+    AC_MSG_ERROR([--with-vendor-name must have a value])
+  elif [ ! [[ $with_vendor_name =~ ^[[:print:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with--vendor-name contains non-printing characters: $with_vendor_name])
+  else
+    COMPANY_NAME="$with_vendor_name"
+  fi
+  AC_SUBST(COMPANY_NAME)
 
   # Override version from arguments
 
@@ -331,6 +342,10 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     VENDOR_VERSION_STRING="$with_vendor_version_string"
   fi
 
+  # We could define --with flags for these, if really needed
+  VERSION_CLASSFILE_MAJOR="$DEFAULT_VERSION_CLASSFILE_MAJOR"
+  VERSION_CLASSFILE_MINOR="$DEFAULT_VERSION_CLASSFILE_MINOR"
+
   AC_MSG_CHECKING([for version string])
   AC_MSG_RESULT([$VERSION_STRING])
 
@@ -348,4 +363,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(VERSION_IS_GA)
   AC_SUBST(VERSION_DATE)
   AC_SUBST(VENDOR_VERSION_STRING)
+  AC_SUBST(VERSION_CLASSFILE_MAJOR)
+  AC_SUBST(VERSION_CLASSFILE_MINOR)
+
 ])

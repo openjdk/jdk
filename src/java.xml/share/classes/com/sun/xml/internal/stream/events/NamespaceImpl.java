@@ -32,7 +32,7 @@ import javax.xml.namespace.QName;
 import javax.xml.XMLConstants;
 /**
  *
- * @author  Neeraj Bajaj,K.Venugopal@sun.com  Sun Microsystems.
+ * @author  Neeraj Bajaj,K Venugopal
  */
 public class NamespaceImpl extends AttributeImpl implements Namespace{
 

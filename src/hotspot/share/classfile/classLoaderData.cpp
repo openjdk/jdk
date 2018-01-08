@@ -574,9 +574,9 @@ void ClassLoaderData::unload() {
     ls.cr();
   }
 
-  // In some rare cases items added to this list will not be freed elsewhere.
-  // To keep it simple, just free everything in it here.
-  free_deallocate_list();
+  // Some items on the _deallocate_list need to free their C heap structures
+  // if they are not already on the _klasses list.
+  unload_deallocate_list();
 
   // Clean up global class iterator for compiler
   static_klass_iterator.adjust_saved_class(this);
@@ -755,6 +755,7 @@ OopHandle ClassLoaderData::add_handle(Handle h) {
 }
 
 void ClassLoaderData::remove_handle(OopHandle h) {
+  assert(!is_unloading(), "Do not remove a handle for a CLD that is unloading");
   oop* ptr = h.ptr_raw();
   if (ptr != NULL) {
     assert(_handles.contains(ptr), "Got unexpected handle " PTR_FORMAT, p2i(ptr));
@@ -799,6 +800,7 @@ void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
 void ClassLoaderData::free_deallocate_list() {
   // Don't need lock, at safepoint
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+  assert(!is_unloading(), "only called for ClassLoaderData that are not unloading");
   if (_deallocate_list == NULL) {
     return;
   }
@@ -824,6 +826,36 @@ void ClassLoaderData::free_deallocate_list() {
       assert(!m->is_klass() || !((InstanceKlass*)m)->is_scratch_class(),
              "scratch classes on this list should be dead");
       // Also should assert that other metadata on the list was found in handles.
+    }
+  }
+}
+
+// This is distinct from free_deallocate_list.  For class loader data that are
+// unloading, this frees the C heap memory for items on the list, and unlinks
+// scratch or error classes so that unloading events aren't triggered for these
+// classes. The metadata is removed with the unloading metaspace.
+// There isn't C heap memory allocated for methods, so nothing is done for them.
+void ClassLoaderData::unload_deallocate_list() {
+  // Don't need lock, at safepoint
+  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+  assert(is_unloading(), "only called for ClassLoaderData that are unloading");
+  if (_deallocate_list == NULL) {
+    return;
+  }
+  // Go backwards because this removes entries that are freed.
+  for (int i = _deallocate_list->length() - 1; i >= 0; i--) {
+    Metadata* m = _deallocate_list->at(i);
+    assert (!m->on_stack(), "wouldn't be unloading if this were so");
+    _deallocate_list->remove_at(i);
+    if (m->is_constantPool()) {
+      ((ConstantPool*)m)->release_C_heap_structures();
+    } else if (m->is_klass()) {
+      InstanceKlass* ik = (InstanceKlass*)m;
+      // also releases ik->constants() C heap memory
+      InstanceKlass::release_C_heap_structures(ik);
+      // Remove the class so unloading events aren't triggered for
+      // this class (scratch or error class) in do_unloading().
+      remove_class(ik);
     }
   }
 }

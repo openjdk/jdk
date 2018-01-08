@@ -30,8 +30,8 @@ import javax.xml.namespace.QName;
 /**
  * <p>XPath constants.</p>
  *
- * @author <a href="mailto:Norman.Walsh@Sun.COM">Norman Walsh</a>
- * @author <a href="mailto:Jeff.Suttor@Sun.COM">Jeff Suttor</a>
+ * @author Norman Walsh
+ * @author Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xpath">XML Path Language (XPath) Version 1.0</a>
  * @since 1.5
  */

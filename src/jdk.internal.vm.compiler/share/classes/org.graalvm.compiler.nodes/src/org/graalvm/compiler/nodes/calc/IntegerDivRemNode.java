@@ -60,7 +60,8 @@ public abstract class IntegerDivRemNode extends FixedBinaryNode implements Lower
 
         // Assigning canDeopt during constructor, because it must never change during lifetime of
         // the node.
-        this.canDeopt = ((IntegerStamp) getY().stamp(NodeView.DEFAULT)).contains(0);
+        IntegerStamp yStamp = (IntegerStamp) getY().stamp(NodeView.DEFAULT);
+        this.canDeopt = yStamp.contains(0) || yStamp.contains(-1);
     }
 
     public final Op getOp() {

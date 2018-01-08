@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,6 +33,7 @@ import com.sun.org.apache.xerces.internal.xs.XSConstants;
  * @author Neeraj Bajaj, Sun Microsystems, inc.
  * @author Sandy Gao, IBM
  *
+ * @LastModified: Nov 2017
  */
 public class FullDVFactory extends BaseDVFactory {
 

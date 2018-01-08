@@ -136,24 +136,21 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
     @Override
     protected GuardedInvocationComponent getGuardedInvocationComponent(final ComponentLinkRequest req) throws Exception {
-        final GuardedInvocationComponent superGic = super.getGuardedInvocationComponent(req);
-        if(superGic != null) {
-            return superGic;
+        if (req.namespaces.isEmpty()) {
+            return null;
         }
-        if (!req.namespaces.isEmpty()) {
+        final Namespace ns = req.namespaces.get(0);
+        if (ns == StandardNamespace.ELEMENT) {
             final Operation op = req.baseOperation;
-            final Namespace ns = req.namespaces.get(0);
-            if (ns == StandardNamespace.ELEMENT) {
-                if (op == StandardOperation.GET) {
-                    return getElementGetter(req.popNamespace());
-                } else if (op == StandardOperation.SET) {
-                    return getElementSetter(req.popNamespace());
-                } else if (op == StandardOperation.REMOVE) {
-                    return getElementRemover(req.popNamespace());
-                }
+            if (op == StandardOperation.GET) {
+                return getElementGetter(req.popNamespace());
+            } else if (op == StandardOperation.SET) {
+                return getElementSetter(req.popNamespace());
+            } else if (op == StandardOperation.REMOVE) {
+                return getElementRemover(req.popNamespace());
             }
         }
-        return null;
+        return super.getGuardedInvocationComponent(req);
     }
 
     @Override

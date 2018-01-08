@@ -11,3 +11,5 @@ nbproject/private/
 test/nashorn/script/external
 test/nashorn/lib
 NashornProfile.txt
+.*/JTreport/.*
+.*/JTwork/.*

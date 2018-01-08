@@ -2064,13 +2064,13 @@ class CompilerThread : public JavaThread {
  private:
   CompilerCounters* _counters;
 
-  ciEnv*            _env;
-  CompileLog*       _log;
-  CompileTask*      _task;
-  CompileQueue*     _queue;
-  BufferBlob*       _buffer_blob;
+  ciEnv*                _env;
+  CompileLog*           _log;
+  CompileTask* volatile _task;  // print_threads_compiling can read this concurrently.
+  CompileQueue*         _queue;
+  BufferBlob*           _buffer_blob;
 
-  AbstractCompiler* _compiler;
+  AbstractCompiler*     _compiler;
 
  public:
 

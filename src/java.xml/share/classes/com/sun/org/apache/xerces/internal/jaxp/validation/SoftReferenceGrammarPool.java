@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -38,6 +37,7 @@ import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
  * the target namespace for the schema and schema location.</p>
  *
  * @author Michael Glavassevich, IBM
+ * @LastModified: Nov 2017
  */
 final class SoftReferenceGrammarPool implements XMLGrammarPool {
 

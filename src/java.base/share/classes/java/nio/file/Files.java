@@ -2955,22 +2955,6 @@ public final class Files {
     }
 
     /**
-     * Reads all bytes from an input stream and writes them to an output stream.
-     */
-    private static long copy(InputStream source, OutputStream sink)
-        throws IOException
-    {
-        long nread = 0L;
-        byte[] buf = new byte[BUFFER_SIZE];
-        int n;
-        while ((n = source.read(buf)) > 0) {
-            sink.write(buf, 0, n);
-            nread += n;
-        }
-        return nread;
-    }
-
-    /**
      * Copies all bytes from an input stream to a file. On return, the input
      * stream will be at end of stream.
      *
@@ -3082,7 +3066,7 @@ public final class Files {
 
         // do the copy
         try (OutputStream out = ostream) {
-            return copy(in, out);
+            return in.transferTo(out);
         }
     }
 
@@ -3124,7 +3108,7 @@ public final class Files {
         Objects.requireNonNull(out);
 
         try (InputStream in = newInputStream(source)) {
-            return copy(in, out);
+            return in.transferTo(out);
         }
     }
 

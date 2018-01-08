@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,6 +30,9 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @LastModified: Oct 2017
+ */
 class TopLevelElement extends SyntaxTreeNode {
 
     /*

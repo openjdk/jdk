@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -48,6 +47,7 @@ import java.util.List;
  * @author Morten Jorgensen
  * @author Erwin Bolwidt <ejb@klomp.org>
  * @author John Howard <JohnH@schemasoft.com>
+ * @LastModified: Oct 2017
  */
 class VariableBase extends TopLevelElement {
 

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -60,6 +59,7 @@ import org.w3c.dom.Element;
  * @author Rahul Srivastava, Sun Microsystems Inc.
  * @author Neeraj Bajaj, Sun Microsystems Inc.
  *
+ * @LastModified: Oct 2017
  */
 abstract class XSDAbstractTraverser {
 

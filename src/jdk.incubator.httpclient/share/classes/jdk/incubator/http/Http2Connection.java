@@ -116,6 +116,8 @@ class Http2Connection  {
                   Utils.getHpackLogger(this::dbgString, DEBUG_HPACK);
     static final ByteBuffer EMPTY_TRIGGER = ByteBuffer.allocate(0);
 
+    private boolean singleStream; // used only for stream 1, then closed
+
     /*
      *  ByteBuffer pooling strategy for HTTP/2 protocol:
      *
@@ -202,7 +204,6 @@ class Http2Connection  {
                 prefaceSent = true;
             }
         }
-
     }
 
     volatile boolean closed;
@@ -397,6 +398,14 @@ class Http2Connection  {
         return aconn.getALPN().thenCompose(checkAlpnCF);
     }
 
+    synchronized boolean singleStream() {
+        return singleStream;
+    }
+
+    synchronized void setSingleStream(boolean use) {
+        singleStream = use;
+    }
+
     static String keyFor(HttpConnection connection) {
         boolean isProxy = connection.isProxied();
         boolean isSecure = connection.isSecure();
@@ -429,6 +438,10 @@ class Http2Connection  {
     // P indicates proxy
     // Eg: "S:H:foo.com:80"
     static String keyString(boolean secure, boolean proxy, String host, int port) {
+        if (secure && port == -1)
+            port = 443;
+        else if (!secure && port == -1)
+            port = 80;
         return (secure ? "S:" : "C:") + (proxy ? "P:" : "H:") + host + ":" + port;
     }
 
@@ -436,8 +449,8 @@ class Http2Connection  {
         return this.key;
     }
 
-    void putConnection() {
-        client2.putConnection(this);
+    boolean offerConnection() {
+        return client2.offerConnection(this);
     }
 
     private HttpPublisher publisher() {
@@ -464,6 +477,7 @@ class Http2Connection  {
     }
 
     void close() {
+        Log.logTrace("Closing HTTP/2 connection: to {0}", connection.address());
         GoAwayFrame f = new GoAwayFrame(0, ErrorFrame.NO_ERROR, "Requested by user".getBytes());
         // TODO: set last stream. For now zero ok.
         sendFrame(f);
@@ -680,7 +694,12 @@ class Http2Connection  {
             // corresponding entry in the window controller.
             windowController.removeStream(streamid);
         }
+        if (singleStream() && streams.isEmpty()) {
+            // should be only 1 stream, but there might be more if server push
+            close();
+        }
     }
+
     /**
      * Increments this connection's send Window by the amount in the given frame.
      */

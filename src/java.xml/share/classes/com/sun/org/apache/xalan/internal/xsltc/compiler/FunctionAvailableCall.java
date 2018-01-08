@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,6 +36,7 @@ import java.util.List;
 /**
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
+ * @LastModified: Nov 2017
  */
 final class FunctionAvailableCall extends FunctionCall {
 

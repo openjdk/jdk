@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -71,7 +70,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * activity (eg, when getDTM() is invoked). The downside of that solution
  * would be a greater delay before the DTM's storage is actually released
  * for reuse.
- * */
+ *
+ * @LastModified: Nov 2017
+ */
 public class DTMManagerDefault extends DTMManager
 {
   //static final boolean JKESS_XNI_EXPERIMENT=true;

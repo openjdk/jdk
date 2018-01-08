@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,6 +26,8 @@ import java.util.List;
  *  The <code>XSNamesaceItemList</code> interface provides the abstraction of
  * an immutable ordered collection of <code>XSNamespaceItem</code>s, without
  * defining or constraining how this collection is implemented.
+ *
+ * @LastModified: Oct 2017
  */
 public interface XSNamespaceItemList extends List<XSNamespaceItem> {
     /**

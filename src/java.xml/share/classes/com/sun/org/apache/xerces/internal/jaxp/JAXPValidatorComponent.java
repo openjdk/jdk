@@ -82,7 +82,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * only those events that need to go through Validator will go the 1st route,
  * and other events go the 2nd direct route.
  *
- * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ * @author Kohsuke Kawaguchi
  */
 final class JAXPValidatorComponent
     extends TeeXMLDocumentFilterImpl implements XMLComponent {
@@ -344,7 +344,7 @@ final class JAXPValidatorComponent
      * to reuse its default {@link com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler}
      * implementation.
      *
-     * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+     * @author Kohsuke Kawaguchi
      */
     private final class XNI2SAX extends DefaultXMLDocumentHandler {
 

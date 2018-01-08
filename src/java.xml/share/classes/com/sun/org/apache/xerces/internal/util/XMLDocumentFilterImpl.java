@@ -42,7 +42,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
  * {@link XMLDocumentFilter}s.
  *
  * @author
- *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ *     Kohsuke Kawaguchi
  */
 public class XMLDocumentFilterImpl implements XMLDocumentFilter {
     private XMLDocumentHandler next;

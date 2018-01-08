@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,6 +41,7 @@ import org.xml.sax.XMLReader;
  * @author Morten Jorgensen
  * @author Erwin Bolwidt <ejb@klomp.org>
  * @author Gunnlaugur Briem <gthb@dimon.is>
+ * @LastModified: Sep 2017
  */
 final class Include extends TopLevelElement {
 

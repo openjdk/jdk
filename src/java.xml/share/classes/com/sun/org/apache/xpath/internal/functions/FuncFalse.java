@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,6 +29,7 @@ import java.util.List;
 /**
  * Execute the False() function.
  * @xsl.usage advanced
+ * @LastModified: Oct 2017
  */
 public class FuncFalse extends Function
 {

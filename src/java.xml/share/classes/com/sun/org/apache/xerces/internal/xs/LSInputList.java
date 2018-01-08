@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,6 +27,8 @@ import org.w3c.dom.ls.LSInput;
  *  The <code>LSInputList</code> interface provides the abstraction of an
  * ordered collection of <code>LSInput</code>s, without defining or
  * constraining how this collection is implemented.
+ *
+ * @LastModified: Oct 2017
  */
 public interface LSInputList extends List<LSInput> {
     /**

@@ -64,8 +64,8 @@ import jdk.xml.internal.SecuritySupport;
  *
  * @author Neeraj Bajaj
  * @author K.Venugopal
- * @author Santiago.Pericas-Geertsen@sun.com
- * @author Sunitha.Reddy@sun.com
+ * @author Santiago Pericas-Geertsen
+ * @author Sunitha Reddy
  */
 public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
         implements XMLStreamWriterBase {
@@ -2041,7 +2041,6 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
          * we dont need to set the value for every end element we encouter.
          * For Well formedness checks we can have the same QName object that was pushed.
          * the values will be set only if application need to know about the endElement
-         * -- neeraj.bajaj@sun.com
          */
         public ElementState peek() {
             return fElements[fDepth - 1];

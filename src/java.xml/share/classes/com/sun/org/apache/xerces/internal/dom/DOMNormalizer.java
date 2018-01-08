@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -97,6 +96,7 @@ import org.w3c.dom.Text;
  *
  * @author Elena Litani, IBM
  * @author Neeraj Bajaj, Sun Microsystems, inc.
+ * @LastModified: Nov 2017
  */
 public class DOMNormalizer implements XMLDocumentHandler {
 

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -64,6 +63,7 @@ import java.io.IOException;
  * @author Glenn Marcy, IBM
  * @author Eric Ye, IBM
  *
+ * @LastModified: Nov 2017
  */
 public class XMLDTDScannerImpl
 extends XMLScanner

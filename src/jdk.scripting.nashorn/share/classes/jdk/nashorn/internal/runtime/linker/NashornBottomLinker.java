@@ -39,11 +39,13 @@ import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
 import jdk.dynalink.beans.BeansLinker;
+import jdk.dynalink.beans.StaticClass;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
 import jdk.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.dynalink.linker.LinkerServices;
+import jdk.dynalink.linker.support.Guards;
 import jdk.dynalink.linker.support.Lookup;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.ECMAException;
@@ -86,12 +88,16 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
             MH.dropArguments(EMPTY_PROP_SETTER, 0, Object.class);
 
     private static final MethodHandle THROW_STRICT_PROPERTY_SETTER;
+    private static final MethodHandle THROW_STRICT_PROPERTY_REMOVER;
     private static final MethodHandle THROW_OPTIMISTIC_UNDEFINED;
+    private static final MethodHandle MISSING_PROPERTY_REMOVER;
 
     static {
         final Lookup lookup = new Lookup(MethodHandles.lookup());
         THROW_STRICT_PROPERTY_SETTER = lookup.findOwnStatic("throwStrictPropertySetter", void.class, Object.class, Object.class);
+        THROW_STRICT_PROPERTY_REMOVER = lookup.findOwnStatic("throwStrictPropertyRemover", boolean.class, Object.class, Object.class);
         THROW_OPTIMISTIC_UNDEFINED = lookup.findOwnStatic("throwOptimisticUndefined", Object.class, int.class);
+        MISSING_PROPERTY_REMOVER = lookup.findOwnStatic("missingPropertyRemover", boolean.class, Object.class, Object.class);
     }
 
     private static GuardedInvocation linkBean(final LinkRequest linkRequest) throws Exception {
@@ -124,6 +130,7 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
     static MethodHandle linkMissingBeanMember(final LinkRequest linkRequest, final LinkerServices linkerServices) throws Exception {
         final CallSiteDescriptor desc = linkRequest.getCallSiteDescriptor();
         final String operand = NashornCallSiteDescriptor.getOperand(desc);
+        final boolean strict = NashornCallSiteDescriptor.isStrict(desc);
         switch (NashornCallSiteDescriptor.getStandardOperation(desc)) {
         case GET:
             if (NashornCallSiteDescriptor.isOptimistic(desc)) {
@@ -133,13 +140,17 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
             }
             return getInvocation(EMPTY_ELEM_GETTER, linkerServices, desc);
         case SET:
-            final boolean strict = NashornCallSiteDescriptor.isStrict(desc);
             if (strict) {
                 return adaptThrower(bindOperand(THROW_STRICT_PROPERTY_SETTER, operand), desc);
             } else if (operand != null) {
                 return getInvocation(EMPTY_PROP_SETTER, linkerServices, desc);
             }
             return getInvocation(EMPTY_ELEM_SETTER, linkerServices, desc);
+        case REMOVE:
+            if (strict) {
+                return adaptThrower(bindOperand(THROW_STRICT_PROPERTY_REMOVER, operand), desc);
+            }
+            return getInvocation(bindOperand(MISSING_PROPERTY_REMOVER, operand), linkerServices, desc);
         default:
             throw new AssertionError("unknown call type " + desc);
         }
@@ -160,6 +171,33 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
     @SuppressWarnings("unused")
     private static void throwStrictPropertySetter(final Object self, final Object name) {
         throw createTypeError(self, name, "cant.set.property");
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean throwStrictPropertyRemover(final Object self, final Object name) {
+        if (isNonConfigurableProperty(self, name)) {
+            throw createTypeError(self, name, "cant.delete.property");
+        }
+        return true;
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean missingPropertyRemover(final Object self, final Object name) {
+        return !isNonConfigurableProperty(self, name);
+    }
+
+    // Corresponds to ECMAScript 5.1 8.12.7 [[Delete]] point 3 check for "isConfigurable" (but negated)
+    private static boolean isNonConfigurableProperty(final Object self, final Object name) {
+        if (self instanceof StaticClass) {
+            final Class<?> clazz = ((StaticClass)self).getRepresentedClass();
+            return BeansLinker.getReadableStaticPropertyNames(clazz).contains(name) ||
+                   BeansLinker.getWritableStaticPropertyNames(clazz).contains(name) ||
+                   BeansLinker.getStaticMethodNames(clazz).contains(name);
+        }
+        final Class<?> clazz = self.getClass();
+        return BeansLinker.getReadableInstancePropertyNames(clazz).contains(name) ||
+            BeansLinker.getWritableInstancePropertyNames(clazz).contains(name) ||
+            BeansLinker.getInstanceMethodNames(clazz).contains(name);
     }
 
     private static ECMAException createTypeError(final Object self, final Object name, final String msg) {
@@ -215,6 +253,8 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
             throw typeError(NashornCallSiteDescriptor.isMethodFirstOperation(desc) ? "no.such.function" : "cant.get.property", getArgument(linkRequest), "null");
         case SET:
             throw typeError("cant.set.property", getArgument(linkRequest), "null");
+        case REMOVE:
+            throw typeError("cant.delete.property", getArgument(linkRequest), "null");
         default:
             throw new AssertionError("unknown call type " + desc);
         }

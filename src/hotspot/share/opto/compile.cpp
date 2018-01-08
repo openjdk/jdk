@@ -1094,6 +1094,7 @@ void Compile::Init(int aliaslevel) {
   _major_progress = true; // start out assuming good things will happen
   set_has_unsafe_access(false);
   set_max_vector_size(0);
+  set_clear_upper_avx(false);  //false as default for clear upper bits of ymm registers
   Copy::zero_to_bytes(_trap_hist, sizeof(_trap_hist));
   set_decompile_count(0);
 

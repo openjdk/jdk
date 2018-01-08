@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,12 @@ package javax.xml;
 /**
  * <p>Utility class to contain basic XML values as constants.
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xml11/">Extensible Markup Language (XML) 1.1</a>
  * @see <a href="http://www.w3.org/TR/REC-xml">Extensible Markup Language (XML) 1.0 (Second Edition)</a>
  * @see <a href="http://www.w3.org/XML/xml-V10-2e-errata">XML 1.0 Second Edition Specification Errata</a>
  * @see <a href="http://www.w3.org/TR/xml-names11/">Namespaces in XML 1.1</a>
  * @see <a href="http://www.w3.org/TR/REC-xml-names">Namespaces in XML</a>
- * @see <a href="http://www.w3.org/XML/xml-names-19990114-errata">Namespaces in XML Errata</a>
  * @see <a href="http://www.w3.org/TR/xmlschema-1/">XML Schema Part 1: Structures</a>
  * @since 1.5
  **/
@@ -103,9 +102,6 @@ public final class XMLConstants {
      * @see <a
      * href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">
      * Namespaces in XML, 3. Qualified Names</a>
-     * @see <a
-     * href="http://www.w3.org/XML/xml-names-19990114-errata">
-     * Namespaces in XML Errata</a>
      */
     public static final String XMLNS_ATTRIBUTE_NS_URI =
         "http://www.w3.org/2000/xmlns/";

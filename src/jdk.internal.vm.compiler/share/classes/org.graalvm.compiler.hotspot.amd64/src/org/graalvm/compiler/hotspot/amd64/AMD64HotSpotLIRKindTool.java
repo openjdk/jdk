@@ -22,14 +22,15 @@
  */
 package org.graalvm.compiler.hotspot.amd64;
 
-import jdk.vm.ci.amd64.AMD64Kind;
 import org.graalvm.compiler.core.amd64.AMD64LIRKindTool;
 import org.graalvm.compiler.core.common.LIRKind;
+
+import jdk.vm.ci.amd64.AMD64Kind;
 
 public class AMD64HotSpotLIRKindTool extends AMD64LIRKindTool {
     @Override
     public LIRKind getNarrowOopKind() {
-        return LIRKind.reference(AMD64Kind.DWORD);
+        return LIRKind.compressedReference(AMD64Kind.DWORD);
     }
 
     @Override

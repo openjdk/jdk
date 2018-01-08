@@ -40,7 +40,7 @@ package javax.xml.validation;
  * It must not be used by users or JAXP implementations.
  * </p>
  *
- * @author <a href="Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
+ * @author Kohsuke Kawaguchi
  * @since 1.5
  */
 public abstract class SchemaFactoryLoader {

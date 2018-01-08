@@ -68,7 +68,7 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
 
     private final Deque<Map<String, Collection<Label>>> unwarrantedOptimismHandlers = new ArrayDeque<>();
     private final Deque<StringBuilder> slotTypesDescriptors = new ArrayDeque<>();
-    private final IntDeque splitNodes = new IntDeque();
+    private final IntDeque splitLiterals = new IntDeque();
 
     /** A stack tracking the next free local variable slot in the blocks. There's one entry for every block
      *  currently on the lexical context stack. */
@@ -89,18 +89,18 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
             if (((FunctionNode)node).inDynamicContext()) {
                 dynamicScopeCount++;
             }
-            splitNodes.push(0);
+            splitLiterals.push(0);
         }
         return super.push(node);
     }
 
-    void enterSplitNode() {
-        splitNodes.getAndIncrement();
+    void enterSplitLiteral() {
+        splitLiterals.getAndIncrement();
         pushFreeSlots(methodEmitters.peek().getUsedSlotsWithLiveTemporaries());
     }
 
-    void exitSplitNode() {
-        final int count = splitNodes.decrementAndGet();
+    void exitSplitLiteral() {
+        final int count = splitLiterals.decrementAndGet();
         assert count >= 0;
     }
 
@@ -115,8 +115,8 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
                 dynamicScopeCount--;
                 assert dynamicScopeCount >= 0;
             }
-            assert splitNodes.peek() == 0;
-            splitNodes.pop();
+            assert splitLiterals.peek() == 0;
+            splitLiterals.pop();
         }
         return popped;
     }
@@ -125,8 +125,8 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
         return dynamicScopeCount > 0;
     }
 
-    boolean inSplitNode() {
-        return !splitNodes.isEmpty() && splitNodes.peek() > 0;
+    boolean inSplitLiteral() {
+        return !splitLiterals.isEmpty() && splitLiterals.peek() > 0;
     }
 
     MethodEmitter pushMethodEmitter(final MethodEmitter newMethod) {

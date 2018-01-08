@@ -42,7 +42,7 @@ import com.sun.org.apache.xerces.internal.util.XMLChar;
  * of <code>java.io.BufferedWriter</code> has been shown to be very
  * expensive in JAX-WS.</p>
  *
- * @author Santiago.PericasGeertsen@sun.com
+ * @author Santiago PericasGeertsen
  */
 public final class UTF8OutputStreamWriter extends Writer {
 

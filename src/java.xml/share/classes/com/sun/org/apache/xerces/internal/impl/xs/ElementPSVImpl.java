@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -47,6 +46,7 @@ import com.sun.org.apache.xerces.internal.xs.XSValue;
  * @xerces.internal
  *
  * @author Elena Litani IBM
+ * @LastModified: Nov 2017
  */
 public class ElementPSVImpl implements ElementPSVI {
 

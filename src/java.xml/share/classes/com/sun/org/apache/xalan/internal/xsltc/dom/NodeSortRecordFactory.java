@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,6 +30,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.Collator;
 import java.util.Locale;
 
+/**
+ * @LastModified: Oct 2017
+ */
 public class NodeSortRecordFactory {
 
     private static int DESCENDING = "descending".length();

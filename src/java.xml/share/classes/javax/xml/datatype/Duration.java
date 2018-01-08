@@ -89,10 +89,10 @@ import javax.xml.namespace.QName;
  * some of the methods may not work correctly on such {@code Duration}s.
  * The impacted methods document their dependency on {@link Calendar}.
  *
- * @author <a href="mailto:Joseph.Fialli@Sun.COM">Joseph Fialli</a>
- * @author <a href="mailto:Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
- * @author <a href="mailto:Sunitha.Reddy@Sun.com">Sunitha Reddy</a>
+ * @author Joseph Fialli
+ * @author Kohsuke Kawaguchi
+ * @author Jeff Suttor
+ * @author Sunitha Reddy
  * @see XMLGregorianCalendar#add(Duration)
  * @since 1.5
  */

@@ -41,7 +41,7 @@ import org.w3c.dom.TypeInfo;
  * Implementation of this "interface" can be obtained through the
  * {@link ValidatorHandler#getTypeInfoProvider()} method.
  *
- * @author  <a href="mailto:Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
+ * @author  Kohsuke Kawaguchi
  * @see org.w3c.dom.TypeInfo
  * @since 1.5
  */

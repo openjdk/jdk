@@ -357,7 +357,7 @@ void print_statistics() {
     MemTracker::final_report(tty);
   }
 
-  ThreadsSMRSupport::log_smr_statistics();
+  ThreadsSMRSupport::log_statistics();
 }
 
 #else // PRODUCT MODE STATISTICS
@@ -399,7 +399,7 @@ void print_statistics() {
     Method::print_touched_methods(tty);
   }
 
-  ThreadsSMRSupport::log_smr_statistics();
+  ThreadsSMRSupport::log_statistics();
 }
 
 #endif

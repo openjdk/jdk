@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,6 +30,7 @@ import jdk.xml.internal.SecuritySupport;
  *
  * @author Michael Glavassevich, IBM
  *
+ * @LastModified: Sep 2017
  */
 public class SAXMessageFormatter {
 

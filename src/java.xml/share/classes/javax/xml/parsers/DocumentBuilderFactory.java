@@ -32,8 +32,8 @@ import javax.xml.validation.Schema;
  * Defines a factory API that enables applications to obtain a
  * parser that produces DOM object trees from XML documents.
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
- * @author <a href="mailto:Neeraj.Bajaj@sun.com">Neeraj Bajaj</a>
+ * @author Jeff Suttor
+ * @author Neeraj Bajaj
  *
  * @since 1.4
  */

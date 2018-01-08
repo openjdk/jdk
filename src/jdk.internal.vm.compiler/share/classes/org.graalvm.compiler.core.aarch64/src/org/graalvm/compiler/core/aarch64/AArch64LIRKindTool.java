@@ -68,7 +68,7 @@ public class AArch64LIRKindTool implements LIRKindTool {
 
     @Override
     public LIRKind getNarrowOopKind() {
-        return LIRKind.reference(AArch64Kind.DWORD);
+        return LIRKind.compressedReference(AArch64Kind.DWORD);
     }
 
     @Override

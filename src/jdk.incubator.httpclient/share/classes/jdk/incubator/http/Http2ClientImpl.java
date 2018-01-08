@@ -65,96 +65,78 @@ class Http2ClientImpl {
     /* Map key is "scheme:host:port" */
     private final Map<String,Http2Connection> connections = new ConcurrentHashMap<>();
 
-    private final Set<String> opening = Collections.synchronizedSet(new HashSet<>());
-    private final Map<String,Set<CompletableFuture<Http2Connection>>> waiting =
-    Collections.synchronizedMap(new HashMap<>());
-
-    private void addToWaiting(String key, CompletableFuture<Http2Connection> cf) {
-        synchronized (waiting) {
-            Set<CompletableFuture<Http2Connection>> waiters = waiting.get(key);
-            if (waiters == null) {
-                waiters = new HashSet<>();
-                waiting.put(key, waiters);
-            }
-            waiters.add(cf);
-        }
-    }
+    private final Set<String> failures = Collections.synchronizedSet(new HashSet<>());
 
     /**
-     * If a https request then async waits until a connection is opened.
-     * Returns null if the request is 'http' as a different (upgrade)
-     * mechanism is used.
+     * When HTTP/2 requested only. The following describes the aggregate behavior including the
+     * calling code. In all cases, the HTTP2 connection cache
+     * is checked first for a suitable connection and that is returned if available.
+     * If not, a new connection is opened, except in https case when a previous negotiate failed.
+     * In that case, we want to continue using http/1.1. When a connection is to be opened and
+     * if multiple requests are sent in parallel then each will open a new connection.
      *
-     * Only one connection per destination is created. Blocks when opening
-     * connection, or when waiting for connection to be opened.
-     * First thread opens the connection and notifies the others when done.
+     * If negotiation/upgrade succeeds then
+     * one connection will be put in the cache and the others will be closed
+     * after the initial request completes (not strictly necessary for h2, only for h2c)
      *
-     * If the request is secure (https) then we open the connection here.
-     * If not, then the more complicated upgrade from 1.1 to 2 happens (not here)
-     * In latter case, when the Http2Connection is connected, putConnection() must
-     * be called to store it.
+     * If negotiate/upgrade fails, then any opened connections remain open (as http/1.1)
+     * and will be used and cached in the http/1 cache. Note, this method handles the
+     * https failure case only (by completing the CF with an ALPN exception, handled externally)
+     * The h2c upgrade is handled externally also.
+     *
+     * Specific CF behavior of this method.
+     * 1. completes with ALPN exception: h2 negotiate failed for first time. failure recorded.
+     * 2. completes with other exception: failure not recorded. Caller must handle
+     * 3. completes normally with null: no connection in cache for h2c or h2 failed previously
+     * 4. completes normally with connection: h2 or h2c connection in cache. Use it.
      */
     CompletableFuture<Http2Connection> getConnectionFor(HttpRequestImpl req) {
         URI uri = req.uri();
         InetSocketAddress proxy = req.proxy();
         String key = Http2Connection.keyFor(uri, proxy);
 
-        synchronized (opening) {
+        synchronized (this) {
             Http2Connection connection = connections.get(key);
             if (connection != null) { // fast path if connection already exists
                 return CompletableFuture.completedFuture(connection);
             }
 
-            if (!req.secure()) {
+            if (!req.secure() || failures.contains(key)) {
+                // secure: negotiate failed before. Use http/1.1
+                // !secure: no connection available in cache. Attempt upgrade
                 return MinimalFuture.completedFuture(null);
-            }
-
-            if (!opening.contains(key)) {
-                debug.log(Level.DEBUG, "Opening: %s", key);
-                opening.add(key);
-            } else {
-                CompletableFuture<Http2Connection> cf = new MinimalFuture<>();
-                addToWaiting(key, cf);
-                return cf;
             }
         }
         return Http2Connection
                 .createAsync(req, this)
                 .whenComplete((conn, t) -> {
-                    debug.log(Level.DEBUG,
-                            "waking up dependents with created connection");
-                    synchronized (opening) {
-                        Set<CompletableFuture<Http2Connection>> waiters = waiting.remove(key);
-                        debug.log(Level.DEBUG, "Opening completed: %s", key);
-                        opening.remove(key);
-                        if (t == null && conn != null)
-                            putConnection(conn);
-                        final Throwable cause = Utils.getCompletionCause(t);
-                        if (waiters == null) {
-                            debug.log(Level.DEBUG, "no dependent to wake up");
-                            return;
-                        } else if (cause instanceof Http2Connection.ALPNException) {
-                            waiters.forEach((cf1) -> cf1.completeAsync(() -> null,
-                                    client.theExecutor()));
-                        } else if (cause != null) {
-                            debug.log(Level.DEBUG,
-                                    () -> "waking up dependants: failed: " + cause);
-                            waiters.forEach((cf1) -> cf1.completeExceptionally(cause));
-                        } else  {
-                            debug.log(Level.DEBUG, "waking up dependants: succeeded");
-                            waiters.forEach((cf1) -> cf1.completeAsync(() -> conn,
-                                    client.theExecutor()));
+                    synchronized (Http2ClientImpl.this) {
+                        if (conn != null) {
+                            offerConnection(conn);
+                        } else {
+                            Throwable cause = Utils.getCompletionCause(t);
+                            if (cause instanceof Http2Connection.ALPNException)
+                                failures.add(key);
                         }
                     }
                 });
     }
 
     /*
-     * TODO: If there isn't a connection to the same destination, then
-     * store it. If there is already a connection, then close it
+     * Cache the given connection, if no connection to the same
+     * destination exists. If one exists, then we let the initial stream
+     * complete but allow it to close itself upon completion.
+     * This situation should not arise with https because the request
+     * has not been sent as part of the initial alpn negotiation
      */
-    void putConnection(Http2Connection c) {
-        connections.put(c.key(), c);
+    boolean offerConnection(Http2Connection c) {
+        String key = c.key();
+        Http2Connection c1 = connections.putIfAbsent(key, c);
+        if (c1 != null) {
+            c.setSingleStream(true);
+            return false;
+        }
+        return true;
     }
 
     void deleteConnection(Http2Connection c) {

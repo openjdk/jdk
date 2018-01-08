@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,7 @@ import jdk.xml.internal.SecuritySupport;
  * href="http://www.w3.org/TR/xmlschema-2/#QName">XML Schema Part2:
  * Datatypes specification</a>, <a
  * href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">Namespaces
- * in XML</a>, <a
- * href="http://www.w3.org/XML/xml-names-19990114-errata">Namespaces
- * in XML Errata</a>.</p>
+ * in XML</a>.
  *
  * <p>The value of a <code>QName</code> contains a <strong>Namespace
  * URI</strong>, <strong>local part</strong> and
@@ -59,13 +57,11 @@ import jdk.xml.internal.SecuritySupport;
  *
  * <p><code>QName</code> is immutable.</p>
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xmlschema-2/#QName">
  *   XML Schema Part2: Datatypes specification</a>
  * @see <a href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">
  *   Namespaces in XML</a>
- * @see <a href="http://www.w3.org/XML/xml-names-19990114-errata">
- *   Namespaces in XML Errata</a>
  * @since 1.5
  */
 
