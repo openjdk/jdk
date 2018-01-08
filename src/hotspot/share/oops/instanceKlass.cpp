@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2265,7 +2265,8 @@ void InstanceKlass::set_source_debug_extension(const char* array, int length) {
 }
 
 address InstanceKlass::static_field_addr(int offset) {
-  return (address)(offset + InstanceMirrorKlass::offset_of_static_fields() + cast_from_oop<intptr_t>(java_mirror()));
+  assert(offset >= InstanceMirrorKlass::offset_of_static_fields(), "has already been adjusted");
+  return (address)(offset + cast_from_oop<intptr_t>(java_mirror()));
 }
 
 
