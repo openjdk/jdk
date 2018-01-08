@@ -363,6 +363,8 @@ com/sun/tools/attach/StartManagementAgent.java                  8179700 generic-
 
 com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i586,macosx-all,windows-x64
 
+com/sun/jndi/ldap/LdapTimeoutTest.java                          8151678 linux-all
+
 javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8194663 generic-all
  
 org/omg/CORBA/OrbPropertiesTest.java			        8194663 generic-all
