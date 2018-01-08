@@ -3421,6 +3421,15 @@ void JNIid::verify(Klass* holder) {
   }
 }
 
+oop InstanceKlass::klass_holder_phantom() {
+  oop* addr;
+  if (is_anonymous()) {
+    addr = _java_mirror.ptr_raw();
+  } else {
+    addr = &class_loader_data()->_class_loader;
+  }
+  return RootAccess<IN_CONCURRENT_ROOT | ON_PHANTOM_OOP_REF>::oop_load(addr);
+}
 
 #ifdef ASSERT
 void InstanceKlass::set_init_state(ClassState state) {
