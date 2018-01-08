@@ -619,12 +619,12 @@ char* java_lang_String::as_utf8_string(oop java_string, int start, int len, char
 bool java_lang_String::equals(oop java_string, jchar* chars, int len) {
   assert(java_string->klass() == SystemDictionary::String_klass(),
          "must be java_string");
-  typeArrayOop value  = java_lang_String::value(java_string);
-  int          length = java_lang_String::length(java_string);
+  typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
+  int length = java_lang_String::length(java_string);
   if (length != len) {
     return false;
   }
-  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+  bool is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     for (int i = 0; i < len; i++) {
       if (value->char_at(i) != chars[i]) {
@@ -646,12 +646,12 @@ bool java_lang_String::equals(oop str1, oop str2) {
          "must be java String");
   assert(str2->klass() == SystemDictionary::String_klass(),
          "must be java String");
-  typeArrayOop value1  = java_lang_String::value(str1);
-  int          length1 = java_lang_String::length(str1);
-  bool       is_latin1 = java_lang_String::is_latin1(str1);
-  typeArrayOop value2  = java_lang_String::value(str2);
-  int          length2 = java_lang_String::length(str2);
-  bool       is_latin2 = java_lang_String::is_latin1(str2);
+  typeArrayOop value1    = java_lang_String::value_no_keepalive(str1);
+  int          length1   = java_lang_String::length(value1);
+  bool         is_latin1 = java_lang_String::is_latin1(str1);
+  typeArrayOop value2    = java_lang_String::value_no_keepalive(str2);
+  int          length2   = java_lang_String::length(value2);
+  bool         is_latin2 = java_lang_String::is_latin1(str2);
 
   if ((length1 != length2) || (is_latin1 != is_latin2)) {
     // Strings of different size or with different
@@ -659,7 +659,7 @@ bool java_lang_String::equals(oop str1, oop str2) {
     return false;
   }
   int blength1 = value1->length();
-  for (int i = 0; i < value1->length(); i++) {
+  for (int i = 0; i < blength1; i++) {
     if (value1->byte_at(i) != value2->byte_at(i)) {
       return false;
     }
@@ -669,7 +669,7 @@ bool java_lang_String::equals(oop str1, oop str2) {
 
 void java_lang_String::print(oop java_string, outputStream* st) {
   assert(java_string->klass() == SystemDictionary::String_klass(), "must be java_string");
-  typeArrayOop value  = java_lang_String::value(java_string);
+  typeArrayOop value  = java_lang_String::value_no_keepalive(java_string);
 
   if (value == NULL) {
     // This can happen if, e.g., printing a String

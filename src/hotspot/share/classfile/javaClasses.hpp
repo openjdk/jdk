@@ -102,6 +102,7 @@ class java_lang_String : AllStatic {
 
   // Accessors
   static inline typeArrayOop value(oop java_string);
+  static inline typeArrayOop value_no_keepalive(oop java_string);
   static inline unsigned int hash(oop java_string);
   static inline bool is_latin1(oop java_string);
   static inline int length(oop java_string);
