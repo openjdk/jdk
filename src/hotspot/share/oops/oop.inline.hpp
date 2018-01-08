@@ -326,7 +326,10 @@ void oopDesc::encode_store_heap_oop(narrowOop* p, oop v) {
   *p = encode_heap_oop(v);
 }
 
+template <DecoratorSet decorators>
+inline oop  oopDesc::obj_field_access(int offset) const             { return HeapAccess<decorators>::oop_load_at(as_oop(), offset); }
 inline oop  oopDesc::obj_field(int offset) const                    { return HeapAccess<>::oop_load_at(as_oop(), offset);  }
+
 inline void oopDesc::obj_field_put(int offset, oop value)           { HeapAccess<>::oop_store_at(as_oop(), offset, value); }
 
 inline jbyte oopDesc::byte_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
