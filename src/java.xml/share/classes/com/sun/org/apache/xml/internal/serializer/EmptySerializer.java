@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -43,6 +42,7 @@ import org.xml.sax.SAXParseException;
  * across package boundaries.
  *
  * @xsl.usage internal
+ * @LastModified: Oct 2017
  */
 public class EmptySerializer implements SerializationHandler
 {

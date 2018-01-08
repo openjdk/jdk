@@ -30,8 +30,11 @@
 
 var NashornScriptEngineFactory = Java.type("jdk.nashorn.api.scripting.NashornScriptEngineFactory");
 var e = new NashornScriptEngineFactory().getScriptEngine("-ot=false");
-var output = e.eval("with(new JavaImporter(java.util)){x}");
-print(output);
+try {
+    e.eval("with(new JavaImporter(java.util)){x}");
+} catch (e) {
+    print(e);
+}
 e.eval("with(new JavaImporter(java.util)){x=1}");
 var output2 = e.eval("with(new JavaImporter(java.util)){x}");
 print(output2);

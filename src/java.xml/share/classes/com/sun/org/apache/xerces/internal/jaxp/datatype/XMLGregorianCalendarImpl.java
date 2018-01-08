@@ -185,9 +185,9 @@ import jdk.xml.internal.SecuritySupport;
  * </ul>
  * </p>
  *
- * @author <a href="mailto:Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
- * @author <a href="mailto:Joseph.Fialli@Sun.com">Joseph Fialli</a>
- * @author <a href="mailto:Sunitha.Reddy@Sun.com">Sunitha Reddy</a>
+ * @author Kohsuke Kawaguchi
+ * @author Joseph Fialli
+ * @author Sunitha Reddy
  * @see javax.xml.datatype.Duration
  * @since 1.5
  */

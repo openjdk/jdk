@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,6 +32,8 @@ import jdk.xml.internal.SecuritySupport;
 
 /**
  * Base class for sort records containing application specific sort keys
+ *
+ * @LastModified: Oct 2017
  */
 public abstract class NodeSortRecord {
     public static final int COMPARE_STRING     = 0;

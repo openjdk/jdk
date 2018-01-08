@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -46,6 +45,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * @author G. Todd Miller
+ * @LastModified: Oct 2017
  */
 public class DOM2SAX implements XMLReader, Locator {
 

@@ -95,9 +95,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
  * The impacted methods document their dependency on {@link Calendar}.
  *
  *
- * @author <a href="mailto:Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
- * @author <a href="mailto:Joseph.Fialli@Sun.com">Joseph Fialli</a>
-
+ * @author Kohsuke Kawaguchi
+ * @author Joseph Fialli
  * @see XMLGregorianCalendar#add(Duration)
  */
 class DurationImpl
@@ -1863,7 +1862,7 @@ class DurationImpl
     /**
      * Representation of {@link Duration} in the object stream.
      *
-     * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+     * @author Kohsuke Kawaguchi
      */
     private static class DurationStream implements Serializable {
         private final String lexical;

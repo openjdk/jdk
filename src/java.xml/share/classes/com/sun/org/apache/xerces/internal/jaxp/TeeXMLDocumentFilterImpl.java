@@ -36,7 +36,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
 /**
  * <p>XMLDocumentHandler which forks the pipeline to two other components.</p>
  *
- * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ * @author Kohsuke Kawaguchi
  */
 class TeeXMLDocumentFilterImpl implements XMLDocumentFilter {
 

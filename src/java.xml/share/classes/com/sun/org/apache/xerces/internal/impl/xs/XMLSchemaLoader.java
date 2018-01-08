@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -102,6 +101,7 @@ import org.xml.sax.InputSource;
  * @xerces.internal
  *
  * @author Neil Graham, IBM
+ * @LastModified: Sep 2017
  */
 
 public class XMLSchemaLoader implements XMLGrammarLoader, XMLComponent, XSElementDeclHelper,

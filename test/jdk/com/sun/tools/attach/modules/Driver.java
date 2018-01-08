@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires !vm.graal.enabled
  * @modules jdk.attach
  * @build m/* Agent
  * @run main/othervm -Djdk.attach.allowAttachSelf m/p.Main jmx javaagent

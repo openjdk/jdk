@@ -51,7 +51,7 @@ public class ClhsdbSymbol {
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             expStrMap.put("symboldump", List.of(
-                    "java/lang/String", "java/util/HashMap", "UsageTracker",
+                    "java/lang/String", "java/util/HashMap",
                     "Ljava/io/InputStream", "LambdaMetafactory", "PerfCounter",
                     "isAnonymousClass", "JVMTI_THREAD_STATE_TERMINATED", "jdi",
                     "checkGetClassLoaderPermission", "lockCreationTime",

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7157626 8001112 8188870
+ * @bug 7157626 8001112 8188870 8173382
  * @summary Test major version for all legal combinations for -source and -target
  * @author sgoel
  *
@@ -38,7 +38,7 @@ import java.util.regex.*;
 public class ClassVersionChecker {
 
     int errors;
-    String[] jdk = {"", "1.6", "1.7", "1.8", "1.9", "1.10"};
+    String[] jdk = {"", "1.6", "1.7", "1.8", "1.9", "1.10", "11"};
     File javaFile = null;
 
     public static void main(String[] args) throws Throwable {
@@ -58,11 +58,12 @@ public class ClassVersionChecker {
          * -1 => invalid combinations
          */
         int[][] ver =
-                {{54, -1, -1, -1, -1, -1},
-                 {54, 50, 51, 52, 53, 54},
-                 {54, -1, 51, 52, 53, 54},
-                 {54, -1, -1, 52, 53, 54},
-                 {54, -1, -1, -1, 53, 54}};
+                {{55, -1, -1, -1, -1, -1, -1},
+                 {55, 50, 51, 52, 53, 54, 55},
+                 {55, -1, 51, 52, 53, 54, 55},
+                 {55, -1, -1, 52, 53, 54, 55},
+                 {55, -1, -1, -1, 53, 54, 55},
+                 {55, -1, -1, -1, -1, 54, 55}};
 
         // Loop to run all possible combinations of source/target values
         for (int i = 0; i< ver.length; i++) {

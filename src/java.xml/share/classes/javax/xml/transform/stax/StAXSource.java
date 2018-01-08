@@ -44,8 +44,8 @@ import javax.xml.transform.Source;
  * <p><code>StAXSource</code>s are consumed during processing
  * and are not reusable.</p>
  *
- * @author <a href="mailto:Neeraj.Bajaj@Sun.com">Neeraj Bajaj</a>
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Neeraj Bajaj
+ * @author Jeff Suttor
  *
  * @see <a href="http://jcp.org/en/jsr/detail?id=173">
  *  JSR 173: Streaming API for XML</a>

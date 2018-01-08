@@ -107,7 +107,6 @@ suite = {
       "subDir" : "share/classes",
       "dependencies" : ["JVMCI_SERVICES", "JVMCI_API", "org.graalvm.util"],
       "sourceDirs" : ["src"],
-      "dependencies" : ["org.graalvm.util"],
       "checkstyle" : "org.graalvm.compiler.graph",
       "uses" : ["org.graalvm.compiler.options.OptionDescriptors"],
       "javaCompliance" : "1.8",
@@ -148,6 +147,7 @@ suite = {
       "dependencies" : [
         "JVMCI_API",
         "org.graalvm.compiler.serviceprovider",
+        "org.graalvm.graphio",
         "org.graalvm.compiler.options"
       ],
       "annotationProcessors" : ["GRAAL_OPTIONS_PROCESSOR"],
@@ -291,7 +291,6 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
-        "org.graalvm.compiler.core.aarch64",
         "org.graalvm.compiler.hotspot",
         "org.graalvm.compiler.replacements.aarch64",
       ],
@@ -435,6 +434,7 @@ suite = {
         "mx:JUNIT",
         "org.graalvm.compiler.api.test",
         "org.graalvm.compiler.graph",
+        "org.graalvm.graphio",
       ],
       "annotationProcessors" : ["GRAAL_NODEINFO_PROCESSOR"],
       "javaCompliance" : "1.8",
@@ -945,6 +945,7 @@ suite = {
       "dependencies" : [
         "org.graalvm.compiler.lir.jtt",
         "org.graalvm.compiler.lir.amd64",
+        "org.graalvm.compiler.core.amd64",
         "JVMCI_HOTSPOT"
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
@@ -1019,7 +1020,6 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
-        "org.graalvm.graphio",
         "org.graalvm.compiler.core",
         "org.graalvm.compiler.java",
       ],

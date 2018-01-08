@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -66,6 +65,7 @@ import java.util.StringTokenizer;
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
  * @author Morten Jorgensen
+ * @LastModified: Oct 2017
  */
 public final class Stylesheet extends SyntaxTreeNode {
 

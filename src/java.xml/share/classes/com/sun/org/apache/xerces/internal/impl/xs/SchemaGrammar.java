@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -78,6 +77,7 @@ import org.xml.sax.SAXException;
  * @author Sandy Gao, IBM
  * @author Elena Litani, IBM
  *
+ * @LastModified: Oct 2017
  */
 
 public class SchemaGrammar implements XSGrammar, XSNamespaceItem {

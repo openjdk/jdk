@@ -67,7 +67,7 @@ public enum Target {
     JDK1_10("1.10", 54, 0),
 
     /** JDK 11. */
-    JDK1_11("11", 54, 0); // Initially an alias for JDK_10
+    JDK1_11("11", 55, 0);
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
 

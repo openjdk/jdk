@@ -234,7 +234,9 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   // Get the flags, offset, and canonical holder of the field.
   _flags = ciFlags(fd->access_flags());
   _offset = fd->offset();
-  _holder = CURRENT_ENV->get_instance_klass(fd->field_holder());
+  Klass* field_holder = fd->field_holder();
+  assert(field_holder != NULL, "null field_holder");
+  _holder = CURRENT_ENV->get_instance_klass(field_holder);
 
   // Check to see if the field is constant.
   Klass* k = _holder->get_Klass();

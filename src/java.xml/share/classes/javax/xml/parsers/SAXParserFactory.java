@@ -35,8 +35,8 @@ import org.xml.sax.SAXNotSupportedException;
  * Defines a factory API that enables applications to configure and
  * obtain a SAX based parser to parse XML documents.
  *
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
- * @author <a href="mailto:Neeraj.Bajaj@sun.com">Neeraj Bajaj</a>
+ * @author Jeff Suttor
+ * @author Neeraj Bajaj
  *
  * @since 1.4
  */

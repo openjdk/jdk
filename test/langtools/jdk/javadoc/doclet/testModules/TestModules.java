@@ -26,7 +26,7 @@
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
-        8164407
+        8164407 8192007
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -764,7 +764,8 @@ public class TestModules extends JavadocTester {
                 + "</a>",
                 "<tr class=\"altColor\">\n"
                 + "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlB/TestClassInModuleB.html\" title=\"class in testpkgmdlB\">TestClassInModuleB</a></th>\n"
-                + "<td class=\"colLast\">With a test description for uses.&nbsp;</td>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">With a test description for uses.</div>\n</td>\n"
                 + "</tr>",
                 "<caption><span>Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
@@ -931,7 +932,8 @@ public class TestModules extends JavadocTester {
                 + "<td class=\"colLast\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></td>\n");
         checkOutput("moduleB-summary.html", true,
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlB/TestClassInModuleB.html\" title=\"class in testpkgmdlB\">TestClassInModuleB</a></th>\n"
-                + "<td class=\"colLast\">With a test description for uses.&nbsp;</td>");
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">With a test description for uses.</div>\n</td>\n");
         checkOutput("moduletags-summary.html", true,
                 "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;<a href=\"#modules.summary\">Modules"
                 + "</a>&nbsp;|&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;Services</li>",

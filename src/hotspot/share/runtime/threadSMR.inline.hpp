@@ -53,24 +53,24 @@ inline void ThreadsList::threads_do(T *cl) const {
 }
 
 // These three inlines are private to ThreadsSMRSupport, but
-// they are called by public inline update_smr_tlh_stats() below:
+// they are called by public inline update_tlh_stats() below:
 
-inline void ThreadsSMRSupport::add_smr_tlh_times(uint add_value) {
-  Atomic::add(add_value, &_smr_tlh_times);
+inline void ThreadsSMRSupport::add_tlh_times(uint add_value) {
+  Atomic::add(add_value, &_tlh_times);
 }
 
-inline void ThreadsSMRSupport::inc_smr_tlh_cnt() {
-  Atomic::inc(&_smr_tlh_cnt);
+inline void ThreadsSMRSupport::inc_tlh_cnt() {
+  Atomic::inc(&_tlh_cnt);
 }
 
-inline void ThreadsSMRSupport::update_smr_tlh_time_max(uint new_value) {
+inline void ThreadsSMRSupport::update_tlh_time_max(uint new_value) {
   while (true) {
-    uint cur_value = _smr_tlh_time_max;
+    uint cur_value = _tlh_time_max;
     if (new_value <= cur_value) {
       // No need to update max value so we're done.
       break;
     }
-    if (Atomic::cmpxchg(new_value, &_smr_tlh_time_max, cur_value) == cur_value) {
+    if (Atomic::cmpxchg(new_value, &_tlh_time_max, cur_value) == cur_value) {
       // Updated max value so we're done. Otherwise try it all again.
       break;
     }
@@ -85,8 +85,8 @@ inline ThreadsList* ThreadsListSetter::list() {
   return ret;
 }
 
-inline ThreadsList* ThreadsSMRSupport::get_smr_java_thread_list() {
-  return (ThreadsList*)OrderAccess::load_acquire(&_smr_java_thread_list);
+inline ThreadsList* ThreadsSMRSupport::get_java_thread_list() {
+  return (ThreadsList*)OrderAccess::load_acquire(&_java_thread_list);
 }
 
 inline bool ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(JavaThread *thread) {
@@ -94,10 +94,10 @@ inline bool ThreadsSMRSupport::is_a_protected_JavaThread_with_lock(JavaThread *t
   return is_a_protected_JavaThread(thread);
 }
 
-inline void ThreadsSMRSupport::update_smr_tlh_stats(uint millis) {
-  ThreadsSMRSupport::inc_smr_tlh_cnt();
-  ThreadsSMRSupport::add_smr_tlh_times(millis);
-  ThreadsSMRSupport::update_smr_tlh_time_max(millis);
+inline void ThreadsSMRSupport::update_tlh_stats(uint millis) {
+  ThreadsSMRSupport::inc_tlh_cnt();
+  ThreadsSMRSupport::add_tlh_times(millis);
+  ThreadsSMRSupport::update_tlh_time_max(millis);
 }
 
 #endif // SHARE_VM_RUNTIME_THREADSMR_INLINE_HPP

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ OPENJDK_TARGET_CPU_ISADIR:=@OPENJDK_TARGET_CPU_ISADIR@
 OPENJDK_TARGET_CPU_LEGACY:=@OPENJDK_TARGET_CPU_LEGACY@
 OPENJDK_TARGET_CPU_LEGACY_LIB:=@OPENJDK_TARGET_CPU_LEGACY_LIB@
 OPENJDK_TARGET_CPU_OSARCH:=@OPENJDK_TARGET_CPU_OSARCH@
+OPENJDK_TARGET_OS_INCLUDE_SUBIDR:=@OPENJDK_TARGET_OS_INCLUDE_SUBDIR@
 
 HOTSPOT_TARGET_OS := @HOTSPOT_TARGET_OS@
 HOTSPOT_TARGET_OS_TYPE := @HOTSPOT_TARGET_OS_TYPE@
@@ -99,6 +100,8 @@ OPENJDK_BUILD_CPU:=@OPENJDK_BUILD_CPU@
 OPENJDK_BUILD_CPU_ARCH:=@OPENJDK_BUILD_CPU_ARCH@
 OPENJDK_BUILD_CPU_BITS:=@OPENJDK_BUILD_CPU_BITS@
 OPENJDK_BUILD_CPU_ENDIAN:=@OPENJDK_BUILD_CPU_ENDIAN@
+
+OPENJDK_BUILD_OS_INCLUDE_SUBIDR:=@OPENJDK_TARGET_OS_INCLUDE_SUBDIR@
 
 # Target platform value in ModuleTarget class file attribute.
 OPENJDK_MODULE_TARGET_PLATFORM:=@OPENJDK_MODULE_TARGET_PLATFORM@
@@ -175,6 +178,10 @@ VERSION_DATE := @VERSION_DATE@
 # Vendor version string
 VENDOR_VERSION_STRING := @VENDOR_VERSION_STRING@
 
+# Class-file version
+VERSION_CLASSFILE_MAJOR := @VERSION_CLASSFILE_MAJOR@
+VERSION_CLASSFILE_MINOR := @VERSION_CLASSFILE_MINOR@
+
 # Convenience CFLAGS settings for passing version information into native programs.
 VERSION_CFLAGS := \
     -DVERSION_FEATURE=$(VERSION_FEATURE) \
@@ -190,6 +197,8 @@ VERSION_CFLAGS := \
     -DVERSION_SPECIFICATION='"$(VERSION_SPECIFICATION)"' \
     -DVERSION_DATE='"$(VERSION_DATE)"' \
     -DVENDOR_VERSION_STRING='"$(VENDOR_VERSION_STRING)"' \
+    -DVERSION_CLASSFILE_MAJOR=$(VERSION_CLASSFILE_MAJOR) \
+    -DVERSION_CLASSFILE_MINOR=$(VERSION_CLASSFILE_MINOR) \
     #
 
 # Platform naming variables
@@ -540,7 +549,6 @@ SJAVAC_SERVER_JAVA_FLAGS:=@SJAVAC_SERVER_JAVA_FLAGS@
 # versions of the variables directly.
 JAVA_CMD:=@JAVA@
 JAVAC_CMD:=@JAVAC@
-JAVAH_CMD:=@JAVAH@
 JAVADOC_CMD:=@JAVADOC@
 JAR_CMD:=@JAR@
 JLINK_CMD := @JLINK@
@@ -553,7 +561,6 @@ JAVA=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
 JAVA_SMALL=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
 JAVA_JAVAC=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_JAVAC) $(JAVA_FLAGS)
 JAVAC=@FIXPATH@ $(JAVAC_CMD)
-JAVAH=@FIXPATH@ $(JAVAH_CMD)
 JAVADOC=@FIXPATH@ $(JAVADOC_CMD)
 JAR=@FIXPATH@ $(JAR_CMD)
 JLINK = @FIXPATH@ $(JLINK_CMD) $(JAVA_TOOL_FLAGS_SMALL)
@@ -578,6 +585,8 @@ INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
 INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
 INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.jmod=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.misc=jdk.compiler.interim \
     #
 INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
     $(INTERIM_LANGTOOLS_MODULES))))
@@ -717,7 +726,7 @@ INSTALL_PREFIX=@prefix@
 # Directories containing architecture-dependent files should be relative to exec_prefix
 INSTALL_EXECPREFIX=@exec_prefix@
 
-# java,javac,javah,javap etc are installed here.
+# java,javac,javap etc are installed here.
 INSTALL_BINDIR=@bindir@
 
 # Read only architecture-independent data

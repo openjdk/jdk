@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -76,6 +75,7 @@ import java.util.Stack;
 /**
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
+ * @LastModified: Nov 2017
  */
 public class MethodGenerator extends MethodGen
     implements com.sun.org.apache.xalan.internal.xsltc.compiler.Constants {

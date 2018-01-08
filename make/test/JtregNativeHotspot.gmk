@@ -113,6 +113,8 @@ ifeq ($(TOOLCHAIN_TYPE), solstudio)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libHandshakeTransitionTest := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libHasNoEntryPoint := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libReturnError := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCNLookUp := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libTestCheckedEnsureLocalCapacity := -lc
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)

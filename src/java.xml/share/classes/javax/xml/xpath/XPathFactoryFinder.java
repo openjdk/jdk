@@ -41,7 +41,7 @@ import jdk.xml.internal.SecuritySupport;
 /**
  * Implementation of {@link XPathFactory#newInstance(String)}.
  *
- * @author <a href="Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
+ * @author Kohsuke Kawaguchi
  * @since 1.5
  */
 class XPathFactoryFinder  {

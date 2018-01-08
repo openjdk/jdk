@@ -38,7 +38,7 @@ import javax.xml.stream.util.XMLEventConsumer;
 /**
  * Implementation of XMLEvent Allocator.
  *
- * @author Neeraj.bajaj@sun.com, k.venugopal@sun.com
+ * @author Neeraj bajaj, k venugopal
  */
 public class XMLEventAllocatorImpl implements XMLEventAllocator {
 

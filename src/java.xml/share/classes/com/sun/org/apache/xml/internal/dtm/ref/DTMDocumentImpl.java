@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -60,6 +59,8 @@ import org.xml.sax.ext.LexicalHandler;
  *
  * <p>Origin: the implemention is a composite logic based on the DTM of XalanJ1 and
  *     DocImpl, DocumentImpl, ElementImpl, TextImpl, etc. of XalanJ2</p>
+ *
+ * @LastModified: Oct 2017
  */
 public class DTMDocumentImpl
 implements DTM, org.xml.sax.ContentHandler, org.xml.sax.ext.LexicalHandler

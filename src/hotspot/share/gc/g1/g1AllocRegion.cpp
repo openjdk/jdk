@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,17 +42,17 @@ void G1AllocRegion::setup(G1CollectedHeap* g1h, HeapRegion* dummy_region) {
 
   // Make sure that any allocation attempt on this region will fail
   // and will not trigger any asserts.
-  assert(allocate(dummy_region, 1, false) == NULL, "should fail");
-  assert(par_allocate(dummy_region, 1, false) == NULL, "should fail");
-  assert(allocate(dummy_region, 1, true) == NULL, "should fail");
-  assert(par_allocate(dummy_region, 1, true) == NULL, "should fail");
+  assert(dummy_region->allocate_no_bot_updates(1) == NULL, "should fail");
+  assert(dummy_region->allocate(1) == NULL, "should fail");
+  DEBUG_ONLY(size_t assert_tmp);
+  assert(dummy_region->par_allocate_no_bot_updates(1, 1, &assert_tmp) == NULL, "should fail");
+  assert(dummy_region->par_allocate(1, 1, &assert_tmp) == NULL, "should fail");
 
   _g1h = g1h;
   _dummy_region = dummy_region;
 }
 
-size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region,
-                                              bool bot_updates) {
+size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
   assert(alloc_region != NULL && alloc_region != _dummy_region,
          "pre-condition");
   size_t result = 0;
@@ -74,7 +74,7 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region,
   size_t min_word_size_to_fill = CollectedHeap::min_fill_size();
 
   while (free_word_size >= min_word_size_to_fill) {
-    HeapWord* dummy = par_allocate(alloc_region, free_word_size, bot_updates);
+    HeapWord* dummy = par_allocate(alloc_region, free_word_size);
     if (dummy != NULL) {
       // If the allocation was successful we should fill in the space.
       CollectedHeap::fill_with_object(dummy, free_word_size);
@@ -110,7 +110,7 @@ size_t G1AllocRegion::retire(bool fill_up) {
                            "the alloc region should never be empty");
 
     if (fill_up) {
-      result = fill_up_remaining_space(alloc_region, _bot_updates);
+      result = fill_up_remaining_space(alloc_region);
     }
 
     assert_alloc_region(alloc_region->used() >= _used_bytes_before, "invariant");
@@ -135,7 +135,7 @@ HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
     new_alloc_region->reset_pre_dummy_top();
     // Need to do this before the allocation
     _used_bytes_before = new_alloc_region->used();
-    HeapWord* result = allocate(new_alloc_region, word_size, _bot_updates);
+    HeapWord* result = allocate(new_alloc_region, word_size);
     assert_alloc_region(result != NULL, "the allocation should succeeded");
 
     OrderAccess::storestore();
@@ -301,7 +301,7 @@ HeapRegion* OldGCAllocRegion::release() {
       // possible object. In this case this region will not be retained, so the
       // original problem cannot occur.
       if (to_allocate_words >= G1CollectedHeap::min_fill_size()) {
-        HeapWord* dummy = attempt_allocation(to_allocate_words, true /* bot_updates */);
+        HeapWord* dummy = attempt_allocation(to_allocate_words);
         CollectedHeap::fill_with_object(dummy, to_allocate_words);
       }
     }

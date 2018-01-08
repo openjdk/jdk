@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.util.stream.TestData;
 
 /*
  * @test
- * @bug 8071597
+ * @bug 8071597 8193856
  */
 @Test
 public class WhileOpTest extends OpTestCase {
@@ -360,5 +360,34 @@ public class WhileOpTest extends OpTestCase {
             ds.count();
         }
         assertTrue(isClosed.get());
+    }
+
+    @Test(groups = { "serialization-hostile" })
+    public void testFlatMapThenTake() {
+        TestData.OfRef<Integer> range = TestData.Factory.ofSupplier(
+                "range", () -> IntStream.range(0, 100).boxed());
+
+        exerciseOpsMulti(range,
+                         // Reference result
+                         s -> s.takeWhile(e -> e != 50),
+                         // For other results collect into array,
+                         // stream the single array (not the elements),
+                         // then flat map to stream the array elements
+                         s -> Stream.<Integer[]>of(s.toArray(Integer[]::new)).
+                                 flatMap(Stream::of).
+                                 takeWhile(e -> e != 50),
+                         s -> Stream.of(s.mapToInt(e -> e).toArray()).
+                                 flatMapToInt(IntStream::of).
+                                 takeWhile(e -> e != 50).
+                                 mapToObj(e -> e),
+                         s -> Stream.of(s.mapToLong(e -> e).toArray()).
+                                 flatMapToLong(LongStream::of).
+                                 takeWhile(e -> e != 50L).
+                                 mapToObj(e -> (int) e),
+                         s -> Stream.of(s.mapToDouble(e -> e).toArray()).
+                                 flatMapToDouble(DoubleStream::of).
+                                 takeWhile(e -> e != 50.0).
+                                 mapToObj(e -> (int) e)
+                         );
     }
 }

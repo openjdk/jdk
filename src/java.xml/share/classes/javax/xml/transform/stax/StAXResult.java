@@ -38,8 +38,8 @@ import javax.xml.transform.Result;
  * {@link javax.xml.validation.Validator} which accept
  * <code>Result</code> as input.
  *
- * @author <a href="mailto:Neeraj.Bajaj@Sun.com">Neeraj Bajaj</a>
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @author Neeraj Bajaj
+ * @author Jeff Suttor
  *
  * @see <a href="http://jcp.org/en/jsr/detail?id=173">
  *  JSR 173: Streaming API for XML</a>

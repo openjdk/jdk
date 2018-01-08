@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,6 +32,7 @@ import org.w3c.dom.DOMStringList;
  * @xerces.internal
  *
  * @author Neil Delima, IBM
+ * @LastModified: Nov 2017
  */
 public class DOMStringListImpl implements DOMStringList {
 

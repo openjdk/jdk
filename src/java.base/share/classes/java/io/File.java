@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2256,7 +2256,7 @@ public class File
     private transient volatile Path filePath;
 
     /**
-     * Returns a {@link Path java.nio.file.Path} object constructed from the
+     * Returns a {@link Path java.nio.file.Path} object constructed from
      * this abstract path. The resulting {@code Path} is associated with the
      * {@link java.nio.file.FileSystems#getDefault default-filesystem}.
      *

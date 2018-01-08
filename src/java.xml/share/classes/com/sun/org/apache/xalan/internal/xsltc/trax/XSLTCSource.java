@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,6 +34,7 @@ import org.xml.sax.SAXException;
 
 /**
  * @author Morten Jorgensen
+ * @LastModified: Nov 2017
  */
 public final class XSLTCSource implements Source {
 

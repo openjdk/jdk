@@ -165,10 +165,10 @@ import java.util.GregorianCalendar;
  *   </li>
  * </ul>
  *
- * @author <a href="mailto:Joseph.Fialli@Sun.com">Joseph Fialli</a>
- * @author <a href="mailto:Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
- * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
- * @author <a href="mailto:Sunitha.Reddy@Sun.com">Sunitha Reddy</a>
+ * @author Joseph Fialli
+ * @author Kohsuke Kawaguchi
+ * @author Jeff Suttor
+ * @author Sunitha Reddy
  * @see Duration
  * @see DatatypeFactory
  * @since 1.5

@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Set;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
+import jdk.nashorn.internal.ir.BaseNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.BreakNode;
@@ -1093,9 +1094,15 @@ final class LocalVariableTypesCalculator extends SimpleNodeVisitor {
     @Override
     public boolean enterUnaryNode(final UnaryNode unaryNode) {
         final Expression expr = unaryNode.getExpression();
-        final LvarType unaryType = toLvarType(unaryNode.setExpression(visitExpression(expr).typeExpression).getType());
-        if(unaryNode.isSelfModifying() && expr instanceof IdentNode) {
-            onSelfAssignment((IdentNode)expr, unaryType);
+        final LvarType unaryType;
+        if (unaryNode.tokenType() == TokenType.DELETE && expr instanceof IdentNode) {
+            // not visiting deleted identifiers; they don't count as use
+            unaryType = toLvarType(unaryNode.getType());
+        } else {
+            unaryType = toLvarType(unaryNode.setExpression(visitExpression(expr).typeExpression).getType());
+            if (unaryNode.isSelfModifying() && expr instanceof IdentNode) {
+                onSelfAssignment((IdentNode) expr, unaryType);
+            }
         }
         typeStack.push(unaryType);
         return false;
@@ -1346,6 +1353,12 @@ final class LocalVariableTypesCalculator extends SimpleNodeVisitor {
                 }
                 inOuterFunction = false;
                 return true;
+            }
+
+            @Override
+            public boolean enterUnaryNode(final UnaryNode unaryNode) {
+                // not visiting deleted identifiers; they don't count as use
+                return !(unaryNode.tokenType() == TokenType.DELETE && unaryNode.getExpression() instanceof IdentNode);
             }
 
             @SuppressWarnings("fallthrough")

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -62,7 +61,9 @@ import org.xml.sax.ContentHandler;
  * Note too that we do not currently attempt to track document
  * mutation. If you alter the DOM after wrapping DOM2DTM around it,
  * all bets are off.
- * */
+ *
+ * @LastModified: Oct 2017
+ */
 public class DOM2DTM extends DTMDefaultBaseIterators
 {
   static final boolean JJK_DEBUG=false;

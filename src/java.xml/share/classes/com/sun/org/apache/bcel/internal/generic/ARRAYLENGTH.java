@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,6 +27,7 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * <PRE>Stack: ..., arrayref -&gt; ..., length</PRE>
  *
  * @version $Id: ARRAYLENGTH.java 1747278 2016-06-07 17:28:43Z britter $
+ * @LastModified: Oct 2017
  */
 public class ARRAYLENGTH extends Instruction
     implements ExceptionThrower, StackProducer, StackConsumer /* since 6.0 */ {

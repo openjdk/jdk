@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -58,6 +57,7 @@ import java.util.Objects;
  * grammar and basic set of operations that can be applied to a URI.
  *
  *
+ * @LastModified: Oct 2017
  */
 public class URI implements Serializable
 {

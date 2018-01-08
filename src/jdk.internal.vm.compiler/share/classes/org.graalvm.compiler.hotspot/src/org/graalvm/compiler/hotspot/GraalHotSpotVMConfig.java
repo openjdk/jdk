@@ -165,6 +165,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final boolean usePopCountInstruction = getFlag("UsePopCountInstruction", Boolean.class);
     public final boolean useAESIntrinsics = getFlag("UseAESIntrinsics", Boolean.class);
     public final boolean useCRC32Intrinsics = getFlag("UseCRC32Intrinsics", Boolean.class);
+    public final boolean useCRC32CIntrinsics = isJDK8 ? false : getFlag("UseCRC32CIntrinsics", Boolean.class);
     public final boolean threadLocalHandshakes = getFlag("ThreadLocalHandshakes", Boolean.class, false);
 
     private final boolean useMultiplyToLenIntrinsic = getFlag("UseMultiplyToLenIntrinsic", Boolean.class);

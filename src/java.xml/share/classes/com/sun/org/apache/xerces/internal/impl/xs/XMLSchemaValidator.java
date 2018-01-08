@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -112,6 +111,7 @@ import jdk.xml.internal.JdkXmlUtils;
  * @author Elena Litani IBM
  * @author Andy Clark IBM
  * @author Neeraj Bajaj, Sun Microsystems, inc.
+ * @LastModified: Nov 2017
  */
 public class XMLSchemaValidator
     implements XMLComponent, XMLDocumentFilter, FieldActivator, RevalidationHandler, XSElementDeclHelper {

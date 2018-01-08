@@ -210,7 +210,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       jarsigner.1 \
       javac.1 \
       javadoc.1 \
-      javah.1 \
       javap.1 \
       jconsole.1 \
       jcmd.1 \

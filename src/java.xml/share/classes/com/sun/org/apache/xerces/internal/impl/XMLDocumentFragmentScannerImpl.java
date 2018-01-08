@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Sep 2017
  */
 
 /*
@@ -72,6 +71,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author Eric Ye, IBM
  * @author Sunitha Reddy, SUN Microsystems
  *
+ * @LastModified: Sep 2017
  */
 public class XMLDocumentFragmentScannerImpl
         extends XMLScanner
@@ -1670,7 +1670,7 @@ public class XMLDocumentFragmentScannerImpl
         // Take advantage of the fact that next string _should_ be "fElementQName.rawName",
         //In scanners most of the time is consumed on checks done for XML characters, we can
         // optimize on it and avoid the checks done for endElement,
-        //we will also avoid symbol table lookup - neeraj.bajaj@sun.com
+        //we will also avoid symbol table lookup.
 
         // this should work both for namespace processing true or false...
 
@@ -2461,7 +2461,6 @@ public class XMLDocumentFragmentScannerImpl
          * we dont need to set the value for every end element encouterd.
          * For Well formedness checks we can have the same QName object that was pushed.
          * the values will be set only if application need to know about the endElement
-         * -- neeraj.bajaj@sun.com
          */
 
         public QName getLastPoppedElement(){

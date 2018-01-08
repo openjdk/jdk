@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package com.sun.tools.javac.file;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.module.Configuration;
+import java.lang.module.ModuleFinder;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -77,11 +79,6 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.JDK9Wrappers.Configuration;
-import com.sun.tools.javac.util.JDK9Wrappers.Layer;
-import com.sun.tools.javac.util.JDK9Wrappers.ModuleFinder;
-import com.sun.tools.javac.util.JDK9Wrappers.Module;
-import com.sun.tools.javac.util.JDK9Wrappers.ServiceLoaderHelper;
 
 import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
 
@@ -980,14 +977,14 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     public <S> ServiceLoader<S> getServiceLoader(Location location, Class<S> service) throws IOException {
         nullCheck(location);
         nullCheck(service);
-        Module.getModule(getClass()).addUses(service);
+        getClass().getModule().addUses(service);
         if (location.isModuleOrientedLocation()) {
             Collection<Path> paths = locations.getLocation(location);
             ModuleFinder finder = ModuleFinder.of(paths.toArray(new Path[paths.size()]));
-            Layer bootLayer = Layer.boot();
+            ModuleLayer bootLayer = ModuleLayer.boot();
             Configuration cf = bootLayer.configuration().resolveAndBind(ModuleFinder.of(), finder, Collections.emptySet());
-            Layer layer = bootLayer.defineModulesWithOneLoader(cf, ClassLoader.getSystemClassLoader());
-            return ServiceLoaderHelper.load(layer, service);
+            ModuleLayer layer = bootLayer.defineModulesWithOneLoader(cf, ClassLoader.getSystemClassLoader());
+            return ServiceLoader.load(layer, service);
         } else {
             return ServiceLoader.load(service, getClassLoader(location));
         }

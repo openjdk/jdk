@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
- * @LastModified: Nov 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,6 +36,7 @@ import com.sun.org.apache.xerces.internal.impl.xs.XSParticleDecl;
  * @author Elena Litani, IBM
  * @author Sandy Gao, IBM
  *
+ * @LastModified: Nov 2017
  */
 public class CMBuilder {
 

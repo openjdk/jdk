@@ -107,7 +107,7 @@ import org.xml.sax.SAXNotSupportedException;
  *
  * <p>This feature is set to <code>false</code> by default.</p>
  *
- * @author  <a href="mailto:Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
+ * @author  Kohsuke Kawaguchi
  * @since 1.5
  */
 public abstract class ValidatorHandler implements ContentHandler {
