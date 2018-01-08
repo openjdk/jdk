@@ -34,34 +34,11 @@
 #include "oops/oop.inline.hpp"
 #include "oops/fieldStreams.hpp"
 #include "runtime/fieldDescriptor.hpp"
-#if INCLUDE_ALL_GCS
-# include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#endif
 
 // ciInstanceKlass
 //
 // This class represents a Klass* in the HotSpot virtual machine
 // whose Klass part in an InstanceKlass.
-
-// ------------------------------------------------------------------
-// ensure_metadata_alive
-//
-// Ensure that the metadata wrapped by the ciMetadata is kept alive by GC.
-// This is primarily useful for metadata which is considered as weak roots
-// by the GC but need to be strong roots if reachable from a current compilation.
-// InstanceKlass are created for both weak and strong metadata.  Ensuring this metadata
-// alive covers the cases where there are weak roots without performance cost.
-//
-static void ensure_metadata_alive(oop metadata_holder) {
-#if INCLUDE_ALL_GCS
-  if (!UseG1GC) {
-    return;
-  }
-  if (metadata_holder != NULL) {
-    G1SATBCardTableModRefBS::enqueue(metadata_holder);
-  }
-#endif
-}
 
 
 // ------------------------------------------------------------------
@@ -88,8 +65,12 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   _has_injected_fields = -1;
   _implementor = NULL; // we will fill these lazily
 
-  oop holder = ik->klass_holder();
-  ensure_metadata_alive(holder);
+  // Ensure that the metadata wrapped by the ciMetadata is kept alive by GC.
+  // This is primarily useful for metadata which is considered as weak roots
+  // by the GC but need to be strong roots if reachable from a current compilation.
+  // InstanceKlass are created for both weak and strong metadata.  Ensuring this metadata
+  // alive covers the cases where there are weak roots without performance cost.
+  oop holder = ik->klass_holder_phantom();
   if (ik->is_anonymous()) {
     // Though ciInstanceKlass records class loader oop, it's not enough to keep
     // VM anonymous classes alive (loader == NULL). Klass holder should be used instead.
