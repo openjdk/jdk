@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ class CommandSetNode extends AbstractNamedNode {
     }
 
     void document(PrintWriter writer) {
-        writer.println("<h4><a name=\"" + context.whereC + "\">" + name +
-                       " Command Set</a> (" +
+        writer.println("<h4 id=\"" + context.whereC + "\">" + name +
+                       " Command Set (" +
                        nameNode.value() + ")</h4>");
         writer.println(comment());
         for (Node node : components) {
@@ -51,11 +51,13 @@ class CommandSetNode extends AbstractNamedNode {
         writer.print("<li><a href=\"#" + context.whereC + "\">");
         writer.println(name() + "</a> Command Set (" +
                        nameNode.value() + ")");
-        writer.println("<ul>");
-        for (Node node : components) {
-            node.documentIndex(writer);
+        if (components.size() > 0) {
+            writer.println("<ul>");
+            for (Node node : components) {
+                node.documentIndex(writer);
+            }
+            writer.println("</ul>");
         }
-        writer.println("</ul>");
     }
 
     void genJavaClassSpecifics(PrintWriter writer, int depth) {
