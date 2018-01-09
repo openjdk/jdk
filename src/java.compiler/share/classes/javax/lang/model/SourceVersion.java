@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,8 +219,9 @@ public enum SourceVersion {
      * followed only by characters for which {@link
      * Character#isJavaIdentifierPart(int)} returns {@code true}.
      * This pattern matches regular identifiers, keywords, restricted
-     * keywords, and the literals {@code "true"}, {@code "false"}, and
-     * {@code "null"}.
+     * keywords, and the literals {@code "true"}, {@code "false"},
+     * {@code "null"}, and {@code "var"}.
+     *
      * The method returns {@code false} for all other strings.
      *
      * @param name the string to check
@@ -254,8 +255,9 @@ public enum SourceVersion {
      * qualified name in the latest source version.  Unlike {@link
      * #isIdentifier isIdentifier}, this method returns {@code false}
      * for keywords, boolean literals, and the null literal.
+     *
      * This method returns {@code true} for <i>restricted
-     * keywords</i>.
+     * keywords</i> and {@code "var"}.
      *
      * @param name the string to check
      * @return {@code true} if this string is a
@@ -272,8 +274,9 @@ public enum SourceVersion {
      * qualified name in the given source version.  Unlike {@link
      * #isIdentifier isIdentifier}, this method returns {@code false}
      * for keywords, boolean literals, and the null literal.
+     *
      * This method returns {@code true} for <i>restricted
-     * keywords</i>.
+     * keywords</i> and {@code "var"}.
      *
      * @param name the string to check
      * @param version the version to use
@@ -297,7 +300,7 @@ public enum SourceVersion {
      * Returns whether or not {@code s} is a keyword, boolean literal,
      * or null literal in the latest source version.
      * This method returns {@code false} for <i>restricted
-     * keywords</i>.
+     * keywords</i> and {@code "var"}.
      *
      * @param s the string to check
      * @return {@code true} if {@code s} is a keyword, or boolean
@@ -314,7 +317,7 @@ public enum SourceVersion {
      * Returns whether or not {@code s} is a keyword, boolean literal,
      * or null literal in the given source version.
      * This method returns {@code false} for <i>restricted
-     * keywords</i>.
+     * keywords</i> and {@code "var"}.
      *
      * @param s the string to check
      * @param version the version to use
