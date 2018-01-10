@@ -200,12 +200,14 @@ const DecoratorSet IN_HEAP            = UCONST64(1) << 18;
 const DecoratorSet IN_HEAP_ARRAY      = UCONST64(1) << 19;
 const DecoratorSet IN_ROOT            = UCONST64(1) << 20;
 const DecoratorSet IN_CONCURRENT_ROOT = UCONST64(1) << 21;
+const DecoratorSet IN_ARCHIVE_ROOT    = UCONST64(1) << 22;
 const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_HEAP_ARRAY |
-                                        IN_ROOT | IN_CONCURRENT_ROOT;
+                                        IN_ROOT | IN_CONCURRENT_ROOT |
+                                        IN_ARCHIVE_ROOT;
 
 // == Value Decorators ==
 // * OOP_NOT_NULL: This property can make certain barriers faster such as compressing oops.
-const DecoratorSet OOP_NOT_NULL       = UCONST64(1) << 22;
+const DecoratorSet OOP_NOT_NULL       = UCONST64(1) << 23;
 const DecoratorSet OOP_DECORATOR_MASK = OOP_NOT_NULL;
 
 // == Arraycopy Decorators ==
