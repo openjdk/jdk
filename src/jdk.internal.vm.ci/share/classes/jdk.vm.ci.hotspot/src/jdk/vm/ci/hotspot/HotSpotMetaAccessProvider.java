@@ -34,7 +34,6 @@ import java.lang.reflect.Modifier;
 import java.util.Objects;
 
 import jdk.vm.ci.code.CodeUtil;
-import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
@@ -284,11 +283,9 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
                     ResolvedJavaType elementType = lookupJavaType.getComponentType();
                     JavaKind elementKind = elementType.getJavaKind();
                     final int headerSize = getArrayBaseOffset(elementKind);
-                    TargetDescription target = runtime.getHostJVMCIBackend().getTarget();
                     int sizeOfElement = getArrayIndexScale(elementKind);
-                    int alignment = target.wordSize;
                     int log2ElementSize = CodeUtil.log2(sizeOfElement);
-                    return computeArrayAllocationSize(length, alignment, headerSize, log2ElementSize);
+                    return computeArrayAllocationSize(length, headerSize, log2ElementSize);
                 }
                 return lookupJavaType.instanceSize();
             }
@@ -303,11 +300,13 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
      * alignment requirements.
      *
      * @param length the number of elements in the array
-     * @param alignment the object alignment requirement
      * @param headerSize the size of the array header
      * @param log2ElementSize log2 of the size of an element in the array
+     * @return the size of the memory chunk
      */
-    public static int computeArrayAllocationSize(int length, int alignment, int headerSize, int log2ElementSize) {
+    public int computeArrayAllocationSize(int length, int headerSize, int log2ElementSize) {
+        HotSpotVMConfig config = runtime.getConfig();
+        int alignment = config.objectAlignment;
         int size = (length << log2ElementSize) + headerSize + (alignment - 1);
         int mask = ~(alignment - 1);
         return size & mask;
