@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ G1SATBCardTableLoggingModRefBS(MemRegion whole_heap) :
 }
 
 void G1SATBCardTableLoggingModRefBS::initialize(G1RegionToSpaceMapper* mapper) {
+  initialize_deferred_card_mark_barriers();
   mapper->set_mapping_changed_listener(&_listener);
 
   _byte_map_size = mapper->reserved().byte_size();
@@ -212,4 +213,15 @@ G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr) {
       }
     }
   }
+}
+
+bool G1SATBCardTableModRefBS::is_in_young(oop obj) const {
+  volatile jbyte* p = byte_for((void*)obj);
+  return *p == g1_young_card_val();
+}
+
+void G1SATBCardTableLoggingModRefBS::flush_deferred_barriers(JavaThread* thread) {
+  CardTableModRefBS::flush_deferred_barriers(thread);
+  thread->satb_mark_queue().flush();
+  thread->dirty_card_queue().flush();
 }

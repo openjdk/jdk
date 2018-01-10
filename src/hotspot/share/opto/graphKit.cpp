@@ -3861,7 +3861,7 @@ void GraphKit::write_barrier_post(Node* oop_store,
   if (use_ReduceInitialCardMarks()
       && obj == just_allocated_object(control())) {
     // We can skip marks on a freshly-allocated object in Eden.
-    // Keep this code in sync with new_store_pre_barrier() in runtime.cpp.
+    // Keep this code in sync with new_deferred_store_barrier() in runtime.cpp.
     // That routine informs GC to take appropriate compensating steps,
     // upon a slow-path allocation, so as to make this card-mark
     // elision safe.
@@ -4159,7 +4159,7 @@ void GraphKit::g1_write_barrier_pre(bool do_load,
  * as part of the allocation in the case the allocated object is not located
  * in the nursery, this would happen for humongous objects. This is similar to
  * how CMS is required to handle this case, see the comments for the method
- * CollectedHeap::new_store_pre_barrier and OptoRuntime::new_store_pre_barrier.
+ * CardTableModRefBS::on_allocation_slowpath_exit and OptoRuntime::new_deferred_store_barrier.
  * A deferred card mark is required for these objects and handled in the above
  * mentioned methods.
  *
@@ -4249,7 +4249,7 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
 
   if (use_ReduceInitialCardMarks() && obj == just_allocated_object(control())) {
     // We can skip marks on a freshly-allocated object in Eden.
-    // Keep this code in sync with new_store_pre_barrier() in runtime.cpp.
+    // Keep this code in sync with new_deferred_store_barrier() in runtime.cpp.
     // That routine informs GC to take appropriate compensating steps,
     // upon a slow-path allocation, so as to make this card-mark
     // elision safe.

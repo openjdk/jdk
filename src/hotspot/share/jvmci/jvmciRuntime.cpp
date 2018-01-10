@@ -116,10 +116,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_instance(JavaThread* thread, Klass* klas
   oop obj = ik->allocate_instance(CHECK);
   thread->set_vm_result(obj);
   JRT_BLOCK_END;
-
-  if (ReduceInitialCardMarks) {
-    new_store_pre_barrier(thread);
-  }
+  SharedRuntime::on_slowpath_allocation_exit(thread);
 JRT_END
 
 JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array(JavaThread* thread, Klass* array_klass, jint length))
@@ -151,28 +148,8 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array(JavaThread* thread, Klass* array_k
     }
   }
   JRT_BLOCK_END;
-
-  if (ReduceInitialCardMarks) {
-    new_store_pre_barrier(thread);
-  }
+  SharedRuntime::on_slowpath_allocation_exit(thread);
 JRT_END
-
-void JVMCIRuntime::new_store_pre_barrier(JavaThread* thread) {
-  // After any safepoint, just before going back to compiled code,
-  // we inform the GC that we will be doing initializing writes to
-  // this object in the future without emitting card-marks, so
-  // GC may take any compensating steps.
-  // NOTE: Keep this code consistent with GraphKit::store_barrier.
-
-  oop new_obj = thread->vm_result();
-  if (new_obj == NULL)  return;
-
-  assert(Universe::heap()->can_elide_tlab_store_barriers(),
-         "compiler must check this first");
-  // GC may decide to give back a safer copy of new_obj.
-  new_obj = Universe::heap()->new_store_pre_barrier(thread, new_obj);
-  thread->set_vm_result(new_obj);
-}
 
 JRT_ENTRY(void, JVMCIRuntime::new_multi_array(JavaThread* thread, Klass* klass, int rank, jint* dims))
   assert(klass->is_klass(), "not a class");

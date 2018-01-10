@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,22 +269,6 @@ public:
   virtual size_t tlab_used(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
   virtual HeapWord* allocate_new_tlab(size_t size);
-
-  // Can a compiler initialize a new object without store barriers?
-  // This permission only extends from the creation of a new object
-  // via a TLAB up to the first subsequent safepoint.
-  virtual bool can_elide_tlab_store_barriers() const {
-    return true;
-  }
-
-  // We don't need barriers for stores to objects in the
-  // young gen and, a fortiori, for initializing stores to
-  // objects therein. This applies to DefNew+Tenured and ParNew+CMS
-  // only and may need to be re-examined in case other
-  // kinds of collectors are implemented in the future.
-  virtual bool can_elide_initializing_store_barrier(oop new_obj) {
-    return is_in_young(new_obj);
-  }
 
   // The "requestor" generation is performing some garbage collection
   // action for which it would be useful to have scratch space.  The

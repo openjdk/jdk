@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,10 +101,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   GCHeapLog* _gc_heap_log;
 
-  // Used in support of ReduceInitialCardMarks; only consulted if COMPILER2
-  // or INCLUDE_JVMCI is being used
-  bool _defer_initial_card_mark;
-
   MemRegion _reserved;
 
  protected:
@@ -128,13 +124,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   // Constructor
   CollectedHeap();
-
-  // Do common initializations that must follow instance construction,
-  // for example, those needing virtual calls.
-  // This code could perhaps be moved into initialize() but would
-  // be slightly more awkward because we want the latter to be a
-  // pure virtual.
-  void pre_initialize();
 
   // Create a new tlab. All TLAB allocations must go through this.
   virtual HeapWord* allocate_new_tlab(size_t size);
@@ -407,45 +396,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     guarantee(false, "thread-local allocation buffers not supported");
     return 0;
   }
-
-  // Can a compiler initialize a new object without store barriers?
-  // This permission only extends from the creation of a new object
-  // via a TLAB up to the first subsequent safepoint. If such permission
-  // is granted for this heap type, the compiler promises to call
-  // defer_store_barrier() below on any slow path allocation of
-  // a new object for which such initializing store barriers will
-  // have been elided.
-  virtual bool can_elide_tlab_store_barriers() const = 0;
-
-  // If a compiler is eliding store barriers for TLAB-allocated objects,
-  // there is probably a corresponding slow path which can produce
-  // an object allocated anywhere.  The compiler's runtime support
-  // promises to call this function on such a slow-path-allocated
-  // object before performing initializations that have elided
-  // store barriers. Returns new_obj, or maybe a safer copy thereof.
-  virtual oop new_store_pre_barrier(JavaThread* thread, oop new_obj);
-
-  // Answers whether an initializing store to a new object currently
-  // allocated at the given address doesn't need a store
-  // barrier. Returns "true" if it doesn't need an initializing
-  // store barrier; answers "false" if it does.
-  virtual bool can_elide_initializing_store_barrier(oop new_obj) = 0;
-
-  // If a compiler is eliding store barriers for TLAB-allocated objects,
-  // we will be informed of a slow-path allocation by a call
-  // to new_store_pre_barrier() above. Such a call precedes the
-  // initialization of the object itself, and no post-store-barriers will
-  // be issued. Some heap types require that the barrier strictly follows
-  // the initializing stores. (This is currently implemented by deferring the
-  // barrier until the next slow-path allocation or gc-related safepoint.)
-  // This interface answers whether a particular heap type needs the card
-  // mark to be thus strictly sequenced after the stores.
-  virtual bool card_mark_must_follow_store() const = 0;
-
-  // If the CollectedHeap was asked to defer a store barrier above,
-  // this informs it to flush such a deferred store barrier to the
-  // remembered set.
-  virtual void flush_deferred_store_barrier(JavaThread* thread);
 
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the

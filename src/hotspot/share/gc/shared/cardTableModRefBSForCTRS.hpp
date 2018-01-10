@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,12 @@ public:
   virtual void initialize();
 
   void set_CTRS(CardTableRS* rs) { _rs = rs; }
+
+  virtual bool card_mark_must_follow_store() const {
+    return UseConcMarkSweepGC;
+  }
+
+  virtual bool is_in_young(oop obj) const;
 
 private:
   CardTableRS* _rs;
