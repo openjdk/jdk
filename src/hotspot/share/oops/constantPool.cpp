@@ -49,9 +49,6 @@
 #include "runtime/signature.hpp"
 #include "runtime/vframe.hpp"
 #include "utilities/copy.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#endif // INCLUDE_ALL_GCS
 
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
   Array<u1>* tags = MetadataFactory::new_array<u1>(loader_data, length, 0, CHECK_NULL);
@@ -330,17 +327,13 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   if (SystemDictionary::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (MetaspaceShared::open_archive_heap_region_mapped() &&
-        _cache->archived_references() != NULL) {
+    if (MetaspaceShared::open_archive_heap_region_mapped()) {
       oop archived = _cache->archived_references();
-      // Make sure GC knows the cached object is now live. This is necessary after
-      // initial GC marking and during concurrent marking as strong roots are only
-      // scanned during initial marking (at the start of the GC marking).
-      assert(UseG1GC, "Requires G1 GC");
-      G1SATBCardTableModRefBS::enqueue(archived);
-      // Create handle for the archived resolved reference array object
-      Handle refs_handle(THREAD, (oop)archived);
-      set_resolved_references(loader_data->add_handle(refs_handle));
+      if (archived != NULL) {
+        // Create handle for the archived resolved reference array object
+        Handle refs_handle(THREAD, archived);
+        set_resolved_references(loader_data->add_handle(refs_handle));
+      }
     } else
 #endif
     {

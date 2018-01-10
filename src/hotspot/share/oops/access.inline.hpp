@@ -788,7 +788,9 @@ namespace AccessInternal {
       ((IN_HEAP_ARRAY & barrier_strength_default) != 0 ? IN_HEAP : INTERNAL_EMPTY);
     static const DecoratorSet conc_root_is_root = heap_array_is_in_heap |
       ((IN_CONCURRENT_ROOT & heap_array_is_in_heap) != 0 ? IN_ROOT : INTERNAL_EMPTY);
-    static const DecoratorSet value = conc_root_is_root | BT_BUILDTIME_DECORATORS;
+    static const DecoratorSet archive_root_is_root = conc_root_is_root |
+      ((IN_ARCHIVE_ROOT & conc_root_is_root) != 0 ? IN_ROOT : INTERNAL_EMPTY);
+    static const DecoratorSet value = archive_root_is_root | BT_BUILDTIME_DECORATORS;
   };
 
   // Step 2: Reduce types.
@@ -1082,7 +1084,8 @@ void Access<decorators>::verify_decorators() {
     (location_decorators ^ IN_ROOT) == 0 ||
     (location_decorators ^ IN_HEAP) == 0 ||
     (location_decorators ^ (IN_HEAP | IN_HEAP_ARRAY)) == 0 ||
-    (location_decorators ^ (IN_ROOT | IN_CONCURRENT_ROOT)) == 0
+    (location_decorators ^ (IN_ROOT | IN_CONCURRENT_ROOT)) == 0 ||
+    (location_decorators ^ (IN_ROOT | IN_ARCHIVE_ROOT)) == 0
   ));
 }
 
