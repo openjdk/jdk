@@ -466,6 +466,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(CardGeneration,              _capacity_at_prologue,                         size_t)                                \
   nonstatic_field(CardGeneration,              _used_at_prologue,                             size_t)                                \
                                                                                                                                      \
+  nonstatic_field(CardTableModRefBS,           _defer_initial_card_mark,                      bool)                                  \
   nonstatic_field(CardTableModRefBS,           _whole_heap,                                   const MemRegion)                       \
   nonstatic_field(CardTableModRefBS,           _guard_index,                                  const size_t)                          \
   nonstatic_field(CardTableModRefBS,           _last_valid_index,                             const size_t)                          \
@@ -482,7 +483,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                                                                                      \
   nonstatic_field(CollectedHeap,               _reserved,                                     MemRegion)                             \
   nonstatic_field(CollectedHeap,               _barrier_set,                                  BarrierSet*)                           \
-  nonstatic_field(CollectedHeap,               _defer_initial_card_mark,                      bool)                                  \
   nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
   nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
                                                                                                                                      \

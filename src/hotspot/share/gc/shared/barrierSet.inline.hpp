@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,6 @@ void BarrierSet::write_ref_array(HeapWord* start, size_t count) {
   assert(UseCompressedOops || (aligned_start == start && aligned_end == end),
          "Expected heap word alignment of start and end");
   write_ref_array_work(MemRegion(aligned_start, aligned_end));
-}
-
-inline void BarrierSet::write_region(MemRegion mr) {
-  write_region_work(mr);
 }
 
 #endif // SHARE_VM_GC_SHARED_BARRIERSET_INLINE_HPP
