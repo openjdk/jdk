@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
     for (ProtectionDomainEntry* current = pd_set_acquire();
                                 current != NULL;
                                 current = current->next()) {
-      if (current->protection_domain() == protection_domain) {
+      if (current->object_no_keepalive() == protection_domain) {
         in_pd_set = true;
         break;
       }
@@ -187,7 +187,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   for (ProtectionDomainEntry* current = pd_set_acquire();
                               current != NULL;
                               current = current->next()) {
-    if (current->protection_domain() == protection_domain) return true;
+    if (current->object_no_keepalive() == protection_domain) return true;
   }
   return false;
 }
