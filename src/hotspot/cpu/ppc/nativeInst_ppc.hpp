@@ -31,6 +31,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointMechanism.hpp"
 
 // We have interfaces for the following instructions:
 //
@@ -93,6 +94,11 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   bool is_safepoint_poll() {
     // Is the current instruction a POTENTIAL read access to the polling page?
     // The current arguments of the instruction are not checked!
+    if (SafepointMechanism::uses_thread_local_poll() && USE_POLL_BIT_ONLY) {
+      int encoding = SafepointMechanism::poll_bit();
+      return MacroAssembler::is_tdi(long_at(0), Assembler::traptoGreaterThanUnsigned | Assembler::traptoEqual,
+                                    -1, encoding);
+    }
     return MacroAssembler::is_load_from_polling_page(long_at(0), NULL);
   }
 
