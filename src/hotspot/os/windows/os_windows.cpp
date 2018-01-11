@@ -62,7 +62,6 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
-#include "semaphore_windows.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
@@ -1845,36 +1844,6 @@ int os::get_last_error() {
   return (int)error;
 }
 
-WindowsSemaphore::WindowsSemaphore(uint value) {
-  _semaphore = ::CreateSemaphore(NULL, value, LONG_MAX, NULL);
-
-  guarantee(_semaphore != NULL, "CreateSemaphore failed with error code: %lu", GetLastError());
-}
-
-WindowsSemaphore::~WindowsSemaphore() {
-  ::CloseHandle(_semaphore);
-}
-
-void WindowsSemaphore::signal(uint count) {
-  if (count > 0) {
-    BOOL ret = ::ReleaseSemaphore(_semaphore, count, NULL);
-
-    assert(ret != 0, "ReleaseSemaphore failed with error code: %lu", GetLastError());
-  }
-}
-
-void WindowsSemaphore::wait() {
-  DWORD ret = ::WaitForSingleObject(_semaphore, INFINITE);
-  assert(ret != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
-  assert(ret == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", ret);
-}
-
-bool WindowsSemaphore::trywait() {
-  DWORD ret = ::WaitForSingleObject(_semaphore, 0);
-  assert(ret != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
-  return ret == WAIT_OBJECT_0;
-}
-
 // sun.misc.Signal
 // NOTE that this is a workaround for an apparent kernel bug where if
 // a signal handler for SIGBREAK is installed then that signal handler
@@ -1966,13 +1935,14 @@ int os::sigexitnum_pd() {
 
 // a counter for each possible signal value, including signal_thread exit signal
 static volatile jint pending_signals[NSIG+1] = { 0 };
-static HANDLE sig_sem = NULL;
+static Semaphore* sig_sem = NULL;
 
 void os::signal_init_pd() {
   // Initialize signal structures
   memset((void*)pending_signals, 0, sizeof(pending_signals));
 
-  sig_sem = ::CreateSemaphore(NULL, 0, NSIG+1, NULL);
+  // Initialize signal semaphore
+  sig_sem = new Semaphore();
 
   // Programs embedding the VM do not want it to attempt to receive
   // events like CTRL_LOGOFF_EVENT, which are used to implement the
@@ -1994,17 +1964,18 @@ void os::signal_init_pd() {
   }
 }
 
-void os::signal_notify(int signal_number) {
-  BOOL ret;
+void os::signal_notify(int sig) {
   if (sig_sem != NULL) {
-    Atomic::inc(&pending_signals[signal_number]);
-    ret = ::ReleaseSemaphore(sig_sem, 1, NULL);
-    assert(ret != 0, "ReleaseSemaphore() failed");
+    Atomic::inc(&pending_signals[sig]);
+    sig_sem->signal();
+  } else {
+    // Signal thread is not created with ReduceSignalUsage and signal_init_pd
+    // initialization isn't called.
+    assert(ReduceSignalUsage, "signal semaphore should be created");
   }
 }
 
-static int check_pending_signals(bool wait_for_signal) {
-  DWORD ret;
+static int check_pending_signals() {
   while (true) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
@@ -2012,10 +1983,6 @@ static int check_pending_signals(bool wait_for_signal) {
         return i;
       }
     }
-    if (!wait_for_signal) {
-      return -1;
-    }
-
     JavaThread *thread = JavaThread::current();
 
     ThreadBlockInVM tbivm(thread);
@@ -2024,8 +1991,7 @@ static int check_pending_signals(bool wait_for_signal) {
     do {
       thread->set_suspend_equivalent();
       // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
-      ret = ::WaitForSingleObject(sig_sem, INFINITE);
-      assert(ret == WAIT_OBJECT_0, "WaitForSingleObject() failed");
+      sig_sem->wait();
 
       // were we externally suspended while we were waiting?
       threadIsSuspended = thread->handle_special_suspend_equivalent_condition();
@@ -2034,8 +2000,7 @@ static int check_pending_signals(bool wait_for_signal) {
         // another thread suspended us. We don't want to continue running
         // while suspended because that would surprise the thread that
         // suspended us.
-        ret = ::ReleaseSemaphore(sig_sem, 1, NULL);
-        assert(ret != 0, "ReleaseSemaphore() failed");
+        sig_sem->signal();
 
         thread->java_suspend_self();
       }
@@ -2043,12 +2008,8 @@ static int check_pending_signals(bool wait_for_signal) {
   }
 }
 
-int os::signal_lookup() {
-  return check_pending_signals(false);
-}
-
 int os::signal_wait() {
-  return check_pending_signals(true);
+  return check_pending_signals();
 }
 
 // Implicit OS exception handling
