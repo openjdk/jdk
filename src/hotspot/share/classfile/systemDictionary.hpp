@@ -532,6 +532,11 @@ public:
                                            Klass* accessing_klass,
                                            TRAPS);
 
+  // find a java.lang.Class object for a given signature
+  static Handle    find_field_handle_type(Symbol* signature,
+                                          Klass* accessing_klass,
+                                          TRAPS);
+
   // ask Java to compute a java.lang.invoke.MethodHandle object for a given CP entry
   static Handle    link_method_handle_constant(Klass* caller,
                                                int ref_kind, //e.g., JVM_REF_invokeVirtual
