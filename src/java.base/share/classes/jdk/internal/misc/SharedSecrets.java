@@ -25,6 +25,7 @@
 
 package jdk.internal.misc;
 
+import javax.crypto.SealedObject;
 import java.io.ObjectInputFilter;
 import java.lang.module.ModuleDescriptor;
 import java.util.ResourceBundle;
@@ -71,6 +72,7 @@ public class SharedSecrets {
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
     private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
+    private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
         if (javaUtilJarAccess == null) {
@@ -323,5 +325,16 @@ public class SharedSecrets {
             unsafe.ensureClassInitialized(RandomAccessFile.class);
         }
         return javaIORandomAccessFileAccess;
+    }
+
+    public static void setJavaxCryptoSealedObjectAccess(JavaxCryptoSealedObjectAccess jcsoa) {
+        javaxCryptoSealedObjectAccess = jcsoa;
+    }
+
+    public static JavaxCryptoSealedObjectAccess getJavaxCryptoSealedObjectAccess() {
+        if (javaxCryptoSealedObjectAccess == null) {
+            unsafe.ensureClassInitialized(SealedObject.class);
+        }
+        return javaxCryptoSealedObjectAccess;
     }
 }
