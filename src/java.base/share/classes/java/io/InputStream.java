@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,93 @@ public abstract class InputStream implements Closeable {
     private static final int MAX_SKIP_BUFFER_SIZE = 2048;
 
     private static final int DEFAULT_BUFFER_SIZE = 8192;
+
+    /**
+     * Returns a new {@code InputStream} that reads no bytes. The returned
+     * stream is initially open.  The stream is closed by calling the
+     * {@code close()} method.  Subsequent calls to {@code close()} have no
+     * effect.
+     *
+     * <p> While the stream is open, the {@code available()}, {@code read()},
+     * {@code read(byte[])}, {@code read(byte[], int, int)},
+     * {@code readAllBytes()}, {@code readNBytes()}, {@code skip()}, and
+     * {@code transferTo()} methods all behave as if end of stream has been
+     * reached.  After the stream has been closed, these methods all throw
+     * {@code IOException}.
+     *
+     * <p> The {@code markSupported()} method returns {@code false}.  The
+     * {@code mark()} method does nothing, and the {@code reset()} method
+     * throws {@code IOException}.
+     *
+     * @return an {@code InputStream} which contains no bytes
+     *
+     * @since 11
+     */
+    public static InputStream nullInputStream() {
+        return new InputStream() {
+            private volatile boolean closed;
+
+            private void ensureOpen() throws IOException {
+                if (closed) {
+                    throw new IOException("Stream closed");
+                }
+            }
+
+            @Override
+            public int available () throws IOException {
+                ensureOpen();
+                return 0;
+            }
+
+            @Override
+            public int read() throws IOException {
+                ensureOpen();
+                return -1;
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                Objects.checkFromIndexSize(off, len, b.length);
+                if (len == 0) {
+                    return 0;
+                }
+                ensureOpen();
+                return -1;
+            }
+
+            @Override
+            public byte[] readAllBytes() throws IOException {
+                ensureOpen();
+                return new byte[0];
+            }
+
+            @Override
+            public int readNBytes(byte[] b, int off, int len)
+                throws IOException {
+                Objects.checkFromIndexSize(off, len, b.length);
+                ensureOpen();
+                return 0;
+            }
+
+            @Override
+            public long skip(long n) throws IOException {
+                ensureOpen();
+                return 0L;
+            }
+
+            @Override
+            public long transferTo(OutputStream out) throws IOException {
+                Objects.requireNonNull(out);
+                ensureOpen();
+                return 0L;
+            }
+
+            @Override
+            public void close() throws IOException {
+                closed = true;
+            }
+        };
+    }
 
     /**
      * Reads the next byte of data from the input stream. The value byte is
@@ -166,7 +253,6 @@ public abstract class InputStream implements Closeable {
      * @see        java.io.InputStream#read()
      */
     public int read(byte b[], int off, int len) throws IOException {
-        Objects.requireNonNull(b);
         Objects.checkFromIndexSize(off, len, b.length);
         if (len == 0) {
             return 0;
@@ -326,7 +412,6 @@ public abstract class InputStream implements Closeable {
      * @since 9
      */
     public int readNBytes(byte[] b, int off, int len) throws IOException {
-        Objects.requireNonNull(b);
         Objects.checkFromIndexSize(off, len, b.length);
 
         int n = 0;
