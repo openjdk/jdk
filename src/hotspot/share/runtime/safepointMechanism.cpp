@@ -36,23 +36,39 @@ void* SafepointMechanism::_poll_disarmed_value;
 void SafepointMechanism::default_initialize() {
   if (ThreadLocalHandshakes) {
     set_uses_thread_local_poll();
-    const size_t page_size = os::vm_page_size();
-    const size_t allocation_size = 2 * page_size;
-    char* polling_page = os::reserve_memory(allocation_size, NULL, page_size);
-    os::commit_memory_or_exit(polling_page, allocation_size, false, "Unable to commit Safepoint polling page");
 
-    char* bad_page  = polling_page;
-    char* good_page = polling_page + page_size;
+    // Poll bit values
+    intptr_t poll_armed_value = poll_bit();
+    intptr_t poll_disarmed_value = 0;
 
-    os::protect_memory(bad_page, page_size, os::MEM_PROT_NONE);
-    os::protect_memory(good_page, page_size, os::MEM_PROT_READ);
+#ifdef USE_POLL_BIT_ONLY
+    if (!USE_POLL_BIT_ONLY)
+#endif
+    {
+      // Polling page
+      const size_t page_size = os::vm_page_size();
+      const size_t allocation_size = 2 * page_size;
+      char* polling_page = os::reserve_memory(allocation_size, NULL, page_size);
+      os::commit_memory_or_exit(polling_page, allocation_size, false, "Unable to commit Safepoint polling page");
 
-    log_info(os)("SafePoint Polling address, bad (protected) page:" INTPTR_FORMAT ", good (unprotected) page:" INTPTR_FORMAT, p2i(bad_page), p2i(good_page));
-    os::set_polling_page((address)(bad_page));
+      char* bad_page  = polling_page;
+      char* good_page = polling_page + page_size;
 
-    intptr_t poll_page_val = reinterpret_cast<intptr_t>(bad_page);
-    _poll_armed_value = reinterpret_cast<void*>(poll_page_val | poll_bit());
-    _poll_disarmed_value = good_page;
+      os::protect_memory(bad_page,  page_size, os::MEM_PROT_NONE);
+      os::protect_memory(good_page, page_size, os::MEM_PROT_READ);
+
+      log_info(os)("SafePoint Polling address, bad (protected) page:" INTPTR_FORMAT ", good (unprotected) page:" INTPTR_FORMAT, p2i(bad_page), p2i(good_page));
+      os::set_polling_page((address)(bad_page));
+
+      // Poll address values
+      intptr_t bad_page_val  = reinterpret_cast<intptr_t>(bad_page),
+               good_page_val = reinterpret_cast<intptr_t>(good_page);
+      poll_armed_value    |= bad_page_val;
+      poll_disarmed_value |= good_page_val;
+    }
+
+    _poll_armed_value    = reinterpret_cast<void*>(poll_armed_value);
+    _poll_disarmed_value = reinterpret_cast<void*>(poll_disarmed_value);
   } else {
     const size_t page_size = os::vm_page_size();
     char* polling_page = os::reserve_memory(page_size, NULL, page_size);

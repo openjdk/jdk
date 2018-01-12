@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3226,7 +3226,7 @@ public class Lower extends TreeTranslator {
             JCVariableDecl indexdef = make.VarDef(index, make.Literal(INT, 0));
             indexdef.init.type = indexdef.type = syms.intType.constType(0);
 
-            List<JCStatement> loopinit = List.of(lencachedef, indexdef);
+            List<JCStatement> loopinit = List.of(arraycachedef, lencachedef, indexdef);
             JCBinary cond = makeBinary(LT, make.Ident(index), make.Ident(lencache));
 
             JCExpressionStatement step = make.Exec(makeUnary(PREINC, make.Ident(index)));
@@ -3236,20 +3236,18 @@ public class Lower extends TreeTranslator {
                                                     make.Ident(index)).setType(elemtype);
             JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(tree.var.mods,
                                                   tree.var.name,
-                                                  tree.var.vartype, loopvarinit).setType(tree.var.type);
+                                                  tree.var.vartype,
+                                                  loopvarinit).setType(tree.var.type);
             loopvardef.sym = tree.var.sym;
+            JCBlock body = make.
+                Block(0, List.of(loopvardef, tree.body));
 
-            JCBlock body = make.Block(0, List.of(loopvardef, tree.body));
-
-            arraycachedef = translate(arraycachedef);
             result = translate(make.
                                ForLoop(loopinit,
                                        cond,
                                        List.of(step),
                                        body));
             patchTargets(body, tree, result);
-            JCStatement nullAssignToArr = make.Assignment(arraycache, make.Literal(BOT, null).setType(syms.botType));
-            result = make.Block(0, List.of(arraycachedef, (JCStatement)result, nullAssignToArr));
         }
         /** Patch up break and continue targets. */
         private void patchTargets(JCTree body, final JCTree src, final JCTree dest) {
@@ -3303,7 +3301,7 @@ public class Lower extends TreeTranslator {
                                             types.erasure(types.asSuper(iterator.type.getReturnType(), syms.iteratorType.tsym)),
                                             currentMethodSym);
 
-            JCStatement init = make.
+             JCStatement init = make.
                 VarDef(itvar, make.App(make.Select(tree.expr, iterator)
                      .setType(types.erasure(iterator.type))));
 
@@ -3328,15 +3326,12 @@ public class Lower extends TreeTranslator {
             indexDef.sym = tree.var.sym;
             JCBlock body = make.Block(0, List.of(indexDef, tree.body));
             body.endpos = TreeInfo.endPos(tree.body);
-            init = translate(init);
             result = translate(make.
-                ForLoop(List.nil(),
+                ForLoop(List.of(init),
                         cond,
                         List.nil(),
                         body));
             patchTargets(body, tree, result);
-            JCStatement nullAssignToIterator = make.Assignment(itvar, make.Literal(BOT, null).setType(syms.botType));
-            result = make.Block(0, List.of(init, (JCStatement)result, nullAssignToIterator));
         }
 
     public void visitVarDef(JCVariableDecl tree) {

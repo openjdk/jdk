@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,39 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 8020968
- * @summary Test security permission check
- * @run main/othervm/java.security.policy=noperms.policy SecurityExceptions true
- * @run main/othervm/java.security.policy=stackwalk.policy SecurityExceptions false
- */
-public class SecurityExceptions {
-    public static void main(String[] args) {
-        boolean expectException = Boolean.parseBoolean(args[0]);
+package runtime/invokedynamic;
 
-        StackWalker sw = StackWalker.getInstance();
+super public class MethodHandleConstantHelper
+    version 51:0
+{
 
-        try {
-            sw = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-            if (expectException) {
-                throw new RuntimeException("Expected SecurityException, but none thrown");
-            }
-        } catch (SecurityException e) {
-            if (!expectException) {
-                System.err.println("Unexpected security exception:");
-                throw e;
-            }
-        }
-    }
+static Field "testField":"I";
+
+static Method "testMethod":"()V"
+{
+    return;
+}
+
+public static Method "testMethodSignatureResolutionFailure":"()V"
+    stack 1 locals 1
+{
+          ldc MethodHandle REF_invokeStatic:
+                  MethodHandleConstantHelper.testMethod:
+                  "(LNotExist;)V";
+
+          return;
+}
+
+public static Method "testFieldSignatureResolutionFailure":"()V"
+    stack 1 locals 1
+{
+          ldc MethodHandle REF_getField:
+                  MethodHandleConstantHelper.testField:
+                  "LNotExist;";
+
+          return;
+}
 }

@@ -22,7 +22,8 @@
  */
 
 /**
- * @test 8155740
+ * @test
+ * @bug 8155740
  * @key headful
  * @summary See <rdar://problem/3429130>: Events: actionPerformed() method not
  *          called when it is button is clicked (system load related)
