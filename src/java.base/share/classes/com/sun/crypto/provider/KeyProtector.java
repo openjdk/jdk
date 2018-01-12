@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package com.sun.crypto.provider;
 
 import java.io.IOException;
-import java.io.Serializable;
-import java.security.Security;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.Provider;
@@ -35,7 +33,6 @@ import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.AlgorithmParameters;
 import java.security.spec.InvalidParameterSpecException;
@@ -44,7 +41,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import javax.crypto.Cipher;
 import javax.crypto.CipherSpi;
 import javax.crypto.SecretKey;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SealedObject;
 import javax.crypto.spec.*;
 import sun.security.x509.AlgorithmId;
@@ -347,7 +343,7 @@ final class KeyProtector {
                                                       SunJCE.getInstance(),
                                                       "PBEWithMD5AndTripleDES");
             cipher.init(Cipher.DECRYPT_MODE, skey, params);
-            return (Key)soForKeyProtector.getObject(cipher);
+            return soForKeyProtector.getKey(cipher);
         } catch (NoSuchAlgorithmException ex) {
             // Note: this catch needed to be here because of the
             // later catch of GeneralSecurityException

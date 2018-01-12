@@ -895,6 +895,9 @@ jdk.xml.dsig.secureValidationPolicy=\
 # Patterns are separated by ";" (semicolon).
 # Whitespace is significant and is considered part of the pattern.
 #
+# If the system property jdk.serialFilter is also specified, it supersedes
+# the security property value defined here.
+#
 # If a pattern includes a "=", it sets a limit.
 # If a limit appears more than once the last value is used.
 # Limits are checked before classes regardless of the order in the
@@ -1005,3 +1008,20 @@ jdk.xml.dsig.secureValidationPolicy=\
 # It is not guaranteed to be examined and used by other implementations.
 #
 #com.sun.CORBA.ORBIorTypeCheckRegistryFilter=binary_class_name;binary_class_name
+
+#
+# JCEKS Encrypted Key Serial Filter
+#
+# This filter, if configured, is used by the JCEKS KeyStore during the
+# deserialization of the encrypted Key object stored inside a key entry.
+# If not configured or the filter result is UNDECIDED (i.e. none of the patterns
+# matches), the filter configured by jdk.serialFilter will be consulted.
+#
+# If the system property jceks.key.serialFilter is also specified, it supersedes
+# the security property value defined here.
+#
+# The filter pattern uses the same format as jdk.serialFilter. The default
+# pattern allows java.lang.Enum, java.security.KeyRep, java.security.KeyRep$Type,
+# and javax.crypto.spec.SecretKeySpec and rejects all the others.
+jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep;\
+  java.base/java.security.KeyRep$Type;java.base/javax.crypto.spec.SecretKeySpec;!*
