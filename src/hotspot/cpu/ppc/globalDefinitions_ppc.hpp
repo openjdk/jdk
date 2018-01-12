@@ -55,5 +55,9 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 #define SUPPORT_RESERVED_STACK_AREA
 
 #define THREAD_LOCAL_POLL
+// If UseSIGTRAP is active, we only use the poll bit and no polling page.
+// Otherwise, we fall back to usage of the polling page in nmethods.
+// Define the condition to use this -XX flag.
+#define USE_POLL_BIT_ONLY UseSIGTRAP
 
 #endif // CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP

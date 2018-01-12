@@ -36,7 +36,8 @@ import static jdk.testlibrary.Asserts.assertNull;
 import static jdk.testlibrary.Asserts.assertTrue;
 
 /*
- * @test 8155742
+ * @test
+ * @bug 8155742
  * @key headful
  * @summary Make sure that modifier key mask is set when robot press
  *          some key with one or more modifiers.

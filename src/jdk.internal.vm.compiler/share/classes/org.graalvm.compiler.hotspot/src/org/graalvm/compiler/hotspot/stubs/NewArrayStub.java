@@ -23,6 +23,7 @@
 package org.graalvm.compiler.hotspot.stubs;
 
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayAllocationSize;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayPrototypeMarkWord;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.getAndClearObjectResult;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.layoutHelperElementTypeMask;
@@ -34,7 +35,6 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.readLayoutHelper;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.registerAsWord;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.useCMSIncrementalMode;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.wordSize;
 import static org.graalvm.compiler.hotspot.replacements.NewObjectSnippets.MAX_ARRAY_FAST_PATH_ALLOCATION_LENGTH;
 import static org.graalvm.compiler.hotspot.replacements.NewObjectSnippets.formatArray;
 import static org.graalvm.compiler.hotspot.stubs.NewInstanceStub.refillAllocate;
@@ -42,7 +42,6 @@ import static org.graalvm.compiler.hotspot.stubs.StubUtil.handlePendingException
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.newDescriptor;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.printf;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.verifyObject;
-import static jdk.vm.ci.hotspot.HotSpotMetaAccessProvider.computeArrayAllocationSize;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
@@ -112,7 +111,7 @@ public class NewArrayStub extends SnippetStub {
         int log2ElementSize = (layoutHelper >> layoutHelperLog2ElementSizeShift(INJECTED_VMCONFIG)) & layoutHelperLog2ElementSizeMask(INJECTED_VMCONFIG);
         int headerSize = (layoutHelper >> layoutHelperHeaderSizeShift(INJECTED_VMCONFIG)) & layoutHelperHeaderSizeMask(INJECTED_VMCONFIG);
         int elementKind = (layoutHelper >> layoutHelperElementTypeShift(INJECTED_VMCONFIG)) & layoutHelperElementTypeMask(INJECTED_VMCONFIG);
-        int sizeInBytes = computeArrayAllocationSize(length, wordSize(), headerSize, log2ElementSize);
+        int sizeInBytes = arrayAllocationSize(length, headerSize, log2ElementSize);
         if (logging(options)) {
             printf("newArray: element kind %d\n", elementKind);
             printf("newArray: array length %d\n", length);

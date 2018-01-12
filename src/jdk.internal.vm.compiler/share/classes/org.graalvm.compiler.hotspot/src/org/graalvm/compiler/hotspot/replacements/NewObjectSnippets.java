@@ -23,7 +23,6 @@
 package org.graalvm.compiler.hotspot.replacements;
 
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
-import static jdk.vm.ci.hotspot.HotSpotMetaAccessProvider.computeArrayAllocationSize;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.calc.UnsignedMath.belowThan;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
@@ -33,6 +32,7 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.PROTOTYPE_MARK_WORD_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.TLAB_END_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.TLAB_TOP_LOCATION;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayAllocationSize;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayKlassOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayLengthOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.config;
@@ -52,7 +52,6 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.useBiasedLocking;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.useTLAB;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.verifyOop;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.wordSize;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.writeTlabTop;
 import static org.graalvm.compiler.hotspot.replacements.HotspotSnippetsOptions.ProfileAllocations;
 import static org.graalvm.compiler.hotspot.replacements.HotspotSnippetsOptions.ProfileAllocationsContext;
@@ -315,8 +314,7 @@ public class NewObjectSnippets implements Snippets {
     private static Object allocateArrayImpl(KlassPointer hub, int length, Word prototypeMarkWord, int headerSize, int log2ElementSize, boolean fillContents, Register threadRegister,
                     boolean maybeUnroll, String typeContext, boolean skipNegativeCheck, OptionValues options, Counters counters) {
         Object result;
-        int alignment = wordSize();
-        int allocationSize = computeArrayAllocationSize(length, alignment, headerSize, log2ElementSize);
+        int allocationSize = arrayAllocationSize(length, headerSize, log2ElementSize);
         Word thread = registerAsWord(threadRegister);
         Word top = readTlabTop(thread);
         Word end = readTlabEnd(thread);

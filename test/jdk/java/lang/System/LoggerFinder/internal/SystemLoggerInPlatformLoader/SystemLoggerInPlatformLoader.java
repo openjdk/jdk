@@ -31,7 +31,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /*
- * @test 8163162
+ * @test
+ * @bug 8163162
  * @summary Checks that LazyLoggers are returned for System.Logger instances
  *          created by modules in the platform class loader.
  * @modules java.base/java.lang:open

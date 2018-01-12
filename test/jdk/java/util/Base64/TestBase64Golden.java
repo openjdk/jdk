@@ -22,7 +22,8 @@
  */
 
 /*
- * @test 4235519
+ * @test
+ * @bug 4235519
  * @author Eric Wang <yiming.wang@oracle.com>
  * @summary tests java.util.Base64
  */
