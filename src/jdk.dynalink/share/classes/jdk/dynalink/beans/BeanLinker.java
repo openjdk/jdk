@@ -116,7 +116,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         if(clazz.isArray()) {
             // Some languages won't have a notion of manipulating collections. Exposing "length" on arrays as an
             // explicit property is beneficial for them.
-            setPropertyGetter("length", MethodHandles.arrayLength(clazz), ValidationType.EXACT_CLASS);
+            setPropertyGetter("length", GET_ARRAY_LENGTH, ValidationType.IS_ARRAY);
         } else if(Collection.class.isAssignableFrom(clazz)) {
             setPropertyGetter("length", GET_COLLECTION_LENGTH, ValidationType.INSTANCE_OF);
         } else if(Map.class.isAssignableFrom(clazz)) {
@@ -545,6 +545,9 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
     private static final MethodHandle GET_MAP_LENGTH = Lookup.PUBLIC.findVirtual(Map.class, "size",
             MethodType.methodType(int.class));
+
+    private static final MethodHandle GET_ARRAY_LENGTH = Lookup.PUBLIC.findStatic(Array.class, "getLength",
+            MethodType.methodType(int.class, Object.class));
 
     private static void assertParameterCount(final CallSiteDescriptor descriptor, final int paramCount) {
         if(descriptor.getMethodType().parameterCount() != paramCount) {
