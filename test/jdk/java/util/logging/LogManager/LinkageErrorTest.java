@@ -28,7 +28,8 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 /**
- * @test 8152515
+ * @test
+ * @bug 8152515
  * @summary Checks that LinkageError are ignored when closing handlers
  *          during Shutdown.
  * @build LinkageErrorTest

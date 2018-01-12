@@ -22,7 +22,8 @@
  */
 
 /**
- * @test 8037857
+ * @test
+ * @bug 8037857
  * @summary tests for stream and spliterator factory methods
  * @run testng StreamAndSpliterator
  */

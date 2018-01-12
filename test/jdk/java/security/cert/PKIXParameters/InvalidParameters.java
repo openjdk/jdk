@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @test 4422738
+ * @bug 4422738
  * @compile InvalidParameters.java
  * @run main InvalidParameters
  * @summary Make sure PKIXParameters(Set) and setTrustAnchors() detects invalid

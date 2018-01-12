@@ -22,7 +22,8 @@
  */
 
 /**
- * @test 8014076 8025067
+ * @test
+ * @bug 8014076 8025067
  * @summary unit test for Arrays.ParallelPrefix().
  * @author Tristan Yan
  * @modules java.management jdk.management
