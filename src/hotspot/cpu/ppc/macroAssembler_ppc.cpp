@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2883,10 +2883,6 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     //assert(ObjectMonitor::recursions_size_in_bytes() == 8, "unexpected size");
     asm_assert_mem8_is_zero(ObjectMonitor::recursions_offset_in_bytes(), temp,
                             "monitor->_recursions should be 0", -1);
-    // Invariant 2: OwnerIsThread shouldn't be 0.
-    //assert(ObjectMonitor::OwnerIsThread_size_in_bytes() == 4, "unexpected size");
-    //asm_assert_mem4_isnot_zero(ObjectMonitor::OwnerIsThread_offset_in_bytes(), temp,
-    //                           "monitor->OwnerIsThread shouldn't be 0", -1);
 #   endif
 
 #if INCLUDE_RTM_OPT

@@ -645,6 +645,11 @@ class InstanceKlass: public Klass {
     return is_anonymous() ? java_mirror() : class_loader();
   }
 
+  // Load the klass_holder as a phantom. This is useful when a weak Klass
+  // pointer has been "peeked" and then must be kept alive before it may
+  // be used safely.
+  oop klass_holder_phantom();
+
   bool is_contended() const                {
     return (_misc_flags & _misc_is_contended) != 0;
   }

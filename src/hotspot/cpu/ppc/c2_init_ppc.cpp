@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,11 @@
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
-// processor dependent initialization for ppc
+// Processor dependent initialization of C2 compiler for ppc.
 
 void Compile::pd_compiler2_init() {
 
-  // Power7 and later
+  // Power7 and later.
   if (PowerArchitecturePPC64 > 6) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_ERGO(bool, UsePopCountInstruction, true);

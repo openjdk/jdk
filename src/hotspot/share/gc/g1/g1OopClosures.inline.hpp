@@ -33,6 +33,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.inline.hpp"
+#include "oops/access.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 
 template <class T>
@@ -87,13 +88,13 @@ inline void G1ScanEvacuatedObjClosure::do_oop_nv(T* p) {
 
 template <class T>
 inline void G1CMOopClosure::do_oop_nv(T* p) {
-  oop obj = oopDesc::load_decode_heap_oop(p);
+  oop obj = RawAccess<MO_VOLATILE>::oop_load(p);
   _task->deal_with_reference(obj);
 }
 
 template <class T>
 inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
+  T heap_oop = RawAccess<MO_VOLATILE>::oop_load(p);
   if (oopDesc::is_null(heap_oop)) {
     return;
   }
@@ -124,7 +125,7 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 
 template <class T>
 inline void G1ConcurrentRefineOopClosure::do_oop_nv(T* p) {
-  T o = oopDesc::load_heap_oop(p);
+  T o = RawAccess<MO_VOLATILE>::oop_load(p);
   if (oopDesc::is_null(o)) {
     return;
   }

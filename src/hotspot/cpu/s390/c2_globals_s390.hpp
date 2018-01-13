@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ define_pd_global(intx, LoopUnrollLimit,              60);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
 define_pd_global(intx, MinJumpTableSize,             18);
 
-// Peephole and CISC spilling both break the graph, and so makes the
+// Peephole and CISC spilling both break the graph, and so make the
 // scheduler sick.
 define_pd_global(bool, OptoPeephole,                 false);
 define_pd_global(bool, UseCISCSpill,                 true);

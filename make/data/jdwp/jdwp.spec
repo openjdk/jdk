@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -869,7 +869,6 @@ JDWP "Java(tm) Debug Wire Protocol"
         "section in "
         "<cite>The Java&trade; Virtual Machine Specification</cite>. "
         "Since JDWP version 1.5."
-        "<p>
         (Out
             (referenceType refType "The reference type ID.")
         )
@@ -2723,7 +2722,6 @@ JDWP "Java(tm) Debug Wire Protocol"
         "<P>"
         "The events that are grouped in a composite event are restricted in the "
         "following ways: "
-        "<P>"
         "<UL>"
         "<LI>Only with other thread start events for the same thread:"
         "    <UL>"
