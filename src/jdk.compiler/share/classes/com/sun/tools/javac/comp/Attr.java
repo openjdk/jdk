@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4743,9 +4743,8 @@ public class Attr extends JCTree.Visitor {
         // Check for proper use of serialVersionUID
         if (env.info.lint.isEnabled(LintCategory.SERIAL)
                 && isSerializable(c.type)
-                && (c.flags() & Flags.ENUM) == 0
-                && !c.isAnonymous()
-                && checkForSerial(c)) {
+                && (c.flags() & (Flags.ENUM | Flags.INTERFACE)) == 0
+                && !c.isAnonymous()) {
             checkSerialVersionUID(tree, c);
         }
         if (allowTypeAnnos) {
@@ -4757,17 +4756,6 @@ public class Attr extends JCTree.Visitor {
         }
     }
         // where
-        boolean checkForSerial(ClassSymbol c) {
-            if ((c.flags() & ABSTRACT) == 0) {
-                return true;
-            } else {
-                return c.members().anyMatch(anyNonAbstractOrDefaultMethod);
-            }
-        }
-
-        public static final Filter<Symbol> anyNonAbstractOrDefaultMethod = s ->
-                s.kind == MTH && (s.flags() & (DEFAULT | ABSTRACT)) != ABSTRACT;
-
         /** get a diagnostic position for an attribute of Type t, or null if attribute missing */
         private DiagnosticPosition getDiagnosticPosition(JCClassDecl tree, Type t) {
             for(List<JCAnnotation> al = tree.mods.annotations; !al.isEmpty(); al = al.tail) {
