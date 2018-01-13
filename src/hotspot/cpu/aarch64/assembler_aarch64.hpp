@@ -2295,23 +2295,32 @@ public:
     rf(Vn, 5), rf(Rd, 0);
   }
 
-#define INSN(NAME, opc, opc2)                                           \
+#define INSN(NAME, opc, opc2, isSHR)                                    \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift){ \
     starti;                                                             \
-    /* The encodings for the immh:immb fields (bits 22:16) are          \
-     *   0001 xxx       8B/16B, shift = xxx                             \
-     *   001x xxx       4H/8H,  shift = xxxx                            \
-     *   01xx xxx       2S/4S,  shift = xxxxx                           \
-     *   1xxx xxx       1D/2D,  shift = xxxxxx (1D is RESERVED)         \
+    /* The encodings for the immh:immb fields (bits 22:16) in *SHR are  \
+     *   0001 xxx       8B/16B, shift = 16  - UInt(immh:immb)           \
+     *   001x xxx       4H/8H,  shift = 32  - UInt(immh:immb)           \
+     *   01xx xxx       2S/4S,  shift = 64  - UInt(immh:immb)           \
+     *   1xxx xxx       1D/2D,  shift = 128 - UInt(immh:immb)           \
+     *   (1D is RESERVED)                                               \
+     * for SHL shift is calculated as:                                  \
+     *   0001 xxx       8B/16B, shift = UInt(immh:immb) - 8             \
+     *   001x xxx       4H/8H,  shift = UInt(immh:immb) - 16            \
+     *   01xx xxx       2S/4S,  shift = UInt(immh:immb) - 32            \
+     *   1xxx xxx       1D/2D,  shift = UInt(immh:immb) - 64            \
+     *   (1D is RESERVED)                                               \
      */                                                                 \
     assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");           \
+    int cVal = (1 << (((T >> 1) + 3) + (isSHR ? 1 : 0)));               \
+    int encodedShift = isSHR ? cVal - shift : cVal + shift;             \
     f(0, 31), f(T & 1, 30), f(opc, 29), f(0b011110, 28, 23),            \
-    f((1 << ((T>>1)+3))|shift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0); \
+    f(encodedShift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0);     \
   }
 
-  INSN(shl,  0, 0b010101);
-  INSN(sshr, 0, 0b000001);
-  INSN(ushr, 1, 0b000001);
+  INSN(shl,  0, 0b010101, /* isSHR = */ false);
+  INSN(sshr, 0, 0b000001, /* isSHR = */ true);
+  INSN(ushr, 1, 0b000001, /* isSHR = */ true);
 
 #undef INSN
 

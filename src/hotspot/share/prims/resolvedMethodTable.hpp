@@ -44,6 +44,9 @@ class ResolvedMethodEntry : public HashtableEntry<oop, mtClass> {
     return (ResolvedMethodEntry**)HashtableEntry<oop, mtClass>::next_addr();
   }
 
+  oop object();
+  oop object_no_keepalive();
+
   void print_on(outputStream* st) const;
 };
 

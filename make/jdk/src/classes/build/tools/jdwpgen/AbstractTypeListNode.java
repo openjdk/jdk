@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@ abstract class AbstractTypeListNode extends AbstractNamedNode {
         if (components.isEmpty()) {
             writer.println("<dd>(None)");
         } else {
-            writer.println("<dd><table border=1 cellpadding=3 cellspacing=0 width=\"90%\" summary=\"\"><tr>");
+            writer.println("<dd><table><tr>");
             for (int i = maxStructIndent; i > 0; --i) {
-                writer.print("<th width=\"4%\">");
+                writer.print("<th style=\"width: 4%\">");
             }
-            writer.println("<th width=\"15%\"><th width=\"65%\">");
+            writer.println("<th style=\"width: 15%\"><th style=\"width: 65%\">");
             writer.println("");
             for (Node node : components) {
                 node.document(writer);

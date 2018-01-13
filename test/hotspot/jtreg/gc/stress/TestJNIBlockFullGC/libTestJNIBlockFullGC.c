@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, SAP SE and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,35 +20,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_POSIX_VM_SEMAPHORE_POSIX_HPP
-#define OS_POSIX_VM_SEMAPHORE_POSIX_HPP
+#include "jni.h"
 
-#include "memory/allocation.hpp"
+JNIEXPORT jint JNICALL
+Java_TestJNIBlockFullGC_TestCriticalArray0(JNIEnv *env, jclass jCls, jintArray jIn) {
+  jint *bufIn = NULL;
+  jint jInLen = (*env)->GetArrayLength(env, jIn);
+  jint result = 0;
+  jint i;
 
-#include <semaphore.h>
+  if (jInLen != 0) {
+    bufIn = (jint*)(*env)->GetPrimitiveArrayCritical(env, jIn, 0);
+  }
 
-class PosixSemaphore : public CHeapObj<mtInternal> {
-  sem_t _semaphore;
+  for (i = 0; i < jInLen; ++i) {
+    result += bufIn[i]; // result = sum of all array elements
+  }
 
-  // Prevent copying and assignment.
-  PosixSemaphore(const PosixSemaphore&);
-  PosixSemaphore& operator=(const PosixSemaphore&);
+  if (bufIn != NULL) {
+    (*env)->ReleasePrimitiveArrayCritical(env, jIn, bufIn, 0);
+  }
 
- public:
-  PosixSemaphore(uint value = 0);
-  ~PosixSemaphore();
+  return result;
+}
 
-  void signal(uint count = 1);
-
-  void wait();
-
-  bool trywait();
-  bool timedwait(struct timespec ts);
-};
-
-typedef PosixSemaphore SemaphoreImpl;
-
-#endif // OS_POSIX_VM_SEMAPHORE_POSIX_HPP

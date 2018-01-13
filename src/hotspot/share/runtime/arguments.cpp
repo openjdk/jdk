@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -527,6 +527,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "ConvertSleepToYield",           JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
   { "ConvertYieldToSleep",           JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
   { "MinSleepInterval",              JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
+  { "CheckAssertionStatusDirectives",JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
   { "MaxPermSize",                   JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
   { "SharedReadWriteSize",           JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },

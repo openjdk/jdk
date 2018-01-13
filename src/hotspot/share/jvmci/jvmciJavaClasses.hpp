@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ class name : AllStatic {                                                        
     static type name() {                                                                                       \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
+      address addr = ik->static_field_addr(_##name##_offset);                                                  \
       oop result = HeapAccess<>::oop_load((HeapWord*)addr);                                                    \
       return type(result);                                                                                     \
     }                                                                                                          \
@@ -359,7 +359,7 @@ class name : AllStatic {                                                        
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       assert(klassName::klass() != NULL, "Class not yet loaded: " #klassName);                                 \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
+      address addr = ik->static_field_addr(_##name##_offset);                                                  \
       HeapAccess<>::oop_store((HeapWord*)addr, x);                                                             \
     }
 #define STATIC_PRIMITIVE_FIELD(klassName, name, jtypename)                                                     \
@@ -367,13 +367,13 @@ class name : AllStatic {                                                        
     static jtypename name() {                                                                                  \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
+      address addr = ik->static_field_addr(_##name##_offset);                                                  \
       return HeapAccess<>::load((jtypename*)addr);                                                             \
     }                                                                                                          \
     static void set_##name(jtypename x) {                                                                      \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
+      address addr = ik->static_field_addr(_##name##_offset);                                                  \
       HeapAccess<>::store((jtypename*)addr, x);                                                                \
     }
 
