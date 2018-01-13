@@ -820,11 +820,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             Content summary = new ContentBuilder();
             if (display(usesTrees)) {
                 description = usesTrees.get(t);
-                if (description != null) {
-                    summary.addContent(description);
+                if (description != null && !description.isEmpty()) {
+                    summary.addContent(HtmlTree.DIV(HtmlStyle.block, description));
+                } else {
+                    addSummaryComment(t, summary);
                 }
+            } else {
+                summary.addContent(Contents.SPACE);
             }
-            addSummaryComment(t, summary);
             table.addRow(typeLinkContent, summary);
         }
     }
@@ -847,11 +850,12 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             Content desc = new ContentBuilder();
             if (display(providesTrees)) {
                 description = providesTrees.get(srv);
-                if (description != null) {
-                    desc.addContent(description);
+                desc.addContent((description != null && !description.isEmpty())
+                        ? HtmlTree.DIV(HtmlStyle.block, description)
+                        : Contents.SPACE);
+            } else {
+                desc.addContent(Contents.SPACE);
                 }
-            }
-            addSummaryComment(srv, desc);
             // Only display the implementation details in the "all" mode.
             if (moduleMode == ModuleMode.ALL && !implSet.isEmpty()) {
                 desc.addContent(new HtmlTree(HtmlTag.BR));

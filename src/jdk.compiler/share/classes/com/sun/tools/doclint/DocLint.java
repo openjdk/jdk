@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,10 @@ import javax.lang.model.element.Name;
 import javax.tools.StandardLocation;
 
 import com.sun.source.doctree.DocCommentTree;
+import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.ModuleTree;
 import com.sun.source.tree.PackageTree;
 import com.sun.source.tree.MethodTree;
@@ -398,6 +400,7 @@ public class DocLint implements Plugin {
             visitDecl(tree, null);
             return super.visitPackage(tree, ignore);
         }
+
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Void visitClass(ClassTree tree, Void ignore) {
             visitDecl(tree, tree.getSimpleName());
@@ -407,7 +410,6 @@ public class DocLint implements Plugin {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Void visitMethod(MethodTree tree, Void ignore) {
             visitDecl(tree, tree.getName());
-            //return super.visitMethod(tree, ignore);
             return null;
         }
 
@@ -429,6 +431,16 @@ public class DocLint implements Plugin {
                 return null;
             }
             return super.visitCompilationUnit(node, p);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Void visitBlock(BlockTree tree, Void ignore) {
+            return null;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Void visitLambdaExpression(LambdaExpressionTree tree, Void ignore) {
+            return null;
         }
 
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,15 @@
  * questions.
  */
 
-/*
+/**
+ * JDK-8157251: BeanLinker relinks array length operations for array types
+ *
  * @test
- * @bug 6356530
- * @summary -Xlint:serial does not flag abstract classes with concrete methods/members
- * @compile/fail/ref=SerializableAbstractClassWithNonAbstractMethodsTest.out -XDrawDiagnostics -Werror -Xlint:serial SerializableAbstractClassWithNonAbstractMethodsTest.java
+ * @run
  */
 
-abstract class SerializableAbstractClassWithNonAbstractMethodsTest implements java.io.Serializable {
-    void m1() {}
-    abstract void m2();
-
-    abstract class AWithUID implements java.io.Serializable {
-        private static final long serialVersionUID = 0;
-        void m(){}
-    }
-
-    interface IDefault extends java.io.Serializable {
-        default int m() { return 1; }
-    }
-
-    interface IDefaultAndUID extends java.io.Serializable {
-        static final long serialVersionUID = 0;
-        default int m() { return 1; }
-    }
-}
+var intArray = Java.type("int[]")
+var doubleArray = Java.type("double[]")
+var arrs = [new intArray(20), new doubleArray(0)]
+for (var i in arrs)
+   print(arrs[i].length)
