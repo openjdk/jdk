@@ -279,11 +279,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   ClassLoaderData(Handle h_class_loader, bool is_anonymous, Dependencies dependencies);
   ~ClassLoaderData();
 
-  // GC interface.
-  void clear_claimed()          { _claimed = 0; }
-  bool claimed() const          { return _claimed == 1; }
-  bool claim();
-
   // The CLD are not placed in the Heap, so the Card Table or
   // the Mod Union Table can't be used to mark when CLD have modified oops.
   // The CT and MUT bits saves this information for the whole class loader data.
@@ -315,6 +310,10 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   Dictionary* create_dictionary();
  public:
+  // GC interface.
+  void clear_claimed() { _claimed = 0; }
+  bool claimed() const { return _claimed == 1; }
+  bool claim();
 
   bool is_alive(BoolObjectClosure* is_alive_closure) const;
 
