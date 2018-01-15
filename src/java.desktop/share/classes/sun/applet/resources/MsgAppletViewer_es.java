@@ -73,7 +73,7 @@ public class MsgAppletViewer_es extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "Advertencia: la etiqueta <embed> requiere el atributo height."},
             {"appletviewer.parse.warning.embed.requireswidth", "Advertencia: la etiqueta <embed> requiere el atributo width."},
             {"appletviewer.parse.warning.appnotLongersupported", "Advertencia: la etiqueta <app> ya no est\u00E1 soportada, utilice <applet> en su lugar:"},
-            {"appletviewer.deprecated", "Advertencia: la API de applet y AppletViewer est\u00E1n anticuados."},
+            {"appletviewer.deprecated", "Advertencia: la API de applet y AppletViewer est\u00E1n en desuso."},
             {"appletviewer.usage", "Sintaxis: appletviewer <opciones> url(s)\n\ndonde <opciones> incluye:\n  -encoding <codificaci\u00F3n>    Especificar la codificaci\u00F3n de caracteres utilizada por los archivos HTML\n  -J<indicador de tiempo de ejecuci\u00F3n>        Transferir argumento al int\u00E9rprete de Java\n\nLa opci\u00F3n -J es no est\u00E1ndar y est\u00E1 sujeta a cambios sin previo aviso."},
             {"appletviewer.main.err.unsupportedopt", "Opci\u00F3n no soportada: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "Argumento no reconocido: {0}"},

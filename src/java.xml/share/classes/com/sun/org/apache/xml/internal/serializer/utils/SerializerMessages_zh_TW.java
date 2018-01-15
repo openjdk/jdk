@@ -186,7 +186,7 @@ public class SerializerMessages_zh_TW extends ListResourceBundle {
                 "\u8B66\u544A:  \u8981\u6C42\u7684\u8F38\u51FA\u6587\u4EF6\u7248\u672C\u70BA ''{0}''\u3002\u4E0D\u652F\u63F4\u6B64\u7248\u672C\u7684 XML\u3002\u8F38\u51FA\u6587\u4EF6\u7684\u7248\u672C\u5C07\u6703\u662F ''1.0''\u3002" },
 
             {   MsgKey.ER_SCHEME_REQUIRED,
-                "\u5FC5\u9808\u6709\u914D\u7F6E\uFF01" },
+                "\u914D\u7F6E\u662F\u5FC5\u8981\u9805\u76EE\uFF01" },
 
             /*
              * Note to translators:  The words 'Properties' and
