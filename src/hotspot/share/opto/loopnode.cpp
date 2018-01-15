@@ -1331,8 +1331,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
           n->set_req(i, old_new[n->in(i)->_idx]);
         }
       }
-      if (n->in(0) != NULL) {
-        assert(n->in(0) == cle_tail, "node not on backedge?");
+      if (n->in(0) != NULL && n->in(0) == cle_tail) {
         n->set_req(0, le_tail);
       }
       igvn->register_new_node_with_optimizer(n);
