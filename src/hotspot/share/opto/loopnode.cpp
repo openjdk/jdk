@@ -1488,8 +1488,8 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     } else {
       new_limit = igvn->transform(new SubINode(iv_phi, min));
     }
-    igvn->replace_input_of(inner_cle->cmp_node(), 2, new_limit);
     Node* cmp = inner_cle->cmp_node()->clone();
+    igvn->replace_input_of(cmp, 2, new_limit);
     Node* bol = inner_cle->in(CountedLoopEndNode::TestValue)->clone();
     cmp->set_req(2, limit);
     bol->set_req(1, igvn->transform(cmp));
