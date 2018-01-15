@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,7 @@ public class Resources_fr extends java.util.ListResourceBundle {
                 "impossible d''effectuer une substitution pour l''alias, {0}"},
         {"substitution.value.prefix.unsupported",
                 "valeur de substitution, {0}, non prise en charge"},
+        {"SPACE", " "},
         {"LPARAM", "("},
         {"RPARAM", ")"},
         {"type.can.t.be.null","le type ne peut \u00EAtre NULL"},

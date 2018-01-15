@@ -259,7 +259,7 @@ public class XMLErrorResources_zh_TW extends ListResourceBundle
        "\u8DEF\u5F91\u5305\u542B\u7121\u6548\u7684\u9041\u96E2\u5E8F\u5217"},
 
     { ER_SCHEME_REQUIRED,
-       "\u914D\u7F6E\u662F\u5FC5\u8981\u7684\uFF01"},
+       "\u914D\u7F6E\u662F\u5FC5\u8981\u9805\u76EE\uFF01"},
 
     { ER_NO_SCHEME_IN_URI,
        "\u5728 URI \u4E2D\u627E\u4E0D\u5230\u914D\u7F6E: {0}"},
