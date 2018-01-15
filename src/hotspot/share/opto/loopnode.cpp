@@ -1393,9 +1393,14 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
           Node* uu = fast_out(j);
           if (uu->is_Phi()) {
             Node* be = uu->in(LoopNode::LoopBackControl);
-            while (be->is_Store() && old_new[be->_idx] != NULL) {
-              ShouldNotReachHere();
-              be = be->in(MemNode::Memory);
+            if (be->is_Store() && old_new[be->_idx] != NULL) {
+              assert(false, "store on the backedge + sunk stores: unsupported");
+              // drop outer loop
+              IfNode* outer_le = outer_loop_end();
+              Node* iff = igvn->transform(new IfNode(outer_le->in(0), outer_le->in(1), outer_le->_prob, outer_le->_fcnt));
+              igvn->replace_node(outer_le, iff);
+              inner_cl->clear_strip_mined();
+              return;
             }
             if (be == last || be == first->in(MemNode::Memory)) {
               assert(phi == NULL, "only one phi");
@@ -1448,10 +1453,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
           // Or fix the outer loop fix to include
           // that chain of stores.
           Node* be = phi->in(LoopNode::LoopBackControl);
-          while (be->is_Store() && old_new[be->_idx] != NULL) {
-            ShouldNotReachHere();
-            be = be->in(MemNode::Memory);
-          }
+          assert(!(be->is_Store() && old_new[be->_idx] != NULL), "store on the backedge + sunk stores: unsupported");
           if (be == first->in(MemNode::Memory)) {
             if (be == phi->in(LoopNode::LoopBackControl)) {
               igvn->replace_input_of(phi, LoopNode::LoopBackControl, last);
