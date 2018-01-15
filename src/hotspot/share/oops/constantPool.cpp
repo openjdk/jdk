@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,13 +327,12 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   if (SystemDictionary::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (MetaspaceShared::open_archive_heap_region_mapped()) {
+    if (MetaspaceShared::open_archive_heap_region_mapped() &&
+        _cache->archived_references() != NULL) {
       oop archived = _cache->archived_references();
-      if (archived != NULL) {
-        // Create handle for the archived resolved reference array object
-        Handle refs_handle(THREAD, archived);
-        set_resolved_references(loader_data->add_handle(refs_handle));
-      }
+      // Create handle for the archived resolved reference array object
+      Handle refs_handle(THREAD, archived);
+      set_resolved_references(loader_data->add_handle(refs_handle));
     } else
 #endif
     {
