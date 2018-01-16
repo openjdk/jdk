@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.util;
+package jdk.internal.util;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.Unsafe;
@@ -50,19 +50,19 @@ import jdk.internal.misc.Unsafe;
  * responsibility of the caller (direct or otherwise) to perform such checks
  * before calling this method.
  */
-class ArraysSupport {
+public class ArraysSupport {
     static final Unsafe U = Unsafe.getUnsafe();
 
     private static final boolean BIG_ENDIAN = U.isBigEndian();
 
-    private static final int LOG2_ARRAY_BOOLEAN_INDEX_SCALE = exactLog2(Unsafe.ARRAY_BOOLEAN_INDEX_SCALE);
-    private static final int LOG2_ARRAY_BYTE_INDEX_SCALE = exactLog2(Unsafe.ARRAY_BYTE_INDEX_SCALE);
-    private static final int LOG2_ARRAY_CHAR_INDEX_SCALE = exactLog2(Unsafe.ARRAY_CHAR_INDEX_SCALE);
-    private static final int LOG2_ARRAY_SHORT_INDEX_SCALE = exactLog2(Unsafe.ARRAY_SHORT_INDEX_SCALE);
-    private static final int LOG2_ARRAY_INT_INDEX_SCALE = exactLog2(Unsafe.ARRAY_INT_INDEX_SCALE);
-    private static final int LOG2_ARRAY_LONG_INDEX_SCALE = exactLog2(Unsafe.ARRAY_LONG_INDEX_SCALE);
-    private static final int LOG2_ARRAY_FLOAT_INDEX_SCALE = exactLog2(Unsafe.ARRAY_FLOAT_INDEX_SCALE);
-    private static final int LOG2_ARRAY_DOUBLE_INDEX_SCALE = exactLog2(Unsafe.ARRAY_DOUBLE_INDEX_SCALE);
+    public static final int LOG2_ARRAY_BOOLEAN_INDEX_SCALE = exactLog2(Unsafe.ARRAY_BOOLEAN_INDEX_SCALE);
+    public static final int LOG2_ARRAY_BYTE_INDEX_SCALE = exactLog2(Unsafe.ARRAY_BYTE_INDEX_SCALE);
+    public static final int LOG2_ARRAY_CHAR_INDEX_SCALE = exactLog2(Unsafe.ARRAY_CHAR_INDEX_SCALE);
+    public static final int LOG2_ARRAY_SHORT_INDEX_SCALE = exactLog2(Unsafe.ARRAY_SHORT_INDEX_SCALE);
+    public static final int LOG2_ARRAY_INT_INDEX_SCALE = exactLog2(Unsafe.ARRAY_INT_INDEX_SCALE);
+    public static final int LOG2_ARRAY_LONG_INDEX_SCALE = exactLog2(Unsafe.ARRAY_LONG_INDEX_SCALE);
+    public static final int LOG2_ARRAY_FLOAT_INDEX_SCALE = exactLog2(Unsafe.ARRAY_FLOAT_INDEX_SCALE);
+    public static final int LOG2_ARRAY_DOUBLE_INDEX_SCALE = exactLog2(Unsafe.ARRAY_DOUBLE_INDEX_SCALE);
 
     private static final int LOG2_BYTE_BIT_SIZE = exactLog2(Byte.SIZE);
 
@@ -107,10 +107,10 @@ class ArraysSupport {
      * the tail of the two arrays.
      */
     @HotSpotIntrinsicCandidate
-    static int vectorizedMismatch(Object a, long aOffset,
-                                  Object b, long bOffset,
-                                  int length,
-                                  int log2ArrayIndexScale) {
+    public static int vectorizedMismatch(Object a, long aOffset,
+                                         Object b, long bOffset,
+                                         int length,
+                                         int log2ArrayIndexScale) {
         // assert a.getClass().isArray();
         // assert b.getClass().isArray();
         // assert 0 <= length <= sizeOf(a)
@@ -161,9 +161,9 @@ class ArraysSupport {
     // Booleans
     // Each boolean element takes up one byte
 
-    static int mismatch(boolean[] a,
-                        boolean[] b,
-                        int length) {
+    public static int mismatch(boolean[] a,
+                               boolean[] b,
+                               int length) {
         int i = 0;
         if (length > 7) {
             i = vectorizedMismatch(
@@ -181,9 +181,9 @@ class ArraysSupport {
         return -1;
     }
 
-    static int mismatch(boolean[] a, int aFromIndex,
-                        boolean[] b, int bFromIndex,
-                        int length) {
+    public static int mismatch(boolean[] a, int aFromIndex,
+                               boolean[] b, int bFromIndex,
+                               int length) {
         int i = 0;
         if (length > 7) {
             int aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + aFromIndex;
@@ -219,9 +219,9 @@ class ArraysSupport {
      * no mismatch.  The index will be within the range of (inclusive) 0 to
      * (exclusive) the smaller of the two array lengths.
      */
-    static int mismatch(byte[] a,
-                        byte[] b,
-                        int length) {
+    public static int mismatch(byte[] a,
+                               byte[] b,
+                               int length) {
         // ISSUE: defer to index receiving methods if performance is good
         // assert length <= a.length
         // assert length <= b.length
@@ -264,9 +264,9 @@ class ArraysSupport {
      * otherwise -1 if no mismatch.  The index will be within the range of
      * (inclusive) 0 to (exclusive) the smaller of the two array bounds.
      */
-    static int mismatch(byte[] a, int aFromIndex,
-                        byte[] b, int bFromIndex,
-                        int length) {
+    public static int mismatch(byte[] a, int aFromIndex,
+                               byte[] b, int bFromIndex,
+                               int length) {
         // assert 0 <= aFromIndex < a.length
         // assert 0 <= aFromIndex + length <= a.length
         // assert 0 <= bFromIndex < b.length
@@ -295,9 +295,9 @@ class ArraysSupport {
 
     // Chars
 
-    static int mismatch(char[] a,
-                        char[] b,
-                        int length) {
+    public static int mismatch(char[] a,
+                               char[] b,
+                               int length) {
         int i = 0;
         if (length > 3) {
             i = vectorizedMismatch(
@@ -315,9 +315,9 @@ class ArraysSupport {
         return -1;
     }
 
-    static int mismatch(char[] a, int aFromIndex,
-                        char[] b, int bFromIndex,
-                        int length) {
+    public static int mismatch(char[] a, int aFromIndex,
+                               char[] b, int bFromIndex,
+                               int length) {
         int i = 0;
         if (length > 3) {
             int aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
@@ -340,9 +340,9 @@ class ArraysSupport {
 
     // Shorts
 
-    static int mismatch(short[] a,
-                        short[] b,
-                        int length) {
+    public static int mismatch(short[] a,
+                               short[] b,
+                               int length) {
         int i = 0;
         if (length > 3) {
             i = vectorizedMismatch(
@@ -360,9 +360,9 @@ class ArraysSupport {
         return -1;
     }
 
-    static int mismatch(short[] a, int aFromIndex,
-                        short[] b, int bFromIndex,
-                        int length) {
+    public static int mismatch(short[] a, int aFromIndex,
+                               short[] b, int bFromIndex,
+                               int length) {
         int i = 0;
         if (length > 3) {
             int aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
@@ -385,9 +385,9 @@ class ArraysSupport {
 
     // Ints
 
-    static int mismatch(int[] a,
-                        int[] b,
-                        int length) {
+    public static int mismatch(int[] a,
+                               int[] b,
+                               int length) {
         int i = 0;
         if (length > 1) {
             i = vectorizedMismatch(
@@ -405,9 +405,9 @@ class ArraysSupport {
         return -1;
     }
 
-    static int mismatch(int[] a, int aFromIndex,
-                        int[] b, int bFromIndex,
-                        int length) {
+    public static int mismatch(int[] a, int aFromIndex,
+                               int[] b, int bFromIndex,
+                               int length) {
         int i = 0;
         if (length > 1) {
             int aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
@@ -430,15 +430,15 @@ class ArraysSupport {
 
     // Floats
 
-    static int mismatch(float[] a,
-                        float[] b,
-                        int length) {
+    public static int mismatch(float[] a,
+                               float[] b,
+                               int length) {
         return mismatch(a, 0, b, 0, length);
     }
 
-    static int mismatch(float[] a, int aFromIndex,
-                        float[] b, int bFromIndex,
-                        int length) {
+    public static int mismatch(float[] a, int aFromIndex,
+                               float[] b, int bFromIndex,
+                               int length) {
         int i = 0;
         if (length > 1) {
             int aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
@@ -475,9 +475,9 @@ class ArraysSupport {
 
     // Long
 
-    static int mismatch(long[] a,
-                        long[] b,
-                        int length) {
+    public static int mismatch(long[] a,
+                               long[] b,
+                               int length) {
         if (length == 0) {
             return -1;
         }
@@ -488,9 +488,9 @@ class ArraysSupport {
         return i >= 0 ? i : -1;
     }
 
-    static int mismatch(long[] a, int aFromIndex,
-                        long[] b, int bFromIndex,
-                        int length) {
+    public static int mismatch(long[] a, int aFromIndex,
+                               long[] b, int bFromIndex,
+                               int length) {
         if (length == 0) {
             return -1;
         }
@@ -506,15 +506,15 @@ class ArraysSupport {
 
     // Double
 
-    static int mismatch(double[] a,
-                        double[] b,
-                        int length) {
+    public static int mismatch(double[] a,
+                               double[] b,
+                               int length) {
         return mismatch(a, 0, b, 0, length);
     }
 
-    static int mismatch(double[] a, int aFromIndex,
-                        double[] b, int bFromIndex,
-                        int length) {
+    public static int mismatch(double[] a, int aFromIndex,
+                               double[] b, int bFromIndex,
+                               int length) {
         if (length == 0) {
             return -1;
         }

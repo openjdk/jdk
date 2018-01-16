@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,11 @@
     format_width       =  1
   };
 
+ public:
+
+  // This platform has no oops in the code that are not also
+  // listed in the oop section.
+  static bool mustIterateImmediateOopsInCode() { return false; }
 
 //Reconciliation History
 // 1.3 97/10/15 15:38:36 relocInfo_i486.hpp

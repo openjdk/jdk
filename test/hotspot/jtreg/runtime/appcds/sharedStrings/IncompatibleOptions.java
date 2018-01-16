@@ -28,7 +28,7 @@
  *          Also test mismatch in oops encoding between dump time and run time
  * Feature support: G1GC only, compressed oops/kptrs, 64-bit os, not on windows
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires (vm.gc=="null")
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc

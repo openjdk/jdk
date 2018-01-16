@@ -217,6 +217,8 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
+java/net/httpclient/SplitResponseSSL.java                       8194151 windows-all
+
 ############################################################################
 
 # jdk_nio
@@ -347,8 +349,6 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 ############################################################################
 
 # svc_tools
-
-sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
 
 sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
 

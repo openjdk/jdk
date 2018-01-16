@@ -26,6 +26,7 @@
 package java.util;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.util.ArraysSupport;
 
 import java.lang.reflect.Array;
 import java.util.concurrent.ForkJoinPool;
