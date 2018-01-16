@@ -1,4 +1,4 @@
-Usage: jstat -help|-options
+Usage: jstat --help|-options
        jstat -<option> [-t] [-h<lines>] <vmid> [<interval> [<count>]]
 
 Definitions:
@@ -18,3 +18,5 @@ Definitions:
                 milliseconds("ms") or seconds("s"). The default units are "ms".
   <count>       Number of samples to take before terminating.
   -J<flag>      Pass <flag> directly to the runtime system.
+  -? -h --help  Prints this help message.
+  -help         Prints this help message.
