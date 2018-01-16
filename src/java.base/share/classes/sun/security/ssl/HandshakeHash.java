@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,29 @@ final class HandshakeHash {
      * a hash for the certificate verify message is required.
      */
     HandshakeHash(boolean needCertificateVerify) {
-        clonesNeeded = needCertificateVerify ? 4 : 3;
+        // We may rework the code later, but for now we use hard-coded number
+        // of clones if the underlying MessageDigests are not cloneable.
+        //
+        // The number used here is based on the current handshake protocols and
+        // implementation.  It may be changed if the handshake processe gets
+        // changed in the future, for example adding a new extension that
+        // requires handshake hash.  Please be careful about the number of
+        // clones if additional handshak hash is required in the future.
+        //
+        // For the current implementation, the handshake hash is required for
+        // the following items:
+        //     . CertificateVerify handshake message (optional)
+        //     . client Finished handshake message
+        //     . server Finished Handshake message
+        //     . the extended Master Secret extension [RFC 7627]
+        //
+        // Note that a late call to server setNeedClientAuth dose not update
+        // the number of clones.  We may address the issue later.
+        //
+        // Note for safety, we allocate one more clone for the current
+        // implementation.  We may consider it more carefully in the future
+        // for the exact number or rework the code in a different way.
+        clonesNeeded = needCertificateVerify ? 5 : 4;
     }
 
     void reserve(ByteBuffer input) {
@@ -335,7 +357,8 @@ final class HandshakeHash {
         if (finMD != null) return;
 
         try {
-            finMD = CloneableDigest.getDigest(normalizeAlgName(s), 2);
+            // See comment in the contructor.
+            finMD = CloneableDigest.getDigest(normalizeAlgName(s), 4);
         } catch (NoSuchAlgorithmException e) {
             throw new Error(e);
         }

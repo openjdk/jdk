@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 8176841
+ * @bug 8176841 8194148
  * @summary Tests *Format class deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
@@ -73,6 +73,7 @@ public class FormatTests {
     private static final String NUM_SINH = "\u0de7\u0de8,\u0de9\u0dea\u0deb.\u0dec\u0ded\u0dee\u0def";
 
     private static final Date testDate = new Calendar.Builder()
+                                        .setCalendarType("gregory")
                                         .setDate(2017, 7, 10)
                                         .setTimeOfDay(15, 15, 0)
                                         .setTimeZone(AMLA)

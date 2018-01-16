@@ -32,7 +32,7 @@ class XXX {
 #if[rw]
 
     private $type$ get$Type$(long a) {
-        $memtype$ x = unsafe.get$Memtype$Unaligned(null, a, bigEndian);
+        $memtype$ x = UNSAFE.get$Memtype$Unaligned(null, a, bigEndian);
         return $fromBits$(x);
     }
 
@@ -49,7 +49,7 @@ class XXX {
     private ByteBuffer put$Type$(long a, $type$ x) {
 #if[rw]
         $memtype$ y = $toBits$(x);
-        unsafe.put$Memtype$Unaligned(null, a, y, bigEndian);
+        UNSAFE.put$Memtype$Unaligned(null, a, y, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -81,7 +81,7 @@ class XXX {
         int rem = (off <= lim ? lim - off : 0);
 
         int size = rem >> $LG_BYTES_PER_VALUE$;
-        if (!unaligned && ((address + off) % $BYTES_PER_VALUE$ != 0)) {
+        if (!UNALIGNED && ((address + off) % $BYTES_PER_VALUE$ != 0)) {
             return (bigEndian
                     ? ($Type$Buffer)(new ByteBufferAs$Type$Buffer$RW$B(this,
                                                                        -1,

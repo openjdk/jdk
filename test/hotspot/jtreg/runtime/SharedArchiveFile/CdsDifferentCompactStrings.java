@@ -26,7 +26,7 @@
  * @requires vm.cds
  * @summary CDS (class data sharing) requires the same -XX:[+-]CompactStrings
  *          setting between archive creation time and load time.
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -26,8 +26,7 @@
  * @test
  * @summary Use ClassLoader.defineClass() to load a class with rewritten bytecode. Make sure
  *          the archived class with the same name is not loaded.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

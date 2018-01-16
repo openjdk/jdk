@@ -421,7 +421,7 @@ void ObjectMonitor::enter(TRAPS) {
 int ObjectMonitor::TryLock(Thread * Self) {
   void * own = _owner;
   if (own != NULL) return 0;
-  if (Atomic::cmpxchg(Self, &_owner, (void*)NULL) == NULL) {
+  if (Atomic::replace_if_null(Self, &_owner)) {
     // Either guarantee _recursions == 0 or set _recursions = 0.
     assert(_recursions == 0, "invariant");
     assert(_owner == Self, "invariant");
@@ -529,7 +529,7 @@ void ObjectMonitor::EnterI(TRAPS) {
   if ((SyncFlags & 16) == 0 && nxt == NULL && _EntryList == NULL) {
     // Try to assume the role of responsible thread for the monitor.
     // CONSIDER:  ST vs CAS vs { if (Responsible==null) Responsible=Self }
-    Atomic::cmpxchg(Self, &_Responsible, (Thread*)NULL);
+    Atomic::replace_if_null(Self, &_Responsible);
   }
 
   // The lock might have been released while this thread was occupied queueing
@@ -553,7 +553,7 @@ void ObjectMonitor::EnterI(TRAPS) {
     assert(_owner != Self, "invariant");
 
     if ((SyncFlags & 2) && _Responsible == NULL) {
-      Atomic::cmpxchg(Self, &_Responsible, (Thread*)NULL);
+      Atomic::replace_if_null(Self, &_Responsible);
     }
 
     // park self
@@ -1007,7 +1007,7 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
       // to reacquire the lock the responsibility for ensuring succession
       // falls to the new owner.
       //
-      if (Atomic::cmpxchg(THREAD, &_owner, (void*)NULL) != NULL) {
+      if (!Atomic::replace_if_null(THREAD, &_owner)) {
         return;
       }
       TEVENT(Exit - Reacquired);
@@ -1032,7 +1032,7 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
         // B.  If the elements forming the EntryList|cxq are TSM
         //     we could simply unpark() the lead thread and return
         //     without having set _succ.
-        if (Atomic::cmpxchg(THREAD, &_owner, (void*)NULL) != NULL) {
+        if (!Atomic::replace_if_null(THREAD, &_owner)) {
           TEVENT(Inflated exit - reacquired succeeded);
           return;
         }
@@ -1714,7 +1714,7 @@ void ObjectMonitor::INotify(Thread * Self) {
         ObjectWaiter * tail = _cxq;
         if (tail == NULL) {
           iterator->_next = NULL;
-          if (Atomic::cmpxchg(iterator, &_cxq, (ObjectWaiter*)NULL) == NULL) {
+          if (Atomic::replace_if_null(iterator, &_cxq)) {
             break;
           }
         } else {

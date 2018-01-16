@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,5 +42,11 @@
     format_width       =  1
 #endif
   };
+
+ public:
+
+  // This platform has no oops in the code that are not also
+  // listed in the oop section.
+  static bool mustIterateImmediateOopsInCode() { return false; }
 
 #endif // CPU_PPC_VM_RELOCINFO_PPC_HPP

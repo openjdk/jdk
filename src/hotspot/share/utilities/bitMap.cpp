@@ -628,7 +628,7 @@ void BitMap::init_pop_count_table() {
       table[i] = num_set_bits(i);
     }
 
-    if (Atomic::cmpxchg(table, &_pop_count_table, (BitMap::idx_t*)NULL) != NULL) {
+    if (!Atomic::replace_if_null(table, &_pop_count_table)) {
       guarantee(_pop_count_table != NULL, "invariant");
       FREE_C_HEAP_ARRAY(idx_t, table);
     }

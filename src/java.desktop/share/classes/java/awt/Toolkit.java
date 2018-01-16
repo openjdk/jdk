@@ -678,6 +678,11 @@ public abstract class Toolkit {
      * If the connection to the specified URL requires
      * either {@code URLPermission} or {@code SocketPermission},
      * then {@code URLPermission} is used for security checks.
+     * For compatibility with pre-1.2 security managers, if the access
+     * is denied with {@code FilePermission} or {@code SocketPermission},
+     * the method throws the {@code SecurityException}
+     * if the corresponding 1.1-style SecurityManager.checkXXX method
+     * also denies permission.
      * @param     url   the URL to use in fetching the pixel data.
      * @return    an image which gets its pixel data from
      *                         the specified URL.
@@ -719,6 +724,11 @@ public abstract class Toolkit {
      * If the connection to the specified URL requires
      * either {@code URLPermission} or {@code SocketPermission},
      * then {@code URLPermission} is used for security checks.
+     * For compatibility with pre-1.2 security managers, if the access
+     * is denied with {@code FilePermission} or {@code SocketPermission},
+     * the method throws {@code SecurityException}
+     * if the corresponding 1.1-style SecurityManager.checkXXX method
+     * also denies permission.
      * @param     url   the URL to use in fetching the pixel data.
      * @return    an image which gets its pixel data from
      *                         the specified URL.

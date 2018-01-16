@@ -1976,8 +1976,8 @@ public class Check {
                          types.covariantReturnType(rt2, rt1, types.noWarnings)) ||
                          checkCommonOverriderIn(s1,s2,site);
                     if (!compat) {
-                        log.error(pos, Errors.TypesIncompatibleDiffRet(t1, t2, s2.name +
-                                "(" + types.memberType(t2, s2).getParameterTypes() + ")"));
+                        log.error(pos, Errors.TypesIncompatible(t1, t2,
+                                Fragments.IncompatibleDiffRet(s2.name, types.memberType(t2, s2).getParameterTypes())));
                         return s2;
                     }
                 } else if (checkNameClash((ClassSymbol)site.tsym, s1, s2) &&
@@ -2563,20 +2563,22 @@ public class Check {
                         //strong semantics - issue an error if two sibling interfaces
                         //have two override-equivalent defaults - or if one is abstract
                         //and the other is default
-                        String errKey;
+                        Fragment diagKey;
                         Symbol s1 = defaults.first();
                         Symbol s2;
                         if (defaults.size() > 1) {
-                            errKey = "types.incompatible.unrelated.defaults";
                             s2 = defaults.toList().tail.head;
+                            diagKey = Fragments.IncompatibleUnrelatedDefaults(Kinds.kindName(site.tsym), site,
+                                    m.name, types.memberType(site, m).getParameterTypes(),
+                                    s1.location(), s2.location());
+
                         } else {
-                            errKey = "types.incompatible.abstract.default";
                             s2 = abstracts.first();
+                            diagKey = Fragments.IncompatibleAbstractDefault(Kinds.kindName(site.tsym), site,
+                                    m.name, types.memberType(site, m).getParameterTypes(),
+                                    s1.location(), s2.location());
                         }
-                        log.error(pos, errKey,
-                                Kinds.kindName(site.tsym), site,
-                                m.name, types.memberType(site, m).getParameterTypes(),
-                                s1.location(), s2.location());
+                        log.error(pos, Errors.TypesIncompatible(s1.location().type, s2.location().type, diagKey));
                         break;
                     }
                 }
@@ -3462,6 +3464,7 @@ public class Check {
                      types.hasSameArgs(sym.type, byName.type) ||
                      types.hasSameArgs(types.erasure(sym.type), types.erasure(byName.type)))) {
                 if ((sym.flags() & VARARGS) != (byName.flags() & VARARGS)) {
+                    sym.flags_field |= CLASH;
                     varargsDuplicateError(pos, sym, byName);
                     return true;
                 } else if (sym.kind == MTH && !types.hasSameArgs(sym.type, byName.type, false)) {

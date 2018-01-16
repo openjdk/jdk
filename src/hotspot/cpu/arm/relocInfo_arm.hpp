@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,5 +31,11 @@
     offset_unit  = 4,
     format_width = 0
   };
+
+ public:
+
+  // This platform has no oops in the code that are not also
+  // listed in the oop section.
+  static bool mustIterateImmediateOopsInCode() { return false; }
 
 #endif // CPU_ARM_VM_RELOCINFO_ARM_HPP
