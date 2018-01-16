@@ -462,7 +462,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"with.weak", "%s (weak)"},
         {"key.bit", "%1$d-bit %2$s key"},
         {"key.bit.weak", "%1$d-bit %2$s key (weak)"},
-        {"unknown.size.1", "unknown size %s key"},
+        {"unknown.size.1", "%s key of unknown size"},
         {".PATTERN.printX509Cert.with.weak",
                 "Owner: {0}\nIssuer: {1}\nSerial number: {2}\nValid from: {3} until: {4}\nCertificate fingerprints:\n\t SHA1: {5}\n\t SHA256: {6}\nSignature algorithm name: {7}\nSubject Public Key Algorithm: {8}\nVersion: {9}"},
         {"PKCS.10.with.weak",
