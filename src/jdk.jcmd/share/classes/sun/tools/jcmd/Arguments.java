@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,11 @@ class Arguments {
             return;
         }
 
-        if (args[0].equals("-h") || args[0].equals("-help") ) {
+        if (args[0].equals("-?") ||
+            args[0].equals("-h") ||
+            args[0].equals("--help") ||
+            // -help: legacy.
+            args[0].equals("-help")) {
             showUsage = true;
             return;
         }
@@ -116,6 +120,6 @@ class Arguments {
         System.out.println("  PerfCounter.print display the counters exposed by this process  ");
         System.out.println("  -f  read and execute commands from the file                     ");
         System.out.println("  -l  list JVM processes on the local machine                     ");
-        System.out.println("  -h  this help                                                   ");
+        System.out.println("  -? -h --help print this help message                            ");
     }
 }

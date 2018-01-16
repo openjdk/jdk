@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1309,7 +1309,7 @@ public class JmodTask {
                         .withValuesConvertedBy(new PatternConverter());
 
         OptionSpec<Void> help
-                = parser.acceptsAll(Set.of("h", "help"), getMessage("main.opt.help"))
+                = parser.acceptsAll(Set.of("h", "help", "?"), getMessage("main.opt.help"))
                         .forHelp();
 
         OptionSpec<Void> helpExtra

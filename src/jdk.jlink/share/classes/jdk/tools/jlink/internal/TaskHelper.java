@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ public final class TaskHelper {
         final boolean hidden;
         final String name;
         final String shortname;
+        final String shortname2;
         final boolean terminalOption;
 
         public Option(boolean hasArg,
@@ -108,6 +109,7 @@ public final class TaskHelper {
                       boolean hidden,
                       String name,
                       String shortname,
+                      String shortname2,
                       boolean isTerminal)
         {
             if (!name.startsWith("--")) {
@@ -122,19 +124,33 @@ public final class TaskHelper {
             this.hidden = hidden;
             this.name = name;
             this.shortname = shortname;
+            this.shortname2 = shortname2;
             this.terminalOption = isTerminal;
+        }
+        public Option(boolean hasArg,
+                      Processing<T> processing,
+                      boolean hidden,
+                      String name,
+                      String shortname,
+                      boolean isTerminal)
+        {
+            this(hasArg, processing, false, name, shortname, "", isTerminal);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name, String shortname, boolean isTerminal) {
-            this(hasArg, processing, false, name, shortname, isTerminal);
+            this(hasArg, processing, false, name, shortname, "", isTerminal);
+        }
+
+        public Option(boolean hasArg, Processing<T> processing, String name, String shortname, String shortname2) {
+            this(hasArg, processing, false, name, shortname, shortname2, false);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name, String shortname) {
-            this(hasArg, processing, false, name, shortname, false);
+            this(hasArg, processing, false, name, shortname, "", false);
         }
 
         public Option(boolean hasArg, Processing<T> processing, boolean hidden, String name) {
-            this(hasArg, processing, hidden, name, "", false);
+            this(hasArg, processing, hidden, name, "", "", false);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name) {
@@ -152,6 +168,7 @@ public final class TaskHelper {
         public boolean matches(String opt) {
             return opt.equals(name) ||
                    opt.equals(shortname) ||
+                   opt.equals(shortname2) ||
                    hasArg && opt.startsWith("--") && opt.startsWith(name + "=");
          }
 
