@@ -175,8 +175,15 @@ public class Http1HeaderParserTest {
               " \t \t charset=UTF-8\r\n" +          // mix of preceding SP and HT
               "Connection: keep-alive\r\n\r\n" +
               "XXYYZZAABBCCDDEEFFGGHHII",
+
+              "HTTP/1.1 401 Unauthorized\r\n" +
+              "WWW-Authenticate: Digest realm=\"wally land\","
+                      +"$NEWLINE    domain=/,"
+                      +"$NEWLINE nonce=\"2B7F3A2B\","
+                      +"$NEWLINE\tqop=\"auth\"\r\n\r\n",
+
            };
-        for (String newLineChar : new String[] { "\n", "\r" }) {
+        for (String newLineChar : new String[] { "\n", "\r", "\r\n" }) {
             for (String template : foldingTemplate)
                 responses.add(template.replace("$NEWLINE", newLineChar));
         }
@@ -331,7 +338,7 @@ public class Http1HeaderParserTest {
                     assertEquals(values.size(), otherValues.size(),
                                  format("%s. Expected list size %d, actual size %s",
                                         msg, values.size(), otherValues.size()));
-                    if (!values.containsAll(otherValues) && otherValues.containsAll(values))
+                    if (!(values.containsAll(otherValues) && otherValues.containsAll(values)))
                         assertTrue(false, format("Lists are unequal [%s] [%s]", values, otherValues));
                     break;
                 }
