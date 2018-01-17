@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Unverfiable app classes should not be archived.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules jdk.jartool/sun.tools.jar

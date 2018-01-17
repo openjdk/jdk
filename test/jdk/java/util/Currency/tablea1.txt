@@ -1,12 +1,12 @@
 #
 #
-# Amendments up until ISO 4217 AMENDMENT NUMBER 162
-#   (As of 30 Auguest 2016)
+# Amendments up until ISO 4217 AMENDMENT NUMBER 164
+#   (As of 22 September 2017)
 #
 
 # Version
 FILEVERSION=3
-DATAVERSION=162
+DATAVERSION=164
 
 # ISO 4217 currency data
 AF	AFN	971	2
@@ -210,7 +210,7 @@ PM	EUR	978	2
 VC	XCD	951	2
 WS	WST	882	2
 SM	EUR	978	2
-ST	STD	678	2
+ST	STN	930	2
 SA	SAR	682	2
 SN	XOF	952	0
 # MA 134

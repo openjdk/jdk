@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4934778 4777599 6553182 8146427 8146475 8175055 8185371
- * @summary  Make sure that -help, -helpfile and -nohelp options work correctly.
+ * @summary  Make sure that --help, -helpfile and -nohelp options work correctly.
  * @author   jamieh
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -66,7 +66,7 @@ public class TestHelpOption extends JavadocTester {
     void testWithOption() {
         javadoc("-d", "out1",
                 "-sourcepath", testSrc,
-                "-help",
+                "--help",
                 testSrc("Sample.java"));
         checkExit(Exit.OK);
 

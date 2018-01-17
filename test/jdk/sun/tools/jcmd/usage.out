@@ -12,4 +12,4 @@ Usage: jcmd <pid | main class> <command ...|PerfCounter.print|-f file>
   PerfCounter.print display the counters exposed by this process  
   -f  read and execute commands from the file                     
   -l  list JVM processes on the local machine                     
-  -h  this help                                                   
+  -? -h --help print this help message                            

@@ -30,8 +30,18 @@
 #include <sys/mman.h>
 
 void SafepointMechanism::pd_initialize() {
+  // No special code needed if we can use SIGTRAP
+  if (ThreadLocalHandshakes && USE_POLL_BIT_ONLY) {
+    default_initialize();
+    return;
+  }
+
+  // Allocate one protected page
   char* map_address = (char*)MAP_FAILED;
   const size_t page_size = os::vm_page_size();
+  const int prot  = PROT_READ;
+  const int flags = MAP_PRIVATE | MAP_ANONYMOUS;
+
   // Use optimized addresses for the polling page,
   // e.g. map it to a special 32-bit address.
   if (OptimizePollingPageLocation) {
@@ -57,14 +67,14 @@ void SafepointMechanism::pd_initialize() {
       // Try to map with current address wish.
       // AIX: AIX needs MAP_FIXED if we provide an address and mmap will
       // fail if the address is already mapped.
-      map_address = (char*) ::mmap(address_wishes[i] - (ssize_t)page_size,
-                                   page_size, PROT_READ,
-                                   MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
+      map_address = (char*) ::mmap(address_wishes[i],
+                                   page_size, prot,
+                                   flags | MAP_FIXED,
                                    -1, 0);
-      log_debug(os)("SafePoint Polling  Page address: %p (wish) => %p",
-                    address_wishes[i], map_address + (ssize_t)page_size);
+      log_debug(os)("SafePoint Polling Page address: %p (wish) => %p",
+                    address_wishes[i], map_address);
 
-      if (map_address + (ssize_t)page_size == address_wishes[i]) {
+      if (map_address == address_wishes[i]) {
         // Map succeeded and map_address is at wished address, exit loop.
         break;
       }
@@ -78,8 +88,17 @@ void SafepointMechanism::pd_initialize() {
     }
   }
   if (map_address == (char*)MAP_FAILED) {
-    map_address = os::reserve_memory(page_size, NULL, page_size);
+    map_address = (char*) ::mmap(NULL, page_size, prot, flags, -1, 0);
   }
   guarantee(map_address != (char*)MAP_FAILED, "SafepointMechanism::pd_initialize: failed to allocate polling page");
+  log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(map_address));
   os::set_polling_page((address)(map_address));
+
+  // Use same page for ThreadLocalHandshakes without SIGTRAP
+  if (ThreadLocalHandshakes) {
+    set_uses_thread_local_poll();
+    intptr_t bad_page_val = reinterpret_cast<intptr_t>(map_address);
+    _poll_armed_value    = reinterpret_cast<void*>(bad_page_val | poll_bit());
+    _poll_disarmed_value = NULL; // Readable on AIX
+  }
 }

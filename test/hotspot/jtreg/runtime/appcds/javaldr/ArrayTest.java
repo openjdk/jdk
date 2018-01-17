@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary test the ability to archive array classes and load them from the archive
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules jdk.jartool/sun.tools.jar
  * @compile ArrayTestHelper.java

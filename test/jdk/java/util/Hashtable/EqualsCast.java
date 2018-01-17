@@ -29,8 +29,8 @@
  *          unnecessarily.  (java.security.Provider tickled this sensitivity.)
  */
 
-import java.util.*;
 import java.security.Provider;
+import java.util.Map;
 
 public class EqualsCast {
     public static void main(String[] args) throws Exception {

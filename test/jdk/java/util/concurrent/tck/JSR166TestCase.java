@@ -472,18 +472,11 @@ public class JSR166TestCase extends TestCase {
         }
     }
 
-    public static boolean atLeastJava6() { return JAVA_CLASS_VERSION >= 50.0; }
-    public static boolean atLeastJava7() { return JAVA_CLASS_VERSION >= 51.0; }
-    public static boolean atLeastJava8() { return JAVA_CLASS_VERSION >= 52.0; }
-    public static boolean atLeastJava9() {
-        return JAVA_CLASS_VERSION >= 53.0
-            // As of 2015-09, java9 still uses 52.0 class file version
-            || JAVA_SPECIFICATION_VERSION.matches("^(1\\.)?(9|[0-9][0-9])$");
-    }
-    public static boolean atLeastJava10() {
-        return JAVA_CLASS_VERSION >= 54.0
-            || JAVA_SPECIFICATION_VERSION.matches("^(1\\.)?[0-9][0-9]$");
-    }
+    public static boolean atLeastJava6()  { return JAVA_CLASS_VERSION >= 50.0; }
+    public static boolean atLeastJava7()  { return JAVA_CLASS_VERSION >= 51.0; }
+    public static boolean atLeastJava8()  { return JAVA_CLASS_VERSION >= 52.0; }
+    public static boolean atLeastJava9()  { return JAVA_CLASS_VERSION >= 53.0; }
+    public static boolean atLeastJava10() { return JAVA_CLASS_VERSION >= 54.0; }
 
     /**
      * Collects all JSR166 unit tests as one suite.

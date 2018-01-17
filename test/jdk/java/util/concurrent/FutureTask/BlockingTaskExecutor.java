@@ -26,7 +26,10 @@
  * @bug 6431315
  * @summary ExecutorService.invokeAll might hang
  * @author Martin Buchholz
+ * @library /lib/testlibrary/
  */
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,13 +37,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
+import jdk.testlibrary.Utils;
 
 /**
  * Adapted from Doug Lea, which was...
  * adapted from a posting by Tom Sugden tom at epcc.ed.ac.uk
  */
 public class BlockingTaskExecutor {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
 
     static void realMain(String[] args) throws Throwable {
         for (int i = 1; i <= 100; i++) {
@@ -75,15 +79,19 @@ public class BlockingTaskExecutor {
         // are blocked.  This should cause the tasks to be
         // interrupted.
         executor.shutdownNow();
-        if (! executor.awaitTermination(5L, TimeUnit.SECONDS))
-            throw new Error("Executor stuck");
+        if (! executor.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
+            throw new Error(
+                String.format("Executor termination timed out after %d ms",
+                              LONG_DELAY_MS));
 
         // Wait for the invocation thread to complete.
-        thread.join(5000);
+        thread.join(LONG_DELAY_MS);
         if (thread.isAlive()) {
             thread.interrupt();
-            thread.join(5000);
-            throw new Error("invokeAll stuck");
+            thread.join(LONG_DELAY_MS);
+            throw new Error(
+                String.format("invokeAll timed out after %d ms",
+                              LONG_DELAY_MS));
         }
     }
 

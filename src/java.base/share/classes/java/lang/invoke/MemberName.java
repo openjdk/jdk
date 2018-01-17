@@ -900,9 +900,9 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
             buf.append(getName(clazz));
             buf.append('.');
         }
-        String name = getName();
+        String name = this.name; // avoid expanding from VM
         buf.append(name == null ? "*" : name);
-        Object type = getType();
+        Object type = this.type; // avoid expanding from VM
         if (!isInvocable()) {
             buf.append('/');
             buf.append(type == null ? "*" : getName(type));

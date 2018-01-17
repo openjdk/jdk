@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Hello World test for AppCDS
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -36,7 +35,6 @@
  */
 
 public class HelloTest {
-
   public static void main(String[] args) throws Exception {
       TestCommon.test(JarBuilder.getOrCreateHelloJar(),
           TestCommon.list("Hello"), "Hello");

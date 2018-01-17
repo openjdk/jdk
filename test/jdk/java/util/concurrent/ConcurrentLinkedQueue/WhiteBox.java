@@ -55,7 +55,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadLocalRandom;
 import static java.util.stream.Collectors.toList;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 @Test
 public class WhiteBox {

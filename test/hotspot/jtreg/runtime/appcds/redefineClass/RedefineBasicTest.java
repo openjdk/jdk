@@ -26,8 +26,7 @@
  * @test
  * @summary Run /runtime/RedefineTests/RedefineRunningMethods in AppCDS mode to
  *          make sure class redefinition works with CDS.
- *          (Note: AppCDS does not support uncompressed oops)
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/RedefineTests /test/hotspot/jtreg/runtime/appcds
  * @modules java.compiler
  *          java.instrument

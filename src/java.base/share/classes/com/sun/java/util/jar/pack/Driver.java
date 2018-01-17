@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,11 +162,12 @@ class Driver {
                         engProps.put((String) me.getKey(), (String) me.getValue());
                     }
                 } else if ("--version".equals(state)) {
-                        System.out.println(MessageFormat.format(RESOURCE.getString(DriverResource.VERSION), Driver.class.getName(), "1.31, 07/05/05"));
+                        System.out.println(MessageFormat.format(RESOURCE.getString(DriverResource.VERSION),
+                                                                Driver.class.getName(), "1.31, 07/05/05"));
                     return;
                 } else if ("--help".equals(state)) {
                     printUsage(doPack, true, System.out);
-                    System.exit(1);
+                    System.exit(0);
                     return;
                 } else {
                     break;

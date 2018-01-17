@@ -532,6 +532,11 @@ public:
                                            Klass* accessing_klass,
                                            TRAPS);
 
+  // find a java.lang.Class object for a given signature
+  static Handle    find_field_handle_type(Symbol* signature,
+                                          Klass* accessing_klass,
+                                          TRAPS);
+
   // ask Java to compute a java.lang.invoke.MethodHandle object for a given CP entry
   static Handle    link_method_handle_constant(Klass* caller,
                                                int ref_kind, //e.g., JVM_REF_invokeVirtual
@@ -648,6 +653,12 @@ public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
   static void clear_invoke_method_table();
+
+  // Returns TRUE if the method is a non-public member of class java.lang.Object.
+  static bool is_nonpublic_Object_method(Method* m) {
+    assert(m != NULL, "Unexpected NULL Method*");
+    return !m->is_public() && m->method_holder() == SystemDictionary::Object_klass();
+  }
 
 protected:
   static InstanceKlass* find_shared_class(Symbol* class_name);

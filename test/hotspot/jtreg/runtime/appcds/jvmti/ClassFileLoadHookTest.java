@@ -26,7 +26,7 @@
  * @test
  * @summary Test jvmti class file loader hook interaction with AppCDS
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  *          java.management

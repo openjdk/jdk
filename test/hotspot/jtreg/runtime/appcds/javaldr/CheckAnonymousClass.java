@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary ensure no anonymous class is being dumped into the CDS archive
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/Hello.java

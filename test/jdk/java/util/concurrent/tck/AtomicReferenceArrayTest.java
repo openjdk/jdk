@@ -84,7 +84,7 @@ public class AtomicReferenceArrayTest extends JSR166TestCase {
      */
     public void testConstructorSubClassArray() {
         Integer[] a = { two, one, three, four, seven };
-        AtomicReferenceArray<Number> aa = new AtomicReferenceArray<Number>(a);
+        AtomicReferenceArray<Number> aa = new AtomicReferenceArray<>(a);
         assertEquals(a.length, aa.length());
         for (int i = 0; i < a.length; i++) {
             assertSame(a[i], aa.get(i));

@@ -25,7 +25,7 @@
  * @test SpaceUtilizationCheck
  * @requires vm.cds
  * @summary Check if the space utilization for shared spaces is adequate
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

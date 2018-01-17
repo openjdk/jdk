@@ -29,7 +29,11 @@
  *          (Got that?)
  */
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class ViewSynch {
     static final Integer ZERO = new Integer(0);
