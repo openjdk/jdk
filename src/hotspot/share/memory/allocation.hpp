@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,9 +227,23 @@ class ClassLoaderData;
 class MetaspaceClosure;
 
 class MetaspaceObj {
+  friend class MetaspaceShared;
+  // When CDS is enabled, all shared metaspace objects are mapped
+  // into a single contiguous memory block, so we can use these
+  // two pointers to quickly determine if something is in the
+  // shared metaspace.
+  //
+  // When CDS is not enabled, both pointers are set to NULL.
+  static void* _shared_metaspace_base; // (inclusive) low address
+  static void* _shared_metaspace_top;  // (exclusive) high address
+
  public:
   bool is_metaspace_object() const;
-  bool is_shared() const;
+  bool is_shared() const {
+    // If no shared metaspace regions are mapped, _shared_metaspace_{base,top} will
+    // both be NULL and all values of p will be rejected quickly.
+    return (((void*)this) < _shared_metaspace_top && ((void*)this) >= _shared_metaspace_base);
+  }
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
 
 #define METASPACE_OBJ_TYPES_DO(f) \
