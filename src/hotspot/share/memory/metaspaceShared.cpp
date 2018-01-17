@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -746,7 +746,7 @@ void MetaspaceShared::patch_cpp_vtable_pointers() {
 }
 
 bool MetaspaceShared::is_valid_shared_method(const Method* m) {
-  assert(is_in_shared_space(m), "must be");
+  assert(is_in_shared_metaspace(m), "must be");
   return CppVtableCloner<Method>::is_valid_shared_object(m);
 }
 
@@ -1819,11 +1819,6 @@ public:
   bool reading() const { return true; }
 };
 
-// Return true if given address is in the mapped shared space.
-bool MetaspaceShared::is_in_shared_space(const void* p) {
-  return UseSharedSpaces && FileMapInfo::current_info()->is_in_shared_space(p);
-}
-
 // Return true if given address is in the misc data region
 bool MetaspaceShared::is_in_shared_region(const void* p, int idx) {
   return UseSharedSpaces && FileMapInfo::current_info()->is_in_shared_region(p, idx);
@@ -1857,35 +1852,46 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
 
   assert(!DumpSharedSpaces, "Should not be called with DumpSharedSpaces");
 
-  char* _ro_base = NULL;
-  char* _rw_base = NULL;
-  char* _mc_base = NULL;
-  char* _md_base = NULL;
-  char* _od_base = NULL;
+  char* ro_base = NULL; char* ro_top;
+  char* rw_base = NULL; char* rw_top;
+  char* mc_base = NULL; char* mc_top;
+  char* md_base = NULL; char* md_top;
+  char* od_base = NULL; char* od_top;
 
   // Map each shared region
-  if ((_mc_base = mapinfo->map_region(mc)) != NULL &&
-      mapinfo->verify_region_checksum(mc) &&
-      (_rw_base = mapinfo->map_region(rw)) != NULL &&
-      mapinfo->verify_region_checksum(rw) &&
-      (_ro_base = mapinfo->map_region(ro)) != NULL &&
-      mapinfo->verify_region_checksum(ro) &&
-      (_md_base = mapinfo->map_region(md)) != NULL &&
-      mapinfo->verify_region_checksum(md) &&
-      (_od_base = mapinfo->map_region(od)) != NULL &&
-      mapinfo->verify_region_checksum(od) &&
+  if ((mc_base = mapinfo->map_region(mc, &mc_top)) != NULL &&
+      (rw_base = mapinfo->map_region(rw, &rw_top)) != NULL &&
+      (ro_base = mapinfo->map_region(ro, &ro_top)) != NULL &&
+      (md_base = mapinfo->map_region(md, &md_top)) != NULL &&
+      (od_base = mapinfo->map_region(od, &od_top)) != NULL &&
       (image_alignment == (size_t)os::vm_allocation_granularity()) &&
       mapinfo->validate_classpath_entry_table()) {
-    // Success (no need to do anything)
+    // Success -- set up MetaspaceObj::_shared_metaspace_{base,top} for
+    // fast checking in MetaspaceShared::is_in_shared_metaspace() and
+    // MetaspaceObj::is_shared().
+    //
+    // We require that mc->rw->ro->md->od to be laid out consecutively, with no
+    // gaps between them. That way, we can ensure that the OS won't be able to
+    // allocate any new memory spaces inside _shared_metaspace_{base,top}, which
+    // would mess up the simple comparision in MetaspaceShared::is_in_shared_metaspace().
+    assert(mc_base < ro_base && mc_base < rw_base && mc_base < md_base && mc_base < od_base, "must be");
+    assert(od_top  > ro_top  && od_top  > rw_top  && od_top  > md_top  && od_top  > mc_top , "must be");
+    assert(mc_top == rw_base, "must be");
+    assert(rw_top == ro_base, "must be");
+    assert(ro_top == md_base, "must be");
+    assert(md_top == od_base, "must be");
+
+    MetaspaceObj::_shared_metaspace_base = (void*)mc_base;
+    MetaspaceObj::_shared_metaspace_top  = (void*)od_top;
     return true;
   } else {
     // If there was a failure in mapping any of the spaces, unmap the ones
     // that succeeded
-    if (_ro_base != NULL) mapinfo->unmap_region(ro);
-    if (_rw_base != NULL) mapinfo->unmap_region(rw);
-    if (_mc_base != NULL) mapinfo->unmap_region(mc);
-    if (_md_base != NULL) mapinfo->unmap_region(md);
-    if (_od_base != NULL) mapinfo->unmap_region(od);
+    if (ro_base != NULL) mapinfo->unmap_region(ro);
+    if (rw_base != NULL) mapinfo->unmap_region(rw);
+    if (mc_base != NULL) mapinfo->unmap_region(mc);
+    if (md_base != NULL) mapinfo->unmap_region(md);
+    if (od_base != NULL) mapinfo->unmap_region(od);
 #ifndef _WINDOWS
     // Release the entire mapped region
     shared_rs.release();

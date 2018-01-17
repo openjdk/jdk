@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "memory/metadataFactory.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
 #include "prims/methodHandles.hpp"
@@ -556,7 +555,7 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
 
 void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
   if (!DumpSharedSpaces) {
-    assert(!MetaspaceShared::is_in_shared_space(klass), "archive methods must not be rewritten at run time");
+    assert(!klass->is_shared(), "archive methods must not be rewritten at run time");
   }
   ResourceMark rm(THREAD);
   Rewriter     rw(klass, klass->constants(), klass->methods(), CHECK);
