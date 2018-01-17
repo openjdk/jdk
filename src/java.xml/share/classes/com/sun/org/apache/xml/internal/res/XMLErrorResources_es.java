@@ -226,7 +226,7 @@ public class XMLErrorResources_es extends ListResourceBundle
       "La clonaci\u00F3n del iterador no est\u00E1 soportada"},
 
     { ER_UNKNOWN_AXIS_TYPE,
-      "Tipo transversal de eje desconocido: {0}"},
+      "Tipo de recorrido de eje desconocido: {0}"},
 
     { ER_AXIS_NOT_SUPPORTED,
       "Traverser de eje no soportado: {0}"},

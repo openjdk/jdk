@@ -213,9 +213,9 @@ class Http1HeaderParser {
         assert state == State.HEADER_FOUND_CR || state == State.HEADER_FOUND_LF;
         char c = (char)input.get();
         if (c == LF && state == State.HEADER_FOUND_CR) {
-            String headerString = sb.toString();
-            sb = new StringBuilder();
-            addHeaderFromString(headerString);
+            // header value will be flushed by
+            // resumeOrSecondCR if next line does not
+            // begin by SP or HT
             state = State.HEADER_FOUND_CR_LF;
         } else if (c == SP || c == HT) {
             sb.append(SP); // parity with MessageHeaders
@@ -229,11 +229,28 @@ class Http1HeaderParser {
 
     private void resumeOrSecondCR(ByteBuffer input) {
         assert state == State.HEADER_FOUND_CR_LF;
-        assert sb.length() == 0;
         char c = (char)input.get();
         if (c == CR) {
+            if (sb.length() > 0) {
+                // no continuation line - flush
+                // previous header value.
+                String headerString = sb.toString();
+                sb = new StringBuilder();
+                addHeaderFromString(headerString);
+            }
             state = State.HEADER_FOUND_CR_LF_CR;
+        } else if (c == SP || c == HT) {
+            assert sb.length() != 0;
+            sb.append(SP); // continuation line
+            state = State.HEADER;
         } else {
+            if (sb.length() > 0) {
+                // no continuation line - flush
+                // previous header value.
+                String headerString = sb.toString();
+                sb = new StringBuilder();
+                addHeaderFromString(headerString);
+            }
             sb.append(c);
             state = State.HEADER;
         }
