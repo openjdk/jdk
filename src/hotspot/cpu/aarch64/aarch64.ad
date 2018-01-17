@@ -17725,7 +17725,7 @@ instruct vsll8B_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (8B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) {
       __ eor(as_FloatRegister($dst$$reg), __ T8B,
              as_FloatRegister($src$$reg),
@@ -17744,7 +17744,7 @@ instruct vsll16B_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (16B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) {
       __ eor(as_FloatRegister($dst$$reg), __ T16B,
              as_FloatRegister($src$$reg),
@@ -17764,9 +17764,8 @@ instruct vsra8B_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (8B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) sh = 7;
-    sh = -sh & 7;
     __ sshr(as_FloatRegister($dst$$reg), __ T8B,
            as_FloatRegister($src$$reg), sh);
   %}
@@ -17779,9 +17778,8 @@ instruct vsra16B_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (16B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) sh = 7;
-    sh = -sh & 7;
     __ sshr(as_FloatRegister($dst$$reg), __ T16B,
            as_FloatRegister($src$$reg), sh);
   %}
@@ -17795,14 +17793,14 @@ instruct vsrl8B_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (8B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) {
       __ eor(as_FloatRegister($dst$$reg), __ T8B,
              as_FloatRegister($src$$reg),
              as_FloatRegister($src$$reg));
     } else {
       __ ushr(as_FloatRegister($dst$$reg), __ T8B,
-             as_FloatRegister($src$$reg), -sh & 7);
+             as_FloatRegister($src$$reg), sh);
     }
   %}
   ins_pipe(vshift64_imm);
@@ -17814,14 +17812,14 @@ instruct vsrl16B_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (16B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) {
       __ eor(as_FloatRegister($dst$$reg), __ T16B,
              as_FloatRegister($src$$reg),
              as_FloatRegister($src$$reg));
     } else {
       __ ushr(as_FloatRegister($dst$$reg), __ T16B,
-             as_FloatRegister($src$$reg), -sh & 7);
+             as_FloatRegister($src$$reg), sh);
     }
   %}
   ins_pipe(vshift128_imm);
@@ -17890,7 +17888,7 @@ instruct vsll4S_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (4H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) {
       __ eor(as_FloatRegister($dst$$reg), __ T8B,
              as_FloatRegister($src$$reg),
@@ -17909,7 +17907,7 @@ instruct vsll8S_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (8H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) {
       __ eor(as_FloatRegister($dst$$reg), __ T16B,
              as_FloatRegister($src$$reg),
@@ -17929,9 +17927,8 @@ instruct vsra4S_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (4H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) sh = 15;
-    sh = -sh & 15;
     __ sshr(as_FloatRegister($dst$$reg), __ T4H,
            as_FloatRegister($src$$reg), sh);
   %}
@@ -17944,9 +17941,8 @@ instruct vsra8S_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (8H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) sh = 15;
-    sh = -sh & 15;
     __ sshr(as_FloatRegister($dst$$reg), __ T8H,
            as_FloatRegister($src$$reg), sh);
   %}
@@ -17960,14 +17956,14 @@ instruct vsrl4S_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (4H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) {
       __ eor(as_FloatRegister($dst$$reg), __ T8B,
              as_FloatRegister($src$$reg),
              as_FloatRegister($src$$reg));
     } else {
       __ ushr(as_FloatRegister($dst$$reg), __ T4H,
-             as_FloatRegister($src$$reg), -sh & 15);
+             as_FloatRegister($src$$reg), sh);
     }
   %}
   ins_pipe(vshift64_imm);
@@ -17979,14 +17975,14 @@ instruct vsrl8S_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (8H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) {
       __ eor(as_FloatRegister($dst$$reg), __ T16B,
              as_FloatRegister($src$$reg),
              as_FloatRegister($src$$reg));
     } else {
       __ ushr(as_FloatRegister($dst$$reg), __ T8H,
-             as_FloatRegister($src$$reg), -sh & 15);
+             as_FloatRegister($src$$reg), sh);
     }
   %}
   ins_pipe(vshift128_imm);
@@ -18054,7 +18050,7 @@ instruct vsll2I_imm(vecD dst, vecD src, immI shift) %{
   ins_encode %{
     __ shl(as_FloatRegister($dst$$reg), __ T2S,
            as_FloatRegister($src$$reg),
-           (int)$shift$$constant & 31);
+           (int)$shift$$constant);
   %}
   ins_pipe(vshift64_imm);
 %}
@@ -18067,7 +18063,7 @@ instruct vsll4I_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ shl(as_FloatRegister($dst$$reg), __ T4S,
            as_FloatRegister($src$$reg),
-           (int)$shift$$constant & 31);
+           (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}
@@ -18080,7 +18076,7 @@ instruct vsra2I_imm(vecD dst, vecD src, immI shift) %{
   ins_encode %{
     __ sshr(as_FloatRegister($dst$$reg), __ T2S,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 31);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift64_imm);
 %}
@@ -18093,7 +18089,7 @@ instruct vsra4I_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ sshr(as_FloatRegister($dst$$reg), __ T4S,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 31);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}
@@ -18106,7 +18102,7 @@ instruct vsrl2I_imm(vecD dst, vecD src, immI shift) %{
   ins_encode %{
     __ ushr(as_FloatRegister($dst$$reg), __ T2S,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 31);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift64_imm);
 %}
@@ -18119,7 +18115,7 @@ instruct vsrl4I_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ ushr(as_FloatRegister($dst$$reg), __ T4S,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 31);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}
@@ -18159,7 +18155,7 @@ instruct vsll2L_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ shl(as_FloatRegister($dst$$reg), __ T2D,
            as_FloatRegister($src$$reg),
-           (int)$shift$$constant & 63);
+           (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}
@@ -18172,7 +18168,7 @@ instruct vsra2L_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ sshr(as_FloatRegister($dst$$reg), __ T2D,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 63);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}
@@ -18185,7 +18181,7 @@ instruct vsrl2L_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ ushr(as_FloatRegister($dst$$reg), __ T2D,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 63);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}
