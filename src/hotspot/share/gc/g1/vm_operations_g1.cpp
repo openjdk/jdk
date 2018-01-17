@@ -139,13 +139,17 @@ void VM_G1CollectForAllocation::doit() {
       // An allocation had been requested. Do it, eventually trying a stronger
       // kind of GC.
       _result = g1h->satisfy_failed_allocation(_word_size, _allocation_context, &_pause_succeeded);
-    } else if (!g1h->has_regions_left_for_allocation()) {
-      // There has been a request to perform a GC to free some space. We have no
-      // information on how much memory has been asked for. In case there are
-      // absolutely no regions left to allocate into, do a maximally compacting full GC.
-      log_info(gc, ergo)("Attempting maximally compacting collection");
-      _pause_succeeded = g1h->do_full_collection(false, /* explicit gc */
-                                                 true   /* clear_all_soft_refs */);
+    } else {
+      bool should_upgrade_to_full = !g1h->should_do_concurrent_full_gc(_gc_cause) &&
+                                    !g1h->has_regions_left_for_allocation();
+      if (should_upgrade_to_full) {
+        // There has been a request to perform a GC to free some space. We have no
+        // information on how much memory has been asked for. In case there are
+        // absolutely no regions left to allocate into, do a maximally compacting full GC.
+        log_info(gc, ergo)("Attempting maximally compacting collection");
+        _pause_succeeded = g1h->do_full_collection(false, /* explicit gc */
+                                                   true   /* clear_all_soft_refs */);
+      }
     }
     guarantee(_pause_succeeded, "Elevated collections during the safepoint must always succeed.");
   } else {
