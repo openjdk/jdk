@@ -65,8 +65,7 @@ public class ConcurrentSkipListSetTest extends JSR166TestCase {
      * Integers 0 ... n - 1.
      */
     private static ConcurrentSkipListSet<Integer> populatedSet(int n) {
-        ConcurrentSkipListSet<Integer> q =
-            new ConcurrentSkipListSet<Integer>();
+        ConcurrentSkipListSet<Integer> q = new ConcurrentSkipListSet<>();
         assertTrue(q.isEmpty());
         for (int i = n - 1; i >= 0; i -= 2)
             assertTrue(q.add(new Integer(i)));

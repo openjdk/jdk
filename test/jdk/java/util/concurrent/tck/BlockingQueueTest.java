@@ -216,18 +216,20 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
     public void testDrainToNonPositiveMaxElements() {
         final BlockingQueue q = emptyCollection();
         final int[] ns = { 0, -1, -42, Integer.MIN_VALUE };
-        for (int n : ns)
-            assertEquals(0, q.drainTo(new ArrayList(), n));
+        final ArrayList sink = new ArrayList();
+        for (int n : ns) {
+            assertEquals(0, q.drainTo(sink, n));
+            assertTrue(sink.isEmpty());
+        }
         if (q.remainingCapacity() > 0) {
             // Not SynchronousQueue, that is
             Object one = makeElement(1);
             q.add(one);
-            ArrayList c = new ArrayList();
             for (int n : ns)
-                assertEquals(0, q.drainTo(new ArrayList(), n));
+                assertEquals(0, q.drainTo(sink, n));
             assertEquals(1, q.size());
             assertSame(one, q.poll());
-            assertTrue(c.isEmpty());
+            assertTrue(sink.isEmpty());
         }
     }
 
