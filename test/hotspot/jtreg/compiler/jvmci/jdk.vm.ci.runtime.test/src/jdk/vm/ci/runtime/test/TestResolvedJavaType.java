@@ -473,6 +473,20 @@ public class TestResolvedJavaType extends TypeUniverse {
         metaAccess.lookupJavaType(ConcreteTransitiveImplementor1.class);
         metaAccess.lookupJavaType(ConcreteTransitiveImplementor2.class);
         assertEquals(aSai2, iSai2.getSingleImplementor());
+
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            try {
+                type.getSingleImplementor();
+                if (!c.isInterface()) {
+                    throw new AssertionError("Expected exception for calling getSingleImplmentor on " + c.getName());
+                }
+            } catch (JVMCIError e) {
+                if (c.isInterface()) {
+                    throw new AssertionError("Unexpected exception", e);
+                }
+            }
+        }
     }
 
     @Test(expected = JVMCIError.class)
@@ -830,6 +844,10 @@ public class TestResolvedJavaType extends TypeUniverse {
         assertNull(metaAccess.lookupJavaType(C.class).getClassInitializer());
         assertNull(metaAccess.lookupJavaType(int.class).getClassInitializer());
         assertNull(metaAccess.lookupJavaType(void.class).getClassInitializer());
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            type.getClassInitializer();
+        }
     }
 
     @Test

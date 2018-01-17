@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @modules java.base/jdk.internal.misc
  * @library ../..
  * @library /test/lib

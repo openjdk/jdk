@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ SUNWprivate_1.1 {
 		JNU_ThrowStringIndexOutOfBoundsException;
 		JNU_ToString;
 
+		Java_java_io_FileDescriptor_cleanupClose0;
 		Java_java_io_FileDescriptor_close0;
 		Java_java_io_FileDescriptor_initIDs;
 		Java_java_io_FileDescriptor_sync;
@@ -257,7 +258,6 @@ SUNWprivate_1.1 {
 		Java_jdk_internal_reflect_NativeConstructorAccessorImpl_newInstance0;
 		Java_jdk_internal_reflect_NativeMethodAccessorImpl_invoke0;
 		Java_jdk_internal_reflect_Reflection_getCallerClass__;
-		Java_jdk_internal_reflect_Reflection_getCallerClass__I;
 		Java_jdk_internal_reflect_Reflection_getClassAccessFlags;
 		Java_jdk_internal_misc_VM_latestUserDefinedLoader0;
                 Java_jdk_internal_misc_VM_getuid;

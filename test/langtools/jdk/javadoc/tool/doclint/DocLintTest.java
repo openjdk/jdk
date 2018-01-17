@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ public class DocLintTest {
         /* 05 */    "}\n";
 
     private final String rawDiags = "-XDrawDiagnostics";
+    private final String htmlVersion = "-html4";
 
     private enum Message {
         // doclint messages
@@ -141,66 +142,66 @@ public class DocLintTest {
         javadoc = ToolProvider.getSystemDocumentationTool();
         fm = javadoc.getStandardFileManager(null, null, null);
         try {
-            fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(new File(".")));
+            fm.setLocation(StandardLocation.CLASS_OUTPUT, List.of(new File(".")));
             fm.setLocation(StandardLocation.CLASS_PATH, Collections.<File>emptyList());
-            files = Arrays.asList(new TestJFO("Test.java", code));
+            files = List.of(new TestJFO("Test.java", code));
 
-            test(Collections.<String>emptyList(),
+            test(List.of(htmlVersion),
                     Main.Result.ERROR,
                     EnumSet.of(Message.DL_ERR9A, Message.DL_WRN12A));
 
-            test(Arrays.asList(rawDiags),
+            test(List.of(htmlVersion, rawDiags),
                     Main.Result.ERROR,
                     EnumSet.of(Message.DL_ERR9, Message.DL_WRN12));
 
-//            test(Arrays.asList("-Xdoclint:none"),
+//            test(List.of("-Xdoclint:none"),
 //                    Main.Result.OK,
 //                    EnumSet.of(Message.JD_WRN10, Message.JD_WRN13));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint"),
+            test(List.of(htmlVersion, rawDiags, "-Xdoclint"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.DL_ERR9, Message.DL_WRN12));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:all/public"),
+            test(List.of(htmlVersion, rawDiags, "-Xdoclint:all/public"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.OPT_BADQUAL));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:all", "-public"),
+            test(List.of(htmlVersion, rawDiags, "-Xdoclint:all", "-public"),
                     Main.Result.OK,
                     EnumSet.of(Message.DL_WRN12));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:syntax"),
+            test(List.of(htmlVersion, rawDiags, "-Xdoclint:syntax"),
                     Main.Result.OK,
                     EnumSet.of(Message.DL_WRN12));
 
-            test(Arrays.asList(rawDiags, "-private"),
+            test(List.of(htmlVersion, rawDiags, "-private"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.DL_ERR6, Message.DL_ERR9, Message.DL_WRN12));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:syntax", "-private"),
+            test(List.of(htmlVersion, rawDiags, "-Xdoclint:syntax", "-private"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.DL_ERR6, Message.DL_WRN12));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:reference"),
+            test(List.of(htmlVersion, rawDiags, "-Xdoclint:reference"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.DL_ERR9));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint:badarg"),
+            test(List.of(htmlVersion, rawDiags, "-Xdoclint:badarg"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.OPT_BADARG));
 
-            files = Arrays.asList(new TestJFO("p1/P1Test.java", p1Code),
+            files = List.of(new TestJFO("p1/P1Test.java", p1Code),
                                   new TestJFO("p2/P2Test.java", p2Code));
 
-            test(Arrays.asList(rawDiags),
+            test(List.of(htmlVersion, rawDiags),
                     Main.Result.ERROR,
                     EnumSet.of(Message.DL_ERR_P1TEST, Message.DL_ERR_P2TEST));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint/package:p1"),
+            test(List.of(htmlVersion, rawDiags, "-Xdoclint/package:p1"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.DL_ERR_P1TEST));
 
-            test(Arrays.asList(rawDiags, "-Xdoclint/package:*p"),
+            test(List.of(htmlVersion, rawDiags, "-Xdoclint/package:*p"),
                     Main.Result.ERROR,
                     EnumSet.of(Message.OPT_BADPACKAGEARG));
 

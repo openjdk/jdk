@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,7 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
                 "\u7121\u6CD5\u5C0D\u5225\u540D\u57F7\u884C\u66FF\u63DB\uFF0C{0}"},
         {"substitution.value.prefix.unsupported",
                 "\u4E0D\u652F\u63F4\u7684\u66FF\u63DB\u503C\uFF0C{0}"},
+        {"SPACE", " "},
         {"LPARAM", "("},
         {"RPARAM", ")"},
         {"type.can.t.be.null","\u8F38\u5165\u4E0D\u80FD\u70BA\u7A7A\u503C"},

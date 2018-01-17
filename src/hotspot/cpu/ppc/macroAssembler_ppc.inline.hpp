@@ -30,6 +30,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
+#include "runtime/safepointMechanism.hpp"
 
 inline bool MacroAssembler::is_ld_largeoffset(address a) {
   const int inst1 = *(int *)a;
@@ -261,7 +262,12 @@ inline address MacroAssembler::last_calls_return_pc() {
 
 // Read from the polling page, its address is already in a register.
 inline void MacroAssembler::load_from_polling_page(Register polling_page_address, int offset) {
-  ld(R0, offset, polling_page_address);
+  if (SafepointMechanism::uses_thread_local_poll() && USE_POLL_BIT_ONLY) {
+    int encoding = SafepointMechanism::poll_bit();
+    tdi(traptoGreaterThanUnsigned | traptoEqual, polling_page_address, encoding);
+  } else {
+    ld(R0, offset, polling_page_address);
+  }
 }
 
 // Trap-instruction-based checks.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -515,7 +515,7 @@ public class JShellTool implements MessageHandler {
         private final OptionSpecBuilder argV = parser.accepts("v");
         private final OptionSpec<String> argR = parser.accepts("R").withRequiredArg();
         private final OptionSpec<String> argC = parser.accepts("C").withRequiredArg();
-        private final OptionSpecBuilder argHelp = parser.acceptsAll(asList("h", "help"));
+        private final OptionSpecBuilder argHelp = parser.acceptsAll(asList("?", "h", "help"));
         private final OptionSpecBuilder argVersion = parser.accepts("version");
         private final OptionSpecBuilder argFullVersion = parser.accepts("full-version");
         private final OptionSpecBuilder argShowVersion = parser.accepts("show-version");

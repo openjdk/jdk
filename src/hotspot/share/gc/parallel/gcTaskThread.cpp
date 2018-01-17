@@ -77,7 +77,7 @@ GCTaskTimeStamp* GCTaskThread::time_stamp_at(uint index) {
   if (_time_stamps == NULL) {
     // We allocate the _time_stamps array lazily since logging can be enabled dynamically
     GCTaskTimeStamp* time_stamps = NEW_C_HEAP_ARRAY(GCTaskTimeStamp, GCTaskTimeStampEntries, mtGC);
-    if (Atomic::cmpxchg(time_stamps, &_time_stamps, (GCTaskTimeStamp*)NULL) != NULL) {
+    if (!Atomic::replace_if_null(time_stamps, &_time_stamps)) {
       // Someone already setup the time stamps
       FREE_C_HEAP_ARRAY(GCTaskTimeStamp, time_stamps);
     }

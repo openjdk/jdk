@@ -28,10 +28,10 @@
  */
 
 import static java.util.stream.Collectors.summingInt;
+import static java.util.stream.Collectors.toList;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -205,12 +205,10 @@ public class IteratorMicroBenchmark {
     }
 
     private static List<Job> filter(Pattern filter, List<Job> jobs) {
-        if (filter == null) return jobs;
-        ArrayList<Job> newJobs = new ArrayList<>();
-        for (Job job : jobs)
-            if (filter.matcher(job.name()).find())
-                newJobs.add(job);
-        return newJobs;
+        return (filter == null) ? jobs
+            : jobs.stream()
+            .filter(job -> filter.matcher(job.name()).find())
+            .collect(toList());
     }
 
     private static void deoptimize(int sum) {
@@ -270,24 +268,24 @@ public class IteratorMicroBenchmark {
             abq.add(abq.remove());
         }
 
-        ArrayList<Job> jobs = new ArrayList<>(Arrays.asList());
+        ArrayList<Job> jobs = new ArrayList<>();
 
-        List.of(al, ad, abq,
-                new LinkedList<>(al),
-                new PriorityQueue<>(al),
-                new Vector<>(al),
-                new ConcurrentLinkedQueue<>(al),
-                new ConcurrentLinkedDeque<>(al),
-                new LinkedBlockingQueue<>(al),
-                new LinkedBlockingDeque<>(al),
-                new LinkedTransferQueue<>(al),
-                new PriorityBlockingQueue<>(al))
-            .stream()
-            .forEach(x -> {
-                         jobs.addAll(collectionJobs(x));
-                         if (x instanceof Deque)
-                             jobs.addAll(dequeJobs((Deque<Integer>)x));
-                     });
+        List.<Collection<Integer>>of(
+            al, ad, abq,
+            new LinkedList<>(al),
+            new PriorityQueue<>(al),
+            new Vector<>(al),
+            new ConcurrentLinkedQueue<>(al),
+            new ConcurrentLinkedDeque<>(al),
+            new LinkedBlockingQueue<>(al),
+            new LinkedBlockingDeque<>(al),
+            new LinkedTransferQueue<>(al),
+            new PriorityBlockingQueue<>(al)).forEach(
+                x -> {
+                    jobs.addAll(collectionJobs(x));
+                    if (x instanceof Deque)
+                        jobs.addAll(dequeJobs((Deque<Integer>)x));
+                });
 
         if (reverse) Collections.reverse(jobs);
         if (shuffle) Collections.shuffle(jobs);

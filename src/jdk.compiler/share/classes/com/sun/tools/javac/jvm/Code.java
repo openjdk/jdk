@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2100,15 +2100,19 @@ public class Code {
     }
 
     private void fillLocalVarPosition(LocalVar lv) {
-        if (lv == null || lv.sym == null || !lv.sym.hasTypeAnnotations())
+        if (lv == null || lv.sym == null || lv.sym.isExceptionParameter()|| !lv.sym.hasTypeAnnotations())
             return;
+        LocalVar.Range widestRange = lv.getWidestRange();
         for (Attribute.TypeCompound ta : lv.sym.getRawTypeAttributes()) {
             TypeAnnotationPosition p = ta.position;
-            LocalVar.Range widestRange = lv.getWidestRange();
-            p.lvarOffset = new int[] { (int)widestRange.start_pc };
-            p.lvarLength = new int[] { (int)widestRange.length };
-            p.lvarIndex = new int[] { (int)lv.reg };
-            p.isValidOffset = true;
+            if (widestRange.closed() && widestRange.length > 0) {
+                p.lvarOffset = new int[] { (int)widestRange.start_pc };
+                p.lvarLength = new int[] { (int)widestRange.length };
+                p.lvarIndex = new int[] { (int)lv.reg };
+                p.isValidOffset = true;
+            } else {
+                p.isValidOffset = false;
+            }
         }
     }
 

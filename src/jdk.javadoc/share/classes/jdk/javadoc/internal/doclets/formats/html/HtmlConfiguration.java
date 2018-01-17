@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,9 +204,10 @@ public class HtmlConfiguration extends BaseConfiguration {
     public boolean frames = true;
 
     /**
-     * This is the HTML version of the generated pages. HTML 4.01 is the default output version.
+     * This is the HTML version of the generated pages.
+     * The default value is determined later.
      */
-    public HtmlVersion htmlVersion = HtmlVersion.HTML4;
+    public HtmlVersion htmlVersion = null;
 
     /**
      * Collected set of doclint options
@@ -298,6 +299,12 @@ public class HtmlConfiguration extends BaseConfiguration {
         if (!generalValidOptions()) {
             return false;
         }
+
+        if (htmlVersion == null) {
+            reporter.print(WARNING, getText("doclet.HTML_version_not_specified", helpfile));
+            htmlVersion = HtmlVersion.HTML4;
+        }
+
         // check if helpfile exists
         if (!helpfile.isEmpty()) {
             DocFile help = DocFile.createFileForInput(this, helpfile);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -558,6 +558,15 @@ class Http2Connection  {
     }
 
     /**
+     * Streams initiated by a client MUST use odd-numbered stream
+     * identifiers; those initiated by the server MUST use even-numbered
+     * stream identifiers.
+     */
+    private static final boolean isSeverInitiatedStream(int streamid) {
+        return (streamid & 0x1) == 0;
+    }
+
+    /**
      * Handles stream 0 (common) frames that apply to whole connection and passes
      * other stream specific frames to that Stream object.
      *
@@ -602,10 +611,19 @@ class Http2Connection  {
                     decodeHeaders((HeaderFrame) frame, decoder);
                 }
 
-                int sid = frame.streamid();
-                if (sid >= nextstreamid && !(frame instanceof ResetFrame)) {
-                    // otherwise the stream has already been reset/closed
-                    resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
+                if (!(frame instanceof ResetFrame)) {
+                    if (isSeverInitiatedStream(streamid)) {
+                        if (streamid < nextPushStream) {
+                            // trailing data on a cancelled push promise stream,
+                            // reset will already have been sent, ignore
+                            Log.logTrace("Ignoring cancelled push promise frame " + frame);
+                        } else {
+                            resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
+                        }
+                    } else if (streamid >= nextstreamid) {
+                        // otherwise the stream has already been reset/closed
+                        resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
+                    }
                 }
                 return;
             }

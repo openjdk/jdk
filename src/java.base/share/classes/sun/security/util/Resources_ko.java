@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
                 "{0} \uBCC4\uCE6D\uC744 \uB300\uCCB4\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
         {"substitution.value.prefix.unsupported",
                 "\uB300\uCCB4 \uAC12 {0}\uC740(\uB294) \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        {"SPACE", " "},
         {"LPARAM", "("},
         {"RPARAM", ")"},
         {"type.can.t.be.null","\uC720\uD615\uC740 \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},

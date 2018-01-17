@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -506,10 +506,11 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                             return false;
                         case "--help":
                         case "-h":
+                        case "-?":
                             out.println(Messages.get("main.usage"));
                             out.println();
                             out.println(Messages.get("main.help"));
-                            return false;
+                            return true;
                         case "-l":
                         case "--list":
                             require(scanMode == ScanMode.ARGS);

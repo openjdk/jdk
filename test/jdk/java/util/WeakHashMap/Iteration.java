@@ -28,7 +28,9 @@
  * @author  Josh Bloch
  */
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 public class Iteration {
     public static void main(String[] args) {

@@ -28,7 +28,12 @@
  * @key randomness
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
+import java.util.Vector;
 
 public class Rotate {
     // Should have lots of distinct factors and be > ROTATE_THRESHOLD

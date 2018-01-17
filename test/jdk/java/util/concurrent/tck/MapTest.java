@@ -129,7 +129,7 @@ public class MapTest extends JSR166TestCase {
         final Object v2 = (permitsNullValues && rnd.nextBoolean() && v1 != null)
             ? null : impl.makeValue(2);
 
-        /** If true, always lands in first bucket in hash tables. */
+        // If true, always lands in first bucket in hash tables.
         final boolean poorHash = rnd.nextBoolean();
         class Key implements Comparable<Key> {
             final int i;

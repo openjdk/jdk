@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @summary Regression test for JDK-8098821
  * @bug 8098821
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.gc.G1
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
@@ -42,21 +42,23 @@ public class SysDictCrash {
         // SharedBaseAddress=0 puts the archive at a very high address on solaris,
         // which provokes the crash.
         ProcessBuilder dumpPb = ProcessTools.createJavaProcessBuilder(true,
+          TestCommon.makeCommandLineForAppCDS(
             "-XX:+UseG1GC", "-XX:MaxRAMPercentage=12.5",
             "-XX:+UseAppCDS",
             "-cp", ".",
             "-XX:SharedBaseAddress=0", "-XX:SharedArchiveFile=./SysDictCrash.jsa",
             "-Xshare:dump",
-            "-showversion", "-Xlog:cds,cds+hashtables");
+            "-showversion", "-Xlog:cds,cds+hashtables"));
 
         TestCommon.checkDump(TestCommon.executeAndLog(dumpPb, "dump"));
 
         ProcessBuilder runPb = ProcessTools.createJavaProcessBuilder(true,
+          TestCommon.makeCommandLineForAppCDS(
             "-XX:+UseG1GC", "-XX:MaxRAMPercentage=12.5",
             "-XX:+UseAppCDS",
             "-XX:SharedArchiveFile=./SysDictCrash.jsa",
             "-Xshare:on",
-            "-version");
+            "-version"));
 
         TestCommon.checkExec(TestCommon.executeAndLog(runPb, "exec"));
     }

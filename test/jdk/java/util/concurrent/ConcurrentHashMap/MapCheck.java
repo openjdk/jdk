@@ -109,13 +109,11 @@ public class MapCheck {
 
     static Map newMap(Class cl) {
         try {
-            Map m = (Map)cl.newInstance();
-            return m;
+            return (Map)cl.newInstance();
         } catch (Exception e) {
             throw new RuntimeException("Can't instantiate " + cl + ": " + e);
         }
     }
-
 
     static void runTest(Map s, Object[] key) {
         shuffle(key);
@@ -136,7 +134,6 @@ public class MapCheck {
         junk = null;
         //        System.gc();
     }
-
 
     static void t1(String nm, int n, Map s, Object[] key, int expect) {
         int sum = 0;

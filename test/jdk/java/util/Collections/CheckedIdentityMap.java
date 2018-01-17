@@ -28,13 +28,14 @@
  * @summary Checked collections with underlying maps with identity comparisons
  */
 
-import java.util.*;
-import static java.util.Collections.*;
+import org.testng.annotations.Test;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
+
+import static java.util.Collections.checkedMap;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
-
-import org.testng.annotations.Test;
 
 public class CheckedIdentityMap {
 

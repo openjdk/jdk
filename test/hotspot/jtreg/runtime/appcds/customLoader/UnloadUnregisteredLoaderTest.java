@@ -26,8 +26,7 @@
  * @test
  * @summary Test the behavior when shared classes loaded by custom loaders are
  *          unloaded.
- * (NOTE: AppCDS does not support uncompressed oops)
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/testlibrary
  * @modules java.base/jdk.internal.misc

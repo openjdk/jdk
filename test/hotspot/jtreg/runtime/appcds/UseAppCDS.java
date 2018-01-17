@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Testing use of UseAppCDS flag
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -122,14 +121,14 @@ public class UseAppCDS {
 
     static void dumpLoadedClasses(boolean useAppCDS, String[] expectedClasses,
                                   String[] unexpectedClasses) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            true,
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+          TestCommon.makeCommandLineForAppCDS(
             "-XX:DumpLoadedClassList=" + CLASSLIST_FILE,
             "-cp",
             TESTJAR,
             useAppCDS ? "-XX:+UseAppCDS" : "-XX:-UseAppCDS",
             TESTNAME,
-            TEST_OUT);
+            TEST_OUT));
 
         OutputAnalyzer output = TestCommon.executeAndLog(pb, "dump-loaded-classes")
             .shouldHaveExitValue(0).shouldContain(TEST_OUT);
@@ -152,8 +151,8 @@ public class UseAppCDS {
 
     static void dumpArchive(boolean useAppCDS, String[] expectedClasses,
                             String[] unexpectedClasses) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            true,
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+          TestCommon.makeCommandLineForAppCDS(
             useAppCDS ? "-XX:-UnlockDiagnosticVMOptions" :
                         "-XX:+UnlockDiagnosticVMOptions",
             "-cp",
@@ -162,7 +161,7 @@ public class UseAppCDS {
             "-XX:SharedClassListFile=" + CLASSLIST_FILE,
             "-XX:SharedArchiveFile=" + ARCHIVE_FILE,
             "-Xlog:cds",
-            "-Xshare:dump");
+            "-Xshare:dump"));
 
         OutputAnalyzer output = TestCommon.executeAndLog(pb, "dump-archive")
             .shouldHaveExitValue(0);
@@ -179,8 +178,8 @@ public class UseAppCDS {
 
     static void useArchive(boolean useAppCDS, String[] expectedClasses,
                            String[] unexpectedClasses) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            true,
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+          TestCommon.makeCommandLineForAppCDS(
             useAppCDS ? "-XX:-UnlockDiagnosticVMOptions" :
                         "-XX:+UnlockDiagnosticVMOptions",
             "-cp",
@@ -190,7 +189,7 @@ public class UseAppCDS {
             "-verbose:class",
             "-Xshare:on",
             TESTNAME,
-            TEST_OUT );
+            TEST_OUT));
 
         OutputAnalyzer output = TestCommon.executeAndLog(pb, "use-archive");
         if (CDSTestUtils.isUnableToMap(output))

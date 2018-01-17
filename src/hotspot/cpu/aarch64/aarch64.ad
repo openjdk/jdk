@@ -5844,8 +5844,8 @@ operand immPollPage()
 operand immByteMapBase()
 %{
   // Get base of card map
-  predicate((jbyte*)n->get_ptr() ==
-        ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->byte_map_base);
+  predicate(Universe::heap()->barrier_set()->is_a(BarrierSet::CardTableModRef) &&
+    (jbyte*)n->get_ptr() == ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->byte_map_base);
   match(ConP);
 
   op_cost(0);

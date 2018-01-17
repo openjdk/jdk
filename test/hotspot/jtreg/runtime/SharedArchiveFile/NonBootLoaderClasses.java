@@ -24,7 +24,7 @@
 /*
  * @test NonBootLoaderClasses
  * @summary Test to ensure platform and app classes are not being archived
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
