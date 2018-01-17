@@ -30,7 +30,9 @@
  * @ignore Bug fix temporarily removed as it uncovered other bugs (4992226)
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
+import java.util.List;
 
 public class CheckForComodification {
     private static final int LENGTH = 10;

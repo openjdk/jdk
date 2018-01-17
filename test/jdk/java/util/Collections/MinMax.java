@@ -29,7 +29,9 @@
  * @author Josh Bloch
  */
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class MinMax {
     public static void main(String[] args) {

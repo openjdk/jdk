@@ -32,7 +32,7 @@
  * @key randomness
  */
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import jdk.test.lib.RandomFactory;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -43,7 +43,8 @@ import java.util.Random;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BooleanSupplier;
-import jdk.test.lib.RandomFactory;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class GCDuringIteration {
 

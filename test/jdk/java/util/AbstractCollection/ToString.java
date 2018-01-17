@@ -29,8 +29,13 @@
  * @author Josh Bloch, Martin Buchholz
  */
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.AbstractCollection;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class ToString {
     private static void realMain(String[] args) {

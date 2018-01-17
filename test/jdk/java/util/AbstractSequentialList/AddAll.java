@@ -27,7 +27,11 @@
  * @summary AddAll(int, Collection) intersperses the Collection with this List.
  */
 
-import java.util.*;
+import java.util.AbstractSequentialList;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ListIterator;
 
 public class AddAll {
     public static void main(String[] args) throws Exception {

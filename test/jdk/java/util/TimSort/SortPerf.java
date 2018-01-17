@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.util.Arrays;
-
 public class SortPerf {
     private static final int NUM_SETS = 5;
     private static final int[] lengths = { 10, 100, 1000, 10000, 1000000 };
