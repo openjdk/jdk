@@ -1,0 +1,7 @@
+ParserTest.java:14:18: compiler.warn.var.not.allowed
+ParserTest.java:16:22: compiler.warn.var.not.allowed
+ParserTest.java:20:19: compiler.warn.var.not.allowed
+ParserTest.java:24:14: compiler.warn.var.not.allowed
+ParserTest.java:28:20: compiler.warn.var.not.allowed
+ParserTest.java:36:27: compiler.warn.var.not.allowed
+6 warnings
