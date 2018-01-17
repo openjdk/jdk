@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -997,7 +997,9 @@ public class PNGImageReader extends ImageReader {
         }
 
         int inputBands = inputBandsForColorType[metadata.IHDR_colorType];
-        int bytesPerRow = (inputBands*passWidth*metadata.IHDR_bitDepth + 7)/8;
+        int bitsPerRow = Math.
+                multiplyExact((inputBands * metadata.IHDR_bitDepth), passWidth);
+        int bytesPerRow = (bitsPerRow + 7) / 8;
 
         // Read the image row-by-row
         for (int srcY = 0; srcY < passHeight; srcY++) {
@@ -1048,7 +1050,8 @@ public class PNGImageReader extends ImageReader {
         int bytesPerPixel = (bitDepth == 16) ? 2 : 1;
         bytesPerPixel *= inputBands;
 
-        int bytesPerRow = (inputBands*passWidth*bitDepth + 7)/8;
+        int bitsPerRow = Math.multiplyExact((inputBands * bitDepth), passWidth);
+        int bytesPerRow = (bitsPerRow + 7) / 8;
         int eltsPerRow = (bitDepth == 16) ? bytesPerRow/2 : bytesPerRow;
 
         // If no pixels need updating, just skip the input data
