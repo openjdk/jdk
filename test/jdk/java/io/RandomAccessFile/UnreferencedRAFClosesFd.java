@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,18 @@
 
 import java.io.File;
 import java.io.FileDescriptor;
-import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.HashSet;
+
+import com.sun.management.UnixOperatingSystemMXBean;
 
 /**
  * @test
@@ -50,6 +53,9 @@ public class UnreferencedRAFClosesFd {
         File inFile= new File(System.getProperty("test.dir", "."), FILE_NAME);
         inFile.createNewFile();
         inFile.deleteOnExit();
+
+        long fdCount0 = getFdCount();
+        System.out.printf("initial count of open file descriptors: %d%n", fdCount0);
 
         String name = inFile.getPath();
         RandomAccessFile raf;
@@ -92,5 +98,22 @@ public class UnreferencedRAFClosesFd {
         Reference.reachabilityFence(fd);
         Reference.reachabilityFence(raf);
         Reference.reachabilityFence(pending);
+
+        // Check the final count of open file descriptors
+        long fdCount = getFdCount();
+        System.out.printf("final count of open file descriptors: %d%n", fdCount);
+        if (fdCount != fdCount0) {
+            throw new AssertionError("raw fd count wrong: expected: " + fdCount0
+                    + ", actual: " + fdCount);
+        }
+    }
+
+
+    // Get the count of open file descriptors, or -1 if not available
+    private static long getFdCount() {
+        OperatingSystemMXBean mxBean = ManagementFactory.getOperatingSystemMXBean();
+        return  (mxBean instanceof UnixOperatingSystemMXBean)
+                ? ((UnixOperatingSystemMXBean) mxBean).getOpenFileDescriptorCount()
+                : -1L;
     }
 }

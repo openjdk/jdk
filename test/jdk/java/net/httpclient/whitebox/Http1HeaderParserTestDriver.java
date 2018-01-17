@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8195138
  * @modules jdk.incubator.httpclient
  * @run testng jdk.incubator.httpclient/jdk.incubator.http.Http1HeaderParserTest
  */

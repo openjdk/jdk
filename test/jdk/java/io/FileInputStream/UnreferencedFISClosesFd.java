@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -42,6 +44,7 @@ import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.sun.management.UnixOperatingSystemMXBean;
 
 /**
  * Tests for FIS unreferenced.
@@ -136,6 +139,9 @@ public class UnreferencedFISClosesFd {
 
         String name = inFile.getPath();
 
+        long fdCount0 = getFdCount();
+        System.out.printf("initial count of open file descriptors: %d%n", fdCount0);
+
         int failCount = 0;
         failCount += test(new FileInputStream(name), CleanupType.CLEANER);
 
@@ -150,6 +156,22 @@ public class UnreferencedFISClosesFd {
         if (failCount > 0) {
             throw new AssertionError("Failed test count: " + failCount);
         }
+
+        // Check the final count of open file descriptors
+        long fdCount = getFdCount();
+        System.out.printf("final count of open file descriptors: %d%n", fdCount);
+        if (fdCount != fdCount0) {
+            throw new AssertionError("raw fd count wrong: expected: " + fdCount0
+                    + ", actual: " + fdCount);
+        }
+    }
+
+    // Get the count of open file descriptors, or -1 if not available
+    private static long getFdCount() {
+        OperatingSystemMXBean mxBean = ManagementFactory.getOperatingSystemMXBean();
+        return  (mxBean instanceof UnixOperatingSystemMXBean)
+                ? ((UnixOperatingSystemMXBean) mxBean).getOpenFileDescriptorCount()
+                : -1L;
     }
 
     private static int test(FileInputStream fis, CleanupType cleanType) throws Exception {

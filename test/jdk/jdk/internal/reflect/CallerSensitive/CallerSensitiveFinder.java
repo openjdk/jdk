@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,20 @@
  */
 
 import com.sun.tools.classfile.*;
-import com.sun.tools.jdeps.ClassFileReader;
 import static com.sun.tools.classfile.ConstantPool.*;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -87,8 +86,7 @@ public class CallerSensitiveFinder {
         }
     }
 
-    private final List<String> csMethodsMissingAnnotation =
-            Collections.synchronizedList(new ArrayList<>());
+    private final List<String> csMethodsMissingAnnotation = new CopyOnWriteArrayList<>();
     private final ReferenceFinder finder;
     public CallerSensitiveFinder() {
         this.finder = new ReferenceFinder(getFilter(), getVisitor());
@@ -142,31 +140,9 @@ public class CallerSensitiveFinder {
     public List<String> run(Stream<Path> classes)throws IOException, InterruptedException,
             ExecutionException, ConstantPoolException
     {
-        classes.forEach(this::processPath);
+        classes.forEach(p -> pool.submit(getTask(p)));
         waitForCompletion();
-        pool.shutdown();
         return csMethodsMissingAnnotation;
-    }
-
-    void processPath(Path path) {
-        try {
-            ClassFileReader reader = ClassFileReader.newInstance(path);
-            for (ClassFile cf : reader.getClassFiles()) {
-                if (cf.access_flags.is(AccessFlags.ACC_MODULE))
-                    continue;
-
-                String classFileName = cf.getName();
-                // for each ClassFile
-                //    parse constant pool to find matching method refs
-                //      parse each method (caller)
-                //      - visit and find method references matching the given method name
-                pool.submit(getTask(cf));
-            }
-        } catch (IOException x) {
-            throw new UncheckedIOException(x);
-        } catch (ConstantPoolException x) {
-            throw new RuntimeException(x);
-        }
     }
 
     private static final String CALLER_SENSITIVE_ANNOTATION = "Ljdk/internal/reflect/CallerSensitive;";
@@ -175,7 +151,6 @@ public class CallerSensitiveFinder {
     {
         RuntimeAnnotations_attribute attr =
             (RuntimeAnnotations_attribute)m.attributes.get(Attribute.RuntimeVisibleAnnotations);
-        int index = 0;
         if (attr != null) {
             for (int i = 0; i < attr.annotations.length; i++) {
                 Annotation ann = attr.annotations[i];
@@ -188,11 +163,24 @@ public class CallerSensitiveFinder {
         return false;
     }
 
-    private final List<FutureTask<Void>> tasks = new ArrayList<FutureTask<Void>>();
-    private FutureTask<Void> getTask(final ClassFile cf) {
-        FutureTask<Void> task = new FutureTask<Void>(new Callable<Void>() {
+    private final List<FutureTask<Void>> tasks = new ArrayList<>();
+
+    /*
+     * Each task parses the class file of the given path.
+     * - parse constant pool to find matching method refs
+     * - parse each method (caller)
+     * - visit and find method references matching the given method name
+     */
+    private FutureTask<Void> getTask(Path p) {
+        FutureTask<Void> task = new FutureTask<>(new Callable<>() {
             public Void call() throws Exception {
-                finder.parse(cf);
+                try (InputStream is = Files.newInputStream(p)) {
+                    finder.parse(ClassFile.read(is));
+                } catch (IOException x) {
+                    throw new UncheckedIOException(x);
+                } catch (ConstantPoolException x) {
+                    throw new RuntimeException(x);
+                }
                 return null;
             }
         });
@@ -207,6 +195,7 @@ public class CallerSensitiveFinder {
         if (tasks.isEmpty()) {
             throw new RuntimeException("No classes found, or specified.");
         }
+        pool.shutdown();
         System.out.println("Parsed " + tasks.size() + " classfiles");
     }
 
@@ -215,21 +204,16 @@ public class CallerSensitiveFinder {
 
         // Either an exploded build or an image.
         File classes = home.resolve("modules").toFile();
-        if (classes.isDirectory()) {
-            return Stream.of(classes.toPath());
-        } else {
-            return jrtPaths();
-        }
-    }
-
-    static Stream<Path> jrtPaths() {
-        FileSystem jrt = FileSystems.getFileSystem(URI.create("jrt:/"));
-        Path root = jrt.getPath("/");
+        Path root = classes.isDirectory()
+                        ? classes.toPath()
+                        : FileSystems.getFileSystem(URI.create("jrt:/"))
+                                     .getPath("/");
 
         try {
             return Files.walk(root)
-                    .filter(p -> p.getNameCount() > 1)
-                    .filter(p -> p.toString().endsWith(".class"));
+                .filter(p -> p.getNameCount() > 1)
+                .filter(p -> p.toString().endsWith(".class") &&
+                             !p.toString().equals("module-info.class"));
         } catch (IOException x) {
             throw new UncheckedIOException(x);
         }

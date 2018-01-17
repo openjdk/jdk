@@ -204,58 +204,70 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * known concrete subclasses {@code ListResourceBundle} and
  * {@code PropertyResourceBundle} are thread-safe.
  *
- * <h3><a id="bundleprovider">Resource Bundles in Named Modules</a></h3>
+ * <h3><a id="resource-bundle-modules">Resource Bundles and Named Modules</a></h3>
  *
- * When resource bundles are deployed in named modules, the following
- * module-specific requirements and restrictions are applied.
+ * Resource bundles can be deployed in modules in the following ways:
  *
- * <ul>
- * <li>Code in a named module that calls {@link #getBundle(String, Locale)}
- * will locate resource bundles in the caller's module (<em>caller module</em>).</li>
- * <li>If resource bundles are deployed in named modules separate from
- * the caller module, those resource bundles need to be loaded from service
- * providers of {@link ResourceBundleProvider}. The caller module must declare
- * "{@code uses}" and the service interface name is the concatenation of the
- * package name of the base name, string "{@code .spi.}", the simple class
- * name of the base name, and the string "{@code Provider}". The
- * <em>bundle provider modules</em> containing resource bundles must
- * declare "{@code provides}" with the service interface name and
- * its implementation class name. For example, if the base name is
- * "{@code com.example.app.MyResources}", the caller module must declare
- * "{@code uses com.example.app.spi.MyResourcesProvider;}" and a module containing resource
- * bundles must declare "{@code provides com.example.app.spi.MyResourcesProvider
- * with com.example.app.internal.MyResourcesProviderImpl;}"
- * where {@code com.example.app.internal.MyResourcesProviderImpl} is an
- * implementation class of {@code com.example.app.spi.MyResourcesProvider}.</li>
- * <li>If you want to use non-standard formats in named modules, such as XML,
- * {@link ResourceBundleProvider} needs to be used.</li>
- * <li>The {@code getBundle} method with a {@code ClassLoader} may not be able to
- * find resource bundles using the given {@code ClassLoader} in named modules.
- * The {@code getBundle} method with a {@code Module} can be used, instead.</li>
- * <li>{@code ResourceBundle.Control} is <em>not</em> supported in named modules.
- * If the {@code getBundle} method with a {@code ResourceBundle.Control} is called
- * in a named module, the method will throw an {@code UnsupportedOperationException}.
- * Any service providers of {@link ResourceBundleControlProvider} are ignored in
- * named modules.
- * </li>
- * </ul>
+ * <h4>Resource bundles together with an application</h4>
  *
- * <h3><a id="RBP_support">ResourceBundleProvider Service Providers</a></h3>
+ * Resource bundles can be deployed together with an application in the same
+ * module.  In that case, the resource bundles are loaded
+ * by code in the module by calling the {@link #getBundle(String)}
+ * or {@link #getBundle(String, Locale)} method.
  *
- * The {@code getBundle} factory methods load service providers of
- * {@link ResourceBundleProvider}, if available, using {@link ServiceLoader}.
- * The service type is designated by
- * {@code <package name> + ".spi." + <simple name> + "Provider"}. For
- * example, if the base name is "{@code com.example.app.MyResources}", the service
- * type is {@code com.example.app.spi.MyResourcesProvider}.
- * <p>
- * In named modules, the loaded service providers for the given base name are
- * used to load resource bundles. If no service provider is available, or if
- * none of the service providers returns a resource bundle and the caller module
- * doesn't have its own service provider, the {@code getBundle} factory method
- * searches for resource bundles that are local in the caller module and that
- * are visible to the class loader of the caller module.  The resource bundle
- * formats for local module searching are "java.class" and "java.properties".
+ * <h4><a id="service-providers">Resource bundles as service providers</a></h4>
+ *
+ * Resource bundles can be deployed in one or more <em>service provider modules</em>
+ * and they can be located using {@link ServiceLoader}.
+ * A {@linkplain ResourceBundleProvider service} interface or class must be
+ * defined. The caller module declares that it uses the service, the service
+ * provider modules declare that they provide implementations of the service.
+ * Refer to {@link ResourceBundleProvider} for developing resource bundle
+ * services and deploying resource bundle providers.
+ * The module obtaining the resource bundle can be a resource bundle
+ * provider itself; in which case this module only locates the resource bundle
+ * via service provider mechanism.
+ *
+ * <p>A {@linkplain ResourceBundleProvider resource bundle provider} can
+ * provide resource bundles in any format such XML which replaces the need
+ * of {@link Control ResourceBundle.Control}.
+ *
+ * <h4><a id="other-modules">Resource bundles in other modules and class path</a></h4>
+ *
+ * Resource bundles in a named module may be <em>encapsulated</em> so that
+ * it cannot be located by code in other modules.  Resource bundles
+ * in unnamed modules and class path are open for any module to access.
+ * Resource bundle follows the resource encapsulation rules as specified
+ * in {@link Module#getResourceAsStream(String)}.
+ *
+ * <p>The {@code getBundle} factory methods with no {@code Control} parameter
+ * locate and load resource bundles from
+ * {@linkplain ResourceBundleProvider service providers}.
+ * It may continue the search as if calling {@link Module#getResourceAsStream(String)}
+ * to find the named resource from a given module and calling
+ * {@link ClassLoader#getResourceAsStream(String)}; refer to
+ * the specification of the {@code getBundle} method for details.
+ * Only non-encapsulated resource bundles of "{@code java.class}"
+ * or "{@code java.properties}" format are searched.
+ *
+ * <p>If the caller module is a
+ * <a href="{@docRoot}/java/util/spi/ResourceBundleProvider.html#obtain-resource-bundle">
+ * resource bundle provider</a>, it does not fall back to the
+ * class loader search.
+ *
+ * <h4>Resource bundles in automatic modules</h4>
+ *
+ * A common format of resource bundles is in {@linkplain PropertyResourceBundle
+ * .properties} file format.  Typically {@code .properties} resource bundles
+ * are packaged in a JAR file.  Resource bundle only JAR file can be readily
+ * deployed as an <a href="{@docRoot}/java/lang/module/ModuleFinder.html#automatic-modules">
+ * automatic module</a>.  For example, if the JAR file contains the
+ * entry "{@code p/q/Foo_ja.properties}" and no {@code .class} entry,
+ * when resolved and defined as an automatic module, no package is derived
+ * for this module.  This allows resource bundles in {@code .properties}
+ * format packaged in one or more JAR files that may contain entries
+ * in the same directory and can be resolved successfully as
+ * automatic modules.
  *
  * <h3>ResourceBundle.Control</h3>
  *
@@ -267,6 +279,14 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * define caching parameters. Refer to the descriptions of the class and the
  * {@link #getBundle(String, Locale, ClassLoader, Control) getBundle}
  * factory method for details.
+ *
+ * <p> {@link ResourceBundle.Control} is designed for an application deployed
+ * in an unnamed module, for example to support resource bundles in
+ * non-standard formats or package localized resources in a non-traditional
+ * convention. {@link ResourceBundleProvider} is the replacement for
+ * {@code ResourceBundle.Control} when migrating to modules.
+ * {@code UnsupportedOperationException} will be thrown when a factory
+ * method that takes the {@code ResourceBundle.Control} parameter is called.
  *
  * <p><a id="modify_default_behavior">For the {@code getBundle} factory</a>
  * methods that take no {@link Control} instance, their <a
@@ -815,14 +835,10 @@ public abstract class ResourceBundle {
 
     /**
      * Gets a resource bundle using the specified base name, the default locale,
-     * and the caller's class loader. Calling this method is equivalent to calling
+     * and the caller module. Calling this method is equivalent to calling
      * <blockquote>
-     * <code>getBundle(baseName, Locale.getDefault(), this.getClass().getClassLoader())</code>,
+     * <code>getBundle(baseName, Locale.getDefault(), callerModule)</code>,
      * </blockquote>
-     * except that <code>getClassLoader()</code> is run with the security
-     * privileges of <code>ResourceBundle</code>.
-     * See {@link #getBundle(String, Locale, ClassLoader) getBundle}
-     * for a complete description of the search and instantiation strategy.
      *
      * @param baseName the base name of the resource bundle, a fully qualified class name
      * @exception java.lang.NullPointerException
@@ -830,6 +846,9 @@ public abstract class ResourceBundle {
      * @exception MissingResourceException
      *     if no resource bundle for the specified base name can be found
      * @return a resource bundle for the given base name and the default locale
+     *
+     * @see <a href="#default_behavior">Resource Bundle Search and Loading Strategy</a>
+     * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName)
@@ -887,14 +906,10 @@ public abstract class ResourceBundle {
 
     /**
      * Gets a resource bundle using the specified base name and locale,
-     * and the caller's class loader. Calling this method is equivalent to calling
+     * and the caller module. Calling this method is equivalent to calling
      * <blockquote>
-     * <code>getBundle(baseName, locale, this.getClass().getClassLoader())</code>,
+     * <code>getBundle(baseName, locale, callerModule)</code>,
      * </blockquote>
-     * except that <code>getClassLoader()</code> is run with the security
-     * privileges of <code>ResourceBundle</code>.
-     * See {@link #getBundle(String, Locale, ClassLoader) getBundle}
-     * for a complete description of the search and instantiation strategy.
      *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified class name
@@ -905,6 +920,9 @@ public abstract class ResourceBundle {
      * @exception MissingResourceException
      *        if no resource bundle for the specified base name can be found
      * @return a resource bundle for the given base name and locale
+     *
+     * @see <a href="#default_behavior">Resource Bundle Search and Loading Strategy</a>
+     * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName,
@@ -922,19 +940,6 @@ public abstract class ResourceBundle {
      * <code>getBundle(baseName, Locale.getDefault(), module)</code>
      * </blockquote>
      *
-     * <p> Resource bundles in named modules may be encapsulated.  When
-     * the resource bundle is loaded from a provider, the caller module
-     * must have an appropriate <i>uses</i> clause in its <i>module descriptor</i>
-     * to declare that the module uses implementations of
-     * {@code <package name> + ".spi." + <simple name> + "Provider"}.
-     * Otherwise, it will load the resource bundles that are local in the
-     * given module or that are visible to the class loader of the given module
-     * (refer to the <a href="#bundleprovider">Resource Bundles in Named Modules</a>
-     * section for details).
-     * When the resource bundle is loaded from the specified module, it is
-     * subject to the encapsulation rules specified by
-     * {@link Module#getResourceAsStream Module.getResourceAsStream}.
-     *
      * @param baseName the base name of the resource bundle,
      *                 a fully qualified class name
      * @param module   the module for which the resource bundle is searched
@@ -950,6 +955,8 @@ public abstract class ResourceBundle {
      * @since 9
      * @spec JPMS
      * @see ResourceBundleProvider
+     * @see <a href="#default_behavior">Resource Bundle Search and Loading Strategy</a>
+     * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
     @CallerSensitive
     public static ResourceBundle getBundle(String baseName, Module module) {
@@ -963,14 +970,15 @@ public abstract class ResourceBundle {
      * on behalf of the specified module.
      *
      * <p> Resource bundles in named modules may be encapsulated.  When
-     * the resource bundle is loaded from a provider, the caller module
+     * the resource bundle is loaded from a
+     * {@linkplain ResourceBundleProvider service provider}, the caller module
      * must have an appropriate <i>uses</i> clause in its <i>module descriptor</i>
-     * to declare that the module uses implementations of
-     * {@code <package name> + ".spi." + <simple name> + "Provider"}.
+     * to declare that the module uses of {@link ResourceBundleProvider}
+     * for the named resource bundle.
      * Otherwise, it will load the resource bundles that are local in the
-     * given module or that are visible to the class loader of the given module
-     * (refer to the <a href="#bundleprovider">Resource Bundles in Named Modules</a>
-     * section for details).
+     * given module as if calling {@link Module#getResourceAsStream(String)}
+     * or that are visible to the class loader of the given module
+     * as if calling {@link ClassLoader#getResourceAsStream(String)}.
      * When the resource bundle is loaded from the specified module, it is
      * subject to the encapsulation rules specified by
      * {@link Module#getResourceAsStream Module.getResourceAsStream}.
@@ -1000,6 +1008,8 @@ public abstract class ResourceBundle {
      * @return a resource bundle for the given base name and locale in the module
      * @since 9
      * @spec JPMS
+     * @see <a href="#default_behavior">Resource Bundle Search and Loading Strategy</a>
+     * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
     @CallerSensitive
     public static ResourceBundle getBundle(String baseName, Locale targetLocale, Module module) {
@@ -1060,28 +1070,25 @@ public abstract class ResourceBundle {
      * Gets a resource bundle using the specified base name, locale, and class
      * loader.
      *
-     * <p>This method behaves the same as calling
-     * {@link #getBundle(String, Locale, ClassLoader, Control)} passing a
-     * default instance of {@link Control} unless another {@link Control} is
-     * provided with the {@link ResourceBundleControlProvider} SPI. Refer to the
-     * description of <a href="#modify_default_behavior">modifying the default
-     * behavior</a>.
+     * <p>When this method is called from a named module and the given
+     * loader is the class loader of the caller module, this is equivalent
+     * to calling:
+     * <blockquote><pre>
+     * getBundle(baseName, targetLocale, callerModule)
+     * </pre></blockquote>
      *
-     * <p><a id="default_behavior">The following describes the default
-     * behavior</a>.
+     * otherwise, this is equivalent to calling:
+     * <blockquote><pre>
+     * getBundle(baseName, targetLocale, loader, control)
+     * </pre></blockquote>
+     * where {@code control} is the default instance of {@link Control} unless
+     * a {@code Control} instance is provided by
+     * {@link ResourceBundleControlProvider} SPI.  Refer to the
+     * description of <a href="#modify_default_behavior">modifying the default
+     * behavior</a>. The following describes the default behavior.
      *
      * <p>
-     * Resource bundles in a named module are private to that module.  If
-     * the caller is in a named module, this method will find resource bundles
-     * from the service providers of {@link java.util.spi.ResourceBundleProvider}
-     * if any. Otherwise, it will load the resource bundles that are visible to
-     * the given {@code loader} (refer to the
-     * <a href="#bundleprovider">Resource Bundles in Named Modules</a> section
-     * for details).
-     * If the caller is in a named module and the given {@code loader} is
-     * different than the caller's class loader, or if the caller is not in
-     * a named module, this method will not find resource bundles from named
-     * modules.
+     * <b><a id="default_behavior">Resource Bundle Search and Loading Strategy</a></b>
      *
      * <p><code>getBundle</code> uses the base name, the specified locale, and
      * the default locale (obtained from {@link java.util.Locale#getDefault()
@@ -1201,7 +1208,7 @@ public abstract class ResourceBundle {
      *
      * <p><b>Note:</b>The <code>baseName</code> argument should be a fully
      * qualified class name. However, for compatibility with earlier versions,
-     * Sun's Java SE Runtime Environments do not verify this, and so it is
+     * Java SE Runtime Environments do not verify this, and so it is
      * possible to access <code>PropertyResourceBundle</code>s by specifying a
      * path name (using "/") instead of a fully qualified class name (using
      * ".").
@@ -1248,7 +1255,7 @@ public abstract class ResourceBundle {
      *
      * @apiNote If the caller module is a named module and the given
      * {@code loader} is the caller module's class loader, this method is
-     * equivalent to {@code getBundle(baseName, locale)}; otherwise, it will not
+     * equivalent to {@code getBundle(baseName, locale)}; otherwise, it may not
      * find resource bundles from named modules.
      * Use {@link #getBundle(String, Locale, Module)} to load resource bundles
      * on behalf on a specific module instead.
@@ -1264,6 +1271,7 @@ public abstract class ResourceBundle {
      * @since 1.2
      * @revised 9
      * @spec JPMS
+     * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
     @CallerSensitive
     public static ResourceBundle getBundle(String baseName, Locale locale,
@@ -1278,9 +1286,9 @@ public abstract class ResourceBundle {
 
     /**
      * Returns a resource bundle using the specified base name, target
-     * locale, class loader and control. Unlike the {@linkplain
-     * #getBundle(String, Locale, ClassLoader) <code>getBundle</code>
-     * factory methods with no <code>control</code> argument}, the given
+     * locale, class loader and control. Unlike the {@link
+     * #getBundle(String, Locale, ClassLoader) getBundle}
+     * factory methods with no {@code control} argument, the given
      * <code>control</code> specifies how to locate and instantiate resource
      * bundles. Conceptually, the bundle loading process with the given
      * <code>control</code> is performed in the following steps.
@@ -2365,7 +2373,14 @@ public abstract class ResourceBundle {
      * the callback methods provides the information necessary for the
      * factory methods to perform the <a
      * href="./ResourceBundle.html#default_behavior">default behavior</a>.
-     * <a href="#note">Note that this class is not supported in named modules.</a>
+     *
+     * <p> {@link ResourceBundle.Control} is designed for an application deployed
+     * in an unnamed module, for example to support resource bundles in
+     * non-standard formats or package localized resources in a non-traditional
+     * convention. {@link ResourceBundleProvider} is the replacement for
+     * {@code ResourceBundle.Control} when migrating to modules.
+     * {@code UnsupportedOperationException} will be thrown when a factory
+     * method that takes the {@code ResourceBundle.Control} parameter is called.
      *
      * <p>In addition to the callback methods, the {@link
      * #toBundleName(String, Locale) toBundleName} and {@link
@@ -2501,8 +2516,8 @@ public abstract class ResourceBundle {
      * }
      * </pre>
      *
-     * @apiNote <a id="note">{@code ResourceBundle.Control} is not supported
-     * in named modules.</a> If the {@code ResourceBundle.getBundle} method with
+     * @apiNote {@code ResourceBundle.Control} is not supported
+     * in named modules. If the {@code ResourceBundle.getBundle} method with
      * a {@code ResourceBundle.Control} is called in a named module, the method
      * will throw an {@link UnsupportedOperationException}. Any service providers
      * of {@link ResourceBundleControlProvider} are ignored in named modules.
