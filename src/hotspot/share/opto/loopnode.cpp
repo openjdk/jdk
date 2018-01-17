@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,9 +70,9 @@ bool LoopNode::is_valid_counted_loop() const {
     CountedLoopNode*    l  = as_CountedLoop();
     CountedLoopEndNode* le = l->loopexit();
     if (le != NULL &&
-        le->proj_out(1 /* true */) == l->in(LoopNode::LoopBackControl)) {
+        le->proj_out_or_null(1 /* true */) == l->in(LoopNode::LoopBackControl)) {
       Node* phi  = l->phi();
-      Node* exit = le->proj_out(0 /* false */);
+      Node* exit = le->proj_out_or_null(0 /* false */);
       if (exit != NULL && exit->Opcode() == Op_IfFalse &&
           phi != NULL && phi->is_Phi() &&
           phi->in(LoopNode::LoopBackControl) == l->incr() &&
@@ -1216,7 +1216,7 @@ IfFalseNode* OuterStripMinedLoopNode::outer_loop_exit() const {
   if (le == NULL) {
     return NULL;
   }
-  Node* c = le->proj_out(false);
+  Node* c = le->proj_out_or_null(false);
   if (c == NULL) {
     return NULL;
   }
