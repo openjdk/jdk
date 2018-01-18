@@ -1731,7 +1731,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
     Node* sfpt = cl->outer_safepoint();
     CountedLoopEndNode* cle = cl->loopexit();
     CountedLoopNode* new_cl = old_new[cl->_idx]->as_CountedLoop();
-    CountedLoopEndNode* new_cle = new_cl->as_CountedLoop()->loopexit();
+    CountedLoopEndNode* new_cle = new_cl->as_CountedLoop()->loopexit_or_null();
     Node* cle_out = cle->proj_out(false);
 
     Node* new_sfpt = NULL;

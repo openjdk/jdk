@@ -68,7 +68,7 @@ void LoopNode::dump_spec(outputStream *st) const {
 bool LoopNode::is_valid_counted_loop() const {
   if (is_CountedLoop()) {
     CountedLoopNode*    l  = as_CountedLoop();
-    CountedLoopEndNode* le = l->loopexit();
+    CountedLoopEndNode* le = l->loopexit_or_null();
     if (le != NULL &&
         le->proj_out_or_null(1 /* true */) == l->in(LoopNode::LoopBackControl)) {
       Node* phi  = l->phi();
@@ -793,7 +793,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
 
 #ifdef ASSERT
   assert(l->is_valid_counted_loop(), "counted loop shape is messed up");
-  assert(l == loop->_head && l->phi() == phi && l->loopexit() == lex, "" );
+  assert(l == loop->_head && l->phi() == phi && l->loopexit_or_null() == lex, "" );
 #endif
 #ifndef PRODUCT
   if (TraceLoopOpts) {
@@ -917,7 +917,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
       }
     }
     CountedLoopEndNode* cle = inner_out->in(0)->as_CountedLoopEnd();
-    assert(cle == inner->loopexit(), "mismatch");
+    assert(cle == inner->loopexit_or_null(), "mismatch");
     bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->is_int()->get_con() == 0;
     if (has_skeleton) {
       assert(expect_skeleton == 1 || expect_skeleton == -1, "unexpected skeleton node");
