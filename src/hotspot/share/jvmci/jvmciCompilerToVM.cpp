@@ -1660,7 +1660,6 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv*, jobject, jobject hs_frame
 
     GrowableArray<ScopeValue*>* scopeLocals = cvf->scope()->locals();
     StackValueCollection* locals = cvf->locals();
-
     if (locals != NULL) {
       for (int i2 = 0; i2 < locals->size(); i2++) {
         StackValue* var = locals->at(i2);
@@ -1669,6 +1668,27 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv*, jobject, jobject hs_frame
           val.l = (jobject) locals->at(i2)->get_obj()();
           cvf->update_local(T_OBJECT, i2, val);
         }
+      }
+    }
+
+    GrowableArray<ScopeValue*>* scopeExpressions = cvf->scope()->expressions();
+    StackValueCollection* expressions = cvf->expressions();
+    if (expressions != NULL) {
+      for (int i2 = 0; i2 < expressions->size(); i2++) {
+        StackValue* var = expressions->at(i2);
+        if (var->type() == T_OBJECT && scopeExpressions->at(i2)->is_object()) {
+          jvalue val;
+          val.l = (jobject) expressions->at(i2)->get_obj()();
+          cvf->update_stack(T_OBJECT, i2, val);
+        }
+      }
+    }
+
+    GrowableArray<MonitorValue*>* scopeMonitors = cvf->scope()->monitors();
+    GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
+    if (monitors != NULL) {
+      for (int i2 = 0; i2 < monitors->length(); i2++) {
+        cvf->update_monitor(i2, monitors->at(i2));
       }
     }
   }
