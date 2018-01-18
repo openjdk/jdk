@@ -34,7 +34,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build SharedStringsWb sun.hotspot.WhiteBox
- * @run main ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main SharedStrings
  */
 

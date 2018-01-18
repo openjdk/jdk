@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI BlobSanityTest
  * @summary sanity testing of allocateCodeBlob, freeCodeBlob and getCodeBlob

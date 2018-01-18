@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  * @compile -XDignore.symbol.file InvokeSpecialAnonTest.java
- * @run main ClassFileInstaller InvokeSpecialAnonTest AnonTester
+ * @run driver ClassFileInstaller InvokeSpecialAnonTest AnonTester
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all InvokeSpecialAnonTest
  */
 import jdk.internal.org.objectweb.asm.*;

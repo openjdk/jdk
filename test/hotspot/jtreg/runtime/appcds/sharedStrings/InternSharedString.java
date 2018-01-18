@@ -35,7 +35,7 @@
  *          jdk.jartool/sun.tools.jar
  * @compile InternStringTest.java
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main InternSharedString
  */
 

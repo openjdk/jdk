@@ -30,7 +30,7 @@
  * @modules jdk.jartool/sun.tools.jar
  * @compile ArrayTestHelper.java
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main ArrayTest
  */
 
