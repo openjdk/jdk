@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -56,7 +56,7 @@ import org.w3c.dom.Node;
  * @xerces.internal
  *
  * @since  PR-DOM-Level-1-19980818.
- * @LastModified: Oct 2017
+ * @LastModified: Jan 2018
  */
 public class NamedNodeMapImpl
     implements NamedNodeMap, Serializable {
@@ -595,12 +595,14 @@ public class NamedNodeMapImpl
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (nodes != null) {
             // nodes are written as a Vector for compatibility.
-            nodes = new ArrayList<>(nodes);
+            // cast to Vector is required
+            nodes = new ArrayList<>((Vector<Node>)nodes);
         }
     }
 
