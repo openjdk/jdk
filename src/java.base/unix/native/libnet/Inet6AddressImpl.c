@@ -198,6 +198,8 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
                 return NULL;
             }
             setInetAddress_hostName(env, o, name);
+            if ((*env)->ExceptionCheck(env))
+                goto done;
             (*env)->SetObjectArrayElement(env, result, index, o);
             (*env)->DeleteLocalRef(env, o);
         }
@@ -355,7 +357,11 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                     goto cleanupAndReturn;
                 }
                 setInetAddress_addr(env, iaObj, ntohl(((struct sockaddr_in*)iterator->ai_addr)->sin_addr.s_addr));
+                if ((*env)->ExceptionCheck(env))
+                    goto cleanupAndReturn;
                 setInetAddress_hostName(env, iaObj, host);
+                if ((*env)->ExceptionCheck(env))
+                    goto cleanupAndReturn;
                 (*env)->SetObjectArrayElement(env, ret, (inetIndex | originalIndex), iaObj);
                 inetIndex++;
             } else if (iterator->ai_family == AF_INET6) {
@@ -376,6 +382,8 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                     setInet6Address_scopeid(env, iaObj, scope);
                 }
                 setInetAddress_hostName(env, iaObj, host);
+                if ((*env)->ExceptionCheck(env))
+                    goto cleanupAndReturn;
                 (*env)->SetObjectArrayElement(env, ret, (inet6Index | originalIndex), iaObj);
                 inet6Index++;
             }
