@@ -443,7 +443,17 @@ public abstract class PKCS11Test {
 
         // the index after whitespace after nssHeader
         int afterheader = s.indexOf("NSS", i) + 4;
-        String version = s.substring(afterheader, s.indexOf(' ', afterheader));
+        int nextSpaceIndex = s.indexOf(' ', afterheader);
+
+        // If the next space is not found,
+        // it has to print the content for further investigation.
+        if (nextSpaceIndex == -1) {
+            System.out.println("===== Content start =====");
+            System.out.println(s);
+            System.out.println("===== Content end =====");
+        }
+
+        String version = s.substring(afterheader, nextSpaceIndex);
 
         // If a "dot dot" release, strip the extra dots for double parsing
         String[] dot = version.split("\\.");

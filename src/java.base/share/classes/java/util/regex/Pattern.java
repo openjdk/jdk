@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -954,6 +954,12 @@ public final class Pattern
     private int flags;
 
     /**
+     * The temporary pattern flags used during compiling. The flags might be turn
+     * on and off by embedded flag.
+     */
+    private transient int flags0;
+
+    /**
      * Boolean indicating this Pattern is compiled; this is necessary in order
      * to lazily compile deserialized Patterns.
      */
@@ -1137,7 +1143,7 @@ public final class Pattern
      * @return  The match flags specified when this pattern was compiled
      */
     public int flags() {
-        return flags;
+        return flags0;
     }
 
     /**
@@ -1369,6 +1375,9 @@ public final class Pattern
         // Read in all fields
         s.defaultReadObject();
 
+        // reset the flags
+        flags0 = flags;
+
         // Initialize counts
         capturingGroupCount = 1;
         localCount = 0;
@@ -1399,6 +1408,9 @@ public final class Pattern
         // to use UNICODE_CASE if UNICODE_CHARACTER_CLASS present
         if ((flags & UNICODE_CHARACTER_CLASS) != 0)
             flags |= UNICODE_CASE;
+
+        // 'flags' for compiling
+        flags0 = flags;
 
         // Reset group index count
         capturingGroupCount = 1;
@@ -1841,7 +1853,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * Indicates whether a particular flag is set or not.
      */
     private boolean has(int f) {
-        return (flags & f) != 0;
+        return (flags0 & f) != 0;
     }
 
     /**
@@ -2718,7 +2730,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                ch == 0x53 || ch == 0x73 ||    //S and s
                ch == 0x4b || ch == 0x6b ||    //K and k
                ch == 0xc5 || ch == 0xe5))) {  //A+ring
-            bits.add(ch, flags());
+            bits.add(ch, flags0);
             return null;
         }
         return single(ch);
@@ -2931,7 +2943,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         boolean capturingGroup = false;
         Node head = null;
         Node tail = null;
-        int save = flags;
+        int save = flags0;
         int saveTCNCount = topClosureNodes.size();
         root = null;
         int ch = next();
@@ -3032,7 +3044,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
 
         accept(')', "Unclosed group");
-        flags = save;
+        flags0 = save;
 
         // Check for quantifiers
         Node node = closure(head);
@@ -3135,28 +3147,28 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         for (;;) {
             switch (ch) {
             case 'i':
-                flags |= CASE_INSENSITIVE;
+                flags0 |= CASE_INSENSITIVE;
                 break;
             case 'm':
-                flags |= MULTILINE;
+                flags0 |= MULTILINE;
                 break;
             case 's':
-                flags |= DOTALL;
+                flags0 |= DOTALL;
                 break;
             case 'd':
-                flags |= UNIX_LINES;
+                flags0 |= UNIX_LINES;
                 break;
             case 'u':
-                flags |= UNICODE_CASE;
+                flags0 |= UNICODE_CASE;
                 break;
             case 'c':
-                flags |= CANON_EQ;
+                flags0 |= CANON_EQ;
                 break;
             case 'x':
-                flags |= COMMENTS;
+                flags0 |= COMMENTS;
                 break;
             case 'U':
-                flags |= (UNICODE_CHARACTER_CLASS | UNICODE_CASE);
+                flags0 |= (UNICODE_CHARACTER_CLASS | UNICODE_CASE);
                 break;
             case '-': // subFlag then fall through
                 ch = next();
@@ -3178,28 +3190,28 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         for (;;) {
             switch (ch) {
             case 'i':
-                flags &= ~CASE_INSENSITIVE;
+                flags0 &= ~CASE_INSENSITIVE;
                 break;
             case 'm':
-                flags &= ~MULTILINE;
+                flags0 &= ~MULTILINE;
                 break;
             case 's':
-                flags &= ~DOTALL;
+                flags0 &= ~DOTALL;
                 break;
             case 'd':
-                flags &= ~UNIX_LINES;
+                flags0 &= ~UNIX_LINES;
                 break;
             case 'u':
-                flags &= ~UNICODE_CASE;
+                flags0 &= ~UNICODE_CASE;
                 break;
             case 'c':
-                flags &= ~CANON_EQ;
+                flags0 &= ~CANON_EQ;
                 break;
             case 'x':
-                flags &= ~COMMENTS;
+                flags0 &= ~COMMENTS;
                 break;
             case 'U':
-                flags &= ~(UNICODE_CHARACTER_CLASS | UNICODE_CASE);
+                flags0 &= ~(UNICODE_CHARACTER_CLASS | UNICODE_CASE);
                 break;
             default:
                 return;

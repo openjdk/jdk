@@ -25,7 +25,6 @@
  * @bug 4268317 8132306 8175797
  * @summary Test if Reference.enqueue() works properly with GC
  * @run main ReferenceEnqueue
- * @run main/othervm -Djdk.lang.ref.disableClearBeforeEnqueue=true ReferenceEnqueue
  */
 
 import java.lang.ref.*;
@@ -87,8 +86,6 @@ public class ReferenceEnqueue {
         final ReferenceQueue<Object> queue = new ReferenceQueue<>();
         final List<Reference<Object>> refs = new ArrayList<>();
         final int iterations = 1000;
-        final boolean disableClearBeforeEnqueue =
-            Boolean.getBoolean("jdk.lang.ref.disableClearBeforeEnqueue");
 
         ExplicitEnqueue() {
             this.refs.add(new SoftReference<>(new Object(), queue));
@@ -101,10 +98,7 @@ public class ReferenceEnqueue {
                 if (ref.enqueue() == false) {
                     throw new RuntimeException("Error: enqueue failed");
                 }
-                if (disableClearBeforeEnqueue && ref.get() == null) {
-                    throw new RuntimeException("Error: clearing should be disabled");
-                }
-                if (!disableClearBeforeEnqueue && ref.get() != null) {
+                if (ref.get() != null) {
                     throw new RuntimeException("Error: referent must be cleared");
                 }
             }

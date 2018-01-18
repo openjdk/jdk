@@ -28,9 +28,27 @@
  * @author Martin Buchholz
  */
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.Objects;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 @SuppressWarnings("unchecked")
 public class BiggernYours {
@@ -152,7 +170,7 @@ public class BiggernYours {
     static int randomize(int size) { return rnd.nextInt(size + 2); }
 
     @SuppressWarnings("serial")
-    private static void realMain(String[] args) throws Throwable {
+    private static void realMain(String[] args) {
         testNavigableMaps(
             new ConcurrentSkipListMap(),
             new ConcurrentSkipListMap() {
@@ -232,7 +250,7 @@ public class BiggernYours {
     static void arrayEqual(Object[] x, Object[] y) {
         if (x == null ? y == null : Arrays.equals(x, y)) pass();
         else fail(Arrays.toString(x) + " not equal to " + Arrays.toString(y));}
-    public static void main(String[] args) throws Throwable {
+    public static void main(String[] args) {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}

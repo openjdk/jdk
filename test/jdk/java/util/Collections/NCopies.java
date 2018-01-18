@@ -28,8 +28,8 @@
  * @author  Martin Buchholz
  */
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collections;
+import java.util.List;
 
 public class NCopies {
     static volatile int passed = 0, failed = 0;

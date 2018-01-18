@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,16 @@ package jdk.testlibrary;
 
 import static jdk.testlibrary.Asserts.*;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 
 /**
  * Utility class for verifying output and exit value from a {@code Process}.
@@ -446,8 +450,9 @@ public final class OutputAnalyzer {
 
 
     /**
-     * Get the contents of the output buffer (stdout and stderr) as list of strings.
-     * Output will be split by system property 'line.separator'.
+     * Get the contents of the output buffer (stdout and stderr)
+     * as a list of strings. Output will be split at new-lines as
+     * recognized by java.io.BufferedReader.readLine().
      *
      * @return Contents of the output buffer as list of strings
      */
@@ -456,12 +461,8 @@ public final class OutputAnalyzer {
     }
 
     private List<String> asLines(String buffer) {
-        List<String> l = new ArrayList<>();
-        String[] a = buffer.split(Utils.NEW_LINE);
-        for (String string : a) {
-            l.add(string);
-        }
-        return l;
+        return new BufferedReader(new StringReader(buffer))
+            .lines().collect(Collectors.toList());
     }
 
     /**

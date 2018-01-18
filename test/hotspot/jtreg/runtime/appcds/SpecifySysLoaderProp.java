@@ -23,17 +23,16 @@
  */
 
 /*
- *  @test
- *  @summary If -Djava.system.class.loader=xxx is specified in command-line, disable UseAppCDS
- *  AppCDS does not support uncompressed oops
- *  @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
- *  @library /test/lib
- *  @modules java.base/jdk.internal.misc
+ * @test
+ * @summary If -Djava.system.class.loader=xxx is specified in command-line, disable UseAppCDS
+ * @requires vm.cds
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
  *      jdk.jartool/sun.tools.jar
- *  @compile test-classes/TestClassLoader.java
- *  @compile test-classes/ReportMyLoader.java
- *  @compile test-classes/TrySwitchMyLoader.java
- *  @run main SpecifySysLoaderProp
+ * @compile test-classes/TestClassLoader.java
+ * @compile test-classes/ReportMyLoader.java
+ * @compile test-classes/TrySwitchMyLoader.java
+ * @run main SpecifySysLoaderProp
  */
 
 import java.io.*;

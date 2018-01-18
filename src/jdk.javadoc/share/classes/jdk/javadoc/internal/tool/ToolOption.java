@@ -346,7 +346,7 @@ public enum ToolOption {
 
     // ----- help options -----
 
-    HELP("--help -help", STANDARD) {
+    HELP("--help -help -? -h", STANDARD) {
         @Override
         public void process(Helper helper) throws OptionException {
             throw new OptionException(OK, helper::usage);

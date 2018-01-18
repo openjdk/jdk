@@ -21,18 +21,18 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4652911
  * @summary test Hashtable readObject for invocation of overridable put method
  */
-import java.util.Hashtable;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Hashtable;
 
 /**
  * Class that extends Hashtable to demonstrate bug when
@@ -52,7 +52,7 @@ public class ReadObject extends Hashtable {
         Object getValue() {
             return mValue;
         }
-    };
+    }
 
     public Object get(Object key) {
         ValueWrapper valueWrapper = (ValueWrapper)super.get(key);

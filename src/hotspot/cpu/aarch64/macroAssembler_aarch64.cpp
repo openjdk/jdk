@@ -801,7 +801,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   assert(is_NativeCallTrampolineStub_at(stub_start_addr), "doesn't look like a trampoline");
 
   end_a_stub();
-  return stub;
+  return stub_start_addr;
 }
 
 address MacroAssembler::ic_call(address entry, jint method_index) {

@@ -73,6 +73,11 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
 }
 #undef __
 
+int CompiledStaticCall::to_trampoline_stub_size() {
+  // SPARC doesn't use trampolines.
+  return 0;
+}
+
 int CompiledStaticCall::to_interp_stub_size() {
   // This doesn't need to be accurate but it must be larger or equal to
   // the real size of the stub.

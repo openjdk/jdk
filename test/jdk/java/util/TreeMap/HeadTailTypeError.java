@@ -28,7 +28,10 @@
  *          valid range in the backing array
  */
 
-import java.util.*;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class HeadTailTypeError {
     public static void main(String[] args) throws Exception {

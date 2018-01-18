@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.types.incompatible.abstract.default
+// key: compiler.err.types.incompatible
+// key: compiler.misc.incompatible.abstract.default
 
 class TypesIncompatibleAbstractDefault {
     interface A {

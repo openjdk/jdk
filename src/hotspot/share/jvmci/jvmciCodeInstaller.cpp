@@ -699,6 +699,7 @@ int CodeInstaller::estimate_stubs_size(TRAPS) {
   // Estimate the number of static and aot call stubs that might be emitted.
   int static_call_stubs = 0;
   int aot_call_stubs = 0;
+  int trampoline_stubs = 0;
   objArrayOop sites = this->sites();
   for (int i = 0; i < sites->length(); i++) {
     oop site = sites->obj_at(i);
@@ -710,8 +711,18 @@ int CodeInstaller::estimate_stubs_size(TRAPS) {
             JVMCI_ERROR_0("expected Integer id, got %s", id_obj->klass()->signature_name());
           }
           jint id = id_obj->int_field(java_lang_boxing_object::value_offset_in_bytes(T_INT));
-          if (id == INVOKESTATIC || id == INVOKESPECIAL) {
+          switch (id) {
+          case INVOKEINTERFACE:
+          case INVOKEVIRTUAL:
+            trampoline_stubs++;
+            break;
+          case INVOKESTATIC:
+          case INVOKESPECIAL:
             static_call_stubs++;
+            trampoline_stubs++;
+            break;
+          default:
+            break;
           }
         }
       }
@@ -726,6 +737,7 @@ int CodeInstaller::estimate_stubs_size(TRAPS) {
     }
   }
   int size = static_call_stubs * CompiledStaticCall::to_interp_stub_size();
+  size += trampoline_stubs * CompiledStaticCall::to_trampoline_stub_size();
 #if INCLUDE_AOT
   size += aot_call_stubs * CompiledStaticCall::to_aot_stub_size();
 #endif
@@ -1171,7 +1183,7 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, Handle site, T
     }
 
     TRACE_jvmci_3("method call");
-    CodeInstaller::pd_relocate_JavaMethod(hotspot_method, pc_offset, CHECK);
+    CodeInstaller::pd_relocate_JavaMethod(buffer, hotspot_method, pc_offset, CHECK);
     if (_next_call_type == INVOKESTATIC || _next_call_type == INVOKESPECIAL) {
       // Need a static call stub for transitions from compiled to interpreted.
       CompiledStaticCall::emit_to_interp_stub(buffer, _instructions->start() + pc_offset);
@@ -1282,4 +1294,3 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, Handle site, T
     }
   }
 }
-

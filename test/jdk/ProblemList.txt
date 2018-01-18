@@ -217,6 +217,8 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
+java/net/httpclient/SplitResponseSSL.java                       8194151 windows-all
+
 ############################################################################
 
 # jdk_nio
@@ -252,7 +254,8 @@ java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-
 # jdk_security
 
 sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
-sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8186098 linux-all
+sun/security/pkcs11/Secmod/AddTrustedCert.java                  8180837 generic-all
+sun/security/pkcs11/tls/TestKeyMaterial.java                    8180837 generic-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
@@ -347,8 +350,6 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 ############################################################################
 
 # svc_tools
-
-sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
 
 sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
 

@@ -29,7 +29,8 @@
  * @author Josh Bloch
  */
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class ToString {
     public static void main(String[] args) {

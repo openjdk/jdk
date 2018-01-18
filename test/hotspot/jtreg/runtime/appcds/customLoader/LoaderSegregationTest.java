@@ -26,8 +26,7 @@
  * @test
  * @summary Check that during dumping, the classes for BOOT/EXT/APP loaders are segregated from the
  *          custom loader classes.
- * (NOTE: AppCDS does not support uncompressed oops)
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc

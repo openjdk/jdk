@@ -28,8 +28,7 @@
  *          the dump and execute steps, in such way that they cause errors
  *          E.g. use compressed oops for creating and archive, but then
  *               execute w/o compressed oops
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

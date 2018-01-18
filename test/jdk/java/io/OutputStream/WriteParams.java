@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 1267039 1267043 4193729
+ * @bug 1267039 1267043 4193729 4358774
  * @summary Check for correct handling of parameters to
  *          XXXXOutputStream.write(b, off, len).
  *
@@ -151,6 +151,11 @@ public class WriteParams {
         doTest(dfos);
         doTest1(dfos);
         dfos.close();
+
+        OutputStream nos = OutputStream.nullOutputStream();
+        doTest(nos);
+        doTest1(nos);
+        nos.close();
 
         /* cleanup */
         fn.delete();

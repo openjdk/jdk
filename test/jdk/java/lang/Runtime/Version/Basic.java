@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Unit test for java.lang.Runtime.Version
- * @bug 8072379 8144062 8161236 8160956
+ * @bug 8072379 8144062 8161236 8160956 8194879
  */
 
 import java.lang.Runtime.Version;
@@ -115,6 +115,7 @@ public class Basic {
         tryCatch("9-pre+-opt", IAE);
         tryCatch("1.4142+-",   IAE);
         tryCatch("2.9979+-%",  IAE);
+        tryCatch("10--ea",     IAE);
 
         //// Test for Runtime.version()
         testVersion();
