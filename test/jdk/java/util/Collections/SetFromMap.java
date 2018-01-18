@@ -28,7 +28,10 @@
  * @author Martin Buchholz
  */
 
-import java.util.*;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class SetFromMap {
     static volatile int passed = 0, failed = 0;

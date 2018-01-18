@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class MultiReleaseJar {
         checkResult(r, false,
                 "Error: unknown option: -multi-release",
                 "Usage: jdeps <options> <path",
-                "use -h, -?, -help, or --help"
+                "use --help"
         );
 
         r = run("jdeps -v -R -cp Version.jar --multi-release 9 test/Main.class");

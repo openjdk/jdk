@@ -27,7 +27,8 @@
  * @summary Vector's lastIndexOf(Object) was lacking synchronization
  * @author Konstantin Kladko
  */
-import java.util.*;
+
+import java.util.Vector;
 
 public class SyncLastIndexOf {
 

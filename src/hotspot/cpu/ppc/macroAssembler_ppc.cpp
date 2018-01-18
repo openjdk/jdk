@@ -5604,12 +5604,17 @@ void MacroAssembler::zap_from_to(Register low, int before, Register high, int af
 
 #endif // !PRODUCT
 
-SkipIfEqualZero::SkipIfEqualZero(MacroAssembler* masm, Register temp, const bool* flag_addr) : _masm(masm), _label() {
+void SkipIfEqualZero::skip_to_label_if_equal_zero(MacroAssembler* masm, Register temp,
+                                                  const bool* flag_addr, Label& label) {
   int simm16_offset = masm->load_const_optimized(temp, (address)flag_addr, R0, true);
   assert(sizeof(bool) == 1, "PowerPC ABI");
   masm->lbz(temp, simm16_offset, temp);
   masm->cmpwi(CCR0, temp, 0);
-  masm->beq(CCR0, _label);
+  masm->beq(CCR0, label);
+}
+
+SkipIfEqualZero::SkipIfEqualZero(MacroAssembler* masm, Register temp, const bool* flag_addr) : _masm(masm), _label() {
+  skip_to_label_if_equal_zero(masm, temp, flag_addr, _label);
 }
 
 SkipIfEqualZero::~SkipIfEqualZero() {

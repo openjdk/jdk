@@ -89,9 +89,9 @@ public class  AtomicUpdaters {
 
             // Would like to test a public volatile in a class in another
             // package - but of course there aren't any
-            new Config(AtomicInteger.class, "value", "private", hasSM ? false : true, false, "private int field of class in different package", TYPE.INT),
-            new Config(AtomicLong.class, "value", "private", hasSM ? false : true, false, "private long field of class in different package", TYPE.LONG),
-            new Config(AtomicReference.class, "value", "private", hasSM ? false : true, false, "private reference field of class in different package", TYPE.REF),
+            new Config(AtomicInteger.class, "value", "private", !hasSM, false, "private int field of class in different package", TYPE.INT),
+            new Config(AtomicLong.class, "value", "private", !hasSM, false, "private long field of class in different package", TYPE.LONG),
+            new Config(AtomicReference.class, "value", "private", !hasSM, false, "private reference field of class in different package", TYPE.REF),
         };
     }
 

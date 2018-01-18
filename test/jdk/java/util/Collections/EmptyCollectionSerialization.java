@@ -29,14 +29,22 @@
  * @run testng EmptyCollectionSerialization
  */
 
-import java.util.*;
-import java.util.function.Supplier;
-import java.io.*;
-import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
-import static org.testng.Assert.fail;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.function.Supplier;
+
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.fail;
 
 public class EmptyCollectionSerialization {
     private static Object patheticDeepCopy(Object o) throws Exception {

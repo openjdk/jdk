@@ -110,14 +110,13 @@ public class ArrayDeque8Test extends JSR166TestCase {
             assertEquals((Integer) 1, q.peekLast());
             assertEquals(maxArraySize - 1, q.size());
 
-            ArrayDeque qq = q;
             ArrayDeque smallish = new ArrayDeque(
                 Collections.nCopies(Integer.MAX_VALUE - q.size() + 1, e));
             assertThrows(
                 IllegalStateException.class,
-                () -> qq.addAll(qq),
-                () -> qq.addAll(smallish),
-                () -> smallish.addAll(qq));
+                () -> q.addAll(q),
+                () -> q.addAll(smallish),
+                () -> smallish.addAll(q));
         }
     }
 

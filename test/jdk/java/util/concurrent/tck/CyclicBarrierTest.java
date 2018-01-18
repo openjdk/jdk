@@ -335,8 +335,7 @@ public class CyclicBarrierTest extends JSR166TestCase {
                         c.await();
                         shouldThrow();
                     }
-                    catch (BrokenBarrierException ok) {}
-                    catch (InterruptedException ok) {}
+                    catch (BrokenBarrierException | InterruptedException ok) {}
                 }}});
 
         for (int i = 0; i < 4; i++) {

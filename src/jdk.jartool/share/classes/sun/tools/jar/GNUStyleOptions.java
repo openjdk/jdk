@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ class GNUStyleOptions {
             },
 
             // Other options
-            new Option(true, true, OptionType.OTHER, "--help", "-h") {
+            new Option(true, true, OptionType.OTHER, "--help", "-h", "-?") {
                 void process(Main jartool, String opt, String arg) throws BadArgs {
                     if (jartool.info == null) {
                         if (arg == null) {

@@ -654,6 +654,12 @@ public:
   static bool is_platform_class_loader(oop class_loader);
   static void clear_invoke_method_table();
 
+  // Returns TRUE if the method is a non-public member of class java.lang.Object.
+  static bool is_nonpublic_Object_method(Method* m) {
+    assert(m != NULL, "Unexpected NULL Method*");
+    return !m->is_public() && m->method_holder() == SystemDictionary::Object_klass();
+  }
+
 protected:
   static InstanceKlass* find_shared_class(Symbol* class_name);
 

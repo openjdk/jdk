@@ -611,8 +611,8 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Support for jbyte atomic::atomic_cmpxchg(jbyte exchange_value, volatile jbyte* dest,
-  //                                          jbyte compare_value)
+  // Support for int8_t atomic::atomic_cmpxchg(int8_t exchange_value, volatile int8_t* dest,
+  //                                           int8_t compare_value)
   //
   // Arguments :
   //    c_rarg0: exchange_value
@@ -637,9 +637,9 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Support for jlong atomic::atomic_cmpxchg(jlong exchange_value,
-  //                                          volatile jlong* dest,
-  //                                          jlong compare_value)
+  // Support for int64_t atomic::atomic_cmpxchg(int64_t exchange_value,
+  //                                            volatile int64_t* dest,
+  //                                            int64_t compare_value)
   // Arguments :
   //    c_rarg0: exchange_value
   //    c_rarg1: dest
@@ -694,8 +694,8 @@ class StubGenerator: public StubCodeGenerator {
   // Result:
   //    *dest += add_value
   //    return *dest;
-  address generate_atomic_add_ptr() {
-    StubCodeMark mark(this, "StubRoutines", "atomic_add_ptr");
+  address generate_atomic_add_long() {
+    StubCodeMark mark(this, "StubRoutines", "atomic_add_long");
     address start = __ pc();
 
     __ movptr(rax, c_rarg0); // Copy to eax we need a return value anyhow
@@ -5015,14 +5015,14 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_catch_exception_entry = generate_catch_exception();
 
     // atomic calls
-    StubRoutines::_atomic_xchg_entry         = generate_atomic_xchg();
-    StubRoutines::_atomic_xchg_long_entry    = generate_atomic_xchg_long();
-    StubRoutines::_atomic_cmpxchg_entry      = generate_atomic_cmpxchg();
-    StubRoutines::_atomic_cmpxchg_byte_entry = generate_atomic_cmpxchg_byte();
-    StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
-    StubRoutines::_atomic_add_entry          = generate_atomic_add();
-    StubRoutines::_atomic_add_ptr_entry      = generate_atomic_add_ptr();
-    StubRoutines::_fence_entry               = generate_orderaccess_fence();
+    StubRoutines::_atomic_xchg_entry          = generate_atomic_xchg();
+    StubRoutines::_atomic_xchg_long_entry     = generate_atomic_xchg_long();
+    StubRoutines::_atomic_cmpxchg_entry       = generate_atomic_cmpxchg();
+    StubRoutines::_atomic_cmpxchg_byte_entry  = generate_atomic_cmpxchg_byte();
+    StubRoutines::_atomic_cmpxchg_long_entry  = generate_atomic_cmpxchg_long();
+    StubRoutines::_atomic_add_entry           = generate_atomic_add();
+    StubRoutines::_atomic_add_long_entry      = generate_atomic_add_long();
+    StubRoutines::_fence_entry                = generate_orderaccess_fence();
 
     // platform dependent
     StubRoutines::x86::_get_previous_fp_entry = generate_get_previous_fp();

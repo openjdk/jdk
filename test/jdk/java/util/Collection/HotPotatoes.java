@@ -28,9 +28,16 @@
  * @author Martin Buchholz
  */
 
-import java.lang.reflect.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.PriorityBlockingQueue;
 
 @SuppressWarnings("unchecked")
 public class HotPotatoes {

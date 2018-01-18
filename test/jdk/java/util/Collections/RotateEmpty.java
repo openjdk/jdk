@@ -27,7 +27,9 @@
  * @summary Collections.rotate(...) returns ArithmeticException
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class RotateEmpty {
 

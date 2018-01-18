@@ -26,7 +26,12 @@
    @summary Test for an illegalargumentexception on loadFactor
 */
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * This class tests to see if creating a hash table with an

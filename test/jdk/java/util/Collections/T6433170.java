@@ -27,8 +27,16 @@
  * @summary CheckedCollection.addAll should be all-or-nothing
  */
 
-import java.util.*;
-import static java.util.Collections.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Vector;
+
+import static java.util.Collections.checkedCollection;
+import static java.util.Collections.checkedList;
+import static java.util.Collections.checkedSet;
 
 @SuppressWarnings("unchecked")
 public class T6433170 {

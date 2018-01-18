@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,5 +34,11 @@
     // We don't use format().
     format_width       =  0
   };
+
+ public:
+
+  // This platform has no oops in the code that are not also
+  // listed in the oop section.
+  static bool mustIterateImmediateOopsInCode() { return false; }
 
 #endif // CPU_AARCH64_VM_RELOCINFO_AARCH64_HPP

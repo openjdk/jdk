@@ -52,7 +52,7 @@ public class ExecutorCompletionServiceLoops {
     static final ExecutorService pool =
         Executors.newFixedThreadPool(POOLSIZE);
     static final ExecutorCompletionService<Integer> ecs =
-        new ExecutorCompletionService<Integer>(pool);
+        new ExecutorCompletionService<>(pool);
     static boolean print = false;
 
     public static void main(String[] args) throws Exception {

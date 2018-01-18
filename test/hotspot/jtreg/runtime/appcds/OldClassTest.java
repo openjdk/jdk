@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary classes with major version < JDK_1.5 (48) should not be included in CDS
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc

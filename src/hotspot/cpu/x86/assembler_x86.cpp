@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3132,6 +3132,89 @@ void Assembler::nop(int i) {
 
     // Generate second nop for size between 11-1
     switch (i) {
+      case 11:
+        emit_int8(0x66); // size prefix
+      case 10:
+        emit_int8(0x66); // size prefix
+      case 9:
+        emit_int8(0x66); // size prefix
+      case 8:
+        addr_nop_8();
+        break;
+      case 7:
+        addr_nop_7();
+        break;
+      case 6:
+        emit_int8(0x66); // size prefix
+      case 5:
+        addr_nop_5();
+        break;
+      case 4:
+        addr_nop_4();
+        break;
+      case 3:
+        // Don't use "0x0F 0x1F 0x00" - need patching safe padding
+        emit_int8(0x66); // size prefix
+      case 2:
+        emit_int8(0x66); // size prefix
+      case 1:
+        emit_int8((unsigned char)0x90);
+                         // nop
+        break;
+      default:
+        assert(i == 0, " ");
+    }
+    return;
+  }
+
+  if (UseAddressNop && VM_Version::is_zx()) {
+    //
+    // Using multi-bytes nops "0x0F 0x1F [address]" for ZX
+    //  1: 0x90
+    //  2: 0x66 0x90
+    //  3: 0x66 0x66 0x90 (don't use "0x0F 0x1F 0x00" - need patching safe padding)
+    //  4: 0x0F 0x1F 0x40 0x00
+    //  5: 0x0F 0x1F 0x44 0x00 0x00
+    //  6: 0x66 0x0F 0x1F 0x44 0x00 0x00
+    //  7: 0x0F 0x1F 0x80 0x00 0x00 0x00 0x00
+    //  8: 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00
+    //  9: 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00
+    // 10: 0x66 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00
+    // 11: 0x66 0x66 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00
+
+    // The rest coding is ZX specific - don't use consecutive address nops
+
+    // 12: 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00 0x66 0x66 0x66 0x90
+    // 13: 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00 0x66 0x66 0x66 0x90
+    // 14: 0x66 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00 0x66 0x66 0x66 0x90
+    // 15: 0x66 0x66 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00 0x66 0x66 0x66 0x90
+
+    while (i >= 15) {
+      // For ZX don't generate consecutive addess nops (mix with regular nops)
+      i -= 15;
+      emit_int8(0x66);   // size prefix
+      emit_int8(0x66);   // size prefix
+      emit_int8(0x66);   // size prefix
+      addr_nop_8();
+      emit_int8(0x66);   // size prefix
+      emit_int8(0x66);   // size prefix
+      emit_int8(0x66);   // size prefix
+      emit_int8((unsigned char)0x90);
+                         // nop
+    }
+    switch (i) {
+      case 14:
+        emit_int8(0x66); // size prefix
+      case 13:
+        emit_int8(0x66); // size prefix
+      case 12:
+        addr_nop_8();
+        emit_int8(0x66); // size prefix
+        emit_int8(0x66); // size prefix
+        emit_int8(0x66); // size prefix
+        emit_int8((unsigned char)0x90);
+                         // nop
+        break;
       case 11:
         emit_int8(0x66); // size prefix
       case 10:
