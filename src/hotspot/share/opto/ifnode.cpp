@@ -1195,14 +1195,17 @@ bool IfNode::is_null_check(ProjNode* proj, PhaseIterGVN* igvn) {
 // Check that the If that is in between the 2 integer comparisons has
 // no side effect
 bool IfNode::is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn) {
-  if (proj != NULL &&
-      proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none) &&
-      proj->outcnt() <= 2) {
+  if (proj == NULL) {
+    return false;
+  }
+  CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+  if (unc != NULL && proj->outcnt() <= 2) {
     if (proj->outcnt() == 1 ||
         // Allow simple null check from LoadRange
         (is_cmp_with_loadrange(proj) && is_null_check(proj, igvn))) {
       CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
       CallStaticJavaNode* dom_unc = proj->in(0)->in(0)->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      assert(dom_unc != NULL, "is_uncommon_trap_if_pattern returned NULL");
 
       // reroute_side_effect_free_unc changes the state of this
       // uncommon trap to restart execution at the previous
