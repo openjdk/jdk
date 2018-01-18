@@ -1017,7 +1017,6 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   CountedLoopNode *main_head = loop->_head->as_CountedLoop();
   assert( main_head->is_normal_loop(), "" );
   CountedLoopEndNode *main_end = main_head->loopexit();
-  guarantee(main_end != NULL, "no loop exit node");
   assert( main_end->outcnt() == 2, "1 true, 1 false path only" );
 
   Node *pre_header= main_head->in(LoopNode::EntryControl);
@@ -1243,7 +1242,6 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   // Find common pieces of the loop being guarded with pre & post loops
   CountedLoopNode *main_head = loop->_head->as_CountedLoop();
   CountedLoopEndNode *main_end = main_head->loopexit();
-  guarantee(main_end != NULL, "no loop exit node");
   // diagnostic to show loop end is not properly formed
   assert(main_end->outcnt() == 2, "1 true, 1 false path only");
 
@@ -1293,7 +1291,6 @@ void PhaseIdealLoop::insert_scalar_rced_post_loop(IdealLoopTree *loop, Node_List
   // Find common pieces of the loop being guarded with pre & post loops
   CountedLoopNode *main_head = loop->_head->as_CountedLoop();
   CountedLoopEndNode *main_end = main_head->loopexit();
-  guarantee(main_end != NULL, "no loop exit node");
   // diagnostic to show loop end is not properly formed
   assert(main_end->outcnt() == 2, "1 true, 1 false path only");
 
@@ -1427,7 +1424,6 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
   assert(LoopUnrollLimit, "");
   CountedLoopNode *loop_head = loop->_head->as_CountedLoop();
   CountedLoopEndNode *loop_end = loop_head->loopexit();
-  assert(loop_end, "");
 #ifndef PRODUCT
   if (PrintOpto && VerifyLoopOptimizations) {
     tty->print("Unrolling ");
@@ -2972,7 +2968,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
       }
       store = n;
       store_value = value;
-    } else if (n->is_If() && n != head->loopexit()) {
+    } else if (n->is_If() && n != head->loopexit_or_null()) {
       msg = "extra control flow";
       msg_node = n;
     }
@@ -3114,7 +3110,6 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   ok.set(store->in(MemNode::Memory)->_idx);
 
   CountedLoopEndNode* loop_exit = head->loopexit();
-  guarantee(loop_exit != NULL, "no loop exit node");
 
   // Loop structure is ok
   ok.set(head->_idx);
