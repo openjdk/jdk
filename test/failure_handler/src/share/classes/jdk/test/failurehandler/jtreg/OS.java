@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,9 @@ class OS {
     }
 
     private OS(String name) {
-        if (name.startsWith("Linux")) {
+        if (name.startsWith("AIX")) {
+            family = "aix";
+        } else if (name.startsWith("Linux")) {
             family = "linux";
         } else if (name.startsWith("Mac") || name.startsWith("Darwin")) {
             family = "mac";
