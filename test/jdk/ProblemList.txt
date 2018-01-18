@@ -254,6 +254,8 @@ java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-
 # jdk_security
 
 sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
+sun/security/pkcs11/Secmod/AddTrustedCert.java                  8180837 generic-all
+sun/security/pkcs11/tls/TestKeyMaterial.java                    8180837 generic-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
