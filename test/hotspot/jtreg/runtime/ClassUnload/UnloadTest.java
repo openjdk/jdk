@@ -27,7 +27,7 @@
  * @library /runtime/testlibrary /test/lib
  * @library classes
  * @build sun.hotspot.WhiteBox test.Empty
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI UnloadTest
  */

@@ -33,7 +33,7 @@
  * @modules java.management
  *          jdk.jartool/sun.tools.jar
  * @build HelloStringGC sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main ExerciseGC
  */
 public class ExerciseGC {

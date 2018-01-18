@@ -27,7 +27,7 @@
  * @summary This test the global safepoint fallback path for handshakes
  * @library /testlibrary /test/lib
  * @build HandshakeWalkStackTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-ThreadLocalHandshakes HandshakeWalkStackTest
  */

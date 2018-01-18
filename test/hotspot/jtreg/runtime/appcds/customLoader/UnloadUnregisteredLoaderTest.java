@@ -34,10 +34,10 @@
  *          jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox ClassUnloadCommon
  * @compile test-classes/UnloadUnregisteredLoader.java test-classes/CustomLoadee.java
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main ClassFileInstaller ClassUnloadCommon
- * @run main ClassFileInstaller ClassUnloadCommon$1
- * @run main ClassFileInstaller ClassUnloadCommon$TestFailure
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller ClassUnloadCommon
+ * @run driver ClassFileInstaller ClassUnloadCommon$1
+ * @run driver ClassFileInstaller ClassUnloadCommon$TestFailure
  * @run main UnloadUnregisteredLoaderTest
  */
 

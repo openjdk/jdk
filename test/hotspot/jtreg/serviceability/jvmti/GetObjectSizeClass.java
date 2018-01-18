@@ -37,7 +37,7 @@ import jdk.test.lib.process.ProcessTools;
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build GetObjectSizeClassAgent
- * @run main ClassFileInstaller GetObjectSizeClassAgent
+ * @run driver ClassFileInstaller GetObjectSizeClassAgent
  * @run main GetObjectSizeClass
  */
 public class GetObjectSizeClass {

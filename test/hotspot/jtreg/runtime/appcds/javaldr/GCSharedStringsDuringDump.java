@@ -35,7 +35,7 @@
  *          jdk.jartool/sun.tools.jar
  *          java.management
  * @build sun.hotspot.WhiteBox GCDuringDumpTransformer GCSharedStringsDuringDumpWb
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=480 GCSharedStringsDuringDump
  */
 

@@ -27,7 +27,7 @@
  * @summary This test tries to stress the handshakes with new and exiting threads
  * @library /testlibrary /test/lib
  * @build HandshakeWalkOneExitTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI HandshakeWalkOneExitTest
  */

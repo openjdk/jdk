@@ -35,7 +35,7 @@
  * @compile ../../test-classes/jdk/dynalink/DynamicLinker.jasm
  * @compile ../../test-classes/com/sun/tools/javac/Main.jasm
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main LimitModsTests
  * @summary AppCDS tests for excluding class in module by using --limit-modules.
  */

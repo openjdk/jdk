@@ -33,7 +33,7 @@
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/RewriteBytecodes.java test-classes/Util.java test-classes/Super.java test-classes/Child.java
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main RewriteBytecodesTest
  */
 

@@ -30,7 +30,7 @@
  * @build compiler.calls.common.InvokeDynamic
  *        compiler.calls.common.InvokeDynamicPatcher
  *        compiler.aot.AotCompiler
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main compiler.calls.common.InvokeDynamicPatcher
  * @run main compiler.aot.AotCompiler

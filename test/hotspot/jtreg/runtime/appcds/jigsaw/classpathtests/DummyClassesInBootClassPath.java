@@ -33,7 +33,7 @@
  * @compile ../../test-classes/java/net/HttpCookie.jasm
  * @compile ../../test-classes/javax/activation/MimeType.jasm
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main DummyClassesInBootClassPath
  */
 
