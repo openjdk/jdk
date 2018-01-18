@@ -814,14 +814,14 @@ jdk.tls.legacyAlgorithms= \
 #     limited:    These policy files contain more restricted cryptographic
 #                 strengths
 #
-# The default setting is determined by the value of the “crypto.policy”
+# The default setting is determined by the value of the "crypto.policy"
 # Security property below. If your country or usage requires the
-# traditional restrictive policy, the “limited” Java cryptographic
+# traditional restrictive policy, the "limited" Java cryptographic
 # policy is still available and may be appropriate for your environment.
 #
 # If you have restrictions that do not fit either use case mentioned
 # above, Java provides the capability to customize these policy files.
-# The “crypto.policy” security property points to a subdirectory
+# The "crypto.policy" security property points to a subdirectory
 # within <java-home>/conf/security/policy/ which can be customized.
 # Please see the <java-home>/conf/security/policy/README.txt file or consult
 # the Java Security Guide/JCA documentation for more information.
