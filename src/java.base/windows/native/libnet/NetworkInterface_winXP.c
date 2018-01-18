@@ -584,7 +584,7 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
             /* default ctor will set family to AF_INET */
 
             setInetAddress_addr(env, iaObj, ntohl(addrs->addr.sa4.sin_addr.s_addr));
-
+            JNU_CHECK_EXCEPTION_RETURN(env, NULL);
             ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
             if (ibObj == NULL) {
               free_netaddr(netaddrP);
@@ -597,6 +597,7 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
               return NULL;
             }
             setInetAddress_addr(env, ia2Obj, ntohl(addrs->brdcast.sa4.sin_addr.s_addr));
+            JNU_CHECK_EXCEPTION_RETURN(env, NULL);
             (*env)->SetObjectField(env, ibObj, ni_ibbroadcastID, ia2Obj);
             (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
             (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
