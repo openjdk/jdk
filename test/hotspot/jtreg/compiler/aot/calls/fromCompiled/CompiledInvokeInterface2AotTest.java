@@ -30,7 +30,7 @@
  *      compiler.aot.AotCompiler
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main compiler.aot.AotCompiler
+ * @run driver compiler.aot.AotCompiler
  *      -libname CompiledInvokeInterface2AotTest.so
  *      -class compiler.calls.common.InvokeInterface
  *      -compile compiler.calls.common.InvokeInterface.callee.*

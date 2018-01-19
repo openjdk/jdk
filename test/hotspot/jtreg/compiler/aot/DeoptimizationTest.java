@@ -30,7 +30,7 @@
  *        compiler.aot.AotCompiler
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *     sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main compiler.aot.AotCompiler -libname libDeoptimizationTest.so
+ * @run driver compiler.aot.AotCompiler -libname libDeoptimizationTest.so
  *     -class compiler.aot.DeoptimizationTest
  *     -compile compiler.aot.DeoptimizationTest.testMethod()D
  *     -extraopt -XX:-UseCompressedOops

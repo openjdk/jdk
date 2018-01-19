@@ -33,7 +33,7 @@
  * @run driver compiler.calls.common.InvokeDynamicPatcher
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main compiler.aot.AotCompiler -libname AotInvokeDynamic2NativeTest.so
+ * @run driver compiler.aot.AotCompiler -libname AotInvokeDynamic2NativeTest.so
  *      -class compiler.calls.common.InvokeDynamic
  *      -compile compiler.calls.common.InvokeDynamic.caller()V
  * @run main/othervm/native -XX:+UseAOT
