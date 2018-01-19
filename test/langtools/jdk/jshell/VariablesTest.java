@@ -26,6 +26,9 @@
  * @bug 8144903 8177466 8191842
  * @summary Tests for EvaluationState.variables
  * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jshell
  * @build Compiler KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng VariablesTest
  */
