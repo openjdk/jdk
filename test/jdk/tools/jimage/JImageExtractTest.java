@@ -124,18 +124,21 @@ public class JImageExtractTest extends JImageCliTest {
 
     public void testExtractToDirBySymlink() throws IOException {
         Path tmp = Files.createTempDirectory(Paths.get("."), getClass().getName());
+        Path symlink;
         try {
-            Path symlink = Files.createSymbolicLink(Paths.get(".", "symlink"), tmp);
-            jimage("extract", "--dir", symlink.toString(), getImagePath())
-                    .assertSuccess()
-                    .resultChecker(r -> {
-                        assertTrue(r.output.isEmpty(), "Output is not expected");
-                    });
-            verifyExplodedImage(tmp);
-        } catch (UnsupportedOperationException e) {
+            symlink = Files.createSymbolicLink(Paths.get(".", "symlink"), tmp);
+        } catch (IOException|UnsupportedOperationException e) {
             // symlinks are not supported
             // nothing to test
+            return;
         }
+
+        jimage("extract", "--dir", symlink.toString(), getImagePath())
+                .assertSuccess()
+                .resultChecker(r -> {
+                    assertTrue(r.output.isEmpty(), "Output is not expected");
+                });
+        verifyExplodedImage(tmp);
     }
 
     public void testExtractToReadOnlyDir() throws IOException {
