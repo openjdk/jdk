@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144903 8171981 8191802
+ * @bug 8144903 8171981 8191802 8191842
  * @summary Tests for determining the type from the expression
  * @build KullaTesting TestingInputStream
  * @run testng TypeNameTest
@@ -38,8 +38,12 @@ public class TypeNameTest extends KullaTesting {
 
 
     private void assertType(String expr, String type) {
+        assertType(expr, type, type);
+    }
+
+    private void assertType(String expr, String type, String inferType) {
         assertEquals(varKey(assertEval(expr)).typeName(), type);
-        assertInferredType(expr, type);
+        assertInferredType(expr, inferType);
     }
 
     public void testTypeInference() {
@@ -58,7 +62,7 @@ public class TypeNameTest extends KullaTesting {
         assertType("d.getS()", "D<?>");
         assertType("null", "Object");
         assertType("Class.forName( \"java.util.ArrayList\" )", "Class<?>");
-        assertType("new ArrayList<Boolean>() {}", "ArrayList<Boolean>");
+        assertType("new ArrayList<Boolean>() {}", "<anonymous class extending ArrayList<Boolean>>", "ArrayList<Boolean>");
         assertType("new ArrayList<String>().stream()", "java.util.stream.Stream<String>");
         assertType("Arrays.asList( 1, 2, 3)", "List<Integer>");
         assertType("new ArrayList().getClass().getClass()", "Class<? extends Class>");
@@ -188,7 +192,7 @@ public class TypeNameTest extends KullaTesting {
         assertType("arrayOf(99)[0]", "Integer");
 
         assertEval("<Z> Z choose(Z z1, Z z2) { return z1; }");
-        assertType("choose(1, 1L);", "Object");
+        assertType("choose(1, 1L);", "Number&Comparable<? extends Number&Comparable<?>>", "Object");
     }
 
     public void testVariableTypeName() {
@@ -215,7 +219,7 @@ public class TypeNameTest extends KullaTesting {
     public void testAnonymousClassName() {
         assertEval("class C {}");
         assertType("new C();", "C");
-        assertType("new C() { int x; };", "C");
+        assertType("new C() { int x; };", "<anonymous class extending C>", "C");
     }
 
     public void testCapturedTypeName() {
@@ -243,7 +247,7 @@ public class TypeNameTest extends KullaTesting {
         assertType("test1.get()", "CharSequence");
         assertEval("class Test2<X extends Number & CharSequence> { public X get() { return null; } }");
         assertEval("Test2<?> test2 = new Test2<>();");
-        assertType("test2.get()", "Object");
+        assertType("test2.get()", "Number&CharSequence", "Object");
         assertEval("class Test3<T> { T[][] get() { return null; } }");
         assertEval("Test3<? extends String> test3 = new Test3<>();");
         assertType("test3.get()", "String[][]");
