@@ -29,6 +29,7 @@
 #include "code/vtableStubs.hpp"
 #include "interp_masm_aarch64.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -140,28 +141,44 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #endif
 
   // Entry arguments:
-  //  rscratch2: Interface
+  //  rscratch2: CompiledICHolder
   //  j_rarg0: Receiver
 
-  // Free registers (non-args) are r0 (interface), rmethod
+
+  // Most registers are in use; we'll use r0, rmethod, r10, r11
+  const Register recv_klass_reg     = r10;
+  const Register holder_klass_reg   = r0; // declaring interface klass (DECC)
+  const Register resolved_klass_reg = rmethod; // resolved interface klass (REFC)
+  const Register temp_reg           = r11;
+  const Register icholder_reg       = rscratch2;
+
+  Label L_no_such_interface;
+
+  __ ldr(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
+  __ ldr(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
 
   // get receiver (need to skip return address on top of stack)
-
   assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
   // get receiver klass (also an implicit null-check)
   address npe_addr = __ pc();
+  __ load_klass(recv_klass_reg, j_rarg0);
 
-  // Most registers are in use; we'll use r0, rmethod, r10, r11
-  __ load_klass(r10, j_rarg0);
+  // Receiver subtype check against REFC.
+  // Destroys recv_klass_reg value.
+  __ lookup_interface_method(// inputs: rec. class, interface
+                             recv_klass_reg, resolved_klass_reg, noreg,
+                             // outputs:  scan temp. reg1, scan temp. reg2
+                             recv_klass_reg, temp_reg,
+                             L_no_such_interface,
+                             /*return_method=*/false);
 
-  Label throw_icce;
-
-  // Get Method* and entrypoint for compiler
+  // Get selected method from declaring class and itable index
+  __ load_klass(recv_klass_reg, j_rarg0);   // restore recv_klass_reg
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             r10, rscratch2, itable_index,
-                             // outputs: method, scan temp. reg
-                             rmethod, r11,
-                             throw_icce);
+                       recv_klass_reg, holder_klass_reg, itable_index,
+                       // outputs: method, scan temp. reg
+                       rmethod, temp_reg,
+                       L_no_such_interface);
 
   // method (rmethod): Method*
   // j_rarg0: receiver
@@ -183,7 +200,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
   __ br(rscratch1);
 
-  __ bind(throw_icce);
+  __ bind(L_no_such_interface);
   __ far_jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
 
   __ flush();
@@ -205,11 +222,11 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   int size = DebugVtables ? 216 : 0;
   if (CountCompiledCalls)
     size += 6 * 4;
-  // FIXME
+  // FIXME: vtable stubs only need 36 bytes
   if (is_vtable_stub)
     size += 52;
   else
-    size += 104;
+    size += 176;
   return size;
 
   // In order to tune these parameters, run the JVM with VM options
@@ -217,33 +234,58 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   // actual itable stubs.  Run it with -Xmx31G -XX:+UseCompressedOops.
   //
   // If Universe::narrow_klass_base is nonzero, decoding a compressed
-  // class can take zeveral instructions.  Run it with -Xmx31G
-  // -XX:+UseCompressedOops.
+  // class can take zeveral instructions.
   //
   // The JVM98 app. _202_jess has a megamorphic interface call.
   // The itable code looks like this:
-  // Decoding VtableStub itbl[1]@12
-  //     ldr     w10, [x1,#8]
-  //     lsl     x10, x10, #3
-  //     ldr     w11, [x10,#280]
-  //     add     x11, x10, x11, uxtx #3
-  //     add     x11, x11, #0x1b8
-  //     ldr     x12, [x11]
-  //     cmp     x9, x12
-  //     b.eq    success
-  // loop:
-  //     cbz     x12, throw_icce
-  //     add     x11, x11, #0x10
-  //     ldr     x12, [x11]
-  //     cmp     x9, x12
-  //     b.ne    loop
-  // success:
-  //     ldr     x11, [x11,#8]
-  //     ldr     x12, [x10,x11]
-  //     ldr     x8, [x12,#72]
-  //     br      x8
-  // throw_icce:
-  //     b      throw_ICCE_entry
+
+  //    ldr    xmethod, [xscratch2,#CompiledICHolder::holder_klass_offset]
+  //    ldr    x0, [xscratch2]
+  //    ldr    w10, [x1,#oopDesc::klass_offset_in_bytes]
+  //    mov    xheapbase, #0x3c000000                //   #narrow_klass_base
+  //    movk    xheapbase, #0x3f7, lsl #32
+  //    add    x10, xheapbase, x10
+  //    mov    xheapbase, #0xe7ff0000                //   #heapbase
+  //    movk    xheapbase, #0x3f7, lsl #32
+  //    ldr    w11, [x10,#vtable_length_offset]
+  //    add    x11, x10, x11, uxtx #3
+  //    add    x11, x11, #itableMethodEntry::method_offset_in_bytes
+  //    ldr    x10, [x11]
+  //    cmp    xmethod, x10
+  //    b.eq    found_method
+  // search:
+  //    cbz    x10, no_such_interface
+  //    add    x11, x11, #0x10
+  //    ldr    x10, [x11]
+  //    cmp    xmethod, x10
+  //    b.ne    search
+  // found_method:
+  //    ldr    w10, [x1,#oopDesc::klass_offset_in_bytes]
+  //    mov    xheapbase, #0x3c000000                //   #narrow_klass_base
+  //    movk    xheapbase, #0x3f7, lsl #32
+  //    add    x10, xheapbase, x10
+  //    mov    xheapbase, #0xe7ff0000                //   #heapbase
+  //    movk    xheapbase, #0x3f7, lsl #32
+  //    ldr    w11, [x10,#vtable_length_offset]
+  //    add    x11, x10, x11, uxtx #3
+  //    add    x11, x11, #itableMethodEntry::method_offset_in_bytes
+  //    add    x10, x10, #itentry_off
+  //    ldr    xmethod, [x11]
+  //    cmp    x0, xmethod
+  //    b.eq    found_method2
+  // search2:
+  //    cbz    xmethod, 0x000003ffa872e6cc
+  //    add    x11, x11, #0x10
+  //    ldr    xmethod, [x11]
+  //    cmp    x0, xmethod
+  //    b.ne    search2
+  // found_method2:
+  //    ldr    w11, [x11,#itableOffsetEntry::offset_offset_in_bytes]
+  //    ldr    xmethod, [x10,w11,uxtw]
+  //    ldr    xscratch1, [xmethod,#Method::from_compiled_offset]
+  //    br    xscratch1
+  // no_such_interface:
+  //    b      throw_ICCE_entry
 
 }
 
