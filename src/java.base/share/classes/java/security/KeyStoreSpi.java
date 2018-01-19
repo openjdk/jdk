@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,6 +395,12 @@ public abstract class KeyStoreSpi {
     public void engineLoad(KeyStore.LoadStoreParameter param)
                 throws IOException, NoSuchAlgorithmException,
                 CertificateException {
+        engineLoad(null, param);
+    }
+
+    void engineLoad(InputStream stream, KeyStore.LoadStoreParameter param)
+                throws IOException, NoSuchAlgorithmException,
+                CertificateException {
 
         if (param == null) {
             engineLoad((InputStream)null, (char[])null);
@@ -425,7 +431,7 @@ public abstract class KeyStoreSpi {
             throw new NoSuchAlgorithmException("ProtectionParameter must"
                 + " be PasswordProtection or CallbackHandlerProtection");
         }
-        engineLoad(null, password);
+        engineLoad(stream, password);
         return;
     }
 
