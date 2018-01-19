@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,15 @@ define_pd_global(intx, CompileThreshold,               1500 );
 define_pd_global(intx,   OnStackReplacePercentage,     933  );
 define_pd_global(intx,   FreqInlineSize,               325  );
 define_pd_global(size_t, NewSizeThreadIncrease,        4*K  );
-define_pd_global(intx, InitialCodeCacheSize,           160*K);
-define_pd_global(intx, ReservedCodeCacheSize,          32*M );
-define_pd_global(intx, NonProfiledCodeHeapSize,        13*M );
-define_pd_global(intx, ProfiledCodeHeapSize,           14*M );
-define_pd_global(intx, NonNMethodCodeHeapSize,         5*M  );
+define_pd_global(uintx,  InitialCodeCacheSize,         160*K);
+define_pd_global(uintx,  ReservedCodeCacheSize,        32*M );
+define_pd_global(uintx,  NonProfiledCodeHeapSize,      13*M );
+define_pd_global(uintx,  ProfiledCodeHeapSize,         14*M );
+define_pd_global(uintx,  NonNMethodCodeHeapSize,       5*M  );
 define_pd_global(bool,   ProfileInterpreter,           false);
-define_pd_global(intx, CodeCacheExpansionSize,         32*K );
-define_pd_global(uintx, CodeCacheMinBlockLength,       1    );
-define_pd_global(uintx, CodeCacheMinimumUseSpace,      400*K);
+define_pd_global(uintx,  CodeCacheExpansionSize,       32*K );
+define_pd_global(uintx,  CodeCacheMinBlockLength,      1    );
+define_pd_global(uintx,  CodeCacheMinimumUseSpace,     400*K);
 define_pd_global(size_t, MetaspaceSize,                12*M );
 define_pd_global(bool,   NeverActAsServerClassMachine, true );
 define_pd_global(uint64_t, MaxRAM,                    1ULL*G);

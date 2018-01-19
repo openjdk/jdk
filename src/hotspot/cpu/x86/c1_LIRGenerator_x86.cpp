@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -572,6 +572,8 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
     if (!ImplicitDiv0Checks) {
       __ cmp(lir_cond_equal, right.result(), LIR_OprFact::intConst(0));
       __ branch(lir_cond_equal, T_INT, new DivByZeroStub(info));
+      // Idiv/irem cannot trap (passing info would generate an assertion).
+      info = NULL;
     }
     LIR_Opr tmp = FrameMap::rdx_opr; // idiv and irem use rdx in their implementation
     if (x->op() == Bytecodes::_irem) {

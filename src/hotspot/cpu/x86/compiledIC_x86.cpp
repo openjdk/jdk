@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,8 +160,8 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
 
 #ifdef ASSERT
   // read the value once
-  intptr_t data = method_holder->data();
-  address destination = jump->jump_destination();
+  volatile intptr_t data = method_holder->data();
+  volatile address destination = jump->jump_destination();
   assert(data == 0 || data == (intptr_t)callee(),
          "a) MT-unsafe modification of inline cache");
   assert(destination == (address)-1 || destination == entry,
