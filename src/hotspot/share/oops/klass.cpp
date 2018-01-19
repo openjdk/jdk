@@ -62,11 +62,13 @@ bool Klass::is_cloneable() const {
 }
 
 void Klass::set_is_cloneable() {
-  if (name() != vmSymbols::java_lang_invoke_MemberName()) {
-    _access_flags.set_is_cloneable_fast();
-  } else {
+  if (name() == vmSymbols::java_lang_invoke_MemberName()) {
     assert(is_final(), "no subclasses allowed");
     // MemberName cloning should not be intrinsified and always happen in JVM_Clone.
+  } else if (is_instance_klass() && InstanceKlass::cast(this)->reference_type() != REF_NONE) {
+    // Reference cloning should not be intrinsified and always happen in JVM_Clone.
+  } else {
+    _access_flags.set_is_cloneable_fast();
   }
 }
 
