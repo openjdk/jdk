@@ -1,8 +1,8 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8177466
+ * @bug 8177466 8189146
+ * @compile/ref=ParserTest9.out -XDrawDiagnostics --release 9 ParserTest.java
  * @summary Add compiler support for local variable type-inference
- * @compile -source 9 ParserTest.java
  * @compile/fail/ref=ParserTest.out -XDrawDiagnostics ParserTest.java
  */
 
@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 import java.util.function.Function;
 import java.util.List;
 
-class ParserTest<var> {
+class ParserTest<var extends AutoCloseable> {
     static class TestClass {
         static class var { } //illegal
     }
@@ -33,7 +33,7 @@ class ParserTest<var> {
 
     @interface DA { }
 
-    static class var extends RuntimeException { } //illegal
+    static abstract class var extends RuntimeException implements AutoCloseable { } //illegal
 
     var x = null; //illegal
 
@@ -67,5 +67,11 @@ class ParserTest<var> {
     void test3(Object o) {
         boolean b1 = o instanceof var; //error
         Object o2 = (var)o; //error
+    }
+
+    void test4() throws Exception {
+        try (final var resource1 = null; // ok
+             var resource2 = null) {     // ok
+        }
     }
 }

@@ -2680,9 +2680,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
 
-        if(isDeoptimizedExpression(lhs)) {
-            // This is actually related to "lhs.getType().isPrimitive()" above: any expression being deoptimized in
-            // the current chain of rest-of compilations used to have a type narrower than Object (so it was primitive).
+        if(containsOptimisticExpression(lhs)) {
+            // Any optimistic expression within lhs could be deoptimized and trigger a rest-of compilation.
             // We must not perform undefined check specialization for them, as then we'd violate the basic rule of
             // "Thou shalt not alter the stack shape between a deoptimized method and any of its (transitive) rest-ofs."
             return false;
@@ -2749,11 +2748,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
 
-        if(isDeoptimizedExpression(lhs)) {
-            // This is actually related to "!lhs.getType().isObject()" above: any expression being deoptimized in
-            // the current chain of rest-of compilations used to have a type narrower than Object. We must not
-            // perform null check specialization for them, as then we'd no longer be loading aconst_null on stack
-            // and thus violate the basic rule of "Thou shalt not alter the stack shape between a deoptimized
+        if(containsOptimisticExpression(lhs)) {
+            // Any optimistic expression within lhs could be deoptimized and trigger a rest-of compilation.
+            // We must not perform null check specialization for them, as then we'd no longer be loading aconst_null
+            // on stack and thus violate the basic rule of "Thou shalt not alter the stack shape between a deoptimized
             // method and any of its (transitive) rest-ofs."
             // NOTE also that if we had a representation for well-known constants (e.g. null, 0, 1, -1, etc.) in
             // Label$Stack.localLoads then this wouldn't be an issue, as we would never (somewhat ridiculously)
@@ -2818,12 +2816,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     /**
-     * Was this expression or any of its subexpressions deoptimized in the current recompilation chain of rest-of methods?
+     * Is this expression or any of its subexpressions optimistic? This includes formerly optimistic
+     * expressions that have been deoptimized in a subsequent compilation.
+     *
      * @param rootExpr the expression being tested
-     * @return true if the expression or any of its subexpressions was deoptimized in the current recompilation chain.
+     * @return true if the expression or any of its subexpressions is optimistic in the current compilation.
      */
-    private boolean isDeoptimizedExpression(final Expression rootExpr) {
-        if(!isRestOf()) {
+    private boolean containsOptimisticExpression(final Expression rootExpr) {
+        if(!useOptimisticTypes()) {
             return false;
         }
         return new Supplier<Boolean>() {
@@ -2839,7 +2839,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     public boolean enterDefault(final Node node) {
                         if(!contains && node instanceof Optimistic) {
                             final int pp = ((Optimistic)node).getProgramPoint();
-                            contains = isValid(pp) && isContinuationEntryPoint(pp);
+                            contains = isValid(pp);
                         }
                         return !contains;
                     }

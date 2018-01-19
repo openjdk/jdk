@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import sun.net.www.protocol.http.HttpCallerInfo;
+import sun.security.jgss.LoginConfigImpl;
 
 /**
  * @since 1.6
@@ -61,19 +62,28 @@ public class NegotiateCallbackHandler implements CallbackHandler {
     private void getAnswer() {
         if (!answered) {
             answered = true;
-            PasswordAuthentication passAuth =
-                    Authenticator.requestPasswordAuthentication(
-                    hci.authenticator,
-                    hci.host, hci.addr, hci.port, hci.protocol,
-                    hci.prompt, hci.scheme, hci.url, hci.authType);
-            /**
-             * To be compatible with existing callback handler implementations,
-             * when the underlying Authenticator is canceled, username and
-             * password are assigned null. No exception is thrown.
-             */
-            if (passAuth != null) {
-                username = passAuth.getUserName();
-                password = passAuth.getPassword();
+            Authenticator auth;
+            if (hci.authenticator != null) {
+                auth = hci.authenticator;
+            } else {
+                auth = LoginConfigImpl.HTTP_USE_GLOBAL_CREDS ?
+                        Authenticator.getDefault() : null;
+            }
+
+            if (auth != null) {
+                PasswordAuthentication passAuth =
+                        auth.requestPasswordAuthenticationInstance(
+                                hci.host, hci.addr, hci.port, hci.protocol,
+                                hci.prompt, hci.scheme, hci.url, hci.authType);
+                /**
+                 * To be compatible with existing callback handler implementations,
+                 * when the underlying Authenticator is canceled, username and
+                 * password are assigned null. No exception is thrown.
+                 */
+                if (passAuth != null) {
+                    username = passAuth.getUserName();
+                    password = passAuth.getPassword();
+                }
             }
         }
     }

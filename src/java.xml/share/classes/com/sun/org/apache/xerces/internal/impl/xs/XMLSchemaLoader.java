@@ -75,6 +75,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.WeakHashMap;
 import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
 import org.w3c.dom.DOMConfiguration;
@@ -160,7 +161,7 @@ XSLoader, DOMConfiguration {
     protected static final String SCHEMA_DV_FACTORY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SCHEMA_DV_FACTORY_PROPERTY;
 
-    protected static final String USE_SERVICE_MECHANISM = Constants.ORACLE_FEATURE_SERVICE_MECHANISM;
+    protected static final String OVERRIDE_PARSER = JdkXmlUtils.OVERRIDE_PARSER;
 
     // recognized features:
     private static final String[] RECOGNIZED_FEATURES = {
@@ -175,7 +176,7 @@ XSLoader, DOMConfiguration {
         HONOUR_ALL_SCHEMALOCATIONS,
         NAMESPACE_GROWTH,
         TOLERATE_DUPLICATES,
-        USE_SERVICE_MECHANISM,
+        OVERRIDE_PARSER,
         XMLConstants.USE_CATALOG
     };
 
@@ -313,18 +314,14 @@ XSLoader, DOMConfiguration {
      * @param sHandler
      * @param builder
      */
-    XMLSchemaLoader(XMLErrorReporter errorReporter,
-            XSGrammarBucket grammarBucket,
+    XMLSchemaLoader(XMLErrorReporter errorReporter, XSGrammarBucket grammarBucket,
             SubstitutionGroupHandler sHandler, CMBuilder builder) {
         this(null, errorReporter, null, grammarBucket, sHandler, builder);
     }
 
-    XMLSchemaLoader(SymbolTable symbolTable,
-            XMLErrorReporter errorReporter,
-            XMLEntityManager entityResolver,
-            XSGrammarBucket grammarBucket,
-            SubstitutionGroupHandler sHandler,
-            CMBuilder builder) {
+    XMLSchemaLoader(SymbolTable symbolTable, XMLErrorReporter errorReporter,
+            XMLEntityManager entityResolver, XSGrammarBucket grammarBucket,
+            SubstitutionGroupHandler sHandler, CMBuilder builder) {
 
         // store properties and features in configuration
         fLoaderConfig.addRecognizedFeatures(RECOGNIZED_FEATURES);
@@ -1231,7 +1228,7 @@ XSLoader, DOMConfiguration {
                 name.equals(HONOUR_ALL_SCHEMALOCATIONS) ||
                 name.equals(NAMESPACE_GROWTH) ||
                 name.equals(TOLERATE_DUPLICATES) ||
-                name.equals(USE_SERVICE_MECHANISM)) {
+                name.equals(OVERRIDE_PARSER)) {
                 return true;
 
             }
@@ -1310,7 +1307,7 @@ XSLoader, DOMConfiguration {
             v.add(HONOUR_ALL_SCHEMALOCATIONS);
             v.add(NAMESPACE_GROWTH);
             v.add(TOLERATE_DUPLICATES);
-            v.add(USE_SERVICE_MECHANISM);
+            v.add(OVERRIDE_PARSER);
             fRecognizedParameters = new DOMStringListImpl(v);
         }
         return fRecognizedParameters;

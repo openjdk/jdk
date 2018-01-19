@@ -80,15 +80,54 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
 
   # The vendor name, if any
   AC_ARG_WITH(vendor-name, [AS_HELP_STRING([--with-vendor-name],
-      [Set vendor name @<:@not specified@:>@])])
+      [Set vendor name. Among others, used to set the 'java.vendor'
+       and 'java.vm.vendor' system properties. @<:@not specified@:>@])])
   if test "x$with_vendor_name" = xyes; then
     AC_MSG_ERROR([--with-vendor-name must have a value])
   elif [ ! [[ $with_vendor_name =~ ^[[:print:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with--vendor-name contains non-printing characters: $with_vendor_name])
-  else
+    AC_MSG_ERROR([--with-vendor-name contains non-printing characters: $with_vendor_name])
+  elif test "x$with_vendor_name" != x; then
+    # Only set COMPANY_NAME if '--with-vendor-name' was used and is not empty.
+    # Otherwise we will use the value from "version-numbers" included above.
     COMPANY_NAME="$with_vendor_name"
   fi
   AC_SUBST(COMPANY_NAME)
+
+  # The vendor URL, if any
+  AC_ARG_WITH(vendor-url, [AS_HELP_STRING([--with-vendor-url],
+      [Set the 'java.vendor.url' system property @<:@not specified@:>@])])
+  if test "x$with_vendor_url" = xyes; then
+    AC_MSG_ERROR([--with-vendor-url must have a value])
+  elif [ ! [[ $with_vendor_url =~ ^[[:print:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with-vendor-url contains non-printing characters: $with_vendor_url])
+  else
+    VENDOR_URL="$with_vendor_url"
+  fi
+  AC_SUBST(VENDOR_URL)
+
+  # The vendor bug URL, if any
+  AC_ARG_WITH(vendor-bug-url, [AS_HELP_STRING([--with-vendor-bug-url],
+      [Set the 'java.vendor.url.bug' system property @<:@not specified@:>@])])
+  if test "x$with_vendor_bug_url" = xyes; then
+    AC_MSG_ERROR([--with-vendor-bug-url must have a value])
+  elif [ ! [[ $with_vendor_bug_url =~ ^[[:print:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with-vendor-bug-url contains non-printing characters: $with_vendor_bug_url])
+  else
+    VENDOR_URL_BUG="$with_vendor_bug_url"
+  fi
+  AC_SUBST(VENDOR_URL_BUG)
+
+  # The vendor VM bug URL, if any
+  AC_ARG_WITH(vendor-vm-bug-url, [AS_HELP_STRING([--with-vendor-vm-bug-url],
+      [Sets the bug URL which will be displayed when the VM crashes @<:@not specified@:>@])])
+  if test "x$with_vendor_vm_bug_url" = xyes; then
+    AC_MSG_ERROR([--with-vendor-vm-bug-url must have a value])
+  elif [ ! [[ $with_vendor_vm_bug_url =~ ^[[:print:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with-vendor-vm-bug-url contains non-printing characters: $with_vendor_vm_bug_url])
+  else
+    VENDOR_URL_VM_BUG="$with_vendor_vm_bug_url"
+  fi
+  AC_SUBST(VENDOR_URL_VM_BUG)
 
   # Override version from arguments
 

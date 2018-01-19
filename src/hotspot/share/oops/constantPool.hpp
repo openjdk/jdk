@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP
 #define SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP
 
+#include "memory/allocation.inline.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.hpp"
@@ -1021,7 +1022,7 @@ class SymbolHashMap: public CHeapObj<mtSymbol> {
         delete(cur);
       }
     }
-    delete _buckets;
+    FREE_C_HEAP_ARRAY(SymbolHashMapBucket, _buckets);
   }
 }; // End SymbolHashMap class
 

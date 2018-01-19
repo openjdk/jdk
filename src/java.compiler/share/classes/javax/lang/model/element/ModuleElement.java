@@ -201,11 +201,10 @@ public interface ModuleElement extends Element, QualifiedNameable {
          * Visits any directive as if by passing itself to that
          * directive's {@link Directive#accept accept} method and passing
          * {@code null} for the additional parameter.
-         * The invocation {@code v.visit(d)} is equivalent to
-         * {@code d.accept(v, null)}.
+         *
          * @param d  the directive to visit
          * @return a visitor-specified result
-         * @implSpec This implementation is {@code visit(d, null)}
+         * @implSpec The default implementation is {@code d.accept(v, null)}.
          */
         default R visit(Directive d) {
             return d.accept(this, null);
@@ -214,11 +213,11 @@ public interface ModuleElement extends Element, QualifiedNameable {
         /**
          * Visits any directive as if by passing itself to that
          * directive's {@link Directive#accept accept} method.
-         * The invocation {@code v.visit(d, p)} is equivalent to
-         * {@code d.accept(v, p)}.
+         *
          * @param d  the directive to visit
          * @param p  a visitor-specified parameter
          * @return a visitor-specified result
+         * @implSpec The default implementation is {@code d.accept(v, p)}.
          */
         default R visit(Directive d, P p) {
             return d.accept(this, p);
@@ -271,7 +270,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
          * @param p  a visitor-specified parameter
          * @return a visitor-specified result
          * @throws UnknownDirectiveException a visitor implementation may optionally throw this exception
-         * @implSpec This implementation throws {@code new UnknownDirectiveException(d, p)}.
+         * @implSpec The default implementation throws {@code new UnknownDirectiveException(d, p)}.
          */
         default R visitUnknown(Directive d, P p) {
             throw new UnknownDirectiveException(d, p);

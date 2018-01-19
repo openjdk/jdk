@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,7 +366,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       delayed_worklist->push(n);
       // Check if a call returns an object.
       if ((n->as_Call()->returns_pointer() &&
-           n->as_Call()->proj_out(TypeFunc::Parms) != NULL) ||
+           n->as_Call()->proj_out_or_null(TypeFunc::Parms) != NULL) ||
           (n->is_CallStaticJava() &&
            n->as_CallStaticJava()->is_boxing_method())) {
         add_call_node(n->as_Call());
@@ -2674,7 +2674,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
   PhaseGVN* igvn = _igvn;
   const TypeOopPtr *toop = C->get_adr_type(alias_idx)->isa_oopptr();
   bool is_instance = (toop != NULL) && toop->is_known_instance();
-  Node *start_mem = C->start()->proj_out(TypeFunc::Memory);
+  Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
   Node *prev = NULL;
   Node *result = orig_mem;
   while (prev != result) {
@@ -3028,7 +3028,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         // An allocation may have an Initialize which has raw stores. Scan
         // the users of the raw allocation result and push AddP users
         // on alloc_worklist.
-        Node *raw_result = alloc->proj_out(TypeFunc::Parms);
+        Node *raw_result = alloc->proj_out_or_null(TypeFunc::Parms);
         assert (raw_result != NULL, "must have an allocation result");
         for (DUIterator_Fast imax, i = raw_result->fast_outs(imax); i < imax; i++) {
           Node *use = raw_result->fast_out(i);
@@ -3219,7 +3219,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // we don't need to do anything, but the users must be pushed
     } else if (n->is_MemBar()) { // Initialize, MemBar nodes
       // we don't need to do anything, but the users must be pushed
-      n = n->as_MemBar()->proj_out(TypeFunc::Memory);
+      n = n->as_MemBar()->proj_out_or_null(TypeFunc::Memory);
       if (n == NULL)
         continue;
     } else if (n->Opcode() == Op_StrCompressedCopy ||

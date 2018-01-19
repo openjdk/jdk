@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.org.apache.xpath.internal.jaxp;
 
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
-import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xpath.internal.axes.LocPathIterator;
 import com.sun.org.apache.xpath.internal.objects.XObject;
@@ -43,6 +42,7 @@ import javax.xml.xpath.XPathFunctionResolver;
 import javax.xml.xpath.XPathNodes;
 import javax.xml.xpath.XPathVariableResolver;
 import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.traversal.NodeIterator;
@@ -57,7 +57,7 @@ class XPathImplUtil {
     XPathFunctionResolver functionResolver;
     XPathVariableResolver variableResolver;
     JAXPPrefixResolver prefixResolver;
-    boolean useServiceMechanism = true;
+    boolean overrideDefaultParser;
     // By default Extension Functions are allowed in XPath Expressions. If
     // Secure Processing Feature is set on XPathFactory then the invocation of
     // extensions function need to throw XPathFunctionException
@@ -125,9 +125,7 @@ class XPathImplUtil {
             //
             // so we really have to create a fresh DocumentBuilder every time we need one
             // - KK
-            DocumentBuilderFactory dbf = FactoryImpl.getDOMFactory(useServiceMechanism);
-            dbf.setNamespaceAware(true);
-            dbf.setValidating(false);
+            DocumentBuilderFactory dbf = JdkXmlUtils.getDOMFactory(overrideDefaultParser);
             return dbf.newDocumentBuilder().parse(source);
         } catch (ParserConfigurationException | SAXException | IOException e) {
             throw new XPathExpressionException (e);

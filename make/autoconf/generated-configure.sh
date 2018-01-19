@@ -902,6 +902,9 @@ VERSION_PATCH
 VERSION_UPDATE
 VERSION_INTERIM
 VERSION_FEATURE
+VENDOR_URL_VM_BUG
+VENDOR_URL_BUG
+VENDOR_URL
 COMPANY_NAME
 MACOSX_BUNDLE_ID_BASE
 MACOSX_BUNDLE_NAME_BASE
@@ -1150,6 +1153,9 @@ with_version_major
 with_version_minor
 with_version_security
 with_vendor_name
+with_vendor_url
+with_vendor_bug_url
+with_vendor_vm_bug_url
 with_version_string
 with_version_pre
 with_version_opt
@@ -2074,7 +2080,16 @@ Optional Packages:
                           compatibility and is ignored
   --with-version-security Deprecated. Option is kept for backwards
                           compatibility and is ignored
-  --with-vendor-name      Set vendor name [not specified]
+  --with-vendor-name      Set vendor name. Among others, used to set the
+                          'java.vendor' and 'java.vm.vendor' system
+                          properties. [not specified]
+  --with-vendor-url       Set the 'java.vendor.url' system property [not
+                          specified]
+  --with-vendor-bug-url   Set the 'java.vendor.url.bug' system property [not
+                          specified]
+  --with-vendor-vm-bug-url
+                          Sets the bug URL which will be displayed when the VM
+                          crashes [not specified]
   --with-version-string   Set version string [calculated]
   --with-version-pre      Set the base part of the version 'PRE' field
                           (pre-release identifier) ['internal']
@@ -5176,7 +5191,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1513805283
+DATE_WHEN_GENERATED=1516225089
 
 ###############################################################################
 #
@@ -25072,9 +25087,59 @@ fi
   if test "x$with_vendor_name" = xyes; then
     as_fn_error $? "--with-vendor-name must have a value" "$LINENO" 5
   elif  ! [[ $with_vendor_name =~ ^[[:print:]]*$ ]] ; then
-    as_fn_error $? "--with--vendor-name contains non-printing characters: $with_vendor_name" "$LINENO" 5
-  else
+    as_fn_error $? "--with-vendor-name contains non-printing characters: $with_vendor_name" "$LINENO" 5
+  elif test "x$with_vendor_name" != x; then
+    # Only set COMPANY_NAME if '--with-vendor-name' was used and is not empty.
+    # Otherwise we will use the value from "version-numbers" included above.
     COMPANY_NAME="$with_vendor_name"
+  fi
+
+
+  # The vendor URL, if any
+
+# Check whether --with-vendor-url was given.
+if test "${with_vendor_url+set}" = set; then :
+  withval=$with_vendor_url;
+fi
+
+  if test "x$with_vendor_url" = xyes; then
+    as_fn_error $? "--with-vendor-url must have a value" "$LINENO" 5
+  elif  ! [[ $with_vendor_url =~ ^[[:print:]]*$ ]] ; then
+    as_fn_error $? "--with-vendor-url contains non-printing characters: $with_vendor_url" "$LINENO" 5
+  else
+    VENDOR_URL="$with_vendor_url"
+  fi
+
+
+  # The vendor bug URL, if any
+
+# Check whether --with-vendor-bug-url was given.
+if test "${with_vendor_bug_url+set}" = set; then :
+  withval=$with_vendor_bug_url;
+fi
+
+  if test "x$with_vendor_bug_url" = xyes; then
+    as_fn_error $? "--with-vendor-bug-url must have a value" "$LINENO" 5
+  elif  ! [[ $with_vendor_bug_url =~ ^[[:print:]]*$ ]] ; then
+    as_fn_error $? "--with-vendor-bug-url contains non-printing characters: $with_vendor_bug_url" "$LINENO" 5
+  else
+    VENDOR_URL_BUG="$with_vendor_bug_url"
+  fi
+
+
+  # The vendor VM bug URL, if any
+
+# Check whether --with-vendor-vm-bug-url was given.
+if test "${with_vendor_vm_bug_url+set}" = set; then :
+  withval=$with_vendor_vm_bug_url;
+fi
+
+  if test "x$with_vendor_vm_bug_url" = xyes; then
+    as_fn_error $? "--with-vendor-vm-bug-url must have a value" "$LINENO" 5
+  elif  ! [[ $with_vendor_vm_bug_url =~ ^[[:print:]]*$ ]] ; then
+    as_fn_error $? "--with-vendor-vm-bug-url contains non-printing characters: $with_vendor_vm_bug_url" "$LINENO" 5
+  else
+    VENDOR_URL_VM_BUG="$with_vendor_vm_bug_url"
   fi
 
 

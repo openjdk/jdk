@@ -508,14 +508,14 @@ jobjectArray getAllDCNames(JNIEnv *env, jobject peer, jstring printer,
           names = env->NewObjectArray(cReturned, cls, NULL);
       }
       if (names == NULL || cls == NULL) {
-          delete buf;
+          delete[] buf;
           return names;
       }
 
       for (int i = 0; i < cReturned; i++) {
           utf_str = JNU_NewStringPlatform(env, buf+(buf_len*i));
             if (utf_str == NULL) {
-                delete buf;
+                delete[] buf;
                 return names;
             }
             env->SetObjectArrayElement(names, i, utf_str);

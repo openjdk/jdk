@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,8 @@ public:
   virtual bool is_CFG() const  { return false; }
   virtual uint ideal_reg() const { return NotAMachineReg; }
 
-  ProjNode* div_proj() { return proj_out(div_proj_num); }
-  ProjNode* mod_proj() { return proj_out(mod_proj_num); }
+  ProjNode* div_proj() { return proj_out_or_null(div_proj_num); }
+  ProjNode* mod_proj() { return proj_out_or_null(mod_proj_num); }
 };
 
 //------------------------------DivModINode---------------------------------------

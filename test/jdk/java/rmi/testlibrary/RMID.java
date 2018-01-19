@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,12 @@ public class RMID extends JavaVM {
     private static final long TIMEOUT_DESTROY_MS  = 10_000L;
     private static final long STARTTIME_MS        = 15_000L;
     private static final long POLLTIME_MS         = 100L;
+    private static final long TIMEOUT_BASE        = 240_000L;
 
     // when restart rmid, it may take more time than usual because of
     // "port in use" by a possible interloper (check JDK-8168975),
-    // so need to set a longer timeout for restart.
-    private static long restartTimeout;
+    // so need to set a longer timeout than STARTTIME_MS for restart.
+    private static final long RESTART_TIMEOUT = (long)(TIMEOUT_BASE * 0.9);
     // Same reason to inheritedChannel in RMIDSelectorProvider.
     // Put it here rather than in RMIDSelectorProvider to adjust
     // both timeout values together.
@@ -264,8 +265,7 @@ public class RMID extends JavaVM {
     {
         super(classname, options, args, out, err);
         this.port = port;
-        long waitTime = (long)(240_000 * TestLibrary.getTimeoutFactor());
-        restartTimeout = (long)(waitTime * 0.9);
+        long waitTime = (long)(TIMEOUT_BASE * TestLibrary.getTimeoutFactor());
         inheritedChannelTimeout = (long)(waitTime * 0.8);
     }
 
@@ -406,7 +406,7 @@ public class RMID extends JavaVM {
         options = makeOptions(port, true, true);
         args = makeArgs();
 
-        start(restartTimeout);
+        start(RESTART_TIMEOUT);
     }
 
     /**

@@ -270,7 +270,7 @@ void AOTCompiledMethod::metadata_do(void f(Metadata*)) {
         CompiledIC *ic = CompiledIC_at(&iter);
         if (ic->is_icholder_call()) {
           CompiledICHolder* cichk = ic->cached_icholder();
-          f(cichk->holder_method());
+          f(cichk->holder_metadata());
           f(cichk->holder_klass());
         } else {
           // Get Klass* or NULL (if value is -1) from GOT cell of virtual call PLT stub.

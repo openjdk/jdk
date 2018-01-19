@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -778,7 +778,6 @@ class os: AllStatic {
   static void* signal(int signal_number, void* handler);
   static void  signal_raise(int signal_number);
   static int   signal_wait();
-  static int   signal_lookup();
   static void* user_handler();
   static void  terminate_signal_thread();
   static int   sigexitnum_pd();

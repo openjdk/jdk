@@ -4198,7 +4198,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   const Register Rflags  = R3_tmp;
   const Register Rklass  = R3_tmp;
 
-  prepare_invoke(byte_no, Rinterf, Rindex, Rrecv, Rflags);
+  prepare_invoke(byte_no, Rinterf, Rmethod, Rrecv, Rflags);
 
   // Special case of invokeinterface called for virtual method of
   // java.lang.Object.  See cpCacheOop.cpp for details.
@@ -4207,56 +4207,39 @@ void TemplateTable::invokeinterface(int byte_no) {
   Label notMethod;
   __ tbz(Rflags, ConstantPoolCacheEntry::is_forced_virtual_shift, notMethod);
 
-  __ mov(Rmethod, Rindex);
   invokevirtual_helper(Rmethod, Rrecv, Rflags);
   __ bind(notMethod);
 
   // Get receiver klass into Rklass - also a null check
   __ load_klass(Rklass, Rrecv);
 
+  Label no_such_interface;
+
+  // Receiver subtype check against REFC.
+  __ lookup_interface_method(// inputs: rec. class, interface
+                             Rklass, Rinterf, noreg,
+                             // outputs:  scan temp. reg1, scan temp. reg2
+                             noreg, Ritable, Rtemp,
+                             no_such_interface);
+
   // profile this call
   __ profile_virtual_call(R0_tmp, Rklass);
 
-  // Compute start of first itableOffsetEntry (which is at the end of the vtable)
-  const int base = in_bytes(Klass::vtable_start_offset());
-  assert(vtableEntry::size() == 1, "adjust the scaling in the code below");
-  __ ldr_s32(Rtemp, Address(Rklass, Klass::vtable_length_offset())); // Get length of vtable
-  __ add(Ritable, Rklass, base);
-  __ add(Ritable, Ritable, AsmOperand(Rtemp, lsl, LogBytesPerWord));
+  // Get declaring interface class from method
+  __ ldr(Rtemp, Address(Rmethod, Method::const_offset()));
+  __ ldr(Rtemp, Address(Rtemp, ConstMethod::constants_offset()));
+  __ ldr(Rinterf, Address(Rtemp, ConstantPool::pool_holder_offset_in_bytes()));
 
-  Label entry, search, interface_ok;
+  // Get itable index from method
+  __ ldr_s32(Rtemp, Address(Rmethod, Method::itable_index_offset()));
+  __ add(Rtemp, Rtemp, (-Method::itable_index_max)); // small negative constant is too large for an immediate on arm32
+  __ neg(Rindex, Rtemp);
 
-  __ b(entry);
-
-  __ bind(search);
-  __ add(Ritable, Ritable, itableOffsetEntry::size() * HeapWordSize);
-
-  __ bind(entry);
-
-  // Check that the entry is non-null.  A null entry means that the receiver
-  // class doesn't implement the interface, and wasn't the same as the
-  // receiver class checked when the interface was resolved.
-
-  __ ldr(Rtemp, Address(Ritable, itableOffsetEntry::interface_offset_in_bytes()));
-  __ cbnz(Rtemp, interface_ok);
-
-  // throw exception
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                   InterpreterRuntime::throw_IncompatibleClassChangeError));
-
-  // the call_VM checks for exception, so we should never return here.
-  __ should_not_reach_here();
-
-  __ bind(interface_ok);
-
-  __ cmp(Rinterf, Rtemp);
-  __ b(search, ne);
-
-  __ ldr_s32(Rtemp, Address(Ritable, itableOffsetEntry::offset_offset_in_bytes()));
-  __ add(Rtemp, Rtemp, Rklass); // Add offset to Klass*
-  assert(itableMethodEntry::size() == 1, "adjust the scaling in the code below");
-
-  __ ldr(Rmethod, Address::indexed_ptr(Rtemp, Rindex));
+  __ lookup_interface_method(// inputs: rec. class, interface
+                             Rklass, Rinterf, Rindex,
+                             // outputs:  scan temp. reg1, scan temp. reg2
+                             Rmethod, Ritable, Rtemp,
+                             no_such_interface);
 
   // Rmethod: Method* to call
 
@@ -4278,6 +4261,13 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // do the call
   __ jump_from_interpreted(Rmethod);
+
+  // throw exception
+  __ bind(no_such_interface);
+  __ restore_method();
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeError));
+  // the call_VM checks for exception, so we should never return here.
+  __ should_not_reach_here();
 }
 
 void TemplateTable::invokehandle(int byte_no) {
@@ -4345,7 +4335,6 @@ void TemplateTable::_new() {
   Label done;
   Label initialize_header;
   Label initialize_object;  // including clearing the fields
-  Label allocate_shared;
 
   const bool allow_shared_alloc =
     Universe::heap()->supports_inline_contig_alloc();
@@ -4390,13 +4379,19 @@ void TemplateTable::_new() {
   // Klass::_lh_instance_slow_path_bit is really a bit mask, not bit number
   __ tbnz(Rsize, exact_log2(Klass::_lh_instance_slow_path_bit), slow_case);
 
+  // Allocate the instance:
+  //  If TLAB is enabled:
+  //    Try to allocate in the TLAB.
+  //    If fails, go to the slow path.
+  //  Else If inline contiguous allocations are enabled:
+  //    Try to allocate in eden.
+  //    If fails due to heap end, go to slow path.
   //
-  // Allocate the instance
-  // 1) Try to allocate in the TLAB
-  // 2) if fail and the object is large allocate in the shared Eden
-  // 3) if the above fails (or is not applicable), go to a slow case
-  // (creates a new TLAB, etc.)
-
+  //  If TLAB is enabled OR inline contiguous is enabled:
+  //    Initialize the allocation.
+  //    Exit.
+  //
+  //  Go to slow path.
   if (UseTLAB) {
     const Register Rtlab_top = R1_tmp;
     const Register Rtlab_end = R2_tmp;
@@ -4406,7 +4401,7 @@ void TemplateTable::_new() {
     __ ldr(Rtlab_end, Address(Rthread, in_bytes(JavaThread::tlab_end_offset())));
     __ add(Rtlab_top, Robj, Rsize);
     __ cmp(Rtlab_top, Rtlab_end);
-    __ b(allow_shared_alloc ? allocate_shared : slow_case, hi);
+    __ b(slow_case, hi);
     __ str(Rtlab_top, Address(Rthread, JavaThread::tlab_top_offset()));
     if (ZeroTLAB) {
       // the fields have been already cleared
@@ -4415,45 +4410,43 @@ void TemplateTable::_new() {
       // initialize both the header and fields
       __ b(initialize_object);
     }
-  }
+  } else {
+    // Allocation in the shared Eden, if allowed.
+    if (allow_shared_alloc) {
+      const Register Rheap_top_addr = R2_tmp;
+      const Register Rheap_top = R5_tmp;
+      const Register Rheap_end = Rtemp;
+      assert_different_registers(Robj, Rklass, Rsize, Rheap_top_addr, Rheap_top, Rheap_end, LR);
 
-  // Allocation in the shared Eden, if allowed.
-  if (allow_shared_alloc) {
-    __ bind(allocate_shared);
+      // heap_end now (re)loaded in the loop since also used as a scratch register in the CAS
+      __ ldr_literal(Rheap_top_addr, Lheap_top_addr);
 
-    const Register Rheap_top_addr = R2_tmp;
-    const Register Rheap_top = R5_tmp;
-    const Register Rheap_end = Rtemp;
-    assert_different_registers(Robj, Rklass, Rsize, Rheap_top_addr, Rheap_top, Rheap_end, LR);
-
-    // heap_end now (re)loaded in the loop since also used as a scratch register in the CAS
-    __ ldr_literal(Rheap_top_addr, Lheap_top_addr);
-
-    Label retry;
-    __ bind(retry);
+      Label retry;
+      __ bind(retry);
 
 #ifdef AARCH64
-    __ ldxr(Robj, Rheap_top_addr);
+      __ ldxr(Robj, Rheap_top_addr);
 #else
-    __ ldr(Robj, Address(Rheap_top_addr));
+      __ ldr(Robj, Address(Rheap_top_addr));
 #endif // AARCH64
 
-    __ ldr(Rheap_end, Address(Rheap_top_addr, (intptr_t)Universe::heap()->end_addr()-(intptr_t)Universe::heap()->top_addr()));
-    __ add(Rheap_top, Robj, Rsize);
-    __ cmp(Rheap_top, Rheap_end);
-    __ b(slow_case, hi);
+      __ ldr(Rheap_end, Address(Rheap_top_addr, (intptr_t)Universe::heap()->end_addr()-(intptr_t)Universe::heap()->top_addr()));
+      __ add(Rheap_top, Robj, Rsize);
+      __ cmp(Rheap_top, Rheap_end);
+      __ b(slow_case, hi);
 
-    // Update heap top atomically.
-    // If someone beats us on the allocation, try again, otherwise continue.
+      // Update heap top atomically.
+      // If someone beats us on the allocation, try again, otherwise continue.
 #ifdef AARCH64
-    __ stxr(Rtemp2, Rheap_top, Rheap_top_addr);
-    __ cbnz_w(Rtemp2, retry);
+      __ stxr(Rtemp2, Rheap_top, Rheap_top_addr);
+      __ cbnz_w(Rtemp2, retry);
 #else
-    __ atomic_cas_bool(Robj, Rheap_top, Rheap_top_addr, 0, Rheap_end/*scratched*/);
-    __ b(retry, ne);
+      __ atomic_cas_bool(Robj, Rheap_top, Rheap_top_addr, 0, Rheap_end/*scratched*/);
+      __ b(retry, ne);
 #endif // AARCH64
 
-    __ incr_allocated_bytes(Rsize, Rtemp);
+      __ incr_allocated_bytes(Rsize, Rtemp);
+    }
   }
 
   if (UseTLAB || allow_shared_alloc) {

@@ -402,6 +402,7 @@ public:
 // 'opened' by reference point and decremented when 'closed'.    Use of zero
 // leads the ImageFileReader to be actually closed and discarded.
 class ImageFileReader {
+friend class ImageFileReaderTable;
 private:
     // Manage a number of image files such that an image can be shared across
     // multiple uses (ex. loader.)

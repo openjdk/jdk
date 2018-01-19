@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,6 +215,7 @@ public:
 
   Node *init_control() const { return in(EntryControl); }
   Node *back_control() const { return in(LoopBackControl); }
+  CountedLoopEndNode *loopexit_or_null() const;
   CountedLoopEndNode *loopexit() const;
   Node *init_trip() const;
   Node *stride() const;
@@ -342,7 +343,7 @@ public:
       return NULL;
     }
     Node *ln = iv_phi->in(0);
-    if (ln->is_CountedLoop() && ln->as_CountedLoop()->loopexit() == this) {
+    if (ln->is_CountedLoop() && ln->as_CountedLoop()->loopexit_or_null() == this) {
       return (CountedLoopNode*)ln;
     }
     return NULL;
@@ -354,7 +355,7 @@ public:
 };
 
 
-inline CountedLoopEndNode *CountedLoopNode::loopexit() const {
+inline CountedLoopEndNode *CountedLoopNode::loopexit_or_null() const {
   Node *bc = back_control();
   if( bc == NULL ) return NULL;
   Node *le = bc->in(0);
@@ -362,13 +363,18 @@ inline CountedLoopEndNode *CountedLoopNode::loopexit() const {
     return NULL;
   return (CountedLoopEndNode*)le;
 }
-inline Node *CountedLoopNode::init_trip() const { return loopexit() ? loopexit()->init_trip() : NULL; }
-inline Node *CountedLoopNode::stride() const { return loopexit() ? loopexit()->stride() : NULL; }
-inline int CountedLoopNode::stride_con() const { return loopexit() ? loopexit()->stride_con() : 0; }
-inline bool CountedLoopNode::stride_is_con() const { return loopexit() && loopexit()->stride_is_con(); }
-inline Node *CountedLoopNode::limit() const { return loopexit() ? loopexit()->limit() : NULL; }
-inline Node *CountedLoopNode::incr() const { return loopexit() ? loopexit()->incr() : NULL; }
-inline Node *CountedLoopNode::phi() const { return loopexit() ? loopexit()->phi() : NULL; }
+inline CountedLoopEndNode *CountedLoopNode::loopexit() const {
+  CountedLoopEndNode* cle = loopexit_or_null();
+  assert(cle != NULL, "loopexit is NULL");
+  return cle;
+}
+inline Node *CountedLoopNode::init_trip() const { return loopexit_or_null() ? loopexit()->init_trip() : NULL; }
+inline Node *CountedLoopNode::stride() const { return loopexit_or_null() ? loopexit()->stride() : NULL; }
+inline int CountedLoopNode::stride_con() const { return loopexit_or_null() ? loopexit()->stride_con() : 0; }
+inline bool CountedLoopNode::stride_is_con() const { return loopexit_or_null() && loopexit()->stride_is_con(); }
+inline Node *CountedLoopNode::limit() const { return loopexit_or_null() ? loopexit()->limit() : NULL; }
+inline Node *CountedLoopNode::incr() const { return loopexit_or_null() ? loopexit()->incr() : NULL; }
+inline Node *CountedLoopNode::phi() const { return loopexit_or_null() ? loopexit()->phi() : NULL; }
 
 //------------------------------LoopLimitNode-----------------------------
 // Counted Loop limit node which represents exact final iterator value:

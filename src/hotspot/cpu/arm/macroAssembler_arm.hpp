@@ -1316,7 +1316,7 @@ public:
 
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,
-                               Register itable_index,
+                               RegisterOrConstant itable_index,
                                Register method_result,
                                Register temp_reg1,
                                Register temp_reg2,

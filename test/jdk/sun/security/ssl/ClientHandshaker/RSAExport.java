@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,6 +419,7 @@ public class RSAExport {
         // reset the security property to make sure that the algorithms
         // and keys used in this test are not disabled.
         Security.setProperty("jdk.certpath.disabledAlgorithms", "MD2");
+        Security.setProperty("jdk.tls.disabledAlgorithms", "MD2");
 
         if (debug)
             System.setProperty("javax.net.debug", "all");

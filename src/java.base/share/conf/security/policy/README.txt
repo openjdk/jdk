@@ -8,7 +8,7 @@
 Import and export control rules on cryptographic software vary from
 country to country.  The Java Cryptography Extension (JCE) architecture
 allows flexible cryptographic key strength to be configured via the
-jurisdiction policy files which are referenced by the “crypto.policy”
+jurisdiction policy files which are referenced by the "crypto.policy"
 security property in the <java-home>/conf/security/java.security file.
 
 By default, Java provides two different sets of cryptographic policy
@@ -20,8 +20,8 @@ files:
     limited:    These policy files contain more restricted cryptographic
                 strengths
 
-These files reside in <java-home>/conf/security/policy in the “unlimited”
-or “limited” subdirectories respectively.
+These files reside in <java-home>/conf/security/policy in the "unlimited"
+or "limited" subdirectories respectively.
 
 Each subdirectory contains a complete policy configuration,
 and subdirectories can be added/edited/removed to reflect your

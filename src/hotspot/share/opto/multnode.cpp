@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,8 @@ const RegMask &MultiNode::out_RegMask() const {
 Node *MultiNode::match( const ProjNode *proj, const Matcher *m ) { return proj->clone(); }
 
 //------------------------------proj_out---------------------------------------
-// Get a named projection
-ProjNode* MultiNode::proj_out(uint which_proj) const {
+// Get a named projection or null if not found
+ProjNode* MultiNode::proj_out_or_null(uint which_proj) const {
   assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || which_proj == (uint)true || which_proj == (uint)false, "must be 1 or 0");
   assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || outcnt() == 2, "bad if #1");
   for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {
@@ -61,6 +61,13 @@ ProjNode* MultiNode::proj_out(uint which_proj) const {
     }
   }
   return NULL;
+}
+
+// Get a named projection
+ProjNode* MultiNode::proj_out(uint which_proj) const {
+  ProjNode* p = proj_out_or_null(which_proj);
+  assert(p != NULL, "named projection %u not found", which_proj);
+  return p;
 }
 
 //=============================================================================
@@ -214,8 +221,6 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptR
   }
 
   ProjNode* other_proj = iff->proj_out(1-_con);
-  if (other_proj == NULL) // Should never happen, but make Parfait happy.
-      return NULL;
   CallStaticJavaNode* call = other_proj->is_uncommon_trap_proj(reason);
   if (call != NULL) {
     assert(reason == Deoptimization::Reason_none ||
