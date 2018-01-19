@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.Security;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
@@ -57,6 +58,8 @@ public class TLSConnection {
     private static final SSLParameters USE_DEFAULT_SSL_PARAMETERS = new SSLParameters();
 
     public static void main(String[] args) throws Exception {
+        // re-enable 3DES
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
         // enable all logging
         System.setProperty("jdk.httpclient.HttpClient.log", "all,frames:all");
