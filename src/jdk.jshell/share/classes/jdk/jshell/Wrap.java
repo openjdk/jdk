@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 
 package jdk.jshell;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import static java.util.stream.Collectors.joining;
 import static jdk.jshell.Util.DOIT_METHOD_NAME;
 
@@ -66,37 +68,76 @@ abstract class Wrap implements GeneralWrap {
         return "\n" + indent(n);
     }
 
-    /**
+    /**Create a stub of a compilable representation of a variable snippet.
+     * The variable is always represented by a field. If the variable
+     * in the snippet has an initializer, the field is initialized by
+     * calling the DOIT_METHOD_NAME method.
      *
-     * @param in
-     * @param rname
-     * @param rinit Initializer or null
-     * @param rdecl Type name and name
-     * @return
+     * In some cases, the real inferred type of the variable may be non-denotable
+     * (e.g. intersection types). The declared type of the field must always
+     * be denotable (i.e. such that it can be written into the classfile), but
+     * if the real type is potentially non-denotable, the {@code enhanced} parameter
+     * must be true.
+     *
+     * @param source the snippet's masked source code
+     * @param wtype variable's denotable type suitable for field declaration
+     * @param brackets any [] that should be appended to the type
+     * @param rname range in source that denotes the name of the
+     * @param winit Initializer or null
+     * @param enhanced if the real inferred type of the variable is potentially
+     *                 non-denotable, this must be true
+     * @return a Wrap that declares the given variable, potentially with
+     *         an initialization method
      */
     public static Wrap varWrap(String source, Wrap wtype, String brackets,
-                               Range rname, Wrap winit, Wrap anonDeclareWrap) {
+                               Range rname, Wrap winit, boolean enhanced,
+                               Wrap anonDeclareWrap) {
         RangeWrap wname = new RangeWrap(source, rname);
-        Wrap wVarDecl = new VarDeclareWrap(wtype, brackets, wname);
+        List<Object> components = new ArrayList<>();
+        components.add(new VarDeclareWrap(wtype, brackets, wname));
         Wrap wmeth;
 
         if (winit == null) {
             wmeth = new CompoundWrap(new NoWrap(" "), "   return null;\n");
         } else {
-        // int x = y
-            // int x_ = y; return x = x_;
-            // decl + "_ = " + init ; + "return " + name + "=" + name + "_ ;"
-            wmeth = new CompoundWrap(
-                    wtype, brackets + " ", wname, "_ =\n        ", winit, semi(winit),
-                    "        return ", wname, " = ", wname, "_;\n"
-            );
+            // int x = y
+            if (enhanced) {
+                // private static <Z> Z do_itAux() {
+                //     wtype x_ = y;
+                //     @SuppressWarnings("unchecked")
+                //     Z x__ = (Z) x_;
+                //     return x__;
+                // }
+                // in do_it method:
+                //return do_itAux();
+                Wrap waux = new CompoundWrap(
+                        "    private static <Z> Z ", DOIT_METHOD_NAME + "Aux", "() throws Throwable {\n",
+                        wtype, brackets + " ", wname, "_ =\n        ", winit, semi(winit),
+                        "        @SuppressWarnings(\"unchecked\") Z ", wname, "__ = (Z)", wname, "_;\n",
+                        "        return ", wname, "__;\n",
+                        "}"
+                );
+                components.add(waux);
+                wmeth = new CompoundWrap(
+                        "        return ", wname, " = ", DOIT_METHOD_NAME + "Aux", "();\n"
+                );
+            } else {
+                // int x_ = y; return x = x_;
+                // decl + "_ = " + init ; + "return " + name + "= " + name + "_ ;"
+                wmeth = new CompoundWrap(
+                        wtype, brackets + " ", wname, "_ =\n        ", winit, semi(winit),
+                        "        return ", wname, " = ", wname, "_;\n"
+                );
+            }
         }
-        Wrap wInitMeth = new DoitMethodWrap(wmeth);
-        return anonDeclareWrap != null ? new CompoundWrap(wVarDecl, wInitMeth, anonDeclareWrap)
-                                       : new CompoundWrap(wVarDecl, wInitMeth);
+        components.add(new DoitMethodWrap(wmeth));
+        if (anonDeclareWrap != null) {
+            components.add(anonDeclareWrap);
+        }
+        return new CompoundWrap(components.toArray());
     }
 
-    public static Wrap tempVarWrap(String source, String typename, String name) {
+    public static Wrap tempVarWrap(String source, String typename, String name, Wrap anonDeclareWrap) {
         RangeWrap winit = new NoWrap(source);
         // y
         // return $1 = y;
@@ -105,7 +146,8 @@ abstract class Wrap implements GeneralWrap {
         Wrap wInitMeth = new DoitMethodWrap(wmeth);
 
         String varDecl = "    public static\n    " + typename + " " + name + ";\n";
-        return new CompoundWrap(varDecl, wInitMeth);
+        return anonDeclareWrap != null ? new CompoundWrap(varDecl, wInitMeth, anonDeclareWrap)
+                                       : new CompoundWrap(varDecl, wInitMeth);
     }
 
     public static Wrap simpleWrap(String source) {
