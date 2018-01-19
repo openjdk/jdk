@@ -33,7 +33,7 @@
  * @run driver compiler.calls.common.InvokeDynamicPatcher
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main compiler.aot.AotCompiler
+ * @run driver compiler.aot.AotCompiler
  *      -libname AotInvokeDynamic2InterpretedTest.so
  *      -class compiler.calls.common.InvokeDynamic
  *      -compile compiler.calls.common.InvokeDynamic.caller()V

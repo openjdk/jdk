@@ -30,7 +30,7 @@
  *        compiler.aot.AotCompiler
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main compiler.aot.AotCompiler
+ * @run driver compiler.aot.AotCompiler
  *      -libname AotInvokeVirtual2InterpretedTest.so
  *      -class compiler.calls.common.InvokeVirtual
  *      -compile compiler.calls.common.InvokeVirtual.caller()V

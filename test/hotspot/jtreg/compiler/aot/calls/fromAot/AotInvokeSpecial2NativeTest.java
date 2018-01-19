@@ -30,7 +30,7 @@
  *        compiler.aot.AotCompiler
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main compiler.aot.AotCompiler -libname AotInvokeSpecial2NativeTest.so
+ * @run driver compiler.aot.AotCompiler -libname AotInvokeSpecial2NativeTest.so
  *      -class compiler.calls.common.InvokeSpecial
  *      -compile compiler.calls.common.InvokeSpecial.caller()V
  * @run main/othervm/native -XX:+UseAOT

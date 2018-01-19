@@ -30,7 +30,7 @@
  *        compiler.aot.AotCompiler
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main compiler.aot.AotCompiler -libname AotInvokeStatic2AotTest.so
+ * @run driver compiler.aot.AotCompiler -libname AotInvokeStatic2AotTest.so
  *      -class compiler.calls.common.InvokeStatic
  *      -extraopt -XX:+UnlockDiagnosticVMOptions -extraopt -XX:+WhiteBoxAPI -extraopt -Xbootclasspath/a:.
  * @run main/othervm -XX:+UseAOT -XX:AOTLibrary=./AotInvokeStatic2AotTest.so
