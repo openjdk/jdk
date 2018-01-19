@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8044445
+ * @bug 8044445 8194307
  * @summary test new methods from JEP-229: Create PKCS12 Keystores by Default
  */
 
@@ -37,8 +37,25 @@ import javax.security.auth.callback.*;
 public class ProbeKeystores {
     private static final char[] PASSWORD = "changeit".toCharArray();
     private static final char[] BAD_PASSWORD = "badpasword".toCharArray();
+    private static final LoadStoreParameter LOAD_STORE_PARAM =
+        new MyLoadStoreParameter(new PasswordProtection(PASSWORD));
+    private static final LoadStoreParameter BAD_LOAD_STORE_PARAM =
+        new MyLoadStoreParameter(new PasswordProtection(BAD_PASSWORD));
     private static final String DIR = System.getProperty("test.src", ".");
     private static final String CERT_FILE = "trusted.pem";
+
+    private static class MyLoadStoreParameter implements LoadStoreParameter {
+
+        private ProtectionParameter protection;
+
+        MyLoadStoreParameter(ProtectionParameter protection) {
+            this.protection = protection;
+        }
+
+        public ProtectionParameter getProtectionParameter() {
+            return protection;
+        }
+    }
 
     public static final void main(String[] args) throws Exception {
 
@@ -169,6 +186,23 @@ public class ProbeKeystores {
         // Next try with an incorrect password
         try {
             ks = KeyStore.getInstance(new File(file), BAD_PASSWORD);
+            throw new Exception("ERROR: expected an exception but got success");
+        } catch (IOException e) {
+            System.out.println("Failed to load a " + type + " keystore named '" + file + "' (as expected)");
+        }
+
+        // Now try with the correct password within a LoadStoreParameter
+        ks = KeyStore.getInstance(new File(file), LOAD_STORE_PARAM);
+        if (!type.equalsIgnoreCase(ks.getType())) {
+            throw new Exception("ERROR: expected a " + type + " keystore, " +
+                "got a " + ks.getType() + " keystore instead");
+        } else {
+            System.out.println("Probed a " + type + " keystore named '" + file + "'");
+        }
+
+        // Next try with an incorrect password within a LoadStoreParameter
+        try {
+            ks = KeyStore.getInstance(new File(file), BAD_LOAD_STORE_PARAM);
             throw new Exception("ERROR: expected an exception but got success");
         } catch (IOException e) {
             System.out.println("Failed to load a " + type + " keystore named '" + file + "' (as expected)");
