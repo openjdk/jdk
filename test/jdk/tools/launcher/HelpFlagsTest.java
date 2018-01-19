@@ -73,7 +73,12 @@ public class HelpFlagsTest extends TestHelper {
         // mentioned in the help text.
         "kinit",
         "klist",
-        "ktab"
+        "ktab",
+        // Oracle proprietary tools without help message.
+        "jmc",
+        "jweblauncher",
+        "jcontrol",
+        "ssvagent"
     };
 
     // Lists which tools support which flags.
@@ -113,12 +118,7 @@ public class HelpFlagsTest extends TestHelper {
         // that way.
         int exitcodeOfWrongFlag;
 
-        // Some tools accept the invalid argument and thus hang the test.
-        // Don't execute these with the wrong flags.
-        // This actually should be considered a bug in the corresponding tool.
-        boolean dontExecuteWithWrongFlags;
-
-        ToolHelpSpec(String n, int q, int h, int hp, int ex1, int l, int dl, int ex2, int hangs) {
+        ToolHelpSpec(String n, int q, int h, int hp, int ex1, int l, int dl, int ex2) {
             toolname = n;
             supportsQuestionMark = ( q  == 1 ? true : false );
             supportsH            = ( h  == 1 ? true : false );
@@ -128,48 +128,48 @@ public class HelpFlagsTest extends TestHelper {
             supportsLegacyHelp   = (  l == 1 ? true : false );
             documentsLegacyHelp  = ( dl == 1 ? true : false );
             exitcodeOfWrongFlag  = ex2;
-
-            dontExecuteWithWrongFlags = ( hangs == 1 ? true : false );
         }
     }
 
     static ToolHelpSpec[] jdkTools = {
-        //               name          -?   -h --help exitcode   -help -help  exitcode  Don't
-        //                                            of help          docu   of wrong  test
-        //                                                             mented flag      inv flag
-        new ToolHelpSpec("jabswitch",   0,   0,   0,   0,         0,    0,     0,       0),   // /?, prints help message anyways, win only
-        new ToolHelpSpec("jaotc",       1,   1,   1,   0,         0,    0,     2,       0),   // -?, -h, --help
-        new ToolHelpSpec("jar",         1,   1,   1,   0,         0,    0,     1,       0),   // -?, -h, --help
-        new ToolHelpSpec("jarsigner",   1,   1,   1,   0,         1,    0,     1,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("java",        1,   1,   1,   0,         1,    1,     1,       0),   // -?, -h, --help -help, Documents -help
-        new ToolHelpSpec("javac",       1,   0,   1,   0,         1,    1,     2,       0),   // -?,     --help -help, Documents -help, -h is already taken for "native header output directory".
-        new ToolHelpSpec("javadoc",     1,   1,   1,   0,         1,    1,     1,       0),   // -?, -h, --help -help, Documents -help
-        new ToolHelpSpec("javap",       1,   1,   1,   0,         1,    1,     2,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("javaw",       1,   1,   1,   0,         1,    1,     1,       0),   // -?, -h, --help -help, win only
-        new ToolHelpSpec("jcmd",        1,   1,   1,   0,         1,    0,     1,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("jdb",         1,   1,   1,   0,         1,    1,     0,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("jdeprscan",   1,   1,   1,   0,         0,    0,     1,       0),   // -?, -h, --help
-        new ToolHelpSpec("jdeps",       1,   1,   1,   0,         1,    0,     2,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("jhsdb",       0,   0,   0,   0,         0,    0,     0,       0),   // none, prints help message anyways.
-        new ToolHelpSpec("jimage",      1,   1,   1,   0,         0,    0,     2,       0),   // -?, -h, --help
-        new ToolHelpSpec("jinfo",       1,   1,   1,   0,         1,    1,     1,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("jjs",         0,   1,   1, 100,         0,    0,   100,       0),   //     -h, --help, return code 100
-        new ToolHelpSpec("jlink",       1,   1,   1,   0,         0,    0,     2,       0),   // -?, -h, --help
-        new ToolHelpSpec("jmap",        1,   1,   1,   0,         1,    0,     1,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("jmod",        1,   1,   1,   0,         1,    0,     2,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("jps",         1,   1,   1,   0,         1,    1,     1,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("jrunscript",  1,   1,   1,   0,         1,    1,     7,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("jshell",      1,   1,   1,   0,         1,    0,     1,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("jstack",      1,   1,   1,   0,         1,    1,     1,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("jstat",       1,   1,   1,   0,         1,    1,     1,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("jstatd",      1,   1,   1,   0,         0,    0,     1,       0),   // -?, -h, --help
-        new ToolHelpSpec("keytool",     1,   1,   1,   0,         1,    0,     1,       0),   // none, prints help message anyways.
-        new ToolHelpSpec("pack200",     1,   1,   1,   0,         1,    0,     2,       0),   // -?, -h, --help, -help accepted but not documented.
-        new ToolHelpSpec("rmic",        0,   0,   0,   0,         0,    0,     1,       0),   // none, pirnts help message anyways.
-        new ToolHelpSpec("rmid",        0,   0,   0,   0,         0,    0,     1,       0),   // none, prints help message anyways.
-        new ToolHelpSpec("rmiregistry", 0,   0,   0,   0,         0,    0,     1,       0),   // none, prints help message anyways.
-        new ToolHelpSpec("serialver",   0,   0,   0,   0,         0,    0,     1,       0),   // none, prints help message anyways.
-        new ToolHelpSpec("unpack200",   1,   1,   1,   0,         1,    0,     2,       0),   // -?, -h, --help, -help accepted but not documented.
+        //               name          -?   -h --help exitcode   -help -help  exitcode
+        //                                            of help          docu   of wrong
+        //                                                             mented flag
+        new ToolHelpSpec("jabswitch",   0,   0,   0,   0,         0,    0,     0),     // /?, prints help message anyways, win only
+        new ToolHelpSpec("jaotc",       1,   1,   1,   0,         0,    0,     2),     // -?, -h, --help
+        new ToolHelpSpec("jar",         1,   1,   1,   0,         0,    0,     1),     // -?, -h, --help
+        new ToolHelpSpec("jarsigner",   1,   1,   1,   0,         1,    0,     1),     // -?, -h, --help, -help accepted but not documented.
+        new ToolHelpSpec("java",        1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
+        new ToolHelpSpec("javac",       1,   0,   1,   0,         1,    1,     2),     // -?,     --help -help, Documents -help, -h is already taken for "native header output directory".
+        new ToolHelpSpec("javadoc",     1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
+        new ToolHelpSpec("javap",       1,   1,   1,   0,         1,    1,     2),     // -?, -h, --help -help, Documents -help
+        new ToolHelpSpec("javaw",       1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help, win only
+        new ToolHelpSpec("jcmd",        1,   1,   1,   0,         1,    0,     1),     // -?, -h, --help, -help accepted but not documented.
+        new ToolHelpSpec("jdb",         1,   1,   1,   0,         1,    1,     0),     // -?, -h, --help -help, Documents -help
+        new ToolHelpSpec("jdeprscan",   1,   1,   1,   0,         0,    0,     1),     // -?, -h, --help
+        new ToolHelpSpec("jdeps",       1,   1,   1,   0,         1,    0,     2),     // -?, -h, --help, -help accepted but not documented.
+        new ToolHelpSpec("jhsdb",       0,   0,   0,   0,         0,    0,     0),     // none, prints help message anyways.
+        new ToolHelpSpec("jimage",      1,   1,   1,   0,         0,    0,     2),     // -?, -h, --help
+        new ToolHelpSpec("jinfo",       1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
+        new ToolHelpSpec("jjs",         0,   1,   1, 100,         0,    0,   100),     //     -h, --help, return code 100
+        new ToolHelpSpec("jlink",       1,   1,   1,   0,         0,    0,     2),     // -?, -h, --help
+        new ToolHelpSpec("jmap",        1,   1,   1,   0,         1,    0,     1),     // -?, -h, --help, -help accepted but not documented.
+        new ToolHelpSpec("jmod",        1,   1,   1,   0,         1,    0,     2),     // -?, -h, --help, -help accepted but not documented.
+        new ToolHelpSpec("jps",         1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
+        new ToolHelpSpec("jrunscript",  1,   1,   1,   0,         1,    1,     7),     // -?, -h, --help -help, Documents -help
+        new ToolHelpSpec("jshell",      1,   1,   1,   0,         1,    0,     1),     // -?, -h, --help, -help accepted but not documented.
+        new ToolHelpSpec("jstack",      1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
+        new ToolHelpSpec("jstat",       1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
+        new ToolHelpSpec("jstatd",      1,   1,   1,   0,         0,    0,     1),     // -?, -h, --help
+        new ToolHelpSpec("keytool",     1,   1,   1,   0,         1,    0,     1),     // none, prints help message anyways.
+        new ToolHelpSpec("pack200",     1,   1,   1,   0,         1,    0,     2),     // -?, -h, --help, -help accepted but not documented.
+        new ToolHelpSpec("rmic",        0,   0,   0,   0,         0,    0,     1),     // none, pirnts help message anyways.
+        new ToolHelpSpec("rmid",        0,   0,   0,   0,         0,    0,     1),     // none, prints help message anyways.
+        new ToolHelpSpec("rmiregistry", 0,   0,   0,   0,         0,    0,     1),     // none, prints help message anyways.
+        new ToolHelpSpec("serialver",   0,   0,   0,   0,         0,    0,     1),     // none, prints help message anyways.
+        new ToolHelpSpec("unpack200",   1,   1,   1,   0,         1,    0,     2),     // -?, -h, --help, -help accepted but not documented.
+        // Oracle proprietary tools:
+        new ToolHelpSpec("javapackager",0,   0,   0,   0,         1,    0,   255),     // -help accepted but not documented.
     };
 
     // Returns true if the file is not a tool.
@@ -400,18 +400,14 @@ public class HelpFlagsTest extends TestHelper {
 
             // Check that the return code listing in jdkTools[] is
             // correct for an invalid flag.
-            if (!tool.dontExecuteWithWrongFlags) {
-                errorMessage += testInvalidFlag(f, "-asdfxgr", tool.exitcodeOfWrongFlag, tool.documentsLegacyHelp);
-            }
+            errorMessage += testInvalidFlag(f, "-asdfxgr", tool.exitcodeOfWrongFlag, tool.documentsLegacyHelp);
 
             // Test for legacy -help flag.
             if (!tool.documentsLegacyHelp) {
                 if (tool.supportsLegacyHelp == true) {
                     errorMessage += testLegacyFlag(f, tool.exitcodeOfHelp);
                 } else {
-                    if (!tool.dontExecuteWithWrongFlags) {
-                        errorMessage += testInvalidFlag(f, "-help", tool.exitcodeOfWrongFlag, false);
-                    }
+                    errorMessage += testInvalidFlag(f, "-help", tool.exitcodeOfWrongFlag, false);
                 }
             }
         }
