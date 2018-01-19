@@ -26,6 +26,7 @@
 #define SHARE_VM_CLASSFILE_JAVACLASSES_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 
@@ -53,6 +54,11 @@ typeArrayOop java_lang_String::value(oop java_string) {
   assert(is_instance(java_string), "must be java_string");
   return (typeArrayOop) java_string->obj_field(value_offset);
 }
+typeArrayOop java_lang_String::value_no_keepalive(oop java_string) {
+  assert(initialized && (value_offset > 0), "Must be initialized");
+  assert(is_instance(java_string), "must be java_string");
+  return (typeArrayOop) java_string->obj_field_access<AS_NO_KEEPALIVE>(value_offset);
+}
 unsigned int java_lang_String::hash(oop java_string) {
   assert(initialized && (hash_offset > 0), "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
@@ -68,11 +74,11 @@ bool java_lang_String::is_latin1(oop java_string) {
 int java_lang_String::length(oop java_string) {
   assert(initialized, "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
-  typeArrayOop value_array = ((typeArrayOop)java_string->obj_field(value_offset));
-  if (value_array == NULL) {
+  typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
+  if (value == NULL) {
     return 0;
   }
-  int arr_length = value_array->length();
+  int arr_length = value->length();
   if (!is_latin1(java_string)) {
     assert((arr_length & 1) == 0, "should be even for UTF16 string");
     arr_length >>= 1; // convert number of bytes to number of elements

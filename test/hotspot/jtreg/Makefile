@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -66,13 +66,15 @@ ifndef CONCURRENCY_FACTOR
   CONCURRENCY_FACTOR = 1
 endif
 
-# Concurrency based on min(cores / 2, 12)
-CONCURRENCY := $(shell awk 'BEGIN { printf "%.0f", $(NUM_CORES) / 2 * $(CONCURRENCY_FACTOR) }')
-ifeq ($(CONCURRENCY), 0)
-  CONCURRENCY := 1
-else ifeq ($(shell expr $(CONCURRENCY) \> 12), 1)
-  CONCURRENCY := 12
-endif
+# Concurrency based on min(cores / 2, 12) * CONCURRENCY_FACTOR
+CONCURRENCY := $(shell awk \
+  'BEGIN { \
+    c = $(NUM_CORES) / 2; \
+    if (c > 12) c = 12; \
+    c = c * $(CONCURRENCY_FACTOR); \
+    if (c < 1) c = 1; \
+    printf "%.0f", c; \
+  }')
 
 # Make sure MaxRAMPercentage is high enough to not cause OOM or swapping since we may end up with a lot of JVM's
 JTREG_BASIC_OPTIONS += -vmoption:-XX:MaxRAMPercentage=$(shell expr 25 / $(CONCURRENCY))

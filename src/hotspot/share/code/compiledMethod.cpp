@@ -404,8 +404,7 @@ void CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic, BoolObjectClos
     // yet be marked below. (We check this further below).
     CompiledICHolder* cichk_oop = ic->cached_icholder();
 
-    if (cichk_oop->holder_method()->method_holder()->is_loader_alive(is_alive) &&
-        cichk_oop->holder_klass()->is_loader_alive(is_alive)) {
+    if (cichk_oop->is_loader_alive(is_alive)) {
       return;
     }
   } else {

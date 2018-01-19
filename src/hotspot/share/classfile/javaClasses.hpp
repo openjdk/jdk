@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,7 @@ class java_lang_String : AllStatic {
 
   // Accessors
   static inline typeArrayOop value(oop java_string);
+  static inline typeArrayOop value_no_keepalive(oop java_string);
   static inline unsigned int hash(oop java_string);
   static inline bool is_latin1(oop java_string);
   static inline int length(oop java_string);
@@ -443,9 +444,6 @@ class java_lang_Throwable: AllStatic {
     hc_detailMessage_offset =  1,
     hc_cause_offset         =  2,  // New since 1.4
     hc_stackTrace_offset    =  3   // New since 1.4
-  };
-  enum {
-      hc_static_unassigned_stacktrace_offset = 0  // New since 1.7
   };
   // Trace constants
   enum {
@@ -878,7 +876,6 @@ class java_lang_ref_Reference: AllStatic {
   static int queue_offset;
   static int next_offset;
   static int discovered_offset;
-  static int number_of_fake_oop_fields;
 
   // Accessors
   static inline oop referent(oop ref);
@@ -902,14 +899,6 @@ class java_lang_ref_Reference: AllStatic {
 
 class java_lang_ref_SoftReference: public java_lang_ref_Reference {
  public:
-  enum {
-   // The timestamp is a long field and may need to be adjusted for alignment.
-   hc_timestamp_offset  = hc_discovered_offset + 1
-  };
-  enum {
-   hc_static_clock_offset = 0
-  };
-
   static int timestamp_offset;
   static int static_clock_offset;
 
@@ -919,6 +908,8 @@ class java_lang_ref_SoftReference: public java_lang_ref_Reference {
   // Accessors for statics
   static jlong clock();
   static void set_clock(jlong value);
+
+  static void compute_offsets();
 };
 
 // Interface to java.lang.invoke.MethodHandle objects
@@ -1228,10 +1219,6 @@ class java_security_AccessControlContext: AllStatic {
 
 class java_lang_ClassLoader : AllStatic {
  private:
-  // The fake offsets are added by the class loader when java.lang.Class is loaded
-  enum {
-   hc_parent_offset = 0
-  };
   static int _loader_data_offset;
   static bool offsets_computed;
   static int parent_offset;
@@ -1279,13 +1266,6 @@ class java_lang_ClassLoader : AllStatic {
 
 class java_lang_System : AllStatic {
  private:
-  enum {
-   hc_static_in_offset  = 0,
-   hc_static_out_offset = 1,
-   hc_static_err_offset = 2,
-   hc_static_security_offset = 3
-  };
-
   static int  static_in_offset;
   static int static_out_offset;
   static int static_err_offset;
@@ -1298,6 +1278,8 @@ class java_lang_System : AllStatic {
 
   static bool has_security_manager();
 
+  static void compute_offsets();
+
   // Debugging
   friend class JavaClasses;
 };
@@ -1307,17 +1289,6 @@ class java_lang_System : AllStatic {
 
 class java_lang_StackTraceElement: AllStatic {
  private:
-  enum {
-    hc_declaringClassObject_offset    = 0,
-    hc_classLoaderName_offset      = 1,
-    hc_moduleName_offset           = 2,
-    hc_moduleVersion_offset        = 3,
-    hc_declaringClass_offset       = 4,
-    hc_methodName_offset           = 5,
-    hc_fileName_offset             = 6,
-    hc_lineNumber_offset           = 7
-  };
-
   static int declaringClassObject_offset;
   static int classLoaderName_offset;
   static int moduleName_offset;
@@ -1343,6 +1314,8 @@ class java_lang_StackTraceElement: AllStatic {
 
   static void fill_in(Handle element, InstanceKlass* holder, const methodHandle& method,
                       int version, int bci, Symbol* name, TRAPS);
+
+  static void compute_offsets();
 
   // Debugging
   friend class JavaClasses;
@@ -1416,14 +1389,6 @@ class java_lang_LiveStackFrameInfo: AllStatic {
 
 class java_lang_AssertionStatusDirectives: AllStatic {
  private:
-  enum {
-    hc_classes_offset,
-    hc_classEnabled_offset,
-    hc_packages_offset,
-    hc_packageEnabled_offset,
-    hc_deflt_offset
-  };
-
   static int classes_offset;
   static int classEnabled_offset;
   static int packages_offset;
@@ -1437,6 +1402,9 @@ class java_lang_AssertionStatusDirectives: AllStatic {
   static void set_packages(oop obj, oop val);
   static void set_packageEnabled(oop obj, oop val);
   static void set_deflt(oop obj, bool val);
+
+  static void compute_offsets();
+
   // Debugging
   friend class JavaClasses;
 };
@@ -1508,9 +1476,6 @@ class JavaClasses : AllStatic {
   static InjectedField _injected_fields[];
 
   static bool check_offset(const char *klass_name, int offset, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
-  static bool check_static_offset(const char *klass_name, int hardcoded_offset, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
-  static bool check_constant(const char *klass_name, int constant, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
-
  public:
   enum InjectedFieldID {
     ALL_INJECTED_FIELDS(DECLARE_INJECTED_FIELD_ENUM)

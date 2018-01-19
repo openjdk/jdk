@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -443,7 +443,17 @@ public abstract class PKCS11Test {
 
         // the index after whitespace after nssHeader
         int afterheader = s.indexOf("NSS", i) + 4;
-        String version = s.substring(afterheader, s.indexOf(' ', afterheader));
+        int nextSpaceIndex = s.indexOf(' ', afterheader);
+
+        // If the next space is not found,
+        // it has to print the content for further investigation.
+        if (nextSpaceIndex == -1) {
+            System.out.println("===== Content start =====");
+            System.out.println(s);
+            System.out.println("===== Content end =====");
+        }
+
+        String version = s.substring(afterheader, nextSpaceIndex);
 
         // If a "dot dot" release, strip the extra dots for double parsing
         String[] dot = version.split("\\.");
@@ -624,6 +634,7 @@ public abstract class PKCS11Test {
             "/usr/lib64/"});
         osMap.put("Linux-ppc64-64", new String[]{"/usr/lib64/"});
         osMap.put("Linux-ppc64le-64", new String[]{"/usr/lib64/"});
+        osMap.put("Linux-s390x-64", new String[]{"/usr/lib64/"});
         osMap.put("Windows-x86-32", new String[]{
             PKCS11_BASE + "/nss/lib/windows-i586/".replace('/', SEP)});
         osMap.put("Windows-amd64-64", new String[]{

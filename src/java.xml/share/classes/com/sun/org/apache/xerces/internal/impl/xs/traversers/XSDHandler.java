@@ -115,7 +115,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * The purpose of this class is to co-ordinate the construction of a
@@ -421,6 +420,8 @@ public class XSDHandler {
     private String fDefer;
     private String fPrefer;
     private String fResolve;
+
+    private boolean fOverrideDefaultParser;
 
     //************ Traversers **********
     XSDAttributeGroupTraverser fAttributeGroupTraverser;
@@ -2244,7 +2245,8 @@ public class XSDHandler {
                 XSDKey key = null;
                 String schemaId = null;
                 if (referType != XSDDescription.CONTEXT_PREPARSE) {
-                    schemaId = XMLEntityManager.expandSystemId(inputSource.getSystemId(), schemaSource.getBaseSystemId(), false);
+                    schemaId = XMLEntityManager.expandSystemId(inputSource.getSystemId(),
+                            schemaSource.getBaseSystemId(), false);
                     key = new XSDKey(schemaId, referType, schemaNamespace);
                     if ((schemaElement = fTraversed.get(key)) != null) {
                         fLastSchemaWasDuplicate = true;
@@ -2260,17 +2262,10 @@ public class XSDHandler {
                     catch (SAXException se) {}
                 }
                 else {
+                    parser = JdkXmlUtils.getXMLReader(fOverrideDefaultParser,
+                            fSecurityManager.isSecureProcessing());
+
                     try {
-                        parser = XMLReaderFactory.createXMLReader();
-                    }
-                    // If something went wrong with the factory
-                    // just use our own SAX parser.
-                    catch (SAXException se) {
-                        parser = new SAXParser();
-                    }
-                    try {
-                        parser.setFeature(NAMESPACE_PREFIXES, true);
-                        namespacePrefixes = true;
                         // If this is a Xerces SAX parser set the security manager if there is one
                         if (parser instanceof SAXParser) {
                             if (fSecurityManager != null) {
@@ -3629,6 +3624,9 @@ public class XSDHandler {
         fAccessExternalSchema = fSecurityPropertyMgr.getValue(
                 XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA);
 
+        fOverrideDefaultParser = componentManager.getFeature(JdkXmlUtils.OVERRIDE_PARSER);
+        fSchemaParser.setFeature(JdkXmlUtils.OVERRIDE_PARSER, fOverrideDefaultParser);
+        fEntityManager.setFeature(JdkXmlUtils.OVERRIDE_PARSER, fOverrideDefaultParser);
         // Passing the Catalog settings to the parser
         fUseCatalog = componentManager.getFeature(XMLConstants.USE_CATALOG);
         fSchemaParser.setFeature(XMLConstants.USE_CATALOG, fUseCatalog);

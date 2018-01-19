@@ -984,7 +984,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   __ load_klass(receiver_klass, receiver);
   __ ldr(holder_klass, Address(Ricklass, CompiledICHolder::holder_klass_offset()));
-  __ ldr(Rmethod, Address(Ricklass, CompiledICHolder::holder_method_offset()));
+  __ ldr(Rmethod, Address(Ricklass, CompiledICHolder::holder_metadata_offset()));
   __ cmp(receiver_klass, holder_klass);
 
 #ifdef AARCH64

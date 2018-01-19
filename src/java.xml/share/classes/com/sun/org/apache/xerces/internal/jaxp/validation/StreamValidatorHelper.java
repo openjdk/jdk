@@ -98,9 +98,6 @@ final class StreamValidatorHelper implements ValidatorHelper {
     private static final String VALIDATION_MANAGER
             = Constants.XERCES_PROPERTY_PREFIX + Constants.VALIDATION_MANAGER_PROPERTY;
 
-    private static final String DEFAULT_TRANSFORMER_IMPL
-            = "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl";
-
     /**
      * Property id: security manager.
      */
@@ -141,12 +138,9 @@ final class StreamValidatorHelper implements ValidatorHelper {
 
             if (result != null) {
                 try {
-                    SAXTransformerFactory tf = fComponentManager.getFeature(
-                            Constants.ORACLE_FEATURE_SERVICE_MECHANISM) ?
-                            (SAXTransformerFactory) SAXTransformerFactory.newInstance() :
-                            (SAXTransformerFactory) TransformerFactory.newInstance(
-                                    DEFAULT_TRANSFORMER_IMPL,
-                                    StreamValidatorHelper.class.getClassLoader());
+                    SAXTransformerFactory tf = JdkXmlUtils.getSAXTransformFactory(
+                            fComponentManager.getFeature(JdkXmlUtils.OVERRIDE_PARSER));
+
                     identityTransformerHandler = tf.newTransformerHandler();
                 } catch (TransformerConfigurationException e) {
                     throw new TransformerFactoryConfigurationError(e);

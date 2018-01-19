@@ -3,7 +3,7 @@ ParserTest.java:16:22: compiler.err.var.not.allowed: var
 ParserTest.java:20:19: compiler.err.var.not.allowed: var
 ParserTest.java:24:14: compiler.err.var.not.allowed: var
 ParserTest.java:28:20: compiler.err.var.not.allowed: var
-ParserTest.java:36:18: compiler.err.var.not.allowed: var
+ParserTest.java:36:27: compiler.err.var.not.allowed: var
 ParserTest.java:38:5: compiler.err.var.not.allowed.here
 ParserTest.java:41:15: compiler.err.var.not.allowed.array
 ParserTest.java:42:13: compiler.err.var.not.allowed.array

@@ -43,14 +43,37 @@ import java.util.Set;
  * This tests the SingleEntryRegistry implemented by JMX.
  * This test is a manual test and uses JMX running on a *different* host.
  * JMX can be enabled in any Java runtime; for example:
- * login or ssh to the different host and invoke rmiregistry with arguments below.
+ *
+ * Note: Use remote host with latest JDK update release for invoking rmiregistry.
+ *
+ * Note: Test should be ran twice once using arg1 and once using arg2.
+ *
+ * login or ssh to the remote host and invoke rmiregistry with arg1.
  * It will not show any output.
- * {@code $JDK_HOME/bin/rmiregistry \
+ * Execute the test, after test completes execution, stop the server.
+ *
+ * repeat above step using arg2 and execute the test.
+ *
+ *
+ * arg1: {@code $JDK_HOME/bin/rmiregistry \
  *         -J-Dcom.sun.management.jmxremote.port=8888 \
  *         -J-Dcom.sun.management.jmxremote.local.only=false \
  *         -J-Dcom.sun.management.jmxremote.ssl=false \
  *         -J-Dcom.sun.management.jmxremote.authenticate=false
  * }
+ *
+ *
+ * replace "jmx-registry-host" with the hostname or IP address of the remote host
+ * for property "-J-Dcom.sun.management.jmxremote.host" below.
+ *
+ * arg2: {@code $JDK_HOME/bin/rmiregistry \
+ *         -J-Dcom.sun.management.jmxremote.port=8888 \
+ *         -J-Dcom.sun.management.jmxremote.local.only=false \
+ *         -J-Dcom.sun.management.jmxremote.ssl=false \
+ *         -J-Dcom.sun.management.jmxremote.authenticate=false \
+ *         -J-Dcom.sun.management.jmxremote.host="jmx-registry-host"
+ * }
+ *
  * On the first host modify the @run command above to replace "jmx-registry-host"
  * with the hostname or IP address of the different host and run the test with jtreg.
  */
@@ -123,6 +146,7 @@ public class NonLocalJMXRemoteTest {
             if (asIndex < 0 ||
                     disallowIndex < 0 ||
                     nonLocalHostIndex < 0 ) {
+                System.out.println("Exception message is " + msg);
                 throw new RuntimeException("exception message is malformed", t);
             }
             System.out.printf("Found expected AccessException: %s%n%n", t);

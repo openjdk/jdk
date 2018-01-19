@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.xml.internal;
 
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl;
+import com.sun.org.apache.xerces.internal.impl.Constants;
+import com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl;
+import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogFeatures.Feature;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
@@ -40,6 +50,18 @@ import org.xml.sax.XMLReader;
  * Constants for use across JAXP processors.
  */
 public class JdkXmlUtils {
+    private static final String DOM_FACTORY_ID = "javax.xml.parsers.DocumentBuilderFactory";
+    private static final String SAX_FACTORY_ID = "javax.xml.parsers.SAXParserFactory";
+    private static final String SAX_DRIVER = "org.xml.sax.driver";
+
+    /**
+     * Xerces features
+     */
+    public static final String NAMESPACES_FEATURE =
+        Constants.SAX_FEATURE_PREFIX + Constants.NAMESPACES_FEATURE;
+    public static final String NAMESPACE_PREFIXES_FEATURE =
+        Constants.SAX_FEATURE_PREFIX + Constants.NAMESPACE_PREFIXES_FEATURE;
+
 
     /**
      * Catalog features
@@ -52,10 +74,18 @@ public class JdkXmlUtils {
     public final static String CATALOG_RESOLVE = CatalogFeatures.Feature.RESOLVE.getPropertyName();
 
     /**
-     * Reset SymbolTable feature
-     * System property name is identical to feature name
+     * Reset SymbolTable feature System property name is identical to feature
+     * name
      */
     public final static String RESET_SYMBOL_TABLE = "jdk.xml.resetSymbolTable";
+
+    /**
+     * jdk.xml.overrideDefaultParser: enables the use of a 3rd party's parser
+     * implementation to override the system-default parser.
+     */
+    public static final String OVERRIDE_PARSER = "jdk.xml.overrideDefaultParser";
+    public static final boolean OVERRIDE_PARSER_DEFAULT = SecuritySupport.getJAXPSystemProperty(
+                    Boolean.class, OVERRIDE_PARSER, "false");
 
     /**
      * Values for a feature
@@ -75,13 +105,17 @@ public class JdkXmlUtils {
     public static final boolean RESET_SYMBOL_TABLE_DEFAULT
             = SecuritySupport.getJAXPSystemProperty(Boolean.class, RESET_SYMBOL_TABLE, "false");
 
-
     /**
      * JDK features (will be consolidated in the next major feature revamp
      */
     public final static String CDATA_CHUNK_SIZE = "jdk.xml.cdataChunkSize";
     public static final int CDATA_CHUNK_SIZE_DEFAULT
             = SecuritySupport.getJAXPSystemProperty(Integer.class, CDATA_CHUNK_SIZE, "0");
+
+    /**
+     * The system-default factory
+     */
+    private static final SAXParserFactory defaultSAXFactory = getSAXFactory(false);
 
     /**
      * Returns the value.
@@ -226,5 +260,154 @@ public class JdkXmlUtils {
                 //shall not happen for internal settings
             }
         }
+    }
+
+    /**
+     * Returns an XMLReader instance. If overrideDefaultParser is requested, use
+     * SAXParserFactory or XMLReaderFactory, otherwise use the system-default
+     * SAXParserFactory to locate an XMLReader.
+     *
+     * @param overrideDefaultParser a flag indicating whether a 3rd party's
+     * parser implementation may be used to override the system-default one
+     * @param secureProcessing a flag indicating whether secure processing is
+     * requested
+     * @param useXMLReaderFactory a flag indicating when the XMLReader should be
+     * created using XMLReaderFactory. True is a compatibility mode that honors
+     * the property org.xml.sax.driver (see JDK-6490921).
+     * @return an XMLReader instance
+     */
+    public static XMLReader getXMLReader(boolean overrideDefaultParser,
+            boolean secureProcessing) {
+        SAXParserFactory saxFactory;
+        XMLReader reader = null;
+        String spSAXDriver = SecuritySupport.getSystemProperty(SAX_DRIVER);
+        if (spSAXDriver != null) {
+            reader = getXMLReaderWXMLReaderFactory();
+        } else if (overrideDefaultParser) {
+            reader = getXMLReaderWSAXFactory(overrideDefaultParser);
+        }
+
+        if (reader != null) {
+            if (secureProcessing) {
+                try {
+                    reader.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, secureProcessing);
+                } catch (SAXException e) {
+                    XMLSecurityManager.printWarning(reader.getClass().getName(),
+                            XMLConstants.FEATURE_SECURE_PROCESSING, e);
+                }
+            }
+            try {
+                reader.setFeature(NAMESPACES_FEATURE, true);
+                reader.setFeature(NAMESPACE_PREFIXES_FEATURE, false);
+            } catch (SAXException se) {
+                // older version of a parser
+            }
+            return reader;
+        }
+
+        // use the system-default
+        saxFactory = defaultSAXFactory;
+
+        try {
+            reader = saxFactory.newSAXParser().getXMLReader();
+        } catch (ParserConfigurationException | SAXException ex) {
+            // shall not happen with the system-default reader
+        }
+        return reader;
+    }
+
+    /**
+     * Creates a system-default DOM Document.
+     *
+     * @return a DOM Document instance
+     */
+    public static Document getDOMDocument() {
+        try {
+            DocumentBuilderFactory dbf = JdkXmlUtils.getDOMFactory(false);
+            return dbf.newDocumentBuilder().newDocument();
+        } catch (ParserConfigurationException pce) {
+            // can never happen with the system-default configuration
+        }
+        return null;
+    }
+
+    /**
+     * Returns a DocumentBuilderFactory instance.
+     *
+     * @param overrideDefaultParser a flag indicating whether the system-default
+     * implementation may be overridden. If the system property of the
+     * DOM factory ID is set, override is always allowed.
+     *
+     * @return a DocumentBuilderFactory instance.
+     */
+    public static DocumentBuilderFactory getDOMFactory(boolean overrideDefaultParser) {
+        boolean override = overrideDefaultParser;
+        String spDOMFactory = SecuritySupport.getJAXPSystemProperty(DOM_FACTORY_ID);
+
+        if (spDOMFactory != null && System.getSecurityManager() == null) {
+            override = true;
+        }
+        DocumentBuilderFactory dbf
+                = !override
+                        ? new DocumentBuilderFactoryImpl()
+                        : DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        // false is the default setting. This step here is for compatibility
+        dbf.setValidating(false);
+        return dbf;
+    }
+
+    /**
+     * Returns a SAXParserFactory instance.
+     *
+     * @param overrideDefaultParser a flag indicating whether the system-default
+     * implementation may be overridden. If the system property of the
+     * DOM factory ID is set, override is always allowed.
+     *
+     * @return a SAXParserFactory instance.
+     */
+    public static SAXParserFactory getSAXFactory(boolean overrideDefaultParser) {
+        boolean override = overrideDefaultParser;
+        String spSAXFactory = SecuritySupport.getJAXPSystemProperty(SAX_FACTORY_ID);
+        if (spSAXFactory != null && System.getSecurityManager() == null) {
+            override = true;
+        }
+
+        SAXParserFactory factory
+                = !override
+                        ? new SAXParserFactoryImpl()
+                        : SAXParserFactory.newInstance();
+        factory.setNamespaceAware(true);
+        return factory;
+    }
+
+    public static SAXTransformerFactory getSAXTransformFactory(boolean overrideDefaultParser) {
+        SAXTransformerFactory tf = overrideDefaultParser
+                ? (SAXTransformerFactory) SAXTransformerFactory.newInstance()
+                : (SAXTransformerFactory) new TransformerFactoryImpl();
+        try {
+            tf.setFeature(OVERRIDE_PARSER, overrideDefaultParser);
+        } catch (TransformerConfigurationException ex) {
+            // ignore since it'd never happen with the JDK impl.
+        }
+        return tf;
+    }
+
+    private static XMLReader getXMLReaderWSAXFactory(boolean overrideDefaultParser) {
+        SAXParserFactory saxFactory = getSAXFactory(overrideDefaultParser);
+        try {
+            return saxFactory.newSAXParser().getXMLReader();
+        } catch (ParserConfigurationException | SAXException ex) {
+            return getXMLReaderWXMLReaderFactory();
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static XMLReader getXMLReaderWXMLReaderFactory() {
+        try {
+            return org.xml.sax.helpers.XMLReaderFactory.createXMLReader();
+        } catch (SAXException ex1) {
+        }
+        return null;
     }
 }

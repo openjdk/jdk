@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,8 +241,18 @@ class Dependencies: public ResourceObj {
     bool is_object() const            { assert(is_valid(), "oops"); return _id < 0; }
 
     Metadata*  as_metadata(OopRecorder* rec) const    { assert(is_metadata(), "oops"); return rec->metadata_at(index()); }
-    Klass*     as_klass(OopRecorder* rec) const       { assert(as_metadata(rec)->is_klass(), "oops"); return (Klass*) as_metadata(rec); }
-    Method*    as_method(OopRecorder* rec) const      { assert(as_metadata(rec)->is_method(), "oops"); return (Method*) as_metadata(rec); }
+    Klass*     as_klass(OopRecorder* rec) const {
+      Metadata* m = as_metadata(rec);
+      assert(m != NULL, "as_metadata returned NULL");
+      assert(m->is_klass(), "oops");
+      return (Klass*) m;
+    }
+    Method*    as_method(OopRecorder* rec) const {
+      Metadata* m = as_metadata(rec);
+      assert(m != NULL, "as_metadata returned NULL");
+      assert(m->is_method(), "oops");
+      return (Method*) m;
+    }
     jobject    as_object(OopRecorder* rec) const      { assert(is_object(), "oops"); return rec->oop_at(index()); }
   };
 #endif // INCLUDE_JVMCI

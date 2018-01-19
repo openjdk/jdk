@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,6 +25,7 @@ import javax.xml.transform.TransformerException;
 import com.sun.org.apache.xml.internal.utils.PrefixResolver;
 import com.sun.org.apache.xml.internal.utils.PrefixResolverDefault;
 import com.sun.org.apache.xpath.internal.objects.XObject;
+import jdk.xml.internal.JdkXmlUtils;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -221,7 +221,7 @@ public class XPathAPI
     // (Changed from: XPathContext xpathSupport = new XPathContext();
     //    because XPathContext is weak in a number of areas... perhaps
     //    XPathContext should be done away with.)
-    XPathContext xpathSupport = new XPathContext();
+    XPathContext xpathSupport = new XPathContext(JdkXmlUtils.OVERRIDE_PARSER_DEFAULT);
 
     // Create an object to resolve namespace prefixes.
     // XPath namespaces are resolved from the input context node's document element
@@ -276,7 +276,7 @@ public class XPathAPI
     XPath xpath = new XPath(str, null, prefixResolver, XPath.SELECT, null);
 
     // Execute the XPath, and have it return the result
-    XPathContext xpathSupport = new XPathContext();
+    XPathContext xpathSupport = new XPathContext(JdkXmlUtils.OVERRIDE_PARSER_DEFAULT);
     int ctxtNode = xpathSupport.getDTMHandleFromNode(contextNode);
 
     return xpath.execute(xpathSupport, ctxtNode, prefixResolver);

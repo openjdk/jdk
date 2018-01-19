@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -54,17 +54,18 @@ public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
     private NamespaceContext namespaceContext=null;
 
     XPathImpl(XPathVariableResolver vr, XPathFunctionResolver fr) {
-        this(vr, fr, false, true, new JdkXmlFeatures(false));
+        this(vr, fr, false, new JdkXmlFeatures(false));
     }
 
     XPathImpl(XPathVariableResolver vr, XPathFunctionResolver fr,
-            boolean featureSecureProcessing, boolean useServiceMechanism,
-            JdkXmlFeatures featureManager) {
+            boolean featureSecureProcessing, JdkXmlFeatures featureManager) {
         this.origVariableResolver = this.variableResolver = vr;
         this.origFunctionResolver = this.functionResolver = fr;
         this.featureSecureProcessing = featureSecureProcessing;
-        this.useServiceMechanism = useServiceMechanism;
         this.featureManager = featureManager;
+        overrideDefaultParser = featureManager.getFeature(
+                JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
+
     }
 
 
@@ -163,7 +164,7 @@ public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
             // Can have errorListener
             XPathExpressionImpl ximpl = new XPathExpressionImpl (xpath,
                     prefixResolver, functionResolver, variableResolver,
-                    featureSecureProcessing, useServiceMechanism, featureManager);
+                    featureSecureProcessing, featureManager);
             return ximpl;
         } catch (TransformerException te) {
             throw new XPathExpressionException (te) ;

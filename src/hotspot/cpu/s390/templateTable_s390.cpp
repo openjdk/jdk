@@ -3557,66 +3557,67 @@ void TemplateTable::invokeinterface(int byte_no) {
   transition(vtos, vtos);
 
   assert(byte_no == f1_byte, "use this argument");
-  Register interface = Z_tos;
-  Register index = Z_ARG3;
-  Register receiver = Z_tmp_1;
-  Register flags = Z_ARG5;
+  Register klass     = Z_ARG2,
+           method    = Z_ARG3,
+           interface = Z_ARG4,
+           flags     = Z_ARG5,
+           receiver  = Z_tmp_1;
 
   BLOCK_COMMENT("invokeinterface {");
 
-  // Destroys Z_ARG1 and Z_ARG2, thus use Z_ARG4 and copy afterwards.
-  prepare_invoke(byte_no, Z_ARG4, index,  // Get f1 klassOop, f2 itable index.
+  prepare_invoke(byte_no, interface, method,  // Get f1 klassOop, f2 itable index.
                  receiver, flags);
 
   // Z_R14 (== Z_bytecode) : return entry
-
-  __ z_lgr(interface, Z_ARG4);
 
   // Special case of invokeinterface called for virtual method of
   // java.lang.Object. See cpCacheOop.cpp for details.
   // This code isn't produced by javac, but could be produced by
   // another compliant java compiler.
-  Label notMethod;
+  NearLabel notMethod, no_such_interface, no_such_method;
   __ testbit(flags, ConstantPoolCacheEntry::is_forced_virtual_shift);
   __ z_brz(notMethod);
-  invokevirtual_helper(index, receiver, flags);
+  invokevirtual_helper(method, receiver, flags);
   __ bind(notMethod);
 
   // Get receiver klass into klass - also a null check.
-  Register klass = flags;
-
   __ restore_locals();
   __ load_klass(klass, receiver);
 
+  __ lookup_interface_method(klass, interface, noreg, noreg, /*temp*/Z_ARG1,
+                             no_such_interface, /*return_method=*/false);
+
   // Profile this call.
-  __ profile_virtual_call(klass, Z_ARG2/*mdp*/, Z_ARG4/*scratch*/);
+  __ profile_virtual_call(klass, Z_ARG1/*mdp*/, flags/*scratch*/);
 
-  NearLabel  no_such_interface, no_such_method;
-  Register   method = Z_tmp_2;
+  // Find entry point to call.
 
-  // TK 2010-08-24: save the index to Z_ARG4. needed in case of an error
-  //                in throw_AbstractMethodErrorByTemplateTable
-  __ z_lgr(Z_ARG4, index);
-  // TK 2011-03-24: copy also klass because it could be changed in
-  //                lookup_interface_method
-  __ z_lgr(Z_ARG2, klass);
-  __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                              klass, interface, index,
-                              // outputs: method, scan temp. reg
-                              method, Z_tmp_2, Z_R1_scratch,
-                              no_such_interface);
+  // Get declaring interface class from method
+  __ z_lg(interface, Address(method, Method::const_offset()));
+  __ z_lg(interface, Address(interface, ConstMethod::constants_offset()));
+  __ z_lg(interface, Address(interface, ConstantPool::pool_holder_offset_in_bytes()));
+
+  // Get itable index from method
+  Register index   = receiver,
+           method2 = flags;
+  __ z_lgf(index, Address(method, Method::itable_index_offset()));
+  __ z_aghi(index, -Method::itable_index_max);
+  __ z_lcgr(index, index);
+
+  __ lookup_interface_method(klass, interface, index, method2, Z_tmp_2,
+                             no_such_interface);
 
   // Check for abstract method error.
   // Note: This should be done more efficiently via a throw_abstract_method_error
   // interpreter entry point and a conditional jump to it in case of a null
   // method.
-  __ compareU64_and_branch(method, (intptr_t) 0,
+  __ compareU64_and_branch(method2, (intptr_t) 0,
                             Assembler::bcondZero, no_such_method);
 
-  __ profile_arguments_type(Z_ARG3, method, Z_ARG5, true);
+  __ profile_arguments_type(Z_tmp_1, method2, Z_tmp_2, true);
 
   // Do the call.
-  __ jump_from_interpreted(method, Z_ARG5);
+  __ jump_from_interpreted(method2, Z_tmp_2);
   __ should_not_reach_here();
 
   // exception handling code follows...
@@ -3628,12 +3629,8 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Throw exception.
   __ restore_bcp();      // Bcp must be correct for exception handler   (was destroyed).
   __ restore_locals();   // Make sure locals pointer is correct as well (was destroyed).
-  // TK 2010-08-24: Call throw_AbstractMethodErrorByTemplateTable now with the
-  //                relevant information for generating a better error message
   __ call_VM(noreg,
-              CAST_FROM_FN_PTR(address,
-                               InterpreterRuntime::throw_AbstractMethodError),
-              Z_ARG2, interface, Z_ARG4);
+             CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
   // The call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
 
@@ -3642,12 +3639,8 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Throw exception.
   __ restore_bcp();      // Bcp must be correct for exception handler   (was destroyed).
   __ restore_locals();   // Make sure locals pointer is correct as well (was destroyed).
-  // TK 2010-08-24: Call throw_IncompatibleClassChangeErrorByTemplateTable now with the
-  //                relevant information for generating a better error message
   __ call_VM(noreg,
-             CAST_FROM_FN_PTR(address,
-                              InterpreterRuntime::throw_IncompatibleClassChangeError),
-             Z_ARG2, interface);
+             CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeError));
   // The call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
 

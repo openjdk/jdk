@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,11 +23,6 @@ package com.sun.org.apache.xalan.internal.xsltc.trax;
 
 import java.io.IOException;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.FactoryConfigurationError;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
@@ -35,13 +30,13 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXResult;
 
 import com.sun.org.apache.xml.internal.utils.XMLReaderManager;
+import jdk.xml.internal.JdkXmlUtils;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
-import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * skeleton extension of XMLFilterImpl for now.
@@ -53,7 +48,7 @@ public class TrAXFilter extends XMLFilterImpl {
     private Templates              _templates;
     private TransformerImpl        _transformer;
     private TransformerHandlerImpl _transformerHandler;
-    private boolean _useServicesMechanism = true;
+    private boolean _overrideDefaultParser;
 
     public TrAXFilter(Templates templates)  throws
         TransformerConfigurationException
@@ -61,7 +56,7 @@ public class TrAXFilter extends XMLFilterImpl {
         _templates = templates;
         _transformer = (TransformerImpl) templates.newTransformer();
         _transformerHandler = new TransformerHandlerImpl(_transformer);
-        _useServicesMechanism = _transformer.useServicesMechnism();
+        _overrideDefaultParser = _transformer.overrideDefaultParser();
     }
 
     public Transformer getTransformer() {
@@ -69,36 +64,14 @@ public class TrAXFilter extends XMLFilterImpl {
     }
 
     private void createParent() throws SAXException {
-        XMLReader parent = null;
-        try {
-            SAXParserFactory pfactory = SAXParserFactory.newInstance();
-            pfactory.setNamespaceAware(true);
-
-            if (_transformer.isSecureProcessing()) {
-                try {
-                    pfactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                }
-                catch (SAXException e) {}
-            }
-
-            SAXParser saxparser = pfactory.newSAXParser();
-            parent = saxparser.getXMLReader();
-        }
-        catch (ParserConfigurationException e) {
-            throw new SAXException(e);
-        }
-        catch (FactoryConfigurationError e) {
-            throw new SAXException(e.toString());
-        }
-
-        if (parent == null) {
-            parent = XMLReaderFactory.createXMLReader();
-        }
+        XMLReader parent = JdkXmlUtils.getXMLReader(_overrideDefaultParser,
+                _transformer.isSecureProcessing());
 
         // make this XMLReader the parent of this filter
         setParent(parent);
     }
 
+    @Override
     public void parse (InputSource input) throws SAXException, IOException
     {
         XMLReader managedReader = null;
@@ -106,7 +79,7 @@ public class TrAXFilter extends XMLFilterImpl {
         try {
             if (getParent() == null) {
                 try {
-                    managedReader = XMLReaderManager.getInstance(_useServicesMechanism)
+                    managedReader = XMLReaderManager.getInstance(_overrideDefaultParser)
                                                     .getXMLReader();
                     setParent(managedReader);
                 } catch (SAXException  e) {
@@ -118,7 +91,7 @@ public class TrAXFilter extends XMLFilterImpl {
             getParent().parse(input);
         } finally {
             if (managedReader != null) {
-                XMLReaderManager.getInstance(_useServicesMechanism).releaseXMLReader(managedReader);
+                XMLReaderManager.getInstance(_overrideDefaultParser).releaseXMLReader(managedReader);
             }
         }
     }

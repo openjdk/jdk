@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,6 +364,14 @@ public class Bug6941169Test {
 
     @Test
     public void testXPath_DOM_withServiceMech() {
+        /**
+         * This is in conflict with the test testXPath_DOM_withSM where the system
+         * default parser is used when the security manager is present. The test
+         * is therefore skipped when the security manager is present.
+         */
+        if (System.getSecurityManager() != null) {
+            return;
+        }
         final String XPATH_EXPRESSION = "/fooTest";
         System.out.println("Evaluate DOM Source;  Service mechnism is on by default;  It would try to use MyDOMFactoryImpl:");
         InputStream input = getClass().getResourceAsStream("Bug6941169.xml");

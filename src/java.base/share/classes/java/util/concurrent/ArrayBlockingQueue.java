@@ -1608,4 +1608,30 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         }
     }
 
+    /**
+     * Deserializes this queue and then checks some invariants.
+     *
+     * @param s the input stream
+     * @throws ClassNotFoundException if the class of a serialized object
+     *         could not be found
+     * @throws java.io.InvalidObjectException if invariants are violated
+     * @throws java.io.IOException if an I/O error occurs
+     */
+    private void readObject(java.io.ObjectInputStream s)
+        throws java.io.IOException, ClassNotFoundException {
+
+        // Read in items array and various fields
+        s.defaultReadObject();
+
+        // Check invariants over count and index fields. Note that
+        // if putIndex==takeIndex, count can be either 0 or items.length.
+        if (items.length == 0 ||
+            takeIndex < 0 || takeIndex >= items.length ||
+            putIndex  < 0 || putIndex  >= items.length ||
+            count < 0     || count     >  items.length ||
+            Math.floorMod(putIndex - takeIndex, items.length) !=
+            Math.floorMod(count, items.length)) {
+            throw new java.io.InvalidObjectException("invariants violated");
+        }
+    }
 }

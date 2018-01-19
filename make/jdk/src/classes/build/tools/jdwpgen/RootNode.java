@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,22 @@ class RootNode extends AbstractNamedNode {
 
     void document(PrintWriter writer) {
         writer.println("<!DOCTYPE html>");
-        writer.println("<html><head><title>" + comment() + "</title></head>");
-        writer.println("<body bgcolor=\"white\">");
+        writer.println("<html lang=\"en\">");
+        writer.println("<head>");
+        writer.println("<meta charset=\"utf-8\"/>");
+        writer.println("<title>" + comment() + "</title>");
+        writer.println("<style>");
+        writer.println("body {background-color:white;}");
+        writer.println("table {border: 1px solid grey; border-spacing:0px; border-collapse: separate; width: 90%;}");
+        writer.println("td, th {padding: 3px; border: 1px solid black;}");
+        writer.println("</style>");
+        writer.println("</head>");
+        writer.println("<body>");
+        writer.println("<ul>");
         for (Node node : components) {
             node.documentIndex(writer);
         }
+        writer.println("</ul>");
         for (Node node : components) {
             node.document(writer);
         }

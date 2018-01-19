@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oo
   if (!(is_instance || is_boxed_value_load))
     return mchain;  // don't try to optimize non-instance types
   uint instance_id = t_oop->instance_id();
-  Node *start_mem = phase->C->start()->proj_out(TypeFunc::Memory);
+  Node *start_mem = phase->C->start()->proj_out_or_null(TypeFunc::Memory);
   Node *prev = NULL;
   Node *result = mchain;
   while (prev != result) {

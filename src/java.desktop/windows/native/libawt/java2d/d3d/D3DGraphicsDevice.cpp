@@ -98,7 +98,7 @@ JNIEXPORT jstring JNICALL Java_sun_java2d_d3d_D3DGraphicsDevice_getDeviceIdNativ
 
     jstring ret = JNU_NewStringPlatform(env, pAdapterId);
 
-    delete pAdapterId;
+    delete[] pAdapterId;
 
     return ret;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -60,29 +60,21 @@ public  class XPathFactoryImpl extends XPathFactory {
          * <p>State of secure mode.</p>
          */
         private boolean _isSecureMode = false;
+
+        /**
+         * XML Features manager
+         */
+        private final JdkXmlFeatures _featureManager;
+
         /**
          * javax.xml.xpath.XPathFactory implementation.
          */
-
-        private boolean _useServicesMechanism = true;
-
-        private final JdkXmlFeatures _featureManager;
-
         public XPathFactoryImpl() {
-            this(true);
-        }
-
-        public static XPathFactory newXPathFactoryNoServiceLoader() {
-            return new XPathFactoryImpl(false);
-        }
-
-        public XPathFactoryImpl(boolean useServicesMechanism) {
             if (System.getSecurityManager() != null) {
                 _isSecureMode = true;
                 _isNotSecureProcessing = false;
             }
             _featureManager = new JdkXmlFeatures(!_isNotSecureProcessing);
-            this._useServicesMechanism = useServicesMechanism;
         }
         /**
          * <p>Is specified object model supported by this
@@ -132,8 +124,7 @@ public  class XPathFactoryImpl extends XPathFactory {
         public javax.xml.xpath.XPath newXPath() {
             return new com.sun.org.apache.xpath.internal.jaxp.XPathImpl(
                     xPathVariableResolver, xPathFunctionResolver,
-                    !_isNotSecureProcessing, _useServicesMechanism,
-                    _featureManager );
+                    !_isNotSecureProcessing, _featureManager );
         }
 
         /**
@@ -192,10 +183,9 @@ public  class XPathFactoryImpl extends XPathFactory {
                 return;
             }
             if (name.equals(XalanConstants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
-                //in secure mode, let _useServicesMechanism be determined by the constructor
-                if (!_isSecureMode)
-                    _useServicesMechanism = value;
-                return;
+                // for compatibility, in secure mode, useServicesMechanism is determined by the constructor
+                if (_isSecureMode)
+                    return;
             }
 
             if (_featureManager != null &&
@@ -247,9 +237,6 @@ public  class XPathFactoryImpl extends XPathFactory {
             // secure processing?
             if (name.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
                 return !_isNotSecureProcessing;
-            }
-            if (name.equals(XalanConstants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
-                return _useServicesMechanism;
             }
 
             /** Check to see if the property is managed by the feature manager **/

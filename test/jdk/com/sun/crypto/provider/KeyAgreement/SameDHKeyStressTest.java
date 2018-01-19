@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8048819
  * @summary This test stressful verifies the assertion of "The secret keys generated
  * by all involved parties should be the same." for javax.crypto.KeyAgreement
- * @run main SameDHKeyStressTest
+ * @run main/othervm -Djdk.crypto.KeyAgreement.legacyKDF=true SameDHKeyStressTest
  */
 import java.security.AlgorithmParameterGenerator;
 import java.security.InvalidAlgorithmParameterException;

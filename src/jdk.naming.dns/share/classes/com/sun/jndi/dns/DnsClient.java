@@ -85,7 +85,9 @@ public class DnsClient {
     private int timeout;                // initial timeout on UDP queries in ms
     private int retries;                // number of UDP retries
 
-    private DatagramSocket udpSocket;
+    private final Object udpSocketLock = new Object();
+    private static final DNSDatagramSocketFactory factory =
+            new DNSDatagramSocketFactory(random);
 
     // Requests sent
     private Map<Integer, ResourceRecord> reqs;
@@ -105,14 +107,6 @@ public class DnsClient {
             throws NamingException {
         this.timeout = timeout;
         this.retries = retries;
-        try {
-            udpSocket = new DatagramSocket();
-        } catch (java.net.SocketException e) {
-            NamingException ne = new ConfigurationException();
-            ne.setRootCause(e);
-            throw ne;
-        }
-
         this.servers = new InetAddress[servers.length];
         serverPorts = new int[servers.length];
 
@@ -142,6 +136,16 @@ public class DnsClient {
         resps = Collections.synchronizedMap(new HashMap<Integer, byte[]>());
     }
 
+    DatagramSocket getDatagramSocket() throws NamingException {
+        try {
+            return factory.open();
+        } catch (java.net.SocketException e) {
+            NamingException ne = new ConfigurationException();
+            ne.setRootCause(e);
+            throw ne;
+        }
+    }
+
     @SuppressWarnings("deprecation")
     protected void finalize() {
         close();
@@ -151,7 +155,6 @@ public class DnsClient {
     private Object queuesLock = new Object();
 
     public void close() {
-        udpSocket.close();
         synchronized (queuesLock) {
             reqs.clear();
             resps.clear();
@@ -393,43 +396,45 @@ public class DnsClient {
 
         int minTimeout = 50; // msec after which there are no retries.
 
-        synchronized (udpSocket) {
-            DatagramPacket opkt = new DatagramPacket(
-                    pkt.getData(), pkt.length(), server, port);
-            DatagramPacket ipkt = new DatagramPacket(new byte[8000], 8000);
-            // Packets may only be sent to or received from this server address
-            udpSocket.connect(server, port);
-            int pktTimeout = (timeout * (1 << retry));
-            try {
-                udpSocket.send(opkt);
+        synchronized (udpSocketLock) {
+            try (DatagramSocket udpSocket = getDatagramSocket()) {
+                DatagramPacket opkt = new DatagramPacket(
+                        pkt.getData(), pkt.length(), server, port);
+                DatagramPacket ipkt = new DatagramPacket(new byte[8000], 8000);
+                // Packets may only be sent to or received from this server address
+                udpSocket.connect(server, port);
+                int pktTimeout = (timeout * (1 << retry));
+                try {
+                    udpSocket.send(opkt);
 
-                // timeout remaining after successive 'receive()'
-                int timeoutLeft = pktTimeout;
-                int cnt = 0;
-                do {
-                    if (debug) {
-                       cnt++;
-                        dprint("Trying RECEIVE(" +
-                                cnt + ") retry(" + (retry + 1) +
-                                ") for:" + xid  + "    sock-timeout:" +
-                                timeoutLeft + " ms.");
-                    }
-                    udpSocket.setSoTimeout(timeoutLeft);
-                    long start = System.currentTimeMillis();
-                    udpSocket.receive(ipkt);
-                    long end = System.currentTimeMillis();
+                    // timeout remaining after successive 'receive()'
+                    int timeoutLeft = pktTimeout;
+                    int cnt = 0;
+                    do {
+                        if (debug) {
+                           cnt++;
+                            dprint("Trying RECEIVE(" +
+                                    cnt + ") retry(" + (retry + 1) +
+                                    ") for:" + xid  + "    sock-timeout:" +
+                                    timeoutLeft + " ms.");
+                        }
+                        udpSocket.setSoTimeout(timeoutLeft);
+                        long start = System.currentTimeMillis();
+                        udpSocket.receive(ipkt);
+                        long end = System.currentTimeMillis();
 
-                    byte[] data = ipkt.getData();
-                    if (isMatchResponse(data, xid)) {
-                        return data;
-                    }
-                    timeoutLeft = pktTimeout - ((int) (end - start));
-                } while (timeoutLeft > minTimeout);
+                        byte[] data = ipkt.getData();
+                        if (isMatchResponse(data, xid)) {
+                            return data;
+                        }
+                        timeoutLeft = pktTimeout - ((int) (end - start));
+                    } while (timeoutLeft > minTimeout);
 
-            } finally {
-                udpSocket.disconnect();
+                } finally {
+                    udpSocket.disconnect();
+                }
+                return null; // no matching packet received within the timeout
             }
-            return null; // no matching packet received within the timeout
         }
     }
 

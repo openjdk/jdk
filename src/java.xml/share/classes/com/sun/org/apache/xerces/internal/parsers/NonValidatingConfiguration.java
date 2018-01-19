@@ -294,7 +294,8 @@ public class NonValidatingConfiguration
             //NOTIFY_BUILTIN_REFS,  // from XMLDocumentFragmentScannerImpl
             //NOTIFY_CHAR_REFS,         // from XMLDocumentFragmentScannerImpl
             //WARN_ON_DUPLICATE_ENTITYDEF   // from XMLEntityManager
-            XMLConstants.USE_CATALOG
+            XMLConstants.USE_CATALOG,
+            JdkXmlUtils.OVERRIDE_PARSER
         };
         addRecognizedFeatures(recognizedFeatures);
 
@@ -310,6 +311,7 @@ public class NonValidatingConfiguration
         //setFeature(NOTIFY_CHAR_REFS, false);      // from XMLDocumentFragmentScannerImpl
         //setFeature(WARN_ON_DUPLICATE_ENTITYDEF, false);   // from XMLEntityManager
         fFeatures.put(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
+        fFeatures.put(JdkXmlUtils.OVERRIDE_PARSER, JdkXmlUtils.OVERRIDE_PARSER_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties = {

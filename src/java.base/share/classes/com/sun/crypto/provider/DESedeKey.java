@@ -25,6 +25,7 @@
 
 package com.sun.crypto.provider;
 
+import java.lang.ref.Reference;
 import java.security.MessageDigest;
 import java.security.KeyRep;
 import java.security.InvalidKeyException;
@@ -86,7 +87,11 @@ final class DESedeKey implements SecretKey {
     }
 
     public byte[] getEncoded() {
-        return this.key.clone();
+        // The key is zeroized by finalize()
+        // The reachability fence ensures finalize() isn't called early
+        byte[] result = key.clone();
+        Reference.reachabilityFence(this);
+        return result;
     }
 
     public String getAlgorithm() {

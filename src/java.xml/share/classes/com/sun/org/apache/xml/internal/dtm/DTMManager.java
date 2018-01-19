@@ -52,7 +52,7 @@ public abstract class DTMManager
    */
   protected XMLStringFactory m_xsf = null;
 
-  private boolean _useServicesMechanism;
+  private boolean _overrideDefaultParser;
   /**
    * Default constructor is protected on purpose.
    */
@@ -297,15 +297,15 @@ public abstract class DTMManager
     /**
      * Return the state of the services mechanism feature.
      */
-    public boolean useServicesMechnism() {
-        return _useServicesMechanism;
+    public boolean overrideDefaultParser() {
+        return _overrideDefaultParser;
     }
 
     /**
      * Set the state of the services mechanism feature.
      */
-    public void setServicesMechnism(boolean flag) {
-        _useServicesMechanism = flag;
+    public void setOverrideDefaultParser(boolean flag) {
+        _overrideDefaultParser = flag;
     }
 
   // -------------------- private methods --------------------

@@ -498,7 +498,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       Label L_no_such_interface;
       __ lookup_interface_method(temp1_recv_klass, temp3_intf,
                                  // Note: next two args must be the same:
-                                 Z_index, Z_method, temp2, noreg,
+                                 Z_index, Z_method, temp2,
                                  L_no_such_interface);
       jump_from_method_handle(_masm, Z_method, temp2, Z_R0, for_compiler_entry);
 

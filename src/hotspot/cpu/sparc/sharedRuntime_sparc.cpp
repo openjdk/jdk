@@ -904,7 +904,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
     Label ok, ok2;
     __ brx(Assembler::equal, false, Assembler::pt, ok);
-    __ delayed()->ld_ptr(G5_method, CompiledICHolder::holder_method_offset(), G5_method);
+    __ delayed()->ld_ptr(G5_method, CompiledICHolder::holder_metadata_offset(), G5_method);
     __ jump_to(ic_miss, G3_scratch);
     __ delayed()->nop();
 

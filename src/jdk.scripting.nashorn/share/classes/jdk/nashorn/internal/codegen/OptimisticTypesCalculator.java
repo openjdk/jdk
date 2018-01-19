@@ -101,12 +101,13 @@ final class OptimisticTypesCalculator extends SimpleNodeVisitor {
                     tagNeverOptimistic(binaryNode.rhs());
                 }
             }
-        } else if(binaryNode.isTokenType(TokenType.INSTANCEOF)) {
+        } else if(binaryNode.isTokenType(TokenType.INSTANCEOF)
+                || binaryNode.isTokenType(TokenType.EQ_STRICT)
+                || binaryNode.isTokenType(TokenType.NE_STRICT)) {
             tagNeverOptimistic(binaryNode.lhs());
             tagNeverOptimistic(binaryNode.rhs());
         }
-        // Don't enter comparison nodes, see JDK-8193567
-        return !binaryNode.isComparison();
+        return true;
     }
 
     @Override

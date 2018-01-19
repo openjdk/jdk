@@ -28,6 +28,7 @@
 #include "code/vtableStubs.hpp"
 #include "interp_masm_arm.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -118,66 +119,47 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   // R0-R3 / R0-R7 registers hold the arguments and cannot be spoiled
   const Register Rclass  = AARCH64_ONLY(R9)  NOT_AARCH64(R4);
-  const Register Rlength = AARCH64_ONLY(R10)  NOT_AARCH64(R5);
+  const Register Rintf   = AARCH64_ONLY(R10) NOT_AARCH64(R5);
   const Register Rscan   = AARCH64_ONLY(R11) NOT_AARCH64(R6);
-  const Register tmp     = Rtemp;
 
-  assert_different_registers(Ricklass, Rclass, Rlength, Rscan, tmp);
+  assert_different_registers(Ricklass, Rclass, Rintf, Rscan, Rtemp);
 
   // Calculate the start of itable (itable goes after vtable)
   const int scale = exact_log2(vtableEntry::size_in_bytes());
   address npe_addr = __ pc();
   __ load_klass(Rclass, R0);
-  __ ldr_s32(Rlength, Address(Rclass, Klass::vtable_length_offset()));
 
-  __ add(Rscan, Rclass, in_bytes(Klass::vtable_start_offset()));
-  __ add(Rscan, Rscan, AsmOperand(Rlength, lsl, scale));
+  Label L_no_such_interface;
 
-  // Search through the itable for an interface equal to incoming Ricklass
-  // itable looks like [intface][offset][intface][offset][intface][offset]
-  const int entry_size = itableOffsetEntry::size() * HeapWordSize;
-  assert(itableOffsetEntry::interface_offset_in_bytes() == 0, "not added for convenience");
+  // Receiver subtype check against REFC.
+  __ ldr(Rintf, Address(Ricklass, CompiledICHolder::holder_klass_offset()));
+  __ lookup_interface_method(// inputs: rec. class, interface, itable index
+                             Rclass, Rintf, noreg,
+                             // outputs: temp reg1, temp reg2
+                             noreg, Rscan, Rtemp,
+                             L_no_such_interface);
 
-  Label loop;
-  __ bind(loop);
-  __ ldr(tmp, Address(Rscan, entry_size, post_indexed));
-#ifdef AARCH64
-  Label found;
-  __ cmp(tmp, Ricklass);
-  __ b(found, eq);
-  __ cbnz(tmp, loop);
-#else
-  __ cmp(tmp, Ricklass);  // set ZF and CF if interface is found
-  __ cmn(tmp, 0, ne);     // check if tmp == 0 and clear CF if it is
-  __ b(loop, ne);
-#endif // AARCH64
-
-  assert(StubRoutines::throw_IncompatibleClassChangeError_entry() != NULL, "Check initialization order");
-#ifdef AARCH64
-  __ jump(StubRoutines::throw_IncompatibleClassChangeError_entry(), relocInfo::runtime_call_type, tmp);
-  __ bind(found);
-#else
-  // CF == 0 means we reached the end of itable without finding icklass
-  __ jump(StubRoutines::throw_IncompatibleClassChangeError_entry(), relocInfo::runtime_call_type, noreg, cc);
-#endif // !AARCH64
-
-  // Interface found at previous position of Rscan, now load the method oop
-  __ ldr_s32(tmp, Address(Rscan, itableOffsetEntry::offset_offset_in_bytes() - entry_size));
-  {
-    const int method_offset = itableMethodEntry::size() * HeapWordSize * itable_index +
-      itableMethodEntry::method_offset_in_bytes();
-    __ add_slow(Rmethod, Rclass, method_offset);
-  }
-  __ ldr(Rmethod, Address(Rmethod, tmp));
+  // Get Method* and entry point for compiler
+  __ ldr(Rintf, Address(Ricklass, CompiledICHolder::holder_metadata_offset()));
+  __ lookup_interface_method(// inputs: rec. class, interface, itable index
+                             Rclass, Rintf, itable_index,
+                             // outputs: temp reg1, temp reg2, temp reg3
+                             Rmethod, Rscan, Rtemp,
+                             L_no_such_interface);
 
   address ame_addr = __ pc();
 
 #ifdef AARCH64
-  __ ldr(tmp, Address(Rmethod, Method::from_compiled_offset()));
-  __ br(tmp);
+  __ ldr(Rtemp, Address(Rmethod, Method::from_compiled_offset()));
+  __ br(Rtemp);
 #else
   __ ldr(PC, Address(Rmethod, Method::from_compiled_offset()));
 #endif // AARCH64
+
+  __ bind(L_no_such_interface);
+
+  assert(StubRoutines::throw_IncompatibleClassChangeError_entry() != NULL, "check initialization order");
+  __ jump(StubRoutines::throw_IncompatibleClassChangeError_entry(), relocInfo::runtime_call_type, Rtemp);
 
   masm->flush();
 
@@ -205,7 +187,7 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
     instr_count = NOT_AARCH64(4) AARCH64_ONLY(5);
   } else {
     // itable stub size
-    instr_count = NOT_AARCH64(20) AARCH64_ONLY(20);
+    instr_count = NOT_AARCH64(31) AARCH64_ONLY(31);
   }
 
 #ifdef AARCH64

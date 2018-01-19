@@ -264,7 +264,8 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
                 NORMALIZE_DATA,
                 SCHEMA_ELEMENT_DEFAULT,
                 SCHEMA_AUGMENT_PSVI,
-                XMLConstants.USE_CATALOG
+                XMLConstants.USE_CATALOG,
+                JdkXmlUtils.OVERRIDE_PARSER
         };
         addRecognizedFeatures(recognizedFeatures);
         fFeatures.put(DISALLOW_DOCTYPE_DECL_FEATURE, Boolean.FALSE);
@@ -272,6 +273,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         fFeatures.put(SCHEMA_ELEMENT_DEFAULT, Boolean.FALSE);
         fFeatures.put(SCHEMA_AUGMENT_PSVI, Boolean.TRUE);
         fFeatures.put(XMLConstants.USE_CATALOG, grammarContainer.getFeature(XMLConstants.USE_CATALOG));
+        fFeatures.put(JdkXmlUtils.OVERRIDE_PARSER, grammarContainer.getFeature(JdkXmlUtils.OVERRIDE_PARSER));
 
         addRecognizedParamsAndSetDefaults(fEntityManager, grammarContainer);
         addRecognizedParamsAndSetDefaults(fErrorReporter, grammarContainer);

@@ -143,10 +143,11 @@ class FactoryFinder {
      * @param doFallback True if the current ClassLoader should be tried as
      * a fallback if the class is not found using cl
      *
-     * @param useServicesMechanism True use services mechanism
+     * @param overrideDefaultParser True to allow overriding the system-default
+     * parser.
      */
     static <T> T newInstance(Class<T> type, String className, ClassLoader cl,
-                             boolean doFallback, boolean useServicesMechanism)
+                             boolean doFallback)
         throws TransformerFactoryConfigurationError
     {
         assert type != null;
@@ -165,13 +166,8 @@ class FactoryFinder {
             if (!type.isAssignableFrom(providerClass)) {
                 throw new ClassCastException(className + " cannot be cast to " + type.getName());
             }
-            Object instance = null;
-            if (!useServicesMechanism) {
-                instance = newInstanceNoServiceLoader(type, providerClass);
-            }
-            if (instance == null) {
-                instance = providerClass.getConstructor().newInstance();
-            }
+            Object instance = providerClass.getConstructor().newInstance();
+
             final ClassLoader clD = cl;
             dPrint(()->"created new instance of " + providerClass +
                        " using ClassLoader: " + clD);
@@ -184,48 +180,6 @@ class FactoryFinder {
         catch (Exception x) {
             throw new TransformerFactoryConfigurationError(x,
                 "Provider " + className + " could not be instantiated: " + x);
-        }
-    }
-
-    /**
-     * Try to construct using newTransformerFactoryNoServiceLoader
-     *   method if available.
-     */
-    private static <T> T newInstanceNoServiceLoader(Class<T> type, Class<?> providerClass) {
-        // Retain maximum compatibility if no security manager.
-        if (System.getSecurityManager() == null) {
-            return null;
-        }
-        try {
-            final Method creationMethod =
-                    providerClass.getDeclaredMethod(
-                        "newTransformerFactoryNoServiceLoader"
-                    );
-            final int modifiers = creationMethod.getModifiers();
-
-            // Do not call the method if it's not public static.
-            if (!Modifier.isPublic(modifiers) || !Modifier.isStatic(modifiers)) {
-                return null;
-            }
-
-            // Only call the method if it's declared to return an instance of
-            // TransformerFactory
-            final Class<?> returnType = creationMethod.getReturnType();
-            if (type.isAssignableFrom(returnType)) {
-                final Object result = creationMethod.invoke(null, (Object[])null);
-                return type.cast(result);
-            } else {
-                // This should not happen, as
-                // TransformerFactoryImpl.newTransformerFactoryNoServiceLoader is
-                // declared to return TransformerFactory.
-                throw new ClassCastException(returnType + " cannot be cast to " + type);
-            }
-        } catch (ClassCastException e) {
-            throw new TransformerFactoryConfigurationError(e, e.getMessage());
-        } catch (NoSuchMethodException exc) {
-            return null;
-        } catch (Exception exc) {
-            return null;
         }
     }
 
@@ -255,7 +209,7 @@ class FactoryFinder {
             String systemProp = SecuritySupport.getSystemProperty(factoryId);
             if (systemProp != null) {
                 dPrint(()->"found system property, value=" + systemProp);
-                return newInstance(type, systemProp, null, true, true);
+                return newInstance(type, systemProp, null, true);
             }
         }
         catch (SecurityException se) {
@@ -282,7 +236,7 @@ class FactoryFinder {
 
             if (factoryClassName != null) {
                 dPrint(()->"found in ${java.home}/conf/jaxp.properties, value=" + factoryClassName);
-                return newInstance(type, factoryClassName, null, true, true);
+                return newInstance(type, factoryClassName, null, true);
             }
         }
         catch (Exception ex) {
@@ -300,7 +254,7 @@ class FactoryFinder {
         }
 
         dPrint(()->"loaded from fallback value: " + fallbackClassName);
-        return newInstance(type, fallbackClassName, null, true, true);
+        return newInstance(type, fallbackClassName, null, true);
     }
 
     /*

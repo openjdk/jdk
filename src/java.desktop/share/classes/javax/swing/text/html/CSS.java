@@ -26,21 +26,27 @@ package javax.swing.text.html;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.GraphicsEnvironment;
-import java.awt.Toolkit;
 import java.awt.HeadlessException;
 import java.awt.Image;
-import java.io.*;
-import java.lang.reflect.Method;
-import java.net.URL;
+import java.awt.Toolkit;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.Locale;
+
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
-import javax.swing.text.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.Element;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.View;
 
 /**
  * Defines a set of
@@ -3568,7 +3574,7 @@ public class CSS implements Serializable {
 
         // Reconstruct the hashtable.
         int numValues = s.readInt();
-        valueConvertor = new Hashtable<>(Math.max(1, numValues));
+        valueConvertor = new Hashtable<>();
         while (numValues-- > 0) {
             Object key = s.readObject();
             Object value = s.readObject();

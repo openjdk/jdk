@@ -591,7 +591,7 @@ public abstract class ResourceBundle {
      */
     private static ClassLoader getLoaderForControl(Module module) {
         ClassLoader loader = getLoader(module);
-        return loader == null ? ClassLoader.getSystemClassLoader() : loader;
+        return loader == null ? ClassLoader.getPlatformClassLoader() : loader;
     }
 
     /**

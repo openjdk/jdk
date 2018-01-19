@@ -1,5 +1,5 @@
 #!/bin/ksh -p
-# Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,24 @@ clean()
 
 # Checking for proper OS
 OS=`uname -s`
+MKTEMP="mktemp"
 case "$OS" in
-   SunOS | Linux | Darwin )
+   AIX )
+      FILESEP="/"
+      PATHSEP=":"
+      TMP=`cd /tmp; pwd -P`
+
+      type ${MKTEMP} > /dev/null 2>&1
+
+      if ! [ $? -ne 0 ] ; then 
+        MKTEMP="/opt/freeware/bin/mktemp"
+      fi
+      if ! [ -e ${MKTEMP} ] ; then 
+        pass "Test skipped because no mktemp found on this machine"
+      fi
+      ;;
+
+   Darwin | Linux | SunOS )
       FILESEP="/"
       PATHSEP=":"
       TMP=`cd /tmp; pwd -P`
@@ -180,7 +196,7 @@ echo ------ PREPARE TEST PLUGIN ---------
 # app have file read permission for all subdirs of the
 # scratch dir
 
-PLUGINDST_DIR=$(mktemp -d ${TMP}/iio_test.XXXXXXXX)
+PLUGINDST_DIR=$(${MKTEMP} -d ${TMP}/iio_test.XXXXXXXX)
 echo "Created PLUGINDST_DIR as ${PLUGINDST_DIR}"
 
 TEST_PLUGIN=dummy.jar

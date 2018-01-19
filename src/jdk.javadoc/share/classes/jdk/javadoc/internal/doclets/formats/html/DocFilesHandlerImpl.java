@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,17 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import com.sun.source.doctree.AttributeTree;
+import com.sun.source.doctree.AttributeTree.ValueKind;
+import com.sun.source.doctree.DocRootTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
+import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.util.SimpleDocTreeVisitor;
+import com.sun.tools.doclint.HtmlTag;
+import com.sun.tools.doclint.HtmlTag.Attr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
@@ -123,13 +130,14 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
                     configuration.messages.warning("doclet.Copy_Overwrite_warning",
                             srcfile.getPath(), dstdir.getPath());
                 } else {
+                    if (Utils.toLowerCase(srcfile.getPath()).endsWith(".html")) {
+                        if (handleHtmlFile(srcfile, dstDocPath)) {
+                            continue;
+                        }
+                    }
                     configuration.messages.notice("doclet.Copying_File_0_To_Dir_1",
                             srcfile.getPath(), dstdir.getPath());
-                    if (Utils.toLowerCase(srcfile.getPath()).endsWith(".html")) {
-                        handleHtmlFile(srcfile, dstDocPath);
-                    } else {
-                        destfile.copyFile(srcfile);
-                    }
+                    destfile.copyFile(srcfile);
                 }
             } else if (srcfile.isDirectory()) {
                 if (configuration.copydocfilesubdirs
@@ -141,19 +149,23 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         }
     }
 
-    private void handleHtmlFile(DocFile srcfile, DocPath dstPath) throws DocFileIOException {
-        DocPath dfilePath = dstPath.resolve(srcfile.getName());
-        HtmlDocletWriter docletWriter = new DocFileWriter(configuration, dfilePath, element);
-
+    private boolean handleHtmlFile(DocFile srcfile, DocPath dstPath) throws DocFileIOException {
         Utils utils = configuration.utils;
-
         FileObject fileObject = srcfile.getFileObject();
         DocFileElement dfElement = new DocFileElement(element, fileObject);
+
+        if (shouldPassThrough(utils.getPreamble(dfElement))) {
+            return false;
+        }
+
+        DocPath dfilePath = dstPath.resolve(srcfile.getName());
+        HtmlDocletWriter docletWriter = new DocFileWriter(configuration, dfilePath, element);
+        configuration.messages.notice("doclet.Generating_0", docletWriter.filename);
+
         String title = getWindowTitle(docletWriter, dfElement).trim();
         HtmlTree htmlContent = docletWriter.getBody(true, title);
         docletWriter.addTop(htmlContent);
         docletWriter.addNavLinks(true, htmlContent);
-
         List<? extends DocTree> fullBody = utils.getFullBody(dfElement);
         Content bodyContent = docletWriter.commentTagsToContent(null, dfElement, fullBody, false);
 
@@ -163,6 +175,69 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         docletWriter.addNavLinks(false, htmlContent);
         docletWriter.addBottom(htmlContent);
         docletWriter.printHtmlDocument(Collections.emptyList(), false, htmlContent);
+        return true;
+    }
+
+
+    private boolean shouldPassThrough(List<? extends DocTree> dtrees) {
+        SimpleDocTreeVisitor<Boolean, Boolean> check = new SimpleDocTreeVisitor<Boolean, Boolean>() {
+            @Override
+            public Boolean visitStartElement(StartElementTree node, Boolean p) {
+                if (Utils.toLowerCase(node.getName().toString()).equals((Attr.STYLE.getText()))) {
+                    return true;
+                }
+                if (Utils.toLowerCase(node.getName().toString()).equals(HtmlTag.LINK.getText())) {
+                    for (DocTree dt : node.getAttributes()) {
+                        if (this.visit(dt, true))
+                            return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public Boolean visitAttribute(AttributeTree node, Boolean p) {
+                if (p == null || p == false) {
+                    return false;
+                }
+                if (Utils.toLowerCase(node.getName().toString()).equals("rel")) {
+                    for (DocTree dt :  node.getValue()) {
+                        Boolean found = new SimpleDocTreeVisitor<Boolean, ValueKind>() {
+
+                            @Override
+                            public Boolean visitText(TextTree node, ValueKind valueKind) {
+                                switch (valueKind) {
+                                    case EMPTY:
+                                        return false;
+                                    default:
+                                        return Utils.toLowerCase(node.getBody()).equals("stylesheet");
+                                }
+                            }
+
+                            @Override
+                            protected Boolean defaultAction(DocTree node, ValueKind valueKind) {
+                                return false;
+                            }
+
+                        }.visit(dt, node.getValueKind());
+
+                        if (found)
+                            return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            protected Boolean defaultAction(DocTree node, Boolean p) {
+                return false;
+            }
+        };
+        for (DocTree dt : dtrees) {
+            if (check.visit(dt, false))
+                return true;
+        }
+        return false;
     }
 
     private String getWindowTitle(HtmlDocletWriter docletWriter, Element element) {

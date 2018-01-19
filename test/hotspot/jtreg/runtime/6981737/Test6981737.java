@@ -41,8 +41,6 @@ public class Test6981737 {
         int major_version = Runtime.version().major();
         String vm_spec_version_re = Integer.toString(major_version);
 
-        verifyProperty("java.vendor", vendor_re);
-        verifyProperty("java.vm.vendor", vendor_re);
         verifyProperty("java.vm.specification.vendor", vendor_re);
         verifyProperty("java.specification.vendor", vendor_re);
         verifyProperty("java.vm.specification.version", vm_spec_version_re);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2373,7 +2373,7 @@ Node *NeverBranchNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (can_reshape && !in(0)->is_Loop()) {
     // Dead code elimination can sometimes delete this projection so
     // if it's not there, there's nothing to do.
-    Node* fallthru = proj_out(0);
+    Node* fallthru = proj_out_or_null(0);
     if (fallthru != NULL) {
       phase->is_IterGVN()->replace_node(fallthru, in(0));
     }

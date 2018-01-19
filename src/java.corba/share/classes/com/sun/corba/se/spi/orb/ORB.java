@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,7 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     public boolean shutdownDebugFlag = false;
     public boolean giopDebugFlag = false;
     public boolean invocationTimingDebugFlag = false ;
+    public boolean orbInitDebugFlag = false ;
 
     // SystemException log wrappers.  Protected so that they can be used in
     // subclasses.
@@ -487,6 +488,24 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     public abstract ThreadPoolManager getThreadPoolManager();
 
     public abstract CopierManager getCopierManager() ;
+
+    /*
+     * This method is called to verify that a stringified IOR passed to
+     * an org.omg.CORBA.ORB::string_to_object method contains a valid and acceptable IOR type.
+     * If an ORB is configured with IOR type checking enabled,
+     * the ORB executes a IOR type registry lookup to
+     * validate that the class name extract from a type id in
+     * a stringified IOR is a known and accepted type.
+     * A CORBA {@code org.omg.CORBA.DATA_CONVERSION} exception will be thrown should the type check fail.
+     *
+     * @param iorClassName
+     *        a string representing the class name corresponding to the type id of an IOR
+     * @throws org.omg.CORBA.DATA_CONVERSION
+     *           exception with an indication that it is a "Bad stringified IOR", which is thrown
+     *           when the type check fails.
+     */
+    public abstract void validateIORClass(String iorClassName);
+
 }
 
 // End of file.

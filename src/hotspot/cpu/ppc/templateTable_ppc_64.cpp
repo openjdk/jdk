@@ -3486,11 +3486,11 @@ void TemplateTable::invokestatic(int byte_no) {
 void TemplateTable::invokeinterface_object_method(Register Rrecv_klass,
                                                   Register Rret,
                                                   Register Rflags,
-                                                  Register Rindex,
+                                                  Register Rmethod,
                                                   Register Rtemp1,
                                                   Register Rtemp2) {
 
-  assert_different_registers(Rindex, Rret, Rrecv_klass, Rflags, Rtemp1, Rtemp2);
+  assert_different_registers(Rmethod, Rret, Rrecv_klass, Rflags, Rtemp1, Rtemp2);
   Label LnotFinal;
 
   // Check for vfinal.
@@ -3502,14 +3502,14 @@ void TemplateTable::invokeinterface_object_method(Register Rrecv_klass,
   // Final call case.
   __ profile_final_call(Rtemp1, Rscratch);
   // Argument and return type profiling.
-  __ profile_arguments_type(Rindex, Rscratch, Rrecv_klass /* scratch */, true);
+  __ profile_arguments_type(Rmethod, Rscratch, Rrecv_klass /* scratch */, true);
   // Do the final call - the index (f2) contains the method.
-  __ call_from_interpreter(Rindex, Rret, Rscratch, Rrecv_klass /* scratch */);
+  __ call_from_interpreter(Rmethod, Rret, Rscratch, Rrecv_klass /* scratch */);
 
   // Non-final callc case.
   __ bind(LnotFinal);
   __ profile_virtual_call(Rrecv_klass, Rtemp1, Rscratch, false);
-  generate_vtable_call(Rrecv_klass, Rindex, Rret, Rscratch);
+  generate_vtable_call(Rrecv_klass, Rmethod, Rret, Rscratch);
 }
 
 void TemplateTable::invokeinterface(int byte_no) {
@@ -3518,58 +3518,61 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   const Register Rscratch1        = R11_scratch1,
                  Rscratch2        = R12_scratch2,
-                 Rscratch3        = R9_ARG7,
-                 Rscratch4        = R10_ARG8,
-                 Rtable_addr      = Rscratch2,
+                 Rmethod          = R6_ARG4,
+                 Rmethod2         = R9_ARG7,
                  Rinterface_klass = R5_ARG3,
-                 Rret_type        = R8_ARG6,
-                 Rret_addr        = Rret_type,
-                 Rindex           = R6_ARG4,
-                 Rreceiver        = R4_ARG2,
-                 Rrecv_klass      = Rreceiver,
+                 Rret_addr        = R8_ARG6,
+                 Rindex           = R10_ARG8,
+                 Rreceiver        = R3_ARG1,
+                 Rrecv_klass      = R4_ARG2,
                  Rflags           = R7_ARG5;
 
-  prepare_invoke(byte_no, Rinterface_klass, Rret_addr, Rindex, Rreceiver, Rflags, Rscratch1);
+  prepare_invoke(byte_no, Rinterface_klass, Rret_addr, Rmethod, Rreceiver, Rflags, Rscratch1);
 
   // Get receiver klass.
-  __ null_check_throw(Rreceiver, oopDesc::klass_offset_in_bytes(), Rscratch3);
+  __ null_check_throw(Rreceiver, oopDesc::klass_offset_in_bytes(), Rscratch2);
   __ load_klass(Rrecv_klass, Rreceiver);
 
   // Check corner case object method.
-  Label LobjectMethod;
-
+  Label LobjectMethod, L_no_such_interface, Lthrow_ame;
   __ testbitdi(CCR0, R0, Rflags, ConstantPoolCacheEntry::is_forced_virtual_shift);
   __ btrue(CCR0, LobjectMethod);
 
-  // Fallthrough: The normal invokeinterface case.
+  __ lookup_interface_method(Rrecv_klass, Rinterface_klass, noreg, noreg, Rscratch1, Rscratch2,
+                             L_no_such_interface, /*return_method=*/false);
+
   __ profile_virtual_call(Rrecv_klass, Rscratch1, Rscratch2, false);
 
   // Find entry point to call.
-  Label Lthrow_icc, Lthrow_ame;
-  // Result will be returned in Rindex.
-  __ mr(Rscratch4, Rrecv_klass);
-  __ mr(Rscratch3, Rindex);
-  __ lookup_interface_method(Rrecv_klass, Rinterface_klass, Rindex, Rindex, Rscratch1, Rscratch2, Lthrow_icc);
 
-  __ cmpdi(CCR0, Rindex, 0);
+  // Get declaring interface class from method
+  __ ld(Rinterface_klass, in_bytes(Method::const_offset()), Rmethod);
+  __ ld(Rinterface_klass, in_bytes(ConstMethod::constants_offset()), Rinterface_klass);
+  __ ld(Rinterface_klass, ConstantPool::pool_holder_offset_in_bytes(), Rinterface_klass);
+
+  // Get itable index from method
+  __ lwa(Rindex, in_bytes(Method::itable_index_offset()), Rmethod);
+  __ subfic(Rindex, Rindex, Method::itable_index_max);
+
+  __ lookup_interface_method(Rrecv_klass, Rinterface_klass, Rindex, Rmethod2, Rscratch1, Rscratch2,
+                             L_no_such_interface);
+
+  __ cmpdi(CCR0, Rmethod2, 0);
   __ beq(CCR0, Lthrow_ame);
   // Found entry. Jump off!
   // Argument and return type profiling.
-  __ profile_arguments_type(Rindex, Rscratch1, Rscratch2, true);
-  __ call_from_interpreter(Rindex, Rret_addr, Rscratch1, Rscratch2);
+  __ profile_arguments_type(Rmethod2, Rscratch1, Rscratch2, true);
+  //__ profile_called_method(Rindex, Rscratch1);
+  __ call_from_interpreter(Rmethod2, Rret_addr, Rscratch1, Rscratch2);
 
   // Vtable entry was NULL => Throw abstract method error.
   __ bind(Lthrow_ame);
-  __ mr(Rrecv_klass, Rscratch4);
-  __ mr(Rindex, Rscratch3);
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
 
   // Interface was not found => Throw incompatible class change error.
-  __ bind(Lthrow_icc);
-  __ mr(Rrecv_klass, Rscratch4);
+  __ bind(L_no_such_interface);
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeError));
-
-  __ should_not_reach_here();
+  DEBUG_ONLY( __ should_not_reach_here(); )
 
   // Special case of invokeinterface called for virtual method of
   // java.lang.Object. See ConstantPoolCacheEntry::set_method() for details:
@@ -3577,7 +3580,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   // to handle this corner case. This code isn't produced by javac, but could
   // be produced by another compliant java compiler.
   __ bind(LobjectMethod);
-  invokeinterface_object_method(Rrecv_klass, Rret_addr, Rflags, Rindex, Rscratch1, Rscratch2);
+  invokeinterface_object_method(Rrecv_klass, Rret_addr, Rflags, Rmethod, Rscratch1, Rscratch2);
 }
 
 void TemplateTable::invokedynamic(int byte_no) {

@@ -152,8 +152,8 @@ public interface ElementVisitor<R, P> {
     /**
      * Visits a module element.
      *
-     * @implSpec Visits a {@code ModuleElement} by calling {@code
-     * visitUnknown(e, p)}.
+     * @implSpec The default implementation visits a {@code
+     * ModuleElement} by calling {@code visitUnknown(e, p)}.
      *
      * @param e  the element to visit
      * @param p  a visitor-specified parameter

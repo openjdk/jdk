@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * @LastModified: Oct 2017
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -49,6 +50,7 @@ import java.util.Stack;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.URIResolver;
+import jdk.xml.internal.JdkXmlUtils;
 import org.xml.sax.XMLReader;
 
 /**
@@ -92,7 +94,7 @@ public class XPathContext extends DTMManager // implements ExpressionContext
    */
   private boolean m_isSecureProcessing = false;
 
-  private boolean m_useServicesMechanism = true;
+  private boolean m_overrideDefaultParser;
 
   /**
    * Though XPathContext context extends
@@ -305,11 +307,11 @@ public class XPathContext extends DTMManager // implements ExpressionContext
    */
   public XPathContext()
   {
-    this(true);
+    this(false);
   }
 
-  public XPathContext(boolean useServicesMechanism) {
-      init(useServicesMechanism);
+  public XPathContext(boolean overrideDefaultParser) {
+      init(overrideDefaultParser);
   }
   /**
    **This constructor doesn't seem to be used anywhere -- huizhe wang**
@@ -324,15 +326,15 @@ public class XPathContext extends DTMManager // implements ExpressionContext
       m_ownerGetErrorListener = m_owner.getClass().getMethod("getErrorListener", new Class<?>[] {});
     }
     catch (NoSuchMethodException nsme) {}
-    init(true);
+    init(false);
   }
 
-  private void init(boolean useServicesMechanism) {
+  private void init(boolean overrideDefaultParser) {
     m_prefixResolvers.push(null);
     m_currentNodes.push(DTM.NULL);
     m_currentExpressionNodes.push(DTM.NULL);
     m_saxLocations.push(null);
-    m_useServicesMechanism = useServicesMechanism;
+    m_overrideDefaultParser = overrideDefaultParser;
     m_dtmManager = DTMManager.newInstance(
                    com.sun.org.apache.xpath.internal.objects.XMLStringFactoryImpl.getFactory()
                    );
@@ -1082,15 +1084,15 @@ public class XPathContext extends DTMManager // implements ExpressionContext
     /**
      * Return the state of the services mechanism feature.
      */
-    public boolean useServicesMechnism() {
-        return m_useServicesMechanism;
+    public boolean overrideDefaultParser() {
+        return m_overrideDefaultParser;
     }
 
     /**
      * Set the state of the services mechanism feature.
      */
-    public void setServicesMechnism(boolean flag) {
-        m_useServicesMechanism = flag;
+    public void setOverrideDefaultParser(boolean flag) {
+        m_overrideDefaultParser = flag;
     }
 
     /**

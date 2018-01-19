@@ -25,12 +25,13 @@
 
 package java.awt.geom;
 
-import java.awt.Shape;
 import java.awt.Rectangle;
-import sun.awt.geom.Curve;
+import java.awt.Shape;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.util.Arrays;
+
+import sun.awt.geom.Curve;
 
 /**
  * The {@code Path2D} class provides a simple, yet flexible
@@ -2625,9 +2626,12 @@ public abstract class Path2D implements Shape, Cloneable {
             throw new java.io.InvalidObjectException(iae.getMessage());
         }
 
-        pointTypes = new byte[(nT < 0) ? INIT_SIZE : nT];
-        if (nC < 0) {
-            nC = INIT_SIZE * 2;
+        // Accept the size from the stream only if it is less than INIT_SIZE
+        // otherwise the size will be based on the real data in the stream
+        pointTypes = new byte[(nT < 0 || nT > INIT_SIZE) ? INIT_SIZE : nT];
+        final int initX2 = INIT_SIZE * 2;
+        if (nC < 0 || nC > initX2) {
+            nC = initX2;
         }
         if (storedbl) {
             ((Path2D.Double) this).doubleCoords = new double[nC];

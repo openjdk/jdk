@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,14 +22,12 @@ package com.sun.org.apache.xalan.internal.lib;
 
 import java.util.StringTokenizer;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import com.sun.org.apache.xalan.internal.extensions.ExpressionContext;
 import com.sun.org.apache.xpath.internal.NodeSet;
 import com.sun.org.apache.xpath.internal.objects.XBoolean;
 import com.sun.org.apache.xpath.internal.objects.XNumber;
 import com.sun.org.apache.xpath.internal.objects.XObject;
+import jdk.xml.internal.JdkXmlUtils;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
@@ -51,7 +48,6 @@ import org.xml.sax.SAXNotSupportedException;
  */
 public class Extensions
 {
-    static final String JDK_DEFAULT_DOM = "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";
   /**
    * Constructor Extensions
    *
@@ -110,7 +106,7 @@ public class Extensions
 
       // This no longer will work right since the DTM.
       // Document myDoc = myProcessor.getContextNode().getOwnerDocument();
-      Document myDoc = getDocument();
+      Document myDoc = JdkXmlUtils.getDOMDocument();
 
         Text textNode = myDoc.createTextNode(textNodeValue);
         DocumentFragment docFrag = myDoc.createDocumentFragment();
@@ -236,7 +232,7 @@ public class Extensions
   public static NodeList tokenize(String toTokenize, String delims)
   {
 
-    Document doc = getDocument();
+    Document doc = JdkXmlUtils.getDOMDocument();
 
     StringTokenizer lTokenizer = new StringTokenizer(toTokenize, delims);
     NodeSet resultSet = new NodeSet();
@@ -269,23 +265,4 @@ public class Extensions
   {
     return tokenize(toTokenize, " \t\n\r");
   }
-
-    /**
-   * @return an instance of DOM Document
-     */
-   private static Document getDocument()
-   {
-        try
-        {
-            if (System.getSecurityManager() == null) {
-                return DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-            } else {
-                return DocumentBuilderFactory.newInstance(JDK_DEFAULT_DOM, null).newDocumentBuilder().newDocument();
-            }
-        }
-        catch(ParserConfigurationException pce)
-        {
-            throw new com.sun.org.apache.xml.internal.utils.WrappedRuntimeException(pce);
-        }
-    }
 }

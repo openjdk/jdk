@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,7 +505,7 @@ ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
   //  Flip 1:  If (Bool[<] CmpU(l, LoadRange)) ...
   //  Flip 2:  If (Bool[<=] CmpU(LoadRange, l)) ...
 
-  ProjNode* iftrap = proj_out(flip_test == 2 ? true : false);
+  ProjNode* iftrap = proj_out_or_null(flip_test == 2 ? true : false);
   return iftrap;
 }
 
@@ -1195,14 +1195,17 @@ bool IfNode::is_null_check(ProjNode* proj, PhaseIterGVN* igvn) {
 // Check that the If that is in between the 2 integer comparisons has
 // no side effect
 bool IfNode::is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn) {
-  if (proj != NULL &&
-      proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none) &&
-      proj->outcnt() <= 2) {
+  if (proj == NULL) {
+    return false;
+  }
+  CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+  if (unc != NULL && proj->outcnt() <= 2) {
     if (proj->outcnt() == 1 ||
         // Allow simple null check from LoadRange
         (is_cmp_with_loadrange(proj) && is_null_check(proj, igvn))) {
       CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
       CallStaticJavaNode* dom_unc = proj->in(0)->in(0)->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      assert(dom_unc != NULL, "is_uncommon_trap_if_pattern returned NULL");
 
       // reroute_side_effect_free_unc changes the state of this
       // uncommon trap to restart execution at the previous
@@ -1471,7 +1474,7 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN *igvn) {
   // be skipped. For example, range check predicate has two checks
   // for lower and upper bounds.
   ProjNode* unc_proj = proj_out(1 - prev_dom->as_Proj()->_con)->as_Proj();
-  if ((unc_proj != NULL) && (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate) != NULL)) {
+  if (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate) != NULL) {
     prev_dom = idom;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.HashMap;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import org.ietf.jgss.Oid;
+import sun.security.action.GetPropertyAction;
 
 /**
  * A Configuration implementation especially designed for JGSS.
@@ -43,6 +44,16 @@ public class LoginConfigImpl extends Configuration {
     private final String mechName;
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("gssloginconfig", "\t[GSS LoginConfigImpl]");
+
+    public static final boolean HTTP_USE_GLOBAL_CREDS;
+
+    static {
+        String prop = GetPropertyAction
+                .privilegedGetProperty("http.use.global.creds");
+        //HTTP_USE_GLOBAL_CREDS = "true".equalsIgnoreCase(prop); // default false
+        HTTP_USE_GLOBAL_CREDS = !"false".equalsIgnoreCase(prop); // default true
+    }
+
 
     /**
      * A new instance of LoginConfigImpl must be created for each login request
@@ -178,7 +189,11 @@ public class LoginConfigImpl extends Configuration {
                 options.put("principal", "*");
                 options.put("isInitiator", "false");
             } else {
-                options.put("useTicketCache", "true");
+                if (caller instanceof HttpCaller && !HTTP_USE_GLOBAL_CREDS) {
+                    options.put("useTicketCache", "false");
+                } else {
+                    options.put("useTicketCache", "true");
+                }
                 options.put("doNotPrompt", "false");
             }
             return new AppConfigurationEntry[] {

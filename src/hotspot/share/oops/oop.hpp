@@ -28,6 +28,7 @@
 #include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/access.hpp"
 #include "oops/metadata.hpp"
 #include "utilities/macros.hpp"
 
@@ -178,6 +179,8 @@ class oopDesc {
   static inline void encode_store_heap_oop(oop* p, oop v);
 
   // Access to fields in a instanceOop through these methods.
+  template <DecoratorSet decorator>
+  oop obj_field_access(int offset) const;
   oop obj_field(int offset) const;
   void obj_field_put(int offset, oop value);
   void obj_field_put_raw(int offset, oop value);

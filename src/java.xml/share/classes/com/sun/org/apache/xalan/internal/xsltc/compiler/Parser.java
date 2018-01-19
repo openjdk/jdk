@@ -22,7 +22,6 @@ package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
 import com.sun.java_cup.internal.runtime.Symbol;
 import com.sun.org.apache.xalan.internal.XalanConstants;
-import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
@@ -43,9 +42,6 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
@@ -56,7 +52,6 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
-import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -101,11 +96,11 @@ public class Parser implements Constants, ContentHandler {
 
     private int _currentImportPrecedence;
 
-    private boolean _useServicesMechanism = true;
+    private boolean _overrideDefaultParser;
 
-    public Parser(XSLTC xsltc, boolean useServicesMechanism) {
+    public Parser(XSLTC xsltc, boolean useOverrideDefaultParser) {
         _xsltc = xsltc;
-        _useServicesMechanism = useServicesMechanism;
+        _overrideDefaultParser = useOverrideDefaultParser;
     }
 
     public void init() {
@@ -465,56 +460,35 @@ public class Parser implements Constants, ContentHandler {
      */
     public SyntaxTreeNode parse(InputSource input) {
         try {
-            // Create a SAX parser and get the XMLReader object it uses
-            final SAXParserFactory factory = FactoryImpl.getSAXFactory(_useServicesMechanism);
+            final XMLReader reader = JdkXmlUtils.getXMLReader(_overrideDefaultParser,
+                    _xsltc.isSecureProcessing());
 
-            if (_xsltc.isSecureProcessing()) {
-                try {
-                    factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                }
-                catch (SAXException e) {}
-            }
+            JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
+                    _xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD), true);
 
-            try {
-                factory.setFeature(Constants.NAMESPACE_FEATURE,true);
-            }
-            catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
-                factory.setNamespaceAware(true);
-            }
-
-            final SAXParser parser = factory.newSAXParser();
-            try {
-                parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
-                        _xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
-            } catch (SAXNotRecognizedException e) {
-                ErrorMsg err = new ErrorMsg(ErrorMsg.WARNING_MSG,
-                        parser.getClass().getName() + ": " + e.getMessage());
-                reportError(WARNING, err);
-            }
 
             boolean supportCatalog = true;
             boolean useCatalog = _xsltc.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG);
             try {
-                factory.setFeature(JdkXmlUtils.USE_CATALOG,useCatalog);
+                reader.setFeature(JdkXmlUtils.USE_CATALOG, useCatalog);
             }
-            catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            catch (SAXNotRecognizedException | SAXNotSupportedException e) {
                 supportCatalog = false;
             }
 
             if (supportCatalog && useCatalog) {
                 try {
                     CatalogFeatures cf = (CatalogFeatures)_xsltc.getProperty(JdkXmlFeatures.CATALOG_FEATURES);
-                    if (cf != null) {
-                        for (CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
-                            parser.setProperty(f.getPropertyName(), cf.get(f));
+                        if (cf != null) {
+                            for (CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+                                reader.setProperty(f.getPropertyName(), cf.get(f));
+                            }
                         }
-                    }
                 } catch (SAXNotRecognizedException e) {
                     //shall not happen for internal settings
                 }
             }
 
-            final XMLReader reader = parser.getXMLReader();
             String lastProperty = "";
             try {
                 XMLSecurityManager securityManager =
@@ -525,7 +499,7 @@ public class Parser implements Constants, ContentHandler {
                 }
                 if (securityManager.printEntityCountInfo()) {
                     lastProperty = XalanConstants.JDK_ENTITY_COUNT_INFO;
-                    parser.setProperty(XalanConstants.JDK_ENTITY_COUNT_INFO, XalanConstants.JDK_YES);
+                    reader.setProperty(XalanConstants.JDK_ENTITY_COUNT_INFO, XalanConstants.JDK_YES);
                 }
             } catch (SAXException se) {
                 XMLSecurityManager.printWarning(reader.getClass().getName(), lastProperty, se);
@@ -536,13 +510,6 @@ public class Parser implements Constants, ContentHandler {
                 _xsltc.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE), false);
 
             return(parse(reader, input));
-        }
-        catch (ParserConfigurationException e) {
-            ErrorMsg err = new ErrorMsg(ErrorMsg.SAX_PARSER_CONFIG_ERR);
-            reportError(ERROR, err);
-        }
-        catch (SAXParseException e){
-            reportError(ERROR, new ErrorMsg(e.getMessage(),e.getLineNumber()));
         }
         catch (SAXException e) {
             reportError(ERROR, new ErrorMsg(e.getMessage()));

@@ -2775,7 +2775,17 @@ Handle SystemDictionary::link_method_handle_constant(Klass* caller,
   java_lang_invoke_MemberName::set_name (mname(), name_str());
   java_lang_invoke_MemberName::set_type (mname(), signature_str());
   java_lang_invoke_MemberName::set_flags(mname(), MethodHandles::ref_kind_to_flags(ref_kind));
-  MethodHandles::resolve_MemberName(mname, caller, CHECK_(empty));
+
+  if (ref_kind == JVM_REF_invokeVirtual &&
+      callee->name() == vmSymbols::java_lang_invoke_MethodHandle() &&
+      (name == vmSymbols::invoke_name() || name == vmSymbols::invokeExact_name())) {
+    // Skip resolution for j.l.i.MethodHandle.invoke()/invokeExact().
+    // They are public signature polymorphic methods, but require appendix argument
+    // which MemberName resolution doesn't handle. There's special logic on JDK side to handle them
+    // (see MethodHandles.linkMethodHandleConstant() and MethodHandles.findVirtualForMH()).
+  } else {
+    MethodHandles::resolve_MemberName(mname, caller, CHECK_(empty));
+  }
 
   // After method/field resolution succeeded, it's safe to resolve MH signature as well.
   Handle type = MethodHandles::resolve_MemberName_type(mname, caller, CHECK_(empty));

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/vtableStubs.hpp"
 #include "interp_masm_s390.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -57,7 +58,6 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), code_length);
   MacroAssembler *masm = new MacroAssembler(&cb);
-  address start_pc;
   int     padding_bytes = 0;
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
@@ -144,9 +144,9 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   return s;
 }
 
-VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
+VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   const int   code_length = VtableStub::pd_code_size_limit(false);
-  VtableStub *s = new(code_length) VtableStub(false, vtable_index);
+  VtableStub *s = new(code_length) VtableStub(false, itable_index);
   if (s == NULL) { // Indicates OOM in the code cache.
     return NULL;
   }
@@ -154,7 +154,6 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), code_length);
   MacroAssembler *masm = new MacroAssembler(&cb);
-  address start_pc;
   int     padding_bytes = 0;
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
@@ -174,11 +173,9 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   // Entry arguments:
   //  Z_method: Interface
   //  Z_ARG1:   Receiver
-  const Register rcvr_klass = Z_tmp_1;    // Used to compute itable_entry_addr.
-                                          // Use extra reg to avoid re-load.
-  const Register vtable_len = Z_tmp_2;    // Used to compute itable_entry_addr.
-  const Register itable_entry_addr = Z_R1_scratch;
-  const Register itable_interface  = Z_R0_scratch;
+  NearLabel no_such_interface;
+  const Register rcvr_klass = Z_tmp_1,
+                 interface  = Z_tmp_2;
 
   // Get receiver klass.
   // Must do an explicit check if implicit checks are disabled.
@@ -186,50 +183,15 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   __ null_check(Z_ARG1, Z_R1_scratch, oopDesc::klass_offset_in_bytes());
   __ load_klass(rcvr_klass, Z_ARG1);
 
-  // Load start of itable entries into itable_entry.
-  __ z_llgf(vtable_len, Address(rcvr_klass, Klass::vtable_length_offset()));
-  __ z_sllg(vtable_len, vtable_len, exact_log2(vtableEntry::size_in_bytes()));
+  // Receiver subtype check against REFC.
+  __ z_lg(interface, Address(Z_method, CompiledICHolder::holder_klass_offset()));
+  __ lookup_interface_method(rcvr_klass, interface, noreg,
+                             noreg, Z_R1, no_such_interface, /*return_method=*/ false);
 
-  // Loop over all itable entries until desired interfaceOop(Rinterface) found.
-  const int vtable_base_offset = in_bytes(Klass::vtable_start_offset());
-  // Count unused bytes.
-  start_pc = __ pc();
-  __ add2reg_with_index(itable_entry_addr, vtable_base_offset + itableOffsetEntry::interface_offset_in_bytes(), rcvr_klass, vtable_len);
-  padding_bytes += 20 - (__ pc() - start_pc);
-
-  const int itable_offset_search_inc = itableOffsetEntry::size() * wordSize;
-  Label search;
-  __ bind(search);
-
-  // Handle IncompatibleClassChangeError in itable stubs.
-  // If the entry is NULL then we've reached the end of the table
-  // without finding the expected interface, so throw an exception.
-  NearLabel   throw_icce;
-  __ load_and_test_long(itable_interface, Address(itable_entry_addr));
-  __ z_bre(throw_icce); // Throw the exception out-of-line.
-  // Count unused bytes.
-  start_pc = __ pc();
-  __ add2reg(itable_entry_addr, itable_offset_search_inc);
-  padding_bytes += 20 - (__ pc() - start_pc);
-  __ z_cgr(itable_interface, Z_method);
-  __ z_brne(search);
-
-  // Entry found. Itable_entry_addr points to the subsequent entry (itable_offset_search_inc too far).
-  // Get offset of vtable for interface.
-
-  const Register vtable_offset = Z_R1_scratch;
-  const Register itable_method = rcvr_klass;   // Calculated before.
-
-  const int vtable_offset_offset = (itableOffsetEntry::offset_offset_in_bytes() -
-                                    itableOffsetEntry::interface_offset_in_bytes()) -
-                                   itable_offset_search_inc;
-  __ z_llgf(vtable_offset, vtable_offset_offset, itable_entry_addr);
-
-  // Compute itableMethodEntry and get method and entry point for compiler.
-  const int method_offset = (itableMethodEntry::size() * wordSize * vtable_index) +
-                            itableMethodEntry::method_offset_in_bytes();
-
-  __ z_lg(Z_method, method_offset, vtable_offset, itable_method);
+  // Get Method* and entrypoint for compiler
+  __ z_lg(interface, Address(Z_method, CompiledICHolder::holder_metadata_offset()));
+  __ lookup_interface_method(rcvr_klass, interface, itable_index,
+                             Z_method, Z_R1, no_such_interface, /*return_method=*/ true);
 
 #ifndef PRODUCT
   if (DebugVtables) {
@@ -244,13 +206,13 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   address ame_addr = __ pc();
   // Must do an explicit check if implicit checks are disabled.
   if (!ImplicitNullChecks) {
-    __ compare64_and_branch(Z_method, (intptr_t) 0, Assembler::bcondEqual, throw_icce);
+    __ compare64_and_branch(Z_method, (intptr_t) 0, Assembler::bcondEqual, no_such_interface);
   }
   __ z_lg(Z_R1_scratch, in_bytes(Method::from_compiled_offset()), Z_method);
   __ z_br(Z_R1_scratch);
 
   // Handle IncompatibleClassChangeError in itable stubs.
-  __ bind(throw_icce);
+  __ bind(no_such_interface);
   // Count unused bytes
   //                  worst case          actual size
   // We force resolving of the call site by jumping to
@@ -273,13 +235,12 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   if (CountCompiledCalls) {
     size += 6 * 4;
   }
-  if (is_vtable_stub) {
-    size += 52;
-  } else {
-    size += 104;
+  size += is_vtable_stub ? 36 : 140;
+  if (UseCompressedClassPointers) {
+    size += MacroAssembler::instr_size_for_decode_klass_not_null();
   }
-  if (Universe::narrow_klass_base() != NULL) {
-    size += 16; // A guess.
+  if (!ImplicitNullChecks) {
+    size += 36;
   }
   return size;
 }

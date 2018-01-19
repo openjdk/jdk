@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import sun.rmi.registry.RegistryImpl;
 public class SingleEntryRegistry extends RegistryImpl {
     SingleEntryRegistry(int port, String name, Remote object)
             throws RemoteException {
-        super(port);
+        super(port, null, null, SingleEntryRegistry::singleRegistryFilter);
         this.name = name;
         this.object = object;
     }
