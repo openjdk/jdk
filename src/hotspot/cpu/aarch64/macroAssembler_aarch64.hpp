@@ -875,7 +875,8 @@ public:
                                RegisterOrConstant itable_index,
                                Register method_result,
                                Register scan_temp,
-                               Label& no_such_interface);
+                               Label& no_such_interface,
+                   bool return_method = true);
 
   // virtual method calling
   // n.b. x86 allows RegisterOrConstant for vtable_index
