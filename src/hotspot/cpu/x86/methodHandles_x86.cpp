@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -589,7 +589,7 @@ void trace_method_handle_stub_wrapper(MethodHandleStubArguments* args) {
 
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
   if (!TraceMethodHandles)  return;
-  BLOCK_COMMENT("trace_method_handle {");
+  BLOCK_COMMENT(err_msg("trace_method_handle %s {", adaptername));
   __ enter();
   __ andptr(rsp, -16); // align stack if needed for FPU state
   __ pusha();

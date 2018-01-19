@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -837,6 +837,20 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::G1SATBCTLogging:
         // With G1, don't generate the call if we statically know that the target in uninitialized
         if (!dest_uninitialized) {
+          Register tmp = O5;
+          assert_different_registers(addr, count, tmp);
+          Label filtered;
+          // Is marking active?
+          if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+            __ ld(G2, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), tmp);
+          } else {
+            guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1,
+                      "Assumption");
+            __ ldsb(G2, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), tmp);
+          }
+          // Is marking active?
+          __ cmp_and_br_short(tmp, G0, Assembler::equal, Assembler::pt, filtered);
+
           __ save_frame(0);
           // Save the necessary global regs... will be used after.
           if (addr->is_global()) {
@@ -856,6 +870,9 @@ class StubGenerator: public StubCodeGenerator {
             __ mov(L1, count);
           }
           __ restore();
+
+          __ bind(filtered);
+          DEBUG_ONLY(__ set(0xDEADC0DE, tmp);) // we have killed tmp
         }
         break;
       case BarrierSet::CardTableForRS:
