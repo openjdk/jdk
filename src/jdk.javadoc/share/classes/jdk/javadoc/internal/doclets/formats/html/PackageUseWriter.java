@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,7 +223,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 DocPath dp = pathString(te,
                         DocPaths.CLASS_USE.resolve(DocPath.forName(utils, te)));
                 Content stringContent = new StringContent(utils.getSimpleName(te));
-                Content typeContent = Links.createLink(dp.fragment(getPackageAnchorName(usingPackage)),
+                Content typeContent = links.createLink(dp.fragment(getPackageAnchorName(usingPackage)),
                         stringContent);
                 Content summary = new ContentBuilder();
                 addIndexComment(te, summary);
@@ -288,7 +288,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     @Override
     protected Content getNavLinkPackage() {
-        Content linkContent = Links.createLink(DocPaths.PACKAGE_SUMMARY,
+        Content linkContent = links.createLink(DocPaths.PACKAGE_SUMMARY,
                 contents.packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
@@ -312,7 +312,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     @Override
     protected Content getNavLinkTree() {
-        Content linkContent = Links.createLink(DocPaths.PACKAGE_TREE,
+        Content linkContent = links.createLink(DocPaths.PACKAGE_TREE,
                 contents.treeLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;
