@@ -101,6 +101,9 @@ typedef TestAccess::Block OopBlock;
 // --- FIXME: Similarly, this typedef collides with opto BlockList.
 // typedef TestAccess::BlockList BlockList;
 
+// Using EXPECT_EQ can't use NULL directly. Otherwise AIX build breaks.
+const OopBlock* const NULL_BLOCK = NULL;
+
 static size_t list_length(const TestAccess::BlockList& list) {
   size_t result = 0;
   for (const OopBlock* block = list.chead();
@@ -1196,9 +1199,9 @@ TEST_F(OopStorageBlockListTest, empty_list) {
   TestAccess::BlockList list(&OopBlock::get_active_entry);
 
   EXPECT_TRUE(is_list_empty(list));
-  EXPECT_EQ(NULL, list.head());
-  EXPECT_EQ(NULL, list.chead());
-  EXPECT_EQ(NULL, list.ctail());
+  EXPECT_EQ(NULL_BLOCK, list.head());
+  EXPECT_EQ(NULL_BLOCK, list.chead());
+  EXPECT_EQ(NULL_BLOCK, list.ctail());
 }
 
 TEST_F(OopStorageBlockListTest, push_back) {
@@ -1219,14 +1222,14 @@ TEST_F(OopStorageBlockListTest, push_back) {
     EXPECT_EQ(block, values[i]);
     block = list.next(*block);
   }
-  EXPECT_EQ(NULL, block);
+  EXPECT_EQ(NULL_BLOCK, block);
 
   block = list.ctail();
   for (size_t i = 0; i < nvalues; ++i) {
     EXPECT_EQ(block, values[nvalues - i - 1]);
     block = list.prev(*block);
   }
-  EXPECT_EQ(NULL, block);
+  EXPECT_EQ(NULL_BLOCK, block);
 
   clear_list(list);
 }
@@ -1249,14 +1252,14 @@ TEST_F(OopStorageBlockListTest, push_front) {
     EXPECT_EQ(block, values[nvalues - i - 1]);
     block = list.next(*block);
   }
-  EXPECT_EQ(NULL, block);
+  EXPECT_EQ(NULL_BLOCK, block);
 
   block = list.ctail();
   for (size_t i = 0; i < nvalues; ++i) {
     EXPECT_EQ(block, values[i]);
     block = list.prev(*block);
   }
-  EXPECT_EQ(NULL, block);
+  EXPECT_EQ(NULL_BLOCK, block);
 
   clear_list(list);
 }
@@ -1281,8 +1284,8 @@ TEST_F(OopStorageBlockListTestWithList, unlink_front) {
   EXPECT_EQ(list.ctail(), values[nvalues - 1]);
 
   list.unlink(*values[0]);
-  EXPECT_EQ(NULL, list.next(*values[0]));
-  EXPECT_EQ(NULL, list.prev(*values[0]));
+  EXPECT_EQ(NULL_BLOCK, list.next(*values[0]));
+  EXPECT_EQ(NULL_BLOCK, list.prev(*values[0]));
   EXPECT_EQ(list.chead(), values[1]);
   EXPECT_EQ(list.ctail(), values[nvalues - 1]);
 
@@ -1291,15 +1294,15 @@ TEST_F(OopStorageBlockListTestWithList, unlink_front) {
     EXPECT_EQ(block, values[i]);
     block = list.next(*block);
   }
-  EXPECT_EQ(NULL, block);
+  EXPECT_EQ(NULL_BLOCK, block);
 }
 
 TEST_F(OopStorageBlockListTestWithList, unlink_back) {
   EXPECT_EQ(list.chead(), values[0]);
 
   list.unlink(*values[nvalues - 1]);
-  EXPECT_EQ(NULL, list.next(*values[nvalues - 1]));
-  EXPECT_EQ(NULL, list.prev(*values[nvalues - 1]));
+  EXPECT_EQ(NULL_BLOCK, list.next(*values[nvalues - 1]));
+  EXPECT_EQ(NULL_BLOCK, list.prev(*values[nvalues - 1]));
   EXPECT_EQ(list.chead(), values[0]);
   EXPECT_EQ(list.ctail(), values[nvalues - 2]);
 
@@ -1308,7 +1311,7 @@ TEST_F(OopStorageBlockListTestWithList, unlink_back) {
     EXPECT_EQ(block, values[i]);
     block = list.next(*block);
   }
-  EXPECT_EQ(NULL, block);
+  EXPECT_EQ(NULL_BLOCK, block);
 }
 
 TEST_F(OopStorageBlockListTestWithList, unlink_middle) {
@@ -1317,8 +1320,8 @@ TEST_F(OopStorageBlockListTestWithList, unlink_middle) {
   size_t index = nvalues / 2;
 
   list.unlink(*values[index]);
-  EXPECT_EQ(NULL, list.next(*values[index]));
-  EXPECT_EQ(NULL, list.prev(*values[index]));
+  EXPECT_EQ(NULL_BLOCK, list.next(*values[index]));
+  EXPECT_EQ(NULL_BLOCK, list.prev(*values[index]));
   EXPECT_EQ(list.chead(), values[0]);
   EXPECT_EQ(list.ctail(), values[nvalues - 1]);
 
@@ -1331,23 +1334,23 @@ TEST_F(OopStorageBlockListTestWithList, unlink_middle) {
     EXPECT_EQ(block, values[i]);
     block = list.next(*block);
   }
-  EXPECT_EQ(NULL, block);
+  EXPECT_EQ(NULL_BLOCK, block);
 }
 
 TEST_F(OopStorageBlockListTest, single) {
   TestAccess::BlockList list(&OopBlock::get_active_entry);
 
   list.push_back(*values[0]);
-  EXPECT_EQ(NULL, list.next(*values[0]));
-  EXPECT_EQ(NULL, list.prev(*values[0]));
+  EXPECT_EQ(NULL_BLOCK, list.next(*values[0]));
+  EXPECT_EQ(NULL_BLOCK, list.prev(*values[0]));
   EXPECT_EQ(list.chead(), values[0]);
   EXPECT_EQ(list.ctail(), values[0]);
 
   list.unlink(*values[0]);
-  EXPECT_EQ(NULL, list.next(*values[0]));
-  EXPECT_EQ(NULL, list.prev(*values[0]));
-  EXPECT_EQ(NULL, list.chead());
-  EXPECT_EQ(NULL, list.ctail());
+  EXPECT_EQ(NULL_BLOCK, list.next(*values[0]));
+  EXPECT_EQ(NULL_BLOCK, list.prev(*values[0]));
+  EXPECT_EQ(NULL_BLOCK, list.chead());
+  EXPECT_EQ(NULL_BLOCK, list.ctail());
 }
 
 TEST_F(OopStorageBlockListTestWithList, two_lists) {
@@ -1363,8 +1366,8 @@ TEST_F(OopStorageBlockListTestWithList, two_lists) {
     active_block = list.next(*active_block);
     allocate_block = list2.prev(*allocate_block);
   }
-  EXPECT_EQ(NULL, active_block);
-  EXPECT_EQ(NULL, allocate_block);
+  EXPECT_EQ(NULL_BLOCK, active_block);
+  EXPECT_EQ(NULL_BLOCK, allocate_block);
 
   for (size_t i = 0; i < nvalues; ++i) {
     list2.unlink(*values[i]);
@@ -1376,6 +1379,6 @@ TEST_F(OopStorageBlockListTestWithList, two_lists) {
     EXPECT_EQ(active_block, values[i]);
     active_block = list.next(*active_block);
   }
-  EXPECT_EQ(NULL, active_block);
+  EXPECT_EQ(NULL_BLOCK, active_block);
 }
 

@@ -171,9 +171,15 @@ public:
   void print_on(outputStream* st) const PRODUCT_RETURN;
 
   // Provides access to storage internals, for unit testing.
+  // Declare, but not define, the public class OopStorage::TestAccess.
+  // That class is defined as part of the unit-test. It "exports" the needed
+  // private types by providing public typedefs for them.
   class TestAccess;
 
-private:
+  // xlC on AIX can't compile test_oopStorage.cpp with following private
+  // classes. C++03 introduced access for nested classes with DR45, but xlC
+  // version 12 rejects it.
+NOT_AIX( private: )
   class Block;
   class BlockList;
 
@@ -279,6 +285,7 @@ private:
     template<typename F> bool iterate(F f) const;
   }; // class Block
 
+private:
   const char* _name;
   BlockList _active_list;
   BlockList _allocate_list;
