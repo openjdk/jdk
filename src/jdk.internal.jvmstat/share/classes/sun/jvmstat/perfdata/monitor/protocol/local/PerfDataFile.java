@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,11 @@
 package sun.jvmstat.perfdata.monitor.protocol.local;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.io.FilenameFilter;
-import jdk.internal.vm.VMSupport;
+import sun.jvmstat.PlatformSupport;
 
 /**
  * Class to provide translations from the local Vm Identifier
@@ -44,11 +47,6 @@ import jdk.internal.vm.VMSupport;
  */
 public class PerfDataFile {
     private PerfDataFile() { };
-
-    /**
-     * The name of the of the system dependent temporary directory
-     */
-    public static final String tmpDirName;
 
     /**
      * The file name prefix for PerfData shared memory files.
@@ -81,6 +79,12 @@ public class PerfDataFile {
 
 
     /**
+     * Platform Specific methods for looking up temporary directories
+     * and process IDs.
+     */
+    private static final PlatformSupport platSupport = PlatformSupport.getInstance();
+
+    /**
      * Get a File object for the instrumentation backing store file
      * for the JVM identified by the given local Vm Identifier.
      * <p>
@@ -94,7 +98,7 @@ public class PerfDataFile {
      * @return File - a File object to the backing store file for the named
      *                shared memory region of the target JVM.
      * @see java.io.File
-     * @see #getTempDirectory()
+     * @see #getTempDirectories()
      */
     public static File getFile(int lvmid) {
         if (lvmid == 0) {
@@ -107,56 +111,65 @@ public class PerfDataFile {
             return null;
         }
 
-        /*
-         * iterate over all files in all directories in tmpDirName that
-         * match the file name patterns.
-         */
-        File tmpDir = new File(tmpDirName);
-        String[] files = tmpDir.list(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                if (!name.startsWith(dirNamePrefix)) {
-                    return false;
-                }
-                File candidate = new File(dir, name);
-                return ((candidate.isDirectory() || candidate.isFile())
-                        && candidate.canRead());
-            }
-        });
-
-        long newestTime = 0;
+        List<String> tmpDirs = getTempDirectories(null, lvmid);
         File newest = null;
 
-        for (int i = 0; i < files.length; i++) {
-            File f = new File(tmpDirName + files[i]);
-            File candidate = null;
+        for (String dir : tmpDirs) {
+            /*
+             * iterate over all files in all directories in this tmpDir that
+             * match the file name patterns.
+             */
+            File tmpDir = new File(dir);
+            String[] files = tmpDir.list(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    if (!name.startsWith(dirNamePrefix)) {
+                        return false;
+                    }
+                    File candidate = new File(dir, name);
+                    return ((candidate.isDirectory() || candidate.isFile())
+                            && candidate.canRead());
+                }
+            });
 
-            if (f.exists() && f.isDirectory()) {
-                /*
-                 * found a directory matching the name patterns. This
-                 * is a 1.4.2 hsperfdata_<user> directory. Check for
-                 * file named <lvmid> in that directory
-                 */
-                String name = Integer.toString(lvmid);
-                candidate = new File(f.getName(), name);
+            long newestTime = 0;
 
-            } else if (f.exists() && f.isFile()) {
-                /*
-                 * found a file matching the name patterns. This
-                 * is a 1.4.1 hsperfdata_<lvmid> file.
-                 */
-                candidate = f;
+            for (String file : files) {
+                File f = new File(dir + file);
+                File candidate = null;
 
-            } else {
-                // unexpected - let conditional below filter this one out
-                candidate = f;
-            }
+                if (f.exists() && f.isDirectory()) {
+                    /*
+                     * found a directory matching the name patterns. This
+                     * is a 1.4.2 hsperfdata_<user> directory. Check for
+                     * file named <lvmid> in that directory
+                     */
+                    String name = f.getAbsolutePath() + File.separator + lvmid;
+                    candidate = new File(name);
+                    // Try NameSpace Id if Host Id doesn't exist.
+                    if (!candidate.exists()) {
+                        name = f.getAbsolutePath() + File.separator +
+                               platSupport.getNamespaceVmId(lvmid);
+                        candidate = new File(name);
+                    }
+                } else if (f.exists() && f.isFile()) {
+                    /*
+                     * found a file matching the name patterns. This
+                     * is a 1.4.1 hsperfdata_<lvmid> file.
+                     */
+                    candidate = f;
 
-            if (candidate.exists() && candidate.isFile()
-                    && candidate.canRead()) {
-                long modTime = candidate.lastModified();
-                if (modTime >= newestTime) {
-                    newestTime = modTime;
-                    newest = candidate;
+                } else {
+                    // unexpected - let conditional below filter this one out
+                    candidate = f;
+                }
+
+                if (candidate.exists() && candidate.isFile()
+                        && candidate.canRead()) {
+                    long modTime = candidate.lastModified();
+                    if (modTime >= newestTime) {
+                        newestTime = modTime;
+                        newest = candidate;
+                    }
                 }
             }
         }
@@ -177,7 +190,7 @@ public class PerfDataFile {
      * @return File - a File object to the backing store file for the named
      *                shared memory region of the target JVM.
      * @see java.io.File
-     * @see #getTempDirectory()
+     * @see #getTempDirectories()
      */
     public static File getFile(String user, int lvmid) {
         if (lvmid == 0) {
@@ -191,11 +204,22 @@ public class PerfDataFile {
         }
 
         // first try for 1.4.2 and later JVMs
-        String basename = getTempDirectory(user) + Integer.toString(lvmid);
-        File f = new File(basename);
+        List<String> tmpDirs = getTempDirectories(user, lvmid);
+        String basename;
+        File f;
 
-        if (f.exists() && f.isFile() && f.canRead()) {
-            return f;
+        for (String dir : tmpDirs) {
+            basename = dir + lvmid;
+            f = new File(basename);
+            if (f.exists() && f.isFile() && f.canRead()) {
+                return f;
+            }
+            // Try NameSpace Id if Host Id doesn't exist.
+            basename = dir + platSupport.getNamespaceVmId(lvmid);
+            f = new File(basename);
+            if (f.exists() && f.isFile() && f.canRead()) {
+                return f;
+            }
         }
 
         // No hit on 1.4.2 JVMs, try 1.4.1 files
@@ -236,7 +260,7 @@ public class PerfDataFile {
     public static int getLocalVmId(File file) {
         try {
             // try 1.4.2 and later format first
-            return Integer.parseInt(file.getName());
+            return(platSupport.getLocalVmId(file));
         } catch (NumberFormatException e) { }
 
         // now try the 1.4.1 format
@@ -267,7 +291,7 @@ public class PerfDataFile {
      * @return String - the name of the temporary directory.
      */
     public static String getTempDirectory() {
-        return tmpDirName;
+        return PlatformSupport.getTemporaryDirectory();
     }
 
     /**
@@ -283,26 +307,28 @@ public class PerfDataFile {
      * @return String - the name of the temporary directory.
      */
     public static String getTempDirectory(String user) {
-        return tmpDirName + dirNamePrefix + user + File.separator;
+        return getTempDirectory() + dirNamePrefix + user + File.separator;
     }
 
-    static {
-        /*
-         * For this to work, the target VM and this code need to use
-         * the same directory. Instead of guessing which directory the
-         * VM is using, we will ask.
-         */
-        String tmpdir = VMSupport.getVMTemporaryDirectory();
-
-        /*
-         * Assure that the string returned has a trailing File.separator
-         * character. This check was added because the Linux implementation
-         * changed such that the java.io.tmpdir string no longer terminates
-         * with a File.separator character.
-         */
-        if (tmpdir.lastIndexOf(File.separator) != (tmpdir.length()-1)) {
-            tmpdir = tmpdir + File.separator;
+    /**
+     * Return the names of the temporary directories being searched for
+     * HotSpot PerfData backing store files.
+     * <p>
+     * This method returns the traditional host temp directory but also
+     * includes a list of temp directories used by containers.
+     *
+     * @return List<String> - A List of temporary directories to search.
+     */
+    public static List<String> getTempDirectories(String userName, int vmid) {
+        List<String> list = platSupport.getTemporaryDirectories(vmid);
+        if (userName == null) {
+            return list;
         }
-        tmpDirName = tmpdir;
+
+        List<String> nameList = list.stream()
+            .map(name -> name + dirNamePrefix + userName + File.separator)
+            .collect(Collectors.toList());
+
+        return nameList;
     }
 }
