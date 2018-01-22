@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7152176 8168518 8172017
+ * @bug 7152176 8168518 8172017 8014628
  * @summary More krb5 tests
  * @library ../../../../java/security/testlibrary/ /test/lib
  * @build jdk.test.lib.Platform
@@ -132,8 +132,13 @@ public class ReplayCacheTestProc {
                 kdc.addPrincipalRandKey(service(i));
             }
 
+            // Native lib might not support aes-sha2
+            KDC.saveConfig(OneKDC.KRB5_CONF, kdc,
+                    "default_tkt_enctypes = aes128-cts",
+                    "default_tgs_enctypes = aes128-cts");
+
+            // Write KTAB after krb5.conf so it contains no aes-sha2 keys
             kdc.writeKtab(OneKDC.KTAB);
-            KDC.saveConfig(OneKDC.KRB5_CONF, kdc);
 
             // User-provided libs
             String userLibs = System.getProperty("test.libs");
