@@ -1752,8 +1752,9 @@ public class HtmlDocletWriter {
                     result.addContent(sb);
                     Content docRootContent = new ContentBuilder();
 
+                    boolean isHRef = inAnAtag() && node.getName().toString().equalsIgnoreCase("href");
                     for (DocTree dt : node.getValue()) {
-                        if (utils.isText(dt) && inAnAtag()) {
+                        if (utils.isText(dt) && isHRef) {
                             String text = ((TextTree) dt).getBody();
                             if (text.startsWith("/..") && !configuration.docrootparent.isEmpty()) {
                                 result.addContent(configuration.docrootparent);
