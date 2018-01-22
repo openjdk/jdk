@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,6 +252,12 @@ public class EncryptionKey
                 case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
                         return Aes256.stringToKey(password, salt, s2kparams);
 
+                case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
+                        return Aes128Sha2.stringToKey(password, salt, s2kparams);
+
+                case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
+                    return Aes256Sha2.stringToKey(password, salt, s2kparams);
+
                 default:
                         throw new IllegalArgumentException("encryption type " +
                         EType.toString(keyType) + " not supported");
@@ -288,6 +294,15 @@ public class EncryptionKey
         } else if (algorithm.equalsIgnoreCase("AES256")
                 || algorithm.equalsIgnoreCase("aes256-cts-hmac-sha1-96")) {
             keyType = EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96;
+            // validate if AES256 is enabled
+            if (!EType.isSupported(keyType)) {
+                throw new IllegalArgumentException("Algorithm " + algorithm +
+                        " not enabled");
+            }
+        } else if (algorithm.equalsIgnoreCase("aes128-cts-hmac-sha256-128")) {
+            keyType = EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128;
+        } else if (algorithm.equalsIgnoreCase("aes256-cts-hmac-sha384-192")) {
+            keyType = EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192;
             // validate if AES256 is enabled
             if (!EType.isSupported(keyType)) {
                 throw new IllegalArgumentException("Algorithm " + algorithm +
