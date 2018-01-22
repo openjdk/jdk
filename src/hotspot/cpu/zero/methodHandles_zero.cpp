@@ -183,3 +183,9 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 }
+
+#ifndef PRODUCT
+void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
+  // This is just a stub.
+}
+#endif //PRODUCT
