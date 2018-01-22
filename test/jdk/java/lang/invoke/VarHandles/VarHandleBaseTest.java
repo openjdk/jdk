@@ -70,6 +70,14 @@ abstract class VarHandleBaseTest {
         checkWithThrowable(IndexOutOfBoundsException.class, message, r);
     }
 
+    static void checkASE(ThrowingRunnable r) {
+        checkWithThrowable(ArrayStoreException.class, null, r);
+    }
+
+    static void checkASE(Object message, ThrowingRunnable r) {
+        checkWithThrowable(ArrayStoreException.class, message, r);
+    }
+
     static void checkISE(ThrowingRunnable r) {
         checkWithThrowable(IllegalStateException.class, null, r);
     }
