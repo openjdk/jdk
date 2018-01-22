@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,7 +385,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     @Override
     protected Content getNavLinkClassUse() {
-        Content useLink = Links.createLink(DocPaths.PACKAGE_USE,
+        Content useLink = links.createLink(DocPaths.PACKAGE_USE,
                 contents.useLabel, "", "");
         Content li = HtmlTree.LI(useLink);
         return li;
@@ -403,7 +403,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             li = HtmlTree.LI(contents.prevPackageLabel);
         } else {
             DocPath p = DocPath.relativePath(packageElement, prev);
-            li = HtmlTree.LI(Links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
+            li = HtmlTree.LI(links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
                 contents.prevPackageLabel, "", ""));
         }
         return li;
@@ -421,7 +421,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             li = HtmlTree.LI(contents.nextPackageLabel);
         } else {
             DocPath p = DocPath.relativePath(packageElement, next);
-            li = HtmlTree.LI(Links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
+            li = HtmlTree.LI(links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
                 contents.nextPackageLabel, "", ""));
         }
         return li;
@@ -435,7 +435,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     @Override
     protected Content getNavLinkTree() {
-        Content useLink = Links.createLink(DocPaths.PACKAGE_TREE,
+        Content useLink = links.createLink(DocPaths.PACKAGE_TREE,
                 contents.treeLabel, "", "");
         Content li = HtmlTree.LI(useLink);
         return li;

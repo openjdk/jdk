@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,48 +192,48 @@ public class TestHtmlTableTags extends JavadocTester {
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
-                "<caption><span>Packages that use <a href=\"../../pkg1/I1.html\" "
+                "<caption><span>Packages that use <a href=\"../I1.html\" "
                 + "title=\"interface in pkg1\">I1</a></span><span class=\"tabEnd\">"
                 + "&nbsp;</span></caption>");
 
         checkOutput("pkg1/class-use/C1.html", true,
                 "<caption><span>Fields in <a href=\"../../pkg2/package-summary.html\">"
-                + "pkg2</a> declared as <a href=\"../../pkg1/C1.html\" "
+                + "pkg2</a> declared as <a href=\"../C1.html\" "
                 + "title=\"class in pkg1\">C1</a></span><span class=\"tabEnd\">&nbsp;"
                 + "</span></caption>",
                 "<caption><span>Methods in <a href=\"../../pkg2/package-summary.html\">"
-                + "pkg2</a> that return <a href=\"../../pkg1/C1.html\" "
+                + "pkg2</a> that return <a href=\"../C1.html\" "
                 + "title=\"class in pkg1\">C1</a></span><span class=\"tabEnd\">"
                 + "&nbsp;</span></caption>");
 
         checkOutput("pkg2/class-use/C2.html", true,
                 "<caption><span>Fields in <a href=\"../../pkg1/package-summary.html\">"
-                + "pkg1</a> declared as <a href=\"../../pkg2/C2.html\" "
+                + "pkg1</a> declared as <a href=\"../C2.html\" "
                 + "title=\"class in pkg2\">C2</a></span><span class=\"tabEnd\">"
                 + "&nbsp;</span></caption>",
                 "<caption><span>Methods in <a href=\"../../pkg1/package-summary.html\">"
-                + "pkg1</a> that return <a href=\"../../pkg2/C2.html\" "
+                + "pkg1</a> that return <a href=\"../C2.html\" "
                 + "title=\"class in pkg2\">C2</a></span><span class=\"tabEnd\">"
                 + "&nbsp;</span></caption>");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
-                "<caption><span>Methods in <a href=\"../../pkg2/package-summary.html\">"
-                + "pkg2</a> that return <a href=\"../../pkg2/C2.ModalExclusionType.html\" "
+                "<caption><span>Methods in <a href=\"../package-summary.html\">"
+                + "pkg2</a> that return <a href=\"../C2.ModalExclusionType.html\" "
                 + "title=\"enum in pkg2\">C2.ModalExclusionType</a></span>"
                 + "<span class=\"tabEnd\">&nbsp;</span></caption>");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
-                "<caption><span>Packages that use <a href=\"../pkg1/package-summary.html\">"
+                "<caption><span>Packages that use <a href=\"package-summary.html\">"
                 + "pkg1</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "<caption><span>Classes in <a href=\"../pkg1/package-summary.html\">"
-                + "pkg1</a> used by <a href=\"../pkg1/package-summary.html\">pkg1</a>"
+                "<caption><span>Classes in <a href=\"package-summary.html\">"
+                + "pkg1</a> used by <a href=\"package-summary.html\">pkg1</a>"
                 + "</span><span class=\"tabEnd\">&nbsp;</span></caption>");
 
         checkOutput("pkg2/package-use.html", true,
-                "<caption><span>Packages that use <a href=\"../pkg2/package-summary.html\">"
+                "<caption><span>Packages that use <a href=\"package-summary.html\">"
                 + "pkg2</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "<caption><span>Classes in <a href=\"../pkg2/package-summary.html\">"
+                "<caption><span>Classes in <a href=\"package-summary.html\">"
                 + "pkg2</a> used by <a href=\"../pkg1/package-summary.html\">pkg1</a>"
                 + "</span><span class=\"tabEnd\">&nbsp;</span></caption>");
 

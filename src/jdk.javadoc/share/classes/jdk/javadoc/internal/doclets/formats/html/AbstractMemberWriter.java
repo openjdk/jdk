@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
         this.utils = configuration.utils;
         this.contents = configuration.contents;
         this.resources = configuration.resources;
-        this.links = configuration.links;
+        this.links = writer.links;
     }
 
     public AbstractMemberWriter(SubWriterHolderWriter writer) {

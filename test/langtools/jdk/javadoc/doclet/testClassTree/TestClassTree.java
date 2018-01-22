@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,11 @@ public class TestClassTree extends JavadocTester {
 
         checkOutput("pkg/package-tree.html", true,
                 "<ul>\n"
-                + "<li class=\"circle\">pkg.<a href=\"../pkg/ParentClass.html\" "
+                + "<li class=\"circle\">pkg.<a href=\"ParentClass.html\" "
                 + "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a>",
                 "<h2 title=\"Annotation Type Hierarchy\">Annotation Type Hierarchy</h2>\n"
                 + "<ul>\n"
-                + "<li class=\"circle\">pkg.<a href=\"../pkg/AnnotationType.html\" "
+                + "<li class=\"circle\">pkg.<a href=\"AnnotationType.html\" "
                 + "title=\"annotation in pkg\"><span class=\"typeNameLink\">AnnotationType</span></a> "
                 + "(implements java.lang.annotation.Annotation)</li>\n"
                 + "</ul>",
@@ -66,7 +66,7 @@ public class TestClassTree extends JavadocTester {
                 + "<li class=\"circle\">java.lang.Enum&lt;E&gt; (implements java.lang."
                 + "Comparable&lt;T&gt;, java.io.Serializable)\n"
                 + "<ul>\n"
-                + "<li class=\"circle\">pkg.<a href=\"../pkg/Coin.html\" "
+                + "<li class=\"circle\">pkg.<a href=\"Coin.html\" "
                 + "title=\"enum in pkg\"><span class=\"typeNameLink\">Coin</span></a></li>\n"
                 + "</ul>\n"
                 + "</li>\n"
@@ -75,7 +75,7 @@ public class TestClassTree extends JavadocTester {
                 + "</ul>");
 
         checkOutput("pkg/package-tree.html", false,
-                "<li class=\"circle\">class pkg.<a href=\"../pkg/ParentClass.html\" "
+                "<li class=\"circle\">class pkg.<a href=\".ParentClass.html\" "
                 + "title=\"class in pkg\"><span class=\"typeNameLink\">ParentClass</span></a></li>");
     }
 }
