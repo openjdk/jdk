@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,8 +262,9 @@ final class GaloisCounterMode extends FeedbackCipher {
      * @exception InvalidKeyException if the given key is inappropriate for
      * initializing this cipher
      */
+    @Override
     void init(boolean decrypting, String algorithm, byte[] key, byte[] iv)
-            throws InvalidKeyException {
+            throws InvalidKeyException, InvalidAlgorithmParameterException {
         init(decrypting, algorithm, key, iv, DEFAULT_TAG_LEN);
     }
 
@@ -282,9 +283,15 @@ final class GaloisCounterMode extends FeedbackCipher {
      */
     void init(boolean decrypting, String algorithm, byte[] keyValue,
               byte[] ivValue, int tagLenBytes)
-              throws InvalidKeyException {
-        if (keyValue == null || ivValue == null) {
+              throws InvalidKeyException, InvalidAlgorithmParameterException {
+        if (keyValue == null) {
             throw new InvalidKeyException("Internal error");
+        }
+        if (ivValue == null) {
+            throw new InvalidAlgorithmParameterException("Internal error");
+        }
+        if (ivValue.length == 0) {
+            throw new InvalidAlgorithmParameterException("IV is empty");
         }
 
         // always encrypt mode for embedded cipher

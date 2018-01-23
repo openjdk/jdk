@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,17 @@ class NativeGCMCipher extends NativeCipher {
             requireReinit = false;
             ibuffer = new ByteArrayOutputStream();
         }
-        init(doEncrypt, keyBytes, ivBytes, tagLen, null);
+        try {
+            init(doEncrypt, keyBytes, ivBytes, tagLen, null);
+        } catch (UcryptoException ex) {
+            if (ex.getError() ==
+                UcryptoException.Error.CRYPTO_MECHANISM_PARAM_INVALID) {
+
+                throw new InvalidAlgorithmParameterException(ex.getMessage());
+            } else {
+                throw ex;
+            }
+        }
     }
 
     // see JCE spec
