@@ -75,6 +75,7 @@ public class HelpFlagsTest extends TestHelper {
         "klist",
         "ktab",
         // Oracle proprietary tools without help message.
+        "javacpl",
         "jmc",
         "jweblauncher",
         "jcontrol",

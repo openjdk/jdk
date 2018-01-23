@@ -317,8 +317,6 @@ tools/pack200/CommandLineTests.java                             8059906 generic-
 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
-tools/launcher/HelpFlagsTest.java                               8195824 windows-all
-
 tools/jimage/JImageExtractTest.java                             8170120 generic-all
 tools/jimage/JImageListTest.java                                8170120 generic-all
 tools/jimage/JImageVerifyTest.java                              8170120 generic-all
