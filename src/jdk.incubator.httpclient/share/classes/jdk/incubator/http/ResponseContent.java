@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,7 +307,7 @@ class ResponseContent {
 
                 int bytes2return = Math.min(bytesread, unfulfilled);
                 debug.log(Level.DEBUG,  "Returning chunk bytes: %d", bytes2return);
-                returnBuffer = Utils.slice(chunk, bytes2return);
+                returnBuffer = Utils.sliceWithLimitedCapacity(chunk, bytes2return);
                 unfulfilled = bytesremaining -= bytes2return;
                 if (unfulfilled == 0) bytesToConsume = 2;
             }
@@ -439,7 +439,7 @@ class ResponseContent {
                     assert hasDemand;
                     int amount = Math.min(b.remaining(), unfulfilled);
                     unfulfilled = remaining -= amount;
-                    ByteBuffer buffer = Utils.slice(b, amount);
+                    ByteBuffer buffer = Utils.sliceWithLimitedCapacity(b, amount);
                     pusher.onNext(List.of(buffer));
                 }
                 if (unfulfilled == 0) {
