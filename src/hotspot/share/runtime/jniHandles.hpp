@@ -94,8 +94,9 @@ class JNIHandles : AllStatic {
   static void print_on(outputStream* st);
   static void print()           { print_on(tty); }
   static void verify();
+  // The category predicates all require handle != NULL.
   static bool is_local_handle(Thread* thread, jobject handle);
-  static bool is_frame_handle(JavaThread* thr, jobject obj);
+  static bool is_frame_handle(JavaThread* thread, jobject handle);
   static bool is_global_handle(jobject handle);
   static bool is_weak_global_handle(jobject handle);
   static size_t global_handle_memory_usage();
@@ -106,6 +107,7 @@ class JNIHandles : AllStatic {
   static bool is_local_handle(jobject handle);
 #endif
 
+  // precondition: handle != NULL.
   static jobjectRefType handle_type(Thread* thread, jobject handle);
 
   // Garbage collection support(global handles only, local handles are traversed from thread)

@@ -103,6 +103,7 @@ public:
   };
 
   // Locks _allocate_mutex.
+  // precondition: ptr != NULL.
   EntryStatus allocation_status(const oop* ptr) const;
 
   // Allocates and returns a new entry.  Returns NULL if memory allocation
