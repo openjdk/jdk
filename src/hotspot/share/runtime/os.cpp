@@ -987,6 +987,11 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 // The verbose parameter is only set by the debug code in one case
 void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   address addr = (address)x;
+  // Handle NULL first, so later checks don't need to protect against it.
+  if (addr == NULL) {
+    st->print_cr("0x0 is NULL");
+    return;
+  }
   CodeBlob* b = CodeCache::find_blob_unsafe(addr);
   if (b != NULL) {
     if (b->is_buffer_blob()) {

@@ -136,6 +136,7 @@ jobject JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
 }
 
 oop JNIHandles::resolve_jweak(jweak handle) {
+  assert(handle != NULL, "precondition");
   assert(is_jweak(handle), "precondition");
   oop result = jweak_ref(handle);
 #if INCLUDE_ALL_GCS
@@ -147,6 +148,7 @@ oop JNIHandles::resolve_jweak(jweak handle) {
 }
 
 bool JNIHandles::is_global_weak_cleared(jweak handle) {
+  assert(handle != NULL, "precondition");
   assert(is_jweak(handle), "not a weak handle");
   return jweak_ref(handle) == NULL;
 }
@@ -200,6 +202,7 @@ inline bool is_storage_handle(const OopStorage* storage, const oop* ptr) {
 
 
 jobjectRefType JNIHandles::handle_type(Thread* thread, jobject handle) {
+  assert(handle != NULL, "precondition");
   jobjectRefType result = JNIInvalidRefType;
   if (is_jweak(handle)) {
     if (is_storage_handle(_weak_global_handles, &jweak_ref(handle))) {
@@ -232,6 +235,7 @@ jobjectRefType JNIHandles::handle_type(Thread* thread, jobject handle) {
 
 
 bool JNIHandles::is_local_handle(Thread* thread, jobject handle) {
+  assert(handle != NULL, "precondition");
   JNIHandleBlock* block = thread->active_handles();
 
   // Look back past possible native calls to jni_PushLocalFrame.
@@ -249,22 +253,25 @@ bool JNIHandles::is_local_handle(Thread* thread, jobject handle) {
 // We easily can't isolate any particular stack frame the handle might
 // come from, so we'll check the whole stack.
 
-bool JNIHandles::is_frame_handle(JavaThread* thr, jobject obj) {
+bool JNIHandles::is_frame_handle(JavaThread* thr, jobject handle) {
+  assert(handle != NULL, "precondition");
   // If there is no java frame, then this must be top level code, such
   // as the java command executable, in which case, this type of handle
   // is not permitted.
   return (thr->has_last_Java_frame() &&
-         (void*)obj < (void*)thr->stack_base() &&
-         (void*)obj >= (void*)thr->last_Java_sp());
+         (void*)handle < (void*)thr->stack_base() &&
+         (void*)handle >= (void*)thr->last_Java_sp());
 }
 
 
 bool JNIHandles::is_global_handle(jobject handle) {
+  assert(handle != NULL, "precondition");
   return !is_jweak(handle) && is_storage_handle(_global_handles, &jobject_ref(handle));
 }
 
 
 bool JNIHandles::is_weak_global_handle(jobject handle) {
+  assert(handle != NULL, "precondition");
   return is_jweak(handle) && is_storage_handle(_weak_global_handles, &jweak_ref(handle));
 }
 
@@ -603,6 +610,7 @@ bool JNIHandles::is_local_handle(jobject handle) {
 }
 
 bool JNIHandleBlock::any_contains(jobject handle) {
+  assert(handle != NULL, "precondition");
   for (JNIHandleBlock* current = _block_list; current != NULL; current = current->_block_list_link) {
     if (current->contains(handle)) {
       return true;

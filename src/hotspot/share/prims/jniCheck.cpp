@@ -435,7 +435,7 @@ static void* check_wrapped_array_release(JavaThread* thr, const char* fn_name,
 }
 
 oop jniCheck::validate_handle(JavaThread* thr, jobject obj) {
-  if (JNIHandles::handle_type(thr, obj) != JNIInvalidRefType) {
+  if ((obj != NULL) && (JNIHandles::handle_type(thr, obj) != JNIInvalidRefType)) {
     ASSERT_OOPS_ALLOWED;
     return JNIHandles::resolve_external_guard(obj);
   }

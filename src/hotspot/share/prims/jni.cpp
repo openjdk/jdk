@@ -862,7 +862,10 @@ JNI_LEAF(jobjectRefType, jni_GetObjectRefType(JNIEnv *env, jobject obj))
 
   HOTSPOT_JNI_GETOBJECTREFTYPE_ENTRY(env, obj);
 
-  jobjectRefType ret = JNIHandles::handle_type(thread, obj);
+  jobjectRefType ret = JNIInvalidRefType;
+  if (obj != NULL) {
+    ret = JNIHandles::handle_type(thread, obj);
+  }
 
   HOTSPOT_JNI_GETOBJECTREFTYPE_RETURN((void *) ret);
   return ret;

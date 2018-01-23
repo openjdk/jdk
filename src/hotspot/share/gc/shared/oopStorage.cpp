@@ -467,6 +467,7 @@ void OopStorage::release(const oop* ptr) {
 void OopStorage::release(const oop* const* ptrs, size_t size) {
   size_t i = 0;
   while (i < size) {
+    check_release_entry(ptrs[i]);
     Block* block = find_block_or_null(ptrs[i]);
     check_release(block, ptrs[i]);
     log_info(oopstorage, ref)("%s: released " PTR_FORMAT, name(), p2i(ptrs[i]));
