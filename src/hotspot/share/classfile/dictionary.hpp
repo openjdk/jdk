@@ -53,6 +53,8 @@ class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
 
   DictionaryEntry* get_entry(int index, unsigned int hash, Symbol* name);
 
+  void clean_cached_protection_domains(BoolObjectClosure* is_alive, DictionaryEntry* probe);
+
 protected:
   static size_t entry_size();
 public:
@@ -84,7 +86,7 @@ public:
   void remove_classes_in_error_state();
 
   // Unload classes whose defining loaders are unloaded
-  void do_unloading();
+  void do_unloading(BoolObjectClosure* is_alive);
 
   // Protection domains
   InstanceKlass* find(unsigned int hash, Symbol* name, Handle protection_domain);

@@ -212,8 +212,44 @@ void DictionaryEntry::add_protection_domain(Dictionary* dict, Handle protection_
   }
 }
 
+// During class loading we may have cached a protection domain that has
+// since been unreferenced, so this entry should be cleared.
+void Dictionary::clean_cached_protection_domains(BoolObjectClosure* is_alive, DictionaryEntry* probe) {
+  assert_locked_or_safepoint(SystemDictionary_lock);
 
-void Dictionary::do_unloading() {
+  ProtectionDomainEntry* current = probe->pd_set();
+  ProtectionDomainEntry* prev = NULL;
+  while (current != NULL) {
+    if (!is_alive->do_object_b(current->object_no_keepalive())) {
+      LogTarget(Debug, protectiondomain) lt;
+      if (lt.is_enabled()) {
+        ResourceMark rm;
+        // Print out trace information
+        LogStream ls(lt);
+        ls.print_cr("PD in set is not alive:");
+        ls.print("class loader: "); loader_data()->class_loader()->print_value_on(&ls);
+        ls.print(" protection domain: "); current->object_no_keepalive()->print_value_on(&ls);
+        ls.print(" loading: "); probe->instance_klass()->print_value_on(&ls);
+        ls.cr();
+      }
+      if (probe->pd_set() == current) {
+        probe->set_pd_set(current->next());
+      } else {
+        assert(prev != NULL, "should be set by alive entry");
+        prev->set_next(current->next());
+      }
+      ProtectionDomainEntry* to_delete = current;
+      current = current->next();
+      delete to_delete;
+    } else {
+      prev = current;
+      current = current->next();
+    }
+  }
+}
+
+
+void Dictionary::do_unloading(BoolObjectClosure* is_alive) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
   // The NULL class loader doesn't initiate loading classes from other class loaders
@@ -239,6 +275,8 @@ void Dictionary::do_unloading() {
         free_entry(probe);
         continue;
       }
+      // Clean pd_set
+      clean_cached_protection_domains(is_alive, probe);
       p = probe->next_addr();
     }
   }
@@ -411,6 +449,10 @@ void Dictionary::add_protection_domain(int index, unsigned int hash,
          "real protection domain should be present");
 
   entry->add_protection_domain(this, protection_domain);
+
+#ifdef ASSERT
+  assert(loader_data() != ClassLoaderData::the_null_class_loader_data(), "doesn't make sense");
+#endif
 
   assert(entry->contains_protection_domain(protection_domain()),
          "now protection domain should be present");
