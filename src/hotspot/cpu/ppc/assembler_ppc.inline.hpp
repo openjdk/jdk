@@ -766,6 +766,7 @@ inline void Assembler::stxvd2x( VectorSRegister d, Register s1, Register s2) { e
 inline void Assembler::mtvsrd(  VectorSRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d)  | ra(a)); }
 inline void Assembler::mtvsrwz( VectorSRegister d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d) | ra(a)); }
 inline void Assembler::xxspltw( VectorSRegister d, VectorSRegister b, int ui2)           { emit_int32( XXSPLTW_OPCODE | vsrt(d) | vsrb(b) | xxsplt_uim(uimm(ui2,2))); }
+inline void Assembler::xxlor(   VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXLOR_OPCODE  | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xxlxor(  VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXLXOR_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xxleqv(  VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXLEQV_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::mtvrd(    VectorRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
