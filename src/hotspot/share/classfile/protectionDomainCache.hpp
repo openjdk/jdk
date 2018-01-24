@@ -113,6 +113,7 @@ class ProtectionDomainEntry :public CHeapObj<mtClass> {
   }
 
   ProtectionDomainEntry* next() { return _next; }
+  void set_next(ProtectionDomainEntry* entry) { _next = entry; }
   oop object();
   oop object_no_keepalive();
 };
