@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,13 @@
 #
 
 # @test
-# @bug 8168518
-# @library ../../../../java/security/testlibrary/ /test/lib
-# @build jdk.test.lib.Platform
-# @run main/othervm/timeout=300 -Djdk.krb5.rcache.useMD5=true
-#           -Dtest.service=host ReplayCacheTestProc
+# @bug 8168518 8194486
 # @summary  testing jdk.krb5.rcache.useMD5. This action is put in a separate
 #           test so that ReplayCacheTestProc.java can be launched with special
 #           test.* system properties easily.
+# @library ../../../../java/security/testlibrary/ /test/lib
+# @build jdk.test.lib.Platform
+# @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+# @run main/othervm/timeout=300 -Djdk.krb5.rcache.useMD5=true
+#           -Djdk.net.hosts.file=TestHosts
+#           -Dtest.service=host ReplayCacheTestProc

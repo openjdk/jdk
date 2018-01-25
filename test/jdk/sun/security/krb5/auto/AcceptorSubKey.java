@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 7077646
+ * @bug 7077646 8194486
  * @summary gssapi wrap for CFX per-message tokens always set FLAG_ACCEPTOR_SUBKEY
+ * @library /test/lib
  * @compile -XDignore.symbol.file AcceptorSubKey.java
- * @run main/othervm AcceptorSubKey 0
- * @run main/othervm AcceptorSubKey 4
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts AcceptorSubKey 0
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts AcceptorSubKey 4
  */
 
 import sun.security.jgss.GSSUtil;

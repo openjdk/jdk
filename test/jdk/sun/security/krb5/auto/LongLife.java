@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 8131051
+ * @bug 8131051 8194486
  * @summary KDC might issue a renewable ticket even if not requested
+ * @library /test/lib
  * @compile -XDignore.symbol.file LongLife.java
- * @run main/othervm LongLife
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts LongLife
  */
 
 import sun.security.krb5.Config;
