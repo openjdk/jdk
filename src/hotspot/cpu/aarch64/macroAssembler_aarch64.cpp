@@ -1049,7 +1049,8 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
     ldr(method_result, Address(method_result, vtable_offset_in_bytes));
   } else {
     vtable_offset_in_bytes += vtable_index.as_constant() * wordSize;
-    ldr(method_result, Address(recv_klass, vtable_offset_in_bytes));
+    ldr(method_result,
+        form_address(rscratch1, recv_klass, vtable_offset_in_bytes));
   }
 }
 
