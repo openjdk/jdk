@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
 
 /*
  * @test
- * @bug 6893158 6907425 7197159
- * @run main/othervm MoreKvno
+ * @bug 6893158 6907425 7197159 8194486
  * @summary AP_REQ check should use key version number
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts MoreKvno
  */
 
 import org.ietf.jgss.GSSException;

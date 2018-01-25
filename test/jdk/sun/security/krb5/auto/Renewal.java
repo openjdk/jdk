@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 8044500
+ * @bug 8044500 8194486
  * @summary Add kinit options and krb5.conf flags that allow users to
  *          obtain renewable tickets and specify ticket lifetimes
- * @library ../../../../java/security/testlibrary/
+ * @library ../../../../java/security/testlibrary/ /test/lib
  * @compile -XDignore.symbol.file Renewal.java
- * @run main/othervm Renewal
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts Renewal
  */
 
 import sun.security.krb5.Config;

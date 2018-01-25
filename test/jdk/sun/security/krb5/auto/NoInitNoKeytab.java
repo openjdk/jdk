@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 7089889
+ * @bug 7089889 8194486
  * @summary Krb5LoginModule.login() throws an exception if used without a keytab
+ * @library /test/lib
  * @compile -XDignore.symbol.file NoInitNoKeytab.java
- * @run main/othervm NoInitNoKeytab
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts NoInitNoKeytab
  */
 
 import java.io.FileOutputStream;
