@@ -1876,14 +1876,15 @@ public abstract class ClassLoader {
      * value until the system is fully initialized.
      *
      * <p> The name of the built-in system class loader is {@code "app"}.
-     * The class path used by the built-in system class loader is determined
-     * by the system property "{@code java.class.path}" during early
-     * initialization of the VM. If the system property is not defined,
-     * or its value is an empty string, then there is no class path
-     * when the initial module is a module on the application module path,
-     * i.e. <em>a named module</em>. If the initial module is not on
-     * the application module path then the class path defaults to
-     * the current working directory.
+     * The system property "{@code java.class.path}" is read during early
+     * initialization of the VM to determine the class path.
+     * An empty value of "{@code java.class.path}" property is interpreted
+     * differently depending on whether the initial module (the module
+     * containing the main class) is named or unnamed:
+     * If named, the built-in system class loader will have no class path and
+     * will search for classes and resources using the application module path;
+     * otherwise, if unnamed, it will set the class path to the current
+     * working directory.
      *
      * @return  The system {@code ClassLoader}
      *
