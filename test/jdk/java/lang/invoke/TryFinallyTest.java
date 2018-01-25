@@ -24,9 +24,7 @@
  */
 
 /* @test
- * @bug 8139885
- * @bug 8150824
- * @bug 8150825
+ * @bug 8139885 8150824 8150825 8194238
  * @run testng/othervm -ea -esa test.java.lang.invoke.TryFinallyTest
  */
 
@@ -126,6 +124,19 @@ public class TryFinallyTest {
         assertTrue(caught);
     }
 
+    @Test
+    public static void testTryFinallyThrowableCheck() {
+        MethodHandle mh = MethodHandles.tryFinally(TryFinally.MH_throwingTarget,
+                                                   TryFinally.MH_catchingCleanup);
+        try {
+            mh.invoke();
+            fail("ClassCastException expected");
+        } catch (Throwable t) {
+            assertTrue("Throwable not assignable to ClassCastException: " + t,
+                       ClassCastException.class.isAssignableFrom(t.getClass()));
+        }
+    }
+
     static class TryFinally {
 
         static String greet(String whom) {
@@ -156,6 +167,17 @@ public class TryFinallyTest {
 
         static void voidCleanup(Throwable t) {}
 
+        static class T1 extends Throwable {}
+
+        static class T2 extends Throwable {}
+
+        static void throwingTarget() throws Throwable {
+            throw new T1();
+        }
+
+        static void catchingCleanup(T2 t) throws Throwable {
+        }
+
         static final Class<TryFinally> TRY_FINALLY = TryFinally.class;
 
         static final MethodType MT_greet = methodType(String.class, String.class);
@@ -166,6 +188,8 @@ public class TryFinallyTest {
         static final MethodType MT_exclaimMore = methodType(String.class, Throwable.class, String.class, String.class);
         static final MethodType MT_voidTarget = methodType(void.class);
         static final MethodType MT_voidCleanup = methodType(void.class, Throwable.class);
+        static final MethodType MT_throwingTarget = methodType(void.class);
+        static final MethodType MT_catchingCleanup = methodType(void.class, T2.class);
 
         static final MethodHandle MH_greet;
         static final MethodHandle MH_exclaim;
@@ -175,6 +199,8 @@ public class TryFinallyTest {
         static final MethodHandle MH_exclaimMore;
         static final MethodHandle MH_voidTarget;
         static final MethodHandle MH_voidCleanup;
+        static final MethodHandle MH_throwingTarget;
+        static final MethodHandle MH_catchingCleanup;
 
         static final MethodHandle MH_dummyTarget;
 
@@ -192,6 +218,8 @@ public class TryFinallyTest {
                 MH_exclaimMore = LOOKUP.findStatic(TRY_FINALLY, "exclaimMore", MT_exclaimMore);
                 MH_voidTarget = LOOKUP.findStatic(TRY_FINALLY, "voidTarget", MT_voidTarget);
                 MH_voidCleanup = LOOKUP.findStatic(TRY_FINALLY, "voidCleanup", MT_voidCleanup);
+                MH_throwingTarget = LOOKUP.findStatic(TRY_FINALLY, "throwingTarget", MT_throwingTarget);
+                MH_catchingCleanup = LOOKUP.findStatic(TRY_FINALLY, "catchingCleanup", MT_catchingCleanup);
                 MH_dummyTarget = MethodHandles.dropArguments(MH_voidTarget, 0, int.class, long.class, Object.class,
                         int.class, long.class, Object.class);
             } catch (Exception e) {
