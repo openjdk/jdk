@@ -3252,4 +3252,3 @@ public class VarHandleTestMethodTypeByte extends VarHandleBaseTest {
         }
     }
 }
-

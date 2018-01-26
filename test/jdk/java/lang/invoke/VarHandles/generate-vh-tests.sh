@@ -1,6 +1,6 @@
 #!/bin/bash
 
-javac -d . ../../../../../make/src/classes/build/tools/spp/Spp.java
+javac -d . ../../../../../../make/jdk/src/classes/build/tools/spp/Spp.java
 
 SPP=build.tools.spp.Spp
 
