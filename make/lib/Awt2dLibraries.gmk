@@ -683,13 +683,13 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
         hidevf w_novirtualdescr arrowrtn2, \
     DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146 4334 4819 4101, \
     MAPFILE := $(BUILD_LIBFONTMANAGER_MAPFILE), \
-    LDFLAGS := $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB)) $(LDFLAGS_CXX_JDK) \
+    LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_macosx := -undefined dynamic_lookup, \
     LIBS := $(BUILD_LIBFONTMANAGER_FONTLIB), \
     LIBS_unix := -lawt -ljava -ljvm $(LIBM) $(LIBCXX), \
-    LIBS_linux := -lc, \
+    LIBS_linux := -lawt_headless -lc, \
     LIBS_solaris := -lawt_headless -lc, \
     LIBS_aix := -lawt_headless,\
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
@@ -719,7 +719,7 @@ BUILD_LIBFONTMANAGER += $(INSTALL_LIBRARIES_HERE)/$(call SHARED_LIBRARY,fontmana
 
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
 
-ifneq (, $(findstring $(OPENJDK_TARGET_OS), solaris aix))
+ifneq (, $(findstring $(OPENJDK_TARGET_OS), solaris aix linux))
   $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_HEADLESS)
 endif
 
