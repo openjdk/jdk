@@ -1889,7 +1889,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
                     Name paramName = name.table.fromString("arg" + i);
                     VarSymbol param = new VarSymbol(PARAMETER, paramName, t, this);
                     newParams.append(param);
-
+                    i++;
                 }
                 params = newParams.toList();
             }
