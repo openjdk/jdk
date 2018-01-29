@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/oopStorage.hpp"
+#include "gc/shared/oopStorage.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"

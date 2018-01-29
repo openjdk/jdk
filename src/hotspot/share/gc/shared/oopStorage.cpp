@@ -23,7 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/oopStorage.hpp"
+#include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageParState.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
