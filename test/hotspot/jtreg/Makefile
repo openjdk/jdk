@@ -38,47 +38,6 @@ LIMIT_JTREG_VM_MEMORY := false
 
 IGNORE_MARKED_TESTS := true
 
-# Get OS name from uname (Cygwin inexplicably adds _NT-5.1)
-UNAME_S := $(shell uname -s | cut -f1 -d_)
-
-ifeq ($(UNAME_S), SunOS)
-  NUM_CORES := $(shell LC_MESSAGES=C /usr/sbin/psrinfo -v | grep -c on-line)
-endif
-ifeq ($(UNAME_S), Linux)
-  NUM_CORES := $(shell cat /proc/cpuinfo  | grep -c processor)
-endif
-ifeq ($(UNAME_S), Darwin)
-  NUM_CORES := $(shell /usr/sbin/sysctl -n hw.ncpu)
-endif
-ifeq ($(findstring CYGWIN,$(UNAME_S)), CYGWIN)
-  ifneq ($(NUMBER_OF_PROCESSORS), )
-    NUM_CORES := $(NUMBER_OF_PROCESSORS)
-  else
-    ifneq ($(HOTSPOT_BUILD_JOBS), )
-      NUM_CORES := $(HOTSPOT_BUILD_JOBS)
-    else
-      NUM_CORES := 1 # fallback
-    endif
-  endif
-endif
-
-ifndef CONCURRENCY_FACTOR
-  CONCURRENCY_FACTOR = 1
-endif
-
-# Concurrency based on min(cores / 2, 12) * CONCURRENCY_FACTOR
-CONCURRENCY := $(shell awk \
-  'BEGIN { \
-    c = $(NUM_CORES) / 2; \
-    if (c > 12) c = 12; \
-    c = c * $(CONCURRENCY_FACTOR); \
-    if (c < 1) c = 1; \
-    printf "%.0f", c; \
-  }')
-
-# Make sure MaxRAMPercentage is high enough to not cause OOM or swapping since we may end up with a lot of JVM's
-JTREG_BASIC_OPTIONS += -vmoption:-XX:MaxRAMPercentage=$(shell expr 25 / $(CONCURRENCY))
-
 # Include the common base file with most of the logic
 include ../../TestCommon.gmk
 
