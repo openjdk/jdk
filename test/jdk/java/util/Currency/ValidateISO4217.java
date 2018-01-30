@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 4691089 4819436 4942982 5104960 6544471 6627549 7066203 7195759
- *      8039317 8074350 8074351 8145952
+ *      8039317 8074350 8074351 8145952 8187946
  * @summary Validate ISO 4217 data for Currency class.
  * @modules java.base/java.util:open
  *          jdk.localedata
@@ -95,7 +95,11 @@ public class ValidateISO4217 {
 
     /* Codes that are obsolete, do not have related country */
     static final String otherCodes =
-        "ADP-AFA-ATS-AYM-AZM-BEF-BGL-BOV-BYB-BYR-CHE-CHW-CLF-COU-CUC-CYP-DEM-EEK-ESP-FIM-FRF-GHC-GRD-GWP-IEP-ITL-LUF-MGF-MTL-MXV-MZM-NLG-PTE-ROL-RUR-SDD-SIT-SKK-SRG-TMM-TPE-TRL-VEF-UYI-USN-USS-VEB-XAG-XAU-XBA-XBB-XBC-XBD-XDR-XFO-XFU-XPD-XPT-XSU-XTS-XUA-XXX-YUM-ZMK-ZWD-ZWN-ZWR";
+        "ADP-AFA-ATS-AYM-AZM-BEF-BGL-BOV-BYB-BYR-CHE-CHW-CLF-COU-CUC-CYP-"
+        + "DEM-EEK-ESP-FIM-FRF-GHC-GRD-GWP-IEP-ITL-LUF-MGF-MTL-MXV-MZM-NLG-"
+        + "PTE-ROL-RUR-SDD-SIT-SKK-SRG-STD-TMM-TPE-TRL-VEF-UYI-USN-USS-VEB-"
+        + "XAG-XAU-XBA-XBB-XBC-XBD-XDR-XFO-XFU-XPD-XPT-XSU-XTS-XUA-XXX-"
+        + "YUM-ZMK-ZWD-ZWN-ZWR";
 
     static boolean err = false;
 

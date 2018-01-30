@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -951,20 +951,20 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
         Content liNav = new HtmlTree(HtmlTag.LI);
         liNav.addContent(!utils.getFullBody(mdle).isEmpty() && !configuration.nocomment
-                ? Links.createLink(SectionName.MODULE_DESCRIPTION, contents.navModuleDescription)
+                ? links.createLink(SectionName.MODULE_DESCRIPTION, contents.navModuleDescription)
                 : contents.navModuleDescription);
         addNavGap(liNav);
         liNav.addContent((display(requires) || display(indirectModules))
-                ? Links.createLink(SectionName.MODULES, contents.navModules)
+                ? links.createLink(SectionName.MODULES, contents.navModules)
                 : contents.navModules);
         addNavGap(liNav);
         liNav.addContent((display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages))
-                ? Links.createLink(SectionName.PACKAGES, contents.navPackages)
+                ? links.createLink(SectionName.PACKAGES, contents.navPackages)
                 : contents.navPackages);
         addNavGap(liNav);
         liNav.addContent((displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees))
-                ? Links.createLink(SectionName.SERVICES, contents.navServices)
+                ? links.createLink(SectionName.SERVICES, contents.navServices)
                 : contents.navServices);
         ulNav.addContent(liNav);
         return ulNav;
@@ -1056,7 +1056,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         if (prevModule == null) {
             li = HtmlTree.LI(contents.prevModuleLabel);
         } else {
-            li = HtmlTree.LI(Links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(
+            li = HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(
                     prevModule)), contents.prevModuleLabel, "", ""));
         }
         return li;
@@ -1073,7 +1073,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         if (nextModule == null) {
             li = HtmlTree.LI(contents.nextModuleLabel);
         } else {
-            li = HtmlTree.LI(Links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(
+            li = HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(
                     nextModule)), contents.nextModuleLabel, "", ""));
         }
         return li;

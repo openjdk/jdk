@@ -63,8 +63,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
 #ifndef PRODUCT
   if (CountCompiledCalls) {
-    __ lea(r19, ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
-    __ incrementw(Address(r19));
+    __ lea(r16, ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
+    __ incrementw(Address(r16));
   }
 #endif
 
@@ -73,13 +73,13 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   // get receiver klass
   address npe_addr = __ pc();
-  __ load_klass(r19, j_rarg0);
+  __ load_klass(r16, j_rarg0);
 
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
     // check offset vs vtable length
-    __ ldrw(rscratch1, Address(r19, Klass::vtable_length_offset()));
+    __ ldrw(rscratch1, Address(r16, Klass::vtable_length_offset()));
     __ cmpw(rscratch1, vtable_index * vtableEntry::size());
     __ br(Assembler::GT, L);
     __ enter();
@@ -91,7 +91,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   }
 #endif // PRODUCT
 
-  __ lookup_virtual_method(r19, vtable_index, rmethod);
+  __ lookup_virtual_method(r16, vtable_index, rmethod);
 
   if (DebugVtables) {
     Label L;
@@ -145,9 +145,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   //  j_rarg0: Receiver
 
 
-  // Most registers are in use; we'll use r0, rmethod, r10, r11
+  // Most registers are in use; we'll use r16, rmethod, r10, r11
   const Register recv_klass_reg     = r10;
-  const Register holder_klass_reg   = r0; // declaring interface klass (DECC)
+  const Register holder_klass_reg   = r16; // declaring interface klass (DECC)
   const Register resolved_klass_reg = rmethod; // resolved interface klass (REFC)
   const Register temp_reg           = r11;
   const Register icholder_reg       = rscratch2;

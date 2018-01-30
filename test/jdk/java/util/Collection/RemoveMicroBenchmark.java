@@ -27,6 +27,8 @@
  * @run main RemoveMicroBenchmark iterations=1 size=8 warmup=0
  */
 
+import static java.util.stream.Collectors.toList;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -202,12 +204,10 @@ public class RemoveMicroBenchmark {
     }
 
     private static List<Job> filter(Pattern filter, List<Job> jobs) {
-        if (filter == null) return jobs;
-        ArrayList<Job> newJobs = new ArrayList<>();
-        for (Job job : jobs)
-            if (filter.matcher(job.name()).find())
-                newJobs.add(job);
-        return newJobs;
+        return (filter == null) ? jobs
+            : jobs.stream()
+            .filter(job -> filter.matcher(job.name()).find())
+            .collect(toList());
     }
 
     private static void deoptimize(int sum) {
@@ -271,8 +271,7 @@ public class RemoveMicroBenchmark {
             new LinkedBlockingQueue<>(),
             new LinkedBlockingDeque<>(),
             new LinkedTransferQueue<>(),
-            new PriorityBlockingQueue<>())
-            .stream().forEach(
+            new PriorityBlockingQueue<>()).forEach(
                 x -> {
                     String klazz = x.getClass().getSimpleName();
                     jobs.addAll(collectionJobs(klazz, () -> x, al));

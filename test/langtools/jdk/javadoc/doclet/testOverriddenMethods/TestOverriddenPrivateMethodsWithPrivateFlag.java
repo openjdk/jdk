@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,13 +51,13 @@ public class TestOverriddenPrivateMethodsWithPrivateFlag extends JavadocTester {
         // The public method should be overridden
         checkOutput("pkg1/SubClass.html", true,
          "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod");
+                 "<dd><code><a href=\"BaseClass.html#publicMethod");
 
         // The package private method should be overridden since the base and sub class are in the same
         // package.
         checkOutput("pkg1/SubClass.html", true,
          "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#packagePrivateMethod");
+                 "<dd><code><a href=\"BaseClass.html#packagePrivateMethod");
 
         // The public method in different package should be overridden
         checkOutput("pkg2/SubClass.html", true,
@@ -67,7 +67,7 @@ public class TestOverriddenPrivateMethodsWithPrivateFlag extends JavadocTester {
         // The private method in should not be overridden
         checkOutput("pkg1/SubClass.html", false,
          "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-                 "<dd><code><a href=\"../pkg1/BaseClass.html#privateMethod");
+                 "<dd><code><a href=\"BaseClass.html#privateMethod");
 
         // The private method in different package should not be overridden
         checkOutput("pkg2/SubClass.html", false,

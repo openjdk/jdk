@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -580,42 +580,39 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
     }
 
     /*
-     * Strip the AT-SPI GTK_MODULEs if present
+     * Strip the AT-SPI GTK_MODULES if present
      */
     gtk_modules_env = getenv ("GTK_MODULES");
-    if (gtk_modules_env && strstr (gtk_modules_env, "atk-bridge") ||
-        gtk_modules_env && strstr (gtk_modules_env, "gail"))
-    {
-        /* the new env will be smaller than the old one */
-        gchar *s, *new_env = SAFE_SIZE_STRUCT_ALLOC(malloc,
-                sizeof(ENV_PREFIX), 1, strlen (gtk_modules_env));
+    if ((gtk_modules_env && strstr(gtk_modules_env, "atk-bridge")) ||
+        (gtk_modules_env && strstr(gtk_modules_env, "gail"))) {
+        /* careful, strtok modifies its args */
+        gchar *tmp_env = strdup(gtk_modules_env);
+        if (tmp_env) {
+            /* the new env will be smaller than the old one */
+            gchar *s, *new_env = SAFE_SIZE_STRUCT_ALLOC(malloc,
+                    sizeof(ENV_PREFIX), 1, strlen (gtk_modules_env));
 
-        if (new_env != NULL )
-        {
-            /* careful, strtok modifies its args */
-            gchar *tmp_env = strdup (gtk_modules_env);
-            strcpy(new_env, ENV_PREFIX);
+            if (new_env) {
+                strcpy(new_env, ENV_PREFIX);
 
-            /* strip out 'atk-bridge' and 'gail' */
-            size_t PREFIX_LENGTH = strlen(ENV_PREFIX);
-            while (s = strtok(tmp_env, ":"))
-            {
-                if ((!strstr (s, "atk-bridge")) && (!strstr (s, "gail")))
-                {
-                    if (strlen (new_env) > PREFIX_LENGTH) {
-                        new_env = strcat (new_env, ":");
+                /* strip out 'atk-bridge' and 'gail' */
+                size_t PREFIX_LENGTH = strlen(ENV_PREFIX);
+                gchar *tmp_ptr = NULL;
+                for (s = strtok_r(tmp_env, ":", &tmp_ptr); s;
+                     s = strtok_r(NULL, ":", &tmp_ptr)) {
+                    if ((!strstr(s, "atk-bridge")) && (!strstr(s, "gail"))) {
+                        if (strlen(new_env) > PREFIX_LENGTH) {
+                            new_env = strcat(new_env, ":");
+                        }
+                        new_env = strcat(new_env, s);
                     }
-                    new_env = strcat(new_env, s);
                 }
-                if (tmp_env)
-                {
-                    free (tmp_env);
-                    tmp_env = NULL; /* next call to strtok arg1==NULL */
+                if (putenv(new_env) != 0) {
+                    /* no free() on success, putenv() doesn't copy string */
+                    free(new_env);
                 }
             }
-            putenv (new_env);
-            free (new_env);
-            free (tmp_env);
+            free(tmp_env);
         }
     }
     /*

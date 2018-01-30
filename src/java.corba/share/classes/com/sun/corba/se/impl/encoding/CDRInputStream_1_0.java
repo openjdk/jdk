@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -725,12 +725,14 @@ public class CDRInputStream_1_0 extends CDRInputStreamBase
     //    IDLEntity.class.isAssignableFrom( clz ).
     // 3. If clz is an interface, use it to create the appropriate
     //    stub factory.
+
     public org.omg.CORBA.Object read_Object(Class clz)
     {
         // In any case, we must first read the IOR.
         IOR ior = IORFactories.makeIOR(parent) ;
-        if (ior.isNil())
+        if (ior.isNil()) {
             return null ;
+        }
 
         PresentationManager.StubFactoryFactory sff = ORB.getStubFactoryFactory() ;
         String codeBase = ior.getProfile().getCodebase() ;
@@ -739,6 +741,7 @@ public class CDRInputStream_1_0 extends CDRInputStreamBase
         if (clz == null) {
             RepositoryId rid = RepositoryId.cache.getId( ior.getTypeId() ) ;
             String className = rid.getClassName() ;
+            orb.validateIORClass(className);
             boolean isIDLInterface = rid.isIDLType() ;
 
             if (className == null || className.equals( "" ))
@@ -761,11 +764,9 @@ public class CDRInputStream_1_0 extends CDRInputStreamBase
         } else {
             // clz is an interface class
             boolean isIDL = IDLEntity.class.isAssignableFrom( clz ) ;
-
             stubFactory = sff.createStubFactory( clz.getName(),
                 isIDL, codeBase, clz, clz.getClassLoader() ) ;
         }
-
         return internalIORToObject( ior, stubFactory, orb ) ;
     }
 

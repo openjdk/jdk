@@ -32,8 +32,8 @@ volatile int CompiledICHolder::_live_count;
 volatile int CompiledICHolder::_live_not_claimed_count;
 
 
-CompiledICHolder::CompiledICHolder(Method* method, Klass* klass)
-  : _holder_method(method), _holder_klass(klass) {
+CompiledICHolder::CompiledICHolder(Metadata* metadata, Klass* klass)
+  : _holder_metadata(metadata), _holder_klass(klass) {
 #ifdef ASSERT
   Atomic::inc(&_live_count);
   Atomic::inc(&_live_not_claimed_count);
@@ -47,12 +47,28 @@ CompiledICHolder::~CompiledICHolder() {
 }
 #endif // ASSERT
 
+bool CompiledICHolder::is_loader_alive(BoolObjectClosure* is_alive) {
+  if (_holder_metadata->is_method()) {
+    if (!((Method*)_holder_metadata)->method_holder()->is_loader_alive(is_alive)) {
+      return false;
+    }
+  } else if (_holder_metadata->is_klass()) {
+    if (!((Klass*)_holder_metadata)->is_loader_alive(is_alive)) {
+      return false;
+    }
+  }
+  if (!_holder_klass->is_loader_alive(is_alive)) {
+    return false;
+  }
+  return true;
+}
+
 // Printing
 
 void CompiledICHolder::print_on(outputStream* st) const {
   st->print("%s", internal_name());
-  st->print(" - method: "); holder_method()->print_value_on(st); st->cr();
-  st->print(" - klass:  "); holder_klass()->print_value_on(st); st->cr();
+  st->print(" - metadata: "); holder_metadata()->print_value_on(st); st->cr();
+  st->print(" - klass:    "); holder_klass()->print_value_on(st); st->cr();
 }
 
 void CompiledICHolder::print_value_on(outputStream* st) const {
@@ -63,7 +79,7 @@ void CompiledICHolder::print_value_on(outputStream* st) const {
 // Verification
 
 void CompiledICHolder::verify_on(outputStream* st) {
-  guarantee(holder_method()->is_method(), "should be method");
+  guarantee(holder_metadata()->is_method() || holder_metadata()->is_klass(), "should be method or klass");
   guarantee(holder_klass()->is_klass(),   "should be klass");
 }
 

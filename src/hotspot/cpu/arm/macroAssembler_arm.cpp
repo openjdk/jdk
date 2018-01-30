@@ -2475,49 +2475,65 @@ void MacroAssembler::store_sized_value(Register src, Address dst, size_t size_in
 // On success, the result will be in method_result, and execution falls through.
 // On failure, execution transfers to the given label.
 void MacroAssembler::lookup_interface_method(Register Rklass,
-                                             Register Rinterf,
-                                             Register Rindex,
+                                             Register Rintf,
+                                             RegisterOrConstant itable_index,
                                              Register method_result,
-                                             Register temp_reg1,
-                                             Register temp_reg2,
+                                             Register Rscan,
+                                             Register Rtmp,
                                              Label& L_no_such_interface) {
 
-  assert_different_registers(Rklass, Rinterf, temp_reg1, temp_reg2, Rindex);
+  assert_different_registers(Rklass, Rintf, Rscan, Rtmp);
 
-  Register Ritable = temp_reg1;
+  const int entry_size = itableOffsetEntry::size() * HeapWordSize;
+  assert(itableOffsetEntry::interface_offset_in_bytes() == 0, "not added for convenience");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
   const int base = in_bytes(Klass::vtable_start_offset());
   const int scale = exact_log2(vtableEntry::size_in_bytes());
-  ldr_s32(temp_reg2, Address(Rklass, Klass::vtable_length_offset())); // Get length of vtable
-  add(Ritable, Rklass, base);
-  add(Ritable, Ritable, AsmOperand(temp_reg2, lsl, scale));
+  ldr_s32(Rtmp, Address(Rklass, Klass::vtable_length_offset())); // Get length of vtable
+  add(Rscan, Rklass, base);
+  add(Rscan, Rscan, AsmOperand(Rtmp, lsl, scale));
 
-  Label entry, search;
+  // Search through the itable for an interface equal to incoming Rintf
+  // itable looks like [intface][offset][intface][offset][intface][offset]
 
-  b(entry);
+  Label loop;
+  bind(loop);
+  ldr(Rtmp, Address(Rscan, entry_size, post_indexed));
+#ifdef AARCH64
+  Label found;
+  cmp(Rtmp, Rintf);
+  b(found, eq);
+  cbnz(Rtmp, loop);
+#else
+  cmp(Rtmp, Rintf);  // set ZF and CF if interface is found
+  cmn(Rtmp, 0, ne);  // check if tmp == 0 and clear CF if it is
+  b(loop, ne);
+#endif // AARCH64
 
-  bind(search);
-  add(Ritable, Ritable, itableOffsetEntry::size() * HeapWordSize);
+#ifdef AARCH64
+  b(L_no_such_interface);
+  bind(found);
+#else
+  // CF == 0 means we reached the end of itable without finding icklass
+  b(L_no_such_interface, cc);
+#endif // !AARCH64
 
-  bind(entry);
-
-  // Check that the entry is non-null.  A null entry means that the receiver
-  // class doesn't implement the interface, and wasn't the same as the
-  // receiver class checked when the interface was resolved.
-
-  ldr(temp_reg2, Address(Ritable, itableOffsetEntry::interface_offset_in_bytes()));
-  cbz(temp_reg2, L_no_such_interface);
-
-  cmp(Rinterf, temp_reg2);
-  b(search, ne);
-
-  ldr_s32(temp_reg2, Address(Ritable, itableOffsetEntry::offset_offset_in_bytes()));
-  add(temp_reg2, temp_reg2, Rklass); // Add offset to Klass*
-  assert(itableMethodEntry::size() * HeapWordSize == wordSize, "adjust the scaling in the code below");
-  assert(itableMethodEntry::method_offset_in_bytes() == 0, "adjust the offset in the code below");
-
-  ldr(method_result, Address::indexed_ptr(temp_reg2, Rindex));
+  if (method_result != noreg) {
+    // Interface found at previous position of Rscan, now load the method
+    ldr_s32(Rtmp, Address(Rscan, itableOffsetEntry::offset_offset_in_bytes() - entry_size));
+    if (itable_index.is_register()) {
+      add(Rtmp, Rtmp, Rklass); // Add offset to Klass*
+      assert(itableMethodEntry::size() * HeapWordSize == wordSize, "adjust the scaling in the code below");
+      assert(itableMethodEntry::method_offset_in_bytes() == 0, "adjust the offset in the code below");
+      ldr(method_result, Address::indexed_ptr(Rtmp, itable_index.as_register()));
+    } else {
+      int method_offset = itableMethodEntry::size() * HeapWordSize * itable_index.as_constant() +
+                          itableMethodEntry::method_offset_in_bytes();
+      add_slow(method_result, Rklass, method_offset);
+      ldr(method_result, Address(method_result, Rtmp));
+    }
+  }
 }
 
 #ifdef COMPILER2

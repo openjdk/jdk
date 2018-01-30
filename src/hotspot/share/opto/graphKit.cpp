@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3754,7 +3754,7 @@ AllocateNode* InitializeNode::allocation() {
 
 // Trace Allocate -> Proj[Parm] -> Initialize
 InitializeNode* AllocateNode::initialization() {
-  ProjNode* rawoop = proj_out(AllocateNode::RawAddress);
+  ProjNode* rawoop = proj_out_or_null(AllocateNode::RawAddress);
   if (rawoop == NULL)  return NULL;
   for (DUIterator_Fast imax, i = rawoop->fast_outs(imax); i < imax; i++) {
     Node* init = rawoop->fast_out(i);

@@ -80,13 +80,20 @@ class DirectMethodHandle extends MethodHandle {
             mtype = mtype.insertParameterTypes(0, receiver);
         }
         if (!member.isField()) {
-            if (refKind == REF_invokeSpecial) {
-                member = member.asSpecial();
-                LambdaForm lform = preparedLambdaForm(member);
-                return new Special(mtype, lform, member);
-            } else {
-                LambdaForm lform = preparedLambdaForm(member);
-                return new DirectMethodHandle(mtype, lform, member);
+            switch (refKind) {
+                case REF_invokeSpecial: {
+                    member = member.asSpecial();
+                    LambdaForm lform = preparedLambdaForm(member);
+                    return new Special(mtype, lform, member);
+                }
+                case REF_invokeInterface: {
+                    LambdaForm lform = preparedLambdaForm(member);
+                    return new Interface(mtype, lform, member, receiver);
+                }
+                default: {
+                    LambdaForm lform = preparedLambdaForm(member);
+                    return new DirectMethodHandle(mtype, lform, member);
+                }
             }
         } else {
             LambdaForm lform = preparedFieldLambdaForm(member);
@@ -190,6 +197,7 @@ class DirectMethodHandle extends MethodHandle {
     static LambdaForm makePreparedLambdaForm(MethodType mtype, int which) {
         boolean needsInit = (which == LF_INVSTATIC_INIT);
         boolean doesAlloc = (which == LF_NEWINVSPECIAL);
+        boolean needsReceiverCheck = (which == LF_INVINTERFACE);
         String linkerName;
         LambdaForm.Kind kind;
         switch (which) {
@@ -219,6 +227,7 @@ class DirectMethodHandle extends MethodHandle {
         int nameCursor = ARG_LIMIT;
         final int NEW_OBJ     = (doesAlloc ? nameCursor++ : -1);
         final int GET_MEMBER  = nameCursor++;
+        final int CHECK_RECEIVER = (needsReceiverCheck ? nameCursor++ : -1);
         final int LINKER_CALL = nameCursor++;
         Name[] names = arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
         assert(names.length == nameCursor);
@@ -233,6 +242,10 @@ class DirectMethodHandle extends MethodHandle {
         }
         assert(findDirectMethodHandle(names[GET_MEMBER]) == names[DMH_THIS]);
         Object[] outArgs = Arrays.copyOfRange(names, ARG_BASE, GET_MEMBER+1, Object[].class);
+        if (needsReceiverCheck) {
+            names[CHECK_RECEIVER] = new Name(getFunction(NF_checkReceiver), names[DMH_THIS], names[ARG_BASE]);
+            outArgs[0] = names[CHECK_RECEIVER];
+        }
         assert(outArgs[outArgs.length-1] == names[GET_MEMBER]);  // look, shifted args!
         int result = LAST_RESULT;
         if (doesAlloc) {
@@ -373,6 +386,29 @@ class DirectMethodHandle extends MethodHandle {
         @Override
         MethodHandle copyWith(MethodType mt, LambdaForm lf) {
             return new Special(mt, lf, member);
+        }
+    }
+
+    /** This subclass represents invokeinterface instructions. */
+    static class Interface extends DirectMethodHandle {
+        private final Class<?> refc;
+        private Interface(MethodType mtype, LambdaForm form, MemberName member, Class<?> refc) {
+            super(mtype, form, member);
+            assert refc.isInterface() : refc;
+            this.refc = refc;
+        }
+        @Override
+        MethodHandle copyWith(MethodType mt, LambdaForm lf) {
+            return new Interface(mt, lf, member, refc);
+        }
+
+        Object checkReceiver(Object recv) {
+            if (!refc.isInstance(recv)) {
+                String msg = String.format("Class %s does not implement the requested interface %s",
+                        recv.getClass().getName(), refc.getName());
+                throw new IncompatibleClassChangeError(msg);
+            }
+            return recv;
         }
     }
 
@@ -738,7 +774,8 @@ class DirectMethodHandle extends MethodHandle {
             NF_allocateInstance = 8,
             NF_constructorMethod = 9,
             NF_UNSAFE = 10,
-            NF_LIMIT = 11;
+            NF_checkReceiver = 11,
+            NF_LIMIT = 12;
 
     private static final @Stable NamedFunction[] NFS = new NamedFunction[NF_LIMIT];
 
@@ -785,6 +822,11 @@ class DirectMethodHandle extends MethodHandle {
                     return new NamedFunction(
                             MemberName.getFactory()
                                     .resolveOrFail(REF_getField, member, DirectMethodHandle.class, NoSuchMethodException.class));
+                case NF_checkReceiver:
+                    member = new MemberName(Interface.class, "checkReceiver", OBJ_OBJ_TYPE, REF_invokeVirtual);
+                    return new NamedFunction(
+                        MemberName.getFactory()
+                            .resolveOrFail(REF_invokeVirtual, member, Interface.class, NoSuchMethodException.class));
                 default:
                     throw newInternalError("Unknown function: " + func);
             }

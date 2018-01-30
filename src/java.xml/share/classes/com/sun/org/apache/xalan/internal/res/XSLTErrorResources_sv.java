@@ -478,7 +478,7 @@ public class XSLTErrorResources_sv extends ListResourceBundle
   {"ER0000" , "{0}" },
 
     { ER_NO_CURLYBRACE,
-      "Fel: Uttryck kan inte inneh\u00E5lla '{'"},
+      "Fel: Uttryck f\u00E5r inte inneh\u00E5lla '{'"},
 
     { ER_ILLEGAL_ATTRIBUTE ,
      "{0} har ett otill\u00E5tet attribut: {1}"},
@@ -1422,4 +1422,4 @@ public class XSLTErrorResources_sv extends ListResourceBundle
   /** String for use when formatting of the error string failed.   */
   public static final String FORMAT_FAILED = "FORMAT_FAILED";
 
-}
+    }

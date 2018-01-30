@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 6932525 6951366 6959292
+ * @bug 6932525 6951366 6959292 8194486
  * @summary kerberos login failure on win2008 with AD set to win2000 compat mode
  * and cannot login if session key and preauth does not use the same etype
- * @run main/othervm -D6932525 W83
- * @run main/othervm -D6959292 W83
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -D6932525 -Djdk.net.hosts.file=TestHosts W83
+ * @run main/othervm -D6959292 -Djdk.net.hosts.file=TestHosts W83
  */
 import com.sun.security.auth.module.Krb5LoginModule;
 import java.io.File;

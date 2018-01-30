@@ -788,7 +788,7 @@ public class TransTypes extends TreeTranslator {
             JCTypeCast typeCast = newExpression.hasTag(Tag.TYPECAST)
                 ? (JCTypeCast) newExpression
                 : null;
-            tree.expr = typeCast != null && types.isSameType(typeCast.type, originalTarget, true)
+            tree.expr = typeCast != null && types.isSameType(typeCast.type, originalTarget)
                 ? typeCast.expr
                 : newExpression;
         }

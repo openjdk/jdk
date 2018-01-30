@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,11 +362,11 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
   // Eliminate Initialize node.
   assert(init->outcnt() <= 2, "only a control and memory projection expected");
   assert(init->req() <= InitializeNode::RawStores, "no pending inits");
-  Node *ctrl_proj = init->proj_out(TypeFunc::Control);
+  Node *ctrl_proj = init->proj_out_or_null(TypeFunc::Control);
   if (ctrl_proj != NULL) {
     C->gvn_replace_by(ctrl_proj, init->in(TypeFunc::Control));
   }
-  Node *mem_proj = init->proj_out(TypeFunc::Memory);
+  Node *mem_proj = init->proj_out_or_null(TypeFunc::Memory);
   if (mem_proj != NULL) {
     Node *mem = init->in(TypeFunc::Memory);
     C->gvn_replace_by(mem_proj, mem);
@@ -891,7 +891,7 @@ bool StringConcat::validate_control_flow() {
       ctrl_path.push(cn);
       ctrl_path.push(cn->proj_out(0));
       ctrl_path.push(cn->proj_out(0)->unique_out());
-      Node* catchproj = cn->proj_out(0)->unique_out()->as_Catch()->proj_out(0);
+      Node* catchproj = cn->proj_out(0)->unique_out()->as_Catch()->proj_out_or_null(0);
       if (catchproj != NULL) {
         ctrl_path.push(catchproj);
       }
@@ -1035,13 +1035,13 @@ bool StringConcat::validate_control_flow() {
   // by calls in the region.
   _stringopts->_visited.Clear();
   Node_List worklist;
-  Node* final_result = _end->proj_out(TypeFunc::Parms);
+  Node* final_result = _end->proj_out_or_null(TypeFunc::Parms);
   for (uint i = 0; i < _control.size(); i++) {
     CallNode* cnode = _control.at(i)->isa_Call();
     if (cnode != NULL) {
       _stringopts->_visited.test_set(cnode->_idx);
     }
-    Node* result = cnode != NULL ? cnode->proj_out(TypeFunc::Parms) : NULL;
+    Node* result = cnode != NULL ? cnode->proj_out_or_null(TypeFunc::Parms) : NULL;
     if (result != NULL && result != final_result) {
       worklist.push(result);
     }

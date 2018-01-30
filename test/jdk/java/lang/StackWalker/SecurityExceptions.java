@@ -22,7 +22,8 @@
  */
 
 /*
- * @test 8020968
+ * @test
+ * @bug 8020968
  * @summary Test security permission check
  * @run main/othervm/java.security.policy=noperms.policy SecurityExceptions true
  * @run main/othervm/java.security.policy=stackwalk.policy SecurityExceptions false

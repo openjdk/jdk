@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-
-import java.util.Arrays;
-import java.util.List;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -308,7 +305,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
         if (link) {
-            return Links.createLink(
+            return links.createLink(
                     SectionName.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY,
                     contents.navAnnotationTypeRequiredMember);
         } else {
@@ -321,7 +318,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      */
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(Links.createLink(
+            liNav.addContent(links.createLink(
                     SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL,
                     contents.navAnnotationTypeMember));
         } else {

@@ -27,8 +27,18 @@
  * @summary Test behavior of nulls in checked collections
  */
 
-import java.util.*;
-import static java.util.Collections.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeSet;
+
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonMap;
 
 @SuppressWarnings({"unchecked","serial"})
 public class CheckedNull {

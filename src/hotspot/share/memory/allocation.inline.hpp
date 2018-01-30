@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
     return NULL;
   }
 
-  if (os::commit_memory(addr, size, !ExecMem, "Allocator (commit)")) {
+  if (os::commit_memory(addr, size, !ExecMem)) {
     return (E*)addr;
   } else {
     os::release_memory(addr, size);

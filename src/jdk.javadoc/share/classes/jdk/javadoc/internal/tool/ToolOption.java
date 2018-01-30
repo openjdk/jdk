@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,6 +189,13 @@ public enum ToolOption {
         }
     },
 
+    ADD_OPENS("--add-opens", HIDDEN, true) {
+        @Override
+        public void process(Helper helper, String arg) throws InvalidValueException {
+            Option.ADD_OPENS.process(helper.getOptionHelper(), primaryName, arg);
+        }
+    },
+
     // ----- doclet options -----
 
     DOCLET("-doclet", STANDARD, true), // handled in setDocletInvoker
@@ -339,7 +346,7 @@ public enum ToolOption {
 
     // ----- help options -----
 
-    HELP("--help -help", STANDARD) {
+    HELP("--help -help -? -h", STANDARD) {
         @Override
         public void process(Helper helper) throws OptionException {
             throw new OptionException(OK, helper::usage);

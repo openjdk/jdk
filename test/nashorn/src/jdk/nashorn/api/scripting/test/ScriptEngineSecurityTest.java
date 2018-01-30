@@ -133,7 +133,7 @@ public class ScriptEngineSecurityTest {
         }
     }
 
-
+    // This also covers overriding finalizer in JavaAdapter such as JDK-8194985
     @Test
     public void securitySystemExitFromFinalizerThread() throws ScriptException {
         if (System.getSecurityManager() == null) {

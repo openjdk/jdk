@@ -609,9 +609,11 @@ class InstanceKlass: public Klass {
   InstanceKlass* host_klass() const              {
     InstanceKlass** hk = adr_host_klass();
     if (hk == NULL) {
+      assert(!is_anonymous(), "Anonymous classes have host klasses");
       return NULL;
     } else {
       assert(*hk != NULL, "host klass should always be set if the address is not null");
+      assert(is_anonymous(), "Only anonymous classes have host klasses");
       return *hk;
     }
   }
@@ -622,6 +624,9 @@ class InstanceKlass: public Klass {
     if (addr != NULL) {
       *addr = host;
     }
+  }
+  bool has_host_klass() const              {
+    return adr_host_klass() != NULL;
   }
   bool is_anonymous() const                {
     return (_misc_flags & _misc_is_anonymous) != 0;

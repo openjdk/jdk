@@ -29,8 +29,9 @@
 #include "utilities/macros.hpp"
 
 // A CompiledICHolder* is a helper object for the inline cache implementation.
-// It holds an intermediate value (method+klass pair) used when converting from
-// compiled to an interpreted call.
+// It holds:
+//   (1) (method+klass pair) when converting from compiled to an interpreted call
+//   (2) (klass+klass pair) when calling itable stub from megamorphic compiled call
 //
 // These are always allocated in the C heap and are freed during a
 // safepoint by the ICBuffer logic.  It's unsafe to free them earlier
@@ -45,31 +46,32 @@ class CompiledICHolder : public CHeapObj<mtCompiler> {
   static volatile int _live_not_claimed_count; // allocated but not yet in use so not
                                                // reachable by iterating over nmethods
 
-  Method* _holder_method;
+  Metadata* _holder_metadata;
   Klass*    _holder_klass;    // to avoid name conflict with oopDesc::_klass
   CompiledICHolder* _next;
 
  public:
   // Constructor
-  CompiledICHolder(Method* method, Klass* klass);
+  CompiledICHolder(Metadata* metadata, Klass* klass);
   ~CompiledICHolder() NOT_DEBUG_RETURN;
 
   static int live_count() { return _live_count; }
   static int live_not_claimed_count() { return _live_not_claimed_count; }
 
   // accessors
-  Method* holder_method() const     { return _holder_method; }
   Klass*    holder_klass()  const     { return _holder_klass; }
+  Metadata* holder_metadata() const   { return _holder_metadata; }
 
-  void set_holder_method(Method* m) { _holder_method = m; }
-  void set_holder_klass(Klass* k)   { _holder_klass = k; }
+  void set_holder_metadata(Metadata* m) { _holder_metadata = m; }
+  void set_holder_klass(Klass* k)     { _holder_klass = k; }
 
-  // interpreter support (offsets in bytes)
-  static int holder_method_offset()   { return offset_of(CompiledICHolder, _holder_method); }
+  static int holder_metadata_offset() { return offset_of(CompiledICHolder, _holder_metadata); }
   static int holder_klass_offset()    { return offset_of(CompiledICHolder, _holder_klass); }
 
   CompiledICHolder* next()     { return _next; }
   void set_next(CompiledICHolder* n) { _next = n; }
+
+  bool is_loader_alive(BoolObjectClosure* is_alive);
 
   // Verify
   void verify_on(outputStream* st);

@@ -1421,4 +1421,5 @@ public class XSLTErrorResources_it extends ListResourceBundle
 
   /** String for use when formatting of the error string failed.   */
   public static final String FORMAT_FAILED = "FORMAT_FAILED";
-}
+
+    }

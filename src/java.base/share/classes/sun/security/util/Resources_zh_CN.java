@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "\u63D0\u4F9B\u4E86\u65E0\u6548\u7684\u7A7A AccessControlContext"},
         {"invalid.null.action.provided", "\u63D0\u4F9B\u4E86\u65E0\u6548\u7684\u7A7A\u64CD\u4F5C"},
         {"invalid.null.Class.provided", "\u63D0\u4F9B\u4E86\u65E0\u6548\u7684\u7A7A\u7C7B"},
-        {"Subject.", "\u4E3B\u9898: \n"},
+        {"Subject.", "\u4E3B\u4F53: \n"},
         {".Principal.", "\t\u4E3B\u7528\u6237: "},
         {".Public.Credential.", "\t\u516C\u5171\u8EAB\u4EFD\u8BC1\u660E: "},
         {".Private.Credentials.inaccessible.",
@@ -71,9 +71,9 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {".Private.Credential.", "\t\u4E13\u7528\u8EAB\u4EFD\u8BC1\u660E: "},
         {".Private.Credential.inaccessible.",
                 "\t\u65E0\u6CD5\u8BBF\u95EE\u4E13\u7528\u8EAB\u4EFD\u8BC1\u660E\n"},
-        {"Subject.is.read.only", "\u4E3B\u9898\u4E3A\u53EA\u8BFB"},
+        {"Subject.is.read.only", "\u4E3B\u4F53\u4E3A\u53EA\u8BFB"},
         {"attempting.to.add.an.object.which.is.not.an.instance.of.java.security.Principal.to.a.Subject.s.Principal.Set",
-                "\u6B63\u5728\u5C1D\u8BD5\u5C06\u4E00\u4E2A\u975E java.security.Principal \u5B9E\u4F8B\u7684\u5BF9\u8C61\u6DFB\u52A0\u5230\u4E3B\u9898\u7684\u4E3B\u7528\u6237\u96C6\u4E2D"},
+                "\u6B63\u5728\u5C1D\u8BD5\u5C06\u4E00\u4E2A\u975E java.security.Principal \u5B9E\u4F8B\u7684\u5BF9\u8C61\u6DFB\u52A0\u5230\u4E3B\u4F53\u7684\u4E3B\u7528\u6237\u96C6\u4E2D"},
         {"attempting.to.add.an.object.which.is.not.an.instance.of.class",
                 "\u6B63\u5728\u5C1D\u8BD5\u6DFB\u52A0\u4E00\u4E2A\u975E{0}\u5B9E\u4F8B\u7684\u5BF9\u8C61"},
 
@@ -84,11 +84,11 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Invalid.null.input.name", "\u65E0\u6548\u7A7A\u8F93\u5165: \u540D\u79F0"},
         {"No.LoginModules.configured.for.name",
          "\u6CA1\u6709\u4E3A{0}\u914D\u7F6E LoginModules"},
-        {"invalid.null.Subject.provided", "\u63D0\u4F9B\u4E86\u65E0\u6548\u7684\u7A7A\u4E3B\u9898"},
+        {"invalid.null.Subject.provided", "\u63D0\u4F9B\u4E86\u65E0\u6548\u7684\u7A7A\u4E3B\u4F53"},
         {"invalid.null.CallbackHandler.provided",
                 "\u63D0\u4F9B\u4E86\u65E0\u6548\u7684\u7A7A CallbackHandler"},
         {"null.subject.logout.called.before.login",
-                "\u7A7A\u4E3B\u9898 - \u5728\u767B\u5F55\u4E4B\u524D\u8C03\u7528\u4E86\u6CE8\u9500"},
+                "\u7A7A\u4E3B\u4F53 - \u5728\u767B\u5F55\u4E4B\u524D\u8C03\u7528\u4E86\u6CE8\u9500"},
         {"unable.to.instantiate.LoginModule.module.because.it.does.not.provide.a.no.argument.constructor",
                 "\u65E0\u6CD5\u5B9E\u4F8B\u5316 LoginModule, {0}, \u56E0\u4E3A\u5B83\u672A\u63D0\u4F9B\u4E00\u4E2A\u65E0\u53C2\u6570\u6784\u9020\u5668"},
         {"unable.to.instantiate.LoginModule",
@@ -115,6 +115,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "\u65E0\u6CD5\u5728\u522B\u540D {0} \u4E0A\u6267\u884C\u66FF\u4EE3"},
         {"substitution.value.prefix.unsupported",
                 "\u66FF\u4EE3\u503C{0}\u4E0D\u53D7\u652F\u6301"},
+        {"SPACE", " "},
         {"LPARAM", "("},
         {"RPARAM", ")"},
         {"type.can.t.be.null","\u7C7B\u578B\u4E0D\u80FD\u4E3A\u7A7A\u503C"},

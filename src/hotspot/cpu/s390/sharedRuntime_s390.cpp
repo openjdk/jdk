@@ -2660,9 +2660,9 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   Label skip_fixup;
   {
     Label ic_miss;
-    const int klass_offset         = oopDesc::klass_offset_in_bytes();
-    const int holder_klass_offset  = CompiledICHolder::holder_klass_offset();
-    const int holder_method_offset = CompiledICHolder::holder_method_offset();
+    const int klass_offset           = oopDesc::klass_offset_in_bytes();
+    const int holder_klass_offset    = CompiledICHolder::holder_klass_offset();
+    const int holder_metadata_offset = CompiledICHolder::holder_metadata_offset();
 
     // Out-of-line call to ic_miss handler.
     __ call_ic_miss_handler(ic_miss, 0x11, 0, Z_R1_scratch);
@@ -2691,7 +2691,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     // This def MUST MATCH code in gen_c2i_adapter!
     const Register code = Z_R11;
 
-    __ z_lg(Z_method, holder_method_offset, Z_method);
+    __ z_lg(Z_method, holder_metadata_offset, Z_method);
     __ load_and_test_long(Z_R0, method_(code));
     __ z_brne(ic_miss);  // Cache miss: call runtime to handle this.
 

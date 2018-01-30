@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 7152121
+ * @bug 7152121 8194486
  * @summary Krb5LoginModule no longer handles keyTabNames with "file:" prefix
+ * @library /test/lib
  * @compile -XDignore.symbol.file FileKeyTab.java
- * @run main/othervm FileKeyTab
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts FileKeyTab
  */
 
 import java.io.File;

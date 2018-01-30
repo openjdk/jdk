@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,9 +457,11 @@ public class Main {
                 showcerts = true;
             } else if (collator.compare(flags, "-strict") ==0) {
                 strict = true;
-            } else if (collator.compare(flags, "-h") == 0 ||
-                        collator.compare(flags, "-?") == 0 ||
-                        collator.compare(flags, "-help") == 0) {
+            } else if (collator.compare(flags, "-?") == 0 ||
+                       collator.compare(flags, "-h") == 0 ||
+                       collator.compare(flags, "--help") == 0 ||
+                       // -help: legacy.
+                       collator.compare(flags, "-help") == 0) {
                 fullusage();
             } else {
                 System.err.println(
@@ -647,6 +649,9 @@ public class Main {
         System.out.println();
         System.out.println(rb.getString
                 (".conf.url.specify.a.pre.configured.options.file"));
+        System.out.println();
+        System.out.println(rb.getString
+                (".print.this.help.message"));
         System.out.println();
 
         System.exit(0);

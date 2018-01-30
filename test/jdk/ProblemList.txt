@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -197,7 +197,6 @@ java/io/pathNames/GeneralWin32.java                             8180264 windows-
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 sun/management/HotspotRuntimeMBean/GetSafepointSyncTime.java    8174734 generic-all
-sun/management/jdp/JdpOffTest.java                              8175542 generic-all
 
 ############################################################################
 
@@ -255,7 +254,8 @@ java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-
 # jdk_security
 
 sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
-sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8186098 linux-all
+sun/security/pkcs11/Secmod/AddTrustedCert.java                  8180837 generic-all
+sun/security/pkcs11/tls/TestKeyMaterial.java                    8180837 generic-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
@@ -266,7 +266,7 @@ javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x
 
 sun/security/krb5/auto/UnboundSSL.java                          8180265 windows-all
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
-sun/security/ssl/X509KeyManager/PreferredKey.java               8176354 generic-all
+sun/security/ssl/X509KeyManager/PreferredKey.java               8190333 generic-all
 
 ############################################################################
 
@@ -351,13 +351,9 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 
 # svc_tools
 
-sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
-
 sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
 
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
-
-com/sun/tools/attach/StartManagementAgent.java                  8179700 generic-all
 
 ############################################################################
 
@@ -365,12 +361,14 @@ com/sun/tools/attach/StartManagementAgent.java                  8179700 generic-
 
 com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i586,macosx-all,windows-x64
 
-javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 generic-all
+com/sun/jndi/ldap/LdapTimeoutTest.java                          8151678 linux-all
+
+javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8194663 generic-all
  
-org/omg/CORBA/OrbPropertiesTest.java			        8175177 generic-all
+org/omg/CORBA/OrbPropertiesTest.java			        8194663 generic-all
 
-javax/rmi/PortableRemoteObject/ConcurrentHashMapTest.java       8080643 generic-all
+javax/rmi/PortableRemoteObject/ConcurrentHashMapTest.java       8194663 generic-all
 
-javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
+javax/rmi/ssl/SSLSocketParametersTest.sh                        8194663 generic-all
 
 ############################################################################

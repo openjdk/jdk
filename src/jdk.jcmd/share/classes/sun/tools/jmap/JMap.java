@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,11 @@ public class JMap {
             if (!arg.startsWith("-")) {
                 break;
             }
-            if (arg.equals("-help") || arg.equals("-h")) {
+            if (arg.equals("-?") ||
+                arg.equals("-h") ||
+                arg.equals("--help") ||
+                // -help: legacy. Undocumented.
+                arg.equals("-help")) {
                 usage(0);
             } else {
                 if (option != null) {
@@ -247,6 +251,8 @@ public class JMap {
         System.err.println("        if the \"live\" suboption is specified, only count live objects");
         System.err.println("    jmap -dump:<dump-options> <pid>");
         System.err.println("        to connect to running process and dump java heap");
+        System.err.println("    jmap -? -h --help");
+        System.err.println("        to print this help message");
         System.err.println("");
         System.err.println("    dump-options:");
         System.err.println("      live         dump only live objects; if not specified,");

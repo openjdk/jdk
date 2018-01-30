@@ -1,0 +1,6 @@
+-t flag positive test:
+flag test PASSED
+functionality test PASSED
+-t flag negative test:
+flag test PASSED
+functionality test PASSED

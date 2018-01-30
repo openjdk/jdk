@@ -28,7 +28,11 @@
  * @author  Josh Bloch, Martin Buchholz
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ToArray {
     public static void main(String[] args) {

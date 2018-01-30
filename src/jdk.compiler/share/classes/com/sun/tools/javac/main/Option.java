@@ -362,7 +362,7 @@ public enum Option {
     },
 
     // Note: -h is already taken for "native header output directory".
-    HELP("--help -help", "opt.help", STANDARD, INFO) {
+    HELP("--help -help -?", "opt.help", STANDARD, INFO) {
         @Override
         public void process(OptionHelper helper, String option) throws InvalidValueException {
             Log log = helper.getLog();

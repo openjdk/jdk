@@ -448,7 +448,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                 Win32ShellFolder2 sf = (Win32ShellFolder2)dir;
 
                 return (sf.isFileSystem() && sf.parent != null &&
-                        sf.parent.equals(Win32ShellFolder2.listRoots()));
+                        sf.parent.equals(getDrives()));
             }
             String path = dir.getPath();
 

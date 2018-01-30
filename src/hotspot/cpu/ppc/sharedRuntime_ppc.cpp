@@ -1188,7 +1188,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   // Argument is valid and klass is as expected, continue.
 
   // Extract method from inline cache, verified entry point needs it.
-  __ ld(R19_method, CompiledICHolder::holder_method_offset(), ic);
+  __ ld(R19_method, CompiledICHolder::holder_metadata_offset(), ic);
   assert(R19_method == ic, "the inline cache register is dead here");
 
   __ ld(code, method_(code));

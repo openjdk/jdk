@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,10 +236,10 @@ public class TestOptions extends JavadocTester {
                 + "public int method() {</a>");
 
         checkOutput("linksource/SomeEnum.html", true,
-                "<pre>public static final&nbsp;<a href=\"../linksource/SomeEnum.html\" "
+                "<pre>public static final&nbsp;<a href=\"SomeEnum.html\" "
                 + "title=\"enum in linksource\">SomeEnum</a> <a href="
                 + "\"../src-html/linksource/SomeEnum.html#line.29\">VALUE1</a></pre>",
-                "<pre>public static final&nbsp;<a href=\"../linksource/SomeEnum.html\" "
+                "<pre>public static final&nbsp;<a href=\"SomeEnum.html\" "
                 + "title=\"enum in linksource\">SomeEnum</a> <a href="
                 + "\"../src-html/linksource/SomeEnum.html#line.30\">VALUE2</a></pre>");
 

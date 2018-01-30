@@ -205,12 +205,19 @@ const char* ImageModuleData::package_to_module(const char* package_name) {
 // Manage a table of open image files.  This table allows multiple access points
 // to share an open image.
 ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(_growth) {
-    _table = new ImageFileReader*[_max];
+    _table = static_cast<ImageFileReader**>(calloc(_max, sizeof(ImageFileReader*)));
     assert(_table != NULL && "allocation failed");
 }
 
 ImageFileReaderTable::~ImageFileReaderTable() {
-    delete[] _table;
+    for (u4 i = 0; i < _count; i++) {
+        ImageFileReader* image = _table[i];
+
+        if (image != NULL) {
+            delete image;
+        }
+    }
+    free(_table);
 }
 
 // Add a new image entry to the table.

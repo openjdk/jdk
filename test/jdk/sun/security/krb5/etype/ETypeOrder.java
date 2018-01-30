@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public class ETypeOrder {
         int[] etypes = EType.getBuiltInDefaults();
 
         // Reference order, note that 2 is not implemented in Java
-        int correct[] = { 18, 17, 16, 23, 1, 3, 2 };
+        int correct[] = { 18, 17, 20, 19, 16, 23, 1, 3, 2 };
 
         int match = 0;
         loopi: for (int i=0; i<etypes.length; i++) {

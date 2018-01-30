@@ -40,10 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class OsCpuLoggingTest {
 
     static void analyzeOutputForOsLog(OutputAnalyzer output) throws Exception {
-        // Aix has it's own logging
-        if (!Platform.isAix()) {
-            output.shouldContain("SafePoint Polling address");
-        }
+        output.shouldContain("SafePoint Polling address");
         output.shouldHaveExitValue(0);
     }
 
@@ -58,7 +55,10 @@ public class OsCpuLoggingTest {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         analyzeOutputForOsCpuLog(output);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:os", "-version");
+        // PPC64 only uses polling pages when UseSIGTRAP is off.
+        pb = (Platform.isPPC() && Platform.is64bit())
+             ? ProcessTools.createJavaProcessBuilder("-Xlog:os", "-XX:-UseSIGTRAP", "-version")
+             : ProcessTools.createJavaProcessBuilder("-Xlog:os", "-version");
         output = new OutputAnalyzer(pb.start());
         analyzeOutputForOsLog(output);
     }

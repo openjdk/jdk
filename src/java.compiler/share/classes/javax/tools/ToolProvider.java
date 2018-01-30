@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package javax.tools;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
@@ -101,17 +99,6 @@ public class ToolProvider {
         return null;
     }
 
-    private static final boolean useLegacy;
-
-    static {
-        Class<?> c = null;
-        try {
-            c = Class.forName("java.lang.Module");
-        } catch (Throwable t) {
-        }
-        useLegacy = (c == null);
-    }
-
     /**
      * Get an instance of a system tool using the service loader.
      * @implNote         By default, this returns the implementation in the specified module.
@@ -126,14 +113,6 @@ public class ToolProvider {
      * @return the specified implementation of the tool
      */
     private static <T> T getSystemTool(Class<T> clazz, String moduleName, String className) {
-        if (useLegacy) {
-            try {
-                return Class.forName(className, true, ClassLoader.getSystemClassLoader()).
-                    asSubclass(clazz).getConstructor().newInstance();
-            } catch (ReflectiveOperationException e) {
-                throw new Error(e);
-            }
-        }
 
         try {
             ServiceLoader<T> sl = ServiceLoader.load(clazz, ClassLoader.getSystemClassLoader());
@@ -150,24 +129,16 @@ public class ToolProvider {
 
     /**
      * Determine if this is the desired tool instance.
-     * @param <T>        the interface of the tool
-     * @param tool       the instance of the tool
-     * @param moduleName the name of the module containing the desired implementation
+     * @param <T>               the interface of the tool
+     * @param tool              the instance of the tool
+     * @param moduleName        the name of the module containing the desired implementation
      * @return true if and only if the tool matches the specified criteria
      */
     private static <T> boolean matches(T tool, String moduleName) {
         PrivilegedAction<Boolean> pa = () -> {
-            // for now, use reflection to implement
-            //      return moduleName.equals(tool.getClass().getModule().getName());
-            try {
-                Method getModuleMethod = Class.class.getDeclaredMethod("getModule");
-                Object toolModule = getModuleMethod.invoke(tool.getClass());
-                Method getNameMethod = toolModule.getClass().getDeclaredMethod("getName");
-                String toolModuleName = (String) getNameMethod.invoke(toolModule);
-                return moduleName.equals(toolModuleName);
-            } catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-                return false;
-            }
+            Module toolModule = tool.getClass().getModule();
+            String toolModuleName = toolModule.getName();
+            return toolModuleName.equals(moduleName);
         };
         return AccessController.doPrivileged(pa);
     }

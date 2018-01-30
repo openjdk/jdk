@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,23 @@
 
 /*
  * @test
- * @bug 6853328 7172701
- * @run main/othervm OkAsDelegateXRealm false
- *      KDC no OK-AS-DELEGATE, fail
- * @run main/othervm -Dtest.kdc.policy.ok-as-delegate OkAsDelegateXRealm true
- *      KDC set OK-AS-DELEGATE for all, succeed
- * @run main/othervm -Dtest.kdc.policy.ok-as-delegate=host/host.r3.local OkAsDelegateXRealm false
- *      KDC set OK-AS-DELEGATE for host/host.r3.local only, fail
- * @run main/othervm -Dtest.kdc.policy.ok-as-delegate=host/host.r3.local,krbtgt/R2,krbtgt/R3 OkAsDelegateXRealm true
- *      KDC set OK-AS-DELEGATE for all three, succeed
+ * @bug 6853328 7172701 8194486
  * @summary Support OK-AS-DELEGATE flag
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts OkAsDelegateXRealm false
+ *      KDC no OK-AS-DELEGATE, fail
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts
+ *      -Dtest.kdc.policy.ok-as-delegate OkAsDelegateXRealm true
+ *      KDC set OK-AS-DELEGATE for all, succeed
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts
+ *      -Dtest.kdc.policy.ok-as-delegate=host/host.r3.local
+ *      OkAsDelegateXRealm false
+ *      KDC set OK-AS-DELEGATE for host/host.r3.local only, fail
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts
+ *      -Dtest.kdc.policy.ok-as-delegate=host/host.r3.local,krbtgt/R2,krbtgt/R3
+ *      OkAsDelegateXRealm true
+ *      KDC set OK-AS-DELEGATE for all three, succeed
  */
 import java.io.FileOutputStream;
 import java.io.IOException;

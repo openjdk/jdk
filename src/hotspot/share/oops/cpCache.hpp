@@ -249,6 +249,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 
   void set_itable_call(
     Bytecodes::Code invoke_code,                 // the bytecode used; must be invokeinterface
+    Klass* referenced_klass,                     // the referenced klass in the InterfaceMethodref
     const methodHandle& method,                  // the resolved interface method
     int itable_index                             // index into itable for the method
   );
@@ -352,6 +353,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   bool      is_f1_null() const                   { Metadata* f1 = f1_ord(); return f1 == NULL; }  // classifies a CPC entry as unbound
   int       f2_as_index() const                  { assert(!is_vfinal(), ""); return (int) _f2; }
   Method*   f2_as_vfinal_method() const          { assert(is_vfinal(), ""); return (Method*)_f2; }
+  Method*   f2_as_interface_method() const       { assert(bytecode_1() == Bytecodes::_invokeinterface, ""); return (Method*)_f2; }
   intx flags_ord() const                         { return (intx)OrderAccess::load_acquire(&_flags); }
   int  field_index() const                       { assert(is_field_entry(),  ""); return (_flags & field_index_mask); }
   int  parameter_size() const                    { assert(is_method_entry(), ""); return (_flags & parameter_size_mask); }
@@ -387,7 +389,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   // trace_name_printed is set to true if the current call has
   // printed the klass name so that other routines in the adjust_*
   // group don't print the klass name.
-  bool adjust_method_entry(Method* old_method, Method* new_method,
+  void adjust_method_entry(Method* old_method, Method* new_method,
          bool* trace_name_printed);
   bool check_no_old_or_obsolete_entries();
   Method* get_interesting_method_entry(Klass* k);

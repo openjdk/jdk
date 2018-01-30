@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -523,9 +523,11 @@ public final class Main {
 
             if (c != null) {
                 command = c;
-            } else if (collator.compare(flags, "-help") == 0 ||
-                    collator.compare(flags, "-h") == 0 ||
-                    collator.compare(flags, "-?") == 0) {
+            } else if (collator.compare(flags, "--help") == 0 ||
+                       collator.compare(flags, "-h") == 0 ||
+                       collator.compare(flags, "-?") == 0 ||
+                       // -help: legacy.
+                       collator.compare(flags, "-help") == 0) {
                 help = true;
             } else if (collator.compare(flags, "-conf") == 0) {
                 i++;
@@ -1804,8 +1806,7 @@ public final class Main {
             } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
                 keysize = SecurityProviderConstants.DEF_RSA_KEY_SIZE;
             } else if ("DSA".equalsIgnoreCase(keyAlgName)) {
-                // hardcode for now as DEF_DSA_KEY_SIZE is still 1024
-                keysize = 2048; // SecurityProviderConstants.DEF_DSA_KEY_SIZE;
+                keysize = SecurityProviderConstants.DEF_DSA_KEY_SIZE;
             }
         }
 
@@ -4609,6 +4610,8 @@ public final class Main {
                 System.err.printf(" %-20s%s\n", c, rb.getString(c.description));
             }
             System.err.println();
+            System.err.println(rb.getString(
+                    "Use.keytool.help.for.all.available.commands"));
             System.err.println(rb.getString(
                     "Use.keytool.command.name.help.for.usage.of.command.name"));
         }

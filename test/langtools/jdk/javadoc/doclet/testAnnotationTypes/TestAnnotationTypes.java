@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,7 @@ public class TestAnnotationTypes extends JavadocTester {
                 + "field.detail\">Field</a>&nbsp;|&nbsp;</li>",
                 "<!-- =========== ANNOTATION TYPE FIELD SUMMARY =========== -->",
                 "<h3>Field Summary</h3>",
-                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"../"
-                + "pkg/AnnotationTypeField.html#DEFAULT_NAME\">DEFAULT_NAME</a></span>"
+                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"#DEFAULT_NAME\">DEFAULT_NAME</a></span>"
                 + "</code></th>",
                 "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->",
                 "<h4>DEFAULT_NAME</h4>\n"

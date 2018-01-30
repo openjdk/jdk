@@ -21,7 +21,6 @@
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
 import com.sun.org.apache.xalan.internal.XalanConstants;
-import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.DOMCache;
@@ -102,8 +101,6 @@ public final class TransformerImpl extends Transformer
 
     private final static String LEXICAL_HANDLER_PROPERTY =
         "http://xml.org/sax/properties/lexical-handler";
-    private static final String NAMESPACE_FEATURE =
-        "http://xml.org/sax/features/namespaces";
 
     /**
      * Namespace prefixes feature for {@link XMLReader}.
@@ -200,15 +197,10 @@ public final class TransformerImpl extends Transformer
     private boolean _isSecureProcessing = false;
 
     /**
-     * Indicates whether implementation parts should use
-     *   service loader (or similar).
-     * Note the default value (false) is the safe option..
+     * Indicates whether 3rd party parser may be used to override the system-default
      */
-    private boolean _useServicesMechanism;
-    /**
-     * protocols allowed for external references set by the stylesheet processing instruction, Import and Include element.
-     */
-    private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+    private boolean _overrideDefaultParser;
+
      /**
      * protocols allowed for external DTD references in source file and/or stylesheet.
      */
@@ -276,11 +268,10 @@ public final class TransformerImpl extends Transformer
         _propertiesClone = (Properties) _properties.clone();
         _indentNumber = indentNumber;
         _tfactory = tfactory;
-        _useServicesMechanism = _tfactory.useServicesMechnism();
-        _accessExternalStylesheet = (String)_tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET);
+        _overrideDefaultParser = _tfactory.overrideDefaultParser();
         _accessExternalDTD = (String)_tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_DTD);
         _securityManager = (XMLSecurityManager)_tfactory.getAttribute(XalanConstants.SECURITY_MANAGER);
-        _readerManager = XMLReaderManager.getInstance(_useServicesMechanism);
+        _readerManager = XMLReaderManager.getInstance(_overrideDefaultParser);
         _readerManager.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
         _readerManager.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, _isSecureProcessing);
         _readerManager.setProperty(XalanConstants.SECURITY_MANAGER, _securityManager);
@@ -317,15 +308,15 @@ public final class TransformerImpl extends Transformer
     /**
      * Return the state of the services mechanism feature.
      */
-    public boolean useServicesMechnism() {
-        return _useServicesMechanism;
+    public boolean overrideDefaultParser() {
+        return _overrideDefaultParser;
     }
 
     /**
      * Set the state of the services mechanism feature.
      */
-    public void setServicesMechnism(boolean flag) {
-        _useServicesMechanism = flag;
+    public void setOverrideDefaultParser(boolean flag) {
+        _overrideDefaultParser = flag;
     }
 
     /**
@@ -409,7 +400,7 @@ public final class TransformerImpl extends Transformer
         // Get encoding using getProperty() to use defaults
         _encoding = _properties.getProperty(OutputKeys.ENCODING);
 
-        _tohFactory = TransletOutputHandlerFactory.newInstance(_useServicesMechanism);
+        _tohFactory = TransletOutputHandlerFactory.newInstance(_overrideDefaultParser);
         _tohFactory.setEncoding(_encoding);
         if (_method != null) {
             _tohFactory.setOutputMethod(_method);
@@ -579,7 +570,7 @@ public final class TransformerImpl extends Transformer
                  if (_dtmManager == null) {
                      _dtmManager =
                          _tfactory.createNewDTMManagerInstance();
-                     _dtmManager.setServicesMechnism(_useServicesMechanism);
+                     _dtmManager.setOverrideDefaultParser(_overrideDefaultParser);
                  }
                  dom = (DOM)_dtmManager.getDTM(source, false, wsfilter, true,
                                               false, false, 0, hasIdCall);
@@ -754,7 +745,7 @@ public final class TransformerImpl extends Transformer
 
                 boolean supportCatalog = true;
 
-                DocumentBuilderFactory builderF = FactoryImpl.getDOMFactory(_useServicesMechanism);
+                DocumentBuilderFactory builderF = JdkXmlUtils.getDOMFactory(_overrideDefaultParser);
                 try {
                     builderF.setFeature(XMLConstants.USE_CATALOG, _useCatalog);
                 } catch (ParserConfigurationException e) {

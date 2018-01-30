@@ -142,6 +142,20 @@ IMPORT_MODULES_MAKE:=@IMPORT_MODULES_MAKE@
 
 COPYRIGHT_YEAR:=@COPYRIGHT_YEAR@
 
+# Platform naming variables
+LAUNCHER_NAME:=@LAUNCHER_NAME@
+PRODUCT_NAME:=@PRODUCT_NAME@
+PRODUCT_SUFFIX:=@PRODUCT_SUFFIX@
+JDK_RC_PLATFORM_NAME:=@JDK_RC_PLATFORM_NAME@
+COMPANY_NAME:=@COMPANY_NAME@
+HOTSPOT_VM_DISTRO:=@HOTSPOT_VM_DISTRO@
+MACOSX_BUNDLE_NAME_BASE=@MACOSX_BUNDLE_NAME_BASE@
+MACOSX_BUNDLE_ID_BASE=@MACOSX_BUNDLE_ID_BASE@
+USERNAME:=@USERNAME@
+VENDOR_URL:=@VENDOR_URL@
+VENDOR_URL_BUG:=@VENDOR_URL_BUG@
+VENDOR_URL_VM_BUG:=@VENDOR_URL_VM_BUG@
+
 # New (JEP-223) version information
 
 ## Building blocks of the version string
@@ -201,16 +215,30 @@ VERSION_CFLAGS := \
     -DVERSION_CLASSFILE_MINOR=$(VERSION_CLASSFILE_MINOR) \
     #
 
-# Platform naming variables
-LAUNCHER_NAME:=@LAUNCHER_NAME@
-PRODUCT_NAME:=@PRODUCT_NAME@
-PRODUCT_SUFFIX:=@PRODUCT_SUFFIX@
-JDK_RC_PLATFORM_NAME:=@JDK_RC_PLATFORM_NAME@
-COMPANY_NAME:=@COMPANY_NAME@
-HOTSPOT_VM_DISTRO:=@HOTSPOT_VM_DISTRO@
-MACOSX_BUNDLE_NAME_BASE=@MACOSX_BUNDLE_NAME_BASE@
-MACOSX_BUNDLE_ID_BASE=@MACOSX_BUNDLE_ID_BASE@
-USERNAME:=@USERNAME@
+ifneq ($(COMPANY_NAME),)
+  # COMPANY_NAME is set to "N/A" in $AUTOCONF_DIR/version-numbers by default,
+  # but can be customized with the '--with-vendor-name' configure option.
+  # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
+  # Otherwise the default value for VENDOR, which is used to set the "java.vendor"
+  # and "java.vm.vendor" properties is hard-coded into the source code (i.e. in
+  # System.c in the jdk for "vm.vendor" and vm_version.cpp in the VM for "java.vm.vendor") 
+  ifneq ($(COMPANY_NAME), N/A)
+    VERSION_CFLAGS += -DVENDOR='"$(COMPANY_NAME)"' 
+  endif
+endif
+
+# Only export VENDOR_URL, VENDOR_URL_BUG and VENDOR_VM_URL_BUG to the build if
+# they are not empty. Otherwise, default values which are defined in the sources
+# will be used.
+ifneq ($(VENDOR_URL),)
+  VERSION_CFLAGS += -DVENDOR_URL='"$(VENDOR_URL)"'
+endif
+ifneq ($(VENDOR_URL_BUG),)
+  VERSION_CFLAGS += -DVENDOR_URL_BUG='"$(VENDOR_URL_BUG)"'
+endif
+ifneq ($(VENDOR_URL_VM_BUG),)
+  VERSION_CFLAGS += -DVENDOR_URL_VM_BUG='"$(VENDOR_URL_VM_BUG)"'
+endif
 
 # Different naming strings generated from the above information.
 RUNTIME_NAME=$(PRODUCT_NAME) $(PRODUCT_SUFFIX)

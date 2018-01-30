@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,12 +158,12 @@ public class TestDeprecatedDocs extends JavadocTester {
                 "<hr>\n"
                 + "<pre>@Deprecated(forRemoval=true)\n"
                 + "public enum <span class=\"typeNameLabel\">TestEnum</span>\n"
-                + "extends java.lang.Enum&lt;<a href=\"../pkg/TestEnum.html\" title=\"enum in pkg\">TestEnum</a>&gt;</pre>\n"
+                + "extends java.lang.Enum&lt;<a href=\"TestEnum.html\" title=\"enum in pkg\">TestEnum</a>&gt;</pre>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"deprecationComment\">enum_test1 passes.</div>\n"
                 + "</div>",
                 "<pre>@Deprecated(forRemoval=true)\n"
-                + "public static final&nbsp;<a href=\"../pkg/TestEnum.html\" title=\"enum in pkg\">TestEnum</a> FOR_REMOVAL</pre>\n"
+                + "public static final&nbsp;<a href=\"TestEnum.html\" title=\"enum in pkg\">TestEnum</a> FOR_REMOVAL</pre>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"deprecationComment\">enum_test3 passes.</div>\n"
                 + "</div>");

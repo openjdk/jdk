@@ -139,7 +139,7 @@ public abstract class SchemaFactory {
      * @since 9
      */
     public static SchemaFactory newDefaultInstance() {
-        return XMLSchemaFactory.newXMLSchemaFactoryNoServiceLoader();
+        return new XMLSchemaFactory();
     }
 
     /**

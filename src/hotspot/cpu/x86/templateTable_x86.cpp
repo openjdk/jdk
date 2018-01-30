@@ -3712,11 +3712,11 @@ void TemplateTable::fast_invokevfinal(int byte_no) {
 void TemplateTable::invokeinterface(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
-  prepare_invoke(byte_no, rax, rbx,  // get f1 Klass*, f2 itable index
+  prepare_invoke(byte_no, rax, rbx,  // get f1 Klass*, f2 Method*
                  rcx, rdx); // recv, flags
 
-  // rax: interface klass (from f1)
-  // rbx: itable index (from f2)
+  // rax: reference klass (from f1)
+  // rbx: method (from f2)
   // rcx: receiver
   // rdx: flags
 
@@ -3738,10 +3738,28 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ null_check(rcx, oopDesc::klass_offset_in_bytes());
   __ load_klass(rdx, rcx);
 
+  Label no_such_interface, no_such_method;
+
+  // Receiver subtype check against REFC.
+  // Superklass in rax. Subklass in rdx. Blows rcx, rdi.
+  __ lookup_interface_method(// inputs: rec. class, interface, itable index
+                             rdx, rax, noreg,
+                             // outputs: scan temp. reg, scan temp. reg
+                             rbcp, rlocals,
+                             no_such_interface,
+                             /*return_method=*/false);
+
   // profile this call
+  __ restore_bcp(); // rbcp was destroyed by receiver type check
   __ profile_virtual_call(rdx, rbcp, rlocals);
 
-  Label no_such_interface, no_such_method;
+  // Get declaring interface class from method, and itable index
+  __ movptr(rax, Address(rbx, Method::const_offset()));
+  __ movptr(rax, Address(rax, ConstMethod::constants_offset()));
+  __ movptr(rax, Address(rax, ConstantPool::pool_holder_offset_in_bytes()));
+  __ movl(rbx, Address(rbx, Method::itable_index_offset()));
+  __ subl(rbx, Method::itable_index_max);
+  __ negl(rbx);
 
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
                              rdx, rax, rbx,
