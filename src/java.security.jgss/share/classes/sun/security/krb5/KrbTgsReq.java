@@ -356,6 +356,8 @@ public class KrbTgsReq {
         case Checksum.CKSUMTYPE_HMAC_MD5_ARCFOUR:
         case Checksum.CKSUMTYPE_HMAC_SHA1_96_AES128:
         case Checksum.CKSUMTYPE_HMAC_SHA1_96_AES256:
+        case Checksum.CKSUMTYPE_HMAC_SHA256_128_AES128:
+        case Checksum.CKSUMTYPE_HMAC_SHA384_192_AES256:
             cksum = new Checksum(Checksum.CKSUMTYPE_DEFAULT, temp, key,
                 KeyUsage.KU_PA_TGS_REQ_CKSUM);
             break;

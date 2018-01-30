@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 
 /*
  * @test
- * @bug 7110803 8170732
+ * @bug 7110803 8170732 8194486
  * @summary SASL service for multiple hostnames
+ * @library /test/lib
  * @compile -XDignore.symbol.file SaslBasic.java
- * @run main/othervm SaslBasic bound auth-int
- * @run main/othervm SaslBasic unbound auth-conf
- * @run main/othervm SaslBasic bound auth
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SaslBasic bound auth-int
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SaslBasic unbound auth-conf
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SaslBasic bound auth
  */
 import java.io.IOException;
 import java.util.Arrays;

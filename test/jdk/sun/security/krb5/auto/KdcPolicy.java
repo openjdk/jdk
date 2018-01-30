@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,12 @@ import sun.security.krb5.Config;
 
 /*
  * @test
- * @bug 8164656 8181461
- * @run main/othervm KdcPolicy udp
- * @run main/othervm KdcPolicy tcp
+ * @bug 8164656 8181461 8194486
  * @summary krb5.kdc.bad.policy test
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts KdcPolicy udp
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts KdcPolicy tcp
  */
 public class KdcPolicy {
 

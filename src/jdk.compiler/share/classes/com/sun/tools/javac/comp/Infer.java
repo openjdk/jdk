@@ -565,7 +565,7 @@ public class Infer {
                                             List<Type> argtypes) {
         final Type restype;
 
-        if (spMethod == null || types.isSameType(spMethod.getReturnType(), syms.objectType, true)) {
+        if (spMethod == null || types.isSameType(spMethod.getReturnType(), syms.objectType)) {
             // The return type of the polymorphic signature is polymorphic,
             // and is computed from the enclosing tree E, as follows:
             // if E is a cast, then use the target type of the cast expression
@@ -1227,8 +1227,8 @@ public class Infer {
             } else {
                 IncorporationBinaryOp that = (IncorporationBinaryOp)o;
                 return opKind == that.opKind &&
-                        types.isSameType(op1, that.op1, true) &&
-                        types.isSameType(op2, that.op2, true);
+                        types.isSameType(op1, that.op1) &&
+                        types.isSameType(op2, that.op2);
             }
         }
 

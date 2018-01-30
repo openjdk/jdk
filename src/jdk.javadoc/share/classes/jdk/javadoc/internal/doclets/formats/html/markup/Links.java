@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,17 +46,20 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
  */
 public class Links {
 
+    private final DocPath file;
     private final HtmlVersion version;
 
     /**
-     * Creates a {@code Links} object for a specific HTML version.
+     * Creates a {@code Links} object for a specific file, to be written in a specific HTML version.
      * The version is used by the {@link #getName(String) getName} method
      * to help determine valid HTML names (ids), and to determine whether
      * to use an {@code id} or {@code name} attribute when creating anchors.
      *
+     * @param file the file
      * @param version the HTML version
      */
-    public Links(HtmlVersion version) {
+    public Links(DocPath file, HtmlVersion version) {
+        this.file = file;
         this.version = version;
     }
 
@@ -118,7 +121,7 @@ public class Links {
      */
     public Content createLink(String where, Content label) {
         DocLink l = DocLink.fragment(getName(where));
-        return Links.createLink(l, label, "", "");
+        return createLink(l, label, "", "");
     }
 
     /**
@@ -128,9 +131,9 @@ public class Links {
      * @param label         the content for the link
      * @return a content tree for the link
      */
-    public static Content createLink(SectionName sectionName, Content label) {
+    public Content createLink(SectionName sectionName, Content label) {
         DocLink l =  DocLink.fragment(sectionName.getName());
-        return Links.createLink(l, label, "", "");
+        return createLink(l, label, "", "");
     }
 
     /**
@@ -145,7 +148,7 @@ public class Links {
      */
     public Content createLink(SectionName sectionName, String where, Content label) {
         DocLink l =  DocLink.fragment(sectionName.getName() + getName(where));
-        return Links.createLink(l, label, "", "");
+        return createLink(l, label, "", "");
     }
 
     /**
@@ -157,7 +160,7 @@ public class Links {
      * @param target    the target for the link, or null
      * @return a content tree for the link
      */
-    public static Content createLink(SectionName sectionName, Content label, String title, String target) {
+    public Content createLink(SectionName sectionName, Content label, String title, String target) {
         DocLink l = DocLink.fragment(sectionName.getName());
         return createLink(l, label, title, target);
     }
@@ -169,8 +172,8 @@ public class Links {
      * @param label  the content for the link
      * @return a content tree for the link
      */
-    public static Content createLink(DocPath path, String label) {
-        return Links.createLink(path, new StringContent(label), false, "", "");
+    public Content createLink(DocPath path, String label) {
+        return createLink(path, new StringContent(label), false, "", "");
     }
 
     /**
@@ -180,8 +183,8 @@ public class Links {
      * @param label  the content for the link
      * @return a content tree for the link
      */
-    public static Content createLink(DocPath path, Content label) {
-        return Links.createLink(path, label, "", "");
+    public Content createLink(DocPath path, Content label) {
+        return createLink(path, label, "", "");
     }
 
     /**
@@ -196,7 +199,7 @@ public class Links {
      * @param target    the target for the link, or null
      * @return a content tree for the link
      */
-    public static Content createLink(DocPath path, Content label, boolean strong,
+    public Content createLink(DocPath path, Content label, boolean strong,
             String title, String target) {
         return createLink(new DocLink(path), label, strong, title, target);
     }
@@ -210,8 +213,8 @@ public class Links {
      * @param target    the target for the link, or null
      * @return a content tree for the link
      */
-    public static Content createLink(DocPath path, Content label, String title, String target) {
-        return Links.createLink(new DocLink(path), label, title, target);
+    public Content createLink(DocPath path, Content label, String title, String target) {
+        return createLink(new DocLink(path), label, title, target);
     }
 
     /**
@@ -221,8 +224,8 @@ public class Links {
      * @param label     the content for the link
      * @return a content tree for the link
      */
-    public static Content createLink(DocLink link, Content label) {
-        return Links.createLink(link, label, "", "");
+    public Content createLink(DocLink link, Content label) {
+        return createLink(link, label, "", "");
     }
 
     /**
@@ -234,8 +237,8 @@ public class Links {
      * @param target    the target for the link, or null
      * @return a content tree for the link
      */
-    public static Content createLink(DocLink link, Content label, String title, String target) {
-        HtmlTree anchor = HtmlTree.A(link.toString(), label);
+    public Content createLink(DocLink link, Content label, String title, String target) {
+        HtmlTree anchor = HtmlTree.A(link.relativizeAgainst(file).toString(), label);
         if (title != null && title.length() != 0) {
             anchor.addAttr(HtmlAttr.TITLE, title);
         }
@@ -257,7 +260,7 @@ public class Links {
      * @param target    the target for the link, or null
      * @return a content tree for the link
      */
-    public static Content createLink(DocLink link, Content label, boolean strong,
+    public Content createLink(DocLink link, Content label, boolean strong,
             String title, String target) {
         return createLink(link, label, strong, title, target, false);
     }
@@ -275,13 +278,13 @@ public class Links {
      * @param isExternal is the link external to the generated documentation
      * @return a content tree for the link
      */
-    public static Content createLink(DocLink link, Content label, boolean strong,
+    public Content createLink(DocLink link, Content label, boolean strong,
             String title, String target, boolean isExternal) {
         Content body = label;
         if (strong) {
             body = HtmlTree.SPAN(HtmlStyle.typeNameLink, body);
         }
-        HtmlTree l = HtmlTree.A(link.toString(), body);
+        HtmlTree l = HtmlTree.A(link.relativizeAgainst(file).toString(), body);
         if (title != null && title.length() != 0) {
             l.addAttr(HtmlAttr.TITLE, title);
         }
@@ -302,12 +305,11 @@ public class Links {
      * @param isExternal is the link external to the generated documentation
      * @return a content tree for the link
      */
-    public static Content createLink(DocLink link, Content label, boolean isExternal) {
-        HtmlTree anchor = HtmlTree.A(link.toString(), label);
+    public Content createLink(DocLink link, Content label, boolean isExternal) {
+        HtmlTree anchor = HtmlTree.A(link.relativizeAgainst(file).toString(), label);
         anchor.setStyle(HtmlStyle.externalLink);
         return anchor;
     }
-
 
     /**
      * Converts a name to a valid HTML name (id).

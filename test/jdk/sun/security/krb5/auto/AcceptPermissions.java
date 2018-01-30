@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 9999999
+ * @bug 8005447 8194486
  * @summary default principal can act as anyone
+ * @library /test/lib
  * @compile -XDignore.symbol.file AcceptPermissions.java
- * @run main/othervm AcceptPermissions two
- * @run main/othervm AcceptPermissions unbound
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts AcceptPermissions two
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts AcceptPermissions unbound
  */
 
 import java.nio.file.Files;

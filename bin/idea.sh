@@ -30,9 +30,10 @@ usage() {
 }
 
 SCRIPT_DIR=`dirname $0`
-PWD=`pwd`
+#assume TOP is the dir from which the script has been called
+TOP=`pwd`
 cd $SCRIPT_DIR; SCRIPT_DIR=`pwd`
-cd ../; TOP=`pwd`; cd $PWD
+cd $TOP;
 
 IDEA_OUTPUT=$TOP/.idea
 VERBOSE="false"
@@ -66,30 +67,42 @@ done
 mkdir $IDEA_OUTPUT || exit 1
 cd $IDEA_OUTPUT; IDEA_OUTPUT=`pwd`
 
-IDEA_MAKE="$TOP/make/idea"
+MAKE_DIR="$SCRIPT_DIR/../make"
+IDEA_MAKE="$MAKE_DIR/idea"
 IDEA_TEMPLATE="$IDEA_MAKE/template"
-IML_TEMPLATE="$IDEA_TEMPLATE/jdk.iml"
-ANT_TEMPLATE="$IDEA_TEMPLATE/ant.xml"
-MISC_TEMPLATE="$IDEA_TEMPLATE/misc.xml"
-IDEA_IML="$IDEA_OUTPUT/jdk.iml"
-IDEA_ANT="$IDEA_OUTPUT/ant.xml"
-IDEA_MISC="$IDEA_OUTPUT/misc.xml"
+
+cp -r "$IDEA_TEMPLATE"/* "$IDEA_OUTPUT"
+
+#init template variables
+for file in `ls -p $IDEA_TEMPLATE | grep -v /`; do
+	VAR_SUFFIX=`echo $file | cut -d'.' -f1 | tr [:lower:] [:upper:]`
+    eval "$VAR_SUFFIX"_TEMPLATE="$IDEA_TEMPLATE"/$file
+	eval IDEA_"$VAR_SUFFIX"="$IDEA_OUTPUT"/$file
+done
+
+#override template variables
+if [ -d "$TEMPLATES_OVERRIDE" ] ; then
+    for file in `ls -p "$TEMPLATES_OVERRIDE" | grep -v /`; do
+        cp "$TEMPLATES_OVERRIDE"/$file "$IDEA_OUTPUT"/
+    	VAR_SUFFIX=`echo $file | cut -d'.' -f1 | tr [:lower:] [:upper:]`
+        eval "$VAR_SUFFIX"_TEMPLATE="$TEMPLATES_OVERRIDE"/$file
+    done
+fi
 
 if [ "$VERBOSE" = "true" ] ; then
   echo "output dir: $IDEA_OUTPUT"
   echo "idea template dir: $IDEA_TEMPLATE"
 fi
 
-if [ ! -f "$IML_TEMPLATE" ] ; then
-  echo "FATAL: cannot find $IML_TEMPLATE" >&2; exit 1
+if [ ! -f "$JDK_TEMPLATE" ] ; then
+  echo "FATAL: cannot find $JDK_TEMPLATE" >&2; exit 1
 fi
 
 if [ ! -f "$ANT_TEMPLATE" ] ; then
   echo "FATAL: cannot find $ANT_TEMPLATE" >&2; exit 1
 fi
 
-cp -r "$IDEA_TEMPLATE"/* "$IDEA_OUTPUT"
-cd $TOP ; make -f "$IDEA_MAKE/idea.gmk" -I make/common idea MAKEOVERRIDES= OUT=$IDEA_OUTPUT/env.cfg MODULES="$*" || exit 1
+cd $TOP ; make -f "$IDEA_MAKE/idea.gmk" -I $MAKE_DIR/.. idea MAKEOVERRIDES= OUT=$IDEA_OUTPUT/env.cfg MODULES="$*" || exit 1
 cd $SCRIPT_DIR
 
 . $IDEA_OUTPUT/env.cfg
@@ -118,11 +131,12 @@ addSourceFolder() {
   root=$@
   relativePath="`echo "$root" | sed -e s@"$TOP/\(.*$\)"@"\1"@`"
   folder="`echo "$SOURCE_FOLDER" | sed -e s@"\(.*/\)####\(.*\)"@"\1$relativePath\2"@`"
-  printf "%s\n" "$folder" >> $IDEA_IML
+  printf "%s\n" "$folder" >> $IDEA_JDK
 }
 
 ### Generate project iml
-rm -f $IDEA_IML
+
+rm -f $IDEA_JDK
 while IFS= read -r line
 do
   if echo "$line" | egrep "^ .* <sourceFolder.*####" > /dev/null ; then
@@ -133,9 +147,9 @@ do
       done
     fi
   else
-    printf "%s\n" "$line" >> $IDEA_IML
+    printf "%s\n" "$line" >> $IDEA_JDK
   fi
-done < "$IML_TEMPLATE"
+done < "$JDK_TEMPLATE"
 
 
 MODULE_NAME="        <property name=\"module.name\" value=\"####\" />"

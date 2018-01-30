@@ -5117,7 +5117,7 @@ TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
 ################################################################################
 # The order of these defines the priority by which we try to find them.
-VALID_VS_VERSIONS="2013 2012 2010"
+VALID_VS_VERSIONS="2013 2012 2010 2015 2017"
 
 VS_DESCRIPTION_2010="Microsoft Visual Studio 2010"
 VS_VERSION_INTERNAL_2010=100
@@ -5149,6 +5149,30 @@ VS_VS_INSTALLDIR_2013="Microsoft Visual Studio 12.0"
 VS_SDK_INSTALLDIR_2013=
 VS_VS_PLATFORM_NAME_2013="v120"
 VS_SDK_PLATFORM_NAME_2013=
+
+VS_DESCRIPTION_2015="Microsoft Visual Studio 2015 - CURRENTLY NOT WORKING"
+VS_VERSION_INTERNAL_2015=140
+VS_MSVCR_2015=vcruntime140.dll
+VS_MSVCP_2015=msvcp140.dll
+VS_ENVVAR_2015="VS140COMNTOOLS"
+VS_VS_INSTALLDIR_2015="Microsoft Visual Studio 14.0"
+VS_SDK_INSTALLDIR_2015=
+VS_VS_PLATFORM_NAME_2015="v140"
+VS_SDK_PLATFORM_NAME_2015=
+# The vcvars of 2015 breaks if 2017 is also installed. Work around this by
+# explicitly specifying Windows Kit 8.1 to be used.
+VS_ENV_ARGS_2015="8.1"
+
+VS_DESCRIPTION_2017="Microsoft Visual Studio 2017 - CURRENTLY NOT WORKING"
+VS_VERSION_INTERNAL_2017=141
+VS_MSVCR_2017=vcruntime140.dll
+VS_MSVCP_2017=msvcp140.dll
+VS_ENVVAR_2017="VS150COMNTOOLS"
+VS_VS_INSTALLDIR_2017="Microsoft Visual Studio/2017"
+VS_EDITIONS_2017="Community Professional Enterprise"
+VS_SDK_INSTALLDIR_2017=
+VS_VS_PLATFORM_NAME_2017="v141"
+VS_SDK_PLATFORM_NAME_2017=
 
 ################################################################################
 
@@ -5191,7 +5215,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1516225089
+DATE_WHEN_GENERATED=1517274450
 
 ###############################################################################
 #
@@ -17113,6 +17137,12 @@ $as_echo "$as_me: Unknown variant(s) specified: $INVALID_VARIANTS" >&6;}
 # Check whether --with-devkit was given.
 if test "${with_devkit+set}" = set; then :
   withval=$with_devkit;
+fi
+
+
+  if test "x$with_devkit" = xyes; then
+    as_fn_error $? "--with-devkit must have a value" "$LINENO" 5
+  elif test "x$with_devkit" != x && test "x$with_devkit" != xno; then
 
   # Only process if variable expands to non-empty
 
@@ -17245,77 +17275,77 @@ $as_echo "$as_me: The path of with_devkit, which resolves as \"$path\", is inval
     fi
   fi
 
-        DEVKIT_ROOT="$with_devkit"
-        # Check for a meta data info file in the root of the devkit
-        if test -f "$DEVKIT_ROOT/devkit.info"; then
-          . $DEVKIT_ROOT/devkit.info
-          # This potentially sets the following:
-          # A descriptive name of the devkit
+    DEVKIT_ROOT="$with_devkit"
+    # Check for a meta data info file in the root of the devkit
+    if test -f "$DEVKIT_ROOT/devkit.info"; then
+      . $DEVKIT_ROOT/devkit.info
+      # This potentially sets the following:
+      # A descriptive name of the devkit
 
   if test "x$DEVKIT_NAME" = x; then
     eval DEVKIT_NAME="\${DEVKIT_NAME_${OPENJDK_TARGET_CPU}}"
   fi
 
-          # Corresponds to --with-extra-path
+      # Corresponds to --with-extra-path
 
   if test "x$DEVKIT_EXTRA_PATH" = x; then
     eval DEVKIT_EXTRA_PATH="\${DEVKIT_EXTRA_PATH_${OPENJDK_TARGET_CPU}}"
   fi
 
-          # Corresponds to --with-toolchain-path
+      # Corresponds to --with-toolchain-path
 
   if test "x$DEVKIT_TOOLCHAIN_PATH" = x; then
     eval DEVKIT_TOOLCHAIN_PATH="\${DEVKIT_TOOLCHAIN_PATH_${OPENJDK_TARGET_CPU}}"
   fi
 
-          # Corresponds to --with-sysroot
+      # Corresponds to --with-sysroot
 
   if test "x$DEVKIT_SYSROOT" = x; then
     eval DEVKIT_SYSROOT="\${DEVKIT_SYSROOT_${OPENJDK_TARGET_CPU}}"
   fi
 
 
-          # Identifies the Visual Studio version in the devkit
+      # Identifies the Visual Studio version in the devkit
 
   if test "x$DEVKIT_VS_VERSION" = x; then
     eval DEVKIT_VS_VERSION="\${DEVKIT_VS_VERSION_${OPENJDK_TARGET_CPU}}"
   fi
 
-          # The Visual Studio include environment variable
+      # The Visual Studio include environment variable
 
   if test "x$DEVKIT_VS_INCLUDE" = x; then
     eval DEVKIT_VS_INCLUDE="\${DEVKIT_VS_INCLUDE_${OPENJDK_TARGET_CPU}}"
   fi
 
-          # The Visual Studio lib environment variable
+      # The Visual Studio lib environment variable
 
   if test "x$DEVKIT_VS_LIB" = x; then
     eval DEVKIT_VS_LIB="\${DEVKIT_VS_LIB_${OPENJDK_TARGET_CPU}}"
   fi
 
-          # Corresponds to --with-msvcr-dll
+      # Corresponds to --with-msvcr-dll
 
   if test "x$DEVKIT_MSVCR_DLL" = x; then
     eval DEVKIT_MSVCR_DLL="\${DEVKIT_MSVCR_DLL_${OPENJDK_TARGET_CPU}}"
   fi
 
-          # Corresponds to --with-msvcp-dll
+      # Corresponds to --with-msvcp-dll
 
   if test "x$DEVKIT_MSVCP_DLL" = x; then
     eval DEVKIT_MSVCP_DLL="\${DEVKIT_MSVCP_DLL_${OPENJDK_TARGET_CPU}}"
   fi
 
-        fi
+    fi
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for devkit" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for devkit" >&5
 $as_echo_n "checking for devkit... " >&6; }
-        if test "x$DEVKIT_NAME" != x; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DEVKIT_NAME in $DEVKIT_ROOT" >&5
+    if test "x$DEVKIT_NAME" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DEVKIT_NAME in $DEVKIT_ROOT" >&5
 $as_echo "$DEVKIT_NAME in $DEVKIT_ROOT" >&6; }
-        else
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DEVKIT_ROOT" >&5
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DEVKIT_ROOT" >&5
 $as_echo "$DEVKIT_ROOT" >&6; }
-        fi
+    fi
 
 
   if test "x$DEVKIT_EXTRA_PATH" != x; then
@@ -17327,10 +17357,10 @@ $as_echo "$DEVKIT_ROOT" >&6; }
   fi
 
 
-        # Fallback default of just /bin if DEVKIT_PATH is not defined
-        if test "x$DEVKIT_TOOLCHAIN_PATH" = x; then
-          DEVKIT_TOOLCHAIN_PATH="$DEVKIT_ROOT/bin"
-        fi
+    # Fallback default of just /bin if DEVKIT_PATH is not defined
+    if test "x$DEVKIT_TOOLCHAIN_PATH" = x; then
+      DEVKIT_TOOLCHAIN_PATH="$DEVKIT_ROOT/bin"
+    fi
 
   if test "x$DEVKIT_TOOLCHAIN_PATH" != x; then
     if test "x$TOOLCHAIN_PATH" = x; then
@@ -17341,27 +17371,24 @@ $as_echo "$DEVKIT_ROOT" >&6; }
   fi
 
 
-        # If DEVKIT_SYSROOT is set, use that, otherwise try a couple of known
-        # places for backwards compatiblity.
-        if test "x$DEVKIT_SYSROOT" != x; then
-          SYSROOT="$DEVKIT_SYSROOT"
-        elif test -d "$DEVKIT_ROOT/$host_alias/libc"; then
-          SYSROOT="$DEVKIT_ROOT/$host_alias/libc"
-        elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
-          SYSROOT="$DEVKIT_ROOT/$host/sys-root"
-        fi
+    # If DEVKIT_SYSROOT is set, use that, otherwise try a couple of known
+    # places for backwards compatiblity.
+    if test "x$DEVKIT_SYSROOT" != x; then
+      SYSROOT="$DEVKIT_SYSROOT"
+    elif test -d "$DEVKIT_ROOT/$host_alias/libc"; then
+      SYSROOT="$DEVKIT_ROOT/$host_alias/libc"
+    elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
+      SYSROOT="$DEVKIT_ROOT/$host/sys-root"
+    fi
 
-        if test "x$DEVKIT_ROOT" != x; then
-          DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib"
-          if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-            DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib64"
-          fi
+    if test "x$DEVKIT_ROOT" != x; then
+      DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib"
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib64"
+      fi
 
-        fi
-
-
-fi
-
+    fi
+  fi
 
   # You can force the sysroot if the sysroot encoded into the compiler tools
   # is not correct.
@@ -32299,7 +32326,11 @@ $as_echo "$as_me: The following toolchain versions are valid on this platform:" 
   elif test "x$DEVKIT_VS_VERSION" != x; then
     VS_VERSION=$DEVKIT_VS_VERSION
     TOOLCHAIN_VERSION=$VS_VERSION
-    eval VS_DESCRIPTION="\${VS_DESCRIPTION_${VS_VERSION}}"
+    # If the devkit has a name, use that as description
+    VS_DESCRIPTION="$DEVKIT_NAME"
+    if test "x$VS_DESCRIPTION" = x; then
+      eval VS_DESCRIPTION="\${VS_DESCRIPTION_${VS_VERSION}}"
+    fi
     eval VS_VERSION_INTERNAL="\${VS_VERSION_INTERNAL_${VS_VERSION}}"
     eval MSVCR_NAME="\${VS_MSVCR_${VS_VERSION}}"
     eval MSVCP_NAME="\${VS_MSVCP_${VS_VERSION}}"
@@ -32367,7 +32398,9 @@ $as_echo "$as_me: Valid Visual Studio versions: $VALID_VS_VERSIONS." >&6;}
   eval VS_COMNTOOLS_VAR="\${VS_ENVVAR_${VS_VERSION}}"
   eval VS_COMNTOOLS="\$${VS_COMNTOOLS_VAR}"
   eval VS_INSTALL_DIR="\${VS_VS_INSTALLDIR_${VS_VERSION}}"
+  eval VS_EDITIONS="\${VS_EDITIONS_${VS_VERSION}}"
   eval SDK_INSTALL_DIR="\${VS_SDK_INSTALLDIR_${VS_VERSION}}"
+  eval VS_ENV_ARGS="\${VS_ENV_ARGS_${VS_VERSION}}"
 
   # When using --with-tools-dir, assume it points to the correct and default
   # version of Visual Studio or that --with-toolchain-version was also set.
@@ -32378,12 +32411,6 @@ $as_echo "$as_me: Valid Visual Studio versions: $VALID_VS_VERSIONS." >&6;}
     VS_BASE="$with_tools_dir/../.."
     METHOD="--with-tools-dir"
 
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-      VCVARSFILE="vc/bin/vcvars32.bat"
-    else
-      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
-    fi
-
 
   windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -32394,19 +32421,42 @@ $as_echo "$as_me: Valid Visual Studio versions: $VALID_VS_VERSIONS." >&6;}
     VS_BASE="$unix_path"
   fi
 
+    # In VS 2017, the default installation is in a subdir named after the edition.
+    # Find the first one present and use that.
+    if test "x$VS_EDITIONS" != x; then
+      for edition in $VS_EDITIONS; do
+        if test -d "$VS_BASE/$edition"; then
+          VS_BASE="$VS_BASE/$edition"
+          break
+        fi
+      done
+    fi
+
     if test -d "$VS_BASE"; then
-      if test -f "$VS_BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
-        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
-        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
-$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+        VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
+            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+      fi
+
+      for VCVARSFILE in $VCVARSFILES; do
+        if test -f "$VS_BASE/$VCVARSFILE"; then
+          VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+          break
+        fi
+      done
+
+      if test "x$VS_ENV_CMD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&5
+$as_echo "$as_me: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&6;}
+      else
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources
+        # (see 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100',
+        # 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       fi
     fi
   fi
@@ -32417,12 +32467,6 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     VS_BASE="$with_tools_dir/../../.."
     METHOD="--with-tools-dir"
 
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-      VCVARSFILE="vc/bin/vcvars32.bat"
-    else
-      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
-    fi
-
 
   windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -32433,19 +32477,42 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     VS_BASE="$unix_path"
   fi
 
+    # In VS 2017, the default installation is in a subdir named after the edition.
+    # Find the first one present and use that.
+    if test "x$VS_EDITIONS" != x; then
+      for edition in $VS_EDITIONS; do
+        if test -d "$VS_BASE/$edition"; then
+          VS_BASE="$VS_BASE/$edition"
+          break
+        fi
+      done
+    fi
+
     if test -d "$VS_BASE"; then
-      if test -f "$VS_BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
-        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
-        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
-$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+        VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
+            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+      fi
+
+      for VCVARSFILE in $VCVARSFILES; do
+        if test -f "$VS_BASE/$VCVARSFILE"; then
+          VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+          break
+        fi
+      done
+
+      if test "x$VS_ENV_CMD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&5
+$as_echo "$as_me: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&6;}
+      else
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources
+        # (see 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100',
+        # 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       fi
     fi
   fi
@@ -32464,7 +32531,6 @@ $as_echo "$as_me: directory within the Visual Studio installation" >&6;}
   fi
 
   VS_ENV_CMD=""
-  VS_ENV_ARGS=""
 
   if test "x$VS_COMNTOOLS" != x; then
 
@@ -32472,12 +32538,6 @@ $as_echo "$as_me: directory within the Visual Studio installation" >&6;}
     VS_VERSION="${VS_VERSION}"
     VS_BASE="$VS_COMNTOOLS/../.."
     METHOD="$VS_COMNTOOLS_VAR variable"
-
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-      VCVARSFILE="vc/bin/vcvars32.bat"
-    else
-      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
-    fi
 
 
   windows_path="$VS_BASE"
@@ -32489,19 +32549,42 @@ $as_echo "$as_me: directory within the Visual Studio installation" >&6;}
     VS_BASE="$unix_path"
   fi
 
+    # In VS 2017, the default installation is in a subdir named after the edition.
+    # Find the first one present and use that.
+    if test "x$VS_EDITIONS" != x; then
+      for edition in $VS_EDITIONS; do
+        if test -d "$VS_BASE/$edition"; then
+          VS_BASE="$VS_BASE/$edition"
+          break
+        fi
+      done
+    fi
+
     if test -d "$VS_BASE"; then
-      if test -f "$VS_BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
-        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
-        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
-$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+        VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
+            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+      fi
+
+      for VCVARSFILE in $VCVARSFILES; do
+        if test -f "$VS_BASE/$VCVARSFILE"; then
+          VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+          break
+        fi
+      done
+
+      if test "x$VS_ENV_CMD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&5
+$as_echo "$as_me: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&6;}
+      else
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources
+        # (see 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100',
+        # 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       fi
     fi
   fi
@@ -32514,12 +32597,6 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     VS_BASE="$PROGRAMFILES/$VS_INSTALL_DIR"
     METHOD="well-known name"
 
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-      VCVARSFILE="vc/bin/vcvars32.bat"
-    else
-      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
-    fi
-
 
   windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -32530,19 +32607,42 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     VS_BASE="$unix_path"
   fi
 
+    # In VS 2017, the default installation is in a subdir named after the edition.
+    # Find the first one present and use that.
+    if test "x$VS_EDITIONS" != x; then
+      for edition in $VS_EDITIONS; do
+        if test -d "$VS_BASE/$edition"; then
+          VS_BASE="$VS_BASE/$edition"
+          break
+        fi
+      done
+    fi
+
     if test -d "$VS_BASE"; then
-      if test -f "$VS_BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
-        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
-        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
-$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+        VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
+            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+      fi
+
+      for VCVARSFILE in $VCVARSFILES; do
+        if test -f "$VS_BASE/$VCVARSFILE"; then
+          VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+          break
+        fi
+      done
+
+      if test "x$VS_ENV_CMD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&5
+$as_echo "$as_me: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&6;}
+      else
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources
+        # (see 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100',
+        # 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       fi
     fi
   fi
@@ -32557,12 +32657,6 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     VS_BASE="$PROGRAMFILES_X86/$VS_INSTALL_DIR"
     METHOD="well-known name"
 
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-      VCVARSFILE="vc/bin/vcvars32.bat"
-    else
-      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
-    fi
-
 
   windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -32573,19 +32667,42 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     VS_BASE="$unix_path"
   fi
 
+    # In VS 2017, the default installation is in a subdir named after the edition.
+    # Find the first one present and use that.
+    if test "x$VS_EDITIONS" != x; then
+      for edition in $VS_EDITIONS; do
+        if test -d "$VS_BASE/$edition"; then
+          VS_BASE="$VS_BASE/$edition"
+          break
+        fi
+      done
+    fi
+
     if test -d "$VS_BASE"; then
-      if test -f "$VS_BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
-        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
-        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
-$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+        VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
+            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+      fi
+
+      for VCVARSFILE in $VCVARSFILES; do
+        if test -f "$VS_BASE/$VCVARSFILE"; then
+          VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+          break
+        fi
+      done
+
+      if test "x$VS_ENV_CMD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&5
+$as_echo "$as_me: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&6;}
+      else
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources
+        # (see 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100',
+        # 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       fi
     fi
   fi
@@ -32597,12 +32714,6 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     VS_BASE="C:/Program Files/$VS_INSTALL_DIR"
     METHOD="well-known name"
 
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-      VCVARSFILE="vc/bin/vcvars32.bat"
-    else
-      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
-    fi
-
 
   windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -32613,19 +32724,42 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     VS_BASE="$unix_path"
   fi
 
+    # In VS 2017, the default installation is in a subdir named after the edition.
+    # Find the first one present and use that.
+    if test "x$VS_EDITIONS" != x; then
+      for edition in $VS_EDITIONS; do
+        if test -d "$VS_BASE/$edition"; then
+          VS_BASE="$VS_BASE/$edition"
+          break
+        fi
+      done
+    fi
+
     if test -d "$VS_BASE"; then
-      if test -f "$VS_BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
-        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
-        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
-$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+        VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
+            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+      fi
+
+      for VCVARSFILE in $VCVARSFILES; do
+        if test -f "$VS_BASE/$VCVARSFILE"; then
+          VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+          break
+        fi
+      done
+
+      if test "x$VS_ENV_CMD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&5
+$as_echo "$as_me: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&6;}
+      else
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources
+        # (see 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100',
+        # 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       fi
     fi
   fi
@@ -32636,12 +32770,6 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     VS_BASE="C:/Program Files (x86)/$VS_INSTALL_DIR"
     METHOD="well-known name"
 
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-      VCVARSFILE="vc/bin/vcvars32.bat"
-    else
-      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
-    fi
-
 
   windows_path="$VS_BASE"
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -32652,19 +32780,42 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     VS_BASE="$unix_path"
   fi
 
+    # In VS 2017, the default installation is in a subdir named after the edition.
+    # Find the first one present and use that.
+    if test "x$VS_EDITIONS" != x; then
+      for edition in $VS_EDITIONS; do
+        if test -d "$VS_BASE/$edition"; then
+          VS_BASE="$VS_BASE/$edition"
+          break
+        fi
+      done
+    fi
+
     if test -d "$VS_BASE"; then
-      if test -f "$VS_BASE/$VCVARSFILE"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
 $as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
-        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
-        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
       else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found Visual Studio installation at $VS_BASE using $METHOD" >&5
-$as_echo "$as_me: Found Visual Studio installation at $VS_BASE using $METHOD" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&5
-$as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring" >&6;}
+        VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
+            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+      fi
+
+      for VCVARSFILE in $VCVARSFILES; do
+        if test -f "$VS_BASE/$VCVARSFILE"; then
+          VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+          break
+        fi
+      done
+
+      if test "x$VS_ENV_CMD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&5
+$as_echo "$as_me: Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring" >&6;}
+      else
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources
+        # (see 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100',
+        # 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       fi
     fi
   fi
@@ -32916,6 +33067,11 @@ $as_echo "$as_me: Found $VS_DESCRIPTION" >&6;}
       break
     fi
   done
+
+  TOOLCHAIN_DESCRIPTION="$VS_DESCRIPTION"
+  if test "$TOOLCHAIN_VERSION" -gt 2013; then
+    UNSUPPORTED_TOOLCHAIN_VERSION=yes
+  fi
 
 
   # If we have a devkit, skip all of the below.
@@ -33249,6 +33405,9 @@ $as_echo "$as_me: Trying to extract Visual Studio environment variables" >&6;}
       # This will end up something like:
       # call C:/progra~2/micros~2.0/vc/bin/amd64/vcvars64.bat
       $ECHO "call $WINPATH_VS_ENV_CMD $VS_ENV_ARGS" >> $EXTRACT_VC_ENV_BAT_FILE
+      # In some cases, the VS_ENV_CMD will change directory, change back so
+      # the set-vs-env.sh ends up in the right place.
+      $ECHO 'cd %~dp0' >> $EXTRACT_VC_ENV_BAT_FILE
       # These will end up something like:
       # C:/CygWin/bin/bash -c 'echo VS_PATH=\"$PATH\" > localdevenv.sh
       # The trailing space for everyone except PATH is no typo, but is needed due
@@ -33670,7 +33829,7 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     if test "x$XCODE_VERSION_OUTPUT" != x; then
       # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
       TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
-      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode"
+      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
     else
       # Currently we do not define this for other toolchains. This might change as the need arise.
       TOOLCHAIN_VERSION=
@@ -55888,7 +56047,6 @@ $as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" 
   MSVC_DLL=
 
   if test "x$MSVC_DLL" = x; then
-    # Probe: Using well-known location from Visual Studio 10.0
     if test "x$VCINSTALLDIR" != x; then
       CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
 
@@ -55901,15 +56059,27 @@ $as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" 
     CYGWIN_VC_INSTALL_DIR="$unix_path"
   fi
 
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+      if test "$VS_VERSION" -lt 2017; then
+        # Probe: Using well-known location from Visual Studio 12.0 and older
+        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+        else
+          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+        fi
       else
-        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+        # Probe: Using well-known location from VS 2017
+        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_INSTALL_DIR/Redist/MSVC/*/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME`"
+        else
+          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_INSTALL_DIR/Redist/MSVC/*/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME`"
+        fi
       fi
-      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
+      # In case any of the above finds more than one file, loop over them.
+      for possible_msvc_dll in $POSSIBLE_MSVC_DLL; do
+        $ECHO "POSSIBLE_MSVC_DLL $possible_msvc_dll"
 
   DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  POSSIBLE_MSVC_DLL="$possible_msvc_dll"
   METHOD="well-known location in VCINSTALLDIR"
   if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
@@ -56082,6 +56252,7 @@ $as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" 
     fi
   fi
 
+      done
     fi
   fi
 
@@ -57237,7 +57408,6 @@ $as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" 
   MSVC_DLL=
 
   if test "x$MSVC_DLL" = x; then
-    # Probe: Using well-known location from Visual Studio 10.0
     if test "x$VCINSTALLDIR" != x; then
       CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
 
@@ -57250,15 +57420,27 @@ $as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" 
     CYGWIN_VC_INSTALL_DIR="$unix_path"
   fi
 
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+      if test "$VS_VERSION" -lt 2017; then
+        # Probe: Using well-known location from Visual Studio 12.0 and older
+        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+        else
+          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+        fi
       else
-        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+        # Probe: Using well-known location from VS 2017
+        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_INSTALL_DIR/Redist/MSVC/*/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME`"
+        else
+          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_INSTALL_DIR/Redist/MSVC/*/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME`"
+        fi
       fi
-      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
+      # In case any of the above finds more than one file, loop over them.
+      for possible_msvc_dll in $POSSIBLE_MSVC_DLL; do
+        $ECHO "POSSIBLE_MSVC_DLL $possible_msvc_dll"
 
   DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  POSSIBLE_MSVC_DLL="$possible_msvc_dll"
   METHOD="well-known location in VCINSTALLDIR"
   if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
@@ -57431,6 +57613,7 @@ $as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" 
     fi
   fi
 
+      done
     fi
   fi
 
@@ -68900,16 +69083,6 @@ $as_echo "no" >&6; }
   fi
 
 
-  # Did user specify any unknown variables?
-
-  if test "x$CONFIGURE_OVERRIDDEN_VARIABLES" != x; then
-    # Replace the separating ! with spaces before presenting for end user.
-    unknown_variables=${CONFIGURE_OVERRIDDEN_VARIABLES//!/ }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The following variables might be unknown to configure: $unknown_variables" >&5
-$as_echo "$as_me: WARNING: The following variables might be unknown to configure: $unknown_variables" >&2;}
-  fi
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if build directory is on local disk" >&5
 $as_echo_n "checking if build directory is on local disk... " >&6; }
 
@@ -68989,6 +69162,16 @@ $as_echo "$JVM_FEATURES_TO_TEST" >&6; }
       as_fn_error $? "Invalid JVM feature(s): $INVALID_FEATURES" "$LINENO" 5
     fi
   done
+
+
+# Did user specify any unknown variables?
+
+  if test "x$CONFIGURE_OVERRIDDEN_VARIABLES" != x; then
+    # Replace the separating ! with spaces before presenting for end user.
+    unknown_variables=${CONFIGURE_OVERRIDDEN_VARIABLES//!/ }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The following variables might be unknown to configure: $unknown_variables" >&5
+$as_echo "$as_me: WARNING: The following variables might be unknown to configure: $unknown_variables" >&2;}
+  fi
 
 
 # We're messing a bit with internal autoconf variables to put the config.status
@@ -70223,10 +70406,7 @@ fi
     printf "* Environment:    $WINDOWS_ENV_VENDOR version $WINDOWS_ENV_VERSION (root at $WINDOWS_ENV_ROOT_PATH)\n"
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
-  if test "x$TOOLCHAIN_VERSION" != "x"; then
-    print_version=" $TOOLCHAIN_VERSION"
-  fi
-  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION$print_version)\n"
+  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
   printf "* C Compiler:     Version $CC_VERSION_NUMBER (at $CC)\n"
   printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at $CXX)\n"
 
@@ -70271,6 +70451,12 @@ fi
   if test "x$IS_RECONFIGURE" != "xyes" && test "x$no_create" = "xyes"; then
     printf "WARNING: The result of this configuration was not saved.\n"
     printf "You should run without '--no-create | -n' to create the configuration.\n"
+    printf "\n"
+  fi
+
+  if test "x$UNSUPPORTED_TOOLCHAIN_VERSION" = "xyes"; then
+    printf "WARNING: The toolchain version used is known to have issues. Please\n"
+    printf "consider using a supported version unless you know what you are doing.\n"
     printf "\n"
   fi
 

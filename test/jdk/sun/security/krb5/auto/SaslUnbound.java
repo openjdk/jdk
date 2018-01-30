@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,16 @@
 
 /*
  * @test
- * @bug 8001104
+ * @bug 8001104 8194486
  * @summary Unbound SASL service: the GSSAPI/krb5 mech
+ * @library /test/lib
  * @compile -XDignore.symbol.file SaslUnbound.java
- * @run main/othervm SaslUnbound 0
- * @run main/othervm/fail SaslUnbound 1
- * @run main/othervm/fail SaslUnbound 2
- * @run main/othervm/fail SaslUnbound 3
- * @run main/othervm/fail SaslUnbound 4
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SaslUnbound 0
+ * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts SaslUnbound 1
+ * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts SaslUnbound 2
+ * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts SaslUnbound 3
+ * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts SaslUnbound 4
  */
 import java.io.IOException;
 import java.util.Arrays;

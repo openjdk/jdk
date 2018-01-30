@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ public class TreeWriter extends AbstractTreeWriter {
                     continue;
                 }
                 DocPath link = pathString(pkg, DocPaths.PACKAGE_TREE);
-                Content li = HtmlTree.LI(Links.createLink(link,
+                Content li = HtmlTree.LI(links.createLink(link,
                         new StringContent(utils.getPackageName(pkg))));
                 if (i < packages.size() - 1) {
                     li.addContent(", ");
