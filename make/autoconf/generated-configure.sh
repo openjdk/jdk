@@ -5215,7 +5215,7 @@ VS_SDK_PLATFORM_NAME_2017=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1517244998
+DATE_WHEN_GENERATED=1517274450
 
 ###############################################################################
 #
@@ -69083,16 +69083,6 @@ $as_echo "no" >&6; }
   fi
 
 
-  # Did user specify any unknown variables?
-
-  if test "x$CONFIGURE_OVERRIDDEN_VARIABLES" != x; then
-    # Replace the separating ! with spaces before presenting for end user.
-    unknown_variables=${CONFIGURE_OVERRIDDEN_VARIABLES//!/ }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The following variables might be unknown to configure: $unknown_variables" >&5
-$as_echo "$as_me: WARNING: The following variables might be unknown to configure: $unknown_variables" >&2;}
-  fi
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if build directory is on local disk" >&5
 $as_echo_n "checking if build directory is on local disk... " >&6; }
 
@@ -69172,6 +69162,16 @@ $as_echo "$JVM_FEATURES_TO_TEST" >&6; }
       as_fn_error $? "Invalid JVM feature(s): $INVALID_FEATURES" "$LINENO" 5
     fi
   done
+
+
+# Did user specify any unknown variables?
+
+  if test "x$CONFIGURE_OVERRIDDEN_VARIABLES" != x; then
+    # Replace the separating ! with spaces before presenting for end user.
+    unknown_variables=${CONFIGURE_OVERRIDDEN_VARIABLES//!/ }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The following variables might be unknown to configure: $unknown_variables" >&5
+$as_echo "$as_me: WARNING: The following variables might be unknown to configure: $unknown_variables" >&2;}
+  fi
 
 
 # We're messing a bit with internal autoconf variables to put the config.status
