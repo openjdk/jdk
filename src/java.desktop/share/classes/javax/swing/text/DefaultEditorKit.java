@@ -110,7 +110,7 @@ public class DefaultEditorKit extends EditorKit {
      * @return the command list
      */
     public Action[] getActions() {
-        return defaultActions;
+        return defaultActions.clone();
     }
 
     /**

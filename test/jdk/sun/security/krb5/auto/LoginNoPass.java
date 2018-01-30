@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 8028351
+ * @bug 8028351 8194486
  * @summary JWS doesn't get authenticated when using kerberos auth proxy
+ * @library /test/lib
  * @compile -XDignore.symbol.file LoginNoPass.java
- * @run main/othervm LoginNoPass
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts LoginNoPass
  */
 
 import sun.security.jgss.GSSUtil;

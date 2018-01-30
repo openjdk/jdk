@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,7 +310,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
         if (link) {
             if (typeElement == null) {
-                return Links.createLink(
+                return links.createLink(
                         SectionName.FIELD_SUMMARY,
                         contents.navField);
             } else {
@@ -329,7 +329,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(Links.createLink(
+            liNav.addContent(links.createLink(
                     SectionName.FIELD_DETAIL,
                     contents.navField));
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug  8157349 8185985
+ * @bug  8157349 8185985 8194953
  * @summary  test copy of doc-files, and its contents for HTML meta content.
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -54,18 +54,18 @@ public class TestCopyFiles extends JavadocTester {
                 "phi-TOP-phi",
                 // check top navbar
                 "<a href=\"../../acme.mdle-summary.html\">Module</a>",
-                "<a href=\"../../p/package-summary.html\">Package</a>",
+                "<a href=\"../package-summary.html\">Package</a>",
                 "<a href=\"../../overview-tree.html\">Tree</a>",
                 "<a href=\"../../deprecated-list.html\">Deprecated</a>",
                 "<a href=\"../../index-all.html\">Index</a>",
                 "phi-HEADER-phi",
                 "In a named module acme.module and named package "
-                        + "<a href=\"../../p/package-summary.html\"><code>p</code></a>.",
+                        + "<a href=\"../package-summary.html\"><code>p</code></a>.",
                 "\"simpleTagLabel\">Since:</",
                 "1940",
                 // check bottom navbar
                 "<a href=\"../../acme.mdle-summary.html\">Module</a>",
-                "<a href=\"../../p/package-summary.html\">Package</a>",
+                "<a href=\"../package-summary.html\">Package</a>",
                 "<a href=\"../../overview-tree.html\">Tree</a>",
                 "<a href=\"../../deprecated-list.html\">Deprecated</a>",
                 "<a href=\"../../index-all.html\">Index</a>",
@@ -91,18 +91,18 @@ public class TestCopyFiles extends JavadocTester {
                 "phi-TOP-phi",
                 // check top navbar
                 "<a href=\"../../acme.mdle-summary.html\">Module</a>",
-                "<a href=\"../../p/package-summary.html\">Package</a>",
+                "<a href=\"../package-summary.html\">Package</a>",
                 "<a href=\"../../overview-tree.html\">Tree</a>",
                 "<a href=\"../../deprecated-list.html\">Deprecated</a>",
                 "<a href=\"../../index-all.html\">Index</a>",
                 "phi-HEADER-phi",
                 "In a named module acme.module and named package "
-                        + "<a href=\"../../p/package-summary.html\"><code>p</code></a>.",
+                        + "<a href=\"../package-summary.html\"><code>p</code></a>.",
                 "\"simpleTagLabel\">Since:</",
                 "1940",
                 // check bottom navbar
                 "<a href=\"../../acme.mdle-summary.html\">Module</a>",
-                "<a href=\"../../p/package-summary.html\">Package</a>",
+                "<a href=\"../package-summary.html\">Package</a>",
                 "<a href=\"../../overview-tree.html\">Tree</a>",
                 "<a href=\"../../deprecated-list.html\">Deprecated</a>",
                 "<a href=\"../../index-all.html\">Index</a>",
@@ -116,7 +116,7 @@ public class TestCopyFiles extends JavadocTester {
                 "phi-TOP-phi",
                 // check top navbar
                 "<a href=\"../../../../acme2.mdle-summary.html\">Module</a>",
-                "<a href=\"../../../../p2/package-summary.html\">Package</a>",
+                "<a href=\"../../../package-summary.html\">Package</a>",
                 "<a href=\"../../../../overview-tree.html\">Tree</a>",
                 "<a href=\"../../../../deprecated-list.html\">Deprecated</a>",
                 "<a href=\"../../../../index-all.html\">Index</a>",
@@ -124,7 +124,7 @@ public class TestCopyFiles extends JavadocTester {
                 "SubSubReadme.html at third level of doc-file directory.",
                 // check bottom navbar
                 "<a href=\"../../../../acme2.mdle-summary.html\">Module</a>",
-                "<a href=\"../../../../p2/package-summary.html\">Package</a>",
+                "<a href=\"../../../package-summary.html\">Package</a>",
                 "<a href=\"../../../../overview-tree.html\">Tree</a>",
                 "<a href=\"../../../../deprecated-list.html\">Deprecated</a>",
                 "<a href=\"../../../../index-all.html\">Index</a>",
@@ -141,7 +141,7 @@ public class TestCopyFiles extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("p/doc-files/inpackage.html", true,
                 "In a named module acme.module and named package "
-                + "<a href=\"../../p/package-summary.html\"><code>p</code></a>."
+                + "<a href=\"../package-summary.html\"><code>p</code></a>."
         );
     }
 
@@ -155,7 +155,7 @@ public class TestCopyFiles extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("p/doc-files/inpackage.html", true,
                 "In a named module acme.module and named package "
-                + "<a href=\"../../p/package-summary.html\"><code>p</code></a>."
+                + "<a href=\"../package-summary.html\"><code>p</code></a>."
         );
     }
 
@@ -257,5 +257,17 @@ public class TestCopyFiles extends JavadocTester {
         checkOutput("p1/doc-files/inpackage.html", true,
                 "A named package in an unnamed module"
         );
+    }
+
+    @Test
+    void testCopyThrough() {
+        javadoc("-d", "copy",
+                "-sourcepath", testSrc("packages"),
+                "p2");
+        checkExit(Exit.OK);
+        checkOutput("p2/doc-files/case1.html", true, "<!-- Generated by javadoc");
+        checkOutput("p2/doc-files/case2.html", false, "<!-- Generated by javadoc");
+        checkOutput("p2/doc-files/case3.html", false, "<!-- Generated by javadoc");
+        checkOutput("p2/doc-files/case4.html", false, "<!-- Generated by javadoc");
     }
 }

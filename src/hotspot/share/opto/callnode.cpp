@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -772,7 +772,7 @@ bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
     ciKlass* boxing_klass = t_oop->klass();
     if (is_CallStaticJava() && as_CallStaticJava()->is_boxing_method()) {
       // Skip unrelated boxing methods.
-      Node* proj = proj_out(TypeFunc::Parms);
+      Node* proj = proj_out_or_null(TypeFunc::Parms);
       if ((proj == NULL) || (phase->type(proj)->is_instptr()->klass() != boxing_klass)) {
         return false;
       }
@@ -784,7 +784,7 @@ bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
       }
       // May modify (by reflection) if an boxing object is passed
       // as argument or returned.
-      Node* proj = returns_pointer() ? proj_out(TypeFunc::Parms) : NULL;
+      Node* proj = returns_pointer() ? proj_out_or_null(TypeFunc::Parms) : NULL;
       if (proj != NULL) {
         const TypeInstPtr* inst_t = phase->type(proj)->isa_instptr();
         if ((inst_t != NULL) && (!inst_t->klass_is_exact() ||
@@ -824,7 +824,7 @@ bool CallNode::has_non_debug_use(Node *n) {
 Node *CallNode::result_cast() {
   Node *cast = NULL;
 
-  Node *p = proj_out(TypeFunc::Parms);
+  Node *p = proj_out_or_null(TypeFunc::Parms);
   if (p == NULL)
     return NULL;
 
@@ -1378,13 +1378,13 @@ Node* AllocateArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       PhaseIterGVN *igvn = phase->is_IterGVN();
       // Unreachable fall through path (negative array length),
       // the allocation can only throw so disconnect it.
-      Node* proj = proj_out(TypeFunc::Control);
+      Node* proj = proj_out_or_null(TypeFunc::Control);
       Node* catchproj = NULL;
       if (proj != NULL) {
         for (DUIterator_Fast imax, i = proj->fast_outs(imax); i < imax; i++) {
           Node *cn = proj->fast_out(i);
           if (cn->is_Catch()) {
-            catchproj = cn->as_Multi()->proj_out(CatchProjNode::fall_through_index);
+            catchproj = cn->as_Multi()->proj_out_or_null(CatchProjNode::fall_through_index);
             break;
           }
         }
@@ -1442,7 +1442,7 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
       // Create a cast which is control dependent on the initialization to
       // propagate the fact that the array length must be positive.
       length = new CastIINode(length, narrow_length_type);
-      length->set_req(0, initialization()->proj_out(0));
+      length->set_req(0, initialization()->proj_out_or_null(0));
     }
   }
 

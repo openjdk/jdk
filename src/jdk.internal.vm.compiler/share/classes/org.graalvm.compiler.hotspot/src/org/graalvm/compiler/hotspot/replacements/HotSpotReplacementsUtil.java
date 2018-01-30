@@ -566,6 +566,28 @@ public class HotSpotReplacementsUtil {
     }
 
     @Fold
+    public static int objectAlignment(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.objectAlignment;
+    }
+
+    /**
+     * Computes the size of the memory chunk allocated for an array. This size accounts for the
+     * array header size, body size and any padding after the last element to satisfy object
+     * alignment requirements.
+     *
+     * @param length the number of elements in the array
+     * @param headerSize the size of the array header
+     * @param log2ElementSize log2 of the size of an element in the array
+     * @return the size of the memory chunk
+     */
+    public static int arrayAllocationSize(int length, int headerSize, int log2ElementSize) {
+        int alignment = objectAlignment(INJECTED_VMCONFIG);
+        int size = (length << log2ElementSize) + headerSize + (alignment - 1);
+        int mask = ~(alignment - 1);
+        return size & mask;
+    }
+
+    @Fold
     public static int instanceHeaderSize(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.useCompressedClassPointers ? (2 * wordSize()) - 4 : 2 * wordSize();
     }

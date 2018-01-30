@@ -26,9 +26,11 @@
 package sun.security.provider.certpath.ldap;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.net.URI;
 import java.util.*;
+import javax.naming.CompositeName;
 import javax.naming.Context;
+import javax.naming.InvalidNameException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.NameNotFoundException;
@@ -44,6 +46,7 @@ import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import javax.security.auth.x500.X500Principal;
 
+import com.sun.jndi.ldap.LdapReferralException;
 import sun.security.util.HexDumpEncoder;
 import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
@@ -181,13 +184,9 @@ final class LDAPCertStoreImpl {
         try {
             ctx = new InitialLdapContext(env, null);
             /*
-             * By default, follow referrals unless application has
-             * overridden property in an application resource file.
+             * Always deal with referrals here.
              */
-            Hashtable<?,?> currentEnv = ctx.getEnvironment();
-            if (currentEnv.get(Context.REFERRAL) == null) {
-                ctx.addToEnvironment(Context.REFERRAL, "follow-scheme");
-            }
+            ctx.addToEnvironment(Context.REFERRAL, "throw");
         } catch (NamingException e) {
             if (debug != null) {
                 debug.println("LDAPCertStore.engineInit about to throw "
@@ -223,9 +222,23 @@ final class LDAPCertStoreImpl {
         private Map<String, byte[][]> valueMap;
         private final List<String> requestedAttributes;
 
-        LDAPRequest(String name) {
-            this.name = name;
+        LDAPRequest(String name) throws CertStoreException {
+            this.name = checkName(name);
             requestedAttributes = new ArrayList<>(5);
+        }
+
+        private String checkName(String name) throws CertStoreException {
+            if (name == null) {
+                throw new CertStoreException("Name absent");
+            }
+            try {
+                if (new CompositeName(name).size() > 1) {
+                    throw new CertStoreException("Invalid name: " + name);
+                }
+            } catch (InvalidNameException ine) {
+                throw new CertStoreException("Invalid name: " + name, ine);
+            }
+            return name;
         }
 
         String getName() {
@@ -242,7 +255,6 @@ final class LDAPCertStoreImpl {
         /**
          * Gets one or more binary values from an attribute.
          *
-         * @param name          the location holding the attribute
          * @param attrId                the attribute identifier
          * @return                      an array of binary values (byte arrays)
          * @throws NamingException      if a naming exception occurs
@@ -300,6 +312,39 @@ final class LDAPCertStoreImpl {
 
             try {
                 attrs = ctx.getAttributes(name, attrIds);
+            } catch (LdapReferralException lre) {
+                // LdapCtx has a hopCount field to avoid infinite loop
+                while (true) {
+                    try {
+                        String newName = (String) lre.getReferralInfo();
+                        URI newUri = new URI(newName);
+                        if (!newUri.getScheme().equalsIgnoreCase("ldap")) {
+                            throw new IllegalArgumentException("Not LDAP");
+                        }
+                        String newDn = newUri.getPath();
+                        if (newDn != null && newDn.charAt(0) == '/') {
+                            newDn = newDn.substring(1);
+                        }
+                        checkName(newDn);
+                    } catch (Exception e) {
+                        throw new NamingException("Cannot follow referral to "
+                                + lre.getReferralInfo());
+                    }
+                    LdapContext refCtx =
+                            (LdapContext)lre.getReferralContext();
+
+                    // repeat the original operation at the new context
+                    try {
+                        attrs = refCtx.getAttributes(name, attrIds);
+                        break;
+                    } catch (LdapReferralException re) {
+                        lre = re;
+                        continue;
+                    } finally {
+                        // Make sure we close referral context
+                        refCtx.close();
+                    }
+                }
             } catch (CommunicationException ce) {
                 communicationError = true;
                 throw ce;
@@ -513,7 +558,7 @@ final class LDAPCertStoreImpl {
      * <code>X509CertSelector</code>), a <code>CertStoreException</code> is
      * thrown.
      *
-     * @param selector a <code>X509CertSelector</code> used to select which
+     * @param xsel a <code>X509CertSelector</code> used to select which
      *  <code>Certificate</code>s should be returned.
      * @return a <code>Collection</code> of <code>X509Certificate</code>s that
      *         match the specified selector
@@ -684,7 +729,7 @@ final class LDAPCertStoreImpl {
      * (or the selector is not an <code>X509CRLSelector</code>), a
      * <code>CertStoreException</code> is thrown.
      *
-     * @param selector A <code>X509CRLSelector</code> used to select which
+     * @param xsel A <code>X509CRLSelector</code> used to select which
      *  <code>CRL</code>s should be returned. Specify <code>null</code>
      *  to return all <code>CRL</code>s.
      * @return A <code>Collection</code> of <code>X509CRL</code>s that

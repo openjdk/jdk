@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 4501327 4868379 8039132
- * @run main/othervm AddressesAndNameType 1
- * @run main/othervm AddressesAndNameType 2
- * @run main/othervm AddressesAndNameType 3
+ * @bug 4501327 4868379 8039132 8194486
  * @summary noaddresses settings and server name type
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts AddressesAndNameType 1
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts AddressesAndNameType 2
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts AddressesAndNameType 3
  */
 
 import java.net.InetAddress;

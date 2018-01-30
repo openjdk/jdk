@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
     static final Option[] recognizedOptions = {
 
-        new Option(false, "-help", "--help", "-?") {
+        new Option(false, "-help", "--help", "-?", "-h") {
             @Override
             void process(JavapTask task, String opt, String arg) {
                 task.options.help = true;

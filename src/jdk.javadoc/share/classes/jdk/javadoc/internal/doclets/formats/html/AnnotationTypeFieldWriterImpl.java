@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-
-import java.util.Arrays;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -292,7 +290,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      */
     protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
         if (link) {
-            return Links.createLink(
+            return links.createLink(
                     SectionName.ANNOTATION_TYPE_FIELD_SUMMARY,
                     contents.navField);
         } else {
@@ -305,7 +303,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
      */
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(Links.createLink(
+            liNav.addContent(links.createLink(
                     SectionName.ANNOTATION_TYPE_FIELD_DETAIL,
                     contents.navField));
         } else {

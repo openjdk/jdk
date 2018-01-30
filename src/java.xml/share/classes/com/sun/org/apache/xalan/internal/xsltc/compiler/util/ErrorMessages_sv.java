@@ -409,7 +409,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * "<xsl:stylesheet>" is a keyword that should not be translated.
          */
         {ErrorMsg.ILLEGAL_TEXT_NODE_ERR,
-        "Textdata utanf\u00F6r det \u00F6versta elementet <xsl:stylesheet>."},
+        "Textdata utanf\u00F6r toppniv\u00E5elementet <xsl:stylesheet>."},
 
         /*
          * Note to translators:  JAXP is an acronym for the Java API for XML

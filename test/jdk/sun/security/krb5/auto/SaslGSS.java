@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 8012082 8019267
+ * @bug 8012082 8019267 8194486
  * @summary SASL: auth-conf negotiated, but unencrypted data is accepted,
   *         reset to unencrypt
+ * @library /test/lib
  * @compile -XDignore.symbol.file SaslGSS.java
- * @run main/othervm SaslGSS
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SaslGSS
  */
 
 import javax.security.auth.callback.Callback;

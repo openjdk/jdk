@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,12 @@ public class Arguments {
     private HostIdentifier hostId;
 
     public static void printUsage(PrintStream ps) {
-      ps.println("usage: jps [-help]");
+      ps.println("usage: jps [--help]");
       ps.println("       jps [-q] [-mlvV] [<hostid>]");
       ps.println();
       ps.println("Definitions:");
       ps.println("    <hostid>:      <hostname>[:<port>]");
+      ps.println("    -? -h --help -help: Print this help message and exit.");
     }
 
     public Arguments(String[] args) throws IllegalArgumentException {
@@ -64,7 +65,10 @@ public class Arguments {
 
         if (args.length == 1) {
             if ((args[0].compareTo("-?") == 0)
-                    || (args[0].compareTo("-help")== 0)) {
+                || (args[0].compareTo("-h")== 0)
+                || (args[0].compareTo("--help")== 0)
+                // -help: legacy.
+                || (args[0].compareTo("-help")== 0)) {
               help = true;
               return;
             }

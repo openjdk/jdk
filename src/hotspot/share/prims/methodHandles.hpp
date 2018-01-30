@@ -70,6 +70,8 @@ class MethodHandles: AllStatic {
   static int find_MemberNames(Klass* k, Symbol* name, Symbol* sig,
                               int mflags, Klass* caller,
                               int skip, objArrayHandle results, TRAPS);
+  static Handle resolve_MemberName_type(Handle mname, Klass* caller, TRAPS);
+
   // bit values for suppress argument to expand_MemberName:
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
@@ -190,6 +192,8 @@ public:
     return (ref_kind == JVM_REF_invokeVirtual ||
             ref_kind == JVM_REF_invokeInterface);
   }
+
+  static int ref_kind_to_flags(int ref_kind);
 
 #include CPU_HEADER(methodHandles)
 

@@ -28,7 +28,9 @@
  *          false if the Map previously mapped k to null.
  */
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class KeySetRemove {
     public static void main(String[] args) throws Exception {

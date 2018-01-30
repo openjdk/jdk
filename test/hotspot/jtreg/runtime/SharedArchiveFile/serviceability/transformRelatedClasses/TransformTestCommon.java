@@ -63,8 +63,8 @@ public class TransformTestCommon {
                                             String parent, String child)
         throws Exception {
 
-        String parentSharedMatch = parent + " source: shared objects file";
-        String childSharedMatch =  child +  " source: shared objects file";
+        String parentSharedMatch = " " + parent + " source: shared objects file";
+        String childSharedMatch =  " " + child +  " source: shared objects file";
 
         if (entry.isParentExpectedShared)
             out.shouldContain(parentSharedMatch);

@@ -644,7 +644,12 @@ JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
 {
     jclass clsLcmsProfile;
     jobject cmmProfile;
-    jfieldID fid = (*env)->GetFieldID (env,
+    jfieldID fid;
+
+    if (pf == NULL) {
+        return NULL;
+    }
+    fid = (*env)->GetFieldID (env,
         (*env)->GetObjectClass(env, pf),
         "cmmProfile", "Lsun/java2d/cmm/Profile;");
     if (fid == NULL) {

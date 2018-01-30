@@ -737,7 +737,8 @@ public class LdapLoginModule implements LoginModule {
 
         if (authFirst || authOnly) {
 
-            String id = replaceUsernameToken(identityMatcher, authcIdentity);
+            String id =
+                replaceUsernameToken(identityMatcher, authcIdentity, username);
 
             // Prepare to bind using user's username and password
             ldapEnvironment.put(Context.SECURITY_CREDENTIALS, password);
@@ -864,8 +865,13 @@ public class LdapLoginModule implements LoginModule {
         }
 
         try {
-            NamingEnumeration<SearchResult> results = ctx.search("",
-                replaceUsernameToken(filterMatcher, userFilter), constraints);
+            // Sanitize username and substitute into LDAP filter
+            String canonicalUserFilter =
+                replaceUsernameToken(filterMatcher, userFilter,
+                    escapeUsernameChars());
+
+            NamingEnumeration<SearchResult> results =
+                ctx.search("", canonicalUserFilter, constraints);
 
             // Extract the distinguished name of the user's entry
             // (Use the first entry if more than one is returned)
@@ -913,12 +919,61 @@ public class LdapLoginModule implements LoginModule {
     }
 
     /**
+     * Modify the supplied username to encode characters that must be escaped
+     * according to RFC 4515: LDAP: String Representation of Search Filters.
+     *
+     * The following characters are encoded as a backslash "\" (ASCII 0x5c)
+     * followed by the two hexadecimal digits representing the value of the
+     * escaped character:
+     *     '*' (ASCII 0x2a)
+     *     '(' (ASCII 0x28)
+     *     ')' (ASCII 0x29)
+     *     '\' (ASCII 0x5c)
+     *     '\0'(ASCII 0x00)
+     *
+     * @return the modified username with its characters escaped as needed
+     */
+    private String escapeUsernameChars() {
+        int len = username.length();
+        StringBuilder escapedUsername = new StringBuilder(len + 16);
+
+        for (int i = 0; i < len; i++) {
+            char c = username.charAt(i);
+            switch (c) {
+            case '*':
+                escapedUsername.append("\\\\2A");
+                break;
+            case '(':
+                escapedUsername.append("\\\\28");
+                break;
+            case ')':
+                escapedUsername.append("\\\\29");
+                break;
+            case '\\':
+                escapedUsername.append("\\\\5C");
+                break;
+            case '\0':
+                escapedUsername.append("\\\\00");
+                break;
+            default:
+                escapedUsername.append(c);
+            }
+        }
+
+        return escapedUsername.toString();
+    }
+
+
+    /**
      * Replace the username token
      *
+     * @param matcher the replacement pattern
      * @param string the target string
+     * @param username the supplied username
      * @return the modified string
      */
-    private String replaceUsernameToken(Matcher matcher, String string) {
+    private String replaceUsernameToken(Matcher matcher, String string,
+        String username) {
         return matcher != null ? matcher.replaceAll(username) : string;
     }
 

@@ -212,6 +212,13 @@ public enum ToolOption {
         }
     },
 
+    ADD_OPENS("--add-opens", true) {
+        @Override
+        public void process(Helper helper, String arg) throws InvalidValueException {
+            Option.ADD_OPENS.process(helper.getOptionHelper(), opt, arg);
+        }
+    },
+
     // ----- doclet options -----
 
     DOCLET("-doclet", true), // handled in setDocletInvoker

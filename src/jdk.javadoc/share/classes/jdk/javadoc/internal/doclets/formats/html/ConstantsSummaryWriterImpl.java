@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,13 +135,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         //add link to summary
         Content link;
         if (pkg.isUnnamed()) {
-            link = Links.createLink(SectionName.UNNAMED_PACKAGE_ANCHOR,
+            link = links.createLink(SectionName.UNNAMED_PACKAGE_ANCHOR,
                     contents.defaultPackageLabel, "", "");
         } else {
             String parsedPackageName = utils.parsePackageName(pkg);
             Content packageNameContent = getPackageLabel(parsedPackageName);
             packageNameContent.addContent(".*");
-            link = Links.createLink(DocLink.fragment(parsedPackageName),
+            link = links.createLink(DocLink.fragment(parsedPackageName),
                     packageNameContent, "", "");
             PackageElement abbrevPkg = configuration.workArounds.getAbbreviatedPackageElement(pkg);
             printedPackageHeaders.add(abbrevPkg);

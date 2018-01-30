@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 7040151
+ * @bug 7040151 8194486
  * @summary SPNEGO GSS code does not parse tokens in accordance to RFC 2478
+ * @library /test/lib
  * @compile -XDignore.symbol.file SPNEGO.java
- * @run main/othervm SPNEGO
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SPNEGO
  */
 
 import sun.security.jgss.GSSUtil;

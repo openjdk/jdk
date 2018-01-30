@@ -30,7 +30,10 @@
  * @author Konstantin Kladko
  */
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class AbstractMapClone extends AbstractMap implements Cloneable {
 

@@ -27,6 +27,7 @@
 #include "code/vtableStubs.hpp"
 #include "interp_masm_x86.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -147,35 +148,49 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #endif
 
   // Entry arguments:
-  //  rax: Interface
+  //  rax: CompiledICHolder
   //  j_rarg0: Receiver
-
-  // Free registers (non-args) are rax (interface), rbx
-
-  // get receiver (need to skip return address on top of stack)
-
-  assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
-  // get receiver klass (also an implicit null-check)
-  address npe_addr = __ pc();
 
   // Most registers are in use; we'll use rax, rbx, r10, r11
   // (various calling sequences use r[cd]x, r[sd]i, r[89]; stay away from them)
-  __ load_klass(r10, j_rarg0);
+  const Register recv_klass_reg     = r10;
+  const Register holder_klass_reg   = rax; // declaring interface klass (DECC)
+  const Register resolved_klass_reg = rbx; // resolved interface klass (REFC)
+  const Register temp_reg           = r11;
+
+  Label L_no_such_interface;
+
+  const Register icholder_reg = rax;
+  __ movptr(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
+  __ movptr(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
+
+  // get receiver klass (also an implicit null-check)
+  assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
+  address npe_addr = __ pc();
+  __ load_klass(recv_klass_reg, j_rarg0);
+
+  // Receiver subtype check against REFC.
+  // Destroys recv_klass_reg value.
+  __ lookup_interface_method(// inputs: rec. class, interface
+                             recv_klass_reg, resolved_klass_reg, noreg,
+                             // outputs:  scan temp. reg1, scan temp. reg2
+                             recv_klass_reg, temp_reg,
+                             L_no_such_interface,
+                             /*return_method=*/false);
+
+  // Get selected method from declaring class and itable index
+  const Register method = rbx;
+  __ load_klass(recv_klass_reg, j_rarg0);   // restore recv_klass_reg
+  __ lookup_interface_method(// inputs: rec. class, interface, itable index
+                       recv_klass_reg, holder_klass_reg, itable_index,
+                       // outputs: method, scan temp. reg
+                       method, temp_reg,
+                       L_no_such_interface);
 
   // If we take a trap while this arg is on the stack we will not
   // be able to walk the stack properly. This is not an issue except
   // when there are mistakes in this assembly code that could generate
   // a spurious fault. Ask me how I know...
-
-  const Register method = rbx;
-  Label throw_icce;
-
-  // Get Method* and entrypoint for compiler
-  __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             r10, rax, itable_index,
-                             // outputs: method, scan temp. reg
-                             method, r11,
-                             throw_icce);
 
   // method (rbx): Method*
   // j_rarg0: receiver
@@ -197,7 +212,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   address ame_addr = __ pc();
   __ jmp(Address(method, Method::from_compiled_offset()));
 
-  __ bind(throw_icce);
+  __ bind(L_no_such_interface);
   __ jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
 
   __ flush();
@@ -224,8 +239,8 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
            (UseCompressedClassPointers ?  MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
   } else {
     // Itable stub size
-    return (DebugVtables ? 512 : 74) + (CountCompiledCalls ? 13 : 0) +
-           (UseCompressedClassPointers ?  MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
+    return (DebugVtables ? 512 : 140) + (CountCompiledCalls ? 13 : 0) +
+           (UseCompressedClassPointers ? 2 * MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
   }
   // In order to tune these parameters, run the JVM with VM options
   // +PrintMiscellaneous and +WizardMode to see information about

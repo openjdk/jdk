@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
 package com.sun.corba.se.impl.encoding;
 
 import com.sun.corba.se.impl.orbutil.ORBConstants;
+import com.sun.corba.se.impl.orbutil.ORBUtility;
 import com.sun.corba.se.impl.encoding.ByteBufferWithInfo;
 import com.sun.corba.se.impl.encoding.BufferManagerWrite;
 import com.sun.corba.se.pept.encoding.OutputObject;
 import com.sun.corba.se.pept.transport.Connection;
 import com.sun.corba.se.spi.orb.ORB;
+import com.sun.corba.se.spi.orb.ORBData;
 
 public class BufferManagerWriteGrow extends BufferManagerWrite
 {
@@ -48,7 +50,20 @@ public class BufferManagerWriteGrow extends BufferManagerWrite
      * buffer manager as set in the ORB.
      */
     public int getBufferSize() {
-        return orb.getORBData().getGIOPBufferSize();
+        ORBData orbData = null;
+        int bufferSize = ORBConstants.GIOP_DEFAULT_BUFFER_SIZE;
+        if (orb != null) {
+            orbData = orb.getORBData();
+            if (orbData != null) {
+                bufferSize = orbData.getGIOPBufferSize();
+                dprint("BufferManagerWriteGrow.getBufferSize: bufferSize == " + bufferSize);
+            } else {
+                dprint("BufferManagerWriteGrow.getBufferSize: orbData reference is NULL");
+            }
+        } else {
+            dprint("BufferManagerWriteGrow.getBufferSize: orb reference is NULL");
+        }
+        return bufferSize;
     }
 
     public void overflow (ByteBufferWithInfo bbwi)
@@ -89,4 +104,9 @@ public class BufferManagerWriteGrow extends BufferManagerWrite
      */
     public void close() {}
 
+    private void dprint(String msg) {
+        if (orb.transportDebugFlag) {
+            ORBUtility.dprint(this, msg);
+}
+    }
 }

@@ -28,10 +28,7 @@
  * @author Martin Buchholz
  */
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.Vector;
 
 public class CopyInto {
     private static void realMain(String[] args) throws Throwable {

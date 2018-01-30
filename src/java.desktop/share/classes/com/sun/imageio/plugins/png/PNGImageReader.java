@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -739,6 +739,17 @@ public class PNGImageReader extends ImageReader {
                     // If chunk type is 'IDAT', we've reached the image data.
                     if (imageStartPosition == -1L) {
                         /*
+                         * The PNG specification mandates that if colorType is
+                         * PNG_COLOR_PALETTE then the PLTE chunk should appear
+                         * before the first IDAT chunk.
+                         */
+                        if (colorType == PNG_COLOR_PALETTE &&
+                            !(metadata.PLTE_present))
+                        {
+                            throw new IIOException("Required PLTE chunk"
+                                    + " missing");
+                        }
+                        /*
                          * PNGs may contain multiple IDAT chunks containing
                          * a portion of image data. We store the position of
                          * the first IDAT chunk and continue with iteration
@@ -986,7 +997,9 @@ public class PNGImageReader extends ImageReader {
         }
 
         int inputBands = inputBandsForColorType[metadata.IHDR_colorType];
-        int bytesPerRow = (inputBands*passWidth*metadata.IHDR_bitDepth + 7)/8;
+        int bitsPerRow = Math.
+                multiplyExact((inputBands * metadata.IHDR_bitDepth), passWidth);
+        int bytesPerRow = (bitsPerRow + 7) / 8;
 
         // Read the image row-by-row
         for (int srcY = 0; srcY < passHeight; srcY++) {
@@ -1037,7 +1050,8 @@ public class PNGImageReader extends ImageReader {
         int bytesPerPixel = (bitDepth == 16) ? 2 : 1;
         bytesPerPixel *= inputBands;
 
-        int bytesPerRow = (inputBands*passWidth*bitDepth + 7)/8;
+        int bitsPerRow = Math.multiplyExact((inputBands * bitDepth), passWidth);
+        int bytesPerRow = (bitsPerRow + 7) / 8;
         int eltsPerRow = (bitDepth == 16) ? bytesPerRow/2 : bytesPerRow;
 
         // If no pixels need updating, just skip the input data

@@ -772,9 +772,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         Node first = null;
         restartFromHead: for (;;) {
             Node h = head, p = h;
-            for (; p != null;) {
-                final Object item;
-                if ((item = p.item) != null) {
+            while (p != null) {
+                if (p.item != null) {
                     if (p.isData) {
                         first = p;
                         break;
@@ -1602,8 +1601,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         // Read in elements until trailing null sentinel found
         Node h = null, t = null;
         for (Object item; (item = s.readObject()) != null; ) {
-            @SuppressWarnings("unchecked")
-            Node newNode = new Node((E) item);
+            Node newNode = new Node(item);
             if (h == null)
                 h = t = newNode;
             else
