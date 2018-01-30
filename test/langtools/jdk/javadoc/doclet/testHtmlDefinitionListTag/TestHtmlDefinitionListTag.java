@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
                 + "<dd>JDK1.0</dd>\n"
                 + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
-                + "<dd><a href=\"../pkg1/C2.html\" title=\"class in pkg1\"><code>"
+                + "<dd><a href=\"C2.html\" title=\"class in pkg1\"><code>"
                 + "C2</code></a>, \n"
                 + "<a href=\"../serialized-form.html#pkg1.C1\">"
                 + "Serialized Form</a></dd>\n"
@@ -166,7 +166,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
                 + "<dd>1.4</dd>\n"
                 + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
-                + "<dd><a href=\"../pkg1/C1.html#setUndecorated-boolean-\">"
+                + "<dd><a href=\"#setUndecorated-boolean-\">"
                 + "<code>setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>",
                 "<dl>\n"
@@ -193,7 +193,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dd>1.4</dd>\n"
                 + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
                 + "<dd>"
-                + "<a href=\"../pkg1/C1.html#readObject--\"><code>readObject()"
+                + "<a href=\"#readObject--\"><code>readObject()"
                 + "</code></a></dd>\n"
                 + "</dl>",
                 "<dl>\n"
@@ -201,7 +201,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dd><code>java.io.IOException</code></dd>\n"
                 + "<dt><span class=\"seeLabel\">See Also:"
                 + "</span></dt>\n"
-                + "<dd><a href=\"../pkg1/C1.html#setUndecorated-boolean-\">"
+                + "<dd><a href=\"#setUndecorated-boolean-\">"
                 + "<code>setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>");
 
@@ -277,7 +277,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 "<dd>JDK1.0</dd>\n" +
                 "<dt><span class=\"seeLabel\">See Also:" +
                 "</span></dt>\n" +
-                "<dd><a href=\"../pkg1/C2.html\" title=\"class in pkg1\">" +
+                "<dd><a href=\"C2.html\" title=\"class in pkg1\">" +
                 "<code>C2</code></a>, \n" +
                 "<a href=\"../serialized-form.html#pkg1.C1\">" +
                 "Serialized Form</a></dd>\n" +
@@ -310,7 +310,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
                 + "<dd>1.4</dd>\n"
                 + "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
-                + "<dd><a href=\"../pkg1/C1.html#readObject--\">"
+                + "<dd><a href=\"#readObject--\">"
                 + "<code>readObject()</code></a></dd>\n"
                 + "</dl>",
                 "<dl>\n"
@@ -319,7 +319,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dd><code>java.io.IOException</code></dd>\n"
                 + "<dt>"
                 + "<span class=\"seeLabel\">See Also:</span></dt>\n"
-                + "<dd><a href=\"../pkg1/C1.html#setUndecorated-boolean-\">"
+                + "<dd><a href=\"#setUndecorated-boolean-\">"
                 + "<code>setUndecorated(boolean)</code></a></dd>\n"
                 + "</dl>");
 
@@ -381,7 +381,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
 
         checkOutput("pkg1/C1.ModalExclusionType.html", expectFound,
                 "<pre>public " +
-                "static final&nbsp;<a href=\"../pkg1/C1.ModalExclusionType.html\" " +
+                "static final&nbsp;<a href=\"C1.ModalExclusionType.html\" " +
                 "title=\"enum in pkg1\">C1.ModalExclusionType</a> " +
                 "APPLICATION_EXCLUDE</pre>\n" +
                 "</li>");

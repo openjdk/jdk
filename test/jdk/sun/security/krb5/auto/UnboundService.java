@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,26 @@
 
 /*
  * @test
- * @bug 8001104
+ * @bug 8001104 8194486
  * @summary Unbound SASL service: the GSSAPI/krb5 mech
+ * @library /test/lib
  * @compile -XDignore.symbol.file UnboundService.java
- * @run main/othervm UnboundService null null
- * @run main/othervm UnboundService server/host.rabbit.hole null
- * @run main/othervm UnboundService server/host.rabbit.hole@RABBIT.HOLE null
- * @run main/othervm/fail UnboundService backend/host.rabbit.hole null
- * @run main/othervm UnboundService null server@host.rabbit.hole
- * @run main/othervm UnboundService server/host.rabbit.hole server@host.rabbit.hole
- * @run main/othervm UnboundService server/host.rabbit.hole@RABBIT.HOLE server@host.rabbit.hole
- * @run main/othervm/fail UnboundService backend/host.rabbit.hole server@host.rabbit.hole
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts UnboundService null null
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts UnboundService
+ *      server/host.rabbit.hole null
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts UnboundService
+ *      server/host.rabbit.hole@RABBIT.HOLE null
+ * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts UnboundService
+ *      backend/host.rabbit.hole null
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts UnboundService
+ *      null server@host.rabbit.hole
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts UnboundService
+ *      server/host.rabbit.hole server@host.rabbit.hole
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts UnboundService
+ *      server/host.rabbit.hole@RABBIT.HOLE server@host.rabbit.hole
+ * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts UnboundService
+ *      backend/host.rabbit.hole server@host.rabbit.hole
  */
 
 import java.io.File;

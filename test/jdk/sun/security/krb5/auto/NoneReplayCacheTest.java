@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 
 /*
  * @test
- * @bug 8001326
- * @run main/othervm NoneReplayCacheTest
+ * @bug 8001326 8194486
  * @summary the replaycache type none cannot stop an authenticator replay,
  * but it can stop a message replay when s.s.k.acceptor.subkey is true.
  * You should not really use none in production environment. This test merely
  * shows there can be other protections when replay cache is not working fine.
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts NoneReplayCacheTest
  */
 
 import org.ietf.jgss.GSSException;

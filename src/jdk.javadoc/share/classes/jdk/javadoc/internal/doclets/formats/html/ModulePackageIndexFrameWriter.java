@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,12 +143,12 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
         Content pkgLabel;
         if (!pkg.isUnnamed()) {
             pkgLabel = getPackageLabel(utils.getPackageName(pkg));
-            packageLinkContent = Links.createLink(pathString(pkg,
+            packageLinkContent = links.createLink(pathString(pkg,
                      DocPaths.PACKAGE_FRAME), pkgLabel, "",
                     "packageFrame");
         } else {
             pkgLabel = new StringContent("<unnamed package>");
-            packageLinkContent = Links.createLink(DocPaths.PACKAGE_FRAME,
+            packageLinkContent = links.createLink(DocPaths.PACKAGE_FRAME,
                     pkgLabel, "", "packageFrame");
         }
         Content li = HtmlTree.LI(packageLinkContent);
@@ -189,7 +189,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all classes link should be added
      */
     protected void addAllClassesLink(Content ul) {
-        Content linkContent = Links.createLink(DocPaths.ALLCLASSES_FRAME,
+        Content linkContent = links.createLink(DocPaths.ALLCLASSES_FRAME,
                 contents.allClassesLabel, "", "packageFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
@@ -202,7 +202,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all packages link should be added
      */
     protected void addAllPackagesLink(Content ul) {
-        Content linkContent = Links.createLink(DocPaths.OVERVIEW_FRAME,
+        Content linkContent = links.createLink(DocPaths.OVERVIEW_FRAME,
                 contents.allPackagesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
@@ -215,7 +215,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all modules link should be added
      */
     protected void addAllModulesLink(Content ul) {
-        Content linkContent = Links.createLink(DocPaths.MODULE_OVERVIEW_FRAME,
+        Content linkContent = links.createLink(DocPaths.MODULE_OVERVIEW_FRAME,
                 contents.allModulesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);

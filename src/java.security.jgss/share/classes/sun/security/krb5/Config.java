@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -578,7 +578,8 @@ public class Config {
                             if (Files.isDirectory(p)) continue;
                             String name = p.getFileName().toString();
                             if (name.matches("[a-zA-Z0-9_-]+") ||
-                                    name.endsWith(".conf")) {
+                                    (!name.startsWith(".") &&
+                                            name.endsWith(".conf"))) {
                                 // if dir is absolute, so is p
                                 readConfigFileLines(p, content, dups);
                             }
@@ -1030,11 +1031,19 @@ public class Config {
         } else if (input.startsWith("a") || (input.startsWith("A"))) {
             // AES
             if (input.equalsIgnoreCase("aes128-cts") ||
-                input.equalsIgnoreCase("aes128-cts-hmac-sha1-96")) {
+                    input.equalsIgnoreCase("aes128-sha1") ||
+                    input.equalsIgnoreCase("aes128-cts-hmac-sha1-96")) {
                 result = EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96;
             } else if (input.equalsIgnoreCase("aes256-cts") ||
-                input.equalsIgnoreCase("aes256-cts-hmac-sha1-96")) {
+                    input.equalsIgnoreCase("aes256-sha1") ||
+                    input.equalsIgnoreCase("aes256-cts-hmac-sha1-96")) {
                 result = EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96;
+            } else if (input.equalsIgnoreCase("aes128-sha2") ||
+                    input.equalsIgnoreCase("aes128-cts-hmac-sha256-128")) {
+                result = EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128;
+            } else if (input.equalsIgnoreCase("aes256-sha2") ||
+                    input.equalsIgnoreCase("aes256-cts-hmac-sha384-192")) {
+                result = EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192;
             // ARCFOUR-HMAC
             } else if (input.equalsIgnoreCase("arcfour-hmac") ||
                    input.equalsIgnoreCase("arcfour-hmac-md5")) {
@@ -1057,6 +1066,10 @@ public class Config {
             result = Checksum.CKSUMTYPE_HMAC_SHA1_96_AES128;
         } else if (input.equalsIgnoreCase("hmac-sha1-96-aes256")) {
             result = Checksum.CKSUMTYPE_HMAC_SHA1_96_AES256;
+        } else if (input.equalsIgnoreCase("hmac-sha256-128-aes128")) {
+            result = Checksum.CKSUMTYPE_HMAC_SHA256_128_AES128;
+        } else if (input.equalsIgnoreCase("hmac-sha384-192-aes256")) {
+            result = Checksum.CKSUMTYPE_HMAC_SHA384_192_AES256;
         } else if (input.equalsIgnoreCase("hmac-md5-rc4") ||
                 input.equalsIgnoreCase("hmac-md5-arcfour") ||
                 input.equalsIgnoreCase("hmac-md5-enc")) {

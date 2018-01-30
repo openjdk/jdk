@@ -473,9 +473,9 @@ final class IRTranslator extends SimpleNodeVisitor {
     @Override
     public boolean enterClassNode(final ClassNode classNode) {
         assert !classNode.isStatement(): "should not reach here for class declaration";
-
+        final IdentNode className = classNode.getIdent();
         curExpr = new ClassExpressionTreeImpl(classNode,
-            translateIdent(classNode.getIdent()),
+            className != null? translateIdent(className) : null,
             translateExpr(classNode.getClassHeritage()),
             translateProperty(classNode.getConstructor()),
             translateProperties(classNode.getClassElements()));

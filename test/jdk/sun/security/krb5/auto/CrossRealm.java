@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 6706974
- * @compile -XDignore.symbol.file CrossRealm.java
- * @run main/othervm CrossRealm
+ * @bug 6706974 8194486
  * @summary Add krb5 test infrastructure
+ * @library /test/lib
+ * @compile -XDignore.symbol.file CrossRealm.java
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts CrossRealm
  */
 import java.io.File;
 import java.io.FileOutputStream;

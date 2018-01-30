@@ -432,7 +432,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
         if (link) {
             if (typeElement == null) {
-                return Links.createLink(
+                return links.createLink(
                         SectionName.METHOD_SUMMARY,
                         contents.navMethod);
             } else {
@@ -451,7 +451,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(Links.createLink(
+            liNav.addContent(links.createLink(
                     SectionName.METHOD_DETAIL, contents.navMethod));
         } else {
             liNav.addContent(contents.navMethod);

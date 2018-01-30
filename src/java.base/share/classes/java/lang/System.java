@@ -631,7 +631,8 @@ public final class System {
      * <tr><th scope="row"><code>java.class.version</code></th>
      *     <td>Java class format version number</td></tr>
      * <tr><th scope="row"><code>java.class.path</code></th>
-     *     <td>Java class path</td></tr>
+     *     <td>Java class path  (refer to
+     *        {@link ClassLoader#getSystemClassLoader()} for details)</td></tr>
      * <tr><th scope="row"><code>java.library.path</code></th>
      *     <td>List of paths to search when loading libraries</td></tr>
      * <tr><th scope="row"><code>java.io.tmpdir</code></th>

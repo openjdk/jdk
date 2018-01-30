@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,14 +57,14 @@ public class TestTypeParameters extends JavadocTester {
                 "<code>&lt;T&gt;&nbsp;java.lang.Object</code>");
 
         checkOutput("pkg/package-summary.html", true,
-                "C</a>&lt;E extends <a href=\"../pkg/Parent.html\" "
+                "C</a>&lt;E extends <a href=\"Parent.html\" "
                 + "title=\"class in pkg\">Parent</a>&gt;");
 
         checkOutput("pkg/class-use/Foo4.html", true,
-                "<a href=\"../../pkg/ClassUseTest3.html\" title=\"class in pkg\">"
-                + "ClassUseTest3</a>&lt;T extends <a href=\"../../pkg/ParamTest2.html\" "
+                "<a href=\"../ClassUseTest3.html\" title=\"class in pkg\">"
+                + "ClassUseTest3</a>&lt;T extends <a href=\"../ParamTest2.html\" "
                 + "title=\"class in pkg\">ParamTest2</a>&lt;java.util.List&lt;? extends "
-                + "<a href=\"../../pkg/Foo4.html\" title=\"class in pkg\">Foo4</a>&gt;&gt;&gt;");
+                + "<a href=\"../Foo4.html\" title=\"class in pkg\">Foo4</a>&gt;&gt;&gt;");
 
         // Nested type parameters
         checkOutput("pkg/C.html", true,
@@ -84,8 +84,8 @@ public class TestTypeParameters extends JavadocTester {
 
         checkOutput("pkg/ClassUseTest3.html", true,
             "public class <a href=\"../src-html/pkg/ClassUseTest3.html#line.28\">" +
-            "ClassUseTest3</a>&lt;T extends <a href=\"../pkg/ParamTest2.html\" " +
+            "ClassUseTest3</a>&lt;T extends <a href=\"ParamTest2.html\" " +
             "title=\"class in pkg\">ParamTest2</a>&lt;java.util.List&lt;? extends " +
-            "<a href=\"../pkg/Foo4.html\" title=\"class in pkg\">Foo4</a>&gt;&gt;&gt;");
+            "<a href=\"Foo4.html\" title=\"class in pkg\">Foo4</a>&gt;&gt;&gt;");
     }
 }

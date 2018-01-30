@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -854,7 +854,7 @@ public class TestModules extends JavadocTester {
                 "<div class=\"subTitle\"><span class=\"moduleLabelInType\">Module</span>&nbsp;"
                 + "<a href=\"../moduleB-summary.html\">moduleB</a></div>",
                 "<div class=\"subTitle\"><span class=\"packageLabelInType\">"
-                + "Package</span>&nbsp;<a href=\"../testpkgmdlB/package-summary.html\">testpkgmdlB</a></div>");
+                + "Package</span>&nbsp;<a href=\"package-summary.html\">testpkgmdlB</a></div>");
         checkFiles(found,
                 "moduleA-frame.html",
                 "moduleA-summary.html",
