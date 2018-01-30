@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.lang.Exception;
 
 /*
  * @test
- * @bug 8030823 8130696
+ * @bug 8030823 8130696 8196414
  * @run main/othervm ProviderVersionCheck
  * @summary Verify all providers in the default Providers list have the proper
  * version for the release
@@ -42,7 +42,8 @@ public class ProviderVersionCheck {
 
         for (Provider p: Security.getProviders()) {
             System.out.print(p.getName() + " ");
-            if (p.getVersion() != 10.0d) {
+            String specVersion = System.getProperty("java.specification.version");
+            if (p.getVersion() != Double.parseDouble(specVersion)) {
                 System.out.println("failed. " + "Version received was " +
                         p.getVersion());
                 failure = true;
