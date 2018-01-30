@@ -83,7 +83,6 @@ public class TestLargePageUseForAuxMemory {
         // Test with large page enabled.
         pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                    "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
-                                                   "-Xms" + heapsize,
                                                    "-Xmx" + heapsize,
                                                    "-Xlog:pagesize",
                                                    "-XX:+UseLargePages",
@@ -99,7 +98,6 @@ public class TestLargePageUseForAuxMemory {
         // Test with large page disabled.
         pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                    "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
-                                                   "-Xms" + heapsize,
                                                    "-Xmx" + heapsize,
                                                    "-Xlog:pagesize",
                                                    "-XX:-UseLargePages",
