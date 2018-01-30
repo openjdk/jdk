@@ -65,26 +65,16 @@ bool ReservedMemoryRegion::add_committed_region(address addr, size_t size, const
     }
 
     if (rgn->adjacent_to(addr, size)) {
-      if (rgn->call_stack()->equals(stack)) {
+      // special case to expand prior region if there is no next region
+      LinkedListNode<CommittedMemoryRegion>* next = node->next();
+      if (next == NULL && rgn->call_stack()->equals(stack)) {
+        VirtualMemorySummary::record_uncommitted_memory(rgn->size(), flag());
         // the two adjacent regions have the same call stack, merge them
         rgn->expand_region(addr, size);
-        VirtualMemorySummary::record_committed_memory(size, flag());
-
-        // maybe merge with the next region
-        LinkedListNode<CommittedMemoryRegion>* next_node = node->next();
-        if (next_node != NULL) {
-          CommittedMemoryRegion* next = next_node->data();
-          if (next->call_stack()->equals(stack) && rgn->adjacent_to(next->base(), next->size())) {
-            // the two adjacent regions have the same call stack, merge them
-            rgn->expand_region(next->base(), next->size());
-
-            // the merge next_node needs to be removed from the list
-            _committed_regions.remove(next_node);
-          }
-        }
+        VirtualMemorySummary::record_committed_memory(rgn->size(), flag());
         return true;
       }
-    }
+      }
 
     if (rgn->overlap_region(addr, size)) {
       // Clear a space for this region in the case it overlaps with any regions.
@@ -97,10 +87,10 @@ bool ReservedMemoryRegion::add_committed_region(address addr, size_t size, const
     node = node->next();
   }
 
-  // New committed region
-  VirtualMemorySummary::record_committed_memory(size, flag());
-  return add_committed_region(committed_rgn);
-}
+    // New committed region
+    VirtualMemorySummary::record_committed_memory(size, flag());
+    return add_committed_region(committed_rgn);
+  }
 
 void ReservedMemoryRegion::set_all_committed(bool b) {
   if (all_committed() != b) {
