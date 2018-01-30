@@ -280,6 +280,9 @@ CUSTOM_LATE_HOOK
 # This needs to be done after CUSTOM_LATE_HOOK since we can setup custom features.
 HOTSPOT_VALIDATE_JVM_FEATURES
 
+# Did user specify any unknown variables?
+BASIC_CHECK_LEFTOVER_OVERRIDDEN
+
 # We're messing a bit with internal autoconf variables to put the config.status
 # in the output directory instead of the current directory.
 CONFIG_STATUS="$CONFIGURESUPPORT_OUTPUTDIR/config.status"
