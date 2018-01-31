@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,11 +134,11 @@ public class G1HeapRegionTable extends VMObject {
         super(addr);
     }
 
-    public HeapRegion getByAddress(Address addr) {
-        long biasedIndex = addr.asLongValue() >>> shiftBy();
+    public HeapRegion getByAddress(Address target) {
+        Address arrayAddr = biasedBaseField.getValue(addr);
+        long biasedIndex = target.asLongValue() >>> shiftBy();
         long offset = biasedIndex * HeapRegion.getPointerSize();
-        Address result = (addr instanceof OopHandle) ? addr.addOffsetToAsOopHandle(offset)
-                                                     : addr.addOffsetTo(offset);
-        return new HeapRegion(result);
+        Address regionAddr = arrayAddr.getAddressAt(offset);
+        return (HeapRegion)VMObjectFactory.newObject(HeapRegion.class, regionAddr);
     }
 }
