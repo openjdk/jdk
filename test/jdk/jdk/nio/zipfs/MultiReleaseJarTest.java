@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144355 8144062 8176709 8194070
+ * @bug 8144355 8144062 8176709 8194070 8193802
  * @summary Test aliasing additions to ZipFileSystem for multi-release jar files
  * @library /lib/testlibrary/java/util/jar
  * @build Compiler JarBuilder CreateMultiReleaseTestJars
@@ -202,6 +202,21 @@ public class MultiReleaseJarTest {
         //testCustomMultiReleaseValue("true\r ", false);
         //testCustomMultiReleaseValue("true\n true", false);
         //testCustomMultiReleaseValue("true\r\n true", false);
+    }
+
+    @Test
+    public void testMultiReleaseJarWithNonVersionDir() throws Exception {
+        String jfname = "multi-release-non-ver.jar";
+        Path jfpath = Paths.get(jfname);
+        URI uri = new URI("jar", jfpath.toUri().toString() , null);
+        JarBuilder jb = new JarBuilder(jfname);
+        jb.addAttribute("Multi-Release", "true");
+        jb.build();
+        Map<String,String> env = Map.of("multi-release", "runtime");
+        try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {
+            Assert.assertTrue(true);
+        }
+        Files.delete(jfpath);
     }
 
     private static final AtomicInteger JAR_COUNT = new AtomicInteger(0);
