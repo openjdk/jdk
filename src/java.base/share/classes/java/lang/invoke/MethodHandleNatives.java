@@ -310,7 +310,7 @@ class MethodHandleNatives {
                                           MethodHandle bootstrapMethod,
                                           String name, Class<?> type,
                                           Object staticArguments) {
-        return DynamicConstant.makeConstant(bootstrapMethod, name, type, staticArguments, caller);
+        return ConstantBootstraps.makeConstant(bootstrapMethod, name, type, staticArguments, caller);
     }
 
     private static String staticArglistForTrace(Object staticArguments) {

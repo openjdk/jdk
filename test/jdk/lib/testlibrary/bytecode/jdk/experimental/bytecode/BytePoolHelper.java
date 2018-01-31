@@ -490,7 +490,8 @@ public class BytePoolHelper<S, T> implements PoolHelper<S, T, byte[]> {
         BsmKey poolKey = bootstraps.lookup(bsmKey);
         if (poolKey == null) {
             poolKey = bsmKey.dup();
-            int bsm_ref = putHandleInternal(MethodHandleInfo.REF_invokeStatic, bsmClass, bsmName, bsmType);
+            // TODO the BSM could be a static method on an interface
+            int bsm_ref = putHandleInternal(MethodHandleInfo.REF_invokeStatic, bsmClass, bsmName, bsmType, false);
             poolKey.at(currentBsmIndex++);
             bootstraps.enter(poolKey);
             bsm_attr.writeChar(bsm_ref);
@@ -562,15 +563,20 @@ public class BytePoolHelper<S, T> implements PoolHelper<S, T, byte[]> {
 
     @Override
     public int putHandle(int refKind, S owner, CharSequence name, T type) {
-        return putHandleInternal(refKind, symbolToString.apply(owner), name, typeToString.apply(type));
+        return putHandleInternal(refKind, symbolToString.apply(owner), name, typeToString.apply(type), false);
     }
 
-    private int putHandleInternal(int refKind, String owner, CharSequence name, String type) {
+    @Override
+    public int putHandle(int refKind, S owner, CharSequence name, T type, boolean isInterface) {
+        return putHandleInternal(refKind, symbolToString.apply(owner), name, typeToString.apply(type), isInterface);
+    }
+
+    private int putHandleInternal(int refKind, String owner, CharSequence name, String type, boolean isInterface) {
         key.setMethodHandle(refKind, owner, name, type);
         PoolKey poolKey = entries.lookup(key);
         if (poolKey == null) {
             poolKey = key.dup();
-            int ref_idx = putMemberRefInternal(fromKind(refKind), owner, name, type);
+            int ref_idx = putMemberRefInternal(fromKind(refKind, isInterface), owner, name, type);
             poolKey.at(currentIndex++);
             entries.enter(poolKey);
             pool.writeByte(PoolTag.CONSTANT_METHODHANDLE.tag);
@@ -580,7 +586,7 @@ public class BytePoolHelper<S, T> implements PoolHelper<S, T, byte[]> {
         return poolKey.index;
     }
 
-    PoolTag fromKind(int bsmKind) {
+    PoolTag fromKind(int bsmKind, boolean isInterface) {
         switch (bsmKind) {
             case 1: // REF_getField
             case 2: // REF_getStatic
@@ -591,9 +597,8 @@ public class BytePoolHelper<S, T> implements PoolHelper<S, T, byte[]> {
             case 6: // REF_invokeStatic
             case 7: // REF_invokeSpecial
             case 8: // REF_newInvokeSpecial
-                return PoolTag.CONSTANT_METHODREF;
             case 9: // REF_invokeInterface
-                return PoolTag.CONSTANT_INTERFACEMETHODREF;
+                return isInterface ? PoolTag.CONSTANT_INTERFACEMETHODREF : PoolTag.CONSTANT_METHODREF;
             default:
                 throw new IllegalStateException();
         }

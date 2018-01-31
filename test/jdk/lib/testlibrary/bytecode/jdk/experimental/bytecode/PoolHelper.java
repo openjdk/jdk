@@ -58,6 +58,8 @@ public interface PoolHelper<S, T, E> {
 
     int putHandle(int refKind, S owner, CharSequence name, T type);
 
+    int putHandle(int refKind, S owner, CharSequence name, T type, boolean isInterface);
+
     int putInvokeDynamic(CharSequence invokedName, T invokedType, S bsmClass, CharSequence bsmName, T bsmType, Consumer<StaticArgListBuilder<S, T, E>> staticArgs);
 
     int putDynamicConstant(CharSequence constName, T constType, S bsmClass, CharSequence bsmName, T bsmType, Consumer<StaticArgListBuilder<S, T, E>> staticArgs);

@@ -1033,6 +1033,12 @@ public class TypedCodeBuilder<S, T, E, C extends TypedCodeBuilder<S, T, E, C>> e
             }
 
             @Override
+            public int putHandle(int refKind, S owner, CharSequence name, T t, boolean isInterface) {
+                type = typeHelper.type(typeHelper.symbolFrom("java/lang/invoke/MethodHandle"));
+                return poolHelper.putHandle(refKind, owner, name, t, isInterface);
+            }
+
+            @Override
             public int putInvokeDynamic(CharSequence invokedName, T invokedType, S bsmClass, CharSequence bsmName, T bsmType, Consumer<StaticArgListBuilder<S, T, E>> staticArgs) {
                 throw new IllegalStateException();
             }

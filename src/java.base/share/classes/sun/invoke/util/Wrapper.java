@@ -273,6 +273,25 @@ public enum Wrapper {
         throw newIllegalArgumentException("not primitive: "+type);
     }
 
+    /** Return the wrapper that corresponds to the provided basic type char.
+     *  The basic type char must be for one of the eight primitive types, or void.
+     *  @throws IllegalArgumentException for unexpected types
+     */
+    public static Wrapper forPrimitiveType(char basicTypeChar) {
+        switch (basicTypeChar) {
+            case 'I': return INT;
+            case 'J': return LONG;
+            case 'S': return SHORT;
+            case 'B': return BYTE;
+            case 'C': return CHAR;
+            case 'F': return FLOAT;
+            case 'D': return DOUBLE;
+            case 'Z': return BOOLEAN;
+            case 'V': return VOID;
+            default: throw newIllegalArgumentException("not primitive: " + basicTypeChar);
+        }
+    }
+
     static Wrapper findPrimitiveType(Class<?> type) {
         Wrapper w = FROM_PRIM[hashPrim(type)];
         if (w != null && w.primitiveType == type) {

@@ -117,6 +117,11 @@ public class IsolatedMethodBuilder extends MethodBuilder<Class<?>, String, Objec
         }
 
         @Override
+        public int putHandle(int refKind, Class<?> owner, CharSequence name, String type, boolean isInterface) {
+            return 0; //???
+        }
+
+        @Override
         public int putMethodType(String s) {
             return 0; //???
         }
