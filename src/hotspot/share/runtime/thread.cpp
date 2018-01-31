@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3200,7 +3200,7 @@ void JavaThread::print_stack_on(outputStream* st) {
   RegisterMap reg_map(this);
   vframe* start_vf = last_java_vframe(&reg_map);
   int count = 0;
-  for (vframe* f = start_vf; f; f = f->sender()) {
+  for (vframe* f = start_vf; f != NULL; f = f->sender()) {
     if (f->is_java_frame()) {
       javaVFrame* jvf = javaVFrame::cast(f);
       java_lang_Throwable::print_stack_element(st, jvf->method(), jvf->bci());
@@ -3213,9 +3213,9 @@ void JavaThread::print_stack_on(outputStream* st) {
       // Ignore non-Java frames
     }
 
-    // Bail-out case for too deep stacks
+    // Bail-out case for too deep stacks if MaxJavaStackTraceDepth > 0
     count++;
-    if (MaxJavaStackTraceDepth == count) return;
+    if (MaxJavaStackTraceDepth > 0 && MaxJavaStackTraceDepth == count) return;
   }
 }
 
