@@ -172,18 +172,3 @@ namespace AccessInternal {
     Copy::conjoint_jlongs_atomic(src, dst, length);
   }
 }
-
-template void AccessInternal::arraycopy_conjoint<jbyte>(jbyte* src, jbyte* dst, size_t length);
-template void AccessInternal::arraycopy_conjoint<jshort>(jshort* src, jshort* dst, size_t length);
-template void AccessInternal::arraycopy_conjoint<jint>(jint* src, jint* dst, size_t length);
-template void AccessInternal::arraycopy_conjoint<jlong>(jlong* src, jlong* dst, size_t length);
-
-template void AccessInternal::arraycopy_arrayof_conjoint<jbyte>(jbyte* src, jbyte* dst, size_t length);
-template void AccessInternal::arraycopy_arrayof_conjoint<jshort>(jshort* src, jshort* dst, size_t length);
-template void AccessInternal::arraycopy_arrayof_conjoint<jint>(jint* src, jint* dst, size_t length);
-template void AccessInternal::arraycopy_arrayof_conjoint<jlong>(jlong* src, jlong* dst, size_t length);
-
-template void AccessInternal::arraycopy_conjoint_atomic<jbyte>(jbyte* src, jbyte* dst, size_t length);
-template void AccessInternal::arraycopy_conjoint_atomic<jshort>(jshort* src, jshort* dst, size_t length);
-template void AccessInternal::arraycopy_conjoint_atomic<jint>(jint* src, jint* dst, size_t length);
-template void AccessInternal::arraycopy_conjoint_atomic<jlong>(jlong* src, jlong* dst, size_t length);
