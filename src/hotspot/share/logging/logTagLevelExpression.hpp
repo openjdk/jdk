@@ -40,7 +40,7 @@ class LogTagLevelExpression : public StackObj {
   static const size_t MaxCombinations = 256;
 
  private:
-  friend void LogConfiguration::configure_stdout(LogLevelType, bool, ...);
+  friend void LogConfiguration::configure_stdout(LogLevelType, int, ...);
 
   static const char* DefaultExpressionString;
 

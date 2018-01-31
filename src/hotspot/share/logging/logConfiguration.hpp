@@ -102,7 +102,7 @@ class LogConfiguration : public AllStatic {
   // (exact_match=false is the same as "-Xlog:<tags>*=<level>", and exact_match=true is "-Xlog:<tags>=<level>").
   // Tags should be specified using the LOG_TAGS macro, e.g.
   // LogConfiguration::configure_stdout(LogLevel::<level>, <true/false>, LOG_TAGS(<tags>));
-  static void configure_stdout(LogLevelType level, bool exact_match, ...);
+  static void configure_stdout(LogLevelType level, int exact_match, ...);
 
   // Parse command line configuration. Parameter 'opts' is the string immediately following the -Xlog: argument ("gc" for -Xlog:gc).
   static bool parse_command_line_arguments(const char* opts = "all");
