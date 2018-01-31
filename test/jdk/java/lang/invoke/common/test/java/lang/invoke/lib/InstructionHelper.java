@@ -90,16 +90,30 @@ public class InstructionHelper {
                                                   String name, Class<?> type,
                                                   String bsmMethodName, MethodType bsmType,
                                                   Consumer<PoolHelper.StaticArgListBuilder<String, String, byte[]>> staticArgs) throws Exception {
-        return ldcDynamicConstant(l, name, cref(type), bsmMethodName, bsmType.toMethodDescriptorString(), staticArgs);
+        return ldcDynamicConstant(l, name, type, l.lookupClass(), bsmMethodName, bsmType, staticArgs);
+    }
+
+    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l,
+                                                  String name, Class<?> type,
+                                                  Class<?> bsmClass, String bsmMethodName, MethodType bsmType,
+                                                  Consumer<PoolHelper.StaticArgListBuilder<String, String, byte[]>> staticArgs) throws Exception {
+        return ldcDynamicConstant(l, name, cref(type), csym(bsmClass), bsmMethodName, bsmType.toMethodDescriptorString(), staticArgs);
     }
 
     public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l,
                                                   String name, String type,
                                                   String bsmMethodName, String bsmType,
                                                   Consumer<PoolHelper.StaticArgListBuilder<String, String, byte[]>> staticArgs) throws Exception {
+        return ldcDynamicConstant(l, name, type, csym(l.lookupClass()), bsmMethodName, bsmType, staticArgs);
+    }
+
+    public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l,
+                                                  String name, String type,
+                                                  String bsmClass, String bsmMethodName, String bsmType,
+                                                  Consumer<PoolHelper.StaticArgListBuilder<String, String, byte[]>> staticArgs) throws Exception {
         return ldc(l, type,
                    P -> P.putDynamicConstant(name, type,
-                                             csym(l.lookupClass()), bsmMethodName, bsmType,
+                                             bsmClass, bsmMethodName, bsmType,
                                              staticArgs));
     }
 
