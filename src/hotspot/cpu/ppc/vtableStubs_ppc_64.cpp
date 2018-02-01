@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
 
-  __ ld(R19_method, v_off, rcvr_klass);
+  __ ld(R19_method, (RegisterOrConstant)v_off, rcvr_klass);
 
 #ifndef PRODUCT
   if (DebugVtables) {
