@@ -73,7 +73,7 @@
 #	9:00 KST  KDT	Korea when at +09
 #	9:30 ACST	Australian Central Standard Time
 # Otherwise, these tables typically use numeric abbreviations like +03
-# and +0330 for integer hour and minute UTC offsets.  Although earlier
+# and +0330 for integer hour and minute UT offsets.  Although earlier
 # editions invented alphabetic time zone abbreviations for every
 # offset, this did not reflect common practice.
 #
@@ -670,17 +670,17 @@ Zone	Asia/Hong_Kong	7:36:42 -	LMT	1904 Oct 30
 # time", in which abolished the adoption of Western Standard Time in
 # western islands (listed above), which means the whole Japan
 # territory, including later occupations, adopt Japan Central Time
-# (UTC+9). The adoption began on Oct 1, 1937. The original text can
+# (UT+9). The adoption began on Oct 1, 1937. The original text can
 # be found on Wikisource:
 # https://ja.wikisource.org/wiki/明治二十八年勅令第百六十七號標準時ニ關スル件中改正ノ件
 #
-# That is, the time zone of Taipei switched to UTC+9 on Oct 1, 1937.
+# That is, the time zone of Taipei switched to UT+9 on Oct 1, 1937.
 
 # From Yu-Cheng Chuang (2014-07-02):
-# I've found more evidence about when the time zone was switched from UTC+9
-# back to UTC+8 after WW2.  I believe it was on Sep 21, 1945.  In a document
+# I've found more evidence about when the time zone was switched from UT+9
+# back to UT+8 after WW2.  I believe it was on Sep 21, 1945.  In a document
 # during Japanese era [1] in which the officer told the staff to change time
-# zone back to Western Standard Time (UTC+8) on Sep 21.  And in another
+# zone back to Western Standard Time (UT+8) on Sep 21.  And in another
 # history page of National Cheng Kung University [2], on Sep 21 there is a
 # note "from today, switch back to Western Standard Time".  From these two
 # materials, I believe that the time zone change happened on Sep 21.  And
@@ -1487,17 +1487,17 @@ Zone	Asia/Jerusalem	2:20:54 -	LMT	1880
 # of the Japanese wanted to scrap daylight-saving time, as opposed to 30% who
 # wanted to keep it.)
 
-# From Paul Eggert (2006-03-22):
-# Shanks & Pottenger write that DST in Japan during those years was as follows:
+# From Takayuki Nikai (2018-01-19):
+# The source of information is Japanese law.
+# http://www.shugiin.go.jp/internet/itdb_housei.nsf/html/houritsu/00219480428029.htm
+# http://www.shugiin.go.jp/internet/itdb_housei.nsf/html/houritsu/00719500331039.htm
+# ... In summary, it is written as follows.  From 24:00 on the first Saturday
+# in May, until 0:00 on the day after the second Saturday in September.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Japan	1948	only	-	May	Sun>=1	2:00	1:00	D
-Rule	Japan	1948	1951	-	Sep	Sat>=8	2:00	0	S
-Rule	Japan	1949	only	-	Apr	Sun>=1	2:00	1:00	D
-Rule	Japan	1950	1951	-	May	Sun>=1	2:00	1:00	D
-# but the only locations using it (for birth certificates, presumably, since
-# their audience is astrologers) were US military bases.  For now, assume
-# that for most purposes daylight-saving time was observed; otherwise, what
-# would have been the point of the 1951 poll?
+Rule	Japan	1948	only	-	May	Sat>=1	24:00	1:00	D
+Rule	Japan	1948	1951	-	Sep	Sun>=9	 0:00	0	S
+Rule	Japan	1949	only	-	Apr	Sat>=1	24:00	1:00	D
+Rule	Japan	1950	1951	-	May	Sat>=1	24:00	1:00	D
 
 # From Hideyuki Suzuki (1998-11-09):
 # 'Tokyo' usually stands for the former location of Tokyo Astronomical
@@ -1528,7 +1528,7 @@ Rule	Japan	1950	1951	-	May	Sun>=1	2:00	1:00	D
 #
 # ...the Showa Emperor announced Ordinance No. 529 of Showa Year 12 ... which
 # means the whole Japan territory, including later occupations, adopt Japan
-# Central Time (UTC+9). The adoption began on Oct 1, 1937.
+# Central Time (UT+9). The adoption began on Oct 1, 1937.
 # https://ja.wikisource.org/wiki/明治二十八年勅令第百六十七號標準時ニ關スル件中改正ノ件
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -2089,8 +2089,8 @@ Zone Asia/Kuching	7:21:20	-	LMT	1926 Mar
 
 # Maldives
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Indian/Maldives	4:54:00 -	LMT	1880 # Male
-			4:54:00	-	MMT	1960 # Male Mean Time
+Zone	Indian/Maldives	4:54:00 -	LMT	1880 # Malé
+			4:54:00	-	MMT	1960 # Malé Mean Time
 			5:00	-	+05
 
 # Mongolia

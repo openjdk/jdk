@@ -706,8 +706,8 @@ Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct # Honiara
 # From Steffen Thorsen (2012-07-25)
 # ... we double checked by calling hotels and offices based in Tokelau asking
 # about the time there, and they all told a time that agrees with UTC+13....
-# Shanks says UTC-10 from 1901 [but] ... there is a good chance the change
-# actually was to UTC-11 back then.
+# Shanks says UT-10 from 1901 [but] ... there is a good chance the change
+# actually was to UT-11 back then.
 #
 # From Paul Eggert (2012-07-25)
 # A Google Books snippet of Appendix to the Journals of the House of
@@ -1473,7 +1473,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 #
 # From Paul Eggert (2006-03-22):
 # The Department of Internal Affairs (DIA) maintains a brief history,
-# as does Carol Squires; see tz-link.htm for the full references.
+# as does Carol Squires; see tz-link.html for the full references.
 # Use these sources in preference to Shanks & Pottenger.
 #
 # For Chatham, IATA SSIM (1991/1999) gives the NZ rules but with

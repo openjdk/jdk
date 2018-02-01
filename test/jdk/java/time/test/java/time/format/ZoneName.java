@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ class ZoneName {
         "Pacific/Rarotonga", "Cook", "Pacific/Rarotonga",
         "America/Louisville", "America_Eastern", "America/New_York",
         "Africa/El_Aaiun", "Europe_Western", "Atlantic/Canary",
-        "Africa/Sao_Tome", "GMT", "Atlantic/Reykjavik",
+        "Africa/Sao_Tome", "Africa_Western", "Africa/Lagos",
         "Pacific/Fiji", "Fiji", "Pacific/Fiji",
         "Asia/Damascus", "Europe_Eastern", "Europe/Bucharest",
         "Asia/Ulaanbaatar", "Mongolia", "Asia/Ulaanbaatar",
@@ -508,6 +508,7 @@ class ZoneName {
         "Africa_Central", "CD", "Africa/Lubumbashi",
         "Africa_Central", "BI", "Africa/Bujumbura",
         "Africa_Central", "RW", "Africa/Kigali",
+        "Africa_Western", "ST", "Africa/Sao_Tome",
         "Africa_Western", "CF", "Africa/Bangui",
         "Africa_Western", "AO", "Africa/Luanda",
         "Africa_Western", "NE", "Africa/Niamey",
@@ -549,7 +550,6 @@ class ZoneName {
         "GMT", "GN", "Africa/Conakry",
         "GMT", "SL", "Africa/Freetown",
         "GMT", "BF", "Africa/Ouagadougou",
-        "GMT", "ST", "Africa/Sao_Tome",
         "GMT", "SN", "Africa/Dakar",
         "GMT", "CI", "Africa/Abidjan",
         "GMT", "IE", "Europe/Dublin",
