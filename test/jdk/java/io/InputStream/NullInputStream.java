@@ -31,7 +31,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug 4358774
+ * @bug 4358774 8139206
  * @run testng NullInputStream
  * @summary Check for expected behavior of InputStream.nullInputStream().
  */
@@ -107,10 +107,30 @@ public class NullInputStream {
     }
 
     @Test(groups = "open")
-    public static void testreadNBytes() {
+    public static void testReadNBytes() {
         try {
             assertEquals(0, openStream.readNBytes(new byte[1], 0, 1),
                 "readNBytes(byte[],int,int) != 0");
+        } catch (IOException ioe) {
+            fail("Unexpected IOException");
+        }
+    }
+
+    @Test(groups = "open")
+    public static void testReadNBytesWithLength() {
+        try {
+            assertEquals(0, openStream.readNBytes(-1).length,
+                "readNBytes(-1) != 0");
+            fail("Expected IllegalArgumentException not thrown");
+        } catch (IllegalArgumentException iae) {
+        } catch (IOException ioe) {
+            fail("Unexpected IOException");
+        }
+        try {
+            assertEquals(0, openStream.readNBytes(0).length,
+                "readNBytes(0, false) != 0");
+            assertEquals(0, openStream.readNBytes(1).length,
+                "readNBytes(1, false) != 0");
         } catch (IOException ioe) {
             fail("Unexpected IOException");
         }
@@ -175,6 +195,15 @@ public class NullInputStream {
     public static void testReadNBytesClosed() {
         try {
             closedStream.readNBytes(new byte[1], 0, 1);
+            fail("Expected IOException not thrown");
+        } catch (IOException e) {
+        }
+    }
+
+    @Test(groups = "closed")
+    public static void testReadNBytesWithLengthClosed() {
+        try {
+            closedStream.readNBytes(1);
             fail("Expected IOException not thrown");
         } catch (IOException e) {
         }
