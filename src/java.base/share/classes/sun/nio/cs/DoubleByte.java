@@ -236,10 +236,8 @@ public class DoubleByte {
                         int b2 = src[sp++] & 0xff;
                         if (b2 < b2Min || b2 > b2Max ||
                             (c = b2c[b1][b2 - b2Min]) == UNMAPPABLE_DECODING) {
-                            if (b2c[b1] == B2C_UNMAPPABLE ||  // isNotLeadingByte
-                                b2c[b2] != B2C_UNMAPPABLE ||  // isLeadingByte
-                                decodeSingle(b2) != UNMAPPABLE_DECODING) {
-                               sp--;
+                            if (crMalformedOrUnmappable(b1, b2).length() == 1) {
+                                sp--;
                             }
                         }
                     }
@@ -472,6 +470,13 @@ public class DoubleByte {
             b2cSB_UNMAPPABLE = new char[0x100];
             Arrays.fill(b2cSB_UNMAPPABLE, UNMAPPABLE_DECODING);
         }
+
+        // always returns unmappableForLenth(2) for doublebyte_only
+        @Override
+        protected CoderResult crMalformedOrUnmappable(int b1, int b2) {
+            return CoderResult.unmappableForLength(2);
+        }
+
         public Decoder_DBCSONLY(Charset cs, char[][] b2c, char[] b2cSB, int b2Min, int b2Max,
                                 boolean isASCIICompatible) {
             super(cs, 0.5f, 1.0f, b2c, b2cSB_UNMAPPABLE, b2Min, b2Max, isASCIICompatible);

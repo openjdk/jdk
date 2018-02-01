@@ -1187,9 +1187,6 @@ AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
 
 AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
 [
-  # Did user specify any unknown variables?
-  BASIC_CHECK_LEFTOVER_OVERRIDDEN
-
   AC_MSG_CHECKING([if build directory is on local disk])
   BASIC_CHECK_DIR_ON_LOCAL_DISK($OUTPUTDIR,
       [OUTPUT_DIR_IS_LOCAL="yes"],
