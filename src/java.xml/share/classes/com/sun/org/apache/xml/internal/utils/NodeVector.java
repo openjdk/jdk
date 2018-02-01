@@ -669,9 +669,10 @@ public class NodeVector implements Serializable, Cloneable
     /*
      *  Pick a pivot and move it out of the way
      */
-    int pivot = a[(lo + hi) / 2];
+    int mid = (lo + hi) >>> 1;
+    int pivot = a[mid];
 
-    a[(lo + hi) / 2] = a[hi];
+    a[mid] = a[hi];
     a[hi] = pivot;
 
     while (lo < hi)

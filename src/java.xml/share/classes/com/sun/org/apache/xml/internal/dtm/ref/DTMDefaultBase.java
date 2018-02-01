@@ -354,7 +354,7 @@ public abstract class DTMDefaultBase implements DTM
 
     while (low <= high)
     {
-      int mid = (low + high) / 2;
+      int mid = (low + high) >>> 1;
       int c = list[mid];
 
       if (c > value)
