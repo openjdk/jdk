@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 class CondyNestedTest_Code {
   0xCAFEBABE;
   0; // minor version
@@ -33,7 +56,7 @@ class CondyNestedTest_Code {
     NameAndType #25 #18; // #27    
     Method #17 #27; // #28    
     Utf8 "StackMapTable"; // #29    
-    Utf8 "main"; // #30    
+    Utf8 "main"; // #30
     Utf8 "([Ljava/lang/String;)V"; // #31    
     Utf8 "java/lang/invoke/MethodType"; // #32    
     class #32; // #33    
@@ -60,8 +83,8 @@ class CondyNestedTest_Code {
     Utf8 "name"; // #54    
     Utf8 "Ljava/lang/String;"; // #55    
     NameAndType #54 #55; // #56    
-    ConstantDynamic 0s #56; // #57    
-    ConstantDynamic 1s #56; // #58    
+    Dynamic 0s #56; // #57
+    Dynamic 1s #56; // #58
     NameAndType #47 #48; // #59    
     Method #17 #59; // #60    
     MethodHandle 6b #60; // #61    
