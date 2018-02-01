@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,11 +364,11 @@ public class FileManager {
          * @since Java for Mac OS X 10.5 Update 6 - 1.6, 1.5
          */
         public static boolean moveToTrash(final File file) throws FileNotFoundException {
-                if (file == null || !file.exists()) throw new FileNotFoundException();
+                if (file == null) throw new FileNotFoundException();
                 final String fileName = file.getAbsolutePath();
 
                 final SecurityManager security = System.getSecurityManager();
-                if (security != null) security.checkWrite(fileName);
+                if (security != null) security.checkDelete(fileName);
 
                 return _moveToTrash(fileName);
         }

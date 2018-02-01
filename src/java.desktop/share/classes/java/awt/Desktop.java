@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,9 @@ import java.io.FilePermission;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Objects;
 
 import javax.swing.JMenuBar;
@@ -363,15 +366,11 @@ public class Desktop {
      * @throws NullPointerException if file is null
      * @throws IllegalArgumentException if file doesn't exist
      */
-    private static void checkFileValidation(File file){
-        if (file == null) throw new NullPointerException("File must not be null");
-
+    private static void checkFileValidation(File file) {
         if (!file.exists()) {
             throw new IllegalArgumentException("The file: "
                     + file.getPath() + " doesn't exist.");
         }
-
-        file.canRead();
     }
 
     /**
@@ -425,6 +424,7 @@ public class Desktop {
      * @see java.awt.AWTPermission
      */
     public void open(File file) throws IOException {
+        file = new File(file.getPath());
         checkAWTPermission();
         checkExec();
         checkActionSupport(Action.OPEN);
@@ -456,6 +456,7 @@ public class Desktop {
      * @see java.awt.AWTPermission
      */
     public void edit(File file) throws IOException {
+        file = new File(file.getPath());
         checkAWTPermission();
         checkExec();
         checkActionSupport(Action.EDIT);
@@ -486,6 +487,7 @@ public class Desktop {
      * allowed to create a subprocess
      */
     public void print(File file) throws IOException {
+        file = new File(file.getPath());
         checkExec();
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -611,14 +613,6 @@ public class Desktop {
         if (sm != null) {
             sm.checkPermission(new FilePermission("<<ALL FILES>>",
                     SecurityConstants.FILE_READ_ACTION));
-        }
-    }
-
-    private void checkDelete() throws SecurityException {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new FilePermission("<<ALL FILES>>",
-                    SecurityConstants.FILE_DELETE_ACTION));
         }
     }
 
@@ -950,6 +944,8 @@ public class Desktop {
      * @since 9
      */
     public void openHelpViewer() {
+        checkAWTPermission();
+        checkExec();
         checkEventsProcessingPermission();
         checkActionSupport(Action.APP_HELP_VIEWER);
         peer.openHelpViewer();
@@ -995,9 +991,15 @@ public class Desktop {
      * @since 9
      */
     public void browseFileDirectory(File file) {
-        checkRead();
+        file = new File(file.getPath());
+        checkAWTPermission();
+        checkExec();
         checkActionSupport(Action.BROWSE_FILE_DIR);
         checkFileValidation(file);
+        File parentFile = file.getParentFile();
+        if (parentFile == null || !parentFile.exists()) {
+            throw new IllegalArgumentException("Parent folder doesn't exist");
+        }
         peer.browseFileDirectory(file);
     }
 
@@ -1017,10 +1019,18 @@ public class Desktop {
      *
      * @since 9
      */
-    public boolean moveToTrash(final File file) {
-        checkDelete();
+    public boolean moveToTrash(File file) {
+        file = new File(file.getPath());
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkDelete(file.getPath());
+        }
         checkActionSupport(Action.MOVE_TO_TRASH);
-        checkFileValidation(file);
+        final File finalFile = file;
+        AccessController.doPrivileged((PrivilegedAction<?>) () -> {
+            checkFileValidation(finalFile);
+            return null;
+        });
         return peer.moveToTrash(file);
     }
 }
