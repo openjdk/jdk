@@ -288,7 +288,7 @@ checkInstanceFieldID(JavaThread* thr, jfieldID fid, jobject obj, int ftype)
   /* validate the object being passed and then get its class */
   ASSERT_OOPS_ALLOWED;
   oop oopObj = jniCheck::validate_object(thr, obj);
-  if (!oopObj) {
+  if (oopObj == NULL) {
     ReportJNIFatalError(thr, fatal_null_object);
   }
   Klass* k_oop = oopObj->klass();
@@ -318,7 +318,7 @@ checkString(JavaThread* thr, jstring js)
 {
   ASSERT_OOPS_ALLOWED;
   oop s = jniCheck::validate_object(thr, js);
-  if (!s || !java_lang_String::is_instance(s))
+  if ((s == NULL) || !java_lang_String::is_instance(s))
     ReportJNIFatalError(thr, fatal_non_string);
 }
 
@@ -461,14 +461,13 @@ Method* jniCheck::validate_jmethod_id(JavaThread* thr, jmethodID method_id) {
 
 
 oop jniCheck::validate_object(JavaThread* thr, jobject obj) {
-    if (!obj)
-        return NULL;
-    ASSERT_OOPS_ALLOWED;
-    oop oopObj = jniCheck::validate_handle(thr, obj);
-    if (!oopObj) {
-      ReportJNIFatalError(thr, fatal_bad_ref_to_jni);
-    }
-    return oopObj;
+  if (obj == NULL) return NULL;
+  ASSERT_OOPS_ALLOWED;
+  oop oopObj = jniCheck::validate_handle(thr, obj);
+  if (oopObj == NULL) {
+    ReportJNIFatalError(thr, fatal_bad_ref_to_jni);
+  }
+  return oopObj;
 }
 
 // Warn if a class descriptor is in decorated form; class descriptors
@@ -492,7 +491,7 @@ void jniCheck::validate_class_descriptor(JavaThread* thr, const char* name) {
 Klass* jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_primitive) {
   ASSERT_OOPS_ALLOWED;
   oop mirror = jniCheck::validate_handle(thr, clazz);
-  if (!mirror) {
+  if (mirror == NULL) {
     ReportJNIFatalError(thr, fatal_received_null_class);
   }
 
