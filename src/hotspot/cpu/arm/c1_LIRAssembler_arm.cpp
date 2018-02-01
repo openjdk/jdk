@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3150,7 +3150,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethodData* md = method->method_data_or_null();
   assert(md != NULL, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
-  assert(data->is_CounterData(), "need CounterData for calls");
+  assert(data != NULL && data->is_CounterData(), "need CounterData for calls");
   assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
   Register mdo  = op->mdo()->as_register();
   assert(op->tmp1()->is_register(), "tmp1 must be allocated");
