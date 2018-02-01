@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,10 @@ public final class ConstantBootstraps {
         requireNonNull(args);
 
         if (type != handle.type().returnType()) {
-            handle = handle.asType(handle.type().changeReturnType(type));
+            // Adjust the return type of the handle to be invoked while
+            // preserving variable arity if present
+            handle = handle.asType(handle.type().changeReturnType(type)).
+                    withVarargs(handle.isVarargsCollector());
         }
 
         return handle.invokeWithArguments(args);
