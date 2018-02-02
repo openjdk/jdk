@@ -86,6 +86,7 @@ import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.jvm.ModuleNameReader;
@@ -1600,10 +1601,10 @@ public class Locations {
         void add(Map<String, List<Path>> map, Path prefix, Path suffix) {
             if (!Files.isDirectory(prefix)) {
                 if (warn) {
-                    String key = Files.exists(prefix)
-                            ? "dir.path.element.not.directory"
-                            : "dir.path.element.not.found";
-                    log.warning(Lint.LintCategory.PATH, key, prefix);
+                    Warning key = Files.exists(prefix)
+                            ? Warnings.DirPathElementNotDirectory(prefix)
+                            : Warnings.DirPathElementNotFound(prefix);
+                    log.warning(Lint.LintCategory.PATH, key);
                 }
                 return;
             }

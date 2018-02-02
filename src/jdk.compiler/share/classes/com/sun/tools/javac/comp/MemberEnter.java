@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.Error;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
@@ -305,9 +306,9 @@ public class MemberEnter extends JCTree.Visitor {
         v.pos = tree.pos;
     }
     // where
-    void checkType(JCTree tree, Type type, String diag) {
+    void checkType(JCTree tree, Type type, Error errorKey) {
         if (!tree.type.isErroneous() && !types.isSameType(tree.type, type)) {
-            log.error(tree, diag, type, tree.type);
+            log.error(tree, errorKey);
         }
     }
     void checkReceiver(JCVariableDecl tree, Env<AttrContext> localEnv) {
@@ -320,14 +321,14 @@ public class MemberEnter extends JCTree.Visitor {
                 outertype = m.owner.owner.owner.type;
             }
             if (outertype.hasTag(TypeTag.CLASS)) {
-                checkType(tree.vartype, outertype, "incorrect.constructor.receiver.type");
-                checkType(tree.nameexpr, outertype, "incorrect.constructor.receiver.name");
+                checkType(tree.vartype, outertype, Errors.IncorrectConstructorReceiverType(outertype, tree.vartype.type));
+                checkType(tree.nameexpr, outertype, Errors.IncorrectConstructorReceiverName(outertype, tree.nameexpr.type));
             } else {
                 log.error(tree, Errors.ReceiverParameterNotApplicableConstructorToplevelClass);
             }
         } else {
-            checkType(tree.vartype, m.owner.type, "incorrect.receiver.type");
-            checkType(tree.nameexpr, m.owner.type, "incorrect.receiver.name");
+            checkType(tree.vartype, m.owner.type, Errors.IncorrectReceiverType(m.owner.type, tree.vartype.type));
+            checkType(tree.nameexpr, m.owner.type, Errors.IncorrectReceiverName(m.owner.type, tree.nameexpr.type));
         }
     }
 
