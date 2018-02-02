@@ -329,36 +329,36 @@ void ClassLoaderData::record_dependency(const Klass* k, TRAPS) {
   ClassLoaderData * const from_cld = this;
   ClassLoaderData * const to_cld = k->class_loader_data();
 
-  // Dependency to the null class loader data doesn't need to be recorded
-  // because the null class loader data never goes away.
-  if (to_cld->is_the_null_class_loader_data()) {
+  // Do not need to record dependency if the dependency is to a class whose
+  // class loader data is never freed.  (i.e. the dependency's class loader
+  // is one of the three builtin class loaders and the dependency is not
+  // anonymous.)
+  if (to_cld->is_permanent_class_loader_data()) {
     return;
   }
 
   oop to;
   if (to_cld->is_anonymous()) {
+    // Just return if an anonymous class is attempting to record a dependency
+    // to itself.  (Note that every anonymous class has its own unique class
+    // loader data.)
+    if (to_cld == from_cld) {
+      return;
+    }
     // Anonymous class dependencies are through the mirror.
     to = k->java_mirror();
   } else {
     to = to_cld->class_loader();
+    oop from = from_cld->class_loader();
 
-    // If from_cld is anonymous, even if it's class_loader is a parent of 'to'
-    // we still have to add it.  The class_loader won't keep from_cld alive.
-    if (!from_cld->is_anonymous()) {
-      // Check that this dependency isn't from the same or parent class_loader
-      oop from = from_cld->class_loader();
-
-      oop curr = from;
-      while (curr != NULL) {
-        if (curr == to) {
-          return; // this class loader is in the parent list, no need to add it.
-        }
-        curr = java_lang_ClassLoader::parent(curr);
-      }
+    // Just return if this dependency is to a class with the same or a parent
+    // class_loader.
+    if (from == to || java_lang_ClassLoader::isAncestor(from, to)) {
+      return; // this class loader is in the parent list, no need to add it.
     }
   }
 
-  // It's a dependency we won't find through GC, add it. This is relatively rare
+  // It's a dependency we won't find through GC, add it. This is relatively rare.
   // Must handle over GC point.
   Handle dependency(THREAD, to);
   from_cld->_dependencies.add(dependency, CHECK);
@@ -704,12 +704,21 @@ bool ClassLoaderData::is_platform_class_loader_data() const {
 }
 
 // Returns true if this class loader data is one of the 3 builtin
-// (boot, application/system or platform) class loaders. Note, the
-// builtin loaders are not freed by a GC.
+// (boot, application/system or platform) class loaders.  Note that
+// if the class loader data is for an anonymous class then it may get
+// freed by a GC even if its class loader is one of the 3 builtin
+// loaders.
 bool ClassLoaderData::is_builtin_class_loader_data() const {
   return (is_the_null_class_loader_data() ||
           SystemDictionary::is_system_class_loader(class_loader()) ||
           SystemDictionary::is_platform_class_loader(class_loader()));
+}
+
+// Returns true if this class loader data is a class loader data
+// that is not ever freed by a GC.  It must be one of the builtin
+// class loaders and not anonymous.
+bool ClassLoaderData::is_permanent_class_loader_data() const {
+  return is_builtin_class_loader_data() && !is_anonymous();
 }
 
 Metaspace* ClassLoaderData::metaspace_non_null() {
