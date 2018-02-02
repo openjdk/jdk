@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -464,10 +464,28 @@ public final class Utils {
     public static final List<ByteBuffer> EMPTY_BB_LIST = List.of();
     public static final ByteBufferReference[] EMPTY_BBR_ARRAY = new ByteBufferReference[0];
 
-    public static ByteBuffer slice(ByteBuffer buffer, int amount) {
+    /**
+     * Returns a slice of size {@code amount} from the given buffer. If the
+     * buffer contains more data than {@code amount}, then the slice's capacity
+     * ( and, but not just, its limit ) is set to {@code amount}. If the buffer
+     * does not contain more data than {@code amount}, then the slice's capacity
+     * will be the same as the given buffer's capacity.
+     */
+    public static ByteBuffer sliceWithLimitedCapacity(ByteBuffer buffer, int amount) {
+        final int index = buffer.position() + amount;
+        final int limit = buffer.limit();
+        if (index != limit) {
+            // additional data in the buffer
+            buffer.limit(index);  // ensures that the slice does not go beyond
+        } else {
+            // no additional data in the buffer
+            buffer.limit(buffer.capacity());  // allows the slice full capacity
+        }
+
         ByteBuffer newb = buffer.slice();
-        newb.limit(amount);
-        buffer.position(buffer.position() + amount);
+        buffer.position(index);
+        buffer.limit(limit);    // restore the original buffer's limit
+        newb.limit(amount);     // slices limit to amount (capacity may be greater)
         return newb;
     }
 

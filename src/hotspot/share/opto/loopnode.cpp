@@ -1260,6 +1260,10 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
   assert(inner_cl->is_strip_mined(), "inner loop should be strip mined");
   Node* inner_iv_phi = inner_cl->phi();
   if (inner_iv_phi == NULL) {
+    IfNode* outer_le = outer_loop_end();
+    Node* iff = igvn->transform(new IfNode(outer_le->in(0), outer_le->in(1), outer_le->_prob, outer_le->_fcnt));
+    igvn->replace_node(outer_le, iff);
+    inner_cl->clear_strip_mined();
     return;
   }
   CountedLoopEndNode* inner_cle = inner_cl->loopexit();

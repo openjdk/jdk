@@ -642,6 +642,24 @@ public class IteratorMicroBenchmark {
                         for (Object o : a)
                             sum[0] += (Integer) o;
                         check.sum(sum[0]);}}},
+            new Job("ArrayList subList .toArray()") {
+                public void work() throws Throwable {
+                    int[] sum = new int[1];
+                    for (int i = 0; i < iterations; i++) {
+                        sum[0] = 0;
+                        for (Object o : asSubList(al).toArray())
+                            sum[0] += (Integer) o;
+                        check.sum(sum[0]);}}},
+            new Job("ArrayList subList .toArray(a)") {
+                public void work() throws Throwable {
+                    Integer[] a = new Integer[size];
+                    int[] sum = new int[1];
+                    for (int i = 0; i < iterations; i++) {
+                        sum[0] = 0;
+                        asSubList(al).toArray(a);
+                        for (Object o : a)
+                            sum[0] += (Integer) o;
+                        check.sum(sum[0]);}}},
             new Job("ArrayDeque.toArray()") {
                 public void work() throws Throwable {
                     int[] sum = new int[1];

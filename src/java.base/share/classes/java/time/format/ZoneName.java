@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -411,7 +411,7 @@ class ZoneName {
         "Pacific/Wake", "Wake", "Pacific/Wake",
         "Pacific/Pago_Pago", "Samoa", "Pacific/Apia",
         "America/Moncton", "Atlantic", "America/Halifax",
-        "Africa/Sao_Tome", "GMT", "Atlantic/Reykjavik",
+        "Africa/Sao_Tome", "Africa_Western", "Africa/Lagos",
         "America/Glace_Bay", "Atlantic", "America/Halifax",
         "Asia/Jakarta", "Indonesia_Western", "Asia/Jakarta",
         "Africa/Asmera", "Africa_Eastern", "Africa/Nairobi",
@@ -494,7 +494,6 @@ class ZoneName {
         "America/Kralendijk", "Atlantic", "America/Halifax",
     };
     private static final String[] mzoneMap = new String[] {
-        "GMT", "ST", "Africa/Sao_Tome",
         "GMT", "ML", "Africa/Bamako",
         "GMT", "IE", "Europe/Dublin",
         "GMT", "SN", "Africa/Dakar",
@@ -509,6 +508,7 @@ class ZoneName {
         "GMT", "GB", "Europe/London",
         "GMT", "LR", "Africa/Monrovia",
         "GMT", "TG", "Africa/Lome",
+        "Africa_Western", "ST", "Africa/Sao_Tome",
         "Africa_Western", "CF", "Africa/Bangui",
         "Africa_Western", "NE", "Africa/Niamey",
         "Africa_Western", "CM", "Africa/Douala",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8132734 8144062 8159785
+ * @bug 8132734 8144062 8159785 8194070
  * @summary Test that URL connections to multi-release jars can be runtime versioned
  * @library /lib/testlibrary/java/util/jar
  * @modules jdk.compiler
@@ -108,7 +108,8 @@ public class MultiReleaseJarURLConnection {
         Assert.assertTrue(readAndCompare(new URL(baseUrlEntry), "return 8"));
 
         // the following tests will not work with unversioned jars
-        if (style.equals("unversioned")) return;
+        if (style.equals("unversioned"))
+            return;
 
         // direct access to versioned entry
         String versUrlEntry = urlFile + "META-INF/versions/" + Runtime.version().major()
@@ -117,12 +118,6 @@ public class MultiReleaseJarURLConnection {
         // adding any fragment does not change things
         Assert.assertTrue(readAndCompare(new URL(versUrlEntry + "#runtime"), rtreturn));
         Assert.assertTrue(readAndCompare(new URL(versUrlEntry + "#fragment"), rtreturn));
-
-        // it really doesn't change things
-        versUrlEntry = urlFile + "META-INF/versions/10/version/Version.java";
-        Assert.assertTrue(readAndCompare(new URL(versUrlEntry), "return 10"));
-        Assert.assertTrue(readAndCompare(new URL(versUrlEntry + "#runtime"), "return 10"));
-        Assert.assertTrue(readAndCompare(new URL(versUrlEntry + "#fragment"), "return 10"));
     }
 
     @Test(dataProvider = "data")
@@ -224,7 +219,6 @@ public class MultiReleaseJarURLConnection {
         }
         cldr.close();
     }
-
 
     private boolean readAndCompare(URL url, String match) throws Exception {
         boolean result;
