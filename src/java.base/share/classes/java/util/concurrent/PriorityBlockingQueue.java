@@ -51,6 +51,7 @@ import java.util.Spliterator;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * An unbounded {@linkplain BlockingQueue blocking queue} that uses
@@ -921,7 +922,9 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         throws java.io.IOException, ClassNotFoundException {
         try {
             s.defaultReadObject();
-            this.queue = new Object[q.size()];
+            int sz = q.size();
+            SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Object[].class, sz);
+            this.queue = new Object[sz];
             comparator = q.comparator();
             addAll(q);
         } finally {
