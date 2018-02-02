@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,32 @@
 
 /*
  * @test
- * @bug 6894643 6913636 8005523 8025123
+ * @bug 6894643 6913636 8005523 8025123 8194486
  * @summary Test JSSE Kerberos ciphersuite
- * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA
- * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA unbound
- * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA unbound sni
- * @run main/othervm SSL TLS_KRB5_WITH_3DES_EDE_CBC_SHA
- * @run main/othervm SSL TLS_KRB5_WITH_3DES_EDE_CBC_MD5
- * @run main/othervm SSL TLS_KRB5_WITH_DES_CBC_SHA
- * @run main/othervm SSL TLS_KRB5_WITH_DES_CBC_MD5
- * @run main/othervm SSL TLS_KRB5_EXPORT_WITH_RC4_40_SHA
- * @run main/othervm SSL TLS_KRB5_EXPORT_WITH_RC4_40_MD5
- * @run main/othervm SSL TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA
- * @run main/othervm SSL TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSL
+ *      TLS_KRB5_WITH_RC4_128_SHA
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSL
+ *      TLS_KRB5_WITH_RC4_128_SHA unbound
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSL
+ *      TLS_KRB5_WITH_RC4_128_SHA unbound sni
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSL
+ *      TLS_KRB5_WITH_3DES_EDE_CBC_SHA
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSL
+ *      TLS_KRB5_WITH_3DES_EDE_CBC_MD5
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSL
+ *      TLS_KRB5_WITH_DES_CBC_SHA
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSL
+ *      TLS_KRB5_WITH_DES_CBC_MD5
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSL
+ *      TLS_KRB5_EXPORT_WITH_RC4_40_SHA
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSL
+ *      TLS_KRB5_EXPORT_WITH_RC4_40_MD5
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSL
+ *      TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSL
+ *      TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5
  */
 import java.io.*;
 import java.security.Permission;

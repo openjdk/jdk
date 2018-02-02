@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,8 @@ public class TestWarnings extends JavadocTester {
         checkExit(Exit.ERROR);
 
         checkOutput("pkg/X.html", true,
-            "<a href=\"../pkg/X.html#m--\"><code>m()</code></a><br/>",
-            "<a href=\"../pkg/X.html#X--\"><code>X()</code></a><br/>",
-            "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>");
+            "<a href=\"#m--\"><code>m()</code></a><br/>",
+            "<a href=\"#X--\"><code>X()</code></a><br/>",
+            "<a href=\"#f\"><code>f</code></a><br/>");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1678,7 +1678,7 @@ public class ClassWriter extends ClassFile {
         try {
             writeClassFile(out, c);
             if (verbose)
-                log.printVerbose("wrote.file", outFile);
+                log.printVerbose("wrote.file", outFile.getName());
             out.close();
             out = null;
         } finally {

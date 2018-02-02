@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,15 +54,15 @@ class ConstantSetNode extends AbstractNamedNode {
     }
 
     void document(PrintWriter writer) {
-        writer.println("<h4><a name=\"" + context.whereC + "\">" + name +
-                       " Constants</a></h4>");
+        writer.println("<h4 id=\"" + context.whereC + "\">" + name +
+                       " Constants</h4>");
         writer.println(comment());
-        writer.println("<dd><table border=1 cellpadding=3 cellspacing=0 width=\"90%\" summary=\"\"><tr>");
-        writer.println("<th width=\"20%\"><th width=\"5%\"><th width=\"65%\">");
+        writer.println("<table><tr>");
+        writer.println("<th style=\"width: 20%\"><th style=\"width: 5%\"><th style=\"width:  65%\">");
         ConstantNode n;
         for (Node node : components) {
             n = (ConstantNode)node;
-            writer.println("<a NAME=\"" + name + "_" + n.name + "\"></a>");
+            writer.println("<span id=\"" + name + "_" + n.name + "\"></span>");
             n.document(writer);
         }
         writer.println("</table>");

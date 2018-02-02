@@ -28,6 +28,11 @@
  * @author Mike Duigou
  * @run testng Defaults
  */
+
+import org.testng.Assert.ThrowingRunnable;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -36,36 +41,31 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.testng.Assert.ThrowingRunnable;
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
-
 import static java.util.Objects.requireNonNull;
-
-import static org.testng.Assert.fail;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class Defaults {
 
@@ -730,7 +730,7 @@ public class Defaults {
         e90, e91, e92, e93, e94, e95, e96, e97, e98, e99,
         EXTRA_KEY;
         public static final int SIZE = values().length;
-    };
+    }
     private static final int TEST_SIZE = IntegerEnum.SIZE - 1;
     /**
      * Realized keys ensure that there is always a hard ref to all test objects.

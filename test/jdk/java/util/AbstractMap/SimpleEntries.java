@@ -28,9 +28,10 @@
  * @author Martin Buchholz
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-import static java.util.AbstractMap.*;
+import java.util.Map;
+
+import static java.util.AbstractMap.SimpleEntry;
+import static java.util.AbstractMap.SimpleImmutableEntry;
 
 public class SimpleEntries {
     private static String k = "foo";

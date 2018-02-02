@@ -86,8 +86,6 @@
 
 #define JAVA_CLASSFILE_MAGIC              0xCAFEBABE
 #define JAVA_MIN_SUPPORTED_VERSION        45
-#define JAVA_MAX_SUPPORTED_VERSION        54
-#define JAVA_MAX_SUPPORTED_MINOR_VERSION  0
 
 // Used for two backward compatibility reasons:
 // - to check for new additions to the class file format in JDK1.5
@@ -109,6 +107,8 @@
 #define JAVA_9_VERSION                    53
 
 #define JAVA_10_VERSION                   54
+
+#define JAVA_11_VERSION                   55
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == 19 || bad_constant == 20) && _major_version >= JAVA_9_VERSION,
@@ -4642,11 +4642,11 @@ static bool has_illegal_visibility(jint flags) {
 }
 
 static bool is_supported_version(u2 major, u2 minor){
-  const u2 max_version = JAVA_MAX_SUPPORTED_VERSION;
+  const u2 max_version = JVM_CLASSFILE_MAJOR_VERSION;
   return (major >= JAVA_MIN_SUPPORTED_VERSION) &&
          (major <= max_version) &&
          ((major != max_version) ||
-          (minor <= JAVA_MAX_SUPPORTED_MINOR_VERSION));
+          (minor <= JVM_CLASSFILE_MINOR_VERSION));
 }
 
 void ClassFileParser::verify_legal_field_modifiers(jint flags,
@@ -5808,8 +5808,8 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
       _class_name->as_C_string(),
       _major_version,
       _minor_version,
-      JAVA_MAX_SUPPORTED_VERSION,
-      JAVA_MAX_SUPPORTED_MINOR_VERSION);
+      JVM_CLASSFILE_MAJOR_VERSION,
+      JVM_CLASSFILE_MINOR_VERSION);
     return;
   }
 

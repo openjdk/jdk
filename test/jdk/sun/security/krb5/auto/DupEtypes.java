@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,16 @@
 
 /*
  * @test
- * @bug 7067974
+ * @bug 7067974 8194486
  * @summary multiple ETYPE-INFO-ENTRY with same etype and different salt
+ * @library /test/lib
  * @compile -XDignore.symbol.file DupEtypes.java
- * @run main/othervm DupEtypes 1
- * @run main/othervm DupEtypes 2
- * @run main/othervm/fail DupEtypes 3
- * @run main/othervm DupEtypes 4
- * @run main/othervm DupEtypes 5
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts DupEtypes 1
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts DupEtypes 2
+ * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts DupEtypes 3
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts DupEtypes 4
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts DupEtypes 5
  */
 
 import sun.security.jgss.GSSUtil;

@@ -2107,9 +2107,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 List<Type> prevBounds = bounds.get(ib);
                 if (bound == qtype) return;
                 for (Type b : prevBounds) {
-                    //check for redundancy - use strict version of isSameType on tvars
-                    //(as the standard version will lead to false positives w.r.t. clones ivars)
-                    if (types.isSameType(b, bound2, true)) return;
+                    //check for redundancy - do not add same bound twice
+                    if (types.isSameType(b, bound2)) return;
                 }
                 bounds.put(ib, prevBounds.prepend(bound2));
                 notifyBoundChange(ib, bound2, false);

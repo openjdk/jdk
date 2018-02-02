@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,6 @@ class Bytes: AllStatic {
   //
   // In short, it makes no sense on z/Architecture to piecemeal get or put unaligned data.
 
-  // Only swap on little endian machines => suffix `_le'.
-  static inline u2   swap_u2_le(u2 x) { return x; }
-  static inline u4   swap_u4_le(u4 x) { return x; }
-  static inline u8   swap_u8_le(u8 x) { return x; }
-
   static inline u2   get_native_u2(address p) { return *(u2*)p; }
   static inline u4   get_native_u4(address p) { return *(u4*)p; }
   static inline u8   get_native_u8(address p) { return *(u8*)p; }
@@ -55,7 +50,8 @@ class Bytes: AllStatic {
   static inline void put_native_u4(address p, u4 x) { *(u4*)p = x; }
   static inline void put_native_u8(address p, u8 x) { *(u8*)p = x; }
 
-#include "bytes_linux_s390.inline.hpp"
+  // The following header contains the implementations of swap_u2, swap_u4, and swap_u8.
+#include OS_CPU_HEADER_INLINE(bytes)
 
   // Efficient reading and writing of unaligned unsigned data in Java byte ordering (i.e. big-endian ordering)
   static inline u2   get_Java_u2(address p) { return get_native_u2(p); }

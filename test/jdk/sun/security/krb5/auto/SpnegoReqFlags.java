@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
 
 /*
  * @test
- * @bug 6815182
- * @run main/othervm SpnegoReqFlags
+ * @bug 6815182 8194486
  * @summary GSSAPI/SPNEGO does not work with server using MIT Kerberos library
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SpnegoReqFlags
  */
 
 import sun.security.jgss.GSSUtil;

@@ -245,8 +245,6 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     protected final Messages messages;
 
-    protected Links links;
-
     /**
      * Creates an object to hold the configuration for a doclet.
      *
@@ -363,7 +361,6 @@ public class HtmlConfiguration extends BaseConfiguration {
         setTopFile(docEnv);
         workArounds.initDocLint(doclintOpts.values(), tagletManager.getCustomTagNames(),
                 Utils.toLowerCase(htmlVersion.name()));
-        links = new Links(htmlVersion);
         return true;
     }
 

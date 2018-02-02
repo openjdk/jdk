@@ -106,7 +106,19 @@ public abstract class EType {
                 "sun.security.krb5.internal.crypto.Aes256CtsHmacSha1EType";
             break;
 
-        case EncryptedData.ETYPE_ARCFOUR_HMAC:
+        case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
+            eType = new Aes128CtsHmacSha2EType();
+            eTypeName =
+                    "sun.security.krb5.internal.crypto.Aes128CtsHmacSha2EType";
+            break;
+
+        case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
+            eType = new Aes256CtsHmacSha2EType();
+            eTypeName =
+                    "sun.security.krb5.internal.crypto.Aes256CtsHmacSha2EType";
+            break;
+
+            case EncryptedData.ETYPE_ARCFOUR_HMAC:
             eType = new ArcFourHmacEType();
             eTypeName = "sun.security.krb5.internal.crypto.ArcFourHmacEType";
             break;
@@ -189,20 +201,23 @@ public abstract class EType {
     // is set to false.
 
     private static final int[] BUILTIN_ETYPES = new int[] {
-        EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96,
-        EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
-        EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
-        EncryptedData.ETYPE_ARCFOUR_HMAC,
-        EncryptedData.ETYPE_DES_CBC_CRC,
-        EncryptedData.ETYPE_DES_CBC_MD5,
+            EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96,
+            EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
+            EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192,
+            EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128,
+            EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
+            EncryptedData.ETYPE_ARCFOUR_HMAC,
+            EncryptedData.ETYPE_DES_CBC_CRC,
+            EncryptedData.ETYPE_DES_CBC_MD5,
     };
 
     private static final int[] BUILTIN_ETYPES_NOAES256 = new int[] {
-        EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
-        EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
-        EncryptedData.ETYPE_ARCFOUR_HMAC,
-        EncryptedData.ETYPE_DES_CBC_CRC,
-        EncryptedData.ETYPE_DES_CBC_MD5,
+            EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
+            EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128,
+            EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
+            EncryptedData.ETYPE_ARCFOUR_HMAC,
+            EncryptedData.ETYPE_DES_CBC_CRC,
+            EncryptedData.ETYPE_DES_CBC_MD5,
     };
 
 
@@ -363,7 +378,10 @@ public abstract class EType {
             return "RC4 with HMAC";
         case 24:
             return "RC4 with HMAC EXP";
-
+        case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
+            return "AES128 CTS mode with HMAC SHA256-128";
+        case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
+            return "AES256 CTS mode with HMAC SHA384-192";
         }
         return "Unknown (" + type + ")";
     }

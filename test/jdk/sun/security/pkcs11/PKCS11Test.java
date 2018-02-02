@@ -31,6 +31,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPairGenerator;
@@ -387,6 +388,11 @@ public abstract class PKCS11Test {
         getNSSInfo(nss_library);
     }
 
+    // Try to parse the version for the specified library.
+    // Assuming the library contains either of the following patterns:
+    // $Header: NSS <version>
+    // Version: NSS <version>
+    // Here, <version> stands for NSS version.
     static double getNSSInfo(String library) {
         // look for two types of headers in NSS libraries
         String nssHeader1 = "$Header: NSS";
@@ -417,7 +423,7 @@ public abstract class PKCS11Test {
                         read = 100 + is.read(data, 100, 900);
                     }
 
-                    s = new String(data, 0, read);
+                    s = new String(data, 0, read, StandardCharsets.US_ASCII);
                     i = s.indexOf(nssHeader1);
                     if (i > 0 || (i = s.indexOf(nssHeader2)) > 0) {
                         found = true;
@@ -443,7 +449,12 @@ public abstract class PKCS11Test {
 
         // the index after whitespace after nssHeader
         int afterheader = s.indexOf("NSS", i) + 4;
-        String version = s.substring(afterheader, s.indexOf(' ', afterheader));
+        String version = String.valueOf(s.charAt(afterheader));
+        for (char c = s.charAt(++afterheader);
+                c == '.' || (c >= '0' && c <= '9');
+                c = s.charAt(++afterheader)) {
+            version += c;
+        }
 
         // If a "dot dot" release, strip the extra dots for double parsing
         String[] dot = version.split("\\.");
@@ -458,6 +469,9 @@ public abstract class PKCS11Test {
         try {
             nss_version = Double.parseDouble(version);
         } catch (NumberFormatException e) {
+            System.out.println("===== Content start =====");
+            System.out.println(s);
+            System.out.println("===== Content end =====");
             System.out.println("Failed to parse lib" + library +
                     " version. Set to 0.0");
             e.printStackTrace();

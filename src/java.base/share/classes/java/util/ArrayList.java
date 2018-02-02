@@ -1143,6 +1143,23 @@ public class ArrayList<E> extends AbstractList<E>
             return modified;
         }
 
+        public Object[] toArray() {
+            checkForComodification();
+            return Arrays.copyOfRange(root.elementData, offset, offset + size);
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> T[] toArray(T[] a) {
+            checkForComodification();
+            if (a.length < size)
+                return (T[]) Arrays.copyOfRange(
+                        root.elementData, offset, offset + size, a.getClass());
+            System.arraycopy(root.elementData, offset, a, 0, size);
+            if (a.length > size)
+                a[size] = null;
+            return a;
+        }
+
         public Iterator<E> iterator() {
             return listIterator();
         }
@@ -1550,7 +1567,6 @@ public class ArrayList<E> extends AbstractList<E>
                     setBit(deathRow, i - beg);
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
-            expectedModCount++;
             modCount++;
             int w = beg;
             for (i = beg; i < end; i++)

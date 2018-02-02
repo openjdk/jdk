@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,33 @@ public final class BandedSampleModel extends ComponentSampleModel
     public DataBuffer createDataBuffer() {
         DataBuffer dataBuffer = null;
 
+        // The minimum size required to store samples of one band
         int size = scanlineStride * height;
+
+        if (numBanks == 1) {
+            /*
+             * The sample model contains a single bank of data buffer. Hence
+             * we need to compute the size required to store samples of all
+             * bands including the respective offsets.
+             */
+            int sizePerBand = size;
+            size += bandOffsets[0];
+            for (int index = 1; index < bandOffsets.length; index++) {
+                size += (bandOffsets[index] - size) + sizePerBand;
+            }
+        } else {
+            /*
+             * The sample model contains multiple banks of data buffer where
+             * each bank would correspond to a particular band. Hence we need
+             * to compute only the additional space required for band offsets.
+             */
+            int maxBandOffset = bandOffsets[0];
+            for (int index = 1; index < bandOffsets.length; index++) {
+                maxBandOffset = Math.max(maxBandOffset, bandOffsets[index]);
+            }
+            size += maxBandOffset;
+        }
+
         switch (dataType) {
         case DataBuffer.TYPE_BYTE:
             dataBuffer = new DataBufferByte(size, numBanks);

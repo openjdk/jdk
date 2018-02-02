@@ -168,3 +168,7 @@ $(foreach t, $(VARHANDLES_BYTE_ARRAY_TYPES), \
   $(eval $(call GenerateVarHandleByteArray,VAR_HANDLE_BYTE_ARRAY_$t,$t)))
 
 GENSRC_JAVA_BASE += $(GENSRC_VARHANDLES)
+
+# Include custom extension post hook
+$(eval $(call IncludeCustomExtension, gensrc/GensrcVarHandles-post.gmk))
+

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 true);
 define_pd_global(bool, UseOnStackReplacement,        true);
 define_pd_global(bool, ProfileInterpreter,           true);
-define_pd_global(bool, TieredCompilation,            true);
+define_pd_global(bool, TieredCompilation,            trueInTiered);
 define_pd_global(intx, CompileThreshold,             10000);
 
 define_pd_global(intx, OnStackReplacePercentage,     140);
@@ -78,27 +78,27 @@ define_pd_global(bool, SuperWordLoopUnrollAnalysis,  false);
 //   x.f = 0
 //   loc = x.f
 //   NullCheck loc
-define_pd_global(bool, OptoScheduling,               false);
-define_pd_global(bool, IdealizeClearArrayNode,       true);
+define_pd_global(bool,     OptoScheduling,               false);
+define_pd_global(bool,     IdealizeClearArrayNode,       true);
 
-define_pd_global(intx, InitialCodeCacheSize,         2048*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(intx, ReservedCodeCacheSize,        256*M);
-define_pd_global(intx, NonProfiledCodeHeapSize,      125*M);
-define_pd_global(intx, ProfiledCodeHeapSize,         126*M);
-define_pd_global(intx, NonNMethodCodeHeapSize,       5*M  );
-define_pd_global(intx, CodeCacheExpansionSize,       64*K);
+define_pd_global(uintx,    InitialCodeCacheSize,         2048*K); // Integral multiple of CodeCacheExpansionSize
+define_pd_global(uintx,    ReservedCodeCacheSize,        256*M);
+define_pd_global(uintx,    NonProfiledCodeHeapSize,      125*M);
+define_pd_global(uintx,    ProfiledCodeHeapSize,         126*M);
+define_pd_global(uintx,    NonNMethodCodeHeapSize,       5*M  );
+define_pd_global(uintx,    CodeCacheExpansionSize,       64*K);
 
 // Ergonomics related flags
-define_pd_global(uint64_t, MaxRAM,                   4ULL*G);
-define_pd_global(uintx, CodeCacheMinBlockLength,     4);
-define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
+define_pd_global(uint64_t, MaxRAM,                       128ULL*G);
+define_pd_global(uintx,    CodeCacheMinBlockLength,      4);
+define_pd_global(uintx,    CodeCacheMinimumUseSpace,     400*K);
 
-define_pd_global(bool,  TrapBasedRangeChecks,        true);
+define_pd_global(bool,     TrapBasedRangeChecks,          true);
 
 // Heap related flags
-define_pd_global(size_t, MetaspaceSize,              ScaleForWordSize(16*M));
+define_pd_global(size_t,   MetaspaceSize,                ScaleForWordSize(16*M));
 
 // Ergonomics related flags
-define_pd_global(bool, NeverActAsServerClassMachine, false);
+define_pd_global(bool,     NeverActAsServerClassMachine, false);
 
 #endif // CPU_PPC_VM_C2_GLOBALS_PPC_HPP

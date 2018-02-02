@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,18 @@
 
 /*
  * @test
- * @bug 8144903 8177466
+ * @bug 8144903 8177466 8191842
  * @summary Tests for EvaluationState.variables
- * @build KullaTesting TestingInputStream ExpectedDiagnostic
+ * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jshell
+ * @build Compiler KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng VariablesTest
  */
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import javax.tools.Diagnostic;
 
@@ -37,6 +43,7 @@ import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
 import jdk.jshell.Snippet.SubKind;
 import jdk.jshell.SnippetEvent;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static java.util.stream.Collectors.toList;
@@ -362,5 +369,157 @@ public class VariablesTest extends KullaTesting {
         assertEval("class O2 { public class Inner { public Inner(int i) { } public String test() { return \"good\"; } } }");
         assertEval("var r5 = new O2().new Inner(1) { public String get() { return \"good\"; } };");
         assertEval("r5.get()", "\"good\"");
+        assertEval("<Z> Z identity(Z z) { return z; }");
+        assertEval("var r6 = identity(new Object() { String s = \"good\"; });");
+        assertEval("r6.s", "\"good\"");
+        assertEval("interface I<B, C> { C get(B b); }");
+        assertEval("<A, B, C> C cascade(A a, I<A, B> c1, I<B, C> c2) { return c2.get(c1.get(a)); }");
+        assertEval("var r7 = cascade(\"good\", a -> new Object() { String s = a; }, b -> new java.util.ArrayList<String>(5) { String s = b.s; });");
+        assertEval("r7.s", "\"good\"");
+        assertEval("var r8 = cascade(\"good\", a -> new Object() { String s = a; public String getS() { return s; } }, b -> new java.util.ArrayList<String>(5) { String s = b.getS(); public String getS() { return s; } });");
+        assertEval("r8.getS()", "\"good\"");
+        assertEval("var r9 = new Object() { class T { class Inner { public String g() { return outer(); } } public String outer() { return \"good\"; } public String test() { return new Inner() {}.g(); } } public String test() { return new T().test(); } };");
+        assertEval("r9.test()", "\"good\"");
+        assertEval("var nested1 = new Object() { class N { public String get() { return \"good\"; } } };");
+        assertEval("nested1.new N().get()", "\"good\"");
+        assertEval("var nested2 = cascade(\"good\", a -> new Object() { abstract class G { abstract String g(); } G g = new G() { String g() { return a; } }; }, b -> new java.util.ArrayList<String>(5) { String s = b.g.g(); });");
+        assertEval("nested2.s", "\"good\"");
+        assertEval("<A, B> B convert(A a, I<A, B> c) { return c.get(a); }");
+        assertEval("var r10 = convert(\"good\", a -> new api.C(12) { public String val = \"\" + i + s + l + a; } );");
+        assertEval("r10.val", "\"12empty[empty]good\"");
+        assertEval("var r11 = convert(\"good\", a -> new api.C(\"a\") { public String val = \"\" + i + s + l + a; } );");
+        assertEval("r11.val", "\"3a[empty]good\"");
+        assertEval("import api.C;");
+        assertEval("var r12 = convert(\"good\", a -> new C(java.util.List.of(\"a\")) { public String val = \"\" + i + s + l + a; } );");
+        assertEval("r12.val", "\"4empty[a]good\"");
+        assertEval("var r13 = convert(\"good\", a -> new api.G<String>(java.util.List.of(\"b\")) { public String val = \"\" + l + a; } );");
+        assertEval("r13.val", "\"[b]good\"");
+        assertEval("var r14 = convert(\"good\", a -> new api.J<String>() { public java.util.List<String> get() { return java.util.List.of(a, \"c\"); } } );");
+        assertEval("r14.get()", "[good, c]");
+        assertEval("var r15a = new java.util.ArrayList<String>();");
+        assertEval("r15a.add(\"a\");");
+        assertEval("var r15b = r15a.get(0);");
+        assertEval("r15b", "\"a\"");
+    }
+
+    public void test8191842() {
+        assertEval("import java.util.stream.*;");
+        assertEval("var list = Stream.of(1, 2, 3).map(j -> new Object() { int i = j; }).collect(Collectors.toList());");
+        assertEval("list.stream().map(a -> String.valueOf(a.i)).collect(Collectors.joining(\", \"));", "\"1, 2, 3\"");
+    }
+
+    public void lvtiRecompileDependentsWithIntersectionTypes() {
+        assertEval("<Z extends Runnable & CharSequence> Z get1() { return null; }", added(VALID));
+        VarSnippet var = varKey(assertEval("var i1 = get1();", added(VALID)));
+        assertEval("import java.util.stream.*;", added(VALID),
+                                                 ste(var, VALID, VALID, true, MAIN_SNIPPET));
+        assertEval("void t1() { i1.run(); i1.length(); }", added(VALID));
+    }
+
+    public void arrayInit() {
+        assertEval("int[] d = {1, 2, 3};");
+    }
+
+    public void testAnonymousVar() {
+        assertEval("new Object() { public String get() { return \"a\"; } }");
+        assertEval("$1.get()", "\"a\"");
+    }
+
+    public void testIntersectionVar() {
+        assertEval("<Z extends Runnable & CharSequence> Z get() { return null; }", added(VALID));
+        assertEval("get();", added(VALID));
+        assertEval("void t1() { $1.run(); $1.length(); }", added(VALID));
+    }
+
+    public void multipleCaptures() {
+        assertEval("class D { D(int foo, String bar) { this.foo = foo; this.bar = bar; } int foo; String bar; } ");
+        assertEval("var d = new D(34, \"hi\") { String z = foo + bar; };");
+        assertEval("d.z", "\"34hi\"");
+    }
+
+    public void multipleAnonymous() {
+        VarSnippet v1 = varKey(assertEval("new Object() { public int i = 42; public int i1 = i; public int m1() { return i1; } };"));
+        VarSnippet v2 = varKey(assertEval("new Object() { public int i = 42; public int i2 = i; public int m2() { return i2; } };"));
+        assertEval(v1.name() + ".i", "42");
+        assertEval(v1.name() + ".i1", "42");
+        assertEval(v1.name() + ".m1()", "42");
+        assertDeclareFail(v1.name() + ".i2",
+                          new ExpectedDiagnostic("compiler.err.cant.resolve.location", 0, 5, 2,
+                                                 -1, -1, Diagnostic.Kind.ERROR));
+        assertEval(v2.name() + ".i", "42");
+        assertEval(v2.name() + ".i2", "42");
+        assertEval(v2.name() + ".m2()", "42");
+        assertDeclareFail(v2.name() + ".i1",
+                          new ExpectedDiagnostic("compiler.err.cant.resolve.location", 0, 5, 2,
+                                                 -1, -1, Diagnostic.Kind.ERROR));
+    }
+
+    public void displayName() {
+        assertVarDisplayName("var v1 = 234;", "int");
+        assertVarDisplayName("var v2 = new int[] {234};", "int[]");
+        assertEval("<Z extends Runnable & CharSequence> Z get() { return null; }", added(VALID));
+        assertVarDisplayName("var v3 = get();", "CharSequence&Runnable");
+        assertVarDisplayName("var v4a = new java.util.ArrayList<String>();", "java.util.ArrayList<String>");
+        assertEval("v4a.add(\"a\");");
+        assertVarDisplayName("var v4b = v4a.get(0);", "String");
+        assertVarDisplayName("var v5 = new Object() { };", "<anonymous class extending Object>");
+        assertVarDisplayName("var v6 = new Runnable() { public void run() { } };", "<anonymous class implementing Runnable>");
+    }
+
+    private void assertVarDisplayName(String var, String typeName) {
+        assertEquals(varKey(assertEval(var)).typeName(), typeName);
+    }
+
+    @BeforeMethod
+    @Override
+    public void setUp() {
+        Path path = Paths.get("cp");
+        Compiler compiler = new Compiler();
+        compiler.compile(path,
+                "package api;\n" +
+                "\n" +
+                "import java.util.List;\n" +
+                "\n" +
+                "public class C {\n" +
+                "   public int i;\n" +
+                "   public String s;\n" +
+                "   public List<String> l;\n" +
+                "   public C(int i) {\n" +
+                "       this.i = i;\n" +
+                "       this.s = \"empty\";\n" +
+                "       this.l = List.of(\"empty\");\n" +
+                "   }\n" +
+                "   public C(String s) {\n" +
+                "       this.i = 3;\n" +
+                "       this.s = s;\n" +
+                "       this.l = List.of(\"empty\");\n" +
+                "   }\n" +
+                "   public C(List<String> l) {\n" +
+                "       this.i = 4;\n" +
+                "       this.s = \"empty\";\n" +
+                "       this.l = l;\n" +
+                "   }\n" +
+                "}\n",
+                "package api;\n" +
+                "\n" +
+                "import java.util.List;\n" +
+                "\n" +
+                "public class G<T> {\n" +
+                "   public List<T> l;\n" +
+                "   public G(List<T> l) {\n" +
+                "       this.l = l;\n" +
+                "   }\n" +
+                "}\n",
+                "package api;\n" +
+                "\n" +
+                "import java.util.List;\n" +
+                "\n" +
+                "public interface J<T> {\n" +
+                "   public List<T> get();\n" +
+                "}\n");
+        String tpath = compiler.getPath(path).toString();
+        setUp(b -> b
+                .remoteVMOptions("--class-path", tpath)
+                .compilerOptions("--class-path", tpath));
     }
 }

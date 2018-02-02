@@ -382,7 +382,7 @@ public class ThreadLocalRandomTest extends JSR166TestCase {
         // Don't use main thread's ThreadLocalRandom - it is likely to
         // be polluted by previous tests.
         final AtomicReference<ThreadLocalRandom> threadLocalRandom =
-            new AtomicReference<ThreadLocalRandom>();
+            new AtomicReference<>();
         final AtomicLong rand = new AtomicLong();
 
         long firstRand = 0;

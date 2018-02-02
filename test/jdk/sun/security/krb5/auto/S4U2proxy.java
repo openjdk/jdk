@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 6355584 8044215
+ * @bug 6355584 8044215 8194486
  * @summary Introduce constrained Kerberos delegation
+ * @library /test/lib
  * @compile -XDignore.symbol.file S4U2proxy.java
- * @run main/othervm S4U2proxy krb5
- * @run main/othervm S4U2proxy spnego
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts S4U2proxy krb5
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts S4U2proxy spnego
  */
 
 import java.util.Arrays;

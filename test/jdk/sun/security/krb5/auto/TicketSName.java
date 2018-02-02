@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,13 @@
 
 /*
  * @test
- * @bug 8178794
+ * @bug 8178794 8194486
  * @summary krb5 client should ignore sname in incoming tickets
+ * @library /test/lib
  * @compile -XDignore.symbol.file TicketSName.java
- * @run main/othervm -Dtest.kdc.diff.sname TicketSName
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts -Dtest.kdc.diff.sname
+ *      TicketSName
  */
 
 import sun.security.jgss.GSSUtil;

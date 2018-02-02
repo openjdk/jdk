@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8132734
+ * @bug 8132734 8194070
  * @summary Test the System properties for JarFile that support multi-release jar files
  * @library /lib/testlibrary/java/util/jar
  * @modules jdk.jartool
@@ -31,17 +31,14 @@
  *          jdk.httpserver
  * @build Compiler JarBuilder CreateMultiReleaseTestJars SimpleHttpServer
  * @run testng MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=0 MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=8 MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=9 MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=10 MultiReleaseJarHttpProperties
+ * @run testng/othervm -Djdk.util.jar.version=0   MultiReleaseJarHttpProperties
+ * @run testng/othervm -Djdk.util.jar.version=8   MultiReleaseJarHttpProperties
+ * @run testng/othervm -Djdk.util.jar.version=9   MultiReleaseJarHttpProperties
  * @run testng/othervm -Djdk.util.jar.version=100 MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=8 -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=9 -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=10 -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=8 -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=9 -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
- * @run testng/othervm -Djdk.util.jar.version=10 -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
+ * @run testng/othervm -Djdk.util.jar.version=8   -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
+ * @run testng/othervm -Djdk.util.jar.version=9   -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
+ * @run testng/othervm -Djdk.util.jar.version=8   -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
+ * @run testng/othervm -Djdk.util.jar.version=9   -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
  * @run testng/othervm -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarHttpProperties
  * @run testng/othervm -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarHttpProperties
  */

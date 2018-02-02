@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,10 +180,11 @@ public class Extern {
         if (fnd == null)
             return null;
 
+        // The following is somewhat questionable since we are using DocPath
+        // to contain external URLs!
         DocPath p = fnd.relative ?
                 relativepath.resolve(fnd.path).resolve(filename) :
                 DocPath.create(fnd.path).resolve(filename);
-
         return new DocLink(p, "is-external=true", memberName);
     }
 

@@ -1233,7 +1233,6 @@ public class DPrinter {
         public Void visitMethodSymbol(MethodSymbol sym, Void ignore) {
             // code
             printList("params", sym.params);
-            printList("savedParameterNames", sym.savedParameterNames);
             return visitSymbol(sym, null);
         }
 

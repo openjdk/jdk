@@ -81,7 +81,7 @@ public class OfferRemoveLoops {
         final CountDownLatch done = new CountDownLatch(3);
         final SplittableRandom rnd = new SplittableRandom();
 
-        /** Poor man's bounded buffer; prevents unbounded queue expansion. */
+        // Poor man's bounded buffer; prevents unbounded queue expansion.
         final Semaphore offers = new Semaphore(maxQueueSize);
 
         abstract class CheckedThread extends Thread {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -478,7 +478,7 @@ public abstract class DkCrypto {
      *
      * DR(Key, Constant) = k-truncate(K1 | K2 | K3 | K4 ...)
      */
-    private byte[] dr(byte[] key, byte[] constant)
+    protected byte[] dr(byte[] key, byte[] constant)
         throws GeneralSecurityException {
 
         Cipher encCipher = getCipher(key, null, Cipher.ENCRYPT_MODE);
@@ -667,7 +667,7 @@ public abstract class DkCrypto {
             new HexDumpEncoder().encodeBuffer(
                 new ByteArrayInputStream(output, offset, len), out);
 
-            System.err.println(traceTag + ":" + out.toString());
+            System.err.println(traceTag + ":\n" + out.toString());
         } catch (Exception e) {
         }
     }

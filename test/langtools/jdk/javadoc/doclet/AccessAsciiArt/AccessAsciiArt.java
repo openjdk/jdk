@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,9 @@ public class AccessAsciiArt extends JavadocTester {
 
         checkOutput("p1/subpkg/SSC.html", true,
                 // Test the top line of the class tree
-                "<li><a href=\"../../p1/C.html\" title=\"class in p1\">p1.C</a></li>",
+                "<li><a href=\"../C.html\" title=\"class in p1\">p1.C</a></li>",
                 // Test the second line of the class tree
-                "<li><a href=\"../../p1/SC.html\" title=\"class in p1\">p1.SC</a></li>",
+                "<li><a href=\"../SC.html\" title=\"class in p1\">p1.SC</a></li>",
                 // Test the third line of the class tree
                 "<li>p1.subpkg.SSC</li>");
     }

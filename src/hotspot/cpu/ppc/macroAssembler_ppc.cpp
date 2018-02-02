@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2883,10 +2883,6 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     //assert(ObjectMonitor::recursions_size_in_bytes() == 8, "unexpected size");
     asm_assert_mem8_is_zero(ObjectMonitor::recursions_offset_in_bytes(), temp,
                             "monitor->_recursions should be 0", -1);
-    // Invariant 2: OwnerIsThread shouldn't be 0.
-    //assert(ObjectMonitor::OwnerIsThread_size_in_bytes() == 4, "unexpected size");
-    //asm_assert_mem4_isnot_zero(ObjectMonitor::OwnerIsThread_offset_in_bytes(), temp,
-    //                           "monitor->OwnerIsThread shouldn't be 0", -1);
 #   endif
 
 #if INCLUDE_RTM_OPT
@@ -5604,12 +5600,17 @@ void MacroAssembler::zap_from_to(Register low, int before, Register high, int af
 
 #endif // !PRODUCT
 
-SkipIfEqualZero::SkipIfEqualZero(MacroAssembler* masm, Register temp, const bool* flag_addr) : _masm(masm), _label() {
+void SkipIfEqualZero::skip_to_label_if_equal_zero(MacroAssembler* masm, Register temp,
+                                                  const bool* flag_addr, Label& label) {
   int simm16_offset = masm->load_const_optimized(temp, (address)flag_addr, R0, true);
   assert(sizeof(bool) == 1, "PowerPC ABI");
   masm->lbz(temp, simm16_offset, temp);
   masm->cmpwi(CCR0, temp, 0);
-  masm->beq(CCR0, _label);
+  masm->beq(CCR0, label);
+}
+
+SkipIfEqualZero::SkipIfEqualZero(MacroAssembler* masm, Register temp, const bool* flag_addr) : _masm(masm), _label() {
+  skip_to_label_if_equal_zero(masm, temp, flag_addr, _label);
 }
 
 SkipIfEqualZero::~SkipIfEqualZero() {

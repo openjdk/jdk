@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,11 @@ final public class JInfo {
 
             optionCount++;
 
-            if (arg.equals("-help") || arg.equals("-h")) {
+            if (arg.equals("-?") ||
+                arg.equals("-h") ||
+                arg.equals("--help") ||
+                // -help: legacy.
+                arg.equals("-help")) {
                 usage(0);
             }
 
@@ -255,7 +259,7 @@ final public class JInfo {
         System.err.println("    -flags               to print VM flags");
         System.err.println("    -sysprops            to print Java system properties");
         System.err.println("    <no option>          to print both VM flags and system properties");
-        System.err.println("    -h | -help           to print this help message");
+        System.err.println("    -? | -h | --help | -help to print this help message");
         System.exit(exit);
     }
 }
