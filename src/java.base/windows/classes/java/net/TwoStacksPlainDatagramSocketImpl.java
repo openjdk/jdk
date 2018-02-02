@@ -86,6 +86,7 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         fd1 = new FileDescriptor();
         try {
             super.create();
+            SocketCleanable.register(fd1);
         } catch (SocketException e) {
             fd1 = null;
             throw e;
@@ -160,6 +161,8 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     protected void close() {
         if (fd != null || fd1 != null) {
+            SocketCleanable.unregister(fd);
+            SocketCleanable.unregister(fd1);
             datagramSocketClose();
             ResourceManager.afterUdpClose();
             fd = null;
