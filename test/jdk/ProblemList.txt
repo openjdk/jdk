@@ -223,6 +223,8 @@ java/net/httpclient/SplitResponseSSL.java                       8194151 windows-
 
 # jdk_nio
 
+java/nio/Buffer/EqualsCompareTest.java                          8193917 solaris-all
+
 java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
 
 java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
