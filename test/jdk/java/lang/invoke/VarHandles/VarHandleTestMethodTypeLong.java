@@ -3252,4 +3252,3 @@ public class VarHandleTestMethodTypeLong extends VarHandleBaseTest {
         }
     }
 }
-

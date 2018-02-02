@@ -83,6 +83,10 @@ import sun.security.util.SecurityConstants;
  * application is executed, it will be executed on the same system as
  * the one on which the Java application was launched.
  *
+ * <p> Note: the methods in the {@code Desktop} class may require
+ * platform-dependent permissions in addition to those described in the
+ * specification.
+ *
  * @see Action
  *
  * @since 1.6

@@ -371,6 +371,18 @@ Zone America/New_York	-4:56:02 -	LMT	1883 Nov 18 12:03:58
 # Nebraska, eastern North Dakota, Oklahoma, eastern South Dakota,
 # western Tennessee, most of Texas, Wisconsin
 
+# From Paul Eggert (2018-01-07):
+# In 1869 the Chicago Astronomical Society contracted with the city to keep
+# time.  Though delayed by the Great Fire, by 1880 a wire ran from the
+# Dearborn Observatory (on the University of Chicago campus) to City Hall,
+# which then sent signals to police and fire stations.  However, railroads got
+# their time signals from the Allegheny Observatory, the Madison Observatory,
+# the Ann Arbor Observatory, etc., so their clocks did not agree with each
+# other or with the city's official time.  The confusion took some years to
+# clear up.  See:
+# Moser M. How Chicago gave America its time zones. Chicago. 2018-01-04.
+# http://www.chicagomag.com/city-life/January-2018/How-Chicago-Gave-America-Its-Time-Zones/
+
 # From Larry M. Smith (2006-04-26) re Wisconsin:
 # https://docs.legis.wisconsin.gov/statutes/statutes/175.pdf
 # is currently enforced at the 01:00 time of change.  Because the local
@@ -1919,7 +1931,7 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # manager of the Creston & District Museum. The article was written in May 2009.
 # http://www.ilovecreston.com/?p=articles&t=spec&ar=260
 # According to the article, Creston has not changed its clocks since June 1918.
-# i.e. Creston has been stuck on UTC-7 for 93 years.
+# i.e. Creston has been stuck on UT-7 for 93 years.
 # Dawson Creek, on the other hand, changed its clocks as recently as April 1972.
 
 # Unfortunately the exact date for the time change in June 1918 remains

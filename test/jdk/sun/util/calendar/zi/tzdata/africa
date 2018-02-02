@@ -181,7 +181,6 @@ Link Africa/Abidjan Africa/Freetown	# Sierra Leone
 Link Africa/Abidjan Africa/Lome		# Togo
 Link Africa/Abidjan Africa/Nouakchott	# Mauritania
 Link Africa/Abidjan Africa/Ouagadougou	# Burkina Faso
-Link Africa/Abidjan Africa/Sao_Tome	# São Tomé and Príncipe
 Link Africa/Abidjan Atlantic/St_Helena	# St Helena
 
 # Djibouti
@@ -448,7 +447,7 @@ Link Africa/Nairobi Indian/Mayotte
 #
 # The Nautical Almanac for the Year 1970, p 264, is the source for -0:44:30.
 #
-# In 1972 Liberia was the last country to switch from a UTC offset
+# In 1972 Liberia was the last country to switch from a UT offset
 # that was not a multiple of 15 or 20 minutes.  The 1972 change was on
 # 1972-01-07, according to an entry dated 1972-01-04 on p 330 of:
 # Presidential Papers: First year of the administration of
@@ -1060,6 +1059,19 @@ Zone	Indian/Reunion	3:41:52 -	LMT	1911 Jun # Saint-Denis
 #	Inaccessible, Nightingale: uninhabited
 
 # São Tomé and Príncipe
+
+# From Steffen Thorsen (2018-01-08):
+# Multiple sources tell that São Tomé changed from UTC to UTC+1 as
+# they entered the year 2018.
+# From Michael Deckers (2018-01-08):
+# the switch is from 01:00 to 02:00 ... [Decree No. 25/2017]
+# http://www.mnec.gov.st/index.php/publicacoes/documentos/file/90-decreto-lei-n-25-2017
+
+Zone	Africa/Sao_Tome	 0:26:56 -	LMT	1884
+			-0:36:45 -	LMT	1912 # Lisbon Mean Time
+			 0:00	-	GMT	2018 Jan  1 01:00
+			 1:00	-	WAT
+
 # Senegal
 # See Africa/Abidjan.
 
