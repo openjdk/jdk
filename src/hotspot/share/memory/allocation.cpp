@@ -210,18 +210,6 @@ ResourceObj::~ResourceObj() {
 }
 #endif // ASSERT
 
-
-void trace_heap_malloc(size_t size, const char* name, void* p) {
-  // A lock is not needed here - tty uses a lock internally
-  tty->print_cr("Heap malloc " INTPTR_FORMAT " " SIZE_FORMAT " %s", p2i(p), size, name == NULL ? "" : name);
-}
-
-
-void trace_heap_free(void* p) {
-  // A lock is not needed here - tty uses a lock internally
-  tty->print_cr("Heap free   " INTPTR_FORMAT, p2i(p));
-}
-
 //--------------------------------------------------------------------------------------
 // Non-product code
 
