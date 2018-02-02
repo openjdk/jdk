@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Ensure that classes found in jimage takes precedence over classes found in -Xbootclasspath/a.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.activation
  *          jdk.jartool/sun.tools.jar

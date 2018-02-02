@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary sharing is disabled if java.base is patch at runtime
  * @library ../..
  * @library /test/hotspot/jtreg/testlibrary

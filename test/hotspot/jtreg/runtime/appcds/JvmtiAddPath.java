@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary JvmtiEnv::AddToBootstrapClassLoaderSearch and JvmtiEnv::AddToSystemClassLoaderSearch should disable AppCDS
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @bug 8060592
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

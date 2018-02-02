@@ -6,32 +6,16 @@
         new JdkLogger(project)
     </script>
 
-     <!-- java.marker is set to a marker file to check for within a Java install dir.
-         The best file to check for across Solaris/Linux/Windows/MacOS is one of the
-         executables; regrettably, that is OS-specific. -->
-    <condition property="java.marker" value="bin/java">
-        <os family="unix"/>
-    </condition>
-    <condition property="java.marker" value="bin/java.exe">
-        <os family="windows"/>
-    </condition>
-
-    <target name="-check-jtreg.home" depends="-def-check">
-        <check name="jtreg" property="jtreg.home" marker="lib/jtreg.jar"/>
-    </target>
-
-    <property name="test.dir" value="${basedir}/jdk/test"/>
-
     <macrodef name="call-make">
-            <attribute name="dir"/>
-            <attribute name="args"/>
-            <sequential>
-                <exec executable="make" dir="@{dir}" failonerror="true">
-                    <arg line="@{args}"/>
-                    <env key="CLASSPATH" value = ""/>
-                </exec>
-            </sequential>
-        </macrodef>
+        <attribute name="dir"/>
+        <attribute name="args"/>
+        <sequential>
+            <exec executable="make" dir="@{dir}" failonerror="true">
+                <arg line="@{args}"/>
+                <env key="CLASSPATH" value = ""/>
+            </exec>
+        </sequential>
+    </macrodef>
 
     <target name="cond-clean" unless="${intellij.ismake}">
         <antcall target="clean"/>
@@ -43,71 +27,17 @@
         **** Global JDK Build Targets
     -->
 
-    <target name="clean" depends="-do-configure">
+    <target name="clean">
         <echo message="base = ${basedir}"/>
+        <call-make dir = "${build.target.dir}" args = "reconfigure"/>
         <call-make dir = "${build.target.dir}" args = "clean"/>
-    </target>
-
-    <target name="-do-configure">
-        <echo message="base = ${basedir}"/>
-        <fail message="Not part of a full JDK forest">
-            <condition>
-                <not>
-                    <available file="${basedir}/configure" />
-                </not>
-            </condition>
-        </fail>
-        <exec executable="sh" dir="${basedir}" failonerror="true">
-            <arg line="configure --with-boot-jdk=${boot.java.home}"/>
-        </exec>
     </target>
 
     <target name="images">
         <call-make dir = "${build.target.dir}" args = "images"/>
     </target>
 
-    <target name="jimages">
-        <call-make dir = "${build.target.dir}" args = "jimages"/>
-    </target>
-
-    <target name="check-env">
-        <exec executable="env" dir="${basedir}"/>
-    </target>
-
     <target name="build-module">
         <call-make dir = "${build.target.dir}" args = "${module.name}"/>
-    </target>
-
-    <target name="-check-boot.java.home" depends="-def-check">
-        <check name="bootstrap java" property="boot.java.home" marker="${java.marker}"/>
-    </target>
-
-    <target name="-def-check">
-        <macrodef name="check">
-            <attribute name="name"/>
-            <attribute name="property"/>
-            <attribute name="marker" default=""/>
-            <sequential>
-                <fail message="Cannot locate @{name}: please set @{property} to its location">
-                    <condition>
-                        <not>
-                            <isset property="@{property}"/>
-                        </not>
-                    </condition>
-                </fail>
-                <fail message="@{name} is not installed in ${@{property}}">
-                    <condition>
-                        <and>
-                            <not>
-                                <equals arg1="@{marker}" arg2=""/>
-                            </not>
-                            <not>
-                                <available file="${@{property}}/@{marker}"/>
-                            </not>
-                        </and>
-                    </condition>
-                </fail>
-            </sequential>
-        </macrodef>
     </target>
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 8043071
+ * @bug 8043071 8194486
  * @summary Expose session key and KRB_CRED through extended GSS-API
+ * @library /test/lib
  * @compile -XDignore.symbol.file NewInquireTypes.java
- * @run main/othervm NewInquireTypes
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts NewInquireTypes
  */
 
 import com.sun.security.jgss.ExtendedGSSContext;

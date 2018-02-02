@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Make sure classes intended for custom loaders cannot be loaded by BOOT/EXT/APP loaders
- * (NOTE: AppCDS does not support uncompressed oops)
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc

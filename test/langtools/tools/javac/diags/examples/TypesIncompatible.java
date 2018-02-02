@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.types.incompatible.diff.ret
+// key: compiler.err.types.incompatible
+// key: compiler.misc.incompatible.diff.ret
 
 interface A {
     int m();

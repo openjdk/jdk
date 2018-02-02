@@ -28,7 +28,7 @@
  *          mapped due to out of range, and -Xshare:on should not fail. Test on
  *          linux 64-bit only since the HeapBaseMinAddress value is platform specific.
  *          The value used in the test may cause different behavior on other platforms.
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires (os.family == "linux") & (os.arch == "amd64") & (sun.arch.data.model == "64")
  * @requires (vm.gc=="null")
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds

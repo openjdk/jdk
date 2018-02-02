@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ jint init_globals() {
   InterfaceSupport_init();
   SharedRuntime::generate_stubs();
   universe2_init();  // dependent on codeCache_init and stubRoutines_init1
+  javaClasses_init();// must happen after vtable initialization, before referenceProcessor_init
   referenceProcessor_init();
   jni_handles_init();
 #if INCLUDE_VM_STRUCTS
@@ -150,7 +151,6 @@ jint init_globals() {
   if (!universe_post_init()) {
     return JNI_ERR;
   }
-  javaClasses_init();   // must happen after vtable initialization
   stubRoutines_init2(); // note: StubRoutines need 2-phase init
   MethodHandles::generate_adapters();
 

@@ -27,6 +27,7 @@ package java.io;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * This class implements an output stream in which the data is
@@ -147,10 +148,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * @param   len   the number of bytes to write.
      */
     public synchronized void write(byte b[], int off, int len) {
-        if ((off < 0) || (off > b.length) || (len < 0) ||
-            ((off + len) - b.length > 0)) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, b.length);
         ensureCapacity(count + len);
         System.arraycopy(b, off, buf, count, len);
         count += len;

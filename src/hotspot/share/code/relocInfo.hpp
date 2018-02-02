@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -910,6 +910,10 @@ class oop_Relocation : public DataRelocation {
   }
   // an oop in the instruction stream
   static RelocationHolder spec_for_immediate() {
+    // If no immediate oops are generated, we can skip some walks over nmethods.
+    // Assert that they don't get generated accidently!
+    assert(relocInfo::mustIterateImmediateOopsInCode(),
+           "Must return true so we will search for oops as roots etc. in the code.");
     const int oop_index = 0;
     const int offset    = 0;    // if you want an offset, use the oop pool
     RelocationHolder rh = newHolder();

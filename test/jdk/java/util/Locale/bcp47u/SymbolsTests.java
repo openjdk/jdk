@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 /*
  *
  * @test
- * @bug 8176841
+ * @bug 8176841 8194148
  * @summary Tests *FormatSymbols class deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
- * @run testng/othervm -Djava.locale.providers=CLDR FormatTests
+ * @run testng/othervm -Djava.locale.providers=CLDR SymbolsTests
  */
 
 import static org.testng.Assert.assertEquals;
@@ -66,11 +66,11 @@ public class SymbolsTests {
         return new Object[][] {
             // Locale, expected decimal separator, expected grouping separator
 
-            {RG_AT, ",", "."},
-            {Locale.US, ".", ","},
+            {RG_AT, ',', '.'},
+            {Locale.US, '.', ','},
 
             // -nu & -rg mixed. -nu should win
-            {Locale.forLanguageTag("ar-EG-u-nu-latn-rg-mazzzz"), ".", ","},
+            {Locale.forLanguageTag("ar-EG-u-nu-latn-rg-mazzzz"), '.', ','},
         };
     }
 

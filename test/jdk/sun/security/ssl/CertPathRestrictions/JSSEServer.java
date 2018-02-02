@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@ public class JSSEServer {
 
     private SSLServerSocket server = null;
 
-    private Exception exception = null;
-
     public JSSEServer(SSLContext context, String constraint,
             boolean needClientAuth) throws Exception {
         TLSRestrictions.setConstraint("Server", constraint);
@@ -49,35 +47,28 @@ public class JSSEServer {
         System.out.println("Server: port=" + getPort());
     }
 
-    public void start() {
-        new Thread(new Runnable() {
+    public Exception start() {
+        System.out.println("Server: started");
+        Exception exception = null;
+        try (SSLSocket socket = (SSLSocket) server.accept()) {
+            System.out.println("Server: accepted connection");
+            socket.setSoTimeout(TLSRestrictions.TIMEOUT);
+            InputStream sslIS = socket.getInputStream();
+            OutputStream sslOS = socket.getOutputStream();
+            sslIS.read();
+            sslOS.write('S');
+            sslOS.flush();
+            System.out.println("Server: finished");
+        } catch (Exception e) {
+            exception = e;
+            e.printStackTrace(System.out);
+            System.out.println("Server: failed");
+        }
 
-            @Override
-            public void run() {
-                try {
-                    System.out.println("Server: started");
-                    try (SSLSocket socket = (SSLSocket) server.accept()) {
-                        socket.setSoTimeout(TLSRestrictions.TIMEOUT);
-                        InputStream sslIS = socket.getInputStream();
-                        OutputStream sslOS = socket.getOutputStream();
-                        sslIS.read();
-                        sslOS.write('S');
-                        sslOS.flush();
-                        System.out.println("Server: finished");
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace(System.out);
-                    exception = e;
-                }
-            }
-        }).start();
+        return exception;
     }
 
     public int getPort() {
         return server.getLocalPort();
-    }
-
-    public Exception getException() {
-        return exception;
     }
 }

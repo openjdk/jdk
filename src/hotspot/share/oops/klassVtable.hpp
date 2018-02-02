@@ -144,21 +144,24 @@ class klassVtable VALUE_OBJ_CLASS_SPEC {
   bool is_miranda_entry_at(int i);
   int fill_in_mirandas(int initialized);
   static bool is_miranda(Method* m, Array<Method*>* class_methods,
-                         Array<Method*>* default_methods, const Klass* super);
+                         Array<Method*>* default_methods, const Klass* super,
+                         bool is_interface);
   static void add_new_mirandas_to_lists(
       GrowableArray<Method*>* new_mirandas,
       GrowableArray<Method*>* all_mirandas,
       Array<Method*>* current_interface_methods,
       Array<Method*>* class_methods,
       Array<Method*>* default_methods,
-      const Klass* super);
+      const Klass* super,
+      bool is_interface);
   static void get_mirandas(
       GrowableArray<Method*>* new_mirandas,
       GrowableArray<Method*>* all_mirandas,
       const Klass* super,
       Array<Method*>* class_methods,
       Array<Method*>* default_methods,
-      Array<Klass*>* local_interfaces);
+      Array<Klass*>* local_interfaces,
+      bool is_interface);
   void verify_against(outputStream* st, klassVtable* vt, int index);
   inline InstanceKlass* ik() const;
   // When loading a class from CDS archive at run time, and no class redefintion

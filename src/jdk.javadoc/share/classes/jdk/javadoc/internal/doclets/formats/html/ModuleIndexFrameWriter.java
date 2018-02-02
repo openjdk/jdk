@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all classes link should be added
      */
     protected void addAllClassesLink(Content ul) {
-        Content linkContent = Links.createLink(DocPaths.ALLCLASSES_FRAME,
+        Content linkContent = links.createLink(DocPaths.ALLCLASSES_FRAME,
                 contents.allClassesLabel, "", "packageFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
@@ -165,7 +165,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all packages link should be added
      */
     protected void addAllPackagesLink(Content ul) {
-        Content linkContent = Links.createLink(DocPaths.OVERVIEW_FRAME,
+        Content linkContent = links.createLink(DocPaths.OVERVIEW_FRAME,
                 contents.allPackagesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);

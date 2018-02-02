@@ -64,14 +64,6 @@ public class Reflection {
     @HotSpotIntrinsicCandidate
     public static native Class<?> getCallerClass();
 
-    /**
-     * @deprecated This method will be removed.
-     * This method is a private JDK API and retained temporarily to
-     * simplify the implementation of sun.misc.Reflection.getCallerClass.
-     */
-    @Deprecated(forRemoval=true)
-    public static native Class<?> getCallerClass(int depth);
-
     /** Retrieves the access flags written to the class file. For
         inner classes these flags may differ from those returned by
         Class.getModifiers(), which searches the InnerClasses

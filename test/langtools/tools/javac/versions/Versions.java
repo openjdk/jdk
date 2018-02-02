@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870
+ * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -64,28 +64,35 @@ public class Versions {
         String TC = "";
         System.out.println("Version.java: Starting");
 
-        check("54.0");
-        check("54.0", "-source 1.6");
-        check("54.0", "-source 1.7");
-        check("54.0", "-source 1.8");
-        check("54.0", "-source 1.9");
-        check("54.0", "-source 1.10");
+        check("55.0");
+        check("55.0", "-source 1.6");
+        check("55.0", "-source 1.7");
+        check("55.0", "-source 1.8");
+        check("55.0", "-source 1.9");
+        check("55.0", "-source 1.10");
+        check("55.0", "-source 11");
 
-        check_source_target("50.0", "6", "6");
-        check_source_target("51.0", "6", "7");
-        check_source_target("51.0", "7", "7");
-        check_source_target("52.0", "6", "8");
-        check_source_target("52.0", "7", "8");
-        check_source_target("52.0", "8", "8");
-        check_source_target("53.0", "6", "9");
-        check_source_target("53.0", "7", "9");
-        check_source_target("53.0", "8", "9");
-        check_source_target("53.0", "9", "9");
-        check_source_target("54.0", "6", "10");
-        check_source_target("54.0", "7", "10");
-        check_source_target("54.0", "8", "10");
-        check_source_target("54.0", "9", "10");
-        check_source_target("54.0", "10", "10");
+        check_source_target(true, "50.0", "6", "6");
+        check_source_target(true, "51.0", "6", "7");
+        check_source_target(true, "51.0", "7", "7");
+        check_source_target(true, "52.0", "6", "8");
+        check_source_target(true, "52.0", "7", "8");
+        check_source_target(true, "52.0", "8", "8");
+        check_source_target(true, "53.0", "6", "9");
+        check_source_target(true, "53.0", "7", "9");
+        check_source_target(true, "53.0", "8", "9");
+        check_source_target(true, "53.0", "9", "9");
+        check_source_target(true, "54.0", "6", "10");
+        check_source_target(true, "54.0", "7", "10");
+        check_source_target(true, "54.0", "8", "10");
+        check_source_target(true, "54.0", "9", "10");
+        check_source_target(true, "54.0", "10", "10");
+        check_source_target(false, "55.0", "6", "11");
+        check_source_target(false, "55.0", "7", "11");
+        check_source_target(false, "55.0", "8", "11");
+        check_source_target(false, "55.0", "9", "11");
+        check_source_target(false, "55.0", "10", "11");
+        check_source_target(false, "55.0", "11", "11");
 
         checksrc16("-source 1.6");
         checksrc16("-source 6");
@@ -108,8 +115,9 @@ public class Versions {
         checksrc110("-source 10");
         checksrc110("-source 1.10", "-target 1.10");
         checksrc110("-source 10", "-target 10");
-        checksrc110("-target 1.10");
-        checksrc110("-target 10");
+        checksrc111("-source 11");
+        checksrc111("-source 11", "-target 11");
+        checksrc111("-target 11");
 
         fail("-source 7", "-target 1.6", "Base.java");
         fail("-source 8", "-target 1.6", "Base.java");
@@ -118,6 +126,8 @@ public class Versions {
         fail("-source 9", "-target 1.8", "Base.java");
         fail("-source 10", "-target 1.7", "Base.java");
         fail("-source 10", "-target 1.8", "Base.java");
+        fail("-source 11", "-target 1.9", "Base.java");
+        fail("-source 11", "-target 1.10", "Base.java");
 
         fail("-source 1.5", "-target 1.5", "Base.java");
         fail("-source 1.4", "-target 1.4", "Base.java");
@@ -139,20 +149,24 @@ public class Versions {
         System.out.printf("\n", fname);
     }
 
-    protected void check_source_target(String... args) {
+    protected void check_source_target(boolean dotOne, String... args) {
         printargs("check_source_target", args);
-        check_target(args[0], args[1], args[2]);
-        check_target(args[0], "1." + args[1], args[2]);
+        check_target(dotOne, args[0], args[1], args[2]);
+        if (dotOne) {
+            check_target(dotOne, args[0], "1." + args[1], args[2]);
+        }
     }
 
-    protected void check_target(String... args) {
+    protected void check_target(boolean dotOne, String... args) {
         check(args[0], "-source " + args[1], "-target " + args[2]);
-        check(args[0], "-source " + args[1], "-target 1." + args[2]);
+        if (dotOne) {
+            check(args[0], "-source " + args[1], "-target 1." + args[2]);
+        }
     }
 
     protected void check(String major, String... args) {
         printargs("check", args);
-        List<String> jcargs = new ArrayList<String>();
+        List<String> jcargs = new ArrayList<>();
         jcargs.add("-Xlint:-options");
 
         // add in args conforming to List requrements of JavaCompiler
@@ -207,6 +221,8 @@ public class Versions {
         pass(newargs);
         newargs[asize] = "New18.java";
         pass(newargs);
+        newargs[asize] = "New110.java";
+        fail(newargs);
     }
 
     protected void checksrc19(String... args) {
@@ -216,7 +232,20 @@ public class Versions {
 
     protected void checksrc110(String... args) {
         printargs("checksrc110", args);
-        checksrc19(args);
+        int asize = args.length;
+        String[] newargs = new String[asize+1];
+        System.arraycopy(args, 0, newargs,0 , asize);
+        newargs[asize] = "New17.java";
+        pass(newargs);
+        newargs[asize] = "New18.java";
+        pass(newargs);
+        newargs[asize] = "New110.java";
+        pass(newargs);
+    }
+
+    protected void checksrc111(String... args) {
+        printargs("checksrc111", args);
+        checksrc110(args);
     }
 
     protected void pass(String... args) {
@@ -343,6 +372,17 @@ public class Versions {
             "public class New18 { \n" +
             "    void m() { \n" +
             "    new Thread(() -> { }); \n" +
+            "    } \n" +
+            "} \n"
+        );
+
+        /*
+         * Create a file with a new feature in 1.10, not in 1.9 : var
+         */
+        writeSourceFile("New110.java",
+            "public class New110 { \n" +
+            "    void m() { \n" +
+            "    var tmp = new Thread(() -> { }); \n" +
             "    } \n" +
             "} \n"
         );

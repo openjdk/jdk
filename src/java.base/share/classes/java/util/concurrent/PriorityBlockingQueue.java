@@ -269,8 +269,8 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         if (a.getClass() != Object[].class)
             a = Arrays.copyOf(a, n, Object[].class);
         if (screen && (n == 1 || this.comparator != null)) {
-            for (int i = 0; i < n; ++i)
-                if (a[i] == null)
+            for (Object elt : a)
+                if (elt == null)
                     throw new NullPointerException();
         }
         this.queue = a;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 template <DecoratorSet decorators>
 template <DecoratorSet idecorators, typename T>
 inline typename EnableIf<
-  AccessInternal::MustConvertCompressedOop<idecorators>::value, T>::type
+  AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>::type
 RawAccessBarrier<decorators>::decode_internal(typename HeapOopType<idecorators>::type value) {
   if (HasDecorator<decorators, OOP_NOT_NULL>::value) {
     return oopDesc::decode_heap_oop_not_null(value);
@@ -44,7 +44,7 @@ RawAccessBarrier<decorators>::decode_internal(typename HeapOopType<idecorators>:
 template <DecoratorSet decorators>
 template <DecoratorSet idecorators, typename T>
 inline typename EnableIf<
-  AccessInternal::MustConvertCompressedOop<idecorators>::value,
+  AccessInternal::MustConvertCompressedOop<idecorators, T>::value,
   typename HeapOopType<idecorators>::type>::type
 RawAccessBarrier<decorators>::encode_internal(T value) {
   if (HasDecorator<decorators, OOP_NOT_NULL>::value) {

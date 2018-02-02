@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,49 @@
 
 /*
  * @test
- * @bug 6853328 7172701
- * @run main/othervm OkAsDelegate false true true false false false
- *      FORWARDABLE ticket not allowed, always fail
- * @run main/othervm OkAsDelegate true false false false false false
- *      Service ticket no OK-AS-DELEGATE. Request nothing, gain nothing
- * @run main/othervm OkAsDelegate true false true false false false
- *      Service ticket no OK-AS-DELEGATE. Request deleg policy, gain nothing
- * @run main/othervm OkAsDelegate true true false true false true
- *      Service ticket no OK-AS-DELEGATE. Request deleg, granted
- * @run main/othervm OkAsDelegate true true true true false true
- *      Service ticket no OK-AS-DELEGATE. Request deleg and deleg policy, granted, with info not by policy
- * @run main/othervm -Dtest.kdc.policy.ok-as-delegate OkAsDelegate true false true true true true
- *      Service ticket has OK-AS-DELEGATE. Request deleg policy, granted
- * @run main/othervm -Dtest.kdc.policy.ok-as-delegate OkAsDelegate true true true true true true
- *      Service ticket has OK-AS-DELEGATE. granted, with info by policy
- * @run main/othervm -Dtest.spnego OkAsDelegate false true true false false false
- * @run main/othervm -Dtest.spnego OkAsDelegate true false false false false false
- * @run main/othervm -Dtest.spnego OkAsDelegate true false true false false false
- * @run main/othervm -Dtest.spnego OkAsDelegate true true false true false true
- * @run main/othervm -Dtest.spnego OkAsDelegate true true true true false true
- * @run main/othervm -Dtest.spnego -Dtest.kdc.policy.ok-as-delegate OkAsDelegate true false true true true true
- * @run main/othervm -Dtest.spnego -Dtest.kdc.policy.ok-as-delegate OkAsDelegate true true true true true true
+ * @bug 6853328 7172701 8194486
  * @summary Support OK-AS-DELEGATE flag
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts OkAsDelegate
+ *      false true true false false false
+ *      FORWARDABLE ticket not allowed, always fail
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts OkAsDelegate
+ *      true false false false false false
+ *      Service ticket no OK-AS-DELEGATE. Request nothing, gain nothing
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts OkAsDelegate
+ *      true false true false false false
+ *      Service ticket no OK-AS-DELEGATE. Request deleg policy, gain nothing
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts OkAsDelegate
+ *      true true false true false true
+ *      Service ticket no OK-AS-DELEGATE. Request deleg, granted
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts
+ *      OkAsDelegate true true true true false true
+ *      Service ticket no OK-AS-DELEGATE. Request deleg and deleg policy, granted, with info not by policy
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts
+ *      -Dtest.kdc.policy.ok-as-delegate OkAsDelegate
+ *      true false true true true true
+ *      Service ticket has OK-AS-DELEGATE. Request deleg policy, granted
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts
+ *      -Dtest.kdc.policy.ok-as-delegate OkAsDelegate
+ *      true true true true true true
+ *      Service ticket has OK-AS-DELEGATE. granted, with info by policy
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts -Dtest.spnego
+ *      OkAsDelegate false true true false false false
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts -Dtest.spnego
+ *      OkAsDelegate true false false false false false
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts -Dtest.spnego
+ *      OkAsDelegate true false true false false false
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts -Dtest.spnego
+ *      OkAsDelegate true true false true false true
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts -Dtest.spnego
+ *      OkAsDelegate true true true true false true
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts -Dtest.spnego
+ *      -Dtest.kdc.policy.ok-as-delegate OkAsDelegate
+ *      true false true true true true
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts -Dtest.spnego
+ *      -Dtest.kdc.policy.ok-as-delegate OkAsDelegate
+ *      true true true true true true
  */
 import com.sun.security.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSContext;

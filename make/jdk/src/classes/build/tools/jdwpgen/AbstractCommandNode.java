@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ import java.io.*;
 class AbstractCommandNode extends AbstractNamedNode {
 
     void document(PrintWriter writer) {
-        writer.println("<h5><a name=\"" + context.whereC + "\">" + name +
-                       " Command</a> (" + nameNode.value() + ")</h5>");
+        writer.println("<h5 id=\"" + context.whereC + "\">" + name +
+                       " Command (" + nameNode.value() + ")</h5>");
         writer.println(comment());
         writer.println("<dl>");
         for (Node node : components) {

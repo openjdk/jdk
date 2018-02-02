@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,8 @@
   template(CGC_Operation)                         \
   template(CMS_Initial_Mark)                      \
   template(CMS_Final_Remark)                      \
-  template(G1CollectFull)                         \
   template(G1CollectForAllocation)                \
-  template(G1IncCollectionPause)                  \
+  template(G1CollectFull)                         \
   template(HandshakeOneThread)                    \
   template(HandshakeAllThreads)                   \
   template(HandshakeFallback)                     \

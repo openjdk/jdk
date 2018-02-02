@@ -44,6 +44,7 @@ $(eval $(call IncludeCustomExtension, test/JtregNativeHotspot.gmk))
 # Add more directories here when needed.
 BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/hotspot/jtreg/gc/g1/TestJNIWeakG1 \
+    $(TOPDIR)/test/hotspot/jtreg/gc/stress/TestJNIBlockFullGC \
     $(TOPDIR)/test/hotspot/jtreg/gc/stress/gclocker \
     $(TOPDIR)/test/hotspot/jtreg/gc/cslocker \
     $(TOPDIR)/test/hotspot/jtreg/native_sanity \

@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @requires ((vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)) & !vm.graal.enabled
+ * @requires vm.cds & !vm.graal.enabled
  * @library ../..
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

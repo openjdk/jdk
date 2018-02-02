@@ -4039,9 +4039,16 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
         }
         if (library == NULL) {
           const char *sub_msg = " on the library path, with error: ";
-          size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;
+          const char *sub_msg2 = "\nModule java.instrument may be missing from runtime image.";
+
+          size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) +
+                       strlen(ebuf) + strlen(sub_msg2) + 1;
           char *buf = NEW_C_HEAP_ARRAY(char, len, mtThread);
-          jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
+          if (!agent->is_instrument_lib()) {
+            jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
+          } else {
+            jio_snprintf(buf, len, "%s%s%s%s%s", msg, name, sub_msg, ebuf, sub_msg2);
+          }
           // If we can't find the agent, exit.
           vm_exit_during_initialization(buf, NULL);
           FREE_C_HEAP_ARRAY(char, buf);

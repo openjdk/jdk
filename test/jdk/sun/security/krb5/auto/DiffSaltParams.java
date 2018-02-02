@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,13 @@
 
 /*
  * @test
- * @bug 8186831
+ * @bug 8186831 8194486
  * @summary Kerberos ignores PA-DATA with a non-null s2kparams
+ * @library /test/lib
  * @compile -XDignore.symbol.file DiffSaltParams.java
- * @run main/othervm -Dsun.security.krb5.debug=true DiffSaltParams
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Dsun.security.krb5.debug=true
+ *      -Djdk.net.hosts.file=TestHosts DiffSaltParams
  */
 
 public class DiffSaltParams {

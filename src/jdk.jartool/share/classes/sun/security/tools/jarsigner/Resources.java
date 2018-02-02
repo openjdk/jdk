@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,8 +118,10 @@ public class Resources extends java.util.ListResourceBundle {
                 "[-strict]                   treat warnings as errors"},
         {".conf.url.specify.a.pre.configured.options.file",
                 "[-conf <url>]               specify a pre-configured options file"},
+        {".print.this.help.message",
+                "[-? -h --help]              Print this help message"},
         {"Option.lacks.argument", "Option lacks argument"},
-        {"Please.type.jarsigner.help.for.usage", "Please type jarsigner -help for usage"},
+        {"Please.type.jarsigner.help.for.usage", "Please type jarsigner --help for usage"},
         {"Please.specify.jarfile.name", "Please specify jarfile name"},
         {"Please.specify.alias.name", "Please specify alias name"},
         {"Only.one.alias.can.be.specified", "Only one alias can be specified"},

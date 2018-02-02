@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1144,7 +1144,7 @@ class JdepsTask {
         for (Option o : recognizedOptions) {
             String name = o.aliases[0].substring(1); // there must always be at least one name
             name = name.charAt(0) == '-' ? name.substring(1) : name;
-            if (o.isHidden() || name.equals("h") || name.startsWith("filter:")) {
+            if (o.isHidden() || name.startsWith("filter:")) {
                 continue;
             }
             log.println(getMessage("main.opt." + name));

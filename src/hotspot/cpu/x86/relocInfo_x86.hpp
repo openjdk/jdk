@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,5 +39,11 @@
     format_width       =  2
 #endif
   };
+
+ public:
+
+  // Instruct loadConP of x86_64.ad places oops in code that are not also
+  // listed in the oop section.
+  static bool mustIterateImmediateOopsInCode() { return true; }
 
 #endif // CPU_X86_VM_RELOCINFO_X86_HPP

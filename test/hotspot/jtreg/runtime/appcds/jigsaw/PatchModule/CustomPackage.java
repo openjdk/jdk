@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary if a class is defined to a package which is not defined to any
  *          module in the jimage, the class will not be found during dump
  *          time but it will be used during run time.

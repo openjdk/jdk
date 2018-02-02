@@ -433,7 +433,7 @@ class StubGenerator: public StubCodeGenerator {
 
 
   //----------------------------------------------------------------------------------------------------
-  // Support for jint Atomic::xchg(jint exchange_value, volatile jint* dest)
+  // Support for int32_t Atomic::xchg(int32_t exchange_value, volatile int32_t* dest)
   //
   // xchg exists as far back as 8086, lock needed for MP only
   // Stack layout immediately after call:

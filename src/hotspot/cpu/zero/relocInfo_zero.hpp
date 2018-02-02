@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,5 +33,9 @@
     offset_unit  =  1,
     format_width =  1
   };
+
+ public:
+
+  static bool mustIterateImmediateOopsInCode() { return true; }
 
 #endif // CPU_ZERO_VM_RELOCINFO_ZERO_HPP

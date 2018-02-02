@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,15 +65,15 @@ enum CipherSuite implements Parameter {
     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_RSA_WITH_AES_256_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK7),
+            Protocol.TLSV1_2, JdkRelease.JDK6),
     TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_DHE_RSA_WITH_AES_256_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK7),
+            Protocol.TLSV1_2, JdkRelease.JDK6),
     TLS_DHE_DSS_WITH_AES_256_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK7),
+            Protocol.TLSV1_2, JdkRelease.JDK6),
     TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA(),
     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA(),
     TLS_RSA_WITH_AES_256_CBC_SHA(),
@@ -86,15 +86,15 @@ enum CipherSuite implements Parameter {
     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_RSA_WITH_AES_128_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK7),
+            Protocol.TLSV1_2, JdkRelease.JDK6),
     TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_DHE_RSA_WITH_AES_128_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK7),
+            Protocol.TLSV1_2, JdkRelease.JDK6),
     TLS_DHE_DSS_WITH_AES_128_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK7),
+            Protocol.TLSV1_2, JdkRelease.JDK6),
     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA(),
     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA(),
     TLS_RSA_WITH_AES_128_CBC_SHA(),

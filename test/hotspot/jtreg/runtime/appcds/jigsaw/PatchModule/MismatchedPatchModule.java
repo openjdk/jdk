@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary different settings of --patch-module at dump time and runtime are
  *          acceptable. The class found in runtime --patch-module entry should
  *          be used.

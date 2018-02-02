@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,8 @@ public class TestInterface extends JavadocTester {
                 // Make sure known implementing class list is correct and omits type parameters.
                 "<dl>\n"
                 + "<dt>All Known Implementing Classes:</dt>\n"
-                + "<dd><code><a href=\"../pkg/Child.html\" title=\"class in pkg\">Child"
-                + "</a></code>, <code><a href=\"../pkg/Parent.html\" title=\"class in pkg\">Parent"
+                + "<dd><code><a href=\"Child.html\" title=\"class in pkg\">Child"
+                + "</a></code>, <code><a href=\"Parent.html\" title=\"class in pkg\">Parent"
                 + "</a></code></dd>\n"
                 + "</dl>");
 
@@ -79,7 +79,7 @@ public class TestInterface extends JavadocTester {
                 // Make sure "All Implemented Interfaces": has substituted type parameters
                 "<dl>\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"
-                + "<dd><code><a href=\"../pkg/Interface.html\" title=\"interface in pkg\">"
+                + "<dd><code><a href=\"Interface.html\" title=\"interface in pkg\">"
                 + "Interface</a>&lt;CE&gt;</code></dd>\n"
                 + "</dl>",
                 //Make sure Class Tree has substituted type parameters.
@@ -87,7 +87,7 @@ public class TestInterface extends JavadocTester {
                 + "<li>java.lang.Object</li>\n"
                 + "<li>\n"
                 + "<ul class=\"inheritance\">\n"
-                + "<li><a href=\"../pkg/Parent.html\" title=\"class in pkg\">"
+                + "<li><a href=\"Parent.html\" title=\"class in pkg\">"
                 + "pkg.Parent</a>&lt;CE&gt;</li>\n"
                 + "<li>\n"
                 + "<ul class=\"inheritance\">\n"
@@ -99,23 +99,23 @@ public class TestInterface extends JavadocTester {
                 + "</ul>",
                 //Make sure "Specified By" has substituted type parameters.
                 "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
-                + "<dd><code><a href=\"../pkg/Interface.html#method--\">method</a>"
+                + "<dd><code><a href=\"Interface.html#method--\">method</a>"
                 + "</code>&nbsp;in interface&nbsp;<code>"
-                + "<a href=\"../pkg/Interface.html\" title=\"interface in pkg\">"
-                + "Interface</a>&lt;<a href=\"../pkg/Child.html\" title=\"type parameter in Child\">"
+                + "<a href=\"Interface.html\" title=\"interface in pkg\">"
+                + "Interface</a>&lt;<a href=\"Child.html\" title=\"type parameter in Child\">"
                 + "CE</a>&gt;</code></dd>",
                 //Make sure "Overrides" has substituted type parameters.
                 "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
-                + "<dd><code><a href=\"../pkg/Parent.html#method--\">method</a>"
-                + "</code>&nbsp;in class&nbsp;<code><a href=\"../pkg/Parent.html\" "
-                + "title=\"class in pkg\">Parent</a>&lt;<a href=\"../pkg/Child.html\" "
+                + "<dd><code><a href=\"Parent.html#method--\">method</a>"
+                + "</code>&nbsp;in class&nbsp;<code><a href=\"Parent.html\" "
+                + "title=\"class in pkg\">Parent</a>&lt;<a href=\"Child.html\" "
                 + "title=\"type parameter in Child\">CE</a>&gt;</code></dd>");
 
         checkOutput("pkg/Parent.html", true,
                 //Make sure "Direct Know Subclasses" omits type parameters
                 "<dl>\n"
                 + "<dt>Direct Known Subclasses:</dt>\n"
-                + "<dd><code><a href=\"../pkg/Child.html\" title=\"class in pkg\">Child"
+                + "<dd><code><a href=\"Child.html\" title=\"class in pkg\">Child"
                 + "</a></code></dd>\n"
                 + "</dl>");
 
@@ -135,7 +135,7 @@ public class TestInterface extends JavadocTester {
 
                 "<td class=\"colFirst\"><code>static void</code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg/ClassWithStaticMembers.html#m--\">m</a></span>()</code></th>\n"
+                + "<a href=\"#m--\">m</a></span>()</code></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">A hider method</div>\n"
                 + "</td>\n",
@@ -144,7 +144,7 @@ public class TestInterface extends JavadocTester {
                 + "<pre>public static&nbsp;void&nbsp;staticMethod()</pre>\n"
                 + "<div class=\"block\"><span class=\"descfrmTypeLabel\">"
                 + "Description copied from interface:&nbsp;<code>"
-                + "<a href=\"../pkg/InterfaceWithStaticMembers.html#staticMethod--\">"
+                + "<a href=\"InterfaceWithStaticMembers.html#staticMethod--\">"
                 + "InterfaceWithStaticMembers</a></code></span></div>\n"
                 + "<div class=\"block\">A static method</div>\n");
 
@@ -165,10 +165,10 @@ public class TestInterface extends JavadocTester {
         checkOutput("pkg1/Child.html", true,
             // Ensure the correct Overrides in the inheritance hierarchy is reported
             "<span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n" +
-            "<dd><code><a href=\"../pkg1/GrandParent.html#method1--\">method1</a></code>" +
+            "<dd><code><a href=\"GrandParent.html#method1--\">method1</a></code>" +
             "&nbsp;in class&nbsp;" +
-            "<code><a href=\"../pkg1/GrandParent.html\" title=\"class in pkg1\">GrandParent</a>" +
-            "&lt;<a href=\"../pkg1/Child.html\" title=\"type parameter in Child\">CE</a>&gt;</code>");
+            "<code><a href=\"GrandParent.html\" title=\"class in pkg1\">GrandParent</a>" +
+            "&lt;<a href=\"Child.html\" title=\"type parameter in Child\">CE</a>&gt;</code>");
     }
 
     @Test
@@ -182,21 +182,21 @@ public class TestInterface extends JavadocTester {
         checkOutput("pkg2/Spliterator.OfDouble.html", true,
             // Ensure the correct type parameters are displayed correctly
             "<h3>Nested classes/interfaces inherited from interface&nbsp;pkg2."
-            + "<a href=\"../pkg2/Spliterator.html\" title=\"interface in pkg2\">Spliterator</a></h3>\n"
-            + "<code><a href=\"../pkg2/Spliterator.OfDouble.html\" title=\"interface in pkg2\">"
-            + "Spliterator.OfDouble</a>, <a href=\"../pkg2/Spliterator.OfInt.html\" "
+            + "<a href=\"Spliterator.html\" title=\"interface in pkg2\">Spliterator</a></h3>\n"
+            + "<code><a href=\"Spliterator.OfDouble.html\" title=\"interface in pkg2\">"
+            + "Spliterator.OfDouble</a>, <a href=\"Spliterator.OfInt.html\" "
             + "title=\"interface in pkg2\">Spliterator.OfInt</a>&lt;"
-            + "<a href=\"../pkg2/Spliterator.OfInt.html\" title=\"type parameter in Spliterator.OfInt\">"
-            + "Integer</a>&gt;, <a href=\"../pkg2/Spliterator.OfPrimitive.html\" title=\"interface in pkg2\">"
-            + "Spliterator.OfPrimitive</a>&lt;<a href=\"../pkg2/Spliterator.OfPrimitive.html\" "
-            + "title=\"type parameter in Spliterator.OfPrimitive\">T</a>,<a href=\"../pkg2/Spliterator.OfPrimitive.html\" "
+            + "<a href=\"Spliterator.OfInt.html\" title=\"type parameter in Spliterator.OfInt\">"
+            + "Integer</a>&gt;, <a href=\"Spliterator.OfPrimitive.html\" title=\"interface in pkg2\">"
+            + "Spliterator.OfPrimitive</a>&lt;<a href=\"Spliterator.OfPrimitive.html\" "
+            + "title=\"type parameter in Spliterator.OfPrimitive\">T</a>,<a href=\"Spliterator.OfPrimitive.html\" "
             + "title=\"type parameter in Spliterator.OfPrimitive\">T_CONS</a>,"
-            + "<a href=\"../pkg2/Spliterator.OfPrimitive.html\" title=\"type parameter in Spliterator.OfPrimitive\">"
-            + "T_SPLITR</a> extends <a href=\"../pkg2/Spliterator.OfPrimitive.html\" title=\"interface in pkg2\">"
-            + "Spliterator.OfPrimitive</a>&lt;<a href=\"../pkg2/Spliterator.OfPrimitive.html\" "
+            + "<a href=\"Spliterator.OfPrimitive.html\" title=\"type parameter in Spliterator.OfPrimitive\">"
+            + "T_SPLITR</a> extends <a href=\"Spliterator.OfPrimitive.html\" title=\"interface in pkg2\">"
+            + "Spliterator.OfPrimitive</a>&lt;<a href=\"Spliterator.OfPrimitive.html\" "
             + "title=\"type parameter in Spliterator.OfPrimitive\">T</a>,"
-            + "<a href=\"../pkg2/Spliterator.OfPrimitive.html\" title=\"type parameter in Spliterator.OfPrimitive\">"
-            + "T_CONS</a>,<a href=\"../pkg2/Spliterator.OfPrimitive.html\" title=\"type parameter in Spliterator.OfPrimitive\">"
+            + "<a href=\"Spliterator.OfPrimitive.html\" title=\"type parameter in Spliterator.OfPrimitive\">"
+            + "T_CONS</a>,<a href=\"Spliterator.OfPrimitive.html\" title=\"type parameter in Spliterator.OfPrimitive\">"
             + "T_SPLITR</a>&gt;&gt;</code>");
     }
 }

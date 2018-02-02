@@ -80,7 +80,7 @@ public class AbstractQueueTest extends JSR166TestCase {
     }
 
     /**
-     * add throws IllegalStateException true if offer fails
+     * add throws IllegalStateException if offer fails
      */
     public void testAddF() {
         Fail q = new Fail();
@@ -106,7 +106,7 @@ public class AbstractQueueTest extends JSR166TestCase {
      */
     public void testRemoveS() {
         Succeed q = new Succeed();
-        q.remove();
+        assertSame(one, q.remove());
     }
 
     /**
@@ -125,7 +125,7 @@ public class AbstractQueueTest extends JSR166TestCase {
      */
     public void testElementS() {
         Succeed q = new Succeed();
-        q.element();
+        assertSame(one, q.element());
     }
 
     /**

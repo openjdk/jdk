@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary a patched class found in --patch-module should be used at runtime
  * @library ../..
  * @library /test/hotspot/jtreg/testlibrary

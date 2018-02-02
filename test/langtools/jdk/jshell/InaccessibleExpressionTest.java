@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8190939
+ * @test 8190939 8191842
  * @summary test expressions whose type is inaccessible
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -86,6 +86,8 @@ public class InaccessibleExpressionTest extends KullaTesting {
         assertEval(list.name() + ".size()", "0");
         VarSnippet one = varKey(assertEval("priv()", "One"));
         assertEquals(one.typeName(), "priv.GetPriv.Count");
+        assertEval("var v = down();", "Packp");
+        assertDeclareFail("v.toString()", "compiler.err.not.def.access.class.intf.cant.access");
     }
 
     public void testInternal() {

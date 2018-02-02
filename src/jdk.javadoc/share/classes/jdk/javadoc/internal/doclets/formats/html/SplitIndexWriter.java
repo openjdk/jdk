@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
     protected void addLinksForIndexes(Content contentTree) {
         for (int i = 0; i < indexElements.size(); i++) {
             int j = i + 1;
-            contentTree.addContent(Links.createLink(DocPaths.indexN(j),
+            contentTree.addContent(links.createLink(DocPaths.indexN(j),
                     new StringContent(indexElements.get(i).toString())));
             contentTree.addContent(Contents.SPACE);
         }
@@ -195,7 +195,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             return HtmlTree.LI(prevletterLabel);
         }
         else {
-            Content prevLink = Links.createLink(DocPaths.indexN(prev),
+            Content prevLink = links.createLink(DocPaths.indexN(prev),
                     prevletterLabel);
             return HtmlTree.LI(prevLink);
         }
@@ -213,7 +213,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             return HtmlTree.LI(nextletterLabel);
         }
         else {
-            Content nextLink = Links.createLink(DocPaths.indexN(next),
+            Content nextLink = links.createLink(DocPaths.indexN(next),
                     nextletterLabel);
             return HtmlTree.LI(nextLink);
         }

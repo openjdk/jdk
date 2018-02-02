@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,12 @@ public class Klist {
     void processArgs(String[] args) {
         Character arg;
         for (int i = 0; i < args.length; i++) {
+            if (args[i].equals("-?") ||
+                args[i].equals("-h") ||
+                args[i].equals("--help")) {
+                printHelp();
+                System.exit(0);
+            }
             if ((args[i].length() >= 2) && (args[i].startsWith("-"))) {
                 arg = Character.valueOf(args[i].charAt(1));
                 switch (arg.charValue()) {
@@ -350,7 +356,5 @@ public class Klist {
         System.out.println("\t-t \t shows keytab entry timestamps");
         System.out.println("\t-K \t shows keytab entry key value");
         System.out.println("\t-e \t shows keytab entry key type");
-        System.out.println("\nUsage: java sun.security.krb5.tools.Klist " +
-                           "-help for help.");
     }
 }

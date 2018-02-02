@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,21 +49,21 @@ public class TestNavigation extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 "<li>Prev&nbsp;Class</li>",
-                "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>",
+                "<a href=\"C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>",
                 "<li><a href=\"../overview-summary.html\">Overview</a></li>");
 
         checkOutput("pkg/C.html", true,
-                "<a href=\"../pkg/A.html\" title=\"annotation in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
-                "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>",
+                "<a href=\"A.html\" title=\"annotation in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
+                "<a href=\"E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>",
                 "<li><a href=\"../overview-summary.html\">Overview</a></li>");
 
         checkOutput("pkg/E.html", true,
-                "<a href=\"../pkg/C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
-                "<a href=\"../pkg/I.html\" title=\"interface in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>",
+                "<a href=\"C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
+                "<a href=\"I.html\" title=\"interface in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>",
                 "<li><a href=\"../overview-summary.html\">Overview</a></li>");
 
         checkOutput("pkg/I.html", true,
-                "<a href=\"../pkg/E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
+                "<a href=\"E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
                 "<li>Next&nbsp;Class</li>",
                 // Test for 4664607
                 "<div class=\"skipNav\"><a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a></div>\n"

@@ -1162,9 +1162,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
   # Setup some hard coded includes
   $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK \
       -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
-      -I${TOPDIR}/src/java.base/share/native/include \
-      -I${TOPDIR}/src/java.base/$OPENJDK_$1_OS/native/include \
-      -I${TOPDIR}/src/java.base/$OPENJDK_$1_OS_TYPE/native/include \
+      -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base/\$(OPENJDK_TARGET_OS_INCLUDE_SUBDIR) \
       -I${TOPDIR}/src/java.base/share/native/libjava \
       -I${TOPDIR}/src/java.base/$OPENJDK_$1_OS_TYPE/native/libjava \
       -I${TOPDIR}/src/hotspot/share/include \

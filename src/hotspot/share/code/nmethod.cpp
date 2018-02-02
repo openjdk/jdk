@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1485,15 +1485,17 @@ bool nmethod::do_unloading_scopes(BoolObjectClosure* is_alive, bool unloading_oc
 
 bool nmethod::do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive, bool unloading_occurred) {
   // Compiled code
-  {
-  RelocIterator iter(this, low_boundary);
-  while (iter.next()) {
-    if (iter.type() == relocInfo::oop_type) {
-      if (unload_if_dead_at(&iter, is_alive, unloading_occurred)) {
-        return true;
+
+  // Prevent extra code cache walk for platforms that don't have immediate oops.
+  if (relocInfo::mustIterateImmediateOopsInCode()) {
+    RelocIterator iter(this, low_boundary);
+    while (iter.next()) {
+      if (iter.type() == relocInfo::oop_type) {
+        if (unload_if_dead_at(&iter, is_alive, unloading_occurred)) {
+          return true;
+        }
       }
     }
-  }
   }
 
   return do_unloading_scopes(is_alive, unloading_occurred);
@@ -1584,18 +1586,21 @@ void nmethod::oops_do(OopClosure* f, bool allow_zombie) {
     // (See comment above.)
   }
 
-  RelocIterator iter(this, low_boundary);
+  // Prevent extra code cache walk for platforms that don't have immediate oops.
+  if (relocInfo::mustIterateImmediateOopsInCode()) {
+    RelocIterator iter(this, low_boundary);
 
-  while (iter.next()) {
-    if (iter.type() == relocInfo::oop_type ) {
-      oop_Relocation* r = iter.oop_reloc();
-      // In this loop, we must only follow those oops directly embedded in
-      // the code.  Other oops (oop_index>0) are seen as part of scopes_oops.
-      assert(1 == (r->oop_is_immediate()) +
-                   (r->oop_addr() >= oops_begin() && r->oop_addr() < oops_end()),
-             "oop must be found in exactly one place");
-      if (r->oop_is_immediate() && r->oop_value() != NULL) {
-        f->do_oop(r->oop_addr());
+    while (iter.next()) {
+      if (iter.type() == relocInfo::oop_type ) {
+        oop_Relocation* r = iter.oop_reloc();
+        // In this loop, we must only follow those oops directly embedded in
+        // the code.  Other oops (oop_index>0) are seen as part of scopes_oops.
+        assert(1 == (r->oop_is_immediate()) +
+               (r->oop_addr() >= oops_begin() && r->oop_addr() < oops_end()),
+               "oop must be found in exactly one place");
+        if (r->oop_is_immediate() && r->oop_value() != NULL) {
+          f->do_oop(r->oop_addr());
+        }
       }
     }
   }
@@ -1620,7 +1625,7 @@ bool nmethod::test_set_oops_do_mark() {
   assert(nmethod::oops_do_marking_is_active(), "oops_do_marking_prologue must be called");
   if (_oops_do_mark_link == NULL) {
     // Claim this nmethod for this thread to mark.
-    if (Atomic::cmpxchg(NMETHOD_SENTINEL, &_oops_do_mark_link, (nmethod*)NULL) == NULL) {
+    if (Atomic::replace_if_null(NMETHOD_SENTINEL, &_oops_do_mark_link)) {
       // Atomically append this nmethod (now claimed) to the head of the list:
       nmethod* observed_mark_nmethods = _oops_do_mark_nmethods;
       for (;;) {

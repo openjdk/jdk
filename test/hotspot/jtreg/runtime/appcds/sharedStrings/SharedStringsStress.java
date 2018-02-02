@@ -27,7 +27,7 @@
  * @summary Write a lots of shared strings.
  * Feature support: G1GC only, compressed oops/kptrs, 64-bit os, not on windows
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.gc.G1
  * @library /test/hotspot/jtreg/runtime/appcds /test/lib
  * @modules jdk.jartool/sun.tools.jar

@@ -103,6 +103,14 @@ public class GetImplementorTest {
         HotSpotResolvedObjectType resolvedIface = CompilerToVMHelper
                 .lookupTypeHelper(Utils.toJVMTypeSignature(tcase.anInterface),
                         getClass(), /* resolve = */ true);
+        if (!resolvedIface.isInterface()) {
+            try {
+                CompilerToVMHelper.getImplementor(resolvedIface);
+                Asserts.fail("Expected " + IllegalArgumentException.class.getName());
+            } catch (IllegalArgumentException e) {
+            }
+            return;
+        }
         HotSpotResolvedObjectType resolvedImplementer = CompilerToVMHelper
                 .getImplementor(resolvedIface);
         HotSpotResolvedObjectType resolvedExpected = null;

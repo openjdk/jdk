@@ -127,7 +127,7 @@ JvmtiRawMonitor::is_valid() {
 
 int JvmtiRawMonitor::SimpleEnter (Thread * Self) {
   for (;;) {
-    if (Atomic::cmpxchg(Self, &_owner, (void*)NULL) == NULL) {
+    if (Atomic::replace_if_null(Self, &_owner)) {
        return OS_OK ;
     }
 
@@ -139,7 +139,7 @@ int JvmtiRawMonitor::SimpleEnter (Thread * Self) {
     Node._next  = _EntryList ;
     _EntryList  = &Node ;
     OrderAccess::fence() ;
-    if (_owner == NULL && Atomic::cmpxchg(Self, &_owner, (void*)NULL) == NULL) {
+    if (_owner == NULL && Atomic::replace_if_null(Self, &_owner)) {
         _EntryList = Node._next ;
         RawMonitor_lock->unlock() ;
         return OS_OK ;

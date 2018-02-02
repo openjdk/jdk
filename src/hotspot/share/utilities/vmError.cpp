@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,11 +243,12 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
           RegisterMap map((JavaThread*)t, false); // No update
           fr = fr.sender(&map);
         } else {
+          // is_first_C_frame() does only simple checks for frame pointer,
+          // it will pass if java compiled code has a pointer in EBP.
+          if (os::is_first_C_frame(&fr)) break;
           fr = os::get_sender_for_C_frame(&fr);
         }
       } else {
-        // is_first_C_frame() does only simple checks for frame pointer,
-        // it will pass if java compiled code has a pointer in EBP.
         if (os::is_first_C_frame(&fr)) break;
         fr = os::get_sender_for_C_frame(&fr);
       }

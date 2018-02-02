@@ -28,7 +28,7 @@
  *          option for testing the interaction with GC and shared strings.
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/test-classes
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.flavor != "minimal"
  * @requires vm.gc.G1
  * @modules java.base/jdk.internal.misc

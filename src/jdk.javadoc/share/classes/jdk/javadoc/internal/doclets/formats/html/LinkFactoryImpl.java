@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -93,7 +92,7 @@ public class LinkFactoryImpl extends LinkFactory {
                 DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf ||
                                 !(DocPath.forName(utils, typeElement)).equals(m_writer.filename)) {
-                        link.addContent(Links.createLink(
+                        link.addContent(m_writer.links.createLink(
                                 filename.fragment(classLinkInfo.where),
                                 label,
                                 classLinkInfo.isStrong,

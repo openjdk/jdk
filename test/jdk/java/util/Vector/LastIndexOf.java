@@ -28,7 +28,7 @@
  *          valid range in the backing array
  */
 
-import java.util.*;
+import java.util.Vector;
 
 public class LastIndexOf {
     public static void main(String[] args) throws Exception {

@@ -25,7 +25,7 @@
 /**
  * @test
  * @summary AppCDS tests for testing -Xbootclasspath/a
- * @requires ((vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)) & !vm.graal.enabled
+ * @requires vm.cds & !vm.graal.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
  *          java.management

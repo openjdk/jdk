@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,10 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -216,59 +220,59 @@ public class TLSRestrictions {
                 needClientAuth,
                 pass);
 
-        JSSEServer server = new JSSEServer(
-                createSSLContext(trustNames, certNames),
-                serverConstraint,
-                needClientAuth);
-        int port = server.getPort();
-        server.start();
+        ExecutorService executor = Executors.newFixedThreadPool(1);
+        try {
+            JSSEServer server = new JSSEServer(
+                    createSSLContext(trustNames, certNames),
+                    serverConstraint,
+                    needClientAuth);
+            int port = server.getPort();
+            Future<Exception> serverFuture = executor.submit(() -> server.start());
 
-        // Run client on another JVM so that its properties cannot be in conflict
-        // with server's.
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(
-                "-Dcert.dir=" + CERT_DIR,
-                "-Djava.security.debug=certpath",
-                "-classpath",
-                TEST_CLASSES,
-                "JSSEClient",
-                port + "",
-                trustNameStr,
-                certNameStr,
-                clientConstraint);
-        int exitValue = outputAnalyzer.getExitValue();
-        String clientOut = outputAnalyzer.getOutput();
+            // Run client on another JVM so that its properties cannot be in conflict
+            // with server's.
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(
+                    "-Dcert.dir=" + CERT_DIR,
+                    "-Djava.security.debug=certpath",
+                    "-classpath",
+                    TEST_CLASSES,
+                    "JSSEClient",
+                    port + "",
+                    trustNameStr,
+                    certNameStr,
+                    clientConstraint);
+            int clientExitValue = outputAnalyzer.getExitValue();
+            String clientOut = outputAnalyzer.getOutput();
+            System.out.println("---------- Client output start ----------");
+            System.out.println(clientOut);
+            System.out.println("---------- Client output end ----------");
 
-        Exception serverException = server.getException();
-        if (serverException != null) {
-            System.out.println("Server: failed");
-        }
-
-        System.out.println("---------- Client output start ----------");
-        System.out.println(clientOut);
-        System.out.println("---------- Client output end ----------");
-
-        if (serverException instanceof SocketTimeoutException
-                || clientOut.contains("SocketTimeoutException")) {
-            System.out.println("The communication gets timeout and skips the test.");
-            return;
-        }
-
-        if (pass) {
-            if (serverException != null || exitValue != 0) {
-                throw new RuntimeException(
-                        "Unexpected failure. Operation was blocked.");
-            }
-        } else {
-            if (serverException == null && exitValue == 0) {
-                throw new RuntimeException(
-                        "Unexpected pass. Operation was allowed.");
+            Exception serverException = serverFuture.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            if (serverException instanceof SocketTimeoutException
+                    || clientOut.contains("SocketTimeoutException")) {
+                System.out.println("The communication gets timeout and skips the test.");
+                return;
             }
 
-            // The test may encounter non-SSL issues, like network problem.
-            if (!(serverException instanceof SSLHandshakeException
-                    || clientOut.contains("SSLHandshakeException"))) {
-                throw new RuntimeException("Failure with unexpected exception.");
+            if (pass) {
+                if (serverException != null || clientExitValue != 0) {
+                    throw new RuntimeException(
+                            "Unexpected failure. Operation was blocked.");
+                }
+            } else {
+                if (serverException == null && clientExitValue == 0) {
+                    throw new RuntimeException(
+                            "Unexpected pass. Operation was allowed.");
+                }
+
+                // The test may encounter non-SSL issues, like network problem.
+                if (!(serverException instanceof SSLHandshakeException
+                        || clientOut.contains("SSLHandshakeException"))) {
+                    throw new RuntimeException("Failure with unexpected exception.");
+                }
             }
+        } finally {
+            executor.shutdown();
         }
     }
 
@@ -520,7 +524,6 @@ public class TLSRestrictions {
                     true);
             break;
         }
-
         System.out.println("Case passed");
         System.out.println("========================================");
     }

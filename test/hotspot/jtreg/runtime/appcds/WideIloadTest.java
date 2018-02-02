@@ -25,7 +25,7 @@
 /**
  * @test
  * @summary Test 'iload_w' bytecode in shared class
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

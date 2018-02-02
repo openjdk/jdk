@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2062,7 +2062,7 @@ void* os::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-struct timespec PosixSemaphore::create_timespec(unsigned int sec, int nsec) {
+static struct timespec create_semaphore_timespec(unsigned int sec, int nsec) {
   struct timespec ts;
   unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
 
@@ -2100,7 +2100,7 @@ static int Sigexit = 0;
 static jint *pending_signals = NULL;
 static int *preinstalled_sigs = NULL;
 static struct sigaction *chainedsigactions = NULL;
-static sema_t sig_sem;
+static Semaphore* sig_sem = NULL;
 typedef int (*version_getting_t)();
 version_getting_t os::Solaris::get_libjsig_version = NULL;
 
@@ -2115,6 +2115,7 @@ void os::Solaris::init_signal_mem() {
   Sigexit = Maxsignum+1;
   assert(Maxsignum >0, "Unable to obtain max signal number");
 
+  // Initialize signal structures
   // pending_signals has one int per signal
   // The additional signal is for SIGEXIT - exit signal to signal_thread
   pending_signals = (jint *)os::malloc(sizeof(jint) * (Sigexit+1), mtInternal);
@@ -2132,21 +2133,22 @@ void os::Solaris::init_signal_mem() {
 }
 
 void os::signal_init_pd() {
-  int ret;
-
-  ret = ::sema_init(&sig_sem, 0, NULL, NULL);
-  assert(ret == 0, "sema_init() failed");
+  // Initialize signal semaphore
+  sig_sem = new Semaphore();
 }
 
-void os::signal_notify(int signal_number) {
-  int ret;
-
-  Atomic::inc(&pending_signals[signal_number]);
-  ret = ::sema_post(&sig_sem);
-  assert(ret == 0, "sema_post() failed");
+void os::signal_notify(int sig) {
+  if (sig_sem != NULL) {
+    Atomic::inc(&pending_signals[sig]);
+    sig_sem->signal();
+  } else {
+    // Signal thread is not created with ReduceSignalUsage and signal_init_pd
+    // initialization isn't called.
+    assert(ReduceSignalUsage, "signal semaphore should be created");
+  }
 }
 
-static int check_pending_signals(bool wait_for_signal) {
+static int check_pending_signals() {
   int ret;
   while (true) {
     for (int i = 0; i < Sigexit + 1; i++) {
@@ -2155,19 +2157,13 @@ static int check_pending_signals(bool wait_for_signal) {
         return i;
       }
     }
-    if (!wait_for_signal) {
-      return -1;
-    }
     JavaThread *thread = JavaThread::current();
     ThreadBlockInVM tbivm(thread);
 
     bool threadIsSuspended;
     do {
       thread->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
-      while ((ret = ::sema_wait(&sig_sem)) == EINTR)
-        ;
-      assert(ret == 0, "sema_wait() failed");
+      sig_sem->wait();
 
       // were we externally suspended while we were waiting?
       threadIsSuspended = thread->handle_special_suspend_equivalent_condition();
@@ -2176,8 +2172,7 @@ static int check_pending_signals(bool wait_for_signal) {
         // another thread suspended us. We don't want to continue running
         // while suspended because that would surprise the thread that
         // suspended us.
-        ret = ::sema_post(&sig_sem);
-        assert(ret == 0, "sema_post() failed");
+        sig_sem->signal();
 
         thread->java_suspend_self();
       }
@@ -2185,12 +2180,8 @@ static int check_pending_signals(bool wait_for_signal) {
   }
 }
 
-int os::signal_lookup() {
-  return check_pending_signals(false);
-}
-
 int os::signal_wait() {
-  return check_pending_signals(true);
+  return check_pending_signals();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3599,7 +3590,7 @@ static bool do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(0, 2000 * NANOSECS_PER_MILLISEC)) {
+    if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2000 * NANOSECS_PER_MILLISEC))) {
       break;
     } else {
       // timeout
@@ -3633,7 +3624,7 @@ static void do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(0, 2 * NANOSECS_PER_MILLISEC)) {
+      if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
         if (osthread->sr.is_running()) {
           return;
         }

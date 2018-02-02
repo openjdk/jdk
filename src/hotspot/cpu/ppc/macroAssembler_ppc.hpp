@@ -980,6 +980,8 @@ class SkipIfEqualZero : public StackObj {
  public:
    // 'Temp' is a temp register that this object can use (and trash).
    explicit SkipIfEqualZero(MacroAssembler*, Register temp, const bool* flag_addr);
+   static void skip_to_label_if_equal_zero(MacroAssembler*, Register temp,
+                                           const bool* flag_addr, Label& label);
    ~SkipIfEqualZero();
 };
 
